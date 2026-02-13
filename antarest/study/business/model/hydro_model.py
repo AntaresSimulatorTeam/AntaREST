@@ -87,33 +87,14 @@ class HydroProperties(AntaresBaseModel, extra="forbid", populate_by_name=True, a
     inflow_structure: InflowStructure
 
 
-def _initialize_field_default(hydro_obj: HydroManagement | InflowStructure, field: str, default_value: Any) -> None:
-    if getattr(hydro_obj, field) is None:
-        setattr(hydro_obj, field, default_value)
-
-
 def initialize_hydro_management(hydro_management: HydroManagement, version: StudyVersion) -> None:
-    for field in ["inter_daily_breakdown", "inter_monthly_breakdown", "leeway_low", "leeway_up", "pumping_efficiency"]:
-        _initialize_field_default(hydro_management, field, 1)
-    _initialize_field_default(hydro_management, "intra_daily_modulation", 24)
-
-    for field in ["reservoir_capacity", "initialize_reservoir_date"]:
-        _initialize_field_default(hydro_management, field, 0)
-
-    for field in ["follow_load", "use_heuristic"]:
-        _initialize_field_default(hydro_management, field, True)
-
-    for field in ["reservoir", "use_water", "hard_bounds", "power_to_level", "use_leeway"]:
-        _initialize_field_default(hydro_management, field, False)
-
     # check specific attributes based on the version of the study
-    if version >= STUDY_VERSION_9_2:
-        field = "overflow_spilled_cost_difference"
-        _initialize_field_default(hydro_management, field, 1)
+    if version >= STUDY_VERSION_9_2 and hydro_management.overflow_spilled_cost_difference is None:
+        hydro_management.overflow_spilled_cost_difference = 1
 
 
 def initialize_inflow_structure(inflow_structure: InflowStructure) -> None:
-    _initialize_field_default(inflow_structure, "inter_monthly_correlation", 0.5)
+    inflow_structure.inter_monthly_correlation = 0.5
 
 
 def _check_attributes_coherence(data: Any, field: str, version: StudyVersion) -> None:

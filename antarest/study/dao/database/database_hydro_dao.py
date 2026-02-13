@@ -52,6 +52,9 @@ if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
+_NOT_IMPLEMENTED_ERROR = "This method is not implemented in the DatabaseHydroDao class."
+
+
 class DatabaseHydroDao(HydroDao):
     """Database implementation of HydroDao"""
 
@@ -457,108 +460,108 @@ class DatabaseHydroDao(HydroDao):
 
     @override
     def get_hydro_maxpower(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def get_hydro_reservoir(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def get_hydro_energy(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def get_hydro_run_of_river(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def get_hydro_modulation(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def get_hydro_credit_modulations(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def get_hydro_inflow_pattern(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def get_hydro_water_values(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def get_hydro_mingen(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def get_hydro_max_hourly_gen_power(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def get_hydro_max_hourly_pump_power(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def get_hydro_max_daily_gen_energy(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def get_hydro_max_daily_pump_energy(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def save_hydro_maxpower(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def save_hydro_reservoir(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def save_hydro_energy(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def save_hydro_run_of_river(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def save_hydro_modulation(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def save_hydro_credit_modulations(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def save_hydro_inflow_pattern(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def save_hydro_water_values(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def save_hydro_mingen(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def save_hydro_max_hourly_gen_power(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def save_hydro_max_hourly_pump_power(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def save_hydro_max_daily_gen_energy(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def save_hydro_max_daily_pump_energy(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
 
     @override
     def convert_hydro_pmax(self, _hydro_pmax: HydroPmax) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
