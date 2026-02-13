@@ -426,17 +426,18 @@ class DatabaseHydroDao(HydroDao):
         )
         session.execute(stmt_delete)
 
-        # Insert new correlations
+        # Insert new correlations in canonical upper-triangle order (area_from < area_to)
         insert_values = []
         for corr_area in correlation.correlation:
             if corr_area.area_id == area_id or corr_area.coefficient == 0:
                 continue
             coefficient = corr_area.coefficient / 100
+            a, b = sorted([area_id, corr_area.area_id])
             insert_values.append(
                 {
                     "study_id": study_id,
-                    "area_from": area_id,
-                    "area_to": corr_area.area_id,
+                    "area_from": a,
+                    "area_to": b,
                     "coefficient": coefficient,
                 }
             )

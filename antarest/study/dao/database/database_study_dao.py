@@ -28,10 +28,6 @@ from typing_extensions import override
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
-from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
-from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
-from antarest.study.business.model.config.general_model import GeneralConfig
-from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.scenario_builder_model import AnyScenarios, Rulesets, ScenarioType
 from antarest.study.business.model.sts_model import (
@@ -356,26 +352,6 @@ class DatabaseStudyDao(
     def get_st_storage_additional_constraints(
         self, area_id: str, storage_id: str
     ) -> list[STStorageAdditionalConstraint]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_general_config(self) -> GeneralConfig:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_optimization_preferences(self) -> OptimizationPreferences:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_advanced_parameters(self) -> AdvancedParameters:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_compatibility_parameters(self) -> CompatibilityParameters:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_compatibility_parameters(self, parameters: CompatibilityParameters) -> None:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
