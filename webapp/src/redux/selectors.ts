@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
-import type { F } from "ts-toolbelt";
 import { sortStudies } from "@/routes/_authenticated/studies/-components/StudiesList/Header/studySortUtils";
 import { createLinkId } from "@/services/api/studies/links/utils";
 import { getHighestVersion } from "@/utils/versionUtils";
+import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
+import type { F } from "ts-toolbelt";
 import { isGroupAdmin, isUserAdmin, nameToId, sortByName } from "../services/utils";
 import type {
   AllClustersAndLinks,
@@ -59,6 +59,10 @@ export const getStudiesState = (state: AppState): StudiesState => state.studies;
 
 export const getStudiesStatus = (state: AppState): StudiesState["status"] => {
   return getStudiesState(state).status;
+};
+
+export const getStudiesError = (state: AppState): StudiesState["error"] => {
+  return getStudiesState(state).error;
 };
 
 export const getStudiesScrollPosition = (state: AppState): StudiesState["scrollPosition"] => {

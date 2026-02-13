@@ -12,24 +12,21 @@
  * This file is part of the Antares project.
  */
 
-import HomeIcon from "@mui/icons-material/Home";
-import { Box, Breadcrumbs } from "@mui/material";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { directoryQueries } from "@/queries/directories/queries";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudyFilters } from "@/redux/selectors";
-import { directoryQueries } from "@/queries/directories/queries";
-import type { StudyMetadata } from "@/types/types";
 import { buildKey } from "@/utils/reactUtils";
+import HomeIcon from "@mui/icons-material/Home";
+import { Breadcrumbs } from "@mui/material";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import useStudy from "../../../-hooks/useStudy";
 import BreadcrumbLink from "./BreadcrumbLink";
 import { buildExternalBreadcrumbs, buildManagedBreadcrumbs } from "./utils";
 
-interface BreadcrumbProps {
-  study: StudyMetadata;
-}
-
-function Breadcrumb({ study }: BreadcrumbProps) {
+function Breadcrumb() {
+  const study = useStudy();
   const dispatch = useAppDispatch();
   const filters = useAppSelector(getStudyFilters);
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
@@ -81,31 +78,29 @@ function Breadcrumb({ study }: BreadcrumbProps) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center" }}>
-      <Breadcrumbs maxItems={5} sx={{ fontSize: 15 }}>
-        {breadcrumbItems.map((item, index) => {
-          const isFirstSegment = index === 0;
-          const isLastSegment = index === breadcrumbItems.length - 1;
+    <Breadcrumbs maxItems={5} sx={{ fontSize: 15, flex: 1 }}>
+      {breadcrumbItems.map((item, index) => {
+        const isFirstSegment = index === 0;
+        const isLastSegment = index === breadcrumbItems.length - 1;
 
-          return (
-            <BreadcrumbLink
-              key={buildKey(item.label, index)}
-              label={item.label}
-              icon={isFirstSegment ? <HomeIcon fontSize="inherit" sx={{ mr: 1 }} /> : null}
-              // Study names (last segment) are never truncated to prevent users from accidentally
-              // working with the wrong study due to similar truncated names.
-              truncate={!isLastSegment}
-              linkOptions={
-                isLastSegment
-                  ? { to: "/studies/$studyId", params: { studyId: study.id } }
-                  : { to: "/studies" }
-              }
-              onClick={() => handleBreadcrumbClick(index)}
-            />
-          );
-        })}
-      </Breadcrumbs>
-    </Box>
+        return (
+          <BreadcrumbLink
+            key={buildKey(item.label, index)}
+            label={item.label}
+            icon={isFirstSegment ? <HomeIcon fontSize="inherit" sx={{ mr: 1 }} /> : null}
+            // Study names (last segment) are never truncated to prevent users from accidentally
+            // working with the wrong study due to similar truncated names.
+            truncate={!isLastSegment}
+            linkOptions={
+              isLastSegment
+                ? { to: "/studies/$studyId", params: { studyId: study.id } }
+                : { to: "/studies" }
+            }
+            onClick={() => handleBreadcrumbClick(index)}
+          />
+        );
+      })}
+    </Breadcrumbs>
   );
 }
 

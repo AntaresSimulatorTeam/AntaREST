@@ -32,6 +32,22 @@ export interface DownloadVariableViewButtonProps {
   label?: string;
 }
 
+const variableViewParamsToFilenameSuffix = (params: VariableViewParams): string => {
+  switch (params.type) {
+    case "area":
+      return `area_${params.areaId}`;
+    case "link":
+      return `link_${params.areaFromId}_${params.areaToId}`;
+    case "thermal":
+    case "renewable":
+    case "st_storage":
+      return `${params.type}_${params.areaId}_${params.clusterId}`;
+    default: {
+      return "";
+    }
+  }
+};
+
 function DownloadVariableViewButton(props: DownloadVariableViewButtonProps) {
   const { t } = useTranslation();
   const { studyId, outputId, params, disabled, label = t("global.export") } = props;
@@ -50,7 +66,8 @@ function DownloadVariableViewButton(props: DownloadVariableViewButtonProps) {
       ...options,
     });
 
-    const filename = `variable_${params.variableName}_${params.frequency}.${extension}`;
+    const outputArea = variableViewParamsToFilenameSuffix(params);
+    const filename = `matrix_${studyId}_output_${outputId}_${outputArea}_${params.variableName}_${params.frequency}.${extension}`;
     downloadFile(blob, filename);
   };
 
