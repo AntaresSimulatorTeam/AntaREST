@@ -16,6 +16,7 @@ Database implementation of HydroDao using SQLAlchemy Core.
 This module provides database-backed storage for hydro configuration when storage_mode=DATABASE.
 """
 
+import math
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any
 
@@ -416,7 +417,7 @@ class DatabaseHydroDao(HydroDao):
 
         # Validate self-correlation if provided
         for corr_area in correlation.correlation:
-            if corr_area.area_id == area_id and corr_area.coefficient != 100.0:
+            if corr_area.area_id == area_id and not math.isclose(corr_area.coefficient, 100.0):
                 raise ValueError(f"Self-correlation for area '{area_id}' must be 100%, got {corr_area.coefficient}%")
 
         # Delete existing correlations involving this area
