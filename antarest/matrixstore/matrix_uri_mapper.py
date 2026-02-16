@@ -32,6 +32,15 @@ def extract_matrix_id(uri: str) -> str:
     return uri.removeprefix(MATRIX_PROTOCOL_PREFIX)
 
 
+def add_matrix_id_prefix(uri: str) -> str:
+    """
+    Add prefix `matrix://` to matrix id for form URL matrix://<id>
+    """
+    if uri.startswith(MATRIX_PROTOCOL_PREFIX):
+        return uri
+    return f"{MATRIX_PROTOCOL_PREFIX}{uri}"
+
+
 class NormalizedMatrixUriMapper(StrEnum):
     NORMALIZED = "normalized"
     DENORMALIZED = "denormalized"
