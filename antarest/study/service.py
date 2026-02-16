@@ -1204,14 +1204,6 @@ class StudyService:
 
         This method is responsible for duplicating a study, optionally including its outputs.
 
-        Output copy behavior:
-            - If `with_outputs` is True and `output_ids` are specified: only the specified outputs are copied.
-            - If `with_outputs` is True and `output_ids` is empty: all outputs are copied.
-            - If `with_outputs` is False and `output_ids` are specified: an error is raised (incoherent configuration).
-            - If `with_outputs` is False: no outputs are copied
-            - If `with_outputs` is None and `output_ids` are specified: outputs will be copied; behaves like `with_outputs=True`.
-            - If `with_outputs` is None and `output_ids` is empty: no outputs are copied.
-
         Args:
             src_uuid: The source study that you want to copy.
             dest_study_name: The name for the destination study.
@@ -1246,9 +1238,7 @@ class StudyService:
 
             match outputs_selection:
                 case "all":
-                    output_names = [
-                        s.name for s in self._get_outputs_access().get_outputs_synthesis(origin_study.id).values()
-                    ]
+                    output_names = [o.id for o in self._get_outputs_access().list_outputs(origin_study.id)]
                 case "none":
                     output_names = []
                 case selected_outputs:
@@ -1256,12 +1246,13 @@ class StudyService:
 
             for output_name in output_names:
                 self._get_outputs_access().copy_output(origin_study.id, study.id, output_name)
+            remove_from_cache(cache=self.cache_service, root_id=study.id)
 
             # Copying all jobs associated with the study
             # TODO: this actually never worked when copying all outputs ?
             #       Move it to output service ?
-            if isinstance(outputs_selection, list):
-                jobs = self.job_result_repository.find_by_study_and_output_ids(origin_study.id, outputs_selection)
+            if output_names:
+                jobs = self.job_result_repository.find_by_study_and_output_ids(origin_study.id, output_names)
                 new_jobs = [job.copy_jobs_for_study(study.id) for job in jobs]
                 self.job_result_repository.save_all(new_jobs)
 

@@ -22,7 +22,7 @@ from markupsafe import escape
 from pydantic import NonNegativeInt
 
 from antarest.core.config import Config
-from antarest.core.exceptions import BadArchiveContent, BadZipBinary
+from antarest.core.exceptions import BadArchiveContent, BadZipBinary, IncorrectArgumentsForCopy
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.model import PublicMode
 from antarest.core.utils.archives import ArchiveFormat
@@ -291,7 +291,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
             - If `with_outputs` is None and `output_ids` is empty: no outputs are copied.
         """
         if with_outputs is False and output_ids:
-            raise ValueError("Cannot specify output IDs when copying outputs is disabled.")
+            raise IncorrectArgumentsForCopy("output_ids can only be used with with_outputs=True")
         if with_outputs:
             if output_ids:
                 return output_ids

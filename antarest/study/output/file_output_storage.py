@@ -43,7 +43,7 @@ from antarest.study.output.output_model import OutputVariablesList
 from antarest.study.output.output_storage import BasicOutputMetadata, IOutputStorage, OutputStorageType
 from antarest.study.output.utils import QueryFileType
 from antarest.study.output.variables_management import extract_variables_list
-from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
+from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist, parse_outputs
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
@@ -196,7 +196,7 @@ class InStudyFileOutputStorage(IOutputStorage):
             shutil.rmtree(path_output, ignore_errors=True)
             if is_zipped:
                 Path(str(path_output) + f"{ArchiveFormat.ZIP}").unlink(missing_ok=True)
-            output_full_name = None
+            raise
 
         return output_full_name
 
@@ -206,8 +206,9 @@ class InStudyFileOutputStorage(IOutputStorage):
         study_data = study_outputs.get_file_study()
 
         results: list[StudySimResultDTO] = []
-        for output in study_data.config.outputs:
-            output_data: Simulation = study_data.config.outputs[output]
+        outputs = parse_outputs(study_outputs.outputs_path)
+        for output in outputs:
+            output_data: Simulation = outputs[output]
             try:
                 file_metadata = FileStudyHelpers.get_config(study_data, output_data.get_file())
                 settings = StudySimSettingsDTO(
@@ -245,7 +246,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         TODO: More or less a duplicate of get_study_sim_result.
         """
         study_outputs = self._outputs_provider.get_outputs(study_id)
-        return study_outputs.get_file_study().config.outputs
+        return parse_outputs(study_outputs.outputs_path)
 
     @override
     def list_outputs(self, study_id: str) -> list[BasicOutputMetadata]:
@@ -253,9 +254,11 @@ class InStudyFileOutputStorage(IOutputStorage):
         Get the list of output for a study.
         """
         study_outputs = self._outputs_provider.get_outputs(study_id)
+        # leverage existing method
+        simulations = parse_outputs(study_outputs.outputs_path)
         return [
             BasicOutputMetadata(id=output_id, in_study=True, archived=output.archived)
-            for output_id, output in study_outputs.get_file_study().config.outputs.items()
+            for output_id, output in simulations.items()
         ]
 
     @override
