@@ -13,13 +13,20 @@
  */
 
 import CircleIcon from "@mui/icons-material/Circle";
+import type { SvgIconProps } from "@mui/material";
 
-interface EnabledIconProps {
-  enabled?: boolean;
+interface StatusDotProps {
+  status: "success" | "error" | "info" | "warning" | "disabled";
+  size?: SvgIconProps["fontSize"] | "xx-small";
 }
 
-function EnabledIcon({ enabled }: EnabledIconProps) {
-  return <CircleIcon color={enabled ? "success" : "error"} sx={{ fontSize: "0.5rem" }} />;
+function StatusDot({ status, size }: StatusDotProps) {
+  return (
+    <CircleIcon
+      color={status}
+      {...(size === "xx-small" ? { sx: { fontSize: "0.5rem" } } : { fontSize: size })}
+    />
+  );
 }
 
-export default EnabledIcon;
+export default StatusDot;
