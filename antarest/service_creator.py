@@ -194,6 +194,7 @@ def build_output_service(
         outputs_provider=study_service_as_file_outputs_provider(study_service),
         cache=cache,
         remote_executor=remote_executor,
+        tmp_dir=config.storage.tmp_dir,
     )
 
     output_service = OutputService(
