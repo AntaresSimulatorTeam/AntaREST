@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, Any, Dict, List
 
 import polars as pl
 from sqlalchemy import Row, Table, case, delete, insert, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -29,7 +30,7 @@ from antarest.core.exceptions import AreaNotFound, LayerNotFound
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_dao import AreaDao
-from antarest.study.dao.database.common import area_exists, serialize_frequency_filters, validate_area_exists
+from antarest.study.dao.database.common import serialize_frequency_filters, validate_area_exists
 from antarest.study.dao.database.models.area import (
     AREA_TABLE,
     AREA_UI_TABLE,
@@ -218,9 +219,6 @@ class DatabaseAreaDao(AreaDao):
 
         area_id = transform_name_to_id(area_name)
 
-        if area_exists(session, study_id, area_id):
-            raise ValueError(f"Area '{area_name}' already exists and could not be created")
-
         # Insert new area
         area_properties = AreaProperties()
         stmt_area = insert(AREA_TABLE).values(
@@ -238,7 +236,10 @@ class DatabaseAreaDao(AreaDao):
             filter_by_year=serialize_frequency_filters(area_properties.filter_by_year),
             adequacy_patch_mode=area_properties.adequacy_patch_mode,
         )
-        session.execute(stmt_area)
+        try:
+            session.execute(stmt_area)
+        except IntegrityError as e:
+            raise ValueError(f"Area '{area_name}' already exists and could not be created") from e
 
         # The commit is handled inside the next method.
         self._create_new_ui(area_id, DEFAULT_LAYER_ID, AreaUI())
@@ -302,12 +303,8 @@ class DatabaseAreaDao(AreaDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        validate_area_exists(session, study_id, area_id)
-        if not self.get_impl().layer_exists(layer):
-            raise LayerNotFound(layer)
-
+        # Set values
         r, g, b = area_ui_data.color_rgb
-
         values = {
             "study_id": study_id,
             "area_id": area_id,
@@ -318,7 +315,15 @@ class DatabaseAreaDao(AreaDao):
             "color_g": g,
             "color_b": b,
         }
-        upsert_one(session, AREA_UI_TABLE, values)
+        # Performs the DB request
+        try:
+            upsert_one(session, AREA_UI_TABLE, values)
+        except IntegrityError as e:
+            # Could raise for area not found or layer not found.
+            if not self.get_impl().layer_exists(layer):
+                raise LayerNotFound(layer) from e
+            else:
+                raise AreaNotFound(area_id) from e
         session.commit()
 
     @override
@@ -457,13 +462,11 @@ class DatabaseAreaDao(AreaDao):
         session = self.get_session()
         study_id = self.get_study_id()
 
-        validate_area_exists(session, study_id, area_id)
-        values = {
-            "study_id": study_id,
-            "area_id": area_id,
-            "matrix_id": matrix_id,
-        }
-        upsert_one(session, table, values)
+        values = {"study_id": study_id, "area_id": area_id, "matrix_id": matrix_id}
+        try:
+            upsert_one(session, table, values)
+        except IntegrityError as e:
+            raise AreaNotFound(area_id) from e
         session.commit()
 
     @override

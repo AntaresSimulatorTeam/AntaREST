@@ -16,12 +16,12 @@ import SelectFE from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
-import { useFormContextPlus } from "@/hooks/useFormContextPlus";
 import type {
   StorageConstraint,
   StorageConstraintOccurrences,
 } from "@/services/api/studies/areas/storages/types";
 import { Alert } from "@mui/material";
+import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { isOccurrencesValid } from "../-utils";
 import { OPERATOR_OPTIONS, VARIABLE_OPTIONS } from "../../-constants";
@@ -34,7 +34,7 @@ function Fields() {
     control,
     setValue,
     formState: { defaultValues },
-  } = useFormContextPlus<StorageConstraint>();
+  } = useFormContext<StorageConstraint>();
 
   // Display an alert if occurrences fetch from the server are invalid
   const displayAlert = !isOccurrencesValid(defaultValues?.occurrences);

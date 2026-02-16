@@ -12,9 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import { type FieldValues, useFormContext } from "react-hook-form";
-import type { UseFormReturnPlus } from "../components/Form/types";
+import { queryOptions } from "@tanstack/react-query";
+import { getDirectories } from "@/services/api/directories";
+import { directoryKeys } from "./keys";
 
-export function useFormContextPlus<TFieldValues extends FieldValues>() {
-  return useFormContext() as UseFormReturnPlus<TFieldValues>;
-}
+export const directoryQueries = {
+  list: () => {
+    return queryOptions({
+      queryKey: directoryKeys.lists(),
+      queryFn: getDirectories,
+    });
+  },
+};

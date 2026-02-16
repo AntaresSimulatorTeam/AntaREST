@@ -12,7 +12,8 @@
 from typing_extensions import override
 
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Mode, Simulation
+from antarest.study.business.model.config.general_model import Mode
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Simulation
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE

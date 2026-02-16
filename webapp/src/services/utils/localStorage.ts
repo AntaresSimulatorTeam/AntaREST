@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import type { StudiesSortConf, StudiesState, StudyFilters } from "@/redux/ducks/studies";
+import * as RA from "ramda-adjunct";
+import type { FolderDTO } from "@/queries/explorer/schemas";
+import type { StudiesState, StudyFilters } from "@/redux/ducks/studies";
 import type { UIState } from "@/redux/ducks/ui";
 import type { TableTemplate } from "@/routes/_authenticated/studies/$studyId/explore/tablemode/-utils";
-import type { FolderDTO } from "@/routes/_authenticated/studies/-components/StudyTree/types";
-import type { UserInfo } from "@/types/types";
-import * as RA from "ramda-adjunct";
+import type { StudySortConfig, UserInfo } from "@/types/types";
 import packages from "../../../package.json";
 import { TABLE_MODE_TYPES_ALIASES } from "../api/studies/tableMode/constants";
 
@@ -43,7 +43,7 @@ const SHARED_KEYS = [StorageKey.AuthUser];
 interface TypeFromKey {
   [StorageKey.AuthUser]: UserInfo;
   [StorageKey.StudiesFavorites]: StudiesState["favorites"];
-  [StorageKey.StudiesSort]: Partial<StudiesSortConf>;
+  [StorageKey.StudiesSort]: Partial<StudySortConfig>;
   [StorageKey.StudiesFilters]: Partial<StudyFilters>;
   [StorageKey.StudiesModelTableModeTemplates]: TableTemplate[];
   [StorageKey.StudyTreeFolders]: FolderDTO[];

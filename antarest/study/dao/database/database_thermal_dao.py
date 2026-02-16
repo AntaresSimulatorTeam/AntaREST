@@ -15,10 +15,11 @@ Database implementation of ThermalDao.
 """
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any, NoReturn, Sequence
 
 import polars as pl
-from sqlalchemy import Row, Select, Table, delete, select
+from sqlalchemy import CursorResult, Row, Select, Table, delete, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -29,7 +30,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     validate_thermal_cluster_against_version,
 )
 from antarest.study.dao.api.thermal_dao import ThermalDao
-from antarest.study.dao.database.common import validate_area_exists
+from antarest.study.dao.database.common import get_row_representation_as_dict, validate_area_exists
 from antarest.study.dao.database.models.thermal import (
     THERMAL_CLUSTER_TABLE,
     THERMAL_CO2_COST_TABLE,
@@ -68,92 +69,20 @@ class DatabaseThermalDao(ThermalDao):
         pass
 
     def _convert_db_row_to_thermal(self, row: Any) -> ThermalCluster:
-        cluster = ThermalCluster(
-            id=row.thermal_id,
-            name=row.name,
-            unit_count=row.unit_count,
-            nominal_capacity=row.nominal_capacity,
-            enabled=row.enabled,
-            group=row.group,
-            gen_ts=row.gen_ts,
-            min_stable_power=row.min_stable_power,
-            min_up_time=row.min_up_time,
-            min_down_time=row.min_down_time,
-            must_run=row.must_run,
-            spinning=row.spinning,
-            volatility_forced=row.volatility_forced,
-            volatility_planned=row.volatility_planned,
-            law_forced=row.law_forced,
-            law_planned=row.law_planned,
-            marginal_cost=row.marginal_cost,
-            spread_cost=row.spread_cost,
-            fixed_cost=row.fixed_cost,
-            startup_cost=row.startup_cost,
-            market_bid_cost=row.market_bid_cost,
-            co2=row.co2,
-            nh3=row.nh3,
-            so2=row.so2,
-            nox=row.nox,
-            pm2_5=row.pm2_5,
-            pm5=row.pm5,
-            pm10=row.pm10,
-            nmvoc=row.nmvoc,
-            op1=row.op1,
-            op2=row.op2,
-            op3=row.op3,
-            op4=row.op4,
-            op5=row.op5,
-            cost_generation=row.cost_generation,
-            efficiency=row.efficiency,
-            variable_o_m_cost=row.variable_o_m_cost,
-        )
+        data = get_row_representation_as_dict(row)
+        del data["study_id"]
+        del data["area_id"]
+        data["id"] = data.pop("thermal_id")
+        cluster = ThermalCluster(**data)
         version = self.get_impl().get_version()
         validate_thermal_cluster_against_version(version, cluster)
         initialize_thermal_cluster(cluster, version)
         return cluster
 
     def _convert_thermal_cluster_to_row(self, area_id: str, cluster: ThermalCluster) -> dict[str, Any]:
-        return dict(
-            study_id=self._study_id,
-            area_id=area_id,
-            thermal_id=cluster.id,
-            name=cluster.name,
-            unit_count=cluster.unit_count,
-            nominal_capacity=cluster.nominal_capacity,
-            enabled=cluster.enabled,
-            group=cluster.group,
-            gen_ts=cluster.gen_ts,
-            min_stable_power=cluster.min_stable_power,
-            min_up_time=cluster.min_up_time,
-            min_down_time=cluster.min_down_time,
-            must_run=cluster.must_run,
-            spinning=cluster.spinning,
-            volatility_forced=cluster.volatility_forced,
-            volatility_planned=cluster.volatility_planned,
-            law_forced=cluster.law_forced,
-            law_planned=cluster.law_planned,
-            marginal_cost=cluster.marginal_cost,
-            spread_cost=cluster.spread_cost,
-            fixed_cost=cluster.fixed_cost,
-            startup_cost=cluster.startup_cost,
-            market_bid_cost=cluster.market_bid_cost,
-            co2=cluster.co2,
-            nh3=cluster.nh3,
-            so2=cluster.so2,
-            nox=cluster.nox,
-            pm2_5=cluster.pm2_5,
-            pm5=cluster.pm5,
-            pm10=cluster.pm10,
-            nmvoc=cluster.nmvoc,
-            op1=cluster.op1,
-            op2=cluster.op2,
-            op3=cluster.op3,
-            op4=cluster.op4,
-            op5=cluster.op5,
-            cost_generation=cluster.cost_generation,
-            efficiency=cluster.efficiency,
-            variable_o_m_cost=cluster.variable_o_m_cost,
-        )
+        values = dict(study_id=self._study_id, area_id=area_id, **cluster.model_dump())
+        values["thermal_id"] = values.pop("id")
+        return values
 
     def _get_thermal_matrix_row(self, area_id: str, thermal_id: str, table: Table) -> Row[Any] | None:
         study_id = self._study_id
@@ -164,32 +93,40 @@ class DatabaseThermalDao(ThermalDao):
         return session.execute(stmt).fetchone()
 
     def _get_thermal_matrix(self, area_id: str, thermal_id: str, table: Table) -> pl.DataFrame:
-        validate_area_exists(self._db_session, self._study_id, area_id)
         row = self._get_thermal_matrix_row(area_id, thermal_id, table)
         if not row:
-            raise ThermalClusterNotFound(area_id, thermal_id)
+            self._raise_the_right_exception(area_id, thermal_id)
         return self.get_impl().get_matrix(row.matrix_id)
 
     def _save_thermal_matrix(self, area_id: str, thermal_id: str, table: Table, matrix_id: str) -> None:
         study_id = self._study_id
         session = self._db_session
 
-        if not self.thermal_exists(area_id, thermal_id):
-            raise ThermalClusterNotFound(area_id, thermal_id)
+        try:
+            values = {"study_id": study_id, "area_id": area_id, "thermal_id": thermal_id, "matrix_id": matrix_id}
+            upsert_one(session, table, values)
+        except IntegrityError as e:
+            self._raise_the_right_exception(area_id, thermal_id, e)
 
-        upsert_one(
-            session, table, {"study_id": study_id, "area_id": area_id, "thermal_id": thermal_id, "matrix_id": matrix_id}
-        )
         session.commit()
+
+    def _raise_the_right_exception(self, area_id: str, thermal_id: str, exc: IntegrityError | None = None) -> NoReturn:
+        # Could be because area does not exist or the thermal does not exist
+        validate_area_exists(self._db_session, self._study_id, area_id)
+        if exc:
+            raise ThermalClusterNotFound(area_id, thermal_id) from exc
+        raise ThermalClusterNotFound(area_id, thermal_id)
 
     @override
     def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
-        study_id = self._study_id
         session = self._db_session
 
-        validate_area_exists(session, study_id, area_id)
         values = self._convert_thermal_cluster_to_row(area_id, thermal)
-        upsert_one(session, THERMAL_CLUSTER_TABLE, values)
+        try:
+            upsert_one(session, THERMAL_CLUSTER_TABLE, values)
+        except IntegrityError as e:
+            self._raise_the_right_exception(area_id, thermal.id, e)
+
         session.commit()
 
     @override
@@ -198,16 +135,18 @@ class DatabaseThermalDao(ThermalDao):
             return
 
         session = self._db_session
-        study_id = self._study_id
-        validate_area_exists(session, study_id, area_id)
-
         values = [self._convert_thermal_cluster_to_row(area_id, thermal) for thermal in thermals]
 
-        upsert_multiple(
-            session=session,
-            table=THERMAL_CLUSTER_TABLE,
-            values=values,
-        )
+        try:
+            upsert_multiple(session=session, table=THERMAL_CLUSTER_TABLE, values=values)
+        except IntegrityError as e:
+            validate_area_exists(session, self._study_id, area_id)
+            # We have to find which thermal does not exist
+            existing_thermal_ids = {th.id for th in self.get_all_thermals_for_area(area_id)}
+            for thermal in thermals:
+                if thermal.id not in existing_thermal_ids:
+                    self._raise_the_right_exception(area_id, thermal.id, e)
+
         session.commit()
 
     @override
@@ -235,16 +174,17 @@ class DatabaseThermalDao(ThermalDao):
         study_id = self._study_id
         session = self._db_session
 
-        if not self.thermal_exists(area_id, thermal_id):
-            raise ThermalClusterNotFound(area_id, thermal_id)
-
-        session.execute(
+        result = session.execute(
             delete(THERMAL_CLUSTER_TABLE).where(
                 (THERMAL_CLUSTER_TABLE.c.study_id == study_id)
                 & (THERMAL_CLUSTER_TABLE.c.area_id == area_id)
                 & (THERMAL_CLUSTER_TABLE.c.thermal_id == thermal_id)
             )
         )
+        assert isinstance(result, CursorResult)
+        if result.rowcount == 0:
+            # Means the DELETE had no effect so the thermal did not exist
+            self._raise_the_right_exception(area_id, thermal_id)
 
         # TODO: depending on scenariobuilder implementation, we may need to delete some stuff from scenario builder here
         session.commit()

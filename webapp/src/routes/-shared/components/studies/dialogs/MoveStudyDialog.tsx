@@ -14,6 +14,8 @@
 
 import FormDialog from "@/components/dialogs/FormDialog";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import { directoryKeys } from "@/queries/directories/keys";
+import { useQueryClient } from "@tanstack/react-query";
 import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
 import { type DialogProps } from "@mui/material";
 import { useSnackbar } from "notistack";
@@ -54,6 +56,7 @@ function MoveStudyDialog(props: Props) {
   const { study, open, onClose } = props;
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
+  const queryClient = useQueryClient();
 
   const defaultValues = {
     path: formalizePath(study.folder, study.id),
@@ -70,6 +73,9 @@ function MoveStudyDialog(props: Props) {
 
   const handleSubmitSuccessful = (data: SubmitHandlerPlus<typeof defaultValues>) => {
     onClose();
+
+    // Refresh directory list to reflect the move (creates directory if it doesn't exist)
+    queryClient.invalidateQueries({ queryKey: directoryKeys.lists() });
 
     enqueueSnackbar(
       t("studies.success.moveStudy", {

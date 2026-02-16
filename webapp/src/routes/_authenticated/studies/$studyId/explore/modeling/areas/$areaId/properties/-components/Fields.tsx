@@ -16,16 +16,16 @@ import NumberFE from "@/components/fieldEditors/NumberFE";
 import SelectFE from "@/components/fieldEditors/SelectFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
-import { useFormContextPlus } from "@/hooks/useFormContextPlus";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { useMemo } from "react";
+import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
 import { ADEQUACY_PATCH_OPTIONS, type PropertiesFormFields } from "../-utils";
 
 function Fields() {
   const { t } = useTranslation();
-  const { control } = useFormContextPlus<PropertiesFormFields>();
+  const { control } = useFormContext<PropertiesFormFields>();
   const study = useStudy();
 
   const filterOptions = useMemo(

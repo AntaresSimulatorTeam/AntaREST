@@ -15,7 +15,6 @@
 import PasswordFE from "@/components/fieldEditors/PasswordFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import Fieldset from "@/components/Fieldset";
-import { useFormContextPlus } from "@/hooks/useFormContextPlus";
 import usePromise from "@/hooks/usePromise";
 import { getGroups, getUsers } from "@/services/api/user";
 import { roleToString, sortByName } from "@/services/utils";
@@ -43,7 +42,7 @@ import {
   type SelectChangeEvent,
 } from "@mui/material";
 import { useMemo, useRef, useState } from "react";
-import { Controller, useFieldArray, useWatch } from "react-hook-form";
+import { Controller, useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { v4 as uuidv4 } from "uuid";
 import type { UserFormDialogProps } from ".";
@@ -59,7 +58,7 @@ function UserForm({ onlyPermissions }: Props) {
     control,
     getValues,
     formState: { defaultValues },
-  } = useFormContextPlus<UserFormDefaultValues>();
+  } = useFormContext<UserFormDefaultValues>();
 
   const { t } = useTranslation();
   const groupLabelId = useRef(uuidv4()).current;

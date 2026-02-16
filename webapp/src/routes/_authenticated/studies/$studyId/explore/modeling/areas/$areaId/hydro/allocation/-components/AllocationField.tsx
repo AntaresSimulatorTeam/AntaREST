@@ -13,9 +13,8 @@
  */
 
 import NumberFE from "@/components/fieldEditors/NumberFE";
-import { useFormContextPlus } from "@/hooks/useFormContextPlus";
 import { Grid, Typography } from "@mui/material";
-import type { FieldArrayWithId } from "react-hook-form";
+import { useFormContext, type FieldArrayWithId } from "react-hook-form";
 import type { AllocationFormFields } from "../-utils";
 
 interface Props {
@@ -25,7 +24,7 @@ interface Props {
 }
 
 function AllocationField({ field, index, label }: Props) {
-  const { control } = useFormContextPlus<AllocationFormFields>();
+  const { control } = useFormContext<AllocationFormFields>();
 
   ////////////////////////////////////////////////////////////////
   // JSX

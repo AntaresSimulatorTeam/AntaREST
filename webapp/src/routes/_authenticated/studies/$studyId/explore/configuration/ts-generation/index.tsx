@@ -13,11 +13,12 @@
  */
 
 import Form from "@/components/Form";
-import type { SubmitHandlerPlus, UseFormReturnPlus } from "@/components/Form/types";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import { generateTimeSeries, setTimeSeriesConfig } from "@/services/api/studies/timeseries";
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
+import type { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import usePromiseHandler from "../../../../../../../hooks/usePromiseHandler";
 import Fields from "./-components/Fields";
@@ -33,7 +34,7 @@ function TimeSeriesGeneration() {
   const { studyId } = Route.useParams();
   const { t } = useTranslation();
   const [isLaunchTaskInProgress, setIsLaunchTaskInProgress] = useState(false);
-  const apiRef = useRef<UseFormReturnPlus<TimeSeriesConfigValues>>(null);
+  const apiRef = useRef<UseFormReturn<TimeSeriesConfigValues>>(null);
 
   const handleGenerateTs = usePromiseHandler({
     fn: generateTimeSeries,

@@ -15,25 +15,29 @@ Celery app for maintenance tasks.
 
 Architecture:
 - Import time: Create Celery app + apply broker config (required for Beat/Worker to connect)
-- celeryd_init signal: Full config loading
+- setup_logging: Applies our logging configuration insetad of celery's default
 - on_after_configure signal: Register periodic tasks (Beat only)
 - worker_init signal: Create MaintenanceContext (Worker only)
+
+The loading of the configuration from ANTAREST_CONF env var is imported from another module
+so that it can be mocked in tests.
+For real use, we raise at import time when the config is not available, to fail fast.
 """
 
 import logging
-import os
 import re
 from enum import StrEnum
-from pathlib import Path
 from typing import Any
 
+import celery
 from celery import Celery
-from celery.signals import celeryd_init, task_failure, worker_init
+from celery.signals import setup_logging, task_failure, worker_init
 
-from antarest.core.config import CeleryConfig, Config
+from antarest.core.config import CeleryConfig
 from antarest.core.logging.utils import configure_logger
-from antarest.core.utils.utils import get_local_path
+from antarest.maintenance.config import get_config, load_config
 from antarest.maintenance.context import MaintenanceContext
+from antarest.maintenance.tasks.common import MaintenanceContextNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -52,22 +56,6 @@ class TaskName(StrEnum):
 def _mask_url_credentials(url: str) -> str:
     """Mask password in URL for safe logging."""
     return re.sub(r"(://[^:]*:)[^@]+(@)", r"\1***\2", url)
-
-
-def _load_config() -> Config | None:
-    """Load config from ANTAREST_CONF env var, or return None."""
-    config_path_str = os.environ.get("ANTAREST_CONF")
-    if not config_path_str:
-        logger.warning("ANTAREST_CONF not set, using defaults")
-        return None
-
-    config_path = Path(config_path_str)
-    if not config_path.exists():
-        logger.error(f"Config file not found: {config_path}")
-        return None
-
-    res = get_local_path() / "resources"
-    return Config.from_yaml_file(res=res, file=config_path)
 
 
 def _apply_celery_config(app: Celery, celery_config: CeleryConfig) -> None:
@@ -98,32 +86,21 @@ celery_app.conf.update(
 
 celery_app.autodiscover_tasks(["antarest.maintenance.tasks"])
 
-_startup_config = _load_config()
-if _startup_config and _startup_config.celery:
-    _apply_celery_config(celery_app, _startup_config.celery)
+load_config()
+_apply_celery_config(celery_app, get_config().celery)
 
 
-@celeryd_init.connect
-def _configure_celery(sender: str, **_: Any) -> None:
-    """Full initialization when Celery process starts (Beat or Worker)."""
-    config = _load_config()
-    if not config:
-        logger.warning("No config loaded, using defaults")
-        return
-
-    if config.celery:
-        _apply_celery_config(celery_app, config.celery)
-        logger.info(f"Broker: {_mask_url_credentials(celery_app.conf.broker_url or '')}")
-
-    configure_logger(config)
-    celery_app.conf.antarest_config = config
-    logger.info("Celery configured")
+@setup_logging.connect
+def _setup_logging(**_: Any) -> None:
+    """
+    It's important to use that celery signal, otherwise celery overrides some of our logging configuration.
+    """
+    configure_logger(get_config())
 
 
 @celery_app.on_after_configure.connect
 def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
     """Register periodic maintenance tasks (called by Beat on startup)."""
-    from antarest.core.config import StorageConfig
     from antarest.maintenance.tasks.auto_archive_task import setup_auto_archive_task
     from antarest.maintenance.tasks.gc_blob_task import clean_blobs_task
     from antarest.maintenance.tasks.gc_matrix_task import clean_matrices_task
@@ -131,8 +108,7 @@ def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
     from antarest.maintenance.tasks.gc_variable_view_task import clean_variable_views_task
     from antarest.maintenance.tasks.watcher_scan_task import watcher_scan_task
 
-    config: Config | None = getattr(celery_app.conf, "antarest_config", None)
-    storage = config.storage if config else StorageConfig()
+    storage = get_config().storage
 
     sender.add_periodic_task(storage.matrix_gc_sleeping_time, clean_matrices_task.s(), name=TaskName.MATRICES_CLEANER)
     sender.add_periodic_task(storage.blob_gc_sleeping_time, clean_blobs_task.s(), name=TaskName.BLOBS_CLEANER)
@@ -153,14 +129,7 @@ def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
 @worker_init.connect
 def _init_worker(**_: Any) -> None:
     """Create MaintenanceContext (Worker only, not Beat)."""
-    config_path_str = os.environ.get("ANTAREST_CONF")
-    config: Config | None = getattr(celery_app.conf, "antarest_config", None)
-
-    if not config or not config_path_str:
-        logger.warning("No config, worker services won't be available")
-        return
-
-    ctx = MaintenanceContext.create(config, Path(config_path_str))
+    ctx = MaintenanceContext.create(get_config())
     celery_app.conf.maintenance_ctx = ctx
     logger.info("Worker ready")
 
@@ -173,3 +142,12 @@ def _log_critical_task_failure(sender: Any, task_id: str, exception: Exception, 
             f"CRITICAL: Auto-archive task [{task_id}] failed permanently after all retries. Exception: {exception}. ",
             exc_info=exception,
         )
+
+
+class MaintenanceTask(celery.Task):  # type: ignore[type-arg]
+    @property
+    def context(self) -> MaintenanceContext:
+        ctx: MaintenanceContext | None = self.app.conf.get("maintenance_ctx")
+        if not ctx:
+            raise MaintenanceContextNotFoundError()
+        return ctx
