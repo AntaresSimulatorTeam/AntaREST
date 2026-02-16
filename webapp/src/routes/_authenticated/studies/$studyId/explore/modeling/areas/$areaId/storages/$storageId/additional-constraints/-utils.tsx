@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import EnabledIcon from "@/components/icons/EnabledIcon";
 import type { RouteListItem } from "@/components/page/ListView";
 import type { QueryList } from "@/queries/types";
 import { isQueryListItemOptimistic } from "@/queries/utils";
@@ -23,6 +24,7 @@ export function constraintsToList(constraints: QueryList<StorageConstraint>): Ro
   const list = constraints.map((constraint) => ({
     id: constraint.id,
     label: constraint.name,
+    icon: <EnabledIcon enabled={constraint.enabled} />,
     linkOptions: linkOptions({
       from: "/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints",
       to: "/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints/$constraintId",
