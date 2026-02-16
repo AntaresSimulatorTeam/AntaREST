@@ -18,7 +18,7 @@ import usePromise from "@/hooks/usePromise";
 import { getVariantParents, getVariantTree } from "@/services/api/variant";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import InformationView from "./-components/InformationView";
-import StudyTreeView from "./-components/StudyTreeView";
+import VariantsTree from "./-components/VariantsTree";
 import useStudy from "./-hooks/useStudy";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/")({
@@ -43,7 +43,7 @@ function StudyHome() {
       ifFulfilled={(variantTree) => (
         <SplitView splitId="study-home" gutterSize={4} sizes={[30, 70]}>
           {/* Left */}
-          <StudyTreeView
+          <VariantsTree
             study={study}
             variantTree={variantTree}
             onClick={(studyId: string) =>
