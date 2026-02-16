@@ -11,3 +11,21 @@
 # This file is part of the Antares project.
 
 """Celery task for regular purge of task table."""
+
+from celery import Task
+
+from antarest.maintenance.app import TaskName, celery_app
+from antarest.maintenance.context import MaintenanceContext
+from antarest.maintenance.tasks.common import GarbageCollectorTaskResult, MaintenanceContextNotFoundError
+from antarest.maintenance.tasks.gc_tasks import clean_tasks
+
+
+@celery_app.task(bind=True, name=TaskName.TASKS_CLEANER, pydantic=True)
+def gc_tasks_task(self: Task) -> GarbageCollectorTaskResult:  # type: ignore[type-arg]
+    ctx: MaintenanceContext | None = self.app.conf.get("maintenance_ctx")
+    if not ctx:
+        raise MaintenanceContextNotFoundError()
+
+    return clean_tasks(
+        ctx.task_service, ctx.config.storage.tasks_gc_dry_run, ctx.config.storage.tasks_gc_retention_duration
+    )

@@ -9,11 +9,41 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from antarest.core.tasks.model import TaskListFilter
-from antarest.core.tasks.service import TaskJobService
+import logging
+import time
+
+from antarest.core.tasks.service import ITaskService
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.lock import LockNotAcquired, create_lock
+from antarest.maintenance.tasks.common import BackGroundTaskStatus, GarbageCollectorTaskResult, LockId
+
+logger = logging.getLogger(__name__)
 
 
-def gc_tasks(task_job_service: TaskJobService, task_retention_duration_date: int):
-    task_filter = TaskListFilter(from_creation_date_utc=task_retention_duration_date)
-    gc_task_list = task_job_service.list_tasks(task_filter)
-    pass
+def clean_tasks(task_service: ITaskService, dry_run: bool, task_retention_duration: int) -> GarbageCollectorTaskResult:
+    start_time = time.time()
+    try:
+        with db():
+            with create_lock(db.session, lock_id=LockId.TASKS_GC):
+                logger.info(f"Deleting tasks older than {task_retention_duration} days from the database")
+            deleted_count = task_service.delete_task_by_creation_date(task_retention_duration)
+
+        duration_seconds = time.time() - start_time
+
+    except LockNotAcquired:
+        logger.warning(f"Could not acquire lock {LockId.TASKS_GC}, another GC is probably running")
+        return GarbageCollectorTaskResult(
+            status=BackGroundTaskStatus.SKIPPED,
+            reason="lock_not_acquired",
+            deleted_count=0,
+            duration_seconds=time.time() - start_time,
+        )
+
+    logger.info(f"Finished tasks GC in {duration_seconds}s (deleted {deleted_count})")
+
+    return GarbageCollectorTaskResult(
+        status=BackGroundTaskStatus.SUCCESS,
+        deleted_count=deleted_count,
+        duration_seconds=duration_seconds,
+        dry_run=dry_run,
+    )

@@ -20,6 +20,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
+from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.service_creator import SESSION_ARGS, create_core_services, init_db_engine
 
@@ -67,3 +68,7 @@ class MaintenanceContext:
     @property
     def output_service(self) -> "OutputService":
         return self.core_services.output_service
+
+    @property
+    def task_service(self) -> "ITaskService":
+        return self.core_services.task_service

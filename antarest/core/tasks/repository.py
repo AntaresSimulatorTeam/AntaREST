@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 
 from antarest.core.tasks.model import TaskJob, TaskListFilter
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 
 
 class TaskJobRepository:
@@ -96,3 +97,15 @@ class TaskJobRepository:
         if task:
             session.delete(task)
             session.commit()
+
+    def delete_by_creation_date(self, task_retention_duration: int) -> int:
+        session = self.session
+        ctime = current_time()
+        # stmt = delete(TaskJob).where(TaskJob.creation_date - ctime < datetime.timedelta(days=task_retention_duration))
+        deleted_rows = (
+            session.query(TaskJob)
+            .filter(TaskJob.creation_date - ctime < datetime.timedelta(days=task_retention_duration))
+            .delete()
+        )
+        session.commit()
+        return deleted_rows
