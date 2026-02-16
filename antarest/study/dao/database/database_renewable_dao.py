@@ -104,7 +104,7 @@ class DatabaseRenewableDao(RenewableDao):
         except IntegrityError as e:
             validate_area_exists(session, self._study_id, area_id)
             # We have to find which renewable does not exist
-            existing_renewable_ids = {renew.id for renew in self.get_all_thermals_for_area(area_id)}
+            existing_renewable_ids = {renew.id for renew in self.get_all_renewables_for_area(area_id)}
             for renewable in renewables:
                 if renewable.id not in existing_renewable_ids:
                     self._raise_the_right_exception(area_id, renewable.id, e)
