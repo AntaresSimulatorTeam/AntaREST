@@ -554,6 +554,9 @@ class LayerNotAllowedToBeDeleted(HTTPException):
             f"You cannot delete the layer: '{layer_name}'",
         )
 
+class UserResourcesNotFound(HTTPException):
+    def __init__(self, path: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, f"User resources is not found: '{path}'")
 
 class StudyOutputNotFoundError(Exception):
     pass
