@@ -18,7 +18,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, NoReturn, Sequence
 
 import polars as pl
-from sqlalchemy import Select, select
+from sqlalchemy import CursorResult, Select, delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
@@ -117,7 +117,24 @@ class DatabaseRenewableDao(RenewableDao):
 
     @override
     def delete_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        study_id = self._study_id
+        session = self._db_session
+        renewable_id = renewable.id.lower()
+
+        result = session.execute(
+            delete(RENEWABLE_CLUSTER_TABLE).where(
+                (RENEWABLE_CLUSTER_TABLE.c.study_id == study_id)
+                & (RENEWABLE_CLUSTER_TABLE.c.area_id == area_id)
+                & (RENEWABLE_CLUSTER_TABLE.c.renewable_id == renewable_id)
+            )
+        )
+        assert isinstance(result, CursorResult)
+        if result.rowcount == 0:
+            # Means the DELETE had no effect so the renewable did not exist
+            self._raise_the_right_exception(area_id, renewable_id)
+
+        # TODO: depending on scenariobuilder implementation, we may need to delete some stuff from scenario builder here
+        session.commit()
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
