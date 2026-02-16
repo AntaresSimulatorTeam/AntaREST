@@ -41,14 +41,14 @@ import {
   type FormState,
   type SubmitErrorHandler,
   type UseFormProps,
+  type UseFormReturn,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { usePromise, useUpdateEffect } from "react-use";
 import CustomScrollbar from "../CustomScrollbar";
 import ErrorView from "../page/ErrorView";
-import type { SubmitHandlerPlus, UseFormReturnPlus } from "./types";
-import useFormApiPlus from "./useFormApiPlus";
-import useFormUndoRedo from "./useFormUndoRedo";
+import useFormUndoRedo from "./hooks/useFormUndoRedo";
+import type { SubmitHandlerPlus } from "./types";
 import { getErrorMessage, isMatch, ROOT_FETCH_ERROR_KEY, ROOT_SUBMIT_ERROR_KEY } from "./utils";
 
 // TODO: Replace built-in validators by Zod (https://react-hook-form.com/docs/useform#resolver).
@@ -68,9 +68,7 @@ export interface FormProps<
     submitResult: SubmitReturnValue,
   ) => void;
   onInvalid?: SubmitErrorHandler<TFieldValues>;
-  children:
-    | ((formApi: UseFormReturnPlus<TFieldValues, TContext>) => React.ReactNode)
-    | React.ReactNode;
+  children: ((formApi: UseFormReturn<TFieldValues, TContext>) => React.ReactNode) | React.ReactNode;
   submitButtonText?: string;
   submitButtonIcon?: ButtonProps["startIcon"];
   miniSubmitButton?: boolean;
@@ -80,7 +78,7 @@ export interface FormProps<
   allowSubmitOnPristine?: boolean;
   enableUndoRedo?: boolean;
   sx?: SxProps<Theme>;
-  apiRef?: React.Ref<UseFormReturnPlus<TFieldValues, TContext>>;
+  apiRef?: React.Ref<UseFormReturn<TFieldValues, TContext>>;
   disableStickyFooter?: boolean;
   extraActions?: React.ReactNode | ((state: { canSubmit: boolean }) => React.ReactNode);
   disableBlocker?: boolean;
@@ -121,6 +119,8 @@ function Form<TFieldValues extends FieldValues, TContext>({
     defaultValues: getDefaultValues(),
   });
 
+  const { set: setNewPresent, undo, redo, canUndo, canRedo } = useFormUndoRedo(formApi);
+
   const { getValues, setError, handleSubmit, formState, reset } = formApi;
 
   // ⚠️ `formState` is a Proxy
@@ -143,10 +143,6 @@ function Form<TFieldValues extends FieldValues, TContext>({
   const canSubmit = (isDirty || allowSubmitOnPristine) && !isSubmitting && !isDisabled;
   const showSubmitButton = !hideSubmitButton;
   const showFooter = showSubmitButton || enableUndoRedo || extraActions || errors.root;
-
-  const formApiPlus = useFormApiPlus(formApi);
-
-  const { set: setNewPresent, undo, redo, canUndo, canRedo } = useFormUndoRedo(formApiPlus);
 
   useFormBlocker({
     isSubmitting,
@@ -178,7 +174,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
 
   useUpdateEffect(() => onStateChange?.(formState), [formState]);
 
-  useEffect(() => setRef(apiRef, formApiPlus));
+  useEffect(() => setRef(apiRef, formApi));
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -278,8 +274,8 @@ function Form<TFieldValues extends FieldValues, TContext>({
       className={clsx("Form", className)}
     >
       <Box className="Form__Content" sx={{ overflow: "auto" }}>
-        <FormProvider {...formApiPlus}>
-          {RA.isFunction(children) ? children(formApiPlus) : children}
+        <FormProvider {...formApi}>
+          {RA.isFunction(children) ? children(formApi) : children}
         </FormProvider>
       </Box>
       {showFooter && (

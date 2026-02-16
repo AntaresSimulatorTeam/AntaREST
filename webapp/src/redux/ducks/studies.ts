@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { DEFAULT_STUDY_SORT_CONFIG } from "@/routes/_authenticated/studies/-components/StudiesList/Header/studySortUtils";
 import { getStudyVersions } from "@/services/api/studies";
 import * as api from "@/services/api/study";
 import storage, { StorageKey } from "@/services/utils/localStorage";
@@ -29,12 +30,12 @@ import {
   createEntityAdapter,
   createReducer,
 } from "@reduxjs/toolkit";
+import { isAxiosError } from "axios";
 import type { O } from "ts-toolbelt";
 import { getFavoriteStudyIds } from "../selectors";
 import type { AppAsyncThunkConfig, AppThunk } from "../store";
 import { FetchStatus, createThunk, makeActionName, type AsyncEntityState } from "../utils";
 import { setDefaultAreaLinkSelection } from "./studySyntheses";
-import { DEFAULT_STUDY_SORT_CONFIG } from "@/routes/_authenticated/studies/-components/StudiesList/Header/studySortUtils";
 
 const studiesAdapter = createEntityAdapter<StudyMetadata>();
 
@@ -291,7 +292,9 @@ export default createReducer(initialState, (builder) => {
     })
     .addCase(fetchStudies.rejected, (draftState, action) => {
       draftState.status = FetchStatus.Failed;
-      draftState.error = action.error.message;
+      draftState.error = isAxiosError(action.payload)
+        ? action.payload.message
+        : action.error.message;
     })
     .addCase(setFavoriteStudies, (draftState, action) => {
       draftState.favorites = action.payload;

@@ -200,7 +200,7 @@ class LocalLauncher(AbstractLauncher):
             simulator_args += ["--solver-logs"]
 
         # Export MPS problems
-        if "export_mps" in options:
+        if "export-mps" in options:
             simulator_args += ["--named-mps-problems"]
 
         # Call the right solver

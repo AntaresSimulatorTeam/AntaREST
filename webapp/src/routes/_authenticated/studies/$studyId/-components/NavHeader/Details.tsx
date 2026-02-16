@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import CustomScrollbar from "@/components/CustomScrollbar";
 import EditorIcon from "@/components/icons/EditorIcon";
 import RouterLink from "@/components/router/RouterLink";
 import { PUBLIC_MODE_LIST } from "@/components/utils/constants";
@@ -25,8 +26,9 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
-import { Divider, Stack, Tooltip, Typography, styled } from "@mui/material";
+import { Chip, Divider, Stack, Tooltip, Typography, styled } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import useStudy from "../../-hooks/useStudy";
 
 const TinyText = styled(Typography)(({ theme }) => ({
   fontSize: 12,
@@ -34,18 +36,18 @@ const TinyText = styled(Typography)(({ theme }) => ({
 }));
 
 interface Props {
-  study: StudyMetadata;
   parentStudy?: StudyMetadata;
-  variantNb: number;
+  variantNb?: number;
 }
 
-function Details({ study, parentStudy, variantNb }: Props) {
+function Details({ parentStudy, variantNb }: Props) {
+  const study = useStudy();
   const [t, i18n] = useTranslation();
   const publicModeLabel =
     PUBLIC_MODE_LIST.find((mode) => mode.id === study?.publicMode)?.name || "";
 
   const tooltipContent = (
-    <Stack direction="column" spacing={1}>
+    <Stack direction="column">
       <Stack spacing={1}>
         <ScheduleOutlinedIcon />
         <TinyText>{convertUTCToLocalTime(study.creationDate)}</TinyText>
@@ -68,7 +70,7 @@ function Details({ study, parentStudy, variantNb }: Props) {
           </RouterLink>
         </Stack>
       )}
-      <Stack spacing={1}>
+      <Stack>
         <EditorIcon />
         <TinyText>{study.editor}</TinyText>
       </Stack>
@@ -80,15 +82,31 @@ function Details({ study, parentStudy, variantNb }: Props) {
   );
 
   return (
-    <Stack spacing={2} divider={<Divider orientation="vertical" flexItem />}>
+    <Stack
+      spacing={1.5}
+      divider={<Divider orientation="vertical" flexItem />}
+      sx={{ overflow: "auto" }}
+    >
       <Tooltip title={tooltipContent} placement="bottom-start">
         <InfoOutlinedIcon fontSize="small" sx={{ color: "text.secondary", cursor: "pointer" }} />
       </Tooltip>
       <TinyText>{`v${compactSemanticVersion(study.version)}`}</TinyText>
-      <Stack spacing={1}>
-        <AccountTreeOutlinedIcon fontSize="inherit" sx={{ color: "text.secondary" }} />
-        <TinyText>{variantNb}</TinyText>
-      </Stack>
+      {typeof variantNb === "number" && (
+        <Stack spacing={1}>
+          <AccountTreeOutlinedIcon fontSize="inherit" sx={{ color: "text.secondary" }} />
+          <TinyText>{variantNb}</TinyText>
+        </Stack>
+      )}
+      <CustomScrollbar>
+        <Stack spacing={1}>
+          {study.managed ? (
+            <Chip label={t("study.managedStudy")} color="info" />
+          ) : (
+            <Chip label={study.workspace} />
+          )}
+          {study.tags?.map((tag) => <Chip key={tag} label={tag} />)}
+        </Stack>
+      </CustomScrollbar>
     </Stack>
   );
 }
