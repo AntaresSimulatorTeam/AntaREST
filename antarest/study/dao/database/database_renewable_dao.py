@@ -70,7 +70,7 @@ class DatabaseRenewableDao(RenewableDao):
         values["renewable_id"] = values.pop("id")
         return values
 
-    def _raise_the_right_exception(
+    def _raise_the_right_renewable_exception(
         self, area_id: str, renewable_id: str, exc: IntegrityError | None = None
     ) -> NoReturn:
         # Could be because area does not exist or the renewable does not exist
@@ -87,7 +87,7 @@ class DatabaseRenewableDao(RenewableDao):
         try:
             upsert_one(session, RENEWABLE_CLUSTER_TABLE, values)
         except IntegrityError as e:
-            self._raise_the_right_exception(area_id, renewable.id, e)
+            self._raise_the_right_renewable_exception(area_id, renewable.id, e)
 
         session.commit()
 
@@ -107,7 +107,7 @@ class DatabaseRenewableDao(RenewableDao):
             existing_renewable_ids = {renew.id for renew in self.get_all_renewables_for_area(area_id)}
             for renewable in renewables:
                 if renewable.id not in existing_renewable_ids:
-                    self._raise_the_right_exception(area_id, renewable.id, e)
+                    self._raise_the_right_renewable_exception(area_id, renewable.id, e)
 
         session.commit()
 
@@ -120,7 +120,7 @@ class DatabaseRenewableDao(RenewableDao):
             values = {"study_id": study_id, "area_id": area_id, "renewable_id": renewable_id, "matrix_id": series_id}
             upsert_one(session, RENEWABLE_SERIES_TABLE, values)
         except IntegrityError as e:
-            self._raise_the_right_exception(area_id, renewable_id, e)
+            self._raise_the_right_renewable_exception(area_id, renewable_id, e)
 
         session.commit()
 
@@ -140,7 +140,7 @@ class DatabaseRenewableDao(RenewableDao):
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
             # Means the DELETE had no effect so the renewable did not exist
-            self._raise_the_right_exception(area_id, renewable_id)
+            self._raise_the_right_renewable_exception(area_id, renewable_id)
 
         # TODO: depending on scenariobuilder implementation, we may need to delete some stuff from scenario builder here
         session.commit()
@@ -185,7 +185,7 @@ class DatabaseRenewableDao(RenewableDao):
         stmt = self._select_renewable_cluster(area_id, renewable_id)
         row = session.execute(stmt).fetchone()
         if not row:
-            self._raise_the_right_exception(area_id, renewable_id)
+            self._raise_the_right_renewable_exception(area_id, renewable_id)
 
         return self._convert_db_row_to_renewable(row)
 
@@ -206,5 +206,5 @@ class DatabaseRenewableDao(RenewableDao):
         )
         row = session.execute(stmt).fetchone()
         if not row:
-            self._raise_the_right_exception(area_id, renewable_id)
+            self._raise_the_right_renewable_exception(area_id, renewable_id)
         return self.get_impl().get_matrix(row.matrix_id)
