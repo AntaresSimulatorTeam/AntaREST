@@ -227,7 +227,7 @@ def fastapi_app(
     app_ctxt = AppBuildContext(application, api_root)
 
     # Database
-    engine = init_db_engine(config_file, config, auto_upgrade_db)
+    engine = init_db_engine(config, auto_upgrade_db, config_file)
     application.add_middleware(DBSessionMiddleware, custom_engine=engine, session_args=SESSION_ARGS)
     # Since Starlette Version 0.24.0, the middlewares are lazily built inside this function
     # But we need to instantiate this middleware as it's needed for the study service.
