@@ -29,14 +29,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
 )
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.dao.database.models.thermal import (
-    THERMAL_CLUSTER_TABLE,
-    THERMAL_CO2_COST_TABLE,
-    THERMAL_FUEL_COST_TABLE,
-    THERMAL_MODULATION_TABLE,
-    THERMAL_PREPRO_TABLE,
-    THERMAL_SERIES_TABLE,
-)
+from antarest.study.dao.database.models.renewable import RENEWABLE_CLUSTER_TABLE, RENEWABLE_SERIES_TABLE
 
 
 def test_save_renewable_creates_cluster(dao: DatabaseStudyDao) -> None:
@@ -126,95 +119,75 @@ def test_get_one_renewable_cluster(dao: DatabaseStudyDao) -> None:
         dao.get_renewable("nonexistent", "battery")
 
 
-def test_get_all_thermals(dao: DatabaseStudyDao) -> None:
+def test_get_all_renewables(dao: DatabaseStudyDao) -> None:
     dao.save_area("Paris")
     dao.save_area("London")
 
-    dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas"))
-    dao.save_thermal("london", ThermalCluster(id="coal", name="Coal"))
+    dao.save_renewable("paris", RenewableCluster(id="battery", name="Battery"))
+    dao.save_renewable("london", RenewableCluster(id="wind", name="Wind"))
 
-    all_thermals = dao.get_all_thermals()
-    assert set(all_thermals.keys()) == {"paris", "london"}
-    assert set(all_thermals["paris"].keys()) == {"gas"}
-    assert set(all_thermals["london"].keys()) == {"coal"}
+    all_renewables = dao.get_all_renewables()
+    assert set(all_renewables.keys()) == {"paris", "london"}
+    assert set(all_renewables["paris"].keys()) == {"battery"}
+    assert set(all_renewables["london"].keys()) == {"wind"}
 
     with pytest.raises(AreaNotFound):
-        dao.get_all_thermals_for_area("nonexistent")
+        dao.get_all_renewables_for_area("nonexistent")
 
 
-def test_delete_thermal(dao: DatabaseStudyDao) -> None:
+def test_delete_renewable(dao: DatabaseStudyDao) -> None:
     dao.save_area("Paris")
-    thermal = ThermalCluster(id="gas", name="Gas")
-    dao.save_thermal("paris", thermal)
+    renewable = RenewableCluster(id="battery", name="Battery")
+    dao.save_renewable("paris", renewable)
 
-    assert dao.thermal_exists("paris", "gas")
+    assert dao.renewable_exists("paris", "battery")
 
-    with pytest.raises(ThermalClusterNotFound):
-        dao.delete_thermal("paris", "gas2")
+    with pytest.raises(RenewableClusterNotFound):
+        dao.delete_renewable("paris", RenewableCluster(id="fake", name="fake"))
     with pytest.raises(AreaNotFound):
-        dao.delete_thermal("paris2", "gas")
+        dao.delete_renewable("paris2", renewable)
 
-    dao.delete_thermal("paris", "gas")
-    assert not dao.thermal_exists("paris", "gas")
+    dao.delete_renewable("paris", renewable)
+    assert not dao.renewable_exists("paris", "battery")
 
-    with pytest.raises(ThermalClusterNotFound):
-        dao.get_thermal("paris", "gas")
+    with pytest.raises(RenewableClusterNotFound):
+        dao.get_renewable("paris", "battery")
 
-    with pytest.raises(ThermalClusterNotFound):
-        dao.delete_thermal("paris", "gas")
-
-
-def test_thermal_exists_returns_false_for_unknown_area(dao: DatabaseStudyDao) -> None:
-    assert not dao.thermal_exists("nonexistent", "gas")
+    with pytest.raises(RenewableClusterNotFound):
+        dao.delete_renewable("paris", renewable)
 
 
-def test_thermal_matrices_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_renewable_exists_returns_false_for_unknown_area(dao: DatabaseStudyDao) -> None:
+    assert not dao.renewable_exists("nonexistent", "gas")
+
+
+def test_renewable_series_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
     dao.save_area("Paris")
-    dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas"))
+    renewable = RenewableCluster(id="battery", name="Battery")
+    dao.save_renewable("paris", renewable)
 
     matrix_service = dao._matrix_service
     dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
     series_id = matrix_service.create(dataframe)
 
-    dao.save_thermal_prepro("paris", "gas", series_id)
-    dao.save_thermal_modulation("paris", "gas", series_id)
-    dao.save_thermal_series("paris", "gas", series_id)
-    dao.save_thermal_fuel_cost("paris", "gas", series_id)
-    dao.save_thermal_co2_cost("paris", "gas", series_id)
+    dao.save_renewable_series("paris", "battery", series_id)
+    pl.testing.assert_frame_equal(dao.get_renewable_series("paris", "battery"), dataframe, check_dtypes=False)
 
-    pl.testing.assert_frame_equal(dao.get_thermal_prepro("paris", "gas"), dataframe, check_dtypes=False)
-    pl.testing.assert_frame_equal(dao.get_thermal_modulation("paris", "gas"), dataframe, check_dtypes=False)
-    pl.testing.assert_frame_equal(dao.get_thermal_series("paris", "gas"), dataframe, check_dtypes=False)
-    pl.testing.assert_frame_equal(dao.get_thermal_fuel_cost("paris", "gas"), dataframe, check_dtypes=False)
-    pl.testing.assert_frame_equal(dao.get_thermal_co2_cost("paris", "gas"), dataframe, check_dtypes=False)
-
-    dao.delete_thermal("paris", "gas")
+    dao.delete_renewable("paris", renewable)
 
     with db_session:
-        assert db_session.execute(select(THERMAL_CLUSTER_TABLE)).fetchall() == []
-        assert db_session.execute(select(THERMAL_PREPRO_TABLE)).fetchall() == []
-        assert db_session.execute(select(THERMAL_MODULATION_TABLE)).fetchall() == []
-        assert db_session.execute(select(THERMAL_SERIES_TABLE)).fetchall() == []
-        assert db_session.execute(select(THERMAL_FUEL_COST_TABLE)).fetchall() == []
-        assert db_session.execute(select(THERMAL_CO2_COST_TABLE)).fetchall() == []
+        assert db_session.execute(select(RENEWABLE_CLUSTER_TABLE)).fetchall() == []
+        assert db_session.execute(select(RENEWABLE_SERIES_TABLE)).fetchall() == []
 
 
-def test_get_thermal_matrix_raises_when_missing(dao: DatabaseStudyDao) -> None:
+def test_get_renewable_matrix_raises_when_missing(dao: DatabaseStudyDao) -> None:
     dao.save_area("Paris")
-    dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas"))
+    dao.save_renewable("paris", RenewableCluster(id="battery", name="Battery"))
 
-    getters = [
-        dao.get_thermal_prepro,
-        dao.get_thermal_series,
-        dao.get_thermal_modulation,
-        dao.get_thermal_fuel_cost,
-        dao.get_thermal_co2_cost,
-    ]
-    for getter in getters:
-        with pytest.raises(ThermalClusterNotFound):
-            getter("paris", "gas")
-        with pytest.raises(AreaNotFound):
-            getter("nonexistent", "gas")
+    with pytest.raises(RenewableClusterNotFound):
+        dao.get_renewable_series("paris", "gas")
+    with pytest.raises(AreaNotFound):
+        dao.get_renewable_series("nonexistent", "gas")
 
 
 def test_save_thermal_matrix_raises_when_missing(dao: DatabaseStudyDao) -> None:
