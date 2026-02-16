@@ -206,10 +206,10 @@ def test_sta_mini_study_antares(client: TestClient, url: str, expected_output: s
         (
             f"/v1/studies/{UUID}/raw?path=input/load/series",
             {
-                "load_de": "matrixfile://load_de.txt",
-                "load_es": "matrixfile://load_es.txt",
-                "load_fr": "matrixfile://load_fr.txt",
-                "load_it": "matrixfile://load_it.txt",
+                "load_de": "matrix://load_de.txt",
+                "load_es": "matrix://load_es.txt",
+                "load_fr": "matrix://load_fr.txt",
+                "load_it": "matrix://load_it.txt",
             },
         ),
         (
@@ -330,7 +330,7 @@ def test_sta_mini_input_for_R_scripts(client: TestClient, url: str, expected_out
         ),
         (
             f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr",
-            {"values-hourly": "matrixfile://values-hourly.txt"},
+            {"values-hourly": "matrix://values-hourly.txt"},
         ),
         (
             f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr/values-hourly",
@@ -422,7 +422,7 @@ def test_sta_mini_copy(
     data_destination = storage_service.get(uuid, "/", -1, True)
 
     link_url_source = data_source["input"]["links"]["de"]["fr"]
-    assert "matrixfile://fr.txt" == link_url_source
+    assert "matrix://fr.txt" == link_url_source
 
     link_url_destination = data_destination["input"]["links"]["de"]["fr"]
     # The study is copied; therefore, it was normalized
