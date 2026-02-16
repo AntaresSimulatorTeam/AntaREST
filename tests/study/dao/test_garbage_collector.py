@@ -21,6 +21,7 @@ from antarest.maintenance.tasks.gc_matrix import clean_matrices
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.link_model import Link
+from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -48,7 +49,7 @@ def test_garbage_collection(dao: DatabaseStudyDao, db_session: Session, tmp_path
     # We need to use different contents, otherwise it will be enough that one table correctly prevents garbage
     # collection
     base_data = [[1, 2.5], [3, 4.7]]
-    dataframes = [pl.DataFrame(data=[[a + i, b + i] for a, b in base_data], orient="row") for i in range(13)]
+    dataframes = [pl.DataFrame(data=[[a + i, b + i] for a, b in base_data], orient="row") for i in range(14)]
     (
         load_df,
         solar_df,
@@ -63,6 +64,7 @@ def test_garbage_collection(dao: DatabaseStudyDao, db_session: Session, tmp_path
         thermal_series_df,
         thermal_fuel_cost_df,
         thermal_co2_cost_df,
+        renewable_series_df,
     ) = dataframes
 
     load_id = matrix_service.create(load_df)
@@ -78,6 +80,7 @@ def test_garbage_collection(dao: DatabaseStudyDao, db_session: Session, tmp_path
     thermal_series_id = matrix_service.create(thermal_series_df)
     thermal_fuel_cost_id = matrix_service.create(thermal_fuel_cost_df)
     thermal_co2_cost_id = matrix_service.create(thermal_co2_cost_df)
+    renewable_series_id = matrix_service.create(renewable_series_df)
 
     # Create `load`, `solar`, `wind`, `reserves` and `misc-gen` matrices in DB
     area_id = "paris"
@@ -104,6 +107,11 @@ def test_garbage_collection(dao: DatabaseStudyDao, db_session: Session, tmp_path
     dao.save_thermal_series(area_id, thermal_id, thermal_series_id)
     dao.save_thermal_fuel_cost(area_id, thermal_id, thermal_fuel_cost_id)
     dao.save_thermal_co2_cost(area_id, thermal_id, thermal_co2_cost_id)
+
+    # Create renewable cluster matrices
+    renewable_id = "battery"
+    dao.save_renewable(area_id, RenewableCluster(id=renewable_id, name="Battery Fr"))
+    dao.save_renewable_series(area_id, renewable_id, renewable_series_id)
 
     # Launch the Garbage collection
     task = clean_matrices(matrix_service=matrix_service, dry_run=False, retention_time=0)
@@ -149,3 +157,6 @@ def test_garbage_collection(dao: DatabaseStudyDao, db_session: Session, tmp_path
 
     thermal_co2_cost = dao.get_thermal_co2_cost(area_id, thermal_id)
     pl.testing.assert_frame_equal(thermal_co2_cost, thermal_co2_cost_df, check_dtypes=False)
+
+    renewable_series = dao.get_renewable_series(area_id, renewable_id)
+    pl.testing.assert_frame_equal(renewable_series, renewable_series_df, check_dtypes=False)
