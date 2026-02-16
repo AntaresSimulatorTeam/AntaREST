@@ -19,14 +19,11 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from antarest.core.exceptions import AreaNotFound, RenewableClusterNotFound, ThermalClusterNotFound
+from antarest.core.exceptions import AreaNotFound, RenewableClusterNotFound
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableCluster,
     RenewableClusterGroup,
     TimeSeriesInterpretation,
-)
-from antarest.study.business.model.thermal_cluster_model import (
-    ThermalCluster,
 )
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.renewable import RENEWABLE_CLUSTER_TABLE, RENEWABLE_SERIES_TABLE
@@ -190,32 +187,23 @@ def test_get_renewable_matrix_raises_when_missing(dao: DatabaseStudyDao) -> None
         dao.get_renewable_series("nonexistent", "gas")
 
 
-def test_save_thermal_matrix_raises_when_missing(dao: DatabaseStudyDao) -> None:
+def test_save_renewable_matrix_raises_when_missing(dao: DatabaseStudyDao) -> None:
     dao.save_area("Paris")
 
-    savers = [
-        dao.save_thermal_prepro,
-        dao.save_thermal_series,
-        dao.save_thermal_modulation,
-        dao.save_thermal_fuel_cost,
-        dao.save_thermal_co2_cost,
-    ]
-
-    for saver in savers:
-        with pytest.raises(ThermalClusterNotFound):
-            saver("paris", "gas", "missing-matrix-id")
-        with pytest.raises(AreaNotFound):
-            saver("nonexistent", "gas", "missing-matrix-id")
+    with pytest.raises(RenewableClusterNotFound):
+        dao.save_renewable_series("paris", "gas", "missing-matrix-id")
+    with pytest.raises(AreaNotFound):
+        dao.save_renewable_series("nonexistent", "gas", "missing-matrix-id")
 
 
 def test_area_with_no_clusters_are_absent_from_clusters_dict(dao: DatabaseStudyDao) -> None:
     dao.save_area("germany")
     dao.save_area("italy")
 
-    dao.save_thermal("germany", ThermalCluster(id="gas", name="Gas"))
+    dao.save_renewable("germany", RenewableCluster(id="battery", name="Battery"))
 
-    clusters = dao.get_all_thermals()
+    clusters = dao.get_all_renewables()
 
     assert "italy" not in clusters
     assert "germany" in clusters
-    assert "gas" in clusters["germany"]
+    assert "battery" in clusters["germany"]
