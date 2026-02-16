@@ -18,7 +18,7 @@ from abc import abstractmethod
 from pathlib import PurePosixPath
 from typing import TYPE_CHECKING, Iterator
 
-from sqlalchemy import select, CursorResult, delete
+from sqlalchemy import CursorResult, delete, select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -78,7 +78,9 @@ class DatabaseUserResourcesDao(UserResourcesDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        stmt = delete(USER_RESOURCES_TABLE).where((USER_RESOURCES_TABLE.c.study_id == study_id) & (USER_RESOURCES_TABLE.c.path == str(resource_path)))
+        stmt = delete(USER_RESOURCES_TABLE).where(
+            (USER_RESOURCES_TABLE.c.study_id == study_id) & (USER_RESOURCES_TABLE.c.path == str(resource_path))
+        )
 
         result = session.execute(stmt)
 

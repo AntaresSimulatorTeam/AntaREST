@@ -35,11 +35,10 @@ def test_save_user_resources_file(dao: DatabaseStudyDao) -> None:
 
     assert len(list(dao.get_all_user_resources())) == 0
 
+
 def test_save_user_resources_folder(dao: DatabaseStudyDao) -> None:
     dao.save_user_resource(
-        UserResourceDataCreation(
-            path=PurePosixPath("folder_path"), resource_type=ResourceType.FOLDER
-        )
+        UserResourceDataCreation(path=PurePosixPath("folder_path"), resource_type=ResourceType.FOLDER)
     )
     result = list(dao.get_all_user_resources())
     assert len(result) == 1
@@ -47,20 +46,22 @@ def test_save_user_resources_folder(dao: DatabaseStudyDao) -> None:
     assert result[0].resource_type == ResourceType.FOLDER
     assert result[0].blob_id is None
 
+
 def test_update_blob_id(dao: DatabaseStudyDao) -> None:
     resource = UserResourceDataCreation(
-            path=PurePosixPath("file_path"), resource_type=ResourceType.FILE, blob_id="test_blob_id"
-        )
+        path=PurePosixPath("file_path"), resource_type=ResourceType.FILE, blob_id="test_blob_id"
+    )
     dao.save_user_resource(resource)
 
     updated_resource = UserResourceDataCreation(
-            path=PurePosixPath("file_path"), resource_type=ResourceType.FILE, blob_id="test_blob_id_updated"
-        )
+        path=PurePosixPath("file_path"), resource_type=ResourceType.FILE, blob_id="test_blob_id_updated"
+    )
     dao.save_user_resource(updated_resource)
 
     result = list(dao.get_all_user_resources())
     assert len(result) == 1
     assert result[0].blob_id == "test_blob_id_updated"
+
 
 def test_user_resources_not_exists(dao: DatabaseStudyDao) -> None:
     with pytest.raises(UserResourcesNotFound):
