@@ -30,7 +30,7 @@ from antarest.study.business.model.renewable_cluster_model import (
 )
 from antarest.study.dao.api.renewable_dao import RenewableDao
 from antarest.study.dao.database.common import get_row_representation_as_dict, validate_area_exists
-from antarest.study.dao.database.models.renewable import RENEWABLE_CLUSTER_TABLE
+from antarest.study.dao.database.models.renewable import RENEWABLE_CLUSTER_TABLE, RENEWABLE_SERIES_TABLE
 from antarest.study.dao.database.sql_utils import upsert_multiple, upsert_one
 
 if TYPE_CHECKING:
@@ -188,4 +188,14 @@ class DatabaseRenewableDao(RenewableDao):
 
     @override
     def get_renewable_series(self, area_id: str, renewable_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        study_id = self._study_id
+        session = self._db_session
+        stmt = select(RENEWABLE_SERIES_TABLE).where(
+            (RENEWABLE_SERIES_TABLE.c.study_id == study_id)
+            & (RENEWABLE_SERIES_TABLE.c.area_id == area_id)
+            & (RENEWABLE_SERIES_TABLE.c.renewable_id == renewable_id)
+        )
+        row = session.execute(stmt).fetchone()
+        if not row:
+            self._raise_the_right_exception(area_id, renewable_id)
+        return self.get_impl().get_matrix(row.matrix_id)
