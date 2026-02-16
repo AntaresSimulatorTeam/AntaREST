@@ -24,6 +24,7 @@ from antarest.study.dao.database.models.link import (
     LINK_INDIRECT_CAPACITY_TABLE,
     LINK_SERIES_TABLE,
 )
+from antarest.study.dao.database.models.renewable import RENEWABLE_SERIES_TABLE
 from antarest.study.dao.database.models.thermal import (
     THERMAL_CO2_COST_TABLE,
     THERMAL_FUEL_COST_TABLE,
@@ -46,6 +47,7 @@ MATRIX_TABLES = [
     THERMAL_SERIES_TABLE,
     THERMAL_FUEL_COST_TABLE,
     THERMAL_CO2_COST_TABLE,
+    RENEWABLE_SERIES_TABLE,
 ]
 
 
