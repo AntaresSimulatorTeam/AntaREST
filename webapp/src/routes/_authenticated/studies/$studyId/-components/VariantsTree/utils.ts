@@ -12,78 +12,102 @@
  * This file is part of the Antares project.
  */
 
-/* eslint-disable no-param-reassign */
-import type { GenericInfo, StudyMetadata, VariantTree } from "@/types/types";
+import type { StudyMetadata, VariantTree } from "@/types/types";
+import { COLORS } from "./constants";
 
-export interface StudyTree {
+export interface LayoutNode {
   name: string;
   attributes: {
     id: string;
   };
   drawOptions: {
     depth: number;
-    nbAllChildrens: number;
+    totalDescendants: number;
   };
-  children: StudyTree[];
+  children: LayoutNode[];
 }
 
-const buildNodeFromMetadata = (study: StudyMetadata): StudyTree => ({
-  name: study.name,
-  attributes: {
-    id: study.id,
-  },
-  drawOptions: {
-    depth: 0,
-    nbAllChildrens: 0,
-  },
-  children: [],
-});
+interface NodeColors {
+  solid: string;
+  faint: string;
+  highlight: string;
+  base: string;
+  verticalLine: string;
+}
 
-const convertVariantTreeToStudyTree = (tree: VariantTree): StudyTree => {
-  const nodeDatum = buildNodeFromMetadata(tree.node);
+function buildLeafNode(study: StudyMetadata): LayoutNode {
+  return {
+    name: study.name,
+    attributes: { id: study.id },
+    drawOptions: { depth: 1, totalDescendants: 0 },
+    children: [],
+  };
+}
+
+/**
+ * Recursively converts a `VariantTree` into a `LayoutNode` that carries pre-computed layout metrics
+ * (`depth` and `totalDescendants`) used for SVG rendering.
+ *
+ * @param tree - The variant tree node to convert.
+ * @returns The corresponding `LayoutNode` with layout metrics.
+ */
+function toLayoutNode(tree: VariantTree): LayoutNode {
   if (tree.children.length === 0) {
-    nodeDatum.drawOptions.depth = 1;
-    nodeDatum.drawOptions.nbAllChildrens = 0;
-    nodeDatum.children = [];
-  } else {
-    nodeDatum.children = (tree.children || []).map((el: VariantTree) =>
-      convertVariantTreeToStudyTree(el),
-    );
-    nodeDatum.drawOptions.depth =
-      1 + Math.max(...nodeDatum.children.map((elm) => elm.drawOptions.depth));
-    nodeDatum.drawOptions.nbAllChildrens = nodeDatum.children
-      .map((elm) => 1 + elm.drawOptions.nbAllChildrens)
-      .reduce((acc, curr) => acc + curr, 0);
+    return buildLeafNode(tree.node);
   }
 
-  return nodeDatum;
-};
+  const children = tree.children.map(toLayoutNode);
+  const depth = 1 + Math.max(...children.map((c) => c.drawOptions.depth));
+  const totalDescendants = children.reduce((sum, c) => sum + 1 + c.drawOptions.totalDescendants, 0);
 
-const buildTree = async (node: StudyTree, childrenTree: VariantTree): Promise<void> => {
-  if ((childrenTree.children || []).length === 0) {
-    node.drawOptions.depth = 1;
-    node.drawOptions.nbAllChildrens = 0;
-    return;
+  return {
+    name: tree.node.name,
+    attributes: { id: tree.node.id },
+    drawOptions: { depth, totalDescendants },
+    children,
+  };
+}
+
+/**
+ * Converts a variant tree returned by the API into a `LayoutNode`
+ * ready for rendering in the SVG tree view.
+ *
+ * @param variantTree - The root variant tree from the API.
+ * @returns A `LayoutNode` with pre-computed layout metrics for SVG rendering.
+ */
+export function buildLayoutTree(variantTree: VariantTree): LayoutNode {
+  return toLayoutNode(variantTree);
+}
+
+export function getNodeColors(depth: number): NodeColors {
+  const base = COLORS[depth % COLORS.length];
+
+  return {
+    solid: `${base}ff`,
+    faint: `${base}0d`,
+    highlight: `${base}44`,
+    base,
+    verticalLine: COLORS[(depth + 1) % COLORS.length],
+  };
+}
+
+/**
+ * Computes the starting row index for each direct child, accounting
+ * for the vertical space consumed by preceding siblings and their
+ * subtrees.
+ *
+ * @param children - Direct child nodes to compute rows for.
+ * @param parentRow - The row index of the parent node.
+ * @returns An array of row indices, one per child.
+ */
+export function computeChildRows(children: readonly LayoutNode[], parentRow: number): number[] {
+  const rows: number[] = [];
+  let currentRow = parentRow + 1;
+
+  for (const child of children) {
+    rows.push(currentRow);
+    currentRow += child.drawOptions.totalDescendants + 1;
   }
-  const children = convertVariantTreeToStudyTree(childrenTree);
-  node.drawOptions = children.drawOptions;
-  node.children = children.children;
-};
 
-export const getTreeNodes = async (tree: VariantTree): Promise<StudyTree> => {
-  const root = buildNodeFromMetadata(tree.node);
-  await buildTree(root, tree);
-  return root;
-};
-
-export const createListFromTree = (tree: StudyTree): GenericInfo[] => {
-  const { name, attributes, children } = tree;
-  const { id } = attributes;
-  let res: GenericInfo[] = [{ id, name }];
-  children.forEach((elm) => {
-    res = res.concat(createListFromTree(elm));
-  });
-  return res;
-};
-
-export default {};
+  return rows;
+}
