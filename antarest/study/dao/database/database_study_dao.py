@@ -27,7 +27,6 @@ from typing_extensions import override
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
-from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.scenario_builder_model import AnyScenarios, Rulesets, ScenarioType
 from antarest.study.business.model.sts_model import (
     STStorage,
@@ -49,6 +48,7 @@ from antarest.study.dao.database.database_district_dao import DatabaseDistrictDa
 from antarest.study.dao.database.database_hydro_dao import DatabaseHydroDao
 from antarest.study.dao.database.database_layer_dao import DatabaseLayerDao
 from antarest.study.dao.database.database_link_dao import DatabaseLinkDao
+from antarest.study.dao.database.database_renewable_dao import DatabaseRenewableDao
 from antarest.study.dao.database.database_study_settings_dao import DatabaseStudySettingsDao
 from antarest.study.dao.database.database_thermal_dao import DatabaseThermalDao
 from antarest.study.dao.database.database_user_resources import DatabaseUserResourcesDao
@@ -66,6 +66,7 @@ class DatabaseStudyDao(
     DatabaseHydroDao,
     DatabaseThermalDao,
     DatabaseStudySettingsDao,
+    DatabaseRenewableDao,
     DatabaseUserResourcesDao,
 ):
     """
@@ -88,6 +89,7 @@ class DatabaseStudyDao(
         DatabaseHydroDao.__init__(self, study_id, db_session)
         DatabaseThermalDao.__init__(self, study_id, db_session)
         DatabaseStudySettingsDao.__init__(self, study_id, db_session)
+        DatabaseRenewableDao.__init__(self, study_id, db_session)
         DatabaseUserResourcesDao.__init__(self, study_id, db_session)
         self._matrix_service = matrix_service
 
@@ -136,42 +138,6 @@ class DatabaseStudyDao(
 
     def get_matrix(self, matrix_id: str) -> pl.DataFrame:
         return self._matrix_service.get(matrix_id)
-
-    @override
-    def save_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_renewables(self, area_id: str, renewables: Sequence[RenewableCluster]) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_renewable_series(self, area_id: str, renewable_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def delete_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_all_renewables_for_area(self, area_id: str) -> Sequence[RenewableCluster]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_renewable(self, area_id: str, renewable_id: str) -> RenewableCluster:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def renewable_exists(self, area_id: str, renewable_id: str) -> bool:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_renewable_series(self, area_id: str, renewable_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
     def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
