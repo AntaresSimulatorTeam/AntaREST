@@ -113,7 +113,16 @@ class DatabaseRenewableDao(RenewableDao):
 
     @override
     def save_renewable_series(self, area_id: str, renewable_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        study_id = self._study_id
+        session = self._db_session
+
+        try:
+            values = {"study_id": study_id, "area_id": area_id, "renewable_id": renewable_id, "matrix_id": series_id}
+            upsert_one(session, RENEWABLE_SERIES_TABLE, values)
+        except IntegrityError as e:
+            self._raise_the_right_exception(area_id, renewable_id, e)
+
+        session.commit()
 
     @override
     def delete_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
