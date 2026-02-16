@@ -14,9 +14,8 @@
 Database implementation of UserResourcesDao.
 """
 
-from abc import abstractmethod
 from pathlib import PurePosixPath
-from typing import TYPE_CHECKING, Iterator
+from typing import Iterator
 
 from sqlalchemy import CursorResult, delete, select
 from sqlalchemy.orm import Session
@@ -27,9 +26,6 @@ from antarest.study.business.model.user_model import UserResourceDataCreation
 from antarest.study.dao.api.user_resources_dao import UserResourcesDao
 from antarest.study.dao.database.models.user_resources import USER_RESOURCES_TABLE
 from antarest.study.dao.database.sql_utils import upsert_one
-
-if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
 class DatabaseUserResourcesDao(UserResourcesDao):
@@ -46,49 +42,31 @@ class DatabaseUserResourcesDao(UserResourcesDao):
         self._study_id = study_id
         self._db_session = db_session
 
-    def get_study_id(self) -> str:
-        """Get the study ID for database queries."""
-        return self._study_id
-
-    def get_session(self) -> Session:
-        """Get the SQLAlchemy session for database operations."""
-        return self._db_session
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
-
     @override
     def save_user_resource(self, resource_data: UserResourceDataCreation) -> None:
-        study_id = self._study_id
-        session = self._db_session
-
         values = {
-            "study_id": study_id,
+            "study_id": self._study_id,
             "path": str(resource_data.path),
             "resource_type": resource_data.resource_type,
             "blob_id": resource_data.blob_id,
         }
-        upsert_one(session, USER_RESOURCES_TABLE, values)
+        upsert_one(self._db_session, USER_RESOURCES_TABLE, values)
 
-        session.commit()
+        self._db_session.commit()
 
     @override
     def delete_user_resource(self, resource_path: PurePosixPath) -> None:
-        study_id = self.get_study_id()
-        session = self.get_session()
-
         stmt = delete(USER_RESOURCES_TABLE).where(
-            (USER_RESOURCES_TABLE.c.study_id == study_id) & (USER_RESOURCES_TABLE.c.path == str(resource_path))
+            (USER_RESOURCES_TABLE.c.study_id == self._study_id) & (USER_RESOURCES_TABLE.c.path == str(resource_path))
         )
 
-        result = session.execute(stmt)
+        result = self._db_session.execute(stmt)
 
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
             raise UserResourcesNotFound(str(resource_path))
 
-        session.commit()
+        self._db_session.commit()
 
     @override
     def get_all_user_resources(self) -> Iterator[UserResourceDataCreation]:
@@ -96,7 +74,11 @@ class DatabaseUserResourcesDao(UserResourcesDao):
 
         rows = self._db_session.execute(stmt).fetchall()
 
-        for row in rows:
-            yield UserResourceDataCreation(
-                path=PurePosixPath(row.path), resource_type=row.resource_type, blob_id=row.blob_id
-            )
+        return iter(
+            [
+                UserResourceDataCreation(
+                    path=PurePosixPath(row.path), resource_type=row.resource_type, blob_id=row.blob_id
+                )
+                for row in rows
+            ]
+        )

@@ -88,6 +88,7 @@ class DatabaseStudyDao(
         DatabaseHydroDao.__init__(self, study_id, db_session)
         DatabaseThermalDao.__init__(self, study_id, db_session)
         DatabaseStudySettingsDao.__init__(self, study_id, db_session)
+        DatabaseUserResourcesDao.__init__(self, study_id, db_session)
         self._matrix_service = matrix_service
 
     # Implementation of abstract methods required by StudyDao
