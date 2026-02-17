@@ -703,7 +703,7 @@ class MatrixService(ISimpleMatrixService):
     def synchronize_matrix_store(self, dry_run: bool) -> dict[str, MatrixMismatchDTO]:
         db_matrices = {m.id for m in self.repo.get_matrices()}
         fs_matrices = {
-            f.name for f in self.matrix_content_repository.bucket_dir.iterdir() if not f.name.endswith(".tsv.lock")
+            f.stem for f in self.matrix_content_repository.bucket_dir.iterdir() if not f.name.endswith(".tsv.lock")
         }
         only_fs_matrices = fs_matrices - db_matrices
         only_db_matrices = db_matrices - fs_matrices

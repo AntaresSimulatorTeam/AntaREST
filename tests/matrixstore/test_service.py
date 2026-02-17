@@ -15,6 +15,7 @@ import io
 import json
 import re
 import typing as t
+import uuid
 import zipfile
 from unittest.mock import Mock
 
@@ -23,6 +24,7 @@ import pandas as pd
 import polars as pl
 import pytest
 from fastapi import UploadFile
+from sqlalchemy import select
 from starlette.datastructures import Headers
 
 from antarest.core.config import InternalMatrixFormat
@@ -43,6 +45,7 @@ from antarest.matrixstore.model import (
     MatrixDataSetUpdateDTO,
     MatrixInfoDTO,
     MatrixMetadataDTO,
+    MatrixMismatchDTO,
 )
 from antarest.matrixstore.parsing import load_matrix
 from antarest.matrixstore.repository import compute_hash
@@ -648,3 +651,53 @@ def _create_upload_file(filename: str, file: t.IO[bytes] = None, content_type: s
     headers = Headers(headers={"content-type": content_type})
     # noinspection PyTypeChecker,PyArgumentList
     return UploadFile(filename=filename, file=file, headers=headers)
+
+
+@with_db_context
+@pytest.mark.parametrize("dry_run", [True, False])
+def test_synchronize_matrix_store(matrix_service: MatrixService, dry_run: bool) -> None:
+    # Ensures when no matrix exist, we return no mismatch
+    assert matrix_service.synchronize_matrix_store(dry_run) == {}
+
+    # Create one matrix in DB but not present in the FS.
+    now = current_time()
+    session = db.session
+    matrix_id = str(uuid.uuid4())
+    session.add(Matrix(id=matrix_id, width=0, height=0, created_at=now, version=1))
+    session.commit()
+
+    # We should return the mismatch
+    assert matrix_service.synchronize_matrix_store(dry_run) == {
+        matrix_id: MatrixMismatchDTO(database=True, filesystem=False)
+    }
+
+    # If `dry_run` is False, we should remove the matrix from DB
+    db_content = session.execute(select(Matrix)).fetchall()
+    if not dry_run:
+        assert db_content == []
+    else:
+        assert len(db_content) == 1
+
+    # Create one matrix on the FS that also exists in DB
+    if not dry_run:
+        session.add(Matrix(id=matrix_id, width=0, height=0, created_at=now, version=1))
+        session.commit()
+    bucket_dir = matrix_service.matrix_content_repository.bucket_dir
+    (bucket_dir / f"{matrix_id}.feather").touch()
+
+    # Asserts no mismatch is returned
+    assert matrix_service.synchronize_matrix_store(dry_run) == {}
+
+    # Remove the matrix from DB. Now we have only a matrix existing on the FS.
+    # We should return the mismatch
+    matrix_service.repo.delete(matrix_id)
+    assert matrix_service.synchronize_matrix_store(dry_run) == {
+        matrix_id: MatrixMismatchDTO(database=False, filesystem=True)
+    }
+
+    # If `dry_run` is False, we should add the matrix in DB
+    db_content = session.execute(select(Matrix)).fetchall()
+    if dry_run:
+        assert db_content == []
+    else:
+        assert len(db_content) == 1
