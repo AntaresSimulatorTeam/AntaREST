@@ -31,6 +31,7 @@ from antarest.core.config import InternalMatrixFormat
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.roles import RoleType
+from antarest.core.serde.matrix_export import write_dataframe_in_tsv_format
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.utils import current_time
@@ -701,3 +702,24 @@ def test_synchronize_matrix_store(matrix_service: MatrixService, dry_run: bool) 
         assert db_content == []
     else:
         assert len(db_content) == 1
+
+
+@with_db_context
+def test_infer_matrix_version(matrix_service: MatrixService) -> None:
+    """Ensures we're able to find a matrix version if we know it's previously calculated hash"""
+
+    # Create a matrix in v2 with values not supported in v1.
+    matrix_id = matrix_service.create(AGGREGATION_DF)
+    assert matrix_service._infer_matrix_version(matrix_id) == 2
+
+    # Create a matrix in v2 with values supported in v1.
+    df = create_polars_dataframe(TEST_MATRIX)
+    matrix_id = matrix_service.create(df)  # Saves the matrix with its headers, so v2.
+    assert matrix_service._infer_matrix_version(matrix_id) == 2
+
+    # Create a matrix in v1
+    df = create_polars_dataframe([[1.1, 1.1], [1.1, 1.1]])
+    bucket_dir = matrix_service.matrix_content_repository.bucket_dir
+    matrix_id = compute_hash(df)
+    write_dataframe_in_tsv_format(df, bucket_dir / f"{matrix_id}.tsv", headers=False)  # No headers means v1.
+    assert matrix_service._infer_matrix_version(matrix_id) == 1

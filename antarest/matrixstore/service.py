@@ -739,7 +739,11 @@ class MatrixService(ISimpleMatrixService):
             # We only need the matrix version for the parsing of legacy `TSV` files.
             return NEW_MATRIX_VERSION
 
-        df = load_matrix(matrix_format, matrix_path, LEGACY_MATRIX_VERSION)
+        try:
+            df = load_matrix(matrix_format, matrix_path, LEGACY_MATRIX_VERSION)
+        except ValueError:
+            # Happens if the matrix contains values that are not handled in v1. Means the matrix is in v2.
+            return NEW_MATRIX_VERSION
         new_hash = compute_hash(df)
         if new_hash == matrix_id:
             # Means we read the matrix as we supposed to so the version we tested was right
