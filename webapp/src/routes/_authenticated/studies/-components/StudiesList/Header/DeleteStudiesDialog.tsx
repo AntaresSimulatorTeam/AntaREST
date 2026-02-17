@@ -14,13 +14,10 @@
 
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import { Typography } from "@mui/material";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import { deleteStudies } from "@/services/api/study";
 import type { StudyMetadata } from "@/types/types";
-import { toError } from "@/utils/fnUtils";
+import { useDeleteStudies } from "./useDeleteStudies";
 
 interface Props {
   studyIds: Array<StudyMetadata["id"]>;
@@ -29,25 +26,15 @@ interface Props {
 }
 
 function DeleteStudiesDialog({ studyIds, open, onClose }: Props) {
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
-  const [isDeleting, setIsDeleting] = useState(false);
+  const deleteStudies = useDeleteStudies({ onSuccess: onClose });
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleConfirm = async () => {
-    setIsDeleting(true);
-    try {
-      await deleteStudies(studyIds, true);
-
-      onClose();
-    } catch (err) {
-      enqueueErrorSnackbar(t("studies.error.deleteStudies"), toError(err));
-    } finally {
-      setIsDeleting(false);
-    }
+  const handleConfirm = () => {
+    deleteStudies.mutate({ studyIds });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -62,9 +49,9 @@ function DeleteStudiesDialog({ studyIds, open, onClose }: Props) {
       maxWidth="xs"
       onConfirm={handleConfirm}
       onCancel={onClose}
-      disableConfirm={isDeleting}
+      disableConfirm={deleteStudies.isPending}
     >
-      <Typography>{t("studies.question.deleteMultiple", { count: studyIds.length })}</Typography>
+      <Typography>{t("studies.question.deleteMany", { count: studyIds.length })}</Typography>
     </ConfirmationDialog>
   );
 }

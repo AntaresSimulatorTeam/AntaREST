@@ -786,7 +786,7 @@
   "study.area.storage.additionalConstraint.notFound": "Aucune contrainte additionnelle trouvée avec l'ID : {{id}}",
   "studies.question.delete": "Êtes-vous sûr de vouloir supprimer l'étude : {{studyName}} ?",
   "studies.question.deleteWithVariants": "Êtes-vous sûr de vouloir supprimer l'étude '{{studyName}}' ainsi que ses {{variantNb}} sous-variante(s) ?",
-  "studies.question.deleteMultiple": "Êtes-vous sûr de vouloir supprimer {{count}} étude(s) ?",
+  "studies.question.deleteMany": "Êtes-vous sûr de vouloir supprimer {{count}} étude(s) ?",
   "studies.error.retrieveData": "Échec de la récupération des données",
   "studies.error.deleteStudy": "Échec de la suppression de l'étude",
   "studies.error.loadStudies": "Échec du chargement des études",

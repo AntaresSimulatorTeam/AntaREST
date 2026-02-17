@@ -197,9 +197,12 @@ export const deleteStudy = async (studyId: string, deleteChildren = false): Prom
   return res.data;
 };
 
-export const deleteStudies = async (studyIds: string[], deleteChildren = false): Promise<void> => {
-  const res = await client.delete(`/v1/studies?children=${deleteChildren}`, {
-    data: studyIds,
+export const deleteStudies = async (params: {
+  studyIds: string[];
+  withVariants?: boolean;
+}): Promise<void> => {
+  const res = await client.delete("/v1/studies", {
+    data: { withVariants: true, ...params },
   });
   return res.data;
 };
