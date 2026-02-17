@@ -1,7 +1,7 @@
 """add user resources table
 
 Revision ID: f77c2a9e5d0c
-Revises: ae838d5fd166
+Revises: 0ed392eeb506
 Create Date: 2026-02-16 11:55:05.930667
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "f77c2a9e5d0c"
-down_revision = "ae838d5fd166"
+down_revision = "0ed392eeb506"
 branch_labels = None
 depends_on = None
 

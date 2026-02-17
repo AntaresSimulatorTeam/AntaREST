@@ -26,6 +26,5 @@ class DatabaseBlobUsageProvider(IBlobUsageProvider):
         with db():
             stmt = select(USER_RESOURCES_TABLE).where(USER_RESOURCES_TABLE.c.blob_id.isnot(None))
             rows = db.session.execute(stmt).fetchall()
-            return iter(
-                [BlobReference(blob_id=row.blob_id, use_description=f"Used by study {row.study_id}") for row in rows]
-            )
+            for row in rows:
+                yield BlobReference(blob_id=row.blob_id, use_description=f"Used by study {row.study_id}")
