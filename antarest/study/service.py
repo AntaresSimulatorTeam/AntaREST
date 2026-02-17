@@ -179,6 +179,7 @@ from antarest.study.storage.variantstudy.variant_study_service import VariantStu
 logger = logging.getLogger(__name__)
 
 MAX_MISSING_STUDY_TIMEOUT = 2  # days
+MAX_BATCH_DELETE_SIZE = 100
 
 
 def get_disk_usage(path: str | Path) -> int:
@@ -1432,6 +1433,114 @@ class StudyService:
         logger.info("study %s deleted by user %s", uuid, get_user_id())
 
         self._on_study_delete(uuid=uuid)
+
+    def delete_studies(self, study_ids: List[str], with_variants: bool) -> None:
+        """
+        Delete multiple studies in batch.
+
+        Args:
+            study_ids: List of study UUIDs to delete
+            with_variants: Whether to delete variant studies as well
+
+        Raises:
+            StudyNotFoundError: If any study is not found
+            UserHasNotPermissionError: If user lacks permission for any study
+            StudyDeletionNotAllowed: If a study has variants and with_variants=False
+            HTTPException(BAD_REQUEST): If study_ids is empty or exceeds MAX_BATCH_DELETE_SIZE
+        """
+        if not study_ids:
+            raise HTTPException(
+                status_code=http.HTTPStatus.BAD_REQUEST,
+                detail="study_ids list cannot be empty",
+            )
+
+        if len(study_ids) > MAX_BATCH_DELETE_SIZE:
+            raise HTTPException(
+                status_code=http.HTTPStatus.BAD_REQUEST,
+                detail=f"Cannot delete more than {MAX_BATCH_DELETE_SIZE} studies at once. Got {len(study_ids)} studies.",
+            )
+
+        logger.warning(
+            "Batch delete requested for %d studies by user %s (with_variants=%s)",
+            len(study_ids),
+            get_user_id(),
+            with_variants,
+        )
+
+        variant_service = self.storage_service.variant_study_service
+
+        studies_to_check = []
+        for study_id in study_ids:
+            study = self.get_study(study_id)
+            assert_permission(study, StudyPermissionType.WRITE)
+            studies_to_check.append(study)
+
+        studies_to_delete: Dict[str, Study] = {}
+
+        for study in studies_to_check:
+            if study.id in studies_to_delete:
+                continue
+
+            if variant_service.has_children(study):
+                if not with_variants:
+                    raise StudyDeletionNotAllowed(study.id, "Study has variant children")
+
+                def collect_study(s: Study) -> None:
+                    # Prefetch the workspace attribute before deletion, as it's lazy-loaded
+                    # and won't be accessible after the object is removed from the session.
+                    # See: https://github.com/AntaresSimulatorTeam/AntaREST/issues/606
+                    if isinstance(s, RawStudy):
+                        _ = s.workspace
+                    studies_to_delete[s.id] = s
+
+                variant_service.walk_children(
+                    study.id,
+                    collect_study,
+                    bottom_first=True,
+                    include_parent=True,
+                )
+            else:
+                if isinstance(study, RawStudy):
+                    _ = study.workspace
+                studies_to_delete[study.id] = study
+
+        generation_tasks = [
+            s.generation_task
+            for s in studies_to_delete.values()
+            if isinstance(s, VariantStudy) and s.generation_task is not None
+        ]
+
+        for task_id in generation_tasks:
+            self.task_service.await_task(task_id, 600)
+
+        study_ids_to_delete = list(studies_to_delete.keys())
+
+        self.repository.delete_many(study_ids_to_delete)
+
+        for study in studies_to_delete.values():
+            study_info = study.to_json_summary()
+            if isinstance(study, RawStudy):
+                study_info = study.to_enhanced_json_summary()
+
+            if self.assert_study_unarchived(study=study, raise_exception=False):
+                self.storage_service.get_storage(study).delete(study)
+            else:
+                if isinstance(study, RawStudy):
+                    os.unlink(self.storage_service.raw_study_service.find_archive_path(study))
+
+            self.event_bus.push(
+                Event(
+                    type=EventType.STUDY_DELETED,
+                    payload=study_info,
+                    permissions=PermissionInfo.from_study(study),
+                )
+            )
+
+            self._on_study_delete(uuid=study.id)
+
+        # Commit the transaction after all filesystem deletions and events succeed.
+        # `delete_many` only flushes changes we commit here to finalize the transaction.
+        self.repository.session.commit()
 
     def import_study(
         self,

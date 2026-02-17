@@ -17,7 +17,7 @@ from pathlib import PurePosixPath
 from typing import Annotated, Dict, Optional, Sequence
 
 from antares.study.version import StudyVersion
-from fastapi import APIRouter, Body, HTTPException, Query, UploadFile
+from fastapi import APIRouter, HTTPException, Query, UploadFile
 from markupsafe import escape
 from pydantic import NonNegativeInt
 
@@ -31,6 +31,7 @@ from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.login.utils import require_current_user
 from antarest.study.model import (
+    DeleteManyStudies,
     MatrixIndex,
     StorageMode,
     StudyMetadataDTO,
@@ -426,17 +427,13 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
     @bp.delete(
         "/studies",
-        status_code=HTTPStatus.OK,
+        status_code=HTTPStatus.NO_CONTENT,
         summary="Delete Multiple Studies",
     )
-    def delete_studies(
-        study_ids: list[str] = Body(description="List of study UUIDs to delete"),
-        children: bool = False,
-    ) -> None:
-        logger.info(f"Deleting multiple studies: {study_ids}")
-        sanitized_ids = [sanitize_uuid(sid) for sid in study_ids]
-        for uuid in sanitized_ids:
-            study_service.delete_study(uuid, children)
+    def delete_studies(data: DeleteManyStudies) -> None:
+        logger.info(f"Deleting multiple studies: {data.study_ids}")
+        sanitized_ids = [sanitize_uuid(sid) for sid in data.study_ids]
+        study_service.delete_studies(sanitized_ids, data.with_variants)
 
     @bp.put(
         "/studies/{uuid}/owner/{user_id}",
