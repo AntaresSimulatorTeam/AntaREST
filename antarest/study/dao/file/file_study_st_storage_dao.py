@@ -281,6 +281,13 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         )
 
     @override
+    def get_st_storage_additional_constraints_matrix(
+        self, area_id: str, storage_id: str, constraint_id: str
+    ) -> pl.DataFrame:
+        url = ["input", "st-storage", "constraints", area_id, storage_id, f"rhs_{constraint_id}"]
+        return self.get_impl().get_matrix(url)
+
+    @override
     def delete_st_storage_additional_constraints(self, area_id: str, storage_id: str, constraints: list[str]) -> None:
         study_data = self.get_file_study()
         for constraint in constraints:

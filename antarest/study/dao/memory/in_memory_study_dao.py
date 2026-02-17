@@ -153,8 +153,10 @@ class InMemoryStudyDao(StudyDao):
         self._storage_cost_level: Dict[ClusterKey, str] = {}
         self._storage_cost_variation_injection: Dict[ClusterKey, str] = {}
         self._storage_cost_variation_withdrawal: Dict[ClusterKey, str] = {}
+        self._storage_cost_variation_withdrawal: Dict[ClusterKey, str] = {}
         # Short-term storages additional constraints
         self._st_storages_constraints: STStorageAdditionalConstraintsMap = {}
+        self._st_storages_constraints_matrix: Dict[ClusterKey, str] = {}
         self._st_storages_constraints_terms: Dict[str, dict[str, str]] = {}
         # Binding constraints
         self._constraints: Dict[str, BindingConstraint] = {}
@@ -640,6 +642,13 @@ class InMemoryStudyDao(StudyDao):
     @override
     def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_cost_variation_withdrawal[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_st_storage_additional_constraints_matrix(
+        self, area_id: str, storage_id: str, constraint_id: str
+    ) -> pl.DataFrame:
+        matrix_id = self._st_storages_constraints_matrix[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
