@@ -701,4 +701,35 @@ class MatrixService(ISimpleMatrixService):
 
     @override
     def synchronize_matrix_store(self, dry_run: bool) -> dict[str, MatrixMismatchDTO]:
-        return {}
+        db_matrices = {m.id for m in self.repo.get_matrices()}
+        fs_matrices = {
+            f.name for f in self.matrix_content_repository.bucket_dir.iterdir() if not f.name.endswith(".tsv.lock")
+        }
+        only_fs_matrices = fs_matrices - db_matrices
+        only_db_matrices = db_matrices - fs_matrices
+
+        result = {}
+        for matrix in only_db_matrices:
+            result[matrix] = MatrixMismatchDTO(database=True, filesystem=False)
+            if not dry_run:
+                # We remove the line from DB as it has no match on the filesystem
+                self.repo.delete(matrix)
+
+        new_matrices = []
+        current_date = current_time()
+        for matrix in only_fs_matrices:
+            result[matrix] = MatrixMismatchDTO(database=False, filesystem=True)
+            if not dry_run:
+                # We have to create a fake entry for the matrix in DB to fit with the filesystem.
+                # But for that we have to find what's the matrix version as it's used for parsing.
+                version = self._infer_matrix_version(matrix)
+                obj = Matrix(id=matrix, width=10, height=10, created_at=current_date, version=version)
+                new_matrices.append(obj)
+
+        if new_matrices:
+            self.repo.save_batch(new_matrices)
+
+        return result
+
+    def _infer_matrix_version(self, matrix_id: str) -> int:
+        pass
