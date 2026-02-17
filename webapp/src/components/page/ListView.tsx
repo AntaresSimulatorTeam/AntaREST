@@ -21,12 +21,13 @@ import {
   CircularProgress,
   List,
   ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
   Tooltip,
 } from "@mui/material";
 import { Outlet, type ToOptions } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import SearchFE from "../fieldEditors/SearchFE";
 import RouterListItemButton from "../router/RouterListItemButton";
@@ -41,24 +42,118 @@ interface BaseListItem {
 
 export interface RouteListItem extends BaseListItem {
   linkOptions: ToOptions;
+  content?: never;
+  data?: never;
 }
 
-interface ListViewProps {
-  list: RouteListItem[];
+export interface ContentListItem<TData = unknown> extends BaseListItem {
+  linkOptions?: never;
+  // It will be used in priority over `renderItemContent` if provided.
+  content?: React.ReactNode;
+  // Used in `renderItemContent` when `content` is not provided.
+  data?: TData;
+}
+
+interface ListViewProps<TItemData = unknown> {
+  list: RouteListItem[] | Array<ContentListItem<TItemData>>;
   splitId: string;
   emptyListContent?: React.ReactNode;
   onAdd?(): void;
   actions?: React.ReactNode;
+  renderItemContent?: ({
+    id,
+    data,
+  }: {
+    id: BaseListItem["id"];
+    data?: TItemData;
+  }) => React.ReactNode;
 }
 
-function ListView({ list, splitId, emptyListContent, onAdd, actions }: ListViewProps) {
+function isRouteListItem(item: RouteListItem | ContentListItem): item is RouteListItem {
+  return !!item?.linkOptions;
+}
+
+function isRouteList(list: RouteListItem[] | ContentListItem[]): list is RouteListItem[] {
+  return list.length > 0 && isRouteListItem(list[0]);
+}
+
+function ListView<TItemData = unknown>({
+  list,
+  splitId,
+  emptyListContent,
+  onAdd,
+  actions,
+  renderItemContent,
+}: ListViewProps<TItemData>) {
   const [search, setSearch] = useState("");
   const { t } = useTranslation();
   const hasActions = !!onAdd || !!actions;
-
+  const hasRouteList = isRouteList(list);
+  const [activeContentItem, setActiveContentItem] = useState<
+    ContentListItem<TItemData> | undefined
+  >(() => (hasRouteList ? undefined : list[0]));
   // Get current route ID to force rebuilds of links when the route changes.
   // Allows to update relative links (e.g. `to: "."`).
   const currentRouteId = useCurrentRouteId();
+
+  useEffect(() => {
+    if (!hasRouteList) {
+      setActiveContentItem(list[0]);
+    }
+  }, [list, hasRouteList]);
+
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const renderItemButton = (item: RouteListItem | ContentListItem<TItemData>) => {
+    const buttonContent = (
+      <>
+        {item.icon && <ListItemIcon sx={{ minWidth: 0, pr: 1.5 }}>{item.icon}</ListItemIcon>}
+        <ListItemText primary={item.label} slotProps={{ primary: { noWrap: true } }} />
+      </>
+    );
+
+    if (isRouteListItem(item)) {
+      return (
+        <RouterListItemButton key={currentRouteId} {...item.linkOptions}>
+          {buttonContent}
+        </RouterListItemButton>
+      );
+    }
+
+    return (
+      <ListItemButton
+        onClick={() => setActiveContentItem(item)}
+        selected={activeContentItem?.id === item.id}
+      >
+        {buttonContent}
+      </ListItemButton>
+    );
+  };
+
+  const renderItemView = () => {
+    if (list.length === 0) {
+      return emptyListContent;
+    }
+
+    if (hasRouteList) {
+      return <Outlet />;
+    }
+
+    if (activeContentItem) {
+      return (
+        activeContentItem.content ||
+        renderItemContent?.({ id: activeContentItem.id, data: activeContentItem.data })
+      );
+    }
+
+    return null;
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <SplitView splitId={splitId}>
@@ -106,18 +201,13 @@ function ListView({ list, splitId, emptyListContent, onAdd, actions }: ListViewP
                     )
                   }
                 >
-                  <RouterListItemButton key={currentRouteId} {...item.linkOptions}>
-                    {item.icon && (
-                      <ListItemIcon sx={{ minWidth: 0, pr: 1.5 }}>{item.icon}</ListItemIcon>
-                    )}
-                    <ListItemText primary={item.label} slotProps={{ primary: { noWrap: true } }} />
-                  </RouterListItemButton>
+                  {renderItemButton(item)}
                 </ListItem>
               </Tooltip>
             ))}
         </List>
       </Box>
-      <Box>{list.length > 0 ? <Outlet /> : emptyListContent}</Box>
+      <Box>{renderItemView()}</Box>
     </SplitView>
   );
 }
