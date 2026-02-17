@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import type { FolderDTO, WorkspaceDTO } from "@/components/App/Studies/StudyTree/types";
-import { compactSemanticVersion } from "@/utils/versionUtils";
 import type { AxiosRequestConfig } from "axios";
 import * as RA from "ramda-adjunct";
+import type { FolderDTO, WorkspaceDTO } from "@/queries/explorer/schemas";
+import { compactSemanticVersion } from "@/utils/versionUtils";
 import type { StudyMapDistrict } from "../../redux/ducks/studyMaps";
 import type {
   AreasConfig,

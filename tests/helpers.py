@@ -10,17 +10,21 @@
 #
 # This file is part of the Antares project.
 
+import hashlib
 import math
+import os
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, cast
+from typing import Any, Callable, Dict, List, Optional, Union, cast
 from unittest.mock import Mock
 
 import numpy as np
+import polars as pl
 from numpy import typing as npt
+from polars.testing import assert_frame_equal
 from typing_extensions import override
 
 from antarest.core.model import SUB_JSON
@@ -31,6 +35,26 @@ from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from tests.conftest_instances import create_admin_user
+
+
+def dirhash(dirname: Union[str, Path], hashfunc: str = "md5") -> str:
+    """Compute a single hash for all files in a directory tree (replacement for checksumdir.dirhash)."""
+    hash_constructor = getattr(hashlib, hashfunc)
+    hashvalues = []
+    for root, dirs, files in os.walk(str(dirname)):
+        dirs.sort()
+        files.sort()
+        for fname in files:
+            hasher = hash_constructor()
+            filepath = os.path.join(root, fname)
+            with open(filepath, "rb") as fp:
+                for chunk in iter(lambda: fp.read(65536), b""):
+                    hasher.update(chunk)
+            hashvalues.append(hasher.hexdigest())
+    hasher = hash_constructor()
+    for h in sorted(hashvalues):
+        hasher.update(h.encode("utf-8"))
+    return hasher.hexdigest()
 
 
 def with_db_context(f: Callable[..., Any]) -> Callable[..., Any]:
@@ -86,7 +110,9 @@ def _assert_array(
 
 
 def assert_study(a: SUB_JSON, b: SUB_JSON) -> None:
-    if isinstance(a, dict) and isinstance(b, dict):
+    if isinstance(a, pl.DataFrame) and isinstance(b, pl.DataFrame):
+        assert_frame_equal(a, b, check_dtypes=False)
+    elif isinstance(a, dict) and isinstance(b, dict):
         _assert_dict(a, b)
     elif isinstance(a, list) and isinstance(b, list):
         _assert_list(a, b)

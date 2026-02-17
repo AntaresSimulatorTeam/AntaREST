@@ -1,6 +1,70 @@
 Antares Web Changelog
 =====================
 
+v2.28.0 (2026-01-27)
+--------------------
+
+### Features
+* **variable-view-gc**: clean old materialized output variable view [`#2932`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2932)
+* **study**: introduce roundtrip method  [`#2823`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2823)
+* **thematic-trimming**: add new fields [`#2924`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2924)
+* **output**: add variables view export endpoint [`#2912`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2912)
+* **cr18**: forced and planned outage counting for thermal time series [`#2892`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2892)
+* **compression_seven_zip**: added compression parameter to the GET request and the export_study method [`#2881`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2881)
+* **ui-results**: add variable per variable views dates column [`#2899`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2899)
+* **ui-results**: introduce results variable per variable views [`#2887`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2887)
+
+### Bug Fixes
+* **ui-storages**: add efficiency cross-validation (#2950) [`#2954`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2954)
+* **matrices**: change Simulator default values [`#2938`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2938)
+* **ui-storages**: allow efficiency > 100% for storages in study v9.2+ [`#2942`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2942)
+* **matrix**: fix a potential issue with polars array transposition [`#2940`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2940)
+* **links**: change default matrix values [`#2933`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2933)
+* **desktop**: prevent console window to pop on study run [`#2911`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2911)
+* **ui**: refetch districts after area changes to prevent invalid state [`#2909`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2909)
+* **st-storage**: clean the sc-builder after deleting object [`#2903`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2903)
+* **ui-results**: reset variable per variable selectors on data type change [`#2901`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2901)
+* **output**: return the right MC years inside the variables view [`#2900`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2900)
+* **matrix-gc**: don't clean variant used matrices in a limit case [`#2890`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2890)
+* **ui**: prevent `SplitView` layout corruption on conditional children changes [`#2883`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2883)
+* **app**: set threadpool size in anyio instead of asyncio [`#2886`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2886)
+
+### Performances
+* **matrix**: use polars instead of pandas in the back-end [`#2926`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2926) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **matrix**: perform less DB calls when normalizing/denormalizing [`#2896`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2896)
+* **aggregation**: faster aggregation for clusters [`#2902`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2902)
+* **matrix**: add in-memory predefined matrices [`#2894`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2894)
+* **ui-variants**: remove commands.length dependency to prevent duplicate API calls [`#2871`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2871)
+
+### Refactorings
+* **output**: move all output related features to output module [`#2919`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2919)
+* **db**: migrate some remaining queries to SQLAlchemy 2.0 API [`#2910`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2910)
+* **matrix**: remove study download level dto [`#2913`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2913)
+* **ui**: move study details inline with breadcrumb and simplify display [`#2908`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2908)
+* **output**: use aggregation code inside `/download` imagrid endpoint [`#2868`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2868) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **output**: isolate the output storage [`#2882`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2882)
+* **celery**: watcher task [`#2929`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2929)
+* **celery**: implement maintenance container [`#2878`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2878)
+* **tasks**: change task status type [`#2879`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2879)
+
+### Miscellaneous
+* **matrix**: fix unit test and revert lock around polars [`#2934`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2934)
+* **logs**: fixing some usage of stopwatch, adding logs to download api [`#2930`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2930)
+* **ci**: update copyright year 2026 [`#2927`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2927)
+* **installer,desktop**: remove dead code [`#2920`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2920)
+* **variable-views**: stronger typing upfront [`#2915`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2915)
+* **ci**: use uv to install dependencies [`#2917`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2917)
+* **mypy**: fix typing after pandas-stub update [`#2916`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2916)
+* **pydantic**: remove pydantic deprecated class-based config [`#2905`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2905)
+* **tests**: fix random test failures where study is not yet scanned [`#2907`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2907)
+* **test**: remove pytest related warnings [`#2906`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2906)
+* **archives**: remove caching of zip file lists [`#2904`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2904)
+* **deps**: bump fastapi [`#2801`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2801)
+* **output**: change some logic inside the /variables-views endpoints [`#2893`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2893)
+* **desktop**: bump pyinstaller to avoid numpy v2 issue [`#2895`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2895)
+* **db**: initialize DB only once for all integration tests [`#2891`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2891)
+* **app**: bump some backend dependencies [`#2889`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2889)
+
 v2.27.1 (2026-01-21)
 --------------------
 

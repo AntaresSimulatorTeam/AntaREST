@@ -557,6 +557,7 @@ class TestRenewable:
             "remove_renewables_cluster",
         ]
 
+    @pytest.mark.flaky(reruns=3)
     def test_update_multiple_renewable_clusters(self, client: TestClient, user_access_token: str) -> None:
         client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 

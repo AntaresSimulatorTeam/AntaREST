@@ -117,7 +117,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=storage_service_mock,
-            output_service=Mock(),
+            output_service=OutputService(storage_service_mock, Mock(), Mock(), Mock(), Mock(), Mock(), event_bus),
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
@@ -178,7 +178,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=study_service,
-            output_service=Mock(),
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
@@ -218,7 +218,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=study_service,
-            output_service=Mock(),
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
@@ -306,7 +306,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=study_service,
-            output_service=Mock(),
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
@@ -577,7 +577,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
-            output_service=Mock(),
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
@@ -611,7 +611,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
-            output_service=Mock(),
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
@@ -650,7 +650,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
-            output_service=Mock(),
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
@@ -829,7 +829,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Mock(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
-            output_service=Mock(),
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
@@ -986,7 +986,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=config,
             study_service=study_service,
-            output_service=Mock(),
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
             login_service=Mock(),
             job_result_repository=job_repository,
             solver_presets_repository=Mock(),
@@ -1090,7 +1090,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=storage_service_mock,
-            output_service=Mock(),
+            output_service=OutputService(storage_service_mock, Mock(), Mock(), Mock(), Mock(), Mock(), event_bus),
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=solver_presets_repository,

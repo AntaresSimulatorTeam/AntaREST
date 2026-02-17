@@ -14,17 +14,21 @@ from dataclasses import dataclass
 from pathlib import PurePosixPath
 from typing import Dict, Iterator, List, Optional, Sequence
 
+import numpy as np
 import polars as pl
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, LinkNotFound, ReferencedObjectDeletionNotAllowed
-from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.core.utils.polars import create_polars_dataframe
+from antarest.core.utils.utils import remove_first_match
+from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint, ClusterTerm, LinkTerm
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
+from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters, HydroPmax
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
@@ -130,6 +134,10 @@ class InMemoryStudyDao(StudyDao):
         self._hydro_inflow_pattern: dict[str, str] = {}
         self._hydro_water_values: dict[str, str] = {}
         self._hydro_mingen: dict[str, str] = {}
+        self._hydro_max_hourly_gen_power: dict[str, str] = {}
+        self._hydro_max_hourly_pump_power: dict[str, str] = {}
+        self._hydro_max_daily_gen_energy: dict[str, str] = {}
+        self._hydro_max_daily_pump_energy: dict[str, str] = {}
         # Renewables
         self._renewables: Dict[ClusterKey, RenewableCluster] = {}
         self._renewable_series: Dict[ClusterKey, str] = {}
@@ -160,6 +168,8 @@ class InMemoryStudyDao(StudyDao):
         self._optimization_preferences: OptimizationPreferences = OptimizationPreferences()
         # Advanced parameters config
         self._advanced_parameters: AdvancedParameters = AdvancedParameters()
+        # Compatibility parameters config
+        self._compatibility_parameters: CompatibilityParameters = CompatibilityParameters()
         # Xpansion
         self._xpansion_candidates: dict[str, XpansionCandidate] = {}
         self._xpansion_settings: XpansionSettings = XpansionSettings()
@@ -218,6 +228,10 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_comments(self, comments: str) -> None:
         self._comments = comments
+
+    @override
+    def update_antares_file(self, editor: str, last_save: float) -> None:
+        pass
 
     @override
     def get_version(self) -> StudyVersion:
@@ -347,8 +361,8 @@ class InMemoryStudyDao(StudyDao):
         self._thermal_co2_cost[cluster_key(area_id, thermal_id)] = series_id
 
     @override
-    def delete_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
-        del self._thermals[cluster_key(area_id, thermal.id)]
+    def delete_thermal(self, area_id: str, thermal_id: str) -> None:
+        del self._thermals[cluster_key(area_id, thermal_id)]
 
     @override
     def get_all_hydro_properties(self) -> Dict[str, HydroProperties]:
@@ -379,6 +393,26 @@ class InMemoryStudyDao(StudyDao):
         return HydroCorrelationMatrix.from_hydro_correlations(self._hydro_correlation)
 
     @override
+    def get_hydro_max_hourly_gen_power(self, area_id: str) -> pl.DataFrame:
+        matrix_id = self._hydro_max_hourly_gen_power[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_max_hourly_pump_power(self, area_id: str) -> pl.DataFrame:
+        matrix_id = self._hydro_max_hourly_pump_power[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_max_daily_gen_energy(self, area_id: str) -> pl.DataFrame:
+        matrix_id = self._hydro_max_daily_gen_energy[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_max_daily_pump_energy(self, area_id: str) -> pl.DataFrame:
+        matrix_id = self._hydro_max_daily_pump_energy[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
     def save_hydro_management(self, hydro_management: HydroManagement, area_id: str) -> None:
         self._hydro_properties[area_id].management_options = hydro_management
 
@@ -393,6 +427,56 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_hydro_correlation(self, area_id: str, correlation: HydroCorrelation) -> None:
         self._hydro_correlation[area_id] = correlation
+
+    @override
+    def save_hydro_max_hourly_gen_power(self, area_id: str, series_id: str) -> None:
+        self._hydro_max_hourly_gen_power[area_id] = series_id
+
+    @override
+    def save_hydro_max_hourly_pump_power(self, area_id: str, series_id: str) -> None:
+        self._hydro_max_hourly_pump_power[area_id] = series_id
+
+    @override
+    def save_hydro_max_daily_gen_energy(self, area_id: str, series_id: str) -> None:
+        self._hydro_max_daily_gen_energy[area_id] = series_id
+
+    @override
+    def save_hydro_max_daily_pump_energy(self, area_id: str, series_id: str) -> None:
+        self._hydro_max_daily_pump_energy[area_id] = series_id
+
+    @override
+    def convert_hydro_pmax(
+        self,
+        hydro_pmax: HydroPmax,
+    ) -> None:
+        compatibility_data = self.get_compatibility_parameters()
+        # If hydro-pmax isn't changed, we don't need to do anything
+        if compatibility_data.hydro_pmax == hydro_pmax:
+            return
+
+        areas = self._area_names
+        matrix_service = self._matrix_service
+
+        hourly = create_polars_dataframe(np.zeros((8760, 1)))
+        daily = create_polars_dataframe(np.full((365, 1), 24))
+
+        if hydro_pmax == HydroPmax.HOURLY:
+            # When converting to hourly, create and save the matrices
+            for area_id in areas:
+                self.save_hydro_max_hourly_gen_power(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly))
+                self.save_hydro_max_hourly_pump_power(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly))
+                self.save_hydro_max_daily_gen_energy(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily))
+                self.save_hydro_max_daily_pump_energy(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily))
+        else:
+            # When converting away from hourly, remove the matrices from in-memory storage
+            for area_id in areas:
+                self._hydro_max_hourly_gen_power.pop(area_id, None)
+                self._hydro_max_hourly_pump_power.pop(area_id, None)
+                self._hydro_max_daily_gen_energy.pop(area_id, None)
+                self._hydro_max_daily_pump_energy.pop(area_id, None)
+        # Update compatibility_data object and save it
+        compatibility_data.hydro_pmax = hydro_pmax
+        self.save_compatibility_parameters(compatibility_data)
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
@@ -632,6 +716,14 @@ class InMemoryStudyDao(StudyDao):
         return self._advanced_parameters
 
     @override
+    def get_compatibility_parameters(self) -> CompatibilityParameters:
+        return self._compatibility_parameters
+
+    @override
+    def save_compatibility_parameters(self, parameters: CompatibilityParameters) -> None:
+        self._compatibility_parameters = parameters
+
+    @override
     def save_advanced_parameters(self, parameters: AdvancedParameters) -> None:
         self._advanced_parameters = parameters
 
@@ -801,12 +893,12 @@ class InMemoryStudyDao(StudyDao):
         del self._districts[district_id]
 
     @override
-    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
+    def get_invalid_area_ids(self, areas: list[str]) -> list[str]:
         # TODO make this actually work once we implement area DAO
         return list(set(areas) - set(self._area_names))
 
     @override
-    def tmp_get_all_areas(self) -> list[str]:
+    def get_all_area_ids(self) -> list[str]:
         return self._area_names
 
     @override
@@ -824,8 +916,8 @@ class InMemoryStudyDao(StudyDao):
         return self._layers
 
     @override
-    def delete_layer(self, layer: Layer) -> None:
-        self._layers.remove(layer)
+    def delete_layer(self, layer_id: str) -> None:
+        remove_first_match(self._layers, lambda layer: layer.id == layer_id)
 
     @override
     def layer_exists(self, layer_id: str) -> bool:

@@ -12,17 +12,19 @@
 
 """Tests for Celery app configuration."""
 
+import os
+from contextlib import contextmanager
+from pathlib import Path
+from typing import Iterator
+from unittest import mock
 from unittest.mock import Mock
 
 import pytest
 
-from antarest.maintenance.app import (
-    _configure_from_environment,
-    _init_worker,
-    _mask_url_credentials,
-    _setup_periodic_tasks,
-    celery_app,
-)
+from antarest.core.config import Config
+from antarest.core.exceptions import ConfigurationError
+from antarest.maintenance.app import _mask_url_credentials, _setup_periodic_tasks, celery_app
+from antarest.maintenance.config import get_config, load_config
 
 
 class TestMaskUrlCredentials:
@@ -46,10 +48,17 @@ class TestCeleryAppConfig:
         assert "json" in celery_app.conf.accept_content
 
     def test_task_routing(self):
-        assert celery_app.conf.task_routes["antarest.maintenance.tasks.*"]["queue"] == "maintenance"
+        for task_name in [
+            "watcher_scan",
+            "matrices_cleaner",
+            "blobs_cleaner",
+            "auto_archiver",
+            "variable_view_cleaner",
+        ]:
+            assert celery_app.conf.task_routes[task_name]["queue"] == "maintenance"
 
     def test_timeouts(self):
-        assert celery_app.conf.task_soft_time_limit == 7000
+        assert celery_app.conf.task_soft_time_limit == 6600
         assert celery_app.conf.task_time_limit == 7200
 
     def test_worker_settings(self):
@@ -57,91 +66,46 @@ class TestCeleryAppConfig:
         assert celery_app.conf.task_acks_late is True
 
 
-@pytest.fixture
-def celery_app_config_backup():
-    original_config = getattr(celery_app.conf, "antarest_config", None)
-    original_eager = celery_app.conf.task_always_eager
-    celery_app.conf.task_always_eager = True
+@contextmanager
+def env_var(name: str, value: str) -> Iterator[None]:
+    prev_value = os.environ.get(name)
+    os.environ[name] = value
     yield
-    celery_app.conf.antarest_config = original_config
-    celery_app.conf.task_always_eager = original_eager
+    if prev_value is None:
+        del os.environ[name]
+    else:
+        os.environ[name] = prev_value
 
 
-class TestConfigureFromEnvironment:
-    def test_stores_config(self, celery_app_config_backup, monkeypatch):
-        mock_config = Mock()
-        mock_config.celery = Mock(
-            broker_url="redis://localhost", result_backend="redis://localhost", result_expires=3600
-        )
-        monkeypatch.setattr("antarest.maintenance.app._load_config", lambda: mock_config)
-        monkeypatch.setattr("antarest.maintenance.app.configure_logger", lambda x: None)
+class TestLoadConfig:
+    def test_load_config_without_env_var_raises(self, tmp_path: Path):
+        with pytest.raises(ConfigurationError):
+            load_config()
 
-        _configure_from_environment(sender="test", conf=celery_app.conf)
-        assert celery_app.conf.antarest_config is mock_config
+        with env_var("ANTAREST_CONF", str(tmp_path / "config.yml")):
+            with pytest.raises(ConfigurationError):
+                load_config()
 
-    def test_handles_no_config(self, celery_app_config_backup, monkeypatch):
-        celery_app.conf.antarest_config = None
-        monkeypatch.setattr("antarest.maintenance.app._load_config", lambda: None)
-        _configure_from_environment(sender="test", conf=celery_app.conf)
-        assert celery_app.conf.antarest_config is None
-
-
-class TestInitWorker:
-    def test_no_context_without_config(self, celery_app_config_backup, monkeypatch):
-        mock_ctx_class = Mock()
-        celery_app.conf.antarest_config = None
-        monkeypatch.setattr("antarest.maintenance.app.MaintenanceContext", mock_ctx_class)
-
-        _init_worker(sender=Mock())
-        mock_ctx_class.create.assert_not_called()
-
-    def test_no_context_without_env_var(self, celery_app_config_backup, monkeypatch):
-        mock_ctx_class = Mock()
-        celery_app.conf.antarest_config = Mock()
-        monkeypatch.setattr("antarest.maintenance.app.MaintenanceContext", mock_ctx_class)
-        monkeypatch.delenv("ANTAREST_CONF", raising=False)
-
-        _init_worker(sender=Mock())
-        mock_ctx_class.create.assert_not_called()
-
-    def test_creates_and_attaches_context(self, celery_app_config_backup, monkeypatch):
-        mock_ctx = Mock()
-        mock_ctx_class = Mock(create=Mock(return_value=mock_ctx))
-        mock_sender = Mock()
-        celery_app.conf.antarest_config = Mock()
-
-        monkeypatch.setattr("antarest.maintenance.app.MaintenanceContext", mock_ctx_class)
-        monkeypatch.setenv("ANTAREST_CONF", "/path/to/config.yaml")
-
-        _init_worker(sender=mock_sender)
-        assert mock_sender.conf.maintenance_ctx is mock_ctx
+    def test_load_config_from_file(self, tmp_path: Path):
+        Path(tmp_path / "config.yml").write_text("storage: {matrix_gc_sleeping_time: 5432}")
+        with env_var("ANTAREST_CONF", str(tmp_path / "config.yml")):
+            load_config()
+        assert isinstance(get_config(), Config)
+        assert get_config().storage.matrix_gc_sleeping_time == 5432
 
 
 class TestSetupPeriodicTasks:
-    def test_uses_defaults_without_config(self, celery_app_config_backup):
-        sender = Mock()
-        celery_app.conf.antarest_config = None
-
-        _setup_periodic_tasks(sender=sender)
-
-        assert sender.add_periodic_task.call_count == 5
-        calls = sender.add_periodic_task.call_args_list
-        assert calls[0][0][0] == 3600  # matrix GC default
-        assert calls[1][0][0] == 86400  # blob GC default
-        assert calls[2][0][0] == 3600  # auto-archive default
-        assert calls[3][0][0] == 60  # watcher scan default
-        assert calls[4][0][0] == 3600  # variable view GC default
-
-    def test_uses_config_intervals(self, celery_app_config_backup):
+    def test_uses_config_intervals(self):
         sender = Mock()
         config = Mock()
         config.storage.matrix_gc_sleeping_time = 7200
         config.storage.blob_gc_sleeping_time = 43200
         config.storage.auto_archive_sleeping_time = 1800
+        config.storage.auto_archive_cron = None
         config.storage.watcher_scan_sleeping_time = 120
-        celery_app.conf.antarest_config = config
 
-        _setup_periodic_tasks(sender=sender)
+        with mock.patch("antarest.maintenance.app.get_config", return_value=config):
+            _setup_periodic_tasks(sender=sender)
 
         calls = sender.add_periodic_task.call_args_list
         assert calls[0][0][0] == 7200
@@ -149,11 +113,5 @@ class TestSetupPeriodicTasks:
         assert calls[2][0][0] == 1800
         assert calls[3][0][0] == 120
 
-    def test_task_names(self, celery_app_config_backup):
-        sender = Mock()
-        celery_app.conf.antarest_config = None
-
-        _setup_periodic_tasks(sender=sender)
-
-        names = [c[1]["name"] for c in sender.add_periodic_task.call_args_list]
+        names = [c[1]["name"] for c in calls]
         assert names == ["matrices_cleaner", "blobs_cleaner", "auto_archiver", "watcher_scan", "variable_view_cleaner"]

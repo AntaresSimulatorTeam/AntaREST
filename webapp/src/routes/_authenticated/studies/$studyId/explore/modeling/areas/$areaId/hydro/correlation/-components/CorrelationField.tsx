@@ -1,0 +1,67 @@
+/**
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
+import NumberFE from "@/components/fieldEditors/NumberFE";
+import { validateNumber } from "@/utils/validation/number";
+import { Grid, Typography } from "@mui/material";
+import { useFormContext, type FieldArrayWithId } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import type { CorrelationFormFields } from "../-utils";
+import useArea from "../../../-hooks/useArea";
+
+interface Props {
+  field: FieldArrayWithId<CorrelationFormFields, "correlation">;
+  index: number;
+  label: string;
+}
+
+// TODO merge with AllocationField
+function CorrelationField({ field, index, label }: Props) {
+  const { control } = useFormContext<CorrelationFormFields>();
+  const area = useArea();
+  const { t } = useTranslation();
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
+  return (
+    <>
+      <Grid item xs={4} md={2}>
+        <Typography
+          sx={{
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {label}
+        </Typography>
+      </Grid>
+      <Grid item xs={4} md={2}>
+        <NumberFE
+          key={field.id}
+          label={t("study.modeling.hydro.correlation.coefficient")}
+          name={`correlation.${index}.coefficient` as const}
+          control={control}
+          rules={{ validate: validateNumber({ min: -100, max: 100 }) }}
+          disabled={field.areaId === area.id}
+          margin="dense"
+        />
+      </Grid>
+    </>
+  );
+}
+
+export default CorrelationField;

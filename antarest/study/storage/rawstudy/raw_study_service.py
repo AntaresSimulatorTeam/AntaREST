@@ -26,12 +26,11 @@ from antarest.core.config import Config
 from antarest.core.exceptions import IncorrectArgumentsForCopy, StudyDeletionNotAllowed, StudyImportFailed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
-from antarest.core.serde.ini_reader import read_ini
-from antarest.core.utils.archives import ArchiveFormat, extract_archive
+from antarest.core.utils.archives import ArchiveFormat, extract_archive_from_path, extract_archive_from_stream
 from antarest.core.utils.utils import current_time
 from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper, extract_matrix_id
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_9_2, RawStudy, Study
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
@@ -39,7 +38,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, 
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.utils import (
-    create_new_empty_study,
     fix_study_root,
     is_managed,
     remove_from_cache,
@@ -91,6 +89,10 @@ class RawStudyService(AbstractStorageService):
         self.study_factory = study_factory
         self._matrix_service = matrix_service
         RawStudyMatrixUsageProvider(StudyMetadataRepository(cache_service=cache), matrix_service=self._matrix_service)
+
+    @property
+    def matrix_service(self) -> ISimpleMatrixService:
+        return self._matrix_service
 
     def update_from_raw_meta(
         self, metadata: RawStudy, fallback_on_default: Optional[bool] = False, study_path: Optional[Path] = None
@@ -210,33 +212,6 @@ class RawStudyService(AbstractStorageService):
         study = self.study_factory.create_from_fs(study_path, is_managed(metadata), metadata.id)
         return FileStudyTreeConfigDTO.from_build_config(study.config)
 
-    def create(self, metadata: RawStudy) -> RawStudy:
-        """
-        Create a new empty study based on the given metadata.
-
-        Args:
-            metadata: An instance containing study information, eg.:
-
-                - id: The study UUID.
-                - name: The name of the study.
-                - version: The version of the study template to be used.
-                - path: The full path of the study directory in the "default" workspace.
-                - author: The author's name (if provided) or "Unknown" if missing.
-
-        Returns:
-            An updated `RawStudy` instance with the path to the newly created study.
-        """
-        path_study = Path(metadata.path)
-
-        create_new_empty_study(version=StudyVersion.parse(metadata.version), path_study=path_study)
-
-        study = self.study_factory.create_from_fs(path_study, is_managed(metadata), metadata.id)
-        update_antares_info(metadata, study.tree, update_author=True)
-
-        metadata.path = str(path_study)
-
-        return metadata
-
     @override
     def copy(
         self,
@@ -318,6 +293,24 @@ class RawStudyService(AbstractStorageService):
         else:
             raise StudyDeletionNotAllowed(metadata.id)
 
+    def _extract_and_setup(self, study: RawStudy, study_path: Path, source: Path | BinaryIO) -> None:
+        study_path.mkdir()
+        try:
+            if isinstance(source, Path):
+                extract_archive_from_path(source, study_path)
+            else:
+                extract_archive_from_stream(source, study_path, tmp_dir=self.config.storage.tmp_dir)
+            fix_study_root(study_path)
+            self.update_from_raw_meta(study, study_path=study_path)
+        except Exception:
+            shutil.rmtree(study_path)
+            raise
+        try:
+            self.checks_antares_web_compatibility(study)
+        except NotImplementedError as e:
+            raise StudyImportFailed(study.name or "Unknown Study", e.args[0])
+        study.path = str(study_path)
+
     def import_study(self, metadata: RawStudy, stream: BinaryIO) -> RawStudy:
         """
         Import study in the directory of the study.
@@ -333,24 +326,7 @@ class RawStudyService(AbstractStorageService):
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
         study_path = Path(metadata.path)
-        study_path.mkdir()
-
-        try:
-            extract_archive(stream, study_path)
-            fix_study_root(study_path)
-            self.update_from_raw_meta(metadata, study_path=study_path)
-
-        except Exception:
-            shutil.rmtree(study_path)
-            raise
-
-        try:
-            self.checks_antares_web_compatibility(metadata)
-        except NotImplementedError as e:
-            study_name = metadata.name or "Unknown Study"
-            raise StudyImportFailed(study_name, e.args[0])
-
-        metadata.path = str(study_path)
+        self._extract_and_setup(metadata, study_path, stream)
         return metadata
 
     @override
@@ -393,7 +369,8 @@ class RawStudyService(AbstractStorageService):
     # noinspection SpellCheckingInspection
     def unarchive(self, study: RawStudy) -> None:
         """
-        Extract the archive of a study.
+        Extract the archive of a study directly from its archive path,
+        bypassing stream-based extraction for better performance.
 
         Args:
             study: The study to be unarchived.
@@ -401,8 +378,12 @@ class RawStudyService(AbstractStorageService):
         Raises:
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
-        with open(self.find_archive_path(study), mode="rb") as fh:
-            self.import_study(study, fh)
+        archive_path = self.find_archive_path(study)
+        study_path = Path(study.path).resolve()
+        workspace_path = self.config.get_workspace_path(workspace=study.workspace).resolve()
+        if not study_path.is_relative_to(workspace_path):
+            raise ValueError(f"Study path '{study_path}' is not within workspace '{workspace_path}'")
+        self._extract_and_setup(study, study_path, archive_path)
 
     def find_archive_path(self, study: Study) -> Path:
         """
@@ -464,17 +445,8 @@ class RawStudyService(AbstractStorageService):
     def checks_antares_web_compatibility(study: Study) -> None:
         """
         A new compatibility section has been introduced with the Simulator version 9.2
-        For now AntaresWeb doesn't support the field `hydro-pmax` when it's set at `hourly`.
-        If we find this value, we want to raise an Exception
         """
-        if StudyVersion.parse(study.version) >= STUDY_VERSION_9_2:
-            general_data_path = Path(study.path) / "settings" / "generaldata.ini"
-            ini_content = read_ini(general_data_path)
-            # The section is optional and AntaresWeb supports the default Simulator value
-            if "compatibility" in ini_content and "hydro-pmax" in ini_content["compatibility"]:
-                hydro_pmax_value = ini_content["compatibility"]["hydro-pmax"]
-                if hydro_pmax_value == "hourly":
-                    raise NotImplementedError("AntaresWeb doesn't support the value 'hourly' for the flag 'hydro-pmax'")
+        pass
 
     def normalize_study(self, study: Study | FileStudy) -> None:
         """
