@@ -56,7 +56,7 @@ from antarest.matrixstore.model import (
     MatrixReference,
     MatrixReferencesDTO,
 )
-from antarest.matrixstore.parsing import save_matrix
+from antarest.matrixstore.parsing import load_matrix, save_matrix
 from antarest.matrixstore.repository import (
     MatrixContentRepository,
     MatrixDataSetRepository,
@@ -732,4 +732,18 @@ class MatrixService(ISimpleMatrixService):
         return result
 
     def _infer_matrix_version(self, matrix_id: str) -> int:
-        pass
+        matrix_path, matrix_format = self.matrix_content_repository.get_matrix_path_n_format(matrix_id)
+        assert matrix_path is not None
+
+        if matrix_format != InternalMatrixFormat.TSV:
+            # We only need the matrix version for the parsing of legacy `TSV` files.
+            return NEW_MATRIX_VERSION
+
+        df = load_matrix(matrix_format, matrix_path, LEGACY_MATRIX_VERSION)
+        new_hash = compute_hash(df)
+        if new_hash == matrix_id:
+            # Means we read the matrix as we supposed to so the version we tested was right
+            return LEGACY_MATRIX_VERSION
+        else:
+            # Means we did not read the matrix as we were supposed to so we have to return the other version
+            return NEW_MATRIX_VERSION
