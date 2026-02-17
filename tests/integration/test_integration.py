@@ -1629,10 +1629,10 @@ def copy_with_output_test(client: TestClient, study_id: str) -> None:
     # Check they are correctly created
     res = client.get(f"/v1/studies/{study_id}/outputs")
     assert res.status_code == 200
-    assert [(d["name"], d[""]) for d in res.json()] == [
-        "20201002-1023eco-output1",
-        "20210716-1815adq-output2",
-        "20231002-1023eco",
+    assert [(d["name"], d["archived"]) for d in res.json()] == [
+        ("20201002-1023eco-output1", False),
+        ("20210716-1815adq-output2", False),
+        ("20231002-1023eco", True),
     ]
 
     # Copy a study with two outputs
