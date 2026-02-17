@@ -19,6 +19,7 @@ from unittest.mock import Mock
 
 import py7zr
 import pytest
+from _pytest.tmpdir import TempPathFactory
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
@@ -132,7 +133,7 @@ def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path, sta_mi
 
 
 @pytest.fixture(scope="session")
-def exporter_setup(tmp_path_factory, sta_mini_zip_path: Path) -> Path:
+def exporter_setup(tmp_path_factory: TempPathFactory, sta_mini_zip_path: Path) -> Path:
     tmp_path = tmp_path_factory.mktemp("exporter_setup")
     path_studies = tmp_path / "studies"
     path_studies.mkdir(exist_ok=True)

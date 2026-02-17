@@ -14,6 +14,7 @@ from pathlib import Path
 import numpy as np
 import polars as pl
 
+from antarest.core.config import Config
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.study.business.model.area_model import AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
@@ -49,6 +50,7 @@ from antarest.study.business.model.xpansion_model import (
 )
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_7_0
+from antarest.study.output.output_service import OutputService
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -57,7 +59,9 @@ from tests.storage.integration.conftest import UUID
 
 
 @with_admin_user
-def test_nominal_case(storage_service, tmp_path: Path, command_context: CommandContext) -> None:
+def test_nominal_case(
+    storage_service: tuple[StudyService, OutputService, Config], tmp_path: Path, command_context: CommandContext
+) -> None:
     """
     Ensures we can represent a study as a filesystem one.
     """

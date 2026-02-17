@@ -538,6 +538,7 @@ class TestFetchRawData:
         res = client.get(f"/v1/studies/{variant_study_id}/raw?path=user/test.txt")
         assert res.content == variant_content
 
+
 class TestFetchOriginalFile:
     """
     Check the retrieval of a file from Study folder

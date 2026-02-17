@@ -263,7 +263,7 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
     }
 
 
-def test_export_output_variables_view(client: TestClient, user_access_token: str, internal_study_id: str):
+def test_export_output_variables_view(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
     output_id = "20201014-1425eco-goodbye"
     url = f"/v1/studies/{internal_study_id}/output/{output_id}/variables-views"

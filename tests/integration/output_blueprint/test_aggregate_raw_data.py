@@ -18,7 +18,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import pytest
 from httpx import Headers
 from starlette.testclient import TestClient
 

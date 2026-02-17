@@ -104,7 +104,7 @@ class TestCreateLink:
         assert link_data[area2_id]["display-comments"] is True
 
         empty_study.config.version = STUDY_VERSION_8_8
-        create_link_command: ICommand = CreateLink(
+        create_link_command_2_3: ICommand = CreateLink(
             area1=area2_id,
             area2=area3_id,
             parameters={},
@@ -112,7 +112,7 @@ class TestCreateLink:
             series=[[0]],
             study_version=empty_study.config.version,
         )
-        output = create_link_command.apply(
+        output = create_link_command_2_3.apply(
             study_data=empty_study,
         )
         assert output.status
@@ -153,7 +153,7 @@ class TestCreateLink:
             "filter-year-by-year": "hourly",
         }
         legacy_command_version = CommandValidationContext(version=1)  # old format
-        create_link_command: ICommand = CreateLink.model_validate(
+        create_link_command_1_3: ICommand = CreateLink.model_validate(
             {
                 "area1": area3_id,
                 "area2": area1_id,
@@ -164,7 +164,7 @@ class TestCreateLink:
             },
             context=legacy_command_version,
         )
-        output = create_link_command.apply(
+        output = create_link_command_1_3.apply(
             study_data=empty_study,
         )
 

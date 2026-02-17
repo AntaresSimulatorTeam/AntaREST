@@ -20,11 +20,11 @@ import pytest
 from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.maintenance.tasks.auto_archive import ArchiveStudyResult, _archive_study, _get_studies_to_archive
 from antarest.maintenance.tasks.auto_archive_task import auto_archive_task
-from antarest.study.model import RawStudy
+from antarest.study.model import RawStudy, Study
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 
-def _make_study(spec, study_id, days_ago, archived=False):
+def _make_study(spec: Mock, study_id: str, days_ago: int, archived: bool = False) -> Study:
     """Helper to create mock studies."""
     study = Mock(spec=spec)
     study.id = study_id
@@ -36,27 +36,27 @@ def _make_study(spec, study_id, days_ago, archived=False):
 
 
 class TestGetStudiesToArchive:
-    def test_returns_old_raw_studies(self):
+    def test_returns_old_raw_studies(self) -> None:
         svc = Mock()
         svc.repository.get_all.return_value = [_make_study(RawStudy, "s1", 90)]
         assert _get_studies_to_archive(svc, 60) == [("s1", True)]
 
-    def test_returns_old_variant_studies(self):
+    def test_returns_old_variant_studies(self) -> None:
         svc = Mock()
         svc.repository.get_all.return_value = [_make_study(VariantStudy, "v1", 90)]
         assert _get_studies_to_archive(svc, 60) == [("v1", False)]
 
-    def test_excludes_recent_studies(self):
+    def test_excludes_recent_studies(self) -> None:
         svc = Mock()
         svc.repository.get_all.return_value = [_make_study(RawStudy, "s1", 30)]
         assert _get_studies_to_archive(svc, 60) == []
 
-    def test_excludes_already_archived(self):
+    def test_excludes_already_archived(self) -> None:
         svc = Mock()
         svc.repository.get_all.return_value = [_make_study(RawStudy, "s1", 90, archived=True)]
         assert _get_studies_to_archive(svc, 60) == []
 
-    def test_uses_updated_at_when_no_last_access(self):
+    def test_uses_updated_at_when_no_last_access(self) -> None:
         svc = Mock()
         study = _make_study(RawStudy, "s1", 90)
         study.last_access = None
@@ -65,7 +65,7 @@ class TestGetStudiesToArchive:
 
 
 class TestArchiveStudy:
-    def test_archives_raw_study(self):
+    def test_archives_raw_study(self) -> None:
         study_svc, output_svc = Mock(), Mock()
         study_svc.archive.return_value = "task1"
 
@@ -74,14 +74,14 @@ class TestArchiveStudy:
         assert result == ArchiveStudyResult(1)
         study_svc.archive.assert_called_once_with("s1")
 
-    def test_dry_run_does_not_archive(self):
+    def test_dry_run_does_not_archive(self) -> None:
         study_svc, output_svc = Mock(), Mock()
         result = _archive_study("s1", True, study_svc, output_svc, dry_run=True)
 
         assert result == ArchiveStudyResult(1)
         study_svc.archive.assert_not_called()
 
-    def test_archives_variant_outputs(self):
+    def test_archives_variant_outputs(self) -> None:
         study_svc, output_svc = Mock(), Mock()
         output_svc.archive_outputs.return_value = ["t1", "t2"]
 
@@ -90,14 +90,14 @@ class TestArchiveStudy:
         assert result == ArchiveStudyResult(1)
         output_svc.archive_outputs.assert_called_once_with("v1")
 
-    def test_handles_task_already_running(self):
+    def test_handles_task_already_running(self) -> None:
         study_svc, output_svc = Mock(), Mock()
         study_svc.archive.side_effect = TaskAlreadyRunning()
 
         result = _archive_study("s1", True, study_svc, output_svc, dry_run=False)
         assert result == ArchiveStudyResult(0)
 
-    def test_returns_error_on_exception(self):
+    def test_returns_error_on_exception(self) -> None:
         study_svc, output_svc = Mock(), Mock()
         study_svc.archive.side_effect = Exception("fail")
 
@@ -107,6 +107,6 @@ class TestArchiveStudy:
 
 
 class TestAutoArchiveTask:
-    def test_raises_without_context(self, with_no_maintenance_ctx):
+    def test_raises_without_context(self, with_no_maintenance_ctx: None) -> None:
         with pytest.raises(RuntimeError, match="MaintenanceContext not in app.conf"):
             auto_archive_task.run()

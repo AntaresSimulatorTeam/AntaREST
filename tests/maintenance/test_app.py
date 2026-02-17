@@ -28,26 +28,26 @@ from antarest.maintenance.config import get_config, load_config
 
 
 class TestMaskUrlCredentials:
-    def test_masks_password(self):
+    def test_masks_password(self) -> None:
         assert _mask_url_credentials("redis://user:secret@localhost:6379/0") == "redis://user:***@localhost:6379/0"
 
-    def test_preserves_url_without_creds(self):
+    def test_preserves_url_without_creds(self) -> None:
         assert _mask_url_credentials("redis://localhost:6379/0") == "redis://localhost:6379/0"
 
-    def test_masks_special_chars(self):
+    def test_masks_special_chars(self) -> None:
         masked = _mask_url_credentials("redis://admin:p4ss!w0rd#123@host:6379/1")
         assert "p4ss!w0rd#123" not in masked
 
 
 class TestCeleryAppConfig:
-    def test_app_name(self):
+    def test_app_name(self) -> None:
         assert celery_app.main == "antarest-maintenance"
 
-    def test_json_serialization(self):
+    def test_json_serialization(self) -> None:
         assert celery_app.conf.task_serializer == "json"
         assert "json" in celery_app.conf.accept_content
 
-    def test_task_routing(self):
+    def test_task_routing(self) -> None:
         for task_name in [
             "watcher_scan",
             "matrices_cleaner",
@@ -57,11 +57,11 @@ class TestCeleryAppConfig:
         ]:
             assert celery_app.conf.task_routes[task_name]["queue"] == "maintenance"
 
-    def test_timeouts(self):
+    def test_timeouts(self) -> None:
         assert celery_app.conf.task_soft_time_limit == 6600
         assert celery_app.conf.task_time_limit == 7200
 
-    def test_worker_settings(self):
+    def test_worker_settings(self) -> None:
         assert celery_app.conf.worker_prefetch_multiplier == 1
         assert celery_app.conf.task_acks_late is True
 
@@ -78,7 +78,7 @@ def env_var(name: str, value: str) -> Iterator[None]:
 
 
 class TestLoadConfig:
-    def test_load_config_without_env_var_raises(self, tmp_path: Path):
+    def test_load_config_without_env_var_raises(self, tmp_path: Path) -> None:
         with pytest.raises(ConfigurationError):
             load_config()
 
@@ -86,7 +86,7 @@ class TestLoadConfig:
             with pytest.raises(ConfigurationError):
                 load_config()
 
-    def test_load_config_from_file(self, tmp_path: Path):
+    def test_load_config_from_file(self, tmp_path: Path) -> None:
         Path(tmp_path / "config.yml").write_text("storage: {matrix_gc_sleeping_time: 5432}")
         with env_var("ANTAREST_CONF", str(tmp_path / "config.yml")):
             load_config()
@@ -95,7 +95,7 @@ class TestLoadConfig:
 
 
 class TestSetupPeriodicTasks:
-    def test_uses_config_intervals(self):
+    def test_uses_config_intervals(self) -> None:
         sender = Mock()
         config = Mock()
         config.storage.matrix_gc_sleeping_time = 7200

@@ -124,7 +124,7 @@ class TestLdapService:
                 assert user is None
 
                 # A known user can log in
-                user: t.Optional[UserLdap] = ldap_service.login(name="ext_id", password="pwd")
+                user = ldap_service.login(name="ext_id", password="pwd")
                 assert user
                 assert user.name == "John Smith"
                 assert user.external_id == "ext_id"

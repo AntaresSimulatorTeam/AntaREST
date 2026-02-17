@@ -24,7 +24,7 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
 
 class CheckSubNode(INode[int, int, int]):
     def build(self, config: FileStudyTreeConfig) -> "TREE":
-        pass
+        return {}
 
     def __init__(self, config: FileStudyTreeConfig, value: int):
         super().__init__(config)
