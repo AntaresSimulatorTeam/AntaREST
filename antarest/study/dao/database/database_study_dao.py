@@ -17,8 +17,7 @@ This DAO provides database-backed storage for studies when storage_mode=DATABASE
 Uses multiple inheritance to combine specialized DAOs (like FileStudyTreeDao).
 """
 
-from pathlib import PurePosixPath
-from typing import Iterator, Optional, Self, Sequence
+from typing import Optional, Self, Sequence
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -35,7 +34,6 @@ from antarest.study.business.model.sts_model import (
     STStorageAdditionalConstraintsMap,
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
-from antarest.study.business.model.user_model import UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionCandidate,
@@ -53,6 +51,7 @@ from antarest.study.dao.database.database_link_dao import DatabaseLinkDao
 from antarest.study.dao.database.database_renewable_dao import DatabaseRenewableDao
 from antarest.study.dao.database.database_study_settings_dao import DatabaseStudySettingsDao
 from antarest.study.dao.database.database_thermal_dao import DatabaseThermalDao
+from antarest.study.dao.database.database_user_resources import DatabaseUserResourcesDao
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -68,6 +67,7 @@ class DatabaseStudyDao(
     DatabaseThermalDao,
     DatabaseStudySettingsDao,
     DatabaseRenewableDao,
+    DatabaseUserResourcesDao,
 ):
     """
     Database implementation of StudyDao.
@@ -90,6 +90,7 @@ class DatabaseStudyDao(
         DatabaseThermalDao.__init__(self, study_id, db_session)
         DatabaseStudySettingsDao.__init__(self, study_id, db_session)
         DatabaseRenewableDao.__init__(self, study_id, db_session)
+        DatabaseUserResourcesDao.__init__(self, study_id, db_session)
         self._matrix_service = matrix_service
 
     # Implementation of abstract methods required by StudyDao
@@ -409,14 +410,6 @@ class DatabaseStudyDao(
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
-    def save_user_resource(self, resource_data: UserResourceDataCreation) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def delete_user_resource(self, resource_path: PurePosixPath) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
     def save_scenario_builder(self, rulesets: Rulesets) -> None:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
@@ -430,9 +423,4 @@ class DatabaseStudyDao(
 
     @override
     def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    # User resources
-    @override
-    def get_all_user_resources(self) -> Iterator[UserResourceDataCreation]:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
