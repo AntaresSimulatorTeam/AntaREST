@@ -26,7 +26,9 @@ from antarest.blobstore.service import BlobService
 from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig, StorageConfig, WorkspaceConfig
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
+from antarest.core.interfaces.eventbus import DummyEventBusService
 from antarest.matrixstore.service import MatrixService
+from antarest.service_creator import build_output_service
 from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -64,16 +66,30 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> 
 
     build_ctxt = create_app_ctxt(FastAPI(title=__name__))
     ftm = SimpleFileTransferManager(Config(storage=StorageConfig(tmp_dir=tmp_dir)))
-    build_study_service(
+    task_service = SimpleSyncTaskService()
+    matrix_service = Mock(spec=MatrixService)
+    blob_service = Mock(spec=BlobService)
+    study_service = build_study_service(
         build_ctxt,
         cache=Mock(),
         user_service=Mock(),
-        task_service=SimpleSyncTaskService(),
+        task_service=task_service,
         file_transfer_manager=ftm,
-        matrix_service=Mock(spec=MatrixService),
-        blob_service=Mock(spec=BlobService),
+        matrix_service=matrix_service,
+        blob_service=blob_service,
         generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
         metadata_repository=repo,
+        config=config,
+    )
+
+    build_output_service(
+        build_ctxt,
+        study_service=study_service,
+        cache=Mock(),
+        task_service=task_service,
+        matrix_service=matrix_service,
+        event_bus=DummyEventBusService(),
+        filetransfer_service=ftm,
         config=config,
     )
 

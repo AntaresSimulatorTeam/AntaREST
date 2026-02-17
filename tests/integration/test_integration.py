@@ -1624,7 +1624,6 @@ def copy_with_output_test(client: TestClient, study_id: str) -> None:
     # Archive one of the outputs
     archive = client.post(f"/v1/studies/{study_id}/outputs/20231002-1023eco/_archive")
     assert archive.status_code == 200
-    metadata = client.get(f"/v1/studies/{study_id}/outputs/20231002-1023eco").json()
 
     # Check they are correctly created
     res = client.get(f"/v1/studies/{study_id}/outputs")

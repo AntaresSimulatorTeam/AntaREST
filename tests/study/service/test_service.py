@@ -55,10 +55,12 @@ from antarest.study.model import (
     StudyFolder,
     StudyMetadataDTO,
 )
+from antarest.study.output.output_storage import BasicOutputMetadata
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
-from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask
+from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, IOutputsAccess, StudyService, StudyUpgraderTask
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
+    Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -127,7 +129,7 @@ def build_study_service(
     task_service: ITaskService = Mock(spec=ITaskService),
     event_bus: IEventBus = Mock(spec=IEventBus),
 ) -> StudyService:
-    return StudyService(
+    service = StudyService(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
         directory_service=directory_service,
@@ -141,6 +143,28 @@ def build_study_service(
         cache_service=cache_service,
         config=config,
     )
+
+    class OutputsAccessMock(IOutputsAccess):
+        def list_outputs(self, study_id: str) -> list[BasicOutputMetadata]:
+            return []
+
+        def get_outputs_synthesis(self, study_id: str) -> dict[str, Simulation]:
+            return {}
+
+        def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:
+            pass
+
+        def delete_output(self, study_id: str, output_id: str) -> None:
+            pass
+
+        def archive_output(self, study_id: str, output_id: str) -> None:
+            pass
+
+        def write_output_to_dir(self, study_id: str, output_id: str, parent_dir: Path) -> None:
+            pass
+
+    service.register_output_access(OutputsAccessMock())
+    return service
 
 
 def study_to_dto(study: Study, folder_path: t.Optional[str] = None) -> StudyMetadataDTO:

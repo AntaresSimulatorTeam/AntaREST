@@ -88,14 +88,15 @@ def file_output_storage(
     studies_dir.mkdir()
 
     with zipfile.ZipFile(sta_mini_zip_path, "r") as zf:
-        outputs_filter = [
-            n
-            for n in zf.namelist()
-            if n.startswith(
-                "STA-mini/output/20201014-1427eco" or n.startswith("STA-mini/output/20201014-1422eco-hello")
-            )
-        ]
-        zf.extractall(studies_dir, members=outputs_filter)
+        # outputs_filter = [
+        #     n
+        #     for n in zf.namelist()
+        #     if n.startswith(
+        #         "STA-mini/output/20201014-1427eco" or n.startswith("STA-mini/output/20201014-1422eco-hello")
+        #     )
+        # ]
+        # zf.extractall(studies_dir, members=outputs_filter)
+        zf.extractall(studies_dir)
 
     outputs_provider = SimpleFileOutputsProvider(studies_dir, matrix_service)
 

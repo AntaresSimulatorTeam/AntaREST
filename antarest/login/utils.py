@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import contextlib
+from contextlib import contextmanager
 from contextvars import ContextVar
 from re import escape
 from typing import Iterator, Optional
@@ -42,7 +42,7 @@ def get_user_impersonator() -> int:
     return user.impersonator
 
 
-@contextlib.contextmanager
+@contextmanager
 def current_user_context(token: Optional[JWTUser]) -> Iterator[JWTUser | None]:
     reset_token = _current_user.set(token)
     try:
