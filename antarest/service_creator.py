@@ -49,6 +49,7 @@ from antarest.login.service import LoginService
 from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
+from antarest.study.dao.database.database_blob_usage_provider import DatabaseBlobUsageProvider
 from antarest.study.main import build_study_service
 from antarest.study.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
 from antarest.study.output.file_output_storage import FileOutputStorage
@@ -228,6 +229,7 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         service=None,
     )
     blob_service = build_blob_service(config=config, service=None)
+    blob_service.register_usage_provider(DatabaseBlobUsageProvider())
     study_service = build_study_service(
         app_ctxt,
         config,
