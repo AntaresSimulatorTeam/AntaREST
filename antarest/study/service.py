@@ -430,15 +430,14 @@ class RawStudyInterface(StudyInterface):
         study = self._study
         file_study: Optional[FileStudy] = None
 
+        command_context = self._variant_study_service.command_factory.command_context
         # Build DAO based on storage mode
         if study.storage_mode == StorageMode.DATABASE:
-            command_context = self._variant_study_service.command_factory.command_context
             dao: StudyDao = DatabaseStudyDao(
                 study.id, db.session, self._matrix_service, command_context.generator_matrix_constants
             )
         else:
             file_study = self.get_files()
-            command_context = self._variant_study_service.command_factory.command_context
             dao = FileStudyTreeDao(
                 file_study,
                 command_context.generator_matrix_constants,

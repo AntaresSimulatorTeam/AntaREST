@@ -605,19 +605,15 @@ class DatabaseHydroDao(HydroDao):
         if compatibility_data.hydro_pmax == hydro_pmax:
             return
 
-        next_compatibility_data = update_compatibility_parameters(
-            compatibility_data, CompatibilityParametersUpdate(hydro_pmax=hydro_pmax)
-        )
-
         area_ids = self.get_impl().get_all_area_ids()
 
-        generator = self.get_impl()._generator_matrix_constants
-        hourly_matrix_id = generator.get_null_matrix()
-        daily_matrix_id = MATRIX_PROTOCOL_PREFIX + generator.matrix_service.create(
-            create_polars_dataframe(np.full((365, 1), 24))
-        )
-
         if hydro_pmax == HydroPmax.HOURLY:
+            generator = self.get_impl()._generator_matrix_constants
+            hourly_matrix_id = generator.get_null_matrix()
+            daily_matrix_id = MATRIX_PROTOCOL_PREFIX + generator.matrix_service.create(
+                create_polars_dataframe(np.full((365, 1), 24))
+            )
+
             for area_id in area_ids:
                 self.save_hydro_max_hourly_gen_power(area_id, hourly_matrix_id)
                 self.save_hydro_max_hourly_pump_power(area_id, hourly_matrix_id)
@@ -626,14 +622,16 @@ class DatabaseHydroDao(HydroDao):
         else:
             study_id = self.get_study_id()
             session = self.get_session()
-            for area_id in area_ids:
-                for table in [
-                    HYDRO_MAX_HOURLY_GEN_POWER_TABLE,
-                    HYDRO_MAX_HOURLY_PUMP_POWER_TABLE,
-                    HYDRO_MAX_DAILY_GEN_ENERGY_TABLE,
-                    HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE,
-                ]:
-                    session.execute(delete(table).where((table.c.study_id == study_id) & (table.c.area_id == area_id)))
+            for table in [
+                HYDRO_MAX_HOURLY_GEN_POWER_TABLE,
+                HYDRO_MAX_HOURLY_PUMP_POWER_TABLE,
+                HYDRO_MAX_DAILY_GEN_ENERGY_TABLE,
+                HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE,
+            ]:
+                session.execute(delete(table).where((table.c.study_id == study_id)))
             session.commit()
 
+        next_compatibility_data = update_compatibility_parameters(
+            compatibility_data, CompatibilityParametersUpdate(hydro_pmax=hydro_pmax)
+        )
         self.get_impl().save_compatibility_parameters(next_compatibility_data)
