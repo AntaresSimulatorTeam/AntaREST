@@ -55,6 +55,7 @@ from antarest.study.dao.database.database_study_settings_dao import DatabaseStud
 from antarest.study.dao.database.database_thermal_dao import DatabaseThermalDao
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
 class DatabaseStudyDao(
@@ -73,13 +74,21 @@ class DatabaseStudyDao(
     Database implementation of StudyDao.
     """
 
-    def __init__(self, study_id: str, db_session: Session, matrix_service: ISimpleMatrixService) -> None:
+    def __init__(
+        self,
+        study_id: str,
+        db_session: Session,
+        matrix_service: ISimpleMatrixService,
+        generator_matrix_constants: GeneratorMatrixConstants,
+    ) -> None:
         """
         Initialize DatabaseStudyDao.
 
         Args:
             study_id: The study ID for database queries
             db_session: SQLAlchemy session for database operations
+            matrix_service: Matrix storage service
+            generator_matrix_constants: Predefined matrix constants generator
         """
         DatabaseAreaDao.__init__(self, study_id, db_session)
         DatabaseAreaPropertiesDao.__init__(self, study_id, db_session)
@@ -91,6 +100,7 @@ class DatabaseStudyDao(
         DatabaseStudySettingsDao.__init__(self, study_id, db_session)
         DatabaseRenewableDao.__init__(self, study_id, db_session)
         self._matrix_service = matrix_service
+        self._generator_matrix_constants = generator_matrix_constants
 
     # Implementation of abstract methods required by StudyDao
     @override

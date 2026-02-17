@@ -22,13 +22,19 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import polars as pl
-from sqlalchemy import Row, delete, insert, select
+from sqlalchemy import Row, Table, delete, insert, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound
-from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
+from antarest.core.utils.polars import create_polars_dataframe
+from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX
+from antarest.study.business.model.config.compatibility_parameters_model import (
+    CompatibilityParametersUpdate,
+    HydroPmax,
+    update_compatibility_parameters,
+)
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_correlation_model import (
     HydroCorrelation,
@@ -41,8 +47,21 @@ from antarest.study.dao.database.models.area import AREA_TABLE
 from antarest.study.dao.database.models.hydro import (
     HYDRO_ALLOCATION_TABLE,
     HYDRO_CORRELATION_TABLE,
+    HYDRO_CREDIT_MODULATIONS_TABLE,
+    HYDRO_ENERGY_TABLE,
+    HYDRO_INFLOW_PATTERN_TABLE,
     HYDRO_INFLOW_STRUCTURE_TABLE,
     HYDRO_MANAGEMENT_TABLE,
+    HYDRO_MAX_DAILY_GEN_ENERGY_TABLE,
+    HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE,
+    HYDRO_MAX_HOURLY_GEN_POWER_TABLE,
+    HYDRO_MAX_HOURLY_PUMP_POWER_TABLE,
+    HYDRO_MAXPOWER_TABLE,
+    HYDRO_MINGEN_TABLE,
+    HYDRO_MODULATION_TABLE,
+    HYDRO_RESERVOIR_TABLE,
+    HYDRO_RUN_OF_RIVER_TABLE,
+    HYDRO_WATER_VALUES_TABLE,
 )
 from antarest.study.dao.database.sql_utils import upsert_one
 
@@ -50,9 +69,6 @@ _MANAGEMENT_COLS = [c for c in HYDRO_MANAGEMENT_TABLE.c if c.name not in ("study
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-
-
-_NOT_IMPLEMENTED_ERROR = "This method is not implemented in the DatabaseHydroDao class."
 
 
 class DatabaseHydroDao(HydroDao):
@@ -456,112 +472,168 @@ class DatabaseHydroDao(HydroDao):
             invalid = self.get_impl().get_invalid_area_ids(all_area_ids)
             raise AreaNotFound(*invalid) from e
 
-    # ==================== Matrix Methods (NotImplementedError) ====================
+    # ==================== Matrix Methods ====================
+
+    def _get_hydro_matrix(self, area_id: str, table: Table) -> pl.DataFrame:
+        study_id = self.get_study_id()
+        session = self.get_session()
+        stmt = select(table).where((table.c.study_id == study_id) & (table.c.area_id == area_id))
+        row = session.execute(stmt).fetchone()
+        if not row:
+            validate_area_exists(session, study_id, area_id)
+            raise ValueError(f"Hydro matrix not found for area '{area_id}' in table '{table.name}'")
+        return self.get_impl().get_matrix(row.matrix_id)
+
+    def _save_hydro_matrix(self, area_id: str, table: Table, matrix_id: str) -> None:
+        session = self.get_session()
+        study_id = self.get_study_id()
+        values = {"study_id": study_id, "area_id": area_id, "matrix_id": matrix_id}
+        try:
+            upsert_one(session, table, values)
+            session.commit()
+        except IntegrityError as e:
+            session.rollback()
+            raise AreaNotFound(area_id) from e
 
     @override
-    def get_hydro_maxpower(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def get_hydro_maxpower(self, area_id: str) -> pl.DataFrame:
+        return self._get_hydro_matrix(area_id, HYDRO_MAXPOWER_TABLE)
 
     @override
-    def get_hydro_reservoir(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def get_hydro_reservoir(self, area_id: str) -> pl.DataFrame:
+        return self._get_hydro_matrix(area_id, HYDRO_RESERVOIR_TABLE)
 
     @override
-    def get_hydro_energy(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def get_hydro_energy(self, area_id: str) -> pl.DataFrame:
+        return self._get_hydro_matrix(area_id, HYDRO_ENERGY_TABLE)
 
     @override
-    def get_hydro_run_of_river(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def get_hydro_run_of_river(self, area_id: str) -> pl.DataFrame:
+        return self._get_hydro_matrix(area_id, HYDRO_RUN_OF_RIVER_TABLE)
 
     @override
-    def get_hydro_modulation(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def get_hydro_modulation(self, area_id: str) -> pl.DataFrame:
+        return self._get_hydro_matrix(area_id, HYDRO_MODULATION_TABLE)
 
     @override
-    def get_hydro_credit_modulations(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def get_hydro_credit_modulations(self, area_id: str) -> pl.DataFrame:
+        return self._get_hydro_matrix(area_id, HYDRO_CREDIT_MODULATIONS_TABLE)
 
     @override
-    def get_hydro_inflow_pattern(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def get_hydro_inflow_pattern(self, area_id: str) -> pl.DataFrame:
+        return self._get_hydro_matrix(area_id, HYDRO_INFLOW_PATTERN_TABLE)
 
     @override
-    def get_hydro_water_values(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def get_hydro_water_values(self, area_id: str) -> pl.DataFrame:
+        return self._get_hydro_matrix(area_id, HYDRO_WATER_VALUES_TABLE)
 
     @override
-    def get_hydro_mingen(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def get_hydro_mingen(self, area_id: str) -> pl.DataFrame:
+        return self._get_hydro_matrix(area_id, HYDRO_MINGEN_TABLE)
 
     @override
-    def get_hydro_max_hourly_gen_power(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def get_hydro_max_hourly_gen_power(self, area_id: str) -> pl.DataFrame:
+        return self._get_hydro_matrix(area_id, HYDRO_MAX_HOURLY_GEN_POWER_TABLE)
 
     @override
-    def get_hydro_max_hourly_pump_power(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def get_hydro_max_hourly_pump_power(self, area_id: str) -> pl.DataFrame:
+        return self._get_hydro_matrix(area_id, HYDRO_MAX_HOURLY_PUMP_POWER_TABLE)
 
     @override
-    def get_hydro_max_daily_gen_energy(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def get_hydro_max_daily_gen_energy(self, area_id: str) -> pl.DataFrame:
+        return self._get_hydro_matrix(area_id, HYDRO_MAX_DAILY_GEN_ENERGY_TABLE)
 
     @override
-    def get_hydro_max_daily_pump_energy(self, _area_id: str) -> pl.DataFrame:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def get_hydro_max_daily_pump_energy(self, area_id: str) -> pl.DataFrame:
+        return self._get_hydro_matrix(area_id, HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE)
 
     @override
-    def save_hydro_maxpower(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def save_hydro_maxpower(self, area_id: str, series_id: str) -> None:
+        self._save_hydro_matrix(area_id, HYDRO_MAXPOWER_TABLE, series_id)
 
     @override
-    def save_hydro_reservoir(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def save_hydro_reservoir(self, area_id: str, series_id: str) -> None:
+        self._save_hydro_matrix(area_id, HYDRO_RESERVOIR_TABLE, series_id)
 
     @override
-    def save_hydro_energy(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def save_hydro_energy(self, area_id: str, series_id: str) -> None:
+        self._save_hydro_matrix(area_id, HYDRO_ENERGY_TABLE, series_id)
 
     @override
-    def save_hydro_run_of_river(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def save_hydro_run_of_river(self, area_id: str, series_id: str) -> None:
+        self._save_hydro_matrix(area_id, HYDRO_RUN_OF_RIVER_TABLE, series_id)
 
     @override
-    def save_hydro_modulation(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def save_hydro_modulation(self, area_id: str, series_id: str) -> None:
+        self._save_hydro_matrix(area_id, HYDRO_MODULATION_TABLE, series_id)
 
     @override
-    def save_hydro_credit_modulations(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def save_hydro_credit_modulations(self, area_id: str, series_id: str) -> None:
+        self._save_hydro_matrix(area_id, HYDRO_CREDIT_MODULATIONS_TABLE, series_id)
 
     @override
-    def save_hydro_inflow_pattern(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def save_hydro_inflow_pattern(self, area_id: str, series_id: str) -> None:
+        self._save_hydro_matrix(area_id, HYDRO_INFLOW_PATTERN_TABLE, series_id)
 
     @override
-    def save_hydro_water_values(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def save_hydro_water_values(self, area_id: str, series_id: str) -> None:
+        self._save_hydro_matrix(area_id, HYDRO_WATER_VALUES_TABLE, series_id)
 
     @override
-    def save_hydro_mingen(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def save_hydro_mingen(self, area_id: str, series_id: str) -> None:
+        self._save_hydro_matrix(area_id, HYDRO_MINGEN_TABLE, series_id)
 
     @override
-    def save_hydro_max_hourly_gen_power(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def save_hydro_max_hourly_gen_power(self, area_id: str, series_id: str) -> None:
+        self._save_hydro_matrix(area_id, HYDRO_MAX_HOURLY_GEN_POWER_TABLE, series_id)
 
     @override
-    def save_hydro_max_hourly_pump_power(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def save_hydro_max_hourly_pump_power(self, area_id: str, series_id: str) -> None:
+        self._save_hydro_matrix(area_id, HYDRO_MAX_HOURLY_PUMP_POWER_TABLE, series_id)
 
     @override
-    def save_hydro_max_daily_gen_energy(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def save_hydro_max_daily_gen_energy(self, area_id: str, series_id: str) -> None:
+        self._save_hydro_matrix(area_id, HYDRO_MAX_DAILY_GEN_ENERGY_TABLE, series_id)
 
     @override
-    def save_hydro_max_daily_pump_energy(self, _area_id: str, _series_id: str) -> None:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def save_hydro_max_daily_pump_energy(self, area_id: str, series_id: str) -> None:
+        self._save_hydro_matrix(area_id, HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE, series_id)
 
     @override
-    def convert_hydro_pmax(self, _hydro_pmax: HydroPmax) -> None:
-        raise NotImplementedError(_NOT_IMPLEMENTED_ERROR)
+    def convert_hydro_pmax(self, hydro_pmax: HydroPmax) -> None:
+        compatibility_data = self.get_impl().get_compatibility_parameters()
+        if compatibility_data.hydro_pmax == hydro_pmax:
+            return
+
+        next_compatibility_data = update_compatibility_parameters(
+            compatibility_data, CompatibilityParametersUpdate(hydro_pmax=hydro_pmax)
+        )
+
+        area_ids = self.get_impl().get_all_area_ids()
+
+        generator = self.get_impl()._generator_matrix_constants
+        hourly_matrix_id = generator.get_null_matrix()
+        daily_matrix_id = MATRIX_PROTOCOL_PREFIX + generator.matrix_service.create(
+            create_polars_dataframe(np.full((365, 1), 24))
+        )
+
+        if hydro_pmax == HydroPmax.HOURLY:
+            for area_id in area_ids:
+                self.save_hydro_max_hourly_gen_power(area_id, hourly_matrix_id)
+                self.save_hydro_max_hourly_pump_power(area_id, hourly_matrix_id)
+                self.save_hydro_max_daily_gen_energy(area_id, daily_matrix_id)
+                self.save_hydro_max_daily_pump_energy(area_id, daily_matrix_id)
+        else:
+            study_id = self.get_study_id()
+            session = self.get_session()
+            for area_id in area_ids:
+                for table in [
+                    HYDRO_MAX_HOURLY_GEN_POWER_TABLE,
+                    HYDRO_MAX_HOURLY_PUMP_POWER_TABLE,
+                    HYDRO_MAX_DAILY_GEN_ENERGY_TABLE,
+                    HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE,
+                ]:
+                    session.execute(delete(table).where((table.c.study_id == study_id) & (table.c.area_id == area_id)))
+            session.commit()
+
+        self.get_impl().save_compatibility_parameters(next_compatibility_data)

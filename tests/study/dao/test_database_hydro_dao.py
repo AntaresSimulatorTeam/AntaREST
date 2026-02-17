@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import numpy as np
+import polars as pl
 import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -26,8 +27,21 @@ from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.hydro import (
     HYDRO_ALLOCATION_TABLE,
     HYDRO_CORRELATION_TABLE,
+    HYDRO_CREDIT_MODULATIONS_TABLE,
+    HYDRO_ENERGY_TABLE,
+    HYDRO_INFLOW_PATTERN_TABLE,
     HYDRO_INFLOW_STRUCTURE_TABLE,
     HYDRO_MANAGEMENT_TABLE,
+    HYDRO_MAX_DAILY_GEN_ENERGY_TABLE,
+    HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE,
+    HYDRO_MAX_HOURLY_GEN_POWER_TABLE,
+    HYDRO_MAX_HOURLY_PUMP_POWER_TABLE,
+    HYDRO_MAXPOWER_TABLE,
+    HYDRO_MINGEN_TABLE,
+    HYDRO_MODULATION_TABLE,
+    HYDRO_RESERVOIR_TABLE,
+    HYDRO_RUN_OF_RIVER_TABLE,
+    HYDRO_WATER_VALUES_TABLE,
 )
 
 
@@ -517,3 +531,143 @@ class TestCascadeDelete:
             stmt = select(HYDRO_CORRELATION_TABLE).where(HYDRO_CORRELATION_TABLE.c.area_to == "paris")
             rows = db_session.execute(stmt).fetchall()
             assert len(rows) == 0
+
+
+_ALL_HYDRO_MATRIX_TABLES = [
+    HYDRO_MAXPOWER_TABLE,
+    HYDRO_RESERVOIR_TABLE,
+    HYDRO_ENERGY_TABLE,
+    HYDRO_RUN_OF_RIVER_TABLE,
+    HYDRO_MODULATION_TABLE,
+    HYDRO_CREDIT_MODULATIONS_TABLE,
+    HYDRO_INFLOW_PATTERN_TABLE,
+    HYDRO_WATER_VALUES_TABLE,
+    HYDRO_MINGEN_TABLE,
+    HYDRO_MAX_HOURLY_GEN_POWER_TABLE,
+    HYDRO_MAX_HOURLY_PUMP_POWER_TABLE,
+    HYDRO_MAX_DAILY_GEN_ENERGY_TABLE,
+    HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE,
+]
+
+
+class TestHydroMatrices:
+    """Tests for hydro matrix CRUD operations."""
+
+    def test_save_and_get_all_hydro_matrices(self, dao: DatabaseStudyDao) -> None:
+        """Test saving and retrieving all 13 hydro matrix types."""
+        dao.save_area("Paris")
+
+        matrix_service = dao._matrix_service
+        dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
+        series_id = matrix_service.create(dataframe)
+
+        # Save all matrices
+        dao.save_hydro_maxpower("paris", series_id)
+        dao.save_hydro_reservoir("paris", series_id)
+        dao.save_hydro_energy("paris", series_id)
+        dao.save_hydro_run_of_river("paris", series_id)
+        dao.save_hydro_modulation("paris", series_id)
+        dao.save_hydro_credit_modulations("paris", series_id)
+        dao.save_hydro_inflow_pattern("paris", series_id)
+        dao.save_hydro_water_values("paris", series_id)
+        dao.save_hydro_mingen("paris", series_id)
+        dao.save_hydro_max_hourly_gen_power("paris", series_id)
+        dao.save_hydro_max_hourly_pump_power("paris", series_id)
+        dao.save_hydro_max_daily_gen_energy("paris", series_id)
+        dao.save_hydro_max_daily_pump_energy("paris", series_id)
+
+        # Retrieve and verify all matrices
+        pl.testing.assert_frame_equal(dao.get_hydro_maxpower("paris"), dataframe, check_dtypes=False)
+        pl.testing.assert_frame_equal(dao.get_hydro_reservoir("paris"), dataframe, check_dtypes=False)
+        pl.testing.assert_frame_equal(dao.get_hydro_energy("paris"), dataframe, check_dtypes=False)
+        pl.testing.assert_frame_equal(dao.get_hydro_run_of_river("paris"), dataframe, check_dtypes=False)
+        pl.testing.assert_frame_equal(dao.get_hydro_modulation("paris"), dataframe, check_dtypes=False)
+        pl.testing.assert_frame_equal(dao.get_hydro_credit_modulations("paris"), dataframe, check_dtypes=False)
+        pl.testing.assert_frame_equal(dao.get_hydro_inflow_pattern("paris"), dataframe, check_dtypes=False)
+        pl.testing.assert_frame_equal(dao.get_hydro_water_values("paris"), dataframe, check_dtypes=False)
+        pl.testing.assert_frame_equal(dao.get_hydro_mingen("paris"), dataframe, check_dtypes=False)
+        pl.testing.assert_frame_equal(dao.get_hydro_max_hourly_gen_power("paris"), dataframe, check_dtypes=False)
+        pl.testing.assert_frame_equal(dao.get_hydro_max_hourly_pump_power("paris"), dataframe, check_dtypes=False)
+        pl.testing.assert_frame_equal(dao.get_hydro_max_daily_gen_energy("paris"), dataframe, check_dtypes=False)
+        pl.testing.assert_frame_equal(dao.get_hydro_max_daily_pump_energy("paris"), dataframe, check_dtypes=False)
+
+        # update
+        dataframe2 = pl.DataFrame(data=[[2, 3, 4], [5, 6, 7.777]], orient="row")
+        series_id2 = matrix_service.create(dataframe2)
+        dao.save_hydro_maxpower("paris", series_id2)
+        pl.testing.assert_frame_equal(dao.get_hydro_maxpower("paris"), dataframe2, check_dtypes=False)
+
+    def test_hydro_matrix_raises(self, dao: DatabaseStudyDao) -> None:
+        """Test that get raises ValueError when area exists but matrix is not saved."""
+        dao.save_area("Paris")
+
+        getters = [
+            dao.get_hydro_maxpower,
+            dao.get_hydro_reservoir,
+            dao.get_hydro_energy,
+            dao.get_hydro_run_of_river,
+            dao.get_hydro_modulation,
+            dao.get_hydro_credit_modulations,
+            dao.get_hydro_inflow_pattern,
+            dao.get_hydro_water_values,
+            dao.get_hydro_mingen,
+            dao.get_hydro_max_hourly_gen_power,
+            dao.get_hydro_max_hourly_pump_power,
+            dao.get_hydro_max_daily_gen_energy,
+            dao.get_hydro_max_daily_pump_energy,
+        ]
+        for getter in getters:
+            # raise because no matrix is saved for area
+            with pytest.raises(ValueError):
+                getter("paris")
+            # raise because area doesn't exist
+            with pytest.raises(AreaNotFound):
+                getter("nonexistent")
+
+        savers = [
+            dao.save_hydro_maxpower,
+            dao.save_hydro_reservoir,
+            dao.save_hydro_energy,
+            dao.save_hydro_run_of_river,
+            dao.save_hydro_modulation,
+            dao.save_hydro_credit_modulations,
+            dao.save_hydro_inflow_pattern,
+            dao.save_hydro_water_values,
+            dao.save_hydro_mingen,
+            dao.save_hydro_max_hourly_gen_power,
+            dao.save_hydro_max_hourly_pump_power,
+            dao.save_hydro_max_daily_gen_energy,
+            dao.save_hydro_max_daily_pump_energy,
+        ]
+        for saver in savers:
+            with pytest.raises(AreaNotFound):
+                saver("nonexistent", "some-matrix-id")
+
+    def test_cascade_delete_hydro_matrices(self, db_session: Session, dao: DatabaseStudyDao) -> None:
+        """Test that all hydro matrices are deleted when the area is deleted."""
+        dao.save_area("Paris")
+
+        matrix_service = dao._matrix_service
+        series_id = matrix_service.create(pl.DataFrame(data=[[1, 2]], orient="row"))
+
+        # Save a matrix in every table
+        dao.save_hydro_maxpower("paris", series_id)
+        dao.save_hydro_reservoir("paris", series_id)
+        dao.save_hydro_energy("paris", series_id)
+        dao.save_hydro_run_of_river("paris", series_id)
+        dao.save_hydro_modulation("paris", series_id)
+        dao.save_hydro_credit_modulations("paris", series_id)
+        dao.save_hydro_inflow_pattern("paris", series_id)
+        dao.save_hydro_water_values("paris", series_id)
+        dao.save_hydro_mingen("paris", series_id)
+        dao.save_hydro_max_hourly_gen_power("paris", series_id)
+        dao.save_hydro_max_hourly_pump_power("paris", series_id)
+        dao.save_hydro_max_daily_gen_energy("paris", series_id)
+        dao.save_hydro_max_daily_pump_energy("paris", series_id)
+
+        dao.delete_area("paris")
+
+        with db_session:
+            for table in _ALL_HYDRO_MATRIX_TABLES:
+                rows = db_session.execute(select(table)).fetchall()
+                assert rows == [], f"Table {table.name} should be empty after cascade delete"

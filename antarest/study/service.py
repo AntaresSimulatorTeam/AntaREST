@@ -416,9 +416,11 @@ class RawStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        if self._study.storage_mode == StorageMode.DATABASE:
-            return DatabaseStudyDao(self._study.id, db.session, self._matrix_service).read_only()
         command_context = self._variant_study_service.command_factory.command_context
+        if self._study.storage_mode == StorageMode.DATABASE:
+            return DatabaseStudyDao(
+                self._study.id, db.session, self._matrix_service, command_context.generator_matrix_constants
+            ).read_only()
         return FileStudyTreeDao(
             self.get_files(), command_context.generator_matrix_constants, command_context.blob_service
         ).read_only()
@@ -430,7 +432,10 @@ class RawStudyInterface(StudyInterface):
 
         # Build DAO based on storage mode
         if study.storage_mode == StorageMode.DATABASE:
-            dao: StudyDao = DatabaseStudyDao(study.id, db.session, self._matrix_service)
+            command_context = self._variant_study_service.command_factory.command_context
+            dao: StudyDao = DatabaseStudyDao(
+                study.id, db.session, self._matrix_service, command_context.generator_matrix_constants
+            )
         else:
             file_study = self.get_files()
             command_context = self._variant_study_service.command_factory.command_context
@@ -579,7 +584,7 @@ class StudyService:
         matrix_service = command_context.matrix_service
         StudyDatabaseMatrixUsageProvider(matrix_service)
         self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
-            StorageMode.DATABASE: DatabaseStudyDaoFactory(matrix_service),
+            StorageMode.DATABASE: DatabaseStudyDaoFactory(matrix_service, command_context.generator_matrix_constants),
             StorageMode.FILESYSTEM: FileStudyDaoFactory(command_context, raw_study_service.study_factory),
         }
 
