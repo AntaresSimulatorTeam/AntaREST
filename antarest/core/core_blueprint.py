@@ -14,9 +14,11 @@
 from fastapi import APIRouter
 
 from antarest.core.config import Config
+from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
 from antarest.core.version_info import VersionInfoDTO, get_commit_id, get_dependencies
+from antarest.login.utils import require_current_user
 from antarest.matrixstore.model import MatrixMismatchDTO
 from antarest.matrixstore.service import ISimpleMatrixService
 
@@ -88,6 +90,10 @@ def create_utils_routes(config: Config, matrix_service: ISimpleMatrixService) ->
         - Deletes lines from `Matrix` table in DB for matrices that do not exist on the filesystem.
         - Insert lines inside `Matrix` table in DB for matrices that exist on the filesystem but not in the DB.
         """
+        user = require_current_user()
+        if not user.is_site_admin():
+            raise UserHasNotPermissionError()
+
         return matrix_service.synchronize_matrix_store(dry_run=dry_run)
 
     return bp
