@@ -353,6 +353,12 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_st_storage_cost_variation_withdrawal(area_id, storage_id)
 
     @override
+    def get_st_storage_additional_constraints_matrix(
+        self, area_id: str, storage_id: str, constraint_id: str
+    ) -> pl.DataFrame:
+        return self._adaptee.get_st_storage_additional_constraints_matrix(area_id, storage_id, constraint_id)
+
+    @override
     def get_all_hydro_properties(self) -> dict[str, HydroProperties]:
         return self._adaptee.get_all_hydro_properties()
 

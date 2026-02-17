@@ -56,7 +56,7 @@ class DatabaseStStorageDao(STStorageDao):
 
     def __init__(self, study_id: str, db_session: Session) -> None:
         """
-        Initialize DatabaseThermalDao with dependencies.
+        Initialize DatabaseStStorageDao with dependencies.
 
         Args:
             study_id: The study ID for database queries.
@@ -202,7 +202,13 @@ class DatabaseStStorageDao(STStorageDao):
         self, area_id: str, storage_id: str, constraint_id: str, series_id: str
     ) -> None:
         try:
-            values = {"study_id": self._study_id, "area_id": area_id, "storage_id": storage_id, "id": constraint_id}
+            values = {
+                "study_id": self._study_id,
+                "area_id": area_id,
+                "st_storage_id": storage_id,
+                "constraint_id": constraint_id,
+                "matrix_id": series_id,
+            }
             upsert_one(self._db_session, ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE, values)
         except IntegrityError as e:
             raise STStorageAdditionalConstraintNotFound(area_id, storage_id) from e
@@ -210,12 +216,29 @@ class DatabaseStStorageDao(STStorageDao):
         self._db_session.commit()
 
     @override
-    def get_st_storage_additional_constraints_matrix(self, area_id: str, storage_id: str, constraint_id: str) -> pl.DataFrame:
-        return self._get_st_storage_additional_constraints_matrix(area_id, storage_id, constraint_id)
+    def get_st_storage_additional_constraints_matrix(
+        self, area_id: str, storage_id: str, constraint_id: str
+    ) -> pl.DataFrame:
+        table = ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE
+        stmt = select(table).where(
+            (table.c.study_id == self._study_id)
+            & (table.c.area_id == area_id)
+            & (table.c.st_storage_id == storage_id)
+            & (table.c.constraint_id == constraint_id)
+        )
+        row = self._db_session.execute(stmt).fetchone()
+        if not row:
+            raise STStorageNotFound(area_id, storage_id)
+        return self.get_impl().get_matrix(row.matrix_id)
 
     def _save_st_storage_matrix(self, area_id: str, storage_id: str, table: Table, matrix_id: str) -> None:
         try:
-            values = {"study_id": self._study_id, "area_id": area_id, "id": storage_id, "matrix_id": matrix_id}
+            values = {
+                "study_id": self._study_id,
+                "area_id": area_id,
+                "st_storage_id": storage_id,
+                "matrix_id": matrix_id,
+            }
             upsert_one(self._db_session, table, values)
         except IntegrityError as e:
             raise STStorageNotFound(area_id, storage_id) from e
@@ -224,22 +247,12 @@ class DatabaseStStorageDao(STStorageDao):
 
     def _get_st_storage_matrix_row(self, area_id: str, storage_id: str, table: Table) -> Row[Any] | None:
         stmt = select(table).where(
-            (table.c.study_id == self._study_id) & (table.c.area_id == area_id) & (table.c.id == storage_id)
+            (table.c.study_id == self._study_id) & (table.c.area_id == area_id) & (table.c.st_storage_id == storage_id)
         )
         return self._db_session.execute(stmt).fetchone()
 
     def _get_st_storage_matrix(self, area_id: str, storage_id: str, table: Table) -> pl.DataFrame:
         row = self._get_st_storage_matrix_row(area_id, storage_id, table)
-        if not row:
-            raise STStorageNotFound(area_id, storage_id)
-        return self.get_impl().get_matrix(row.matrix_id)
-
-    def _get_st_storage_additional_constraints_matrix(self, area_id: str, storage_id: str, constraint_id: str) -> pl.DataFrame:
-        table = ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE
-        stmt = select(table).where(
-            (table.c.study_id == self._study_id) & (table.c.area_id == area_id) & (table.c.id == storage_id) & (table.c.id == constraint_id)
-        )
-        row = self._db_session.execute(stmt).fetchone()
         if not row:
             raise STStorageNotFound(area_id, storage_id)
         return self.get_impl().get_matrix(row.matrix_id)

@@ -23,8 +23,8 @@ matrix_tables = [
     "cost_injection",
     "cost_withdrawal",
     "cost_level",
-    "variation_injection",
-    "variation_withdrawal",
+    "cost_variation_injection",
+    "cost_variation_withdrawal",
 ]
 
 def upgrade():
@@ -36,7 +36,7 @@ def upgrade():
         "st_storage",
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("area_id", sa.String(length=255), nullable=False),
-        sa.Column("id", sa.String(length=255), nullable=False),
+        sa.Column("st_storage_id", sa.String(length=255), nullable=False),
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("group", group_enum, nullable=False),
         sa.Column("injection_nominal_capacity", sa.Float(), nullable=False),
@@ -56,7 +56,7 @@ def upgrade():
                     name="fk_st_storage_area",
                     ondelete="CASCADE",
         ),
-        sa.PrimaryKeyConstraint("study_id", "area_id", "id", name="pk_st_storage")
+        sa.PrimaryKeyConstraint("study_id", "area_id", "st_storage_id", name="pk_st_storage")
     )
 
     for table in matrix_tables:
@@ -68,7 +68,7 @@ def upgrade():
             sa.Column("matrix_id", sa.String(length=64), nullable=False),
             sa.ForeignKeyConstraint(
                 ["study_id", "area_id", "st_storage_id"],
-                ["st_storage.study_id", "st_storage.area_id", "st_storage.id"],
+                ["st_storage.study_id", "st_storage.area_id", "st_storage.st_storage_id"],
                         name=f"fk_{table}_st_storage",
                         ondelete="CASCADE",
             ),
@@ -80,7 +80,7 @@ def upgrade():
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("area_id", sa.String(length=255), nullable=False),
         sa.Column("st_storage_id", sa.String(length=255), nullable=False),
-        sa.Column("id", sa.String(length=255), nullable=False),
+        sa.Column("constraint_id", sa.String(length=255), nullable=False),
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("variable", variable_enum, nullable=False),
         sa.Column("operator", operator_enum, nullable=False),
@@ -88,11 +88,11 @@ def upgrade():
         sa.Column("enabled", sa.Boolean(), nullable=False),
         sa.ForeignKeyConstraint(
             ["study_id", "area_id", "st_storage_id"],
-            ["st_storage.study_id", "st_storage.area_id", "st_storage.id"],
+            ["st_storage.study_id", "st_storage.area_id", "st_storage.st_storage_id"],
                     name="fk_st_storage_additional_constraint",
                     ondelete="CASCADE",
         ),
-        sa.PrimaryKeyConstraint("study_id", "area_id", "st_storage_id", "id", name="pk_st_storage_additional_constraint")
+        sa.PrimaryKeyConstraint("study_id", "area_id", "st_storage_id", "constraint_id", name="pk_st_storage_additional_constraint")
     )
 
     op.create_table(
@@ -100,15 +100,15 @@ def upgrade():
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("area_id", sa.String(length=255), nullable=False),
         sa.Column("st_storage_id", sa.String(length=255), nullable=False),
-        sa.Column("id", sa.String(length=255), nullable=False),
+        sa.Column("constraint_id", sa.String(length=255), nullable=False),
         sa.Column("matrix_id", sa.String(length=64), nullable=False),
         sa.ForeignKeyConstraint(
-            ["study_id", "area_id", "st_storage_id", "id"],
-            ["st_storage_additional_constraint.study_id", "st_storage_additional_constraint.area_id", "st_storage_additional_constraint.st_storage_id", "st_storage_additional_constraint.id"],
+            ["study_id", "area_id", "st_storage_id", "constraint_id"],
+            ["st_storage_additional_constraint.study_id", "st_storage_additional_constraint.area_id", "st_storage_additional_constraint.st_storage_id", "st_storage_additional_constraint.constraint_id"],
             name="fk_st_storage_constraint_matrix_st_storage",
             ondelete="CASCADE",
         ),
-        sa.PrimaryKeyConstraint("study_id", "area_id", "st_storage_id", "id", name="pk_st_storage_constraint_matrix")
+        sa.PrimaryKeyConstraint("study_id", "area_id", "st_storage_id", "constraint_id", name="pk_st_storage_constraint_matrix")
     )
 
 def downgrade():

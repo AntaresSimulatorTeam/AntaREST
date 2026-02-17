@@ -47,7 +47,7 @@ ST_STORAGE_TABLE = Table(
     metadata,
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("area_id", String(255), nullable=False, primary_key=True),
-    Column("id", String(255), nullable=False, primary_key=True),
+    Column("st_storage_id", String(255), nullable=False, primary_key=True),
     Column("name", String(255), nullable=False),
     Column("group", _GROUP_ENUM, nullable=False),
     Column("injection_nominal_capacity", Float, nullable=False),
@@ -75,7 +75,7 @@ def _create_st_storage_matrix_table(name: str) -> Table:
         Column("matrix_id", String(64), nullable=False),
         ForeignKeyConstraint(
             ["study_id", "area_id", "st_storage_id"],
-            ["st_storage.study_id", "st_storage.area_id", "st_storage.id"],
+            ["st_storage.study_id", "st_storage.area_id", "st_storage.st_storage_id"],
             ondelete="CASCADE",
         ),
     )
@@ -99,7 +99,7 @@ ST_STORAGE_ADDITIONAL_CONSTRAINT_TABLE = Table(
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("st_storage_id", String(255), nullable=False, primary_key=True),
-    Column("id", String(255), nullable=False, primary_key=True),
+    Column("constraint_id", String(255), nullable=False, primary_key=True),
     Column("name", String(255), nullable=False),
     Column("variable", _VARIABLE_ENUM, nullable=False),
     Column("operator", _OPERATOR_ENUM, nullable=False),
@@ -107,7 +107,7 @@ ST_STORAGE_ADDITIONAL_CONSTRAINT_TABLE = Table(
     Column("enabled", Boolean, nullable=False),
     ForeignKeyConstraint(
         ["study_id", "area_id", "st_storage_id"],
-        ["st_storage.study_id", "st_storage.area_id", "st_storage.id"],
+        ["st_storage.study_id", "st_storage.area_id", "st_storage.st_storage_id"],
         ondelete="CASCADE",
     ),
 )
@@ -118,15 +118,15 @@ ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE = Table(
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("st_storage_id", String(255), nullable=False, primary_key=True),
-    Column("id", String(255), nullable=False, primary_key=True),
+    Column("constraint_id", String(255), nullable=False, primary_key=True),
     Column("matrix_id", String(64), nullable=False),
     ForeignKeyConstraint(
-        ["study_id", "area_id", "st_storage_id", "id"],
+        ["study_id", "area_id", "st_storage_id", "constraint_id"],
         [
             "st_storage_additional_constraint.study_id",
             "st_storage_additional_constraint.area_id",
             "st_storage_additional_constraint.st_storage_id",
-            "st_storage_additional_constraint.id",
+            "st_storage_additional_constraint.constraint_id",
         ],
         ondelete="CASCADE",
     ),
