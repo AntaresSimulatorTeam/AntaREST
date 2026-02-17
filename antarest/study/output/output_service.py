@@ -287,6 +287,7 @@ class OutputService:
             try:
                 stopwatch = StopWatch()
                 self._find_output_storage(study_id, output_id).unarchive_study_output(study_id, output_id)
+                remove_from_cache(cache=self._cache, root_id=study_id)
                 stopwatch.log_elapsed(
                     lambda x: logger.info(f"Output {output_id} of study {study_id} unarchived in {x}s")
                 )

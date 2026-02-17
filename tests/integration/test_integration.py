@@ -9,17 +9,17 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import io
 import os
-import tempfile
 import zipfile
 from http import HTTPStatus
+from io import BytesIO
 from pathlib import Path
 from unittest.mock import ANY
 
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
+from integration.test_helpers.outputs import create_minimal_output_zip_from_name
 from starlette.testclient import TestClient
 
 from antarest.core.serde.ini_reader import read_ini
@@ -1606,206 +1606,33 @@ def test_copy_variant_with_specific_path(client: TestClient, admin_access_token:
 
 def test_copy_with_specific_output(admin_client: TestClient, internal_study_id: str, tmp_path: Path) -> None:
     client = admin_client
-    copy_with_output(client, internal_study_id)
-
     raw = client.post("/v1/studies?name=raw")
+    copy_with_output_test(client, raw.json())
+
     variant = client.post(f"/v1/studies/{raw.json()}/variants", params={"name": "variant"})
-
-    for output_name in [
-        "20201014-1422eco-hello",
-        "20201014-1425eco-goodbye",
-        "20201014-1427eco",
-        "20201014-1430adq",
-        "20201014-1430adq-2",
-        "20241807-1540eco-extra-outputs",
-    ]:
-        with tempfile.TemporaryDirectory(dir=tmp_path) as tmp_dir:
-            output_path = Path(tmp_dir) / f"{output_name}.zip"
-            create_output_zip(output_path)
-            upload = admin_client.post(
-                f"/v1/studies/{variant.json()}/output", files={"output": (output_path.name, output_path.read_bytes())}
-            )
-            assert upload.status_code == 202
-
-    outputs = admin_client.get(f"/v1/studies/{raw.json()}/outputs")
-    assert outputs.status_code == 200
-    assert [o["name"] for o in outputs.json()] == ["20260216-0856eco"]
-
-    copy_with_output(client, variant.json())
+    copy_with_output_test(client, variant.json())
 
 
-def test_copy_variant_with_specific_output(admin_client: TestClient, internal_study_id: str, tmp_path: Path) -> None:
-    client = admin_client
-    raw = client.post("/v1/studies?name=raw")
-    variant = client.post(f"/v1/studies/{raw.json()}/variants", params={"name": "variant"})
-
-    for output_name in [
-        "20201014-1422eco-hello",
-        "20201014-1425eco-goodbye",
-        "20201014-1427eco",
-        "20201014-1430adq",
-        "20201014-1430adq-2",
-        "20241807-1540eco-extra-outputs",
-    ]:
-        output_path = tmp_path / f"{output_name}.zip"
-        create_output_zip(output_path)
-        upload = admin_client.post(
-            f"/v1/studies/{variant.json()}/output", files={"output": (output_path.name, output_path.read_bytes())}
-        )
+def copy_with_output_test(client: TestClient, study_id: str) -> None:
+    # Create 3 outputs in provided study
+    for output_name in ["20201002-1023eco-output1", "20210716-1815adq-output2", "20231002-1023eco"]:
+        buffer = BytesIO()
+        create_minimal_output_zip_from_name(buffer, output_name)
+        upload = client.post(f"/v1/studies/{study_id}/output", files={"output": (f"{output_name}.zip", buffer)})
         assert upload.status_code == 202
 
-    outputs = admin_client.get(f"/v1/studies/{raw.json()}/outputs")
-    assert outputs.status_code == 200
-    assert [o["name"] for o in outputs.json()] == ["20260216-0856eco"]
+    # Archive one of the outputs
+    archive = client.post(f"/v1/studies/{study_id}/outputs/20231002-1023eco/_archive")
+    assert archive.status_code == 200
+    metadata = client.get(f"/v1/studies/{study_id}/outputs/20231002-1023eco").json()
 
-    copy_with_output(client, variant.json())
-
-
-PARAMETERS_TEMPLATE = """
-[general]
-mode = Economy
-simulation.start = 1
-simulation.end = 7
-horizon = 2000
-first-month-in-year = january
-first.weekday = Monday
-january.1st = Monday
-leapyear = False
-nbyears = 1
-user-playlist = True
-year-by-year = False
-geographic-trimming = True
-thematic-trimming = False
-derated = False
-custom-scenario = False
-active-rules-scenario = default ruleset
-generate = hydro, thermal
-nbtimeseriesload = 1
-nbtimeserieshydro = 1
-nbtimeserieswind = 1
-nbtimeseriesthermal = 1
-nbtimeseriessolar = 1
-refreshtimeseries = 
-intra-modal = 
-inter-modal = 
-refreshintervalload = 0
-refreshintervalhydro = 5
-refreshintervalwind = 5
-refreshintervalthermal = 0
-refreshintervalsolar = 0
-readonly = False
-
-[input]
-import = 
-
-[output]
-synthesis = False
-storenewset = False
-archives = 
-result-format = txt-files
-
-[optimization]
-simplex-range = week
-transmission-capacities = local-values
-include-constraints = True
-include-hurdlecosts = True
-include-tc-minstablepower = True
-include-tc-min-ud-time = True
-include-dayahead = True
-include-strategicreserve = True
-include-spinningreserve = True
-include-primaryreserve = True
-include-exportmps = none
-include-exportstructure = False
-include-unfeasible-problem-behavior = error-verbose
-
-[adequacy patch]
-include-adq-patch = False
-set-to-null-ntc-from-physical-out-to-physical-in-for-first-step = True
-price-taking-order = DENS
-include-hurdle-cost-csr = False
-check-csr-cost-function = False
-threshold-initiate-curtailment-sharing-rule = 0.0
-threshold-display-local-matching-rule-violations = 0.0
-threshold-csr-variable-bounds-relaxation = 3
-
-[other preferences]
-hydro-heuristic-policy = accommodate rule curves
-hydro-pricing-mode = fast
-power-fluctuations = free modulations
-shedding-policy = accurate shave peaks
-unit-commitment-mode = fast
-number-of-cores-mode = medium
-renewable-generation-modelling = aggregated
-
-[advanced parameters]
-accuracy-on-correlation = 
-
-[seeds - Mersenne Twister]
-seed-tsgen-wind = 5489
-seed-tsgen-load = 5489
-seed-tsgen-hydro = 5489
-seed-tsgen-thermal = 5489
-seed-tsgen-solar = 5489
-seed-tsnumbers = 5489
-seed-unsupplied-energy-costs = 6005489
-seed-spilled-energy-costs = 7005489
-seed-thermal-costs = 8005489
-seed-hydro-costs = 9005489
-seed-initial-reservoir-levels = 10005489
-
-[compatibility]
-hydro-pmax = daily
-"""
-
-INFO_ANTARES_OUTPUT_TEMPLATE = """
-[general]
-version = 9.2
-name = 
-mode = Economy
-date = 2026.02.16 - 08:56
-title = 2026.02.16 - 08:56
-timestamp = 1771228579
-"""
-
-
-def create_output_zip(output_path: Path) -> None:
-    """
-    Creates a minimal output content into a zip file that can be imported through the API
-    """
-    with zipfile.ZipFile(output_path, "w") as zf:
-        zf.writestr("about-the-study/parameters.ini", PARAMETERS_TEMPLATE)
-        zf.writestr("info.antares-output", INFO_ANTARES_OUTPUT_TEMPLATE)
-
-
-def test_create_output(admin_client: TestClient, tmp_path: Path) -> None:
-    output_name = "20201014-1422eco-hello"
-    output_zip = tmp_path / f"{output_name}.zip"
-    with zipfile.ZipFile(output_zip, "w") as zf:
-        zf.writestr("about-the-study/parameters.ini", PARAMETERS_TEMPLATE)
-        zf.writestr("info.antares-output", INFO_ANTARES_OUTPUT_TEMPLATE)
-
-    raw = admin_client.post("/v1/studies?name=raw&version=9.2")
-    upload = admin_client.post(
-        f"/v1/studies/{raw.json()}/output", files={"output": (output_zip.name, output_zip.read_bytes())}
-    )
-    assert upload.status_code == 202
-
-    outputs = admin_client.get(f"/v1/studies/{raw.json()}/outputs")
-    assert outputs.status_code == 200
-    assert [o["name"] for o in outputs.json()] == ["20260216-0856eco"]
-
-
-def copy_with_output(client: TestClient, study_id: str) -> None:
+    # Check they are correctly created
     res = client.get(f"/v1/studies/{study_id}/outputs")
     assert res.status_code == 200
-    assert [d["name"] for d in res.json()] == [
-        "20201014-1422eco-hello",
-        "20201014-1425eco-goodbye",
-        "20201014-1427eco",
-        "20201014-1430adq",
-        "20201014-1430adq-2",
-        "20241807-1540eco-extra-outputs",
+    assert [(d["name"], d[""]) for d in res.json()] == [
+        "20201002-1023eco-output1",
+        "20210716-1815adq-output2",
+        "20231002-1023eco",
     ]
 
     # Copy a study with two outputs
@@ -1815,14 +1642,14 @@ def copy_with_output(client: TestClient, study_id: str) -> None:
             "study_name": "copied",
             "with_outputs": True,
             "use_task": False,
-            "output_ids": ["20201014-1427eco", "20241807-1540eco-extra-outputs"],
+            "output_ids": ["20210716-1815adq-output2", "20231002-1023eco"],
         },
     )
 
     copied_study_id = res.json()
     res = client.get(f"/v1/studies/{copied_study_id}/outputs")
     assert res.status_code == 200
-    assert [d["name"] for d in res.json()] == ["20201014-1427eco", "20241807-1540eco-extra-outputs"]
+    assert [d["name"] for d in res.json()] == ["20210716-1815adq-output2", "20231002-1023eco"]
 
     # Copy a study but with the with_output boolean set to False, should raise an error
     copy = client.post(
@@ -1867,16 +1694,12 @@ def copy_with_output(client: TestClient, study_id: str) -> None:
     res = client.get(f"/v1/studies/{res.json()}/outputs")
     assert res.status_code == 200
     assert [d["name"] for d in res.json()] == [
-        "20201014-1422eco-hello",
-        "20201014-1425eco-goodbye",
-        "20201014-1427eco",
-        "20201014-1430adq",
-        "20201014-1430adq-2",
-        "20241807-1540eco-extra-outputs",
+        "20201002-1023eco-output1",
+        "20210716-1815adq-output2",
+        "20231002-1023eco",
     ]
 
     # Copy a study with no boolean and no id. Should not copy the outputs
-
     res = client.post(
         f"/v1/studies/{study_id}/copy",
         params={
@@ -1909,13 +1732,13 @@ def copy_with_output(client: TestClient, study_id: str) -> None:
         params={
             "study_name": "copied",
             "use_task": False,
-            "output_ids": ["20201014-1427eco"],
+            "output_ids": ["20231002-1023eco"],
         },
     )
     assert res.status_code == 201
     res = client.get(f"/v1/studies/{res.json()}/outputs")
     assert res.status_code == 200
-    assert [d["name"] for d in res.json()] == ["20201014-1427eco"]
+    assert [d["name"] for d in res.json()] == ["20231002-1023eco"]
 
 
 def test_areas_deletion_with_binding_constraints(
