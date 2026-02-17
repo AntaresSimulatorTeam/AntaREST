@@ -16,13 +16,13 @@ from integration.assets import ASSETS_DIR
 from starlette.testclient import TestClient
 
 
-def test_import(client: TestClient, admin_access_token: str, internal_study_id: str, tmp_path: Path) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+def test_import(admin_client: TestClient, internal_study_id: str, tmp_path: Path) -> None:
+    client = admin_client
 
     # Import an output and store it with new storage type
     output_path_zip = ASSETS_DIR / "output_adq.zip"
     res = client.post(
-        f"/v1/studies/{internal_study_id}/output?storage_type=PARQUET",
+        f"/v1/studies/{internal_study_id}/output?storage_type=V2",
         files={"output": io.BytesIO(output_path_zip.read_bytes())},
     )
     assert res.status_code == 202, res.json()
@@ -52,10 +52,8 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
     }
 
 
-def test_delete_study_linked_to_output(
-    client: TestClient, admin_access_token: str, internal_study_id: str, tmp_path: Path
-) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+def test_delete_study_linked_to_output(admin_client: TestClient, internal_study_id: str, tmp_path: Path) -> None:
+    client = admin_client
 
     # Creates a blank study
     res = client.post(
@@ -68,16 +66,14 @@ def test_delete_study_linked_to_output(
     # Import an output and store it with new storage type
     output_path_zip = ASSETS_DIR / "output_adq.zip"
     res = client.post(
-        f"/v1/studies/{study_id}/output?storage_type=PARQUET",
+        f"/v1/studies/{study_id}/output?storage_type=V2",
         files={"output": io.BytesIO(output_path_zip.read_bytes())},
     )
     assert res.status_code == 202, res.json()
     assert res.json() == "20221004-1430adq"
 
     # Check output metadata
-    res = client.get(
-        f"/v1/studies/{study_id}/outputs",
-    )
+    res = client.get(f"/v1/studies/{study_id}/outputs")
     assert len(res.json()) == 1
 
     # Delete study
