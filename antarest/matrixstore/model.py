@@ -171,6 +171,15 @@ class MatrixReferencesDTO(AntaresBaseModel, extra="forbid", populate_by_name=Tru
     disk_usage: Optional[int] = None
 
 
+class MatrixMismatchDTO(AntaresBaseModel, extra="forbid", populate_by_name=True):
+    """
+    Pydantic translation of the existence of a matrix in the 2 storage places
+    """
+
+    database: bool
+    filesystem: bool
+
+
 class MatrixDataSet(Base):
     """
     Represents a user dataset containing matrices in the database.

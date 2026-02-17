@@ -17,6 +17,8 @@ from antarest.core.config import Config
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
 from antarest.core.version_info import VersionInfoDTO, get_commit_id, get_dependencies
+from antarest.matrixstore.model import MatrixMismatchDTO
+from antarest.matrixstore.service import ISimpleMatrixService
 
 
 class StatusDTO(AntaresBaseModel):
@@ -27,7 +29,7 @@ class DesktopModeDTO(AntaresBaseModel):
     desktop_mode: bool
 
 
-def create_utils_routes(config: Config) -> APIRouter:
+def create_utils_routes(config: Config, matrix_service: ISimpleMatrixService) -> APIRouter:
     """
     Utility endpoints
 
@@ -74,5 +76,18 @@ def create_utils_routes(config: Config) -> APIRouter:
         """
 
         return DesktopModeDTO(desktop_mode=config.desktop_mode)
+
+    @bp.post(
+        "/private/resolve-matrix-store",
+        summary="Synchronize Database with filesystem for the matrix-store. To be used if an issue occurred",
+    )
+    def synchronize_matrix_store(dry_run: bool) -> dict[str, MatrixMismatchDTO]:
+        """
+        To be used by the admin only.
+        If `dry_run` is True, only returns the list of mismatches. Else, also performs the 2 following operations:
+        - Deletes lines from `Matrix` table in DB for matrices that do not exist on the filesystem.
+        - Insert lines inside `Matrix` table in DB for matrices that exist on the filesystem but not in the DB.
+        """
+        return matrix_service.synchronize_matrix_store(dry_run=dry_run)
 
     return bp

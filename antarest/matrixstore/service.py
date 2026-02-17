@@ -52,6 +52,7 @@ from antarest.matrixstore.model import (
     MatrixDescriptionDTO,
     MatrixInfoDTO,
     MatrixMetadataDTO,
+    MatrixMismatchDTO,
     MatrixReference,
     MatrixReferencesDTO,
 )
@@ -165,6 +166,10 @@ class ISimpleMatrixService(ABC):
     def get_matrices_references(self, disk_usage: bool) -> dict[str, MatrixReferencesDTO]:
         raise NotImplementedError
 
+    @abstractmethod
+    def synchronize_matrix_store(self, dry_run: bool) -> dict[str, MatrixMismatchDTO]:
+        raise NotImplementedError
+
 
 class SimpleMatrixService(ISimpleMatrixService):
     def __init__(self, matrix_content_repository: MatrixContentRepository):
@@ -216,6 +221,10 @@ class SimpleMatrixService(ISimpleMatrixService):
     @override
     def get_matrices_references(self, disk_usage: bool) -> dict[str, MatrixReferencesDTO]:
         raise NotImplementedError
+
+    @override
+    def synchronize_matrix_store(self, dry_run: bool) -> dict[str, MatrixMismatchDTO]:
+        return {}
 
 
 def check_dataframe_compliance(df: pl.DataFrame) -> None:
@@ -689,3 +698,7 @@ class MatrixService(ISimpleMatrixService):
                 references_dto[matrix_id].refs.append(ref_dto)
 
         return references_dto
+
+    @override
+    def synchronize_matrix_store(self, dry_run: bool) -> dict[str, MatrixMismatchDTO]:
+        return {}
