@@ -229,9 +229,7 @@ def test_st_storage_matrices_lifecycle(db_session: Session, dao: DatabaseStudyDa
         dao.get_st_storage_upper_rule_curve("area_1", "battery"), dataframe, check_dtypes=False
     )
     pl.testing.assert_frame_equal(dao.get_st_storage_inflows("area_1", "battery"), dataframe, check_dtypes=False)
-    pl.testing.assert_frame_equal(
-        dao.get_st_storage_cost_injection("area_1", "battery"), dataframe, check_dtypes=False
-    )
+    pl.testing.assert_frame_equal(dao.get_st_storage_cost_injection("area_1", "battery"), dataframe, check_dtypes=False)
     pl.testing.assert_frame_equal(
         dao.get_st_storage_cost_withdrawal("area_1", "battery"), dataframe, check_dtypes=False
     )
