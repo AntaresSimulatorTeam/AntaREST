@@ -704,7 +704,7 @@ class MatrixService(ISimpleMatrixService):
         for matrix in only_db_matrices:
             result[matrix] = MatrixMismatchDTO(database=True, filesystem=False)
             if not dry_run:
-                # We remove the line from DB as it has no match on the filesystem
+                logger.info(f"Removing matrix {matrix} from database as it has no match on the filesystem")
                 self.repo.delete(matrix)
 
         new_matrices = []
@@ -712,8 +712,8 @@ class MatrixService(ISimpleMatrixService):
         for matrix in only_fs_matrices:
             result[matrix] = MatrixMismatchDTO(database=False, filesystem=True)
             if not dry_run:
-                # We have to create a fake entry for the matrix in DB to fit with the filesystem.
-                # But for that we have to find what's the matrix version as it's used for parsing.
+                logger.info(f"Creating matrix {matrix} inside database as it exists on the filesystem")
+                # For that we have to find what's the matrix version as it's used for parsing.
                 version = self.matrix_content_repository.infer_matrix_version(matrix)
                 obj = Matrix(id=matrix, width=10, height=10, created_at=current_date, version=version)
                 new_matrices.append(obj)
