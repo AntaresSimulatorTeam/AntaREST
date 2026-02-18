@@ -696,9 +696,7 @@ class MatrixService(ISimpleMatrixService):
     @override
     def synchronize_matrix_store(self, dry_run: bool) -> dict[str, MatrixMismatchDTO]:
         db_matrices = {m.id for m in self.repo.get_matrices()}
-        fs_matrices = {
-            f.stem for f in self.matrix_content_repository.bucket_dir.iterdir() if not f.name.endswith(".tsv.lock")
-        }
+        fs_matrices = self.matrix_content_repository.get_all_matrices_on_the_filesystem()
         only_fs_matrices = fs_matrices - db_matrices
         only_db_matrices = db_matrices - fs_matrices
 

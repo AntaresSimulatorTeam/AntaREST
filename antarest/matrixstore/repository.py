@@ -396,3 +396,6 @@ class MatrixContentRepository:
         else:
             # Means we did not read the matrix as we were supposed to so we have to return the other version
             return NEW_MATRIX_VERSION
+
+    def get_all_matrices_on_the_filesystem(self) -> set[str]:
+        return {f.stem for f in self.bucket_dir.iterdir() if not f.name.endswith(".tsv.lock")}
