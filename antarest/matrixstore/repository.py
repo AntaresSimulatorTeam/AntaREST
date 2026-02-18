@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import hashlib
 import logging
 import os
@@ -387,8 +386,7 @@ class MatrixContentRepository:
             version = LEGACY_MATRIX_VERSION
             try:
                 df = load_matrix(matrix_format, matrix_path, version)
-                new_hash = compute_hash(df)
-                if new_hash != matrix_id:
+                if compute_hash(df) != matrix_id:
                     # Means we did not read the matrix as we were supposed to so we have to read it with the other version
                     version = NEW_MATRIX_VERSION
                     df = load_matrix(matrix_format, matrix_path, version)

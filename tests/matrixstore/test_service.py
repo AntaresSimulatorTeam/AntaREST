@@ -685,7 +685,7 @@ def test_synchronize_matrix_store(matrix_service: MatrixService, dry_run: bool) 
         session.add(Matrix(id=matrix_id, width=0, height=0, created_at=now, version=1))
         session.commit()
     bucket_dir = matrix_service.matrix_content_repository.bucket_dir
-    (bucket_dir / f"{matrix_id}.feather").touch()
+    (bucket_dir / f"{matrix_id}.tsv").touch()
 
     # Asserts no mismatch is returned
     assert matrix_service.synchronize_matrix_store(dry_run) == {}
