@@ -29,18 +29,6 @@ _GROUP_ENUM = Enum(STStorageGroup, name="group")
 _VARIABLE_ENUM = Enum(AdditionalConstraintVariable, name="variable")
 _OPERATOR_ENUM = Enum(AdditionalConstraintOperator, name="operator")
 
-MATRIX_TABLES = [
-    "pmax_injection",
-    "pmax_withdrawal",
-    "lower_rule_curve",
-    "upper_rule_curve",
-    "inflows",
-    "cost_injection",
-    "cost_withdrawal",
-    "cost_level",
-    "cost_variation_injection",
-    "cost_variation_withdrawal",
-]
 
 ST_STORAGE_TABLE = Table(
     "st_storage",
