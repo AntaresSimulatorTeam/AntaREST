@@ -708,15 +708,12 @@ class MatrixService(ISimpleMatrixService):
                 self.repo.delete(matrix)
 
         new_matrices = []
-        current_date = current_time()
         for matrix in only_fs_matrices:
             result[matrix] = MatrixMismatchDTO(database=False, filesystem=True)
             if not dry_run:
                 logger.info(f"Creating matrix {matrix} inside database as it exists on the filesystem")
                 # For that we have to find what's the matrix version as it's used for parsing.
-                version = self.matrix_content_repository.infer_matrix_version(matrix)
-                obj = Matrix(id=matrix, width=10, height=10, created_at=current_date, version=version)
-                new_matrices.append(obj)
+                new_matrices.append(self.matrix_content_repository.infer_matrix_characteristics(matrix))
 
         if new_matrices:
             self.repo.save_batch(new_matrices)

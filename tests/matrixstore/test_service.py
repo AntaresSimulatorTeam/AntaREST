@@ -706,22 +706,31 @@ def test_synchronize_matrix_store(matrix_service: MatrixService, dry_run: bool) 
 
 
 @with_db_context
-def test_infer_matrix_version(matrix_service: MatrixService) -> None:
+def test_infer_matrix_characteristics(matrix_service: MatrixService) -> None:
     """Ensures we're able to find a matrix version if we know it's previously calculated hash"""
     content_repo = matrix_service.matrix_content_repository
 
     # Create a matrix in v2 with values not supported in v1.
     matrix_id = matrix_service.create(AGGREGATION_DF)
-    assert content_repo.infer_matrix_version(matrix_id) == 2
+    matrix = content_repo.infer_matrix_characteristics(matrix_id)
+    assert matrix.version == 2
+    assert matrix.height == 14
+    assert matrix.width == 124
 
     # Create a matrix in v2 with values supported in v1.
     df = create_polars_dataframe(TEST_MATRIX)
     matrix_id = matrix_service.create(df)  # Saves the matrix with its headers, so v2.
-    assert content_repo.infer_matrix_version(matrix_id) == 2
+    matrix = content_repo.infer_matrix_characteristics(matrix_id)
+    assert matrix.version == 2
+    assert matrix.height == 2
+    assert matrix.width == 3
 
     # Create a matrix in v1
     df = create_polars_dataframe([[1.1, 1.1], [1.1, 1.1]])
     bucket_dir = content_repo.bucket_dir
     matrix_id = compute_hash(df)
     write_dataframe_in_tsv_format(df, bucket_dir / f"{matrix_id}.tsv", headers=False)  # No headers means v1.
-    assert content_repo.infer_matrix_version(matrix_id) == 1
+    matrix = content_repo.infer_matrix_characteristics(matrix_id)
+    assert matrix.version == 1
+    assert matrix.height == 2
+    assert matrix.width == 2
