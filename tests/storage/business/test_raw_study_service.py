@@ -376,7 +376,7 @@ def test_copy_study(tmp_path: Path) -> None:
         version="700",
         groups=groups,
     )
-    md = study_service.copy(src_md, "dst_name", groups, PurePosixPath(), [], None)
+    md = study_service.copy(src_md, "dst_name", groups, PurePosixPath())
     md_id = md.id
     assert str(md.path) == f"{tmp_path}{os.sep}{md_id}"
     assert md.public_mode == PublicMode.NONE
@@ -385,6 +385,7 @@ def test_copy_study(tmp_path: Path) -> None:
 
 
 def test_zipped_output(tmp_path: Path) -> None:
+    # Setup
     if not platform.platform().startswith("Windows"):
         os.environ["TZ"] = "Europe/Paris"  # set new timezone
         time.tzset()
@@ -427,6 +428,7 @@ timestamp = 1599488150
 
     output_storage = InStudyFileOutputStorage(OutputsProvider(), cache=Mock(), remote_executor=Mock())
 
+    # Test
     expected_output_name = "20200907-1615eco-11mc"
     output_name = output_storage.import_output(name, zipped_output)
     if output_name != expected_output_name:
@@ -438,7 +440,6 @@ timestamp = 1599488150
     output_storage.unarchive_study_output(name, expected_output_name)
     assert (study_path / "output" / expected_output_name).exists()
     assert not (study_path / "output" / (expected_output_name + ".zip")).exists()
-    output_storage.delete_output(name, output_name)
 
     output_storage.archive_study_output(name, expected_output_name)
     assert not (study_path / "output" / expected_output_name).exists()

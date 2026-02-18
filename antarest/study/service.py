@@ -1382,7 +1382,7 @@ class StudyService:
         with tempfile.TemporaryDirectory(dir=self.config.storage.tmp_dir) as tmpdir:
             logger.info(f"Exporting study {metadata.id} to temporary path {tmpdir}")
             tmp_study_path = Path(tmpdir) / "tmp_copy"
-            self.storage_service.get_storage(metadata).export_study_flat(metadata, tmp_study_path, outputs)
+            self.storage_service.get_storage(metadata).export_study_flat(metadata, tmp_study_path)
             if outputs:
                 outputs_access = self._get_outputs_access()
                 for output_metadata in outputs_access.list_outputs(metadata.id):
