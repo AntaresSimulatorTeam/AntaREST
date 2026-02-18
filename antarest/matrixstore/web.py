@@ -33,6 +33,7 @@ from antarest.matrixstore.model import (
     MatrixDataSetUpdateDTO,
     MatrixInfoDTO,
     MatrixMetadataDTO,
+    MatrixMismatchDTO,
     MatrixReferencesDTO,
 )
 from antarest.matrixstore.service import MatrixService
@@ -159,5 +160,22 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
     def delete_datasets(id: str) -> None:
         logger.info(f"Removing matrix dataset metadata {id}")
         service.delete_dataset(id)
+
+    @bp.post(
+        "/private/resolve-matrix-store",
+        summary="Synchronize Database with filesystem for the matrix-store. To be used if an issue occurred",
+    )
+    def synchronize_matrix_store(dry_run: bool) -> dict[str, MatrixMismatchDTO]:
+        """
+        To be used by the admin only.
+        If `dry_run` is True, only returns the list of mismatches. Else, also performs the 2 following operations:
+        - Deletes lines from `Matrix` table in DB for matrices that do not exist on the filesystem.
+        - Insert lines inside `Matrix` table in DB for matrices that exist on the filesystem but not in the DB.
+        """
+        user = require_current_user()
+        if not user.is_site_admin():
+            raise UserHasNotPermissionError()
+
+        return service.synchronize_matrix_store(dry_run=dry_run)
 
     return bp

@@ -12,14 +12,10 @@
 
 import re
 from typing import Any
-from unittest.mock import Mock
 
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 from typing_extensions import override
-
-from antarest.core.config import Config
-from antarest.core.core_blueprint import create_utils_routes
 
 
 class RegEx:
@@ -44,7 +40,6 @@ class RegEx:
 
 class TestVersionInfo:
     def test_version_info(self, app: FastAPI) -> None:
-        app.include_router(create_utils_routes(Config(), Mock()))
         client = TestClient(app, raise_server_exceptions=False)
         res = client.get("/version")
         res.raise_for_status()

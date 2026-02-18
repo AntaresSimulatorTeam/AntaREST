@@ -252,6 +252,7 @@ def fastapi_app(
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    api_root.include_router(create_utils_routes(config))
     api_root.include_router(create_file_system_blueprint(config))
 
     add_exception_handlers(application)
@@ -260,7 +261,6 @@ def fastapi_app(
     services = create_services(config, app_ctxt)
 
     application.include_router(api_root)
-    api_root.include_router(create_utils_routes(config, services.matrix))
 
     # Important note:
     # those singleton services must be "started" ONLY when explictly asked.
