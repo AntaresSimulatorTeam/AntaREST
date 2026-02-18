@@ -16,7 +16,7 @@ import polars as pl
 from typing_extensions import override
 
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
-from antarest.matrixstore.model import MatrixContent, MatrixMetadataDTO, MatrixReferencesDTO
+from antarest.matrixstore.model import MatrixContent, MatrixMetadataDTO, MatrixMismatchDTO, MatrixReferencesDTO
 from antarest.matrixstore.repository import compute_hash
 from antarest.matrixstore.service import ISimpleMatrixService
 
@@ -77,3 +77,7 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
     @override
     def get_matrices_references(self, disk_usage: bool) -> dict[str, MatrixReferencesDTO]:
         raise NotImplementedError()
+
+    @override
+    def synchronize_matrix_store(self, dry_run: bool) -> dict[str, MatrixMismatchDTO]:
+        return {}
