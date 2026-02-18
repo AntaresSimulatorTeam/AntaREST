@@ -19,7 +19,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from antarest.core.exceptions import STStorageAdditionalConstraintNotFound, STStorageNotFound
+from antarest.core.exceptions import AreaNotFound, STStorageAdditionalConstraintNotFound, STStorageNotFound
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.st_storage import (
@@ -49,7 +49,7 @@ def test_save_st_storage(dao: DatabaseStudyDao) -> None:
     assert st_storage.name == "st-storage"
     assert st_storage.efficiency == 0.8
 
-    with pytest.raises(STStorageNotFound):
+    with pytest.raises(AreaNotFound):
         dao.save_st_storage("nonexistent", STStorage(id="st_storage_id", name="st-storage"))
 
 
@@ -77,7 +77,7 @@ def test_save_multiple_st_storages(dao: DatabaseStudyDao) -> None:
     all_storages = dao.get_all_st_storages_for_area("area_1")
     assert len(all_storages) == 2
 
-    with pytest.raises(STStorageNotFound):
+    with pytest.raises(AreaNotFound):
         dao.save_st_storages(
             "nonexistent",
             [STStorage(id="s1", name="s1"), STStorage(id="s2", name="s2")],
@@ -104,7 +104,7 @@ def test_get_st_storage_raises_when_missing(dao: DatabaseStudyDao) -> None:
     with pytest.raises(STStorageNotFound):
         dao.get_st_storage("area_1", "nonexistent")
 
-    with pytest.raises(STStorageNotFound):
+    with pytest.raises(AreaNotFound):
         dao.get_st_storage("nonexistent", "st_storage_id_1")
 
 
@@ -126,7 +126,7 @@ def test_delete_st_storage(dao: DatabaseStudyDao) -> None:
 
     with pytest.raises(STStorageNotFound):
         dao.delete_st_storage("area_1", STStorage(id="nonexistent", name="x"))
-    with pytest.raises(STStorageNotFound):
+    with pytest.raises(AreaNotFound):
         dao.delete_st_storage("nonexistent", STStorage(id="st_storage_id_1", name="x"))
 
     dao.delete_st_storage("area_1", STStorage(id="st_storage_id_1", name="st-storage-1"))
@@ -277,7 +277,7 @@ def test_get_st_storage_matrix_raises_when_missing(dao: DatabaseStudyDao) -> Non
     for getter in getters:
         with pytest.raises(STStorageNotFound):
             getter("area_1", "battery")
-        with pytest.raises(STStorageNotFound):
+        with pytest.raises(AreaNotFound):
             getter("nonexistent", "battery")
 
 
@@ -299,7 +299,7 @@ def test_save_st_storage_matrix_raises_when_missing(dao: DatabaseStudyDao) -> No
     for saver in savers:
         with pytest.raises(STStorageNotFound):
             saver("area_1", "battery", "missing-matrix-id")
-        with pytest.raises(STStorageNotFound):
+        with pytest.raises(AreaNotFound):
             saver("nonexistent", "battery", "missing-matrix-id")
 
 

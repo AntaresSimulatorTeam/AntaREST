@@ -28,6 +28,8 @@ from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
     STStorageAdditionalConstraintsMap,
+    initialize_st_storage,
+    validate_st_storage_against_version,
 )
 from antarest.study.dao.api.st_storage_dao import STStorageDao
 from antarest.study.dao.database.common import get_row_representation_as_dict, validate_area_exists
@@ -82,7 +84,11 @@ class DatabaseStStorageDao(STStorageDao):
         del data["study_id"]
         del data["area_id"]
         data["id"] = data.pop("st_storage_id")
-        return STStorage(**data)
+        storage = STStorage(**data)
+        version = self.get_impl().get_version()
+        validate_st_storage_against_version(version, storage)
+        initialize_st_storage(storage, version)
+        return storage
 
     def _convert_constraint_to_row(
         self, area_id: str, storage_id: str, constraint: STStorageAdditionalConstraint
@@ -140,6 +146,7 @@ class DatabaseStStorageDao(STStorageDao):
         try:
             upsert_multiple(session, ST_STORAGE_TABLE, values)
         except IntegrityError as e:
+            validate_area_exists(session, self._study_id, area_id)
             existing_storage_ids = {th.id for th in self.get_all_st_storages_for_area(area_id)}
             for storage in storages:
                 if storage.id not in existing_storage_ids:

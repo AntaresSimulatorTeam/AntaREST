@@ -32,10 +32,10 @@ def upgrade():
     group_enum = sa.Enum(
         "psp_open", "psp_closed", "pondage", "battery",
         "other1", "other2", "other3", "other4", "other5",
-        name="group",
+        name="ststoragegroup",
     )
-    variable_enum = sa.Enum("withdrawal", "injection", "netting", name="variable")
-    operator_enum = sa.Enum("less", "greater", "equal", name="operator")
+    variable_enum = sa.Enum("withdrawal", "injection", "netting", name="additionalconstraintvariable")
+    operator_enum = sa.Enum("less", "greater", "equal", name="additionalconstraintoperator")
 
     op.create_table(
         "st_storage",
@@ -137,6 +137,6 @@ def downgrade():
     op.drop_table("st_storage")
 
     if op.get_context().dialect.name == "postgresql":
-        sa.Enum(name="group").drop(op.get_bind(), checkfirst=True)
-        sa.Enum(name="variable").drop(op.get_bind(), checkfirst=True)
-        sa.Enum(name="operator").drop(op.get_bind(), checkfirst=True)
+        sa.Enum(name="ststoragegroup").drop(op.get_bind(), checkfirst=True)
+        sa.Enum(name="additionalconstraintvariable").drop(op.get_bind(), checkfirst=True)
+        sa.Enum(name="additionalconstraintoperator").drop(op.get_bind(), checkfirst=True)

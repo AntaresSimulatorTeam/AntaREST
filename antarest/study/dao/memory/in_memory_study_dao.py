@@ -749,7 +749,7 @@ class InMemoryStudyDao(StudyDao):
     def save_st_storage_constraint_matrix(
         self, area_id: str, storage_id: str, constraint_id: str, series_id: str
     ) -> None:
-        self._st_storages_constraints_terms.setdefault(area_id, {})[storage_id] = series_id
+        self._st_storages_constraints_matrix[additional_constraint_key(area_id, constraint_id)] = series_id
 
     @override
     def delete_st_storage_additional_constraints(self, area_id: str, storage_id: str, constraints: list[str]) -> None:

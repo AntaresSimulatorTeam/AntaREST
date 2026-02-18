@@ -25,9 +25,9 @@ from antarest.study.business.model.sts_model import (
 
 metadata = Base.metadata
 
-_GROUP_ENUM = Enum(STStorageGroup, name="group")
-_VARIABLE_ENUM = Enum(AdditionalConstraintVariable, name="variable")
-_OPERATOR_ENUM = Enum(AdditionalConstraintOperator, name="operator")
+_GROUP_ENUM = Enum(STStorageGroup, name="ststoragegroup")
+_VARIABLE_ENUM = Enum(AdditionalConstraintVariable, name="additionalconstraintvariable")
+_OPERATOR_ENUM = Enum(AdditionalConstraintOperator, name="additionalconstraintoperator")
 
 
 ST_STORAGE_TABLE = Table(
