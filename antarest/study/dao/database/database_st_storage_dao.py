@@ -41,9 +41,11 @@ from antarest.study.dao.database.models.st_storage import (
     PMAX_INJECTION_TABLE,
     PMAX_WITHDRAWAL_TABLE,
     ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE,
+    ST_STORAGE_ADDITIONAL_CONSTRAINT_TABLE,
+    ST_STORAGE_TABLE,
     UPPER_RULE_CURVE_TABLE,
 )
-from antarest.study.dao.database.sql_utils import upsert_one
+from antarest.study.dao.database.sql_utils import upsert_multiple, upsert_one
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -69,53 +71,176 @@ class DatabaseStStorageDao(STStorageDao):
     def get_impl(self) -> "DatabaseStudyDao":
         pass
 
+    def _convert_st_storage_to_db_values(self, area_id: str, st_storage: STStorage) -> dict[str, Any]:
+        values = dict(study_id=self._study_id, area_id=area_id, **st_storage.model_dump())
+        values["st_storage_id"] = values.pop("id")
+        return values
+
+    def _convert_db_values_to_st_storage(self, row: Row[Any]) -> STStorage:
+        data = {k: v for k, v in row._mapping.items() if k not in {"study_id", "area_id"}}
+        data["id"] = data.pop("st_storage_id")
+        return STStorage(**data)
+
+    def _convert_constraint_to_db_values(
+        self, area_id: str, storage_id: str, constraint: STStorageAdditionalConstraint
+    ) -> dict[str, Any]:
+        values = dict(study_id=self._study_id, area_id=area_id, st_storage_id=storage_id, **constraint.model_dump())
+        values["constraint_id"] = values.pop("id")
+        return values
+
+    def _convert_db_values_to_constraint(self, row: Row[Any]) -> STStorageAdditionalConstraint:
+        data = {k: v for k, v in row._mapping.items() if k not in {"study_id", "area_id", "st_storage_id"}}
+        data["id"] = data.pop("constraint_id")
+        return STStorageAdditionalConstraint(**data)
+
     @override
     def save_st_storage(self, area_id: str, st_storage: STStorage) -> None:
-        pass
+        session = self._db_session
+
+        value = self._convert_st_storage_to_db_values(area_id, st_storage)
+
+        try:
+            upsert_one(session, ST_STORAGE_TABLE, value)
+        except IntegrityError as e:
+            raise STStorageNotFound(area_id, st_storage.id) from e
+
+        session.commit()
 
     @override
     def save_st_storages(self, area_id: str, storages: Sequence[STStorage]) -> None:
-        pass
+        session = self._db_session
+
+        values = [self._convert_st_storage_to_db_values(area_id, st_storage) for st_storage in storages]
+
+        try:
+            upsert_multiple(session, ST_STORAGE_TABLE, values)
+        except IntegrityError as e:
+            raise STStorageNotFound(area_id, storages[0].id) from e
+
+        session.commit()
 
     @override
     def get_all_st_storages(self) -> dict[str, dict[str, STStorage]]:
-        pass
+        session, study_id = self._db_session, self._study_id
+
+        stmt = select(ST_STORAGE_TABLE).where(ST_STORAGE_TABLE.c.study_id == study_id)
+        rows = session.execute(stmt).fetchall()
+
+        st_storages_by_areas: dict[str, dict[str, STStorage]] = {}
+        for row in rows:
+            st_storage = self._convert_db_values_to_st_storage(row)
+            st_storages_by_areas.setdefault(row.area_id, {})[st_storage.id.lower()] = st_storage
+        return st_storages_by_areas
 
     @override
     def get_all_st_storages_for_area(self, area_id: str) -> Sequence[STStorage]:
-        pass
+        session, study_id = self._db_session, self._study_id
+
+        stmt = select(ST_STORAGE_TABLE).where(
+            (ST_STORAGE_TABLE.c.study_id == study_id) & (ST_STORAGE_TABLE.c.area_id == area_id)
+        )
+
+        rows = session.execute(stmt).fetchall()
+
+        return [self._convert_db_values_to_st_storage(row) for row in rows]
 
     @override
     def get_st_storage(self, area_id: str, storage_id: str) -> STStorage:
-        pass
+        session, study_id = self._db_session, self._study_id
+
+        stmt = select(ST_STORAGE_TABLE).where(
+            (ST_STORAGE_TABLE.c.study_id == study_id)
+            & (ST_STORAGE_TABLE.c.area_id == area_id)
+            & (ST_STORAGE_TABLE.c.st_storage_id == storage_id)
+        )
+
+        row = session.execute(stmt).fetchone()
+
+        if not row:
+            raise STStorageNotFound(area_id, storage_id)
+
+        return self._convert_db_values_to_st_storage(row)
 
     @override
     def st_storage_exists(self, area_id: str, storage_id: str) -> bool:
-        pass
+        session, study_id = self._db_session, self._study_id
+
+        stmt = select(ST_STORAGE_TABLE).where(
+            (ST_STORAGE_TABLE.c.study_id == study_id)
+            & (ST_STORAGE_TABLE.c.area_id == area_id)
+            & (ST_STORAGE_TABLE.c.st_storage_id == storage_id)
+        )
+
+        return session.execute(stmt).fetchone() is not None
 
     @override
     def delete_st_storage(self, area_id: str, storage: STStorage) -> None:
-        pass
+        session = self._db_session
+
+        if not self.st_storage_exists(area_id, storage.id):
+            raise STStorageNotFound(area_id, storage.id)
+
+        session.execute(ST_STORAGE_TABLE.delete().where(ST_STORAGE_TABLE.c.st_storage_id == storage.id))
+        session.commit()
 
     @override
     def save_st_storage_additional_constraints(
         self, area_id: str, storage_id: str, constraints: list[STStorageAdditionalConstraint]
     ) -> None:
-        pass
+        session = self._db_session
+
+        values = [self._convert_constraint_to_db_values(area_id, storage_id, constraint) for constraint in constraints]
+
+        try:
+            upsert_multiple(session, ST_STORAGE_ADDITIONAL_CONSTRAINT_TABLE, values)
+        except IntegrityError as e:
+            raise STStorageNotFound(area_id, storage_id) from e
+
+        session.commit()
 
     @override
     def get_all_st_storage_additional_constraints(self) -> STStorageAdditionalConstraintsMap:
-        pass
+        session, study_id = self._db_session, self._study_id
+
+        stmt = select(ST_STORAGE_ADDITIONAL_CONSTRAINT_TABLE).where(
+            ST_STORAGE_ADDITIONAL_CONSTRAINT_TABLE.c.study_id == study_id
+        )
+        rows = session.execute(stmt).fetchall()
+
+        constraint_by_areas: STStorageAdditionalConstraintsMap = {}
+        for row in rows:
+            constraint = self._convert_db_values_to_constraint(row)
+            constraint_by_areas.setdefault(row.area_id, {}).setdefault(row.st_storage_id.lower(), []).append(constraint)
+        return constraint_by_areas
 
     @override
     def get_st_storage_additional_constraints(
         self, area_id: str, storage_id: str
     ) -> list[STStorageAdditionalConstraint]:
-        pass
+        session, study_id = self._db_session, self._study_id
+
+        table = ST_STORAGE_ADDITIONAL_CONSTRAINT_TABLE
+        stmt = select(table).where(
+            (table.c.study_id == study_id) & (table.c.area_id == area_id) & (table.c.st_storage_id == storage_id)
+        )
+        rows = session.execute(stmt).fetchall()
+
+        return [self._convert_db_values_to_constraint(row) for row in rows]
 
     @override
     def delete_st_storage_additional_constraints(self, area_id: str, storage_id: str, constraints: list[str]) -> None:
-        pass
+        session = self._db_session
+        table = ST_STORAGE_ADDITIONAL_CONSTRAINT_TABLE
+
+        session.execute(
+            table.delete().where(
+                (table.c.study_id == self._study_id)
+                & (table.c.area_id == area_id)
+                & (table.c.st_storage_id == storage_id)
+                & (table.c.constraint_id.in_(constraints))
+            )
+        )
+        session.commit()
 
     @override
     def save_st_storage_pmax_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
@@ -211,7 +336,7 @@ class DatabaseStStorageDao(STStorageDao):
             }
             upsert_one(self._db_session, ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE, values)
         except IntegrityError as e:
-            raise STStorageAdditionalConstraintNotFound(area_id, storage_id) from e
+            raise STStorageAdditionalConstraintNotFound(area_id, constraint_id) from e
 
         self._db_session.commit()
 
@@ -228,7 +353,7 @@ class DatabaseStStorageDao(STStorageDao):
         )
         row = self._db_session.execute(stmt).fetchone()
         if not row:
-            raise STStorageNotFound(area_id, storage_id)
+            raise STStorageAdditionalConstraintNotFound(area_id, constraint_id)
         return self.get_impl().get_matrix(row.matrix_id)
 
     def _save_st_storage_matrix(self, area_id: str, storage_id: str, table: Table, matrix_id: str) -> None:
