@@ -43,6 +43,7 @@ from antarest.login.utils import require_current_user
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound, MatrixNotSupported
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import (
+    NEW_MATRIX_VERSION,
     Matrix,
     MatrixContent,
     MatrixDataSet,
@@ -56,7 +57,7 @@ from antarest.matrixstore.model import (
     MatrixReference,
     MatrixReferencesDTO,
 )
-from antarest.matrixstore.parsing import load_matrix, save_matrix
+from antarest.matrixstore.parsing import save_matrix
 from antarest.matrixstore.repository import (
     MatrixContentRepository,
     MatrixDataSetRepository,
@@ -79,13 +80,6 @@ EXCLUDED_FILES = {
 logger = logging.getLogger(__name__)
 
 MATRIX_PROTOCOL_PREFIX = "matrix://"
-
-LEGACY_MATRIX_VERSION = 1
-NEW_MATRIX_VERSION = 2
-"""
-Version 1 matrices were not saved with a header, unlike version 2 ones.
-Therefore, we rely on this version to know how to read the matrices
-"""
 
 
 class ISimpleMatrixService(ABC):
@@ -722,7 +716,7 @@ class MatrixService(ISimpleMatrixService):
             if not dry_run:
                 # We have to create a fake entry for the matrix in DB to fit with the filesystem.
                 # But for that we have to find what's the matrix version as it's used for parsing.
-                version = self._infer_matrix_version(matrix)
+                version = self.matrix_content_repository.infer_matrix_version(matrix)
                 obj = Matrix(id=matrix, width=10, height=10, created_at=current_date, version=version)
                 new_matrices.append(obj)
 
@@ -730,24 +724,3 @@ class MatrixService(ISimpleMatrixService):
             self.repo.save_batch(new_matrices)
 
         return result
-
-    def _infer_matrix_version(self, matrix_id: str) -> int:
-        matrix_path, matrix_format = self.matrix_content_repository.get_matrix_path_n_format(matrix_id)
-        assert matrix_path is not None
-
-        if matrix_format != InternalMatrixFormat.TSV:
-            # We only need the matrix version for the parsing of legacy `TSV` files.
-            return NEW_MATRIX_VERSION
-
-        try:
-            df = load_matrix(matrix_format, matrix_path, LEGACY_MATRIX_VERSION)
-        except ValueError:
-            # Happens if the matrix contains values that are not handled in v1. Means the matrix is in v2.
-            return NEW_MATRIX_VERSION
-        new_hash = compute_hash(df)
-        if new_hash == matrix_id:
-            # Means we read the matrix as we supposed to so the version we tested was right
-            return LEGACY_MATRIX_VERSION
-        else:
-            # Means we did not read the matrix as we were supposed to so we have to return the other version
-            return NEW_MATRIX_VERSION

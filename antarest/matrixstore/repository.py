@@ -28,7 +28,7 @@ from sqlalchemy.orm import Session
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.matrixstore.model import Matrix, MatrixDataSet
+from antarest.matrixstore.model import LEGACY_MATRIX_VERSION, NEW_MATRIX_VERSION, Matrix, MatrixDataSet
 from antarest.matrixstore.parsing import load_matrix, save_matrix
 
 logger = logging.getLogger(__name__)
@@ -252,7 +252,7 @@ class MatrixContentRepository:
         Returns:
             The matrix content or `None` if the file is not found.
         """
-        matrix_path, internal_format = self.get_matrix_path_n_format(matrix_hash)
+        matrix_path, internal_format = self._get_matrix_path_n_format(matrix_hash)
         if matrix_path:
             return load_matrix(internal_format, matrix_path, matrix_version)
         raise FileNotFoundError(str(self.bucket_dir.joinpath(matrix_hash)))
@@ -267,7 +267,7 @@ class MatrixContentRepository:
         Returns:
             `True` if the matrix exist else `None`.
         """
-        matrix_path = self.get_matrix_path_n_format(matrix_hash)[0]
+        matrix_path = self._get_matrix_path_n_format(matrix_hash)[0]
         if matrix_path:
             return True
         return False
@@ -363,15 +363,36 @@ class MatrixContentRepository:
         lock_file.unlink(missing_ok=True)
 
     def get_matrix_disk_usage(self, matrix_hash: str) -> int:
-        matrix_path = self.get_matrix_path_n_format(matrix_hash)[0]
+        matrix_path = self._get_matrix_path_n_format(matrix_hash)[0]
         if matrix_path:
             return os.stat(matrix_path).st_size
         raise FileNotFoundError(str(self.bucket_dir.joinpath(matrix_hash)))
 
-    def get_matrix_path_n_format(self, matrix_hash: str) -> tuple[Optional[Path], InternalMatrixFormat]:
+    def _get_matrix_path_n_format(self, matrix_hash: str) -> tuple[Optional[Path], InternalMatrixFormat]:
         for internal_format in InternalMatrixFormat:
             matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
             if matrix_path.exists():
                 return matrix_path, internal_format
 
         return None, InternalMatrixFormat.HDF
+
+    def infer_matrix_version(self, matrix_id: str) -> int:
+        matrix_path, matrix_format = self._get_matrix_path_n_format(matrix_id)
+        assert matrix_path is not None
+
+        if matrix_format != InternalMatrixFormat.TSV:
+            # We only need the matrix version for the parsing of legacy `TSV` files.
+            return NEW_MATRIX_VERSION
+
+        try:
+            df = load_matrix(matrix_format, matrix_path, LEGACY_MATRIX_VERSION)
+        except ValueError:
+            # Happens if the matrix contains values that are not handled in v1. Means the matrix is in v2.
+            return NEW_MATRIX_VERSION
+        new_hash = compute_hash(df)
+        if new_hash == matrix_id:
+            # Means we read the matrix as we supposed to so the version we tested was right
+            return LEGACY_MATRIX_VERSION
+        else:
+            # Means we did not read the matrix as we were supposed to so we have to return the other version
+            return NEW_MATRIX_VERSION

@@ -39,6 +39,7 @@ from antarest.login.model import Group, GroupDTO, Identity, UserInfo
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound, MatrixNotSupported
 from antarest.matrixstore.model import (
+    NEW_MATRIX_VERSION,
     Matrix,
     MatrixDataSet,
     MatrixDataSetDTO,
@@ -50,7 +51,7 @@ from antarest.matrixstore.model import (
 )
 from antarest.matrixstore.parsing import load_matrix
 from antarest.matrixstore.repository import compute_hash
-from antarest.matrixstore.service import NEW_MATRIX_VERSION, MatrixService, check_dataframe_compliance
+from antarest.matrixstore.service import MatrixService, check_dataframe_compliance
 from tests.conftest import PROJECT_DIR
 from tests.helpers import with_db_context
 
@@ -707,19 +708,20 @@ def test_synchronize_matrix_store(matrix_service: MatrixService, dry_run: bool) 
 @with_db_context
 def test_infer_matrix_version(matrix_service: MatrixService) -> None:
     """Ensures we're able to find a matrix version if we know it's previously calculated hash"""
+    content_repo = matrix_service.matrix_content_repository
 
     # Create a matrix in v2 with values not supported in v1.
     matrix_id = matrix_service.create(AGGREGATION_DF)
-    assert matrix_service._infer_matrix_version(matrix_id) == 2
+    assert content_repo.infer_matrix_version(matrix_id) == 2
 
     # Create a matrix in v2 with values supported in v1.
     df = create_polars_dataframe(TEST_MATRIX)
     matrix_id = matrix_service.create(df)  # Saves the matrix with its headers, so v2.
-    assert matrix_service._infer_matrix_version(matrix_id) == 2
+    assert content_repo.infer_matrix_version(matrix_id) == 2
 
     # Create a matrix in v1
     df = create_polars_dataframe([[1.1, 1.1], [1.1, 1.1]])
-    bucket_dir = matrix_service.matrix_content_repository.bucket_dir
+    bucket_dir = content_repo.bucket_dir
     matrix_id = compute_hash(df)
     write_dataframe_in_tsv_format(df, bucket_dir / f"{matrix_id}.tsv", headers=False)  # No headers means v1.
-    assert matrix_service._infer_matrix_version(matrix_id) == 1
+    assert content_repo.infer_matrix_version(matrix_id) == 1

@@ -25,6 +25,13 @@ from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
 from antarest.login.model import Group, GroupDTO, Identity, UserInfo
 
+LEGACY_MATRIX_VERSION = 1
+NEW_MATRIX_VERSION = 2
+"""
+Version 1 matrices were not saved with a header, unlike version 2 ones.
+Therefore, we rely on this version to know how to read the matrices
+"""
+
 
 class Matrix(Base):
     """
