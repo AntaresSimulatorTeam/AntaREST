@@ -180,7 +180,13 @@ class DatabaseStStorageDao(STStorageDao):
         if not self.st_storage_exists(area_id, storage.id):
             raise STStorageNotFound(area_id, storage.id)
 
-        session.execute(ST_STORAGE_TABLE.delete().where(ST_STORAGE_TABLE.c.st_storage_id == storage.id))
+        session.execute(
+            ST_STORAGE_TABLE.delete().where(
+                (ST_STORAGE_TABLE.c.study_id == self._study_id)
+                & (ST_STORAGE_TABLE.c.area_id == area_id)
+                & (ST_STORAGE_TABLE.c.st_storage_id == storage.id)
+            )
+        )
         session.commit()
 
     @override

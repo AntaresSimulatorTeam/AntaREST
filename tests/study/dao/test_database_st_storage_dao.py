@@ -321,7 +321,7 @@ def test_constraint_matrix_lifecycle(db_session: Session, dao: DatabaseStudyDao)
         dao.get_st_storage_additional_constraints_matrix("area_1", "battery", "c1"), dataframe, check_dtypes=False
     )
 
-    with pytest.raises(STStorageNotFound):
+    with pytest.raises(STStorageAdditionalConstraintNotFound):
         dao.get_st_storage_additional_constraints_matrix("area_1", "battery", "nonexistent")
 
     with pytest.raises(STStorageAdditionalConstraintNotFound):
