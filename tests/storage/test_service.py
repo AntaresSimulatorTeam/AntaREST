@@ -25,6 +25,7 @@ from unittest.mock import ANY, Mock, call, patch, seal
 import pytest
 from _pytest.logging import LogCaptureFixture
 from antares.study.version import StudyVersion
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from antarest.blobstore.service import BlobService
@@ -1197,8 +1198,10 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
     ) -> None:
         assert parent_id == raw_study.id
         assert bottom_first is True
-        assert include_parent is False
+        assert include_parent is True
         fun(variant_study)
+        if include_parent:
+            fun(raw_study)
 
     variant_study_service.walk_children.side_effect = walk_children
 
@@ -1216,9 +1219,12 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
     args, kwargs = variant_study_service.walk_children.call_args
     assert args[0] == raw_study.id
     assert kwargs.get("bottom_first") is True
-    assert kwargs.get("include_parent") is False
+    assert kwargs.get("include_parent") is True
 
-    assert repository.delete.call_args_list == [call(variant_study.id), call(raw_study.id)]
+    # With delete_studies, repository.delete is called once with all study IDs
+    repository.delete.assert_called_once()
+    deleted_ids = set(repository.delete.call_args[0])
+    assert deleted_ids == {variant_study.id, raw_study.id}
 
 
 @with_admin_user
@@ -1254,8 +1260,8 @@ def test_delete_studies_raises_when_children_and_no_variants_flag(tmp_path: Path
 
 
 @with_admin_user
-def test_delete_studies_checks_variant_permissions(tmp_path: Path) -> None:
-    """Permission check must be performed on each variant child individually."""
+def test_delete_studies_also_deletes_child_variants(tmp_path: Path) -> None:
+    """Deleting a parent study with with_variants=True also deletes all its child variants."""
     admin_group = Group(id="admin", name="admin")
     repository = Mock(spec=StudyMetadataRepository)
 
@@ -1270,19 +1276,19 @@ def test_delete_studies_checks_variant_permissions(tmp_path: Path) -> None:
     parent.to_json_summary = Mock(return_value={"id": "parent"})
     parent.to_enhanced_json_summary = Mock(return_value={"id": "parent", "workspace": DEFAULT_WORKSPACE_NAME})
 
-    forbidden_variant = create_variant_study(
-        id="forbidden-variant",
+    child_variant = create_variant_study(
+        id="child-variant",
         path=str(tmp_path / "fv"),
         archived=False,
         owner=None,
         groups=[admin_group],
         public_mode=PublicMode.NONE,
     )
-    forbidden_variant.generation_task = None
-    forbidden_variant.to_json_summary = Mock(return_value={"id": "forbidden-variant"})
+    child_variant.generation_task = None
+    child_variant.to_json_summary = Mock(return_value={"id": "child-variant"})
 
     def get_study(study_id: str) -> Study:
-        return {"parent": parent, "forbidden-variant": forbidden_variant}[study_id]
+        return {"parent": parent, "child-variant": child_variant}[study_id]
 
     repository.get.side_effect = get_study
     variant_study_service = Mock(spec=VariantStudyService)
@@ -1291,7 +1297,7 @@ def test_delete_studies_checks_variant_permissions(tmp_path: Path) -> None:
     def walk_children(
         parent_id: str, fun: t.Callable[[t.Any], None], bottom_first: bool, include_parent: bool = True
     ) -> None:
-        fun(forbidden_variant)
+        fun(child_variant)
         if include_parent:
             fun(parent)
 
@@ -1305,10 +1311,9 @@ def test_delete_studies_checks_variant_permissions(tmp_path: Path) -> None:
         variant_study_service=variant_study_service,
     )
 
-    # Admin user has permission, so this should succeed
     service.delete_studies(["parent"], with_variants=True)
     deleted_ids = set(repository.delete.call_args.args)
-    assert "forbidden-variant" in deleted_ids
+    assert "child-variant" in deleted_ids
     assert "parent" in deleted_ids
 
 
@@ -1352,8 +1357,6 @@ def test_delete_studies_events_pushed_after_db_delete(tmp_path: Path) -> None:
 @with_admin_user
 def test_delete_studies_empty_list_raises() -> None:
     """Passing an empty list should raise an HTTPException."""
-    from fastapi import HTTPException
-
     service = build_study_service(
         raw_study_service=Mock(spec=RawStudyService),
         directory_service=Mock(spec=DirectoryService),
@@ -1368,8 +1371,6 @@ def test_delete_studies_empty_list_raises() -> None:
 @with_admin_user
 def test_delete_studies_exceeds_max_batch_size() -> None:
     """Exceeding MAX_BATCH_DELETE_SIZE should raise an HTTPException."""
-    from fastapi import HTTPException
-
     service = build_study_service(
         raw_study_service=Mock(spec=RawStudyService),
         directory_service=Mock(spec=DirectoryService),

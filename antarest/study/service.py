@@ -1428,27 +1428,7 @@ class StudyService:
             uuid: study uuid
             children: delete children or not
         """
-        study = self.get_study(uuid)
-        assert_permission(study, StudyPermissionType.WRITE)
-        study_info = self._prefetch_study_info(study)
-        variant_service = self.storage_service.variant_study_service
-
-        self._validate_children_deletion(study, children, variant_service)
-
-        if variant_service.has_children(study):
-            variant_service.walk_children(
-                study.id,
-                lambda s: self.delete_study(s.id, True),
-                bottom_first=True,
-                include_parent=False,
-            )
-
-        # If the study is a variant, and its snapshot is generating,
-        # we need to wait until it's done to delete it to avoid any fs issues
-        self._await_generation_tasks([study])
-        self.repository.delete(study.id)
-        self._delete_study_from_filesystem(study)
-        self._notify_study_deleted(study, study_info)
+        self.delete_studies([uuid], with_variants=children)
 
     def delete_studies(self, study_ids: List[str], with_variants: bool) -> None:
         """
@@ -1477,9 +1457,8 @@ class StudyService:
             )
 
         logger.warning(
-            "Batch delete requested for %d studies by user %s (with_variants=%s)",
+            "Batch delete requested for %d studies (with_variants=%s)",
             len(study_ids),
-            get_user_id(),
             with_variants,
         )
 
@@ -1522,8 +1501,6 @@ class StudyService:
 
         for study in studies_to_delete.values():
             self._delete_study_from_filesystem(study)
-
-        for study in studies_to_delete.values():
             self._notify_study_deleted(study, study_infos[study.id])
 
     def import_study(
