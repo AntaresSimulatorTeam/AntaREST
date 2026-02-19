@@ -119,7 +119,6 @@ function ManagedTreeNode({
   if (isUpdating(id)) {
     return (
       <EditableTreeItem
-        itemId={path}
         initialValue={name}
         isEditing
         isPending={isUpdatePending}
@@ -164,7 +163,6 @@ function ManagedTreeNode({
       {/* Show editable item when creating a subdirectory under this directory */}
       {isCreatingSubDirectory(id) && (
         <EditableTreeItem
-          itemId={`temp-${id}-${Date.now()}`}
           isEditing
           isPending={isCreatePending}
           onSave={onSaveSubDirectory(id)} // id is the parentId for the new subdirectory

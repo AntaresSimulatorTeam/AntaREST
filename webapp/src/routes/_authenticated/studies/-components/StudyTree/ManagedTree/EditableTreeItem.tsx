@@ -12,13 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { CircularProgress, TextField } from "@mui/material";
+import { Box, CircularProgress, TextField } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
-import TreeItemEnhanced from "@/components/TreeItemEnhanced";
-import { editableTreeItemStyles, textFieldStyles, treeNodeIcons } from "./styles";
+import { editableRowStyles, textFieldStyles, treeNodeIcons } from "./styles";
 
 interface EditableTreeItemProps {
-  itemId: string;
   initialValue?: string;
   isEditing: boolean;
   isPending?: boolean;
@@ -27,7 +25,6 @@ interface EditableTreeItemProps {
 }
 
 function EditableTreeItem({
-  itemId,
   initialValue = "",
   isEditing,
   isPending = false,
@@ -96,34 +93,27 @@ function EditableTreeItem({
     return null;
   }
 
+  const FolderIcon = treeNodeIcons.folder;
+
   return (
-    <TreeItemEnhanced
-      itemId={itemId}
-      label={
-        <TextField
-          inputRef={inputRef}
-          value={value}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          onBlur={handleBlur}
-          size="small"
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-          fullWidth
-          disabled={isPending}
-          sx={textFieldStyles}
-          slotProps={{
-            input: {
-              endAdornment: isPending ? <CircularProgress size={16} sx={{ ml: 1 }} /> : null,
-            },
-          }}
-        />
-      }
-      slots={{
-        expandIcon: treeNodeIcons.folder,
-      }}
-      sx={editableTreeItemStyles}
-    />
+    <Box sx={editableRowStyles}>
+      <FolderIcon sx={{ fontSize: "1.2rem", color: "info.main" }} />
+      <TextField
+        inputRef={inputRef}
+        value={value}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
+        size="small"
+        disabled={isPending}
+        sx={textFieldStyles}
+        slotProps={{
+          input: {
+            endAdornment: isPending ? <CircularProgress size={16} sx={{ ml: 1 }} /> : null,
+          },
+        }}
+      />
+    </Box>
   );
 }
 
