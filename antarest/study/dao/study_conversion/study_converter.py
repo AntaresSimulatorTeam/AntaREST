@@ -273,8 +273,6 @@ class StudyConverter:
 
             if self._study_version >= STUDY_VERSION_9_2:
                 storage_constraints = constraints.get(sts_id)
-                if storage_constraints is None:
-                    storage_constraints = constraints.get(sts_id)
                 if storage_constraints:
                     self._new_dao.save_st_storage_additional_constraints(area_id, sts_id, storage_constraints)
                     for constraint in storage_constraints:

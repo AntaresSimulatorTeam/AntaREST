@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import json
 import shutil
 import uuid
 from datetime import datetime, timezone
@@ -164,9 +165,12 @@ def test_command_matrix_usage_provider(
     with db():
         study_id = "study_id"
 
-        study_version = "880"
+        study_version = "930"
         variant_study_repository.save(VariantStudy(id=study_id, version=study_version, path=tmp_path.as_posix()))
         matrices_id = "a68de4b5e96a60c8ceb3c7b7ef93461725bdbbff3516b136585a743b5c0ec664"
+        st_storage_matrix_ids = [
+            command_matrix_usage_provider.matrix_service.create(pl.DataFrame([[i]])) for i in range(10)
+        ]
 
         # TODO: add series to the command blocks
         command_block1 = CommandBlock(
@@ -185,28 +189,53 @@ def test_command_matrix_usage_provider(
             version=7,
             study_version=study_version,
         )
+        command_block3 = CommandBlock(
+            study_id=study_id,
+            command=CommandName.CREATE_ST_STORAGE.value,
+            args=json.dumps(
+                {
+                    "area_id": "area1",
+                    "parameters": {"name": "sts"},
+                    "pmax_injection": st_storage_matrix_ids[0],
+                    "pmax_withdrawal": st_storage_matrix_ids[1],
+                    "lower_rule_curve": st_storage_matrix_ids[2],
+                    "upper_rule_curve": st_storage_matrix_ids[3],
+                    "inflows": st_storage_matrix_ids[4],
+                    "cost_injection": st_storage_matrix_ids[5],
+                    "cost_withdrawal": st_storage_matrix_ids[6],
+                    "cost_level": st_storage_matrix_ids[7],
+                    "cost_variation_injection": st_storage_matrix_ids[8],
+                    "cost_variation_withdrawal": st_storage_matrix_ids[9],
+                }
+            ),
+            index=2,
+            version=3,
+            study_version=study_version,
+        )
 
         db.session.add(command_block1)
         db.session.add(command_block2)
+        db.session.add(command_block3)
         db.session.commit()
 
         # DB request to fetch the command ids
-        cmd1_id, cmd2_id = "", ""
+        cmd_ids = {}
         for cmd in db.session.query(CommandBlock).all():
-            if cmd.index == 0:
-                cmd1_id = cmd.id
-            else:
-                cmd2_id = cmd.id
-        description1 = f"Used by command {cmd1_id} from variant study {study_id}"
-        description2 = f"Used by command {cmd2_id} from variant study {study_id}"
+            cmd_ids[cmd.index] = cmd.id
+        description1 = f"Used by command {cmd_ids[0]} from variant study {study_id}"
+        description2 = f"Used by command {cmd_ids[1]} from variant study {study_id}"
+        description3 = f"Used by command {cmd_ids[2]} from variant study {study_id}"
 
         # Check the response
         matrices_references = list(command_matrix_usage_provider.get_matrix_usage())
 
-        assert matrices_references == [
+        assert matrices_references[:2] == [
             MatrixReference(matrix_id=matrices_id, use_description=description1),
             MatrixReference(matrix_id=matrices_id, use_description=description2),
         ]
+        assert set(matrices_references[2:]) == {
+            MatrixReference(matrix_id=matrix_id, use_description=description3) for matrix_id in st_storage_matrix_ids
+        }
 
 
 @with_db_context

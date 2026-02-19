@@ -39,7 +39,8 @@ from antarest.study.dao.database.models.st_storage import (
 )
 
 
-def test_save_st_storage(dao: DatabaseStudyDao) -> None:
+def test_save_st_storage(dao_930: DatabaseStudyDao) -> None:
+    dao = dao_930
     dao.save_area("area_1")
 
     dao.save_st_storage(
@@ -55,6 +56,10 @@ def test_save_st_storage(dao: DatabaseStudyDao) -> None:
             initial_level=0.3,
             initial_level_optim=True,
             enabled=True,
+            efficiency_withdrawal=0.9,
+            penalize_variation_injection=True,
+            penalize_variation_withdrawal=False,
+            allow_overflow=True,
         ),
     )
 
@@ -69,10 +74,10 @@ def test_save_st_storage(dao: DatabaseStudyDao) -> None:
     assert st_storage.initial_level == 0.3
     assert st_storage.initial_level_optim is True
     assert st_storage.enabled is True
-    assert st_storage.efficiency_withdrawal is None
-    assert st_storage.penalize_variation_injection is None
-    assert st_storage.penalize_variation_withdrawal is None
-    assert st_storage.allow_overflow is None
+    assert st_storage.efficiency_withdrawal == 0.9
+    assert st_storage.penalize_variation_injection is True
+    assert st_storage.penalize_variation_withdrawal is False
+    assert st_storage.allow_overflow is True
 
     with pytest.raises(AreaNotFound):
         dao.save_st_storage("nonexistent", STStorage(id="st_storage_id", name="st-storage"))
