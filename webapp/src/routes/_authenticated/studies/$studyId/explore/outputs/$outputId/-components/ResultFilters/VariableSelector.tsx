@@ -39,13 +39,13 @@ import {
   getFirstVariableForItem,
   getVariables,
   type DataType,
-  type OutputItemType,
+  type ListType,
 } from "../../-utils";
 
 interface VariableSelectorProps {
   variablesMetadata: VariablesListDTO | null;
   dataType: DataType;
-  itemType: OutputItemType;
+  itemType: ListType;
   selectedItemId: string;
   selectedVariable: string;
   onVariableSelect: (variable: string) => void;

@@ -25,6 +25,7 @@ import {
 import EmptyView from "@/components/page/EmptyView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import type { UsePromiseResponse } from "@/hooks/usePromise";
+import type { StudyMapDistrict } from "@/redux/ducks/studyMaps";
 import type {
   VariablesListDTO,
   VariableViewMatrixDTO,
@@ -33,14 +34,13 @@ import type { AreaWithId, LinkElement } from "@/types/types";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { isAxiosError } from "axios";
 import { useTranslation } from "react-i18next";
-import type { OutputItemType } from "../../../-utils";
+import type { ListType } from "../../../-utils";
 import ProcessButton from "./ProcessButton";
 
 interface VariableMatrixProps {
   variablesMetadata: VariablesListDTO | null;
-  itemType: OutputItemType;
-  selectedItemId: string;
-  selectedItem: AreaWithId | LinkElement | undefined;
+  itemType: ListType;
+  selectedItem: AreaWithId | StudyMapDistrict | LinkElement;
   onMaterializeVariable: () => void;
   isMaterializing: boolean;
   variableViewDataRes: UsePromiseResponse<VariableViewMatrixDTO | null>;
@@ -52,18 +52,17 @@ interface VariableMatrixProps {
 
 function hasVariablesForItem(
   variablesMetadata: VariablesListDTO,
-  itemType: OutputItemType,
-  selectedItemId: string,
-  selectedItem: AreaWithId | LinkElement | undefined,
+  itemType: ListType,
+  selectedItem: AreaWithId | StudyMapDistrict | LinkElement,
 ): boolean {
   // Variable-per-variable always uses mcInd
   const data = variablesMetadata.mcInd;
 
   if (itemType === "areas") {
-    return data.areas.some((area) => area.name === selectedItemId);
+    return data.areas.some((area) => area.name === selectedItem.id);
   }
 
-  if (itemType === "links" && selectedItem && "area1" in selectedItem) {
+  if (itemType === "links" && "area1" in selectedItem) {
     return data.links.some(
       (link) => link.area1Name === selectedItem.area1 && link.area2Name === selectedItem.area2,
     );
@@ -75,7 +74,6 @@ function hasVariablesForItem(
 function VariableMatrix({
   variablesMetadata,
   itemType,
-  selectedItemId,
   selectedItem,
   onMaterializeVariable,
   isMaterializing,
@@ -88,10 +86,7 @@ function VariableMatrix({
   const { t } = useTranslation();
 
   // TODO: !variablesMetadata check may be unnecessary
-  if (
-    !variablesMetadata ||
-    !hasVariablesForItem(variablesMetadata, itemType, selectedItemId, selectedItem)
-  ) {
+  if (!variablesMetadata || !hasVariablesForItem(variablesMetadata, itemType, selectedItem)) {
     return <EmptyView title={t("study.outputs.noVariablesForArea")} icon={GridOffIcon} />;
   }
 

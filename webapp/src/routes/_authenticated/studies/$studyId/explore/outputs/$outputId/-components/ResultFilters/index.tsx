@@ -19,6 +19,7 @@ import NumberFE from "@/components/fieldEditors/NumberFE";
 import SearchFE from "@/components/fieldEditors/SearchFE";
 import SelectFE from "@/components/fieldEditors/SelectFE";
 import { useDebouncedField } from "@/hooks/useDebouncedField";
+import type { StudyMapDistrict } from "@/redux/ducks/studyMaps";
 import type { VariablesListDTO } from "@/services/api/studies/outputs/variableViews/types";
 import type { AreaWithId, LinkElement } from "@/types/types";
 import FilterListIcon from "@mui/icons-material/FilterList";
@@ -33,13 +34,13 @@ import {
   matchesSearchTerm,
   type DataType,
   type Frequency,
+  type ListType,
   type MonteCarloMode,
-  type OutputItemType,
 } from "../../-utils";
 import ClusterSelector from "./ClusterSelector";
+import DownloadVariableViewButton from "./DownloadVariableViewButton";
 import MonteCarloModeSelector from "./MonteCarloModeSelector";
 import VariableSelector from "./VariableSelector";
-import DownloadVariableViewButton from "./DownloadVariableViewButton";
 
 interface ColumnHeader {
   variable: string;
@@ -83,9 +84,8 @@ interface Props {
   onColHeadersChange: (colHeaders: string[][], indices: number[]) => void;
   onToggleFilter: () => void;
   variablesMetadata: VariablesListDTO | null;
-  itemType: OutputItemType;
-  selectedItemId: string;
-  selectedItem: AreaWithId | LinkElement | undefined;
+  itemType: ListType;
+  selectedItem: AreaWithId | StudyMapDistrict | LinkElement;
   selectedVariable: string;
   onVariableSelect: (variable: string) => void;
   selectedClusterId: string;
@@ -111,7 +111,6 @@ function ResultFilters({
   onToggleFilter,
   variablesMetadata,
   itemType,
-  selectedItemId,
   selectedItem,
   selectedVariable,
   onVariableSelect,
@@ -303,7 +302,7 @@ function ResultFilters({
         <ClusterSelector
           variablesMetadata={variablesMetadata}
           dataType={dataType}
-          selectedItemId={selectedItemId}
+          selectedItemId={selectedItem.id}
           selectedClusterId={selectedClusterId}
           onClusterSelect={onClusterSelect}
         />
@@ -316,7 +315,7 @@ function ResultFilters({
           variablesMetadata={variablesMetadata}
           dataType={dataType}
           itemType={itemType}
-          selectedItemId={selectedItemId}
+          selectedItemId={selectedItem.id}
           selectedVariable={selectedVariable}
           onVariableSelect={onVariableSelect}
           selectedClusterId={selectedClusterId}
@@ -416,7 +415,6 @@ function ResultFilters({
                   itemType,
                   dataType,
                   selectedClusterId,
-                  selectedItemId,
                   selectedItem,
                   selectedVariable,
                   frequency,

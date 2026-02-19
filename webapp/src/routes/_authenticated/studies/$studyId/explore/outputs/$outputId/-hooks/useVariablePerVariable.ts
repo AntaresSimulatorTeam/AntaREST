@@ -36,6 +36,7 @@
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import usePromise from "@/hooks/usePromise";
 import { useTaskMonitor } from "@/hooks/useTaskMonitor";
+import type { StudyMapDistrict } from "@/redux/ducks/studyMaps";
 import {
   getTimeIndex,
   getVariablesList,
@@ -46,16 +47,15 @@ import type { AreaWithId, LinkElement } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { buildVariableViewParams, type Frequency, type OutputItemType } from "../-utils";
+import { buildVariableViewParams, type Frequency, type ListType } from "../-utils";
 
 interface UseVariablePerVariableProps {
   studyId: string;
   outputId: string | undefined;
   isEnabled: boolean;
-  itemType: OutputItemType;
+  itemType: ListType;
   frequency: Frequency;
-  selectedItemId: string;
-  selectedItem: AreaWithId | LinkElement | undefined;
+  selectedItem: AreaWithId | StudyMapDistrict | LinkElement;
   dataType: string;
   selectedClusterId: string;
 }
@@ -66,7 +66,6 @@ export function useVariablePerVariable({
   isEnabled,
   itemType,
   frequency,
-  selectedItemId,
   selectedItem,
   dataType,
   selectedClusterId,
@@ -82,7 +81,7 @@ export function useVariablePerVariable({
   const materializationParamsRef = useRef<{
     variable: string;
     itemId: string;
-    itemType: OutputItemType;
+    itemType: ListType;
     frequency: Frequency;
   } | null>(null);
 
@@ -110,7 +109,7 @@ export function useVariablePerVariable({
 
   const variableViewDataRes = usePromise(
     async () => {
-      if (!outputId || !selectedVariable || !selectedItemId || !selectedItem) {
+      if (!outputId || !selectedVariable || !selectedItem) {
         return null;
       }
 
@@ -126,7 +125,6 @@ export function useVariablePerVariable({
         itemType,
         dataType,
         selectedClusterId,
-        selectedItemId,
         selectedItem,
         selectedVariable,
         frequency,
@@ -136,16 +134,7 @@ export function useVariablePerVariable({
       return data;
     },
     {
-      deps: [
-        studyId,
-        outputId,
-        selectedVariable,
-        selectedItemId,
-        itemType,
-        frequency,
-        dataType,
-        selectedClusterId,
-      ],
+      deps: [studyId, outputId, selectedVariable, itemType, frequency, dataType, selectedClusterId],
     },
   );
 
@@ -164,10 +153,10 @@ export function useVariablePerVariable({
     setIsMaterializing(false);
     setMaterializationTaskId(null);
     materializationParamsRef.current = null;
-  }, [selectedVariable, selectedItemId]);
+  }, [selectedVariable, selectedItem]);
 
   const handleMaterializeVariable = async () => {
-    if (!outputId || !selectedVariable || !selectedItemId || !selectedItem) {
+    if (!outputId || !selectedVariable || !selectedItem) {
       return;
     }
 
@@ -186,7 +175,6 @@ export function useVariablePerVariable({
         itemType,
         dataType,
         selectedClusterId,
-        selectedItemId,
         selectedItem,
         selectedVariable,
         frequency,
@@ -199,7 +187,7 @@ export function useVariablePerVariable({
       // Store the current view params to check later if user is still on this view
       materializationParamsRef.current = {
         variable: selectedVariable,
-        itemId: selectedItemId,
+        itemId: selectedItem.id,
         itemType,
         frequency,
       };

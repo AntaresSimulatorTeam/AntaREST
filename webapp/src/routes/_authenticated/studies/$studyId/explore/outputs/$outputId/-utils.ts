@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import type { ContentListItem } from "@/components/page/ListView";
+import type { StudyMapDistrict } from "@/redux/ducks/studyMaps";
 import type {
   AreaVariablesDTO,
   RenewableClusterVariablesDTO,
@@ -22,19 +24,14 @@ import type {
 } from "@/services/api/studies/outputs/variableViews/types";
 import type { AreaWithId, LinkElement, Simulation } from "@/types/types";
 
-export const OUTPUT_ITEM_TYPES = ["areas", "links", "synthesis"] as const;
-export const DATA_TYPES = ["values", "details", "details-res", "id", "details-STstorage"] as const;
-export const FREQUENCIES = ["hourly", "daily", "weekly", "monthly", "annual"] as const;
-export const MONTE_CARLO_MODES = ["mc-ind", "mc-all", "variable-per-variable"] as const;
-
-export type OutputItemType = (typeof OUTPUT_ITEM_TYPES)[number];
-export type DataType = (typeof DATA_TYPES)[number];
-export type Frequency = (typeof FREQUENCIES)[number];
-export type MonteCarloMode = (typeof MONTE_CARLO_MODES)[number];
+export type ListType = "areas" | "links" | "synthesis";
+export type DataType = "values" | "details" | "details-res" | "id" | "details-STstorage";
+export type Frequency = "hourly" | "daily" | "weekly" | "monthly" | "annual";
+export type MonteCarloMode = "mc-ind" | "mc-all" | "variable-per-variable";
 
 interface Params {
   output: Partial<Simulation> & { id: string; name: string };
-  item: AreaWithId | LinkElement;
+  item: AreaWithId | StudyMapDistrict | LinkElement;
   dataType: DataType;
   frequency: Frequency;
   year?: number;
@@ -61,25 +58,21 @@ export function createPath(params: Params): string {
 export const SYNTHESIS_ITEMS = [
   {
     id: "areas",
-    name: "Areas",
     label: "Areas synthesis",
   },
   {
     id: "links",
-    name: "Links",
     label: "Links synthesis",
   },
   {
     id: "digest",
-    name: "Digest",
     label: "Digest",
   },
   {
     id: "thermal",
-    name: "Thermal",
     label: "Thermal synthesis",
   },
-];
+] as const satisfies ContentListItem[];
 
 export function matchesSearchTerm(text: string, searchTerm: string): boolean {
   const searchTerms = searchTerm.split("|").map((term) => term.trim().toLowerCase());
@@ -116,11 +109,10 @@ export function matchesSearchTerm(text: string, searchTerm: string): boolean {
  * // Returns: { type: "link", variableName: "FLOW LIN.", frequency: "monthly", areaFromId: "area1", areaToId: "area2" }
  */
 export function buildVariableViewParams(
-  itemType: OutputItemType,
+  itemType: ListType,
   dataType: string,
   selectedClusterId: string,
-  selectedItemId: string,
-  selectedItem: AreaWithId | LinkElement,
+  selectedItem: AreaWithId | StudyMapDistrict | LinkElement,
   selectedVariable: string,
   frequency: Frequency,
 ): VariableViewParams {
@@ -131,7 +123,7 @@ export function buildVariableViewParams(
         type: "thermal",
         variableName: selectedVariable,
         frequency: frequency,
-        areaId: selectedItemId,
+        areaId: selectedItem.id,
         clusterId: selectedClusterId,
       };
     }
@@ -140,7 +132,7 @@ export function buildVariableViewParams(
         type: "renewable",
         variableName: selectedVariable,
         frequency: frequency,
-        areaId: selectedItemId,
+        areaId: selectedItem.id,
         clusterId: selectedClusterId,
       };
     }
@@ -149,7 +141,7 @@ export function buildVariableViewParams(
         type: "st_storage",
         variableName: selectedVariable,
         frequency: frequency,
-        areaId: selectedItemId,
+        areaId: selectedItem.id,
         clusterId: selectedClusterId,
       };
     }
@@ -159,7 +151,7 @@ export function buildVariableViewParams(
       type: "area",
       variableName: selectedVariable,
       frequency: frequency,
-      areaId: selectedItemId,
+      areaId: selectedItem.id,
     };
   }
 
@@ -190,7 +182,7 @@ export function buildVariableViewParams(
  */
 export function getFirstVariableForItem(
   variablesMetadata: VariablesListDTO | null,
-  itemType: OutputItemType,
+  itemType: ListType,
   selectedItemId: string,
 ): string {
   if (!variablesMetadata || !selectedItemId) {
@@ -276,7 +268,7 @@ function isLinkMatch(area1: string, area2: string, selectedId: string): boolean 
  */
 export function getVariables(
   variablesMetadata: VariablesListDTO,
-  itemType: OutputItemType,
+  itemType: ListType,
   selectedItemId: string,
   dataType: DataType,
 ): string[] {
