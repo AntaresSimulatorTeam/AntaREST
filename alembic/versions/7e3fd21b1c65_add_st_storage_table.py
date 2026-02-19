@@ -28,7 +28,7 @@ matrix_tables = [
 ]
 
 
-def upgrade():
+def upgrade() -> None:
     variable_enum = sa.Enum("withdrawal", "injection", "netting", name="additionalconstraintvariable")
     operator_enum = sa.Enum("less", "greater", "equal", name="additionalconstraintoperator")
 
@@ -123,7 +123,7 @@ def upgrade():
     )
 
 
-def downgrade():
+def downgrade() -> None:
     for table in matrix_tables:
         op.drop_table(table)
 

@@ -35,6 +35,7 @@ from antarest.study.dao.database.models.st_storage import (
     LOWER_RULE_CURVE_TABLE,
     PMAX_INJECTION_TABLE,
     PMAX_WITHDRAWAL_TABLE,
+    ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE,
     UPPER_RULE_CURVE_TABLE,
 )
 from antarest.study.dao.database.models.thermal import (
@@ -70,6 +71,7 @@ MATRIX_TABLES = [
     COST_LEVEL_TABLE,
     COST_VARIATION_INJECTION_TABLE,
     COST_VARIATION_WITHDRAWAL_TABLE,
+    ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE,
 ]
 
 

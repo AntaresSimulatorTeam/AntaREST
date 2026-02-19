@@ -147,7 +147,7 @@ class DatabaseStStorageDao(STStorageDao):
             upsert_multiple(session, ST_STORAGE_TABLE, values)
         except IntegrityError as e:
             validate_area_exists(session, self._study_id, area_id)
-            existing_storage_ids = {th.id for th in self.get_all_st_storages_for_area(area_id)}
+            existing_storage_ids = {sts.id for sts in self.get_all_st_storages_for_area(area_id)}
             for storage in storages:
                 if storage.id not in existing_storage_ids:
                     raise STStorageNotFound(area_id, storage.id) from e
@@ -256,7 +256,7 @@ class DatabaseStStorageDao(STStorageDao):
         constraint_by_areas: STStorageAdditionalConstraintsMap = {}
         for row in rows:
             constraint = self._convert_db_row_to_constraint(row)
-            constraint_by_areas.setdefault(row.area_id, {}).setdefault(row.st_storage_id.lower(), []).append(constraint)
+            constraint_by_areas.setdefault(row.area_id, {}).setdefault(row.st_storage_id, []).append(constraint)
         return constraint_by_areas
 
     @override
