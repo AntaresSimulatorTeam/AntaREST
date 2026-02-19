@@ -42,7 +42,7 @@ import {
   type ListType,
   type MonteCarloMode,
 } from "../../-utils";
-import ResultFilters from "../ResultFilters";
+import ResultFilters from "./ResultFilters";
 import ResultMatrix from "./ResultMatrix";
 import VariableMatrix from "./VariableMatrix";
 

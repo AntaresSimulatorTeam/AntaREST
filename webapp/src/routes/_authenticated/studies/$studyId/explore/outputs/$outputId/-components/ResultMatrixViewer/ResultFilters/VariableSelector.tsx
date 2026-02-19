@@ -40,7 +40,7 @@ import {
   getVariables,
   type DataType,
   type ListType,
-} from "../../-utils";
+} from "../../../-utils";
 
 interface VariableSelectorProps {
   variablesMetadata: VariablesListDTO | null;
