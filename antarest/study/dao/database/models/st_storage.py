@@ -67,16 +67,16 @@ def _create_st_storage_matrix_table(name: str) -> Table:
     )
 
 
-PMAX_INJECTION_TABLE = _create_st_storage_matrix_table("pmax_injection")
-PMAX_WITHDRAWAL_TABLE = _create_st_storage_matrix_table("pmax_withdrawal")
-LOWER_RULE_CURVE_TABLE = _create_st_storage_matrix_table("lower_rule_curve")
-UPPER_RULE_CURVE_TABLE = _create_st_storage_matrix_table("upper_rule_curve")
-INFLOWS_TABLE = _create_st_storage_matrix_table("inflows")
-COST_INJECTION_TABLE = _create_st_storage_matrix_table("cost_injection")
-COST_WITHDRAWAL_TABLE = _create_st_storage_matrix_table("cost_withdrawal")
-COST_LEVEL_TABLE = _create_st_storage_matrix_table("cost_level")
-COST_VARIATION_INJECTION_TABLE = _create_st_storage_matrix_table("cost_variation_injection")
-COST_VARIATION_WITHDRAWAL_TABLE = _create_st_storage_matrix_table("cost_variation_withdrawal")
+PMAX_INJECTION_TABLE = _create_st_storage_matrix_table("st_storage_pmax_injection")
+PMAX_WITHDRAWAL_TABLE = _create_st_storage_matrix_table("st_storage_pmax_withdrawal")
+LOWER_RULE_CURVE_TABLE = _create_st_storage_matrix_table("st_storage_lower_rule_curve")
+UPPER_RULE_CURVE_TABLE = _create_st_storage_matrix_table("st_storage_upper_rule_curve")
+INFLOWS_TABLE = _create_st_storage_matrix_table("st_storage_inflows")
+COST_INJECTION_TABLE = _create_st_storage_matrix_table("st_storage_cost_injection")
+COST_WITHDRAWAL_TABLE = _create_st_storage_matrix_table("st_storage_cost_withdrawal")
+COST_LEVEL_TABLE = _create_st_storage_matrix_table("st_storage_cost_level")
+COST_VARIATION_INJECTION_TABLE = _create_st_storage_matrix_table("st_storage_cost_variation_injection")
+COST_VARIATION_WITHDRAWAL_TABLE = _create_st_storage_matrix_table("st_storage_cost_variation_withdrawal")
 
 
 ST_STORAGE_ADDITIONAL_CONSTRAINT_TABLE = Table(

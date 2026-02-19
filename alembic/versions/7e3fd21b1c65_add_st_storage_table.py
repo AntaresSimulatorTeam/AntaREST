@@ -15,16 +15,16 @@ branch_labels = None
 depends_on = None
 
 matrix_tables = [
-    "pmax_injection",
-    "pmax_withdrawal",
-    "lower_rule_curve",
-    "upper_rule_curve",
-    "inflows",
-    "cost_injection",
-    "cost_withdrawal",
-    "cost_level",
-    "cost_variation_injection",
-    "cost_variation_withdrawal",
+    "st_storage_pmax_injection",
+    "st_storage_pmax_withdrawal",
+    "st_storage_lower_rule_curve",
+    "st_storage_upper_rule_curve",
+    "st_storage_inflows",
+    "st_storage_cost_injection",
+    "st_storage_cost_withdrawal",
+    "st_storage_cost_level",
+    "st_storage_cost_variation_injection",
+    "st_storage_cost_variation_withdrawal",
 ]
 
 
