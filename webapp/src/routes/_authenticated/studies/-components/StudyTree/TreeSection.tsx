@@ -17,6 +17,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import {
   alpha,
   Box,
+  Collapse,
   IconButton,
   Stack,
   type SxProps,
@@ -24,6 +25,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 type TreeSectionVariant = "managed" | "external";
@@ -102,6 +104,7 @@ function TreeSection({
 }: TreeSectionProps) {
   const styles = variantStyles[variant];
   const { t } = useTranslation();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -110,7 +113,13 @@ function TreeSection({
   return (
     <Box sx={styles.container}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-        <Stack direction="row" spacing={1} alignItems="center">
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          onClick={() => setIsCollapsed((prev) => !prev)}
+          sx={{ cursor: "pointer" }}
+        >
           <Box sx={styles.icon}>{icon}</Box>
           <Typography variant="subtitle2" sx={styles.title}>
             {title}
@@ -135,24 +144,13 @@ function TreeSection({
             </Tooltip>
           )}
           {onRootClick && (
-            <Tooltip
-              title={t("studies.tree.allStudies", { defaultValue: "All studies" })} // TODO: update label and add key
-              placement="top"
-              arrow
-            >
-              <IconButton
-                size="small"
-                onClick={onRootClick}
-                sx={{ p: 0.5 }}
-                aria-label="All studies"
-              >
-                <HomeIcon sx={{ fontSize: 18 }} />
-              </IconButton>
-            </Tooltip>
+            <IconButton size="small" onClick={onRootClick} sx={{ p: 0.5 }} aria-label="Home">
+              <HomeIcon sx={{ fontSize: 18 }} />
+            </IconButton>
           )}
         </Stack>
       </Stack>
-      {children}
+      <Collapse in={!isCollapsed}>{children}</Collapse>
     </Box>
   );
 }
