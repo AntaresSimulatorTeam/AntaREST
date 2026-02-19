@@ -40,7 +40,7 @@ interface ResultMatrixProps {
   dateTimeMetadata: MatrixIndex | undefined;
 }
 
-function ResultMatrix({
+function OutputMatrix({
   matrixRes,
   resultColHeaders,
   filteredData,
@@ -98,4 +98,4 @@ function ResultMatrix({
   );
 }
 
-export default ResultMatrix;
+export default OutputMatrix;

@@ -42,8 +42,8 @@ import {
   type ListType,
   type MonteCarloMode,
 } from "../../-utils";
+import OutputMatrix from "./OutputMatrix";
 import ResultFilters from "./ResultFilters";
-import ResultMatrix from "./ResultMatrix";
 import VariableMatrix from "./VariableMatrix";
 
 interface ResultMatrixViewerProps {
@@ -302,7 +302,7 @@ function ResultMatrixViewer({ itemType, selectedItem, output }: ResultMatrixView
               dateTimeMetadata={timeIndexMetadata}
             />
           ) : (
-            <ResultMatrix
+            <OutputMatrix
               matrixRes={matrixRes}
               resultColHeaders={resultColHeaders}
               filteredData={filteredData}
