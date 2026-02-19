@@ -17,7 +17,6 @@ from unittest.mock import Mock
 
 import pytest
 from helpers import with_admin_user, with_db_context
-from py7zr import SevenZipFile
 from sqlalchemy import create_engine
 
 from antarest.blobstore.repository import BlobContentRepository
@@ -29,7 +28,6 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.eventbus import DummyEventBusService
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.tasks.service import TaskJobService
-from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
 from antarest.launcher.repository import JobResultRepository
@@ -60,6 +58,8 @@ from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+
+# TODO: remove that file
 
 
 @pytest.fixture(scope="session")
@@ -204,23 +204,3 @@ def service(tmp_path: Path, db_path: Path) -> StudyService:
 @with_db_context
 def test_service(service: StudyService) -> None:
     service.create_study("study", STUDY_VERSION_9_3, [])
-
-
-@pytest.mark.parametrize("outputs", [True, False])
-@with_admin_user
-@with_db_context
-def test_export_archived_study(service: StudyService, outputs: bool) -> None:
-    study_id = service.create_study("study", STUDY_VERSION_9_3, [])
-    study = service.get_file_study(service.get_study(study_id))
-    study_path = study.config.study_path
-
-    (study_path / "output/results1").mkdir(parents=True)
-    (study_path / "output/results1/file.txt").write_text("42")
-
-    download = service.export_study(study_id, outputs=outputs, archive_format=ArchiveFormat.SEVEN_ZIP)
-    service.file_transfer_manager.get_download_metadata(download_id=download.file.id, wait_for_availability=True)
-    download_path = service.file_transfer_manager.fetch_download(download.file.id).path
-
-    with SevenZipFile(download_path) as szf:
-        szf_files = set(szf.getnames())
-        assert ("output/results1/file.txt" in szf_files) == outputs

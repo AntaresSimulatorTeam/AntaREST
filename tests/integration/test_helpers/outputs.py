@@ -177,6 +177,8 @@ def create_minimal_output_dir(
     if isinstance(timestamp, str):
         timestamp = datetime.strptime(timestamp, TIMESTAMP_FORMAT)
     output_dir = parent / output_tuple_to_name(timestamp, mode, name)
+    output_dir.mkdir()
+    (output_dir / "about-the-study").mkdir()
     (output_dir / "about-the-study" / "parameters.ini").write_text(PARAMETERS_TEMPLATE)
     info_content = INFO_ANTARES_OUTPUT_TEMPLATE.format(
         version="9.2", name=name, mode=mode.value, timestamp=timestamp.timestamp()
