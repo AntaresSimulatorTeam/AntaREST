@@ -17,7 +17,7 @@ import { Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import type { StudyMetadata } from "@/types/types";
-import { useDeleteStudies } from "./useDeleteStudies";
+import { useDeleteStudies } from "./hooks/useDeleteStudies";
 
 interface Props {
   studyIds: Array<StudyMetadata["id"]>;

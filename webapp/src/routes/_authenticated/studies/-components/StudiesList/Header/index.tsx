@@ -27,10 +27,10 @@ import { toError } from "@/utils/fnUtils";
 import BatchActions from "./BatchActions";
 import DeleteStudiesDialog from "./DeleteStudiesDialog";
 import FilterControls from "./FilterControls";
+import { useBreadcrumbs } from "./hooks/useBreadcrumbs";
 import NavigationBreadcrumbs from "./NavigationBreadcrumbs";
 import ScanFolderDialog from "./ScanFolderDialog";
 import type { BreadcrumbItem, HeaderProps } from "./types";
-import { useBreadcrumbs } from "./useBreadcrumbs";
 
 function Header({
   studyIds,
