@@ -20,7 +20,7 @@ from configparser import MissingSectionHeaderError
 from datetime import datetime, timedelta
 from functools import wraps
 from pathlib import Path
-from unittest.mock import ANY, Mock, call, patch, seal
+from unittest.mock import ANY, Mock, patch, seal
 
 import pytest
 from _pytest.logging import LogCaptureFixture
