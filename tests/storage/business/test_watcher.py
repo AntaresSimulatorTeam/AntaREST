@@ -224,7 +224,7 @@ def test_scan_recursive_false(study_tree: Path, db_session: Session) -> None:
 
     raw_study_service.get_study_information.side_effect = get_info
     repository = StudyMetadataRepository(session=db_session, cache_service=Mock(spec=ICache))
-    repository.delete = Mock()
+    object.__setattr__(repository, "delete", Mock())
     config = build_config(study_tree)
     service = build_study_service(raw_study_service, directory_service, repository, config)
     watcher = Watcher(config, service, task_service=SimpleSyncTaskService())

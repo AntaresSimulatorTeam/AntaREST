@@ -228,7 +228,7 @@ def test_parse_xpress_dir(tmp_path: Path) -> None:
     assert env_variables["XPRESSDIR"] == "fake_path_for_test"
 
 
-def test_parse_solver_presets(launcher_config: LocalConfig):
+def test_parse_solver_presets(launcher_config: LocalConfig) -> None:
     local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
     launch_parameters = LauncherParametersDTO()
     solver_presets = SolverPresets.model_validate(

@@ -16,6 +16,7 @@ from zipfile import ZipFile
 
 import pytest
 from py7zr import SevenZipFile, py7zr
+from typing_extensions import override
 
 from antarest.blobstore.service import BlobService
 from antarest.core.config import InternalMatrixFormat
@@ -211,6 +212,7 @@ def test_export_output(tmp_path: Path) -> None:
     study_factory.create_from_fs.return_value = study_tree
 
     class OutputsProvider(IFileOutputsProvider):
+        @override
         def get_outputs(self, study_id: str) -> FileStudyOutputs:
             return FileStudyOutputs(
                 get_file_study=lambda: FileStudy(Mock(), study_tree),

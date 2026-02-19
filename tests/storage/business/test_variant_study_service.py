@@ -76,7 +76,7 @@ def test_get(tmp_path: str, project_path: Path) -> None:
     )
 
     metadata = create_variant_study(id="study2.py", path=str(path_study), generation_task="1")
-    study_service.exists = Mock()
+    object.__setattr__(study_service, "exists", Mock())
     study_service.exists.return_value = False
 
     def task_status() -> None:
@@ -150,7 +150,7 @@ def test_get_cache(tmp_path: str) -> None:
     metadata = create_variant_study(id="study2.py", path=str(path_study))
 
     cache_id = f"{CacheConstants.RAW_STUDY}/{metadata.id}"
-    study_service.exists = Mock()
+    object.__setattr__(study_service, "exists", Mock())
     study_service.exists.return_value = True
 
     assert study_service.get(metadata=metadata, url="", depth=-1) == data
@@ -189,7 +189,7 @@ def test_assert_study_exist(tmp_path: str, project_path: Path) -> None:
 
     metadata = create_variant_study(id=study_name, path=str(path_study2))
 
-    study_service.exists = Mock()
+    object.__setattr__(study_service, "exists", Mock())
     study_service.exists.return_value = True
     study_service._check_study_exists(metadata)
 
@@ -222,7 +222,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path: Path) -> None:
 
     metadata = create_variant_study(id=study_name, path=str(path_study2))
 
-    study_service.exists = Mock()
+    object.__setattr__(study_service, "exists", Mock())
     study_service.exists.return_value = False
 
     with pytest.raises(StudyNotFoundError):

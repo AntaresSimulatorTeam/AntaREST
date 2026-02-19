@@ -113,7 +113,7 @@ def app_and_services(tmp_path: Path, db_path: Path) -> Iterable[tuple[FastAPI, S
 
     app, services = fastapi_app(config_path, RESOURCES_DIR, mount_front=False)
 
-    def is_study_scanned():
+    def is_study_scanned() -> None:
         with db():
             studies = services.study.get_studies_information(
                 StudyFilter(access_permissions=AccessPermissions.for_user(DEFAULT_ADMIN_USER))

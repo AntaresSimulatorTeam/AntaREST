@@ -43,7 +43,7 @@ class MockMatrixNode(MatrixNode):
         df.write_csv(self.config.path, separator="\t", include_header=False)
 
     def check_errors(self, data: str, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
-        pass  # not used
+        return []  # not used
 
 
 def test_normalize_denormalize_methods(tmp_path: Path) -> None:

@@ -100,7 +100,7 @@ class TestMatrixService:
         """Creates a new matrix object with the specified data, but fail during saving."""
         # if the matrix can't be created in the service
         matrix_repo = matrix_service.repo
-        matrix_repo.save = Mock(side_effect=Exception("database error"))
+        object.__setattr__(matrix_repo, "save", Mock(side_effect=Exception("database error")))
         with pytest.raises(Exception, match="database error"):
             matrix_service.create(create_polars_dataframe(TEST_MATRIX))
 

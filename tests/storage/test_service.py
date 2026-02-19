@@ -668,7 +668,7 @@ def test_change_owner() -> None:
     study = create_raw_study(id=study_id, owner=alice)
     repository.get.return_value = study
     user_service.get_user.return_value = bob
-    service._edit_study_using_command = Mock()
+    object.__setattr__(service, "_edit_study_using_command", Mock())
 
     with current_user_context(jwt_user):
         service.change_owner(study_id, 2)
@@ -876,9 +876,9 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
     # They all belong to the same group.
     writers = db_session.query(Group).filter(Group.name == "Writers").one()
     studies = [
-        create_study(id=uuid.uuid4(), name="Main Study", owner_id=jwt_users["John"].id, groups=[writers]),
-        create_study(id=uuid.uuid4(), name="Variant Study 1", owner_id=jwt_users["Jane"].id, groups=[writers]),
-        create_study(id=uuid.uuid4(), name="Variant Study 2", owner_id=jwt_users["Jane"].id, groups=[writers]),
+        create_study(id=str(uuid.uuid4()), name="Main Study", owner_id=jwt_users["John"].id, groups=[writers]),
+        create_study(id=str(uuid.uuid4()), name="Variant Study 1", owner_id=jwt_users["Jane"].id, groups=[writers]),
+        create_study(id=str(uuid.uuid4()), name="Variant Study 2", owner_id=jwt_users["Jane"].id, groups=[writers]),
     ]
 
     # All admin and writers should have WRITE access to the studies.
@@ -895,7 +895,9 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
     # Jack creates a additional variant study and adds it to the readers and writers groups.
     readers = db_session.query(Group).filter(Group.name == "Readers").one()
     studies.append(
-        create_study(id=uuid.uuid4(), name="Variant Study 3", owner_id=jwt_users["Jack"].id, groups=[readers, writers])
+        create_study(
+            id=str(uuid.uuid4()), name="Variant Study 3", owner_id=jwt_users["Jack"].id, groups=[readers, writers]
+        )
     )
 
     # All admin and writers should have READ access to the studies.
@@ -1152,8 +1154,8 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
         owner=None,
         groups=[],
     )
-    raw_study.to_json_summary = Mock(return_value={"id": raw_study.id})
-    raw_study.to_enhanced_json_summary = Mock(return_value={"id": raw_study.id})
+    object.__setattr__(raw_study, "to_json_summary", Mock(return_value={"id": raw_study.id}))
+    object.__setattr__(raw_study, "to_enhanced_json_summary", Mock(return_value={"id": raw_study.id}))
 
     variant_study = create_variant_study(
         id="variant-study",
@@ -1164,7 +1166,7 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
         groups=[],
     )
     variant_study.generation_task = None
-    variant_study.to_json_summary = Mock(return_value={"id": variant_study.id})
+    object.__setattr__(variant_study, "to_json_summary", Mock(return_value={"id": variant_study.id}))
 
     def get_study_by_id(study_id: str) -> Study:
         if study_id == raw_study.id:

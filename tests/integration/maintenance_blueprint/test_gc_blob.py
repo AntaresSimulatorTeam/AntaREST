@@ -26,7 +26,7 @@ from tests.helpers import create_study
 
 
 class TestCleanBlobsIntegration:
-    def test_deletes_unused_blobs(self, simple_blob_service: BlobService):
+    def test_deletes_unused_blobs(self, simple_blob_service: BlobService) -> None:
         blob_id = simple_blob_service.save(b"Test content")
         assert blob_id in simple_blob_service.get_saved_blobs()
 
@@ -43,7 +43,7 @@ class TestCleanBlobsIntegration:
 
         assert blob_id not in simple_blob_service.get_saved_blobs()
 
-    def test_dry_run_does_not_delete(self, simple_blob_service: BlobService):
+    def test_dry_run_does_not_delete(self, simple_blob_service: BlobService) -> None:
         blob_id = simple_blob_service.save(b"Test content for dry run")
         assert blob_id in simple_blob_service.get_saved_blobs()
 
@@ -60,7 +60,7 @@ class TestCleanBlobsIntegration:
         # Blob should still exist because dry_run is True
         assert blob_id in simple_blob_service.get_saved_blobs()
 
-    def test_returns_success_with_no_blobs(self, simple_blob_service: BlobService):
+    def test_returns_success_with_no_blobs(self, simple_blob_service: BlobService) -> None:
         with db():
             result = clean_blobs(
                 blob_service=simple_blob_service,
@@ -71,7 +71,7 @@ class TestCleanBlobsIntegration:
         assert result.deleted_count == 0
         assert result.duration_seconds >= 0
 
-    def test_deletes_multiple_unused_blobs(self, simple_blob_service: BlobService):
+    def test_deletes_multiple_unused_blobs(self, simple_blob_service: BlobService) -> None:
         blob_ids = [
             simple_blob_service.save(b"Content 1"),
             simple_blob_service.save(b"Content 2"),
@@ -93,7 +93,7 @@ class TestCleanBlobsIntegration:
         for blob_id in blob_ids:
             assert blob_id not in simple_blob_service.get_saved_blobs()
 
-    def test_returns_skipped_when_lock_held(self, simple_blob_service: BlobService):
+    def test_returns_skipped_when_lock_held(self, simple_blob_service: BlobService) -> None:
         with db():
             with create_lock(db.session, lock_id=LockId.BLOB_GC):
                 result = clean_blobs(blob_service=simple_blob_service, dry_run=False)

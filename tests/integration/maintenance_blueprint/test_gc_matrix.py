@@ -26,7 +26,7 @@ from antarest.matrixstore.service import MatrixService
 class TestCleanMatricesIntegration:
     """Integration tests for clean_matrices using real database and services."""
 
-    def test_deletes_old_unused_matrices(self, matrix_service: MatrixService):
+    def test_deletes_old_unused_matrices(self, matrix_service: MatrixService) -> None:
         """Test that old unused matrices are deleted."""
         matrix_data = pl.DataFrame([[1, 2], [3, 4]])
 
@@ -56,7 +56,7 @@ class TestCleanMatricesIntegration:
             matrices_after = matrix_service.get_matrices()
             assert not any(m.id == matrix_id for m in matrices_after)
 
-    def test_keeps_recent_unused_matrices(self, matrix_service: MatrixService):
+    def test_keeps_recent_unused_matrices(self, matrix_service: MatrixService) -> None:
         """Test that recent unused matrices are NOT deleted."""
         matrix_data = pl.DataFrame([[1, 2], [3, 4]])
 
@@ -76,7 +76,7 @@ class TestCleanMatricesIntegration:
             matrices_after = matrix_service.get_matrices()
             assert any(m.id == matrix_id for m in matrices_after)
 
-    def test_dry_run_does_not_delete(self, matrix_service: MatrixService):
+    def test_dry_run_does_not_delete(self, matrix_service: MatrixService) -> None:
         """Test that dry_run mode does not delete matrices."""
         matrix_data = pl.DataFrame([[1, 2], [3, 4]])
 
@@ -103,7 +103,7 @@ class TestCleanMatricesIntegration:
             matrices_after = matrix_service.get_matrices()
             assert any(m.id == matrix_id for m in matrices_after)
 
-    def test_returns_success_with_no_matrices(self, matrix_service: MatrixService):
+    def test_returns_success_with_no_matrices(self, matrix_service: MatrixService) -> None:
         """Test successful execution when there are no matrices."""
         result = clean_matrices(
             matrix_service=matrix_service,

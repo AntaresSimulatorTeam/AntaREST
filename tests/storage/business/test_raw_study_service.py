@@ -20,6 +20,7 @@ from unittest.mock import Mock
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
+from typing_extensions import override
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyDeletionNotAllowed, StudyNotFoundError
@@ -420,6 +421,7 @@ timestamp = 1599488150
         )
 
     class OutputsProvider(IFileOutputsProvider):
+        @override
         def get_outputs(self, study_id: str) -> FileStudyOutputs:
             return FileStudyOutputs(
                 get_file_study=lambda: study_service.get_raw(md),

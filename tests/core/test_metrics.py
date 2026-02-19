@@ -76,7 +76,7 @@ def _get_histo_count(registry: CollectorRegistry, name: str, labels: dict[str, s
         return None
 
 
-def test_task_metrics_recorder():
+def test_task_metrics_recorder() -> None:
     registry = CollectorRegistry()
     recorder = TasksMetricsRecorder(registry)
     metrics_names = {m.name for m in registry.collect()}
@@ -101,7 +101,7 @@ def test_task_metrics_recorder():
     assert _get_histo_count(registry, "tasks_duration_seconds", {"type": "archive", "status": "completed"}) == 1
 
 
-def test_cancelled_task_metrics():
+def test_cancelled_task_metrics() -> None:
     registry = CollectorRegistry()
     recorder = TasksMetricsRecorder(registry)
 
@@ -119,7 +119,7 @@ def test_cancelled_task_metrics():
     assert _get_histo_count(registry, "tasks_duration_seconds", {"type": "archive", "status": "cancelled"}) == 1
 
 
-def test_db_connection_metrics():
+def test_db_connection_metrics() -> None:
     engine = create_engine("sqlite:///:memory:")
 
     registry = CollectorRegistry()
@@ -155,7 +155,7 @@ def test_db_connection_metrics():
     assert _get_value(registry, "db_connections_events", {"event_type": "checkin"}) == 1
 
 
-def test_db_connection_metrics_detach():
+def test_db_connection_metrics_detach() -> None:
     engine = create_engine("sqlite:///:memory:")
 
     registry = CollectorRegistry()
@@ -177,7 +177,7 @@ def test_db_connection_metrics_detach():
     assert _get_value(registry, "db_connections_events", {"event_type": "checkin"}) is None
 
 
-def test_db_connection_metrics_overflow():
+def test_db_connection_metrics_overflow() -> None:
     engine = create_engine("sqlite:///:memory:", poolclass=QueuePool, max_overflow=1, pool_size=1)
 
     registry = CollectorRegistry()
@@ -204,7 +204,7 @@ def test_db_connection_metrics_overflow():
     assert _get_value(registry, "db_connections_events", {"event_type": "close"}) == 1
 
 
-def test_db_connection_metrics_invalidate():
+def test_db_connection_metrics_invalidate() -> None:
     engine = create_engine("sqlite:///:memory:")
 
     registry = CollectorRegistry()
@@ -238,7 +238,7 @@ def test_db_connection_metrics_invalidate():
     assert _get_value(registry, "db_connections_events", {"event_type": "checkin"}) == 2
 
 
-def test_db_connection_metrics_recycle():
+def test_db_connection_metrics_recycle() -> None:
     engine = create_engine("sqlite:///:memory:", pool_recycle=1)
 
     registry = CollectorRegistry()
@@ -267,7 +267,7 @@ def test_db_connection_metrics_recycle():
 
 
 @pytest.mark.skip(reason="to be run manually with a local postgres server in debug mode")
-def test_db_connection_metrics_preping():
+def test_db_connection_metrics_preping() -> None:
     engine = create_engine("postgresql+psycopg2://postgres:somepass@127.0.0.1:5432/postgres", pool_pre_ping=True)
 
     registry = CollectorRegistry()
@@ -292,7 +292,7 @@ def test_db_connection_metrics_preping():
 
 
 @pytest.mark.skip(reason="to be run manually with a local postgres server in debug mode")
-def test_db_transaction_is_closed_on_server_disconnect():
+def test_db_transaction_is_closed_on_server_disconnect() -> None:
     engine = create_engine("postgresql+psycopg2://postgres:somepass@127.0.0.1:5432/postgres", pool_pre_ping=True)
 
     session_factory = sessionmaker(bind=engine)
@@ -314,7 +314,7 @@ def test_db_transaction_is_closed_on_server_disconnect():
     assert _get_value(registry, "db_transactions_current") == 0
 
 
-def test_db_session_metrics():
+def test_db_session_metrics() -> None:
     metadata = MetaData()
 
     prometheus_client.disable_created_metrics()

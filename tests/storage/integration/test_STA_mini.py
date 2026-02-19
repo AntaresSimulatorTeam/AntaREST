@@ -27,12 +27,14 @@ from sqlalchemy import Engine
 from starlette.testclient import TestClient
 
 from antarest.core.application import create_app_ctxt
+from antarest.core.config import Config
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.main import add_study_routes
 from antarest.study.output.output_model import OutputVariables, OutputVariablesInformation
+from antarest.study.output.output_service import OutputService
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.common.prepro import default_k
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
@@ -50,7 +52,7 @@ from tests.storage.integration.data.set_values_monthly import set_values_monthly
 
 
 @pytest.fixture
-def client(services, db_engine: Engine) -> TestClient:
+def client(services: tuple[StudyService, OutputService, Config], db_engine: Engine) -> TestClient:
     app = FastAPI(title=__name__)
     app.add_middleware(
         DBSessionMiddleware,
@@ -509,7 +511,7 @@ def _clean_db() -> None:
 
 @with_admin_user
 @with_db_context
-def test_sta_mini_output_variables(services) -> None:
+def test_sta_mini_output_variables(services: tuple[StudyService, OutputService, Config]) -> None:
     study_service, output_service, _ = services
     # Adds the study UUID inside the DB to avoid ForeignKey issues
     with db():

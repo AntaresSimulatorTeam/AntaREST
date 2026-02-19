@@ -60,7 +60,7 @@ def _create_variable_view(
 class TestCleanVariableViewsIntegration:
     """Integration tests for clean_variable_views using real database."""
 
-    def test_deletes_old_variable_views(self, matrix_service: MatrixService):
+    def test_deletes_old_variable_views(self, matrix_service: MatrixService) -> None:
         """Test that old variable views are deleted."""
         study_id = str(uuid.uuid4())
         output_id = "test-output"
@@ -92,7 +92,7 @@ class TestCleanVariableViewsIntegration:
             views_after = db.session.query(OutputVariablesViewsModel).all()
             assert len(views_after) == 0
 
-    def test_keeps_recent_variable_views(self, matrix_service: MatrixService):
+    def test_keeps_recent_variable_views(self, matrix_service: MatrixService) -> None:
         """Test that recent variable views are NOT deleted."""
         study_id = str(uuid.uuid4())
         output_id = "test-output"
@@ -121,7 +121,7 @@ class TestCleanVariableViewsIntegration:
             views_after = db.session.query(OutputVariablesViewsModel).all()
             assert len(views_after) == 1
 
-    def test_dry_run_does_not_delete(self, matrix_service: MatrixService):
+    def test_dry_run_does_not_delete(self, matrix_service: MatrixService) -> None:
         """Test that dry_run mode does not delete variable views."""
         study_id = str(uuid.uuid4())
         output_id = "test-output"
@@ -150,7 +150,7 @@ class TestCleanVariableViewsIntegration:
             views_after = db.session.query(OutputVariablesViewsModel).all()
             assert len(views_after) == 1
 
-    def test_returns_skipped_with_no_views(self):
+    def test_returns_skipped_with_no_views(self) -> None:
         """Test execution when there are no variable views."""
         result = clean_variable_views(dry_run=False, retention_time=7)
 
@@ -159,7 +159,7 @@ class TestCleanVariableViewsIntegration:
         assert result.deleted_count == 0
         assert result.duration_seconds >= 0
 
-    def test_deletes_only_old_views_keeps_recent(self, matrix_service: MatrixService):
+    def test_deletes_only_old_views_keeps_recent(self, matrix_service: MatrixService) -> None:
         """Test that only old views are deleted while recent ones are kept."""
         study_id = str(uuid.uuid4())
         output_id = "test-output"

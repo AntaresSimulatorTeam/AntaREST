@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.core.serde.json import from_json
@@ -20,7 +21,7 @@ from tests.integration.utils import wait_task_completion
 
 
 def test_study_data(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
-    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
     # Upgrades the study in v8.8
     res = client.put(f"/v1/studies/{internal_study_id}/upgrade", params={"target_version": "8.8"})

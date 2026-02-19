@@ -50,7 +50,9 @@ def file_study(tmp_path: Path, matrix_service: ISimpleMatrixService) -> FileStud
 
 
 @pytest.fixture
-def filestudy_dao(file_study: FileStudy, matrix_service, blob_service) -> FileStudyTreeDao:
+def filestudy_dao(
+    file_study: FileStudy, matrix_service: ISimpleMatrixService, blob_service: IBlobService
+) -> FileStudyTreeDao:
     constants = GeneratorMatrixConstants(matrix_service)
     constants.init_constant_matrices()
     return FileStudyTreeDao(file_study, constants, blob_service)

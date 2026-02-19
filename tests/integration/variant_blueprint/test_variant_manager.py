@@ -18,6 +18,7 @@ import typing as t
 from pathlib import Path
 
 import pytest
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
@@ -429,7 +430,7 @@ def test_clear_snapshots(
 
 
 def test_deletion_while_generating(client: TestClient, admin_access_token: str, variant_id: str, tmp_path: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
     # Generates the study from scratch
     res = client.put(f"/v1/studies/{variant_id}/generate?from_scratch=True")
     res.raise_for_status()

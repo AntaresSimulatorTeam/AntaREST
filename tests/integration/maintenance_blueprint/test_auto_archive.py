@@ -28,7 +28,7 @@ from tests.helpers import create_raw_study, create_variant_study
 
 
 class TestArchiveOldStudiesIntegration:
-    def test_archives_old_studies_dry_run(self, db_middleware):
+    def test_archives_old_studies_dry_run(self) -> None:
         mock_study_service = Mock(spec=StudyService)
         mock_output_service = Mock(spec=OutputService)
 
@@ -83,7 +83,7 @@ class TestArchiveOldStudiesIntegration:
         mock_study_service.archive.assert_not_called()
         mock_output_service.archive_outputs.assert_not_called()
 
-    def test_returns_success_with_no_old_studies(self, db_middleware):
+    def test_returns_success_with_no_old_studies(self) -> None:
         mock_study_service = Mock(spec=StudyService)
         mock_output_service = Mock(spec=OutputService)
 
@@ -131,7 +131,7 @@ class TestArchiveOldStudiesIntegration:
         mock_study_service.task_service.await_task.assert_called_once_with("snapshot_task")
         assert result.duration_seconds >= 0
 
-    def test_excludes_already_archived_studies(self, db_middleware):
+    def test_excludes_already_archived_studies(self) -> None:
         mock_study_service = Mock(spec=StudyService)
         mock_output_service = Mock(spec=OutputService)
 

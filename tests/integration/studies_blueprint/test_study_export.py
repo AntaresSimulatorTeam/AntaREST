@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import zipfile
+from pathlib import Path
 
 import py7zr
 from starlette.testclient import TestClient
@@ -17,7 +18,7 @@ from starlette.testclient import TestClient
 
 # Doing exports with both .zip and .7z
 def test_export_study_with_both_compression(
-    client: TestClient, internal_study_id: str, admin_access_token: str, tmp_path
+    client: TestClient, internal_study_id: str, admin_access_token: str, tmp_path: Path
 ) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
     base_path = tmp_path / "tmp"

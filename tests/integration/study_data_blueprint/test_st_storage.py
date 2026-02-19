@@ -17,6 +17,7 @@ from unittest.mock import ANY
 import numpy as np
 import pytest
 from antares.study.version import StudyVersion
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
@@ -93,7 +94,7 @@ class TestSTStorage:
         # =============================
         #  SET UP
         # =============================
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Upgrade study to version 860 or above
         res = client.put(f"/v1/studies/{internal_study_id}/upgrade", params={"target_version": f"{study_version:ddd}"})
@@ -481,7 +482,7 @@ class TestSTStorage:
         Then the short-term storage is created with initialLevel = 0.0, and initialLevelOptim = False.
         """
         # Create a new study in version 860 (or higher)
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         res = client.post("/v1/studies", params={"name": "MyStudy", "version": study_version})
         assert res.status_code in {200, 201}, res.json()
         study_id = res.json()
@@ -654,7 +655,7 @@ class TestSTStorage:
         In this test, we want to check that short-term storages can be managed
         in the context of a "variant" study.
         """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         # Create an area
         area_name = "France"
         res = client.post(f"/v1/studies/{variant_id}/areas", json={"name": area_name, "type": "AREA"})
@@ -748,7 +749,7 @@ class TestSTStorage:
         also when the identifier in the section name is in uppercase, which
         happens when studies are created outside from antares-web.
         """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Create an area
         area_name = "France"
@@ -800,7 +801,7 @@ class TestSTStorage:
         assert res.json()[0]["reservoirCapacity"] == 5600
 
     def test_additional_constraints(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Upgrade study to version 9.2
         res = client.put(f"/v1/studies/{internal_study_id}/upgrade", params={"target_version": "920"})

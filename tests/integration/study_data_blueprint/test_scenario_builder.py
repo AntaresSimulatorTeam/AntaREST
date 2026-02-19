@@ -109,8 +109,8 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     assert res.status_code == 200
     assert res.json() == {"thermal": {"be": {}, "fr": {"nuclear": {"0": ""}}}}
 
-    scenarios: AreaItemsScenarios = {"be": {}, "fr": {"nuclear": {"0": 2}}}
-    res = client.put(f"/v1/studies/{study_id}/config/scenariobuilder/thermal", json={"thermal": scenarios})
+    area_scenarios: AreaItemsScenarios = {"be": {}, "fr": {"nuclear": {"0": 2}}}
+    res = client.put(f"/v1/studies/{study_id}/config/scenariobuilder/thermal", json={"thermal": area_scenarios})
     assert res.status_code == 200
     assert res.json() == {"thermal": {"be": {}, "fr": {"nuclear": {"0": 2}}}}
 

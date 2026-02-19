@@ -127,7 +127,7 @@ class TestLauncherService:
             task_service=Mock(),
             cache=Mock(),
         )
-        launcher_service._generate_new_id = lambda: str(uuid)
+        object.__setattr__(launcher_service, "_generate_new_id", lambda: str(uuid))
 
         storage_service_mock.get_user_name.return_value = "fake_user"
         job_id = launcher_service.run_study("study_uuid", "local", LauncherParametersDTO())
@@ -894,7 +894,7 @@ class TestLauncherService:
         launcher_service._save_solver_stats(job_result, zip_file)
         assert repository.save.call_count == 2
         mock_call = repository.save.mock_calls[-1]
-        actual_obj: JobResult = mock_call.args[0]
+        actual_obj_result: JobResult = mock_call.args[0]
         expected_obj = JobResult(
             id=job_id,
             study_id=study_id,
@@ -902,7 +902,7 @@ class TestLauncherService:
             solver_stats="0\n1",
             owner_id=1,
         )
-        assert actual_obj.to_dto().model_dump() == expected_obj.to_dto().model_dump()
+        assert actual_obj_result.to_dto().model_dump() == expected_obj.to_dto().model_dump()
 
     @pytest.mark.parametrize(
         ["running_jobs", "expected_result", "default_launcher"],
@@ -1075,7 +1075,7 @@ class TestLauncherService:
         repository = Mock()
         solver_presets_repository = Mock()
 
-        def get_mock_solver_presets(solver_presets_id: str):
+        def get_mock_solver_presets(solver_presets_id: str) -> SolverPresetsDB | None:
             if solver_presets_id == "config-1":
                 return SolverPresetsDB.from_model(
                     SolverPresets(

@@ -42,6 +42,7 @@ import typing as t
 
 import numpy as np
 import pytest
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
@@ -59,7 +60,7 @@ class TestRenewable:
         user_access_token: str,
         internal_study_id: str,
     ) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         # Upgrade study to version 810
         res = client.put(f"/v1/studies/{internal_study_id}/upgrade", params={"target_version": 810})
         res.raise_for_status()
@@ -472,7 +473,7 @@ class TestRenewable:
         In this test, we want to check that renewable clusters can be managed
         in the context of a "variant" study.
         """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         # Create an area
         area_name = "France"
         res = client.post(f"/v1/studies/{variant_id}/areas", json={"name": area_name, "type": "AREA"})
@@ -558,7 +559,7 @@ class TestRenewable:
 
     @pytest.mark.flaky(reruns=3)
     def test_update_multiple_renewable_clusters(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Create a study with one area
         res = client.post("/v1/studies", params={"name": "study_test", "version": "8.8"})

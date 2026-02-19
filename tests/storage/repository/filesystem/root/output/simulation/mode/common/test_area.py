@@ -69,9 +69,9 @@ class TestOutputSimulationAreaItem:
         new_node = area.OutputSimulationAreaItem(matrix_mapper=Mock(), config=new_config, area="fr")
         new_actual = new_node.build()
         # check the result
-        actual_obj: dict[str, dict[str, MatrixFrequency]] = {}
+        new_actual_obj: dict[str, dict[str, MatrixFrequency]] = {}
         for key, value in new_actual.items():
             assert isinstance(value, AreaOutputSeriesMatrix)
-            actual_obj[key] = {"freq": value.freq}
+            new_actual_obj[key] = {"freq": value.freq}
 
-        assert actual_obj == expected
+        assert new_actual_obj == expected

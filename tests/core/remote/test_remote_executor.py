@@ -24,7 +24,7 @@ from antarest.eventbus.service import EventBusService
 from antarest.worker.worker import WorkerTaskCommand, WorkerTaskResult
 
 
-def test_remote_executor():
+def test_remote_executor() -> None:
     config = Config()
     config.tasks.remote_workers.append(RemoteWorkerConfig("worker", queues=["q1", "q2"]))
 
@@ -50,7 +50,7 @@ def test_remote_executor():
 
     task_result = None
 
-    def start_task():
+    def start_task() -> None:
         nonlocal task_result
         task_result = executor.execute_remote_task(task_queue="q1", task_args={"src": "src", "dest": "dest"})
 
@@ -61,7 +61,7 @@ def test_remote_executor():
     assert task_result == TaskResult(success=True, message="OK")
 
 
-def test_remote_executor_should_reject_unknown_queue():
+def test_remote_executor_should_reject_unknown_queue() -> None:
     config = Config()
     config.tasks.remote_workers.append(RemoteWorkerConfig("worker", queues=["q1", "q2"]))
 
