@@ -218,7 +218,7 @@ def test_export_output(tmp_path: Path) -> None:
                 study_workspace=DEFAULT_WORKSPACE_NAME,
             )
 
-    output_storage = FileOutputStorage(OutputsProvider(), cache=Mock(), remote_executor=Mock())
+    output_storage = FileOutputStorage(OutputsProvider(), cache=Mock(), remote_executor=Mock(), tmp_dir=root)
 
     output_storage.export_output(study.id, output_id, export_path)
     zipf = ZipFile(export_path)

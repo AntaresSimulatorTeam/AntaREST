@@ -427,7 +427,7 @@ timestamp = 1599488150
                 study_workspace=DEFAULT_WORKSPACE_NAME,
             )
 
-    output_storage = FileOutputStorage(OutputsProvider(), cache=Mock(), remote_executor=Mock())
+    output_storage = FileOutputStorage(OutputsProvider(), cache=Mock(), remote_executor=Mock(), tmp_dir=study_path)
 
     expected_output_name = "20200907-1615eco-11mc"
     output_name = output_storage.import_output(name, zipped_output)

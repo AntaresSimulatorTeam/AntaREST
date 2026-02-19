@@ -17,8 +17,7 @@ This DAO provides database-backed storage for studies when storage_mode=DATABASE
 Uses multiple inheritance to combine specialized DAOs (like FileStudyTreeDao).
 """
 
-from pathlib import PurePosixPath
-from typing import Iterator, Optional, Self, Sequence
+from typing import Optional, Self, Sequence
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -28,7 +27,6 @@ from typing_extensions import override
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
-from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.scenario_builder_model import AnyScenarios, Rulesets, ScenarioType
 from antarest.study.business.model.sts_model import (
     STStorage,
@@ -36,7 +34,6 @@ from antarest.study.business.model.sts_model import (
     STStorageAdditionalConstraintsMap,
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
-from antarest.study.business.model.user_model import UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionCandidate,
@@ -51,8 +48,10 @@ from antarest.study.dao.database.database_district_dao import DatabaseDistrictDa
 from antarest.study.dao.database.database_hydro_dao import DatabaseHydroDao
 from antarest.study.dao.database.database_layer_dao import DatabaseLayerDao
 from antarest.study.dao.database.database_link_dao import DatabaseLinkDao
+from antarest.study.dao.database.database_renewable_dao import DatabaseRenewableDao
 from antarest.study.dao.database.database_study_settings_dao import DatabaseStudySettingsDao
 from antarest.study.dao.database.database_thermal_dao import DatabaseThermalDao
+from antarest.study.dao.database.database_user_resources import DatabaseUserResourcesDao
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -67,6 +66,8 @@ class DatabaseStudyDao(
     DatabaseHydroDao,
     DatabaseThermalDao,
     DatabaseStudySettingsDao,
+    DatabaseRenewableDao,
+    DatabaseUserResourcesDao,
 ):
     """
     Database implementation of StudyDao.
@@ -88,6 +89,8 @@ class DatabaseStudyDao(
         DatabaseHydroDao.__init__(self, study_id, db_session)
         DatabaseThermalDao.__init__(self, study_id, db_session)
         DatabaseStudySettingsDao.__init__(self, study_id, db_session)
+        DatabaseRenewableDao.__init__(self, study_id, db_session)
+        DatabaseUserResourcesDao.__init__(self, study_id, db_session)
         self._matrix_service = matrix_service
 
     # Implementation of abstract methods required by StudyDao
@@ -135,42 +138,6 @@ class DatabaseStudyDao(
 
     def get_matrix(self, matrix_id: str) -> pl.DataFrame:
         return self._matrix_service.get(matrix_id)
-
-    @override
-    def save_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_renewables(self, area_id: str, renewables: Sequence[RenewableCluster]) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_renewable_series(self, area_id: str, renewable_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def delete_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_all_renewables_for_area(self, area_id: str) -> Sequence[RenewableCluster]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_renewable(self, area_id: str, renewable_id: str) -> RenewableCluster:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def renewable_exists(self, area_id: str, renewable_id: str) -> bool:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_renewable_series(self, area_id: str, renewable_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
     def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
@@ -443,14 +410,6 @@ class DatabaseStudyDao(
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
-    def save_user_resource(self, resource_data: UserResourceDataCreation) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def delete_user_resource(self, resource_path: PurePosixPath) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
     def save_scenario_builder(self, rulesets: Rulesets) -> None:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
@@ -464,9 +423,4 @@ class DatabaseStudyDao(
 
     @override
     def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    # User resources
-    @override
-    def get_all_user_resources(self) -> Iterator[UserResourceDataCreation]:
         raise NotImplementedError("This method is not yet implemented for database storage mode")

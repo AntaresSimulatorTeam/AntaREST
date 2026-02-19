@@ -43,6 +43,7 @@ from antarest.login.utils import require_current_user
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound, MatrixNotSupported
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import (
+    NEW_MATRIX_VERSION,
     Matrix,
     MatrixContent,
     MatrixDataSet,
@@ -52,6 +53,7 @@ from antarest.matrixstore.model import (
     MatrixDescriptionDTO,
     MatrixInfoDTO,
     MatrixMetadataDTO,
+    MatrixMismatchDTO,
     MatrixReference,
     MatrixReferencesDTO,
 )
@@ -78,13 +80,6 @@ EXCLUDED_FILES = {
 logger = logging.getLogger(__name__)
 
 MATRIX_PROTOCOL_PREFIX = "matrix://"
-
-LEGACY_MATRIX_VERSION = 1
-NEW_MATRIX_VERSION = 2
-"""
-Version 1 matrices were not saved with a header, unlike version 2 ones.
-Therefore, we rely on this version to know how to read the matrices
-"""
 
 
 class ISimpleMatrixService(ABC):
@@ -165,6 +160,10 @@ class ISimpleMatrixService(ABC):
     def get_matrices_references(self, disk_usage: bool) -> dict[str, MatrixReferencesDTO]:
         raise NotImplementedError
 
+    @abstractmethod
+    def synchronize_matrix_store(self, dry_run: bool) -> dict[str, MatrixMismatchDTO]:
+        raise NotImplementedError
+
 
 class SimpleMatrixService(ISimpleMatrixService):
     def __init__(self, matrix_content_repository: MatrixContentRepository):
@@ -216,6 +215,10 @@ class SimpleMatrixService(ISimpleMatrixService):
     @override
     def get_matrices_references(self, disk_usage: bool) -> dict[str, MatrixReferencesDTO]:
         raise NotImplementedError
+
+    @override
+    def synchronize_matrix_store(self, dry_run: bool) -> dict[str, MatrixMismatchDTO]:
+        return {}
 
 
 def check_dataframe_compliance(df: pl.DataFrame) -> None:
@@ -689,3 +692,30 @@ class MatrixService(ISimpleMatrixService):
                 references_dto[matrix_id].refs.append(ref_dto)
 
         return references_dto
+
+    @override
+    def synchronize_matrix_store(self, dry_run: bool) -> dict[str, MatrixMismatchDTO]:
+        db_matrices = {m.id for m in self.repo.get_matrices()}
+        fs_matrices = self.matrix_content_repository.get_all_matrices_on_the_filesystem()
+        only_fs_matrices = fs_matrices - db_matrices
+        only_db_matrices = db_matrices - fs_matrices
+
+        result = {}
+        for matrix in only_db_matrices:
+            result[matrix] = MatrixMismatchDTO(database=True, filesystem=False)
+            if not dry_run:
+                logger.info(f"Removing matrix {matrix} from database as it has no match on the filesystem")
+                self.repo.delete(matrix)
+
+        new_matrices = []
+        for matrix in only_fs_matrices:
+            result[matrix] = MatrixMismatchDTO(database=False, filesystem=True)
+            if not dry_run:
+                logger.info(f"Creating matrix {matrix} inside database as it exists on the filesystem")
+                # For that we have to find what's the matrix version as it's used for parsing.
+                new_matrices.append(self.matrix_content_repository.infer_matrix_characteristics(matrix))
+
+        if new_matrices:
+            self.repo.save_batch(new_matrices)
+
+        return result

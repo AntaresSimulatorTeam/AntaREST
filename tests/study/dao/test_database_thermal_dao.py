@@ -209,9 +209,8 @@ def test_delete_thermal(dao: DatabaseStudyDao) -> None:
         dao.delete_thermal("paris", "gas")
 
 
-def test_thermal_exists_raises_for_unknown_area(dao: DatabaseStudyDao) -> None:
-    with pytest.raises(AreaNotFound):
-        dao.thermal_exists("nonexistent", "gas")
+def test_thermal_exists_returns_false_for_unknown_area(dao: DatabaseStudyDao) -> None:
+    assert not dao.thermal_exists("nonexistent", "gas")
 
 
 def test_thermal_matrices_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
