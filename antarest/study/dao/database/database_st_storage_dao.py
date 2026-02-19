@@ -150,7 +150,7 @@ class DatabaseStStorageDao(STStorageDao):
             existing_storage_ids = {th.id for th in self.get_all_st_storages_for_area(area_id)}
             for storage in storages:
                 if storage.id not in existing_storage_ids:
-                    self._raise_the_right_storage_exception(area_id, storage.id, e)
+                    raise STStorageNotFound(area_id, storage.id) from e
 
         session.commit()
 
@@ -164,7 +164,7 @@ class DatabaseStStorageDao(STStorageDao):
         st_storages_by_areas: dict[str, dict[str, STStorage]] = {}
         for row in rows:
             st_storage = self._convert_db_row_to_st_storage(row)
-            st_storages_by_areas.setdefault(row.area_id, {})[st_storage.id.lower()] = st_storage
+            st_storages_by_areas.setdefault(row.area_id, {})[st_storage.id] = st_storage
         return st_storages_by_areas
 
     @override
@@ -392,7 +392,7 @@ class DatabaseStStorageDao(STStorageDao):
         self._db_session.commit()
 
     @override
-    def get_st_storage_additional_constraints_matrix(
+    def get_st_storage_additional_constraint_matrix(
         self, area_id: str, storage_id: str, constraint_id: str
     ) -> pl.DataFrame:
         table = ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE

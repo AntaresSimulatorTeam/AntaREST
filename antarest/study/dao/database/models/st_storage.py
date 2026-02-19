@@ -20,12 +20,10 @@ from antarest.dbmodel import Base
 from antarest.study.business.model.sts_model import (
     AdditionalConstraintOperator,
     AdditionalConstraintVariable,
-    STStorageGroup,
 )
 
 metadata = Base.metadata
 
-_GROUP_ENUM = Enum(STStorageGroup, name="ststoragegroup")
 _VARIABLE_ENUM = Enum(AdditionalConstraintVariable, name="additionalconstraintvariable")
 _OPERATOR_ENUM = Enum(AdditionalConstraintOperator, name="additionalconstraintoperator")
 
@@ -37,7 +35,7 @@ ST_STORAGE_TABLE = Table(
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("st_storage_id", String(255), nullable=False, primary_key=True),
     Column("name", String(255), nullable=False),
-    Column("group", _GROUP_ENUM, nullable=False),
+    Column("group", String(255), nullable=False),
     Column("injection_nominal_capacity", Float, nullable=False),
     Column("withdrawal_nominal_capacity", Float, nullable=False),
     Column("reservoir_capacity", Float, nullable=False),

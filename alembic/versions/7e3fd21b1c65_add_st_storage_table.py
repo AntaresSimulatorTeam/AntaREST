@@ -29,11 +29,6 @@ matrix_tables = [
 
 
 def upgrade():
-    group_enum = sa.Enum(
-        "psp_open", "psp_closed", "pondage", "battery",
-        "other1", "other2", "other3", "other4", "other5",
-        name="ststoragegroup",
-    )
     variable_enum = sa.Enum("withdrawal", "injection", "netting", name="additionalconstraintvariable")
     operator_enum = sa.Enum("less", "greater", "equal", name="additionalconstraintoperator")
 
@@ -43,7 +38,7 @@ def upgrade():
         sa.Column("area_id", sa.String(length=255), nullable=False),
         sa.Column("st_storage_id", sa.String(length=255), nullable=False),
         sa.Column("name", sa.String(length=255), nullable=False),
-        sa.Column("group", group_enum, nullable=False),
+        sa.Column("group", sa.String(length=255), nullable=False),
         sa.Column("injection_nominal_capacity", sa.Float(), nullable=False),
         sa.Column("withdrawal_nominal_capacity", sa.Float(), nullable=False),
         sa.Column("reservoir_capacity", sa.Float(), nullable=False),
@@ -137,6 +132,5 @@ def downgrade():
     op.drop_table("st_storage")
 
     if op.get_context().dialect.name == "postgresql":
-        sa.Enum(name="ststoragegroup").drop(op.get_bind(), checkfirst=True)
         sa.Enum(name="additionalconstraintvariable").drop(op.get_bind(), checkfirst=True)
         sa.Enum(name="additionalconstraintoperator").drop(op.get_bind(), checkfirst=True)

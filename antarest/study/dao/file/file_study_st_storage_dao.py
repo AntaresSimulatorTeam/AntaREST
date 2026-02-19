@@ -280,7 +280,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         )
 
     @override
-    def get_st_storage_additional_constraints_matrix(
+    def get_st_storage_additional_constraint_matrix(
         self, area_id: str, storage_id: str, constraint_id: str
     ) -> pl.DataFrame:
         url = ["input", "st-storage", "constraints", area_id, storage_id, f"rhs_{constraint_id}"]

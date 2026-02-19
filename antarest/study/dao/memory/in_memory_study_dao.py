@@ -644,7 +644,7 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_st_storage_additional_constraints_matrix(
+    def get_st_storage_additional_constraint_matrix(
         self, area_id: str, storage_id: str, constraint_id: str
     ) -> pl.DataFrame:
         matrix_id = self._st_storages_constraints_matrix[additional_constraint_key(area_id, constraint_id)]

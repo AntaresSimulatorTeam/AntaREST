@@ -42,12 +42,37 @@ from antarest.study.dao.database.models.st_storage import (
 def test_save_st_storage(dao: DatabaseStudyDao) -> None:
     dao.save_area("area_1")
 
-    dao.save_st_storage("area_1", STStorage(id="st_storage_id", name="st-storage", efficiency=0.8))
+    dao.save_st_storage(
+        "area_1",
+        STStorage(
+            id="st_storage_id",
+            name="st-storage",
+            group="battery",
+            injection_nominal_capacity=100.0,
+            withdrawal_nominal_capacity=200.0,
+            reservoir_capacity=500.0,
+            efficiency=0.8,
+            initial_level=0.3,
+            initial_level_optim=True,
+            enabled=True,
+        ),
+    )
 
     st_storage = dao.get_st_storage("area_1", "st_storage_id")
     assert st_storage.id == "st_storage_id"
     assert st_storage.name == "st-storage"
+    assert st_storage.group == "battery"
+    assert st_storage.injection_nominal_capacity == 100.0
+    assert st_storage.withdrawal_nominal_capacity == 200.0
+    assert st_storage.reservoir_capacity == 500.0
     assert st_storage.efficiency == 0.8
+    assert st_storage.initial_level == 0.3
+    assert st_storage.initial_level_optim is True
+    assert st_storage.enabled is True
+    assert st_storage.efficiency_withdrawal is None
+    assert st_storage.penalize_variation_injection is None
+    assert st_storage.penalize_variation_withdrawal is None
+    assert st_storage.allow_overflow is None
 
     with pytest.raises(AreaNotFound):
         dao.save_st_storage("nonexistent", STStorage(id="st_storage_id", name="st-storage"))
@@ -204,41 +229,61 @@ def test_st_storage_matrices_lifecycle(db_session: Session, dao: DatabaseStudyDa
     dao.save_st_storage("area_1", STStorage(id="battery", name="Battery"))
 
     matrix_service = dao._matrix_service
-    dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
-    series_id = matrix_service.create(dataframe)
+    pmax_injection_df = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
+    pmax_withdrawal_df = pl.DataFrame(data=[[5, 6.1], [7, 8.3]], orient="row")
+    lower_rule_curve_df = pl.DataFrame(data=[[9, 10.2], [11, 12.4]], orient="row")
+    upper_rule_curve_df = pl.DataFrame(data=[[13, 14.6], [15, 16.8]], orient="row")
+    inflows_df = pl.DataFrame(data=[[17, 18.9], [19, 20.1]], orient="row")
+    cost_injection_df = pl.DataFrame(data=[[21, 22.2], [23, 24.4]], orient="row")
+    cost_withdrawal_df = pl.DataFrame(data=[[25, 26.5], [27, 28.7]], orient="row")
+    cost_level_df = pl.DataFrame(data=[[29, 30.8], [31, 32.0]], orient="row")
+    cost_variation_injection_df = pl.DataFrame(data=[[33, 34.1], [35, 36.3]], orient="row")
+    cost_variation_withdrawal_df = pl.DataFrame(data=[[37, 38.4], [39, 40.6]], orient="row")
 
-    dao.save_st_storage_pmax_injection("area_1", "battery", series_id)
-    dao.save_st_storage_pmax_withdrawal("area_1", "battery", series_id)
-    dao.save_st_storage_lower_rule_curve("area_1", "battery", series_id)
-    dao.save_st_storage_upper_rule_curve("area_1", "battery", series_id)
-    dao.save_st_storage_inflows("area_1", "battery", series_id)
-    dao.save_st_storage_cost_injection("area_1", "battery", series_id)
-    dao.save_st_storage_cost_withdrawal("area_1", "battery", series_id)
-    dao.save_st_storage_cost_level("area_1", "battery", series_id)
-    dao.save_st_storage_cost_variation_injection("area_1", "battery", series_id)
-    dao.save_st_storage_cost_variation_withdrawal("area_1", "battery", series_id)
+    dao.save_st_storage_pmax_injection("area_1", "battery", matrix_service.create(pmax_injection_df))
+    dao.save_st_storage_pmax_withdrawal("area_1", "battery", matrix_service.create(pmax_withdrawal_df))
+    dao.save_st_storage_lower_rule_curve("area_1", "battery", matrix_service.create(lower_rule_curve_df))
+    dao.save_st_storage_upper_rule_curve("area_1", "battery", matrix_service.create(upper_rule_curve_df))
+    dao.save_st_storage_inflows("area_1", "battery", matrix_service.create(inflows_df))
+    dao.save_st_storage_cost_injection("area_1", "battery", matrix_service.create(cost_injection_df))
+    dao.save_st_storage_cost_withdrawal("area_1", "battery", matrix_service.create(cost_withdrawal_df))
+    dao.save_st_storage_cost_level("area_1", "battery", matrix_service.create(cost_level_df))
+    dao.save_st_storage_cost_variation_injection(
+        "area_1", "battery", matrix_service.create(cost_variation_injection_df)
+    )
+    dao.save_st_storage_cost_variation_withdrawal(
+        "area_1", "battery", matrix_service.create(cost_variation_withdrawal_df)
+    )
 
-    pl.testing.assert_frame_equal(dao.get_st_storage_pmax_injection("area_1", "battery"), dataframe, check_dtypes=False)
     pl.testing.assert_frame_equal(
-        dao.get_st_storage_pmax_withdrawal("area_1", "battery"), dataframe, check_dtypes=False
+        dao.get_st_storage_pmax_injection("area_1", "battery"), pmax_injection_df, check_dtypes=False
     )
     pl.testing.assert_frame_equal(
-        dao.get_st_storage_lower_rule_curve("area_1", "battery"), dataframe, check_dtypes=False
+        dao.get_st_storage_pmax_withdrawal("area_1", "battery"), pmax_withdrawal_df, check_dtypes=False
     )
     pl.testing.assert_frame_equal(
-        dao.get_st_storage_upper_rule_curve("area_1", "battery"), dataframe, check_dtypes=False
-    )
-    pl.testing.assert_frame_equal(dao.get_st_storage_inflows("area_1", "battery"), dataframe, check_dtypes=False)
-    pl.testing.assert_frame_equal(dao.get_st_storage_cost_injection("area_1", "battery"), dataframe, check_dtypes=False)
-    pl.testing.assert_frame_equal(
-        dao.get_st_storage_cost_withdrawal("area_1", "battery"), dataframe, check_dtypes=False
-    )
-    pl.testing.assert_frame_equal(dao.get_st_storage_cost_level("area_1", "battery"), dataframe, check_dtypes=False)
-    pl.testing.assert_frame_equal(
-        dao.get_st_storage_cost_variation_injection("area_1", "battery"), dataframe, check_dtypes=False
+        dao.get_st_storage_lower_rule_curve("area_1", "battery"), lower_rule_curve_df, check_dtypes=False
     )
     pl.testing.assert_frame_equal(
-        dao.get_st_storage_cost_variation_withdrawal("area_1", "battery"), dataframe, check_dtypes=False
+        dao.get_st_storage_upper_rule_curve("area_1", "battery"), upper_rule_curve_df, check_dtypes=False
+    )
+    pl.testing.assert_frame_equal(dao.get_st_storage_inflows("area_1", "battery"), inflows_df, check_dtypes=False)
+    pl.testing.assert_frame_equal(
+        dao.get_st_storage_cost_injection("area_1", "battery"), cost_injection_df, check_dtypes=False
+    )
+    pl.testing.assert_frame_equal(
+        dao.get_st_storage_cost_withdrawal("area_1", "battery"), cost_withdrawal_df, check_dtypes=False
+    )
+    pl.testing.assert_frame_equal(dao.get_st_storage_cost_level("area_1", "battery"), cost_level_df, check_dtypes=False)
+    pl.testing.assert_frame_equal(
+        dao.get_st_storage_cost_variation_injection("area_1", "battery"),
+        cost_variation_injection_df,
+        check_dtypes=False,
+    )
+    pl.testing.assert_frame_equal(
+        dao.get_st_storage_cost_variation_withdrawal("area_1", "battery"),
+        cost_variation_withdrawal_df,
+        check_dtypes=False,
     )
 
     # Cascade delete: deleting the storage should remove all matrix rows
@@ -318,11 +363,11 @@ def test_constraint_matrix_lifecycle(db_session: Session, dao: DatabaseStudyDao)
 
     dao.save_st_storage_constraint_matrix("area_1", "battery", "c1", series_id)
     pl.testing.assert_frame_equal(
-        dao.get_st_storage_additional_constraints_matrix("area_1", "battery", "c1"), dataframe, check_dtypes=False
+        dao.get_st_storage_additional_constraint_matrix("area_1", "battery", "c1"), dataframe, check_dtypes=False
     )
 
     with pytest.raises(STStorageAdditionalConstraintNotFound):
-        dao.get_st_storage_additional_constraints_matrix("area_1", "battery", "nonexistent")
+        dao.get_st_storage_additional_constraint_matrix("area_1", "battery", "nonexistent")
 
     with pytest.raises(STStorageAdditionalConstraintNotFound):
         dao.save_st_storage_constraint_matrix("area_1", "battery", "nonexistent", series_id)

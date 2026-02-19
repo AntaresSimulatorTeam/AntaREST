@@ -94,7 +94,7 @@ class ReadOnlySTStorageDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_st_storage_additional_constraints_matrix(
+    def get_st_storage_additional_constraint_matrix(
         self, area_id: str, storage_id: str, constraint_id: str
     ) -> pl.DataFrame:
         raise NotImplementedError()
