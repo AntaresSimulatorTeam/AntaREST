@@ -22,11 +22,16 @@ logger = logging.getLogger(__name__)
 
 def clean_tasks(task_service: ITaskService, dry_run: bool, task_retention_duration: int) -> GarbageCollectorTaskResult:
     start_time = time.time()
+    deleted_count = 0
     try:
         with db():
             with create_lock(db.session, lock_id=LockId.TASKS_GC):
                 logger.info(f"Deleting tasks older than {task_retention_duration} days from the database")
-            deleted_count = task_service.delete_task_by_creation_date(task_retention_duration)
+                if not dry_run:
+                    deleted_count = task_service.delete_task_by_creation_date(task_retention_duration)
+                else:
+                    logger.info(f"[dry-run] Would delete tasks older than {task_retention_duration} days")
+                    deleted_count = 0
 
         duration_seconds = time.time() - start_time
 

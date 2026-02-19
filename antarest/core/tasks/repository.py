@@ -101,10 +101,9 @@ class TaskJobRepository:
     def delete_by_creation_date(self, task_retention_duration: int) -> int:
         session = self.session
         ctime = current_time()
-        # stmt = delete(TaskJob).where(TaskJob.creation_date - ctime < datetime.timedelta(days=task_retention_duration))
         deleted_rows = (
             session.query(TaskJob)
-            .filter(TaskJob.creation_date - ctime < datetime.timedelta(days=task_retention_duration))
+            .filter(TaskJob.creation_date < ctime - datetime.timedelta(days=task_retention_duration))
             .delete()
         )
         session.commit()
