@@ -25,7 +25,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getAreas, getLinks } from "../../../../../../../redux/selectors";
-import ResultMatrixViewer from "./-components/ResultMatrixViewer";
+import OutputMatrixViewer from "./-components/OutputMatrixViewer";
 import SynthesisViewer from "./-components/SynthesisViewer";
 import useStudyOutput from "./-hooks/useStudyOutput";
 import { SYNTHESIS_ITEMS, type ListType } from "./-utils";
@@ -109,7 +109,7 @@ function Output() {
         return !data ? (
           <SynthesisViewer gridId={id} />
         ) : (
-          <ResultMatrixViewer output={output} itemType={listType} selectedItem={data} />
+          <OutputMatrixViewer output={output} itemType={listType} selectedItem={data} />
         );
       }}
     />

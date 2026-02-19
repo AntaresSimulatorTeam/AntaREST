@@ -32,6 +32,7 @@ import { Box } from "@mui/material";
 import { useParams } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { Props } from "react-virtualized-auto-sizer";
 import type { PartialStudyOutput } from "../../-hooks/useStudyOutput";
 import { useVariablePerVariable } from "../../-hooks/useVariablePerVariable";
 import {
@@ -42,11 +43,11 @@ import {
   type ListType,
   type MonteCarloMode,
 } from "../../-utils";
+import OutputFilters from "./OutputFilters";
 import OutputMatrix from "./OutputMatrix";
-import ResultFilters from "./ResultFilters";
 import VariableMatrix from "./VariableMatrix";
 
-interface ResultMatrixViewerProps {
+interface Props {
   itemType: ListType;
   selectedItem: AreaWithId | StudyMapDistrict | LinkElement;
   output?: PartialStudyOutput;
@@ -54,7 +55,7 @@ interface ResultMatrixViewerProps {
 
 type SetResultColHeaders = (headers: string[][], indices: number[]) => void;
 
-function ResultMatrixViewer({ itemType, selectedItem, output }: ResultMatrixViewerProps) {
+function OutputMatrixViewer({ itemType, selectedItem, output }: Props) {
   const { studyId, outputId } = useParams({
     from: "/_authenticated/studies/$studyId/explore/outputs/$outputId/",
   });
@@ -252,7 +253,7 @@ function ResultMatrixViewer({ itemType, selectedItem, output }: ResultMatrixView
     <ViewWrapper flex>
       <Box sx={{ display: "flex", flexDirection: "column", height: 1, width: 1 }}>
         <Box sx={{ flexShrink: 0 }}>
-          <ResultFilters
+          <OutputFilters
             mcMode={mcMode}
             setMcMode={setMcMode}
             year={year}
@@ -318,4 +319,4 @@ function ResultMatrixViewer({ itemType, selectedItem, output }: ResultMatrixView
   );
 }
 
-export default ResultMatrixViewer;
+export default OutputMatrixViewer;

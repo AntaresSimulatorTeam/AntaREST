@@ -93,7 +93,7 @@ interface Props {
   canExportVariableView: boolean;
 }
 
-function ResultFilters({
+function OutputFilters({
   mcMode,
   setMcMode,
   year,
@@ -431,4 +431,4 @@ function ResultFilters({
   );
 }
 
-export default ResultFilters;
+export default OutputFilters;

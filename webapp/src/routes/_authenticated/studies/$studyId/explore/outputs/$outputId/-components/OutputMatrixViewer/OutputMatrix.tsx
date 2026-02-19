@@ -30,7 +30,7 @@ import { toError } from "@/utils/fnUtils";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { useTranslation } from "react-i18next";
 
-interface ResultMatrixProps {
+interface Props {
   matrixRes: UsePromiseResponse<ResultMatrixDTO | undefined>;
   resultColHeaders: string[][];
   filteredData: number[][];
@@ -48,7 +48,7 @@ function OutputMatrix({
   matrixGridRef,
   dateTime,
   dateTimeMetadata,
-}: ResultMatrixProps) {
+}: Props) {
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
