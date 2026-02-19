@@ -394,12 +394,6 @@ class StudyMetadataRepository:
         session.execute(stmt)
         session.commit()
 
-    def delete_many(self, ids: List[str]) -> None:
-        session = self.session
-        stmt = delete(Study).where(Study.id.in_(ids))
-        session.execute(stmt)
-        session.flush()
-
     def update_tags(self, study: Study, new_tags: Sequence[str]) -> None:
         """
         Updates the tags associated with a given study in the database,

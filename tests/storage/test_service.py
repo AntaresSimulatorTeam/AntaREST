@@ -29,7 +29,12 @@ from sqlalchemy.orm import Session
 
 from antarest.blobstore.service import BlobService
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.exceptions import StudyVariantUpgradeError, TaskAlreadyRunning
+from antarest.core.exceptions import (
+    StudyDeletionNotAllowed,
+    StudyNotFoundError,
+    StudyVariantUpgradeError,
+    TaskAlreadyRunning,
+)
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import JWTGroup, JWTUser
@@ -57,7 +62,7 @@ from antarest.study.model import (
     StudyMetadataDTO,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
-from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask
+from antarest.study.service import MAX_BATCH_DELETE_SIZE, MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
@@ -917,15 +922,15 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
 
 @with_admin_user
 def test_delete_study_calls_callback(tmp_path: Path) -> None:
-    study_uuid = str(uuid.uuid4())
+    study_id = "my_study"
     repository_mock = Mock()
-    study_path = tmp_path / study_uuid
+    study_path = tmp_path / study_id
     study_path.mkdir()
     (study_path / "study.antares").touch()
     repository_mock.get.return_value = Mock(
         spec=RawStudy,
         archived=False,
-        id="my_study",
+        id=study_id,
         path=study_path,
         groups=[],
         owner=None,
@@ -937,9 +942,9 @@ def test_delete_study_calls_callback(tmp_path: Path) -> None:
     service.add_on_deletion_callback(callback)
     service.storage_service.variant_study_service.has_children.return_value = False  # type: ignore
 
-    service.delete_study(study_uuid, children=False)
+    service.delete_study(study_id, children=False)
 
-    callback.assert_called_once_with(study_uuid)
+    callback.assert_called_once_with(study_id)
 
 
 @with_admin_user
@@ -1214,6 +1219,466 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
     assert kwargs.get("include_parent") is False
 
     assert repository.delete.call_args_list == [call(variant_study.id), call(raw_study.id)]
+
+
+@with_admin_user
+def test_delete_studies_raises_when_children_and_no_variants_flag(tmp_path: Path) -> None:
+    """Should raise StudyDeletionNotAllowed when study has children and with_variants=False."""
+    repository = Mock(spec=StudyMetadataRepository)
+
+    study = create_raw_study(
+        id="has-children",
+        path=str(tmp_path / "s"),
+        archived=False,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=None,
+        groups=[],
+    )
+    repository.get.return_value = study
+
+    variant_study_service = Mock(spec=VariantStudyService)
+    variant_study_service.has_children.return_value = True
+
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
+        repository=repository,
+        config=Config(),
+        variant_study_service=variant_study_service,
+    )
+
+    with pytest.raises(StudyDeletionNotAllowed):
+        service.delete_studies(["has-children"], with_variants=False)
+
+    repository.delete.assert_not_called()
+
+
+@with_admin_user
+def test_delete_studies_checks_variant_permissions(tmp_path: Path) -> None:
+    """Permission check must be performed on each variant child individually."""
+    admin_group = Group(id="admin", name="admin")
+    repository = Mock(spec=StudyMetadataRepository)
+
+    parent = create_raw_study(
+        id="parent",
+        path=str(tmp_path / "parent"),
+        archived=False,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=None,
+        groups=[],
+    )
+    parent.to_json_summary = Mock(return_value={"id": "parent"})
+    parent.to_enhanced_json_summary = Mock(return_value={"id": "parent", "workspace": DEFAULT_WORKSPACE_NAME})
+
+    forbidden_variant = create_variant_study(
+        id="forbidden-variant",
+        path=str(tmp_path / "fv"),
+        archived=False,
+        owner=None,
+        groups=[admin_group],
+        public_mode=PublicMode.NONE,
+    )
+    forbidden_variant.generation_task = None
+    forbidden_variant.to_json_summary = Mock(return_value={"id": "forbidden-variant"})
+
+    def get_study(study_id: str) -> Study:
+        return {"parent": parent, "forbidden-variant": forbidden_variant}[study_id]
+
+    repository.get.side_effect = get_study
+    variant_study_service = Mock(spec=VariantStudyService)
+    variant_study_service.has_children.side_effect = lambda s: s.id == "parent"
+
+    def walk_children(
+        parent_id: str, fun: t.Callable[[t.Any], None], bottom_first: bool, include_parent: bool = True
+    ) -> None:
+        fun(forbidden_variant)
+        if include_parent:
+            fun(parent)
+
+    variant_study_service.walk_children.side_effect = walk_children
+
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
+        repository=repository,
+        config=Config(),
+        variant_study_service=variant_study_service,
+    )
+
+    # Admin user has permission, so this should succeed
+    service.delete_studies(["parent"], with_variants=True)
+    deleted_ids = set(repository.delete.call_args.args)
+    assert "forbidden-variant" in deleted_ids
+    assert "parent" in deleted_ids
+
+
+@with_admin_user
+def test_delete_studies_events_pushed_after_db_delete(tmp_path: Path) -> None:
+    """Events must be pushed only after repository.delete succeeds."""
+    call_order: t.List[str] = []
+    repository = Mock(spec=StudyMetadataRepository)
+    event_bus = Mock(spec=IEventBus)
+
+    study = create_raw_study(
+        id="ev-study",
+        path=str(tmp_path / "ev"),
+        archived=False,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=None,
+        groups=[],
+    )
+    study.to_json_summary = Mock(return_value={"id": "ev-study"})
+    study.to_enhanced_json_summary = Mock(return_value={"id": "ev-study", "workspace": DEFAULT_WORKSPACE_NAME})
+
+    repository.get.return_value = study
+    repository.delete.side_effect = lambda *args: call_order.append("delete")
+    event_bus.push.side_effect = lambda *args: call_order.append("event")
+    variant_study_service = Mock(spec=VariantStudyService)
+    variant_study_service.has_children.return_value = False
+
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
+        repository=repository,
+        config=Config(),
+        variant_study_service=variant_study_service,
+        event_bus=event_bus,
+    )
+
+    service.delete_studies(["ev-study"], with_variants=False)
+    assert call_order == ["delete", "event"]
+
+
+@with_admin_user
+def test_delete_studies_empty_list_raises() -> None:
+    """Passing an empty list should raise an HTTPException."""
+    from fastapi import HTTPException
+
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
+        repository=Mock(spec=StudyMetadataRepository),
+        config=Config(),
+    )
+
+    with pytest.raises(HTTPException):
+        service.delete_studies([], with_variants=False)
+
+
+@with_admin_user
+def test_delete_studies_exceeds_max_batch_size() -> None:
+    """Exceeding MAX_BATCH_DELETE_SIZE should raise an HTTPException."""
+    from fastapi import HTTPException
+
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
+        repository=Mock(spec=StudyMetadataRepository),
+        config=Config(),
+    )
+
+    ids = [f"study-{i}" for i in range(MAX_BATCH_DELETE_SIZE + 1)]
+    with pytest.raises(HTTPException):
+        service.delete_studies(ids, with_variants=False)
+
+
+@with_admin_user
+def test_delete_studies_runs_callbacks(tmp_path: Path) -> None:
+    """Deletion callbacks should be invoked for every deleted study."""
+    repository = Mock(spec=StudyMetadataRepository)
+
+    study_a = create_raw_study(
+        id="cb-a",
+        path=str(tmp_path / "a"),
+        archived=False,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=None,
+        groups=[],
+    )
+    study_a.to_json_summary = Mock(return_value={"id": "cb-a"})
+    study_a.to_enhanced_json_summary = Mock(return_value={"id": "cb-a", "workspace": DEFAULT_WORKSPACE_NAME})
+
+    study_b = create_raw_study(
+        id="cb-b",
+        path=str(tmp_path / "b"),
+        archived=False,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=None,
+        groups=[],
+    )
+    study_b.to_json_summary = Mock(return_value={"id": "cb-b"})
+    study_b.to_enhanced_json_summary = Mock(return_value={"id": "cb-b", "workspace": DEFAULT_WORKSPACE_NAME})
+
+    def get_study(study_id: str) -> Study:
+        return {"cb-a": study_a, "cb-b": study_b}[study_id]
+
+    repository.get.side_effect = get_study
+    variant_study_service = Mock(spec=VariantStudyService)
+    variant_study_service.has_children.return_value = False
+
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
+        repository=repository,
+        config=Config(),
+        variant_study_service=variant_study_service,
+    )
+
+    callback = Mock()
+    service.add_on_deletion_callback(callback)
+    service.delete_studies(["cb-a", "cb-b"], with_variants=False)
+    assert callback.call_count == 2
+    callback_ids = {c.args[0] for c in callback.call_args_list}
+    assert callback_ids == {"cb-a", "cb-b"}
+
+
+def test_delete_studies_no_permission_on_one_study(tmp_path: Path) -> None:
+    """When user lacks WRITE permission on one study, the whole batch must fail."""
+    # Non-admin user who owns study-a but not study-b
+    user = JWTUser(id=99, impersonator=99, type="users", groups=[])
+    repository = Mock(spec=StudyMetadataRepository)
+
+    study_a = create_raw_study(
+        id="study-a",
+        path=str(tmp_path / "a"),
+        archived=False,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=User(id=99, name="owner"),
+        groups=[],
+        public_mode=PublicMode.NONE,
+    )
+
+    study_b = create_raw_study(
+        id="study-b",
+        path=str(tmp_path / "b"),
+        archived=False,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=User(id=50, name="other"),
+        groups=[],
+        public_mode=PublicMode.NONE,
+    )
+
+    def get_study(study_id: str) -> Study:
+        return {"study-a": study_a, "study-b": study_b}[study_id]
+
+    repository.get.side_effect = get_study
+    variant_study_service = Mock(spec=VariantStudyService)
+    variant_study_service.has_children.return_value = False
+
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
+        repository=repository,
+        config=Config(),
+        variant_study_service=variant_study_service,
+    )
+
+    with current_user_context(user):
+        with pytest.raises(UserHasNotPermissionError):
+            service.delete_studies(["study-a", "study-b"], with_variants=False)
+
+    # Nothing should be deleted because the batch failed early
+    repository.delete.assert_not_called()
+
+
+def test_delete_studies_no_permission_on_variant(tmp_path: Path) -> None:
+    """When user lacks WRITE on a variant child, the batch must fail."""
+    user = JWTUser(id=99, impersonator=99, type="users", groups=[])
+    repository = Mock(spec=StudyMetadataRepository)
+
+    parent = create_raw_study(
+        id="parent",
+        path=str(tmp_path / "parent"),
+        archived=False,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=User(id=99, name="owner"),
+        groups=[],
+        public_mode=PublicMode.NONE,
+    )
+
+    # Variant permission should be denied (different owner)
+    variant = create_variant_study(
+        id="child-variant",
+        path=str(tmp_path / "variant"),
+        parent_id="parent",
+        archived=False,
+        owner=User(id=50, name="other"),
+        groups=[],
+        public_mode=PublicMode.NONE,
+    )
+
+    variant.generation_task = None
+
+    def get_study(study_id: str) -> Study:
+        return {"parent": parent, "child-variant": variant}[study_id]
+
+    repository.get.side_effect = get_study
+    variant_study_service = Mock(spec=VariantStudyService)
+    variant_study_service.has_children.side_effect = lambda s: s.id == "parent"
+
+    def walk_children(
+        parent_id: str, fun: t.Callable[[t.Any], None], bottom_first: bool, include_parent: bool = True
+    ) -> None:
+        fun(variant)
+        if include_parent:
+            fun(parent)
+
+    variant_study_service.walk_children.side_effect = walk_children
+
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
+        repository=repository,
+        config=Config(),
+        variant_study_service=variant_study_service,
+    )
+
+    with current_user_context(user):
+        with pytest.raises(UserHasNotPermissionError):
+            service.delete_studies(["parent"], with_variants=True)
+
+    # Permission failure on the variant must prevent any deletion
+    repository.delete.assert_not_called()
+
+
+@with_admin_user
+def test_delete_studies_invalid_id(tmp_path: Path) -> None:
+    """When one study ID does not exist, the batch must fail with StudyNotFoundError."""
+    repository = Mock(spec=StudyMetadataRepository)
+
+    study_a = create_raw_study(
+        id="study-a",
+        path=str(tmp_path / "a"),
+        archived=False,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=None,
+        groups=[],
+    )
+
+    def get_study(study_id: str) -> t.Optional[Study]:
+        if study_id == "study-a":
+            return study_a
+        return None  # Simulates missing study
+
+    repository.get.side_effect = get_study
+
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
+        repository=repository,
+        config=Config(),
+    )
+
+    with pytest.raises(StudyNotFoundError):
+        service.delete_studies(["study-a", "nonexistent-id"], with_variants=False)
+
+    repository.delete.assert_not_called()
+
+
+@with_admin_user
+def test_delete_studies_duplicate_ids(tmp_path: Path) -> None:
+    """Duplicate IDs in the list should be deduplicated — study deleted and notified once."""
+    repository = Mock(spec=StudyMetadataRepository)
+    event_bus = Mock(spec=IEventBus)
+
+    study = create_raw_study(
+        id="dup-study",
+        path=str(tmp_path / "dup"),
+        archived=False,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=None,
+        groups=[],
+    )
+    study.to_json_summary = Mock(return_value={"id": "dup-study"})
+    study.to_enhanced_json_summary = Mock(return_value={"id": "dup-study", "workspace": DEFAULT_WORKSPACE_NAME})
+
+    repository.get.return_value = study
+
+    variant_study_service = Mock(spec=VariantStudyService)
+    variant_study_service.has_children.return_value = False
+
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
+        repository=repository,
+        config=Config(),
+        variant_study_service=variant_study_service,
+        event_bus=event_bus,
+    )
+
+    service.delete_studies(["dup-study", "dup-study"], with_variants=False)
+
+    # Deduplicated — only one delete call and one event
+    repository.delete.assert_called_once_with("dup-study")
+    assert event_bus.push.call_count == 1
+
+
+@with_admin_user
+def test_delete_studies_variant_id_also_in_list(tmp_path: Path) -> None:
+    """When a variant ID is explicitly listed alongside its parent, it must not be deleted twice."""
+    repository = Mock(spec=StudyMetadataRepository)
+    event_bus = Mock(spec=IEventBus)
+
+    parent = create_raw_study(
+        id="parent",
+        path=str(tmp_path / "parent"),
+        archived=False,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=None,
+        groups=[],
+    )
+    parent.to_json_summary = Mock(return_value={"id": "parent"})
+    parent.to_enhanced_json_summary = Mock(return_value={"id": "parent", "workspace": DEFAULT_WORKSPACE_NAME})
+
+    variant = create_variant_study(
+        id="child-variant",
+        path=str(tmp_path / "variant"),
+        parent_id="parent",
+        archived=False,
+        owner=None,
+        groups=[],
+    )
+    variant.generation_task = None
+    variant.to_json_summary = Mock(return_value={"id": "child-variant"})
+
+    def get_study(study_id: str) -> Study:
+        return {"parent": parent, "child-variant": variant}[study_id]
+
+    repository.get.side_effect = get_study
+
+    variant_study_service = Mock(spec=VariantStudyService)
+    variant_study_service.has_children.side_effect = lambda s: s.id == "parent"
+
+    def walk_children(
+        parent_id: str, fun: t.Callable[[t.Any], None], bottom_first: bool, include_parent: bool = True
+    ) -> None:
+        fun(variant)
+        if include_parent:
+            fun(parent)
+
+    variant_study_service.walk_children.side_effect = walk_children
+
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
+        repository=repository,
+        config=Config(),
+        variant_study_service=variant_study_service,
+        event_bus=event_bus,
+    )
+
+    # Both parent and its child-variant are passed explicitly
+    service.delete_studies(["parent", "child-variant"], with_variants=True)
+
+    # Should still result in a single delete call with no duplicate IDs
+    repository.delete.assert_called_once()
+    deleted_ids = list(repository.delete.call_args.args)
+    assert sorted(deleted_ids) == ["child-variant", "parent"]
+
+    # Exactly one event per unique study
+    assert event_bus.push.call_count == 2
+    event_payloads = {c.args[0].payload["id"] for c in event_bus.push.call_args_list}
+    assert event_payloads == {"parent", "child-variant"}
 
 
 @pytest.mark.parametrize(
