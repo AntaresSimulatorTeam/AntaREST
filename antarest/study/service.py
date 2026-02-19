@@ -1386,7 +1386,9 @@ class StudyService:
         return study.to_json_summary()
 
     @staticmethod
-    def _validate_children_deletion(study: Study, allow_children_deletion: bool, variant_service) -> None:
+    def _validate_children_deletion(
+        study: Study, allow_children_deletion: bool, variant_service: VariantStudyService
+    ) -> None:
         """Validate that study can be deleted when it has variant children."""
         if variant_service.has_children(study) and not allow_children_deletion:
             raise StudyDeletionNotAllowed(study.id, "Study has variant children")
