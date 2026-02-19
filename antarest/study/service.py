@@ -1363,9 +1363,7 @@ class StudyService:
 
         return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
 
-    def _do_export_study(
-        self, metadata: Study, target: Path, outputs: bool = True, archive_format: ArchiveFormat = ArchiveFormat.ZIP
-    ) -> Path:
+    def _do_export_study(self, metadata: Study, target: Path, outputs: bool, archive_format: ArchiveFormat) -> Path:
         """
         Export and compress the study to an archive file.
 

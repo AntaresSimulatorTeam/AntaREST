@@ -165,12 +165,36 @@ def create_minimal_output_zip(
         zf.writestr("info.antares-output", info_content)
 
 
-def create_minimal_output_zip_from_name(
-    target: Path | IO[bytes],
-    output_name: str,
+def create_minimal_output_dir(
+    parent: Path,
+    timestamp: datetime | str,
+    mode: Mode = Mode.ECONOMY,
+    name: str = "",
 ) -> None:
+    """
+    Creates a minimal valid output content into a zip file that can be imported through the API.
+    """
+    if isinstance(timestamp, str):
+        timestamp = datetime.strptime(timestamp, TIMESTAMP_FORMAT)
+    output_dir = parent / output_tuple_to_name(timestamp, mode, name)
+    (output_dir / "about-the-study" / "parameters.ini").write_text(PARAMETERS_TEMPLATE)
+    info_content = INFO_ANTARES_OUTPUT_TEMPLATE.format(
+        version="9.2", name=name, mode=mode.value, timestamp=timestamp.timestamp()
+    )
+    (output_dir / "info.antares-output").write_text(info_content)
+
+
+def create_minimal_output_zip_from_name(target: Path | IO[bytes], output_name: str) -> None:
     """
     Creates a minimal valid output content into a zip file that can be imported through the API.
     """
     timestamp, mode, name = output_name_to_tuple(output_name)
     create_minimal_output_zip(target, timestamp, mode, name)
+
+
+def create_minimal_output_dir_from_name(parent: Path, output_name: str) -> None:
+    """
+    Creates a minimal valid output content into a directory.
+    """
+    timestamp, mode, name = output_name_to_tuple(output_name)
+    create_minimal_output_dir(parent, timestamp, mode, name)
