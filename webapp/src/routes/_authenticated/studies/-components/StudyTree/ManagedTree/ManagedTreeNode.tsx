@@ -15,7 +15,7 @@
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import { Box, IconButton, Tooltip } from "@mui/material";
+import { Box, IconButton } from "@mui/material";
 import * as R from "ramda";
 import { useMemo } from "react";
 import TreeItemEnhanced from "@/components/TreeItemEnhanced";
@@ -53,8 +53,6 @@ function ManagedTreeNode({
 }: ManagedTreeNodeProps) {
   const { children, path, name, id } = node;
   const isRootNode = name === ROOT_NODE_NAME;
-  const hasChildren = children.length > 0;
-
   const sortedChildren = useMemo(
     () => R.sortBy(R.compose(R.toLower, R.prop("name")), children),
     [children],
@@ -136,14 +134,12 @@ function ManagedTreeNode({
       itemId={path}
       label={
         <Box sx={nodeLabelContainerStyles}>
-          <Tooltip title={name}>
-            <Box
-              component="span"
-              sx={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
-            >
-              {name}
-            </Box>
-          </Tooltip>
+          <Box
+            component="span"
+            sx={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+          >
+            {name}
+          </Box>
           <Box sx={nodeActionsContainerStyles}>
             <IconButton size="small" onClick={handleAddSubDirectory} sx={actionButtonStyles}>
               <CreateNewFolderIcon sx={addSubDirectoryIconStyles} />
@@ -159,8 +155,9 @@ function ManagedTreeNode({
       }
       onClick={() => onNodeClick(path)}
       slots={{
-        collapseIcon: hasChildren ? treeNodeIcons.folderOpen : undefined,
-        expandIcon: hasChildren ? treeNodeIcons.folder : undefined,
+        collapseIcon: treeNodeIcons.folderOpen,
+        expandIcon: treeNodeIcons.folder,
+        endIcon: treeNodeIcons.folder,
       }}
       sx={treeItemStyles}
     >
