@@ -36,15 +36,15 @@ function EditableTreeItem({
 }: EditableTreeItemProps) {
   const [value, setValue] = useState(initialValue);
   const inputRef = useRef<HTMLInputElement>(null);
+  const hasSavedRef = useRef(false);
 
-  // TODO check if this is still needed
   useEffect(() => {
     if (isEditing && inputRef.current) {
       // Small delay to ensure the tree item is rendered
       setTimeout(() => {
         inputRef.current?.focus();
         inputRef.current?.select();
-      }, 50);
+      }, 100);
     }
   }, [isEditing]);
 
@@ -53,6 +53,12 @@ function EditableTreeItem({
   ////////////////////////////////////////////////////////////////
 
   const handleSave = () => {
+    if (hasSavedRef.current) {
+      return;
+    }
+
+    // Prevent double-save caused by Firefox triggering blur event when Enter is pressed
+    hasSavedRef.current = true;
     const trimmedValue = value.trim();
 
     if (trimmedValue) {
