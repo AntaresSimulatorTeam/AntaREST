@@ -14,4 +14,5 @@
 
 export const studyKeys = {
   all: () => ["studies"],
+  deleteMany: () => [...studyKeys.all(), "deleteStudies"],
 };

@@ -15,17 +15,15 @@
 import logging
 from typing import TYPE_CHECKING
 
-from celery import Celery, Task
+from celery import Celery
 
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.login.utils import current_user_context
-from antarest.maintenance.app import TaskName, celery_app
-from antarest.maintenance.context import MaintenanceContext
+from antarest.maintenance.app import MaintenanceTask, TaskName, celery_app
 from antarest.maintenance.tasks.auto_archive import AutoArchiveTaskResult, archive_old_studies
 from antarest.maintenance.tasks.common import (
     TRANSIENT_ERRORS,
     CronParseError,
-    MaintenanceContextNotFoundError,
     parse_cron_string,
 )
 
@@ -36,6 +34,7 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(
+    base=MaintenanceTask,
     bind=True,
     name=TaskName.AUTO_ARCHIVER,
     pydantic=True,
@@ -45,7 +44,7 @@ logger = logging.getLogger(__name__)
     retry_backoff_max=7200,
     retry_jitter=True,
 )
-def auto_archive_task(self: Task) -> AutoArchiveTaskResult:  # type: ignore[type-arg]
+def auto_archive_task(self: MaintenanceTask) -> AutoArchiveTaskResult:
     """
     Celery wrapper that delegates to archive_old_studies() with admin context.
 
@@ -61,10 +60,7 @@ def auto_archive_task(self: Task) -> AutoArchiveTaskResult:  # type: ignore[type
     if self.request.retries > 0:
         logger.warning(f"Auto-archive retry attempt {self.request.retries}/5")
 
-    ctx: MaintenanceContext | None = self.app.conf.get("maintenance_ctx")
-    if not ctx:
-        raise MaintenanceContextNotFoundError()
-
+    ctx = self.context
     with current_user_context(DEFAULT_ADMIN_USER):
         return archive_old_studies(
             ctx.study_service,

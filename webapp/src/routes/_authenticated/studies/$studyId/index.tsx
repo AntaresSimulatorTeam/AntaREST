@@ -16,10 +16,9 @@ import SplitView from "@/components/page/SplitView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
 import { getVariantParents, getVariantTree } from "@/services/api/variant";
-import { Box } from "@mui/material";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import InformationView from "./-components/InformationView";
-import StudyTreeView from "./-components/StudyTreeView";
+import VariantsTree from "./-components/VariantsTree";
 import useStudy from "./-hooks/useStudy";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/")({
@@ -44,24 +43,13 @@ function StudyHome() {
       ifFulfilled={(variantTree) => (
         <SplitView splitId="study-home" gutterSize={4} sizes={[30, 70]}>
           {/* Left */}
-          <Box
-            height="100%"
-            display="flex"
-            flexDirection="column"
-            justifyContent="flex-start"
-            alignItems="flex-start"
-            boxSizing="border-box"
-            overflow="hidden"
-            px={1}
-          >
-            <StudyTreeView
-              study={study}
-              variantTree={variantTree}
-              onClick={(studyId: string) =>
-                navigate({ to: "/studies/$studyId", params: { studyId } })
-              }
-            />
-          </Box>
+          <VariantsTree
+            study={study}
+            variantTree={variantTree}
+            onClick={(studyId: string) =>
+              navigate({ to: "/studies/$studyId", params: { studyId } })
+            }
+          />
           {/* Right */}
           <InformationView study={study} variantTree={variantTree} />
         </SplitView>

@@ -12,63 +12,95 @@
  * This file is part of the Antares project.
  */
 
+import { directoryQueries } from "@/queries/directories/queries";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import type { StudyMetadata } from "@/types/types";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudyFilters } from "@/redux/selectors";
+import { buildKey } from "@/utils/reactUtils";
 import HomeIcon from "@mui/icons-material/Home";
-import { Box, Breadcrumbs } from "@mui/material";
+import { Breadcrumbs } from "@mui/material";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import useStudy from "../../../-hooks/useStudy";
 import BreadcrumbLink from "./BreadcrumbLink";
-import { buildBreadcrumbPath } from "./utils";
+import { buildExternalBreadcrumbs, buildManagedBreadcrumbs } from "./utils";
 
-interface BreadcrumbProps {
-  study: StudyMetadata;
-}
-
-function Breadcrumb({ study }: BreadcrumbProps) {
+function Breadcrumb() {
+  const study = useStudy();
   const dispatch = useAppDispatch();
+  const filters = useAppSelector(getStudyFilters);
+  const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
-  const breadcrumbPath = buildBreadcrumbPath({
-    folderPath: study.folder,
-    workspaceName: study.workspace,
-    studyName: study.name,
-  });
+  // Build breadcrumbs based on study type (managed vs external)
+  const breadcrumbItems = study.managed
+    ? buildManagedBreadcrumbs({
+        directoryId: study.directoryId ?? null,
+        studyName: study.name,
+        directories,
+      })
+    : buildExternalBreadcrumbs({
+        folderPath: study.folder,
+        workspaceName: study.workspace,
+        studyName: study.name,
+      });
+
+  const handleBreadcrumbClick = (index: number) => {
+    const item = breadcrumbItems[index];
+    const isLastSegment = index === breadcrumbItems.length - 1;
+
+    // Last segment (study name) doesn't trigger filter updates - it just navigates
+    if (isLastSegment) {
+      return;
+    }
+
+    if (study.managed) {
+      dispatch(
+        updateStudyFilters({
+          activeTree: "managed",
+          managed: { directoryId: item.id },
+        }),
+      );
+    } else {
+      dispatch(
+        updateStudyFilters({
+          activeTree: "external",
+          external: {
+            path: item.path || "/",
+            strictPath: filters.external.strictPath,
+          },
+        }),
+      );
+    }
+  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center" }}>
-      <Breadcrumbs maxItems={5} sx={{ fontSize: 15 }}>
-        {breadcrumbPath.map((folderName, index) => {
-          const folderPath = `/${breadcrumbPath.slice(0, index + 1).join("/")}`;
-          const isFirstSegment = index === 0;
-          const isLastSegment = index === breadcrumbPath.length - 1;
+    <Breadcrumbs maxItems={5} sx={{ fontSize: 15, flex: 1 }}>
+      {breadcrumbItems.map((item, index) => {
+        const isFirstSegment = index === 0;
+        const isLastSegment = index === breadcrumbItems.length - 1;
 
-          return (
-            <BreadcrumbLink
-              key={folderPath}
-              label={folderName}
-              icon={isFirstSegment ? <HomeIcon fontSize="inherit" sx={{ mr: 1 }} /> : null}
-              // Study names (last segment) are never truncated to prevent users from accidentally
-              // working with the wrong study due to similar truncated names.
-              truncate={!isLastSegment}
-              linkOptions={
-                isLastSegment
-                  ? { to: "/studies/$studyId", params: { studyId: study.id } }
-                  : { to: "/studies" }
-              }
-              onClick={() => {
-                if (!isLastSegment) {
-                  // This allows users to browse other studies in the same folder hierarchy
-                  dispatch(updateStudyFilters({ folder: folderPath }));
-                }
-              }}
-            />
-          );
-        })}
-      </Breadcrumbs>
-    </Box>
+        return (
+          <BreadcrumbLink
+            key={buildKey(item.label, index)}
+            label={item.label}
+            icon={isFirstSegment ? <HomeIcon fontSize="inherit" sx={{ mr: 1 }} /> : null}
+            // Study names (last segment) are never truncated to prevent users from accidentally
+            // working with the wrong study due to similar truncated names.
+            truncate={!isLastSegment}
+            linkOptions={
+              isLastSegment
+                ? { to: "/studies/$studyId", params: { studyId: study.id } }
+                : { to: "/studies" }
+            }
+            onClick={() => handleBreadcrumbClick(index)}
+          />
+        );
+      })}
+    </Breadcrumbs>
   );
 }
 

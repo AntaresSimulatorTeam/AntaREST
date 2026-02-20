@@ -13,7 +13,6 @@
  */
 
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
-import { useFormContextPlus } from "@/hooks/useFormContextPlus";
 import { TimeSeriesType } from "@/services/api/studies/timeseries/constants";
 import BuildIcon from "@mui/icons-material/Build";
 import {
@@ -25,6 +24,7 @@ import {
   TableHead,
   TableRow,
 } from "@mui/material";
+import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import type { TimeSeriesConfigValues } from "../-utils";
 import TypeConfigFields from "./TypeConfigFields";
@@ -33,7 +33,7 @@ function Fields() {
   const {
     control,
     formState: { errors },
-  } = useFormContextPlus<TimeSeriesConfigValues>();
+  } = useFormContext<TimeSeriesConfigValues>();
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////

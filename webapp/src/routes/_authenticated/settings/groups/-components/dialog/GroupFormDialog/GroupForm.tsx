@@ -14,7 +14,6 @@
 
 import StringFE from "@/components/fieldEditors/StringFE";
 import Fieldset from "@/components/Fieldset";
-import { useFormContextPlus } from "@/hooks/useFormContextPlus";
 import usePromise from "@/hooks/usePromise";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getAuthUser } from "@/redux/selectors";
@@ -44,7 +43,7 @@ import {
   type SelectChangeEvent,
 } from "@mui/material";
 import { useMemo, useRef, useState } from "react";
-import { Controller, useFieldArray, useWatch } from "react-hook-form";
+import { Controller, useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { v4 as uuidv4 } from "uuid";
 import { RESERVED_GROUP_NAMES, RESERVED_USER_NAMES, ROLE_TYPE_KEYS } from "../../../../-utils";
@@ -55,7 +54,7 @@ function GroupForm() {
     control,
     getValues,
     formState: { defaultValues },
-  } = useFormContextPlus<GroupFormDefaultValues>();
+  } = useFormContext<GroupFormDefaultValues>();
 
   const { t } = useTranslation();
   const authUser = useAppSelector(getAuthUser);

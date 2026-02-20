@@ -12,26 +12,31 @@
  * This file is part of the Antares project.
  */
 
-import SimpleLoader from "@/components/loaders/SimpleLoader";
-import RootPage from "@/components/page/RootPage";
-import SplitView from "@/components/page/SplitView";
-import ViewWrapper from "@/components/page/ViewWrapper";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getStudiesStatus, getStudyIdsFilteredAndSorted } from "@/redux/selectors";
-import { FetchStatus } from "@/redux/utils";
-import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
+import FolderIcon from "@mui/icons-material/Folder";
 import { Box } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import CustomScrollbar from "@/components/CustomScrollbar";
+import SimpleLoader from "@/components/loaders/SimpleLoader";
+import RootPage from "@/components/page/RootPage";
+import SplitView from "@/components/page/SplitView";
+import ViewWrapper from "@/components/page/ViewWrapper";
+import { directoryQueries } from "@/queries/directories/queries";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudiesStatus, getStudyIdsFilteredAndSorted } from "@/redux/selectors";
+import { FetchStatus } from "@/redux/utils";
 import FiltersDrawer from "./-components/FiltersDrawer";
 import HeaderActions from "./-components/HeaderActions";
 import RefreshButton from "./-components/RefreshButton";
-import SideNav from "./-components/SideNav";
 import StudiesList from "./-components/StudiesList";
+import StudyTree from "./-components/StudyTree";
 
 export const Route = createFileRoute("/_authenticated/studies/")({
   component: Studies,
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(directoryQueries.list());
+  },
 });
 
 function Studies() {
@@ -47,13 +52,18 @@ function Studies() {
   return (
     <RootPage
       title={t("global.studies")}
-      titleIcon={TravelExploreOutlinedIcon}
+      titleIcon={FolderIcon}
       headerActions={<HeaderActions onOpenFilterClick={() => setOpenFilter(true)} />}
     >
-      <SplitView splitId="studies" minSize={[200, 400]}>
-        {/* Left */}
-        <SideNav />
-        {/* Right */}
+      <SplitView splitId="studies" minSize={[300, 800]}>
+        {/* Left - Studies tree explorer */}
+        <CustomScrollbar>
+          <Box sx={{ overflow: "auto" }}>
+            <StudyTree />
+          </Box>
+        </CustomScrollbar>
+
+        {/* Right - Studies list */}
         <ViewWrapper flex disablePadding>
           {(studiesStatus === FetchStatus.Loading || studiesStatus === FetchStatus.Idle) && (
             <SimpleLoader />

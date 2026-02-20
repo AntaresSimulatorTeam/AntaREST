@@ -1,6 +1,8 @@
 FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim
 
-# RUN apt update && apt install -y procps gdb
+# RUN apt-get update && apt-get install -y procps gdb
+RUN apt-get update && apt-get install -y --no-install-recommends p7zip-full \
+    && rm -rf /var/lib/apt/lists/*
 
 # Add the `ls` alias to simplify debugging
 RUN echo "alias ll='/bin/ls -l --color=auto'" >> /root/.bashrc

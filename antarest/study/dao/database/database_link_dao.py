@@ -13,15 +13,16 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Sequence
 
 import polars as pl
-from sqlalchemy import Insert, Row, Table, Update, delete, insert, select, update
+from sqlalchemy import Row, Table, delete, select
+from sqlalchemy.engine.cursor import CursorResult
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, LinkNotFound
-from antarest.study.business.model.common import FilterOption
 from antarest.study.business.model.link_model import Link
 from antarest.study.dao.api.link_dao import LinkDao
+from antarest.study.dao.database.common import get_row_representation_as_dict
 from antarest.study.dao.database.models.link import (
     LINK_DIRECT_CAPACITY_TABLE,
     LINK_INDIRECT_CAPACITY_TABLE,
@@ -34,30 +35,10 @@ if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
-def _join_with_comma(values: list[FilterOption]) -> str:
-    """Serialize filtering values for DB format"""
-    return ", ".join(value.name.lower() for value in values)
-
-
 def _convert_db_rows_to_model(db_row: Any) -> Link:
-    return Link(
-        area1=db_row.area1,
-        area2=db_row.area2,
-        hurdles_cost=db_row.hurdles_cost,
-        loop_flow=db_row.loop_flow,
-        use_phase_shifter=db_row.use_phase_shifter,
-        transmission_capacities=db_row.transmission_capacities,
-        asset_type=db_row.asset_type,
-        display_comments=db_row.display_comments,
-        comments=db_row.comments,
-        colorr=db_row.colorr,
-        colorb=db_row.colorb,
-        colorg=db_row.colorg,
-        link_width=db_row.link_width,
-        link_style=db_row.link_style,
-        filter_synthesis=db_row.filter_synthesis,
-        filter_year_by_year=db_row.filter_year_by_year,
-    )
+    data = get_row_representation_as_dict(db_row)
+    del data["study_id"]
+    return Link(**data)
 
 
 class DatabaseLinkDao(LinkDao):
@@ -82,41 +63,18 @@ class DatabaseLinkDao(LinkDao):
     @override
     def save_link(self, link: Link) -> None:
         session = self.get_session()
-
-        values = {
-            "study_id": self.get_study_id(),
-            "area1": link.area1,
-            "area2": link.area2,
-            "hurdles_cost": link.hurdles_cost,
-            "loop_flow": link.loop_flow,
-            "use_phase_shifter": link.use_phase_shifter,
-            "transmission_capacities": link.transmission_capacities,
-            "asset_type": link.asset_type,
-            "display_comments": link.display_comments,
-            "comments": link.comments,
-            "colorr": link.colorr,
-            "colorb": link.colorb,
-            "colorg": link.colorg,
-            "link_width": link.link_width,
-            "link_style": link.link_style,
-            "filter_synthesis": _join_with_comma(link.filter_synthesis),
-            "filter_year_by_year": _join_with_comma(link.filter_year_by_year),
-        }
+        values = {"study_id": self.get_study_id(), **link.model_dump()}
 
         try:
             upsert_one(session, LINK_TABLE, values)
         except IntegrityError:
-            # Happens if the link's areas did not existed -> ForeignKey constraint fails
-            session.rollback()
+            # Happens if the link's areas did not exist -> ForeignKey constraint fails
             raise AreaNotFound(*[link.area1, link.area2])
 
         session.commit()
 
     @override
     def delete_link(self, link: Link) -> None:
-        if not self.link_exists(link.area1, link.area2):
-            raise LinkNotFound(f"The link {link.area1} -> {link.area2} is not present in the study")
-
         study_id = self.get_study_id()
         session = self.get_session()
         stmt = delete(LINK_TABLE).where(
@@ -124,7 +82,11 @@ class DatabaseLinkDao(LinkDao):
             & (LINK_TABLE.c.area1 == link.area1)
             & (LINK_TABLE.c.area2 == link.area2)
         )
-        session.execute(stmt)
+        result = session.execute(stmt)
+        assert isinstance(result, CursorResult)
+        if result.rowcount == 0:
+            # Means the DELETE had no effect so the link did not exist
+            raise LinkNotFound(f"The link {link.area1} -> {link.area2} is not present in the study")
         session.commit()
 
     @override
@@ -162,23 +124,14 @@ class DatabaseLinkDao(LinkDao):
 
     def _save_link_matrix(self, area_from_id: str, area_to_id: str, table: Table, matrix_id: str) -> None:
         area1, area2 = sorted((area_from_id, area_to_id))
-        row = self._get_row(area1, area2, table)
         session = self.get_session()
         study_id = self.get_study_id()
-        stmt: Insert | Update
-        if not row:
-            # We must check if the link exist or not
-            if not self.link_exists(area1, area2):
-                raise LinkNotFound(f"The link {area1} -> {area2} is not present in the study")
-            stmt = insert(table).values(study_id=study_id, area1=area1, area2=area2, matrix_id=matrix_id)
-        else:
-            stmt = (
-                update(table)
-                .where((table.c.study_id == study_id) & (table.c.area1 == area1) & (table.c.area2 == area2))
-                .values(matrix_id=matrix_id)
-            )
 
-        session.execute(stmt)
+        values = {"study_id": study_id, "area1": area1, "area2": area2, "matrix_id": matrix_id}
+        try:
+            upsert_one(session, table, values)
+        except IntegrityError as e:
+            raise LinkNotFound(f"The link {area_from_id} -> {area_to_id} is not present in the study") from e
         session.commit()
 
     @override

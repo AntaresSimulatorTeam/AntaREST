@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import numpy as np
 import polars as pl
@@ -34,6 +35,7 @@ from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.scenario_builder_model import Ruleset
+from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
@@ -48,7 +50,8 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettings,
 )
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.model import STUDY_VERSION_7_0
+from antarest.study.dao.study_conversion.study_converter import StudyConverter
+from antarest.study.model import STUDY_VERSION_7_0, STUDY_VERSION_9_2
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -409,3 +412,42 @@ def test_matrices_normalized(storage_service: StudyService, tmp_path: Path) -> N
     storage_service.write_study_as_file_study(UUID, new_path, with_outputs=False, normalize_matrices=True)
     assert not (new_path / "input" / "load" / "series" / "load_de.txt").exists()
     assert (new_path / "input" / "load" / "series" / "load_de.txt.link").exists()
+
+
+def test_convert_short_term_storages_also_converts_additional_constraint_matrix() -> None:
+    source_dao = MagicMock()
+    new_dao = MagicMock()
+    matrix_service = MagicMock()
+    matrix_service.create.return_value = "matrix-id"
+
+    converter = StudyConverter(
+        source_dao=source_dao,
+        new_dao=new_dao,
+        study_version=STUDY_VERSION_9_2,
+        matrix_service=matrix_service,
+    )
+
+    df = pl.DataFrame({"0": [0.0]})
+    source_dao.get_st_storage_pmax_injection.return_value = df
+    source_dao.get_st_storage_pmax_withdrawal.return_value = df
+    source_dao.get_st_storage_lower_rule_curve.return_value = df
+    source_dao.get_st_storage_upper_rule_curve.return_value = df
+    source_dao.get_st_storage_inflows.return_value = df
+    source_dao.get_st_storage_cost_injection.return_value = df
+    source_dao.get_st_storage_cost_withdrawal.return_value = df
+    source_dao.get_st_storage_cost_level.return_value = df
+    source_dao.get_st_storage_cost_variation_injection.return_value = df
+    source_dao.get_st_storage_cost_variation_withdrawal.return_value = df
+    source_dao.get_st_storage_additional_constraint_matrix.return_value = df
+
+    storage = STStorage(id="battery", name="Battery")
+    constraint = STStorageAdditionalConstraint(id="c1", name="Constraint 1")
+
+    converter._convert_short_term_storages(
+        area_id="fr",
+        storages=[storage],
+        constraints={"battery": [constraint]},
+    )
+
+    source_dao.get_st_storage_additional_constraint_matrix.assert_called_once_with("fr", "battery", "c1")
+    new_dao.save_st_storage_constraint_matrix.assert_called_once_with("fr", "battery", "c1", "matrix-id")

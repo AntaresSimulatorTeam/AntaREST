@@ -17,9 +17,9 @@ Created once per worker in worker_init and stored in app.conf.maintenance_ctx.
 """
 
 import logging
-from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
+from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.service_creator import SESSION_ARGS, create_core_services, init_db_engine
 
@@ -42,11 +42,11 @@ class MaintenanceContext:
         self.core_services = core_services
 
     @classmethod
-    def create(cls, config: "Config", config_path: Path) -> "MaintenanceContext":
+    def create(cls, config: "Config") -> "MaintenanceContext":
         """Initialize DB and services, return a ready-to-use context."""
-        logger.info(f"Initializing MaintenanceContext from {config_path}")
+        logger.info("Initializing MaintenanceContext")
 
-        engine = init_db_engine(config_path, config, auto_upgrade_db=False)
+        engine = init_db_engine(config, auto_upgrade_db=False)
         DBSessionMiddleware(None, custom_engine=engine, session_args=cast(dict[str, bool], SESSION_ARGS))
         core_services = create_core_services(app_ctxt=None, config=config)
 
@@ -67,3 +67,7 @@ class MaintenanceContext:
     @property
     def output_service(self) -> "OutputService":
         return self.core_services.output_service
+
+    @property
+    def task_service(self) -> "ITaskService":
+        return self.core_services.task_service

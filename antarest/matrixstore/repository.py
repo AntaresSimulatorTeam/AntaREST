@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import hashlib
 import logging
 import os
@@ -28,10 +27,12 @@ from sqlalchemy.orm import Session
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.matrixstore.model import Matrix, MatrixDataSet
+from antarest.core.utils.utils import current_time
+from antarest.matrixstore.model import LEGACY_MATRIX_VERSION, NEW_MATRIX_VERSION, Matrix, MatrixDataSet
 from antarest.matrixstore.parsing import load_matrix, save_matrix
 
 logger = logging.getLogger(__name__)
+LOCK_SUFFIX = ".tsv.lock"
 
 
 class MatrixDataSetRepository:
@@ -310,7 +311,7 @@ class MatrixContentRepository:
             return MatrixCreationResult(hash=matrix_hash, new=False)
 
         # Ensure exclusive access to the matrix file between multiple processes (or threads).
-        lock_file = matrix_path.with_suffix(".tsv.lock")  # use tsv lock to stay consistent with old data
+        lock_file = matrix_path.with_suffix(LOCK_SUFFIX)  # use tsv lock to stay consistent with old data
         with FileLock(lock_file, timeout=15):
             # we check again for the existence of the file, as it might have been created by another process or thread
             if matrix_path.exists():
@@ -359,7 +360,7 @@ class MatrixContentRepository:
 
         # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
         # Abandoned lock files are deleted here to maintain consistent behavior.
-        lock_file = matrix_path.with_suffix(".tsv.lock")
+        lock_file = matrix_path.with_suffix(LOCK_SUFFIX)
         lock_file.unlink(missing_ok=True)
 
     def get_matrix_disk_usage(self, matrix_hash: str) -> int:
@@ -375,3 +376,31 @@ class MatrixContentRepository:
                 return matrix_path, internal_format
 
         return None, InternalMatrixFormat.HDF
+
+    def infer_matrix_characteristics(self, matrix_id: str) -> Matrix:
+        matrix_path, matrix_format = self._get_matrix_path_n_format(matrix_id)
+        assert matrix_path is not None
+
+        if matrix_format == InternalMatrixFormat.TSV:
+            # We only need the matrix version for the parsing of legacy `TSV` files.
+            version = LEGACY_MATRIX_VERSION
+            try:
+                df = load_matrix(matrix_format, matrix_path, version)
+                if compute_hash(df) != matrix_id:
+                    # Means we did not read the matrix as we were supposed to so we have to read it with the other version
+                    version = NEW_MATRIX_VERSION
+                    df = load_matrix(matrix_format, matrix_path, version)
+            except ValueError:
+                # Happens if the matrix contains values that are not handled in v1. Means the matrix is in v2.
+                version = NEW_MATRIX_VERSION
+                df = load_matrix(matrix_format, matrix_path, version)
+
+        else:
+            version = NEW_MATRIX_VERSION
+            df = load_matrix(matrix_format, matrix_path, version)
+
+        height, width = df.shape
+        return Matrix(id=matrix_id, width=width, height=height, created_at=current_time(), version=version)
+
+    def get_all_matrices_on_the_filesystem(self) -> set[str]:
+        return {f.stem for f in self.bucket_dir.iterdir() if not f.name.endswith(LOCK_SUFFIX)}

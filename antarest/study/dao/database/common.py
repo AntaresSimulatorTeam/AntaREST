@@ -9,9 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import cast
+from typing import Any, cast
 
-from sqlalchemy import select
+from sqlalchemy import Row, select
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound
@@ -27,6 +27,10 @@ def validate_area_exists(session: Session, study_id: str, area_id: str) -> None:
 def area_exists(session: Session, study_id: str, area_id: str) -> bool:
     stmt = select(AREA_TABLE.c.area_id).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
     return session.execute(stmt).fetchone() is not None
+
+
+def get_row_representation_as_dict(row: Row[Any]) -> dict[str, Any]:
+    return row._asdict()
 
 
 """

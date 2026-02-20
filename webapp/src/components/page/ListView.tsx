@@ -21,6 +21,7 @@ import {
   CircularProgress,
   List,
   ListItem,
+  ListItemIcon,
   ListItemText,
   Tooltip,
 } from "@mui/material";
@@ -34,6 +35,7 @@ import SplitView from "./SplitView";
 interface BaseListItem {
   id: string;
   label: string;
+  icon?: React.ReactNode;
   loading?: boolean;
 }
 
@@ -105,6 +107,9 @@ function ListView({ list, splitId, emptyListContent, onAdd, actions }: ListViewP
                   }
                 >
                   <RouterListItemButton key={currentRouteId} {...item.linkOptions}>
+                    {item.icon && (
+                      <ListItemIcon sx={{ minWidth: 0, pr: 1.5 }}>{item.icon}</ListItemIcon>
+                    )}
                     <ListItemText primary={item.label} slotProps={{ primary: { noWrap: true } }} />
                   </RouterListItemButton>
                 </ListItem>

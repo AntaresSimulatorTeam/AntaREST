@@ -12,16 +12,15 @@
  * This file is part of the Antares project.
  */
 
+import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
 import storage, { StorageKey } from "@/services/utils/localStorage";
 import type { UserInfo } from "@/types/types";
-import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
 import type { AppState } from "../ducks";
 import { login, logout, refresh } from "../ducks/auth";
 import {
-  deleteStudy,
   setFavoriteStudies,
   updateStudiesFromLocalStorage,
-  updateStudiesSortConf,
+  updateStudySortConfig,
   updateStudyFilters,
 } from "../ducks/studies";
 import { setMenuOpen } from "../ducks/ui";
@@ -71,7 +70,7 @@ localStorageMiddleware.startListening({
 });
 
 localStorageMiddleware.startListening({
-  actionCreator: updateStudiesSortConf,
+  actionCreator: updateStudySortConfig,
   effect: (action) => {
     storage.setItem(StorageKey.StudiesSort, (prev) => ({
       ...prev,
@@ -84,27 +83,10 @@ localStorageMiddleware.startListening({
 localStorageMiddleware.startListening({
   actionCreator: updateStudyFilters,
   effect: (action) => {
-    if (action.payload.folder !== undefined) {
-      storage.setItem(StorageKey.StudiesFilters, () => ({
-        folder: action.payload.folder,
-      }));
-    }
-  },
-});
-
-// remove folder of deleted study from localStorage, otherwise we'll
-// see ghost folders in the study tree
-localStorageMiddleware.startListening({
-  actionCreator: deleteStudy.fulfilled,
-  effect: ({ meta }) => {
-    if ("name" in meta.arg) {
-      const { workspace, folder } = meta.arg;
-      const folders = storage.getItem(StorageKey.StudyTreeFolders) || [];
-      const filteredFolders = folders.filter(
-        (f) => !(f.workspace === workspace && f.path === folder),
-      );
-      storage.setItem(StorageKey.StudyTreeFolders, filteredFolders);
-    }
+    storage.setItem(StorageKey.StudiesFilters, (prev) => ({
+      ...prev,
+      ...action.payload,
+    }));
   },
 });
 

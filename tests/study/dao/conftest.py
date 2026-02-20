@@ -12,26 +12,36 @@
 import uuid
 
 import pytest
+from antares.study.version import StudyVersion
 from sqlalchemy.orm import Session
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
-from antarest.study.model import StorageMode
+from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_3, StorageMode
 from tests.helpers import create_study
 
 
-@pytest.fixture
-def dao(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
+def build_dao(db_session: Session, matrix_service: ISimpleMatrixService, version: StudyVersion) -> DatabaseStudyDao:
     """
     Create a test study in database mode and create a DatabaseStudyDao instance for testing.
     """
     study_id = str(uuid.uuid4())
     with db_session:
-        study = create_study(id=study_id, name="Test Study")
+        study = create_study(id=study_id, name="Test Study", version=str(version))
         study.storage_mode = StorageMode.DATABASE
         db_session.add(study)
         db_session.commit()
         factory = DatabaseStudyDaoFactory(matrix_service, db_session)
         dao = factory.create_study_dao(study)
     return dao
+
+
+@pytest.fixture
+def dao(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
+    return build_dao(db_session, matrix_service, STUDY_VERSION_8_8)
+
+
+@pytest.fixture
+def dao_930(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
+    return build_dao(db_session, matrix_service, STUDY_VERSION_9_3)
