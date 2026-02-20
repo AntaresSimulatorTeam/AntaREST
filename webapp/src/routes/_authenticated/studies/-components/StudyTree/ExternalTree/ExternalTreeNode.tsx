@@ -106,6 +106,7 @@ function ExternalTreeNode({
         collapseIcon: isWorkspace ? treeNodeIcons.workspace : treeNodeIcons.folderOpen,
         expandIcon: isWorkspace ? treeNodeIcons.workspace : treeNodeIcons.folder,
       }}
+      disableTooltip
       sx={isWorkspace ? workspaceItemStyles : treeItemStyles}
     >
       {/* Loading placeholder to show expand arrow for folders with unloaded children */}
@@ -113,6 +114,7 @@ function ExternalTreeNode({
         <TreeItemEnhanced
           itemId={`${path}//loading`}
           label={`${t("global.loading")}...`}
+          disableTooltip
           sx={{ fontStyle: "italic" }}
         />
       )}
