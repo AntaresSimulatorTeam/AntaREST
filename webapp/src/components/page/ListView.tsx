@@ -61,13 +61,8 @@ interface ListViewProps<TItemData = unknown> {
   emptyListContent?: React.ReactNode;
   onAdd?(): void;
   actions?: React.ReactNode;
-  renderItemContent?: ({
-    id,
-    data,
-  }: {
-    id: BaseListItem["id"];
-    data?: TItemData;
-  }) => React.ReactNode;
+  // Used only for ContentListItem list to render content when `content` is not provided
+  renderItemContent?: (item: { id: BaseListItem["id"]; data?: TItemData }) => React.ReactNode;
 }
 
 function isRouteListItem(item: RouteListItem | ContentListItem): item is RouteListItem {
