@@ -31,7 +31,7 @@ import {
 import {
   StudyOutputDownloadLevelDTO,
   StudyOutputDownloadType,
-  type FileStudyTreeConfigDTO,
+  type StudySynthesis,
   type GenericInfo,
   type StudyMetadata,
   type OutputDetails,
@@ -74,7 +74,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
   const [optionSelection, setOptionSelection] = useState<string>("exportWith");
   const [outputList, setOutputList] = useState<GenericInfo[]>();
   const [currentOutput, setCurrentOutput] = useState<string>();
-  const [studySynthesis, setStudySynthesis] = useState<FileStudyTreeConfigDTO>();
+  const [studySynthesis, setStudySynthesis] = useState<StudySynthesis>();
   const [filter, setFilter] = useState<StudyOutputDownloadDTO>({
     type: StudyOutputDownloadType.AREAS,
     level: StudyOutputDownloadLevelDTO.WEEKLY,

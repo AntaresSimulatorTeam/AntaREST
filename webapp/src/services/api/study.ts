@@ -19,7 +19,6 @@ import * as RA from "ramda-adjunct";
 import type { StudyMapDistrict } from "../../redux/ducks/studyMaps";
 import type {
   AreasConfig,
-  FileStudyTreeConfigDTO,
   MatrixAggregationResult,
   OutputDetails,
   StudyLayer,
@@ -28,6 +27,7 @@ import type {
   StudyMetadataPatchDTO,
   StudyOutputDownloadDTO,
   StudyPublicMode,
+  StudySynthesis,
 } from "../../types/types";
 import { convertStudyDtoToMetadata } from "../utils";
 import client from "./client";
@@ -112,7 +112,7 @@ export const getStudyOutputById = async (
   return outputs.find((output) => output.name === outputId);
 };
 
-export const getStudySynthesis = async (sid: string): Promise<FileStudyTreeConfigDTO> => {
+export const getStudySynthesis = async (sid: string): Promise<StudySynthesis> => {
   const res = await client.get(`/v1/studies/${sid}/synthesis`);
   return res.data;
 };

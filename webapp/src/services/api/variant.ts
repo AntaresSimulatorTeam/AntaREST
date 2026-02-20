@@ -12,17 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import type {
-  CommandDTO,
-  FileStudyTreeConfigDTO,
-  StudyMetadata,
-  StudyMetadataDTO,
-  VariantTree,
-} from "../../types/types";
-import { convertStudyDtoToMetadata, convertVariantTreeDTO } from "../utils";
+import type {CommandDTO, StudyMetadata, StudyMetadataDTO, StudySynthesis, VariantTree,} from "../../types/types";
+import {convertStudyDtoToMetadata, convertVariantTreeDTO} from "../utils";
 import client from "./client";
-import type { FileDownloadTask } from "./downloads";
-import type { TaskDTO } from "./tasks/types";
+import type {FileDownloadTask} from "./downloads";
+import type {TaskDTO} from "./tasks/types";
 
 export const getVariantTree = async (id: string): Promise<VariantTree> => {
   const res = await client.get(`/v1/studies/${id}/variants`);
@@ -124,7 +118,7 @@ export const getTask = async (id: string, withLogs = false): Promise<TaskDTO> =>
   return res.data;
 };
 
-export const getStudySynthesis = async (studyId: string): Promise<FileStudyTreeConfigDTO> => {
+export const getStudySynthesis = async (studyId: string): Promise<StudySynthesis> => {
   const res = await client.get(`/v1/studies/${studyId}/synthesis`);
   return res.data;
 };

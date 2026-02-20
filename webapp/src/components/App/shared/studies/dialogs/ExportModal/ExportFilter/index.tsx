@@ -21,7 +21,7 @@ import {
   StudyOutputDownloadType,
   type Area,
   type District,
-  type FileStudyTreeConfigDTO,
+  type StudySynthesis,
   type StudyOutputDownloadDTO,
 } from "../../../../../../../types/types";
 import SelectMulti from "../../../../../../common/SelectMulti";
@@ -41,7 +41,7 @@ const Root = styled(Box)(({ theme }) => ({
 
 interface PropTypes {
   output: string;
-  synthesis: FileStudyTreeConfigDTO | undefined;
+  synthesis: StudySynthesis | undefined;
   filter: StudyOutputDownloadDTO;
   setFilter: (filter: StudyOutputDownloadDTO) => void;
 }

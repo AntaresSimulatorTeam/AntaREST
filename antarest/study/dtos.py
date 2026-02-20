@@ -10,8 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
@@ -30,34 +29,22 @@ class StudyDataSynthesis(AntaresBaseModel):
     Synthetic data about the **input** data of a study.
     """
 
-    study_path: Path
-    path: Path
     study_id: str
     version: StudyVersionInt
-    output_path: Optional[Path] = None
     districts: Dict[str, District] = {}
     areas: Dict[str, AreaConfig] = {}
     bindings: List[BindingConstraint] = []
-    store_new_set: bool = False
-    archive_input_series: List[str] = []
     enr_modelling: EnrModelling = EnrModelling.AGGREGATED
-    archive_path: Optional[Path] = None
 
     @classmethod
     def from_study_config(cls, config: FileStudyTreeConfig) -> "StudyDataSynthesis":
         return StudyDataSynthesis.model_construct(
-            study_path=config.study_path,
-            path=config.path,
             study_id=config.study_id,
             version=config.version,
-            output_path=config.output_path,
             areas=config.areas,
             districts=config.districts,
             bindings=config.bindings,
-            store_new_set=config.store_new_set,
-            archive_input_series=config.archive_input_series,
             enr_modelling=EnrModelling(config.enr_modelling),
-            archive_path=config.archive_path,
         )
 
 
@@ -74,34 +61,22 @@ class StudySynthesis(AntaresBaseModel):
     a breaking change of the API.
     """
 
-    study_path: Path
-    path: Path
     study_id: str
     version: StudyVersionInt
-    output_path: Optional[Path] = None
     districts: Dict[str, District] = {}
     areas: Dict[str, AreaConfig] = {}
     outputs: Dict[str, OutputDetails] = {}
     bindings: List[BindingConstraint] = []
-    store_new_set: bool = False
-    archive_input_series: List[str] = []
     enr_modelling: EnrModelling = EnrModelling.AGGREGATED
-    archive_path: Optional[Path] = None
 
     @classmethod
     def aggregate(cls, synthesis: StudyDataSynthesis, outputs: dict[str, OutputDetails]) -> "StudySynthesis":
         return StudySynthesis.model_construct(
-            study_path=synthesis.study_path,
-            path=synthesis.path,
             study_id=synthesis.study_id,
             version=synthesis.version,
-            output_path=synthesis.output_path,
             areas=synthesis.areas,
             districts=synthesis.districts,
             bindings=synthesis.bindings,
-            store_new_set=synthesis.store_new_set,
-            archive_input_series=synthesis.archive_input_series,
             enr_modelling=synthesis.enr_modelling,
-            archive_path=synthesis.archive_path,
             outputs=outputs,
         )

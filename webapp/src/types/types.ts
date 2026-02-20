@@ -296,18 +296,13 @@ export interface District {
   output: boolean;
 }
 
-export interface FileStudyTreeConfigDTO {
-  study_path: string;
-  path: string;
+export interface StudySynthesis {
   study_id: string;
   version: number;
-  output_path?: string;
   areas: Record<string, Area>;
   districts: Record<string, District>;
   outputs: Record<string, OutputDetails>;
   bindings: string[];
-  store_new_set: boolean;
-  archive_input_series: string[];
   enr_modelling: string;
 }
 

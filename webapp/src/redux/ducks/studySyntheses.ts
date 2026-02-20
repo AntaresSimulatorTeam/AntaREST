@@ -20,18 +20,18 @@ import {
   createReducer,
 } from "@reduxjs/toolkit";
 import * as api from "../../services/api/study";
-import type { FileStudyTreeConfigDTO, GenericInfo, Link, LinkElement } from "../../types/types";
+import type { GenericInfo, Link, LinkElement, StudySynthesis } from "../../types/types";
 import {
+  getDeepVariantsIds,
   getStudyMapsIds,
   getStudySynthesis,
   getStudySynthesisIds,
-  getDeepVariantsIds,
 } from "../selectors";
 import type { AppAsyncThunkConfig, AppDispatch, AppThunk } from "../store";
 import { makeActionName } from "../utils";
 import { deleteStudyMap, setStudyMap } from "./studyMaps";
 
-export const studySynthesesAdapter = createEntityAdapter<FileStudyTreeConfigDTO>({
+export const studySynthesesAdapter = createEntityAdapter<StudySynthesis>({
   selectId: (studyData) => studyData.study_id,
 });
 
@@ -67,12 +67,12 @@ export const setCurrentBindingConst = createAction<
 >(n("SET_CURRENT_BINDING_CONST"));
 
 export const updateStudySynthesis = createAction<{
-  id: FileStudyTreeConfigDTO["study_id"];
-  changes: Partial<Omit<FileStudyTreeConfigDTO, "study_id">>;
+  id: StudySynthesis["study_id"];
+  changes: Partial<Omit<StudySynthesis, "study_id">>;
 }>(n("UPDATE_STUDY_SYNTHESIS"));
 
 export const createStudyLink = createAction<{
-  studyId: FileStudyTreeConfigDTO["study_id"];
+  studyId: StudySynthesis["study_id"];
   area1: LinkElement["area1"];
   area2: LinkElement["area2"];
   filtersSynthesis?: Link["filters_synthesis"];
@@ -80,7 +80,7 @@ export const createStudyLink = createAction<{
 }>(n("CREATE_STUDY_LINK"));
 
 export const deleteStudyLink = createAction<{
-  studyId: FileStudyTreeConfigDTO["study_id"];
+  studyId: StudySynthesis["study_id"];
   area1: LinkElement["area1"];
   area2: LinkElement["area2"];
 }>(n("DELETE_STUDY_LINK"));
@@ -91,7 +91,7 @@ export const deleteStudyLink = createAction<{
 
 const initDefaultAreaLinkSelection = (
   dispatch: AppDispatch,
-  studyData?: FileStudyTreeConfigDTO,
+  studyData?: StudySynthesis,
 ): void => {
   if (studyData) {
     dispatch(setCurrentArea(""));
@@ -104,7 +104,7 @@ const initDefaultAreaLinkSelection = (
 };
 
 export const setDefaultAreaLinkSelection =
-  (studyId: FileStudyTreeConfigDTO["study_id"]): AppThunk =>
+  (studyId: StudySynthesis["study_id"]): AppThunk =>
   (dispatch, getState) => {
     const state = getState();
     const studyData = getStudySynthesis(state, studyId);
@@ -112,13 +112,13 @@ export const setDefaultAreaLinkSelection =
   };
 
 export const createStudySynthesis = createAsyncThunk<
-  FileStudyTreeConfigDTO,
-  FileStudyTreeConfigDTO["study_id"],
+  StudySynthesis,
+  StudySynthesis["study_id"],
   AppAsyncThunkConfig
 >(n("CREATE_STUDY_SYNTHESIS"), async (studyId, { dispatch, rejectWithValue }) => {
   try {
     // Fetch study synthesis data
-    const studyData: FileStudyTreeConfigDTO = await api.getStudySynthesis(studyId);
+    const studyData: StudySynthesis = await api.getStudySynthesis(studyId);
     initDefaultAreaLinkSelection(dispatch, studyData);
     return studyData;
   } catch (err) {
@@ -127,16 +127,16 @@ export const createStudySynthesis = createAsyncThunk<
 });
 
 export const setStudySynthesis = createAsyncThunk<
-  FileStudyTreeConfigDTO,
-  FileStudyTreeConfigDTO["study_id"],
+  StudySynthesis,
+  StudySynthesis["study_id"],
   AppAsyncThunkConfig
 >(n("SET_STUDY_SYNTHESIS"), (studyId, { rejectWithValue }) => {
   return api.getStudySynthesis(studyId).catch(rejectWithValue);
 });
 
 export const deleteStudySynthesis = createAsyncThunk<
-  FileStudyTreeConfigDTO["study_id"],
-  FileStudyTreeConfigDTO["study_id"],
+  StudySynthesis["study_id"],
+  StudySynthesis["study_id"],
   AppAsyncThunkConfig
 >(n("DELETE_STUDY_SYNTHESIS"), (id) => {
   return id;
