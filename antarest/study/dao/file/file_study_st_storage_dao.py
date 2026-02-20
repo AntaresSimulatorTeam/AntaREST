@@ -36,7 +36,6 @@ if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
 _STORAGE_LIST_PATH = "input/st-storage/clusters/{area_id}/list/{storage_id}"
-_STORAGE_SERIES_PATH = "input/st-storage/series/{area_id}/{storage_id}/{ts_name}"
 _ALL_STORAGE_PATH = "input/st-storage/clusters"
 
 
@@ -279,6 +278,13 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         study_data.tree.save(
             series_id, ["input", "st-storage", "constraints", area_id, storage_id, f"rhs_{constraint_id}"]
         )
+
+    @override
+    def get_st_storage_additional_constraint_matrix(
+        self, area_id: str, storage_id: str, constraint_id: str
+    ) -> pl.DataFrame:
+        url = ["input", "st-storage", "constraints", area_id, storage_id, f"rhs_{constraint_id}"]
+        return self.get_impl().get_matrix(url)
 
     @override
     def delete_st_storage_additional_constraints(self, area_id: str, storage_id: str, constraints: list[str]) -> None:
