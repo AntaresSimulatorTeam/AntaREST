@@ -7,25 +7,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends p7zip-full \
 # Add the `ls` alias to simplify debugging
 RUN echo "alias ll='/bin/ls -l --color=auto'" >> /root/.bashrc
 
-ENV ANTAREST_CONF /resources/application.yaml
+ENV ANTAREST_CONF=/resources/application.yaml
 
 RUN mkdir -p examples/studies
 
+# Install dependencies first (cached layer when only source code changes)
 COPY ./pyproject.toml ./uv.lock ./LICENSE ./README.md /
-COPY ./conf/* /conf/
+RUN uv sync --frozen --no-dev --no-install-project
+
+# Copy source code and install the project itself
 COPY ./antarest /antarest
+COPY ./conf/* /conf/
 COPY ./resources /resources
 COPY ./scripts /scripts
 COPY ./alembic /alembic
 COPY ./alembic.ini /alembic.ini
+RUN uv sync --frozen --no-dev
 
-# Install dependencies using uv
-ENV UV_HTTP_TIMEOUT=120
-ENV UV_INDEX_URL=https://devin-depot.rte-france.com/repository/pypi-all/simple/
-RUN uv venv /.venv && \
-    uv export --frozen --no-dev --no-emit-project > /tmp/requirements.txt && \
-    uv pip install -r /tmp/requirements.txt && \
-    uv pip install --no-deps .
 ENV PATH="/.venv/bin:$PATH"
 
 ENTRYPOINT ["./scripts/start.sh"]

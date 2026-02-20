@@ -20,7 +20,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
       - name: Install dependencies
-        run: uv sync --frozen --no-dev --extra desktop --compile-bytecode
+        run: uv sync --frozen --extra desktop --compile-bytecode
       - name: Check format (ruff)
         run: |
           uv run --frozen ruff check antarest/ tests/
