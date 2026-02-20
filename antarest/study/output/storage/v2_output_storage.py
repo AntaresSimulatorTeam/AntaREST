@@ -25,7 +25,7 @@ from antarest.study.model import MatrixFrequency, MatrixIndex, StudySimResultDTO
 from antarest.study.output.filestudy.extract_metadata import extract_metadata
 from antarest.study.output.lfs.lfs import ILargeFileStorage
 from antarest.study.output.output_model import OutputVariablesList
-from antarest.study.output.output_storage import BasicOutputMetadata, IOutputStorage, OutputStorageType
+from antarest.study.output.storage.output_storage import BasicOutputMetadata, IOutputStorage, OutputStorageType
 from antarest.study.output.storage.repository import OutputMetadata, OutputMetadataRepository
 from antarest.study.output.utils import QueryFileType
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation

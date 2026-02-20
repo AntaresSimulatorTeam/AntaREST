@@ -14,7 +14,7 @@ from pathlib import Path
 from typing_extensions import override
 
 from antarest.study.output.output_service import OutputService
-from antarest.study.output.output_storage import BasicOutputMetadata
+from antarest.study.output.storage.output_storage import BasicOutputMetadata
 from antarest.study.service import IOutputsAccess
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 

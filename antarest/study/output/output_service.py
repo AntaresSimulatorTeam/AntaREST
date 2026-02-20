@@ -63,7 +63,7 @@ from antarest.study.output.output_model import (
     OutputVariablesViewResponse,
     OutputVariablesViewStatus,
 )
-from antarest.study.output.output_storage import BasicOutputMetadata, IOutputStorage, OutputStorageType
+from antarest.study.output.storage.output_storage import BasicOutputMetadata, IOutputStorage, OutputStorageType
 from antarest.study.output.utils import (
     MCYEAR_COL,
     MCAllAreasQueryFile,

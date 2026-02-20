@@ -37,7 +37,7 @@ from antarest.study.output.output_model import (
     OutputVariablesViewResponse,
 )
 from antarest.study.output.output_service import OutputService
-from antarest.study.output.output_storage import OutputStorageType
+from antarest.study.output.storage.output_storage import OutputStorageType
 from antarest.study.output.utils import (
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,

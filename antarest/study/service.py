@@ -121,7 +121,7 @@ from antarest.study.model import (
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
 )
-from antarest.study.output.output_storage import BasicOutputMetadata
+from antarest.study.output.storage.output_storage import BasicOutputMetadata
 from antarest.study.repository import (
     StudyFilter,
     StudyMetadataRepository,

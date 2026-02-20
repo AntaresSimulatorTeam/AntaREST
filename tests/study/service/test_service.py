@@ -55,7 +55,7 @@ from antarest.study.model import (
     StudyFolder,
     StudyMetadataDTO,
 )
-from antarest.study.output.output_storage import BasicOutputMetadata
+from antarest.study.output.storage.output_storage import BasicOutputMetadata
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
 from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, IOutputsAccess, StudyService, StudyUpgraderTask
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (

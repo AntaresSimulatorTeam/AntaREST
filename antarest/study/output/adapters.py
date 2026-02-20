@@ -19,8 +19,8 @@ from typing_extensions import override
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME
 from antarest.core.model import StudyPermissionType
-from antarest.study.output.file_output_storage import FileStudyOutputs, IFileOutputsProvider
 from antarest.study.output.output_service import IStudyMetadataProvider, StudyMetadata
+from antarest.study.output.storage.file_output_storage import FileStudyOutputs, IFileOutputsProvider
 from antarest.study.service import StudyService
 from antarest.study.storage.utils import assert_permission
 

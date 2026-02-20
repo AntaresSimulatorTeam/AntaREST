@@ -31,8 +31,12 @@ from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import StudySimResultDTO, StudySimSettingsDTO
-from antarest.study.output.file_output_storage import FileStudyOutputs, IFileOutputsProvider, InStudyFileOutputStorage
-from antarest.study.output.output_storage import BasicOutputMetadata
+from antarest.study.output.storage.file_output_storage import (
+    FileStudyOutputs,
+    IFileOutputsProvider,
+    InStudyFileOutputStorage,
+)
+from antarest.study.output.storage.output_storage import BasicOutputMetadata
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode, Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy

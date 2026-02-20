@@ -40,7 +40,7 @@ from antarest.study.model import (
 )
 from antarest.study.output.aggregator_management import AggregatorManager
 from antarest.study.output.output_model import OutputVariablesList
-from antarest.study.output.output_storage import BasicOutputMetadata, IOutputStorage, OutputStorageType
+from antarest.study.output.storage.output_storage import BasicOutputMetadata, IOutputStorage, OutputStorageType
 from antarest.study.output.utils import QueryFileType
 from antarest.study.output.variables_management import extract_variables_list
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist, parse_outputs

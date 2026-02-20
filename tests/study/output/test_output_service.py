@@ -26,8 +26,12 @@ from antarest.study.model import (
     RawStudy,
     Study,
 )
-from antarest.study.output.file_output_storage import FileStudyOutputs, IFileOutputsProvider, InStudyFileOutputStorage
 from antarest.study.output.output_service import IStudyMetadataProvider, OutputService, StudyMetadata
+from antarest.study.output.storage.file_output_storage import (
+    FileStudyOutputs,
+    IFileOutputsProvider,
+    InStudyFileOutputStorage,
+)
 from antarest.study.storage.utils import is_output_archived
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.worker.archive_worker import ArchiveTaskArgs
