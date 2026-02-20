@@ -1,8 +1,8 @@
 """add_hydro_matrix_tables
 
-Revision ID: 251a3393d58d
-Revises: f77c2a9e5d0c
-Create Date: 2026-02-18 14:59:18.405136
+Revision ID: c20d6b990db0
+Revises: 7e3fd21b1c65
+Create Date: 2026-02-20 12:41:53.325497
 
 """
 
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "251a3393d58d"
-down_revision = "f77c2a9e5d0c"
+revision = "c20d6b990db0"
+down_revision = "7e3fd21b1c65"
 branch_labels = None
 depends_on = None
 
