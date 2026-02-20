@@ -13,7 +13,7 @@
  */
 
 import * as R from "ramda";
-import { ROOT_NODE_NAME } from "@/components/utils/constants";
+import { TREE_ROOT_NAME } from "@/components/utils/constants";
 import type { Directory } from "@/services/api/directories/types";
 import type { DirectoryTreeNode } from "./types";
 
@@ -57,7 +57,7 @@ export function buildDirectoryTree(directories: Directory[]): DirectoryTreeNode 
   // Return the root node with all top-level directories as children
   return {
     id: "",
-    name: ROOT_NODE_NAME,
+    name: TREE_ROOT_NAME,
     path: "",
     parentId: null,
     children: sortedRoots.map(buildNode),

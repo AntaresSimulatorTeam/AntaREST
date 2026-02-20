@@ -19,7 +19,7 @@ import { Box, IconButton } from "@mui/material";
 import * as R from "ramda";
 import { useMemo } from "react";
 import TreeItemEnhanced from "@/components/TreeItemEnhanced";
-import { ROOT_NODE_NAME } from "@/components/utils/constants";
+import { TREE_ROOT_NAME } from "@/components/utils/constants";
 import EditableTreeItem from "./EditableTreeItem";
 import {
   actionButtonStyles,
@@ -52,7 +52,7 @@ function ManagedTreeNode({
   isDeletePending,
 }: ManagedTreeNodeProps) {
   const { children, path, name, id } = node;
-  const isRootNode = name === ROOT_NODE_NAME;
+  const isRootNode = name === TREE_ROOT_NAME;
   const sortedChildren = useMemo(
     () => R.sortBy(R.compose(R.toLower, R.prop("name")), children),
     [children],
