@@ -349,7 +349,6 @@ class RawStudyService(AbstractStorageService):
                 shutil.rmtree(metadata.path, ignore_errors=True)
 
     def archive(self, study: RawStudy) -> None:
-        # TODO: remove it, archival of study with its output will be handled at the study service level
         archive_path = self.config.storage.archive_dir.joinpath(f"{study.id}{ArchiveFormat.SEVEN_ZIP}")
 
         path_study = Path(study.path)

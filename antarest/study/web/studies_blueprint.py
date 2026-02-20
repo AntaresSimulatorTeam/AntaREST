@@ -37,8 +37,7 @@ from antarest.study.model import (
     StudyMetadataPatchDTO,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyPagination, StudySortBy
-from antarest.study.service import StudyService
-from antarest.study.storage.study_storage import OutputSelection
+from antarest.study.service import OutputSelection, StudyService
 
 logger = logging.getLogger(__name__)
 

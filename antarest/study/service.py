@@ -20,7 +20,7 @@ import tempfile
 from abc import ABC, abstractmethod
 from datetime import timedelta
 from pathlib import Path, PurePosixPath
-from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Type, cast
+from typing import Any, BinaryIO, Callable, Dict, List, Literal, Optional, Sequence, Type, TypeAlias, cast
 from uuid import uuid4
 
 import pandas as pd
@@ -140,7 +140,6 @@ from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFi
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.synthesis import OutputSynthesis
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.study_storage import OutputSelection
 from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
 from antarest.study.storage.utils import (
     assert_permission,
@@ -173,6 +172,8 @@ from antarest.study.storage.variantstudy.variant_study_service import VariantStu
 logger = logging.getLogger(__name__)
 
 MAX_MISSING_STUDY_TIMEOUT = 2  # days
+
+OutputSelection: TypeAlias = Literal["all", "none"] | list[str]
 
 
 def get_disk_usage(path: str | Path) -> int:

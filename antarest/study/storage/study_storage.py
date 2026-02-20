@@ -12,7 +12,7 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path, PurePosixPath
-from typing import Literal, Optional, Sequence, TypeAlias
+from typing import Optional, Sequence
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
@@ -20,8 +20,6 @@ from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import Study, StudyMetadataDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
-
-OutputSelection: TypeAlias = Literal["all", "none"] | list[str]
 
 
 class IStudyStorage(ABC):
