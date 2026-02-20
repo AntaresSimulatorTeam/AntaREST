@@ -131,7 +131,7 @@ function OutputMatrixViewer({ selectedItem, output }: Props) {
     {
       resetDataOnReload: true,
       resetErrorOnReload: true,
-      deps: [studyId, path, !!output, !!selectedItem, isVariablePerVariable],
+      deps: [studyId, path, output, isVariablePerVariable],
     },
   );
 

@@ -26,7 +26,7 @@ import { getAreas, getLinks } from "../../../../../../../redux/selectors";
 import OutputMatrixViewer from "./-components/OutputMatrixViewer";
 import SynthesisViewer from "./-components/SynthesisViewer";
 import useStudyOutput from "./-hooks/useStudyOutput";
-import { SYNTHESIS_ITEMS, type Item, type ListType } from "./-utils";
+import { isDistrict, SYNTHESIS_ITEMS, type Item, type ListType } from "./-utils";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/outputs/$outputId/")(
   {
@@ -44,17 +44,22 @@ function Output() {
 
   const { data: districts = [] } = usePromiseWithSnackbarError(() => getStudyDistricts(studyId), {
     deps: [studyId],
-    errorMessage: t("study.outputs.loadDistrictsError"), // TODO text
+    errorMessage: t("study.outputs.error.loadDistricts"),
   });
 
   const { data: output } = useStudyOutput({ studyId, outputId });
 
-  const list = useMemo<Array<ContentListItem<Item>>>(() => {
+  const list = useMemo<Array<ContentListItem<Item | undefined>>>(() => {
     if (listType === "areas") {
-      return [...areas, ...districts].map((item) => ({
+      const adaptedDistricts = districts.map((district) => ({
+        ...district,
+        id: `@ ${district.id}`,
+      }));
+
+      return [...areas, ...adaptedDistricts].map((item) => ({
         id: item.id,
         label: item.name,
-        icon: "areas" in item ? <AutoAwesomeMotionIcon color="info" /> : undefined,
+        icon: isDistrict(item) ? <AutoAwesomeMotionIcon color="info" /> : undefined,
         data: item,
       }));
     }
@@ -71,7 +76,7 @@ function Output() {
     return [];
   }, [listType, areas, districts, links]);
 
-  ///////////
+  ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 

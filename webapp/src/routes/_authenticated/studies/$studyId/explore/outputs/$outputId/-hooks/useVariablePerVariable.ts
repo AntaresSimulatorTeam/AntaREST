@@ -104,7 +104,7 @@ export function useVariablePerVariable({
 
   const variableViewDataRes = usePromise(
     async () => {
-      if (!outputId || !selectedVariable || !selectedItem) {
+      if (!outputId || !selectedVariable) {
         return null;
       }
 
@@ -128,7 +128,15 @@ export function useVariablePerVariable({
       return data;
     },
     {
-      deps: [studyId, outputId, selectedVariable, frequency, dataType, selectedClusterId],
+      deps: [
+        studyId,
+        outputId,
+        selectedVariable,
+        selectedItem,
+        frequency,
+        dataType,
+        selectedClusterId,
+      ],
     },
   );
 

@@ -93,11 +93,12 @@ function ListView<TItemData = unknown>({
   // Allows to update relative links (e.g. `to: "."`).
   const currentRouteId = useCurrentRouteId();
 
+  // If the list is not a route list, ensure there's always an active content item selected
   useEffect(() => {
-    if (!hasRouteList) {
+    if (!hasRouteList && (!activeContentItem || !list.includes(activeContentItem))) {
       setActiveContentItem(list[0]);
     }
-  }, [list, hasRouteList]);
+  }, [list, hasRouteList, activeContentItem]);
 
   ////////////////////////////////////////////////////////////////
   // Utils

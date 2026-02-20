@@ -49,7 +49,7 @@ export function isDistrict(item: Item): item is StudyMapDistrict {
   return "areas" in item;
 }
 
-export function isAreaOrDistrict(item: Item): item is AreaWithId {
+export function isAreaOrDistrict(item: Item): item is AreaWithId | StudyMapDistrict {
   return isArea(item) || isDistrict(item);
 }
 
@@ -67,11 +67,7 @@ export function createPath(params: Params): string {
         .padStart(5, "0")}`
     : "mc-all";
   const itemType = isLink(item) ? "links" : "areas";
-  const itemFolder = isLink(item)
-    ? `${item.area1}/${item.area2}`
-    : isDistrict(item)
-      ? `@ ${item.id}`
-      : item.id;
+  const itemFolder = isLink(item) ? `${item.area1}/${item.area2}` : item.id;
 
   return `output/${id}/${mode.toLowerCase()}/${periodFolder}/${itemType}/${itemFolder}/${dataType}-${frequency}`;
 }
