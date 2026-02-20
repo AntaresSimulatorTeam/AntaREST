@@ -191,8 +191,8 @@ class StorageConfig:
     variable_view_gc_retention_days: int = 30
     watcher_scan_sleeping_time: int = 900
     watcher_scan_dry_run: bool = False
-    tasks_gc_retention_duration: int = 3600
-    tasks_gc_sleeping_time: int = 3600
+    tasks_gc_retention_days: int = 30
+    tasks_gc_sleeping_time: int = 86400
     tasks_gc_dry_run: bool = False
     study_storage: StudyStorageConfig = StudyStorageConfig()
 
@@ -244,7 +244,7 @@ class StorageConfig:
             ),
             watcher_scan_sleeping_time=data.get("watcher_scan_sleeping_time", defaults.watcher_scan_sleeping_time),
             watcher_scan_dry_run=data.get("watcher_scan_dry_run", defaults.watcher_scan_dry_run),
-            tasks_gc_retention_duration=data.get("tasks_gc_retention_duration", defaults.tasks_gc_retention_duration),
+            tasks_gc_retention_days=data.get("tasks_gc_retention_days", defaults.tasks_gc_retention_days),
             study_storage=StudyStorageConfig.from_dict(data.get("study", {}).get("storage", {})),
         )
 
