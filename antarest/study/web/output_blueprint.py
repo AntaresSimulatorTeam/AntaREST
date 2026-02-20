@@ -235,7 +235,7 @@ def create_output_routes(
         "/studies/{study_id}/outputs",
         summary="Get global information about a study simulation result",
     )
-    def sim_result(study_id: str) -> list[OutputDetails]:
+    def get_outputs(study_id: str) -> list[OutputDetails]:
         logger.info(f"Fetching output list for study {study_id}")
         study_id = sanitize_uuid(study_id)
         content = output_service.get_output_details(study_id)

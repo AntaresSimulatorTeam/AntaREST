@@ -32,24 +32,16 @@ def test_import(admin_client: TestClient, internal_study_id: str, tmp_path: Path
     res = client.get(
         f"/v1/studies/{internal_study_id}/outputs",
     )
+    assert res.status_code == 200, res.json()
     assert len(res.json()) == 7
     assert res.json()[-1] == {
         "archived": False,
-        "completionDate": "",
+        "byYear": False,
+        "mode": "Adequacy",
         "name": "20221004-1430adq",
-        "settings": {
-            "advancedParameters": {},
-            "general": {},
-            "input": {},
-            "optimization": {},
-            "otherPreferences": {},
-            "output": {},
-            "playlist": None,
-            "seedsMersenneTwister": {},
-        },
-        "status": "",
-        "type": "Adequacy",
-    }
+        "nbYears": 1,
+        "synthesis": True,
+    }, res.json()
 
 
 def test_delete_study_linked_to_output(admin_client: TestClient, internal_study_id: str, tmp_path: Path) -> None:

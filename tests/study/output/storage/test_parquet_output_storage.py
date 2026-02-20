@@ -89,7 +89,7 @@ def test_storage(
     with db():
         # Check there is no output at first for that study
         assert not storage.output_exists(study_id="my-study", output_id="20201014-1427eco")
-        assert storage.get_study_sim_result(study_id="my-study") == []
+        assert storage.list_outputs(study_id="my-study") == []
 
         # Import output
         output_name = storage.import_output("my-study", output_path)
@@ -100,10 +100,10 @@ def test_storage(
         assert not storage.is_output_archived(study_id="my-study", output_id="20201014-1427eco")
 
         # Check output appears in list of study outputs
-        study_outputs = storage.get_study_sim_result(study_id="my-study")
+        study_outputs = storage.list_outputs(study_id="my-study")
         assert len(study_outputs) == 1
         study_output = study_outputs[0]
-        assert study_output.name == "20201014-1427eco"
+        assert study_output.id == "20201014-1427eco"
         assert not study_output.archived
         assert len(lfs.list_files()) == 1
 
@@ -126,7 +126,7 @@ def test_storage(
         # Delete output
         storage.delete_output(study_id="my-study", output_id="20201014-1427eco")
         assert not storage.output_exists(study_id="my-study", output_id="20201014-1427eco")
-        assert storage.get_study_sim_result(study_id="my-study") == []
+        assert storage.list_outputs(study_id="my-study") == []
         assert lfs.list_files() == []
 
 

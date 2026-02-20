@@ -188,7 +188,7 @@ class V2OutputStorage(IOutputStorage):
         if metadata is None:
             raise OutputNotFound(output_id)
         return OutputDetails(
-            id=metadata.output_name,
+            name=metadata.output_name,
             mode=Mode(metadata.type),
             synthesis=metadata.synthesis,
             by_year=metadata.by_year,

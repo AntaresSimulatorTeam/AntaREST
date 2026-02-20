@@ -30,7 +30,7 @@ def adapt_output_service_to_study_service(output_service: OutputService) -> IOut
 
         @override
         def get_outputs_details(self, study_id: str) -> dict[str, OutputDetails]:
-            return {o.id: o for o in output_service.get_output_details(study_id)}
+            return {o.name: o for o in output_service.get_output_details(study_id)}
 
         @override
         def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:

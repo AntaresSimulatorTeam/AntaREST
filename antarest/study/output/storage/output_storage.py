@@ -18,6 +18,7 @@ from typing import BinaryIO, Iterator, Optional, Sequence
 
 import pandas as pd
 from pydantic import ConfigDict
+from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.model import MatrixFrequency, MatrixIndex
@@ -51,9 +52,14 @@ class OutputMetadata:
 
 
 class OutputDetails(AntaresBaseModel):
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(
+        frozen=True,
+        alias_generator=to_camel,
+        extra="forbid",
+        populate_by_name=True,
+    )
 
-    id: str
+    name: str
     mode: Mode
     synthesis: bool
     by_year: bool

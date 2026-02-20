@@ -215,7 +215,7 @@ class InStudyFileOutputStorage(IOutputStorage):
             raise OutputNotFound(output_id)
         output_data: Simulation = outputs[output_id]
         return OutputDetails(
-            id=output_id,
+            name=output_id,
             mode=output_data.mode,
             synthesis=output_data.synthesis,
             by_year=output_data.by_year,
