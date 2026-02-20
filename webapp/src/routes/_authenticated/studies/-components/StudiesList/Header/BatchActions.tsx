@@ -14,36 +14,43 @@
 
 import BoltIcon from "@mui/icons-material/Bolt";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
-import { Button, IconButton, Tooltip } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { Button, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
 interface BatchActionsProps {
   selectedCount: number;
   onLaunch: () => void;
+  onDelete: () => void;
   onDeselectAll: () => void;
 }
 
-function BatchActions({ selectedCount, onLaunch, onDeselectAll }: BatchActionsProps) {
+function BatchActions({ selectedCount, onLaunch, onDelete, onDeselectAll }: BatchActionsProps) {
   const { t } = useTranslation();
 
   if (selectedCount === 0) {
     return null;
   }
 
-  // TODO: Implement deleteAllStudies
-
   return (
     <>
       <Tooltip title={t("studies.batchMode")}>
-        <Button onClick={onLaunch} color="primary">
-          <BoltIcon />
-          {t("global.launch")} ({selectedCount})
+        <Button onClick={onLaunch} color="primary" startIcon={<BoltIcon />}>
+          {t("global.launch")}
+        </Button>
+      </Tooltip>
+      <Tooltip title={t("global.delete")}>
+        <Button onClick={onDelete} color="error" startIcon={<DeleteIcon />}>
+          {t("global.delete")}
         </Button>
       </Tooltip>
       <Tooltip title={t("studies.deselectAll")}>
-        <IconButton color="primary" onClick={onDeselectAll}>
-          <CheckBoxIcon />
-        </IconButton>
+        <Stack>
+          <IconButton color="primary" onClick={onDeselectAll}>
+            <CheckBoxIcon />
+          </IconButton>
+          <Typography variant="body2">({selectedCount})</Typography>
+        </Stack>
       </Tooltip>
     </>
   );

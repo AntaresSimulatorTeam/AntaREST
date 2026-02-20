@@ -113,9 +113,7 @@ class DatabaseThermalDao(ThermalDao):
     def _raise_the_right_exception(self, area_id: str, thermal_id: str, exc: IntegrityError | None = None) -> NoReturn:
         # Could be because area does not exist or the thermal does not exist
         validate_area_exists(self._db_session, self._study_id, area_id)
-        if exc:
-            raise ThermalClusterNotFound(area_id, thermal_id) from exc
-        raise ThermalClusterNotFound(area_id, thermal_id)
+        raise ThermalClusterNotFound(area_id, thermal_id) from exc
 
     @override
     def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:

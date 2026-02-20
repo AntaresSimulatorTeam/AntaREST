@@ -19,7 +19,7 @@ import os
 import shutil
 from datetime import timedelta
 from pathlib import Path, PurePosixPath
-from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Type, cast
+from typing import Any, BinaryIO, Callable, Dict, Iterable, List, Optional, Sequence, Type, cast
 from uuid import uuid4
 
 import pandas as pd
@@ -179,6 +179,7 @@ from antarest.study.storage.variantstudy.variant_study_service import VariantStu
 logger = logging.getLogger(__name__)
 
 MAX_MISSING_STUDY_TIMEOUT = 2  # days
+MAX_BATCH_DELETE_SIZE = 100
 
 
 def get_disk_usage(path: str | Path) -> int:
@@ -1374,6 +1375,51 @@ class StudyService:
             study, dest, len(output_list or []) > 0, output_list
         )
 
+    @staticmethod
+    def _prefetch_study_info(study: Study) -> Any:
+        # This prefetches the workspace because it is lazy-loaded and the object is deleted
+        # before using the workspace attribute in raw study deletion.
+        # See https://github.com/AntaresSimulatorTeam/AntaREST/issues/606
+        if isinstance(study, RawStudy):
+            _ = study.workspace
+            return study.to_enhanced_json_summary()
+        return study.to_json_summary()
+
+    @staticmethod
+    def _validate_children_deletion(
+        study: Study, allow_children_deletion: bool, variant_service: VariantStudyService
+    ) -> None:
+        """Validate that study can be deleted when it has variant children."""
+        if variant_service.has_children(study) and not allow_children_deletion:
+            raise StudyDeletionNotAllowed(study.id, "Study has variant children")
+
+    def _await_generation_tasks(self, studies: Iterable[Study], timeout: int = 600) -> None:
+        """Wait for any pending generation tasks on variant studies."""
+        generation_tasks = [
+            s.generation_task for s in studies if isinstance(s, VariantStudy) and s.generation_task is not None
+        ]
+        for task_id in generation_tasks:
+            self.task_service.await_task(task_id, timeout)
+
+    def _delete_study_from_filesystem(self, study: Study) -> None:
+        """Delete study files from disk (handles both archived and unarchived studies)."""
+        if self.assert_study_unarchived(study=study, raise_exception=False):
+            self.storage_service.get_storage(study).delete(study)
+        elif isinstance(study, RawStudy):
+            os.unlink(self.storage_service.raw_study_service.find_archive_path(study))
+
+    def _notify_study_deleted(self, study: Study, study_info: Any) -> None:
+        """Push deletion event, log the action, and run deletion callbacks."""
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DELETED,
+                payload=study_info,
+                permissions=PermissionInfo.from_study(study),
+            )
+        )
+        logger.info("study %s deleted by user %s", study.id, get_user_id())
+        self._on_study_delete(uuid=study.id)
+
     def delete_study(self, uuid: str, children: bool) -> None:
         """
         Delete study and all its children
@@ -1382,56 +1428,80 @@ class StudyService:
             uuid: study uuid
             children: delete children or not
         """
-        study = self.get_study(uuid)
-        assert_permission(study, StudyPermissionType.WRITE)
+        self.delete_studies([uuid], with_variants=children)
 
-        study_info = study.to_json_summary()
+    def delete_studies(self, study_ids: List[str], with_variants: bool) -> None:
+        """
+        Delete multiple studies in batch.
 
-        # this prefetch the workspace because it is lazy loaded and the object is deleted
-        # before using workspace attribute in raw study deletion
-        # see https://github.com/AntaresSimulatorTeam/AntaREST/issues/606
-        if isinstance(study, RawStudy):
-            _ = study.workspace
-            study_info = study.to_enhanced_json_summary()
+        Args:
+            study_ids: List of study UUIDs to delete
+            with_variants: Whether to delete variant studies as well
+
+        Raises:
+            StudyNotFoundError: If any study is not found
+            UserHasNotPermissionError: If user lacks permission for any study
+            StudyDeletionNotAllowed: If a study has variants and with_variants=False
+            HTTPException(BAD_REQUEST): If study_ids is empty or exceeds MAX_BATCH_DELETE_SIZE
+        """
+        if not study_ids:
+            raise HTTPException(
+                status_code=http.HTTPStatus.BAD_REQUEST,
+                detail="study_ids list cannot be empty",
+            )
+
+        if len(study_ids) > MAX_BATCH_DELETE_SIZE:
+            raise HTTPException(
+                status_code=http.HTTPStatus.BAD_REQUEST,
+                detail=f"Cannot delete more than {MAX_BATCH_DELETE_SIZE} studies at once. Got {len(study_ids)} studies.",
+            )
+
+        logger.warning(
+            "Batch delete requested for %d studies (with_variants=%s)",
+            len(study_ids),
+            with_variants,
+        )
 
         variant_service = self.storage_service.variant_study_service
 
-        if variant_service.has_children(study):
-            if not children:
-                raise StudyDeletionNotAllowed(study.id, "Study has variant children")
+        studies_to_check = []
+        for study_id in study_ids:
+            study = self.get_study(study_id)
+            assert_permission(study, StudyPermissionType.WRITE)
+            studies_to_check.append(study)
 
-            variant_service.walk_children(
-                study.id,
-                lambda s: self.delete_study(s.id, True),
-                bottom_first=True,
-                include_parent=False,
-            )
+        studies_to_delete: Dict[str, Study] = {}
+        study_infos: Dict[str, Any] = {}
 
-        # If the study is a variant, and its snapshot is generating,
-        # we need to wait until it's done to delete it to avoid any fs issues
-        if isinstance(study, VariantStudy) and study.generation_task:
-            self.task_service.await_task(study.generation_task, 600)
+        for study in studies_to_check:
+            if study.id in studies_to_delete:
+                continue
 
-        self.repository.delete(study.id)
+            self._validate_children_deletion(study, with_variants, variant_service)
 
-        # delete the files afterward for
-        # if the study cannot be deleted from database for foreign key reason
-        if self.assert_study_unarchived(study=study, raise_exception=False):
-            self.storage_service.get_storage(study).delete(study)
-        else:
-            if isinstance(study, RawStudy):
-                os.unlink(self.storage_service.raw_study_service.find_archive_path(study))
+            if variant_service.has_children(study):
 
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DELETED,
-                payload=study_info,
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
-        logger.info("study %s deleted by user %s", uuid, get_user_id())
+                def collect_study(s: Study) -> None:
+                    assert_permission(s, StudyPermissionType.WRITE)
+                    study_infos[s.id] = self._prefetch_study_info(s)
+                    studies_to_delete[s.id] = s
 
-        self._on_study_delete(uuid=uuid)
+                variant_service.walk_children(
+                    study.id,
+                    collect_study,
+                    bottom_first=True,
+                    include_parent=True,
+                )
+            else:
+                study_infos[study.id] = self._prefetch_study_info(study)
+                studies_to_delete[study.id] = study
+
+        self._await_generation_tasks(studies_to_delete.values())
+        self.repository.delete(*studies_to_delete.keys())
+
+        for study in studies_to_delete.values():
+            self._delete_study_from_filesystem(study)
+            self._notify_study_deleted(study, study_infos[study.id])
 
     def import_study(
         self,
