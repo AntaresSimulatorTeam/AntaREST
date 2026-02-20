@@ -29,7 +29,7 @@ import { useDeleteDirectoryDialog } from "./hooks/useDeleteDirectoryDialog";
 import { useDirectoryOperations } from "./hooks/useDirectoryOperations";
 import ManagedTreeNode from "./ManagedTreeNode";
 import type { ManagedTreeProps } from "./types";
-import { buildDirectoryTree, getDirectoryPath } from "./utils";
+import { buildDirectoryTree, getDescendantIds, getDirectoryPath } from "./utils";
 
 function ManagedTree({ isCreatingDirectory, onDirectoryCreated }: ManagedTreeProps) {
   const { t } = useTranslation();
@@ -72,7 +72,7 @@ function ManagedTree({ isCreatingDirectory, onDirectoryCreated }: ManagedTreePro
     dispatch(
       updateStudyFilters({
         activeTree: "managed",
-        managed: { directoryId: itemId },
+        managed: { directoryId: itemId, directoryIds: getDescendantIds(itemId, directories) },
       }),
     );
   };

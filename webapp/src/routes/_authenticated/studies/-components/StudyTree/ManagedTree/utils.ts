@@ -96,6 +96,19 @@ export function findDirectoryById(
 }
 
 /**
+ * Gets all descendant IDs of a directory from a flat directory list,
+ * including the directory itself.
+ *
+ * @param directoryId - The ID of the starting directory
+ * @param directories - Flat array of all directories
+ * @returns Array containing the given directoryId and all descendant IDs
+ */
+export function getDescendantIds(directoryId: string, directories: Directory[]): string[] {
+  const children = directories.filter((directory) => directory.parentId === directoryId);
+  return [directoryId, ...children.flatMap((child) => getDescendantIds(child.id, directories))];
+}
+
+/**
  * Gets the path from root to a specific directory node
  * Returns array of directory IDs representing the path
  *
