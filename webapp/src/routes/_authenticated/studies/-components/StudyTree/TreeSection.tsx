@@ -86,17 +86,12 @@ const variantStyles: Record<
       textTransform: "uppercase",
       letterSpacing: 0.5,
     },
-    subtitle: {
-      color: "text.disabled",
-      fontStyle: "italic",
-    },
   },
 };
 
 function TreeSection({
   variant,
   title,
-  subtitle,
   icon,
   children,
   onAddDirectory,
@@ -124,11 +119,6 @@ function TreeSection({
           <Typography variant="subtitle2" sx={styles.title}>
             {title}
           </Typography>
-          {subtitle && (
-            <Typography variant="caption" sx={styles.subtitle}>
-              {subtitle}
-            </Typography>
-          )}
         </Stack>
         <Stack direction="row">
           {onAddDirectory && (
