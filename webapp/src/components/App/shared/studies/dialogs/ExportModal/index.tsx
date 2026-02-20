@@ -34,7 +34,7 @@ import {
   type FileStudyTreeConfigDTO,
   type GenericInfo,
   type StudyMetadata,
-  type StudyOutput,
+  type OutputDetails,
   type StudyOutputDownloadDTO,
 } from "../../../../../../types/types";
 import BasicDialog, { type BasicDialogProps } from "../../../../../common/dialogs/BasicDialog";
@@ -136,7 +136,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
       try {
         const res = await getStudyOutputs(study.id);
         const tmpSynth = await getStudySynthesis(study.id);
-        setOutputList(res.map((o: StudyOutput) => ({ id: o.name, name: o.name })));
+        setOutputList(res.map((o: OutputDetails) => ({ id: o.name, name: o.name })));
         setCurrentOutput(res.length > 0 ? res[0].name : undefined);
         setStudySynthesis(tmpSynth);
       } catch (e) {

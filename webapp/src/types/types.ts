@@ -89,37 +89,15 @@ export interface StudyMetadataPatchDTO {
   tags?: string[];
 }
 
-export interface StudyOutput {
+export interface OutputDetails {
   name: string;
-  type: string;
-  settings: {
-    general: {
-      mode: string;
-      horizon: number;
-      nbyears: number;
-      simulation: {
-        start: number;
-        end: number;
-      };
-    };
-    input: {
-      import: string;
-    };
-    output: {
-      synthesis: boolean;
-      storenewset: boolean;
-      archives: string;
-    };
-    optimization: object;
-    otherPreferences: object;
-    advancedParameters: object;
-    seedsMersenneTwister: object;
-    playlist: unknown[];
-  };
-  completionDate: string;
-  status: string;
+  mode: string;
+  synthesis: boolean;
+  byYear: boolean;
+  nbYears: number;
   archived: boolean;
 }
+
 export interface StudyLayer {
   areas: string[];
   id: string;
@@ -318,12 +296,6 @@ export interface District {
   output: boolean;
 }
 
-export interface Simulation {
-  mode: string;
-  nbyears: number;
-  by_year: boolean;
-}
-
 export interface FileStudyTreeConfigDTO {
   study_path: string;
   path: string;
@@ -332,7 +304,7 @@ export interface FileStudyTreeConfigDTO {
   output_path?: string;
   areas: Record<string, Area>;
   districts: Record<string, District>;
-  outputs: Record<string, Simulation>;
+  outputs: Record<string, OutputDetails>;
   bindings: string[];
   store_new_set: boolean;
   archive_input_series: string[];

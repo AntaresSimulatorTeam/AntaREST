@@ -21,11 +21,11 @@ import type {
   AreasConfig,
   FileStudyTreeConfigDTO,
   MatrixAggregationResult,
+  OutputDetails,
   StudyLayer,
   StudyMetadata,
   StudyMetadataDTO,
   StudyMetadataPatchDTO,
-  StudyOutput,
   StudyOutputDownloadDTO,
   StudyPublicMode,
 } from "../../types/types";
@@ -91,7 +91,7 @@ export const getStudyMetadata = async (sid: string): Promise<StudyMetadata> => {
   return convertStudyDtoToMetadata(sid, res.data);
 };
 
-export const getStudyOutputs = async (sid: string): Promise<StudyOutput[]> => {
+export const getStudyOutputs = async (sid: string): Promise<OutputDetails[]> => {
   const res = await client.get(`/v1/studies/${sid}/outputs`);
   return res.data;
 };
@@ -107,7 +107,7 @@ export const getStudyOutputs = async (sid: string): Promise<StudyOutput[]> => {
 export const getStudyOutputById = async (
   studyId: string,
   outputId: string,
-): Promise<StudyOutput | undefined> => {
+): Promise<OutputDetails | undefined> => {
   const outputs = await getStudyOutputs(studyId);
   return outputs.find((output) => output.name === outputId);
 };

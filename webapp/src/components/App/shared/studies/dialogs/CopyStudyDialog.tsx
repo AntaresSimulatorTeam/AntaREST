@@ -22,7 +22,7 @@ import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
 import { copyStudy } from "@/services/api/studies";
 import { getStudyOutputs } from "@/services/api/study";
-import type { StudyMetadata, StudyOutput } from "@/types/types";
+import type { StudyMetadata, OutputDetails } from "@/types/types";
 import { validateStudyName } from "@/utils/studiesUtils";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
 import SaveAsIcon from "@mui/icons-material/SaveAs";
@@ -38,7 +38,7 @@ interface Props {
 interface DefaultValues {
   studyName: string;
   destinationFolder: string;
-  outputIds?: Array<StudyOutput["name"]>;
+  outputIds?: Array<OutputDetails["name"]>;
 }
 
 function CopyStudyDialog({ study, open, onClose }: Props) {

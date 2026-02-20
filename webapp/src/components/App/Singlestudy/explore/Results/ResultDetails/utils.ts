@@ -17,10 +17,10 @@ import type {
   RenewableClusterVariablesDTO,
   ShortTermStorageVariablesDTO,
   ThermalClusterVariablesDTO,
-  VariableViewParams,
   VariablesListDTO,
+  VariableViewParams,
 } from "@/services/api/studies/outputs/variableViews/types";
-import type { Area, LinkElement, Simulation } from "../../../../../../types/types";
+import type { Area, LinkElement, OutputDetails } from "../../../../../../types/types";
 
 export const OUTPUT_ITEM_TYPES = ["areas", "links", "synthesis"] as const;
 export const DATA_TYPES = ["values", "details", "details-res", "id", "details-STstorage"] as const;
@@ -33,7 +33,7 @@ export type Frequency = (typeof FREQUENCIES)[number];
 export type MonteCarloMode = (typeof MONTE_CARLO_MODES)[number];
 
 interface Params {
-  output: Partial<Simulation> & { id: string; name: string };
+  output: Partial<OutputDetails> & { id: string; name: string };
   item: (Area & { id: string }) | LinkElement;
   dataType: DataType;
   frequency: Frequency;
@@ -47,7 +47,7 @@ export function createPath(params: Params): string {
   const { id, mode = "economy" } = output;
   const isYearPeriod = year && year > 0;
   const periodFolder = isYearPeriod
-    ? `mc-ind/${Math.min(year, output.nbyears || MAX_YEAR)
+    ? `mc-ind/${Math.min(year, output.nbYears || MAX_YEAR)
         .toString()
         .padStart(5, "0")}`
     : "mc-all";

@@ -53,7 +53,7 @@ import {
   unarchiveOutput,
 } from "../../../../../services/api/study";
 import { convertUTCToLocalTime } from "../../../../../services/utils";
-import type { StudyMetadata, StudyOutput } from "../../../../../types/types";
+import type { StudyMetadata, OutputDetails } from "../../../../../types/types";
 import type { EmptyObject } from "../../../../../utils/tsUtils";
 import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
 import LaunchJobLogView from "../../../Tasks/LaunchJobLogView";
@@ -63,7 +63,7 @@ interface OutputDetail {
   creationDate?: string;
   completionDate?: string;
   job?: Job;
-  output?: StudyOutput;
+  output?: OutputDetails;
   archived?: boolean;
   isRunning: boolean;
 }
@@ -281,7 +281,7 @@ function Results() {
       {output.job && <LaunchJobLogView job={output.job} logButton logErrorButton />}
 
       {/* Digest button */}
-      {output.job?.status === "success" && output.output?.settings?.output?.synthesis && (
+      {output.job?.status === "success" && output.output?.synthesis && (
         <Box sx={{ height: "24px", margin: 0.5 }}>
           <Tooltip title="Digest">
             <EqualizerIcon

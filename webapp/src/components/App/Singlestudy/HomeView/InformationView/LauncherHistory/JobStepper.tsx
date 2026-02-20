@@ -110,7 +110,7 @@ function JobStepper({ studyId, jobs, jobsProgress }: Props) {
     }
 
     const output = outputs?.find((output) => output.name === job.outputId);
-    return !!output?.settings?.output?.synthesis;
+    return !!output?.synthesis;
   };
 
   const closeDialog = () => setDialogState({});
