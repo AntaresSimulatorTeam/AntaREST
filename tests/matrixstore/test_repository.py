@@ -29,7 +29,13 @@ from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Password, User
 from antarest.login.repository import GroupRepository, UserRepository
-from antarest.matrixstore.model import Matrix, MatrixDataSet, MatrixDataSetRelation
+from antarest.matrixstore.model import (
+    LEGACY_MATRIX_VERSION,
+    NEW_MATRIX_VERSION,
+    Matrix,
+    MatrixDataSet,
+    MatrixDataSetRelation,
+)
 from antarest.matrixstore.parsing import load_matrix, save_matrix
 from antarest.matrixstore.repository import (
     MatrixContentRepository,
@@ -37,7 +43,6 @@ from antarest.matrixstore.repository import (
     MatrixRepository,
     compute_hash,
 )
-from antarest.matrixstore.service import LEGACY_MATRIX_VERSION, NEW_MATRIX_VERSION
 
 ArrayData = list[list[float]] | npt.NDArray[np.float64]
 

@@ -13,6 +13,7 @@
  */
 
 import type { Options } from "@/components/fieldEditors/SelectFE";
+import StatusDot from "@/components/icons/StatusDot";
 import type { RouteListItem } from "@/components/page/ListView";
 import type { QueryList } from "@/queries/types";
 import { isQueryListItemOptimistic } from "@/queries/utils";
@@ -81,6 +82,7 @@ export function bindingConstraintsToList(
   const list = constraints.map((constraint) => ({
     id: constraint.id,
     label: constraint.name,
+    icon: <StatusDot status={constraint.enabled ? "success" : "error"} size="xx-small" />,
     linkOptions: linkOptions({
       to: ".",
       params: { bindingConstraintId: constraint.id },

@@ -192,8 +192,18 @@ export const upgradeStudy = async (studyId: string, targetVersion: string): Prom
   });
 };
 
-export const deleteStudy = async (sid: string, deleteAllChildren?: boolean): Promise<void> => {
-  const res = await client.delete(`/v1/studies/${sid}?children=${deleteAllChildren || false}`);
+export const deleteStudy = async (studyId: string, deleteChildren = false): Promise<void> => {
+  const res = await client.delete(`/v1/studies/${studyId}?children=${deleteChildren}`);
+  return res.data;
+};
+
+export const deleteStudies = async (params: {
+  studyIds: string[];
+  withVariants?: boolean;
+}): Promise<void> => {
+  const res = await client.delete("/v1/studies", {
+    data: { withVariants: true, ...params },
+  });
   return res.data;
 };
 

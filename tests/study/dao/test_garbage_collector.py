@@ -21,6 +21,8 @@ from antarest.maintenance.tasks.gc_matrix import clean_matrices
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.link_model import Link
+from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -48,7 +50,7 @@ def test_garbage_collection(dao: DatabaseStudyDao, db_session: Session, tmp_path
     # We need to use different contents, otherwise it will be enough that one table correctly prevents garbage
     # collection
     base_data = [[1, 2.5], [3, 4.7]]
-    dataframes = [pl.DataFrame(data=[[a + i, b + i] for a, b in base_data], orient="row") for i in range(13)]
+    dataframes = [pl.DataFrame(data=[[a + i, b + i] for a, b in base_data], orient="row") for i in range(25)]
     (
         load_df,
         solar_df,
@@ -63,6 +65,18 @@ def test_garbage_collection(dao: DatabaseStudyDao, db_session: Session, tmp_path
         thermal_series_df,
         thermal_fuel_cost_df,
         thermal_co2_cost_df,
+        renewable_series_df,
+        sts_pmax_injection_df,
+        sts_pmax_withdrawal_df,
+        sts_lower_rule_curve_df,
+        sts_upper_rule_curve_df,
+        sts_inflows_df,
+        sts_cost_injection_df,
+        sts_cost_withdrawal_df,
+        sts_cost_level_df,
+        sts_cost_variation_injection_df,
+        sts_cost_variation_withdrawal_df,
+        sts_constraint_matrix_df,
     ) = dataframes
 
     load_id = matrix_service.create(load_df)
@@ -78,6 +92,18 @@ def test_garbage_collection(dao: DatabaseStudyDao, db_session: Session, tmp_path
     thermal_series_id = matrix_service.create(thermal_series_df)
     thermal_fuel_cost_id = matrix_service.create(thermal_fuel_cost_df)
     thermal_co2_cost_id = matrix_service.create(thermal_co2_cost_df)
+    renewable_series_id = matrix_service.create(renewable_series_df)
+    sts_pmax_injection_id = matrix_service.create(sts_pmax_injection_df)
+    sts_pmax_withdrawal_id = matrix_service.create(sts_pmax_withdrawal_df)
+    sts_lower_rule_curve_id = matrix_service.create(sts_lower_rule_curve_df)
+    sts_upper_rule_curve_id = matrix_service.create(sts_upper_rule_curve_df)
+    sts_inflows_id = matrix_service.create(sts_inflows_df)
+    sts_cost_injection_id = matrix_service.create(sts_cost_injection_df)
+    sts_cost_withdrawal_id = matrix_service.create(sts_cost_withdrawal_df)
+    sts_cost_level_id = matrix_service.create(sts_cost_level_df)
+    sts_cost_variation_injection_id = matrix_service.create(sts_cost_variation_injection_df)
+    sts_cost_variation_withdrawal_id = matrix_service.create(sts_cost_variation_withdrawal_df)
+    sts_constraint_matrix_id = matrix_service.create(sts_constraint_matrix_df)
 
     # Create `load`, `solar`, `wind`, `reserves` and `misc-gen` matrices in DB
     area_id = "paris"
@@ -104,6 +130,34 @@ def test_garbage_collection(dao: DatabaseStudyDao, db_session: Session, tmp_path
     dao.save_thermal_series(area_id, thermal_id, thermal_series_id)
     dao.save_thermal_fuel_cost(area_id, thermal_id, thermal_fuel_cost_id)
     dao.save_thermal_co2_cost(area_id, thermal_id, thermal_co2_cost_id)
+
+    # Create renewable cluster matrices
+    renewable_id = "battery"
+    dao.save_renewable(area_id, RenewableCluster(id=renewable_id, name="Battery Fr"))
+    dao.save_renewable_series(area_id, renewable_id, renewable_series_id)
+
+    # Create ST Storage matrices
+    st_storage_id = "battery_storage"
+    dao.save_st_storage(area_id, STStorage(id=st_storage_id, name="Battery Storage"))
+    dao.save_st_storage_pmax_injection(area_id, st_storage_id, sts_pmax_injection_id)
+    dao.save_st_storage_pmax_withdrawal(area_id, st_storage_id, sts_pmax_withdrawal_id)
+    dao.save_st_storage_lower_rule_curve(area_id, st_storage_id, sts_lower_rule_curve_id)
+    dao.save_st_storage_upper_rule_curve(area_id, st_storage_id, sts_upper_rule_curve_id)
+    dao.save_st_storage_inflows(area_id, st_storage_id, sts_inflows_id)
+    dao.save_st_storage_cost_injection(area_id, st_storage_id, sts_cost_injection_id)
+    dao.save_st_storage_cost_withdrawal(area_id, st_storage_id, sts_cost_withdrawal_id)
+    dao.save_st_storage_cost_level(area_id, st_storage_id, sts_cost_level_id)
+    dao.save_st_storage_cost_variation_injection(area_id, st_storage_id, sts_cost_variation_injection_id)
+    dao.save_st_storage_cost_variation_withdrawal(area_id, st_storage_id, sts_cost_variation_withdrawal_id)
+
+    # Create ST Storage additional constraint matrix
+    constraint_id = "constraint_1"
+    dao.save_st_storage_additional_constraints(
+        area_id,
+        storage_id=st_storage_id,
+        constraints=[STStorageAdditionalConstraint(id=constraint_id, name="Constraint 1")],
+    )
+    dao.save_st_storage_constraint_matrix(area_id, st_storage_id, constraint_id, sts_constraint_matrix_id)
 
     # Launch the Garbage collection
     task = clean_matrices(matrix_service=matrix_service, dry_run=False, retention_time=0)
@@ -149,3 +203,39 @@ def test_garbage_collection(dao: DatabaseStudyDao, db_session: Session, tmp_path
 
     thermal_co2_cost = dao.get_thermal_co2_cost(area_id, thermal_id)
     pl.testing.assert_frame_equal(thermal_co2_cost, thermal_co2_cost_df, check_dtypes=False)
+
+    renewable_series = dao.get_renewable_series(area_id, renewable_id)
+    pl.testing.assert_frame_equal(renewable_series, renewable_series_df, check_dtypes=False)
+
+    sts_pmax_injection = dao.get_st_storage_pmax_injection(area_id, st_storage_id)
+    pl.testing.assert_frame_equal(sts_pmax_injection, sts_pmax_injection_df, check_dtypes=False)
+
+    sts_pmax_withdrawal = dao.get_st_storage_pmax_withdrawal(area_id, st_storage_id)
+    pl.testing.assert_frame_equal(sts_pmax_withdrawal, sts_pmax_withdrawal_df, check_dtypes=False)
+
+    sts_lower_rule_curve = dao.get_st_storage_lower_rule_curve(area_id, st_storage_id)
+    pl.testing.assert_frame_equal(sts_lower_rule_curve, sts_lower_rule_curve_df, check_dtypes=False)
+
+    sts_upper_rule_curve = dao.get_st_storage_upper_rule_curve(area_id, st_storage_id)
+    pl.testing.assert_frame_equal(sts_upper_rule_curve, sts_upper_rule_curve_df, check_dtypes=False)
+
+    sts_inflows = dao.get_st_storage_inflows(area_id, st_storage_id)
+    pl.testing.assert_frame_equal(sts_inflows, sts_inflows_df, check_dtypes=False)
+
+    sts_cost_injection = dao.get_st_storage_cost_injection(area_id, st_storage_id)
+    pl.testing.assert_frame_equal(sts_cost_injection, sts_cost_injection_df, check_dtypes=False)
+
+    sts_cost_withdrawal = dao.get_st_storage_cost_withdrawal(area_id, st_storage_id)
+    pl.testing.assert_frame_equal(sts_cost_withdrawal, sts_cost_withdrawal_df, check_dtypes=False)
+
+    sts_cost_level = dao.get_st_storage_cost_level(area_id, st_storage_id)
+    pl.testing.assert_frame_equal(sts_cost_level, sts_cost_level_df, check_dtypes=False)
+
+    sts_cost_variation_injection = dao.get_st_storage_cost_variation_injection(area_id, st_storage_id)
+    pl.testing.assert_frame_equal(sts_cost_variation_injection, sts_cost_variation_injection_df, check_dtypes=False)
+
+    sts_cost_variation_withdrawal = dao.get_st_storage_cost_variation_withdrawal(area_id, st_storage_id)
+    pl.testing.assert_frame_equal(sts_cost_variation_withdrawal, sts_cost_variation_withdrawal_df, check_dtypes=False)
+
+    sts_constraint_matrix = dao.get_st_storage_additional_constraint_matrix(area_id, st_storage_id, constraint_id)
+    pl.testing.assert_frame_equal(sts_constraint_matrix, sts_constraint_matrix_df, check_dtypes=False)

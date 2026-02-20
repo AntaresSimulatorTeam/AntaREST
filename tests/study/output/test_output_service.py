@@ -103,7 +103,7 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
     remote_executor: IRemoteExecutor = Mock(spec=IRemoteExecutor)
     file_outputs_provider = _file_outputs_provider(study_mock)
     output_storage = FileOutputStorage(
-        cache=cache_mock, outputs_provider=file_outputs_provider, remote_executor=remote_executor
+        cache=cache_mock, outputs_provider=file_outputs_provider, remote_executor=remote_executor, tmp_dir=tmp_path
     )
 
     studies_metadata_repository = _studies_repository(study_mock)
@@ -155,7 +155,9 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
     cache_mock = Mock()
     task_service = Mock(spec=ITaskService)
     file_outputs_provider = _file_outputs_provider(study_mock)
-    output_storage = FileOutputStorage(cache=cache_mock, outputs_provider=file_outputs_provider, remote_executor=Mock())
+    output_storage = FileOutputStorage(
+        cache=cache_mock, outputs_provider=file_outputs_provider, remote_executor=Mock(), tmp_dir=tmp_path
+    )
 
     studies_metadata_repository = _studies_repository(study_mock)
     output_service = OutputService(

@@ -113,9 +113,7 @@ class DatabaseThermalDao(ThermalDao):
     def _raise_the_right_exception(self, area_id: str, thermal_id: str, exc: IntegrityError | None = None) -> NoReturn:
         # Could be because area does not exist or the thermal does not exist
         validate_area_exists(self._db_session, self._study_id, area_id)
-        if exc:
-            raise ThermalClusterNotFound(area_id, thermal_id) from exc
-        raise ThermalClusterNotFound(area_id, thermal_id)
+        raise ThermalClusterNotFound(area_id, thermal_id) from exc
 
     @override
     def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
@@ -207,12 +205,16 @@ class DatabaseThermalDao(ThermalDao):
     def get_all_thermals_for_area(self, area_id: str) -> Sequence[ThermalCluster]:
         study_id = self._study_id
         session = self._db_session
-        validate_area_exists(session, study_id, area_id)
 
         stmt = select(THERMAL_CLUSTER_TABLE).where(
             (THERMAL_CLUSTER_TABLE.c.study_id == study_id) & (THERMAL_CLUSTER_TABLE.c.area_id == area_id)
         )
         rows = session.execute(stmt).fetchall()
+
+        if not rows:
+            # Ensures the area exists
+            validate_area_exists(session, study_id, area_id)
+
         return [self._convert_db_row_to_thermal(row) for row in rows]
 
     def _select_thermal_cluster(self, area_id: str, thermal_id: str) -> Select[Any]:
@@ -226,18 +228,16 @@ class DatabaseThermalDao(ThermalDao):
     @override
     def get_thermal(self, area_id: str, thermal_id: str) -> ThermalCluster:
         session = self._db_session
-        validate_area_exists(session, self._study_id, area_id)
         stmt = self._select_thermal_cluster(area_id, thermal_id)
         row = session.execute(stmt).fetchone()
         if not row:
-            raise ThermalClusterNotFound(area_id, thermal_id)
+            self._raise_the_right_exception(area_id, thermal_id)
 
         return self._convert_db_row_to_thermal(row)
 
     @override
     def thermal_exists(self, area_id: str, thermal_id: str) -> bool:
         session = self._db_session
-        validate_area_exists(session, self._study_id, area_id)
         stmt = self._select_thermal_cluster(area_id, thermal_id)
         return session.execute(stmt).fetchone() is not None
 
