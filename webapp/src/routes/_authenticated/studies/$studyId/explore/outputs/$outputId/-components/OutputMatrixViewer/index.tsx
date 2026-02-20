@@ -24,15 +24,13 @@ import {
 import ViewWrapper from "@/components/page/ViewWrapper";
 import usePromise from "@/hooks/usePromise";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
-import type { StudyMapDistrict } from "@/redux/ducks/studyMaps";
 import { getStudyMatrixIndex } from "@/services/api/matrix";
 import { getStudyData } from "@/services/api/study";
-import type { AreaWithId, LinkElement, MatrixIndex } from "@/types/types";
+import type { MatrixIndex } from "@/types/types";
 import { Box } from "@mui/material";
 import { useParams } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Props } from "react-virtualized-auto-sizer";
 import type { PartialStudyOutput } from "../../-hooks/useStudyOutput";
 import { useVariablePerVariable } from "../../-hooks/useVariablePerVariable";
 import {
@@ -40,7 +38,7 @@ import {
   MAX_YEAR,
   type DataType,
   type Frequency,
-  type ListType,
+  type Item,
   type MonteCarloMode,
 } from "../../-utils";
 import OutputFilters from "./OutputFilters";
@@ -48,14 +46,13 @@ import OutputMatrix from "./OutputMatrix";
 import VariableMatrix from "./VariableMatrix";
 
 interface Props {
-  itemType: ListType;
-  selectedItem: AreaWithId | StudyMapDistrict | LinkElement;
+  selectedItem: Item;
   output?: PartialStudyOutput;
 }
 
 type SetResultColHeaders = (headers: string[][], indices: number[]) => void;
 
-function OutputMatrixViewer({ itemType, selectedItem, output }: Props) {
+function OutputMatrixViewer({ selectedItem, output }: Props) {
   const { studyId, outputId } = useParams({
     from: "/_authenticated/studies/$studyId/explore/outputs/$outputId/",
   });
@@ -70,7 +67,6 @@ function OutputMatrixViewer({ itemType, selectedItem, output }: Props) {
   const [headerIndices, setHeaderIndices] = useState<number[]>([]);
   const matrixGridRef = useRef<FilterableMatrixGridHandle>(null);
 
-  const isSynthesis = itemType === "synthesis";
   const isVariablePerVariable = mcMode === "variable-per-variable";
 
   const {
@@ -85,7 +81,6 @@ function OutputMatrixViewer({ itemType, selectedItem, output }: Props) {
     studyId,
     outputId,
     isEnabled: isVariablePerVariable,
-    itemType,
     frequency,
     selectedItem,
     dataType,
@@ -93,7 +88,7 @@ function OutputMatrixViewer({ itemType, selectedItem, output }: Props) {
   });
 
   const path = useMemo(() => {
-    if (output && selectedItem && !isSynthesis) {
+    if (output) {
       return createPath({
         output,
         item: selectedItem,
@@ -103,11 +98,11 @@ function OutputMatrixViewer({ itemType, selectedItem, output }: Props) {
       });
     }
     return "";
-  }, [output, selectedItem, isSynthesis, dataType, frequency, year]);
+  }, [output, selectedItem, dataType, frequency, year]);
 
   const matrixRes = usePromise<ResultMatrixDTO | undefined>(
     async () => {
-      if (!output || !selectedItem || isSynthesis || !path || isVariablePerVariable) {
+      if (!output || !path || isVariablePerVariable) {
         return new Promise(() => {
           // Intentionally never resolves to keep promise in pending state
           // Prevents invalid "No data" while loading
@@ -136,7 +131,7 @@ function OutputMatrixViewer({ itemType, selectedItem, output }: Props) {
     {
       resetDataOnReload: true,
       resetErrorOnReload: true,
-      deps: [studyId, path, !!output, !!selectedItem, isSynthesis, isVariablePerVariable],
+      deps: [studyId, path, !!output, !!selectedItem, isVariablePerVariable],
     },
   );
 
@@ -270,7 +265,6 @@ function OutputMatrixViewer({ itemType, selectedItem, output }: Props) {
             onColHeadersChange={handleColHeadersChange}
             onToggleFilter={handleToggleFilter}
             variablesMetadata={variablesMetadata ?? null}
-            itemType={itemType}
             selectedItem={selectedItem}
             selectedVariable={selectedVariable}
             onVariableSelect={setSelectedVariable}
@@ -292,7 +286,6 @@ function OutputMatrixViewer({ itemType, selectedItem, output }: Props) {
           {mcMode === "variable-per-variable" ? (
             <VariableMatrix
               variablesMetadata={variablesMetadata ?? null}
-              itemType={itemType}
               selectedItem={selectedItem}
               onMaterializeVariable={handleMaterializeVariable}
               isMaterializing={isMaterializing}

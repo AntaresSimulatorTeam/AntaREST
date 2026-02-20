@@ -36,26 +36,23 @@
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import usePromise from "@/hooks/usePromise";
 import { useTaskMonitor } from "@/hooks/useTaskMonitor";
-import type { StudyMapDistrict } from "@/redux/ducks/studyMaps";
 import {
   getTimeIndex,
   getVariablesList,
   getVariableViewData,
   materializeVariableView,
 } from "@/services/api/studies/outputs/variableViews";
-import type { AreaWithId, LinkElement } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { buildVariableViewParams, type Frequency, type ListType } from "../-utils";
+import { buildVariableViewParams, type Frequency, type Item } from "../-utils";
 
 interface UseVariablePerVariableProps {
   studyId: string;
   outputId: string | undefined;
   isEnabled: boolean;
-  itemType: ListType;
   frequency: Frequency;
-  selectedItem: AreaWithId | StudyMapDistrict | LinkElement;
+  selectedItem: Item;
   dataType: string;
   selectedClusterId: string;
 }
@@ -64,7 +61,6 @@ export function useVariablePerVariable({
   studyId,
   outputId,
   isEnabled,
-  itemType,
   frequency,
   selectedItem,
   dataType,
@@ -81,7 +77,6 @@ export function useVariablePerVariable({
   const materializationParamsRef = useRef<{
     variable: string;
     itemId: string;
-    itemType: ListType;
     frequency: Frequency;
   } | null>(null);
 
@@ -122,7 +117,6 @@ export function useVariablePerVariable({
       }
 
       const params = buildVariableViewParams(
-        itemType,
         dataType,
         selectedClusterId,
         selectedItem,
@@ -134,7 +128,7 @@ export function useVariablePerVariable({
       return data;
     },
     {
-      deps: [studyId, outputId, selectedVariable, itemType, frequency, dataType, selectedClusterId],
+      deps: [studyId, outputId, selectedVariable, frequency, dataType, selectedClusterId],
     },
   );
 
@@ -172,7 +166,6 @@ export function useVariablePerVariable({
       setIsMaterializing(true);
 
       const params = buildVariableViewParams(
-        itemType,
         dataType,
         selectedClusterId,
         selectedItem,
@@ -188,7 +181,6 @@ export function useVariablePerVariable({
       materializationParamsRef.current = {
         variable: selectedVariable,
         itemId: selectedItem.id,
-        itemType,
         frequency,
       };
     } catch (error) {

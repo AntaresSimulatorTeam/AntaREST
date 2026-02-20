@@ -38,15 +38,15 @@ import {
   getClusterVariables,
   getFirstVariableForItem,
   getVariables,
+  isAreaOrDistrict,
   type DataType,
-  type ListType,
+  type Item,
 } from "../../../-utils";
 
 interface VariableSelectorProps {
   variablesMetadata: VariablesListDTO | null;
   dataType: DataType;
-  itemType: ListType;
-  selectedItemId: string;
+  selectedItem: Item;
   selectedVariable: string;
   onVariableSelect: (variable: string) => void;
   disabled?: boolean;
@@ -56,8 +56,7 @@ interface VariableSelectorProps {
 function VariableSelector({
   variablesMetadata,
   dataType,
-  itemType,
-  selectedItemId,
+  selectedItem,
   selectedVariable,
   onVariableSelect,
   disabled,
@@ -68,31 +67,31 @@ function VariableSelector({
   const isClusterDataType = ["details", "details-res", "details-STstorage"].includes(dataType);
 
   const variableOptions = useMemo(() => {
-    if (!variablesMetadata || !selectedItemId) {
+    if (!variablesMetadata) {
       return [];
     }
 
     // For cluster data types, get variables from the specific cluster
 
-    if (isClusterDataType && selectedClusterId && itemType === "areas") {
-      return getClusterVariables(variablesMetadata, selectedItemId, dataType, selectedClusterId);
+    if (isClusterDataType && selectedClusterId && isAreaOrDistrict(selectedItem)) {
+      return getClusterVariables(variablesMetadata, selectedItem.id, dataType, selectedClusterId);
     }
 
-    return getVariables(variablesMetadata, itemType, selectedItemId, dataType);
-  }, [variablesMetadata, selectedItemId, isClusterDataType, selectedClusterId, itemType, dataType]);
+    return getVariables(variablesMetadata, selectedItem, dataType);
+  }, [variablesMetadata, selectedItem, isClusterDataType, selectedClusterId, dataType]);
 
   const isVariableValid = variableOptions.includes(selectedVariable);
 
   // Auto-select first variable when switching item types or when no valid variable is selected
   useEffect(() => {
-    if (!isVariableValid && variablesMetadata && selectedItemId) {
+    if (!isVariableValid && variablesMetadata) {
       let firstVariable = "";
 
       // For cluster data types, get the first variable from the selected cluster
-      if (isClusterDataType && selectedClusterId && itemType === "areas") {
+      if (isClusterDataType && selectedClusterId && isAreaOrDistrict(selectedItem)) {
         const clusterVariables = getClusterVariables(
           variablesMetadata,
-          selectedItemId,
+          selectedItem.id,
           dataType,
           selectedClusterId,
         );
@@ -100,7 +99,7 @@ function VariableSelector({
         firstVariable = clusterVariables[0] || "";
       } else {
         // For non-cluster data types, get the first variable for the item
-        firstVariable = getFirstVariableForItem(variablesMetadata, itemType, selectedItemId);
+        firstVariable = getFirstVariableForItem(variablesMetadata, selectedItem);
       }
 
       if (firstVariable) {
@@ -110,8 +109,7 @@ function VariableSelector({
   }, [
     isVariableValid,
     variablesMetadata,
-    selectedItemId,
-    itemType,
+    selectedItem,
     dataType,
     selectedClusterId,
     onVariableSelect,

@@ -39,7 +39,7 @@ function ClusterSelector({
   const { t } = useTranslation();
 
   const clusterOptions = useMemo(() => {
-    if (!variablesMetadata || !selectedItemId) {
+    if (!variablesMetadata) {
       return [];
     }
 

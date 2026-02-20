@@ -19,9 +19,7 @@ import NumberFE from "@/components/fieldEditors/NumberFE";
 import SearchFE from "@/components/fieldEditors/SearchFE";
 import SelectFE from "@/components/fieldEditors/SelectFE";
 import { useDebouncedField } from "@/hooks/useDebouncedField";
-import type { StudyMapDistrict } from "@/redux/ducks/studyMaps";
 import type { VariablesListDTO } from "@/services/api/studies/outputs/variableViews/types";
-import type { AreaWithId, LinkElement } from "@/types/types";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import FilterListOffIcon from "@mui/icons-material/FilterListOff";
 import { Box, IconButton, Tooltip } from "@mui/material";
@@ -31,10 +29,11 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   buildVariableViewParams,
+  isAreaOrDistrict,
   matchesSearchTerm,
   type DataType,
   type Frequency,
-  type ListType,
+  type Item,
   type MonteCarloMode,
 } from "../../../-utils";
 import ClusterSelector from "./ClusterSelector";
@@ -84,8 +83,7 @@ interface Props {
   onColHeadersChange: (colHeaders: string[][], indices: number[]) => void;
   onToggleFilter: () => void;
   variablesMetadata: VariablesListDTO | null;
-  itemType: ListType;
-  selectedItem: AreaWithId | StudyMapDistrict | LinkElement;
+  selectedItem: Item;
   selectedVariable: string;
   onVariableSelect: (variable: string) => void;
   selectedClusterId: string;
@@ -110,7 +108,6 @@ function OutputFilters({
   onColHeadersChange,
   onToggleFilter,
   variablesMetadata,
-  itemType,
   selectedItem,
   selectedVariable,
   onVariableSelect,
@@ -269,7 +266,7 @@ function OutputFilters({
   const isVariablePerVariable = mcMode === "variable-per-variable";
   const isClusterDataType = ["details", "details-res", "details-STstorage"].includes(dataType);
   const shouldShowClusterSelector =
-    isVariablePerVariable && isClusterDataType && itemType === "areas";
+    isVariablePerVariable && isClusterDataType && isAreaOrDistrict(selectedItem);
 
   // Data filters (requiring API calls, refetch new result)
   const RESULT_FILTERS = [
@@ -314,8 +311,7 @@ function OutputFilters({
         <VariableSelector
           variablesMetadata={variablesMetadata}
           dataType={dataType}
-          itemType={itemType}
-          selectedItemId={selectedItem.id}
+          selectedItem={selectedItem}
           selectedVariable={selectedVariable}
           onVariableSelect={onVariableSelect}
           selectedClusterId={selectedClusterId}
@@ -412,7 +408,6 @@ function OutputFilters({
                 studyId={studyId}
                 outputId={outputId}
                 params={buildVariableViewParams(
-                  itemType,
                   dataType,
                   selectedClusterId,
                   selectedItem,

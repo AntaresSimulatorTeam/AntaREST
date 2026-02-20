@@ -15,9 +15,7 @@
 import BackButton from "@/components/buttons/BackButton";
 import ListView, { type ContentListItem } from "@/components/page/ListView";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
-import type { StudyMapDistrict } from "@/redux/ducks/studyMaps";
 import { getStudyDistricts } from "@/services/api/study";
-import type { AreaWithId, LinkElement } from "@/types/types";
 import AutoAwesomeMotionIcon from "@mui/icons-material/AutoAwesomeMotion";
 import { Stack, Tab, Tabs } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
@@ -28,7 +26,7 @@ import { getAreas, getLinks } from "../../../../../../../redux/selectors";
 import OutputMatrixViewer from "./-components/OutputMatrixViewer";
 import SynthesisViewer from "./-components/SynthesisViewer";
 import useStudyOutput from "./-hooks/useStudyOutput";
-import { SYNTHESIS_ITEMS, type ListType } from "./-utils";
+import { SYNTHESIS_ITEMS, type Item, type ListType } from "./-utils";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/outputs/$outputId/")(
   {
@@ -51,7 +49,7 @@ function Output() {
 
   const { data: output } = useStudyOutput({ studyId, outputId });
 
-  const list = useMemo<Array<ContentListItem<AreaWithId | StudyMapDistrict | LinkElement>>>(() => {
+  const list = useMemo<Array<ContentListItem<Item>>>(() => {
     if (listType === "areas") {
       return [...areas, ...districts].map((item) => ({
         id: item.id,
@@ -88,17 +86,12 @@ function Output() {
   return (
     <ListView
       splitId="results"
-      // minSize={[150, 400]}
+      splitMinSize={[280, 150]}
       list={list}
       actions={
         <Stack>
           <BackButton linkOptions={{ to: ".." }} />
-          <Tabs
-            value={listType}
-            onChange={handleListTypeChange}
-            size="extra-small"
-            variant="fullWidth"
-          >
+          <Tabs value={listType} onChange={handleListTypeChange} size="extra-small">
             <Tab label={t("study.areas")} value="areas" />
             <Tab label={t("study.links")} value="links" />
             {output?.synthesis && <Tab label={t("study.synthesis")} value="synthesis" />}
@@ -109,7 +102,7 @@ function Output() {
         return !data ? (
           <SynthesisViewer gridId={id} />
         ) : (
-          <OutputMatrixViewer output={output} itemType={listType} selectedItem={data} />
+          <OutputMatrixViewer output={output} selectedItem={data} />
         );
       }}
     />
