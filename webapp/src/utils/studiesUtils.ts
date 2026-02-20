@@ -24,7 +24,7 @@ import { validateString } from "./validation/string";
 ////////////////////////////////////////////////////////////////
 
 const folderPredicate = R.curry((filters: StudyFilters, study: StudyMetadata) => {
-  const { activeTree, managed, external, search } = filters;
+  const { activeTree, managed, external } = filters;
 
   if (activeTree === "managed") {
     // Only show managed studies
@@ -32,16 +32,16 @@ const folderPredicate = R.curry((filters: StudyFilters, study: StudyMetadata) =>
       return false;
     }
 
-    // If search is active, show all managed studies (global search)
-    if (search) {
+    // Root (null directoryId): show all managed studies (global scope)
+    if (managed.directoryId === null) {
       return true;
     }
 
-    // If directoryId is null, show studies with no directoryId (home/default)
-    // Otherwise, show only studies in the selected directory
-    return managed.directoryId === null
-      ? study.directoryId === null
-      : study.directoryId === managed.directoryId;
+    // A specific directory is selected: scope to that directory and its descendants.
+    // directoryIds contains the selected dir + all descendants (computed on navigation).
+    if (managed.directoryIds) {
+      return !!study.directoryId && managed.directoryIds.includes(study.directoryId);
+    }
   }
 
   // activeTree === "external"

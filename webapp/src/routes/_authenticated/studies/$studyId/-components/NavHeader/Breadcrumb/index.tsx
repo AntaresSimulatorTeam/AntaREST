@@ -17,6 +17,7 @@ import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudyFilters } from "@/redux/selectors";
+import { getDescendantIds } from "@/routes/_authenticated/studies/-components/StudyTree/ManagedTree/utils";
 import { buildKey } from "@/utils/reactUtils";
 import HomeIcon from "@mui/icons-material/Home";
 import { Breadcrumbs } from "@mui/material";
@@ -57,7 +58,10 @@ function Breadcrumb() {
       dispatch(
         updateStudyFilters({
           activeTree: "managed",
-          managed: { directoryId: item.id },
+          managed: {
+            directoryId: item.id,
+            directoryIds: item.id ? getDescendantIds(item.id, directories) : null,
+          },
         }),
       );
     } else {

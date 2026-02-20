@@ -44,6 +44,8 @@ export interface StudyFilters {
   activeTree: "managed" | "external";
   managed: {
     directoryId: string | null;
+    // All directory IDs in scope (selected dir + descendants). null = root (all managed studies).
+    directoryIds: string[] | null;
   };
   external: {
     path: string;
@@ -96,6 +98,7 @@ const initialState = studiesAdapter.getInitialState({
     activeTree: "managed",
     managed: {
       directoryId: null,
+      directoryIds: null,
     },
     external: {
       path: "",
