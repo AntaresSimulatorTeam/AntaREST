@@ -31,7 +31,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import SearchFE from "../fieldEditors/SearchFE";
 import RouterListItemButton from "../router/RouterListItemButton";
-import SplitView from "./SplitView";
+import SplitView, { type SplitViewProps } from "./SplitView";
 
 interface BaseListItem {
   id: string;
@@ -56,7 +56,8 @@ export interface ContentListItem<TData = unknown> extends BaseListItem {
 
 interface ListViewProps<TItemData = unknown> {
   list: RouteListItem[] | Array<ContentListItem<TItemData>>;
-  splitId: string;
+  splitId: SplitViewProps["splitId"];
+  splitMinSize?: SplitViewProps["minSize"];
   emptyListContent?: React.ReactNode;
   onAdd?(): void;
   actions?: React.ReactNode;
@@ -80,6 +81,7 @@ function isRouteList(list: RouteListItem[] | ContentListItem[]): list is RouteLi
 function ListView<TItemData = unknown>({
   list,
   splitId,
+  splitMinSize,
   emptyListContent,
   onAdd,
   actions,
@@ -156,7 +158,7 @@ function ListView<TItemData = unknown>({
   ////////////////////////////////////////////////////////////////
 
   return (
-    <SplitView splitId={splitId}>
+    <SplitView splitId={splitId} minSize={splitMinSize}>
       <Box sx={{ display: "flex", flexDirection: "column" }}>
         {hasActions && (
           <Box
