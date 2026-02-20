@@ -37,11 +37,14 @@ function EditableTreeItem({
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
-      // Small delay to ensure the tree item is rendered
-      setTimeout(() => {
+      // Defer focus/select to the next animation frame so the browser has fully
+      // painted the MUI tree item before we attempt to interact with the input.
+      // Calling focus() synchronously after the render commit can silently fail
+      // if the element is mid-transition and not yet interactable.
+      requestAnimationFrame(() => {
         inputRef.current?.focus();
         inputRef.current?.select();
-      }, 100);
+      });
     }
   }, [isEditing]);
 
