@@ -14,9 +14,8 @@ from pathlib import Path
 from typing_extensions import override
 
 from antarest.study.output.output_service import OutputService
-from antarest.study.output.storage.output_storage import BasicOutputMetadata
+from antarest.study.output.storage.output_storage import OutputDetails, OutputMetadata
 from antarest.study.service import IOutputsAccess
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 
 
 def adapt_output_service_to_study_service(output_service: OutputService) -> IOutputsAccess:
@@ -26,12 +25,12 @@ def adapt_output_service_to_study_service(output_service: OutputService) -> IOut
 
     class OutputServiceAdapter(IOutputsAccess):
         @override
-        def list_outputs(self, study_id: str) -> list[BasicOutputMetadata]:
+        def list_outputs(self, study_id: str) -> list[OutputMetadata]:
             return list(output_service.list_outputs(study_id))
 
         @override
-        def get_outputs_synthesis(self, study_id: str) -> dict[str, Simulation]:
-            return output_service.get_simulations(study_id)
+        def get_outputs_details(self, study_id: str) -> dict[str, OutputDetails]:
+            return {o.id: o for o in output_service.get_output_details(study_id)}
 
         @override
         def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:

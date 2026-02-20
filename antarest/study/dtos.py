@@ -17,11 +17,11 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.district_model import District
 from antarest.study.model import StudyVersionInt
+from antarest.study.output.storage.output_storage import OutputDetails
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
     EnrModelling,
     FileStudyTreeConfig,
-    Simulation,
 )
 
 
@@ -81,7 +81,7 @@ class StudySynthesis(AntaresBaseModel):
     output_path: Optional[Path] = None
     districts: Dict[str, District] = {}
     areas: Dict[str, AreaConfig] = {}
-    outputs: Dict[str, Simulation] = {}
+    outputs: Dict[str, OutputDetails] = {}
     bindings: List[BindingConstraint] = []
     store_new_set: bool = False
     archive_input_series: List[str] = []
@@ -89,7 +89,7 @@ class StudySynthesis(AntaresBaseModel):
     archive_path: Optional[Path] = None
 
     @classmethod
-    def aggregate(cls, synthesis: StudyDataSynthesis, outputs: dict[str, Simulation]) -> "StudySynthesis":
+    def aggregate(cls, synthesis: StudyDataSynthesis, outputs: dict[str, OutputDetails]) -> "StudySynthesis":
         return StudySynthesis.model_construct(
             study_path=synthesis.study_path,
             path=synthesis.path,

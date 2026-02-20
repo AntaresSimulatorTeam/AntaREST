@@ -121,7 +121,7 @@ from antarest.study.model import (
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
 )
-from antarest.study.output.storage.output_storage import BasicOutputMetadata
+from antarest.study.output.storage.output_storage import OutputDetails, OutputMetadata
 from antarest.study.repository import (
     StudyFilter,
     StudyMetadataRepository,
@@ -129,7 +129,7 @@ from antarest.study.repository import (
     StudySortBy,
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO, Simulation
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
@@ -500,11 +500,11 @@ class IOutputsAccess(ABC):
     """
 
     @abstractmethod
-    def list_outputs(self, study_id: str) -> list[BasicOutputMetadata]:
+    def list_outputs(self, study_id: str) -> list[OutputMetadata]:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_outputs_synthesis(self, study_id: str) -> dict[str, Simulation]:
+    def get_outputs_details(self, study_id: str) -> dict[str, OutputDetails]:
         raise NotImplementedError()
 
     @abstractmethod
@@ -1011,7 +1011,7 @@ class StudyService:
         study.last_access = current_time()
         self.repository.save(study)
         input_synthesis = self.storage_service.get_storage(study).get_synthesis(study)
-        outputs = self._get_outputs_access().get_outputs_synthesis(study.id)
+        outputs = self._get_outputs_access().get_outputs_details(study.id)
         return StudySynthesis.aggregate(input_synthesis, outputs)
 
     def get_input_matrix_startdate(self, study_id: str, path: Optional[str]) -> MatrixIndex:

@@ -35,22 +35,24 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     MatrixFrequency,
     MatrixIndex,
-    StudySimResultDTO,
-    StudySimSettingsDTO,
 )
 from antarest.study.output.aggregator_management import AggregatorManager
 from antarest.study.output.output_model import OutputVariablesList
-from antarest.study.output.storage.output_storage import BasicOutputMetadata, IOutputStorage, OutputStorageType
+from antarest.study.output.storage.output_storage import (
+    IOutputStorage,
+    OutputDetails,
+    OutputMetadata,
+    OutputStorageType,
+)
 from antarest.study.output.utils import QueryFileType
 from antarest.study.output.variables_management import extract_variables_list
-from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist, parse_outputs
+from antarest.study.storage.rawstudy.model.filesystem.config.files import parse_outputs
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestSynthesis,
     DigestUI,
 )
-from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import (
     extract_output_name,
     fix_study_root,
@@ -201,55 +203,28 @@ class InStudyFileOutputStorage(IOutputStorage):
         return output_full_name
 
     @override
-    def get_study_sim_result(self, study_id: str) -> list[StudySimResultDTO]:
-        study_outputs = self._outputs_provider.get_outputs(study_id)
-        study_data = study_outputs.get_file_study()
-
-        results: list[StudySimResultDTO] = []
-        outputs = parse_outputs(study_outputs.outputs_path)
-        for output in outputs:
-            output_data: Simulation = outputs[output]
-            try:
-                file_metadata = FileStudyHelpers.get_config(study_data, output_data.get_file())
-                settings = StudySimSettingsDTO(
-                    general=file_metadata["general"],
-                    input=file_metadata["input"],
-                    output=file_metadata["output"],
-                    optimization=file_metadata["optimization"],
-                    otherPreferences=file_metadata["other preferences"],
-                    advancedParameters=file_metadata["advanced parameters"],
-                    seedsMersenneTwister=file_metadata["seeds - Mersenne Twister"],
-                    playlist=[year for year in (get_playlist(file_metadata) or {}).keys()],
-                )
-
-                results.append(
-                    StudySimResultDTO(
-                        name=output_data.get_file(),
-                        type=output_data.mode,
-                        settings=settings,
-                        completionDate="",
-                        status="",
-                        archived=output_data.archived,
-                    )
-                )
-            except Exception as e:
-                logger.error(
-                    f"Failed to retrieve info about output {output} in study {study_id}",
-                    exc_info=e,
-                )
-        return results
-
-    @override
-    def get_simulations(self, study_id: str) -> dict[str, Simulation]:
+    def get_output_details(self, study_id: str, output_id: str) -> OutputDetails:
         """
         Get the list of output for a study.
-        TODO: More or less a duplicate of get_study_sim_result.
         """
         study_outputs = self._outputs_provider.get_outputs(study_id)
-        return parse_outputs(study_outputs.outputs_path)
+
+        # TODO: optimize, should only parse one here
+        outputs = parse_outputs(study_outputs.outputs_path)
+        if output_id not in outputs:
+            raise OutputNotFound(output_id)
+        output_data: Simulation = outputs[output_id]
+        return OutputDetails(
+            id=output_id,
+            mode=output_data.mode,
+            synthesis=output_data.synthesis,
+            by_year=output_data.by_year,
+            nb_years=output_data.nbyears,
+            archived=output_data.archived,
+        )
 
     @override
-    def list_outputs(self, study_id: str) -> list[BasicOutputMetadata]:
+    def list_outputs(self, study_id: str) -> list[OutputMetadata]:
         """
         Get the list of output for a study.
         """
@@ -257,7 +232,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         # leverage existing method
         simulations = parse_outputs(study_outputs.outputs_path)
         return [
-            BasicOutputMetadata(id=output_id, in_study=True, archived=output.archived)
+            OutputMetadata(id=output_id, in_study=True, archived=output.archived)
             for output_id, output in simulations.items()
         ]
 

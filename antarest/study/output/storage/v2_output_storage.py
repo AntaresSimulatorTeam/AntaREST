@@ -13,7 +13,7 @@ import logging
 import shutil
 import uuid
 from pathlib import Path
-from typing import BinaryIO, Iterator, List, Optional, Sequence
+from typing import BinaryIO, Iterator, Optional, Sequence
 
 import pandas as pd
 from typing_extensions import override
@@ -25,10 +25,15 @@ from antarest.study.model import MatrixFrequency, MatrixIndex, StudySimResultDTO
 from antarest.study.output.filestudy.extract_metadata import extract_metadata
 from antarest.study.output.lfs.lfs import ILargeFileStorage
 from antarest.study.output.output_model import OutputVariablesList
-from antarest.study.output.storage.output_storage import BasicOutputMetadata, IOutputStorage, OutputStorageType
-from antarest.study.output.storage.repository import OutputMetadata, OutputMetadataRepository
+from antarest.study.output.storage.output_storage import (
+    IOutputStorage,
+    OutputDetails,
+    OutputMetadata,
+    OutputStorageType,
+)
+from antarest.study.output.storage.repository import DbOutputMetadata, OutputMetadataRepository
 from antarest.study.output.utils import QueryFileType
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 from antarest.study.storage.utils import extract_output_name, fix_study_root
 
@@ -52,7 +57,7 @@ def _empty_settings() -> StudySimSettingsDTO:
     )
 
 
-def _metadata_to_sim_result(metadata: OutputMetadata) -> StudySimResultDTO:
+def _metadata_to_sim_result(metadata: DbOutputMetadata) -> StudySimResultDTO:
     return StudySimResultDTO(
         archived=metadata.archived,
         name=metadata.output_name,
@@ -116,10 +121,10 @@ class V2OutputStorage(IOutputStorage):
         self._metadata_repository = metadata_repository
         self._tmp_dir = tmp_dir
 
-    def _get_metadata(self, study_id: str, output_name: str) -> OutputMetadata | None:
+    def _get_metadata(self, study_id: str, output_name: str) -> DbOutputMetadata | None:
         return self._metadata_repository.get(study_id, output_name)
 
-    def _require_metadata(self, study_id: str, output_name: str) -> OutputMetadata:
+    def _require_metadata(self, study_id: str, output_name: str) -> DbOutputMetadata:
         metadata = self._metadata_repository.get(study_id, output_name)
         if metadata is None:
             raise OutputNotFound(f"Output {output_name} does not exist.")
@@ -152,11 +157,14 @@ class V2OutputStorage(IOutputStorage):
             # TODO here: extract variables values
 
             self._metadata_repository.save(
-                OutputMetadata(
+                DbOutputMetadata(
                     study_id=study_id,
                     output_name=output_name,
                     archived=False,
                     type=metadata.type,
+                    synthesis=metadata.settings.output["synthesis"],  # TODO: should not need to got into dicts
+                    by_year=metadata.settings.general["year-by-year"],
+                    nb_years=metadata.settings.general["nbyears"],
                 )
             )
             timer.log_elapsed(lambda duration: logger.info(f"Output imported to internal storage in {duration}s."))
@@ -165,21 +173,28 @@ class V2OutputStorage(IOutputStorage):
             shutil.rmtree(tmp_dir, ignore_errors=True)
 
     @override
-    def get_study_sim_result(self, study_id: str) -> List[StudySimResultDTO]:
-        outputs = self._metadata_repository.get_all(study_id)
-        return [_metadata_to_sim_result(m) for m in outputs]
-
-    @override
-    def list_outputs(self, study_id: str) -> list[BasicOutputMetadata]:
+    def list_outputs(self, study_id: str) -> list[OutputMetadata]:
         return [
-            BasicOutputMetadata(id=o.output_name, in_study=False, archived=o.archived)
+            OutputMetadata(id=o.output_name, in_study=False, archived=o.archived)
             for o in self._metadata_repository.get_all(study_id)
         ]
 
     @override
-    def get_simulations(self, study_id: str) -> dict[str, Simulation]:
-        # TODO
-        return {}
+    def get_output_details(self, study_id: str, output_id: str) -> OutputDetails:
+        """
+        Get the list of output for a study.
+        """
+        metadata = self._metadata_repository.get(study_id, output_id)
+        if metadata is None:
+            raise OutputNotFound(output_id)
+        return OutputDetails(
+            id=metadata.output_name,
+            mode=Mode(metadata.type),
+            synthesis=metadata.synthesis,
+            by_year=metadata.by_year,
+            nb_years=metadata.nb_years,
+            archived=metadata.archived,
+        )
 
     @override
     def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:

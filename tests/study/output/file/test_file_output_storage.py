@@ -36,7 +36,7 @@ from antarest.study.output.storage.file_output_storage import (
     IFileOutputsProvider,
     InStudyFileOutputStorage,
 )
-from antarest.study.output.storage.output_storage import BasicOutputMetadata
+from antarest.study.output.storage.output_storage import OutputMetadata
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode, Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -109,12 +109,12 @@ def file_output_storage(
 
 def test_file_output_storage(file_output_storage):
     assert file_output_storage.list_outputs("STA-mini") == [
-        BasicOutputMetadata(id="20201014-1422eco-hello", in_study=True, archived=False),
-        BasicOutputMetadata(id="20201014-1425eco-goodbye", in_study=True, archived=False),
-        BasicOutputMetadata(id="20201014-1427eco", in_study=True, archived=False),
-        BasicOutputMetadata(id="20201014-1430adq", in_study=True, archived=False),
-        BasicOutputMetadata(id="20201014-1430adq-2", in_study=True, archived=True),
-        BasicOutputMetadata(id="20241807-1540eco-extra-outputs", in_study=True, archived=False),
+        OutputMetadata(id="20201014-1422eco-hello", in_study=True, archived=False),
+        OutputMetadata(id="20201014-1425eco-goodbye", in_study=True, archived=False),
+        OutputMetadata(id="20201014-1427eco", in_study=True, archived=False),
+        OutputMetadata(id="20201014-1430adq", in_study=True, archived=False),
+        OutputMetadata(id="20201014-1430adq-2", in_study=True, archived=True),
+        OutputMetadata(id="20241807-1540eco-extra-outputs", in_study=True, archived=False),
     ]
 
     with pytest.raises(StudyNotFoundError):
@@ -198,7 +198,7 @@ def test_file_output_storage(file_output_storage):
     with pytest.raises(StudyNotFoundError):
         file_output_storage.get_simulations("non-existent")
 
-    assert file_output_storage.get_study_sim_result("STA-mini") == [
+    assert file_output_storage.get_output_details("STA-mini") == [
         StudySimResultDTO(
             name="20201014-1422eco-hello",
             type="Economy",

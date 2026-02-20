@@ -55,7 +55,7 @@ from antarest.study.model import (
     StudyFolder,
     StudyMetadataDTO,
 )
-from antarest.study.output.storage.output_storage import BasicOutputMetadata
+from antarest.study.output.storage.output_storage import OutputMetadata
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
 from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, IOutputsAccess, StudyService, StudyUpgraderTask
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -145,10 +145,10 @@ def build_study_service(
     )
 
     class OutputsAccessMock(IOutputsAccess):
-        def list_outputs(self, study_id: str) -> list[BasicOutputMetadata]:
+        def list_outputs(self, study_id: str) -> list[OutputMetadata]:
             return []
 
-        def get_outputs_synthesis(self, study_id: str) -> dict[str, Simulation]:
+        def get_outputs_details(self, study_id: str) -> dict[str, Simulation]:
             return {}
 
         def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:

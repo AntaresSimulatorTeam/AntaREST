@@ -319,13 +319,9 @@ export interface District {
 }
 
 export interface Simulation {
-  name: string;
-  date: string;
   mode: string;
   nbyears: number;
-  synthesis: boolean;
   by_year: boolean;
-  error: boolean;
 }
 
 export interface FileStudyTreeConfigDTO {

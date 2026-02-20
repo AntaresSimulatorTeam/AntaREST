@@ -159,9 +159,9 @@ class CoreServices:
 
 # TODO: move it elswhere ?
 def _delete_study_outputs(storage: IOutputStorage, study_id: str) -> None:
-    outputs = storage.get_study_sim_result(study_id)
+    outputs = storage.list_outputs(study_id)
     for output in outputs:
-        storage.delete_output(study_id, output.name)
+        storage.delete_output(study_id, output.id)
 
 
 def build_output_storage(config: Config, file_output_storage: InStudyFileOutputStorage) -> list[IOutputStorage]:

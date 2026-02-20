@@ -17,11 +17,13 @@ from pathlib import Path
 from typing import BinaryIO, Iterator, Optional, Sequence
 
 import pandas as pd
+from pydantic import ConfigDict
 
-from antarest.study.model import MatrixFrequency, MatrixIndex, StudySimResultDTO
+from antarest.core.serde import AntaresBaseModel
+from antarest.study.model import MatrixFrequency, MatrixIndex
 from antarest.study.output.output_model import OutputVariablesList
 from antarest.study.output.utils import QueryFileType
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
 logger = logging.getLogger(__name__)
@@ -33,7 +35,7 @@ class OutputStorageType(StrEnum):
 
 
 @dataclass(frozen=True)
-class BasicOutputMetadata:
+class OutputMetadata:
     """
     Simplest metadata for a study output.
 
@@ -45,6 +47,17 @@ class BasicOutputMetadata:
 
     id: str
     in_study: bool
+    archived: bool
+
+
+class OutputDetails(AntaresBaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    mode: Mode
+    synthesis: bool
+    by_year: bool
+    nb_years: int
     archived: bool
 
 
@@ -84,28 +97,21 @@ class IOutputStorage(ABC):
         """
 
     @abstractmethod
-    def list_outputs(self, study_id: str) -> list[BasicOutputMetadata]:
+    def list_outputs(self, study_id: str) -> list[OutputMetadata]:
         """
         Get the list of outputs for a study.
         """
 
     @abstractmethod
-    def get_study_sim_result(self, study_id: str) -> list[StudySimResultDTO]:
+    def get_output_details(self, study_id: str, output_id: str) -> OutputDetails:
         """
-        Get the list of output for a study
+        Get the list of output for a study.
         """
 
     @abstractmethod
     def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:
         """
         Copies one output to another study. Note that the copied output will be created in this storage.
-        """
-
-    @abstractmethod
-    def get_simulations(self, study_id: str) -> dict[str, Simulation]:
-        """
-        Get the list of outputs for a study.
-        TODO: More or less a duplicate of get_study_sim_result ...
         """
 
     @abstractmethod

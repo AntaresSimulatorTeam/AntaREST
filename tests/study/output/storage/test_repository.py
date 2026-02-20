@@ -16,7 +16,7 @@ from sqlalchemy import Engine
 
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.study.model import Study
-from antarest.study.output.storage.repository import OutputMetadata, OutputMetadataRepository
+from antarest.study.output.storage.repository import DbOutputMetadata, OutputMetadataRepository
 from antarest.study.repository import StudyMetadataRepository
 
 
@@ -44,9 +44,9 @@ def test_repo(study_repo: StudyMetadataRepository, output_repo: OutputMetadataRe
         study_repo.save(Study(id="study_id_2", name="name", version="9.2", path=""))
 
         # 3 results, 2 for the same study, 1 is archived
-        output_repo.save(OutputMetadata(study_id="study_id_1", output_name="output_1", archived=False, type="eco"))
-        output_repo.save(OutputMetadata(study_id="study_id_1", output_name="output_2", archived=True, type="eco"))
-        output_repo.save(OutputMetadata(study_id="study_id_2", output_name="output_1", archived=False, type="eco"))
+        output_repo.save(DbOutputMetadata(study_id="study_id_1", output_name="output_1", archived=False, type="eco"))
+        output_repo.save(DbOutputMetadata(study_id="study_id_1", output_name="output_2", archived=True, type="eco"))
+        output_repo.save(DbOutputMetadata(study_id="study_id_2", output_name="output_1", archived=False, type="eco"))
 
         # Get all
         assert len(list(output_repo.get_all())) == 3

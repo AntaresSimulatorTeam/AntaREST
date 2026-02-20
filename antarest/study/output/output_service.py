@@ -49,7 +49,6 @@ from antarest.study.model import (
     MatrixIndex,
     StudyDownloadDTO,
     StudyDownloadType,
-    StudySimResultDTO,
 )
 from antarest.study.output.aggregator_management import (
     AREA_COL,
@@ -63,7 +62,12 @@ from antarest.study.output.output_model import (
     OutputVariablesViewResponse,
     OutputVariablesViewStatus,
 )
-from antarest.study.output.storage.output_storage import BasicOutputMetadata, IOutputStorage, OutputStorageType
+from antarest.study.output.storage.output_storage import (
+    IOutputStorage,
+    OutputDetails,
+    OutputMetadata,
+    OutputStorageType,
+)
 from antarest.study.output.utils import (
     MCYEAR_COL,
     MCAllAreasQueryFile,
@@ -83,7 +87,6 @@ from antarest.study.output.variables_management import (
 )
 from antarest.study.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.storage.df_download import export_df_chunks
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestUI,
 )
@@ -313,14 +316,13 @@ class OutputService:
 
         return task_id
 
-    def get_study_sim_result(self, study_id: str) -> list[StudySimResultDTO]:
+    def get_output_details(self, study_id: str) -> list[OutputDetails]:
         """
         Get global result information
         Args:
             study_id: study Id
 
         Returns: an object containing all needed information
-
         """
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
         logger.info(
@@ -328,13 +330,12 @@ class OutputService:
             study_id,
             get_user_id(),
         )
-
-        return [r for s in self._storages for r in s.get_study_sim_result(study_id)]
-
-    def get_simulations(self, study_id: str) -> dict[str, Simulation]:
-        """ """
-        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-        return {sim_id: sim for s in self._storages for sim_id, sim in s.get_simulations(study_id).items()}
+        res = []
+        for storage in self._storages:
+            outputs = storage.list_outputs(study_id)
+            for o in outputs:
+                res.append(storage.get_output_details(study_id, o.id))
+        return res
 
     def import_output(
         self,
@@ -539,11 +540,11 @@ class OutputService:
         logger.info(f"Archiving all outputs for study {study_id}")
         self._studies_repository.assert_permission(study_id, StudyPermissionType.WRITE)
 
-        outputs = self.get_study_sim_result(study_id)
+        outputs = self.list_outputs(study_id)
         task_ids = []
         for output in outputs:
             if not output.archived:
-                task_id = self.archive_output(study_id, output.name)
+                task_id = self.archive_output(study_id, output.id)
                 if task_id:
                     task_ids.append(task_id)
         return task_ids
@@ -861,5 +862,5 @@ class OutputService:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
         self._find_output_storage(study_id, output_id).write_output_to_dir(study_id, output_id, outputs_dir)
 
-    def list_outputs(self, study_id: str) -> Iterable[BasicOutputMetadata]:
+    def list_outputs(self, study_id: str) -> Iterable[OutputMetadata]:
         return itertools.chain(*(s.list_outputs(study_id) for s in self._storages))

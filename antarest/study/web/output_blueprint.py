@@ -29,7 +29,7 @@ from antarest.core.utils.dict_utils import remove_nones
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.study.model import MatrixFrequency, MatrixIndex, StudyDownloadDTO, StudySimResultDTO
+from antarest.study.model import MatrixFrequency, MatrixIndex, StudyDownloadDTO
 from antarest.study.output.output_model import (
     OutputVariablesInformation,
     OutputVariablesList,
@@ -37,7 +37,7 @@ from antarest.study.output.output_model import (
     OutputVariablesViewResponse,
 )
 from antarest.study.output.output_service import OutputService
-from antarest.study.output.storage.output_storage import OutputStorageType
+from antarest.study.output.storage.output_storage import OutputDetails, OutputStorageType
 from antarest.study.output.utils import (
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
@@ -235,10 +235,10 @@ def create_output_routes(
         "/studies/{study_id}/outputs",
         summary="Get global information about a study simulation result",
     )
-    def sim_result(study_id: str) -> list[StudySimResultDTO]:
+    def sim_result(study_id: str) -> list[OutputDetails]:
         logger.info(f"Fetching output list for study {study_id}")
         study_id = sanitize_uuid(study_id)
-        content = output_service.get_study_sim_result(study_id)
+        content = output_service.get_output_details(study_id)
         return content
 
     @bp.get(

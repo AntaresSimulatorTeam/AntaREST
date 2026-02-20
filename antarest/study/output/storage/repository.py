@@ -18,7 +18,7 @@ from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import db
 
 
-class OutputMetadata(Base):
+class DbOutputMetadata(Base):
     __tablename__ = "output_metadata"
 
     # Design note: we don't enforce a foreign key constraint on study_id because it
@@ -31,7 +31,11 @@ class OutputMetadata(Base):
     )
     output_name: Mapped[str] = mapped_column(primary_key=True, nullable=False)
     archived: Mapped[bool] = mapped_column(nullable=False)
+    # TODO: enum ?
     type: Mapped[str] = mapped_column(nullable=False)
+    synthesis: Mapped[bool] = mapped_column(nullable=False)
+    by_year: Mapped[bool] = mapped_column(nullable=False)
+    nb_years: Mapped[int] = mapped_column(nullable=False)
 
 
 class OutputMetadataRepository:
@@ -41,24 +45,24 @@ class OutputMetadataRepository:
     TODO: don't expose ORM instances but pydantic model instead ?
     """
 
-    def get(self, study_id: str, output_name: str) -> OutputMetadata | None:
-        return db.session.get(OutputMetadata, (study_id, output_name))
+    def get(self, study_id: str, output_name: str) -> DbOutputMetadata | None:
+        return db.session.get(DbOutputMetadata, (study_id, output_name))
 
-    def get_all(self, study_id: str | None = None, archived: bool | None = None) -> Iterator[OutputMetadata]:
-        stmt = select(OutputMetadata)
+    def get_all(self, study_id: str | None = None, archived: bool | None = None) -> Iterator[DbOutputMetadata]:
+        stmt = select(DbOutputMetadata)
         if study_id is not None:
-            stmt = stmt.where(OutputMetadata.study_id == study_id)
+            stmt = stmt.where(DbOutputMetadata.study_id == study_id)
         if archived is not None:
-            stmt = stmt.where(OutputMetadata.archived == archived)
+            stmt = stmt.where(DbOutputMetadata.archived == archived)
         return db.session.scalars(stmt)
 
     def delete(self, study_id: str, output_name: str) -> None:
-        stmt = delete(OutputMetadata).where(
-            OutputMetadata.study_id == study_id, OutputMetadata.output_name == output_name
+        stmt = delete(DbOutputMetadata).where(
+            DbOutputMetadata.study_id == study_id, DbOutputMetadata.output_name == output_name
         )
         db.session.execute(stmt)
         db.session.commit()
 
-    def save(self, output_metadata: OutputMetadata) -> None:
+    def save(self, output_metadata: DbOutputMetadata) -> None:
         db.session.add(output_metadata)
         db.session.commit()
