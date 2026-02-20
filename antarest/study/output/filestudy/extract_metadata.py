@@ -12,8 +12,8 @@
 from pathlib import Path
 
 from antarest.core.serde.ini_reader import IniReader
-from antarest.study.model import StudySimResultDTO, StudySimSettingsDTO
-from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
+from antarest.study.output.storage.output_storage import OutputDetails
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 
 DUPLICATE_KEYS = [
     "playlist_year_weight",
@@ -24,30 +24,19 @@ DUPLICATE_KEYS = [
 ]
 
 
-def extract_metadata(output_path: Path) -> StudySimResultDTO:
+def extract_metadata(output_path: Path) -> OutputDetails:
     # TODO: add some basic checks
     parameters_path = output_path / "about-the-study" / "parameters.ini"
     ini_reader = IniReader(special_keys=DUPLICATE_KEYS)
     parameters_dict = ini_reader.read(parameters_path)
-
-    settings = StudySimSettingsDTO(
-        general=parameters_dict["general"],
-        input=parameters_dict["input"],
-        output=parameters_dict["output"],
-        optimization=parameters_dict["optimization"],
-        otherPreferences=parameters_dict["other preferences"],
-        advancedParameters=parameters_dict["advanced parameters"],
-        seedsMersenneTwister=parameters_dict["seeds - Mersenne Twister"],
-        playlist=list((get_playlist(parameters_dict) or {}).keys()),
-    )
-    # TODO: maybe the short version "eco" is expected, instead of "Economy"
-    #       is it anyway useful ??
-    mode = parameters_dict["general"]["mode"]
-    return StudySimResultDTO(
-        name=output_path.name,
-        type=mode,
-        settings=settings,
-        completionDate="",
-        status="",
+    general = parameters_dict["general"]
+    output = parameters_dict["output"]
+    mode = Mode(general["mode"])
+    return OutputDetails(
+        name=output_path.name,  # TODO: should it be re-built from data instead ?
+        mode=mode,
+        synthesis=output["synthesis"],
+        by_year=general["year-by-year"],
+        nb_years=general["nbyears"],
         archived=False,
     )

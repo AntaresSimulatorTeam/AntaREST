@@ -64,7 +64,7 @@ def _metadata_to_sim_result(metadata: DbOutputMetadata) -> StudySimResultDTO:
         settings=_empty_settings(),  # TODO
         completionDate="",
         status="",
-        type=metadata.type,
+        type=metadata.mode,
     )
 
 
@@ -152,7 +152,7 @@ class V2OutputStorage(IOutputStorage):
             self._archive_storage.write_file(_archive_id(study_id, output_name), archive_path)
 
             # Create metadata
-            metadata = extract_metadata(dir_path)
+            output_details = extract_metadata(dir_path)
 
             # TODO here: extract variables values
 
@@ -161,10 +161,10 @@ class V2OutputStorage(IOutputStorage):
                     study_id=study_id,
                     output_name=output_name,
                     archived=False,
-                    type=metadata.type,
-                    synthesis=metadata.settings.output["synthesis"],  # TODO: should not need to got into dicts
-                    by_year=metadata.settings.general["year-by-year"],
-                    nb_years=metadata.settings.general["nbyears"],
+                    mode=output_details.mode,
+                    synthesis=output_details.synthesis,  # TODO: should not need to got into dicts
+                    by_year=output_details.by_year,
+                    nb_years=output_details.nb_years,
                 )
             )
             timer.log_elapsed(lambda duration: logger.info(f"Output imported to internal storage in {duration}s."))
@@ -189,7 +189,7 @@ class V2OutputStorage(IOutputStorage):
             raise OutputNotFound(output_id)
         return OutputDetails(
             name=metadata.output_name,
-            mode=Mode(metadata.type),
+            mode=Mode(metadata.mode),
             synthesis=metadata.synthesis,
             by_year=metadata.by_year,
             nb_years=metadata.nb_years,

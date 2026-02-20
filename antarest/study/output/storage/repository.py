@@ -32,7 +32,7 @@ class DbOutputMetadata(Base):
     output_name: Mapped[str] = mapped_column(primary_key=True, nullable=False)
     archived: Mapped[bool] = mapped_column(nullable=False)
     # TODO: enum ?
-    type: Mapped[str] = mapped_column(nullable=False)
+    mode: Mapped[str] = mapped_column(nullable=False)
     synthesis: Mapped[bool] = mapped_column(nullable=False)
     by_year: Mapped[bool] = mapped_column(nullable=False)
     nb_years: Mapped[int] = mapped_column(nullable=False)
