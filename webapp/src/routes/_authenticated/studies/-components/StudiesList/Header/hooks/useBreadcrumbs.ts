@@ -16,8 +16,8 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { directoryQueries } from "@/queries/directories/queries";
 import type { Directory } from "@/services/api/directories/types";
-import { buildDirectoryTree, getDirectoryPath } from "../../StudyTree/ManagedTree/utils";
-import type { BreadcrumbItem } from "./types";
+import { buildDirectoryTree, getDirectoryPath } from "../../../StudyTree/ManagedTree/utils";
+import type { BreadcrumbItem } from "../types";
 
 interface UseBreadcrumbsParams {
   activeTree: "managed" | "external";

@@ -12,7 +12,15 @@
  * This file is part of the Antares project.
  */
 
-export const studyKeys = {
-  all: () => ["studies"],
-  deleteMany: () => [...studyKeys.all(), "deleteStudies"],
+import { mutationOptions } from "@tanstack/react-query";
+import { deleteStudies } from "@/services/api/study";
+import { studyKeys } from "./keys";
+
+export const studyMutations = {
+  deleteMany: () => {
+    return mutationOptions({
+      mutationKey: studyKeys.deleteMany(),
+      mutationFn: deleteStudies,
+    });
+  },
 };
