@@ -84,6 +84,7 @@ class ClusterKey:
 @dataclass(frozen=True)
 class AdditionalConstraintKey:
     area_id: str
+    storage_id: str
     constraint_id: str
 
 
@@ -96,8 +97,8 @@ def cluster_key(area_id: str, cluster_id: str) -> ClusterKey:
     return ClusterKey(area_id, cluster_id)
 
 
-def additional_constraint_key(area_id: str, constraint_id: str) -> AdditionalConstraintKey:
-    return AdditionalConstraintKey(area_id, constraint_id)
+def additional_constraint_key(area_id: str, storage_id: str, constraint_id: str) -> AdditionalConstraintKey:
+    return AdditionalConstraintKey(area_id, storage_id, constraint_id)
 
 
 class InMemoryStudyDao(StudyDao):
@@ -155,6 +156,7 @@ class InMemoryStudyDao(StudyDao):
         self._storage_cost_variation_withdrawal: Dict[ClusterKey, str] = {}
         # Short-term storages additional constraints
         self._st_storages_constraints: STStorageAdditionalConstraintsMap = {}
+        self._st_storages_constraints_matrix: Dict[AdditionalConstraintKey, str] = {}
         self._st_storages_constraints_terms: Dict[str, dict[str, str]] = {}
         # Binding constraints
         self._constraints: Dict[str, BindingConstraint] = {}
@@ -643,6 +645,13 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
+    def get_st_storage_additional_constraint_matrix(
+        self, area_id: str, storage_id: str, constraint_id: str
+    ) -> pl.DataFrame:
+        matrix_id = self._st_storages_constraints_matrix[additional_constraint_key(area_id, storage_id, constraint_id)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
     def save_st_storage(self, area_id: str, st_storage: STStorage) -> None:
         self._st_storages[cluster_key(area_id, st_storage.id)] = st_storage
 
@@ -741,7 +750,7 @@ class InMemoryStudyDao(StudyDao):
     def save_st_storage_constraint_matrix(
         self, area_id: str, storage_id: str, constraint_id: str, series_id: str
     ) -> None:
-        self._st_storages_constraints_terms.setdefault(area_id, {})[storage_id] = series_id
+        self._st_storages_constraints_matrix[additional_constraint_key(area_id, storage_id, constraint_id)] = series_id
 
     @override
     def delete_st_storage_additional_constraints(self, area_id: str, storage_id: str, constraints: list[str]) -> None:
@@ -752,6 +761,9 @@ class InMemoryStudyDao(StudyDao):
                 constraints_to_remove.append(constraint)
         for constraint in constraints_to_remove:
             self._st_storages_constraints[area_id][storage_id].remove(constraint)
+            self._st_storages_constraints_matrix.pop(
+                additional_constraint_key(area_id, storage_id, constraint.id), None
+            )
 
     @override
     def save_st_storage_additional_constraints(

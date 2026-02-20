@@ -553,6 +553,13 @@ class StudyMetadataPatchDTO(AntaresBaseModel):
         return tags
 
 
+class DeleteManyStudies(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    study_ids: List[str] = Field(..., description="List of study UUIDs to delete")
+    with_variants: bool = Field(default=False, description="Whether to delete variant studies as well")
+
+
 class StudySimSettingsDTO(AntaresBaseModel):
     general: Dict[str, Any]
     input: Dict[str, Any]

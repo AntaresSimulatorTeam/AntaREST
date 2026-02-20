@@ -24,12 +24,17 @@ import { validateString } from "./validation/string";
 ////////////////////////////////////////////////////////////////
 
 const folderPredicate = R.curry((filters: StudyFilters, study: StudyMetadata) => {
-  const { activeTree, managed, external } = filters;
+  const { activeTree, managed, external, search } = filters;
 
   if (activeTree === "managed") {
     // Only show managed studies
     if (!study.managed) {
       return false;
+    }
+
+    // If search is active, show all managed studies (global search)
+    if (search) {
+      return true;
     }
 
     // If directoryId is null, show studies with no directoryId (home/default)
