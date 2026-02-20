@@ -113,6 +113,10 @@ class SynchTaskService(ITaskService):
     def await_task(self, task_id: str, timeout_sec: t.Optional[int] = None) -> None:
         pass
 
+    @override
+    def delete_task_by_creation_date(self, task_retention_duration: int) -> int:
+        pass
+
 
 @pytest.fixture(name="command_context")
 def command_context_fixture(matrix_service: MatrixService, blob_service: BlobService) -> CommandContext:

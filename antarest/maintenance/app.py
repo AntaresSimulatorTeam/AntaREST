@@ -50,6 +50,7 @@ class TaskName(StrEnum):
     BLOBS_CLEANER = "blobs_cleaner"
     AUTO_ARCHIVER = "auto_archiver"
     VARIABLE_VIEW_CLEANER = "variable_view_cleaner"
+    TASKS_CLEANER = "tasks_cleaner"
 
 
 def _mask_url_credentials(url: str) -> str:
@@ -103,6 +104,7 @@ def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
     from antarest.maintenance.tasks.auto_archive_task import setup_auto_archive_task
     from antarest.maintenance.tasks.gc_blob_task import clean_blobs_task
     from antarest.maintenance.tasks.gc_matrix_task import clean_matrices_task
+    from antarest.maintenance.tasks.gc_tasks_task import gc_tasks_task
     from antarest.maintenance.tasks.gc_variable_view_task import clean_variable_views_task
     from antarest.maintenance.tasks.watcher_scan_task import watcher_scan_task
 
@@ -115,6 +117,7 @@ def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
     sender.add_periodic_task(
         storage.variable_view_gc_sleeping_time, clean_variable_views_task.s(), name=TaskName.VARIABLE_VIEW_CLEANER
     )
+    sender.add_periodic_task(storage.tasks_gc_sleeping_time, gc_tasks_task.s(), name=TaskName.TASKS_CLEANER)
 
     logger.info(
         f"Periodic tasks registered: matrix_gc={storage.matrix_gc_sleeping_time}s, "

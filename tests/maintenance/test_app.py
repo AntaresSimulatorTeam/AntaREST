@@ -103,6 +103,7 @@ class TestSetupPeriodicTasks:
         config.storage.auto_archive_sleeping_time = 1800
         config.storage.auto_archive_cron = None
         config.storage.watcher_scan_sleeping_time = 120
+        config.storage.tasks_gc_sleeping_time = 3600
 
         with mock.patch("antarest.maintenance.app.get_config", return_value=config):
             _setup_periodic_tasks(sender=sender)
@@ -112,6 +113,14 @@ class TestSetupPeriodicTasks:
         assert calls[1][0][0] == 43200
         assert calls[2][0][0] == 1800
         assert calls[3][0][0] == 120
+        assert calls[5][0][0] == 3600
 
         names = [c[1]["name"] for c in calls]
-        assert names == ["matrices_cleaner", "blobs_cleaner", "auto_archiver", "watcher_scan", "variable_view_cleaner"]
+        assert names == [
+            "matrices_cleaner",
+            "blobs_cleaner",
+            "auto_archiver",
+            "watcher_scan",
+            "variable_view_cleaner",
+            "tasks_cleaner",
+        ]
