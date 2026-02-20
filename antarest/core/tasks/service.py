@@ -108,6 +108,10 @@ class ITaskService(ABC):
         """
         raise NotImplementedError()
 
+    @abstractmethod
+    def delete_task_by_creation_date(self, task_retention_duration: int) -> int:
+        raise NotImplementedError()
+
 
 # noinspection PyUnusedLocal
 class NoopNotifier(ITaskNotifier):
@@ -513,3 +517,7 @@ class TaskJobService(ITaskService):
             return task.progress
         else:
             raise UserHasNotPermissionError()
+
+    @override
+    def delete_task_by_creation_date(self, task_retention_duration: int) -> int:
+        return self.repo.delete_by_creation_date(task_retention_duration=task_retention_duration)
