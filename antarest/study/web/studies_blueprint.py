@@ -31,6 +31,7 @@ from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.login.utils import require_current_user
 from antarest.study.model import (
+    DeleteManyStudies,
     MatrixIndex,
     StorageMode,
     StudyMetadataDTO,
@@ -423,6 +424,16 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         uuid_sanitized = sanitize_uuid(uuid)
 
         study_service.delete_study(uuid_sanitized, children)
+
+    @bp.delete(
+        "/studies",
+        status_code=HTTPStatus.NO_CONTENT,
+        summary="Delete Multiple Studies",
+    )
+    def delete_studies(data: DeleteManyStudies) -> None:
+        logger.info(f"Deleting multiple studies: {data.study_ids}")
+        sanitized_ids = [sanitize_uuid(sid) for sid in data.study_ids]
+        study_service.delete_studies(sanitized_ids, data.with_variants)
 
     @bp.put(
         "/studies/{uuid}/owner/{user_id}",
