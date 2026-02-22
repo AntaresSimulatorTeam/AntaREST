@@ -53,6 +53,9 @@ function Output() {
     if (listType === "areas") {
       const adaptedDistricts = districts.map((district) => ({
         ...district,
+        // In the `output` folder of the studies, district and area folders share the same
+        // hierarchy level. Area folders are named using their IDs, whereas district folders
+        // are named using the `@ ` prefix followed by their IDs.
         id: `@ ${district.id}`,
       }));
 
