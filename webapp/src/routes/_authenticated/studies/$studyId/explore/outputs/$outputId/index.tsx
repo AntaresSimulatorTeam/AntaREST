@@ -94,10 +94,11 @@ function Output() {
   return (
     <ListView
       splitId="results"
-      splitMinSize={[280, 150]}
+      // Minimum left panel size to prevent the tabs scrollbar (supports EN and FR label lengths)
+      splitMinSize={[293, 150]}
       list={list}
       actions={
-        <Stack>
+        <Stack sx={{ overflow: "auto" }}>
           <BackButton linkOptions={{ to: ".." }} />
           <Tabs value={listType} onChange={handleListTypeChange} size="extra-small">
             <Tab label={t("study.areas")} value="areas" />
