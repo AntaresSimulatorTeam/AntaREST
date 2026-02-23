@@ -13,7 +13,8 @@
 """
 SQLAlchemy Core table definitions for rulesets.
 """
-from sqlalchemy import Table, Column, String, ForeignKeyConstraint, Enum, JSON
+
+from sqlalchemy import JSON, Column, Enum, ForeignKeyConstraint, String, Table
 
 from antarest.dbmodel import Base
 from antarest.study.business.model.scenario_builder_model import ScenarioType
@@ -39,8 +40,11 @@ RULESET_AREA_TABLE = Table(
     Column("scenario_type", _SCENARIO_TYPE_ENUM, nullable=False, primary_key=True),
     Column("timeseries", JSON, nullable=False),
     ForeignKeyConstraint(
-        ["study_id", "ruleset_name"], ["ruleset.study_id", "ruleset.ruleset_name"], name="fk_ruleset_area", ondelete="CASCADE"
-    )
+        ["study_id", "ruleset_name"],
+        ["ruleset.study_id", "ruleset.ruleset_name"],
+        name="fk_ruleset_area",
+        ondelete="CASCADE",
+    ),
 )
 
 RULESET_LINK_TABLE = Table(
@@ -51,9 +55,11 @@ RULESET_LINK_TABLE = Table(
     Column("link_id", String(255), nullable=False, primary_key=True),
     Column("timeseries", JSON, nullable=False),
     ForeignKeyConstraint(
-        ["study_id", "ruleset_name"], ["ruleset.study_id", "ruleset.ruleset_name"], name="fk_ruleset_link",
-        ondelete="CASCADE"
-    )
+        ["study_id", "ruleset_name"],
+        ["ruleset.study_id", "ruleset.ruleset_name"],
+        name="fk_ruleset_link",
+        ondelete="CASCADE",
+    ),
 )
 
 RULESET_BC_GROUP_TABLE = Table(
@@ -64,9 +70,11 @@ RULESET_BC_GROUP_TABLE = Table(
     Column("bc_group_id", String(255), nullable=False, primary_key=True),
     Column("timeseries", JSON, nullable=False),
     ForeignKeyConstraint(
-        ["study_id", "ruleset_name"], ["ruleset.study_id", "ruleset.ruleset_name"], name="fk_ruleset_bc_group",
-        ondelete="CASCADE"
-    )
+        ["study_id", "ruleset_name"],
+        ["ruleset.study_id", "ruleset.ruleset_name"],
+        name="fk_ruleset_bc_group",
+        ondelete="CASCADE",
+    ),
 )
 
 RULESET_AREA_ITEM_TABLE = Table(
@@ -79,8 +87,11 @@ RULESET_AREA_ITEM_TABLE = Table(
     Column("scenario_type", _SCENARIO_TYPE_ENUM, nullable=False, primary_key=True),
     Column("timeseries", JSON, nullable=False),
     ForeignKeyConstraint(
-        ["study_id", "ruleset_name"], ["ruleset.study_id", "ruleset.ruleset_name"], name="fk_ruleset_area_item", ondelete="CASCADE"
-    )
+        ["study_id", "ruleset_name"],
+        ["ruleset.study_id", "ruleset.ruleset_name"],
+        name="fk_ruleset_area_item",
+        ondelete="CASCADE",
+    ),
 )
 
 RULESET_AREA_ITEM_CONSTRAINT_TABLE = Table(
@@ -93,6 +104,9 @@ RULESET_AREA_ITEM_CONSTRAINT_TABLE = Table(
     Column("constraint_id", String(255), nullable=False, primary_key=True),
     Column("timeseries", JSON, nullable=False),
     ForeignKeyConstraint(
-        ["study_id", "ruleset_name"], ["ruleset.study_id", "ruleset.ruleset_name"], name="fk_ruleset_area_item_constraint", ondelete="CASCADE"
-    )
+        ["study_id", "ruleset_name"],
+        ["ruleset.study_id", "ruleset.ruleset_name"],
+        name="fk_ruleset_area_item_constraint",
+        ondelete="CASCADE",
+    ),
 )
