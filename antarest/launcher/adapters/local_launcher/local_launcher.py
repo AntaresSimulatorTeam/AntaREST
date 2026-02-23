@@ -29,7 +29,7 @@ from antarest.core.config import LocalConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.jwt import JWTUser
-from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks
+from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType
 from antarest.login.utils import current_user_context, require_current_user
@@ -150,7 +150,7 @@ class LocalLauncher(AbstractLauncher):
                 if process.returncode == 0:
                     # The job succeed we need to import the output
                     try:
-                        launcher_logs = self._import_launcher_logs(job_id)
+                        launcher_logs = self._get_launcher_logs(job_id)
                         output_id = self.callbacks.import_output(job_id, export_path / "output", launcher_logs)
                     except Exception as e:
                         logger.error(
@@ -177,12 +177,9 @@ class LocalLauncher(AbstractLauncher):
                 logger.info(f"Removing launch {job_id} export path at {export_path}")
                 shutil.rmtree(export_path, ignore_errors=True)
 
-    def _import_launcher_logs(self, job_id: str) -> Dict[str, List[Path]]:
+    def _get_launcher_logs(self, job_id: str) -> SimulationLogs:
         logs_path = self.log_directory / job_id
-        return {
-            "antares-out.log": [logs_path / f"{job_id}-out.log"],
-            "antares-err.log": [logs_path / f"{job_id}-err.log"],
-        }
+        return SimulationLogs(logs_path / f"{job_id}-out.log", logs_path / f"{job_id}-err.log")
 
     def _parse_launcher_options(
         self, launcher_parameters: LauncherParametersDTO, solver_version: SolverVersion

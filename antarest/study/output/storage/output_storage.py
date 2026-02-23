@@ -195,3 +195,9 @@ class IOutputStorage(ABC):
         """
         Extract variables list from output.
         """
+
+    @abstractmethod
+    def get_logs(self, study_id: str, output_id: str, job_id: str, err_log: bool) -> str:
+        """
+        Retrieve logs.
+        """

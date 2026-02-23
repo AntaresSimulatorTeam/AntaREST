@@ -271,3 +271,7 @@ class V2OutputStorage(IOutputStorage):
     @override
     def write_output_to_dir(self, study_id: str, output_id: str, parent: Path) -> None:
         raise NotImplementedError()
+
+    @override
+    def get_logs(self, study_id: str, output_id: str, job_id: str, err_log: bool) -> str:
+        raise NotImplementedError()

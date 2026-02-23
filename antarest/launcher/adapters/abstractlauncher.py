@@ -11,8 +11,9 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Dict, List, NamedTuple, Optional, Protocol
+from typing import Callable, List, NamedTuple, Optional, Protocol
 
 from antares.study.version import SolverVersion
 
@@ -23,8 +24,14 @@ from antarest.launcher.adapters.log_parser import LaunchProgressDTO
 from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType
 
 
+@dataclass(frozen=True)
+class SimulationLogs:
+    out: Path | None
+    err: Path | None
+
+
 class ImportCallBack(Protocol):
-    def __call__(self, job_id: str, output_path: Path, additional_logs: Dict[str, List[Path]]) -> Optional[str]:
+    def __call__(self, job_id: str, output_path: Path, additional_logs: SimulationLogs) -> Optional[str]:
         pass
 
 

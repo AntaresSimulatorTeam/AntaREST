@@ -20,7 +20,7 @@ import threading
 import time
 import traceback
 from pathlib import Path
-from typing import Awaitable, Callable, Dict, List, Optional, cast
+from typing import Awaitable, Callable, List, Optional, cast
 
 from antares.study.version import SolverVersion
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
@@ -39,7 +39,7 @@ from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
 from antarest.core.utils.archives import unzip
 from antarest.core.utils.utils import assert_this
-from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks
+from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType, XpansionParametersDTO
 from antarest.launcher.ssh_client import calculates_slurm_load
@@ -136,6 +136,30 @@ class LauncherArgs(argparse.Namespace):
         adequacy_patch = launcher_params.adequacy_patch
         if adequacy_patch is not None:
             self.post_processing = True
+
+
+def _get_log_path_from_log_dir(log_dir: Path, log_type: LogType = LogType.STDOUT) -> Optional[Path]:
+    pattern = {
+        LogType.STDOUT: "antares-out-*",
+        LogType.STDERR: "antares-err-*",
+    }[log_type]
+    return next(iter(log_dir.glob(pattern)), None)
+
+
+def _get_log_path(study: StudyDTO, log_type: LogType = LogType.STDOUT) -> Optional[Path]:
+    log_dir = Path(study.job_log_dir)
+    return _get_log_path_from_log_dir(log_dir, log_type)
+
+
+def _find_log_dir(base_log_dir: Path, job_id: str) -> Optional[Path]:
+    pattern = f"{job_id}*"
+    return next(iter(base_log_dir.glob(pattern)), None)
+
+
+def _get_logs(job_log_dir: Path) -> SimulationLogs:
+    out_log_path = next(iter(job_log_dir.glob("antares-out-*")), None)
+    err_log_path = next(iter(job_log_dir.glob("antares-err-*")), None)
+    return SimulationLogs(out_log_path, err_log_path)
 
 
 class SlurmLauncher(AbstractLauncher):
@@ -296,37 +320,23 @@ class SlurmLauncher(AbstractLauncher):
     def _import_study_output(
         self,
         job_id: str,
-        xpansion_mode: Optional[str] = None,
-        log_dir: Optional[str] = None,
+        xpansion_mode: str,
+        log_dir: str,
     ) -> Optional[str]:
         if xpansion_mode:
             self._import_xpansion_result(job_id, xpansion_mode)
 
-        launcher_logs: Dict[str, List[Path]] = {}
-        if log_dir is not None:
-            launcher_logs = {
-                log_name: log_path
-                for log_name, log_path in {
-                    "antares-out.log": [
-                        p
-                        for p in [SlurmLauncher._get_log_path_from_log_dir(Path(log_dir), LogType.STDOUT)]
-                        if p is not None
-                    ],
-                    "antares-err.log": [
-                        p
-                        for p in [SlurmLauncher._get_log_path_from_log_dir(Path(log_dir), LogType.STDERR)]
-                        if p is not None
-                    ],
-                }.items()
-                if log_path
-            }
+        if log_dir:
+            launcher_logs = _get_logs(Path(log_dir))
+        else:
+            launcher_logs = SimulationLogs(None, None)
 
         # The following callback is actually calling:
         # `antarest.launcher.service.LauncherService._import_output`
         return self.callbacks.import_output(
-            job_id,
-            self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "output",
-            launcher_logs,
+            job_id=job_id,
+            output_path=self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "output",
+            additional_logs=launcher_logs,
         )
 
     def _import_xpansion_result(self, job_id: str, xpansion_mode: str) -> None:
@@ -361,7 +371,7 @@ class SlurmLauncher(AbstractLauncher):
 
             study_list = self.data_repo_tinydb.get_list_of_studies()
             for study in study_list:
-                log_path = SlurmLauncher._get_log_path(study)
+                log_path = _get_log_path(study)
                 if study.with_error:
                     self.log_tail_manager.stop_tracking(log_path)
                     self._handle_failure(study)
@@ -450,24 +460,6 @@ class SlurmLauncher(AbstractLauncher):
             logger.error(msg, exc_info=e)
         else:
             self.callbacks.update_status(study.name, JobStatus.SUCCESS, None, output_id)
-
-    @staticmethod
-    def _get_log_path(study: StudyDTO, log_type: LogType = LogType.STDOUT) -> Optional[Path]:
-        log_dir = Path(study.job_log_dir)
-        return SlurmLauncher._get_log_path_from_log_dir(log_dir, log_type)
-
-    @staticmethod
-    def _find_log_dir(base_log_dir: Path, job_id: str) -> Optional[Path]:
-        pattern = f"{job_id}*"
-        return next(iter(base_log_dir.glob(pattern)), None)
-
-    @staticmethod
-    def _get_log_path_from_log_dir(log_dir: Path, log_type: LogType = LogType.STDOUT) -> Optional[Path]:
-        pattern = {
-            LogType.STDOUT: "antares-out-*",
-            LogType.STDERR: "antares-err-*",
-        }[log_type]
-        return next(iter(log_dir.glob(pattern)), None)
 
     def _clean_local_workspace(self) -> None:
         logger.info("Cleaning up slurm workspace")
@@ -612,11 +604,11 @@ class SlurmLauncher(AbstractLauncher):
         log_path: Optional[Path] = None
         for study in self.data_repo_tinydb.get_list_of_studies():
             if study.name == job_id:
-                log_path = SlurmLauncher._get_log_path(study, log_type)
+                log_path = _get_log_path(study, log_type)
                 if log_path:
                     return log_path.read_text()
-        if log_dir := SlurmLauncher._find_log_dir(Path(self.launcher_args.log_dir) / "JOB_LOGS", job_id):
-            log_path = SlurmLauncher._get_log_path_from_log_dir(log_dir, log_type)
+        if log_dir := _find_log_dir(Path(self.launcher_args.log_dir) / "JOB_LOGS", job_id):
+            log_path = _get_log_path_from_log_dir(log_dir, log_type)
         return log_path.read_text() if log_path else None
 
     def _create_event_listener(self) -> Callable[[Event], Awaitable[None]]:

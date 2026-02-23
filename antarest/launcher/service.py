@@ -15,7 +15,7 @@ import os
 import shutil
 from http import HTTPStatus
 from pathlib import Path
-from typing import Dict, List, Optional, cast
+from typing import Dict, List, Optional
 from uuid import UUID, uuid4
 
 from antares.study.version import SolverVersion
@@ -33,8 +33,8 @@ from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, is_zip, read_in_zip
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import StopWatch, concat_files, concat_files_to_str, current_time
-from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
+from antarest.core.utils.utils import StopWatch, current_time
+from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.extensions.adequacy_patch.extension import AdequacyPatchExtension
 from antarest.launcher.extensions.interface import ILauncherExtension
@@ -509,10 +509,20 @@ class LauncherService:
         self,
         job_id: str,
         output_path: Path,
-        additional_logs: Dict[str, List[Path]],
+        additional_logs: SimulationLogs,
     ) -> Optional[str]:
+        """
+        TODO: clarify contract for the output_path param: a zip, a path ? ...
+
+              With local launcher, we get the "study / output" path of the launcher workspace, so it's the parent of
+              the actual output path, which will be a directory ? And the log paths are taken from another dir.
+
+              With slurm launcher, it looks like we never go into save_logs be cause we always have a zipped
+              output ? output_path is " study / job_id / output" located in the slurm workspace.
+              A priori antares-launcher fait bien un unzip de tout.
+
+        """
         logger.info(f"Importing output for job {job_id}")
-        study_id: Optional[str] = None
         with db():
             job_result = self.job_result_repository.get(job_id)
             if not job_result:
@@ -525,71 +535,54 @@ class LauncherService:
             # this now can be a zip file instead of a directory !
             output_true_path = find_single_output_path(output_path)
             output_is_zipped = is_zip(output_true_path)
-            output_suffix = cast(
-                Optional[str],
-                getattr(
-                    job_launch_params,
-                    LAUNCHER_PARAM_NAME_SUFFIX,
-                    None,
-                ),
-            )
+            output_suffix = job_launch_params.output_suffix
 
             self._save_solver_stats(job_result, output_true_path)
             if additional_logs and not output_is_zipped:
-                for log_name, log_paths in additional_logs.items():
-                    concat_files(
-                        log_paths,
-                        output_true_path / log_name,
-                    )
+                if additional_logs.out:
+                    shutil.copy(additional_logs.out, output_true_path / "antares-out.log")
+                if additional_logs.err:
+                    shutil.copy(additional_logs.err, output_true_path / "antares-err.log")
 
-        if study_id:
-            zip_path: Optional[Path] = None
-            stopwatch = StopWatch()
-            if not output_is_zipped and job_launch_params.archive_output:
-                logger.info("Re zipping output for transfer")
-                zip_path = output_true_path.parent / f"{output_true_path.name}.zip"
-                archive_dir(output_true_path, target_archive_path=zip_path, archive_format=ArchiveFormat.ZIP)
-                stopwatch.log_elapsed(lambda x: logger.info(f"Zipped output for job {job_id} in {x}s"))
+        zip_path: Optional[Path] = None
+        stopwatch = StopWatch()
+        if not output_is_zipped and job_launch_params.archive_output:
+            logger.info("Re zipping output for transfer")
+            zip_path = output_true_path.parent / f"{output_true_path.name}.zip"
+            archive_dir(output_true_path, target_archive_path=zip_path, archive_format=ArchiveFormat.ZIP)
+            stopwatch.log_elapsed(lambda x: logger.info(f"Zipped output for job {job_id} in {x}s"))
 
-            final_output_path = zip_path or output_true_path
-            with db():
-                try:
-                    if additional_logs and output_is_zipped:
-                        for log_name, log_paths in additional_logs.items():
-                            log_type = LogType.from_filename(log_name)
-                            log_suffix = log_name
-                            if log_type:
-                                log_suffix = log_type.to_suffix()
-                            self.study_service.save_logs(
-                                study_id,
-                                job_id,
-                                log_suffix,
-                                concat_files_to_str(log_paths),
-                            )
+        final_output_path = zip_path or output_true_path
+        with db():
+            try:
+                if additional_logs and output_is_zipped:
+                    if additional_logs.out:
+                        self.study_service.save_logs(study_id, job_id, "out.log", additional_logs.out.read_text())
+                    if additional_logs.err:
+                        self.study_service.save_logs(study_id, job_id, "err.log", additional_logs.err.read_text())
 
-                    if job_owner_id:
-                        # We restore the user context as the following processes need it
-                        current_user = self.login_service.get_jwt(job_owner_id)
-                    else:
-                        current_user = get_current_user()
+                if job_owner_id:
+                    # We restore the user context as the following processes need it
+                    current_user = self.login_service.get_jwt(job_owner_id)
+                else:
+                    current_user = get_current_user()
 
-                    with current_user_context(current_user):
-                        return self.output_service.import_output(
-                            study_id,
-                            final_output_path,
-                            output_suffix,
-                            job_launch_params.auto_unzip,
-                        )
-                except StudyNotFoundError:
-                    return self._import_fallback_output(
-                        job_id,
+                with current_user_context(current_user):
+                    return self.output_service.import_output(
+                        study_id,
                         final_output_path,
                         output_suffix,
+                        job_launch_params.auto_unzip,
                     )
-                finally:
-                    if zip_path:
-                        os.unlink(zip_path)
-        raise JobNotFound()
+            except StudyNotFoundError:
+                return self._import_fallback_output(
+                    job_id,
+                    final_output_path,
+                    output_suffix,
+                )
+            finally:
+                if zip_path:
+                    os.unlink(zip_path)
 
     def _download_fallback_output(self, job_id: str) -> FileDownloadTaskDTO:
         output_path = self._get_job_output_fallback_path(job_id)
