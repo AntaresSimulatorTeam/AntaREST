@@ -44,9 +44,13 @@ def test_repo(study_repo: StudyMetadataRepository, output_repo: OutputMetadataRe
         study_repo.save(Study(id="study_id_2", name="name", version="9.2", path=""))
 
         # 3 results, 2 for the same study, 1 is archived
-        output_repo.save(DbOutputMetadata(study_id="study_id_1", output_name="output_1", archived=False, type="eco"))
-        output_repo.save(DbOutputMetadata(study_id="study_id_1", output_name="output_2", archived=True, type="eco"))
-        output_repo.save(DbOutputMetadata(study_id="study_id_2", output_name="output_1", archived=False, type="eco"))
+        output_repo.save(
+            DbOutputMetadata(study_id="study_id_1", output_name="output_1", archived=False, mode="Economy")
+        )
+        output_repo.save(DbOutputMetadata(study_id="study_id_1", output_name="output_2", archived=True, mode="Economy"))
+        output_repo.save(
+            DbOutputMetadata(study_id="study_id_2", output_name="output_1", archived=False, mode="Economy")
+        )
 
         # Get all
         assert len(list(output_repo.get_all())) == 3

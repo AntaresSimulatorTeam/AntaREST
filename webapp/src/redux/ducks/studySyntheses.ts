@@ -89,10 +89,7 @@ export const deleteStudyLink = createAction<{
 // Thunks
 ////////////////////////////////////////////////////////////////
 
-const initDefaultAreaLinkSelection = (
-  dispatch: AppDispatch,
-  studyData?: StudySynthesis,
-): void => {
+const initDefaultAreaLinkSelection = (dispatch: AppDispatch, studyData?: StudySynthesis): void => {
   if (studyData) {
     dispatch(setCurrentArea(""));
     dispatch(setCurrentLink(""));
