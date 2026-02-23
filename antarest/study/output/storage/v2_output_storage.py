@@ -158,7 +158,7 @@ class V2OutputStorage(IOutputStorage):
             # Create metadata
             output_details = extract_metadata(dir_path)
 
-            # TODO here: extract variables values
+            # TODO here: extract all required data: variables list, time index, digest, parquet files
 
             self._metadata_repository.save(
                 DbOutputMetadata(
@@ -202,7 +202,7 @@ class V2OutputStorage(IOutputStorage):
 
     @override
     def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:
-        # TODO
+        # TODO: copy all relevant data: archive, parquet files, DB metadata
         pass
 
     @override
@@ -248,10 +248,12 @@ class V2OutputStorage(IOutputStorage):
 
     @override
     def get_digest(self, study_id: str, output_id: str) -> DigestUI:
+        # TODO: at import time, extract and dave either as file or in DB
         raise NotImplementedError()
 
     @override
     def get_output_time_index(self, study_id: str, output_id: str, frequency: MatrixFrequency) -> MatrixIndex:
+        # TODO: at import time, save necessary metadata for that
         raise NotImplementedError()
 
     @override
@@ -266,10 +268,12 @@ class V2OutputStorage(IOutputStorage):
         transform_columns_headers: bool,
         mc_years: Optional[Sequence[int]] = None,
     ) -> Iterator[pd.DataFrame]:
+        # TODO: at import time, extract to parquet files
         raise NotImplementedError()
 
     @override
     def extract_variables_list(self, study_id: str, output_id: str) -> OutputVariablesList:
+        # TODO: at import time, extract metadata and save it to DB
         raise NotImplementedError()
 
     @override
@@ -278,4 +282,5 @@ class V2OutputStorage(IOutputStorage):
 
     @override
     def get_logs(self, study_id: str, output_id: str, job_id: str, log_type: LogType) -> str:
+        # TODO: at import time, extract log files and store them in database
         raise NotImplementedError()
