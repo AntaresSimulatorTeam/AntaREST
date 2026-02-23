@@ -1247,11 +1247,8 @@ class StudyService:
 
             for output_name in output_names:
                 self._get_outputs_access().copy_output(origin_study.id, study.id, output_name)
-            remove_from_cache(cache=self.cache_service, root_id=study.id)
 
             # Copying all jobs associated with the study
-            # TODO: this actually never worked when copying all outputs ?
-            #       Move it to output service ?
             if output_names:
                 jobs = self.job_result_repository.find_by_study_and_output_ids(origin_study.id, output_names)
                 new_jobs = [job.copy_jobs_for_study(study.id) for job in jobs]
