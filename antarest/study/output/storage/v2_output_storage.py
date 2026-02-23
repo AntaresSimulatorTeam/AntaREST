@@ -21,6 +21,7 @@ from typing_extensions import override
 from antarest.core.exceptions import OutputNotFound
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive
 from antarest.core.utils.utils import StopWatch
+from antarest.launcher.model import LogType
 from antarest.study.model import MatrixFrequency, MatrixIndex, StudySimResultDTO, StudySimSettingsDTO
 from antarest.study.output.filestudy.extract_metadata import extract_metadata
 from antarest.study.output.lfs.lfs import ILargeFileStorage
@@ -137,7 +138,10 @@ class V2OutputStorage(IOutputStorage):
 
     @override
     def import_output(
-        self, study_id: str, output: BinaryIO | Path, output_name_suffix: Optional[str] = None
+        self,
+        study_id: str,
+        output: BinaryIO | Path,
+        output_name_suffix: Optional[str] = None,
     ) -> Optional[str]:
         logger.info(f"Importing output for study {study_id} to internal storage.")
         timer = StopWatch()
@@ -273,5 +277,5 @@ class V2OutputStorage(IOutputStorage):
         raise NotImplementedError()
 
     @override
-    def get_logs(self, study_id: str, output_id: str, job_id: str, err_log: bool) -> str:
+    def get_logs(self, study_id: str, output_id: str, job_id: str, log_type: LogType) -> str:
         raise NotImplementedError()

@@ -32,6 +32,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unarchive, unzip
 from antarest.core.utils.utils import StopWatch
+from antarest.launcher.model import LogType
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     MatrixFrequency,
@@ -422,24 +423,24 @@ class InStudyFileOutputStorage(IOutputStorage):
         return extract_variables_list(study_outputs.outputs_path / output_id)
 
     @override
-    def get_logs(self, study_id: str, output_id: str, job_id: str, err_log: bool) -> str:
+    def get_logs(self, study_id: str, output_id: str, job_id: str, log_type: LogType) -> str:
         study_outputs = self._outputs_provider.get_outputs(study_id)
         file_study = study_outputs.get_file_study()
         log_locations = {
-            False: [
+            LogType.STDOUT: [
                 ["output", "logs", f"{job_id}-out.log"],
                 ["output", "logs", f"{output_id}-out.log"],
                 ["output", output_id, "antares-out"],
                 ["output", output_id, "simulation"],
             ],
-            True: [
+            LogType.STDERR: [
                 ["output", "logs", f"{job_id}-err.log"],
                 ["output", "logs", f"{output_id}-err.log"],
                 ["output", output_id, "antares-err"],
             ],
         }
         empty_log = False
-        for log_location in log_locations[err_log]:
+        for log_location in log_locations[log_type]:
             try:
                 # Assume UTF-8 but ignore errors, it's difficult to be sure of log encoding
                 # especially because of windows error messages
@@ -459,24 +460,3 @@ class InStudyFileOutputStorage(IOutputStorage):
         if empty_log:
             return ""
         raise ChildNotFoundError(f"Logs for {output_id} of study {study_id} were not found")
-
-    def _save_logs(
-        self,
-        study_id: str,
-        job_id: str,
-        log_suffix: str,
-        log_data: str,
-    ) -> None:
-        logger.info(f"Saving logs for job {job_id} of study {study_id}")
-        stopwatch = StopWatch()
-        study_outputs = self._outputs_provider.get_outputs(study_id)
-        file_study = study_outputs.get_file_study()
-        file_study.tree.save(
-            bytes(log_data, encoding="utf-8"),
-            [
-                "output",
-                "logs",
-                f"{job_id}-{log_suffix}",
-            ],
-        )
-        stopwatch.log_elapsed(lambda d: logger.info(f"Saved logs for job {job_id} in {d}s"))

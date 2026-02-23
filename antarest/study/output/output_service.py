@@ -40,6 +40,7 @@ from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.files import temp_file_path
 from antarest.core.utils.utils import StopWatch, current_time
+from antarest.launcher.model import LogType
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import (
@@ -855,3 +856,7 @@ class OutputService:
 
     def list_outputs(self, study_id: str) -> Iterable[OutputMetadata]:
         return itertools.chain(*(s.list_outputs(study_id) for s in self._storages))
+
+    def get_logs(self, study_id: str, output_id: str, job_id: str, log_type: LogType) -> str:
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
+        return self._find_output_storage(study_id, output_id).get_logs(study_id, output_id, job_id, log_type)

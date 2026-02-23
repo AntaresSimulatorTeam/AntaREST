@@ -641,66 +641,6 @@ class StudyService:
 
         return output
 
-    def get_logs(self, study_id: str, output_id: str, job_id: str, err_log: bool) -> Optional[str]:
-        study = self.get_study(study_id)
-        assert_permission(study, StudyPermissionType.READ)
-        file_study = self.get_file_study(study)
-        log_locations = {
-            False: [
-                ["output", "logs", f"{job_id}-out.log"],
-                ["output", "logs", f"{output_id}-out.log"],
-                ["output", output_id, "antares-out"],
-                ["output", output_id, "simulation"],
-            ],
-            True: [
-                ["output", "logs", f"{job_id}-err.log"],
-                ["output", "logs", f"{output_id}-err.log"],
-                ["output", output_id, "antares-err"],
-            ],
-        }
-        empty_log = False
-        for log_location in log_locations[err_log]:
-            try:
-                # Assume UTF-8 but ignore errors, it's difficult to be sure of log encoding
-                # especially because of windows error messages
-                log = cast(
-                    bytes,
-                    file_study.tree.get(log_location, depth=1, formatted=True),
-                ).decode(encoding="utf-8", errors="replace")
-                # when missing file, RawFileNode return empty bytes
-                if log:
-                    return log
-                else:
-                    empty_log = True
-            except ChildNotFoundError:
-                pass
-            except KeyError:
-                pass
-        if empty_log:
-            return ""
-        raise ChildNotFoundError(f"Logs for {output_id} of study {study_id} were not found")
-
-    def save_logs(
-        self,
-        study_id: str,
-        job_id: str,
-        log_suffix: str,
-        log_data: str,
-    ) -> None:
-        logger.info(f"Saving logs for job {job_id} of study {study_id}")
-        stopwatch = StopWatch()
-        study = self.get_study(study_id)
-        file_study = self.get_file_study(study)
-        file_study.tree.save(
-            bytes(log_data, encoding="utf-8"),
-            [
-                "output",
-                "logs",
-                f"{job_id}-{log_suffix}",
-            ],
-        )
-        stopwatch.log_elapsed(lambda d: logger.info(f"Saved logs for job {job_id} in {d}s"))
-
     def get_comments(self, study_id: str) -> str:
         """
         Get the comments of a study.

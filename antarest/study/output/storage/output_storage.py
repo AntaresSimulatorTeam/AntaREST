@@ -21,6 +21,7 @@ from pydantic import ConfigDict
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
+from antarest.launcher.model import LogType
 from antarest.study.model import MatrixFrequency, MatrixIndex
 from antarest.study.output.output_model import OutputVariablesList
 from antarest.study.output.utils import QueryFileType
@@ -197,7 +198,7 @@ class IOutputStorage(ABC):
         """
 
     @abstractmethod
-    def get_logs(self, study_id: str, output_id: str, job_id: str, err_log: bool) -> str:
+    def get_logs(self, study_id: str, output_id: str, job_id: str, log_type: LogType) -> str:
         """
         Retrieve logs.
         """

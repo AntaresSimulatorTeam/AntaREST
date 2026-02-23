@@ -408,31 +408,27 @@ class LauncherService:
         logs[JobLogType.AFTER if log.log_type == str(JobLogType.AFTER) else JobLogType.BEFORE].append(log.message)
         return logs
 
-    def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
+    def get_log(self, job_id: str, log_type: LogType) -> str:
         job_result = self.job_result_repository.get(str(job_id))
-        if job_result:
-            if job_result.output_id:
-                launcher_logs = (
-                    self.study_service.get_logs(
-                        job_result.study_id, job_result.output_id, job_id, log_type == LogType.STDERR
-                    )
-                    or ""
-                )
-            else:
-                if job_result.launcher is None:
-                    raise ValueError(f"Job {job_id} has no launcher")
-                self._assert_launcher_is_initialized(job_result.launcher)
-                launcher_logs = str(self.launchers[job_result.launcher].get_log(job_id, log_type) or "")
-            if log_type == LogType.STDOUT:
-                app_logs: Dict[JobLogType, List[str]] = functools.reduce(
-                    lambda logs, log: LauncherService.sort_log(log, logs),
-                    job_result.logs or [],
-                    {JobLogType.BEFORE: [], JobLogType.AFTER: []},
-                )
-                return "\n".join(app_logs[JobLogType.BEFORE] + [launcher_logs] + app_logs[JobLogType.AFTER])
-            return launcher_logs
+        if not job_result:
+            raise JobNotFound()
 
-        raise JobNotFound()
+        launcher_logs: str
+        if job_result.output_id:
+            launcher_logs = self.output_service.get_logs(job_result.study_id, job_result.output_id, job_id, log_type)
+        else:
+            if job_result.launcher is None:
+                raise ValueError(f"Job {job_id} has no launcher")
+            self._assert_launcher_is_initialized(job_result.launcher)
+            launcher_logs = self.launchers[job_result.launcher].get_log(job_id, log_type) or ""
+        if log_type == LogType.STDOUT:
+            app_logs: Dict[JobLogType, List[str]] = functools.reduce(
+                lambda logs, log: LauncherService.sort_log(log, logs),
+                job_result.logs or [],
+                {JobLogType.BEFORE: [], JobLogType.AFTER: []},
+            )
+            return "\n".join(app_logs[JobLogType.BEFORE] + [launcher_logs] + app_logs[JobLogType.AFTER])
+        return launcher_logs
 
     def _export_study(
         self,
@@ -555,12 +551,6 @@ class LauncherService:
         final_output_path = zip_path or output_true_path
         with db():
             try:
-                if additional_logs and output_is_zipped:
-                    if additional_logs.out:
-                        self.study_service.save_logs(study_id, job_id, "out.log", additional_logs.out.read_text())
-                    if additional_logs.err:
-                        self.study_service.save_logs(study_id, job_id, "err.log", additional_logs.err.read_text())
-
                 if job_owner_id:
                     # We restore the user context as the following processes need it
                     current_user = self.login_service.get_jwt(job_owner_id)
@@ -571,8 +561,8 @@ class LauncherService:
                     return self.output_service.import_output(
                         study_id,
                         final_output_path,
-                        output_suffix,
-                        job_launch_params.auto_unzip,
+                        output_name_suffix=output_suffix,
+                        auto_unzip=job_launch_params.auto_unzip,
                     )
             except StudyNotFoundError:
                 return self._import_fallback_output(
