@@ -27,7 +27,7 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: 🐍 Install dependencies
-        run: uv sync --frozen --all-extras --compile-bytecode
+        run: uv sync --frozen --extra desktop --extra windows --compile-bytecode
 
       - name: 📦 Packaging AntaresWebWorker
         run: bash ./package_worker.sh

@@ -56,7 +56,27 @@ dependencies = [
     "xlsxwriter~=3.2.0",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
+dev = [
+    {include-group = "test"},
+    "celery-types~=0.23.0",
+    "ruff~=0.9.6",
+    "mypy~=1.15.0",
+    "pre-commit~=4.1.0",
+    "pyinstaller==6.17.0",
+    "pyinstaller-hooks-contrib==2025.10",
+    # Extra requirements installed by `mypy --install-types`.
+    # IMPORTANT: Make sure the versions of these typing libraries match the versions
+    # of the corresponding implementation libraries used in production (in `pyproject.toml`).
+    "pandas-stubs~=2.3.3",
+    "pyarrow-stubs~=20.0.0",
+    "types-openpyxl~=3.1.5",
+    "types-paramiko~=3.4.0",
+    "types-psycopg2~=2.9.9",
+    "types-redis~=4.1.2",
+    "types-requests~=2.27.1",
+    "types-PyYAML~=5.4.1",
+]
 test = [
     "checksumdir~=1.2.0",
     "pytest~=9.0.2",
@@ -66,6 +86,8 @@ test = [
     "pytest-mock~=3.15.0",
     "jinja2~=3.1.3",
 ]
+
+[project.optional-dependencies]
 desktop = [
     "PyQt5~=5.15.6; sys_platform != 'win32'",
 ]
@@ -154,24 +176,3 @@ skip-magic-trailing-comma = false
 
 # Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"
-
-[dependency-groups]
-dev = [
-    "celery-types~=0.23.0",
-    "ruff~=0.9.6",
-    "mypy~=1.15.0",
-    "pre-commit~=4.1.0",
-    "pyinstaller==6.17.0",
-    "pyinstaller-hooks-contrib==2025.10",
-    # Extra requirements installed by `mypy --install-types`.
-    # IMPORTANT: Make sure the versions of these typing libraries match the versions
-    # of the corresponding implementation libraries used in production (in `pyproject.toml`).
-    "pandas-stubs~=2.3.3",
-    "pyarrow-stubs~=20.0.0",
-    "types-openpyxl~=3.1.5",
-    "types-paramiko~=3.4.0",
-    "types-psycopg2~=2.9.9",
-    "types-redis~=4.1.2",
-    "types-requests~=2.27.1",
-    "types-PyYAML~=5.4.1",
-]
