@@ -15,11 +15,11 @@
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import { Box, IconButton, Tooltip } from "@mui/material";
+import { Box, IconButton } from "@mui/material";
 import * as R from "ramda";
 import { useMemo } from "react";
 import TreeItemEnhanced from "@/components/TreeItemEnhanced";
-import { ROOT_NODE_NAME } from "@/components/utils/constants";
+import { TREE_ROOT_NAME } from "@/components/utils/constants";
 import EditableTreeItem from "./EditableTreeItem";
 import {
   actionButtonStyles,
@@ -52,9 +52,7 @@ function ManagedTreeNode({
   isDeletePending,
 }: ManagedTreeNodeProps) {
   const { children, path, name, id } = node;
-  const isRootNode = name === ROOT_NODE_NAME;
-  const hasChildren = children.length > 0;
-
+  const isRootNode = name === TREE_ROOT_NAME;
   const sortedChildren = useMemo(
     () => R.sortBy(R.compose(R.toLower, R.prop("name")), children),
     [children],
@@ -121,7 +119,6 @@ function ManagedTreeNode({
   if (isUpdating(id)) {
     return (
       <EditableTreeItem
-        itemId={path}
         initialValue={name}
         isEditing
         isPending={isUpdatePending}
@@ -136,14 +133,12 @@ function ManagedTreeNode({
       itemId={path}
       label={
         <Box sx={nodeLabelContainerStyles}>
-          <Tooltip title={name}>
-            <Box
-              component="span"
-              sx={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
-            >
-              {name}
-            </Box>
-          </Tooltip>
+          <Box
+            component="span"
+            sx={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+          >
+            {name}
+          </Box>
           <Box sx={nodeActionsContainerStyles}>
             <IconButton size="small" onClick={handleAddSubDirectory} sx={actionButtonStyles}>
               <CreateNewFolderIcon sx={addSubDirectoryIconStyles} />
@@ -159,15 +154,15 @@ function ManagedTreeNode({
       }
       onClick={() => onNodeClick(path)}
       slots={{
-        collapseIcon: hasChildren ? treeNodeIcons.folderOpen : undefined,
-        expandIcon: hasChildren ? treeNodeIcons.folder : undefined,
+        collapseIcon: treeNodeIcons.folderOpen,
+        expandIcon: treeNodeIcons.folder,
+        endIcon: treeNodeIcons.folder,
       }}
       sx={treeItemStyles}
     >
       {/* Show editable item when creating a subdirectory under this directory */}
       {isCreatingSubDirectory(id) && (
         <EditableTreeItem
-          itemId={`temp-${id}-${Date.now()}`}
           isEditing
           isPending={isCreatePending}
           onSave={onSaveSubDirectory(id)} // id is the parentId for the new subdirectory
