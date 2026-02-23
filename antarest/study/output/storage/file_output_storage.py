@@ -46,7 +46,6 @@ from antarest.study.output.storage.output_storage import (
 )
 from antarest.study.output.utils import QueryFileType
 from antarest.study.output.variables_management import extract_variables_list
-from antarest.study.storage.rawstudy.model.filesystem.config.files import parse_outputs
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
@@ -208,9 +207,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         Get the list of output for a study.
         """
         study_outputs = self._outputs_provider.get_outputs(study_id)
-
-        # TODO: optimize, should only parse one here
-        outputs = parse_outputs(study_outputs.outputs_path)
+        outputs = study_outputs.get_file_study().config.outputs
         if output_id not in outputs:
             raise OutputNotFound(output_id)
         output_data: Simulation = outputs[output_id]
@@ -229,8 +226,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         Get the list of output for a study.
         """
         study_outputs = self._outputs_provider.get_outputs(study_id)
-        # leverage existing method
-        simulations = parse_outputs(study_outputs.outputs_path)
+        simulations = study_outputs.get_file_study().config.outputs
         return [
             OutputMetadata(id=output_id, in_study=True, archived=output.archived)
             for output_id, output in simulations.items()

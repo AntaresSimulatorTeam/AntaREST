@@ -22,6 +22,7 @@ from starlette.testclient import TestClient
 
 from antarest.blobstore.service import BlobService
 from antarest.core.application import create_app_ctxt
+from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import Config, SecurityConfig, StorageConfig, WorkspaceConfig
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.eventbus import DummyEventBusService
@@ -47,6 +48,8 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> 
     else:
         raise ValueError(f"Unsupported archive format {sta_mini_archive_path.suffix}")
 
+    cache = LocalCache()
+
     config = Config(
         resources_path=Path(),
         security=SecurityConfig(disabled=True),
@@ -68,7 +71,7 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> 
     blob_service = Mock(spec=BlobService)
     study_service = build_study_service(
         build_ctxt,
-        cache=Mock(),
+        cache=cache,
         user_service=Mock(),
         task_service=task_service,
         file_transfer_manager=ftm,
@@ -82,7 +85,7 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> 
     build_output_service(
         build_ctxt,
         study_service=study_service,
-        cache=Mock(),
+        cache=cache,
         task_service=task_service,
         matrix_service=matrix_service,
         event_bus=DummyEventBusService(),

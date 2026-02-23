@@ -45,11 +45,37 @@ def test_repo(study_repo: StudyMetadataRepository, output_repo: OutputMetadataRe
 
         # 3 results, 2 for the same study, 1 is archived
         output_repo.save(
-            DbOutputMetadata(study_id="study_id_1", output_name="output_1", archived=False, mode="Economy")
+            DbOutputMetadata(
+                study_id="study_id_1",
+                output_name="output_1",
+                archived=False,
+                mode="Economy",
+                synthesis=True,
+                nb_years=1,
+                by_year=True,
+            )
         )
-        output_repo.save(DbOutputMetadata(study_id="study_id_1", output_name="output_2", archived=True, mode="Economy"))
         output_repo.save(
-            DbOutputMetadata(study_id="study_id_2", output_name="output_1", archived=False, mode="Economy")
+            DbOutputMetadata(
+                study_id="study_id_1",
+                output_name="output_2",
+                archived=True,
+                mode="Economy",
+                synthesis=False,
+                nb_years=12,
+                by_year=True,
+            )
+        )
+        output_repo.save(
+            DbOutputMetadata(
+                study_id="study_id_2",
+                output_name="output_1",
+                archived=False,
+                mode="Adequacy",
+                synthesis=True,
+                nb_years=24,
+                by_year=False,
+            )
         )
 
         # Get all
@@ -61,8 +87,15 @@ def test_repo(study_repo: StudyMetadataRepository, output_repo: OutputMetadataRe
         output_1, output_2 = study_1_outputs[0], study_1_outputs[1]
         assert output_1.output_name == "output_1"
         assert not output_1.archived
+        assert output_1.synthesis
+        assert output_1.by_year
+        assert output_1.nb_years == 1
+
         assert output_2.output_name == "output_2"
         assert output_2.archived
+        assert not output_2.synthesis
+        assert output_2.by_year
+        assert output_2.nb_years == 12
 
         # get only one output
         output_2 = output_repo.get(study_id="study_id_1", output_name="output_2")

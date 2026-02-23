@@ -1,9 +1,6 @@
 {
-  "study_path": "DUMMY_VALUE",
-  "path": "DUMMY_VALUE",
   "study_id": "DUMMY_VALUE",
   "version": 700,
-  "output_path": "DUMMY_VALUE",
   "districts": {
     "all areas": {
       "id": "all areas",
@@ -1555,8 +1552,5 @@
     }
   },
   "bindings": [],
-  "store_new_set": true,
-  "archive_input_series": [],
-  "enr_modelling": "aggregated",
-  "archive_path": null
+  "enr_modelling": "aggregated"
 }

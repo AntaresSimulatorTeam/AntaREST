@@ -108,7 +108,7 @@ def test_variant_manager(
 
         res = client.get(f"v1/studies/{variant_id}/synthesis", headers=admin_headers)
 
-        assert variant_id in res.json()["output_path"]
+        assert res.json()["study_id"] == variant_id
 
         client.post(f"/v1/studies/{variant_id}/variants?name=bar", headers=admin_headers)
         client.post(f"/v1/studies/{variant_id}/variants?name=baz", headers=admin_headers)
