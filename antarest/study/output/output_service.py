@@ -29,7 +29,6 @@ from antarest.core.exceptions import (
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import ICache
 from antarest.core.model import StudyPermissionType
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.serde.parquet_writer import (
@@ -90,7 +89,6 @@ from antarest.study.storage.df_download import export_df_chunks
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestUI,
 )
-from antarest.study.storage.utils import remove_from_cache
 
 logger = logging.getLogger(__name__)
 
@@ -206,7 +204,6 @@ class OutputService:
         matrix_service: ISimpleMatrixService,
         tmp_dir: Path,
         studies_repository: IStudyMetadataProvider,
-        cache: ICache,
     ) -> None:
         self._storages = storage if isinstance(storage, list) else [storage]
         self._task_service = task_service
@@ -214,7 +211,6 @@ class OutputService:
         self._matrix_service = matrix_service
         self._tmp_dir = tmp_dir
         self._studies_repository = studies_repository
-        self._cache = cache
 
         OutputVariablesMatrixUsageProvider(self._matrix_service)
 
@@ -290,7 +286,6 @@ class OutputService:
             try:
                 stopwatch = StopWatch()
                 self._find_output_storage(study_id, output_id).unarchive_study_output(study_id, output_id)
-                remove_from_cache(cache=self._cache, root_id=study_id)
                 stopwatch.log_elapsed(
                     lambda x: logger.info(f"Output {output_id} of study {study_id} unarchived in {x}s")
                 )
@@ -360,7 +355,6 @@ class OutputService:
         self._studies_repository.assert_permission(uuid, StudyPermissionType.RUN)
 
         output_id = self._get_storage(storage_type).import_output(uuid, output, output_name_suffix)
-        remove_from_cache(cache=self._cache, root_id=uuid)
         logger.info("output added to study %s by user %s", uuid, get_user_id())
 
         if output_id and isinstance(output, Path) and output.suffix == ArchiveFormat.ZIP and auto_unzip:
@@ -532,7 +526,6 @@ class OutputService:
         self._studies_repository.assert_permission(uuid, StudyPermissionType.WRITE)
 
         self._find_output_storage(uuid, output_name).delete_output(uuid, output_name)
-        remove_from_cache(cache=self._cache, root_id=uuid)
 
         logger.info(f"Output {output_name} deleted from study {uuid}")
 
@@ -581,7 +574,6 @@ class OutputService:
             try:
                 stopwatch = StopWatch()
                 storage.archive_study_output(study_id, output_id)
-                remove_from_cache(cache=self._cache, root_id=study_id)
                 stopwatch.log_elapsed(lambda x: logger.info(f"Output {output_id} of study {study_id} archived in {x}s"))
                 return TaskResult(
                     success=True,
@@ -856,7 +848,6 @@ class OutputService:
         self._studies_repository.assert_permission(src_study_id, StudyPermissionType.READ)
         self._studies_repository.assert_permission(target_study_id, StudyPermissionType.WRITE)
         self._find_output_storage(src_study_id, output_name).copy_output(src_study_id, target_study_id, output_name)
-        remove_from_cache(cache=self._cache, root_id=target_study_id)
 
     def write_output_to_dir(self, study_id: str, output_id: str, outputs_dir: Path) -> None:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)

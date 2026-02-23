@@ -241,6 +241,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         src_outputs_dir = self._outputs_provider.get_outputs(src_study_id).outputs_path
         target_outputs_dir = self._outputs_provider.get_outputs(target_study_id).outputs_path
         _copy_output(src_outputs_dir, output_id, target_outputs_dir)
+        remove_from_cache(self._cache, target_study_id)
 
     @override
     def delete_output(self, study_id: str, output_id: str) -> None:
@@ -353,6 +354,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         workspace = study_outputs.study_workspace
         if workspace != DEFAULT_WORKSPACE_NAME:
             self._remote_unarchive(output_id, study_outputs)
+            remove_from_cache(self._cache, study_id)
         else:
             study_outputs = self._outputs_provider.get_outputs(study_id)
             outputs_path = study_outputs.outputs_path

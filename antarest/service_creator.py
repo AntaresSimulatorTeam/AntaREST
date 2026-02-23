@@ -204,7 +204,6 @@ def build_output_service(
         file_transfer_manager=filetransfer_service,
         matrix_service=matrix_service,
         tmp_dir=config.storage.tmp_dir,
-        cache=cache,
     )
 
     study_service.register_output_access(adapt_output_service_to_study_service(output_service))

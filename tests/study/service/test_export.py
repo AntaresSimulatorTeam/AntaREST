@@ -187,7 +187,6 @@ def service(tmp_path: Path, db_path: Path) -> StudyService:
         storage=output_storage,
         task_service=task_service,
         matrix_service=matrix_service,
-        cache=cache,
         tmp_dir=tmp_path / "tmp",
         file_transfer_manager=ftm,
         studies_repository=study_service_as_studies_repository(study_service),

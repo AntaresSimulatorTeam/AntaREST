@@ -114,7 +114,6 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
     studies_metadata_repository = _studies_repository(study_mock)
     output_service = OutputService(
         matrix_service=Mock(),
-        cache=cache_mock,
         file_transfer_manager=Mock(),
         tmp_dir=tmp_path,
         studies_repository=studies_metadata_repository,
@@ -170,7 +169,6 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
     studies_metadata_repository = _studies_repository(study_mock)
     output_service = OutputService(
         matrix_service=Mock(),
-        cache=cache_mock,
         file_transfer_manager=Mock(),
         tmp_dir=tmp_path,
         studies_repository=studies_metadata_repository,
