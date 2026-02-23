@@ -31,9 +31,7 @@ from antarest.core.exceptions import AreaNotFound
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX
 from antarest.study.business.model.config.compatibility_parameters_model import (
-    CompatibilityParametersUpdate,
     HydroPmax,
-    update_compatibility_parameters,
 )
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_correlation_model import (
@@ -63,7 +61,7 @@ from antarest.study.dao.database.models.hydro import (
     HYDRO_RUN_OF_RIVER_TABLE,
     HYDRO_WATER_VALUES_TABLE,
 )
-from antarest.study.dao.database.sql_utils import upsert_one
+from antarest.study.dao.database.sql_utils import upsert_multiple, upsert_one
 
 _MANAGEMENT_COLS = [c for c in HYDRO_MANAGEMENT_TABLE.c if c.name not in ("study_id", "area_id")]
 
@@ -605,31 +603,49 @@ class DatabaseHydroDao(HydroDao):
         if compatibility_data.hydro_pmax == hydro_pmax:
             return
 
-        area_ids = self.get_impl().get_all_area_ids()
+        study_id = self.get_study_id()
+        session = self.get_session()
 
         if hydro_pmax == HydroPmax.HOURLY:
+            area_ids = self.get_impl().get_all_area_ids()
             generator = self.get_impl()._generator_matrix_constants
             hourly_matrix_id = generator.get_null_matrix().removeprefix(MATRIX_PROTOCOL_PREFIX)
             daily_matrix_id = generator.matrix_service.create(create_polars_dataframe(np.full((365, 1), 24)))
 
-            for area_id in area_ids:
-                self.save_hydro_max_hourly_gen_power(area_id, hourly_matrix_id)
-                self.save_hydro_max_hourly_pump_power(area_id, hourly_matrix_id)
-                self.save_hydro_max_daily_gen_energy(area_id, daily_matrix_id)
-                self.save_hydro_max_daily_pump_energy(area_id, daily_matrix_id)
+            hourly_rows = [
+                {"study_id": study_id, "area_id": area_id, "matrix_id": hourly_matrix_id} for area_id in area_ids
+            ]
+            daily_rows = [
+                {"study_id": study_id, "area_id": area_id, "matrix_id": daily_matrix_id} for area_id in area_ids
+            ]
+            try:
+                upsert_multiple(session, HYDRO_MAX_HOURLY_GEN_POWER_TABLE, hourly_rows)
+                upsert_multiple(session, HYDRO_MAX_HOURLY_PUMP_POWER_TABLE, hourly_rows)
+                upsert_multiple(session, HYDRO_MAX_DAILY_GEN_ENERGY_TABLE, daily_rows)
+                upsert_multiple(session, HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE, daily_rows)
+                session.commit()
+            except IntegrityError as e:
+                session.rollback()
+                invalid = self.get_impl().get_invalid_area_ids(area_ids)
+                raise AreaNotFound(*invalid) from e
         else:
-            study_id = self.get_study_id()
-            session = self.get_session()
-            for table in [
-                HYDRO_MAX_HOURLY_GEN_POWER_TABLE,
-                HYDRO_MAX_HOURLY_PUMP_POWER_TABLE,
-                HYDRO_MAX_DAILY_GEN_ENERGY_TABLE,
-                HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE,
-            ]:
-                session.execute(delete(table).where((table.c.study_id == study_id)))
+            session.execute(
+                delete(HYDRO_MAX_HOURLY_GEN_POWER_TABLE).where(HYDRO_MAX_HOURLY_GEN_POWER_TABLE.c.study_id == study_id)
+            )
+            session.execute(
+                delete(HYDRO_MAX_HOURLY_PUMP_POWER_TABLE).where(
+                    HYDRO_MAX_HOURLY_PUMP_POWER_TABLE.c.study_id == study_id
+                )
+            )
+            session.execute(
+                delete(HYDRO_MAX_DAILY_GEN_ENERGY_TABLE).where(HYDRO_MAX_DAILY_GEN_ENERGY_TABLE.c.study_id == study_id)
+            )
+            session.execute(
+                delete(HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE).where(
+                    HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE.c.study_id == study_id
+                )
+            )
             session.commit()
 
-        next_compatibility_data = update_compatibility_parameters(
-            compatibility_data, CompatibilityParametersUpdate(hydro_pmax=hydro_pmax)
-        )
-        self.get_impl().save_compatibility_parameters(next_compatibility_data)
+        compatibility_data.hydro_pmax = hydro_pmax
+        self.get_impl().save_compatibility_parameters(compatibility_data)

@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
-from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_3, StorageMode
+from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3, StorageMode
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from tests.helpers import create_study
 
@@ -48,3 +48,8 @@ def dao(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseSt
 @pytest.fixture
 def dao_930(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
     return build_dao(db_session, matrix_service, STUDY_VERSION_9_3)
+
+
+@pytest.fixture
+def dao_920(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
+    return build_dao(db_session, matrix_service, STUDY_VERSION_9_2)

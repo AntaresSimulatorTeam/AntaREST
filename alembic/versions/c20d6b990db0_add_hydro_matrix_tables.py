@@ -51,5 +51,5 @@ def upgrade():
 
 
 def downgrade():
-    for table_name in reversed(_HYDRO_MATRIX_TABLES):
+    for table_name in _HYDRO_MATRIX_TABLES:
         op.drop_table(table_name)

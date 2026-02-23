@@ -17,7 +17,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound
-from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.config.compatibility_parameters_model import (
     HydroPmax,
 )
@@ -47,8 +46,6 @@ from antarest.study.dao.database.models.hydro import (
     HYDRO_RUN_OF_RIVER_TABLE,
     HYDRO_WATER_VALUES_TABLE,
 )
-from antarest.study.model import STUDY_VERSION_9_2
-from tests.study.dao.conftest import build_dao
 
 
 class TestHydroManagement:
@@ -564,38 +561,64 @@ class TestHydroMatrices:
         dao.save_area("Paris")
 
         matrix_service = dao._matrix_service
-        dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
-        series_id = matrix_service.create(dataframe)
+
+        def make(data: list[list[float]]) -> tuple[pl.DataFrame, str]:
+            df = pl.DataFrame(data=data, orient="row")
+            return df, matrix_service.create(df)
+
+        df_maxpower, sid_maxpower = make([[1, 2], [3, 4]])
+        df_reservoir, sid_reservoir = make([[5, 6], [7, 8]])
+        df_energy, sid_energy = make([[9, 10], [11, 12]])
+        df_run_of_river, sid_run_of_river = make([[13, 14], [15, 16]])
+        df_modulation, sid_modulation = make([[17, 18], [19, 20]])
+        df_credit_modulations, sid_credit_modulations = make([[21, 22], [23, 24]])
+        df_inflow_pattern, sid_inflow_pattern = make([[25, 26], [27, 28]])
+        df_water_values, sid_water_values = make([[29, 30], [31, 32]])
+        df_mingen, sid_mingen = make([[33, 34], [35, 36]])
+        df_max_hourly_gen_power, sid_max_hourly_gen_power = make([[37, 38], [39, 40]])
+        df_max_hourly_pump_power, sid_max_hourly_pump_power = make([[41, 42], [43, 44]])
+        df_max_daily_gen_energy, sid_max_daily_gen_energy = make([[45, 46], [47, 48]])
+        df_max_daily_pump_energy, sid_max_daily_pump_energy = make([[49, 50], [51, 52]])
 
         # Save all matrices
-        dao.save_hydro_maxpower("paris", series_id)
-        dao.save_hydro_reservoir("paris", series_id)
-        dao.save_hydro_energy("paris", series_id)
-        dao.save_hydro_run_of_river("paris", series_id)
-        dao.save_hydro_modulation("paris", series_id)
-        dao.save_hydro_credit_modulations("paris", series_id)
-        dao.save_hydro_inflow_pattern("paris", series_id)
-        dao.save_hydro_water_values("paris", series_id)
-        dao.save_hydro_mingen("paris", series_id)
-        dao.save_hydro_max_hourly_gen_power("paris", series_id)
-        dao.save_hydro_max_hourly_pump_power("paris", series_id)
-        dao.save_hydro_max_daily_gen_energy("paris", series_id)
-        dao.save_hydro_max_daily_pump_energy("paris", series_id)
+        dao.save_hydro_maxpower("paris", sid_maxpower)
+        dao.save_hydro_reservoir("paris", sid_reservoir)
+        dao.save_hydro_energy("paris", sid_energy)
+        dao.save_hydro_run_of_river("paris", sid_run_of_river)
+        dao.save_hydro_modulation("paris", sid_modulation)
+        dao.save_hydro_credit_modulations("paris", sid_credit_modulations)
+        dao.save_hydro_inflow_pattern("paris", sid_inflow_pattern)
+        dao.save_hydro_water_values("paris", sid_water_values)
+        dao.save_hydro_mingen("paris", sid_mingen)
+        dao.save_hydro_max_hourly_gen_power("paris", sid_max_hourly_gen_power)
+        dao.save_hydro_max_hourly_pump_power("paris", sid_max_hourly_pump_power)
+        dao.save_hydro_max_daily_gen_energy("paris", sid_max_daily_gen_energy)
+        dao.save_hydro_max_daily_pump_energy("paris", sid_max_daily_pump_energy)
 
         # Retrieve and verify all matrices
-        pl.testing.assert_frame_equal(dao.get_hydro_maxpower("paris"), dataframe, check_dtypes=False)
-        pl.testing.assert_frame_equal(dao.get_hydro_reservoir("paris"), dataframe, check_dtypes=False)
-        pl.testing.assert_frame_equal(dao.get_hydro_energy("paris"), dataframe, check_dtypes=False)
-        pl.testing.assert_frame_equal(dao.get_hydro_run_of_river("paris"), dataframe, check_dtypes=False)
-        pl.testing.assert_frame_equal(dao.get_hydro_modulation("paris"), dataframe, check_dtypes=False)
-        pl.testing.assert_frame_equal(dao.get_hydro_credit_modulations("paris"), dataframe, check_dtypes=False)
-        pl.testing.assert_frame_equal(dao.get_hydro_inflow_pattern("paris"), dataframe, check_dtypes=False)
-        pl.testing.assert_frame_equal(dao.get_hydro_water_values("paris"), dataframe, check_dtypes=False)
-        pl.testing.assert_frame_equal(dao.get_hydro_mingen("paris"), dataframe, check_dtypes=False)
-        pl.testing.assert_frame_equal(dao.get_hydro_max_hourly_gen_power("paris"), dataframe, check_dtypes=False)
-        pl.testing.assert_frame_equal(dao.get_hydro_max_hourly_pump_power("paris"), dataframe, check_dtypes=False)
-        pl.testing.assert_frame_equal(dao.get_hydro_max_daily_gen_energy("paris"), dataframe, check_dtypes=False)
-        pl.testing.assert_frame_equal(dao.get_hydro_max_daily_pump_energy("paris"), dataframe, check_dtypes=False)
+        pl.testing.assert_frame_equal(dao.get_hydro_maxpower("paris"), df_maxpower, check_dtypes=False)
+        pl.testing.assert_frame_equal(dao.get_hydro_reservoir("paris"), df_reservoir, check_dtypes=False)
+        pl.testing.assert_frame_equal(dao.get_hydro_energy("paris"), df_energy, check_dtypes=False)
+        pl.testing.assert_frame_equal(dao.get_hydro_run_of_river("paris"), df_run_of_river, check_dtypes=False)
+        pl.testing.assert_frame_equal(dao.get_hydro_modulation("paris"), df_modulation, check_dtypes=False)
+        pl.testing.assert_frame_equal(
+            dao.get_hydro_credit_modulations("paris"), df_credit_modulations, check_dtypes=False
+        )
+        pl.testing.assert_frame_equal(dao.get_hydro_inflow_pattern("paris"), df_inflow_pattern, check_dtypes=False)
+        pl.testing.assert_frame_equal(dao.get_hydro_water_values("paris"), df_water_values, check_dtypes=False)
+        pl.testing.assert_frame_equal(dao.get_hydro_mingen("paris"), df_mingen, check_dtypes=False)
+        pl.testing.assert_frame_equal(
+            dao.get_hydro_max_hourly_gen_power("paris"), df_max_hourly_gen_power, check_dtypes=False
+        )
+        pl.testing.assert_frame_equal(
+            dao.get_hydro_max_hourly_pump_power("paris"), df_max_hourly_pump_power, check_dtypes=False
+        )
+        pl.testing.assert_frame_equal(
+            dao.get_hydro_max_daily_gen_energy("paris"), df_max_daily_gen_energy, check_dtypes=False
+        )
+        pl.testing.assert_frame_equal(
+            dao.get_hydro_max_daily_pump_energy("paris"), df_max_daily_pump_energy, check_dtypes=False
+        )
 
         # update
         dataframe2 = pl.DataFrame(data=[[2, 3, 4], [5, 6, 7.777]], orient="row")
@@ -680,69 +703,68 @@ class TestHydroMatrices:
 
 
 class TestConvertHydroPmax:
-    """Tests for convert_hydro_pmax conversion logic."""
+    """
+    Tests for convert_hydro_pmax conversion logic.
 
-    @pytest.fixture
-    def dao_v92(self, db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
-        # The default `dao` fixture (STUDY_VERSION_8_8) cannot be used here because
-        # compatibility parameters (required by convert_hydro_pmax) are only inserted
-        # at study creation for versions >= 9.2 (see DatabaseStudyDaoFactory).
-        # Using an older version causes get_compatibility_parameters() to raise
-        # StudyNotFoundError on the very first line of convert_hydro_pmax.
-        return build_dao(db_session, matrix_service, STUDY_VERSION_9_2)
+    The default `dao` fixture (STUDY_VERSION_8_8) cannot be used here because
+    compatibility parameters (required by convert_hydro_pmax) are only inserted
+    at study creation for versions >= 9.2 (see DatabaseStudyDaoFactory).
+    Using an older version causes get_compatibility_parameters() to raise
+    StudyNotFoundError on the very first line of convert_hydro_pmax.
+    """
 
-    def test_roundtrip(self, dao_v92: DatabaseStudyDao) -> None:
-        dao_v92.save_area("Paris")
-        dao_v92.save_area("London")
+    def test_roundtrip(self, dao_920: DatabaseStudyDao) -> None:
+        dao_920.save_area("Paris")
+        dao_920.save_area("London")
 
-        dao_v92.convert_hydro_pmax(HydroPmax.HOURLY)
-        assert dao_v92.get_compatibility_parameters().hydro_pmax == HydroPmax.HOURLY
+        dao_920.convert_hydro_pmax(HydroPmax.HOURLY)
+        assert dao_920.get_compatibility_parameters().hydro_pmax == HydroPmax.HOURLY
         expected_daily = np.full((365, 1), 24.0)
         for area_id in ["paris", "london"]:
-            assert dao_v92.get_hydro_max_hourly_gen_power(area_id).is_empty()
-            assert dao_v92.get_hydro_max_hourly_pump_power(area_id).is_empty()
-            assert (dao_v92.get_hydro_max_daily_gen_energy(area_id).to_numpy() == expected_daily).all()
-            assert (dao_v92.get_hydro_max_daily_pump_energy(area_id).to_numpy() == expected_daily).all()
+            assert dao_920.get_hydro_max_hourly_gen_power(area_id).is_empty()
+            assert dao_920.get_hydro_max_hourly_pump_power(area_id).is_empty()
+            assert (dao_920.get_hydro_max_daily_gen_energy(area_id).to_numpy() == expected_daily).all()
+            assert (dao_920.get_hydro_max_daily_pump_energy(area_id).to_numpy() == expected_daily).all()
 
-        dao_v92.convert_hydro_pmax(HydroPmax.DAILY)
-        assert dao_v92.get_compatibility_parameters().hydro_pmax == HydroPmax.DAILY
+        dao_920.convert_hydro_pmax(HydroPmax.DAILY)
+        assert dao_920.get_compatibility_parameters().hydro_pmax == HydroPmax.DAILY
         for area_id in ["paris", "london"]:
             with pytest.raises(ValueError):
-                dao_v92.get_hydro_max_hourly_gen_power(area_id)
+                dao_920.get_hydro_max_hourly_gen_power(area_id)
 
-    def test_convert_hourly_noop_preserves_custom_matrices(self, dao_v92: DatabaseStudyDao) -> None:
+    def test_convert_hourly_noop_preserves_custom_matrices(self, dao_920: DatabaseStudyDao) -> None:
         """Converting to HOURLY when already HOURLY does not overwrite manually saved matrices."""
-        dao_v92.save_area("Paris")
-        dao_v92.convert_hydro_pmax(HydroPmax.HOURLY)
+        dao_920.save_area("Paris")
+        dao_920.convert_hydro_pmax(HydroPmax.HOURLY)
 
         # Overwrite the default matrices with custom values
-        matrix_service = dao_v92._matrix_service
+        matrix_service = dao_920._matrix_service
         custom_hourly = matrix_service.create(pl.DataFrame({"0": [1.0, 2.0, 3.0]}))
         custom_daily = matrix_service.create(pl.DataFrame({"0": [99.0] * 365}))
-        dao_v92.save_hydro_max_hourly_gen_power("paris", custom_hourly)
-        dao_v92.save_hydro_max_hourly_pump_power("paris", custom_hourly)
-        dao_v92.save_hydro_max_daily_gen_energy("paris", custom_daily)
-        dao_v92.save_hydro_max_daily_pump_energy("paris", custom_daily)
+        dao_920.save_hydro_max_hourly_gen_power("paris", custom_hourly)
+        dao_920.save_hydro_max_hourly_pump_power("paris", custom_hourly)
+        dao_920.save_hydro_max_daily_gen_energy("paris", custom_daily)
+        dao_920.save_hydro_max_daily_pump_energy("paris", custom_daily)
 
         # Converting to HOURLY again is a no-op: custom values must be preserved
-        dao_v92.convert_hydro_pmax(HydroPmax.HOURLY)
+        dao_920.convert_hydro_pmax(HydroPmax.HOURLY)
 
         pl.testing.assert_frame_equal(
-            dao_v92.get_hydro_max_hourly_gen_power("paris"), pl.DataFrame({"0": [1.0, 2.0, 3.0]})
+            dao_920.get_hydro_max_hourly_gen_power("paris"), pl.DataFrame({"0": [1.0, 2.0, 3.0]})
         )
         pl.testing.assert_frame_equal(
-            dao_v92.get_hydro_max_hourly_pump_power("paris"), pl.DataFrame({"0": [1.0, 2.0, 3.0]})
+            dao_920.get_hydro_max_hourly_pump_power("paris"), pl.DataFrame({"0": [1.0, 2.0, 3.0]})
         )
         pl.testing.assert_frame_equal(
-            dao_v92.get_hydro_max_daily_gen_energy("paris"), pl.DataFrame({"0": [99.0] * 365})
+            dao_920.get_hydro_max_daily_gen_energy("paris"), pl.DataFrame({"0": [99.0] * 365})
         )
         pl.testing.assert_frame_equal(
-            dao_v92.get_hydro_max_daily_pump_energy("paris"), pl.DataFrame({"0": [99.0] * 365})
+            dao_920.get_hydro_max_daily_pump_energy("paris"), pl.DataFrame({"0": [99.0] * 365})
         )
 
-    def test_no_areas(self, dao_v92: DatabaseStudyDao) -> None:
+    def test_no_areas(self, dao_920: DatabaseStudyDao) -> None:
         """Converting with no areas still updates the compat param."""
-        dao_v92.convert_hydro_pmax(HydroPmax.HOURLY)
-        assert dao_v92.get_compatibility_parameters().hydro_pmax == HydroPmax.HOURLY
-        dao_v92.convert_hydro_pmax(HydroPmax.DAILY)
-        assert dao_v92.get_compatibility_parameters().hydro_pmax == HydroPmax.DAILY
+        dao_920.convert_hydro_pmax(HydroPmax.HOURLY)
+        assert dao_920.get_compatibility_parameters().hydro_pmax == HydroPmax.HOURLY
+        dao_920.convert_hydro_pmax(HydroPmax.DAILY)
+        assert dao_920.get_compatibility_parameters().hydro_pmax == HydroPmax.DAILY
