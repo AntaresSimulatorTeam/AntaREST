@@ -33,6 +33,8 @@ function EditableTreeItem({
 }: EditableTreeItemProps) {
   const [value, setValue] = useState(initialValue);
   const inputRef = useRef<HTMLInputElement>(null);
+  // No need to reset after save: this component is conditionally rendered by its
+  // parent and unmounts once the operation completes, so each editing session gets a fresh instance.
   const hasSavedRef = useRef(false);
 
   useEffect(() => {

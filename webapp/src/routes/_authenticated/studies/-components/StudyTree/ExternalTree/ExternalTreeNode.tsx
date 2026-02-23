@@ -18,10 +18,10 @@ import * as R from "ramda";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import TreeItemEnhanced from "@/components/TreeItemEnhanced";
+import { sortByName } from "@/services/utils";
 import { treeItemStyles, treeNodeIcons, workspaceItemStyles } from "./styles";
 import type { ExternalTreeNodeMetadata, ExternalTreeNodeProps } from "./types";
 
-const sortByName = R.sortBy<ExternalTreeNodeMetadata>(R.compose(R.toLower, R.prop("name")));
 const filterScannedStudies = R.reject<ExternalTreeNodeMetadata>(
   (node) => node.isScannedStudy === true,
 );
