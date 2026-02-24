@@ -32,7 +32,7 @@ from antarest.study.business.model.config.timeseries_config_model import TimeSer
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.thematic_trimming_model import (
     ThematicTrimming,
-    validate_thematic_trimming_against_version,
+    initialize_thematic_trimming_against_version,
 )
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -58,9 +58,9 @@ def _create_default_settings(dao: DatabaseStudyDao, study: Study) -> None:
 
     dao.save_optimization_preferences(OptimizationPreferences())
 
-    trimming = ThematicTrimming()
-    validate_thematic_trimming_against_version(trimming, study_version)
-    dao.save_thematic_trimming(trimming)
+    thematic_trimming = ThematicTrimming()
+    initialize_thematic_trimming_against_version(thematic_trimming, study_version)
+    dao.save_thematic_trimming(thematic_trimming)
 
     if study_version >= STUDY_VERSION_8_3:
         adequacy_patch_parameters = AdequacyPatchParameters()
