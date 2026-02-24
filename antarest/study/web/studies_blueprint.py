@@ -619,4 +619,11 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         study_id = re.sub(r"[\r\n\t\f\v]", "", study_id)
         logger.info("Logging study %s", study_id)
 
+    @bp.put(
+        "/studies/{study_id}/new_sanitized",
+    )
+    def new_sanitized_study_id(study_id: str) -> None:
+        study_id = sanitize_uuid(study_id)
+        logger.info("Logging study %s", study_id)
+
     return bp
