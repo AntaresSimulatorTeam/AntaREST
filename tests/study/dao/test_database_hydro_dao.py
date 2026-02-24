@@ -706,11 +706,7 @@ class TestConvertHydroPmax:
     """
     Tests for convert_hydro_pmax conversion logic.
 
-    The default `dao` fixture (STUDY_VERSION_8_8) cannot be used here because
-    compatibility parameters (required by convert_hydro_pmax) are only inserted
-    at study creation for versions >= 9.2 (see DatabaseStudyDaoFactory).
-    Using an older version causes get_compatibility_parameters() to raise
-    StudyNotFoundError on the very first line of convert_hydro_pmax.
+    compatibility parameter is only available from version 9.2 so we use dao_920 in the tests bellow.
     """
 
     def test_roundtrip(self, dao_920: DatabaseStudyDao) -> None:
