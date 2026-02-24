@@ -10,12 +10,6 @@
 #
 # This file is part of the Antares project.
 
-"""
-Database implementation of AreaDao using SQLAlchemy Core.
-
-This module provides database-backed storage for areas when storage_mode=DATABASE.
-"""
-
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
