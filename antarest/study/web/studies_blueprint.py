@@ -18,7 +18,7 @@ from pathlib import PurePosixPath
 from typing import Annotated, Dict, Optional, Sequence
 
 from antares.study.version import StudyVersion
-from fastapi import APIRouter, HTTPException, Query, UploadFile
+from fastapi import APIRouter, HTTPException, Path, Query, UploadFile
 from markupsafe import escape
 from pydantic import NonNegativeInt
 
@@ -624,6 +624,22 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     )
     def new_sanitized_study_id(study_id: str) -> None:
         study_id = sanitize_uuid(study_id)
+        logger.info("Logging study %s", study_id)
+
+    @bp.put(
+        "/studies/{study_id}/simpler-pattern",
+    )
+    def simpler_pattern(
+        study_id: str = Path(pattern=r"^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"),
+    ) -> None:
+        logger.info("Logging study %s", study_id)
+
+    @bp.put(
+        "/studies/{study_id}/even-simpler-pattern",
+    )
+    def even_simpler_pattern(
+        study_id: str = Path(pattern=r"^[a-zA-Z0-9_-]*$"),
+    ) -> None:
         logger.info("Logging study %s", study_id)
 
     return bp
