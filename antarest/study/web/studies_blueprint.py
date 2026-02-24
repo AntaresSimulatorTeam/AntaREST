@@ -588,4 +588,12 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         study_id = _sanitize_study_id(study_id)
         logger.info("Logging study %s", study_id)
 
+    @bp.put(
+        "/studies/{study_id}/check-crlf",
+    )
+    def check_crlf(study_id: str) -> None:
+        if "\r\n" in study_id or "\n" in study_id:
+            raise ValueError("Invalid str")
+        logger.info("Logging study %s", study_id)
+
     return bp
