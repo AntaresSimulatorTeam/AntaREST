@@ -14,7 +14,7 @@ import collections
 import logging
 from http import HTTPStatus
 from pathlib import PurePosixPath
-from typing import Annotated, Dict, Optional, Sequence, TypeAlias
+from typing import Annotated, Dict, Optional, Sequence
 
 from antares.study.version import StudyVersion
 from fastapi import APIRouter, HTTPException, Query, UploadFile
@@ -26,13 +26,7 @@ from antarest.core.exceptions import BadArchiveContent, BadZipBinary
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.model import PublicMode
 from antarest.core.utils.archives import ArchiveFormat
-from antarest.core.utils.utils import (
-    UUID_PATTERN,
-    sanitize_string,
-    sanitize_uuid,
-    validate_folder_path,
-    validate_study_name,
-)
+from antarest.core.utils.utils import sanitize_string, sanitize_uuid, validate_folder_path, validate_study_name
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.login.utils import require_current_user
@@ -50,8 +44,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 logger = logging.getLogger(__name__)
 
 QUERY_REGEX = r"^\s*(?:\d+\s*(?:,\s*\d+\s*)*)?$"
-
-UuidStr: TypeAlias = Annotated[str, Query(pattern=UUID_PATTERN)]
 
 
 def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) -> Sequence[str]:
@@ -293,7 +285,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         summary="Copy Study",
     )
     def copy_study(
-        uuid: UuidStr,
+        uuid: str,
         study_name: str,
         output_ids: Annotated[list[str], Query(default_factory=list)],
         with_outputs: bool | None = None,
