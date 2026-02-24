@@ -642,4 +642,12 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     ) -> None:
         logger.info("Logging study %s", study_id)
 
+    @bp.put(
+        "/studies/{study_id}/invalid-pattern",
+    )
+    def invalid_pattern(
+        study_id: str = Path(pattern=r"^.*$"),
+    ) -> None:
+        logger.info("Logging study %s", study_id)
+
     return bp
