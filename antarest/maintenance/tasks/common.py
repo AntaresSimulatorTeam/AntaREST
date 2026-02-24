@@ -15,7 +15,52 @@
 from enum import IntEnum, StrEnum
 from typing import Optional
 
+from celery.schedules import crontab
+from redis.exceptions import ConnectionError as RedisConnectionError
+from sqlalchemy.exc import OperationalError
+
 from antarest.core.serde import AntaresBaseModel
+from antarest.core.utils.lock import LockNotAcquired
+
+
+class CronParseError(ValueError):
+    """Raised when a cron string is invalid."""
+
+
+def parse_cron_string(cron_string: str) -> crontab:
+    """
+    Parse a cron string and return a Celery crontab schedule.
+
+    Args:
+        cron_string: Standard cron format "minute hour day_of_month month day_of_week"
+                     Examples: "0 0 * * 6" (Saturday midnight), "*/15 * * * *" (every 15 min)
+
+    Returns:
+        A Celery crontab schedule object
+
+    Raises:
+        CronParseError: If the cron string is invalid (wrong format or out-of-range values)
+    """
+
+    cron_parts = cron_string.split()
+    if len(cron_parts) != 5:
+        raise CronParseError(f"Invalid cron string: '{cron_string}'. Expected 5 fields, got {len(cron_parts)}.")
+    return crontab(
+        minute=cron_parts[0],
+        hour=cron_parts[1],
+        day_of_month=cron_parts[2],
+        month_of_year=cron_parts[3],
+        day_of_week=cron_parts[4],
+    )
+
+
+# Transient errors that should trigger a retry
+TRANSIENT_ERRORS = (
+    RedisConnectionError,  # Redis connection issues
+    OperationalError,  # Database connection issues
+    LockNotAcquired,  # Lock already held by another task
+    ConnectionError,  # Generic network errors
+)
 
 
 class MaintenanceContextNotFoundError(RuntimeError):

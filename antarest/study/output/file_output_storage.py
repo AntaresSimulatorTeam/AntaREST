@@ -17,13 +17,13 @@ from pathlib import Path
 from typing import BinaryIO, Callable, Iterator, Optional, Sequence
 from uuid import uuid4
 
-import pandas as pd
+import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import ICache
 from antarest.core.remote.remote_executor import IRemoteExecutor
-from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unzip
+from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive_from_stream, unzip
 from antarest.core.utils.utils import StopWatch
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -87,10 +87,13 @@ class FileOutputStorage(IOutputStorage):
     Implementation based on outputs stored in antares-solver file format.
     """
 
-    def __init__(self, outputs_provider: IFileOutputsProvider, cache: ICache, remote_executor: IRemoteExecutor) -> None:
+    def __init__(
+        self, outputs_provider: IFileOutputsProvider, cache: ICache, remote_executor: IRemoteExecutor, tmp_dir: Path
+    ) -> None:
         self._outputs_provider = outputs_provider
         self._cache = cache
         self._remote_executor = remote_executor
+        self._tmp_dir = tmp_dir
 
     @override
     def import_output(
@@ -117,7 +120,7 @@ class FileOutputStorage(IOutputStorage):
                     path_output = Path(str(path_output) + f"{ArchiveFormat.ZIP}")
                     shutil.copyfile(output, path_output)
             else:
-                extract_archive(output, path_output)
+                extract_archive_from_stream(output, path_output, tmp_dir=self._tmp_dir)
 
             stopwatch.log_elapsed(lambda elapsed_time: logger.info(f"Copied output for {study_id} in {elapsed_time}s"))
             fix_study_root(path_output)
@@ -334,7 +337,7 @@ class FileOutputStorage(IOutputStorage):
         columns_names: Sequence[str],
         transform_columns_headers: bool,
         mc_years: Optional[Sequence[int]] = None,
-    ) -> Iterator[pd.DataFrame]:
+    ) -> Iterator[pl.DataFrame]:
         study_outputs = self._outputs_provider.get_outputs(study_id)
         aggregator_manager = AggregatorManager(
             study_outputs.outputs_path / output_id,

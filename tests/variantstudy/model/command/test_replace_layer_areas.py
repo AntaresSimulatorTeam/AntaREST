@@ -154,7 +154,7 @@ class TestReplaceLayerAreas:
 
         output = update_command.apply(study_data=empty_study)
         assert not output.status
-        assert "Layer not found" in output.message
+        assert "Layer is not found" in output.message
 
     def test_replace_layer_areas_empty_list(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         """Test replacing layer with an empty list of areas (removes all areas)."""

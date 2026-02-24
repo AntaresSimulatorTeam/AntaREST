@@ -17,7 +17,7 @@ from pathlib import PurePosixPath
 from typing import Annotated, Dict, Optional, Sequence
 
 from antares.study.version import StudyVersion
-from fastapi import APIRouter, Query, UploadFile
+from fastapi import APIRouter, HTTPException, Query, UploadFile
 from markupsafe import escape
 from pydantic import NonNegativeInt
 
@@ -31,7 +31,9 @@ from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.login.utils import require_current_user
 from antarest.study.model import (
+    DeleteManyStudies,
     MatrixIndex,
+    StorageMode,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
 )
@@ -349,16 +351,36 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         directory: str = Query(
             "", description="Directory path where the study will be created (e.g., 'project/subfolder')"
         ),
+        storage_mode: StorageMode = StorageMode.FILESYSTEM,
     ) -> str:
+        """
+        Create a new empty study.
+
+        Args:
+        - `name`: The name of the study to create.
+        - `version`: The version of the study (optional).
+        - `groups`: Comma-separated list of group IDs to associate with the study.
+        - `storage_mode`: Storage mode for the study ("filesystem" or "database"). Defaults to "filesystem".
+        - `directory`: The name of the directory
+        Returns:
+        - The ID of the newly created study.
+        """
+        if storage_mode == StorageMode.DATABASE and not config.storage.study_storage.database_mode_enabled:
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_IMPLEMENTED,
+                detail="Database storage mode is not enabled on this server",
+            )
         study_version = StudyVersion.parse(version) if version else None
-        logger.info(f"Creating new study '{name}'")
+        logger.info(f"Creating new study '{name}' with storage_mode={storage_mode}")
         name_sanitized = validate_study_name(escape(name))
         group_ids = _split_comma_separated_values(groups)
         group_ids = [sanitize_string(gid) for gid in group_ids]
 
         directory_path_sanitized = validate_folder_path(directory) if directory else ""
 
-        uuid = study_service.create_study(name_sanitized, study_version, group_ids, directory=directory_path_sanitized)
+        uuid = study_service.create_study(
+            name_sanitized, study_version, group_ids, storage_mode=storage_mode, directory=directory_path_sanitized
+        )
 
         return uuid
 
@@ -402,6 +424,16 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         uuid_sanitized = sanitize_uuid(uuid)
 
         study_service.delete_study(uuid_sanitized, children)
+
+    @bp.delete(
+        "/studies",
+        status_code=HTTPStatus.NO_CONTENT,
+        summary="Delete Multiple Studies",
+    )
+    def delete_studies(data: DeleteManyStudies) -> None:
+        logger.info(f"Deleting multiple studies: {data.study_ids}")
+        sanitized_ids = [sanitize_uuid(sid) for sid in data.study_ids]
+        study_service.delete_studies(sanitized_ids, data.with_variants)
 
     @bp.put(
         "/studies/{uuid}/owner/{user_id}",

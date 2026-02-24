@@ -86,8 +86,10 @@ class StudyConverter:
         self._new_dao.save_advanced_parameters(self._source_dao.get_advanced_parameters())
         self._new_dao.save_optimization_preferences(self._source_dao.get_optimization_preferences())
         self._new_dao.save_thematic_trimming(self._source_dao.get_thematic_trimming())
-        if self._study_version > STUDY_VERSION_8_3:
+        if self._study_version >= STUDY_VERSION_8_3:
             self._new_dao.save_adequacy_patch_parameters(self._source_dao.get_adequacy_patch_parameters())
+        if self._study_version >= STUDY_VERSION_9_2:
+            self._new_dao.save_compatibility_parameters(self._source_dao.get_compatibility_parameters())
 
     def _convert_xpansion(self) -> None:
         try:
@@ -270,8 +272,15 @@ class StudyConverter:
             self._new_dao.save_st_storage_inflows(area_id, sts_id, inflows_id)
 
             if self._study_version >= STUDY_VERSION_9_2:
-                if sts_id in constraints:
-                    self._new_dao.save_st_storage_additional_constraints(area_id, sts_id, constraints[sts_id])
+                storage_constraints = constraints.get(sts_id)
+                if storage_constraints:
+                    self._new_dao.save_st_storage_additional_constraints(area_id, sts_id, storage_constraints)
+                    for constraint in storage_constraints:
+                        rhs_matrix = self._source_dao.get_st_storage_additional_constraint_matrix(
+                            area_id, sts_id, constraint.id
+                        )
+                        rhs_matrix_id = self._matrix_service.create(rhs_matrix)
+                        self._new_dao.save_st_storage_constraint_matrix(area_id, sts_id, constraint.id, rhs_matrix_id)
 
                 cost_injection = self._source_dao.get_st_storage_cost_injection(area_id, sts_id)
                 injection_id = self._matrix_service.create(cost_injection)

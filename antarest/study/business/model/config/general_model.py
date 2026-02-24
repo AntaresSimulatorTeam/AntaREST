@@ -19,7 +19,6 @@ from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import STUDY_VERSION_7_1
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 
 
 class Month(EnumIgnoreCase):
@@ -53,6 +52,37 @@ class BuildingMode(EnumIgnoreCase):
     DERATED = "Derated"
 
 
+class Mode(EnumIgnoreCase):
+    """
+    Simulation mode of an Antares study.
+    """
+
+    ECONOMY = "Economy"
+    ADEQUACY = "Adequacy"
+    EXPANSION = "Expansion"
+
+    def get_output_suffix(self) -> str:
+        if self == Mode.ECONOMY:
+            return "eco"
+        elif self == Mode.ADEQUACY:
+            return "adq"
+        elif self == Mode.EXPANSION:
+            return "exp"
+        else:
+            raise ValueError(f"Unknown mode: {self}")
+
+    @staticmethod
+    def from_output_suffix(suffix: str) -> "Mode":
+        if suffix == "eco":
+            return Mode.ECONOMY
+        elif suffix == "adq":
+            return Mode.ADEQUACY
+        elif suffix == "exp":
+            return Mode.EXPANSION
+        else:
+            raise ValueError(f"Unknown suffix: {suffix}")
+
+
 DayNumberType: TypeAlias = Annotated[int, Field(ge=1, le=366)]
 
 
@@ -73,9 +103,9 @@ class GeneralConfig(AntaresBaseModel):
     year_by_year: bool = False
     simulation_synthesis: bool = True
     mc_scenario: bool = False
-    filtering: bool | None = None
-    geographic_trimming: bool | None = None
-    thematic_trimming: bool | None = None
+    filtering: bool | None = None  # Disappeared in v7.1
+    geographic_trimming: bool | None = None  # Since v7.1
+    thematic_trimming: bool | None = None  # Since v7.1
 
     @model_validator(mode="before")
     def day_fields_validation(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -149,7 +179,7 @@ def validate_general_config_version(config: GeneralConfig | GeneralConfigUpdate,
                 raise InvalidFieldForVersionError(f"Field '{field}' is not a valid field for study version {version}")
 
 
-def initialize_default_values(config: GeneralConfig, version: StudyVersion) -> None:
+def initialize_general_config_against_version(config: GeneralConfig, version: StudyVersion) -> None:
     if version < STUDY_VERSION_7_1:
         _initialize_field_default(config, "filtering", False)
 

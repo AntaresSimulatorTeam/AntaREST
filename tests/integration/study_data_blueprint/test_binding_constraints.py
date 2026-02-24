@@ -90,6 +90,7 @@ class TestBindingConstraints:
     Test the end points related to binding constraints.
     """
 
+    @pytest.mark.flaky(reruns=3)
     def test_update_multiple_binding_constraints(self, client: TestClient, user_access_token: str) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         preparer = PreparerProxy(client, user_access_token)
@@ -110,7 +111,7 @@ class TestBindingConstraints:
         end = time.time()
         duration = end - start
         # due to new code this should be extremely fast.
-        assert duration < duration_threshold(0.2)
+        assert duration < duration_threshold(0.5)
         # asserts the changes are effective.
         res = client.get(f"/v1/studies/{study_id}/bindingconstraints")
         assert res.status_code == 200

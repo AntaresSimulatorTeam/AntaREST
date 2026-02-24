@@ -49,6 +49,14 @@ class FileStudyAreaDao(AreaDao):
         pass
 
     @override
+    def get_all_area_ids(self) -> list[str]:
+        """
+        Retrieve all physical areas of a study.
+        """
+        study_data = self.get_file_study()
+        return list(study_data.config.areas)
+
+    @override
     def get_all_areas_info(self) -> List[AreaInfo]:
         """
         Retrieve all physical areas of a study.
@@ -144,6 +152,17 @@ class FileStudyAreaDao(AreaDao):
             color_rgb = (area_ui_data.style.color_r, area_ui_data.style.color_g, area_ui_data.style.color_b)
 
         return AreaUI(x=x, y=y, color_rgb=color_rgb)
+
+    @override
+    def get_invalid_area_ids(self, areas: list[str]) -> list[str]:
+        """
+        Check all areas exists in the study.
+        """
+        areas_set = set(areas)
+        study_data = self.get_file_study()
+        all_areas = set(study_data.config.areas)
+        invalid_areas = areas_set - all_areas
+        return list(invalid_areas)
 
     @override
     def get_load(self, area_id: str) -> pl.DataFrame:
@@ -330,6 +349,13 @@ class FileStudyAreaDao(AreaDao):
         if (study_data.tree.config.path / "user" / "ts-generator-output" / "thermal" / area_id).exists():
             study_data.tree.delete(["user", "ts-generator-output", "thermal", area_id])
 
+        if study_version >= STUDY_VERSION_9_2:
+            with contextlib.suppress(ChildNotFoundError):
+                study_data.tree.delete(["input", "hydro", "series", area_id, "maxHourlyGenPower"])
+                study_data.tree.delete(["input", "hydro", "series", area_id, "maxHourlyPumpPower"])
+                study_data.tree.delete(["input", "hydro", "common", "capacity", f"maxDailyGenEnergy_{area_id}"])
+                study_data.tree.delete(["input", "hydro", "common", "capacity", f"maxDailyPumpEnergy_{area_id}"])
+
     def _remove_area_from_links(self, area_id: str, study_data: Any, logger: Any) -> None:
         """Remove all links associated with the area."""
 
@@ -473,7 +499,7 @@ class FileStudyAreaDao(AreaDao):
         # Verify that the layer exists
         layers = study_data.tree.get(["layers", "layers", "layers"])
         if layer_id not in [str(layer) for layer in list(layers.keys())]:
-            raise LayerNotFound
+            raise LayerNotFound(layer_id)
 
         # Get all areas UI configuration
         areas_ui = study_data.tree.get(["input", "areas", ",".join(study_data.config.areas), "ui"])

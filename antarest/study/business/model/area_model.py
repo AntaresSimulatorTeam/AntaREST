@@ -19,6 +19,9 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 
+DEFAULT_LAYER_ID = "0"
+DEFAULT_LAYER_NAME = "All"
+
 
 class AreaType(enum.Enum):
     AREA = "AREA"

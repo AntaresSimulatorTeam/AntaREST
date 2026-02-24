@@ -23,6 +23,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, User
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
@@ -106,9 +107,8 @@ class TestRawStudyService:
         db.session.commit()
 
         # Prepare the RAW Study
-        raw_study_service.create(raw_study)
-
         command_context = command_factory.command_context
+        FileStudyDaoFactory(command_context, raw_study_service.study_factory).create_study_dao(raw_study)
 
         create_area_fr = CreateArea(command_context=command_context, area_name="fr", study_version=raw_study.version)
 

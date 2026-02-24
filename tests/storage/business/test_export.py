@@ -15,7 +15,6 @@ from unittest.mock import Mock
 from zipfile import ZipFile
 
 import pytest
-from checksumdir import dirhash
 from py7zr import SevenZipFile, py7zr
 
 from antarest.blobstore.service import BlobService
@@ -36,7 +35,7 @@ from antarest.study.storage.variantstudy.model.command.create_cluster import Cre
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.conftest import empty_study_fixture
 from tests.db_statement_recorder import DBStatementRecorder
-from tests.helpers import create_raw_study, with_db_context
+from tests.helpers import create_raw_study, dirhash, with_db_context
 
 
 def test_export(
@@ -219,7 +218,7 @@ def test_export_output(tmp_path: Path) -> None:
                 study_workspace=DEFAULT_WORKSPACE_NAME,
             )
 
-    output_storage = FileOutputStorage(OutputsProvider(), cache=Mock(), remote_executor=Mock())
+    output_storage = FileOutputStorage(OutputsProvider(), cache=Mock(), remote_executor=Mock(), tmp_dir=root)
 
     output_storage.export_output(study.id, output_id, export_path)
     zipf = ZipFile(export_path)

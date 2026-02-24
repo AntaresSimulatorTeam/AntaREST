@@ -13,25 +13,25 @@
  */
 
 import type { Job } from "@/services/api/launcher/jobs/types";
+import * as api from "@/services/api/study";
+import type { FileStudyTreeConfigDTO, GenericInfo, Link, LinkElement } from "@/types/types";
 import {
   createAction,
   createAsyncThunk,
   createEntityAdapter,
   createReducer,
 } from "@reduxjs/toolkit";
-import * as api from "../../services/api/study";
-import type { FileStudyTreeConfigDTO, GenericInfo, Link, LinkElement } from "../../types/types";
 import {
+  getDeepVariantsIds,
   getStudyMapsIds,
   getStudySynthesis,
   getStudySynthesisIds,
-  getDeepVariantsIds,
 } from "../selectors";
 import type { AppAsyncThunkConfig, AppDispatch, AppThunk } from "../store";
 import { makeActionName } from "../utils";
 import { deleteStudyMap, setStudyMap } from "./studyMaps";
 
-export const studySynthesesAdapter = createEntityAdapter<FileStudyTreeConfigDTO>({
+const studySynthesesAdapter = createEntityAdapter<FileStudyTreeConfigDTO>({
   selectId: (studyData) => studyData.study_id,
 });
 

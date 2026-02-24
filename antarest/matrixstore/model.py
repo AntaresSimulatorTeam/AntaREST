@@ -25,6 +25,13 @@ from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
 from antarest.login.model import Group, GroupDTO, Identity, UserInfo
 
+LEGACY_MATRIX_VERSION = 1
+NEW_MATRIX_VERSION = 2
+"""
+Version 1 matrices were not saved with a header, unlike version 2 ones.
+Therefore, we rely on this version to know how to read the matrices
+"""
+
 
 class Matrix(Base):
     """
@@ -169,6 +176,15 @@ class MatrixReferencesDTO(AntaresBaseModel, extra="forbid", populate_by_name=Tru
 
     refs: list[MatrixDescriptionDTO]
     disk_usage: Optional[int] = None
+
+
+class MatrixMismatchDTO(AntaresBaseModel, extra="forbid", populate_by_name=True):
+    """
+    Pydantic translation of the existence of a matrix in the 2 storage places
+    """
+
+    database: bool
+    filesystem: bool
 
 
 class MatrixDataSet(Base):

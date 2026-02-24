@@ -90,6 +90,14 @@ export default {
           padding: 4,
           fontSize: "0.75rem",
           lineHeight: "initial",
+          ".MuiButton-startIcon": {
+            marginRight: 4,
+            marginLeft: 0,
+          },
+          ".MuiButton-endIcon": {
+            marginRight: 0,
+            marginLeft: 4,
+          },
         },
       },
     ],
@@ -262,5 +270,19 @@ export default {
         borderColor: theme.palette.divider,
       }),
     },
+  },
+  MuiStack: {
+    defaultProps: {
+      direction: "row",
+      useFlexGap: true,
+    },
+    variants: [
+      {
+        props: { direction: "row" },
+        style: {
+          alignItems: "center",
+        },
+      },
+    ],
   },
 } satisfies CssVarsThemeOptions["components"];

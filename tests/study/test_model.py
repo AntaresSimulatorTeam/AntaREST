@@ -56,6 +56,7 @@ class TestStudy:
             "ix_study_name",
             "ix_study_owner_id",
             "ix_study_parent_id",
+            "ix_study_storage_mode",
             "ix_study_type",
             "ix_study_updated_at",
             "ix_study_version",
@@ -139,3 +140,36 @@ class TestStudy:
             assert len(study_tag_pairs) == 2
             assert set(e.tag_label for e in study_tag_pairs) == {"test-tag-2", "test-tag-3"}
             assert set(e.study_id for e in study_tag_pairs) == {study_id_1}
+
+    def test_storage_mode_defaults_to_filesystem(self, db_session: Session) -> None:
+        """
+        Test that storage_mode defaults to FILESYSTEM for backward compatibility.
+        """
+        study_id = uuid.uuid4()
+
+        with db_session:
+            study = create_study(id=str(study_id), name="Test Storage Mode")
+            db_session.add(study)
+            db_session.commit()
+
+        with db_session:
+            study = db_session.query(Study).first()
+            assert study.storage_mode == "filesystem"
+
+    def test_storage_mode_can_be_database(self, db_session: Session) -> None:
+        """
+        Test that storage_mode can be explicitly set to DATABASE.
+        """
+        study_id = uuid.uuid4()
+
+        with db_session:
+            from antarest.study.model import StorageMode
+
+            study = create_study(id=str(study_id), name="Test Database Mode")
+            study.storage_mode = StorageMode.DATABASE
+            db_session.add(study)
+            db_session.commit()
+
+        with db_session:
+            study = db_session.query(Study).first()
+            assert study.storage_mode == "database"

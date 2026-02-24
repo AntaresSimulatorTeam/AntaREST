@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import type z from "zod";
+import type { StudySortConfigSchema } from "@/routes/_authenticated/studies/-components/StudiesList/Header/studySortUtils";
 import type { TaskTypeValue } from "../services/api/tasks/types";
 
 export type IdType = number | string;
@@ -59,6 +61,7 @@ export interface StudyMetadataDTO extends IdentityDTO {
   horizon?: string;
   tags?: string[];
   parent_id?: string;
+  directory_id?: string | null;
 }
 
 export interface StudyMetadata {
@@ -80,6 +83,7 @@ export interface StudyMetadata {
   horizon?: string;
   tags?: string[];
   parentId?: string;
+  directoryId?: string | null;
 }
 
 export interface StudyMetadataPatchDTO {
@@ -125,6 +129,8 @@ export interface StudyLayer {
   id: string;
   name: string;
 }
+
+export type StudySortConfig = z.infer<typeof StudySortConfigSchema>;
 
 export interface VariantTreeDTO {
   node: StudyMetadataDTO;
@@ -308,6 +314,10 @@ export interface Area {
   filters_year: string[];
 }
 
+export interface AreaWithId extends Area {
+  id: string;
+}
+
 export interface District {
   id: string;
   name?: string;
@@ -340,7 +350,7 @@ export interface FileStudyTreeConfigDTO {
   bindings: string[];
   store_new_set: boolean;
   archive_input_series: string[];
-  enr_modelling: string;
+  enr_modelling: "aggregated" | "clusters";
 }
 
 export interface LinkElement {
