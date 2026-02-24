@@ -1,7 +1,7 @@
 """add ruleset table
 
 Revision ID: c11cfe5728b0
-Revises: 7e3fd21b1c65
+Revises: c20d6b990db0
 Create Date: 2026-02-24 09:10:06.132523
 
 """
@@ -12,7 +12,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "c11cfe5728b0"
-down_revision = "7e3fd21b1c65"
+down_revision = "c20d6b990db0"
 branch_labels = None
 depends_on = None
 
