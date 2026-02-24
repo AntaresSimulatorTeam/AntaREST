@@ -706,7 +706,7 @@ class TestConvertHydroPmax:
     """
     Tests for convert_hydro_pmax conversion logic.
 
-    compatibility parameter is only available from version 9.2 so we use dao_920 in the tests bellow.
+    compatibility parameter is only available from version 9.2 so we use dao_920 in the tests below.
     """
 
     def test_roundtrip(self, dao_920: DatabaseStudyDao) -> None:
