@@ -50,7 +50,7 @@ def test_garbage_collection(dao: DatabaseStudyDao, db_session: Session, tmp_path
     # We need to use different contents, otherwise it will be enough that one table correctly prevents garbage
     # collection
     base_data = [[1, 2.5], [3, 4.7]]
-    dataframes = [pl.DataFrame(data=[[a + i, b + i] for a, b in base_data], orient="row") for i in range(25)]
+    dataframes = [pl.DataFrame(data=[[a + i, b + i] for a, b in base_data], orient="row") for i in range(38)]
     (
         load_df,
         solar_df,
@@ -77,6 +77,19 @@ def test_garbage_collection(dao: DatabaseStudyDao, db_session: Session, tmp_path
         sts_cost_variation_injection_df,
         sts_cost_variation_withdrawal_df,
         sts_constraint_matrix_df,
+        hydro_maxpower_df,
+        hydro_reservoir_df,
+        hydro_energy_df,
+        hydro_run_of_river_df,
+        hydro_modulation_df,
+        hydro_credit_modulations_df,
+        hydro_inflow_pattern_df,
+        hydro_water_values_df,
+        hydro_mingen_df,
+        hydro_max_hourly_gen_power_df,
+        hydro_max_hourly_pump_power_df,
+        hydro_max_daily_gen_energy_df,
+        hydro_max_daily_pump_energy_df,
     ) = dataframes
 
     load_id = matrix_service.create(load_df)
@@ -104,6 +117,19 @@ def test_garbage_collection(dao: DatabaseStudyDao, db_session: Session, tmp_path
     sts_cost_variation_injection_id = matrix_service.create(sts_cost_variation_injection_df)
     sts_cost_variation_withdrawal_id = matrix_service.create(sts_cost_variation_withdrawal_df)
     sts_constraint_matrix_id = matrix_service.create(sts_constraint_matrix_df)
+    hydro_maxpower_id = matrix_service.create(hydro_maxpower_df)
+    hydro_reservoir_id = matrix_service.create(hydro_reservoir_df)
+    hydro_energy_id = matrix_service.create(hydro_energy_df)
+    hydro_run_of_river_id = matrix_service.create(hydro_run_of_river_df)
+    hydro_modulation_id = matrix_service.create(hydro_modulation_df)
+    hydro_credit_modulations_id = matrix_service.create(hydro_credit_modulations_df)
+    hydro_inflow_pattern_id = matrix_service.create(hydro_inflow_pattern_df)
+    hydro_water_values_id = matrix_service.create(hydro_water_values_df)
+    hydro_mingen_id = matrix_service.create(hydro_mingen_df)
+    hydro_max_hourly_gen_power_id = matrix_service.create(hydro_max_hourly_gen_power_df)
+    hydro_max_hourly_pump_power_id = matrix_service.create(hydro_max_hourly_pump_power_df)
+    hydro_max_daily_gen_energy_id = matrix_service.create(hydro_max_daily_gen_energy_df)
+    hydro_max_daily_pump_energy_id = matrix_service.create(hydro_max_daily_pump_energy_df)
 
     # Create `load`, `solar`, `wind`, `reserves` and `misc-gen` matrices in DB
     area_id = "paris"
@@ -158,6 +184,21 @@ def test_garbage_collection(dao: DatabaseStudyDao, db_session: Session, tmp_path
         constraints=[STStorageAdditionalConstraint(id=constraint_id, name="Constraint 1")],
     )
     dao.save_st_storage_constraint_matrix(area_id, st_storage_id, constraint_id, sts_constraint_matrix_id)
+
+    # Create hydro matrices
+    dao.save_hydro_maxpower(area_id, hydro_maxpower_id)
+    dao.save_hydro_reservoir(area_id, hydro_reservoir_id)
+    dao.save_hydro_energy(area_id, hydro_energy_id)
+    dao.save_hydro_run_of_river(area_id, hydro_run_of_river_id)
+    dao.save_hydro_modulation(area_id, hydro_modulation_id)
+    dao.save_hydro_credit_modulations(area_id, hydro_credit_modulations_id)
+    dao.save_hydro_inflow_pattern(area_id, hydro_inflow_pattern_id)
+    dao.save_hydro_water_values(area_id, hydro_water_values_id)
+    dao.save_hydro_mingen(area_id, hydro_mingen_id)
+    dao.save_hydro_max_hourly_gen_power(area_id, hydro_max_hourly_gen_power_id)
+    dao.save_hydro_max_hourly_pump_power(area_id, hydro_max_hourly_pump_power_id)
+    dao.save_hydro_max_daily_gen_energy(area_id, hydro_max_daily_gen_energy_id)
+    dao.save_hydro_max_daily_pump_energy(area_id, hydro_max_daily_pump_energy_id)
 
     # Launch the Garbage collection
     task = clean_matrices(matrix_service=matrix_service, dry_run=False, retention_time=0)
@@ -239,3 +280,42 @@ def test_garbage_collection(dao: DatabaseStudyDao, db_session: Session, tmp_path
 
     sts_constraint_matrix = dao.get_st_storage_additional_constraint_matrix(area_id, st_storage_id, constraint_id)
     pl.testing.assert_frame_equal(sts_constraint_matrix, sts_constraint_matrix_df, check_dtypes=False)
+
+    hydro_maxpower = dao.get_hydro_maxpower(area_id)
+    pl.testing.assert_frame_equal(hydro_maxpower, hydro_maxpower_df, check_dtypes=False)
+
+    hydro_reservoir = dao.get_hydro_reservoir(area_id)
+    pl.testing.assert_frame_equal(hydro_reservoir, hydro_reservoir_df, check_dtypes=False)
+
+    hydro_energy = dao.get_hydro_energy(area_id)
+    pl.testing.assert_frame_equal(hydro_energy, hydro_energy_df, check_dtypes=False)
+
+    hydro_run_of_river = dao.get_hydro_run_of_river(area_id)
+    pl.testing.assert_frame_equal(hydro_run_of_river, hydro_run_of_river_df, check_dtypes=False)
+
+    hydro_modulation = dao.get_hydro_modulation(area_id)
+    pl.testing.assert_frame_equal(hydro_modulation, hydro_modulation_df, check_dtypes=False)
+
+    hydro_credit_modulations = dao.get_hydro_credit_modulations(area_id)
+    pl.testing.assert_frame_equal(hydro_credit_modulations, hydro_credit_modulations_df, check_dtypes=False)
+
+    hydro_inflow_pattern = dao.get_hydro_inflow_pattern(area_id)
+    pl.testing.assert_frame_equal(hydro_inflow_pattern, hydro_inflow_pattern_df, check_dtypes=False)
+
+    hydro_water_values = dao.get_hydro_water_values(area_id)
+    pl.testing.assert_frame_equal(hydro_water_values, hydro_water_values_df, check_dtypes=False)
+
+    hydro_mingen = dao.get_hydro_mingen(area_id)
+    pl.testing.assert_frame_equal(hydro_mingen, hydro_mingen_df, check_dtypes=False)
+
+    hydro_max_hourly_gen_power = dao.get_hydro_max_hourly_gen_power(area_id)
+    pl.testing.assert_frame_equal(hydro_max_hourly_gen_power, hydro_max_hourly_gen_power_df, check_dtypes=False)
+
+    hydro_max_hourly_pump_power = dao.get_hydro_max_hourly_pump_power(area_id)
+    pl.testing.assert_frame_equal(hydro_max_hourly_pump_power, hydro_max_hourly_pump_power_df, check_dtypes=False)
+
+    hydro_max_daily_gen_energy = dao.get_hydro_max_daily_gen_energy(area_id)
+    pl.testing.assert_frame_equal(hydro_max_daily_gen_energy, hydro_max_daily_gen_energy_df, check_dtypes=False)
+
+    hydro_max_daily_pump_energy = dao.get_hydro_max_daily_pump_energy(area_id)
+    pl.testing.assert_frame_equal(hydro_max_daily_pump_energy, hydro_max_daily_pump_energy_df, check_dtypes=False)
