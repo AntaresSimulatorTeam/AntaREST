@@ -629,22 +629,13 @@ class DatabaseHydroDao(HydroDao):
                 invalid = self.get_impl().get_invalid_area_ids(area_ids)
                 raise AreaNotFound(*invalid) from e
         else:
-            session.execute(
-                delete(HYDRO_MAX_HOURLY_GEN_POWER_TABLE).where(HYDRO_MAX_HOURLY_GEN_POWER_TABLE.c.study_id == study_id)
-            )
-            session.execute(
-                delete(HYDRO_MAX_HOURLY_PUMP_POWER_TABLE).where(
-                    HYDRO_MAX_HOURLY_PUMP_POWER_TABLE.c.study_id == study_id
-                )
-            )
-            session.execute(
-                delete(HYDRO_MAX_DAILY_GEN_ENERGY_TABLE).where(HYDRO_MAX_DAILY_GEN_ENERGY_TABLE.c.study_id == study_id)
-            )
-            session.execute(
-                delete(HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE).where(
-                    HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE.c.study_id == study_id
-                )
-            )
+            for table in [
+                HYDRO_MAX_HOURLY_GEN_POWER_TABLE,
+                HYDRO_MAX_HOURLY_PUMP_POWER_TABLE,
+                HYDRO_MAX_DAILY_GEN_ENERGY_TABLE,
+                HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE,
+            ]:
+                session.execute(delete(table).where(table.c.study_id == study_id))
             session.commit()
 
         compatibility_data.hydro_pmax = hydro_pmax
