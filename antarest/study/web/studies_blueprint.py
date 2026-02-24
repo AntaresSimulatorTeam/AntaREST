@@ -12,6 +12,7 @@
 
 import collections
 import logging
+import re
 from http import HTTPStatus
 from pathlib import PurePosixPath
 from typing import Annotated, Dict, Optional, Sequence
@@ -602,6 +603,20 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     def count_crlf(study_id: str) -> None:
         if study_id.count("\r\n") > 0 or study_id.count("\n") > 0:
             raise ValueError("Invalid str")
+        logger.info("Logging study %s", study_id)
+
+    @bp.put(
+        "/studies/{study_id}/replace_pattern",
+    )
+    def replace_pattern(study_id: str) -> None:
+        study_id = re.sub("[\r\n\t\f\v]", "", study_id)
+        logger.info("Logging study %s", study_id)
+
+    @bp.put(
+        "/studies/{study_id}/replace_pattern_2",
+    )
+    def replace_pattern_2(study_id: str) -> None:
+        study_id = re.sub(r"[\r\n\t\f\v]", "", study_id)
         logger.info("Logging study %s", study_id)
 
     return bp
