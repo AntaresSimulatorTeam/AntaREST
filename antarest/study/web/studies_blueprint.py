@@ -555,4 +555,10 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         study_id = sanitize_uuid(study_id)
         return study_service.normalize_study_by_id(study_id)
 
+    @bp.put(
+        "/studies/{study_id}/toto",
+    )
+    def toto(study_id: str) -> None:
+        logger.info(f"Totoing study {study_id}")
+
     return bp
