@@ -110,3 +110,29 @@ HYDRO_CORRELATION_TABLE = Table(
         ondelete="CASCADE",
     ),
 )
+
+
+def _create_hydro_matrix_table(name: str) -> Table:
+    return Table(
+        name,
+        metadata,
+        Column("study_id", String(36), nullable=False, primary_key=True),
+        Column("area_id", String(255), nullable=False, primary_key=True),
+        Column("matrix_id", String(64), nullable=False),
+        ForeignKeyConstraint(["study_id", "area_id"], ["area.study_id", "area.area_id"], ondelete="CASCADE"),
+    )
+
+
+HYDRO_MAXPOWER_TABLE = _create_hydro_matrix_table("hydro_maxpower")
+HYDRO_RESERVOIR_TABLE = _create_hydro_matrix_table("hydro_reservoir")
+HYDRO_ENERGY_TABLE = _create_hydro_matrix_table("hydro_energy")
+HYDRO_RUN_OF_RIVER_TABLE = _create_hydro_matrix_table("hydro_run_of_river")
+HYDRO_MODULATION_TABLE = _create_hydro_matrix_table("hydro_modulation")
+HYDRO_CREDIT_MODULATIONS_TABLE = _create_hydro_matrix_table("hydro_credit_modulations")
+HYDRO_INFLOW_PATTERN_TABLE = _create_hydro_matrix_table("hydro_inflow_pattern")
+HYDRO_WATER_VALUES_TABLE = _create_hydro_matrix_table("hydro_water_values")
+HYDRO_MINGEN_TABLE = _create_hydro_matrix_table("hydro_mingen")
+HYDRO_MAX_HOURLY_GEN_POWER_TABLE = _create_hydro_matrix_table("hydro_max_hourly_gen_power")
+HYDRO_MAX_HOURLY_PUMP_POWER_TABLE = _create_hydro_matrix_table("hydro_max_hourly_pump_power")
+HYDRO_MAX_DAILY_GEN_ENERGY_TABLE = _create_hydro_matrix_table("hydro_max_daily_gen_energy")
+HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE = _create_hydro_matrix_table("hydro_max_daily_pump_energy")
