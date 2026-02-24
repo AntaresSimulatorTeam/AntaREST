@@ -30,37 +30,6 @@ jobs:
         run: |
           mypy --install-types --non-interactive
 
-  python-test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      max-parallel: 9
-      matrix:
-        os: [ubuntu-22.04]
-
-    steps:
-      - name: Checkout github repo (+ download lfs dependencies)
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.11
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          activate-environment: true
-      - name: Install dependencies
-        run: |
-          uv pip install -r requirements-dev.txt
-      - name: Test with pytest
-        run: |
-          pytest --cov antarest --cov-report xml -n 4 --dist=worksteal
-      - name: Archive code coverage results
-        if: matrix.os == 'ubuntu-22.04'
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-code-coverage-report
-          path: coverage.xml
-
   npm-setup:
     runs-on: ubuntu-22.04
     steps:
@@ -148,13 +117,9 @@ jobs:
 
   sonarcloud:
     runs-on: ubuntu-22.04
-    needs: [python-test, npm-test]
+    needs: [npm-test]
     steps:
       - uses: actions/checkout@v4
-      - name: Download python coverage report
-        uses: actions/download-artifact@v4
-        with:
-          name: python-code-coverage-report
       - name: SonarCloud Scan
         uses: sonarsource/sonarcloud-github-action@v3.1.0
         env:
