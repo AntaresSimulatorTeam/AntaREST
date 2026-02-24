@@ -44,6 +44,19 @@ def upgrade() -> None:
     )
 
     op.create_table(
+        "active_ruleset",
+        sa.Column("study_id", sa.String(length=36), nullable=False),
+        sa.Column("ruleset_name", sa.String(length=255), nullable=False),
+        sa.ForeignKeyConstraint(
+            ["study_id", "ruleset_name"],
+            ["ruleset.study_id", "ruleset.ruleset_name"],
+            name="fk_active_ruleset",
+            ondelete="CASCADE",
+        ),
+        sa.PrimaryKeyConstraint("study_id", name="pk_active_ruleset"),
+    )
+
+    op.create_table(
         "ruleset_area",
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("ruleset_name", sa.String(length=255), nullable=False),
@@ -54,7 +67,7 @@ def upgrade() -> None:
             ["study_id", "ruleset_name"],
             ["ruleset.study_id", "ruleset.ruleset_name"],
             name="fk_ruleset_area",
-            ondelete="CASCADE"
+            ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("study_id", "ruleset_name", "area_id", "scenario_type", name="pk_ruleset_area"),
     )
@@ -69,7 +82,7 @@ def upgrade() -> None:
             ["study_id", "ruleset_name"],
             ["ruleset.study_id", "ruleset.ruleset_name"],
             name="fk_ruleset_link",
-            ondelete="CASCADE"
+            ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("study_id", "ruleset_name", "link_id", name="pk_ruleset_link"),
     )
@@ -84,7 +97,7 @@ def upgrade() -> None:
             ["study_id", "ruleset_name"],
             ["ruleset.study_id", "ruleset.ruleset_name"],
             name="fk_ruleset_bc_group",
-            ondelete="CASCADE"
+            ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("study_id", "ruleset_name", "bc_group_id", name="pk_ruleset_bc_group"),
     )
@@ -101,7 +114,7 @@ def upgrade() -> None:
             ["study_id", "ruleset_name"],
             ["ruleset.study_id", "ruleset.ruleset_name"],
             name="fk_ruleset_area_item",
-            ondelete="CASCADE"
+            ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint(
             "study_id", "ruleset_name", "area_id", "item_id", "scenario_type", name="pk_ruleset_area_item"
@@ -120,7 +133,7 @@ def upgrade() -> None:
             ["study_id", "ruleset_name"],
             ["ruleset.study_id", "ruleset.ruleset_name"],
             name="fk_ruleset_area_item_constraint",
-            ondelete="CASCADE"
+            ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint(
             "study_id", "ruleset_name", "area_id", "item_id", "constraint_id", name="pk_ruleset_area_item_constraint"
@@ -134,6 +147,7 @@ def downgrade() -> None:
     op.drop_table("ruleset_bc_group")
     op.drop_table("ruleset_area_item")
     op.drop_table("ruleset_area_item_constraint")
+    op.drop_table("active_ruleset")
     op.drop_table("ruleset")
 
     if op.get_bind().dialect.name == "postgresql":

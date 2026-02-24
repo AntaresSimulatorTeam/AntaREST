@@ -28,7 +28,17 @@ RULESET_TABLE = Table(
     metadata,
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("ruleset_name", String(255), nullable=False, primary_key=True),
-    ForeignKeyConstraint(["study_id"], ["study.id"], ondelete="CASCADE"),
+    ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_ruleset", ondelete="CASCADE"),
+)
+
+ACTIVE_RULESET_TABLE = Table(
+    "active_ruleset",
+    metadata,
+    Column("study_id", String(36), nullable=False, primary_key=True),
+    Column("ruleset_name", String(255), nullable=False),
+    ForeignKeyConstraint(
+        ["study_id", "ruleset_name"], ["ruleset.study_id", "ruleset.ruleset_name"], name="fk_active_ruleset", ondelete="CASCADE",
+    ),
 )
 
 RULESET_AREA_TABLE = Table(
