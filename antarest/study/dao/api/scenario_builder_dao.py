@@ -47,6 +47,9 @@ class ReadOnlyScenarioBuilderDao(ABC):
     def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
         """
         Get a scenario, from the active ruleset, by its type (name).
+
+        Args:
+            scenario_type: The scenario type to retrieve.
         """
         raise NotImplementedError()
 
@@ -56,5 +59,12 @@ class ScenarioBuilderDao(ReadOnlyScenarioBuilderDao):
     def save_scenario_builder(self, rulesets: Rulesets) -> None:
         """
         Save rulesets.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_active_ruleset_name(self, ruleset_name: str) -> None:
+        """
+        Save active ruleset name.
         """
         raise NotImplementedError()

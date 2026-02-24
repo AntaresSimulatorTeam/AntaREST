@@ -767,6 +767,12 @@ class STStorageAdditionalConstraintNotFound(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
+class RulesetNotFound(HTTPException):
+    def __init__(self, ruleset_name: str) -> None:
+        msg = f"Ruleset '{ruleset_name}' is not found."
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
 class OutputAggregationError(HTTPException):
     def __init__(self, output_id: str, message: str) -> None:
         msg = f"Could not aggregate output data for output '{output_id}' : {message}."

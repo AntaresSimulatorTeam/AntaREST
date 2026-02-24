@@ -982,6 +982,10 @@ class InMemoryStudyDao(StudyDao):
         return self.active_ruleset_name or default_ruleset
 
     @override
+    def save_active_ruleset_name(self, ruleset_name: str) -> None:
+        self.active_ruleset_name = ruleset_name
+
+    @override
     def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
         return self.rulesets[self.get_active_ruleset_name()].get(scenario_type)
 

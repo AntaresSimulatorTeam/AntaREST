@@ -27,7 +27,6 @@ from typing_extensions import override
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
-from antarest.study.business.model.scenario_builder_model import AnyScenarios, Rulesets, ScenarioType
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
@@ -44,6 +43,7 @@ from antarest.study.dao.database.database_hydro_dao import DatabaseHydroDao
 from antarest.study.dao.database.database_layer_dao import DatabaseLayerDao
 from antarest.study.dao.database.database_link_dao import DatabaseLinkDao
 from antarest.study.dao.database.database_renewable_dao import DatabaseRenewableDao
+from antarest.study.dao.database.database_scenario_builder_dao import DatabaseScenarioBuilderDao
 from antarest.study.dao.database.database_st_storage_dao import DatabaseStStorageDao
 from antarest.study.dao.database.database_study_settings_dao import DatabaseStudySettingsDao
 from antarest.study.dao.database.database_thermal_dao import DatabaseThermalDao
@@ -65,6 +65,7 @@ class DatabaseStudyDao(
     DatabaseRenewableDao,
     DatabaseUserResourcesDao,
     DatabaseStStorageDao,
+    DatabaseScenarioBuilderDao,
 ):
     """
     Database implementation of StudyDao.
@@ -89,6 +90,7 @@ class DatabaseStudyDao(
         DatabaseRenewableDao.__init__(self, study_id, db_session)
         DatabaseUserResourcesDao.__init__(self, study_id, db_session)
         DatabaseStStorageDao.__init__(self, study_id, db_session)
+        DatabaseScenarioBuilderDao.__init__(self, study_id, db_session)
         self._matrix_service = matrix_service
 
     # Implementation of abstract methods required by StudyDao
@@ -271,20 +273,4 @@ class DatabaseStudyDao(
 
     @override
     def get_thematic_trimming(self) -> ThematicTrimming:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_scenario_builder(self, rulesets: Rulesets) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_rulesets(self) -> Rulesets:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_active_ruleset_name(self, default_ruleset: str = "Default Ruleset") -> str:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
         raise NotImplementedError("This method is not yet implemented for database storage mode")

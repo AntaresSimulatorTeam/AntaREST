@@ -74,6 +74,13 @@ class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
                 active_ruleset = default_ruleset
         return active_ruleset
 
+    @override
+    def save_active_ruleset_name(self, ruleset_name: str) -> None:
+        """
+        Save the active ruleset name.
+        """
+        self.get_file_study().tree.save(ruleset_name, ACTIVE_RULESET_URL)
+
     def _get_nb_years(self) -> int:
         study_data = self.get_file_study()
         try:
