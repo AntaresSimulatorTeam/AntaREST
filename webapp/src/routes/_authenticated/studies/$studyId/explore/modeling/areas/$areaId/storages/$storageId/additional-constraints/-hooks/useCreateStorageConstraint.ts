@@ -13,7 +13,6 @@
  */
 
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import useSafeMemo from "@/hooks/useSafeMemo";
 import { storageMutations } from "@/queries/storages/mutations";
 import { storageQueries } from "@/queries/storages/queries";
 import type { QueryListItem } from "@/queries/types";
@@ -29,14 +28,13 @@ function useCreateStorageConstraint() {
   });
   const router = useRouter();
   const queryClient = useQueryClient();
-  const tempConstraintId = useSafeMemo(() => crypto.randomUUID(), []);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
 
   const { studyId, areaId, storageId } = params;
   const { queryKey: queryListKey } = storageQueries.constraintList(studyId, areaId, storageId);
 
-  const isRouterMatchTempConstraint = () => {
+  const isRouterMatchTempConstraint = (tempConstraintId: string) => {
     return router.state.matches.some(
       (m) =>
         m.routeId ===
@@ -49,6 +47,7 @@ function useCreateStorageConstraint() {
     ...storageMutations.createConstraint(studyId, areaId, storageId),
     onMutate: async (variables) => {
       const { values } = variables;
+      const tempConstraintId = crypto.randomUUID();
 
       await queryClient.cancelQueries({ queryKey: queryListKey });
 
@@ -71,12 +70,10 @@ function useCreateStorageConstraint() {
         to: "/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints/$constraintId",
         params: { ...params, constraintId: tempConstraintId },
       });
-    },
-    onError: (error, variables) => {
-      queryClient.setQueryData(queryListKey, (old = []) => {
-        return old.filter((constraint) => constraint.id !== tempConstraintId);
-      });
 
+      return tempConstraintId;
+    },
+    onError: (error, variables, tempConstraintId) => {
       enqueueErrorSnackbar(
         t("study.modeling.storages.additionalConstraints.create.error", {
           name: variables.values.name,
@@ -84,18 +81,26 @@ function useCreateStorageConstraint() {
         error,
       );
 
-      if (isRouterMatchTempConstraint()) {
+      if (!tempConstraintId) {
+        return;
+      }
+
+      queryClient.setQueryData(queryListKey, (old = []) => {
+        return old.filter((constraint) => constraint.id !== tempConstraintId);
+      });
+
+      if (isRouterMatchTempConstraint(tempConstraintId)) {
         router.navigate({ to: "..", replace: true });
       }
     },
-    onSuccess: (newConstraint) => {
+    onSuccess: (newConstraint, _, tempConstraintId) => {
       queryClient.setQueryData(queryListKey, (old = []) => {
         return old.map((constraint) =>
           constraint.id === tempConstraintId ? newConstraint : constraint,
         );
       });
 
-      if (isRouterMatchTempConstraint()) {
+      if (isRouterMatchTempConstraint(tempConstraintId)) {
         router.navigate({
           to: ".",
           params: { ...params, constraintId: newConstraint.id },
