@@ -1,6 +1,76 @@
 Antares Web Changelog
 =====================
 
+v2.29.0 (2026-02-24)
+--------------------
+
+### Features
+* **ui**: improve study tree UX with collapsible sections, consistent icons, and stability fixes [`#3014`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3014)
+* **ui-studies**: scope study search recursively to selected managed directory [`#3017`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3017)
+* **user-resources**: implement database support [`#3006`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3006)
+* **matrix-store**: add an admin endpoint to solve app issues [`#3010`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3010)
+* **ui-studies**: make search global across all directories [`#3011`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3011)
+* **st-storage**: implement database support [`#3008`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3008)
+* **dao**: support renewable clusters in DB [`#3002`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3002)
+* **ui-bc,ui-storages**: add enabled status icon to constraints lists [`#3003`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3003)
+* **ui-config**: add new group for thematic trimming and new buttons by group [`#3000`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3000)
+* **hydro**: dao db hydro [`#2985`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2985)
+* **ui-studies**: add managed studies tree explorer [`#2986`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2986)
+* **favorite directory**: adding favorite directory class [`#2984`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2984)
+* **dao**: support study settings inside DB [`#2977`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2977)
+* **ui-output**: add export variable view button [`#2988`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2988)
+* **dao**: thermal clusters DAO [`#2978`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2978)
+* **layer**: implement database support [`#2970`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2970)
+* **dao**: add link matrices in DB [`#2975`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2975)
+* **ui-hydro**: add compatibility form and new hydro matrices [`#2982`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2982)
+* **ui-config**: simplify TS generation form [`#2971`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2971)
+* **launcher**: add export mps option [`#2980`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2980)
+* **xpansion**: support new fields inside settings [`#2960`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2960)
+* **dao**: support links inside DB [`#2965`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2965)
+* **district**: implement database support [`#2956`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2956)
+* **hydro**: implement cr23 for rte-i [`#2966`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2966)
+* **area**: add matrices inside DB DAO [`#2957`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2957)
+* **favorite**: add backend favorite [`#2925`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2925)
+* **area**: implement dao for properties [`#2952`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2952)
+* **area**: implement database support [`#2780`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2780)
+* **ui-storages**: add efficiency cross-validation [`#2950`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2950)
+
+### Bug Fixes
+* **ui**: update incorrect query param key for st_storage in DTO adapter [`#3015`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3015)
+* **launcher**: fix typo in export mps option [`#3001`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3001)
+* **celery**: fix logging setup [`#2999`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2999)
+* **debug**: add matrix prefix for the front-end [`#3004`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3004)
+* **ui-study**: error displayed when opening the study home directly [`#2995`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2995)
+* **ui-outputs**: add study id output id and area to download variable view button [`#2997`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2997)
+* **ui**: issue with FormContext [`#2994`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2994)
+* **ci**: fix broken deps [`#2990`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2990)
+* **tests**: add retry for flaky tests [`#2993`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2993)
+* **sonar**: fix sonar errors [`#2992`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2992)
+* **layer**: remove optional fields in layer model [`#2989`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2989)
+* **celery**: fix setup [`#2976`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2976)
+* **favorite**: replace user id in favorite queries [`#2968`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2968)
+* **xpansion**: allow candidate creation with integer name [`#2979`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2979)
+* **ui-queries**: default staleTime [`#2973`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2973)
+* **alembic**: merge heads [`#2962`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2962)
+* **alembic**: create enum before migration [`#2963`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2963)
+* **alembic**: bug during migration [`#2953`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2953)
+* **constraint**: fix bug when deleting additionnal constraints [`#2958`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2958)
+
+### Performances
+* **archive**: improve perfs [`#2987`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2987)
+* **ui**: rework variants tree with responsive layout [`#3005`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3005)
+* **db**: perform less `select` inside DAO methods [`#2996`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2996)
+* **aggregation**: use polars instead of pandas [`#2943`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2943)
+
+### Refactorings
+* **dao**: introduce a factory to initialize studies [`#2981`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2981)
+* **dao**: add a utility upsert method [`#2983`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2983)
+* **ui**: replace React Router by Tanstack Router [`#2888`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2888)
+
+### Miscellaneous
+* **db**: ensure we only have one head for alembic [`#2972`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2972)
+* **matrix**: various cleaning and improve some test performance [`#2935`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2935) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+
 v2.28.0 (2026-01-27)
 --------------------
 

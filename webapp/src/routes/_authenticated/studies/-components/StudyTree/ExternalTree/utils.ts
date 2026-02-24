@@ -13,7 +13,7 @@
  */
 
 import * as R from "ramda";
-import { DEFAULT_WORKSPACE_NAME, ROOT_NODE_NAME } from "@/components/utils/constants";
+import { DEFAULT_WORKSPACE_NAME, TREE_ROOT_NAME } from "@/components/utils/constants";
 import type { FolderDTO, WorkspaceDTO } from "@/queries/explorer/schemas";
 import type { StudyMetadata } from "@/types/types";
 import type { ExternalTreeNodeMetadata } from "./types";
@@ -56,8 +56,8 @@ const findChildByName = (name: string) => R.find<ExternalTreeNodeMetadata>(R.pro
  * @returns A tree structure representing the studies.
  */
 export const buildExternalTree = (studies: StudyMetadata[]): ExternalTreeNodeMetadata => {
-  const initialTree: ExternalTreeNodeMetadata = {
-    name: ROOT_NODE_NAME,
+  const treeRoot: ExternalTreeNodeMetadata = {
+    name: TREE_ROOT_NAME,
     children: [],
     path: "",
   };
@@ -93,7 +93,7 @@ export const buildExternalTree = (studies: StudyMetadata[]): ExternalTreeNodeMet
 
       return tree;
     },
-    initialTree,
+    treeRoot,
     studies,
   );
 };
