@@ -13,6 +13,7 @@
  */
 
 import { Box } from "@mui/material";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import CustomScrollbar from "@/components/CustomScrollbar";
@@ -21,9 +22,11 @@ import { updateStudyFilters, updateStudySortConfig } from "@/redux/ducks/studies
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudyFilters, getStudySortConfig } from "@/redux/selectors";
+import { directoryQueries } from "@/queries/directories/queries";
 import { scanFolder } from "@/services/api/study";
 import type { StudySortConfig } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
+import { getDescendantIds } from "@/routes/_authenticated/studies/-components/StudyTree/ManagedTree/utils";
 import BatchActions from "./BatchActions";
 import DeleteStudiesDialog from "./DeleteStudiesDialog";
 import FilterControls from "./FilterControls";
@@ -64,6 +67,8 @@ function Header({
     externalPath: external.path,
   });
 
+  const { data: directories } = useSuspenseQuery(directoryQueries.list());
+
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
@@ -73,7 +78,10 @@ function Header({
       dispatch(
         updateStudyFilters({
           activeTree: "managed",
-          managed: { directoryId: item.id },
+          managed: {
+            directoryId: item.id,
+            directoryIds: item.id ? getDescendantIds(item.id, directories) : null,
+          },
         }),
       );
     } else {

@@ -13,7 +13,7 @@
  */
 
 import * as R from "ramda";
-import { ROOT_NODE_NAME } from "@/components/utils/constants";
+import { TREE_ROOT_NAME } from "@/components/utils/constants";
 import type { Directory } from "@/services/api/directories/types";
 import type { DirectoryTreeNode } from "./types";
 
@@ -57,7 +57,7 @@ export function buildDirectoryTree(directories: Directory[]): DirectoryTreeNode 
   // Return the root node with all top-level directories as children
   return {
     id: "",
-    name: ROOT_NODE_NAME,
+    name: TREE_ROOT_NAME,
     path: "",
     parentId: null,
     children: sortedRoots.map(buildNode),
@@ -93,6 +93,19 @@ export function findDirectoryById(
 ): DirectoryTreeNode | undefined {
   const allNodes = flattenDirectoryTree(tree);
   return allNodes.find((node) => node.id === id);
+}
+
+/**
+ * Gets all descendant IDs of a directory from a flat directory list,
+ * including the directory itself.
+ *
+ * @param directoryId - The ID of the starting directory
+ * @param directories - Flat array of all directories
+ * @returns Array containing the given directoryId and all descendant IDs
+ */
+export function getDescendantIds(directoryId: string, directories: Directory[]): string[] {
+  const children = directories.filter((directory) => directory.parentId === directoryId);
+  return [directoryId, ...children.flatMap((child) => getDescendantIds(child.id, directories))];
 }
 
 /**

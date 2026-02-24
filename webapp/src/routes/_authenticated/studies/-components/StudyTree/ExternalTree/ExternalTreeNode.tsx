@@ -18,26 +18,10 @@ import * as R from "ramda";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import TreeItemEnhanced from "@/components/TreeItemEnhanced";
-import { DEFAULT_WORKSPACE_NAME, ROOT_NODE_NAME } from "@/components/utils/constants";
+import { sortByName } from "@/services/utils";
 import { treeItemStyles, treeNodeIcons, workspaceItemStyles } from "./styles";
 import type { ExternalTreeNodeMetadata, ExternalTreeNodeProps } from "./types";
 
-// Prioritizes the default workspace in sorting
-const prioritizeDefault = (
-  folderA: ExternalTreeNodeMetadata,
-  folderB: ExternalTreeNodeMetadata,
-): number => {
-  if (folderA.name === DEFAULT_WORKSPACE_NAME) {
-    return -1;
-  }
-  if (folderB.name === DEFAULT_WORKSPACE_NAME) {
-    return 1;
-  }
-  return 0;
-};
-
-const sortByName = R.sortBy<ExternalTreeNodeMetadata>(R.compose(R.toLower, R.prop("name")));
-const sortDefaultFirst = R.sortWith<ExternalTreeNodeMetadata>([prioritizeDefault]);
 const filterScannedStudies = R.reject<ExternalTreeNodeMetadata>(
   (node) => node.isScannedStudy === true,
 );
@@ -60,10 +44,8 @@ function ExternalTreeNode({
   const isWorkspace = isWorkspacePath(path);
 
   const sortedChildren = useMemo(() => {
-    const nodesToDisplay = filterScannedStudies(children);
-    const sortedByName = sortByName(nodesToDisplay);
-    return name === ROOT_NODE_NAME ? sortDefaultFirst(sortedByName) : sortedByName;
-  }, [children, name]);
+    return sortByName(filterScannedStudies(children));
+  }, [children]);
 
   const label = alias ? `${alias} (${name})` : name;
 
@@ -106,6 +88,7 @@ function ExternalTreeNode({
         collapseIcon: isWorkspace ? treeNodeIcons.workspace : treeNodeIcons.folderOpen,
         expandIcon: isWorkspace ? treeNodeIcons.workspace : treeNodeIcons.folder,
       }}
+      disableTooltip
       sx={isWorkspace ? workspaceItemStyles : treeItemStyles}
     >
       {/* Loading placeholder to show expand arrow for folders with unloaded children */}
@@ -113,6 +96,7 @@ function ExternalTreeNode({
         <TreeItemEnhanced
           itemId={`${path}//loading`}
           label={`${t("global.loading")}...`}
+          disableTooltip
           sx={{ fontStyle: "italic" }}
         />
       )}

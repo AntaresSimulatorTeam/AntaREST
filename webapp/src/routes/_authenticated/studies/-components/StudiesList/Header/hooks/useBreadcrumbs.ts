@@ -14,6 +14,7 @@
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
+import { TREE_ROOT_NAME } from "@/components/utils/constants";
 import { directoryQueries } from "@/queries/directories/queries";
 import type { Directory } from "@/services/api/directories/types";
 import { buildDirectoryTree, getDirectoryPath } from "../../../StudyTree/ManagedTree/utils";
@@ -33,27 +34,27 @@ export function useBreadcrumbs({
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
   return useMemo((): BreadcrumbItem[] => {
-    const homeItem: BreadcrumbItem = {
-      label: "root",
+    const rootItem: BreadcrumbItem = {
+      label: TREE_ROOT_NAME,
       id: null,
       path: null,
     };
 
     if (activeTree === "managed") {
-      return buildManagedBreadcrumbs(homeItem, managedDirectoryId, directories);
+      return buildManagedBreadcrumbs(rootItem, managedDirectoryId, directories);
     }
 
-    return buildExternalBreadcrumbs(homeItem, externalPath);
+    return buildExternalBreadcrumbs(rootItem, externalPath);
   }, [activeTree, managedDirectoryId, externalPath, directories]);
 }
 
 function buildManagedBreadcrumbs(
-  homeItem: BreadcrumbItem,
+  rootItem: BreadcrumbItem,
   directoryId: string | null,
   directories: Directory[],
 ): BreadcrumbItem[] {
   if (!directoryId) {
-    return [homeItem];
+    return [rootItem];
   }
 
   const directoryTree = buildDirectoryTree(directories);
@@ -63,7 +64,7 @@ function buildManagedBreadcrumbs(
   );
 
   return [
-    homeItem,
+    rootItem,
     ...pathIds.map(
       (id): BreadcrumbItem => ({
         label: directoriesById[id]?.name || id,
@@ -74,15 +75,15 @@ function buildManagedBreadcrumbs(
   ];
 }
 
-function buildExternalBreadcrumbs(homeItem: BreadcrumbItem, path: string): BreadcrumbItem[] {
+function buildExternalBreadcrumbs(rootItem: BreadcrumbItem, path: string): BreadcrumbItem[] {
   if (!path) {
-    return [homeItem];
+    return [rootItem];
   }
 
   const pathParts = path.split("/").filter(Boolean);
 
   return [
-    homeItem,
+    rootItem,
     ...pathParts.map(
       (part, index): BreadcrumbItem => ({
         label: part,

@@ -12,15 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import FormDialog from "@/components/dialogs/FormDialog";
-import type { SubmitHandlerPlus } from "@/components/Form/types";
-import { directoryKeys } from "@/queries/directories/keys";
-import { useQueryClient } from "@tanstack/react-query";
 import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
-import { type DialogProps } from "@mui/material";
+import type { DialogProps } from "@mui/material";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSnackbar } from "notistack";
 import * as R from "ramda";
 import { useTranslation } from "react-i18next";
+import FormDialog from "@/components/dialogs/FormDialog";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
+import { directoryKeys } from "@/queries/directories/keys";
 import { moveStudy } from "../../../../../services/api/study";
 import type { StudyMetadata } from "../../../../../types/types";
 import StudyPathFE from "../StudyPathFE";
