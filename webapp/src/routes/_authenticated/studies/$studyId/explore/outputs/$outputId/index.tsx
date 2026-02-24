@@ -16,6 +16,7 @@ import BackButton from "@/components/buttons/BackButton";
 import ListView, { type ContentListItem } from "@/components/page/ListView";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import { getStudyDistricts } from "@/services/api/study";
+import { sortByName } from "@/services/utils";
 import AutoAwesomeMotionIcon from "@mui/icons-material/AutoAwesomeMotion";
 import { Stack, Tab, Tabs } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
@@ -59,7 +60,8 @@ function Output() {
         id: `@ ${district.id}`,
       }));
 
-      return [...areas, ...adaptedDistricts].map((item) => ({
+      // Areas are already sorted in redux state
+      return [...areas, ...sortByName(adaptedDistricts)].map((item) => ({
         id: item.id,
         label: item.name,
         icon: isDistrict(item) ? <AutoAwesomeMotionIcon color="info" /> : undefined,
