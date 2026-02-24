@@ -596,4 +596,12 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
             raise ValueError("Invalid str")
         logger.info("Logging study %s", study_id)
 
+    @bp.put(
+        "/studies/{study_id}/count-crlf",
+    )
+    def count_crlf(study_id: str) -> None:
+        if study_id.count("\r\n") > 0 or study_id.count("\n") > 0:
+            raise ValueError("Invalid str")
+        logger.info("Logging study %s", study_id)
+
     return bp
