@@ -561,4 +561,11 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     def toto(study_id: str) -> None:
         logger.info(f"Totoing study {study_id}")
 
+    @bp.put(
+        "/studies/{study_id}/isalnum",
+    )
+    def isalnum(study_id: str) -> None:
+        if study_id.isalnum():
+            logger.info(f"Logging study {study_id}")
+
     return bp
