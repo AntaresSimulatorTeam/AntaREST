@@ -14,6 +14,7 @@ import json
 import math
 import os
 import time
+import zipfile
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Union
@@ -42,6 +43,7 @@ from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import current_time
 from antarest.dbmodel import Base
+from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.adapters.local_launcher.local_launcher import SOLVER_VERSION_9_2
 from antarest.launcher.model import (
     JobLog,
@@ -646,11 +648,11 @@ class TestLauncherService:
         assert job_result_mock.logs[0].log_type == str(JobLogType.BEFORE)
 
     def test_get_logs(self, tmp_path: Path) -> None:
-        study_service = Mock()
+        output_service = Mock()
         launcher_service = LauncherService(
             config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
-            study_service=study_service,
-            output_service=Mock(),
+            study_service=Mock(),
+            output_service=output_service,
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
@@ -684,7 +686,7 @@ class TestLauncherService:
         logs = launcher_service.get_log(job_id, LogType.STDERR)
         assert logs == "launcher logs"
 
-        study_service.get_logs.side_effect = ["some sim log", "error log"]
+        output_service.get_logs.side_effect = ["some sim log", "error log"]
 
         job_result_mock.output_id = "some id"
         logs = launcher_service.get_log(job_id, LogType.STDOUT)
@@ -693,7 +695,7 @@ class TestLauncherService:
         logs = launcher_service.get_log(job_id, LogType.STDERR)
         assert logs == "error log"
 
-        study_service.get_logs.assert_has_calls(
+        output_service.get_logs.assert_has_calls(
             [
                 call("study_id", "some id", job_id, False),
                 call("study_id", "some id", job_id, True),
@@ -702,6 +704,7 @@ class TestLauncherService:
 
     @with_admin_user
     def test_manage_output(self, tmp_path: Path) -> None:
+        # TODO: finish adaptation
         study_service = Mock()
         study_service.get_study.return_value = Mock(spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE)
         output_service = Mock(spec=OutputService)
@@ -758,9 +761,11 @@ class TestLauncherService:
             ),
         ]
         with pytest.raises(JobNotFound):
-            launcher_service._import_output(job_id, output_path, {"out.log": [additional_log]})
+            additional_logs = SimulationLogs(out=additional_log, err=None)
+            launcher_service._import_output(job_id, output_path, additional_logs)
 
-        launcher_service._import_output(job_id, output_path, {"out.log": [additional_log]})
+        additional_logs = SimulationLogs(out=additional_log, err=None)
+        launcher_service._import_output(job_id, output_path, additional_logs)
         assert not launcher_service._get_job_output_fallback_path(job_id).exists()
         launcher_service.output_service.import_output.assert_called()
 
@@ -768,33 +773,25 @@ class TestLauncherService:
         launcher_service.output_service.export_output.assert_called()
 
         launcher_service._import_output(
-            zipped_job_id,
-            zipped_output_path,
-            {
-                "out.log": [additional_log],
-                "antares-out": [additional_log],
-                "antares-err": [additional_log],
-            },
+            zipped_job_id, zipped_output_path, SimulationLogs(out=additional_log, err=additional_log)
         )
-        launcher_service.study_service.save_logs.has_calls(
-            [
-                call(study_id, zipped_job_id, "out.log", "some log"),
-                call(study_id, zipped_job_id, "out", "some log"),
-                call(study_id, zipped_job_id, "err", "some log"),
-            ]
-        )
+        with zipfile.ZipFile(new_output_zipped_path, "r") as zf:
+            assert "antares-out.log" in zf.namelist()
+            assert "antares-err.log" in zf.namelist()
 
         launcher_service.output_service.import_output.side_effect = [
             StudyNotFoundError(""),
             StudyNotFoundError(""),
         ]
 
-        assert launcher_service._import_output(job_id, output_path, {"out.log": [additional_log]}) is None
+        assert (
+            launcher_service._import_output(job_id, output_path, SimulationLogs(out=additional_log, err=None)) is None
+        )
 
         (new_output_path / "info.antares-output").write_text(
             f"[general]\nmode=Economy\nname=foo\ntimestamp={time.time()}"
         )
-        output_name = launcher_service._import_output(job_id, output_path, {"out.log": [additional_log]})
+        output_name = launcher_service._import_output(job_id, output_path, SimulationLogs(out=additional_log, err=None))
         assert output_name is not None
         assert output_name.endswith("-hello")
         assert launcher_service._get_job_output_fallback_path(job_id).exists()

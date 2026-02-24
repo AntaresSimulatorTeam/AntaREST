@@ -27,6 +27,7 @@ from antarest.core.exceptions import (
     StudyNotFoundError,
 )
 from antarest.core.remote.remote_executor import IRemoteExecutor
+from antarest.launcher.model import LogType
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -318,6 +319,32 @@ def test_write_output_to_dir(file_output_storage: InStudyFileOutputStorage, tmp_
         file_output_storage.write_output_to_dir("non-existent", "20201014-1427eco", export_path)
     with pytest.raises(OutputNotFound):
         file_output_storage.write_output_to_dir("STA-mini", "non-existent", export_path)
+
+
+def test_get_logs(file_output_storage: InStudyFileOutputStorage, tmp_path: Path) -> None:
+    # Will write fake logs to underlying output dir
+    outputs_path = tmp_path / "studies" / "STA-mini" / "output"
+
+    (outputs_path / "logs").mkdir()
+
+    possible_log_paths = [
+        outputs_path / "20201014-1427eco" / "antares-out.log",
+        outputs_path / "20201014-1427eco" / "simulation.log",
+        outputs_path / "logs" / "156-out.log",
+        outputs_path / "logs" / "20201014-1427eco-out.log",
+    ]
+
+    for log_path in possible_log_paths:
+        log_path.write_text("some log 2")
+        logs = file_output_storage.get_logs("STA-mini", "20201014-1427eco", "156", LogType.STDOUT)
+        assert logs == "some log 2"
+        log_path.unlink()
+
+        # Check invalid utf-8 characters are correctly replaced
+        log_path.write_text("Caractère invalide", encoding="latin-1")
+        logs = file_output_storage.get_logs("STA-mini", "20201014-1427eco", "156", LogType.STDOUT)
+        assert logs == "Caract�re invalide"
+        log_path.unlink()
 
 
 # TODO: add tests for aggregation, time index

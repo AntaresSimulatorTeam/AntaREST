@@ -91,8 +91,11 @@ class IOutputStorage(ABC):
         """
         Import an outputs to the storage.
 
-        Accepts either a binary input, in which case either a zip or 7z file is expected,
-        or a path, in which case only uncompressed or zip is handled (?).
+        Accepts either:
+         - a binary IO, in which case either a zip or 7z file is expected, with no nested directories.
+         - a path to zip file, with no nested directories.
+         - a path to a directory, where the actual output dir could be a child of that directory.
+
         Note that in the case of a zip file path, the output will be considered archived.
 
         Args:

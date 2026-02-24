@@ -13,6 +13,7 @@ import functools
 import logging
 import os
 import shutil
+import zipfile
 from http import HTTPStatus
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -517,6 +518,9 @@ class LauncherService:
               output ? output_path is " study / job_id / output" located in the slurm workspace.
               A priori antares-launcher fait bien un unzip de tout.
 
+              Bottomline:
+              we always get a directory. TODO: check with command line launcher though
+
         """
         logger.info(f"Importing output for job {job_id}")
         with db():
@@ -534,12 +538,23 @@ class LauncherService:
             output_suffix = job_launch_params.output_suffix
 
             self._save_solver_stats(job_result, output_true_path)
-            if additional_logs and not output_is_zipped:
+
+            if output_is_zipped:
+                # TODO: not sure the output is at the top inside the zip ?? Yes it is.
+                with zipfile.ZipFile(output_true_path, "a") as zf:
+                    if additional_logs.out:
+                        zf.write(additional_logs.out, "antares-out.log")
+                    if additional_logs.err:
+                        zf.write(additional_logs.err, "antares-err.log")
+            else:
                 if additional_logs.out:
                     shutil.copy(additional_logs.out, output_true_path / "antares-out.log")
                 if additional_logs.err:
                     shutil.copy(additional_logs.err, output_true_path / "antares-err.log")
 
+        # TODO: this probably exists for the mounted workspaces to delegate unarchival there.
+        #       But for internal studies, it does not make sense to zip again here.
+        #       It's an implementation detail of file output storage, should go there.
         zip_path: Optional[Path] = None
         stopwatch = StopWatch()
         if not output_is_zipped and job_launch_params.archive_output:

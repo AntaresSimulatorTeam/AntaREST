@@ -59,7 +59,6 @@ from antarest.study.output.storage.output_storage import OutputMetadata
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
 from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, IOutputsAccess, StudyService, StudyUpgraderTask
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -67,7 +66,6 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFi
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import (
     assert_permission,
@@ -1274,91 +1272,6 @@ def test_create_command(
     )
 
     assert command.command_name.value == expected_name
-
-
-@with_admin_user
-def test_get_save_logs(tmp_path: Path) -> None:
-    study_id = str(uuid.uuid4())
-    study_name = "My Study"
-    study_mock = Mock(
-        spec=RawStudy,
-        archived=False,
-        id=study_id,
-        path=tmp_path,
-        owner=None,
-        groups=[],
-        public_mode=PublicMode.NONE,
-        workspace="other_workspace",
-        to_json_summary=Mock(return_value={"id": study_id, "name": study_name}),
-    )
-    # The `name` attribute cannot be mocked during creation of the mock object
-    # https://stackoverflow.com/a/62552149/1513933
-    study_mock.name = study_name
-
-    service = build_study_service(
-        raw_study_service=Mock(spec=RawStudyService),
-        directory_service=Mock(spec=DirectoryService),
-        repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
-        config=Mock(spec=Config),
-    )
-
-    output_config = Mock(get_file=Mock(return_value="output_id"), archived=False)
-
-    file_study_config = FileStudyTreeConfig(tmp_path, tmp_path, "study_id", 0, archive_path=None)
-    file_study_config.outputs = {"output_id": output_config}
-
-    context = Mock()
-    context.resolver.get_matrix.return_value = None
-    service.storage_service.raw_study_service.get_raw.return_value = FileStudy(  # type: ignore
-        config=file_study_config,
-        tree=FileStudyTree(context, file_study_config),
-    )
-
-    output_path = tmp_path / "output"
-    output_path.mkdir()
-    (output_path / "output_id").mkdir()
-    (output_path / "logs").mkdir()
-
-    possible_log_paths = [
-        output_path / "output_id" / "antares-out.log",
-        output_path / "output_id" / "simulation.log",
-        output_path / "logs" / "job_id-out.log",
-        output_path / "logs" / "output_id-out.log",
-    ]
-
-    for log_path in possible_log_paths:
-        log_path.write_text("some log 2")
-        logs = service.get_logs(study_id, "output_id", "job_id", False)
-        assert logs == "some log 2"
-        log_path.unlink()
-
-        # Check invalid utf-8 characters are correctly replaced
-        log_path.write_text("Caractère invalide", encoding="latin-1")
-        logs = service.get_logs(study_id, "output_id", "job_id", False)
-        assert logs == "Caract�re invalide"
-        log_path.unlink()
-
-    service.save_logs(study_id, "job_id", "out.log", "some log")
-    assert (
-        service.get_logs(
-            study_id,
-            "output_id",
-            "job_id",
-            False,
-        )
-        == "some log"
-    )
-
-    service.save_logs(study_id, "job_id", "err.log", "some log 3")
-    assert (
-        service.get_logs(
-            study_id,
-            "output_id",
-            "job_id",
-            True,
-        )
-        == "some log 3"
-    )
 
 
 @with_admin_user

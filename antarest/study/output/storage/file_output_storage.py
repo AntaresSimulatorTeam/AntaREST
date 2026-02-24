@@ -153,13 +153,23 @@ class InStudyFileOutputStorage(IOutputStorage):
         output: BinaryIO | Path,
         output_name_suffix: Optional[str] = None,
     ) -> Optional[str]:
+        """
+        Starts by creating a temporary output directory inside the output dir, then copies the provided output into it.
+
+        Finally rename the temp directory to the actual output name.
+
+        In case of a zip path, seems that it's just copied, not extracted. Why that difference in logic ?
+        Probably because for external studies, we only want to unarchive it afterwards, at the service level...
+        But it's far too implicit !
+        """
         study_outputs = self._outputs_provider.get_outputs(study_id)
 
         # Initialize to path to temporary output directory ?
         path_output = study_outputs.outputs_path / f"imported_output_{str(uuid4())}"
 
         path_output.mkdir(parents=True)
-        output_full_name: Optional[str]
+
+        output_full_name: str
         is_zipped = False
         stopwatch = StopWatch()
         try:
@@ -426,6 +436,8 @@ class InStudyFileOutputStorage(IOutputStorage):
     def get_logs(self, study_id: str, output_id: str, job_id: str, log_type: LogType) -> str:
         study_outputs = self._outputs_provider.get_outputs(study_id)
         file_study = study_outputs.get_file_study()
+
+        # Analysis on test platform: nothing in output/logs ? why do we have this ?
         log_locations = {
             LogType.STDOUT: [
                 ["output", "logs", f"{job_id}-out.log"],

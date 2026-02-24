@@ -320,8 +320,8 @@ class SlurmLauncher(AbstractLauncher):
     def _import_study_output(
         self,
         job_id: str,
-        xpansion_mode: str,
-        log_dir: str,
+        xpansion_mode: str | None,
+        log_dir: str | None,
     ) -> Optional[str]:
         if xpansion_mode:
             self._import_xpansion_result(job_id, xpansion_mode)
