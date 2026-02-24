@@ -37,7 +37,10 @@ ACTIVE_RULESET_TABLE = Table(
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("ruleset_name", String(255), nullable=False),
     ForeignKeyConstraint(
-        ["study_id", "ruleset_name"], ["ruleset.study_id", "ruleset.ruleset_name"], name="fk_active_ruleset", ondelete="CASCADE",
+        ["study_id", "ruleset_name"],
+        ["ruleset.study_id", "ruleset.ruleset_name"],
+        name="fk_active_ruleset",
+        ondelete="CASCADE",
     ),
 )
 
