@@ -62,6 +62,4 @@ class FileStudyAdvancedParametersDao(AdvancedParametersDao, ABC):
                 general_data[key][field] = value
 
         file_study.tree.save(general_data, GENERAL_DATA_PATH)
-
-        # Sync the in-memory config so that the study synthesis stays up-to-date
         file_study.config.enr_modelling = parameters.renewable_generation_modelling.value
