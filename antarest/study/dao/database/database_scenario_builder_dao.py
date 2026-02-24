@@ -87,17 +87,12 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
         self._study_id = study_id
         self._db_session = db_session
 
-    def get_study_id(self) -> str:
-        """Get the study ID for database queries."""
-        return self._study_id
-
-    def get_session(self) -> Session:
-        """Get the SQLAlchemy session for database operations."""
-        return self._db_session
-
     @override
     def save_scenario_builder(self, rulesets: Rulesets) -> None:
         study_id, session = self._study_id, self._db_session
+        previous_active_ruleset = session.execute(
+            select(ACTIVE_RULESET_TABLE.c.ruleset_name).where(ACTIVE_RULESET_TABLE.c.study_id == study_id)
+        ).scalar_one_or_none()
 
         # Delete all existing rulesets for the study
         session.execute(delete(RULESET_TABLE).where(RULESET_TABLE.c.study_id == study_id))
@@ -143,6 +138,10 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
         ]:
             if rows:
                 session.execute(insert(table), rows)
+
+        # Re-attach the previous active ruleset if it still exists after the replacement.
+        if previous_active_ruleset in rulesets:
+            upsert_one(session, ACTIVE_RULESET_TABLE, {"study_id": study_id, "ruleset_name": previous_active_ruleset})
 
         session.commit()
 

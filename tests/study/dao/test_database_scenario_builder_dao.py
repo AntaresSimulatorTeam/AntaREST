@@ -140,6 +140,16 @@ def test_save_replaces_active_ruleset_via_cascade(dao: DatabaseStudyDao) -> None
     assert dao.get_active_ruleset_name() == "Default Ruleset"
 
 
+def test_save_preserves_active_ruleset_when_name_still_exists(dao: DatabaseStudyDao) -> None:
+    dao.save_scenario_builder({"R1": Ruleset(load={"fr": {"0": 1}}), "R2": Ruleset()})
+    dao.save_active_ruleset_name("R1")
+
+    # Overwrite rulesets entirely but keep the same active ruleset name.
+    dao.save_scenario_builder({"R1": Ruleset(wind={"de": {"0": 2}}), "R3": Ruleset()})
+
+    assert dao.get_active_ruleset_name() == "R1"
+
+
 def test_save_active_ruleset_name_with_nonexistent_ruleset_raises(dao: DatabaseStudyDao) -> None:
     with pytest.raises(RulesetNotFound):
         dao.save_active_ruleset_name("nonexistent")

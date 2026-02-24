@@ -21,7 +21,9 @@ from antarest.study.business.model.scenario_builder_model import ScenarioType
 
 metadata = Base.metadata
 
-_SCENARIO_TYPE_ENUM = Enum(ScenarioType, name="scenariotype")
+_SCENARIO_TYPE_ENUM = Enum(
+    ScenarioType, name="scenariotype", values_callable=lambda enum_cls: [e.value for e in enum_cls]
+)
 
 RULESET_TABLE = Table(
     "ruleset",
