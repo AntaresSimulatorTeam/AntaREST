@@ -33,6 +33,7 @@ from antarest.study.business.model.layer_model import Layer
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_9_2, Study
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
 def _create_default_settings(dao: DatabaseStudyDao, study: Study) -> None:
@@ -70,8 +71,14 @@ class DatabaseStudyDaoFactory(StudyFactoryDao):
     Used to initialize a study inside DB
     """
 
-    def __init__(self, matrix_service: ISimpleMatrixService, session: Session | None = None) -> None:
+    def __init__(
+        self,
+        matrix_service: ISimpleMatrixService,
+        generator_matrix_constants: GeneratorMatrixConstants,
+        session: Session | None = None,
+    ) -> None:
         self._matrix_service = matrix_service
+        self._generator_matrix_constants = generator_matrix_constants
         self._session = session
 
     @property
@@ -83,7 +90,7 @@ class DatabaseStudyDaoFactory(StudyFactoryDao):
 
     @override
     def create_study_dao(self, study: Study) -> DatabaseStudyDao:
-        dao = DatabaseStudyDao(study.id, self.session, self._matrix_service)
+        dao = DatabaseStudyDao(study.id, self.session, self._matrix_service, self._generator_matrix_constants)
         dao.save_layer(Layer(id=DEFAULT_LAYER_ID, name=DEFAULT_LAYER_NAME))
         _create_default_settings(dao, study)
         return dao
