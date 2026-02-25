@@ -17,7 +17,7 @@ from typing import Annotated, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
-from antarest.core.api_types import SanitizedStr
+from antarest.core.api_types import UuidStr
 from antarest.core.config import Config
 from antarest.core.tasks.model import TaskDTO, TaskListFilter
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, TaskJobService
@@ -51,7 +51,7 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
 
     @bp.get("/tasks/{task_id}")
     def get_task(
-        task_id: SanitizedStr,
+        task_id: UuidStr,
         wait_for_completion: bool = False,
         with_logs: bool = False,
         timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT,
@@ -90,7 +90,7 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
         return service.status_task(task_id, with_logs)
 
     @bp.put("/tasks/{task_id}/cancel", status_code=HTTPStatus.ACCEPTED)
-    def cancel_task(task_id: SanitizedStr) -> None:
+    def cancel_task(task_id: UuidStr) -> None:
         logger.info(f"Requesting cancellation for task {task_id}")
         service.cancel_task(task_id)
 
@@ -98,7 +98,7 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
         "/tasks/{task_id}/progress",
         summary="Retrieve task progress from task id",
     )
-    def get_progress(task_id: SanitizedStr) -> Optional[int]:
+    def get_progress(task_id: UuidStr) -> Optional[int]:
         logger.info(f"Fetching task progress of task {task_id}")
         return service.get_task_progress(task_id)
 
