@@ -112,14 +112,42 @@ class RawPathToMatrixMapper:
             bc_id, suffix = rest[0][:-3], rest[0][-2:]
             return mapping[suffix](bc_id)
 
+        elif prefix == "renewables":
+            if len(rest) != 4 or rest[0] != "series" or rest[3] != "series":
+                raise ValueError(error_msg)
+            return self._dao.get_renewable_series(rest[1], rest[2])
+
+        elif prefix == "thermal":
+            return self._get_matrix_inside_thermal_folder(rest, error_msg)
+
         """
         children: TREE = {
             "areas": InputAreas(self.matrix_mapper, config.next_file("areas")),
             "hydro": InputHydro(self.matrix_mapper, config.next_file("hydro")),
             "links": InputLink(self.matrix_mapper, config.next_file("links")),
-            "thermal": InputThermal(self.matrix_mapper, config.next_file("thermal")),
         }
-            children["renewables"] = ClusteredRenewables(self.matrix_mapper, config.next_file("renewables"))
             children["st-storage"] = InputSTStorage(self.matrix_mapper, config.next_file("st-storage"))
         pass
         """
+
+    def _get_matrix_inside_thermal_folder(self, parts: tuple[str, ...], error_msg: str) -> pl.DataFrame:
+        if len(parts) != 4:
+            raise ValueError(error_msg)
+
+        area_id, thermal_id = parts[1], parts[2]
+
+        if parts[0] == "series":
+            if parts[3] == "fuelCost":
+                return self._dao.get_thermal_fuel_cost(area_id, thermal_id)
+            elif parts[3] == "C02Cost":
+                return self._dao.get_thermal_co2_cost(area_id, thermal_id)
+            elif parts[3] == "series":
+                return self._dao.get_thermal_series(area_id, thermal_id)
+
+        elif parts[0] == "prepro":
+            if parts[3] == "data":
+                return self._dao.get_thermal_prepro(area_id, thermal_id)
+            elif parts[3] == "modulation":
+                return self._dao.get_thermal_modulation(area_id, thermal_id)
+
+        raise ValueError(error_msg)
