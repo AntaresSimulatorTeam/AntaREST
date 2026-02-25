@@ -15,7 +15,7 @@ from pathlib import Path
 from fastapi import APIRouter
 from starlette.responses import FileResponse
 
-from antarest.core.api_types import SanitizedStr
+from antarest.core.api_types import UuidStr
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -38,7 +38,7 @@ def create_file_transfer_api(filetransfer_manager: FileTransferManager, config: 
         "/downloads/{download_id}",
         summary="Retrieve download file",
     )
-    def fetch_download(download_id: SanitizedStr) -> FileResponse:
+    def fetch_download(download_id: UuidStr) -> FileResponse:
         logger.info(f"Retrieving content for download {download_id}.")
         download = filetransfer_manager.fetch_download(download_id)
         return FileResponse(
@@ -51,7 +51,7 @@ def create_file_transfer_api(filetransfer_manager: FileTransferManager, config: 
         "/downloads/{download_id}/metadata",
         summary="Retrieve information on a file's state of preparation",
     )
-    def get_download_metadata(download_id: SanitizedStr, wait_for_availability: bool = False) -> FileDownloadDTO:
+    def get_download_metadata(download_id: UuidStr, wait_for_availability: bool = False) -> FileDownloadDTO:
         logger.info(f"Retrieving metadata for download {download_id} (waiting: {wait_for_availability}).")
         return filetransfer_manager.get_download_metadata(download_id, wait_for_availability)
 
