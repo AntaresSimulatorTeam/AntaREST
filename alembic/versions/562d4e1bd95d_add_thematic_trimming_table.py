@@ -24,10 +24,10 @@ def upgrade():
         sa.ForeignKeyConstraint(
             ["study_id"],
             ["study.id"],
-            name=op.f("fk_thematic_trimming_study_id_study"),
+            name="fk_thematic_trimming_study_id_study",
             ondelete="CASCADE",
         ),
-        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_thematic_trimming")),
+        sa.PrimaryKeyConstraint("study_id", name="pk_thematic_trimming"),
     )
 
 def downgrade():

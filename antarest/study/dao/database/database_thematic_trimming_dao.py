@@ -35,39 +35,31 @@ class DatabaseThematicTrimmingDao(ThematicTrimmingDao):
         self._study_id = study_id
         self._db_session = db_session
 
-    def get_study_id(self) -> str:
-        """Get the study ID for database queries."""
-        return self._study_id
-
-    def get_session(self) -> Session:
-        """Get the SQLAlchemy session for database operations."""
-        return self._db_session
-
     @abstractmethod
     def get_impl(self) -> "DatabaseStudyDao":
         pass
 
     @override
     def get_thematic_trimming(self) -> ThematicTrimming:
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_id = self._study_id
 
         stmt = select(THEMATIC_TRIMMING_TABLE).where((THEMATIC_TRIMMING_TABLE.c.study_id == study_id))
 
-        row = session.execute(stmt).fetchone()
+        row = self._db_session.execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
         return ThematicTrimming.model_validate(row.thematic_trimming)
 
     @override
     def save_thematic_trimming(self, trimming: ThematicTrimming) -> None:
-        session = self.get_session()
-        values = {"study_id": self.get_study_id(), "thematic_trimming": trimming.model_dump(exclude_none=True)}
+        session = self._db_session
+        study_id = self._study_id
+        values = {"study_id": study_id, "thematic_trimming": trimming.model_dump(exclude_none=True)}
 
         try:
             upsert_one(session, THEMATIC_TRIMMING_TABLE, values)
-        except IntegrityError:
+        except IntegrityError as e:
             # Happens if the study does not exist -> ForeignKey constraint fails
-            raise StudyNotFoundError(self.get_study_id())
+            raise StudyNotFoundError(study_id) from e
 
         session.commit()
