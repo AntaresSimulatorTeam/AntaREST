@@ -14,14 +14,14 @@ import collections
 import logging
 from http import HTTPStatus
 from pathlib import PurePosixPath
-from typing import Annotated, Dict, Optional, Sequence, TypeAlias
+from typing import Annotated, Dict, Optional, Sequence
 
 from antares.study.version import StudyVersion
-from fastapi import APIRouter, HTTPException, Path, Query, UploadFile
+from fastapi import APIRouter, HTTPException, Query, UploadFile
 from markupsafe import escape
 from pydantic import NonNegativeInt
 
-from antarest.core.api_types import SanitizedStr
+from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.config import Config
 from antarest.core.exceptions import BadArchiveContent, BadZipBinary
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
@@ -50,13 +50,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 logger = logging.getLogger(__name__)
 
 QUERY_REGEX = r"^\s*(?:\d+\s*(?:,\s*\d+\s*)*)?$"
-
-_UUID_PATTERN = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-
-UuidStr: TypeAlias = Annotated[
-    SanitizedStr,
-    Path(pattern="^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"),
-]
 
 
 def _sanitize_study_id(study_id: str) -> str:
@@ -537,7 +530,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{study_id}/archive",
         summary="Archive a study",
     )
-    def archive_study(study_id: SanitizedStr) -> str:
+    def archive_study(study_id: UuidStr) -> str:
         logger.info(f"Archiving study {study_id}")
         study_id = sanitize_uuid(study_id)
         return study_service.archive(study_id)
@@ -546,7 +539,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{study_id}/unarchive",
         summary="Unarchive a study",
     )
-    def unarchive_study(study_id: SanitizedStr) -> str:
+    def unarchive_study(study_id: UuidStr) -> str:
         logger.info(f"Unarchiving study {study_id}")
         study_id = sanitize_uuid(study_id)
         return study_service.unarchive(study_id)
@@ -572,7 +565,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{study_id}/normalize",
         summary="Move study matrices into the matrix-store and replace them with symbolic links.",
     )
-    def normalize_study(study_id: SanitizedStr) -> None:
+    def normalize_study(study_id: UuidStr) -> None:
         """
         This endpoint iterates over every matrix inside a study.
         For each, it saves them inside the application's matrix-store.

@@ -17,7 +17,7 @@ from uuid import UUID
 from fastapi import APIRouter, Query
 from pydantic import Field
 
-from antarest.core.api_types import SanitizedStr
+from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.utils.web import APITag
@@ -50,7 +50,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Run study",
     )
     def run(
-        study_id: SanitizedStr,
+        study_id: UuidStr,
         launcher: Optional[SanitizedStr] = None,
         launcher_parameters: LauncherParametersDTO = LauncherParametersDTO(),
         solver_presets_id: Optional[SanitizedStr] = None,

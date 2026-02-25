@@ -15,3 +15,9 @@ from pydantic import StringConstraints
 
 # A string without new lines. This ensures that it's safe to log it, see sonar issue python:S5145
 SanitizedStr: TypeAlias = Annotated[str, StringConstraints(pattern=r"^.*$")]
+
+
+# Specific string type for UUIDs
+UuidStr: TypeAlias = Annotated[
+    str, StringConstraints(pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+]

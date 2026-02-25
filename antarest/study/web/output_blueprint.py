@@ -21,7 +21,7 @@ from fastapi import APIRouter, Depends, Query, UploadFile
 from pydantic import TypeAdapter
 from starlette.responses import FileResponse, Response
 
-from antarest.core.api_types import SanitizedStr
+from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -129,7 +129,7 @@ def create_output_routes(
         "/studies/{study_id}/outputs/{output_id}/variables",
         summary="Get outputs data variables",
     )
-    def output_variables_information(study_id: SanitizedStr, output_id: SanitizedStr) -> OutputVariablesInformation:
+    def output_variables_information(study_id: UuidStr, output_id: SanitizedStr) -> OutputVariablesInformation:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching whole output of the simulation {output_id} for study {study_id}")
@@ -139,7 +139,7 @@ def create_output_routes(
         "/studies/{study_id}/outputs/{output_id}/export",
         summary="Get outputs data",
     )
-    def output_export(study_id: SanitizedStr, output_id: SanitizedStr) -> FileDownloadTaskDTO:
+    def output_export(study_id: UuidStr, output_id: SanitizedStr) -> FileDownloadTaskDTO:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching whole output of the simulation {output_id} for study {study_id}")
@@ -176,7 +176,7 @@ def create_output_routes(
 
     @bp.post("/studies/{study_id}/outputs/{output_id}/download", summary="Get outputs data")
     def output_download(
-        study_id: SanitizedStr,
+        study_id: UuidStr,
         output_id: SanitizedStr,
         data: StudyDownloadDTO,
         use_task: bool = Query(default=False, deprecated=True),
@@ -192,7 +192,7 @@ def create_output_routes(
         "/studies/{study_id}/outputs/{output_id}",
         summary="Delete a simulation output",
     )
-    def delete_output(study_id: SanitizedStr, output_id: SanitizedStr) -> None:
+    def delete_output(study_id: UuidStr, output_id: SanitizedStr) -> None:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"FDeleting output {output_id} from study {study_id}")
@@ -202,7 +202,7 @@ def create_output_routes(
         "/studies/{study_id}/outputs/{output_id}/_archive",
         summary="Archive output",
     )
-    def archive_output(study_id: SanitizedStr, output_id: SanitizedStr) -> str | None:
+    def archive_output(study_id: UuidStr, output_id: SanitizedStr) -> str | None:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Archiving of the output {output_id} of the study {study_id}")
@@ -214,7 +214,7 @@ def create_output_routes(
         "/studies/{study_id}/outputs/{output_id}/_unarchive",
         summary="Unarchive output",
     )
-    def unarchive_output(study_id: SanitizedStr, output_id: SanitizedStr) -> str | None:
+    def unarchive_output(study_id: UuidStr, output_id: SanitizedStr) -> str | None:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Unarchiving of the output {output_id} of the study {study_id}")
@@ -226,7 +226,7 @@ def create_output_routes(
         "/private/studies/{study_id}/outputs/{output_id}/digest-ui",
         summary="Display an output digest file for the front-end",
     )
-    def get_digest_file(study_id: SanitizedStr, output_id: SanitizedStr) -> DigestUI:
+    def get_digest_file(study_id: UuidStr, output_id: SanitizedStr) -> DigestUI:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Retrieving the digest file for the output {output_id} of the study {study_id}")
@@ -236,7 +236,7 @@ def create_output_routes(
         "/studies/{study_id}/outputs",
         summary="Get global information about a study simulation result",
     )
-    def sim_result(study_id: SanitizedStr) -> list[StudySimResultDTO]:
+    def sim_result(study_id: UuidStr) -> list[StudySimResultDTO]:
         logger.info(f"Fetching output list for study {study_id}")
         study_id = sanitize_uuid(study_id)
         content = output_service.get_study_sim_result(study_id)
