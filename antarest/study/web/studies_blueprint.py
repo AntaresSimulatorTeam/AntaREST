@@ -12,7 +12,6 @@
 
 import collections
 import logging
-import re
 from http import HTTPStatus
 from pathlib import PurePosixPath
 from typing import Annotated, Dict, Optional, Sequence, TypeAlias
@@ -20,7 +19,7 @@ from typing import Annotated, Dict, Optional, Sequence, TypeAlias
 from antares.study.version import StudyVersion
 from fastapi import APIRouter, HTTPException, Path, Query, UploadFile
 from markupsafe import escape
-from pydantic import NonNegativeInt, StringConstraints
+from pydantic import NonNegativeInt
 
 from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
@@ -582,136 +581,5 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         logger.info(f"Normalizing study {study_id}")
         study_id = sanitize_uuid(study_id)
         return study_service.normalize_study_by_id(study_id)
-
-    @bp.put(
-        "/studies/{study_id}/toto",
-    )
-    def toto(study_id: SanitizedStr) -> None:
-        logger.info(f"Totoing study {study_id}")
-
-    @bp.put(
-        "/studies/{study_id}/isalnum",
-    )
-    def isalnum(study_id: SanitizedStr) -> None:
-        if study_id.isalnum():
-            logger.info(f"Logging study {study_id}")
-
-    @bp.put(
-        "/studies/{study_id}/isalnum-nofstring",
-    )
-    def isalnum_without_fstring(study_id: SanitizedStr) -> None:
-        if study_id.isalnum():
-            logger.info("Logging study %s", study_id)
-
-    @bp.put(
-        "/studies/{study_id}/isalnum-function-nofstring",
-    )
-    def isalnum_function_without_fstring(study_id: SanitizedStr) -> None:
-        study_id = _sanitize_study_id(study_id)
-        logger.info("Logging study %s", study_id)
-
-    @bp.put(
-        "/studies/{study_id}/check-crlf",
-    )
-    def check_crlf(study_id: SanitizedStr) -> None:
-        if "\r\n" in study_id or "\n" in study_id:
-            raise ValueError("Invalid str")
-        logger.info("Logging study %s", study_id)
-
-    @bp.put(
-        "/studies/{study_id}/count-crlf",
-    )
-    def count_crlf(study_id: SanitizedStr) -> None:
-        if study_id.count("\r\n") > 0 or study_id.count("\n") > 0:
-            raise ValueError("Invalid str")
-        logger.info("Logging study %s", study_id)
-
-    @bp.put(
-        "/studies/{study_id}/replace_pattern",
-    )
-    def replace_pattern(study_id: SanitizedStr) -> None:
-        study_id = re.sub("[\r\n\t\f\v]", "", study_id)
-        logger.info("Logging study %s", study_id)
-
-    @bp.put(
-        "/studies/{study_id}/replace_pattern_2",
-    )
-    def replace_pattern_2(study_id: SanitizedStr) -> None:
-        study_id = re.sub(r"[\r\n\t\f\v]", "", study_id)
-        logger.info("Logging study %s", study_id)
-
-    @bp.put(
-        "/studies/{study_id}/new_sanitized",
-    )
-    def new_sanitized_study_id(study_id: SanitizedStr) -> None:
-        study_id = sanitize_uuid(study_id)
-        logger.info("Logging study %s", study_id)
-
-    @bp.put(
-        "/studies/{study_id}/simpler-pattern",
-    )
-    def simpler_pattern(
-        study_id: SanitizedStr = Path(pattern=r"^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"),
-    ) -> None:
-        logger.info("Logging study %s", study_id)
-
-    @bp.put(
-        "/studies/{study_id}/even-simpler-pattern",
-    )
-    def even_simpler_pattern(
-        study_id: SanitizedStr = Path(pattern=r"^[a-zA-Z0-9_-]*$"),
-    ) -> None:
-        logger.info("Logging study %s", study_id)
-
-    @bp.put(
-        "/studies/{study_id}/invalid-pattern",
-    )
-    def invalid_pattern(
-        study_id: SanitizedStr = Path(pattern=r"^.*$"),
-    ) -> None:
-        logger.info("Logging study %s", study_id)
-
-    @bp.put(
-        "/studies/{study_id}/no-sanitization",
-    )
-    def no_sanitization(study_id: SanitizedStr) -> None:
-        logger.info("Logging study %s", study_id)
-
-    @bp.put(
-        "/studies/{study_id}/uuid-pattern",
-    )
-    def uuid_pattern(study_id: SanitizedStr = Path(pattern=_UUID_PATTERN)) -> None:
-        logger.info("Logging study %s", study_id)
-
-    @bp.put(
-        "/studies/{study_id}/uuid-pattern-annotated-type",
-    )
-    def uuid_pattern_annotated_type(study_id: UuidStr) -> None:
-        logger.info("Logging study %s", study_id)
-
-    @bp.put(
-        "/studies/{study_id}/path-annotation",
-    )
-    def path_annotation(study_id: SanitizedStr = Path()) -> None:
-        logger.info("Logging study %s", study_id)
-
-    @bp.put(
-        "/studies/query-annotation",
-    )
-    def query_annotation(study_id: SanitizedStr = Query()) -> None:
-        logger.info("Logging study %s", study_id)
-
-    @bp.put(
-        "/studies/{study_id}/pydantic-constraint",
-    )
-    def pydantic_constraint(study_id: Annotated[SanitizedStr, StringConstraints(pattern=r"^[a-zA-Z0-9_-]*$")]) -> None:
-        logger.info("Logging study %s", study_id)
-
-    @bp.put(
-        "/studies/{study_id}/sanitized-str-type",
-    )
-    def sanitized_str_type(study_id: SanitizedStr, other_id: SanitizedStr = Query()) -> None:
-        logger.info("Logging study %s", study_id)
-        logger.info("Logging other %s", other_id)
 
     return bp
