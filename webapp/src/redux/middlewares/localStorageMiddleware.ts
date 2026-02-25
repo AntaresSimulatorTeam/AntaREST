@@ -23,6 +23,7 @@ import {
   updateStudySortConfig,
   updateStudyFilters,
 } from "../ducks/studies";
+import { getStudyFilters } from "../selectors";
 import { setMenuOpen } from "../ducks/ui";
 
 const localStorageMiddleware = createListenerMiddleware<AppState>();
@@ -82,11 +83,8 @@ localStorageMiddleware.startListening({
 // When a user opens a folder, it should remain open after a page refresh.
 localStorageMiddleware.startListening({
   actionCreator: updateStudyFilters,
-  effect: (action) => {
-    storage.setItem(StorageKey.StudiesFilters, (prev) => ({
-      ...prev,
-      ...action.payload,
-    }));
+  effect: (_, listenerApi) => {
+    storage.setItem(StorageKey.StudiesFilters, getStudyFilters(listenerApi.getState()));
   },
 });
 

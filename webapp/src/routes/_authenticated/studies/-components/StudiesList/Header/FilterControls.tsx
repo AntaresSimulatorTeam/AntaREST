@@ -32,11 +32,11 @@ import type { StudySortConfig } from "@/types/types";
 
 interface FilterControlsProps {
   activeTree: "managed" | "external";
-  strictPath: boolean;
+  showDescendants: boolean;
   isReferenceTypeActive: boolean;
   canScan: boolean;
   sortConfig: StudySortConfig;
-  onToggleStrictPath: () => void;
+  onToggleShowDescendants: (value: boolean) => void;
   onToggleStudyType: () => void;
   onScanFolder: () => void;
   onSortChange: (sortConfig: StudySortConfig) => void;
@@ -44,11 +44,11 @@ interface FilterControlsProps {
 
 function FilterControls({
   activeTree,
-  strictPath,
+  showDescendants,
   isReferenceTypeActive,
   canScan,
   sortConfig,
-  onToggleStrictPath,
+  onToggleShowDescendants,
   onToggleStudyType,
   onScanFolder,
   onSortChange,
@@ -61,27 +61,25 @@ function FilterControls({
 
   return (
     <>
-      {/* Folder hierarchy toggle - only for external tree */}
-      {activeTree === "external" && (
-        <ToggleButtonGroup
-          value={strictPath}
-          exclusive
-          onChange={onToggleStrictPath}
-          size="extra-small"
-          color="primary"
-        >
-          <Tooltip title={t("studies.filters.strictfolder")}>
-            <ToggleButton value={true}>
-              <FolderIcon />
-            </ToggleButton>
-          </Tooltip>
-          <Tooltip title={t("studies.filters.showChildrens")}>
-            <ToggleButton value={false}>
-              <AccountTreeIcon />
-            </ToggleButton>
-          </Tooltip>
-        </ToggleButtonGroup>
-      )}
+      {/* Folder hierarchy toggle - current dir only vs include descendants */}
+      <ToggleButtonGroup
+        value={showDescendants}
+        exclusive
+        onChange={(_e, v) => v !== null && onToggleShowDescendants(v)}
+        size="extra-small"
+        color="primary"
+      >
+        <Tooltip title={t("studies.filters.strictfolder")}>
+          <ToggleButton value={false}>
+            <FolderIcon />
+          </ToggleButton>
+        </Tooltip>
+        <Tooltip title={t("studies.filters.showChildrens")}>
+          <ToggleButton value={true}>
+            <AccountTreeIcon />
+          </ToggleButton>
+        </Tooltip>
+      </ToggleButtonGroup>
 
       {/* Folder scan button - only for desktop mode enabled */}
       {canScan && (

@@ -65,6 +65,8 @@ function Header({
   const isDesktopMode = import.meta.env.MODE === "desktop";
   const isReferenceStudyTypeActive = filters.type === "references";
   const canScan = activeTree === "external" && external.path !== "";
+  const showDescendants =
+    activeTree === "external" ? external.showDescendants : managed.showDescendants;
 
   // Breadcrumb navigation
   const breadcrumbItems = useBreadcrumbs({
@@ -94,19 +96,17 @@ function Header({
       dispatch(
         updateStudyFilters({
           activeTree: "external",
-          external: { path: item.path ?? "", strictPath: external.strictPath },
+          external: { path: item.path ?? "" },
         }),
       );
     }
   };
 
-  const handleToggleStrictPath = () => {
+  const handleToggleShowDescendants = (value: boolean) => {
     if (activeTree === "external") {
-      dispatch(
-        updateStudyFilters({
-          external: { ...external, strictPath: !external.strictPath },
-        }),
-      );
+      dispatch(updateStudyFilters({ external: { showDescendants: value } }));
+    } else {
+      dispatch(updateStudyFilters({ managed: { showDescendants: value } }));
     }
   };
 
@@ -205,11 +205,11 @@ function Header({
 
           <FilterControls
             activeTree={activeTree}
-            strictPath={external.strictPath}
+            showDescendants={showDescendants}
             isReferenceTypeActive={isReferenceStudyTypeActive}
             canScan={canScan}
             sortConfig={sortConfig}
-            onToggleStrictPath={handleToggleStrictPath}
+            onToggleShowDescendants={handleToggleShowDescendants}
             onToggleStudyType={handleToggleStudyType}
             onScanFolder={handleOpenScanDialog}
             onSortChange={handleSortChange}

@@ -46,10 +46,11 @@ export interface StudyFilters {
     directoryId: string | null;
     // All directory IDs in scope (selected dir + descendants). null = root (all managed studies).
     directoryIds: string[] | null;
+    showDescendants: boolean;
   };
   external: {
     path: string;
-    strictPath: boolean;
+    showDescendants: boolean;
   };
   type: "all" | "references" | "variants";
   management: "all" | "managed" | "unmanaged";
@@ -85,6 +86,24 @@ interface StudyUpload {
 
 type CreateStudyArg = StudyCreator | StudyUpload | StudyMetadata;
 
+function buildInitialFilters(): StudyFilters {
+  const saved = storage.getItem(StorageKey.StudiesFilters) || {};
+  return {
+    search: "",
+    activeTree: "managed",
+    type: "references",
+    management: "all",
+    archive: "all",
+    versions: [],
+    users: [],
+    groups: [],
+    tags: [],
+    ...saved,
+    managed: { directoryId: null, directoryIds: null, showDescendants: false, ...saved.managed },
+    external: { path: "", showDescendants: false, ...saved.external },
+  };
+}
+
 const initialState = studiesAdapter.getInitialState({
   status: FetchStatus.Idle,
   error: null as string | null,
@@ -93,26 +112,7 @@ const initialState = studiesAdapter.getInitialState({
   scrollPosition: 0,
   versionList: [] as string[],
   favorites: [],
-  filters: {
-    search: "",
-    activeTree: "managed",
-    managed: {
-      directoryId: null,
-      directoryIds: null,
-    },
-    external: {
-      path: "",
-      strictPath: false,
-    },
-    type: "references",
-    management: "all",
-    archive: "all",
-    versions: [],
-    users: [],
-    groups: [],
-    tags: [],
-    ...(storage.getItem(StorageKey.StudiesFilters) || {}),
-  } satisfies StudyFilters,
+  filters: buildInitialFilters(),
   sort: DEFAULT_STUDY_SORT_CONFIG,
 }) as StudiesState;
 
@@ -136,7 +136,7 @@ export const setStudyScrollPosition = createAction<StudiesState["scrollPosition"
 
 export const setFavoriteStudies = createAction<StudiesState["favorites"]>(n("SET_FAVORITES"));
 
-export const updateStudyFilters = createAction<Partial<StudiesState["filters"]>>(
+export const updateStudyFilters = createAction<O.Partial<StudyFilters, "deep">>(
   n("UPDATE_FILTERS"),
 );
 
@@ -303,7 +303,14 @@ export default createReducer(initialState, (builder) => {
       draftState.favorites = action.payload;
     })
     .addCase(updateStudyFilters, (draftState, action) => {
-      Object.assign(draftState.filters, action.payload);
+      const { managed, external, ...rest } = action.payload;
+      Object.assign(draftState.filters, rest);
+      if (managed) {
+        Object.assign(draftState.filters.managed, managed);
+      }
+      if (external) {
+        Object.assign(draftState.filters.external, external);
+      }
       draftState.scrollPosition = 0;
     })
     .addCase(updateStudySortConfig, (draftState, action) => {
