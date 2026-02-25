@@ -27,7 +27,12 @@ from antarest.core.exceptions import BadArchiveContent, BadZipBinary
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.model import PublicMode
 from antarest.core.utils.archives import ArchiveFormat
-from antarest.core.utils.utils import sanitize_string, sanitize_uuid, validate_folder_path, validate_study_name
+from antarest.core.utils.utils import (
+    sanitize_string,
+    sanitize_uuid,
+    validate_folder_path,
+    validate_study_name,
+)
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.login.utils import require_current_user
@@ -45,6 +50,8 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 logger = logging.getLogger(__name__)
 
 QUERY_REGEX = r"^\s*(?:\d+\s*(?:,\s*\d+\s*)*)?$"
+
+_UUID_PATTERN = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 
 
 def _sanitize_study_id(study_id: str) -> str:
@@ -654,6 +661,12 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{study_id}/no-sanitization",
     )
     def no_sanitization(study_id: str) -> None:
+        logger.info("Logging study %s", study_id)
+
+    @bp.put(
+        "/studies/{study_id}/uuid-pattern",
+    )
+    def uuid_pattern(study_id: str = Path(pattern=_UUID_PATTERN)) -> None:
         logger.info("Logging study %s", study_id)
 
     return bp
