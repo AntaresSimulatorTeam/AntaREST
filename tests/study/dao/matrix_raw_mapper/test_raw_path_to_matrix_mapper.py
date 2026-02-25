@@ -13,10 +13,10 @@ from pathlib import Path
 
 import polars as pl
 import pytest
-from study.dao.conftest import build_real_case_db_study
 
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
+from tests.study.dao.conftest import build_real_case_db_study
 
 
 def test_mapper(dao_930: DatabaseStudyDao) -> None:
