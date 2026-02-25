@@ -845,6 +845,7 @@
   "studies.variant": "Variant",
   "studies.variants": "Variants",
   "studies.managed": "Managed",
+  "studies.managedStudy": "Managed",
   "studies.unmanaged": "Unmanaged",
   "studies.archived": "Archived",
   "studies.unarchived": "Unarchived",

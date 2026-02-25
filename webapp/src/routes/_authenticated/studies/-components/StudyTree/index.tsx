@@ -43,7 +43,7 @@ function StudyTree() {
     dispatch(
       updateStudyFilters({
         activeTree: "managed",
-        managed: { directoryId: null },
+        managed: { directoryId: null, directoryIds: null },
       }),
     );
   };
