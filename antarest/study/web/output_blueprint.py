@@ -119,7 +119,7 @@ def create_output_routes(
         status_code=HTTPStatus.ACCEPTED,
         summary="Import Output",
     )
-    def import_output(uuid: SanitizedStr, output: UploadFile) -> str | None:
+    def import_output(uuid: UuidStr, output: UploadFile) -> str | None:
         logger.info(f"Importing output for study {uuid}")
         output_id = output_service.import_output(uuid, output.file)
         return output_id
@@ -147,7 +147,7 @@ def create_output_routes(
         summary="Get time index for output matrices by frequency",
     )
     def get_output_time_index(
-        uuid: SanitizedStr,
+        uuid: UuidStr,
         output_id: SanitizedStr,
         frequency: MatrixFrequency = Query(
             MatrixFrequency.HOURLY,
@@ -237,7 +237,7 @@ def create_output_routes(
         summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs individual Outputs",
     )
     def aggregate_areas_raw_data(
-        uuid: SanitizedStr,
+        uuid: UuidStr,
         output_id: SanitizedStr,
         query_file: MCIndAreasQueryFile,
         frequency: MatrixFrequency,
@@ -297,7 +297,7 @@ def create_output_routes(
         include_in_schema=False,
     )
     def redirect_aggregate_areas_raw_data(
-        uuid: SanitizedStr,
+        uuid: UuidStr,
         output_id: SanitizedStr,
         query_file: MCIndAreasQueryFile,
         frequency: MatrixFrequency,
@@ -315,7 +315,7 @@ def create_output_routes(
         summary="Retrieve Aggregated Links Raw Data from Study Economy MCs individual Outputs",
     )
     def aggregate_links_raw_data(
-        uuid: SanitizedStr,
+        uuid: UuidStr,
         output_id: SanitizedStr,
         query_file: MCIndLinksQueryFile,
         frequency: MatrixFrequency,
@@ -373,7 +373,7 @@ def create_output_routes(
         include_in_schema=False,
     )
     def redirect_aggregate_links_raw_data(
-        uuid: SanitizedStr,
+        uuid: UuidStr,
         output_id: SanitizedStr,
         query_file: MCIndLinksQueryFile,
         frequency: MatrixFrequency,
@@ -391,7 +391,7 @@ def create_output_routes(
         summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs All Outputs",
     )
     def aggregate_areas_raw_data__all(
-        uuid: SanitizedStr,
+        uuid: UuidStr,
         output_id: SanitizedStr,
         query_file: MCAllAreasQueryFile,
         frequency: MatrixFrequency,
@@ -448,7 +448,7 @@ def create_output_routes(
         include_in_schema=False,
     )
     def redirect_aggregate_areas_raw_data__all(
-        uuid: SanitizedStr,
+        uuid: UuidStr,
         output_id: SanitizedStr,
         query_file: MCAllAreasQueryFile,
         frequency: MatrixFrequency,
@@ -465,7 +465,7 @@ def create_output_routes(
         summary="Retrieve Aggregated Links Raw Data from Study Economy MC-All Outputs",
     )
     def aggregate_links_raw_data__all(
-        uuid: SanitizedStr,
+        uuid: UuidStr,
         output_id: SanitizedStr,
         query_file: MCAllLinksQueryFile,
         frequency: MatrixFrequency,
@@ -523,7 +523,7 @@ def create_output_routes(
         include_in_schema=False,
     )
     def redirect_aggregate_links_raw_data__all(
-        uuid: SanitizedStr,
+        uuid: UuidStr,
         output_id: SanitizedStr,
         query_file: MCAllLinksQueryFile,
         frequency: MatrixFrequency,
@@ -539,7 +539,7 @@ def create_output_routes(
         "/studies/{uuid}/output/{output_id}/variables-list",
         summary="Retrieves the list of variables for a given output",
     )
-    def get_output_variables_list(uuid: SanitizedStr, output_id: SanitizedStr) -> OutputVariablesList:
+    def get_output_variables_list(uuid: UuidStr, output_id: SanitizedStr) -> OutputVariablesList:
         output_id = sanitize_string(output_id)
         return output_service.get_output_variables_list(uuid, output_id)
 
@@ -552,7 +552,7 @@ def create_output_routes(
         },
     )
     def get_output_variables_view(
-        uuid: SanitizedStr,
+        uuid: UuidStr,
         output_id: SanitizedStr,
         variable_name: SanitizedStr,
         frequency: MatrixFrequency,
@@ -591,7 +591,7 @@ def create_output_routes(
         summary="Export the variables view for a given output and a given configuration in a given format",
     )
     def export_output_variables_view(
-        uuid: SanitizedStr,
+        uuid: UuidStr,
         output_id: SanitizedStr,
         variable_name: SanitizedStr,
         frequency: MatrixFrequency,
@@ -634,7 +634,7 @@ def create_output_routes(
         summary="Materialize the variables view for a given output and a given configuration",
     )
     def materialize_output_variables_view(
-        uuid: SanitizedStr,
+        uuid: UuidStr,
         output_id: SanitizedStr,
         variable_name: SanitizedStr,
         frequency: MatrixFrequency,

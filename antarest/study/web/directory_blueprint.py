@@ -16,7 +16,7 @@ from typing import List
 
 from fastapi import APIRouter
 
-from antarest.core.api_types import SanitizedStr
+from antarest.core.api_types import UuidStr
 from antarest.core.config import Config
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -54,7 +54,7 @@ def create_directory_routes(
         "/directories/{directory_id}",
         summary="Update directory",
     )
-    def update_directory(directory_id: SanitizedStr, data: DirectoryUpdate) -> DirectoryMetadata:
+    def update_directory(directory_id: UuidStr, data: DirectoryUpdate) -> DirectoryMetadata:
         """
         Update directory name or parent.
         """
@@ -66,7 +66,7 @@ def create_directory_routes(
         status_code=HTTPStatus.NO_CONTENT,
         summary="Delete directory",
     )
-    def delete_directory(directory_id: SanitizedStr) -> None:
+    def delete_directory(directory_id: UuidStr) -> None:
         """
         Delete a directory only if it and all its subdirectories contain no studies.
         """
