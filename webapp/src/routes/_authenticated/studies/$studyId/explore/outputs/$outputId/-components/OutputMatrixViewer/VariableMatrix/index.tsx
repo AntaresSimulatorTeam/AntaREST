@@ -77,7 +77,6 @@ function VariableMatrix({
 }: VariableMatrixProps) {
   const { t } = useTranslation();
 
-  // TODO: !variablesMetadata check may be unnecessary
   if (!variablesMetadata || !hasVariablesForItem(variablesMetadata, selectedItem)) {
     return <EmptyView title={t("study.outputs.noVariablesForArea")} icon={GridOffIcon} />;
   }

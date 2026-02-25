@@ -173,13 +173,12 @@ function OutputMatrixViewer({ selectedItem, output }: Props) {
     }
   }, [mcMode, year]);
 
-  // Reset variable and cluster selections when dataType changes in variable-per-variable mode
   useEffect(() => {
     if (isVariablePerVariable) {
       setSelectedVariable("");
       setSelectedClusterId("");
     }
-  }, [dataType, isVariablePerVariable, setSelectedVariable]);
+  }, [isVariablePerVariable, setSelectedVariable]);
 
   const variableViewDateTime = useMemo(
     () => timeIndexMetadata && generateDateTime(timeIndexMetadata),
