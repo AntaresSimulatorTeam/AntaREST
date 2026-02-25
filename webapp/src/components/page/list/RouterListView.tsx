@@ -22,6 +22,7 @@ import { renderListItem } from "./utils";
 
 export interface RouterListViewItem extends ListPanelItem {
   linkOptions: ToOptions;
+  disabled?: boolean;
 }
 
 interface RouterListViewProps {
@@ -55,7 +56,7 @@ function RouterListView({
         actions={actions}
         disableSearch={disableSearch}
         renderItemContent={(item) => (
-          <RouterListItemButton key={currentRouteId} {...item.linkOptions}>
+          <RouterListItemButton key={currentRouteId} {...item.linkOptions} disabled={item.disabled}>
             {renderListItem(item)}
           </RouterListItemButton>
         )}

@@ -28,6 +28,7 @@ export interface ListViewItem<TData = unknown> extends ListPanelItem {
    * Used in `renderItemView()` when `view` is not provided.
    */
   data?: TData;
+  disabled?: boolean;
 }
 
 interface ListViewProps<TItemData = unknown> {
@@ -88,7 +89,11 @@ function ListView<TItemData>({
         actions={actions}
         disableSearch={disableSearch}
         renderItemContent={(item) => (
-          <ListItemButton onClick={() => setActiveItem(item)} selected={activeItem?.id === item.id}>
+          <ListItemButton
+            onClick={() => setActiveItem(item)}
+            selected={activeItem?.id === item.id}
+            disabled={item.disabled}
+          >
             {renderListItem(item)}
           </ListItemButton>
         )}
