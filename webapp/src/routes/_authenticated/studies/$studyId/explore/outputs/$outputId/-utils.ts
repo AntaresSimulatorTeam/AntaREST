@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { ContentListItem } from "@/components/page/list/ListView";
+import type { ListViewItem } from "@/components/page/list/ListView";
 import type { StudyMapDistrict } from "@/redux/ducks/studyMaps";
 import type {
   AreaVariablesDTO,
@@ -89,7 +89,7 @@ export const SYNTHESIS_ITEMS = [
     id: "thermal",
     label: "Thermal synthesis",
   },
-] as const satisfies ContentListItem[];
+] as const satisfies ListViewItem[];
 
 export function matchesSearchTerm(text: string, searchTerm: string): boolean {
   const searchTerms = searchTerm.split("|").map((term) => term.trim().toLowerCase());
