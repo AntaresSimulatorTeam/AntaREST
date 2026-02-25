@@ -136,10 +136,39 @@ class RawPathToMatrixMapper:
 
             raise ValueError(error_msg)
 
+        elif prefix == "st-storage":
+            return self._get_matrix_inside_st_storage_folder(rest, error_msg)
+
         """
         "hydro": InputHydro(self.matrix_mapper, config.next_file("hydro")),
-        "st-storage":  InputSTStorage(self.matrix_mapper, config.next_file("st-storage"))
         """
+
+    def _get_matrix_inside_st_storage_folder(self, parts: tuple[str, ...], error_msg: str) -> pl.DataFrame:
+        if len(parts) != 4:
+            raise ValueError(error_msg)
+
+        area_id, sts_id = parts[1], parts[2]
+
+        if parts[0] == "constraints" and parts[3].startswith("rhs_"):
+            return self._dao.get_st_storage_additional_constraint_matrix(area_id, sts_id, parts[3].removeprefix("rhs_"))
+
+        if parts[0] == "series":
+            mapping: dict[str, Callable[[str, str], pl.DataFrame]] = {
+                "cost_variation_withdrawal": self._dao.get_st_storage_cost_variation_withdrawal,
+                "cost_variation_injection": self._dao.get_st_storage_cost_variation_injection,
+                "cost_level": self._dao.get_st_storage_cost_level,
+                "cost_withdrawal": self._dao.get_st_storage_cost_withdrawal,
+                "cost_injection": self._dao.get_st_storage_cost_injection,
+                "inflows": self._dao.get_st_storage_inflows,
+                "upper_rule_curve": self._dao.get_st_storage_upper_rule_curve,
+                "lower_rule_curve": self._dao.get_st_storage_lower_rule_curve,
+                "pmax_withdrawal": self._dao.get_st_storage_pmax_withdrawal,
+                "pmax_injection": self._dao.get_st_storage_pmax_injection,
+            }
+            if parts[3] in mapping:
+                return mapping[parts[3]](area_id, sts_id)
+
+        raise ValueError(error_msg)
 
     def _get_matrix_inside_thermal_folder(self, parts: tuple[str, ...], error_msg: str) -> pl.DataFrame:
         if len(parts) != 4:
