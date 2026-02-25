@@ -20,7 +20,7 @@ from typing import Annotated, Dict, Optional, Sequence, TypeAlias
 from antares.study.version import StudyVersion
 from fastapi import APIRouter, HTTPException, Path, Query, UploadFile
 from markupsafe import escape
-from pydantic import NonNegativeInt
+from pydantic import NonNegativeInt, StringConstraints
 
 from antarest.core.config import Config
 from antarest.core.exceptions import BadArchiveContent, BadZipBinary
@@ -687,6 +687,12 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/query-annotation",
     )
     def query_annotation(study_id: str = Query()) -> None:
+        logger.info("Logging study %s", study_id)
+
+    @bp.put(
+        "/studies/{study_id}/pydantic-constraint",
+    )
+    def pydantic_constraint(study_id: Annotated[str, StringConstraints(pattern=r"^[a-zA-Z0-9_-]*$")]) -> None:
         logger.info("Logging study %s", study_id)
 
     return bp
