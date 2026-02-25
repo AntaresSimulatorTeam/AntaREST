@@ -11,8 +11,10 @@
 # This file is part of the Antares project.
 
 
+from study.dao.conftest import build_real_case_db_study
+
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
-def test_error_cases(dao: DatabaseStudyDao) -> None:
-    pass
+def test_error_cases(dao_930: DatabaseStudyDao) -> None:
+    result = build_real_case_db_study(dao_930)
