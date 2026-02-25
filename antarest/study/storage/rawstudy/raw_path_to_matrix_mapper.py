@@ -15,7 +15,7 @@ from typing import Callable
 import polars as pl
 
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
-from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
 from antarest.study.model import STUDY_VERSION_8_2, STUDY_VERSION_8_7
 
 
@@ -26,7 +26,7 @@ class RawPathToMatrixMapper:
     But to ensure backward compatibility for the `raw` endpoints we still have to return the matrices.
     """
 
-    def __init__(self, dao: StudyDao) -> None:
+    def __init__(self, dao: ReadOnlyStudyDao) -> None:
         self._dao = dao
 
     def get_matrix_from_path(self, path: Path) -> pl.DataFrame:
