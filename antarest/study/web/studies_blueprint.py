@@ -650,4 +650,10 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     ) -> None:
         logger.info("Logging study %s", study_id)
 
+    @bp.put(
+        "/studies/{study_id}/no-sanitization",
+    )
+    def no_sanitization(study_id: str) -> None:
+        logger.info("Logging study %s", study_id)
+
     return bp
