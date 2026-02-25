@@ -16,7 +16,7 @@ import polars as pl
 
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.model import STUDY_VERSION_8_7
+from antarest.study.model import STUDY_VERSION_8_2, STUDY_VERSION_8_7
 
 
 class RawPathToMatrixMapper:
@@ -120,14 +120,25 @@ class RawPathToMatrixMapper:
         elif prefix == "thermal":
             return self._get_matrix_inside_thermal_folder(rest, error_msg)
 
+        elif prefix == "links":
+            if study_version < STUDY_VERSION_8_2:
+                if len(rest) != 2:
+                    raise ValueError(error_msg)
+                return self._dao.get_link_series(rest[0], rest[1])
+
+            # Since v8.2 link matrices are separated in 3 different matrices, we have to determine which one was asked.
+            if len(rest) == 2:
+                return self._dao.get_link_series(rest[0], rest[1].removesuffix("_parameters"))
+            elif len(rest) == 3 and rest[1] == "capacities":
+                if rest[2].endswith("_indirect"):
+                    return self._dao.get_link_indirect_capacities(rest[0], rest[2].removesuffix("_indirect"))
+                return self._dao.get_link_direct_capacities(rest[0], rest[2].removesuffix("_direct"))
+
+            raise ValueError(error_msg)
+
         """
-        children: TREE = {
-            "areas": InputAreas(self.matrix_mapper, config.next_file("areas")),
-            "hydro": InputHydro(self.matrix_mapper, config.next_file("hydro")),
-            "links": InputLink(self.matrix_mapper, config.next_file("links")),
-        }
-            children["st-storage"] = InputSTStorage(self.matrix_mapper, config.next_file("st-storage"))
-        pass
+        "hydro": InputHydro(self.matrix_mapper, config.next_file("hydro")),
+        "st-storage":  InputSTStorage(self.matrix_mapper, config.next_file("st-storage"))
         """
 
     def _get_matrix_inside_thermal_folder(self, parts: tuple[str, ...], error_msg: str) -> pl.DataFrame:
