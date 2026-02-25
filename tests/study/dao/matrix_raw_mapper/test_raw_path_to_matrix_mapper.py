@@ -10,11 +10,13 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
+
 import polars as pl
-from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
+import pytest
 from study.dao.conftest import build_real_case_db_study
 
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
 
 
 def test_mapper(dao_930: DatabaseStudyDao) -> None:
@@ -80,3 +82,18 @@ def test_mapper(dao_930: DatabaseStudyDao) -> None:
     # Error cases
     ##########################
 
+    # Empty path
+    with pytest.raises(ValueError, match="Path . is empty"):
+        mapper.get_matrix_from_path(Path(""))
+
+    # GeneralData
+    with pytest.raises(ValueError, match='Path settings/generaldata does not point towards a matrix.'):
+        mapper.get_matrix_from_path(Path("settings/generaldata"))
+
+    # User resource
+    with pytest.raises(ValueError, match='Path user/my_file.xlsx does not point towards a matrix.'):
+        mapper.get_matrix_from_path(Path("user/my_file.xlsx"))
+
+    # Thermal.ini file
+    with pytest.raises(ValueError, match='Path input/thermal/clusters/paris/list does not point towards a matrix.'):
+        mapper.get_matrix_from_path(Path(f"input/thermal/clusters/{area_id}/list"))
