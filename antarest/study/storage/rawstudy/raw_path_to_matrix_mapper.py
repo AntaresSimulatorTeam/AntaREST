@@ -139,9 +139,14 @@ class RawPathToMatrixMapper:
         elif prefix == "st-storage":
             return self._get_matrix_inside_st_storage_folder(rest, error_msg)
 
-        """
-        "hydro": InputHydro(self.matrix_mapper, config.next_file("hydro")),
-        """
+        elif prefix == "hydro":
+            return self._get_matrix_inside_hydro_folder(rest, error_msg)
+
+        raise ValueError(error_msg)
+
+    def _get_matrix_inside_hydro_folder(self, parts: tuple[str, ...], error_msg: str) -> pl.DataFrame:
+        # todo
+        pass
 
     def _get_matrix_inside_st_storage_folder(self, parts: tuple[str, ...], error_msg: str) -> pl.DataFrame:
         if len(parts) != 4:
