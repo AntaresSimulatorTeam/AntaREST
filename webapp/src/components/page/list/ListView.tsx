@@ -15,7 +15,7 @@
 import { Box, ListItemButton } from "@mui/material";
 import { useState } from "react";
 import { useUpdateEffect } from "react-use";
-import ListPanel, { type ListPanelItem } from "../../ListPanel";
+import ListPanel, { type ListPanelItem, type ListPanelProps } from "../../ListPanel";
 import SplitView, { type SplitViewProps } from "../SplitView";
 import { renderListItem } from "./utils";
 
@@ -35,8 +35,9 @@ interface ListViewProps<TItemData = unknown> {
   splitId: SplitViewProps["splitId"];
   splitMinSize?: SplitViewProps["minSize"];
   emptyListView?: React.ReactNode;
-  onAdd?(): void;
-  actions?: React.ReactNode;
+  onAdd?: ListPanelProps["onAdd"];
+  actions?: ListPanelProps["actions"];
+  disableSearch?: ListPanelProps["disableSearch"];
   renderItemView?: (item: { id: ListPanelItem["id"]; data?: TItemData }) => React.ReactNode;
 }
 
@@ -47,6 +48,7 @@ function ListView<TItemData>({
   emptyListView,
   onAdd,
   actions,
+  disableSearch,
   renderItemView,
 }: ListViewProps<TItemData>) {
   const [activeItem, setActiveItem] = useState(list[0]);
@@ -84,6 +86,7 @@ function ListView<TItemData>({
         list={list}
         onAdd={onAdd}
         actions={actions}
+        disableSearch={disableSearch}
         renderItemContent={(item) => (
           <ListItemButton onClick={() => setActiveItem(item)} selected={activeItem?.id === item.id}>
             {renderListItem(item)}

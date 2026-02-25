@@ -34,7 +34,7 @@ export interface ListPanelItem {
   loading?: boolean;
 }
 
-interface ListPanelProps<TItem extends ListPanelItem> {
+export interface ListPanelProps<TItem extends ListPanelItem = ListPanelItem> {
   list: TItem[];
   onAdd?: VoidFunction;
   actions?: React.ReactNode;
@@ -59,6 +59,21 @@ function ListPanel<TItem extends ListPanelItem>({
   const [search, setSearch] = useState("");
   const { t } = useTranslation();
   const hasActions = !!onAdd || !!actions;
+
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const getFilteredList = () => {
+    if (disableSearch || !search) {
+      return list;
+    }
+    return list.filter((item) => isSearchMatching(search, item.label));
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <Stack direction="column">
@@ -88,23 +103,21 @@ function ListPanel<TItem extends ListPanelItem>({
         />
       )}
       <List dense sx={{ overflow: "auto" }}>
-        {list
-          .filter((item) => isSearchMatching(search, item.label))
-          .map((item) => (
-            <Tooltip key={item.id} title={item.label} placement="right">
-              <ListItem
-                disablePadding
-                secondaryAction={
-                  item.loading && (
-                    <CircularProgress color="inherit" size={16} sx={{ verticalAlign: "middle" }} />
-                  )
-                }
-                {...slotProps?.listItem}
-              >
-                {renderItemContent(item)}
-              </ListItem>
-            </Tooltip>
-          ))}
+        {getFilteredList().map((item) => (
+          <Tooltip key={item.id} title={item.label} placement="right">
+            <ListItem
+              disablePadding
+              secondaryAction={
+                item.loading && (
+                  <CircularProgress color="inherit" size={16} sx={{ verticalAlign: "middle" }} />
+                )
+              }
+              {...slotProps?.listItem}
+            >
+              {renderItemContent(item)}
+            </ListItem>
+          </Tooltip>
+        ))}
       </List>
     </Stack>
   );

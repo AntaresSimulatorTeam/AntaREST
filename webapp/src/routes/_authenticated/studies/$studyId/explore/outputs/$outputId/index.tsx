@@ -99,6 +99,7 @@ function Output() {
       // Minimum left panel size to prevent the tabs scrollbar (supports EN and FR label lengths)
       splitMinSize={[293, 150]}
       list={list}
+      disableSearch={listType === "synthesis"}
       actions={
         <Stack sx={{ overflow: "auto" }}>
           <BackButton linkOptions={{ to: ".." }} />
@@ -110,11 +111,10 @@ function Output() {
         </Stack>
       }
       renderItemView={({ id, data }) => {
-        return !data ? (
-          <SynthesisViewer gridId={id} />
-        ) : (
-          <OutputMatrixViewer output={output} selectedItem={data} />
-        );
+        if (data) {
+          return <OutputMatrixViewer output={output} selectedItem={data} />;
+        }
+        return <SynthesisViewer gridId={id} />;
       }}
     />
   );

@@ -15,7 +15,7 @@
 import useCurrentRouteId from "@/hooks/router/useCurrentRouteId";
 import { Box } from "@mui/material";
 import { Outlet, type ToOptions } from "@tanstack/react-router";
-import ListPanel, { type ListPanelItem } from "../../ListPanel";
+import ListPanel, { type ListPanelItem, type ListPanelProps } from "../../ListPanel";
 import RouterListItemButton from "../../router/RouterListItemButton";
 import SplitView, { type SplitViewProps } from "../SplitView";
 import { renderListItem } from "./utils";
@@ -29,8 +29,9 @@ interface RouterListViewProps {
   splitId: SplitViewProps["splitId"];
   splitMinSize?: SplitViewProps["minSize"];
   emptyListView?: React.ReactNode;
-  onAdd?(): void;
-  actions?: React.ReactNode;
+  onAdd?: ListPanelProps["onAdd"];
+  actions?: ListPanelProps["actions"];
+  disableSearch?: ListPanelProps["disableSearch"];
 }
 
 function RouterListView({
@@ -40,6 +41,7 @@ function RouterListView({
   emptyListView,
   onAdd,
   actions,
+  disableSearch,
 }: RouterListViewProps) {
   // Get current route ID to force rebuilds of links when the route changes.
   // Allows to update relative links (e.g. `to: "."`).
@@ -51,6 +53,7 @@ function RouterListView({
         list={list}
         onAdd={onAdd}
         actions={actions}
+        disableSearch={disableSearch}
         renderItemContent={(item) => (
           <RouterListItemButton key={currentRouteId} {...item.linkOptions}>
             {renderListItem(item)}
