@@ -145,8 +145,41 @@ class RawPathToMatrixMapper:
         raise ValueError(error_msg)
 
     def _get_matrix_inside_hydro_folder(self, parts: tuple[str, ...], error_msg: str) -> pl.DataFrame:
-        # todo
-        pass
+        if len(parts) != 3:
+            raise ValueError(error_msg)
+
+        if parts[0] == "common" and parts[1] == "capacity":
+            if parts[2].startswith("maxpower_"):
+                return self._dao.get_hydro_maxpower(parts[2].removeprefix("maxpower_"))
+            if parts[2].startswith("reservoir_"):
+                return self._dao.get_hydro_reservoir(parts[2].removeprefix("reservoir_"))
+            if parts[2].startswith("creditmodulations_"):
+                return self._dao.get_hydro_credit_modulations(parts[2].removeprefix("creditmodulations_"))
+            if parts[2].startswith("inflowPattern_"):
+                return self._dao.get_hydro_inflow_pattern(parts[2].removeprefix("inflowPattern_"))
+            if parts[2].startswith("waterValues_"):
+                return self._dao.get_hydro_water_values(parts[2].removeprefix("waterValues_"))
+            if parts[2].startswith("maxDailyGenEnergy_"):
+                return self._dao.get_hydro_max_daily_gen_energy(parts[2].removeprefix("maxDailyGenEnergy_"))
+            if parts[2].startswith("maxDailyPumpEnergy_"):
+                return self._dao.get_hydro_max_daily_pump_energy(parts[2].removeprefix("maxDailyPumpEnergy_"))
+
+        if parts[0] == "series":
+            area_id = parts[1]
+            mapping: dict[str, Callable[[str], pl.DataFrame]] = {
+                "ror": self._dao.get_hydro_run_of_river,
+                "mod": self._dao.get_hydro_modulation,
+                "mingen": self._dao.get_hydro_mingen,
+                "maxHourlyGenPower": self._dao.get_hydro_max_hourly_gen_power,
+                "maxHourlyPumpPower": self._dao.get_hydro_max_hourly_pump_power,
+            }
+            if parts[2] in mapping:
+                return mapping[parts[2]](area_id)
+
+        if parts[0] == "prepro" and parts[2] == "energy":
+            return self._dao.get_hydro_energy(parts[1])
+
+        raise ValueError(error_msg)
 
     def _get_matrix_inside_st_storage_folder(self, parts: tuple[str, ...], error_msg: str) -> pl.DataFrame:
         if len(parts) != 4:
