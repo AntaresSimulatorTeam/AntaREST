@@ -22,6 +22,7 @@ from fastapi import APIRouter, HTTPException, Path, Query, UploadFile
 from markupsafe import escape
 from pydantic import NonNegativeInt, StringConstraints
 
+from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
 from antarest.core.exceptions import BadArchiveContent, BadZipBinary
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
@@ -694,5 +695,12 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     )
     def pydantic_constraint(study_id: Annotated[str, StringConstraints(pattern=r"^[a-zA-Z0-9_-]*$")]) -> None:
         logger.info("Logging study %s", study_id)
+
+    @bp.put(
+        "/studies/{study_id}/sanitized-str-type",
+    )
+    def sanitized_str_type(study_id: SanitizedStr, other_id: SanitizedStr = Query()) -> None:
+        logger.info("Logging study %s", study_id)
+        logger.info("Logging other %s", other_id)
 
     return bp
