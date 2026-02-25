@@ -15,7 +15,7 @@ import logging
 import re
 from http import HTTPStatus
 from pathlib import PurePosixPath
-from typing import Annotated, Dict, Optional, Sequence
+from typing import Annotated, Dict, Optional, Sequence, TypeAlias
 
 from antares.study.version import StudyVersion
 from fastapi import APIRouter, HTTPException, Path, Query, UploadFile
@@ -52,6 +52,8 @@ logger = logging.getLogger(__name__)
 QUERY_REGEX = r"^\s*(?:\d+\s*(?:,\s*\d+\s*)*)?$"
 
 _UUID_PATTERN = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+
+UuidStr: TypeAlias = Annotated[str, Path(pattern="^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")]
 
 
 def _sanitize_study_id(study_id: str) -> str:
@@ -667,6 +669,12 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{study_id}/uuid-pattern",
     )
     def uuid_pattern(study_id: str = Path(pattern=_UUID_PATTERN)) -> None:
+        logger.info("Logging study %s", study_id)
+
+    @bp.put(
+        "/studies/{study_id}/uuid-pattern-annotated-type",
+    )
+    def uuid_pattern_annotated_type(study_id: UuidStr) -> None:
         logger.info("Logging study %s", study_id)
 
     return bp
