@@ -28,7 +28,7 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.serde.json import to_json
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.dict_utils import remove_nones
-from antarest.core.utils.utils import sanitize_string, sanitize_uuid
+from antarest.core.utils.utils import sanitize_string
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import MatrixFrequency, MatrixIndex, StudyDownloadDTO, StudySimResultDTO
@@ -121,8 +121,7 @@ def create_output_routes(
     )
     def import_output(uuid: SanitizedStr, output: UploadFile) -> str | None:
         logger.info(f"Importing output for study {uuid}")
-        uuid_sanitized = sanitize_uuid(uuid)
-        output_id = output_service.import_output(uuid_sanitized, output.file)
+        output_id = output_service.import_output(uuid, output.file)
         return output_id
 
     @bp.get(
@@ -130,7 +129,6 @@ def create_output_routes(
         summary="Get outputs data variables",
     )
     def output_variables_information(study_id: UuidStr, output_id: SanitizedStr) -> OutputVariablesInformation:
-        study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching whole output of the simulation {output_id} for study {study_id}")
         return output_service.get_output_variables_information(study_id, output_id)
@@ -140,7 +138,6 @@ def create_output_routes(
         summary="Get outputs data",
     )
     def output_export(study_id: UuidStr, output_id: SanitizedStr) -> FileDownloadTaskDTO:
-        study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching whole output of the simulation {output_id} for study {study_id}")
         return output_service.export_output(study_uuid=study_id, output_uuid=output_id)
@@ -169,10 +166,9 @@ def create_output_routes(
         Returns:
         - MatrixIndex containing start_date, steps, first_week_size, and level.
         """
-        study_id = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
-        logger.info(f"Getting time index for study '{study_id}', output '{output_id}' at frequency '{frequency}'")
-        return output_service.get_output_time_index(study_id, output_id, frequency)
+        logger.info(f"Getting time index for study '{uuid}', output '{output_id}' at frequency '{frequency}'")
+        return output_service.get_output_time_index(uuid, output_id, frequency)
 
     @bp.post("/studies/{study_id}/outputs/{output_id}/download", summary="Get outputs data")
     def output_download(
@@ -182,7 +178,6 @@ def create_output_routes(
         use_task: bool = Query(default=False, deprecated=True),
         tmp_export_file: Path = Depends(file_transfer_manager.request_tmp_file),
     ) -> FileResponse:
-        study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching batch outputs of simulation {output_id} for study {study_id}")
 
@@ -193,7 +188,6 @@ def create_output_routes(
         summary="Delete a simulation output",
     )
     def delete_output(study_id: UuidStr, output_id: SanitizedStr) -> None:
-        study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"FDeleting output {output_id} from study {study_id}")
         output_service.delete_output(study_id, output_id)
@@ -203,7 +197,6 @@ def create_output_routes(
         summary="Archive output",
     )
     def archive_output(study_id: UuidStr, output_id: SanitizedStr) -> str | None:
-        study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Archiving of the output {output_id} of the study {study_id}")
 
@@ -215,7 +208,6 @@ def create_output_routes(
         summary="Unarchive output",
     )
     def unarchive_output(study_id: UuidStr, output_id: SanitizedStr) -> str | None:
-        study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Unarchiving of the output {output_id} of the study {study_id}")
 
@@ -227,7 +219,6 @@ def create_output_routes(
         summary="Display an output digest file for the front-end",
     )
     def get_digest_file(study_id: UuidStr, output_id: SanitizedStr) -> DigestUI:
-        study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Retrieving the digest file for the output {output_id} of the study {study_id}")
         return output_service.get_digest_file(study_id, output_id)
@@ -238,7 +229,6 @@ def create_output_routes(
     )
     def sim_result(study_id: UuidStr) -> list[StudySimResultDTO]:
         logger.info(f"Fetching output list for study {study_id}")
-        study_id = sanitize_uuid(study_id)
         content = output_service.get_study_sim_result(study_id)
         return content
 
@@ -282,7 +272,6 @@ def create_output_routes(
         )
 
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
-        uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
@@ -360,7 +349,6 @@ def create_output_routes(
         )
 
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
-        uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
@@ -436,7 +424,6 @@ def create_output_routes(
         )
 
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
-        uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
@@ -510,7 +497,6 @@ def create_output_routes(
         )
 
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
-        uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
@@ -554,7 +540,6 @@ def create_output_routes(
         summary="Retrieves the list of variables for a given output",
     )
     def get_output_variables_list(uuid: SanitizedStr, output_id: SanitizedStr) -> OutputVariablesList:
-        uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
         return output_service.get_output_variables_list(uuid, output_id)
 
@@ -584,7 +569,6 @@ def create_output_routes(
         If the view does not exist in DB yet, returns an HTTP 404 response.
         The user will have to use the endpoint `POST /variables-views/materialize` with the same configuration first.
         """
-        uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
         item_id = _to_item_id(
@@ -626,7 +610,6 @@ def create_output_routes(
             True, alias="index", description="Whether to include the index or not", title="With Index"
         ),
     ) -> Response:
-        uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
         item_id = _to_item_id(
@@ -668,7 +651,6 @@ def create_output_routes(
         If the view is already registered in DB, raise an HTTP Conflict error.
         The user should use the endpoint `GET /variables-views/data` with the same configuration.
         """
-        uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
         item_id = _to_item_id(
             type=type,

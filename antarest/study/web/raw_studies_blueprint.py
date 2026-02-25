@@ -28,7 +28,7 @@ from antarest.core.model import SUB_JSON
 from antarest.core.serde.json import from_json, to_json
 from antarest.core.serde.matrix_export import TableExportFormat, simplify_dataframe
 from antarest.core.swagger import get_path_examples
-from antarest.core.utils.utils import sanitize_string, sanitize_uuid
+from antarest.core.utils.utils import sanitize_string
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
@@ -257,7 +257,6 @@ def create_raw_study_routes(
             ),
         ] = "/",
     ) -> None:
-        uuid = sanitize_uuid(uuid)
         logger.info(f"Deleting path {path} inside study {uuid}")
         study_service.delete_user_file_or_folder(uuid, path)
 
@@ -345,7 +344,6 @@ def create_raw_study_routes(
         logger.info(f"Exporting matrix '{matrix_path}' to {export_format} format for study '{uuid}'")
 
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
-        uuid = sanitize_uuid(uuid)
         matrix_path = sanitize_string(matrix_path)
 
         df_matrix = study_service.get_matrix_with_index_and_header(

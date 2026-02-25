@@ -20,7 +20,7 @@ from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.tasks.model import TaskDTO
-from antarest.core.utils.utils import sanitize_string, sanitize_uuid
+from antarest.core.utils.utils import sanitize_string
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import StudyMetadataDTO
@@ -64,9 +64,8 @@ def create_study_variant_routes(
         - `uuid`: The UUID of the parent study.
         - `name`: The name of the new study variant.
         """
-        sanitized_uuid = sanitize_uuid(uuid)
         logger.info(f"Creating new variant '{name}' from study {uuid}")
-        variant_study = variant_study_service.create_variant_study(uuid=sanitized_uuid, name=name)
+        variant_study = variant_study_service.create_variant_study(uuid=uuid, name=name)
         return variant_study.id
 
     @bp.get(
@@ -76,8 +75,7 @@ def create_study_variant_routes(
     )
     def get_variants(uuid: SanitizedStr) -> VariantTreeDTO:
         logger.info(f"Fetching variant children of study {uuid}")
-        sanitized_uuid = sanitize_uuid(uuid)
-        return variant_study_service.get_all_variants_children(sanitized_uuid)
+        return variant_study_service.get_all_variants_children(uuid)
 
     @bp.get(
         "/studies/{uuid}/parents",
@@ -93,11 +91,10 @@ def create_study_variant_routes(
         uuid: SanitizedStr, direct: Optional[bool] = False
     ) -> Union[List[StudyMetadataDTO], Optional[StudyMetadataDTO]]:
         logger.info(f"Fetching variant parents of study {uuid}")
-        sanitized_uuid = sanitize_uuid(uuid)
         return (
-            variant_study_service.get_variants_parents(sanitized_uuid)
+            variant_study_service.get_variants_parents(uuid)
             if not direct
-            else variant_study_service.get_direct_parent(sanitized_uuid)
+            else variant_study_service.get_direct_parent(uuid)
         )
 
     @bp.get(
@@ -121,8 +118,7 @@ def create_study_variant_routes(
         - The list of variant commands
         """
         logger.info(f"Fetching command list of variant study {uuid}")
-        sanitized_uuid = sanitize_uuid(uuid)
-        return variant_study_service.get_commands(sanitized_uuid)
+        return variant_study_service.get_commands(uuid)
 
     @bp.get(
         "/studies/{uuid}/commands/_matrices",
@@ -132,8 +128,7 @@ def create_study_variant_routes(
         uuid: SanitizedStr,
     ) -> FileDownloadTaskDTO:
         logger.info(f"Exporting commands matrices for variant study {uuid}")
-        sanitized_uuid = sanitize_uuid(uuid)
-        return variant_study_service.export_commands_matrices(sanitized_uuid)
+        return variant_study_service.export_commands_matrices(uuid)
 
     @bp.post(
         "/studies/{uuid}/commands",
@@ -156,9 +151,8 @@ def create_study_variant_routes(
         - The list of the newly appended commands if the study is a variant, None otherwise.
         """
         logger.info(f"Appending new command to variant study {uuid}")
-        sanitized_uuid = sanitize_uuid(uuid)
-        internal_commands = variant_study_service.convert_commands(sanitized_uuid, commands)
-        return study_service.apply_commands(sanitized_uuid, internal_commands)
+        internal_commands = variant_study_service.convert_commands(uuid, commands)
+        return study_service.apply_commands(uuid, internal_commands)
 
     @bp.put(
         "/studies/{uuid}/commands",
@@ -171,9 +165,8 @@ def create_study_variant_routes(
     )
     def replace_commands(uuid: SanitizedStr, commands: List[CommandDTOAPI] = Body(...)) -> str:
         logger.info(f"Replacing all commands of variant study {uuid}")
-        sanitized_uuid = sanitize_uuid(uuid)
-        internal_commands = variant_study_service.convert_commands(sanitized_uuid, commands)
-        return variant_study_service.replace_commands(sanitized_uuid, internal_commands)
+        internal_commands = variant_study_service.convert_commands(uuid, commands)
+        return variant_study_service.replace_commands(uuid, internal_commands)
 
     @bp.post(
         "/studies/{uuid}/command",
@@ -186,9 +179,8 @@ def create_study_variant_routes(
     )
     def append_command(uuid: SanitizedStr, command: CommandDTOAPI) -> str:
         logger.info(f"Appending new command to variant study {uuid}")
-        sanitized_uuid = sanitize_uuid(uuid)
-        internal_command = variant_study_service.convert_commands(sanitized_uuid, [command])[0]
-        return variant_study_service.append_command(sanitized_uuid, internal_command)
+        internal_command = variant_study_service.convert_commands(uuid, [command])[0]
+        return variant_study_service.append_command(uuid, internal_command)
 
     @bp.get(
         "/studies/{uuid}/commands/{cid}",
@@ -202,9 +194,8 @@ def create_study_variant_routes(
     )
     def get_command(uuid: SanitizedStr, cid: SanitizedStr) -> CommandDTOAPI:
         logger.info(f"Fetching command {cid} info of variant study {uuid}")
-        sanitized_uuid = sanitize_uuid(uuid)
         sanitized_cid = sanitize_string(cid)
-        return variant_study_service.get_command(sanitized_uuid, sanitized_cid)
+        return variant_study_service.get_command(uuid, sanitized_cid)
 
     @bp.put(
         "/studies/{uuid}/commands/{cid}/move",
@@ -212,9 +203,8 @@ def create_study_variant_routes(
     )
     def move_command(uuid: SanitizedStr, cid: SanitizedStr, index: int) -> None:
         logger.info(f"Moving command {cid} to index {index} for variant study {uuid}")
-        sanitized_uuid = sanitize_uuid(uuid)
         sanitized_cid = sanitize_string(cid)
-        variant_study_service.move_command(sanitized_uuid, sanitized_cid, index)
+        variant_study_service.move_command(uuid, sanitized_cid, index)
 
     @bp.put(
         "/studies/{uuid}/commands/{cid}",
@@ -222,10 +212,9 @@ def create_study_variant_routes(
     )
     def update_command(uuid: SanitizedStr, cid: SanitizedStr, command: CommandDTOAPI) -> None:
         logger.info(f"Update command {cid} for variant study {uuid}")
-        sanitized_uuid = sanitize_uuid(uuid)
         sanitized_cid = sanitize_string(cid)
-        internal_command = variant_study_service.convert_commands(sanitized_uuid, [command])[0]
-        variant_study_service.update_command(sanitized_uuid, sanitized_cid, internal_command)
+        internal_command = variant_study_service.convert_commands(uuid, [command])[0]
+        variant_study_service.update_command(uuid, sanitized_cid, internal_command)
 
     @bp.delete(
         "/studies/{uuid}/commands/{cid}",
@@ -233,9 +222,8 @@ def create_study_variant_routes(
     )
     def remove_command(uuid: SanitizedStr, cid: SanitizedStr) -> None:
         logger.info(f"Removing command {cid} of variant study {uuid}")
-        sanitized_uuid = sanitize_uuid(uuid)
         sanitized_cid = sanitize_string(cid)
-        variant_study_service.remove_command(sanitized_uuid, sanitized_cid)
+        variant_study_service.remove_command(uuid, sanitized_cid)
 
     @bp.delete(
         "/studies/{uuid}/commands",
@@ -243,8 +231,7 @@ def create_study_variant_routes(
     )
     def remove_all_commands(uuid: SanitizedStr) -> None:
         logger.info(f"Removing all commands from variant study {uuid}")
-        sanitized_uuid = sanitize_uuid(uuid)
-        variant_study_service.remove_all_commands(sanitized_uuid)
+        variant_study_service.remove_all_commands(uuid)
 
     @bp.put(
         "/studies/{uuid}/generate",
@@ -252,16 +239,14 @@ def create_study_variant_routes(
     )
     def generate_variant(uuid: SanitizedStr, denormalize: bool = False, from_scratch: bool = False) -> str:
         logger.info(f"Generating snapshot for variant study {uuid}")
-        sanitized_uuid = sanitize_uuid(uuid)
-        return variant_study_service.generate(sanitized_uuid, denormalize, from_scratch)
+        return variant_study_service.generate(uuid, denormalize, from_scratch)
 
     @bp.get(
         "/studies/{uuid}/task",
         summary="Get study generation task",
     )
     def get_study_generation_task(uuid: SanitizedStr) -> TaskDTO:
-        sanitized_uuid = sanitize_uuid(uuid)
-        return variant_study_service.get_study_task(sanitized_uuid)
+        return variant_study_service.get_study_task(uuid)
 
     @bp.put(
         "/studies/variants/clear-snapshots",

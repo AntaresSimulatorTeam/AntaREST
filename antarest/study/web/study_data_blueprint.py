@@ -23,7 +23,6 @@ from starlette.responses import RedirectResponse
 from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.config import Config
 from antarest.core.model import JSON, StudyPermissionType
-from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
@@ -173,8 +172,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def get_comments(uuid: UuidStr) -> str:
         logger.info(f"Get comments of study {uuid}")
-        study_id = sanitize_uuid(uuid)
-        return study_service.get_comments(study_id)
+        return study_service.get_comments(uuid)
 
     @bp.put(
         "/studies/{uuid}/comments",
@@ -183,8 +181,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def edit_comments(uuid: UuidStr, data: CommentsDto) -> None:
         logger.info(f"Editing comments for study {uuid}")
-        study_id = sanitize_uuid(uuid)
-        study_service.set_comments(study_id, data.comments)
+        study_service.set_comments(uuid, data.comments)
 
     @bp.get(
         "/studies/{uuid}/areas",
@@ -244,7 +241,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def delete_area(uuid: UuidStr, area_id: SanitizedStr) -> str:
         logger.info(f"Removing area {area_id} in study {uuid}")
-        uuid = sanitize_uuid(uuid)
         area_id = transform_name_to_id(area_id)
         study_service.delete_area(uuid, area_id)
         return area_id
@@ -1799,7 +1795,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         """
         NOTE: This endpoint is used by antares-craft to read a study.
         """
-        study_id = sanitize_uuid(study_id)
         return study_service.get_study_data(study_id)
 
     return bp
