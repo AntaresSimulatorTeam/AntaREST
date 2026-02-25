@@ -677,4 +677,10 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     def uuid_pattern_annotated_type(study_id: UuidStr) -> None:
         logger.info("Logging study %s", study_id)
 
+    @bp.put(
+        "/studies/{study_id}/path-annotation",
+    )
+    def path_annotation(study_id: str = Path()) -> None:
+        logger.info("Logging study %s", study_id)
+
     return bp
