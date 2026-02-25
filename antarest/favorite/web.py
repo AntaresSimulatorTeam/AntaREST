@@ -12,6 +12,7 @@
 
 from fastapi import APIRouter
 
+from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
 from antarest.core.utils.web import APITag
 from antarest.favorite.model import FavoriteDirectoryDTO, FavoriteStudyDTO
@@ -31,12 +32,12 @@ def create_favorite_routes(
         return favorite_service.list_favorites()
 
     @bp.post("/favorites/studies/{uuid}", summary="Add a study in the list of favorite studies")
-    def add_favorite_study(uuid: str) -> FavoriteStudyDTO:
+    def add_favorite_study(uuid: SanitizedStr) -> FavoriteStudyDTO:
         logger.info("Creating new favorite study for current user")
         return favorite_service.add_favorite(uuid)
 
     @bp.delete("/favorites/studies/{uuid}", summary="Delete a study from the ")
-    def delete_favorite_study(uuid: str) -> None:
+    def delete_favorite_study(uuid: SanitizedStr) -> None:
         logger.info("Deleting favorite study for current user")
         favorite_service.delete_favorite(uuid)
 
@@ -46,12 +47,12 @@ def create_favorite_routes(
         return favorite_directory_service.list_favorites()
 
     @bp.post("/favorites/directories/{uuid}", summary="Add a directory in the list of favorite directories")
-    def add_favorite_directory(uuid: str) -> FavoriteDirectoryDTO:
+    def add_favorite_directory(uuid: SanitizedStr) -> FavoriteDirectoryDTO:
         logger.info("Creating new favorite directory for current user")
         return favorite_directory_service.add_favorite(uuid)
 
     @bp.delete("/favorites/directories/{uuid}", summary="Delete a directory from the list of favorite directories")
-    def delete_favorite_directory(uuid: str) -> None:
+    def delete_favorite_directory(uuid: SanitizedStr) -> None:
         logger.info("Deleting a favorite directory for current user")
         favorite_directory_service.delete_favorite(uuid)
 

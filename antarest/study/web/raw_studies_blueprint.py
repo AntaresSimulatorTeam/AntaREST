@@ -21,6 +21,7 @@ from fastapi import APIRouter, Body, File, HTTPException
 from fastapi.params import Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
+from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
 from antarest.core.exceptions import IncorrectPathError
 from antarest.core.model import SUB_JSON
@@ -70,7 +71,7 @@ CONTENT_TYPES = {
 }
 
 DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
-PATH_TYPE = Annotated[str, Query(openapi_examples=get_path_examples())]
+PATH_TYPE = Annotated[SanitizedStr, Query(openapi_examples=get_path_examples())]
 
 
 class MatrixFormat(EnumIgnoreCase):
@@ -131,7 +132,7 @@ def create_raw_study_routes(
         summary="Retrieve Raw Data from Study: JSON, Text, or File Attachment",
     )
     def get_study_data(
-        uuid: str,
+        uuid: SanitizedStr,
         path: PATH_TYPE = "/",
         depth: int = 3,
         formatted: bool = True,
@@ -217,7 +218,7 @@ def create_raw_study_routes(
         "/studies/{uuid}/raw/original-file",
         summary="Retrieve Raw file from a Study folder in its original format",
     )
-    def get_study_file(uuid: str, path: PATH_TYPE = "/") -> Response:
+    def get_study_file(uuid: SanitizedStr, path: PATH_TYPE = "/") -> Response:
         """
         Fetches for a file in its original format from a study folder
 
@@ -246,9 +247,9 @@ def create_raw_study_routes(
         summary="Delete files or folders located inside the 'User' folder",
     )
     def delete_file(
-        uuid: str,
+        uuid: SanitizedStr,
         path: Annotated[
-            str,
+            SanitizedStr,
             Query(
                 openapi_examples={
                     "user/wind_solar/synthesis_windSolar.xlsx": {"value": "user/wind_solar/synthesis_windSolar.xlsx"}
@@ -265,7 +266,7 @@ def create_raw_study_routes(
         status_code=http.HTTPStatus.OK,
         summary="Update study by posting formatted data",
     )
-    def edit_study(uuid: str, path: PATH_TYPE = "/", data: SUB_JSON = Body(default="")) -> Any:
+    def edit_study(uuid: SanitizedStr, path: PATH_TYPE = "/", data: SUB_JSON = Body(default="")) -> Any:
         """
         Same endpoint as the PUT one.
         Only difference is that it cannot create an empty folder.
@@ -280,7 +281,7 @@ def create_raw_study_routes(
         summary="Update data by posting a Raw file or by creating folder(s)",
     )
     def replace_study_file(
-        uuid: str,
+        uuid: SanitizedStr,
         path: PATH_TYPE = "/",
         file: bytes = File(default=None),
         create_missing: bool = Query(default=True, deprecated=True),  # type: ignore
@@ -315,8 +316,8 @@ def create_raw_study_routes(
         summary="Download a matrix in a given format",
     )
     def get_matrix(
-        uuid: str,
-        matrix_path: str = Query(  # type: ignore
+        uuid: SanitizedStr,
+        matrix_path: SanitizedStr = Query(  # type: ignore
             ..., alias="path", description="Relative path of the matrix to download", title="Matrix Path"
         ),
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,  # type: ignore

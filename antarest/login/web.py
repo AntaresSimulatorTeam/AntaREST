@@ -16,6 +16,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import UserHasNotPermissionError
@@ -129,7 +130,7 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
         return service.get_all_groups(details)
 
     @bp.get("/groups/{id}")
-    def groups_get_id(id: str, details: bool = False) -> GroupDetailDTO | GroupDTO:
+    def groups_get_id(id: SanitizedStr, details: bool = False) -> GroupDetailDTO | GroupDTO:
         logger.info(f"Fetching group {id} info")
         group: GroupDetailDTO | GroupDTO | None = None
         if details:
@@ -153,12 +154,12 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
         return service.save_group(group).to_dto()
 
     @bp.delete("/groups/{id}")
-    def groups_delete(id: str) -> None:
+    def groups_delete(id: SanitizedStr) -> None:
         logger.info(f"Removing group {id}")
         service.delete_group(id)
 
     @bp.get("/roles/group/{group}")
-    def roles_get_all(group: str) -> list[RoleDetailDTO]:
+    def roles_get_all(group: SanitizedStr) -> list[RoleDetailDTO]:
         logger.info(f"Fetching roles for group {group}")
         return [r.to_dto() for r in service.get_all_roles_in_group(group=group)]
 
@@ -168,7 +169,7 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
         return service.save_role(role).to_dto()
 
     @bp.delete("/roles/{group}/{user}")
-    def roles_delete(user: int, group: str) -> None:
+    def roles_delete(user: int, group: SanitizedStr) -> None:
         logger.info(f"Remove role in group {group} for {user}")
         service.delete_role(user, group)
 

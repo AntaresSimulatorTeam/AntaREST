@@ -16,6 +16,7 @@ from typing import List, Optional, Union
 import humanize
 from fastapi import APIRouter, Body
 
+from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.tasks.model import TaskDTO
@@ -55,7 +56,7 @@ def create_study_variant_routes(
             }
         },
     )
-    def create_variant(uuid: str, name: str) -> str:
+    def create_variant(uuid: SanitizedStr, name: SanitizedStr) -> str:
         """
         Creates a study variant.
 
@@ -73,7 +74,7 @@ def create_study_variant_routes(
         summary="Get children variants",
         response_model=None,  # To cope with recursive models issues
     )
-    def get_variants(uuid: str) -> VariantTreeDTO:
+    def get_variants(uuid: SanitizedStr) -> VariantTreeDTO:
         logger.info(f"Fetching variant children of study {uuid}")
         sanitized_uuid = sanitize_uuid(uuid)
         return variant_study_service.get_all_variants_children(sanitized_uuid)
@@ -89,7 +90,7 @@ def create_study_variant_routes(
         },
     )
     def get_parents(
-        uuid: str, direct: Optional[bool] = False
+        uuid: SanitizedStr, direct: Optional[bool] = False
     ) -> Union[List[StudyMetadataDTO], Optional[StudyMetadataDTO]]:
         logger.info(f"Fetching variant parents of study {uuid}")
         sanitized_uuid = sanitize_uuid(uuid)
@@ -109,7 +110,7 @@ def create_study_variant_routes(
             }
         },
     )
-    def list_commands(uuid: str) -> List[CommandDTOAPI]:
+    def list_commands(uuid: SanitizedStr) -> List[CommandDTOAPI]:
         """
         Get the list of commands of a variant.
 
@@ -128,7 +129,7 @@ def create_study_variant_routes(
         summary="Export a variant's commands matrices",
     )
     def export_matrices(
-        uuid: str,
+        uuid: SanitizedStr,
     ) -> FileDownloadTaskDTO:
         logger.info(f"Exporting commands matrices for variant study {uuid}")
         sanitized_uuid = sanitize_uuid(uuid)
@@ -143,7 +144,7 @@ def create_study_variant_routes(
             }
         },
     )
-    def append_commands(uuid: str, commands: List[CommandDTOAPI] = Body(...)) -> Optional[List[str]]:
+    def append_commands(uuid: SanitizedStr, commands: List[CommandDTOAPI] = Body(...)) -> Optional[List[str]]:
         """
         Append a list of commands to a variant study.
 
@@ -168,7 +169,7 @@ def create_study_variant_routes(
             }
         },
     )
-    def replace_commands(uuid: str, commands: List[CommandDTOAPI] = Body(...)) -> str:
+    def replace_commands(uuid: SanitizedStr, commands: List[CommandDTOAPI] = Body(...)) -> str:
         logger.info(f"Replacing all commands of variant study {uuid}")
         sanitized_uuid = sanitize_uuid(uuid)
         internal_commands = variant_study_service.convert_commands(sanitized_uuid, commands)
@@ -183,7 +184,7 @@ def create_study_variant_routes(
             }
         },
     )
-    def append_command(uuid: str, command: CommandDTOAPI) -> str:
+    def append_command(uuid: SanitizedStr, command: CommandDTOAPI) -> str:
         logger.info(f"Appending new command to variant study {uuid}")
         sanitized_uuid = sanitize_uuid(uuid)
         internal_command = variant_study_service.convert_commands(sanitized_uuid, [command])[0]
@@ -199,7 +200,7 @@ def create_study_variant_routes(
             }
         },
     )
-    def get_command(uuid: str, cid: str) -> CommandDTOAPI:
+    def get_command(uuid: SanitizedStr, cid: SanitizedStr) -> CommandDTOAPI:
         logger.info(f"Fetching command {cid} info of variant study {uuid}")
         sanitized_uuid = sanitize_uuid(uuid)
         sanitized_cid = sanitize_string(cid)
@@ -209,7 +210,7 @@ def create_study_variant_routes(
         "/studies/{uuid}/commands/{cid}/move",
         summary="Move a command to an other index",
     )
-    def move_command(uuid: str, cid: str, index: int) -> None:
+    def move_command(uuid: SanitizedStr, cid: SanitizedStr, index: int) -> None:
         logger.info(f"Moving command {cid} to index {index} for variant study {uuid}")
         sanitized_uuid = sanitize_uuid(uuid)
         sanitized_cid = sanitize_string(cid)
@@ -219,7 +220,7 @@ def create_study_variant_routes(
         "/studies/{uuid}/commands/{cid}",
         summary="Move a command to an other index",
     )
-    def update_command(uuid: str, cid: str, command: CommandDTOAPI) -> None:
+    def update_command(uuid: SanitizedStr, cid: SanitizedStr, command: CommandDTOAPI) -> None:
         logger.info(f"Update command {cid} for variant study {uuid}")
         sanitized_uuid = sanitize_uuid(uuid)
         sanitized_cid = sanitize_string(cid)
@@ -230,7 +231,7 @@ def create_study_variant_routes(
         "/studies/{uuid}/commands/{cid}",
         summary="Remove a command",
     )
-    def remove_command(uuid: str, cid: str) -> None:
+    def remove_command(uuid: SanitizedStr, cid: SanitizedStr) -> None:
         logger.info(f"Removing command {cid} of variant study {uuid}")
         sanitized_uuid = sanitize_uuid(uuid)
         sanitized_cid = sanitize_string(cid)
@@ -240,7 +241,7 @@ def create_study_variant_routes(
         "/studies/{uuid}/commands",
         summary="Clear variant's commands",
     )
-    def remove_all_commands(uuid: str) -> None:
+    def remove_all_commands(uuid: SanitizedStr) -> None:
         logger.info(f"Removing all commands from variant study {uuid}")
         sanitized_uuid = sanitize_uuid(uuid)
         variant_study_service.remove_all_commands(sanitized_uuid)
@@ -249,7 +250,7 @@ def create_study_variant_routes(
         "/studies/{uuid}/generate",
         summary="Generate variant snapshot",
     )
-    def generate_variant(uuid: str, denormalize: bool = False, from_scratch: bool = False) -> str:
+    def generate_variant(uuid: SanitizedStr, denormalize: bool = False, from_scratch: bool = False) -> str:
         logger.info(f"Generating snapshot for variant study {uuid}")
         sanitized_uuid = sanitize_uuid(uuid)
         return variant_study_service.generate(sanitized_uuid, denormalize, from_scratch)
@@ -258,7 +259,7 @@ def create_study_variant_routes(
         "/studies/{uuid}/task",
         summary="Get study generation task",
     )
-    def get_study_generation_task(uuid: str) -> TaskDTO:
+    def get_study_generation_task(uuid: SanitizedStr) -> TaskDTO:
         sanitized_uuid = sanitize_uuid(uuid)
         return variant_study_service.get_study_task(sanitized_uuid)
 
