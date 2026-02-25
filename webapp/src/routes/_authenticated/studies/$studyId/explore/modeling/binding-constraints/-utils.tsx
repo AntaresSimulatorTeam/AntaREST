@@ -14,7 +14,7 @@
 
 import type { Options } from "@/components/fieldEditors/SelectFE";
 import StatusDot from "@/components/icons/StatusDot";
-import type { RouteListItem } from "@/components/page/ListView";
+import type { RouteListItem } from "@/components/page/list/RouterListView";
 import type { QueryList } from "@/queries/types";
 import { isQueryListItemOptimistic } from "@/queries/utils";
 import type {

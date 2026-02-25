@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { ContentListItem } from "@/components/page/ListView";
+import type { ContentListItem } from "@/components/page/list/ListView";
 import type { StudyMapDistrict } from "@/redux/ducks/studyMaps";
 import type {
   AreaVariablesDTO,

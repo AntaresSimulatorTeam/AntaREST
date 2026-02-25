@@ -13,7 +13,7 @@
  */
 
 import BackButton from "@/components/buttons/BackButton";
-import ListView, { type ContentListItem } from "@/components/page/ListView";
+import ListView, { type ListViewItem } from "@/components/page/list/ListView";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import { getStudyDistricts } from "@/services/api/study";
 import { sortByName } from "@/services/utils";
@@ -50,7 +50,7 @@ function Output() {
 
   const { data: output } = useStudyOutput({ studyId, outputId });
 
-  const list = useMemo<Array<ContentListItem<Item | undefined>>>(() => {
+  const list = useMemo<Array<ListViewItem<Item | undefined>>>(() => {
     if (listType === "areas") {
       const adaptedDistricts = districts.map((district) => ({
         ...district,
@@ -109,7 +109,7 @@ function Output() {
           </Tabs>
         </Stack>
       }
-      renderItemContent={({ id, data }) => {
+      renderItemView={({ id, data }) => {
         return !data ? (
           <SynthesisViewer gridId={id} />
         ) : (
