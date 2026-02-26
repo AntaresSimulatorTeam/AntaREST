@@ -17,7 +17,7 @@ import { createLinkId } from "@/services/api/studies/links/utils";
 import { getHighestVersion } from "@/utils/versionUtils";
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
 import type { F } from "ts-toolbelt";
-import { isGroupAdmin, isUserAdmin, nameToId, sortByName } from "../services/utils";
+import { isGroupAdmin, isUserAdmin, nameToId, sortByName, sortByProp } from "../services/utils";
 import type {
   AllClustersAndLinks,
   AreaWithId,
@@ -298,7 +298,7 @@ export const getLinks = createSelector(getStudySynthesis, (synthesis) => {
       });
     });
   }
-  return links;
+  return sortByProp("label", links);
 });
 
 export const getCurrentLinkId = (state: AppState): StudySynthesesState["currentLink"] => {
