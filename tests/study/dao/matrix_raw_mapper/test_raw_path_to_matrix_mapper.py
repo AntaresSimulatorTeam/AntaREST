@@ -206,25 +206,19 @@ def test_nominal_cases(dao_930: DatabaseStudyDao) -> None:
     # todo: We're missing BC and Xpansion tests as they are not yet implemented in DB.
 
 
-def test_error_cases(dao_930: DatabaseStudyDao) -> None:
+@pytest.mark.parametrize(
+    "incorrect_path",
+    [Path("settings/generaldata"), Path("input/thermal/clusters/paris/list"), Path("user/my_file.xlsx")],
+)
+def test_error_cases(dao_930: DatabaseStudyDao, incorrect_path: Path) -> None:
     mapper = RawPathToMatrixMapper(dao_930)
+
     # Empty path
     with pytest.raises(IncorrectPathError, match="Path . is empty"):
         mapper.get_matrix_from_path(Path(""))
 
-    # GeneralData
-    with pytest.raises(
-        IncorrectPathError, match=r"The provided path does not point to a valid matrix: 'settings[\\/]generaldata'"
-    ):
-        mapper.get_matrix_from_path(Path("settings/generaldata"))
-
-    # User resource
-    with pytest.raises(
-        IncorrectPathError, match=r"The provided path does not point to a valid matrix: 'user[\\/]my_file.xlsx'"
-    ):
-        mapper.get_matrix_from_path(Path("user/my_file.xlsx"))
-
-    # Thermal.ini file
-    pattern = r"The provided path does not point to a valid matrix: 'input[\\/]thermal[\\/]clusters[\\/]paris[\\/]list'"
+    # Incorrect path
+    path_pattern = incorrect_path.as_posix().replace("/", r"[\\/]")
+    pattern = f"The provided path does not point to a valid matrix: '{path_pattern}'"
     with pytest.raises(IncorrectPathError, match=pattern):
-        mapper.get_matrix_from_path(Path("input/thermal/clusters/paris/list"))
+        mapper.get_matrix_from_path(incorrect_path)
