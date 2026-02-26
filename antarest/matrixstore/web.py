@@ -17,6 +17,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
 from starlette.responses import FileResponse
 
+from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -89,7 +90,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         return service.get_matrices()
 
     @bp.get("/matrix/{id}")
-    def get(id: str) -> MatrixDTO:
+    def get(id: SanitizedStr) -> MatrixDTO:
         logger.info("Fetching matrix")
         df = service.get(id)
         return MatrixDTO(id=id, index=list(range(len(df))), columns=list(df.columns), data=df.to_numpy())
@@ -121,14 +122,14 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
     @bp.put(
         "/matrixdataset/{id}/metadata",
     )
-    def update_dataset_metadata(id: str, metadata: MatrixDataSetUpdateDTO) -> MatrixDataSetDTO:
+    def update_dataset_metadata(id: SanitizedStr, metadata: MatrixDataSetUpdateDTO) -> MatrixDataSetDTO:
         logger.info(f"Updating matrix dataset metadata {id}")
         return service.update_dataset(id, metadata).to_dto()
 
     @bp.get(
         "/matrixdataset/_search",
     )
-    def query_datasets(name: Optional[str], filter_own: bool = False) -> List[MatrixDataSetDTO]:
+    def query_datasets(name: Optional[SanitizedStr], filter_own: bool = False) -> List[MatrixDataSetDTO]:
         logger.info("Searching matrix dataset metadata")
         return service.list(name, filter_own)
 
@@ -136,7 +137,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         "/matrixdataset/{dataset_id}/download",
         summary="Download dataset",
     )
-    def download_dataset(dataset_id: str) -> FileDownloadTaskDTO:
+    def download_dataset(dataset_id: SanitizedStr) -> FileDownloadTaskDTO:
         logger.info(f"Download {dataset_id} matrix dataset")
         return service.download_dataset(dataset_id)
 
@@ -145,7 +146,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         summary="Download matrix content",
     )
     def download_matrix(
-        matrix_id: str,
+        matrix_id: SanitizedStr,
         tmp_export_file: Path = Depends(ftm.request_tmp_file),
     ) -> FileResponse:
         logger.info(f"Download {matrix_id} matrix")
@@ -157,7 +158,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         )
 
     @bp.delete("/matrixdataset/{id}")
-    def delete_datasets(id: str) -> None:
+    def delete_datasets(id: SanitizedStr) -> None:
         logger.info(f"Removing matrix dataset metadata {id}")
         service.delete_dataset(id)
 
