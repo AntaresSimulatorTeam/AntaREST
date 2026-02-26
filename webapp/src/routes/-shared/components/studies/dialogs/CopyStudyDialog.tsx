@@ -20,14 +20,18 @@ import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
+import { directoryQueries } from "@/queries/directories/queries";
 import { copyStudy } from "@/services/api/studies";
 import { getStudyOutputs } from "@/services/api/study";
 import type { StudyMetadata, StudyOutput } from "@/types/types";
 import { validateStudyName } from "@/utils/studiesUtils";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
 import SaveAsIcon from "@mui/icons-material/SaveAs";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import StudyPathFE from "../StudyPathFE";
+import StudyDestinationFE from "../StudyDestinationFE";
+import type { DirectoryValue } from "../StudyDestinationFE/types";
+import { toDirectoryPath } from "../StudyDestinationFE/utils";
 
 interface Props {
   study: StudyMetadata;
@@ -37,7 +41,7 @@ interface Props {
 
 interface DefaultValues {
   studyName: string;
-  destinationFolder: string;
+  directory: DirectoryValue;
   outputIds?: Array<StudyOutput["name"]>;
 }
 
@@ -45,6 +49,7 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
   const { t } = useTranslation();
   const isVariant = study.type === "variantstudy";
   const Icon = isVariant ? SaveAsIcon : FileCopyOutlinedIcon;
+  const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
   const outputsRes = usePromise(async () => {
     const outputs = await getStudyOutputs(study.id);
@@ -53,7 +58,7 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
 
   const defaultValues: DefaultValues = {
     studyName: `${study.name} (${t("studies.copySuffix")})`,
-    destinationFolder: "",
+    directory: { id: study.directoryId ?? null, newDirectoryPath: "" },
   };
 
   ////////////////////////////////////////////////////////////////
@@ -61,12 +66,15 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({
-    values: { studyName, destinationFolder, outputIds = [] },
+    values: { studyName, directory, outputIds = [] },
   }: SubmitHandlerPlus<DefaultValues>) => {
+    // TODO: This should be moved to the API layer when Tan stack migration is done.
+    const directoryPath = toDirectoryPath(directory, directories);
+
     return copyStudy({
       studyId: study.id,
       studyName: studyName.trim(),
-      destinationFolder,
+      destinationFolder: directoryPath,
       outputIds,
     });
   };
@@ -98,7 +106,7 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
             rules={{ validate: validateStudyName }}
             autoFocus
           />
-          <StudyPathFE name="destinationFolder" control={control} />
+          <StudyDestinationFE name="directory" control={control} />
           <UsePromiseCond
             response={outputsRes}
             ifPending={() => (

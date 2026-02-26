@@ -15,6 +15,7 @@
 import BoltIcon from "@mui/icons-material/Bolt";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import DeleteIcon from "@mui/icons-material/Delete";
+import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
 import { Button, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
@@ -23,9 +24,17 @@ interface BatchActionsProps {
   onLaunch: () => void;
   onDelete: () => void;
   onDeselectAll: () => void;
+  /** If not provided, the Move button is not rendered (only used for managed studies) */
+  onMove?: () => void;
 }
 
-function BatchActions({ selectedCount, onLaunch, onDelete, onDeselectAll }: BatchActionsProps) {
+function BatchActions({
+  selectedCount,
+  onLaunch,
+  onDelete,
+  onDeselectAll,
+  onMove,
+}: BatchActionsProps) {
   const { t } = useTranslation();
 
   if (selectedCount === 0) {
@@ -39,6 +48,13 @@ function BatchActions({ selectedCount, onLaunch, onDelete, onDeselectAll }: Batc
           {t("global.launch")}
         </Button>
       </Tooltip>
+      {onMove && (
+        <Tooltip title={t("global.move")}>
+          <Button onClick={onMove} color="inherit" startIcon={<DriveFileMoveIcon />}>
+            {t("global.move")}
+          </Button>
+        </Tooltip>
+      )}
       <Tooltip title={t("global.delete")}>
         <Button onClick={onDelete} color="error" startIcon={<DeleteIcon />}>
           {t("global.delete")}
