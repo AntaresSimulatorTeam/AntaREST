@@ -362,8 +362,8 @@ class TestDownloadMatrices:
 
         # fake study_id
         res = client.get(f"/v1/studies/{fake_str}/raw/download", params={"path": raw_matrix_path, "format": "tsv"})
-        assert res.status_code == 400
-        assert "is not a valid UUID" in res.json()["description"]
+        assert res.status_code == 422
+        assert "should match pattern" in res.json()["description"]
 
         # fake path
         res = client.get(
