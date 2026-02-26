@@ -49,8 +49,8 @@ logger = logging.getLogger(__name__)
 
 
 class UserCredentials(AntaresBaseModel):
-    username: str
-    password: str
+    username: SanitizedStr
+    password: SanitizedStr
 
 
 def _generate_tokens(user: JWTUser, jwt_manager: AuthJWT, expire: Optional[timedelta] = None) -> CredentialsDTO:
