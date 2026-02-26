@@ -88,7 +88,7 @@ function ListView<TItemData>({
         onAdd={onAdd}
         actions={actions}
         disableSearch={disableSearch}
-        renderItemContent={(item) => (
+        renderItem={(item) => (
           <ListItemButton
             onClick={() => setActiveItem(item)}
             selected={activeItem?.id === item.id}

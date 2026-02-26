@@ -55,7 +55,7 @@ function RouterListView({
         onAdd={onAdd}
         actions={actions}
         disableSearch={disableSearch}
-        renderItemContent={(item) => (
+        renderItem={(item) => (
           <RouterListItemButton key={currentRouteId} {...item.linkOptions} disabled={item.disabled}>
             {renderListItem(item)}
           </RouterListItemButton>

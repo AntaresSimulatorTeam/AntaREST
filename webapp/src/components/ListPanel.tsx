@@ -45,14 +45,14 @@ export interface ListPanelProps<TItem extends ListPanelItem = ListPanelItem> {
   /**
    * Custom renderer for each list item's content (rendered inside MUI's ListItem)
    */
-  renderItemContent: (item: TItem) => React.ReactNode;
+  renderItem: (item: TItem) => React.ReactNode;
 }
 
 function ListPanel<TItem extends ListPanelItem>({
   list,
   onAdd,
   actions,
-  renderItemContent,
+  renderItem,
   disableSearch = false,
   slotProps,
 }: ListPanelProps<TItem>) {
@@ -114,7 +114,7 @@ function ListPanel<TItem extends ListPanelItem>({
               }
               {...slotProps?.listItem}
             >
-              {renderItemContent(item)}
+              {renderItem(item)}
             </ListItem>
           </Tooltip>
         ))}
