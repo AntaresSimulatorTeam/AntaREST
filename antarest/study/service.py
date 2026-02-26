@@ -582,10 +582,12 @@ class StudyService:
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
-        matrix_service = command_context.matrix_service
-        StudyDatabaseMatrixUsageProvider(matrix_service)
+        self._matrix_service = command_context.matrix_service
+        StudyDatabaseMatrixUsageProvider(self._matrix_service)
         self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
-            StorageMode.DATABASE: DatabaseStudyDaoFactory(matrix_service, command_context.generator_matrix_constants),
+            StorageMode.DATABASE: DatabaseStudyDaoFactory(
+                self._matrix_service, command_context.generator_matrix_constants
+            ),
             StorageMode.FILESYSTEM: FileStudyDaoFactory(command_context, raw_study_service.study_factory),
         }
 
@@ -1696,16 +1698,26 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
 
-        self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
-
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
+        # We need to handle matrices differently if our study is stored in DB
+        if study.storage_mode == StorageMode.DATABASE:
+            context = self.storage_service.variant_study_service.command_factory.command_context
+            command = ReplaceMatrix(
+                target=url, matrix=new, command_context=context, study_version=StudyVersion.parse(study.version)
             )
-        )
-        logger.info("data %s on study %s updated by user %s", url, uuid, get_user_id())
+            self.get_study_interface(study).add_commands([command])
+
+        else:
+            self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
+
+            self.event_bus.push(
+                Event(
+                    type=EventType.STUDY_DATA_EDITED,
+                    payload=study.to_json_summary(),
+                    permissions=PermissionInfo.from_study(study),
+                )
+            )
+            logger.info("data %s on study %s updated by user %s", url, uuid, get_user_id())
+
         return cast(JSON, new)
 
     def change_owner(self, study_id: str, owner_id: int) -> None:

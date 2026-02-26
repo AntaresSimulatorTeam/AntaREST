@@ -223,7 +223,7 @@ def test_nominal_cases(dao_930: DatabaseStudyDao) -> None:
         Path("input/reserves/area/area"),  # Unexisting folder even if it starts well
         Path("input/misc-gen/area"),  # Missing prefix
         Path("input/folder"),  # Folder does not exist
-        Path("input/bindingconstraints/constraint_suffix"),  # Wrong suffix, should be `lt`, `gt` or `eq`
+        Path("input/bindingconstraints"),  # Folder containing matrices but not a matrix in itself
         Path("input/renewables/series/area/cluster/file"),  # Should end with `series`
         Path("input/renewables/prepro/area/cluster/series"),  # Should start with `series`
         Path("input/thermal/prepro/area/cluster/series"),  # Should end with `data` or `modulation`
@@ -239,11 +239,8 @@ def test_nominal_cases(dao_930: DatabaseStudyDao) -> None:
 def test_error_cases(dao_930_shared: DatabaseStudyDao, incorrect_path: Path) -> None:
     mapper = RawPathToMatrixMapper(dao_930_shared)
 
-    if not incorrect_path.parts:
-        pattern = "Path . is empty"
-    else:
-        path_pattern = incorrect_path.as_posix().replace("/", r"[\\/]")
-        pattern = f"The provided path does not point to a valid matrix: '{path_pattern}'"
+    path_pattern = incorrect_path.as_posix().replace("/", r"[\\/]")
+    pattern = f"The provided path does not point to a valid matrix: '{path_pattern}'"
 
     with pytest.raises(IncorrectPathError, match=pattern):
         mapper.get_matrix_from_path(incorrect_path)
