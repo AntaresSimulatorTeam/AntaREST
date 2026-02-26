@@ -47,12 +47,6 @@ logger = logging.getLogger(__name__)
 QUERY_REGEX = r"^\s*(?:\d+\s*(?:,\s*\d+\s*)*)?$"
 
 
-def _sanitize_study_id(study_id: str) -> str:
-    if study_id.isalnum():
-        return study_id
-    raise ValueError("Invalid study id")
-
-
 def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) -> Sequence[str]:
     """Split a comma-separated list of values into an ordered set of strings."""
     values = value.split(",") if value else default
