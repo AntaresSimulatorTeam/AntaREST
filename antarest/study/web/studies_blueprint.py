@@ -73,34 +73,46 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         summary="Get Studies",
     )
     def get_studies(
-        name: str = Query(
-            "",
-            description=(
-                "Filter studies based on their name."
-                "Case-insensitive search for studies whose name contains the specified value."
+        name: Annotated[
+            str,
+            Query(
+                description=(
+                    "Filter studies based on their name."
+                    "Case-insensitive search for studies whose name contains the specified value."
+                ),
+                alias="name",
             ),
-            alias="name",
-        ),
-        managed: Optional[bool] = Query(None, description="Filter studies based on their management status."),
-        archived: Optional[bool] = Query(None, description="Filter studies based on their archive status."),
-        variant: Optional[bool] = Query(None, description="Filter studies based on their variant status."),
-        versions: str = Query("", description="Comma-separated list of versions for filtering.", pattern=QUERY_REGEX),
-        users: str = Query("", description="Comma-separated list of user IDs for filtering.", pattern=QUERY_REGEX),
-        groups: str = Query("", description="Comma-separated list of group IDs for filtering."),
-        tags: str = Query("", description="Comma-separated list of tags for filtering."),
-        study_ids: str = Query("", description="Comma-separated list of study IDs for filtering.", alias="studyIds"),
-        exists: Optional[bool] = Query(None, description="Filter studies based on their existence on disk."),
-        workspace: str = Query("", description="Filter studies based on their workspace."),
-        folder: str = Query("", description="Filter studies based on their folder."),
-        sort_by: StudySortBy = Query(
-            None,
-            description="Sort studies based on their name (case-insensitive) or creation date.",
-            alias="sortBy",
-        ),
-        page_nb: NonNegativeInt = Query(0, description="Page number (starting from 0).", alias="pageNb"),
-        page_size: NonNegativeInt = Query(
-            0, description="Number of studies per page (0 = no limit).", alias="pageSize"
-        ),
+        ] = "",
+        managed: Annotated[
+            Optional[bool], Query(description="Filter studies based on their management status.")
+        ] = None,
+        archived: Annotated[Optional[bool], Query(description="Filter studies based on their archive status.")] = None,
+        variant: Annotated[Optional[bool], Query(description="Filter studies based on their variant status.")] = None,
+        versions: Annotated[
+            str, Query(description="Comma-separated list of versions for filtering.", pattern=QUERY_REGEX)
+        ] = "",
+        users: Annotated[
+            str, Query(description="Comma-separated list of user IDs for filtering.", pattern=QUERY_REGEX)
+        ] = "",
+        groups: Annotated[str, Query(description="Comma-separated list of group IDs for filtering.")] = "",
+        tags: Annotated[str, Query(description="Comma-separated list of tags for filtering.")] = "",
+        study_ids: Annotated[
+            str, Query(description="Comma-separated list of study IDs for filtering.", alias="studyIds")
+        ] = "",
+        exists: Annotated[Optional[bool], Query(description="Filter studies based on their existence on disk.")] = None,
+        workspace: Annotated[str, Query(description="Filter studies based on their workspace.")] = "",
+        folder: Annotated[str, Query(description="Filter studies based on their folder.")] = "",
+        sort_by: Annotated[
+            StudySortBy | None,
+            Query(
+                description="Sort studies based on their name (case-insensitive) or creation date.",
+                alias="sortBy",
+            ),
+        ] = None,
+        page_nb: Annotated[NonNegativeInt, Query(description="Page number (starting from 0).", alias="pageNb")] = 0,
+        page_size: Annotated[
+            NonNegativeInt, Query(description="Number of studies per page (0 = no limit).", alias="pageSize")
+        ] = 0,
     ) -> Dict[str, StudyMetadataDTO]:
         """
         Get the list of studies matching the specified criteria.
@@ -161,18 +173,20 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         summary="Count Studies",
     )
     def count_studies(
-        name: str = Query("", description="Case-insensitive: filter studies based on their name.", alias="name"),
-        managed: Optional[bool] = Query(None, description="Management status filter."),
-        archived: Optional[bool] = Query(None, description="Archive status filter."),
-        variant: Optional[bool] = Query(None, description="Variant status filter."),
-        versions: str = Query("", description="Comma-separated versions filter.", pattern=QUERY_REGEX),
-        users: str = Query("", description="Comma-separated user IDs filter.", pattern=QUERY_REGEX),
-        groups: str = Query("", description="Comma-separated group IDs filter."),
-        tags: str = Query("", description="Comma-separated tags filter."),
-        study_ids: str = Query("", description="Comma-separated study IDs filter.", alias="studyIds"),
-        exists: Optional[bool] = Query(None, description="Existence on disk filter."),
-        workspace: str = Query("", description="Workspace filter."),
-        folder: str = Query("", description="Study folder filter."),
+        name: Annotated[
+            str, Query(description="Case-insensitive: filter studies based on their name.", alias="name")
+        ] = "",
+        managed: Annotated[Optional[bool], Query(description="Management status filter.")] = None,
+        archived: Annotated[Optional[bool], Query(description="Archive status filter.")] = None,
+        variant: Annotated[Optional[bool], Query(description="Variant status filter.")] = None,
+        versions: Annotated[str, Query(description="Comma-separated versions filter.", pattern=QUERY_REGEX)] = "",
+        users: Annotated[str, Query(description="Comma-separated user IDs filter.", pattern=QUERY_REGEX)] = "",
+        groups: Annotated[str, Query(description="Comma-separated group IDs filter.")] = "",
+        tags: Annotated[str, Query(description="Comma-separated tags filter.")] = "",
+        study_ids: Annotated[str, Query(description="Comma-separated study IDs filter.", alias="studyIds")] = "",
+        exists: Annotated[Optional[bool], Query(description="Existence on disk filter.")] = None,
+        workspace: Annotated[str, Query(description="Workspace filter.")] = "",
+        folder: Annotated[str, Query(description="Study folder filter.")] = "",
     ) -> int:
         """
         Get the number of studies matching the specified criteria.
@@ -348,9 +362,9 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         name: str,
         version: str | None = None,
         groups: str = "",
-        directory: str = Query(
-            "", description="Directory path where the study will be created (e.g., 'project/subfolder')"
-        ),
+        directory: Annotated[
+            str, Query(description="Directory path where the study will be created (e.g., 'project/subfolder')")
+        ] = "",
         storage_mode: StorageMode = StorageMode.FILESYSTEM,
     ) -> str:
         """

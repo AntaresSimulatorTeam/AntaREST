@@ -49,7 +49,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
+DEFAULT_EXPORT_FORMAT = Query(alias="format", description="Export format", title="Export Format")
 
 download_expiration_time_query: Any = Query(
     gt=0,
@@ -151,10 +151,12 @@ def create_output_routes(
     def get_output_time_index(
         uuid: str,
         output_id: str,
-        frequency: MatrixFrequency = Query(
-            MatrixFrequency.HOURLY,
-            description="Temporal frequency (hourly, daily, weekly, monthly, annual)",
-        ),
+        frequency: Annotated[
+            MatrixFrequency,
+            Query(
+                description="Temporal frequency (hourly, daily, weekly, monthly, annual)",
+            ),
+        ] = MatrixFrequency.HOURLY,
     ) -> MatrixIndex:
         """
         Get the time indexing information (start date, step count, etc.) for output matrices
@@ -178,8 +180,8 @@ def create_output_routes(
         study_id: str,
         output_id: str,
         data: StudyDownloadDTO,
-        use_task: bool = Query(default=False, deprecated=True),
-        tmp_export_file: Path = Depends(file_transfer_manager.request_tmp_file),
+        tmp_export_file: Annotated[Path, Depends(file_transfer_manager.request_tmp_file)],
+        use_task: Annotated[bool, Query(deprecated=True)] = False,
     ) -> FileResponse:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
@@ -253,7 +255,7 @@ def create_output_routes(
         mc_years: str = "",
         areas_ids: str = "",
         columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        export_format: Annotated[TableExportFormat, DEFAULT_EXPORT_FORMAT] = TableExportFormat.CSV,
         download_expiration_time: Annotated[int, download_expiration_time_query] = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         # noinspection SpellCheckingInspection
@@ -314,7 +316,7 @@ def create_output_routes(
         mc_years: str = "",
         areas_ids: str = "",
         columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        export_format: Annotated[TableExportFormat, DEFAULT_EXPORT_FORMAT] = TableExportFormat.CSV,
     ) -> str:
         return aggregate_areas_raw_data(
             uuid, output_id, query_file, frequency, mc_years, areas_ids, columns_names, export_format
@@ -332,7 +334,7 @@ def create_output_routes(
         mc_years: str = "",
         links_ids: str = "",
         columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        export_format: Annotated[TableExportFormat, DEFAULT_EXPORT_FORMAT] = TableExportFormat.CSV,
         download_expiration_time: Annotated[int, download_expiration_time_query] = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         """
@@ -391,7 +393,7 @@ def create_output_routes(
         mc_years: str = "",
         links_ids: str = "",
         columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        export_format: Annotated[TableExportFormat, DEFAULT_EXPORT_FORMAT] = TableExportFormat.CSV,
     ) -> str:
         return aggregate_links_raw_data(
             uuid, output_id, query_file, frequency, mc_years, links_ids, columns_names, export_format
@@ -408,7 +410,7 @@ def create_output_routes(
         frequency: MatrixFrequency,
         areas_ids: str = "",
         columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        export_format: Annotated[TableExportFormat, DEFAULT_EXPORT_FORMAT] = TableExportFormat.CSV,
         download_expiration_time: Annotated[int, download_expiration_time_query] = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         # noinspection SpellCheckingInspection
@@ -466,7 +468,7 @@ def create_output_routes(
         frequency: MatrixFrequency,
         areas_ids: str = "",
         columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        export_format: Annotated[TableExportFormat, DEFAULT_EXPORT_FORMAT] = TableExportFormat.CSV,
     ) -> str:
         return aggregate_areas_raw_data__all(
             uuid, output_id, query_file, frequency, areas_ids, columns_names, export_format
@@ -483,7 +485,7 @@ def create_output_routes(
         frequency: MatrixFrequency,
         links_ids: str = "",
         columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        export_format: Annotated[TableExportFormat, DEFAULT_EXPORT_FORMAT] = TableExportFormat.CSV,
         download_expiration_time: Annotated[int, download_expiration_time_query] = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         """
@@ -542,7 +544,7 @@ def create_output_routes(
         frequency: MatrixFrequency,
         links_ids: str = "",
         columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        export_format: Annotated[TableExportFormat, DEFAULT_EXPORT_FORMAT] = TableExportFormat.CSV,
     ) -> str:
         return aggregate_links_raw_data__all(
             uuid, output_id, query_file, frequency, links_ids, columns_names, export_format
@@ -618,12 +620,12 @@ def create_output_routes(
         renewable_id: str | None = None,
         st_storage_id: str | None = None,
         export_format: TableExportFormat = TableExportFormat.CSV,
-        with_header: bool = Query(
-            True, alias="header", description="Whether to include the header or not", title="With Header"
-        ),
-        with_index: bool = Query(
-            True, alias="index", description="Whether to include the index or not", title="With Index"
-        ),
+        with_header: Annotated[
+            bool, Query(alias="header", description="Whether to include the header or not", title="With Header")
+        ] = True,
+        with_index: Annotated[
+            bool, Query(alias="index", description="Whether to include the index or not", title="With Index")
+        ] = True,
     ) -> Response:
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)

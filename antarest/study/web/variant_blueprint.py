@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import datetime
 import logging
-from typing import List, Optional, Union
+from typing import Annotated, List, Optional, Union
 
 import humanize
 from fastapi import APIRouter, Body
@@ -143,7 +143,7 @@ def create_study_variant_routes(
             }
         },
     )
-    def append_commands(uuid: str, commands: List[CommandDTOAPI] = Body(...)) -> Optional[List[str]]:
+    def append_commands(uuid: str, commands: Annotated[List[CommandDTOAPI], Body()]) -> Optional[List[str]]:
         """
         Append a list of commands to a variant study.
 
@@ -168,7 +168,7 @@ def create_study_variant_routes(
             }
         },
     )
-    def replace_commands(uuid: str, commands: List[CommandDTOAPI] = Body(...)) -> str:
+    def replace_commands(uuid: str, commands: Annotated[List[CommandDTOAPI], Body()]) -> str:
         logger.info(f"Replacing all commands of variant study {uuid}")
         sanitized_uuid = sanitize_uuid(uuid)
         internal_commands = variant_study_service.convert_commands(sanitized_uuid, commands)

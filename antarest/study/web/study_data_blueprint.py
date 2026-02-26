@@ -13,11 +13,11 @@
 import enum
 import logging
 from http import HTTPStatus
-from typing import Dict, List, Literal, Mapping, Optional, Sequence
+from typing import Annotated, Dict, List, Literal, Mapping, Optional, Sequence
 
 import typing_extensions as te
 from fastapi import APIRouter, Body, Query
-from pydantic import ConfigDict, Field, RootModel
+from pydantic import Field
 from starlette.responses import RedirectResponse
 
 from antarest.core.config import Config
@@ -136,14 +136,6 @@ class ClusterType(enum.StrEnum):
     THERMALS = "thermals"
 
 
-class PlaylistRootModel(RootModel[dict[int, PlaylistValues]]):
-    model_config = ConfigDict(json_schema_extra={"example": {"1": {"status": False, "weight": 0.4}}})
-
-
-class PlaylistUpdateRootModel(RootModel[dict[int, PlaylistValuesUpdate]]):
-    model_config = ConfigDict(json_schema_extra={"example": {"1": {"status": False, "weight": 0.4}}})
-
-
 def create_study_data_routes(study_service: StudyService, config: Config) -> APIRouter:
     """
     Endpoint implementation for studies area management
@@ -191,8 +183,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def get_areas(
         uuid: str,
-        type: Optional[AreaType] = Query(default=None, deprecated=True),
-        ui: bool = Query(default=False),
+        type: Annotated[Optional[AreaType], Query(deprecated=True)] = None,
+        ui: Annotated[bool, Query()] = False,
     ) -> List[AreaResponse] | Dict[str, AreaUIData]:
         logger.info(f"Fetching area list (type={type}, ui={ui}) for study {uuid}")
         if ui:
@@ -388,7 +380,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/matrix",
         summary="Edit matrix",
     )
-    def edit_matrix(uuid: str, path: str, matrix_edit_instructions: List[MatrixEditInstruction] = Body(...)) -> None:
+    def edit_matrix(
+        uuid: str, path: str, matrix_edit_instructions: Annotated[List[MatrixEditInstruction], Body()]
+    ) -> None:
         # NOTE: This Markdown documentation is reflected in the Swagger API
         """
         Edit a matrix in a study based on the provided edit instructions.
@@ -428,24 +422,30 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/playlist/form",
         summary="Get MC Scenario playlist data for table form",
     )
-    def get_playlist(uuid: str) -> PlaylistRootModel:
+    def get_playlist(uuid: str) -> dict[int, PlaylistValues]:
         logger.info(f"Getting MC Scenario playlist data for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
         playlist_as_dict = study_service.playlist_manager.get_playlist(study_interface).years
-        return PlaylistRootModel.model_validate(playlist_as_dict)
+        return playlist_as_dict
 
     @bp.put(
         path="/studies/{uuid}/config/playlist/form",
         summary="Update MC Scenario playlist data with values from table form",
     )
-    def update_playlist(uuid: str, data: PlaylistUpdateRootModel) -> PlaylistRootModel:
+    def update_playlist(
+        uuid: str,
+        data: Annotated[
+            dict[int, PlaylistValuesUpdate],
+            Body(json_schema_extra={"example": {"1": {"status": False, "weight": 0.4}}}),
+        ],
+    ) -> dict[int, PlaylistValues]:
         logger.info(f"Updating MC Scenario playlist table data for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        playlist_update = PlaylistUpdate.model_validate({"years": data.model_dump()})
+        playlist_update = PlaylistUpdate.model_validate({"years": data})
         playlist_as_dict = study_service.playlist_manager.update_playlist(study_interface, playlist_update).years
-        return PlaylistRootModel.model_validate(playlist_as_dict)
+        return playlist_as_dict
 
     @bp.get(
         path="/studies/{uuid}/config/scenariobuilder",
@@ -710,25 +710,27 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def update_table_mode(
         uuid: str,
         table_type: TableModeType,
-        data: TableDataDTO = Body(
-            ...,
-            examples=[
-                {
-                    "de / nuclear_cl1": {
-                        "enabled": True,
-                        "group": "Nuclear",
-                        "unitCount": 17,
-                        "nominalCapacity": 123,
-                    },
-                    "de / gas_cl1": {
-                        "enabled": True,
-                        "group": "Gas",
-                        "unitCount": 15,
-                        "nominalCapacity": 456,
-                    },
-                }
-            ],
-        ),
+        data: Annotated[
+            TableDataDTO,
+            Body(
+                examples=[
+                    {
+                        "de / nuclear_cl1": {
+                            "enabled": True,
+                            "group": "Nuclear",
+                            "unitCount": 17,
+                            "nominalCapacity": 123,
+                        },
+                        "de / gas_cl1": {
+                            "enabled": True,
+                            "group": "Gas",
+                            "unitCount": 15,
+                            "nominalCapacity": 456,
+                        },
+                    }
+                ]
+            ),
+        ],
     ) -> TableDataDTO:
         """
         Update the table data for the given study and table type.
@@ -1087,17 +1089,19 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def set_allocation_form_fields(
         uuid: str,
         area_id: str,
-        data: HydroAllocation = Body(
-            ...,
-            examples=[
-                HydroAllocation(
-                    allocation=[
-                        HydroAllocationArea.model_validate({"areaId": "EAST", "coefficient": 1}),
-                        HydroAllocationArea.model_validate({"areaId": "NORTH", "coefficient": 0.20}),
-                    ]
-                )
-            ],
-        ),
+        data: Annotated[
+            HydroAllocation,
+            Body(
+                examples=[
+                    HydroAllocation(
+                        allocation=[
+                            HydroAllocationArea.model_validate({"areaId": "EAST", "coefficient": 1}),
+                            HydroAllocationArea.model_validate({"areaId": "NORTH", "coefficient": 0.20}),
+                        ]
+                    )
+                ]
+            ),
+        ],
     ) -> HydroAllocation:
         """
         Update the hydraulic allocation of a given area.
@@ -1158,17 +1162,19 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def set_correlation(
         uuid: str,
         area_id: str,
-        data: HydroCorrelation = Body(
-            ...,
-            examples=[
-                HydroCorrelation(
-                    correlation=[
-                        HydroCorrelationArea.model_validate({"areaId": "east", "coefficient": 80}),
-                        HydroCorrelationArea.model_validate({"areaId": "north", "coefficient": 20}),
-                    ]
-                )
-            ],
-        ),
+        data: Annotated[
+            HydroCorrelation,
+            Body(
+                examples=[
+                    HydroCorrelation(
+                        correlation=[
+                            HydroCorrelationArea.model_validate({"areaId": "east", "coefficient": 80}),
+                            HydroCorrelationArea.model_validate({"areaId": "north", "coefficient": 20}),
+                        ]
+                    )
+                ]
+            ),
+        ],
     ) -> HydroCorrelation:
         """
         Update the hydraulic correlation of a given area.
@@ -1743,7 +1749,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         area_id: str,
         cluster_type: ClusterType,
         source_cluster_id: str,
-        new_cluster_name: str = Query(..., alias="newName", title="New Cluster Name"),
+        new_cluster_name: Annotated[str, Query(alias="newName", title="New Cluster Name")],
     ) -> STStorage | ThermalCluster | RenewableCluster:
         logger.info(f"Duplicates {cluster_type.value} {source_cluster_id} of {area_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
