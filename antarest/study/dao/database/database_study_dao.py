@@ -27,7 +27,7 @@ from typing_extensions import override
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
-from antarest.study.business.model.scenario_builder_model import AnyScenarios, Rulesets, ScenarioType
+from antarest.study.business.model.scenario_builder_model import AnyScenarios, Ruleset, ScenarioType
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionCandidate,
@@ -278,15 +278,11 @@ class DatabaseStudyDao(
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
-    def save_scenario_builder(self, rulesets: Rulesets) -> None:
+    def save_scenario_builder(self, ruleset: Ruleset) -> None:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
-    def get_rulesets(self) -> Rulesets:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_active_ruleset_name(self, default_ruleset: str = "Default Ruleset") -> str:
+    def get_ruleset(self) -> Ruleset:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override

@@ -110,7 +110,7 @@ from antarest.study.business.table_mode_management import TableDataDTO, TableMod
 from antarest.study.model import CommentsDto
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.web.views.scenario_builder_views import RulesetsView, rulesets_model_to_view, rulesets_view_to_model
+from antarest.study.web.views.scenario_builder_views import RulesetView, ruleset_model_to_view, ruleset_view_to_model
 
 logger = logging.getLogger(__name__)
 
@@ -453,11 +453,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Get MC Scenario builder config",
         response_model_exclude_none=True,
     )
-    def get_scenario_builder_config(uuid: UuidStr) -> RulesetsView:
+    def get_scenario_builder_config(uuid: UuidStr) -> RulesetView:
         logger.info(f"Getting MC Scenario builder config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return rulesets_model_to_view(study_service.scenario_builder_manager.get_rulesets(study_interface))
+        return ruleset_model_to_view(study_service.scenario_builder_manager.get_ruleset(study_interface))
 
     @bp.get(
         path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
@@ -536,11 +536,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/scenariobuilder",
         summary="Set MC Scenario builder config",
     )
-    def update_scenario_builder_config(uuid: UuidStr, data: RulesetsView) -> None:
+    def update_scenario_builder_config(uuid: UuidStr, data: RulesetView) -> None:
         logger.info(f"Updating MC Scenario builder config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.scenario_builder_manager.update_scenario(study_interface, rulesets_view_to_model(data))
+        study_service.scenario_builder_manager.update_scenario(study_interface, ruleset_view_to_model(data))
 
     @bp.put(
         path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
