@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 import io
 import logging
-import re
 from typing import Sequence
 
 import polars as pl
@@ -136,11 +135,6 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
     )
     def add_resource(uuid: UuidStr, resource_type: XpansionResourceFileType, file: UploadFile = File()) -> None:
         logger.info(f"Add xpansion {resource_type} files in the study {uuid}")
-        if not file.filename or re.match(r"[\r\n]", file.filename):
-            raise ValueError(
-                "Invalid filename: filename must not be empty and must not contain carriage return or line feed "
-                "characters."
-            )
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         return study_service.xpansion_manager.add_resource(study_interface, resource_type, file)
