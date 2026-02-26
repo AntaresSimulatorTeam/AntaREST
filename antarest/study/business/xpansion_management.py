@@ -171,6 +171,7 @@ class XpansionManager:
         filename = file.filename
         if not filename:
             raise FileImportFailed("A filename is required")
+        filename = check_sanitized(filename)
         logger.info(f"Adding xpansion {resource_type} resource file {check_sanitized(filename)} to study '{study.id}'")
 
         # checks the file doesn't already exist
