@@ -123,4 +123,4 @@ export default CheckboxesTagsFEWithRHF as <
 >(
   props: ReactHookFormSupportProps<TFieldValues, TFieldName, TContext> &
     CheckboxesTagsFEProps<T, DisableClearable, FreeSolo>,
-) => React.ReactElement;
+) => React.JSX.Element;

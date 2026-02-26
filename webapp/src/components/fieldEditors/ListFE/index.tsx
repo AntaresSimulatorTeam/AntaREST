@@ -40,7 +40,7 @@ import {
   Typography,
 } from "@mui/material";
 import * as RA from "ramda-adjunct";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type JSX } from "react";
 import type { FieldPath, FieldValues } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useUpdateEffect } from "react-use";

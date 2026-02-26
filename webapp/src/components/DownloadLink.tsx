@@ -21,7 +21,7 @@ import { IconButton, Tooltip } from "@mui/material";
 interface Props {
   url: string;
   title: string;
-  children: React.ReactElement;
+  children: React.ReactElement<any>;
 }
 
 function DownloadLink(props: Props) {
