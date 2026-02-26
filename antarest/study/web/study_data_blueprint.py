@@ -752,29 +752,29 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: UuidStr,
         enabled: Optional[bool] = Query(None, description="Filter results based on enabled status"),
         operator: BindingConstraintOperator = Query(None, description="Filter results based on operator"),
-        comments: str = Query("", description="Filter results based on comments (word match)"),
-        group: str = Query("", description="filter binding constraints based on group name (exact match)"),
+        comments: SanitizedStr = Query("", description="Filter results based on comments (word match)"),
+        group: SanitizedStr = Query("", description="filter binding constraints based on group name (exact match)"),
         time_step: BindingConstraintFrequency = Query(
             None,
             description="Filter results based on time step",
             alias="timeStep",
         ),
-        area_name: str = Query(
+        area_name: SanitizedStr = Query(
             "",
             description="Filter results based on area name (word match)",
             alias="areaName",
         ),
-        cluster_name: str = Query(
+        cluster_name: SanitizedStr = Query(
             "",
             description="Filter results based on cluster name (word match)",
             alias="clusterName",
         ),
-        link_id: str = Query(
+        link_id: SanitizedStr = Query(
             "",
             description="Filter results based on link ID ('area1%area2')",
             alias="linkId",
         ),
-        cluster_id: str = Query(
+        cluster_id: SanitizedStr = Query(
             "",
             description="Filter results based on cluster ID ('area.cluster')",
             alias="clusterId",
