@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import re
 from pathlib import Path
 from typing import Callable
 
@@ -18,6 +19,112 @@ from antarest.core.exceptions import IncorrectPathError
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
 from antarest.study.model import STUDY_VERSION_8_2, STUDY_VERSION_8_7
+
+path_handlers = [
+    (re.compile(r"user/expansion/capa/(?P<file_name>\w+)"), lambda m: m.group("file_name")),
+    (re.compile(r"user/expansion/weights/(?P<file_name>\w+)"), lambda m: m.group("file_name")),
+    (re.compile(r"input/load/series/load_(?P<area_id>\w+)"), lambda m: m.group("area_id")),
+    (re.compile(r"input/wind/series/wind_(?P<area_id>\w+)"), lambda m: m.group("area_id")),
+    (re.compile(r"input/solar/series/solar_(?P<area_id>\w+)"), lambda m: m.group("area_id")),
+    (re.compile(r"input/misc-gen/miscgen-(?P<area_id>\w+)"), lambda m: m.group("area_id")),
+    (re.compile(r"input/reserves/(?P<area_id>\w+)"), lambda m: m.group("area_id")),
+    (
+        re.compile(r"input/links/(?P<area1>\w+)/(?P<area2>\w+)_parameters"),
+        lambda m: (m.group("area1"), m.group("area2")),
+    ),
+    (
+        re.compile(r"input/links/(?P<area1>\w+)/capacities/(?P<area2>\w+)_direct"),
+        lambda m: (m.group("area1"), m.group("area2")),
+    ),
+    (
+        re.compile(r"input/links/(?P<area1>\w+)/capacities/(?P<area2>\w+)_indirect"),
+        lambda m: (m.group("area1"), m.group("area2")),
+    ),
+    (
+        re.compile(r"input/thermal/prepro/(?P<area_id>\w+)/(?P<thermal_id>\w+)/data"),
+        lambda m: (m.group("area_id"), m.group("thermal_id")),
+    ),
+    (
+        re.compile(r"input/thermal/prepro/(?P<area_id>\w+)/(?P<thermal_id>\w+)/modulation"),
+        lambda m: (m.group("area_id"), m.group("thermal_id")),
+    ),
+    (
+        re.compile(r"input/thermal/series/(?P<area_id>\w+)/(?P<thermal_id>\w+)/series"),
+        lambda m: (m.group("area_id"), m.group("thermal_id")),
+    ),
+    (
+        re.compile(r"input/thermal/series/(?P<area_id>\w+)/(?P<thermal_id>\w+)/fuelCost"),
+        lambda m: (m.group("area_id"), m.group("thermal_id")),
+    ),
+    (
+        re.compile(r"input/thermal/series/(?P<area_id>\w+)/(?P<thermal_id>\w+)/C02Cost"),
+        lambda m: (m.group("area_id"), m.group("thermal_id")),
+    ),
+    (
+        re.compile(r"input/renewables/series/(?P<area_id>\w+)/(?P<renewable_id>\w+)/series"),
+        lambda m: (m.group("area_id"), m.group("renewable_id")),
+    ),
+    (
+        re.compile(r"input/st-storage/series/(?P<area_id>\w+)/(?P<st_storage_id>\w+)/pmax_injection"),
+        lambda m: (m.group("area_id"), m.group("st_storage_id")),
+    ),
+    (
+        re.compile(r"input/st-storage/series/(?P<area_id>\w+)/(?P<st_storage_id>\w+)/pmax_withdrawal"),
+        lambda m: (m.group("area_id"), m.group("st_storage_id")),
+    ),
+    (
+        re.compile(r"input/st-storage/series/(?P<area_id>\w+)/(?P<st_storage_id>\w+)/lower_rule_curve"),
+        lambda m: (m.group("area_id"), m.group("st_storage_id")),
+    ),
+    (
+        re.compile(r"input/st-storage/series/(?P<area_id>\w+)/(?P<st_storage_id>\w+)/upper_rule_curve"),
+        lambda m: (m.group("area_id"), m.group("st_storage_id")),
+    ),
+    (
+        re.compile(r"input/st-storage/series/(?P<area_id>\w+)/(?P<st_storage_id>\w+)/inflows"),
+        lambda m: (m.group("area_id"), m.group("st_storage_id")),
+    ),
+    (
+        re.compile(r"input/st-storage/series/(?P<area_id>\w+)/(?P<st_storage_id>\w+)/cost_injection"),
+        lambda m: (m.group("area_id"), m.group("st_storage_id")),
+    ),
+    (
+        re.compile(r"input/st-storage/series/(?P<area_id>\w+)/(?P<st_storage_id>\w+)/cost_withdrawal"),
+        lambda m: (m.group("area_id"), m.group("st_storage_id")),
+    ),
+    (
+        re.compile(r"input/st-storage/series/(?P<area_id>\w+)/(?P<st_storage_id>\w+)/cost_level"),
+        lambda m: (m.group("area_id"), m.group("st_storage_id")),
+    ),
+    (
+        re.compile(r"input/st-storage/series/(?P<area_id>\w+)/(?P<st_storage_id>\w+)/cost_variation_injection"),
+        lambda m: (m.group("area_id"), m.group("st_storage_id")),
+    ),
+    (
+        re.compile(r"input/st-storage/series/(?P<area_id>\w+)/(?P<st_storage_id>\w+)/cost_variation_withdrawal"),
+        lambda m: (m.group("area_id"), m.group("st_storage_id")),
+    ),
+    (
+        re.compile(r"input/st-storage/constraints/(?P<area_id>\w+)/(?P<st_storage_id>\w+)/rhs_(?P<constraint_id>\w+)"),
+        lambda m: (m.group("area_id"), m.group("st_storage_id"), m.group("constraint_id")),
+    ),
+    (re.compile(r"input/hydro/common/capacity/maxpower_(?P<area_id>\w+)"), lambda m: m.group("area_id")),
+    (re.compile(r"input/hydro/common/capacity/reservoir_(?P<area_id>\w+)"), lambda m: m.group("area_id")),
+    (re.compile(r"input/hydro/series/(?P<area_id>\w+)/ror"), lambda m: m.group("area_id")),
+    (re.compile(r"input/hydro/prepro/(?P<area_id>\w+)/mod"), lambda m: m.group("area_id")),
+    (re.compile(r"input/hydro/prepro/(?P<area_id>\w+)/mingen"), lambda m: m.group("area_id")),
+    (re.compile(r"input/hydro/prepro/(?P<area_id>\w+)/maxHourlyGenPower"), lambda m: m.group("area_id")),
+    (re.compile(r"input/hydro/prepro/(?P<area_id>\w+)/maxHourlyPumpPower"), lambda m: m.group("area_id")),
+    (re.compile(r"input/hydro/common/capacity/creditmodulations_(?P<area_id>\w+)"), lambda m: m.group("area_id")),
+    (re.compile(r"input/hydro/common/capacity/inflowPattern_(?P<area_id>\w+)"), lambda m: m.group("area_id")),
+    (re.compile(r"input/hydro/common/capacity/waterValues_(?P<area_id>\w+)"), lambda m: m.group("area_id")),
+    (re.compile(r"input/hydro/common/capacity/maxDailyGenEnergy_(?P<area_id>\w+)"), lambda m: m.group("area_id")),
+    (re.compile(r"input/hydro/common/capacity/maxDailyPumpEnergy_(?P<area_id>\w+)"), lambda m: m.group("area_id")),
+    (re.compile(r"input/bindingconstraints/(?P<constraint_id>\w+)"), lambda m: m.group("constraint_id")),
+    (re.compile(r"input/bindingconstraints/(?P<constraint_id>\w+)_lt"), lambda m: m.group("constraint_id")),
+    (re.compile(r"input/bindingconstraints/(?P<constraint_id>\w+)_gt"), lambda m: m.group("constraint_id")),
+    (re.compile(r"input/bindingconstraints/(?P<constraint_id>\w+)_eq"), lambda m: m.group("constraint_id")),
+]
 
 
 class RawPathToMatrixMapper:
@@ -235,3 +342,12 @@ class RawPathToMatrixMapper:
                 return self._dao.get_thermal_modulation(area_id, thermal_id)
 
         raise IncorrectPathError(error_msg)
+
+
+"""
+
+
+
+        path_handlers[0][1](path_handlers[0][0].fullmatch("input/thermal/fr/cluster2/series"))
+
+"""
