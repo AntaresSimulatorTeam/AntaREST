@@ -208,12 +208,37 @@ def test_nominal_cases(dao_930: DatabaseStudyDao) -> None:
 
 @pytest.mark.parametrize(
     "incorrect_path",
-    [Path("settings/generaldata"), Path("input/thermal/clusters/paris/list"), Path("user/my_file.xlsx"), Path('')],
+    [
+        Path("settings/generaldata"),  # Not inside input, user or output folder
+        Path("input/thermal/clusters/paris/list"),  # Not a matrix
+        Path("user/my_file.xlsx"),  # Could be a matrix but not for the back-end
+        Path("user/expansion/capa"),  # Folder containing matrices but not a matrix in itself
+        Path(""),  # Empty path
+        Path("input/wind/series/area"),  # Missing prefix
+        Path("input/wind/series"),  # Folder containing matrices but not a matrix in itself
+        Path("input/load/series/area"),  # Missing prefix
+        Path("input/load/series"),  # Folder containing matrices but not a matrix in itself
+        Path("input/solar/series/area"),  # Missing prefix
+        Path("input/solar/series"),  # Folder containing matrices but not a matrix in itself
+        Path("input/reserves/area/area"),  # Unexisting folder even if it starts well
+        Path("input/misc-gen/area"),  # Missing prefix
+        Path("input/folder"),  # Folder does not exist
+        Path("input/bindingconstraints/constraint_suffix"),  # Wrong suffix, should be `lt`, `gt` or `eq`
+        Path("input/renewables/series/area/cluster/file"),  # Should end with `series`
+        Path("input/renewables/prepro/area/cluster/series"),  # Should start with `series`
+        Path("input/thermal/prepro/area/cluster/series"),  # Should end with `data` or `modulation`
+        Path("input/thermal/series/area/cluster/file"),  # Should end with `series`, `fuelCost` or `C02Cost`
+        Path("input/links/area1/area2"),  # Should end with `_parameters`
+        Path("input/links/area1/capacities/area2"),  # Should end with `_direct` or `_indirect`
+        Path("input/st-storage/constraints/area/sts/c1"),  # Should end with the `rsh_` prefix
+        Path("input/st-storage/series/area/sts/file"),  # Not a real matrix file even if in the right folder
+        Path("input/hydro/common/capacity/file"),  # Not a real matrix file even if in the right folder
+        Path("input/hydro/series/area/file"),  # Not a real matrix file even if in the right folder
+    ],
 )
-def test_error_cases(dao_930: DatabaseStudyDao, incorrect_path: Path) -> None:
-    mapper = RawPathToMatrixMapper(dao_930)
+def test_error_cases(dao_930_shared: DatabaseStudyDao, incorrect_path: Path) -> None:
+    mapper = RawPathToMatrixMapper(dao_930_shared)
 
-    # Incorrect path
     if not incorrect_path.parts:
         pattern = "Path . is empty"
     else:

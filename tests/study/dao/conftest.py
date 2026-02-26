@@ -9,14 +9,18 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import contextlib
 import uuid
 from dataclasses import dataclass
 
 import polars as pl
 import pytest
 from antares.study.version import StudyVersion
-from sqlalchemy.orm import Session
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
+from antarest.dbmodel import Base
+from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -54,6 +58,20 @@ def dao(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseSt
 @pytest.fixture
 def dao_930(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
     return build_dao(db_session, matrix_service, STUDY_VERSION_9_3)
+
+
+@pytest.fixture(scope="session")
+def dao_930_shared() -> DatabaseStudyDao:
+    return build_shared_dao(STUDY_VERSION_9_3, InMemorySimpleMatrixService())
+
+
+def build_shared_dao(study_version: StudyVersion, matrix_service: ISimpleMatrixService):
+    """To be used inside tests that do not alter the DAO, but just use it"""
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    make_session = sessionmaker(bind=engine)
+    with contextlib.closing(make_session()) as session:
+        return build_dao(session, matrix_service, study_version)
 
 
 @pytest.fixture
