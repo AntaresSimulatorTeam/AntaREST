@@ -213,13 +213,14 @@ def test_mapper(dao_930: DatabaseStudyDao) -> None:
         mapper.get_matrix_from_path(Path(""))
 
     # GeneralData
-    with pytest.raises(ValueError, match="Path settings/generaldata does not point towards a matrix."):
+    with pytest.raises(ValueError, match=r"Path settings[\\/]generaldata does not point towards a matrix."):
         mapper.get_matrix_from_path(Path("settings/generaldata"))
 
     # User resource
-    with pytest.raises(ValueError, match="Path user/my_file.xlsx does not point towards a matrix."):
+    with pytest.raises(ValueError, match=r"Path user[\\/]my_file.xlsx does not point towards a matrix."):
         mapper.get_matrix_from_path(Path("user/my_file.xlsx"))
 
     # Thermal.ini file
-    with pytest.raises(ValueError, match="Path input/thermal/clusters/paris/list does not point towards a matrix."):
+    pattern = r"Path input[\\/]thermal[\\/]clusters[\\/]paris[\\/]list does not point towards a matrix."
+    with pytest.raises(ValueError, match=pattern):
         mapper.get_matrix_from_path(Path(f"input/thermal/clusters/{area_id}/list"))
