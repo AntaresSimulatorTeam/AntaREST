@@ -18,21 +18,38 @@ import { generateCustomColumns } from "@/components/Matrix/shared/utils";
 import EmptyView from "@/components/page/EmptyView";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
-import type { UsePromiseResponse } from "@/hooks/usePromise";
+import usePromise from "@/hooks/usePromise";
+import { getStudyData } from "@/services/api/study";
 import GridOffIcon from "@mui/icons-material/GridOff";
+import { useParams } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
-export interface SynthesisData {
+interface SynthesisViewerProps {
+  gridId: string;
+}
+
+interface SynthesisData {
   columns: string[];
   data: string[][];
 }
 
-interface SynthesisViewerProps {
-  synthesisRes: UsePromiseResponse<SynthesisData | null>;
-}
-
-function SynthesisViewer({ synthesisRes }: SynthesisViewerProps) {
+function SynthesisViewer({ gridId }: SynthesisViewerProps) {
   const { t } = useTranslation();
+  const { studyId, outputId } = useParams({
+    from: "/_authenticated/studies/$studyId/explore/outputs/$outputId/",
+  });
+
+  const response = usePromise(
+    () => {
+      return getStudyData<SynthesisData | null>(
+        studyId,
+        `output/${outputId}/economy/mc-all/grid/${gridId}`,
+      );
+    },
+    {
+      deps: [studyId, outputId, gridId],
+    },
+  );
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -41,7 +58,7 @@ function SynthesisViewer({ synthesisRes }: SynthesisViewerProps) {
   return (
     <ViewWrapper flex>
       <UsePromiseCond
-        response={synthesisRes}
+        response={response}
         ifPending={() => <DataGridSkeleton />}
         ifFulfilled={(matrix) => {
           if (!matrix) {
