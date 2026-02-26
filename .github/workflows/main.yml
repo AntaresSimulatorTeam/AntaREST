@@ -10,10 +10,6 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - name: Download python coverage report
-        uses: actions/download-artifact@v4
-        with:
-          name: python-code-coverage-report
       - name: SonarCloud Scan
         uses: sonarsource/sonarcloud-github-action@v3.1.0
         env:
