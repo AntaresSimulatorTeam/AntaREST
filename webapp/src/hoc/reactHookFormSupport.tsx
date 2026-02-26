@@ -252,7 +252,7 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
 
     WithReactHookForm.displayName = `WithReactHookForm(${getComponentDisplayName(FieldEditor)})`;
 
-    return hoistNonReactStatics(WithReactHookForm, FieldEditor);
+    return WithReactHookForm;
   }
 
   return withReactHookForm;
