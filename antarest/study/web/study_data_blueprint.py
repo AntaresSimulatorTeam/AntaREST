@@ -421,7 +421,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/playlist/form",
         summary="Get MC Scenario playlist data for table form",
     )
-    def get_playlist(uuid: UuidStr) -> PlaylistRootModel:
+    def get_playlist(uuid: UuidStr) -> dict[int, PlaylistValues]:
         logger.info(f"Getting MC Scenario playlist data for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -432,7 +432,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/playlist/form",
         summary="Update MC Scenario playlist data with values from table form",
     )
-    def update_playlist(uuid: UuidStr, data: PlaylistUpdateRootModel) -> PlaylistRootModel:
+    def update_playlist(
+        uuid: UuidStr,
+        data: Annotated[
+            dict[int, PlaylistValuesUpdate],
+            Body(json_schema_extra={"example": {"1": {"status": False, "weight": 0.4}}}),
+        ],
+    ) -> dict[int, PlaylistValues]:
         logger.info(f"Updating MC Scenario playlist table data for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
