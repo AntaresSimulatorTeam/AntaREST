@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import { mergeSxProp } from "@/utils/muiUtils";
 import type { SvgIconComponent } from "@mui/icons-material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ErrorIcon from "@mui/icons-material/Error";
@@ -22,14 +21,15 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
+  type DialogContentProps,
   DialogContentText,
+  type DialogProps,
   DialogTitle,
   styled,
-  type DialogContentProps,
-  type DialogProps,
 } from "@mui/material";
 import * as RA from "ramda-adjunct";
-import React from "react";
+import { mergeSxProp } from "@/utils/muiUtils";
+
 type AlertValue = "success" | "error" | "info" | "warning";
 
 export interface BasicDialogProps extends Omit<DialogProps, "title"> {
@@ -57,19 +57,17 @@ const titleIconByAlert: Record<AlertValue, SvgIconComponent> = {
   warning: WarningIcon,
 };
 
-function BasicDialog(props: BasicDialogProps) {
-  const {
-    title,
-    titleIcon,
-    children,
-    actions,
-    alert,
-    contentProps,
-    fullScreen = false,
-    sx,
-    ...dialogProps
-  } = props;
-
+function BasicDialog({
+  title,
+  titleIcon,
+  children,
+  actions,
+  alert,
+  contentProps,
+  fullScreen = false,
+  sx,
+  ...dialogProps
+}: BasicDialogProps) {
   const TitleIcon = titleIcon || (alert ? titleIconByAlert[alert] : null);
 
   return (

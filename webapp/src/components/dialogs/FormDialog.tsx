@@ -12,14 +12,13 @@
  * This file is part of the Antares project.
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { mergeSxProp } from "@/utils/muiUtils";
 import SaveIcon from "@mui/icons-material/Save";
 import { Button } from "@mui/material";
 import * as RA from "ramda-adjunct";
 import { useId, useState } from "react";
 import type { FieldValues, FormState } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { mergeSxProp } from "@/utils/muiUtils";
 import Form, { type FormProps } from "../Form";
 import BasicDialog, { type BasicDialogProps } from "./BasicDialog";
 
@@ -31,32 +30,28 @@ type SuperType<TFieldValues extends FieldValues, TContext, SubmitReturnValue> = 
 
 export interface FormDialogProps<
   TFieldValues extends FieldValues = FieldValues,
-  TContext = any,
-  SubmitReturnValue = any,
+  TContext = unknown,
+  SubmitReturnValue = unknown,
 > extends SuperType<TFieldValues, TContext, SubmitReturnValue> {
   cancelButtonText?: string;
   onCancel: VoidFunction;
 }
 
-function FormDialog<TFieldValues extends FieldValues, TContext, SubmitReturnValue>(
-  props: FormDialogProps<TFieldValues, TContext, SubmitReturnValue>,
-) {
-  const {
-    config,
-    onSubmit,
-    onSubmitSuccessful,
-    onInvalid,
-    children,
-    onStateChange,
-    onCancel,
-    onClose,
-    cancelButtonText,
-    submitButtonText,
-    submitButtonIcon,
-    allowSubmitOnPristine = false,
-    ...dialogProps
-  } = props;
-
+function FormDialog<TFieldValues extends FieldValues, TContext, SubmitReturnValue>({
+  config,
+  onSubmit,
+  onSubmitSuccessful,
+  onInvalid,
+  children,
+  onStateChange,
+  onCancel,
+  onClose,
+  cancelButtonText,
+  submitButtonText,
+  submitButtonIcon,
+  allowSubmitOnPristine = false,
+  ...dialogProps
+}: FormDialogProps<TFieldValues, TContext, SubmitReturnValue>) {
   const formProps = {
     config,
     onSubmit,
@@ -129,7 +124,7 @@ function FormDialog<TFieldValues extends FieldValues, TContext, SubmitReturnValu
         {...formProps}
         sx={{
           ".Form__Content": {
-            px: 1, // Prevent content from touching scrollbar
+            p: 1, // Prevent content from touching scrollbar
           },
         }}
         id={formId}
