@@ -409,7 +409,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         mount_dir = _get_mount_dir(fs, mount)
 
         # The following code looks weird, but it's the only way to handle exceptions in generators.
-        tasks = []
+        file_infos = []
         iterator = mount_dir.glob(path) if path else mount_dir.iterdir()
         while True:
             try:
@@ -423,9 +423,9 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
                 # Unacceptable pattern: non-relative glob pattern
                 raise HTTPException(status_code=403, detail=f"Access denied to path: '{path}'. {exc}") from exc
             else:
-                tasks.append(FileInfoDTO.from_path(file_path, details=details))
+                file_infos.append(FileInfoDTO.from_path(file_path, details=details))
 
-        return tasks
+        return file_infos
 
     @bp.get(
         "/{fs}/{mount}/cat",

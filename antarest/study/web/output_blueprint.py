@@ -14,7 +14,7 @@ import logging
 from http import HTTPStatus
 from io import BytesIO
 from pathlib import Path
-from typing import Annotated, Any, Sequence
+from typing import Annotated, Any, Sequence, TypeAlias
 
 import pandas as pd
 from fastapi import APIRouter, Depends, Query, UploadFile
@@ -50,7 +50,9 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_EXPORT_FORMAT = Query(alias="format", description="Export format", title="Export Format")
+ExportFormatQuery: TypeAlias = Annotated[
+    TableExportFormat, Query(alias="format", description="Export format", title="Export Format")
+]
 
 download_expiration_time_query: Any = Query(
     gt=0,
@@ -246,7 +248,7 @@ def create_output_routes(
         mc_years: SanitizedStr = "",
         areas_ids: SanitizedStr = "",
         columns_names: SanitizedStr = "",
-        export_format: Annotated[TableExportFormat, DEFAULT_EXPORT_FORMAT] = TableExportFormat.CSV,
+        export_format: ExportFormatQuery = TableExportFormat.CSV,
         download_expiration_time: Annotated[int, download_expiration_time_query] = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         # noinspection SpellCheckingInspection
@@ -306,7 +308,7 @@ def create_output_routes(
         mc_years: SanitizedStr = "",
         areas_ids: SanitizedStr = "",
         columns_names: SanitizedStr = "",
-        export_format: Annotated[TableExportFormat, DEFAULT_EXPORT_FORMAT] = TableExportFormat.CSV,
+        export_format: ExportFormatQuery = TableExportFormat.CSV,
     ) -> str:
         return aggregate_areas_raw_data(
             uuid, output_id, query_file, frequency, mc_years, areas_ids, columns_names, export_format
@@ -324,7 +326,7 @@ def create_output_routes(
         mc_years: SanitizedStr = "",
         links_ids: SanitizedStr = "",
         columns_names: SanitizedStr = "",
-        export_format: Annotated[TableExportFormat, DEFAULT_EXPORT_FORMAT] = TableExportFormat.CSV,
+        export_format: ExportFormatQuery = TableExportFormat.CSV,
         download_expiration_time: Annotated[int, download_expiration_time_query] = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         """
@@ -382,7 +384,7 @@ def create_output_routes(
         mc_years: SanitizedStr = "",
         links_ids: SanitizedStr = "",
         columns_names: SanitizedStr = "",
-        export_format: Annotated[TableExportFormat, DEFAULT_EXPORT_FORMAT] = TableExportFormat.CSV,
+        export_format: ExportFormatQuery = TableExportFormat.CSV,
     ) -> str:
         return aggregate_links_raw_data(
             uuid, output_id, query_file, frequency, mc_years, links_ids, columns_names, export_format
@@ -399,7 +401,7 @@ def create_output_routes(
         frequency: MatrixFrequency,
         areas_ids: SanitizedStr = "",
         columns_names: SanitizedStr = "",
-        export_format: Annotated[TableExportFormat, DEFAULT_EXPORT_FORMAT] = TableExportFormat.CSV,
+        export_format: ExportFormatQuery = TableExportFormat.CSV,
         download_expiration_time: Annotated[int, download_expiration_time_query] = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         # noinspection SpellCheckingInspection
@@ -456,7 +458,7 @@ def create_output_routes(
         frequency: MatrixFrequency,
         areas_ids: SanitizedStr = "",
         columns_names: SanitizedStr = "",
-        export_format: Annotated[TableExportFormat, DEFAULT_EXPORT_FORMAT] = TableExportFormat.CSV,
+        export_format: ExportFormatQuery = TableExportFormat.CSV,
     ) -> str:
         return aggregate_areas_raw_data__all(
             uuid, output_id, query_file, frequency, areas_ids, columns_names, export_format
@@ -473,7 +475,7 @@ def create_output_routes(
         frequency: MatrixFrequency,
         links_ids: SanitizedStr = "",
         columns_names: SanitizedStr = "",
-        export_format: Annotated[TableExportFormat, DEFAULT_EXPORT_FORMAT] = TableExportFormat.CSV,
+        export_format: ExportFormatQuery = TableExportFormat.CSV,
         download_expiration_time: Annotated[int, download_expiration_time_query] = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         """
@@ -531,7 +533,7 @@ def create_output_routes(
         frequency: MatrixFrequency,
         links_ids: SanitizedStr = "",
         columns_names: SanitizedStr = "",
-        export_format: Annotated[TableExportFormat, DEFAULT_EXPORT_FORMAT] = TableExportFormat.CSV,
+        export_format: ExportFormatQuery = TableExportFormat.CSV,
     ) -> str:
         return aggregate_links_raw_data__all(
             uuid, output_id, query_file, frequency, links_ids, columns_names, export_format

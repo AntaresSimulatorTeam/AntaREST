@@ -14,7 +14,7 @@ import http
 import io
 import logging
 from pathlib import Path, PurePosixPath
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, TypeAlias
 
 import polars as pl
 from fastapi import APIRouter, Body, File, HTTPException
@@ -70,7 +70,9 @@ CONTENT_TYPES = {
     ".antares": ("text/plain", "utf-8"),
 }
 
-DEFAULT_EXPORT_FORMAT = Query(alias="format", description="Export format", title="Export Format")
+ExportFormatQuery: TypeAlias = Annotated[
+    TableExportFormat, Query(alias="format", description="Export format", title="Export Format")
+]
 PATH_TYPE = Annotated[SanitizedStr, Query(openapi_examples=get_path_examples())]
 
 
@@ -320,7 +322,7 @@ def create_raw_study_routes(
             SanitizedStr,
             Query(alias="path", description="Relative path of the matrix to download", title="Matrix Path"),
         ],
-        export_format: Annotated[TableExportFormat, DEFAULT_EXPORT_FORMAT] = TableExportFormat.CSV,
+        export_format: ExportFormatQuery = TableExportFormat.CSV,
         with_header: Annotated[
             bool, Query(alias="header", description="Whether to include the header or not", title="With Header")
         ] = True,

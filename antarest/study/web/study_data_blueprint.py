@@ -57,7 +57,11 @@ from antarest.study.business.model.config.optimization_config_model import (
     OptimizationPreferences,
     OptimizationPreferencesUpdate,
 )
-from antarest.study.business.model.config.playlist_model import PlaylistUpdate, PlaylistValues, PlaylistValuesUpdate
+from antarest.study.business.model.config.playlist_model import (
+    PlaylistRootModel,
+    PlaylistUpdate,
+    PlaylistUpdateRootModel,
+)
 from antarest.study.business.model.config.timeseries_config_model import (
     TimeSeriesConfiguration,
     TimeSeriesConfigurationUpdate,
@@ -421,12 +425,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/playlist/form",
         summary="Get MC Scenario playlist data for table form",
     )
-    def get_playlist(uuid: UuidStr) -> dict[int, PlaylistValues]:
+    def get_playlist(uuid: UuidStr) -> PlaylistRootModel:
         logger.info(f"Getting MC Scenario playlist data for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
         playlist_as_dict = study_service.playlist_manager.get_playlist(study_interface).years
-        return playlist_as_dict
+        return PlaylistRootModel(playlist_as_dict)
 
     @bp.put(
         path="/studies/{uuid}/config/playlist/form",
@@ -434,17 +438,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def update_playlist(
         uuid: UuidStr,
-        data: Annotated[
-            dict[int, PlaylistValuesUpdate],
-            Body(json_schema_extra={"example": {"1": {"status": False, "weight": 0.4}}}),
-        ],
-    ) -> dict[int, PlaylistValues]:
+        data: PlaylistUpdateRootModel,
+    ) -> PlaylistRootModel:
         logger.info(f"Updating MC Scenario playlist table data for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        playlist_update = PlaylistUpdate.model_validate({"years": data})
+        playlist_update = PlaylistUpdate.model_validate({"years": data.root})
         playlist_as_dict = study_service.playlist_manager.update_playlist(study_interface, playlist_update).years
-        return playlist_as_dict
+        return PlaylistRootModel(playlist_as_dict)
 
     @bp.get(
         path="/studies/{uuid}/config/scenariobuilder",
