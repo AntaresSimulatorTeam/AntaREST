@@ -19,6 +19,7 @@ from typing import Annotated, List, Optional
 from fastapi import Depends, HTTPException, Query
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
+from antarest.core.api_types import SanitizedStr
 from antarest.core.application import AppBuildContext
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import Event, IEventBus
@@ -104,7 +105,7 @@ def configure_websockets(app_ctxt: AppBuildContext, config: Config, event_bus: I
     @app_ctxt.api_root.websocket("/ws")
     async def connect(
         websocket: WebSocket,
-        token: Annotated[str, Query()],
+        token: Annotated[SanitizedStr, Query()],
         jwt_manager: Annotated[AuthJWT, Depends(AuthJWT)],
     ) -> None:
         user: Optional[JWTUser] = None

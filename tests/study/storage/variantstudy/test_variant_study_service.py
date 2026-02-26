@@ -24,7 +24,7 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import current_time, sanitize_uuid
+from antarest.core.utils.utils import current_time
 from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import SimpleMatrixService
@@ -302,7 +302,7 @@ class TestVariantStudyService:
                 variant_study = variant_study_service.create_variant_study(raw_study.id, "Variant{}".format(str(index)))
                 variant_list.append(variant_study)
                 # Generate a snapshot for each variant
-                variant_study_service.generate(sanitize_uuid(variant_list[index].id), False, False)
+                variant_study_service.generate(variant_list[index].id, False, False)
 
                 # Modify the `created_at` and `updated_at` attributes in DB.
                 with db():
