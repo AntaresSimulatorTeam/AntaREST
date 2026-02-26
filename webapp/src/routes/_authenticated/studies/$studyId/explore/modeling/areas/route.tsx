@@ -13,7 +13,7 @@
  */
 
 import EmptyView from "@/components/page/EmptyView";
-import ListView from "@/components/page/ListView";
+import RouterListView from "@/components/page/list/RouterListView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
 import { getAreas } from "@/redux/selectors";
@@ -88,14 +88,14 @@ function AreasLayout() {
     <UsePromiseCond
       response={response}
       ifFulfilled={(areas) => (
-        <ListView
+        <RouterListView
           splitId="areas"
           list={areas.map((area) => ({
             id: area.id,
             label: area.name,
             linkOptions: getAreaLinkOptions(area),
           }))}
-          emptyListContent={<EmptyView title="No areas" />}
+          emptyListView={<EmptyView title="No areas" />}
         />
       )}
     />

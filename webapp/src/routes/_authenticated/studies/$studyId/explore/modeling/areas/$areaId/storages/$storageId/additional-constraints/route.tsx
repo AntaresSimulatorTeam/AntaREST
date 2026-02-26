@@ -13,7 +13,7 @@
  */
 
 import EmptyView from "@/components/page/EmptyView";
-import ListView from "@/components/page/ListView";
+import RouterListView from "@/components/page/list/RouterListView";
 import useDialog from "@/hooks/useDialog";
 import { storageQueries } from "@/queries/storages/queries";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
@@ -65,10 +65,10 @@ function AdditionalConstraints() {
   });
 
   return (
-    <ListView
+    <RouterListView
       splitId="storage-additionalConstraints"
       list={list}
-      emptyListContent={<EmptyView title={t("study.bindingConstraints.empty")} />}
+      emptyListView={<EmptyView title={t("study.bindingConstraints.empty")} />}
       onAdd={handleAdd}
     />
   );

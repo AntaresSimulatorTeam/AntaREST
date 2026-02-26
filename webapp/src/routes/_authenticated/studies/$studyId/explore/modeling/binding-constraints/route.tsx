@@ -13,7 +13,7 @@
  */
 
 import EmptyView from "@/components/page/EmptyView";
-import ListView from "@/components/page/ListView";
+import RouterListView from "@/components/page/list/RouterListView";
 import useDialog from "@/hooks/useDialog";
 import { bindingConstraintQueries } from "@/queries/bindingConstraints/queries";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -54,10 +54,10 @@ function BindingConstraintsLayout() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <ListView
+    <RouterListView
       splitId="binding-constraints"
       list={list}
-      emptyListContent={<EmptyView title={t("study.bindingConstraints.empty")} />}
+      emptyListView={<EmptyView title={t("study.bindingConstraints.empty")} />}
       onAdd={handleAdd}
     />
   );

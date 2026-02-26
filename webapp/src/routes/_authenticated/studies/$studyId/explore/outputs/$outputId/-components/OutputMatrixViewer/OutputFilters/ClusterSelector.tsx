@@ -17,7 +17,7 @@ import type { VariablesListDTO } from "@/services/api/studies/outputs/variableVi
 import { Autocomplete } from "@mui/material";
 import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { getClusters, getFirstClusterId, type ClusterOption, type DataType } from "../../-utils";
+import { getClusters, getFirstClusterId, type ClusterOption, type DataType } from "../../../-utils";
 
 interface ClusterSelectorProps {
   variablesMetadata: VariablesListDTO | null;
@@ -39,7 +39,7 @@ function ClusterSelector({
   const { t } = useTranslation();
 
   const clusterOptions = useMemo(() => {
-    if (!variablesMetadata || !selectedItemId) {
+    if (!variablesMetadata) {
       return [];
     }
 
