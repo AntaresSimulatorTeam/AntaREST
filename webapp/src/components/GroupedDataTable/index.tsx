@@ -92,8 +92,6 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
   const pendingRows = useRef<Array<TRow<TGroups[number]>>>([]);
   const { createOps, deleteOps, totalOps } = useOperationInProgressCount();
 
-  useEffect(() => setTableData(data), [data]);
-
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => onDataChange?.(tableData), [tableData]);
 
