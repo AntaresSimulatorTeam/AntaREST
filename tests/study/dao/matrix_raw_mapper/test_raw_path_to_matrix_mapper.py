@@ -208,17 +208,17 @@ def test_nominal_cases(dao_930: DatabaseStudyDao) -> None:
 
 @pytest.mark.parametrize(
     "incorrect_path",
-    [Path("settings/generaldata"), Path("input/thermal/clusters/paris/list"), Path("user/my_file.xlsx")],
+    [Path("settings/generaldata"), Path("input/thermal/clusters/paris/list"), Path("user/my_file.xlsx"), Path('')],
 )
 def test_error_cases(dao_930: DatabaseStudyDao, incorrect_path: Path) -> None:
     mapper = RawPathToMatrixMapper(dao_930)
 
-    # Empty path
-    with pytest.raises(IncorrectPathError, match="Path . is empty"):
-        mapper.get_matrix_from_path(Path(""))
-
     # Incorrect path
-    path_pattern = incorrect_path.as_posix().replace("/", r"[\\/]")
-    pattern = f"The provided path does not point to a valid matrix: '{path_pattern}'"
+    if not incorrect_path.parts:
+        pattern = "Path . is empty"
+    else:
+        path_pattern = incorrect_path.as_posix().replace("/", r"[\\/]")
+        pattern = f"The provided path does not point to a valid matrix: '{path_pattern}'"
+
     with pytest.raises(IncorrectPathError, match=pattern):
         mapper.get_matrix_from_path(incorrect_path)
