@@ -25,12 +25,12 @@ def to_kebab_case(string: str) -> str:
     return string.replace("_", "-")
 
 
-def sanitize_for_log(string: str, error_message: str) -> str:
+def sanitize_for_log(string: str, error_message: str = "string must not contain newline characters.") -> str:
     """
     Raises if the string contains newline characters, and should therefore not be logged, in particular.
 
     See sonar issue python:5145
     """
-    if not string or re.match(r"[\r\n]", string):
+    if re.match(r"[\r\n]", string):
         raise ValueError(error_message)
     return string
