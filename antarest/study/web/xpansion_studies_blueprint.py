@@ -133,7 +133,9 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         "/studies/{uuid}/extensions/xpansion/resources/{resource_type}",
         summary="Add Xpansion resource file",
     )
-    def add_resource(uuid: UuidStr, resource_type: XpansionResourceFileType, file: Annotated[UploadFile, File()]) -> None:
+    def add_resource(
+        uuid: UuidStr, resource_type: XpansionResourceFileType, file: Annotated[UploadFile, File()]
+    ) -> None:
         logger.info(f"Add xpansion {resource_type} files in the study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)

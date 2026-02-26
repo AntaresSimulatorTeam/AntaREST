@@ -317,7 +317,8 @@ def create_raw_study_routes(
     def get_matrix(
         uuid: UuidStr,
         matrix_path: Annotated[
-            SanitizedStr, Query(alias="path", description="Relative path of the matrix to download", title="Matrix Path")
+            SanitizedStr,
+            Query(alias="path", description="Relative path of the matrix to download", title="Matrix Path"),
         ],
         export_format: Annotated[TableExportFormat, DEFAULT_EXPORT_FORMAT] = TableExportFormat.CSV,
         with_header: Annotated[

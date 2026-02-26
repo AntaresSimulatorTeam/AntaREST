@@ -180,11 +180,15 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         managed: Annotated[Optional[bool], Query(description="Management status filter.")] = None,
         archived: Annotated[Optional[bool], Query(description="Archive status filter.")] = None,
         variant: Annotated[Optional[bool], Query(description="Variant status filter.")] = None,
-        versions: Annotated[SanitizedStr, Query(description="Comma-separated versions filter.", pattern=QUERY_REGEX)] = "",
+        versions: Annotated[
+            SanitizedStr, Query(description="Comma-separated versions filter.", pattern=QUERY_REGEX)
+        ] = "",
         users: Annotated[SanitizedStr, Query(description="Comma-separated user IDs filter.", pattern=QUERY_REGEX)] = "",
         groups: Annotated[SanitizedStr, Query(description="Comma-separated group IDs filter.")] = "",
         tags: Annotated[SanitizedStr, Query(description="Comma-separated tags filter.")] = "",
-        study_ids: Annotated[SanitizedStr, Query(description="Comma-separated study IDs filter.", alias="studyIds")] = "",
+        study_ids: Annotated[
+            SanitizedStr, Query(description="Comma-separated study IDs filter.", alias="studyIds")
+        ] = "",
         exists: Annotated[Optional[bool], Query(description="Existence on disk filter.")] = None,
         workspace: Annotated[SanitizedStr, Query(description="Workspace filter.")] = "",
         folder: Annotated[SanitizedStr, Query(description="Study folder filter.")] = "",
@@ -363,7 +367,8 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         version: SanitizedStr | None = None,
         groups: SanitizedStr = "",
         directory: Annotated[
-            SanitizedStr, Query(description="Directory path where the study will be created (e.g., 'project/subfolder')")
+            SanitizedStr,
+            Query(description="Directory path where the study will be created (e.g., 'project/subfolder')"),
         ] = "",
         storage_mode: StorageMode = StorageMode.FILESYSTEM,
     ) -> str:
