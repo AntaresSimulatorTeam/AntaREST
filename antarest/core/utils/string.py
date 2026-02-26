@@ -9,7 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import re
+
+from pydantic import validate_call
+
+from antarest.core.api_types import SanitizedStr
 
 
 def to_pascal_case(value: str) -> str:
@@ -25,12 +28,11 @@ def to_kebab_case(string: str) -> str:
     return string.replace("_", "-")
 
 
-def check_sanitized(string: str) -> str:
+@validate_call
+def check_sanitized(string: SanitizedStr) -> SanitizedStr:
     """
     Raises if the string contains newline characters, and should therefore not be logged, in particular.
 
     See sonar issue python:5145
     """
-    if not re.match(r"^.*$", string):
-        raise ValueError("String must not contain newline characters")
     return string
