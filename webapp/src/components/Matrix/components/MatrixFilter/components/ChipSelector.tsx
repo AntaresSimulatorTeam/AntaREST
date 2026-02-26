@@ -147,4 +147,4 @@ function ChipSelectorComponent<T extends string | number = number>({
 
 export default memo(ChipSelectorComponent) as <T extends string | number = number>(
   props: ChipSelectorProps<T>,
-) => React.ReactElement<any>;
+) => React.ReactElement;

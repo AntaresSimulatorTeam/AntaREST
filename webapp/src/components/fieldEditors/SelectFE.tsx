@@ -351,4 +351,4 @@ export default SelectFEWithRHF as <
 >(
   props: ReactHookFormSupportProps<TFieldValues, TFieldName, TContext> &
     SelectFEProps<OptionValue, Value, EmptyValue>,
-) => React.JSX.Element;
+) => React.ReactElement;

@@ -38,7 +38,7 @@ export function isValidSizes(sizes: unknown): sizes is number[] {
  * @param type - The type property of a React element (string, function, or object)
  * @returns The type identifier string, or undefined if it cannot be determined
  */
-function getTypeId(type: React.ReactElement<any>["type"]): string | undefined {
+function getTypeId(type: React.ReactElement["type"]): string | undefined {
   if (typeof type === "string") {
     return type;
   }
