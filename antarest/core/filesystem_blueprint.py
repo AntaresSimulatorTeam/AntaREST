@@ -27,6 +27,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import Field
 from starlette.responses import PlainTextResponse, StreamingResponse
 
+from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
@@ -375,7 +376,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
     async def list_files(
         fs: FilesystemName,
         mount: MountPointName,
-        path: str = "",
+        path: SanitizedStr = "",
         details: bool = False,
     ) -> Sequence[FileInfoDTO]:
         """
@@ -440,8 +441,8 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
     async def view_file(
         fs: FilesystemName,
         mount: MountPointName,
-        path: str = "",
-        encoding: str = "utf-8",
+        path: SanitizedStr = "",
+        encoding: SanitizedStr = "utf-8",
     ) -> str:
         # noinspection SpellCheckingInspection
         """
@@ -499,7 +500,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
     async def download_file(
         fs: FilesystemName,
         mount: MountPointName,
-        path: str = "",
+        path: SanitizedStr = "",
     ) -> StreamingResponse:
         """
         Download a file from a mount point.

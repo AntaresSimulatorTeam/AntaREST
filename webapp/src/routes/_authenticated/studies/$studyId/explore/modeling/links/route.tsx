@@ -13,7 +13,7 @@
  */
 
 import EmptyView from "@/components/page/EmptyView";
-import ListView from "@/components/page/ListView";
+import RouterListView from "@/components/page/list/RouterListView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
 import { getLinks } from "@/redux/selectors";
@@ -55,7 +55,7 @@ function LinksLayout() {
     <UsePromiseCond
       response={response}
       ifFulfilled={(links) => (
-        <ListView
+        <RouterListView
           splitId="links"
           list={links.map((link) => ({
             id: link.id,
@@ -65,7 +65,7 @@ function LinksLayout() {
               params: { studyId, linkId: link.id },
             }),
           }))}
-          emptyListContent={<EmptyView title={t("study.modeling.links.empty")} />}
+          emptyListView={<EmptyView title={t("study.modeling.links.empty")} />}
         />
       )}
     />

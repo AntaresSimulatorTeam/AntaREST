@@ -13,7 +13,7 @@
  */
 
 import EmptyView from "@/components/page/EmptyView";
-import ListView from "@/components/page/ListView";
+import RouterListView from "@/components/page/list/RouterListView";
 import useDialog from "@/hooks/useDialog";
 import { getNames, sortByName } from "@/services/utils";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
@@ -77,7 +77,7 @@ function TableModeLayout() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <ListView
+    <RouterListView
       splitId="tablemode"
       list={templates.map((tp) => ({
         id: tp.name,
@@ -87,7 +87,7 @@ function TableModeLayout() {
           params: { ...params, tableModeId: tp.name },
         }),
       }))}
-      emptyListContent={<EmptyView title={t("study.tableMode.empty")} icon={TableViewIcon} />}
+      emptyListView={<EmptyView title={t("study.tableMode.empty")} icon={TableViewIcon} />}
       onAdd={handleAdd}
     />
   );
