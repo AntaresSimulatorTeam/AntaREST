@@ -14,12 +14,13 @@ from pathlib import Path
 import polars as pl
 import pytest
 
+from antarest.core.exceptions import IncorrectPathError
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
 from tests.study.dao.conftest import build_real_case_db_study
 
 
-def test_mapper(dao_930: DatabaseStudyDao) -> None:
+def test_nominal_cases(dao_930: DatabaseStudyDao) -> None:
     ##########################
     # Set Up
     ##########################
@@ -204,23 +205,26 @@ def test_mapper(dao_930: DatabaseStudyDao) -> None:
 
     # todo: We're missing BC and Xpansion tests as they are not yet implemented in DB.
 
-    ##########################
-    # Error cases
-    ##########################
 
+def test_error_cases(dao_930: DatabaseStudyDao) -> None:
+    mapper = RawPathToMatrixMapper(dao_930)
     # Empty path
-    with pytest.raises(ValueError, match="Path . is empty"):
+    with pytest.raises(IncorrectPathError, match="Path . is empty"):
         mapper.get_matrix_from_path(Path(""))
 
     # GeneralData
-    with pytest.raises(ValueError, match=r"Path settings[\\/]generaldata does not point towards a matrix."):
+    with pytest.raises(
+        IncorrectPathError, match=r"The provided path does not point to a valid matrix: 'settings[\\/]generaldata'"
+    ):
         mapper.get_matrix_from_path(Path("settings/generaldata"))
 
     # User resource
-    with pytest.raises(ValueError, match=r"Path user[\\/]my_file.xlsx does not point towards a matrix."):
+    with pytest.raises(
+        IncorrectPathError, match=r"The provided path does not point to a valid matrix: 'user[\\/]my_file.xlsx'"
+    ):
         mapper.get_matrix_from_path(Path("user/my_file.xlsx"))
 
     # Thermal.ini file
-    pattern = r"Path input[\\/]thermal[\\/]clusters[\\/]paris[\\/]list does not point towards a matrix."
-    with pytest.raises(ValueError, match=pattern):
-        mapper.get_matrix_from_path(Path(f"input/thermal/clusters/{area_id}/list"))
+    pattern = r"The provided path does not point to a valid matrix: 'input[\\/]thermal[\\/]clusters[\\/]paris[\\/]list'"
+    with pytest.raises(IncorrectPathError, match=pattern):
+        mapper.get_matrix_from_path(Path("input/thermal/clusters/paris/list"))
