@@ -440,14 +440,10 @@ class InStudyFileOutputStorage(IOutputStorage):
         # Analysis on test platform: nothing in output/logs ? why do we have this ?
         log_locations = {
             LogType.STDOUT: [
-                ["output", "logs", f"{job_id}-out.log"],
-                ["output", "logs", f"{output_id}-out.log"],
                 ["output", output_id, "antares-out"],
                 ["output", output_id, "simulation"],
             ],
             LogType.STDERR: [
-                ["output", "logs", f"{job_id}-err.log"],
-                ["output", "logs", f"{output_id}-err.log"],
                 ["output", output_id, "antares-err"],
             ],
         }
