@@ -31,8 +31,8 @@ import type { AppAsyncThunkConfig, AppDispatch, AppThunk } from "../store";
 import { makeActionName } from "../utils";
 import { deleteStudyMap, setStudyMap } from "./studyMaps";
 
-const studySynthesesAdapter = createEntityAdapter<FileStudyTreeConfigDTO>({
-  selectId: (studyData) => studyData.study_id,
+const studySynthesesAdapter = createEntityAdapter({
+  selectId: (studyData: FileStudyTreeConfigDTO) => studyData.study_id,
 });
 
 export interface StudySynthesesState
