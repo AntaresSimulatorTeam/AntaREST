@@ -72,9 +72,7 @@ class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
         return DEFAULT_RULESET_NAME
 
     @staticmethod
-    def _extract_ruleset_data(
-        file_study: FileStudy, ruleset_name: str, scenario_type: ScenarioType
-    ) -> RulesetFileData:
+    def _extract_ruleset_data(file_study: FileStudy, ruleset_name: str, scenario_type: ScenarioType) -> RulesetFileData:
         """
         Extracts from file study only the relevant data for the provided ruleset name and scenario type.
         """
