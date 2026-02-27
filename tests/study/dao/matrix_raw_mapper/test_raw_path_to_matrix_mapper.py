@@ -244,3 +244,6 @@ def test_error_cases(dao_930_shared: DatabaseStudyDao, incorrect_path: Path) -> 
 
     with pytest.raises(IncorrectPathError, match=pattern):
         mapper.get_matrix_from_path(incorrect_path)
+
+    with pytest.raises(IncorrectPathError, match=pattern):
+        mapper.save_matrix_from_path(incorrect_path, "")
