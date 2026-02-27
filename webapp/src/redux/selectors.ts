@@ -215,8 +215,8 @@ export const getGroup = groupsSelectors.selectById;
 export const getStudySynthesesState = (state: AppState): StudySynthesesState =>
   state.studySyntheses;
 
-const studySynthesesSelectors = createEntityAdapter<FileStudyTreeConfigDTO>({
-  selectId: (studyData) => studyData.study_id,
+const studySynthesesSelectors = createEntityAdapter({
+  selectId: (studyData: FileStudyTreeConfigDTO) => studyData.study_id,
 }).getSelectors(getStudySynthesesState);
 
 export const getStudySynthesisById = studySynthesesSelectors.selectEntities;
@@ -386,8 +386,8 @@ export const getStudyOutput = createSelector(
 
 export const getStudyMapsState = (state: AppState): StudyMapsState => state.studyMaps;
 
-const studyMapsSelectors = createEntityAdapter<StudyMap>({
-  selectId: (studyMap) => studyMap.studyId,
+const studyMapsSelectors = createEntityAdapter({
+  selectId: (studyMap: StudyMap) => studyMap.studyId,
 }).getSelectors(getStudyMapsState);
 
 export const getStudyMapsById = studyMapsSelectors.selectEntities;

@@ -47,14 +47,15 @@ function Storages() {
   const { areaId } = Route.useParams();
   const { t } = useTranslation();
 
-  const { data: storages = [], isLoading } = usePromiseWithSnackbarError(
-    () => getStorages(study.id, areaId),
-    {
-      resetDataOnReload: true,
-      errorMessage: t("studies.error.retrieveData"),
-      deps: [study.id, areaId],
-    },
-  );
+  const {
+    data: storages = [],
+    isLoading,
+    status,
+  } = usePromiseWithSnackbarError(() => getStorages(study.id, areaId), {
+    resetDataOnReload: true,
+    errorMessage: t("studies.error.retrieveData"),
+    deps: [study.id, areaId],
+  });
 
   const [totals, setTotals] = useState(getStoragesTotals(storages));
 
@@ -173,6 +174,7 @@ function Storages() {
 
   return (
     <GroupedDataTable
+      key={status}
       isLoading={isLoading}
       data={storages || []}
       columns={columns}

@@ -51,9 +51,11 @@ function Thermals() {
   const { areaId } = Route.useParams();
   const { t } = useTranslation();
 
-  const { data: clustersWithCapacity = [], isLoading } = usePromiseWithSnackbarError<
-    ThermalClusterWithCapacity[]
-  >(
+  const {
+    data: clustersWithCapacity = [],
+    isLoading,
+    status,
+  } = usePromiseWithSnackbarError<ThermalClusterWithCapacity[]>(
     async () => {
       const clusters = await getThermalClusters(study.id, areaId);
       return clusters?.map(addClusterCapacity);
@@ -144,6 +146,7 @@ function Thermals() {
 
   return (
     <GroupedDataTable
+      key={status}
       isLoading={isLoading}
       data={clustersWithCapacity}
       columns={columns}
