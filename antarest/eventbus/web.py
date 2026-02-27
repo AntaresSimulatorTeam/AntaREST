@@ -14,7 +14,7 @@ import dataclasses
 import logging
 from enum import StrEnum
 from http import HTTPStatus
-from typing import List, Optional
+from typing import Annotated, List, Optional
 
 from fastapi import Depends, HTTPException, Query
 from starlette.websockets import WebSocket, WebSocketDisconnect
@@ -105,8 +105,8 @@ def configure_websockets(app_ctxt: AppBuildContext, config: Config, event_bus: I
     @app_ctxt.api_root.websocket("/ws")
     async def connect(
         websocket: WebSocket,
-        token: SanitizedStr = Query(...),
-        jwt_manager: AuthJWT = Depends(),
+        token: Annotated[SanitizedStr, Query()],
+        jwt_manager: Annotated[AuthJWT, Depends(AuthJWT)],
     ) -> None:
         user: Optional[JWTUser] = None
         if not config.security.disabled:

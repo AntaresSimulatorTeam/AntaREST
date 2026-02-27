@@ -12,7 +12,7 @@
 
 import logging
 from datetime import timedelta
-from typing import Optional
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -174,7 +174,7 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
         service.delete_role(user, group)
 
     @bp.post("/bots", summary="Create bot token")
-    def bots_create(create: BotCreateDTO, jwt_manager: AuthJWT = Depends()) -> str:
+    def bots_create(create: BotCreateDTO, jwt_manager: Annotated[AuthJWT, Depends(AuthJWT)]) -> str:
         logger.info(f"Creating new bot '{create.name}'")
         bot = service.save_bot(create)
         groups = []
@@ -246,7 +246,7 @@ def create_login_api(service: LoginService) -> APIRouter:
     @bp.post("/login", summary="Login")
     def login(
         credentials: UserCredentials,
-        jwt_manager: AuthJWT = Depends(),
+        jwt_manager: Annotated[AuthJWT, Depends(AuthJWT)],
     ) -> CredentialsDTO:
         logger.info(f"New login for {credentials.username}")
         user = service.authenticate(credentials.username, credentials.password)
@@ -262,7 +262,7 @@ def create_login_api(service: LoginService) -> APIRouter:
         "/refresh",
         summary="Refresh access token",
     )
-    def refresh(jwt_manager: AuthJWT = Depends()) -> CredentialsDTO:
+    def refresh(jwt_manager: Annotated[AuthJWT, Depends(AuthJWT)]) -> CredentialsDTO:
         jwt_manager.jwt_refresh_token_required()
         identity = from_json(jwt_manager.get_jwt_subject())
         logger.debug(f"Refreshing access token for {identity['id']}")

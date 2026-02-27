@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import asyncio
 import datetime
 import re
 from pathlib import Path
@@ -56,7 +55,7 @@ class TestMountPointDTO:
     def test_from_path__missing_file(self) -> None:
         name = "foo"
         path = Path("/path/to/workspaces/internal_studies")
-        dto = asyncio.run(MountPointDTO.from_path(name, path))
+        dto = MountPointDTO.from_path(name, path)
         assert dto.name == name
         assert dto.path == path
         assert dto.total_bytes == 0
@@ -68,7 +67,7 @@ class TestMountPointDTO:
         mocker.patch("shutil.disk_usage", return_value=(100, 200, 300))
 
         name = "foo"
-        dto = asyncio.run(MountPointDTO.from_path(name, tmp_path))
+        dto = MountPointDTO.from_path(name, tmp_path)
         assert dto.name == name
         assert dto.path == tmp_path
         assert dto.total_bytes == 100
@@ -101,7 +100,7 @@ class TestFileInfoDTO:
 
     def test_from_path__missing_file(self) -> None:
         path = Path("/path/to/workspaces/internal_studies/5a503c20-24a3-4734-9cf8-89565c9db5ec/study.antares")
-        dto = asyncio.run(FileInfoDTO.from_path(path))
+        dto = FileInfoDTO.from_path(path)
         assert dto.path == path
         assert dto.file_type == "unknown"
         assert dto.file_count == 0
@@ -116,7 +115,7 @@ class TestFileInfoDTO:
         before = datetime.datetime.now() - datetime.timedelta(seconds=1)
         path.write_bytes(b"1234567")  # 7 bytes
         after = datetime.datetime.now() + datetime.timedelta(seconds=1)
-        dto = asyncio.run(FileInfoDTO.from_path(path))
+        dto = FileInfoDTO.from_path(path)
         assert dto.path == path
         assert dto.file_type == "file"
         assert dto.file_count == 1
@@ -131,7 +130,7 @@ class TestFileInfoDTO:
         before = datetime.datetime.now() - datetime.timedelta(seconds=1)
         path.mkdir()
         after = datetime.datetime.now() + datetime.timedelta(seconds=1)
-        dto = asyncio.run(FileInfoDTO.from_path(path, details=False))
+        dto = FileInfoDTO.from_path(path, details=False)
         assert dto.path == path
         assert dto.file_type == "directory"
         assert dto.file_count == 1
@@ -148,7 +147,7 @@ class TestFileInfoDTO:
         (path / "bar.txt").write_bytes(b"1234567")
         (path / "baz.txt").write_bytes(b"890")
         after = datetime.datetime.now() + datetime.timedelta(seconds=1)
-        dto = asyncio.run(FileInfoDTO.from_path(path, details=True))
+        dto = FileInfoDTO.from_path(path, details=True)
         assert dto.path == path
         assert dto.file_type == "directory"
         assert dto.file_count == 3
