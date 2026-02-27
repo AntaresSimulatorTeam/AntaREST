@@ -446,7 +446,7 @@ def test_save_matrix_from_path(dao_930: DatabaseStudyDao) -> None:
         Path("input/reserves/area/area"),  # Unexisting folder even if it starts well
         Path("input/misc-gen/area"),  # Missing prefix
         Path("input/folder"),  # Folder does not exist
-        Path("input/bindingconstraints"),  # Folder containing matrices but not a matrix in itself
+        Path("input/bindingconstraints/constraint_suffix"),  # Wrong suffix, should be `lt`, `gt` or `eq`
         Path("input/renewables/series/area/cluster/file"),  # Should end with `series`
         Path("input/renewables/prepro/area/cluster/series"),  # Should start with `series`
         Path("input/thermal/prepro/area/cluster/series"),  # Should end with `data` or `modulation`

@@ -294,20 +294,20 @@ class RawPathToMatrixMapper:
                 ]
             )
 
+    def _get_matcher(self, path: Path) -> tuple[RegexMatcher, re.Match[str]]:
+        for regex_matcher in self._path_matchers:
+            match = regex_matcher.pattern.fullmatch(path.as_posix())
+            if match:
+                return regex_matcher, match
+
+        raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
+
     def get_matrix_from_path(self, path: Path) -> pl.DataFrame:
         # todo: we do not support outputs matrices for the moment
 
-        for regex_matcher in self._path_matchers:
-            match = regex_matcher.pattern.fullmatch(path.as_posix())
-            if match:
-                return regex_matcher.getter(**match.groupdict())
-
-        raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
+        matcher, match = self._get_matcher(path)
+        return matcher.getter(**match.groupdict())
 
     def save_matrix_from_path(self, path: Path, series_id: str) -> None:
-        for regex_matcher in self._path_matchers:
-            match = regex_matcher.pattern.fullmatch(path.as_posix())
-            if match:
-                return regex_matcher.setter(**{**match.groupdict(), "series_id": series_id})
-
-        raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
+        matcher, match = self._get_matcher(path)
+        return matcher.setter(**{**match.groupdict(), "series_id": series_id})
