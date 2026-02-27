@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from pathlib import Path
 
+import numpy as np
 import polars as pl
 import pytest
 
@@ -20,7 +21,7 @@ from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToM
 from tests.study.dao.conftest import build_real_case_db_study
 
 
-def test_nominal_cases(dao_930: DatabaseStudyDao) -> None:
+def test_get_matrix_from_path(dao_930: DatabaseStudyDao) -> None:
     ##########################
     # Set Up
     ##########################
@@ -202,6 +203,228 @@ def test_nominal_cases(dao_930: DatabaseStudyDao) -> None:
     path = Path(f"input/hydro/common/capacity/maxDailyPumpEnergy_{area_id}")
     hydro_max_daily_pump_energy = mapper.get_matrix_from_path(path)
     pl.testing.assert_frame_equal(hydro_max_daily_pump_energy, hydro_max_daily_pump_energy_df, check_dtypes=False)
+
+    # todo: We're missing BC and Xpansion tests as they are not yet implemented in DB.
+
+
+def test_save_matrix_from_path(dao_930: DatabaseStudyDao) -> None:
+    ##########################
+    # Set Up
+    ##########################
+    dao = dao_930
+    result = build_real_case_db_study(dao)
+    area_id, area2 = result.area1, result.area2
+    thermal_id, renewable_id, st_storage_id = result.thermal_id, result.renewable_id, result.sts_id
+    constraint_id = result.sts_constraint_id
+
+    generator = np.random.default_rng(11)
+
+    def _build_random_dataframe() -> tuple[str, pl.DataFrame]:
+        matrix = pl.DataFrame(generator.integers(0, 10, size=(5, 3)), orient="row")
+        matrix_id = dao._matrix_service.create(matrix)
+        return matrix_id, matrix
+
+    ##########################
+    # Nominal cases
+    ##########################
+
+    mapper = RawPathToMatrixMapper(dao)
+
+    path = Path(f"input/load/series/load_{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_load(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/solar/series/solar_{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_solar(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/wind/series/wind_{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_wind(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/misc-gen/miscgen-{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_misc_gen(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/reserves/{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_reserves(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/links/{area_id}/{area2}_parameters")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_link_series(area_id, area2), df, check_dtypes=False)
+
+    path = Path(f"input/links/{area_id}/capacities/{area2}_direct")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_link_direct_capacities(area_id, area2), df, check_dtypes=False)
+
+    path = Path(f"input/links/{area_id}/capacities/{area2}_indirect")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_link_indirect_capacities(area_id, area2), df, check_dtypes=False)
+
+    path = Path(f"input/thermal/prepro/{area_id}/{thermal_id}/data")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_thermal_prepro(area_id, thermal_id), df, check_dtypes=False)
+
+    path = Path(f"input/thermal/prepro/{area_id}/{thermal_id}/modulation")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_thermal_modulation(area_id, thermal_id), df, check_dtypes=False)
+
+    path = Path(f"input/thermal/series/{area_id}/{thermal_id}/series")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_thermal_series(area_id, thermal_id), df, check_dtypes=False)
+
+    path = Path(f"input/thermal/series/{area_id}/{thermal_id}/fuelCost")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_thermal_fuel_cost(area_id, thermal_id), df, check_dtypes=False)
+
+    path = Path(f"input/thermal/series/{area_id}/{thermal_id}/CO2Cost")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_thermal_co2_cost(area_id, thermal_id), df, check_dtypes=False)
+
+    path = Path(f"input/renewables/series/{area_id}/{renewable_id}/series")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_renewable_series(area_id, renewable_id), df, check_dtypes=False)
+
+    path = Path(f"input/st-storage/series/{area_id}/{st_storage_id}/pmax_injection")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_st_storage_pmax_injection(area_id, st_storage_id), df, check_dtypes=False)
+
+    path = Path(f"input/st-storage/series/{area_id}/{st_storage_id}/pmax_withdrawal")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_st_storage_pmax_withdrawal(area_id, st_storage_id), df, check_dtypes=False)
+
+    path = Path(f"input/st-storage/series/{area_id}/{st_storage_id}/lower_rule_curve")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_st_storage_lower_rule_curve(area_id, st_storage_id), df, check_dtypes=False)
+
+    path = Path(f"input/st-storage/series/{area_id}/{st_storage_id}/upper_rule_curve")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_st_storage_upper_rule_curve(area_id, st_storage_id), df, check_dtypes=False)
+
+    path = Path(f"input/st-storage/series/{area_id}/{st_storage_id}/inflows")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_st_storage_inflows(area_id, st_storage_id), df, check_dtypes=False)
+
+    path = Path(f"input/st-storage/series/{area_id}/{st_storage_id}/cost_injection")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_st_storage_cost_injection(area_id, st_storage_id), df, check_dtypes=False)
+
+    path = Path(f"input/st-storage/series/{area_id}/{st_storage_id}/cost_withdrawal")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_st_storage_cost_withdrawal(area_id, st_storage_id), df, check_dtypes=False)
+
+    path = Path(f"input/st-storage/series/{area_id}/{st_storage_id}/cost_level")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_st_storage_cost_level(area_id, st_storage_id), df, check_dtypes=False)
+
+    path = Path(f"input/st-storage/series/{area_id}/{st_storage_id}/cost_variation_injection")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(
+        dao.get_st_storage_cost_variation_injection(area_id, st_storage_id), df, check_dtypes=False
+    )
+
+    path = Path(f"input/st-storage/series/{area_id}/{st_storage_id}/cost_variation_withdrawal")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(
+        dao.get_st_storage_cost_variation_withdrawal(area_id, st_storage_id), df, check_dtypes=False
+    )
+
+    path = Path(f"input/st-storage/constraints/{area_id}/{st_storage_id}/rhs_{constraint_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(
+        dao.get_st_storage_additional_constraint_matrix(area_id, st_storage_id, constraint_id), df, check_dtypes=False
+    )
+
+    path = Path(f"input/hydro/common/capacity/maxpower_{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_maxpower(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/common/capacity/reservoir_{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_reservoir(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/prepro/{area_id}/energy")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_energy(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/series/{area_id}/ror")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_run_of_river(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/series/{area_id}/mod")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_modulation(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/common/capacity/creditmodulations_{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_credit_modulations(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/common/capacity/inflowPattern_{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_inflow_pattern(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/common/capacity/waterValues_{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_water_values(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/series/{area_id}/mingen")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_mingen(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/series/{area_id}/maxHourlyGenPower")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_max_hourly_gen_power(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/series/{area_id}/maxHourlyPumpPower")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_max_hourly_pump_power(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/common/capacity/maxDailyGenEnergy_{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_max_daily_gen_energy(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/common/capacity/maxDailyPumpEnergy_{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_max_daily_pump_energy(area_id), df, check_dtypes=False)
 
     # todo: We're missing BC and Xpansion tests as they are not yet implemented in DB.
 
