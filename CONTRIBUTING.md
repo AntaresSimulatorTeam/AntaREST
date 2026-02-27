@@ -37,17 +37,9 @@ Before contributing, make sure you have the following installed:
    git remote add upstream https://github.com/AntaresSimulatorTeam/AntaREST.git
    ```
 
-4. **Create a virtual environment**:
+4. **Install dependencies**:
    ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-5. **Install dependencies**:
-   ```bash
-   python3 -m pip install --upgrade pip
-   pip install -e .
-   pip install -r requirements-dev.txt
+   uv sync  # Install all dependencies including dev
    ```
 
 6. **Install frontend dependencies**:
