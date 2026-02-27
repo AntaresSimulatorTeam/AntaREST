@@ -1714,15 +1714,14 @@ class StudyService:
         else:
             self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
 
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_DATA_EDITED,
-                    payload=study.to_json_summary(),
-                    permissions=PermissionInfo.from_study(study),
-                )
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DATA_EDITED,
+                payload=study.to_json_summary(),
+                permissions=PermissionInfo.from_study(study),
             )
-            logger.info("data %s on study %s updated by user %s", url, uuid, get_user_id())
-
+        )
+        logger.info("data %s on study %s updated by user %s", url, uuid, get_user_id())
         return cast(JSON, new)
 
     def change_owner(self, study_id: str, owner_id: int) -> None:
