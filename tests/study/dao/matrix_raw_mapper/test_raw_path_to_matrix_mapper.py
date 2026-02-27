@@ -14,9 +14,11 @@ from pathlib import Path
 import numpy as np
 import polars as pl
 import pytest
+from study.dao.conftest import build_dao
 
 from antarest.core.exceptions import IncorrectPathError
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.model import STUDY_VERSION_8_1
 from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
 from tests.study.dao.conftest import build_real_case_db_study
 
@@ -446,7 +448,7 @@ def test_save_matrix_from_path(dao_930: DatabaseStudyDao) -> None:
         Path("input/reserves/area/area"),  # Unexisting folder even if it starts well
         Path("input/misc-gen/area"),  # Missing prefix
         Path("input/folder"),  # Folder does not exist
-        Path("input/bindingconstraints/constraint_suffix"),  # Wrong suffix, should be `lt`, `gt` or `eq`
+        Path("input/bindingconstraints"),  # Folder containing matrices but not a matrix in itself
         Path("input/renewables/series/area/cluster/file"),  # Should end with `series`
         Path("input/renewables/prepro/area/cluster/series"),  # Should start with `series`
         Path("input/thermal/prepro/area/cluster/series"),  # Should end with `data` or `modulation`
@@ -470,3 +472,35 @@ def test_error_cases(dao_930_shared: DatabaseStudyDao, incorrect_path: Path) -> 
 
     with pytest.raises(IncorrectPathError, match=pattern):
         mapper.save_matrix_from_path(incorrect_path, "")
+
+
+def test_version_specifics(dao_930: DatabaseStudyDao) -> None:
+    dao_81 = build_dao(dao_930._db_session, dao_930._matrix_service, STUDY_VERSION_8_1)
+    mapper_81 = RawPathToMatrixMapper(dao_81)
+    mapper_93 = RawPathToMatrixMapper(dao_930)
+
+    ##########################
+    # Links
+    ##########################
+
+    # Prior to v8.2
+    assert mapper_81._get_matcher(Path("input/links/france/uk"))[1].groups() == ("france", "uk")
+    assert mapper_81._get_matcher(Path("input/links/france/uk_parameters"))[1].groups() == ("france", "uk_parameters")
+
+    # After v8.2
+    assert mapper_93._get_matcher(Path("input/links/france/uk_parameters"))[1].groups() == ("france", "uk")
+    with pytest.raises(IncorrectPathError, match="The provided path does not point to a valid matrix"):
+        mapper_93._get_matcher(Path("input/links/france/uk"))  # Missing suffix
+
+    ##########################
+    # Binding constraints
+    ##########################
+
+    # Prior to v8.7
+    assert mapper_81._get_matcher(Path("input/bindingconstraints/bc1"))[1].groups() == ("bc1",)
+    assert mapper_81._get_matcher(Path("input/bindingconstraints/bc1_lt"))[1].groups() == ("bc1_lt",)
+
+    # After v8.7
+    assert mapper_93._get_matcher(Path("input/bindingconstraints/bc1_lt"))[1].groups() == ("bc1",)
+    with pytest.raises(IncorrectPathError, match="The provided path does not point to a valid matrix"):
+        mapper_93._get_matcher(Path("input/bindingconstraints/bc1"))  # Missing suffix
