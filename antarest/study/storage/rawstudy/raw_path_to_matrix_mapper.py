@@ -114,7 +114,7 @@ class RawPathToMatrixMapper:
                 setter=self._dao.save_thermal_fuel_cost,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/thermal/series/(?P<area_id>[^/]+)/(?P<thermal_id>[^/]+)/C02Cost"),
+                pattern=re.compile(r"input/thermal/series/(?P<area_id>[^/]+)/(?P<thermal_id>[^/]+)/CO2Cost"),
                 getter=self._dao.get_thermal_co2_cost,
                 setter=self._dao.save_thermal_co2_cost,
             ),

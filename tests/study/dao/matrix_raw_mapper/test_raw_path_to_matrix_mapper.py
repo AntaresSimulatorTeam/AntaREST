@@ -111,7 +111,7 @@ def test_nominal_cases(dao_930: DatabaseStudyDao) -> None:
     thermal_fuel_cost = mapper.get_matrix_from_path(Path(f"input/thermal/series/{area_id}/{thermal_id}/fuelCost"))
     pl.testing.assert_frame_equal(thermal_fuel_cost, thermal_fuel_cost_df, check_dtypes=False)
 
-    thermal_co2_cost = mapper.get_matrix_from_path(Path(f"input/thermal/series/{area_id}/{thermal_id}/C02Cost"))
+    thermal_co2_cost = mapper.get_matrix_from_path(Path(f"input/thermal/series/{area_id}/{thermal_id}/CO2Cost"))
     pl.testing.assert_frame_equal(thermal_co2_cost, thermal_co2_cost_df, check_dtypes=False)
 
     renewable_series = mapper.get_matrix_from_path(Path(f"input/renewables/series/{area_id}/{renewable_id}/series"))
@@ -227,7 +227,7 @@ def test_nominal_cases(dao_930: DatabaseStudyDao) -> None:
         Path("input/renewables/series/area/cluster/file"),  # Should end with `series`
         Path("input/renewables/prepro/area/cluster/series"),  # Should start with `series`
         Path("input/thermal/prepro/area/cluster/series"),  # Should end with `data` or `modulation`
-        Path("input/thermal/series/area/cluster/file"),  # Should end with `series`, `fuelCost` or `C02Cost`
+        Path("input/thermal/series/area/cluster/file"),  # Should end with `series`, `fuelCost` or `CO2Cost`
         Path("input/links/area1/area2"),  # Should end with `_parameters`
         Path("input/links/area1/capacities/area2"),  # Should end with `_direct` or `_indirect`
         Path("input/st-storage/constraints/area/sts/c1"),  # Should end with the `rsh_` prefix
