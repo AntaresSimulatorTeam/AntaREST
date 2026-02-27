@@ -526,13 +526,11 @@ class LauncherService:
             job_result = self.job_result_repository.get(job_id)
             if not job_result:
                 raise JobNotFound()
-
             study_id = job_result.study_id
             job_owner_id = job_result.owner_id
             job_launch_params = LauncherParametersDTO.from_launcher_params(job_result.launcher_params)
 
             output_true_path = find_single_output_path(output_path)
-            output_suffix = job_launch_params.output_suffix
 
             self._save_solver_stats(job_result, output_true_path)
 
@@ -545,14 +543,15 @@ class LauncherService:
         #       But for internal studies, it does not make sense to zip again here.
         #       It's an implementation detail of file output storage, should go there.
         zip_path: Optional[Path] = None
-        stopwatch = StopWatch()
         if job_launch_params.archive_output:
+            stopwatch = StopWatch()
             logger.info("Re zipping output for transfer")
             zip_path = output_true_path.parent / f"{output_true_path.name}.zip"
             archive_dir(output_true_path, target_archive_path=zip_path, archive_format=ArchiveFormat.ZIP)
             stopwatch.log_elapsed(lambda x: logger.info(f"Zipped output for job {job_id} in {x}s"))
-
-        final_output_path = zip_path or output_true_path
+            final_output_path = zip_path
+        else:
+            final_output_path = output_true_path
         with db():
             try:
                 if job_owner_id:
@@ -565,16 +564,17 @@ class LauncherService:
                     return self.output_service.import_output(
                         study_id,
                         final_output_path,
-                        output_name_suffix=output_suffix,
+                        output_name_suffix=job_launch_params.output_suffix,
                         auto_unzip=job_launch_params.auto_unzip,
                     )
             except StudyNotFoundError:
                 return self._import_fallback_output(
                     job_id,
                     final_output_path,
-                    output_suffix,
+                    job_launch_params.output_suffix,
                 )
             finally:
+                # Delete the temporary zip file, which now has been imported
                 if zip_path:
                     os.unlink(zip_path)
 
