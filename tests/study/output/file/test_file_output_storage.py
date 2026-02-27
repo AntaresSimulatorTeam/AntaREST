@@ -330,8 +330,6 @@ def test_get_logs(file_output_storage: InStudyFileOutputStorage, tmp_path: Path)
     possible_log_paths = [
         outputs_path / "20201014-1427eco" / "antares-out.log",
         outputs_path / "20201014-1427eco" / "simulation.log",
-        outputs_path / "logs" / "156-out.log",
-        outputs_path / "logs" / "20201014-1427eco-out.log",
     ]
 
     for log_path in possible_log_paths:

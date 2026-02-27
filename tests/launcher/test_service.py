@@ -697,8 +697,8 @@ class TestLauncherService:
 
         output_service.get_logs.assert_has_calls(
             [
-                call("study_id", "some id", job_id, False),
-                call("study_id", "some id", job_id, True),
+                call("study_id", "some id", job_id, LogType.STDOUT),
+                call("study_id", "some id", job_id, LogType.STDERR),
             ]
         )
 
@@ -779,15 +779,13 @@ class TestLauncherService:
             assert "antares-out.log" in zf.namelist()
             assert "antares-err.log" in zf.namelist()
 
-        launcher_service.output_service.import_output.side_effect = [
-            StudyNotFoundError(""),
-            StudyNotFoundError(""),
-        ]
+        launcher_service.output_service.import_output.side_effect = [StudyNotFoundError("")]
 
         assert (
             launcher_service._import_output(job_id, output_path, SimulationLogs(out=additional_log, err=None)) is None
         )
 
+        launcher_service.output_service.import_output.side_effect = [StudyNotFoundError("")]
         (new_output_path / "info.antares-output").write_text(
             f"[general]\nmode=Economy\nname=foo\ntimestamp={time.time()}"
         )
@@ -795,7 +793,7 @@ class TestLauncherService:
         assert output_name is not None
         assert output_name.endswith("-hello")
         assert launcher_service._get_job_output_fallback_path(job_id).exists()
-        assert (launcher_service._get_job_output_fallback_path(job_id) / output_name / "out.log").exists()
+        assert (launcher_service._get_job_output_fallback_path(job_id) / output_name / "antares-out.log").exists()
 
         launcher_service.job_result_repository.get.reset_mock()
         launcher_service.job_result_repository.get.side_effect = [
@@ -1044,7 +1042,7 @@ class TestLauncherService:
         )
 
         # Ensures the output_service.import_output method was called with the right user
-        launcher_service._import_output("job_id", tmp_path, {})
+        launcher_service._import_output("job_id", tmp_path, SimulationLogs.no_logs())
 
     @with_admin_user
     def test_run_study_with_solver_presets(self) -> None:

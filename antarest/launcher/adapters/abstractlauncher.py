@@ -26,8 +26,20 @@ from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParamete
 
 @dataclass(frozen=True)
 class SimulationLogs:
+    """
+    Paths to the logs of a simulation.
+
+    Attributes:
+        out: Path to the standard output log file.
+        err: Path to the standard error log file.
+    """
+
     out: Path | None
     err: Path | None
+
+    @classmethod
+    def no_logs(cls) -> "SimulationLogs":
+        return cls(None, None)
 
 
 class ImportCallBack(Protocol):
