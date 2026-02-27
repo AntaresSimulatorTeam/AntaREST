@@ -11,16 +11,18 @@
 # This file is part of the Antares project.
 from pathlib import Path
 
+import numpy as np
 import polars as pl
 import pytest
 
 from antarest.core.exceptions import IncorrectPathError
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.model import STUDY_VERSION_8_1
 from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
-from tests.study.dao.conftest import build_real_case_db_study
+from tests.study.dao.conftest import build_dao, build_real_case_db_study
 
 
-def test_nominal_cases(dao_930: DatabaseStudyDao) -> None:
+def test_get_matrix_from_path(dao_930: DatabaseStudyDao) -> None:
     ##########################
     # Set Up
     ##########################
@@ -111,7 +113,7 @@ def test_nominal_cases(dao_930: DatabaseStudyDao) -> None:
     thermal_fuel_cost = mapper.get_matrix_from_path(Path(f"input/thermal/series/{area_id}/{thermal_id}/fuelCost"))
     pl.testing.assert_frame_equal(thermal_fuel_cost, thermal_fuel_cost_df, check_dtypes=False)
 
-    thermal_co2_cost = mapper.get_matrix_from_path(Path(f"input/thermal/series/{area_id}/{thermal_id}/C02Cost"))
+    thermal_co2_cost = mapper.get_matrix_from_path(Path(f"input/thermal/series/{area_id}/{thermal_id}/CO2Cost"))
     pl.testing.assert_frame_equal(thermal_co2_cost, thermal_co2_cost_df, check_dtypes=False)
 
     renewable_series = mapper.get_matrix_from_path(Path(f"input/renewables/series/{area_id}/{renewable_id}/series"))
@@ -206,6 +208,228 @@ def test_nominal_cases(dao_930: DatabaseStudyDao) -> None:
     # todo: We're missing BC and Xpansion tests as they are not yet implemented in DB.
 
 
+def test_save_matrix_from_path(dao_930: DatabaseStudyDao) -> None:
+    ##########################
+    # Set Up
+    ##########################
+    dao = dao_930
+    result = build_real_case_db_study(dao)
+    area_id, area2 = result.area1, result.area2
+    thermal_id, renewable_id, st_storage_id = result.thermal_id, result.renewable_id, result.sts_id
+    constraint_id = result.sts_constraint_id
+
+    generator = np.random.default_rng(11)
+
+    def _build_random_dataframe() -> tuple[str, pl.DataFrame]:
+        matrix = pl.DataFrame(generator.integers(0, 10, size=(5, 3)), orient="row")
+        matrix_id = dao._matrix_service.create(matrix)
+        return matrix_id, matrix
+
+    ##########################
+    # Nominal cases
+    ##########################
+
+    mapper = RawPathToMatrixMapper(dao)
+
+    path = Path(f"input/load/series/load_{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_load(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/solar/series/solar_{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_solar(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/wind/series/wind_{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_wind(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/misc-gen/miscgen-{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_misc_gen(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/reserves/{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_reserves(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/links/{area_id}/{area2}_parameters")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_link_series(area_id, area2), df, check_dtypes=False)
+
+    path = Path(f"input/links/{area_id}/capacities/{area2}_direct")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_link_direct_capacities(area_id, area2), df, check_dtypes=False)
+
+    path = Path(f"input/links/{area_id}/capacities/{area2}_indirect")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_link_indirect_capacities(area_id, area2), df, check_dtypes=False)
+
+    path = Path(f"input/thermal/prepro/{area_id}/{thermal_id}/data")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_thermal_prepro(area_id, thermal_id), df, check_dtypes=False)
+
+    path = Path(f"input/thermal/prepro/{area_id}/{thermal_id}/modulation")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_thermal_modulation(area_id, thermal_id), df, check_dtypes=False)
+
+    path = Path(f"input/thermal/series/{area_id}/{thermal_id}/series")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_thermal_series(area_id, thermal_id), df, check_dtypes=False)
+
+    path = Path(f"input/thermal/series/{area_id}/{thermal_id}/fuelCost")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_thermal_fuel_cost(area_id, thermal_id), df, check_dtypes=False)
+
+    path = Path(f"input/thermal/series/{area_id}/{thermal_id}/CO2Cost")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_thermal_co2_cost(area_id, thermal_id), df, check_dtypes=False)
+
+    path = Path(f"input/renewables/series/{area_id}/{renewable_id}/series")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_renewable_series(area_id, renewable_id), df, check_dtypes=False)
+
+    path = Path(f"input/st-storage/series/{area_id}/{st_storage_id}/pmax_injection")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_st_storage_pmax_injection(area_id, st_storage_id), df, check_dtypes=False)
+
+    path = Path(f"input/st-storage/series/{area_id}/{st_storage_id}/pmax_withdrawal")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_st_storage_pmax_withdrawal(area_id, st_storage_id), df, check_dtypes=False)
+
+    path = Path(f"input/st-storage/series/{area_id}/{st_storage_id}/lower_rule_curve")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_st_storage_lower_rule_curve(area_id, st_storage_id), df, check_dtypes=False)
+
+    path = Path(f"input/st-storage/series/{area_id}/{st_storage_id}/upper_rule_curve")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_st_storage_upper_rule_curve(area_id, st_storage_id), df, check_dtypes=False)
+
+    path = Path(f"input/st-storage/series/{area_id}/{st_storage_id}/inflows")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_st_storage_inflows(area_id, st_storage_id), df, check_dtypes=False)
+
+    path = Path(f"input/st-storage/series/{area_id}/{st_storage_id}/cost_injection")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_st_storage_cost_injection(area_id, st_storage_id), df, check_dtypes=False)
+
+    path = Path(f"input/st-storage/series/{area_id}/{st_storage_id}/cost_withdrawal")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_st_storage_cost_withdrawal(area_id, st_storage_id), df, check_dtypes=False)
+
+    path = Path(f"input/st-storage/series/{area_id}/{st_storage_id}/cost_level")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_st_storage_cost_level(area_id, st_storage_id), df, check_dtypes=False)
+
+    path = Path(f"input/st-storage/series/{area_id}/{st_storage_id}/cost_variation_injection")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(
+        dao.get_st_storage_cost_variation_injection(area_id, st_storage_id), df, check_dtypes=False
+    )
+
+    path = Path(f"input/st-storage/series/{area_id}/{st_storage_id}/cost_variation_withdrawal")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(
+        dao.get_st_storage_cost_variation_withdrawal(area_id, st_storage_id), df, check_dtypes=False
+    )
+
+    path = Path(f"input/st-storage/constraints/{area_id}/{st_storage_id}/rhs_{constraint_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(
+        dao.get_st_storage_additional_constraint_matrix(area_id, st_storage_id, constraint_id), df, check_dtypes=False
+    )
+
+    path = Path(f"input/hydro/common/capacity/maxpower_{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_maxpower(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/common/capacity/reservoir_{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_reservoir(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/prepro/{area_id}/energy")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_energy(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/series/{area_id}/ror")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_run_of_river(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/series/{area_id}/mod")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_modulation(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/common/capacity/creditmodulations_{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_credit_modulations(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/common/capacity/inflowPattern_{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_inflow_pattern(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/common/capacity/waterValues_{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_water_values(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/series/{area_id}/mingen")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_mingen(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/series/{area_id}/maxHourlyGenPower")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_max_hourly_gen_power(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/series/{area_id}/maxHourlyPumpPower")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_max_hourly_pump_power(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/common/capacity/maxDailyGenEnergy_{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_max_daily_gen_energy(area_id), df, check_dtypes=False)
+
+    path = Path(f"input/hydro/common/capacity/maxDailyPumpEnergy_{area_id}")
+    series_id, df = _build_random_dataframe()
+    mapper.save_matrix_from_path(path, series_id)
+    pl.testing.assert_frame_equal(dao.get_hydro_max_daily_pump_energy(area_id), df, check_dtypes=False)
+
+    # todo: We're missing BC and Xpansion tests as they are not yet implemented in DB.
+
+
 @pytest.mark.parametrize(
     "incorrect_path",
     [
@@ -223,11 +447,11 @@ def test_nominal_cases(dao_930: DatabaseStudyDao) -> None:
         Path("input/reserves/area/area"),  # Unexisting folder even if it starts well
         Path("input/misc-gen/area"),  # Missing prefix
         Path("input/folder"),  # Folder does not exist
-        Path("input/bindingconstraints/constraint_suffix"),  # Wrong suffix, should be `lt`, `gt` or `eq`
+        Path("input/bindingconstraints"),  # Folder containing matrices but not a matrix in itself
         Path("input/renewables/series/area/cluster/file"),  # Should end with `series`
         Path("input/renewables/prepro/area/cluster/series"),  # Should start with `series`
         Path("input/thermal/prepro/area/cluster/series"),  # Should end with `data` or `modulation`
-        Path("input/thermal/series/area/cluster/file"),  # Should end with `series`, `fuelCost` or `C02Cost`
+        Path("input/thermal/series/area/cluster/file"),  # Should end with `series`, `fuelCost` or `CO2Cost`
         Path("input/links/area1/area2"),  # Should end with `_parameters`
         Path("input/links/area1/capacities/area2"),  # Should end with `_direct` or `_indirect`
         Path("input/st-storage/constraints/area/sts/c1"),  # Should end with the `rsh_` prefix
@@ -239,11 +463,43 @@ def test_nominal_cases(dao_930: DatabaseStudyDao) -> None:
 def test_error_cases(dao_930_shared: DatabaseStudyDao, incorrect_path: Path) -> None:
     mapper = RawPathToMatrixMapper(dao_930_shared)
 
-    if not incorrect_path.parts:
-        pattern = "Path . is empty"
-    else:
-        path_pattern = incorrect_path.as_posix().replace("/", r"[\\/]")
-        pattern = f"The provided path does not point to a valid matrix: '{path_pattern}'"
+    path_pattern = incorrect_path.as_posix().replace("/", r"[\\/]")
+    pattern = f"The provided path does not point to a valid matrix: '{path_pattern}'"
 
     with pytest.raises(IncorrectPathError, match=pattern):
         mapper.get_matrix_from_path(incorrect_path)
+
+    with pytest.raises(IncorrectPathError, match=pattern):
+        mapper.save_matrix_from_path(incorrect_path, "")
+
+
+def test_version_specifics(dao_930: DatabaseStudyDao) -> None:
+    dao_81 = build_dao(dao_930._db_session, dao_930._matrix_service, STUDY_VERSION_8_1)
+    mapper_81 = RawPathToMatrixMapper(dao_81)
+    mapper_93 = RawPathToMatrixMapper(dao_930)
+
+    ##########################
+    # Links
+    ##########################
+
+    # Prior to v8.2
+    assert mapper_81._get_matcher(Path("input/links/france/uk"))[1].groups() == ("france", "uk")
+    assert mapper_81._get_matcher(Path("input/links/france/uk_parameters"))[1].groups() == ("france", "uk_parameters")
+
+    # After v8.2
+    assert mapper_93._get_matcher(Path("input/links/france/uk_parameters"))[1].groups() == ("france", "uk")
+    with pytest.raises(IncorrectPathError, match="The provided path does not point to a valid matrix"):
+        mapper_93._get_matcher(Path("input/links/france/uk"))  # Missing suffix
+
+    ##########################
+    # Binding constraints
+    ##########################
+
+    # Prior to v8.7
+    assert mapper_81._get_matcher(Path("input/bindingconstraints/bc1"))[1].groups() == ("bc1",)
+    assert mapper_81._get_matcher(Path("input/bindingconstraints/bc1_lt"))[1].groups() == ("bc1_lt",)
+
+    # After v8.7
+    assert mapper_93._get_matcher(Path("input/bindingconstraints/bc1_lt"))[1].groups() == ("bc1",)
+    with pytest.raises(IncorrectPathError, match="The provided path does not point to a valid matrix"):
+        mapper_93._get_matcher(Path("input/bindingconstraints/bc1"))  # Missing suffix
