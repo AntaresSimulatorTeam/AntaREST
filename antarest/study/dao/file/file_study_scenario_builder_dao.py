@@ -59,19 +59,6 @@ class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
         return nb_years
 
     @staticmethod
-    def _resolve_ruleset_name(file_study: FileStudy) -> str:
-        """
-        Determines the ruleset section name to read from the scenariobuilder file.
-        Uses "Default Ruleset" if present, otherwise falls back to the first section.
-        """
-        data = file_study.tree.get(["settings", "scenariobuilder"])
-        if DEFAULT_RULESET_NAME in data:
-            return DEFAULT_RULESET_NAME
-        if data:
-            return next(iter(data))
-        return DEFAULT_RULESET_NAME
-
-    @staticmethod
     def _extract_ruleset_data(file_study: FileStudy, ruleset_name: str, scenario_type: ScenarioType) -> RulesetFileData:
         """
         Extracts from file study only the relevant data for the provided ruleset name and scenario type.
@@ -90,8 +77,7 @@ class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
         study_data = self.get_file_study()
         study_version = study_data.config.version
         nb_years = self._get_nb_years()
-        ruleset_name = self._resolve_ruleset_name(study_data)
-        ruleset_config = self._extract_ruleset_data(study_data, ruleset_name, scenario_type)
+        ruleset_config = self._extract_ruleset_data(study_data, DEFAULT_RULESET_NAME, scenario_type)
 
         complete_ruleset = initialize_ruleset_with_version(
             years=[str(y) for y in range(0, nb_years)],
