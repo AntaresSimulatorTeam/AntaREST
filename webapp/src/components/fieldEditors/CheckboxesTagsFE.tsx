@@ -22,6 +22,7 @@ import {
   type AutocompleteProps,
   type AutocompleteValue,
 } from "@mui/material";
+import type React from "react";
 import type { FieldPath, FieldValues } from "react-hook-form";
 
 interface CheckboxesTagsFEProps<
@@ -122,4 +123,4 @@ export default CheckboxesTagsFEWithRHF as <
 >(
   props: ReactHookFormSupportProps<TFieldValues, TFieldName, TContext> &
     CheckboxesTagsFEProps<T, DisableClearable, FreeSolo>,
-) => JSX.Element;
+) => React.ReactElement;

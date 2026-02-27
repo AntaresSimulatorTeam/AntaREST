@@ -35,7 +35,7 @@ interface Props {
   resultColHeaders: string[][];
   filteredData: number[][];
   resultColumns: EnhancedGridColumn[];
-  matrixGridRef: React.RefObject<FilterableMatrixGridHandle>;
+  matrixGridRef: React.RefObject<FilterableMatrixGridHandle | null>;
   dateTime: DateTimes | undefined;
   dateTimeMetadata: MatrixIndex | undefined;
 }
