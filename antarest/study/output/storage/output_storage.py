@@ -100,10 +100,10 @@ class IOutputStorage(ABC):
 
         Args:
             study_id: the study id
-            output: Path of the output or raw data
+            output: Path to the output, either zipped or not.
             output_name: Optional name suffix to append to the output name
 
-        Returns: None
+        Returns: the output identifier inside the study
         """
 
     @abstractmethod

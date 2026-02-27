@@ -13,7 +13,6 @@ import functools
 import logging
 import os
 import shutil
-import zipfile
 from http import HTTPStatus
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -532,32 +531,22 @@ class LauncherService:
             job_owner_id = job_result.owner_id
             job_launch_params = LauncherParametersDTO.from_launcher_params(job_result.launcher_params)
 
-            # this now can be a zip file instead of a directory !
             output_true_path = find_single_output_path(output_path)
-            output_is_zipped = is_zip(output_true_path)
             output_suffix = job_launch_params.output_suffix
 
             self._save_solver_stats(job_result, output_true_path)
 
-            if output_is_zipped:
-                # TODO: not sure the output is at the top inside the zip ?? Yes it is.
-                with zipfile.ZipFile(output_true_path, "a") as zf:
-                    if additional_logs.out:
-                        zf.write(additional_logs.out, "antares-out.log")
-                    if additional_logs.err:
-                        zf.write(additional_logs.err, "antares-err.log")
-            else:
-                if additional_logs.out:
-                    shutil.copy(additional_logs.out, output_true_path / "antares-out.log")
-                if additional_logs.err:
-                    shutil.copy(additional_logs.err, output_true_path / "antares-err.log")
+            if additional_logs.out:
+                shutil.copy(additional_logs.out, output_true_path / "antares-out.log")
+            if additional_logs.err:
+                shutil.copy(additional_logs.err, output_true_path / "antares-err.log")
 
         # TODO: this probably exists for the mounted workspaces to delegate unarchival there.
         #       But for internal studies, it does not make sense to zip again here.
         #       It's an implementation detail of file output storage, should go there.
         zip_path: Optional[Path] = None
         stopwatch = StopWatch()
-        if not output_is_zipped and job_launch_params.archive_output:
+        if job_launch_params.archive_output:
             logger.info("Re zipping output for transfer")
             zip_path = output_true_path.parent / f"{output_true_path.name}.zip"
             archive_dir(output_true_path, target_archive_path=zip_path, archive_format=ArchiveFormat.ZIP)
