@@ -542,7 +542,7 @@ class LauncherService:
         # TODO: this probably exists for the mounted workspaces to delegate unarchival there.
         #       But for internal studies, it does not make sense to zip again here.
         #       It's an implementation detail of file output storage, should go there.
-        zip_path: Optional[Path] = None
+        zip_path: Path | None = None
         if job_launch_params.archive_output:
             stopwatch = StopWatch()
             logger.info("Re zipping output for transfer")
