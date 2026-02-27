@@ -14,7 +14,7 @@ import http
 import io
 import logging
 from pathlib import Path, PurePosixPath
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, TypeAlias
 
 import polars as pl
 from fastapi import APIRouter, Body, File, HTTPException
@@ -70,7 +70,9 @@ CONTENT_TYPES = {
     ".antares": ("text/plain", "utf-8"),
 }
 
-DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
+ExportFormatQuery: TypeAlias = Annotated[
+    TableExportFormat, Query(alias="format", description="Export format", title="Export Format")
+]
 PATH_TYPE = Annotated[SanitizedStr, Query(openapi_examples=get_path_examples())]
 
 
@@ -265,7 +267,7 @@ def create_raw_study_routes(
         status_code=http.HTTPStatus.OK,
         summary="Update study by posting formatted data",
     )
-    def edit_study(uuid: UuidStr, path: PATH_TYPE = "/", data: SUB_JSON = Body(default="")) -> Any:
+    def edit_study(uuid: UuidStr, path: PATH_TYPE = "/", data: Annotated[SUB_JSON, Body()] = "") -> Any:
         """
         Same endpoint as the PUT one.
         Only difference is that it cannot create an empty folder.
@@ -282,8 +284,8 @@ def create_raw_study_routes(
     def replace_study_file(
         uuid: UuidStr,
         path: PATH_TYPE = "/",
-        file: bytes = File(default=None),
-        create_missing: bool = Query(default=True, deprecated=True),  # type: ignore
+        file: Annotated[bytes | None, File()] = None,
+        create_missing: Annotated[bool, Query(deprecated=True)] = True,
         resource_type: ResourceType = ResourceType.FILE,
     ) -> None:
         """
@@ -303,7 +305,7 @@ def create_raw_study_routes(
             raise HTTPException(status_code=422, detail="Argument mismatch: Must give a content to create a file")
 
         path = sanitize_string(path)
-        if resource_type == ResourceType.FOLDER:  # type: ignore
+        if resource_type == ResourceType.FOLDER:
             logger.info(f"Creating folder {path} for study {uuid}")
             study_service.create_user_folder(uuid, path)
         else:
@@ -316,16 +318,17 @@ def create_raw_study_routes(
     )
     def get_matrix(
         uuid: UuidStr,
-        matrix_path: SanitizedStr = Query(  # type: ignore
-            ..., alias="path", description="Relative path of the matrix to download", title="Matrix Path"
-        ),
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,  # type: ignore
-        with_header: bool = Query(  # type: ignore
-            True, alias="header", description="Whether to include the header or not", title="With Header"
-        ),
-        with_index: bool = Query(  # type: ignore
-            True, alias="index", description="Whether to include the index or not", title="With Index"
-        ),
+        matrix_path: Annotated[
+            SanitizedStr,
+            Query(alias="path", description="Relative path of the matrix to download", title="Matrix Path"),
+        ],
+        export_format: ExportFormatQuery = TableExportFormat.CSV,
+        with_header: Annotated[
+            bool, Query(alias="header", description="Whether to include the header or not", title="With Header")
+        ] = True,
+        with_index: Annotated[
+            bool, Query(alias="index", description="Whether to include the index or not", title="With Index")
+        ] = True,
     ) -> FileResponse:
         """
         Download a matrix in a given format.
