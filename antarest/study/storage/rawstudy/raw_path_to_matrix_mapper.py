@@ -44,228 +44,232 @@ class RawPathToMatrixMapper:
         self._xpansion_weights_getter = lambda m: self._dao.get_xpansion_resource(XpansionResourceFileType.WEIGHTS, m)
         self._path_matchers = [
             RegexMatcher(
-                pattern=re.compile(r"user/expansion/capa/(?P<file_name>\w+)"),
+                pattern=re.compile(r"user/expansion/capa/(?P<file_name>[^/]+)"),
                 getter=self._xpansion_capa_getter,  # type: ignore
                 setter=self._dao.save_xpansion_capacity,
             ),
             RegexMatcher(
-                pattern=re.compile(r"user/expansion/weights/(?P<file_name>\w+)"),
+                pattern=re.compile(r"user/expansion/weights/(?P<file_name>[^/]+)"),
                 getter=self._xpansion_weights_getter,  # type: ignore
                 setter=self._dao.save_xpansion_weight,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/load/series/load_(?P<area_id>\w+)"),
+                pattern=re.compile(r"input/load/series/load_(?P<area_id>[^/]+)"),
                 getter=self._dao.get_load,
                 setter=self._dao.save_load,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/wind/series/wind_(?P<area_id>\w+)"),
+                pattern=re.compile(r"input/wind/series/wind_(?P<area_id>[^/]+)"),
                 getter=self._dao.get_wind,
                 setter=self._dao.save_wind,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/solar/series/solar_(?P<area_id>\w+)"),
+                pattern=re.compile(r"input/solar/series/solar_(?P<area_id>[^/]+)"),
                 getter=self._dao.get_solar,
                 setter=self._dao.save_solar,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/misc-gen/miscgen-(?P<area_id>\w+)"),
+                pattern=re.compile(r"input/misc-gen/miscgen-(?P<area_id>[^/]+)"),
                 getter=self._dao.get_misc_gen,
                 setter=self._dao.save_misc_gen,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/reserves/(?P<area_id>\w+)"),
+                pattern=re.compile(r"input/reserves/(?P<area_id>[^/]+)"),
                 getter=self._dao.get_reserves,
                 setter=self._dao.save_reserves,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/links/(?P<area_from>\w+)/(?P<area_to>\w+)_parameters"),
+                pattern=re.compile(r"input/links/(?P<area_from>[^/]+)/(?P<area_to>[^/]+)_parameters"),
                 getter=self._dao.get_link_series,
                 setter=self._dao.save_link_series,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/links/(?P<area_from>\w+)/capacities/(?P<area_to>\w+)_direct"),
+                pattern=re.compile(r"input/links/(?P<area_from>[^/]+)/capacities/(?P<area_to>[^/]+)_direct"),
                 getter=self._dao.get_link_direct_capacities,
                 setter=self._dao.save_link_direct_capacities,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/links/(?P<area_from>\w+)/capacities/(?P<area_to>\w+)_indirect"),
+                pattern=re.compile(r"input/links/(?P<area_from>[^/]+)/capacities/(?P<area_to>[^/]+)_indirect"),
                 getter=self._dao.get_link_indirect_capacities,
                 setter=self._dao.save_link_indirect_capacities,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/thermal/prepro/(?P<area_id>\w+)/(?P<thermal_id>\w+)/data"),
+                pattern=re.compile(r"input/thermal/prepro/(?P<area_id>[^/]+)/(?P<thermal_id>[^/]+)/data"),
                 getter=self._dao.get_thermal_prepro,
                 setter=self._dao.save_thermal_prepro,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/thermal/prepro/(?P<area_id>\w+)/(?P<thermal_id>\w+)/modulation"),
+                pattern=re.compile(r"input/thermal/prepro/(?P<area_id>[^/]+)/(?P<thermal_id>[^/]+)/modulation"),
                 getter=self._dao.get_thermal_modulation,
                 setter=self._dao.save_thermal_modulation,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/thermal/series/(?P<area_id>\w+)/(?P<thermal_id>\w+)/series"),
+                pattern=re.compile(r"input/thermal/series/(?P<area_id>[^/]+)/(?P<thermal_id>[^/]+)/series"),
                 getter=self._dao.get_thermal_series,
                 setter=self._dao.save_thermal_series,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/thermal/series/(?P<area_id>\w+)/(?P<thermal_id>\w+)/fuelCost"),
+                pattern=re.compile(r"input/thermal/series/(?P<area_id>[^/]+)/(?P<thermal_id>[^/]+)/fuelCost"),
                 getter=self._dao.get_thermal_fuel_cost,
                 setter=self._dao.save_thermal_fuel_cost,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/thermal/series/(?P<area_id>\w+)/(?P<thermal_id>\w+)/C02Cost"),
+                pattern=re.compile(r"input/thermal/series/(?P<area_id>[^/]+)/(?P<thermal_id>[^/]+)/C02Cost"),
                 getter=self._dao.get_thermal_co2_cost,
                 setter=self._dao.save_thermal_co2_cost,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/renewables/series/(?P<area_id>\w+)/(?P<renewable_id>\w+)/series"),
+                pattern=re.compile(r"input/renewables/series/(?P<area_id>[^/]+)/(?P<renewable_id>[^/]+)/series"),
                 getter=self._dao.get_renewable_series,
                 setter=self._dao.save_renewable_series,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/st-storage/series/(?P<area_id>\w+)/(?P<storage_id>\w+)/pmax_injection"),
+                pattern=re.compile(r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/pmax_injection"),
                 getter=self._dao.get_st_storage_pmax_injection,
                 setter=self._dao.save_st_storage_pmax_injection,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/st-storage/series/(?P<area_id>\w+)/(?P<storage_id>\w+)/pmax_withdrawal"),
+                pattern=re.compile(r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/pmax_withdrawal"),
                 getter=self._dao.get_st_storage_pmax_withdrawal,
                 setter=self._dao.save_st_storage_pmax_withdrawal,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/st-storage/series/(?P<area_id>\w+)/(?P<storage_id>\w+)/lower_rule_curve"),
+                pattern=re.compile(
+                    r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/lower_rule_curve"
+                ),
                 getter=self._dao.get_st_storage_lower_rule_curve,
                 setter=self._dao.save_st_storage_lower_rule_curve,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/st-storage/series/(?P<area_id>\w+)/(?P<storage_id>\w+)/upper_rule_curve"),
+                pattern=re.compile(
+                    r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/upper_rule_curve"
+                ),
                 getter=self._dao.get_st_storage_upper_rule_curve,
                 setter=self._dao.save_st_storage_upper_rule_curve,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/st-storage/series/(?P<area_id>\w+)/(?P<storage_id>\w+)/inflows"),
+                pattern=re.compile(r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/inflows"),
                 getter=self._dao.get_st_storage_inflows,
                 setter=self._dao.save_st_storage_inflows,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/st-storage/series/(?P<area_id>\w+)/(?P<storage_id>\w+)/cost_injection"),
+                pattern=re.compile(r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/cost_injection"),
                 getter=self._dao.get_st_storage_cost_injection,
                 setter=self._dao.save_st_storage_cost_injection,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/st-storage/series/(?P<area_id>\w+)/(?P<storage_id>\w+)/cost_withdrawal"),
+                pattern=re.compile(r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/cost_withdrawal"),
                 getter=self._dao.get_st_storage_cost_withdrawal,
                 setter=self._dao.save_st_storage_cost_withdrawal,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/st-storage/series/(?P<area_id>\w+)/(?P<storage_id>\w+)/cost_level"),
+                pattern=re.compile(r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/cost_level"),
                 getter=self._dao.get_st_storage_cost_level,
                 setter=self._dao.save_st_storage_cost_level,
             ),
             RegexMatcher(
                 pattern=re.compile(
-                    r"input/st-storage/series/(?P<area_id>\w+)/(?P<storage_id>\w+)/cost_variation_injection"
+                    r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/cost_variation_injection"
                 ),
                 getter=self._dao.get_st_storage_cost_variation_injection,
                 setter=self._dao.save_st_storage_cost_variation_injection,
             ),
             RegexMatcher(
                 pattern=re.compile(
-                    r"input/st-storage/series/(?P<area_id>\w+)/(?P<storage_id>\w+)/cost_variation_withdrawal"
+                    r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/cost_variation_withdrawal"
                 ),
                 getter=self._dao.get_st_storage_cost_variation_withdrawal,
                 setter=self._dao.save_st_storage_cost_variation_withdrawal,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/hydro/common/capacity/maxpower_(?P<area_id>\w+)"),
+                pattern=re.compile(r"input/hydro/common/capacity/maxpower_(?P<area_id>[^/]+)"),
                 getter=self._dao.get_hydro_maxpower,
                 setter=self._dao.save_hydro_maxpower,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/hydro/common/capacity/reservoir_(?P<area_id>\w+)"),
+                pattern=re.compile(r"input/hydro/common/capacity/reservoir_(?P<area_id>[^/]+)"),
                 getter=self._dao.get_hydro_reservoir,
                 setter=self._dao.save_hydro_reservoir,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/hydro/prepro/(?P<area_id>\w+)/energy"),
+                pattern=re.compile(r"input/hydro/prepro/(?P<area_id>[^/]+)/energy"),
                 getter=self._dao.get_hydro_energy,
                 setter=self._dao.save_hydro_energy,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/hydro/series/(?P<area_id>\w+)/ror"),
+                pattern=re.compile(r"input/hydro/series/(?P<area_id>[^/]+)/ror"),
                 getter=self._dao.get_hydro_run_of_river,
                 setter=self._dao.save_hydro_run_of_river,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/hydro/series/(?P<area_id>\w+)/mod"),
+                pattern=re.compile(r"input/hydro/series/(?P<area_id>[^/]+)/mod"),
                 getter=self._dao.get_hydro_modulation,
                 setter=self._dao.save_hydro_modulation,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/hydro/series/(?P<area_id>\w+)/mingen"),
+                pattern=re.compile(r"input/hydro/series/(?P<area_id>[^/]+)/mingen"),
                 getter=self._dao.get_hydro_mingen,
                 setter=self._dao.save_hydro_mingen,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/hydro/series/(?P<area_id>\w+)/maxHourlyGenPower"),
+                pattern=re.compile(r"input/hydro/series/(?P<area_id>[^/]+)/maxHourlyGenPower"),
                 getter=self._dao.get_hydro_max_hourly_gen_power,
                 setter=self._dao.save_hydro_max_hourly_gen_power,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/hydro/series/(?P<area_id>\w+)/maxHourlyPumpPower"),
+                pattern=re.compile(r"input/hydro/series/(?P<area_id>[^/]+)/maxHourlyPumpPower"),
                 getter=self._dao.get_hydro_max_hourly_pump_power,
                 setter=self._dao.save_hydro_max_hourly_pump_power,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/hydro/common/capacity/creditmodulations_(?P<area_id>\w+)"),
+                pattern=re.compile(r"input/hydro/common/capacity/creditmodulations_(?P<area_id>[^/]+)"),
                 getter=self._dao.get_hydro_credit_modulations,
                 setter=self._dao.save_hydro_credit_modulations,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/hydro/common/capacity/inflowPattern_(?P<area_id>\w+)"),
+                pattern=re.compile(r"input/hydro/common/capacity/inflowPattern_(?P<area_id>[^/]+)"),
                 getter=self._dao.get_hydro_inflow_pattern,
                 setter=self._dao.save_hydro_inflow_pattern,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/hydro/common/capacity/waterValues_(?P<area_id>\w+)"),
+                pattern=re.compile(r"input/hydro/common/capacity/waterValues_(?P<area_id>[^/]+)"),
                 getter=self._dao.get_hydro_water_values,
                 setter=self._dao.save_hydro_water_values,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/hydro/common/capacity/maxDailyGenEnergy_(?P<area_id>\w+)"),
+                pattern=re.compile(r"input/hydro/common/capacity/maxDailyGenEnergy_(?P<area_id>[^/]+)"),
                 getter=self._dao.get_hydro_max_daily_gen_energy,
                 setter=self._dao.save_hydro_max_daily_gen_energy,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/hydro/common/capacity/maxDailyPumpEnergy_(?P<area_id>\w+)"),
+                pattern=re.compile(r"input/hydro/common/capacity/maxDailyPumpEnergy_(?P<area_id>[^/]+)"),
                 getter=self._dao.get_hydro_max_daily_pump_energy,
                 setter=self._dao.save_hydro_max_daily_pump_energy,
             ),
             RegexMatcher(
                 pattern=re.compile(
-                    r"input/st-storage/constraints/(?P<area_id>\w+)/(?P<storage_id>\w+)/rhs_(?P<constraint_id>\w+)"
+                    r"input/st-storage/constraints/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/rhs_(?P<constraint_id>[^/]+)"
                 ),
                 getter=self._dao.get_st_storage_additional_constraint_matrix,
                 setter=self._dao.save_st_storage_constraint_matrix,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/bindingconstraints/(?P<constraint_id>\w+)"),
+                pattern=re.compile(r"input/bindingconstraints/(?P<constraint_id>[^/]+)"),
                 getter=self._dao.get_constraint_values_matrix,
                 setter=self._dao.save_constraint_values_matrix,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/bindingconstraints/(?P<constraint_id>\w+)_lt"),
+                pattern=re.compile(r"input/bindingconstraints/(?P<constraint_id>[^/]+)_lt"),
                 getter=self._dao.get_constraint_less_term_matrix,
                 setter=self._dao.save_constraint_less_term_matrix,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/bindingconstraints/(?P<constraint_id>\w+)_gt"),
+                pattern=re.compile(r"input/bindingconstraints/(?P<constraint_id>[^/]+)_gt"),
                 getter=self._dao.get_constraint_greater_term_matrix,
                 setter=self._dao.save_constraint_greater_term_matrix,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/bindingconstraints/(?P<constraint_id>\w+)_eq"),
+                pattern=re.compile(r"input/bindingconstraints/(?P<constraint_id>[^/]+)_eq"),
                 getter=self._dao.get_constraint_equal_term_matrix,
                 setter=self._dao.save_constraint_equal_term_matrix,
             ),
