@@ -108,7 +108,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
 }: FormProps<TFieldValues, TContext>) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
-  const lastSubmittedData = useRef<TFieldValues>();
+  const lastSubmittedData = useRef<TFieldValues>(undefined);
   const submitSuccessfulCb = useRef(voidFn);
   const mounted = usePromise();
 

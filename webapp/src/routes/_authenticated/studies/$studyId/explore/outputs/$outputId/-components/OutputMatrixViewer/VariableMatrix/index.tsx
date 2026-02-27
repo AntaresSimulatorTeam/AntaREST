@@ -42,7 +42,7 @@ interface VariableMatrixProps {
   isMaterializing: boolean;
   variableViewDataRes: UsePromiseResponse<VariableViewMatrixDTO | null>;
   resultColumns: EnhancedGridColumn[];
-  matrixGridRef: React.RefObject<FilterableMatrixGridHandle>;
+  matrixGridRef: React.RefObject<FilterableMatrixGridHandle | null>;
   dateTime?: DateTimes;
   dateTimeMetadata?: DateTimeMetadataDTO;
 }
