@@ -589,12 +589,10 @@ class StudyService:
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
-        self._matrix_service = command_context.matrix_service
-        StudyDatabaseMatrixUsageProvider(self._matrix_service)
+        matrix_service = command_context.matrix_service
+        StudyDatabaseMatrixUsageProvider(matrix_service)
         self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
-            StorageMode.DATABASE: DatabaseStudyDaoFactory(
-                self._matrix_service, command_context.generator_matrix_constants
-            ),
+            StorageMode.DATABASE: DatabaseStudyDaoFactory(matrix_service, command_context.generator_matrix_constants),
             StorageMode.FILESYSTEM: FileStudyDaoFactory(command_context, raw_study_service.study_factory),
         }
 
