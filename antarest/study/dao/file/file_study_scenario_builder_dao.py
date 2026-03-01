@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from typing import cast
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
@@ -32,11 +32,18 @@ from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder im
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
+if TYPE_CHECKING:
+    from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+
 SCENARIO_BUILDER_PATH = ["settings", "scenariobuilder"]
 NB_YEARS_URL = ["settings", "generaldata", "general", "nbyears"]
 
 
 class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
+    @abstractmethod
+    def get_impl(self) -> "FileStudyTreeDao":
+        pass
+
     @abstractmethod
     def get_file_study(self) -> FileStudy:
         pass
@@ -51,22 +58,17 @@ class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
         return parse_ruleset_from_any(scenario_builder_data, study_data.config.version)
 
     def _get_nb_years(self) -> int:
-        study_data = self.get_file_study()
-        try:
-            nb_years = cast(int, study_data.tree.get(NB_YEARS_URL))
-        except KeyError:
-            nb_years = 1
-        return nb_years
+        return self.get_impl().get_general_config().nb_years
 
     @staticmethod
     def _extract_ruleset_data(file_study: FileStudy, ruleset_name: str, scenario_type: ScenarioType) -> RulesetFileData:
         """
-        Extracts from file study only the relevant data for the provided ruleset name and scenario type.
+        Extracts from the file study only the relevant data for the provided ruleset name and scenario type.
         """
         try:
             suffix = SCENARIO_TYPE_SYMBOLS[scenario_type]
             url = ["settings", "scenariobuilder", ruleset_name, suffix]
-            return cast(RulesetFileData, file_study.tree.get(url))
+            return file_study.tree.get(url)
         except KeyError:
             return {}
 
