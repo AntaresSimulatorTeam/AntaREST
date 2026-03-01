@@ -23,6 +23,7 @@ from typing import Any, BinaryIO, Callable, Dict, Iterable, List, Optional, Sequ
 from uuid import uuid4
 
 import pandas as pd
+import polars as pl
 from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from markupsafe import escape
@@ -181,6 +182,12 @@ logger = logging.getLogger(__name__)
 
 MAX_MISSING_STUDY_TIMEOUT = 2  # days
 MAX_BATCH_DELETE_SIZE = 100
+
+
+def _get_matrix_from_path(study_interface: StudyInterface, matrix_path: Path) -> pl.DataFrame:
+    """We give a ReadOnlyStudyDao instead of a StudyDao, but it does not matter as we only use the getter methods."""
+    mapper = RawPathToMatrixMapper(study_interface.get_study_dao())  # type: ignore
+    return mapper.get_matrix_from_path(matrix_path)
 
 
 def get_disk_usage(path: str | Path) -> int:
@@ -1696,7 +1703,16 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
 
-        self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
+        # We need to handle matrices differently if our study is stored in DB
+        if study.storage_mode == StorageMode.DATABASE:
+            context = self.storage_service.variant_study_service.command_factory.command_context
+            command = ReplaceMatrix(
+                target=url, matrix=new, command_context=context, study_version=StudyVersion.parse(study.version)
+            )
+            self.get_study_interface(study).add_commands([command])
+
+        else:
+            self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
 
         self.event_bus.push(
             Event(
@@ -2416,8 +2432,7 @@ class StudyService:
 
         # We need to handle matrices differently if our study is stored in DB
         if study.storage_mode == StorageMode.DATABASE:
-            mapper = RawPathToMatrixMapper(study_interface.get_study_dao())
-            pandas_df = mapper.get_matrix_from_path(matrix_path).to_pandas()
+            pandas_df = _get_matrix_from_path(study_interface, matrix_path).to_pandas()
 
         else:
             # Checks that the provided path refers to a matrix
@@ -2567,9 +2582,7 @@ class StudyService:
 
         # We need to handle matrices differently if our study is stored in DB
         if study.storage_mode == StorageMode.DATABASE:
-            study_interface = self.get_study_interface(study)
-            mapper = RawPathToMatrixMapper(study_interface.get_study_dao())
-            return mapper.get_matrix_from_path(Path(path))
+            return _get_matrix_from_path(self.get_study_interface(study), Path(path))
 
         else:
             file_study = self.get_file_study(study)
