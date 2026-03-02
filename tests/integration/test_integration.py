@@ -997,10 +997,12 @@ def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, in
     assert res.status_code == 200
     task_id = res.json()
     wait_for(
-        lambda: client.get(
-            f"/v1/tasks/{task_id}",
-        ).json()["status"]
-        == 3
+        lambda: (
+            client.get(
+                f"/v1/tasks/{task_id}",
+            ).json()["status"]
+            == 3
+        )
     )
 
     res = client.post(f"/v1/studies/{internal_study_id}/outputs/{usual_output}/_archive")
@@ -1034,10 +1036,12 @@ def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, in
     assert res.status_code == 200
     task_id = res.json()
     wait_for(
-        lambda: client.get(
-            f"/v1/tasks/{task_id}",
-        ).json()["status"]
-        == 3
+        lambda: (
+            client.get(
+                f"/v1/tasks/{task_id}",
+            ).json()["status"]
+            == 3
+        )
     )
 
     res = client.get(f"/v1/studies/{study_id}")
@@ -1048,10 +1052,12 @@ def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, in
 
     task_id = res.json()
     wait_for(
-        lambda: client.get(
-            f"/v1/tasks/{task_id}",
-        ).json()["status"]
-        == 3,
+        lambda: (
+            client.get(
+                f"/v1/tasks/{task_id}",
+            ).json()["status"]
+            == 3
+        ),
     )
 
     res = client.get(f"/v1/studies/{study_id}")

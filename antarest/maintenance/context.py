@@ -17,7 +17,7 @@ Created once per worker in worker_init and stored in app.conf.maintenance_ctx.
 """
 
 import logging
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
@@ -47,7 +47,7 @@ class MaintenanceContext:
         logger.info("Initializing MaintenanceContext")
 
         engine = init_db_engine(config, auto_upgrade_db=False)
-        DBSessionMiddleware(None, custom_engine=engine, session_args=cast(dict[str, bool], SESSION_ARGS))
+        DBSessionMiddleware(None, custom_engine=engine, session_args=SESSION_ARGS)
         core_services = create_core_services(app_ctxt=None, config=config)
 
         return cls(config, core_services)
