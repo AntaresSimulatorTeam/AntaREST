@@ -27,7 +27,6 @@ from antarest.core.exceptions import IncorrectPathError
 from antarest.core.model import SUB_JSON
 from antarest.core.serde.json import from_json, to_json
 from antarest.core.serde.matrix_export import TableExportFormat, simplify_dataframe
-from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_string
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -73,7 +72,7 @@ CONTENT_TYPES = {
 ExportFormatQuery: TypeAlias = Annotated[
     TableExportFormat, Query(alias="format", description="Export format", title="Export Format")
 ]
-PATH_TYPE = Annotated[SanitizedStr, Query(openapi_examples=get_path_examples())]
+PATH_TYPE = Annotated[SanitizedStr, Query()]
 
 
 class MatrixFormat(EnumIgnoreCase):
