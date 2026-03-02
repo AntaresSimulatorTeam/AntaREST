@@ -21,6 +21,7 @@ from typing_extensions import override
 from antarest.core.exceptions import OutputNotFound
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive
 from antarest.core.utils.utils import StopWatch
+from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.study.model import MatrixFrequency, MatrixIndex, StudySimResultDTO, StudySimSettingsDTO
 from antarest.study.output.filestudy.extract_metadata import extract_metadata
@@ -142,6 +143,7 @@ class V2OutputStorage(IOutputStorage):
         study_id: str,
         output: BinaryIO | Path,
         output_name_suffix: Optional[str] = None,
+        logs: SimulationLogs = SimulationLogs.no_logs(),
     ) -> Optional[str]:
         logger.info(f"Importing output for study {study_id} to internal storage.")
         timer = StopWatch()

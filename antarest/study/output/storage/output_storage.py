@@ -21,6 +21,7 @@ from pydantic import ConfigDict
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
+from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.study.model import MatrixFrequency, MatrixIndex
 from antarest.study.output.output_model import OutputVariablesList
@@ -87,6 +88,7 @@ class IOutputStorage(ABC):
         study_id: str,
         output: BinaryIO | Path,
         output_name_suffix: Optional[str] = None,
+        logs: SimulationLogs = SimulationLogs.no_logs(),
     ) -> Optional[str]:
         """
         Import an outputs to the storage.

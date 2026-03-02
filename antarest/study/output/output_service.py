@@ -40,6 +40,7 @@ from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.files import temp_file_path
 from antarest.core.utils.utils import StopWatch, current_time
+from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -340,6 +341,7 @@ class OutputService:
         output_name_suffix: Optional[str] = None,
         auto_unzip: bool = True,
         storage_type: OutputStorageType | None = None,
+        logs: SimulationLogs = SimulationLogs.no_logs(),
     ) -> Optional[str]:
         """
         Import specific output simulation inside study
@@ -355,7 +357,7 @@ class OutputService:
         logger.info(f"Importing new output for study {uuid}")
         self._studies_repository.assert_permission(uuid, StudyPermissionType.RUN)
 
-        output_id = self._get_storage(storage_type).import_output(uuid, output, output_name_suffix)
+        output_id = self._get_storage(storage_type).import_output(uuid, output, output_name_suffix, logs)
         logger.info("output added to study %s by user %s", uuid, get_user_id())
 
         if output_id and isinstance(output, Path) and output.suffix == ArchiveFormat.ZIP and auto_unzip:

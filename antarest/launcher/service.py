@@ -552,6 +552,7 @@ class LauncherService:
             final_output_path = zip_path
         else:
             final_output_path = output_true_path
+
         with db():
             try:
                 if job_owner_id:

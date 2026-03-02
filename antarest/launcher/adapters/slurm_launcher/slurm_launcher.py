@@ -329,7 +329,7 @@ class SlurmLauncher(AbstractLauncher):
         if log_dir:
             launcher_logs = _get_logs(Path(log_dir))
         else:
-            launcher_logs = SimulationLogs(None, None)
+            launcher_logs = SimulationLogs.no_logs()
 
         # The following callback is actually calling:
         # `antarest.launcher.service.LauncherService._import_output`

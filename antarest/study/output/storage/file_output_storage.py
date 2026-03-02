@@ -11,9 +11,10 @@
 # This file is part of the Antares project.
 import logging
 import shutil
+import zipfile
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import BinaryIO, Callable, Iterator, Optional, Sequence, cast
 from uuid import uuid4
 
@@ -21,7 +22,6 @@ import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import (
-    BadOutputError,
     ChildNotFoundError,
     OutputAlreadyArchived,
     OutputAlreadyExists,
@@ -30,8 +30,9 @@ from antarest.core.exceptions import (
 )
 from antarest.core.interfaces.cache import ICache
 from antarest.core.remote.remote_executor import IRemoteExecutor
-from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unarchive, unzip
+from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, is_zip, unarchive, unzip
 from antarest.core.utils.utils import StopWatch
+from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -131,6 +132,50 @@ def _output_exists(outputs_root: Path, output_id: str) -> bool:
     return output_path.is_dir() or zip_path.is_file()
 
 
+def _import_zip_as_archived(
+    study_id: str, output_zip_path: Path, study_outputs_path: Path, output_name_suffix: str | None, logs: SimulationLogs
+) -> str:
+    """Simply copies the zip to destination study/output/<output_name>.zip, with the right name extracted from output
+    files."""
+    t = StopWatch()
+
+    output_full_name = extract_output_name(output_zip_path, output_name_suffix)
+    final_path = study_outputs_path / f"{output_full_name}.zip"
+    shutil.copyfile(output_zip_path, final_path)
+
+    _add_logs(final_path, logs)
+
+    logger.info(f"Copied output for {study_id} in {t}s")
+    return output_full_name
+
+
+def _import_dir(output_dir: Path, study_outputs_path: Path, output_name_suffix: str | None) -> str:
+    # Make sure that output files are just under that path, no nested directories.
+    output_full_name = extract_output_name(output_dir, output_name_suffix)
+
+    # Moving temporary directory to actual directory
+    output_dir.rename(study_outputs_path / output_full_name)
+    return output_full_name
+
+
+def _copy_file(src: Path, dst_root: Path, dst: PurePosixPath) -> None:
+    """
+    Copies src to dst inside dst_root, dst_root being either a dict or a zip file.
+    """
+    if is_zip(dst_root):
+        with zipfile.ZipFile(dst_root) as zf:
+            zf.write(src, str(dst))
+    else:
+        shutil.copyfile(src, dst_root / dst)
+
+
+def _add_logs(output_dir: Path, logs: SimulationLogs) -> None:
+    if logs.out:
+        _copy_file(logs.out, output_dir, PurePosixPath("antares-out.log"))
+    if logs.err:
+        _copy_file(logs.err, output_dir, PurePosixPath("antares-err.log"))
+
+
 class InStudyFileOutputStorage(IOutputStorage):
     """
     Implementation based on outputs stored in antares-solver file format, inside a study.
@@ -152,6 +197,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         study_id: str,
         output: BinaryIO | Path,
         output_name_suffix: Optional[str] = None,
+        logs: SimulationLogs = SimulationLogs.no_logs(),
     ) -> Optional[str]:
         """
         Starts by creating a temporary output directory inside the output dir, then copies the provided output into it.
@@ -164,54 +210,41 @@ class InStudyFileOutputStorage(IOutputStorage):
         """
         study_outputs = self._outputs_provider.get_outputs(study_id)
 
-        # Initialize to path to temporary output directory ?
-        path_output = study_outputs.outputs_path / f"imported_output_{str(uuid4())}"
+        if isinstance(output, Path) and is_zip(output):
+            output_name = _import_zip_as_archived(
+                study_id, output, study_outputs.outputs_path, output_name_suffix, logs
+            )
+            remove_from_cache(self._cache, study_id)
+            return output_name
 
-        path_output.mkdir(parents=True)
-
-        output_full_name: str
-        is_zipped = False
-        stopwatch = StopWatch()
+        # Output is first written to a temporary directory which is then moved to the actual output path
+        tmp_output_dir = study_outputs.outputs_path / f"imported_output_{str(uuid4())}"
         try:
             if isinstance(output, Path):
-                if output.suffix != ArchiveFormat.ZIP:
-                    shutil.copytree(output, path_output / "imported")
-                elif output.suffix == ArchiveFormat.ZIP:
-                    is_zipped = True
-                    path_output.rmdir()
-                    path_output = Path(str(path_output) + f"{ArchiveFormat.ZIP}")
-                    shutil.copyfile(output, path_output)
+                t = StopWatch()
+                shutil.copytree(output, tmp_output_dir)
+                t.log_elapsed(lambda x: logger.info(f"Copied output for {study_id} in {x}s"))
             else:
-                # in case of stream, we extract it to temporary output directory
-                extract_archive(output, path_output)
+                # in case of stream, it's assumed to be an archive which we extract to the temporary output directory
+                t = StopWatch()
+                extract_archive(output, tmp_output_dir)
+                fix_study_root(tmp_output_dir)
+                t.log_elapsed(lambda x: logger.info(f"Extracted output for {study_id} in {x}s"))
 
-            stopwatch.log_elapsed(lambda elapsed_time: logger.info(f"Copied output for {study_id} in {elapsed_time}s"))
+            # Add log files
+            _add_logs(tmp_output_dir, logs)
 
-            # Does nothing if zipped, else make sure that output files are just under that path, no nested directories.
-            fix_study_root(path_output)
-            output_full_name = extract_output_name(path_output, output_name_suffix)
-            extension = f"{ArchiveFormat.ZIP}" if is_zipped else ""
+            # Moving temporary directory to actual directory
+            output_name = extract_output_name(tmp_output_dir, output_name_suffix)
+            tmp_output_dir.rename(study_outputs.outputs_path / output_name)
 
-            # Moving temporary directory to actual directory /output/<output-name>[.zip]
-            path_output = path_output.rename(Path(path_output.parent, output_full_name + extension))
             remove_from_cache(self._cache, study_id)
 
-            study_data = study_outputs.get_file_study()
-            data = study_data.tree.get(["output", output_full_name], depth=1)
-
-            if data is None:
-                # TODO: what is that output id ??
-                self.delete_output(study_id, "imported_output")
-                raise BadOutputError("The output provided is not conform.")
-
+            return output_name
         except Exception as e:
             logger.error("Failed to import output", exc_info=e)
-            shutil.rmtree(path_output, ignore_errors=True)
-            if is_zipped:
-                Path(str(path_output) + f"{ArchiveFormat.ZIP}").unlink(missing_ok=True)
+            shutil.rmtree(tmp_output_dir, ignore_errors=True)
             raise
-
-        return output_full_name
 
     @override
     def get_output_details(self, study_id: str, output_id: str) -> OutputDetails:
