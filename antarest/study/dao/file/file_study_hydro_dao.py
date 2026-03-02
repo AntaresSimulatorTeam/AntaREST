@@ -98,7 +98,7 @@ class FileStudyHydroDao(HydroDao):
         file_study = self.get_file_study()
         ini_content = file_study.tree.get(get_allocation_path(area_id))
         # allocation format can differ from the number of '[' (i.e. [[allocation]] or [allocation])
-        allocation_data = ini_content.get("[allocation]", ini_content.get("allocation", {}))
+        allocation_data = ini_content.get("[allocation]", ini_content.get("allocation")) or {}
         allocations = []
         for area_name, coefficient in allocation_data.items():
             # Checks the written area exists in the study

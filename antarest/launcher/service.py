@@ -683,10 +683,8 @@ class LauncherService:
 
         if launcher is None:
             raise ValueError(f"Job {job_id} has no launcher")
-        launch_progress_json: Dict[str, float] = self.launchers[launcher].cache.get(id=f"Launch_Progress_{job_id}") or {
-            "progress": 0
-        }
-        return launch_progress_json.get("progress", 0)
+        launch_progress_json = self.launchers[launcher].cache.get(id=f"Launch_Progress_{job_id}") or {"progress": 0.0}
+        return float(launch_progress_json.get("progress", 0.0))
 
     def create_solver_presets(self, solver_presets_creation: SolverPresetsCreation) -> SolverPresets:
         """

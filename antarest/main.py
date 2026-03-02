@@ -15,7 +15,7 @@ import copy
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, AsyncGenerator, Dict, Optional, Tuple, cast
+from typing import Any, AsyncGenerator, Optional, Tuple
 
 import pydantic
 import uvicorn
@@ -232,7 +232,7 @@ def fastapi_app(
     # Since Starlette Version 0.24.0, the middlewares are lazily built inside this function
     # But we need to instantiate this middleware as it's needed for the study service.
     # So we manually instantiate it here.
-    DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
+    DBSessionMiddleware(None, custom_engine=engine, session_args=SESSION_ARGS)
 
     # TODO move that elsewhere
     @AuthJWT.load_config  # type: ignore
