@@ -46,16 +46,6 @@ from antarest.study.storage.utils import (
 logger = logging.getLogger(__name__)
 
 
-class _LogScanDuration:
-    """Functional object use to log the scanning duration of a workspace."""
-
-    def __init__(self, workspace_name: str) -> None:
-        self.workspace_name = workspace_name
-
-    def __call__(self, duration: float) -> None:
-        logger.info(f"Workspace {self.workspace_name} scanned in {duration}s")
-
-
 class Watcher(IService):
     """
     Background service that periodically scans workspaces for studies.
@@ -204,7 +194,7 @@ class Watcher(IService):
                     studies = studies + rec_scan_for_studies(
                         path, name, groups, workspace.filter_in, workspace.filter_out, max_depth=max_depth
                     )
-                    stopwatch.log_elapsed(_LogScanDuration(name))
+                    logger.info(f"Workspace {name} scanned in {stopwatch.lap()}s")
         else:
             raise ValueError("Both workspace_name and directory_path must be specified")
         with db():
@@ -212,10 +202,7 @@ class Watcher(IService):
             with FileLock(Watcher.SCAN_LOCK):
                 logger.info(f"FileLock acquired to synchronize for {directory_path or 'all studies'}")
                 self.study_service.sync_studies_on_disk(studies, directory_path, recursive)
-                stopwatch.log_elapsed(
-                    lambda x: logger.info(f"{directory_path or 'All studies'} synchronized in {x}s"),
-                    since_start=True,
-                )
+                logger.info(f"{directory_path or 'All studies'} synchronized in {stopwatch.since_start}s")
 
     def clean_desktop_studies(
         self,
@@ -243,7 +230,4 @@ class Watcher(IService):
             with FileLock(Watcher.SCAN_LOCK):
                 logger.info("FileLock acquired to delete missing studies")
                 self.study_service.delete_missing_studies()
-                stopwatch.log_elapsed(
-                    lambda x: logger.info(f"deleted missing studies in {x}s"),
-                    since_start=True,
-                )
+                logger.info(f"deleted missing studies in {stopwatch.since_start}s")

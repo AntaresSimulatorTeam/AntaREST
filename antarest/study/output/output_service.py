@@ -274,9 +274,7 @@ class OutputService:
             try:
                 stopwatch = StopWatch()
                 self._storage.unarchive_study_output(study_id, output_id)
-                stopwatch.log_elapsed(
-                    lambda x: logger.info(f"Output {output_id} of study {study_id} unarchived in {x}s")
-                )
+                logger.info(f"Output {output_id} of study {study_id} unarchived in {stopwatch}s")
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully unarchived",
@@ -560,7 +558,7 @@ class OutputService:
             try:
                 stopwatch = StopWatch()
                 self._storage.archive_study_output(study_id, output_id)
-                stopwatch.log_elapsed(lambda x: logger.info(f"Output {output_id} of study {study_id} archived in {x}s"))
+                logger.info(f"Output {output_id} of study {study_id} archived in {stopwatch}s")
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully archived",
@@ -684,7 +682,7 @@ class OutputService:
                 )
                 export_df_chunks(self._tmp_dir, file_path, results, export_format)
 
-                stopwatch.log_elapsed(lambda x: logger.info(f"Created aggregated outputs file '{file_path}' in {x}s."))
+                logger.info(f"Created aggregated outputs file '{file_path}' in {stopwatch}s.")
 
                 if on_success:
                     on_success()
