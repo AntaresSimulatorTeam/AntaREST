@@ -68,7 +68,7 @@ jobs:
         with:
           node-version: 22.13.0
       - name: Cache node modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: webapp/node_modules
           key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
@@ -91,7 +91,7 @@ jobs:
         with:
           node-version: 22.13.0
       - name: Restore node modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: webapp/node_modules
           key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
@@ -111,7 +111,7 @@ jobs:
         with:
           node-version: 22.13.0
       - name: Restore node modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: webapp/node_modules
           key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
@@ -131,7 +131,7 @@ jobs:
         with:
           node-version: 22.13.0
       - name: Restore node modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: webapp/node_modules
           key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
