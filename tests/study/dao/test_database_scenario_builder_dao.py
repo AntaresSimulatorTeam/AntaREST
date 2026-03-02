@@ -211,8 +211,3 @@ def test_get_scenario_by_type_does_not_mix_scenario_types(dao: DatabaseStudyDao)
 
     assert dao.get_scenario_by_type(ScenarioType.LOAD) == {"fr": {"0": 1}}
     assert dao.get_scenario_by_type(ScenarioType.WIND) == {"fr": {"0": 99}}
-
-
-def test_save_active_ruleset_name_is_noop(dao: DatabaseStudyDao) -> None:
-    # save_active_ruleset_name is a no-op in single-ruleset model
-    dao.save_active_ruleset_name("anything")
