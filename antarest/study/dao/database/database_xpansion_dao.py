@@ -18,8 +18,8 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Optional
 
 import polars as pl
-from pydantic import TypeAdapter
 from sqlalchemy import CursorResult, delete, insert, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -31,7 +31,6 @@ from antarest.core.exceptions import (
     XpansionConfigurationAlreadyExists,
     XpansionConfigurationDoesNotExist,
 )
-from antarest.core.serde.json import to_json_string
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionAdequacyPattern,
@@ -44,17 +43,16 @@ from antarest.study.business.model.xpansion_model import (
 from antarest.study.dao.api.xpansion_dao import XpansionDao
 from antarest.study.dao.database.common import get_row_representation_as_dict
 from antarest.study.dao.database.models.xpansion import (
-    XPANSION_ADEQUACY_CRITERION_TABLE,
+    XPANSION_ADEQUACY_CRITERION_V2_TABLE,
+    XPANSION_ADEQUACY_PATTERN_TABLE,
     XPANSION_CANDIDATE_TABLE,
+    XPANSION_SENSITIVITY_PROJECTION_TABLE,
     XPANSION_SETTINGS_TABLE,
 )
 from antarest.study.dao.database.sql_utils import upsert_one
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-
-_ADEQUACY_PATTERNS_ADAPTER: TypeAdapter[list[XpansionAdequacyPattern]] = TypeAdapter(list[XpansionAdequacyPattern])
-_PROJECTION_ADAPTER: TypeAdapter[list[str]] = TypeAdapter(list[str])
 
 
 class DatabaseXpansionDao(XpansionDao):
@@ -143,10 +141,15 @@ class DatabaseXpansionDao(XpansionDao):
         data = get_row_representation_as_dict(row)
         del data["study_id"]
 
+        projection_rows = self._db_session.execute(
+            select(XPANSION_SENSITIVITY_PROJECTION_TABLE.c.candidate_name).where(
+                XPANSION_SENSITIVITY_PROJECTION_TABLE.c.study_id == self._study_id
+            )
+        ).fetchall()
         sensitivity_config = XpansionSensitivitySettings(
             epsilon=data.pop("sensitivity_epsilon"),
             capex=data.pop("sensitivity_capex"),
-            projection=_PROJECTION_ADAPTER.validate_json(data.pop("sensitivity_projection")),
+            projection=[r.candidate_name for r in projection_rows],
         )
         # Nullable columns: map NULL back to the empty-string default.
         data["yearly_weights"] = data.get("yearly_weights") or ""
@@ -177,22 +180,32 @@ class DatabaseXpansionDao(XpansionDao):
             "cut_coefficient_tolerance": settings.cut_coefficient_tolerance,
             "sensitivity_epsilon": sensitivity.epsilon,
             "sensitivity_capex": sensitivity.capex,
-            "sensitivity_projection": to_json_string(sensitivity.projection),
         }
         upsert_one(self._db_session, XPANSION_SETTINGS_TABLE, values)
+        # Replace projection rows: delete existing, then insert the new list.
+        self._db_session.execute(
+            delete(XPANSION_SENSITIVITY_PROJECTION_TABLE).where(
+                XPANSION_SENSITIVITY_PROJECTION_TABLE.c.study_id == self._study_id
+            )
+        )
+        if sensitivity.projection:
+            try:
+                self._db_session.execute(
+                    insert(XPANSION_SENSITIVITY_PROJECTION_TABLE),
+                    [{"study_id": self._study_id, "candidate_name": name} for name in sensitivity.projection],
+                )
+            except IntegrityError:
+                self._db_session.rollback()
+                raise CandidateNotFoundError("One or more candidates in the projection do not exist")
         self._db_session.commit()
 
     @override
     def checks_xpansion_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
+        # Projection validity is enforced at save time by the DB FK RESTRICT on
+        # xpansion_sensitivity_projection → xpansion_candidate.
         # File existence checks for additional_constraints and yearly_weights
         # require blob storage access, which is not yet available in the database DAO.
-        # Pydantic validation of the settings object still applies upstream.
-        if settings.sensitivity_config and settings.sensitivity_config.projection is not None:
-            stmt = select(XPANSION_CANDIDATE_TABLE.c.name).where(XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
-            existing_names = {row.name for row in self._db_session.execute(stmt)}
-            invalid = [name for name in settings.sensitivity_config.projection if name not in existing_names]
-            if invalid:
-                raise CandidateNotFoundError(f"Candidates not found in projection: {', '.join(invalid)}")
+        pass
 
     # ------------------------------------------------------------------
     # XpansionDao — candidates
@@ -232,16 +245,20 @@ class DatabaseXpansionDao(XpansionDao):
 
     @override
     def delete_xpansion_candidate(self, candidate_name: str) -> None:
-        result = self._db_session.execute(
-            delete(XPANSION_CANDIDATE_TABLE).where(
-                (XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
-                & (XPANSION_CANDIDATE_TABLE.c.name == candidate_name)
+        try:
+            result = self._db_session.execute(
+                delete(XPANSION_CANDIDATE_TABLE).where(
+                    (XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
+                    & (XPANSION_CANDIDATE_TABLE.c.name == candidate_name)
+                )
             )
-        )
-        assert isinstance(result, CursorResult)
-        if result.rowcount == 0:
-            raise CandidateNotFoundError(f"The candidate '{candidate_name}' does not exist")
-        self._db_session.commit()
+            assert isinstance(result, CursorResult)
+            if result.rowcount == 0:
+                raise CandidateNotFoundError(f"The candidate '{candidate_name}' does not exist")
+            self._db_session.commit()
+        except IntegrityError:
+            self._db_session.rollback()
+            raise XpansionCandidateDeletionError(self._study_id, candidate_name)
 
     @override
     def checks_xpansion_candidate_coherence(self, candidate: XpansionCandidate) -> None:
@@ -251,14 +268,12 @@ class DatabaseXpansionDao(XpansionDao):
 
     @override
     def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
-        stmt = select(XPANSION_SETTINGS_TABLE.c.sensitivity_projection).where(
-            XPANSION_SETTINGS_TABLE.c.study_id == self._study_id
+        stmt = select(XPANSION_SENSITIVITY_PROJECTION_TABLE.c.candidate_name).where(
+            (XPANSION_SENSITIVITY_PROJECTION_TABLE.c.study_id == self._study_id)
+            & (XPANSION_SENSITIVITY_PROJECTION_TABLE.c.candidate_name == candidate_name)
         )
-        row = self._db_session.execute(stmt).fetchone()
-        if row:
-            projection = _PROJECTION_ADAPTER.validate_json(row.sensitivity_projection)
-            if candidate_name in projection:
-                raise XpansionCandidateDeletionError(self._study_id, candidate_name)
+        if self._db_session.execute(stmt).fetchone() is not None:
+            raise XpansionCandidateDeletionError(self._study_id, candidate_name)
 
     # ------------------------------------------------------------------
     # XpansionDao — adequacy criterion
@@ -266,14 +281,18 @@ class DatabaseXpansionDao(XpansionDao):
 
     @override
     def get_xpansion_adequacy_criterion(self) -> XpansionAdequacyCriterion:
-        stmt = select(XPANSION_ADEQUACY_CRITERION_TABLE).where(
-            XPANSION_ADEQUACY_CRITERION_TABLE.c.study_id == self._study_id
-        )
-        row = self._db_session.execute(stmt).fetchone()
+        row = self._db_session.execute(
+            select(XPANSION_ADEQUACY_CRITERION_V2_TABLE).where(
+                XPANSION_ADEQUACY_CRITERION_V2_TABLE.c.study_id == self._study_id
+            )
+        ).fetchone()
         if not row:
             return XpansionAdequacyCriterion()
 
-        patterns = _ADEQUACY_PATTERNS_ADAPTER.validate_json(row.patterns)
+        pattern_rows = self._db_session.execute(
+            select(XPANSION_ADEQUACY_PATTERN_TABLE).where(XPANSION_ADEQUACY_PATTERN_TABLE.c.study_id == self._study_id)
+        ).fetchall()
+        patterns = [XpansionAdequacyPattern(area=r.area, criterion=r.criterion) for r in pattern_rows]
         return XpansionAdequacyCriterion(
             stopping_threshold=row.stopping_threshold,
             criterion_count_threshold=row.criterion_count_threshold,
@@ -287,13 +306,24 @@ class DatabaseXpansionDao(XpansionDao):
             if missing_areas:
                 raise AreaNotFound(*missing_areas)
 
-        values: dict[str, Any] = {
-            "study_id": self._study_id,
-            "stopping_threshold": criterion.stopping_threshold,
-            "criterion_count_threshold": criterion.criterion_count_threshold,
-            "patterns": _ADEQUACY_PATTERNS_ADAPTER.dump_json(criterion.patterns).decode(),
-        }
-        upsert_one(self._db_session, XPANSION_ADEQUACY_CRITERION_TABLE, values)
+        upsert_one(
+            self._db_session,
+            XPANSION_ADEQUACY_CRITERION_V2_TABLE,
+            {
+                "study_id": self._study_id,
+                "stopping_threshold": criterion.stopping_threshold,
+                "criterion_count_threshold": criterion.criterion_count_threshold,
+            },
+        )
+        # Replace all patterns: delete existing rows then insert the new ones.
+        self._db_session.execute(
+            delete(XPANSION_ADEQUACY_PATTERN_TABLE).where(XPANSION_ADEQUACY_PATTERN_TABLE.c.study_id == self._study_id)
+        )
+        if criterion.patterns:
+            self._db_session.execute(
+                insert(XPANSION_ADEQUACY_PATTERN_TABLE),
+                [{"study_id": self._study_id, "area": p.area, "criterion": p.criterion} for p in criterion.patterns],
+            )
         self._db_session.commit()
 
     # ------------------------------------------------------------------
