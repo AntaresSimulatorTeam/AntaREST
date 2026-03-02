@@ -78,7 +78,7 @@ dev = [
     "types-PyYAML~=5.4.1",
 ]
 test = [
-    "checksumdir~=1.2.0",
+    "checksumdir~=1.3.0",
     "pytest~=9.0.2",
     "pytest-rerunfailures~=16.1",
     "pytest-xdist~=3.8.0",
