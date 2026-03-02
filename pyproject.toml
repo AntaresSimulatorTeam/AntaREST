@@ -59,7 +59,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     {include-group = "test"},
-    "celery-types~=0.23.0",
+    "celery-types~=0.24.0",
     "ruff~=0.9.6",
     "mypy~=1.15.0",
     "pre-commit~=4.1.0",
