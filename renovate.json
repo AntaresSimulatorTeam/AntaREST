@@ -2,10 +2,9 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended",
-    ":semanticCommits",
-    "security:openssf-scorecard",
-    "helpers:pinGitHubActionDigests"
+    ":semanticCommits"
   ],
+  "dependencyDashboard": true,
   "labels": ["dependencies"],
   "baseBranches": ["dev"],
   "enabledManagers": ["pep621", "github-actions"],
@@ -18,51 +17,24 @@
   "commitMessageAction": "update",
   "packageRules": [
     {
-      "description": "API layer (fastapi, uvicorn, pydantic, httpx): separate PR",
+      "description": "Group all Python minor/patch updates in one PR",
       "matchManagers": ["pep621"],
-      "matchPackageNames": ["fastapi", "uvicorn", "pydantic", "httpx", "python-multipart"],
       "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "python API layer (minor/patch)"
-    },
-    {
-      "description": "Data layer (sqlalchemy, alembic, pandas, numpy, polars, pyarrow): separate PR",
-      "matchManagers": ["pep621"],
-      "matchPackageNames": ["SQLAlchemy", "alembic", "pandas", "numpy", "numexpr", "polars", "pyarrow", "tables", "openpyxl", "xlsxwriter"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "python data layer (minor/patch)"
-    },
-    {
-      "description": "Infra layer (celery, redis, gunicorn, psycopg2): separate PR",
-      "matchManagers": ["pep621"],
-      "matchPackageNames": ["celery", "redis", "gunicorn", "psycopg2-binary", "prometheus-client"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "python infra layer (minor/patch)"
-    },
-    {
-      "description": "Remaining Python prod minor/patch updates",
-      "matchManagers": ["pep621"],
-      "matchDepTypes": ["dependencies"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "python other dependencies (minor/patch)"
-    },
-    {
-      "description": "Group Python dev dependencies minor/patch updates",
-      "matchManagers": ["pep621"],
-      "matchDepTypes": ["devDependencies"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "python dev dependencies (minor/patch)"
+      "groupName": "python dependencies (minor/patch)",
+      "labels": ["dependencies", "minor or patch"]
     },
     {
       "description": "Major updates: one PR per package, require dashboard approval",
       "matchUpdateTypes": ["major"],
       "dependencyDashboardApproval": true,
-      "minimumReleaseAge": "14 days",
-      "labels": ["dependencies", "breaking"]
+      "minimumReleaseAge": "30 days",
+      "labels": ["dependencies", "major"]
     },
     {
-      "description": "Group GitHub Actions updates",
+      "description": "Group GitHub Actions minor/patch updates",
       "matchManagers": ["github-actions"],
-      "groupName": "github-actions"
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "github-actions (minor/patch)"
     },
     {
       "description": "Security updates bypass schedule and release age",
@@ -79,9 +51,9 @@
       "labels": ["dependencies", "internal"]
     },
     {
-      "description": "Lock file maintenance weekly",
-      "matchUpdateTypes": ["lockFileMaintenance"],
-      "schedule": ["before 9am on monday"]
+      "description": "Pin Python version",
+      "matchPackageNames": ["python"],
+      "enabled": false
     }
   ]
 }
