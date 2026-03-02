@@ -251,7 +251,7 @@ class TestRemoveArea:
                 default_ruleset[f"hgp,{area_id2},0"] = 1
 
             output = UpdateScenarioBuilder(
-                data={"Default Ruleset": parse_ruleset_update(default_ruleset)},
+                data=parse_ruleset_update(default_ruleset),
                 command_context=command_context,
                 study_version=study_version,
             ).apply(study_data=empty_study)

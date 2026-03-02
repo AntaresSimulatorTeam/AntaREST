@@ -138,7 +138,6 @@ def test_sta_mini_study_antares(storage_service: StudyService, url: str, new: SU
             42,
             None,
         ),
-        (f"/v1/studies/{UUID}/raw?path=input/load/prepro/fr/k", [[0]], create_polars_dataframe(data=np.array([[0.0]]))),
         (
             f"/v1/studies/{UUID}/raw?path=input/load/series/load_fr",
             [[i] for i in range(100)],

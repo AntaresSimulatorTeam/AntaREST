@@ -23,6 +23,7 @@ from typing import Any, BinaryIO, Callable, Dict, Iterable, List, Optional, Sequ
 from uuid import uuid4
 
 import pandas as pd
+import polars as pl
 from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from markupsafe import escape
@@ -144,6 +145,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import Matri
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.synthesis import OutputSynthesis
+from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
@@ -180,6 +182,12 @@ logger = logging.getLogger(__name__)
 
 MAX_MISSING_STUDY_TIMEOUT = 2  # days
 MAX_BATCH_DELETE_SIZE = 100
+
+
+def _get_matrix_from_path(study_interface: StudyInterface, matrix_path: Path) -> pl.DataFrame:
+    """We give a ReadOnlyStudyDao instead of a StudyDao, but it does not matter as we only use the getter methods."""
+    mapper = RawPathToMatrixMapper(study_interface.get_study_dao())  # type: ignore
+    return mapper.get_matrix_from_path(matrix_path)
 
 
 def get_disk_usage(path: str | Path) -> int:
@@ -1695,7 +1703,16 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
 
-        self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
+        # We need to handle matrices differently if our study is stored in DB
+        if study.storage_mode == StorageMode.DATABASE:
+            context = self.storage_service.variant_study_service.command_factory.command_context
+            command = ReplaceMatrix(
+                target=url, matrix=new, command_context=context, study_version=StudyVersion.parse(study.version)
+            )
+            self.get_study_interface(study).add_commands([command])
+
+        else:
+            self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
 
         self.event_bus.push(
             Event(
@@ -2413,17 +2430,22 @@ class StudyService:
                 hydro_matrix = self.correlation_manager.get_correlation_matrix(study_interface)
             return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
 
-        # Checks that the provided path refers to a matrix
-        node = self.get_file_study(study).tree.get_node(list(url))
-        if isinstance(node, MatrixNode):
-            pandas_df = node.parse_as_dataframe().to_pandas()
-        elif isinstance(node, OutputSeriesMatrix):
-            pandas_df = node.parse_dataframe()
-            pandas_df.columns = pd.Index(pandas_df.columns)
-        elif isinstance(node, OutputSynthesis):
-            pandas_df = pd.DataFrame(**node.load())
+        # We need to handle matrices differently if our study is stored in DB
+        if study.storage_mode == StorageMode.DATABASE:
+            pandas_df = _get_matrix_from_path(study_interface, matrix_path).to_pandas()
+
         else:
-            raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
+            # Checks that the provided path refers to a matrix
+            node = self.get_file_study(study).tree.get_node(list(url))
+            if isinstance(node, MatrixNode):
+                pandas_df = node.parse_as_dataframe().to_pandas()
+            elif isinstance(node, OutputSeriesMatrix):
+                pandas_df = node.parse_dataframe()
+                pandas_df.columns = pd.Index(pandas_df.columns)
+            elif isinstance(node, OutputSynthesis):
+                pandas_df = pd.DataFrame(**node.load())
+            else:
+                raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 
         if with_index:
             matrix_index = self.get_input_matrix_startdate(study_id, path)
@@ -2557,15 +2579,21 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
-        file_study = self.get_file_study(study)
-        url = [item for item in path.split("/") if item]
-        node, relative_url = file_study.tree.get_node_and_remainder(url)
 
-        # Return a dataframe when possible instead of less memory & computation - efficient python objects
-        if isinstance(node, MatrixNode):
-            return node.parse_as_dataframe()
+        # We need to handle matrices differently if our study is stored in DB
+        if study.storage_mode == StorageMode.DATABASE:
+            return _get_matrix_from_path(self.get_study_interface(study), Path(path))
 
-        return node.get(url=relative_url, depth=depth, formatted=formatted)
+        else:
+            file_study = self.get_file_study(study)
+            url = [item for item in path.split("/") if item]
+            node, relative_url = file_study.tree.get_node_and_remainder(url)
+
+            # Return a dataframe when possible instead of less memory & computation - efficient python objects
+            if isinstance(node, MatrixNode):
+                return node.parse_as_dataframe()
+
+            return node.get(url=relative_url, depth=depth, formatted=formatted)
 
     def get_study_data(self, uuid: str) -> StudyDataDTO:
         study = self.get_study(uuid)

@@ -28,6 +28,7 @@ from typing_extensions import override
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
+from antarest.study.business.model.scenario_builder_model import AnyScenarios, ScenarioType
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionCandidate,
@@ -46,6 +47,7 @@ from antarest.study.dao.database.database_renewable_dao import DatabaseRenewable
 from antarest.study.dao.database.database_scenario_builder_dao import DatabaseScenarioBuilderDao
 from antarest.study.dao.database.database_st_storage_dao import DatabaseStStorageDao
 from antarest.study.dao.database.database_study_settings_dao import DatabaseStudySettingsDao
+from antarest.study.dao.database.database_thematic_trimming_dao import DatabaseThematicTrimmingDao
 from antarest.study.dao.database.database_thermal_dao import DatabaseThermalDao
 from antarest.study.dao.database.database_user_resources import DatabaseUserResourcesDao
 from antarest.study.model import Study
@@ -66,6 +68,7 @@ class DatabaseStudyDao(
     DatabaseRenewableDao,
     DatabaseUserResourcesDao,
     DatabaseStStorageDao,
+    DatabaseThematicTrimmingDao,
     DatabaseScenarioBuilderDao,
 ):
     """
@@ -99,6 +102,7 @@ class DatabaseStudyDao(
         DatabaseRenewableDao.__init__(self, study_id, db_session)
         DatabaseUserResourcesDao.__init__(self, study_id, db_session)
         DatabaseStStorageDao.__init__(self, study_id, db_session)
+        DatabaseThematicTrimmingDao.__init__(self, study_id, db_session)
         DatabaseScenarioBuilderDao.__init__(self, study_id, db_session)
         self._matrix_service = matrix_service
         self._generator_matrix_constants = generator_matrix_constants
@@ -275,12 +279,4 @@ class DatabaseStudyDao(
 
     @override
     def get_xpansion_adequacy_criterion(self) -> XpansionAdequacyCriterion:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_thematic_trimming(self, trimming: ThematicTrimming) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_thematic_trimming(self) -> ThematicTrimming:
         raise NotImplementedError("This method is not yet implemented for database storage mode")

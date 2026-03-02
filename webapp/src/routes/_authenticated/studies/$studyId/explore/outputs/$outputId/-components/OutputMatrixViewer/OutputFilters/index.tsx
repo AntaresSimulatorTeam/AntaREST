@@ -20,7 +20,6 @@ import SearchFE from "@/components/fieldEditors/SearchFE";
 import SelectFE from "@/components/fieldEditors/SelectFE";
 import { useDebouncedField } from "@/hooks/useDebouncedField";
 import type { VariablesListDTO } from "@/services/api/studies/outputs/variableViews/types";
-import type { AreaWithId, LinkElement } from "@/types/types";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import FilterListOffIcon from "@mui/icons-material/FilterListOff";
 import { Box, IconButton, Tooltip } from "@mui/material";
@@ -30,16 +29,17 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   buildVariableViewParams,
+  isAreaOrDistrict,
   matchesSearchTerm,
   type DataType,
   type Frequency,
+  type Item,
   type MonteCarloMode,
-  type OutputItemType,
-} from "../../-utils";
+} from "../../../-utils";
 import ClusterSelector from "./ClusterSelector";
+import DownloadVariableViewButton from "./DownloadVariableViewButton";
 import MonteCarloModeSelector from "./MonteCarloModeSelector";
 import VariableSelector from "./VariableSelector";
-import DownloadVariableViewButton from "./DownloadVariableViewButton";
 
 interface ColumnHeader {
   variable: string;
@@ -83,9 +83,7 @@ interface Props {
   onColHeadersChange: (colHeaders: string[][], indices: number[]) => void;
   onToggleFilter: () => void;
   variablesMetadata: VariablesListDTO | null;
-  itemType: OutputItemType;
-  selectedItemId: string;
-  selectedItem: AreaWithId | LinkElement | undefined;
+  selectedItem: Item;
   selectedVariable: string;
   onVariableSelect: (variable: string) => void;
   selectedClusterId: string;
@@ -93,7 +91,7 @@ interface Props {
   canExportVariableView: boolean;
 }
 
-function ResultFilters({
+function OutputFilters({
   mcMode,
   setMcMode,
   year,
@@ -110,8 +108,6 @@ function ResultFilters({
   onColHeadersChange,
   onToggleFilter,
   variablesMetadata,
-  itemType,
-  selectedItemId,
   selectedItem,
   selectedVariable,
   onVariableSelect,
@@ -270,7 +266,7 @@ function ResultFilters({
   const isVariablePerVariable = mcMode === "variable-per-variable";
   const isClusterDataType = ["details", "details-res", "details-STstorage"].includes(dataType);
   const shouldShowClusterSelector =
-    isVariablePerVariable && isClusterDataType && itemType === "areas";
+    isVariablePerVariable && isClusterDataType && isAreaOrDistrict(selectedItem);
 
   // Data filters (requiring API calls, refetch new result)
   const RESULT_FILTERS = [
@@ -303,7 +299,7 @@ function ResultFilters({
         <ClusterSelector
           variablesMetadata={variablesMetadata}
           dataType={dataType}
-          selectedItemId={selectedItemId}
+          selectedItemId={selectedItem.id}
           selectedClusterId={selectedClusterId}
           onClusterSelect={onClusterSelect}
         />
@@ -315,8 +311,7 @@ function ResultFilters({
         <VariableSelector
           variablesMetadata={variablesMetadata}
           dataType={dataType}
-          itemType={itemType}
-          selectedItemId={selectedItemId}
+          selectedItem={selectedItem}
           selectedVariable={selectedVariable}
           onVariableSelect={onVariableSelect}
           selectedClusterId={selectedClusterId}
@@ -413,10 +408,8 @@ function ResultFilters({
                 studyId={studyId}
                 outputId={outputId}
                 params={buildVariableViewParams(
-                  itemType,
                   dataType,
                   selectedClusterId,
-                  selectedItemId,
                   selectedItem,
                   selectedVariable,
                   frequency,
@@ -433,4 +426,4 @@ function ResultFilters({
   );
 }
 
-export default ResultFilters;
+export default OutputFilters;

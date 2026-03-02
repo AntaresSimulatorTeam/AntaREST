@@ -10,12 +10,10 @@
 #
 # This file is part of the Antares project.
 
-import base64
 import datetime
 import glob
 import http
 import logging
-import re
 import time
 from pathlib import Path
 from typing import Any, Callable, List, Optional, TypeVar
@@ -26,8 +24,6 @@ from typing_extensions import override
 from antarest.core.exceptions import ShouldNotHappenException
 
 logger = logging.getLogger(__name__)
-
-UUID_PATTERN = re.compile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
 
 class DTO:
@@ -53,13 +49,6 @@ class DTO:
     @override
     def __repr__(self) -> str:
         return self.__str__()
-
-
-def sanitize_uuid(uuid: str) -> str:
-    if not UUID_PATTERN.match(uuid):
-        sanitized_id = base64.b64encode(uuid.encode("utf-8")).decode("utf-8")
-        raise HTTPException(status_code=http.HTTPStatus.BAD_REQUEST, detail=f"uuid {sanitized_id} is not a valid UUID")
-    return uuid
 
 
 def validate_study_name(name: str) -> str:
