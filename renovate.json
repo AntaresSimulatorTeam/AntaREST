@@ -52,7 +52,7 @@
     },
     {
       "description": "Pin Python and Node versions",
-      "matchPackageNames": ["python", "node"],
+      "matchDepNames": ["python", "node"],
       "enabled": false
     }
   ]

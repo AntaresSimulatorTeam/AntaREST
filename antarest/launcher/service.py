@@ -549,7 +549,7 @@ class LauncherService:
                 logger.info("Re zipping output for transfer")
                 zip_path = output_true_path.parent / f"{output_true_path.name}.zip"
                 archive_dir(output_true_path, target_archive_path=zip_path, archive_format=ArchiveFormat.ZIP)
-                stopwatch.log_elapsed(lambda x: logger.info(f"Zipped output for job {job_id} in {x}s"))
+                logger.info(f"Zipped output for job {job_id} in {stopwatch}s")
 
             final_output_path = zip_path or output_true_path
             with db():

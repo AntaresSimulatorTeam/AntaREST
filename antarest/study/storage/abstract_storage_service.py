@@ -200,7 +200,5 @@ class AbstractStorageService(IStudyStorage, ABC):
             self.export_study_flat(metadata, tmp_study_path, outputs)
             stopwatch = StopWatch()
             archive_dir(tmp_study_path, target, archive_format=archive_format)
-            stopwatch.log_elapsed(
-                lambda x: logger.info(f"Study {path_study} exported ({target.suffix} format) in {x}s")
-            )
+            logger.info(f"Study {path_study} exported ({target.suffix} format) in {stopwatch}s")
         return target

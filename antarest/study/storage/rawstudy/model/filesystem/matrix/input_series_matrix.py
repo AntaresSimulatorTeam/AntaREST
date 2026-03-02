@@ -90,7 +90,7 @@ class InputSeriesMatrix(MatrixNode):
 
         if matrix.is_empty() and use_default_empty and self.default_empty is not None:
             matrix = create_polars_dataframe(self.default_empty())
-        stopwatch.log_elapsed(lambda x: logger.debug(f"Matrix parsed in {x}s"))
+        logger.debug(f"Matrix parsed in {stopwatch}s")
         return matrix
 
     @override
