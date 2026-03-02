@@ -70,7 +70,7 @@ class StudyConverter:
         self._convert_settings()
 
         # Scenario Builder
-        self._new_dao.save_scenario_builder(self._source_dao.get_rulesets())
+        self._new_dao.save_scenario_builder(self._source_dao.get_ruleset())
 
         # Districts
         for district in self._source_dao.get_districts():
