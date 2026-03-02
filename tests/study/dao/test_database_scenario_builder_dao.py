@@ -14,222 +14,205 @@
 Unit tests for DatabaseScenarioBuilderDAO.
 """
 
-import pytest
-
-from antarest.core.exceptions import RulesetNotFound
+from antarest.study.business.model.link_model import Link
+from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.scenario_builder_model import Ruleset, ScenarioType
+from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
-def test_get_active_ruleset_returns_default_when_empty(dao: DatabaseStudyDao) -> None:
-    assert dao.get_active_ruleset_name() == "Default Ruleset"
+def _setup_areas(dao: DatabaseStudyDao, *area_names: str) -> None:
+    for name in area_names:
+        dao.save_area(name)
 
 
-def test_save_then_get_active_ruleset_name(dao: DatabaseStudyDao) -> None:
-    dao.save_scenario_builder({"my_ruleset": Ruleset()})
-    dao.save_active_ruleset_name("my_ruleset")
-    assert dao.get_active_ruleset_name() == "my_ruleset"
-
-
-def test_save_active_ruleset_overwrites_previous(dao: DatabaseStudyDao) -> None:
-    dao.save_scenario_builder({"first": Ruleset(), "second": Ruleset()})
-    dao.save_active_ruleset_name("first")
-    dao.save_active_ruleset_name("second")
-    assert dao.get_active_ruleset_name() == "second"
-
-
-def test_save_empty_rulesets(dao: DatabaseStudyDao) -> None:
-    dao.save_scenario_builder({})
-    assert dao.get_rulesets() == {}
+def test_save_empty_ruleset(dao: DatabaseStudyDao) -> None:
+    dao.save_scenario_builder(Ruleset())
+    assert dao.get_ruleset() == Ruleset()
 
 
 def test_save_ruleset_with_area_scenarios(dao: DatabaseStudyDao) -> None:
-    rulesets = {
-        "R1": Ruleset(
-            load={"fr": {"0": 1, "1": 2}},
-            wind={"de": {"0": 3}},
-        )
-    }
-    dao.save_scenario_builder(rulesets)
-    result = dao.get_rulesets()
+    ruleset = Ruleset(
+        load={"fr": {"0": 1, "1": 2}},
+        wind={"de": {"0": 3}},
+    )
+    dao.save_scenario_builder(ruleset)
+    result = dao.get_ruleset()
 
-    assert result["R1"].load == {"fr": {"0": 1, "1": 2}}
-    assert result["R1"].wind == {"de": {"0": 3}}
+    assert result.load == {"fr": {"0": 1, "1": 2}}
+    assert result.wind == {"de": {"0": 3}}
+
+
+def test_save_ruleset_with_all_area_types(dao: DatabaseStudyDao) -> None:
+    ruleset = Ruleset(
+        load={"fr": {"0": 1}},
+        hydro={"fr": {"0": 2}},
+        wind={"fr": {"0": 3}},
+        solar={"fr": {"0": 4}},
+        hydro_initial_levels={"fr": {"0": 0.5}},
+        hydro_final_levels={"fr": {"0": 0.8}},
+        hydro_generation_power={"fr": {"0": 5}},
+    )
+    dao.save_scenario_builder(ruleset)
+    result = dao.get_ruleset()
+
+    assert result.load == {"fr": {"0": 1}}
+    assert result.hydro == {"fr": {"0": 2}}
+    assert result.wind == {"fr": {"0": 3}}
+    assert result.solar == {"fr": {"0": 4}}
+    assert result.hydro_initial_levels == {"fr": {"0": 0.5}}
+    assert result.hydro_final_levels == {"fr": {"0": 0.8}}
+    assert result.hydro_generation_power == {"fr": {"0": 5}}
 
 
 def test_save_ruleset_with_link_scenarios(dao: DatabaseStudyDao) -> None:
-    rulesets = {"R1": Ruleset(ntc={"fr - de": {"0": 1, "1": 2}})}
-    dao.save_scenario_builder(rulesets)
-    result = dao.get_rulesets()
+    _setup_areas(dao, "fr", "de")
+    dao.save_link(Link(area1="de", area2="fr"))
+    ruleset = Ruleset(ntc={"de / fr": {"0": 1, "1": 2}})
+    dao.save_scenario_builder(ruleset)
+    result = dao.get_ruleset()
 
-    assert result["R1"].ntc == {"fr - de": {"0": 1, "1": 2}}
+    assert result.ntc == {"de / fr": {"0": 1, "1": 2}}
 
 
 def test_save_ruleset_with_binding_constraints(dao: DatabaseStudyDao) -> None:
-    rulesets = {"R1": Ruleset(binding_constraints={"group1": {"0": 5, "1": 6}})}
-    dao.save_scenario_builder(rulesets)
-    result = dao.get_rulesets()
+    ruleset = Ruleset(binding_constraints={"group1": {"0": 5, "1": 6}})
+    dao.save_scenario_builder(ruleset)
+    result = dao.get_ruleset()
 
-    assert result["R1"].binding_constraints == {"group1": {"0": 5, "1": 6}}
+    assert result.binding_constraints == {"group1": {"0": 5, "1": 6}}
 
 
-def test_save_ruleset_with_area_item_scenarios(dao: DatabaseStudyDao) -> None:
-    rulesets = {
-        "R1": Ruleset(
-            thermal={"fr": {"gas_cluster": {"0": 1, "1": 2}}},
-            renewable={"de": {"wind_farm": {"0": 3}}},
-        )
-    }
-    dao.save_scenario_builder(rulesets)
-    result = dao.get_rulesets()
+def test_save_ruleset_with_thermal_scenarios(dao: DatabaseStudyDao) -> None:
+    _setup_areas(dao, "fr")
+    dao.save_thermal("fr", ThermalCluster(id="gas_cluster", name="Gas Cluster"))
+    ruleset = Ruleset(thermal={"fr": {"gas_cluster": {"0": 1, "1": 2}}})
+    dao.save_scenario_builder(ruleset)
+    result = dao.get_ruleset()
 
-    assert result["R1"].thermal == {"fr": {"gas_cluster": {"0": 1, "1": 2}}}
-    assert result["R1"].renewable == {"de": {"wind_farm": {"0": 3}}}
+    assert result.thermal == {"fr": {"gas_cluster": {"0": 1, "1": 2}}}
+
+
+def test_save_ruleset_with_renewable_scenarios(dao: DatabaseStudyDao) -> None:
+    _setup_areas(dao, "de")
+    dao.save_renewable("de", RenewableCluster(id="wind_farm", name="Wind Farm"))
+    ruleset = Ruleset(renewable={"de": {"wind_farm": {"0": 3}}})
+    dao.save_scenario_builder(ruleset)
+    result = dao.get_ruleset()
+
+    assert result.renewable == {"de": {"wind_farm": {"0": 3}}}
 
 
 def test_save_ruleset_with_storage_inflows(dao: DatabaseStudyDao) -> None:
-    rulesets = {
-        "R1": Ruleset(
-            storage_inflows={"fr": {"battery_1": {"0": 4, "1": 5}}},
-        )
-    }
-    dao.save_scenario_builder(rulesets)
-    result = dao.get_rulesets()
+    _setup_areas(dao, "fr")
+    dao.save_st_storage("fr", STStorage(id="battery_1", name="Battery 1"))
+    ruleset = Ruleset(storage_inflows={"fr": {"battery_1": {"0": 4, "1": 5}}})
+    dao.save_scenario_builder(ruleset)
+    result = dao.get_ruleset()
 
-    assert result["R1"].storage_inflows == {"fr": {"battery_1": {"0": 4, "1": 5}}}
+    assert result.storage_inflows == {"fr": {"battery_1": {"0": 4, "1": 5}}}
 
 
 def test_save_ruleset_with_storage_constraints(dao: DatabaseStudyDao) -> None:
-    rulesets = {"R1": Ruleset(storage_constraints={"fr": {"battery": {"constraint_a": {"0": 10, "1": 20}}}})}
-    dao.save_scenario_builder(rulesets)
-    result = dao.get_rulesets()
+    _setup_areas(dao, "fr")
+    dao.save_st_storage("fr", STStorage(id="battery", name="Battery"))
+    dao.save_st_storage_additional_constraints(
+        "fr",
+        storage_id="battery",
+        constraints=[STStorageAdditionalConstraint(id="constraint_a", name="Constraint A")],
+    )
+    ruleset = Ruleset(storage_constraints={"fr": {"battery": {"constraint_a": {"0": 10, "1": 20}}}})
+    dao.save_scenario_builder(ruleset)
+    result = dao.get_ruleset()
 
-    assert result["R1"].storage_constraints == {"fr": {"battery": {"constraint_a": {"0": 10, "1": 20}}}}
-
-
-def test_save_multiple_rulesets(dao: DatabaseStudyDao) -> None:
-    rulesets = {
-        "winter": Ruleset(load={"fr": {"0": 1}}),
-        "summer": Ruleset(load={"fr": {"0": 99}}),
-    }
-    dao.save_scenario_builder(rulesets)
-    result = dao.get_rulesets()
-
-    assert set(result.keys()) == {"winter", "summer"}
-    assert result["winter"].load == {"fr": {"0": 1}}
-    assert result["summer"].load == {"fr": {"0": 99}}
+    assert result.storage_constraints == {"fr": {"battery": {"constraint_a": {"0": 10, "1": 20}}}}
 
 
-def test_save_replaces_previous_rulesets(dao: DatabaseStudyDao) -> None:
-    dao.save_scenario_builder({"old": Ruleset(load={"fr": {"0": 1}})})
-    dao.save_scenario_builder({"new": Ruleset(wind={"de": {"0": 2}})})
-    result = dao.get_rulesets()
+def test_save_replaces_previous_ruleset(dao: DatabaseStudyDao) -> None:
+    dao.save_scenario_builder(Ruleset(load={"fr": {"0": 1}}))
+    dao.save_scenario_builder(Ruleset(wind={"de": {"0": 2}}))
+    result = dao.get_ruleset()
 
-    assert "old" not in result
-    assert result["new"].wind == {"de": {"0": 2}}
-
-
-def test_save_replaces_active_ruleset_via_cascade(dao: DatabaseStudyDao) -> None:
-    dao.save_scenario_builder({"R1": Ruleset()})
-    dao.save_active_ruleset_name("R1")
-
-    # Overwrite rulesets entirely — R1 no longer exists
-    dao.save_scenario_builder({"R2": Ruleset()})
-
-    # Active ruleset should have been deleted by cascade
-    assert dao.get_active_ruleset_name() == "Default Ruleset"
-
-
-def test_save_preserves_active_ruleset_when_name_still_exists(dao: DatabaseStudyDao) -> None:
-    dao.save_scenario_builder({"R1": Ruleset(load={"fr": {"0": 1}}), "R2": Ruleset()})
-    dao.save_active_ruleset_name("R1")
-
-    # Overwrite rulesets entirely but keep the same active ruleset name.
-    dao.save_scenario_builder({"R1": Ruleset(wind={"de": {"0": 2}}), "R3": Ruleset()})
-
-    assert dao.get_active_ruleset_name() == "R1"
-
-
-def test_save_active_ruleset_name_with_nonexistent_ruleset_raises(dao: DatabaseStudyDao) -> None:
-    with pytest.raises(RulesetNotFound):
-        dao.save_active_ruleset_name("nonexistent")
+    assert result.load == {}
+    assert result.wind == {"de": {"0": 2}}
 
 
 def test_get_scenario_by_type_area(dao: DatabaseStudyDao) -> None:
-    rulesets = {"active": Ruleset(load={"fr": {"0": 1}, "de": {"0": 2}})}
-    dao.save_scenario_builder(rulesets)
-    dao.save_active_ruleset_name("active")
+    dao.save_scenario_builder(Ruleset(load={"fr": {"0": 1}, "de": {"0": 2}}))
 
     result = dao.get_scenario_by_type(ScenarioType.LOAD)
     assert result == {"fr": {"0": 1}, "de": {"0": 2}}
 
 
 def test_get_scenario_by_type_link(dao: DatabaseStudyDao) -> None:
-    rulesets = {"active": Ruleset(ntc={"fr - de": {"0": 7}})}
-    dao.save_scenario_builder(rulesets)
-    dao.save_active_ruleset_name("active")
+    _setup_areas(dao, "fr", "de")
+    dao.save_link(Link(area1="de", area2="fr"))
+    dao.save_scenario_builder(Ruleset(ntc={"de / fr": {"0": 7}}))
 
     result = dao.get_scenario_by_type(ScenarioType.LINK)
-    assert result == {"fr - de": {"0": 7}}
+    assert result == {"de / fr": {"0": 7}}
 
 
-def test_get_scenario_by_type_area_item(dao: DatabaseStudyDao) -> None:
-    rulesets = {"active": Ruleset(thermal={"fr": {"gas": {"0": 1}, "nuc": {"0": 2}}})}
-    dao.save_scenario_builder(rulesets)
-    dao.save_active_ruleset_name("active")
+def test_get_scenario_by_type_binding_constraints(dao: DatabaseStudyDao) -> None:
+    dao.save_scenario_builder(Ruleset(binding_constraints={"group1": {"0": 5}}))
+
+    result = dao.get_scenario_by_type(ScenarioType.BINDING_CONSTRAINTS)
+    assert result == {"group1": {"0": 5}}
+
+
+def test_get_scenario_by_type_thermal(dao: DatabaseStudyDao) -> None:
+    _setup_areas(dao, "fr")
+    dao.save_thermal("fr", ThermalCluster(id="gas", name="Gas"))
+    dao.save_thermal("fr", ThermalCluster(id="nuc", name="Nuc"))
+    dao.save_scenario_builder(Ruleset(thermal={"fr": {"gas": {"0": 1}, "nuc": {"0": 2}}}))
 
     result = dao.get_scenario_by_type(ScenarioType.THERMAL)
     assert result == {"fr": {"gas": {"0": 1}, "nuc": {"0": 2}}}
 
 
 def test_get_scenario_by_type_storage_inflows(dao: DatabaseStudyDao) -> None:
-    rulesets = {"active": Ruleset(storage_inflows={"fr": {"battery_1": {"0": 4}}})}
-    dao.save_scenario_builder(rulesets)
-    dao.save_active_ruleset_name("active")
+    _setup_areas(dao, "fr")
+    dao.save_st_storage("fr", STStorage(id="battery_1", name="Battery 1"))
+    dao.save_scenario_builder(Ruleset(storage_inflows={"fr": {"battery_1": {"0": 4}}}))
 
     result = dao.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_INFLOWS)
     assert result == {"fr": {"battery_1": {"0": 4}}}
 
 
 def test_get_scenario_by_type_storage_constraints(dao: DatabaseStudyDao) -> None:
-    rulesets = {"active": Ruleset(storage_constraints={"fr": {"battery": {"c1": {"0": 10}}}})}
-    dao.save_scenario_builder(rulesets)
-    dao.save_active_ruleset_name("active")
+    _setup_areas(dao, "fr")
+    dao.save_st_storage("fr", STStorage(id="battery", name="Battery"))
+    dao.save_st_storage_additional_constraints(
+        "fr",
+        storage_id="battery",
+        constraints=[STStorageAdditionalConstraint(id="c1", name="C1")],
+    )
+    dao.save_scenario_builder(Ruleset(storage_constraints={"fr": {"battery": {"c1": {"0": 10}}}}))
 
     result = dao.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS)
     assert result == {"fr": {"battery": {"c1": {"0": 10}}}}
 
 
 def test_get_scenario_by_type_returns_empty_when_no_data(dao: DatabaseStudyDao) -> None:
-    rulesets = {"active": Ruleset()}
-    dao.save_scenario_builder(rulesets)
-    dao.save_active_ruleset_name("active")
+    dao.save_scenario_builder(Ruleset())
 
     result = dao.get_scenario_by_type(ScenarioType.SOLAR)
     assert result == {}
 
 
-def test_get_scenario_by_type_only_returns_active_ruleset(dao: DatabaseStudyDao) -> None:
-    rulesets = {
-        "active": Ruleset(load={"fr": {"0": 1}}),
-        "other": Ruleset(load={"de": {"0": 99}}),
-    }
-    dao.save_scenario_builder(rulesets)
-    dao.save_active_ruleset_name("active")
-
-    result = dao.get_scenario_by_type(ScenarioType.LOAD)
-    assert result == {"fr": {"0": 1}}
-
-
 def test_get_scenario_by_type_does_not_mix_scenario_types(dao: DatabaseStudyDao) -> None:
-    rulesets = {
-        "active": Ruleset(
+    dao.save_scenario_builder(
+        Ruleset(
             load={"fr": {"0": 1}},
             wind={"fr": {"0": 99}},
         )
-    }
-    dao.save_scenario_builder(rulesets)
-    dao.save_active_ruleset_name("active")
+    )
 
     assert dao.get_scenario_by_type(ScenarioType.LOAD) == {"fr": {"0": 1}}
     assert dao.get_scenario_by_type(ScenarioType.WIND) == {"fr": {"0": 99}}
+
+
+def test_save_active_ruleset_name_is_noop(dao: DatabaseStudyDao) -> None:
+    # save_active_ruleset_name is a no-op in single-ruleset model
+    dao.save_active_ruleset_name("anything")

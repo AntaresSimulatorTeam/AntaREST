@@ -48,10 +48,3 @@ class ScenarioBuilderDao(ReadOnlyScenarioBuilderDao):
         Save ruleset.
         """
         raise NotImplementedError()
-
-    @abstractmethod
-    def save_active_ruleset_name(self, ruleset_name: str) -> None:
-        """
-        Save active ruleset name.
-        """
-        raise NotImplementedError()

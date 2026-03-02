@@ -11,117 +11,116 @@
 # This file is part of the Antares project.
 
 """
-SQLAlchemy Core table definitions for rulesets.
+SQLAlchemy Core table definitions for scenario builder (ruleset).
 """
 
-from sqlalchemy import JSON, Column, Enum, ForeignKeyConstraint, String, Table
+from sqlalchemy import JSON, Column, ForeignKeyConstraint, String, Table
 
 from antarest.dbmodel import Base
-from antarest.study.business.model.scenario_builder_model import ScenarioType
 
 metadata = Base.metadata
 
-_SCENARIO_TYPE_ENUM = Enum(
-    ScenarioType, name="scenariotype", values_callable=lambda enum_cls: [e.value for e in enum_cls]
-)
 
-RULESET_TABLE = Table(
-    "ruleset",
+def _create_area_scenario_table(name: str) -> Table:
+    return Table(
+        name,
+        metadata,
+        Column("study_id", String(36), nullable=False, primary_key=True),
+        Column("area_id", String(255), nullable=False, primary_key=True),
+        Column("timeseries", JSON, nullable=False),
+        ForeignKeyConstraint(["study_id"], ["study.id"], ondelete="CASCADE"),
+    )
+
+
+SCENARIO_LOAD_TABLE = _create_area_scenario_table("scenario_load")
+SCENARIO_HYDRO_TABLE = _create_area_scenario_table("scenario_hydro")
+SCENARIO_WIND_TABLE = _create_area_scenario_table("scenario_wind")
+SCENARIO_SOLAR_TABLE = _create_area_scenario_table("scenario_solar")
+SCENARIO_HYDRO_INITIAL_LEVEL_TABLE = _create_area_scenario_table("scenario_hydro_initial_level")
+SCENARIO_HYDRO_FINAL_LEVEL_TABLE = _create_area_scenario_table("scenario_hydro_final_level")
+SCENARIO_HYDRO_GENERATION_POWER_TABLE = _create_area_scenario_table("scenario_hydro_generation_power")
+
+SCENARIO_NTC_TABLE = Table(
+    "scenario_ntc",
     metadata,
     Column("study_id", String(36), nullable=False, primary_key=True),
-    Column("ruleset_name", String(255), nullable=False, primary_key=True),
-    ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_ruleset", ondelete="CASCADE"),
-)
-
-ACTIVE_RULESET_TABLE = Table(
-    "active_ruleset",
-    metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
-    Column("ruleset_name", String(255), nullable=False),
-    ForeignKeyConstraint(
-        ["study_id", "ruleset_name"],
-        ["ruleset.study_id", "ruleset.ruleset_name"],
-        name="fk_active_ruleset",
-        ondelete="CASCADE",
-    ),
-)
-
-RULESET_AREA_TABLE = Table(
-    "ruleset_area",
-    metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
-    Column("ruleset_name", String(255), nullable=False, primary_key=True),
-    Column("area_id", String(255), nullable=False, primary_key=True),
-    Column("scenario_type", _SCENARIO_TYPE_ENUM, nullable=False, primary_key=True),
+    Column("area1", String(255), nullable=False, primary_key=True),
+    Column("area2", String(255), nullable=False, primary_key=True),
     Column("timeseries", JSON, nullable=False),
     ForeignKeyConstraint(
-        ["study_id", "ruleset_name"],
-        ["ruleset.study_id", "ruleset.ruleset_name"],
-        name="fk_ruleset_area",
+        ["study_id", "area1", "area2"],
+        ["link.study_id", "link.area1", "link.area2"],
         ondelete="CASCADE",
     ),
 )
 
-RULESET_LINK_TABLE = Table(
-    "ruleset_link",
+SCENARIO_BINDING_CONSTRAINTS_TABLE = Table(
+    "scenario_binding_constraints",
     metadata,
     Column("study_id", String(36), nullable=False, primary_key=True),
-    Column("ruleset_name", String(255), nullable=False, primary_key=True),
-    Column("link_id", String(255), nullable=False, primary_key=True),
-    Column("timeseries", JSON, nullable=False),
-    ForeignKeyConstraint(
-        ["study_id", "ruleset_name"],
-        ["ruleset.study_id", "ruleset.ruleset_name"],
-        name="fk_ruleset_link",
-        ondelete="CASCADE",
-    ),
-)
-
-RULESET_BC_GROUP_TABLE = Table(
-    "ruleset_bc_group",
-    metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
-    Column("ruleset_name", String(255), nullable=False, primary_key=True),
     Column("bc_group_id", String(255), nullable=False, primary_key=True),
     Column("timeseries", JSON, nullable=False),
-    ForeignKeyConstraint(
-        ["study_id", "ruleset_name"],
-        ["ruleset.study_id", "ruleset.ruleset_name"],
-        name="fk_ruleset_bc_group",
-        ondelete="CASCADE",
-    ),
+    ForeignKeyConstraint(["study_id"], ["study.id"], ondelete="CASCADE"),
 )
 
-RULESET_AREA_ITEM_TABLE = Table(
-    "ruleset_area_item",
+SCENARIO_THERMAL_TABLE = Table(
+    "scenario_thermal",
     metadata,
     Column("study_id", String(36), nullable=False, primary_key=True),
-    Column("ruleset_name", String(255), nullable=False, primary_key=True),
     Column("area_id", String(255), nullable=False, primary_key=True),
-    Column("item_id", String(255), nullable=False, primary_key=True),
-    Column("scenario_type", _SCENARIO_TYPE_ENUM, nullable=False, primary_key=True),
+    Column("thermal_id", String(255), nullable=False, primary_key=True),
     Column("timeseries", JSON, nullable=False),
     ForeignKeyConstraint(
-        ["study_id", "ruleset_name"],
-        ["ruleset.study_id", "ruleset.ruleset_name"],
-        name="fk_ruleset_area_item",
+        ["study_id", "area_id", "thermal_id"],
+        ["thermal_cluster.study_id", "thermal_cluster.area_id", "thermal_cluster.thermal_id"],
         ondelete="CASCADE",
     ),
 )
 
-RULESET_AREA_ITEM_CONSTRAINT_TABLE = Table(
-    "ruleset_area_item_constraint",
+SCENARIO_RENEWABLE_TABLE = Table(
+    "scenario_renewable",
     metadata,
     Column("study_id", String(36), nullable=False, primary_key=True),
-    Column("ruleset_name", String(255), nullable=False, primary_key=True),
     Column("area_id", String(255), nullable=False, primary_key=True),
-    Column("item_id", String(255), nullable=False, primary_key=True),
+    Column("renewable_id", String(255), nullable=False, primary_key=True),
+    Column("timeseries", JSON, nullable=False),
+    ForeignKeyConstraint(
+        ["study_id", "area_id", "renewable_id"],
+        ["renewable_cluster.study_id", "renewable_cluster.area_id", "renewable_cluster.renewable_id"],
+        ondelete="CASCADE",
+    ),
+)
+
+SCENARIO_STORAGE_INFLOWS_TABLE = Table(
+    "scenario_storage_inflows",
+    metadata,
+    Column("study_id", String(36), nullable=False, primary_key=True),
+    Column("area_id", String(255), nullable=False, primary_key=True),
+    Column("st_storage_id", String(255), nullable=False, primary_key=True),
+    Column("timeseries", JSON, nullable=False),
+    ForeignKeyConstraint(
+        ["study_id", "area_id", "st_storage_id"],
+        ["st_storage.study_id", "st_storage.area_id", "st_storage.st_storage_id"],
+        ondelete="CASCADE",
+    ),
+)
+
+SCENARIO_STORAGE_CONSTRAINTS_TABLE = Table(
+    "scenario_storage_constraints",
+    metadata,
+    Column("study_id", String(36), nullable=False, primary_key=True),
+    Column("area_id", String(255), nullable=False, primary_key=True),
+    Column("st_storage_id", String(255), nullable=False, primary_key=True),
     Column("constraint_id", String(255), nullable=False, primary_key=True),
     Column("timeseries", JSON, nullable=False),
     ForeignKeyConstraint(
-        ["study_id", "ruleset_name"],
-        ["ruleset.study_id", "ruleset.ruleset_name"],
-        name="fk_ruleset_area_item_constraint",
+        ["study_id", "area_id", "st_storage_id", "constraint_id"],
+        [
+            "st_storage_additional_constraint.study_id",
+            "st_storage_additional_constraint.area_id",
+            "st_storage_additional_constraint.st_storage_id",
+            "st_storage_additional_constraint.constraint_id",
+        ],
         ondelete="CASCADE",
     ),
 )

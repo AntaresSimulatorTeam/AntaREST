@@ -57,13 +57,6 @@ class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
         scenario_builder_data = study_data.tree.get(["settings", "scenariobuilder"])
         return parse_ruleset_from_any(scenario_builder_data, study_data.config.version)
 
-    @override
-    def save_active_ruleset_name(self, ruleset_name: str) -> None:
-        """
-        Save the active ruleset name.
-        """
-        self.get_file_study().tree.save(ruleset_name, ACTIVE_RULESET_URL)
-
     def _get_nb_years(self) -> int:
         return self.get_impl().get_general_config().nb_years
 
