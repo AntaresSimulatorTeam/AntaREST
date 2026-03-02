@@ -91,7 +91,7 @@ export type VariableViewParamsDTO =
   | (VariableViewBaseParamsDTO & { type: "link"; area_from_id: string; area_to_id: string })
   | (VariableViewBaseParamsDTO & { type: "thermal"; area_id: string; thermal_id: string })
   | (VariableViewBaseParamsDTO & { type: "renewable"; area_id: string; renewable_id: string })
-  | (VariableViewBaseParamsDTO & { type: "st_storage"; area_id: string; storage_id: string });
+  | (VariableViewBaseParamsDTO & { type: "st_storage"; area_id: string; st_storage_id: string });
 
 export interface GetVariablesListParams {
   studyId: string;

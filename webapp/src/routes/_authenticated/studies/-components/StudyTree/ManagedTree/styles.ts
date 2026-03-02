@@ -56,15 +56,14 @@ export const treeItemStyles: SxProps<Theme> = {
   },
 };
 
-export const editableTreeItemStyles: SxProps<Theme> = {
-  ...treeItemStyles,
-  "& > .MuiTreeItem-content": {
-    ...(treeItemStyles["& > .MuiTreeItem-content"] as object),
-    backgroundColor: (theme) => `${theme.palette.info.main}08`,
-    "&:hover": {
-      backgroundColor: (theme) => `${theme.palette.info.main}12`,
-    },
-  },
+export const editableRowStyles: SxProps<Theme> = {
+  display: "flex",
+  alignItems: "center",
+  gap: 0.5,
+  borderRadius: 1,
+  px: 1,
+  py: 0.25,
+  backgroundColor: (theme) => `${theme.palette.info.main}08`,
 };
 
 export const textFieldStyles: SxProps<Theme> = {

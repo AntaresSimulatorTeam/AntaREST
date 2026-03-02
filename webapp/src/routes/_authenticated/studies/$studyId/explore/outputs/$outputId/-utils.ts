@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import type { ListViewItem } from "@/components/page/list/ListView";
+import type { StudyMapDistrict } from "@/redux/ducks/studyMaps";
 import type {
   AreaVariablesDTO,
   RenewableClusterVariablesDTO,
@@ -22,25 +24,38 @@ import type {
 } from "@/services/api/studies/outputs/variableViews/types";
 import type { AreaWithId, LinkElement, Simulation } from "@/types/types";
 
-export const OUTPUT_ITEM_TYPES = ["areas", "links", "synthesis"] as const;
-export const DATA_TYPES = ["values", "details", "details-res", "id", "details-STstorage"] as const;
-export const FREQUENCIES = ["hourly", "daily", "weekly", "monthly", "annual"] as const;
-export const MONTE_CARLO_MODES = ["mc-ind", "mc-all", "variable-per-variable"] as const;
+export type ListType = "areas" | "links" | "synthesis";
+export type DataType = "values" | "details" | "details-res" | "id" | "details-STstorage";
+export type Frequency = "hourly" | "daily" | "weekly" | "monthly" | "annual";
+export type MonteCarloMode = "mc-ind" | "mc-all" | "variable-per-variable";
 
-export type OutputItemType = (typeof OUTPUT_ITEM_TYPES)[number];
-export type DataType = (typeof DATA_TYPES)[number];
-export type Frequency = (typeof FREQUENCIES)[number];
-export type MonteCarloMode = (typeof MONTE_CARLO_MODES)[number];
+export type Item = AreaWithId | StudyMapDistrict | LinkElement;
 
 interface Params {
   output: Partial<Simulation> & { id: string; name: string };
-  item: AreaWithId | LinkElement;
+  item: Item;
   dataType: DataType;
   frequency: Frequency;
   year?: number;
 }
 
 export const MAX_YEAR = 99999;
+
+export function isArea(item: Item): item is AreaWithId {
+  return "links" in item;
+}
+
+export function isDistrict(item: Item): item is StudyMapDistrict {
+  return "areas" in item;
+}
+
+export function isAreaOrDistrict(item: Item): item is AreaWithId | StudyMapDistrict {
+  return isArea(item) || isDistrict(item);
+}
+
+export function isLink(item: Item): item is LinkElement {
+  return "area1" in item;
+}
 
 export function createPath(params: Params): string {
   const { output, item, dataType, frequency, year } = params;
@@ -51,9 +66,8 @@ export function createPath(params: Params): string {
         .toString()
         .padStart(5, "0")}`
     : "mc-all";
-  const isLink = "area1" in item;
-  const itemType = isLink ? "links" : "areas";
-  const itemFolder = isLink ? `${item.area1}/${item.area2}` : item.id;
+  const itemType = isLink(item) ? "links" : "areas";
+  const itemFolder = isLink(item) ? `${item.area1}/${item.area2}` : item.id;
 
   return `output/${id}/${mode.toLowerCase()}/${periodFolder}/${itemType}/${itemFolder}/${dataType}-${frequency}`;
 }
@@ -61,25 +75,21 @@ export function createPath(params: Params): string {
 export const SYNTHESIS_ITEMS = [
   {
     id: "areas",
-    name: "Areas",
     label: "Areas synthesis",
   },
   {
     id: "links",
-    name: "Links",
     label: "Links synthesis",
   },
   {
     id: "digest",
-    name: "Digest",
     label: "Digest",
   },
   {
     id: "thermal",
-    name: "Thermal",
     label: "Thermal synthesis",
   },
-];
+] as const satisfies ListViewItem[];
 
 export function matchesSearchTerm(text: string, searchTerm: string): boolean {
   const searchTerms = searchTerm.split("|").map((term) => term.trim().toLowerCase());
@@ -93,7 +103,6 @@ export function matchesSearchTerm(text: string, searchTerm: string): boolean {
 /**
  * Builds parameters for variable view API requests based on item type and data type
  *
- * @param itemType - The type of output item (areas, links, or synthesis)
  * @param dataType - The type of data being requested (values, details, details-res, details-STstorage, or id)
  * @param selectedClusterId - The ID of the selected cluster (for cluster-specific data types)
  * @param selectedItemId - The ID of the selected item (area name or link ID)
@@ -116,22 +125,20 @@ export function matchesSearchTerm(text: string, searchTerm: string): boolean {
  * // Returns: { type: "link", variableName: "FLOW LIN.", frequency: "monthly", areaFromId: "area1", areaToId: "area2" }
  */
 export function buildVariableViewParams(
-  itemType: OutputItemType,
   dataType: string,
   selectedClusterId: string,
-  selectedItemId: string,
-  selectedItem: AreaWithId | LinkElement,
+  selectedItem: Item,
   selectedVariable: string,
   frequency: Frequency,
 ): VariableViewParams {
-  if (itemType === "areas") {
+  if (isAreaOrDistrict(selectedItem)) {
     // Cluster/storage params
     if (dataType === "details" && selectedClusterId) {
       return {
         type: "thermal",
         variableName: selectedVariable,
         frequency: frequency,
-        areaId: selectedItemId,
+        areaId: selectedItem.id,
         clusterId: selectedClusterId,
       };
     }
@@ -140,7 +147,7 @@ export function buildVariableViewParams(
         type: "renewable",
         variableName: selectedVariable,
         frequency: frequency,
-        areaId: selectedItemId,
+        areaId: selectedItem.id,
         clusterId: selectedClusterId,
       };
     }
@@ -149,7 +156,7 @@ export function buildVariableViewParams(
         type: "st_storage",
         variableName: selectedVariable,
         frequency: frequency,
-        areaId: selectedItemId,
+        areaId: selectedItem.id,
         clusterId: selectedClusterId,
       };
     }
@@ -159,7 +166,7 @@ export function buildVariableViewParams(
       type: "area",
       variableName: selectedVariable,
       frequency: frequency,
-      areaId: selectedItemId,
+      areaId: selectedItem.id,
     };
   }
 
@@ -177,8 +184,7 @@ export function buildVariableViewParams(
  * Retrieves the first variable for a selected item (area or link)
  *
  * @param variablesMetadata - The metadata containing all variables information, or null if not loaded
- * @param itemType - The type of item (areas, links, or synthesis)
- * @param selectedItemId - The ID of the selected item (area name or link ID in format "area1%area2")
+ * @param selectedItem - The selected item
  * @returns The first variable name for the item, or empty string if not found or no variables exist
  *
  * @example
@@ -190,23 +196,22 @@ export function buildVariableViewParams(
  */
 export function getFirstVariableForItem(
   variablesMetadata: VariablesListDTO | null,
-  itemType: OutputItemType,
-  selectedItemId: string,
+  selectedItem: Item,
 ): string {
-  if (!variablesMetadata || !selectedItemId) {
+  if (!variablesMetadata) {
     return "";
   }
 
   const data = variablesMetadata.mcInd;
 
-  if (itemType === "areas") {
-    const area = data.areas.find((area) => area.name === selectedItemId);
+  if (isAreaOrDistrict(selectedItem)) {
+    const area = data.areas.find((area) => area.name === selectedItem.id);
     return area?.variables[0] || "";
   }
 
-  if (itemType === "links") {
+  if (isLink(selectedItem)) {
     const link = data.links.find((link) =>
-      isLinkMatch(link.area1Name, link.area2Name, selectedItemId),
+      isLinkMatch(link.area1Name, link.area2Name, selectedItem.id),
     );
     return link?.variables[0] || "";
   }
@@ -269,27 +274,25 @@ function isLinkMatch(area1: string, area2: string, selectedId: string): boolean 
  * Extracts variables based on item type (areas or links)
  *
  * @param variablesMetadata - The metadata containing all variables information
- * @param itemType - The type of item (areas or links)
- * @param selectedItemId - The ID of the selected item
+ * @param selectedItem - The selected item
  * @param dataType - The type of data to extract
  * @returns Array of variable names
  */
 export function getVariables(
   variablesMetadata: VariablesListDTO,
-  itemType: OutputItemType,
-  selectedItemId: string,
+  selectedItem: Item,
   dataType: DataType,
 ): string[] {
   const data = variablesMetadata.mcInd;
 
-  if (itemType === "areas") {
-    const area = data.areas.find((a) => a.name === selectedItemId);
+  if (isAreaOrDistrict(selectedItem)) {
+    const area = data.areas.find((a) => a.name === selectedItem.id);
     return area ? getAreaVariables(area, dataType) : [];
   }
 
-  if (itemType === "links") {
+  if (isLink(selectedItem)) {
     const link = data.links.find((link) =>
-      isLinkMatch(link.area1Name, link.area2Name, selectedItemId),
+      isLinkMatch(link.area1Name, link.area2Name, selectedItem.id),
     );
     return link?.variables || [];
   }

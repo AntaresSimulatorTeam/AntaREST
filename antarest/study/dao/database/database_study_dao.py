@@ -28,7 +28,6 @@ from typing_extensions import override
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.scenario_builder_model import AnyScenarios, Rulesets, ScenarioType
-from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionCandidate,
@@ -46,10 +45,12 @@ from antarest.study.dao.database.database_link_dao import DatabaseLinkDao
 from antarest.study.dao.database.database_renewable_dao import DatabaseRenewableDao
 from antarest.study.dao.database.database_st_storage_dao import DatabaseStStorageDao
 from antarest.study.dao.database.database_study_settings_dao import DatabaseStudySettingsDao
+from antarest.study.dao.database.database_thematic_trimming_dao import DatabaseThematicTrimmingDao
 from antarest.study.dao.database.database_thermal_dao import DatabaseThermalDao
 from antarest.study.dao.database.database_user_resources import DatabaseUserResourcesDao
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
 class DatabaseStudyDao(
@@ -65,18 +66,27 @@ class DatabaseStudyDao(
     DatabaseRenewableDao,
     DatabaseUserResourcesDao,
     DatabaseStStorageDao,
+    DatabaseThematicTrimmingDao,
 ):
     """
     Database implementation of StudyDao.
     """
 
-    def __init__(self, study_id: str, db_session: Session, matrix_service: ISimpleMatrixService) -> None:
+    def __init__(
+        self,
+        study_id: str,
+        db_session: Session,
+        matrix_service: ISimpleMatrixService,
+        generator_matrix_constants: GeneratorMatrixConstants,
+    ) -> None:
         """
         Initialize DatabaseStudyDao.
 
         Args:
             study_id: The study ID for database queries
             db_session: SQLAlchemy session for database operations
+            matrix_service: Matrix storage service
+            generator_matrix_constants: Predefined matrix constants generator
         """
         DatabaseAreaDao.__init__(self, study_id, db_session)
         DatabaseAreaPropertiesDao.__init__(self, study_id, db_session)
@@ -89,7 +99,9 @@ class DatabaseStudyDao(
         DatabaseRenewableDao.__init__(self, study_id, db_session)
         DatabaseUserResourcesDao.__init__(self, study_id, db_session)
         DatabaseStStorageDao.__init__(self, study_id, db_session)
+        DatabaseThematicTrimmingDao.__init__(self, study_id, db_session)
         self._matrix_service = matrix_service
+        self._generator_matrix_constants = generator_matrix_constants
 
     # Implementation of abstract methods required by StudyDao
     @override
@@ -263,14 +275,6 @@ class DatabaseStudyDao(
 
     @override
     def get_xpansion_adequacy_criterion(self) -> XpansionAdequacyCriterion:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_thematic_trimming(self, trimming: ThematicTrimming) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_thematic_trimming(self) -> ThematicTrimming:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override

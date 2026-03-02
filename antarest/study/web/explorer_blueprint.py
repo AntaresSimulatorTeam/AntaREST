@@ -15,6 +15,7 @@ from typing import List
 
 from fastapi import APIRouter
 
+from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -41,7 +42,7 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
         "/explorer/{workspace}/_list_dir",
         summary="For a given directory, list sub directories.",
     )
-    def list_dir(workspace: str, path: str) -> List[FolderDTO]:
+    def list_dir(workspace: SanitizedStr, path: SanitizedStr) -> List[FolderDTO]:
         """
         Endpoint to list sub directories of a given directory
         Args:

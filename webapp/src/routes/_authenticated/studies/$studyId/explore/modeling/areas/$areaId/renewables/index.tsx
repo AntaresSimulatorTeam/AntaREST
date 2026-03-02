@@ -54,9 +54,11 @@ function Renewables() {
   const { t } = useTranslation();
   const enrModelling = useAppSelector((state) => getStudySynthesis(state, study.id)?.enr_modelling);
 
-  const { data: clustersWithCapacity = [], isLoading } = usePromiseWithSnackbarError<
-    RenewableClusterWithCapacity[]
-  >(
+  const {
+    data: clustersWithCapacity = [],
+    isLoading,
+    status,
+  } = usePromiseWithSnackbarError<RenewableClusterWithCapacity[]>(
     async () => {
       const clusters = await getRenewableClusters(study.id, areaId);
       return clusters?.map(addClusterCapacity);
@@ -144,6 +146,7 @@ function Renewables() {
 
   return (
     <GroupedDataTable
+      key={status}
       isLoading={isLoading}
       data={clustersWithCapacity}
       columns={columns}

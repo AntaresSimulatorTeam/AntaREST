@@ -27,7 +27,6 @@ import {
   Typography,
 } from "@mui/material";
 import { useState } from "react";
-import type { DraggableProvided } from "react-beautiful-dnd";
 import ReactJson, { type InteractionProps } from "react-json-view";
 import type { CommandResultDTO } from "../../../../../../../../../../types/types";
 import type { CommandItem } from "../../commandTypes";
@@ -36,12 +35,12 @@ import CommandDetails from "./CommandDetails";
 import CommandMatrixViewer from "./CommandMatrixViewer";
 import {
   detailsStyle,
-  DraggableAccorderon,
   Header,
   headerIconStyle,
   Info,
   ItemContainer,
   JsonContainer,
+  StyledAccordion,
   StyledDeleteIcon,
 } from "./style";
 
@@ -54,35 +53,9 @@ export const Item = styled(Box)(({ theme }) => ({
   width: "100%",
 }));
 
-interface StyleType {
-  provided: DraggableProvided;
-  style: React.CSSProperties;
-  isDragging: boolean;
-}
-function getStyle({ provided, style, isDragging }: StyleType) {
-  // If you don't want any spacing between your items
-  // then you could just return this.
-  // I do a little bit of magic to have some nice visual space
-  // between the row items
-  const combined = {
-    ...style,
-    ...provided.draggableProps.style,
-  };
-
-  const marginBottom = 8;
-  const withSpacing = {
-    ...combined,
-    height: isDragging ? combined.height : (combined.height as number) - marginBottom,
-    marginBottom,
-  };
-  return withSpacing;
-}
-
 interface PropsType {
-  provided: DraggableProvided;
   item: CommandItem;
   style: React.CSSProperties;
-  isDragging: boolean;
   index: number;
   generationStatus: boolean;
   generationIndex: number;
@@ -96,10 +69,8 @@ interface PropsType {
 }
 
 function CommandListItem({
-  provided,
   item,
   style,
-  isDragging,
   index,
   generationStatus,
   generationIndex,
@@ -160,15 +131,9 @@ function CommandListItem({
   };
 
   return (
-    <ItemContainer
-      {...provided.draggableProps}
-      {...provided.dragHandleProps}
-      ref={provided.innerRef}
-      style={getStyle({ provided, style, isDragging })}
-      onTopVisible={expandedIndex === index}
-    >
+    <ItemContainer style={style} onTopVisible={expandedIndex === index}>
       <Item>
-        <DraggableAccorderon isDragging={isDragging} expanded={expandedIndex === index}>
+        <StyledAccordion expanded={expandedIndex === index}>
           <AccordionSummary
             expandIcon={<ExpandMore />}
             aria-controls="panel1a-content"
@@ -206,7 +171,7 @@ function CommandListItem({
               <CommandMatrixViewer command={item} />
             </Box>
           </AccordionDetails>
-        </DraggableAccorderon>
+        </StyledAccordion>
         <Box
           sx={{
             height: "50px",
