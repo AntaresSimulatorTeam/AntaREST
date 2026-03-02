@@ -141,6 +141,7 @@ def _import_zip_as_archived(
 
     output_full_name = extract_output_name(output_zip_path, output_name_suffix)
     final_path = study_outputs_path / f"{output_full_name}.zip"
+    study_outputs_path.mkdir(exist_ok=True)
     shutil.copyfile(output_zip_path, final_path)
 
     _add_logs(final_path, logs)
@@ -210,6 +211,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         """
         study_outputs = self._outputs_provider.get_outputs(study_id)
 
+        # Optimized path to copy outputs on external devices. Will then be unarchived there.
         if isinstance(output, Path) and is_zip(output):
             output_name = _import_zip_as_archived(
                 study_id, output, study_outputs.outputs_path, output_name_suffix, logs

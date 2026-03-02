@@ -14,7 +14,6 @@ import json
 import math
 import os
 import time
-import zipfile
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Union
@@ -775,12 +774,9 @@ class TestLauncherService:
         launcher_service._import_output(
             zipped_job_id, zipped_output_path, SimulationLogs(out=additional_log, err=additional_log)
         )
-        with zipfile.ZipFile(new_output_zipped_path, "r") as zf:
-            assert "antares-out.log" in zf.namelist()
-            assert "antares-err.log" in zf.namelist()
+        launcher_service.output_service.import_output.assert_called()
 
         launcher_service.output_service.import_output.side_effect = [StudyNotFoundError("")]
-
         assert (
             launcher_service._import_output(job_id, output_path, SimulationLogs(out=additional_log, err=None)) is None
         )
@@ -793,7 +789,6 @@ class TestLauncherService:
         assert output_name is not None
         assert output_name.endswith("-hello")
         assert launcher_service._get_job_output_fallback_path(job_id).exists()
-        assert (launcher_service._get_job_output_fallback_path(job_id) / output_name / "antares-out.log").exists()
 
         launcher_service.job_result_repository.get.reset_mock()
         launcher_service.job_result_repository.get.side_effect = [

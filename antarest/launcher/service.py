@@ -534,15 +534,11 @@ class LauncherService:
 
             self._save_solver_stats(job_result, output_true_path)
 
-            if additional_logs.out:
-                shutil.copy(additional_logs.out, output_true_path / "antares-out.log")
-            if additional_logs.err:
-                shutil.copy(additional_logs.err, output_true_path / "antares-err.log")
-
-        # TODO: this probably exists for the mounted workspaces to delegate unarchival there.
-        #       But for internal studies, it does not make sense to zip again here.
-        #       It's an implementation detail of file output storage, should go there.
         zip_path: Path | None = None
+        # Optimized path for studies stored on external devices, that will then be unarchived there.
+        # TODO: that whole optimization path should be refactored to:
+        #       - be more explicit
+        #       - not affect internal studies
         if job_launch_params.archive_output:
             stopwatch = StopWatch()
             logger.info("Re zipping output for transfer")

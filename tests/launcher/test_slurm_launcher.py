@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import os
 import random
 import textwrap
 import uuid
@@ -283,7 +282,6 @@ def test_run_study(
         cache=Mock(),
     )
 
-    slurm_launcher._clean_local_workspace = Mock()
     slurm_launcher.start = Mock()
     slurm_launcher._delete_workspace_file = Mock()
 
@@ -364,21 +362,6 @@ def test_check_state(tmp_path: Path, launcher_config: SlurmConfig) -> None:
     assert slurm_launcher._delete_workspace_file.call_count == 4
     assert data_repo_tinydb.remove_study.call_count == 2
     slurm_launcher.stop.assert_called_once()
-
-
-def test_clean_local_workspace(tmp_path: Path, launcher_config: SlurmConfig) -> None:
-    slurm_launcher = SlurmLauncher(
-        config=launcher_config,
-        callbacks=Mock(),
-        event_bus=Mock(),
-        use_private_workspace=False,
-        cache=Mock(),
-    )
-    (launcher_config.local_workspace / "machin.txt").touch()
-
-    assert os.listdir(launcher_config.local_workspace)
-    slurm_launcher._clean_local_workspace()
-    assert not os.listdir(launcher_config.local_workspace)
 
 
 # noinspection PyUnresolvedReferences

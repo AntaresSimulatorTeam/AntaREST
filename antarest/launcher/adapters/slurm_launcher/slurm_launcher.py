@@ -461,16 +461,6 @@ class SlurmLauncher(AbstractLauncher):
         else:
             self.callbacks.update_status(study.name, JobStatus.SUCCESS, None, output_id)
 
-    def _clean_local_workspace(self) -> None:
-        logger.info("Cleaning up slurm workspace")
-        local_workspace = self.local_workspace
-        for filename in os.listdir(local_workspace):
-            file_path = os.path.join(local_workspace, filename)
-            if os.path.isfile(file_path) or os.path.islink(file_path):
-                os.unlink(file_path)
-            elif os.path.isdir(file_path):
-                shutil.rmtree(file_path)
-
     def _clean_up_study(self, launch_id: str) -> None:
         logger.info(f"Cleaning up study with launch_id {launch_id}")
         self.data_repo_tinydb.remove_study(launch_id)
