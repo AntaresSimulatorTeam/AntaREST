@@ -239,7 +239,7 @@ class IniReader(IReader):
         else:  # pragma: no cover
             raise TypeError(repr(type(path)))
 
-        return cast(JSON, sections)
+        return sections
 
     def _parse_ini_file(self, ini_file: TextIO, **kwargs: Any) -> JSON:
         """

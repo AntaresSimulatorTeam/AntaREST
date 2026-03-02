@@ -214,7 +214,7 @@ def compute_hash(df: pl.DataFrame) -> str:
     pandas_df = df.to_pandas()
     pandas_df.replace({None: np.nan}, inplace=True)
     if df.columns == [str(i) for i in range(len(df.columns))]:
-        pandas_df.columns = pd.RangeIndex(0, pandas_df.shape[1])  # type: ignore
+        pandas_df.columns = pd.RangeIndex(0, pandas_df.shape[1])
 
     # We're computing the hash with the dataframe content and its headers
     column_names_hashes = util.hash_pandas_object(pandas_df.columns, index=False)

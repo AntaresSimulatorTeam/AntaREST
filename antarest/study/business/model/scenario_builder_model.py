@@ -247,7 +247,7 @@ def _get_scenario_types_according_to_version(version: StudyVersion) -> set[Scena
     if version < STUDY_VERSION_9_3:
         all_scenario_types.remove(ScenarioType.SHORT_TERM_STORAGE_INFLOWS)
         all_scenario_types.remove(ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS)
-    return all_scenario_types  # type: ignore
+    return all_scenario_types
 
 
 def initialize_ruleset_with_version(

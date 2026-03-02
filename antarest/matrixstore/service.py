@@ -368,9 +368,9 @@ class MatrixService(ISimpleMatrixService):
                 else:
                     with py7zr.SevenZipFile(buffer, "r") as szf:
                         for info in szf.list():
-                            if info.is_directory or info.filename in EXCLUDED_FILES:  # type:ignore
+                            if info.is_directory or info.filename in EXCLUDED_FILES:
                                 continue
-                            file_content = next(iter(szf.read(info.filename).values()))
+                            file_content = next(iter(szf.read([info.filename]).values()))
                             matrix_id = self._file_importation(file_content.read(), is_json=is_json)
                             matrix_info.append(MatrixInfoDTO(id=matrix_id, name=info.filename))
                             szf.reset()
