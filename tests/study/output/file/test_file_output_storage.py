@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import os
 import shutil
+import tempfile
 import zipfile
 from pathlib import Path
 from unittest.mock import Mock
@@ -27,6 +28,7 @@ from antarest.core.exceptions import (
     StudyNotFoundError,
 )
 from antarest.core.remote.remote_executor import IRemoteExecutor
+from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.launcher.model import LogType
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
@@ -345,4 +347,87 @@ def test_get_logs(file_output_storage: InStudyFileOutputStorage, tmp_path: Path)
         log_path.unlink()
 
 
-# TODO: add tests for aggregation, time index
+def _extract_output_to_dir(study_zip: Path, output_path: str, target_dir: Path) -> None:
+    with tempfile.TemporaryDirectory() as tmp_dir_str:
+        tmp_dir = Path(tmp_dir_str)
+        with zipfile.ZipFile(study_zip, "r") as zf:
+            names = [n for n in zf.namelist() if n.startswith(output_path)]
+            zf.extractall(tmp_dir, members=names)
+        (tmp_dir / "STA-mini" / "output" / "20201014-1422eco-hello").rename(target_dir)
+
+
+def test_import_output_directory(
+    file_output_storage: InStudyFileOutputStorage, tmp_path: Path, sta_mini_zip_path: Path
+) -> None:
+    # Extract one of the outputs of STA-mini to a directory
+    studies_dir = tmp_path / "studies"
+
+    study_dir = studies_dir / "my-study"
+    study_dir.mkdir()
+
+    output_dir = tmp_path / "import-output"
+    _extract_output_to_dir(sta_mini_zip_path, "STA-mini/output/20201014-1422eco-hello", output_dir)
+
+    # Import directory
+    file_output_storage.import_output("my-study", output_dir)
+
+    expected_output_dir = study_dir / "output" / "20201014-1422eco-hello"
+    assert expected_output_dir.exists()
+    assert file_output_storage.list_outputs("my-study") == [
+        OutputMetadata(id="20201014-1422eco-hello", in_study=True, archived=False)
+    ]
+
+
+def test_import_output_zip_should_import_it_as_archived(
+    file_output_storage: InStudyFileOutputStorage, tmp_path: Path, sta_mini_zip_path: Path
+) -> None:
+    # Checks the "optimized path" for zipped outputs, see TODOs
+
+    # Extract one of the outputs of STA-mini to a directory and zip it
+    studies_dir = tmp_path / "studies"
+
+    study_dir = studies_dir / "my-study"
+    study_dir.mkdir()
+
+    zip_path = tmp_path / "import-output.zip"
+    output_dir = tmp_path / "import-output"
+    _extract_output_to_dir(sta_mini_zip_path, "STA-mini/output/20201014-1422eco-hello", output_dir)
+    archive_dir(src_dir_path=output_dir, target_archive_path=zip_path, remove_source_dir=True)
+
+    # Import zip file
+    file_output_storage.import_output("my-study", zip_path)
+
+    assert file_output_storage.list_outputs("my-study") == [
+        OutputMetadata(id="20201014-1422eco-hello", in_study=True, archived=True)
+    ]
+
+
+@pytest.mark.parametrize("archive_format", [ArchiveFormat.ZIP, ArchiveFormat.SEVEN_ZIP])
+def test_import_output_archive_stream(
+    file_output_storage: InStudyFileOutputStorage,
+    tmp_path: Path,
+    sta_mini_zip_path: Path,
+    archive_format: ArchiveFormat,
+) -> None:
+    # Checks the "optimized path" for zipped outputs, see TODOs
+
+    # Extract one of the outputs of STA-mini to a directory and zip it
+    studies_dir = tmp_path / "studies"
+
+    study_dir = studies_dir / "my-study"
+    study_dir.mkdir()
+
+    archive_path = tmp_path / f"import-output{archive_format}"
+    output_dir = tmp_path / "import-output"
+    _extract_output_to_dir(sta_mini_zip_path, "STA-mini/output/20201014-1422eco-hello", output_dir)
+    archive_dir(
+        src_dir_path=output_dir, target_archive_path=archive_path, remove_source_dir=True, archive_format=archive_format
+    )
+
+    # Import archive stream
+    with open(archive_path, "rb") as f:
+        file_output_storage.import_output("my-study", f)
+
+    assert file_output_storage.list_outputs("my-study") == [
+        OutputMetadata(id="20201014-1422eco-hello", in_study=True, archived=False)
+    ]
