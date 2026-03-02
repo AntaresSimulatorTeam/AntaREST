@@ -593,7 +593,7 @@ class MatrixService(ISimpleMatrixService):
                     # noinspection PyTypeChecker
                     np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")
             archive_dir(Path(tmpdir), export_path, archive_format=ArchiveFormat.ZIP)
-            stopwatch.log_elapsed(lambda x: logger.info(f"Matrix dataset exported (zipped mode) in {x}s"))
+            logger.info(f"Matrix dataset exported (zipped mode) in {stopwatch}s")
         return str(export_path)
 
     def download_dataset(self, dataset_id: str) -> FileDownloadTaskDTO:

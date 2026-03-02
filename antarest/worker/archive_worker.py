@@ -69,7 +69,7 @@ class ArchiveWorker(AbstractWorker):
             stopwatch = StopWatch()
             logger.info(f"Extracting {src} into {dest}")
             unzip(dest, src)
-            stopwatch.log_elapsed(lambda t: logger.info(f"Successfully extracted {src} into {dest} in {t}s"))
+            logger.info(f"Successfully extracted {src} into {dest} in {stopwatch}s")
             return TaskResult(success=True, message="")
         except Exception as e:
             logger.warning(

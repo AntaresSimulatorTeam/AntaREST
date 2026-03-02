@@ -105,16 +105,63 @@ def get_local_path() -> Path:
 
 
 class StopWatch:
+    """A simple stopwatch for measuring elapsed time, with support for laps.
+
+    The stopwatch starts automatically on creation. It tracks two timers:
+    a start timer (never reset) and a lap timer (reset on each call to ``lap()``).
+
+    Properties:
+        since_start: Total time since creation (never resets).
+        elapsed: Time since the last ``lap()`` call (or creation if ``lap()`` was never called).
+
+    Methods:
+        lap(): Returns the time since the last lap and resets the lap timer.
+
+    The stopwatch can also be used directly in f-strings via ``__format__``,
+    which formats the time since the last lap.
+
+    Examples::
+
+        stopwatch = StopWatch()
+
+        do_first_step()
+        logger.info(f"First step done in {stopwatch.lap()}s")
+
+        do_second_step()
+        logger.info(f"Second step done in {stopwatch.lap()}s")
+
+        logger.info(f"Total time: {stopwatch.since_start}s")
+
+        # Using __format__ for the current lap duration without resetting:
+        do_third_step()
+        logger.info(f"Third step running for {stopwatch:.2f}s")
+    """
+
     def __init__(self) -> None:
-        self.current_time: float = time.time()
-        self.start_time = self.current_time
+        self._start: float = time.time()
+        self._lap: float = self._start
 
-    def reset_current(self) -> None:
-        self.current_time = time.time()
+    def lap(self) -> float:
+        """Return the time elapsed since the last lap (or creation), then reset the lap timer."""
+        now = time.time()
+        elapsed = now - self._lap
+        self._lap = now
+        return elapsed
 
-    def log_elapsed(self, logger_: Callable[[float], None], since_start: bool = False) -> None:
-        logger_(time.time() - (self.start_time if since_start else self.current_time))
-        self.current_time = time.time()
+    @property
+    def since_start(self) -> float:
+        """Return the time elapsed since creation. No side effects."""
+        return time.time() - self._start
+
+    @property
+    def elapsed(self) -> float:
+        """Return the time elapsed since the last lap (or creation). No side effects."""
+        return time.time() - self._lap
+
+    @override
+    def __format__(self, format_spec: str) -> str:
+        """Format the time elapsed since the last lap. No side effects (does not reset the lap timer)."""
+        return format(self.elapsed, format_spec)
 
 
 T = TypeVar("T")

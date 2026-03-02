@@ -690,7 +690,7 @@ class StudyService:
                 f"{job_id}-{log_suffix}",
             ],
         )
-        stopwatch.log_elapsed(lambda d: logger.info(f"Saved logs for job {job_id} in {d}s"))
+        logger.info(f"Saved logs for job {job_id} in {stopwatch}s")
 
     def get_comments(self, study_id: str) -> str:
         """
