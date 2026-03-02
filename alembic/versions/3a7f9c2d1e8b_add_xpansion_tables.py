@@ -93,38 +93,8 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("study_id", name=op.f("pk_xpansion_adequacy_criterion")),
     )
 
-    op.create_table(
-        "xpansion_adequacy_criterion_v2",
-        sa.Column("study_id", sa.String(length=36), nullable=False),
-        sa.Column("stopping_threshold", sa.Float(), nullable=False),
-        sa.Column("criterion_count_threshold", sa.Float(), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["study_id"],
-            ["xpansion_settings.study_id"],
-            name=op.f("fk_xpansion_adequacy_criterion_v2_settings"),
-            ondelete="CASCADE",
-        ),
-        sa.PrimaryKeyConstraint("study_id", name=op.f("pk_xpansion_adequacy_criterion_v2")),
-    )
-
-    op.create_table(
-        "xpansion_adequacy_pattern",
-        sa.Column("study_id", sa.String(length=36), nullable=False),
-        sa.Column("area", sa.String(length=255), nullable=False),
-        sa.Column("criterion", sa.Float(), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["study_id"],
-            ["xpansion_adequacy_criterion_v2.study_id"],
-            name=op.f("fk_xpansion_adequacy_pattern_criterion_v2"),
-            ondelete="CASCADE",
-        ),
-        sa.PrimaryKeyConstraint("study_id", "area", name=op.f("pk_xpansion_adequacy_pattern")),
-    )
-
 
 def downgrade() -> None:
-    op.drop_table("xpansion_adequacy_pattern")
-    op.drop_table("xpansion_adequacy_criterion_v2")
     op.drop_table("xpansion_adequacy_criterion")
     op.drop_table("xpansion_candidate")
     op.drop_table("xpansion_settings")

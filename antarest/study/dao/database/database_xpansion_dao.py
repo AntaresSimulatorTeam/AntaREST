@@ -31,7 +31,7 @@ from antarest.core.exceptions import (
     XpansionConfigurationAlreadyExists,
     XpansionConfigurationDoesNotExist,
 )
-from antarest.core.serde.json import from_json, to_json_string
+from antarest.core.serde.json import to_json_string
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionAdequacyPattern,
@@ -146,7 +146,7 @@ class DatabaseXpansionDao(XpansionDao):
         sensitivity_config = XpansionSensitivitySettings(
             epsilon=data.pop("sensitivity_epsilon"),
             capex=data.pop("sensitivity_capex"),
-            projection=from_json(data.pop("sensitivity_projection")),
+            projection=_PROJECTION_ADAPTER.validate_json(data.pop("sensitivity_projection")),
         )
         # Nullable columns: map NULL back to the empty-string default.
         data["yearly_weights"] = data.get("yearly_weights") or ""
@@ -188,7 +188,8 @@ class DatabaseXpansionDao(XpansionDao):
         # require blob storage access, which is not yet available in the database DAO.
         # Pydantic validation of the settings object still applies upstream.
         if settings.sensitivity_config and settings.sensitivity_config.projection is not None:
-            existing_names = {c.name for c in self.get_all_xpansion_candidates()}
+            stmt = select(XPANSION_CANDIDATE_TABLE.c.name).where(XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
+            existing_names = {row.name for row in self._db_session.execute(stmt)}
             invalid = [name for name in settings.sensitivity_config.projection if name not in existing_names]
             if invalid:
                 raise CandidateNotFoundError(f"Candidates not found in projection: {', '.join(invalid)}")
@@ -281,15 +282,16 @@ class DatabaseXpansionDao(XpansionDao):
 
     @override
     def save_xpansion_adequacy_criterion(self, criterion: XpansionAdequacyCriterion) -> None:
-        missing_areas = self.get_impl().get_invalid_area_ids([p.area for p in criterion.patterns])
-        if missing_areas:
-            raise AreaNotFound(*missing_areas)
+        if criterion.patterns:
+            missing_areas = self.get_impl().get_invalid_area_ids([p.area for p in criterion.patterns])
+            if missing_areas:
+                raise AreaNotFound(*missing_areas)
 
         values: dict[str, Any] = {
             "study_id": self._study_id,
             "stopping_threshold": criterion.stopping_threshold,
             "criterion_count_threshold": criterion.criterion_count_threshold,
-            "patterns": to_json_string([p.model_dump() for p in criterion.patterns]),
+            "patterns": _ADEQUACY_PATTERNS_ADAPTER.dump_json(criterion.patterns).decode(),
         }
         upsert_one(self._db_session, XPANSION_ADEQUACY_CRITERION_TABLE, values)
         self._db_session.commit()

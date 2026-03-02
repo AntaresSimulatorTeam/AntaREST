@@ -307,23 +307,31 @@ class TestXpansionCandidates:
             dao.checks_xpansion_candidate_coherence(candidate)
 
     def test_checks_candidate_coherence_raises_for_missing_area_from(self, dao: DatabaseStudyDao) -> None:
-        """checks_xpansion_candidate_coherence should raise AreaNotFound when area_from is absent."""
-        dao.create_xpansion_configuration()
-        dao.save_area("Lyon")
-        # area_from ("nonexistent") not saved.
+        """checks_xpansion_candidate_coherence should raise AreaNotFound when area_from is absent.
 
-        candidate = _make_candidate("cand", "nonexistent", "lyon")
-        with pytest.raises(AreaNotFound, match="nonexistent"):
+        XpansionLink sorts areas alphabetically, so area_from < area_to.
+        "alpha" < "paris" → area_from="alpha" (missing), area_to="paris" (exists).
+        """
+        dao.create_xpansion_configuration()
+        dao.save_area("Paris")
+        # area_from ("alpha") not saved.
+
+        candidate = _make_candidate("cand", "alpha", "paris")
+        with pytest.raises(AreaNotFound, match="alpha"):
             dao.checks_xpansion_candidate_coherence(candidate)
 
     def test_checks_candidate_coherence_raises_for_missing_area_to(self, dao: DatabaseStudyDao) -> None:
-        """checks_xpansion_candidate_coherence should raise AreaNotFound when area_to is absent."""
-        dao.create_xpansion_configuration()
-        dao.save_area("Lyon")
-        # area_to ("nonexistent") not saved.
+        """checks_xpansion_candidate_coherence should raise AreaNotFound when area_to is absent.
 
-        candidate = _make_candidate("cand", "lyon", "nonexistent")
-        with pytest.raises(AreaNotFound, match="nonexistent"):
+        XpansionLink sorts areas alphabetically, so area_from < area_to.
+        "paris" < "zz_missing" → area_from="paris" (exists), area_to="zz_missing" (missing).
+        """
+        dao.create_xpansion_configuration()
+        dao.save_area("Paris")
+        # area_to ("zz_missing") not saved.
+
+        candidate = _make_candidate("cand", "paris", "zz_missing")
+        with pytest.raises(AreaNotFound, match="zz_missing"):
             dao.checks_xpansion_candidate_coherence(candidate)
 
     def test_checks_candidate_coherence_passes_for_valid_link(self, dao: DatabaseStudyDao) -> None:

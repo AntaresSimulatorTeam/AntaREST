@@ -14,19 +14,16 @@
 SQLAlchemy Core table definitions for Xpansion storage.
 
 Design decisions:
-  - xpansion_settings   : flat row per study; sensitivity scalars are inlined;
-                          sensitivity_projection stored as JSON Text.
-  - xpansion_candidate  : one row per candidate (individual CRUD, 13 typed fields).
+  - xpansion_settings           : flat row per study; sensitivity scalars are inlined;
+                                  sensitivity_projection stored as JSON Text.
+  - xpansion_candidate          : one row per candidate (individual CRUD, 13 typed fields).
   - xpansion_adequacy_criterion : flat row per study; patterns stored as JSON Text.
-  - xpansion_adequacy_pattern   : alternative to JSON patterns — one row per pattern
-                                  (normalized design for benchmarking comparison).
 
 Cascade chain:
   study → xpansion_settings → xpansion_candidate
                              → xpansion_adequacy_criterion
-                             → xpansion_adequacy_pattern (via xpansion_adequacy_criterion)
   Deleting xpansion_settings (i.e. the xpansion configuration) therefore
-  cascades to both candidates and the adequacy criterion (and transitively to patterns).
+  cascades to both candidates and the adequacy criterion.
 """
 
 from sqlalchemy import Boolean, Column, Enum, Float, ForeignKeyConstraint, Integer, String, Table, Text
@@ -131,44 +128,6 @@ XPANSION_ADEQUACY_CRITERION_TABLE = Table(
         ["study_id"],
         ["xpansion_settings.study_id"],
         name="fk_xpansion_adequacy_criterion_settings",
-        ondelete="CASCADE",
-    ),
-)
-
-# ---------------------------------------------------------------------------
-# Alternative normalized design (for benchmarking comparison with JSON Text).
-#
-# xpansion_adequacy_criterion_v2  (1-to-1 with xpansion_settings)
-#   Scalars only — patterns live in xpansion_adequacy_pattern rows.
-#
-# xpansion_adequacy_pattern  (1-to-many with xpansion_adequacy_criterion_v2)
-#   One row per XpansionAdequacyPattern.  PK = (study_id, area).
-# ---------------------------------------------------------------------------
-
-XPANSION_ADEQUACY_CRITERION_V2_TABLE = Table(
-    "xpansion_adequacy_criterion_v2",
-    metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
-    Column("stopping_threshold", Float(), nullable=False),
-    Column("criterion_count_threshold", Float(), nullable=False),
-    ForeignKeyConstraint(
-        ["study_id"],
-        ["xpansion_settings.study_id"],
-        name="fk_xpansion_adequacy_criterion_v2_settings",
-        ondelete="CASCADE",
-    ),
-)
-
-XPANSION_ADEQUACY_PATTERN_TABLE = Table(
-    "xpansion_adequacy_pattern",
-    metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
-    Column("area", String(255), nullable=False, primary_key=True),
-    Column("criterion", Float(), nullable=False),
-    ForeignKeyConstraint(
-        ["study_id"],
-        ["xpansion_adequacy_criterion_v2.study_id"],
-        name="fk_xpansion_adequacy_pattern_criterion_v2",
         ondelete="CASCADE",
     ),
 )
