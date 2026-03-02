@@ -51,8 +51,8 @@
       "labels": ["dependencies", "internal"]
     },
     {
-      "description": "Pin Python version",
-      "matchPackageNames": ["python"],
+      "description": "Pin Python and Node versions",
+      "matchPackageNames": ["python", "node"],
       "enabled": false
     }
   ]
