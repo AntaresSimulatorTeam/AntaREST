@@ -153,7 +153,7 @@ jobs:
         with:
           name: python-code-coverage-report
       - name: SonarCloud Scan
-        uses: sonarsource/sonarcloud-github-action@v3.1.0
+        uses: sonarsource/sonarcloud-github-action@v5.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
