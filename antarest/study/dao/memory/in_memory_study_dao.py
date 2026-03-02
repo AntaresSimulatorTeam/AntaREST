@@ -46,7 +46,7 @@ from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.scenario_builder_model import (
     AnyScenarios,
-    Rulesets,
+    Ruleset,
     ScenarioType,
 )
 from antarest.study.business.model.sts_model import (
@@ -203,8 +203,7 @@ class InMemoryStudyDao(StudyDao):
         # Layer-Area associations (layer_id -> set of area_ids)
         self._layer_areas: dict[str, set[str]] = {}
         # Scenario Builder
-        self.rulesets: Rulesets = {}
-        self.active_ruleset_name: Optional[str] = None
+        self.ruleset: Ruleset = Ruleset()
         # Load
         self._load: dict[str, str] = {}
         # Reserves
@@ -974,20 +973,16 @@ class InMemoryStudyDao(StudyDao):
         self._area_properties[area_id] = area_properties
 
     @override
-    def get_rulesets(self) -> Rulesets:
-        return self.rulesets
-
-    @override
-    def get_active_ruleset_name(self, default_ruleset: str = "Default Ruleset") -> str:
-        return self.active_ruleset_name or default_ruleset
+    def get_ruleset(self) -> Ruleset:
+        return self.ruleset
 
     @override
     def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
-        return self.rulesets[self.get_active_ruleset_name()].get(scenario_type)
+        return self.ruleset.get(scenario_type)
 
     @override
-    def save_scenario_builder(self, rulesets: Rulesets) -> None:
-        self.rulesets = rulesets
+    def save_scenario_builder(self, ruleset: Ruleset) -> None:
+        self.ruleset = ruleset
 
     @override
     def get_all_areas_info(self) -> List[AreaInfo]:

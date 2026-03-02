@@ -105,7 +105,7 @@ class TestRemoveCluster:
 
             # Add scenario builder data
             output = UpdateScenarioBuilder(
-                data={"Default Ruleset": RulesetUpdate(thermal={area_id: {cluster_name.lower(): {"0": 1}}})},
+                data=RulesetUpdate(thermal={area_id: {cluster_name.lower(): {"0": 1}}}),
                 command_context=command_context,
                 study_version=study_version,
             ).apply(study_data=empty_study)
