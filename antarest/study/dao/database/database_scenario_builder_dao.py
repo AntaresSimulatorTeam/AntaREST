@@ -36,7 +36,6 @@ from antarest.study.dao.database.models.ruleset import (
 
 _LINK_SEPARATOR = " / "
 
-# Maps Ruleset field name to the corresponding area scenario table
 _AREA_FIELD_TO_TABLE: dict[str, Table] = {
     "load": SCENARIO_LOAD_TABLE,
     "hydro": SCENARIO_HYDRO_TABLE,
@@ -47,7 +46,6 @@ _AREA_FIELD_TO_TABLE: dict[str, Table] = {
     "hydro_generation_power": SCENARIO_HYDRO_GENERATION_POWER_TABLE,
 }
 
-# Maps ScenarioType to area scenario table (for get_scenario_by_type)
 _AREA_SCENARIO_TYPE_TO_TABLE: dict[ScenarioType, Table] = {
     ScenarioType.LOAD: SCENARIO_LOAD_TABLE,
     ScenarioType.HYDRO: SCENARIO_HYDRO_TABLE,
@@ -58,7 +56,6 @@ _AREA_SCENARIO_TYPE_TO_TABLE: dict[ScenarioType, Table] = {
     ScenarioType.HYDRO_GENERATION_POWER: SCENARIO_HYDRO_GENERATION_POWER_TABLE,
 }
 
-# Maps ScenarioType to (table, item_id_column) for area-item scenarios
 _AREA_ITEM_TABLE_MAP: dict[ScenarioType, tuple[Table, str]] = {
     ScenarioType.THERMAL: (SCENARIO_THERMAL_TABLE, "thermal_id"),
     ScenarioType.RENEWABLE: (SCENARIO_RENEWABLE_TABLE, "renewable_id"),
@@ -92,7 +89,6 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
 
         base = {"study_id": study_id}
 
-        # Area scenarios (7 tables)
         for field_name, table in _AREA_FIELD_TO_TABLE.items():
             scenarios: dict[str, Any] = getattr(ruleset, field_name)
             if scenarios:
@@ -101,7 +97,6 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
                     [{**base, "area_id": area_id, "timeseries": ts} for area_id, ts in scenarios.items()],
                 )
 
-        # NTC (links): split "area1 / area2" into columns
         if ruleset.ntc:
             session.execute(
                 insert(SCENARIO_NTC_TABLE),
@@ -116,14 +111,12 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
                 ],
             )
 
-        # Binding constraints
         if ruleset.binding_constraints:
             session.execute(
                 insert(SCENARIO_BINDING_CONSTRAINTS_TABLE),
                 [{**base, "bc_group_id": bc_id, "timeseries": ts} for bc_id, ts in ruleset.binding_constraints.items()],
             )
 
-        # Area-item scenarios (thermal, renewable, storage_inflows)
         for scenario_type, (table, id_col) in _AREA_ITEM_TABLE_MAP.items():
             scenarios = ruleset.get(scenario_type)
             if scenarios:
@@ -135,7 +128,6 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
                 if rows:
                     session.execute(insert(table), rows)
 
-        # Storage constraints
         if ruleset.storage_constraints:
             rows = [
                 {
@@ -159,20 +151,17 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
         study_id, session = self._study_id, self._db_session
         ruleset = Ruleset()
 
-        # Area scenarios
         for field_name, table in _AREA_FIELD_TO_TABLE.items():
             stmt = select(table).where(table.c.study_id == study_id)
             scenarios = {row.area_id: row.timeseries for row in session.execute(stmt)}
             if scenarios:
                 setattr(ruleset, field_name, scenarios)
 
-        # NTC (links): reconstitute "area1 / area2"
         stmt = select(SCENARIO_NTC_TABLE).where(SCENARIO_NTC_TABLE.c.study_id == study_id)
         ntc = {f"{row.area1}{_LINK_SEPARATOR}{row.area2}": row.timeseries for row in session.execute(stmt)}
         if ntc:
             ruleset.ntc = ntc
 
-        # Binding constraints
         stmt = select(SCENARIO_BINDING_CONSTRAINTS_TABLE).where(
             SCENARIO_BINDING_CONSTRAINTS_TABLE.c.study_id == study_id
         )
@@ -180,7 +169,6 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
         if bc:
             ruleset.binding_constraints = bc
 
-        # Area-item scenarios (thermal, renewable, storage_inflows)
         for scenario_type, (table, id_col) in _AREA_ITEM_TABLE_MAP.items():
             stmt = select(table).where(table.c.study_id == study_id)
             result: dict[str, dict[str, Any]] = {}
@@ -189,7 +177,6 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
             if result:
                 ruleset.set(scenario_type, result)
 
-        # Storage constraints
         stmt = select(SCENARIO_STORAGE_CONSTRAINTS_TABLE).where(
             SCENARIO_STORAGE_CONSTRAINTS_TABLE.c.study_id == study_id
         )
@@ -207,7 +194,6 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
     def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
         study_id, session = self._study_id, self._db_session
 
-        # Area scenarios
         if scenario_type in _AREA_SCENARIO_TYPE_TO_TABLE:
             table = _AREA_SCENARIO_TYPE_TO_TABLE[scenario_type]
             stmt = select(table).where(table.c.study_id == study_id)

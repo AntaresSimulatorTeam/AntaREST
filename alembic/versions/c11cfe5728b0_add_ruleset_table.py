@@ -1,7 +1,7 @@
 """add scenario builder tables
 
 Revision ID: c11cfe5728b0
-Revises: c20d6b990db0
+Revises: 562d4e1bd95d
 Create Date: 2026-02-24 09:10:06.132523
 
 """
