@@ -66,6 +66,9 @@ def build_filesystem_dao(
     """
     Create a test study in filesystem mode and create a FileStudyTreeDao instance for testing.
     """
+    # Put matrix_service in common
+    study_factory._matrix_mapper_factory._matrix_service = command_context.matrix_service
+    # Create the study
     study_id = str(uuid.uuid4())
     study = create_study(id=study_id, name="Test Study", version=str(version), path=str(study_path / "my_study"))
     study.storage_mode = StorageMode.FILESYSTEM
