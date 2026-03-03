@@ -94,7 +94,7 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
             if scenarios:
                 session.execute(
                     insert(table),
-                    [{**base, "area_id": area_id, "ts_numbers": ts} for area_id, ts in scenarios.items()],
+                    [{**base, "area_id": area_id, "value": ts} for area_id, ts in scenarios.items()],
                 )
 
         if ruleset.ntc:
@@ -105,7 +105,7 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
                         **base,
                         "area1": link_id.split(_LINK_SEPARATOR)[0],
                         "area2": link_id.split(_LINK_SEPARATOR)[1],
-                        "ts_numbers": ts,
+                        "value": ts,
                     }
                     for link_id, ts in ruleset.ntc.items()
                 ],
@@ -114,14 +114,14 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
         if ruleset.binding_constraints:
             session.execute(
                 insert(SCENARIO_BINDING_CONSTRAINTS_TABLE),
-                [{**base, "bc_group_id": bc_id, "ts_numbers": ts} for bc_id, ts in ruleset.binding_constraints.items()],
+                [{**base, "bc_group_id": bc_id, "value": ts} for bc_id, ts in ruleset.binding_constraints.items()],
             )
 
         for scenario_type, (table, id_col) in _AREA_ITEM_TABLE_MAP.items():
             scenarios = ruleset.get(scenario_type)
             if scenarios:
                 rows = [
-                    {**base, "area_id": area_id, id_col: item_id, "ts_numbers": ts}
+                    {**base, "area_id": area_id, id_col: item_id, "value": ts}
                     for area_id, items in scenarios.items()
                     for item_id, ts in items.items()
                 ]
@@ -135,7 +135,7 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
                     "area_id": area_id,
                     "st_storage_id": storage_id,
                     "constraint_id": constraint_id,
-                    "ts_numbers": ts,
+                    "value": ts,
                 }
                 for area_id, storages in ruleset.storage_constraints.items()
                 for storage_id, constraints in storages.items()
@@ -153,19 +153,19 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
 
         for field_name, table in _AREA_FIELD_TO_TABLE.items():
             stmt = select(table).where(table.c.study_id == study_id)
-            scenarios = {row.area_id: row.ts_numbers for row in session.execute(stmt)}
+            scenarios = {row.area_id: row.value for row in session.execute(stmt)}
             if scenarios:
                 setattr(ruleset, field_name, scenarios)
 
         stmt = select(SCENARIO_NTC_TABLE).where(SCENARIO_NTC_TABLE.c.study_id == study_id)
-        ntc = {f"{row.area1}{_LINK_SEPARATOR}{row.area2}": row.ts_numbers for row in session.execute(stmt)}
+        ntc = {f"{row.area1}{_LINK_SEPARATOR}{row.area2}": row.value for row in session.execute(stmt)}
         if ntc:
             ruleset.ntc = ntc
 
         stmt = select(SCENARIO_BINDING_CONSTRAINTS_TABLE).where(
             SCENARIO_BINDING_CONSTRAINTS_TABLE.c.study_id == study_id
         )
-        bc = {row.bc_group_id: row.ts_numbers for row in session.execute(stmt)}
+        bc = {row.bc_group_id: row.value for row in session.execute(stmt)}
         if bc:
             ruleset.binding_constraints = bc
 
@@ -173,7 +173,7 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
             stmt = select(table).where(table.c.study_id == study_id)
             result: dict[str, dict[str, Any]] = {}
             for row in session.execute(stmt):
-                result.setdefault(row.area_id, {})[getattr(row, id_col)] = row.ts_numbers
+                result.setdefault(row.area_id, {})[getattr(row, id_col)] = row.value
             if result:
                 ruleset.set(scenario_type, result)
 
@@ -183,7 +183,7 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
         storage_constraints: dict[str, dict[str, dict[str, Any]]] = {}
         for row in session.execute(stmt):
             storage_constraints.setdefault(row.area_id, {}).setdefault(row.st_storage_id, {})[row.constraint_id] = (
-                row.ts_numbers
+                row.value
             )
         if storage_constraints:
             ruleset.storage_constraints = storage_constraints
@@ -197,24 +197,24 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
         if scenario_type in _AREA_SCENARIO_TYPE_TO_TABLE:
             table = _AREA_SCENARIO_TYPE_TO_TABLE[scenario_type]
             stmt = select(table).where(table.c.study_id == study_id)
-            return {row.area_id: row.ts_numbers for row in session.execute(stmt)}
+            return {row.area_id: row.value for row in session.execute(stmt)}
 
         if scenario_type == ScenarioType.LINK:
             stmt = select(SCENARIO_NTC_TABLE).where(SCENARIO_NTC_TABLE.c.study_id == study_id)
-            return {f"{row.area1}{_LINK_SEPARATOR}{row.area2}": row.ts_numbers for row in session.execute(stmt)}
+            return {f"{row.area1}{_LINK_SEPARATOR}{row.area2}": row.value for row in session.execute(stmt)}
 
         if scenario_type == ScenarioType.BINDING_CONSTRAINTS:
             stmt = select(SCENARIO_BINDING_CONSTRAINTS_TABLE).where(
                 SCENARIO_BINDING_CONSTRAINTS_TABLE.c.study_id == study_id
             )
-            return {row.bc_group_id: row.ts_numbers for row in session.execute(stmt)}
+            return {row.bc_group_id: row.value for row in session.execute(stmt)}
 
         if scenario_type in _AREA_ITEM_TABLE_MAP:
             table, id_col = _AREA_ITEM_TABLE_MAP[scenario_type]
             stmt = select(table).where(table.c.study_id == study_id)
             result: dict[str, Any] = {}
             for row in session.execute(stmt):
-                result.setdefault(row.area_id, {})[getattr(row, id_col)] = row.ts_numbers
+                result.setdefault(row.area_id, {})[getattr(row, id_col)] = row.value
             return result
 
         if scenario_type == ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS:
@@ -224,7 +224,7 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
             constraints_result: dict[str, Any] = {}
             for row in session.execute(stmt):
                 constraints_result.setdefault(row.area_id, {}).setdefault(row.st_storage_id, {})[row.constraint_id] = (
-                    row.ts_numbers
+                    row.value
                 )
             return constraints_result
 

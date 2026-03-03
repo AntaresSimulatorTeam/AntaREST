@@ -27,7 +27,7 @@ def _create_area_scenario_table(name: str) -> Table:
         metadata,
         Column("study_id", String(36), nullable=False, primary_key=True),
         Column("area_id", String(255), nullable=False, primary_key=True),
-        Column("ts_numbers", JSON, nullable=False),
+        Column("value", JSON, nullable=False),
         ForeignKeyConstraint(["study_id"], ["study.id"], ondelete="CASCADE"),
     )
 
@@ -46,7 +46,7 @@ SCENARIO_NTC_TABLE = Table(
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("area1", String(255), nullable=False, primary_key=True),
     Column("area2", String(255), nullable=False, primary_key=True),
-    Column("ts_numbers", JSON, nullable=False),
+    Column("value", JSON, nullable=False),
     ForeignKeyConstraint(
         ["study_id", "area1", "area2"],
         ["link.study_id", "link.area1", "link.area2"],
@@ -59,7 +59,7 @@ SCENARIO_BINDING_CONSTRAINTS_TABLE = Table(
     metadata,
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("bc_group_id", String(255), nullable=False, primary_key=True),
-    Column("ts_numbers", JSON, nullable=False),
+    Column("value", JSON, nullable=False),
     ForeignKeyConstraint(["study_id"], ["study.id"], ondelete="CASCADE"),
 )
 
@@ -69,7 +69,7 @@ SCENARIO_THERMAL_TABLE = Table(
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("thermal_id", String(255), nullable=False, primary_key=True),
-    Column("ts_numbers", JSON, nullable=False),
+    Column("value", JSON, nullable=False),
     ForeignKeyConstraint(
         ["study_id", "area_id", "thermal_id"],
         ["thermal_cluster.study_id", "thermal_cluster.area_id", "thermal_cluster.thermal_id"],
@@ -83,7 +83,7 @@ SCENARIO_RENEWABLE_TABLE = Table(
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("renewable_id", String(255), nullable=False, primary_key=True),
-    Column("ts_numbers", JSON, nullable=False),
+    Column("value", JSON, nullable=False),
     ForeignKeyConstraint(
         ["study_id", "area_id", "renewable_id"],
         ["renewable_cluster.study_id", "renewable_cluster.area_id", "renewable_cluster.renewable_id"],
@@ -97,7 +97,7 @@ SCENARIO_STORAGE_INFLOWS_TABLE = Table(
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("st_storage_id", String(255), nullable=False, primary_key=True),
-    Column("ts_numbers", JSON, nullable=False),
+    Column("value", JSON, nullable=False),
     ForeignKeyConstraint(
         ["study_id", "area_id", "st_storage_id"],
         ["st_storage.study_id", "st_storage.area_id", "st_storage.st_storage_id"],
@@ -112,7 +112,7 @@ SCENARIO_STORAGE_CONSTRAINTS_TABLE = Table(
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("st_storage_id", String(255), nullable=False, primary_key=True),
     Column("constraint_id", String(255), nullable=False, primary_key=True),
-    Column("ts_numbers", JSON, nullable=False),
+    Column("value", JSON, nullable=False),
     ForeignKeyConstraint(
         ["study_id", "area_id", "st_storage_id", "constraint_id"],
         [
