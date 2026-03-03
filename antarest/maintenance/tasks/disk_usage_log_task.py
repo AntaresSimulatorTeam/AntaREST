@@ -12,6 +12,19 @@
 
 """Celery task for disk usage logging."""
 
+from antarest.maintenance.app import MaintenanceTask, TaskName, celery_app, logger
+from antarest.maintenance.tasks.disk_usage_log import DiskUsageTaskResult, disk_usage_logging
 
-def disk_usage_log_task():
-    pass
+
+@celery_app.task(
+    base=MaintenanceTask,
+    bind=True,
+    name=TaskName.DISK_USAGE,
+    pydantic=True,
+)
+def disk_usage_log_task(self: MaintenanceTask) -> DiskUsageTaskResult:
+    ctx = self.context
+
+    logger.info("Registering disk usage metrics")
+
+    return disk_usage_logging(ctx.config)
