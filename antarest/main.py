@@ -35,7 +35,6 @@ from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.filesystem_blueprint import create_file_system_blueprint
 from antarest.core.logging.utils import LoggingMiddleware, configure_logger
 from antarest.core.metrics import add_metrics
-from antarest.core.swagger import customize_openapi
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import get_local_path
 from antarest.core.utils.web import tags_metadata
@@ -277,8 +276,6 @@ def fastapi_app(
         services.blob_gc.start()
     if services.variable_view_gc and Module.VARIABLE_VIEW_GC in config.server.services:
         services.variable_view_gc.start()
-
-    customize_openapi(application)
 
     add_metrics(application, config)
 
