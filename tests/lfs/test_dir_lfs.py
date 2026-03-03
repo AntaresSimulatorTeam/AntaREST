@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from antarest.study.output.lfs.dir_lfs import DirLargeFileStorage
+from antarest.lfs.dir_lfs import DirLargeFileStorage
 
 
 def test_lfs(tmp_path: Path):

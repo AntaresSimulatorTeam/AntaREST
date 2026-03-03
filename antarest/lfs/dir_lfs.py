@@ -16,7 +16,7 @@ from typing import BinaryIO
 
 from typing_extensions import override
 
-from antarest.study.output.lfs.lfs import ILargeFileStorage
+from antarest.lfs.lfs import ILargeFileStorage
 
 
 class DirLargeFileStorage(ILargeFileStorage):

@@ -44,6 +44,7 @@ from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudySer
 from antarest.favorite.web import create_favorite_routes
 from antarest.launcher.main import build_launcher
 from antarest.launcher.service import LauncherService
+from antarest.lfs.dir_lfs import DirLargeFileStorage
 from antarest.login.main import build_login
 from antarest.login.service import LoginService
 from antarest.matrixstore.main import build_matrix_service
@@ -53,7 +54,6 @@ from antarest.study.adapters import adapt_output_service_to_study_service
 from antarest.study.dao.database.database_blob_usage_provider import DatabaseBlobUsageProvider
 from antarest.study.main import build_study_service
 from antarest.study.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
-from antarest.study.output.lfs.dir_lfs import DirLargeFileStorage
 from antarest.study.output.output_service import OutputService
 from antarest.study.output.storage.file_output_storage import InStudyFileOutputStorage
 from antarest.study.output.storage.output_storage import IOutputStorage

@@ -20,9 +20,9 @@ from sqlalchemy import Engine
 
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.lfs.dir_lfs import DirLargeFileStorage
+from antarest.lfs.lfs import ILargeFileStorage
 from antarest.study.model import Study
-from antarest.study.output.lfs.dir_lfs import DirLargeFileStorage
-from antarest.study.output.lfs.lfs import ILargeFileStorage
 from antarest.study.output.storage.repository import OutputMetadataRepository
 from antarest.study.output.storage.v2_output_storage import V2OutputStorage
 from antarest.study.repository import StudyMetadataRepository
