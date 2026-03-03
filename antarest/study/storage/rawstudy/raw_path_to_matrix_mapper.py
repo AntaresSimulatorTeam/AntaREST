@@ -42,12 +42,12 @@ class RawPathToMatrixMapper:
     def __init__(self, dao: StudyDao) -> None:
         self._path_matchers = [
             RegexMatcher(
-                pattern=re.compile(r"user/expansion/capa/(?P<file_name>[^/]+)"),
+                pattern=re.compile(r"user/expansion/capa/(?P<filename>[^/]+)"),
                 getter=lambda m: dao.get_xpansion_resource(XpansionResourceFileType.CAPACITIES, m),  # type: ignore
                 setter=dao.save_xpansion_capacity,
             ),
             RegexMatcher(
-                pattern=re.compile(r"user/expansion/weights/(?P<file_name>[^/]+)"),
+                pattern=re.compile(r"user/expansion/weights/(?P<filename>[^/]+)"),
                 getter=lambda m: dao.get_xpansion_resource(XpansionResourceFileType.WEIGHTS, m),  # type: ignore
                 setter=dao.save_xpansion_weight,
             ),
