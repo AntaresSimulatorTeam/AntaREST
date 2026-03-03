@@ -15,7 +15,8 @@ from antarest.study.business.model.thematic_trimming_model import ThematicTrimmi
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
-def test_nominal_case(dao: DatabaseStudyDao) -> None:
+def test_nominal_case(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     new_trimming = ThematicTrimming(ov_cost=False, op_cost=False, mrg_price=False, co2_emis=False, dtg_by_plant=False)
     dao.save_thematic_trimming(new_trimming)
     assert dao.get_thematic_trimming() == new_trimming

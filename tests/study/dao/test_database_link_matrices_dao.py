@@ -41,7 +41,8 @@ def _set_up(dao: DatabaseStudyDao) -> tuple[str, str, pl.DataFrame, pl.DataFrame
     return series1_id, series2_id, df1, df2, link
 
 
-def test_series_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_series_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     series1_id, series2_id, df1, df2, link = _set_up(dao)
 
     # Create series
@@ -68,7 +69,8 @@ def test_series_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
         assert matrix_rows == []
 
 
-def test_direct_capacity_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_direct_capacity_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     series1_id, series2_id, df1, df2, link = _set_up(dao)
 
     # Create direct_capacity matrix
@@ -95,7 +97,8 @@ def test_direct_capacity_lifecycle(db_session: Session, dao: DatabaseStudyDao) -
         assert matrix_rows == []
 
 
-def test_indirect_capacity_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_indirect_capacity_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     series1_id, series2_id, df1, df2, link = _set_up(dao)
 
     # Create indirect_capacity matrix

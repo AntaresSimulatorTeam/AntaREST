@@ -40,7 +40,8 @@ from antarest.study.model import STUDY_VERSION_9_3
 from tests.study.dao.conftest import build_db_dao
 
 
-def test_nominal_case(dao: DatabaseStudyDao) -> None:
+def test_nominal_case(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     # General Config
     new_general_config = GeneralConfig(
         mode=Mode.ECONOMY,

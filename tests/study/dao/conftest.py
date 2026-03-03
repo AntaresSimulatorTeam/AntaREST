@@ -79,7 +79,7 @@ def build_filesystem_dao(
 
 
 @pytest.fixture
-def dao(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
+def db_dao(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
     return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
 
 

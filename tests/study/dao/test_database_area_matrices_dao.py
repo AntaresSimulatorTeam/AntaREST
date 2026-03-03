@@ -26,7 +26,8 @@ from antarest.study.dao.database.models.area import (
 )
 
 
-def test_load_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_load_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     matrix_service = dao._matrix_service
     dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
     series_id = matrix_service.create(dataframe)
@@ -51,7 +52,8 @@ def test_load_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
         assert load_rows == []
 
 
-def test_solar_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_solar_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     matrix_service = dao._matrix_service
     dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
     series_id = matrix_service.create(dataframe)
@@ -76,7 +78,8 @@ def test_solar_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
         assert solar_rows == []
 
 
-def test_wind_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_wind_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     matrix_service = dao._matrix_service
     dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
     series_id = matrix_service.create(dataframe)
@@ -101,7 +104,8 @@ def test_wind_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
         assert wind_rows == []
 
 
-def test_reserves_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_reserves_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     matrix_service = dao._matrix_service
     dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
     series_id = matrix_service.create(dataframe)
@@ -126,7 +130,8 @@ def test_reserves_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
         assert reserves_rows == []
 
 
-def test_misc_gen_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_misc_gen_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     matrix_service = dao._matrix_service
     dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
     series_id = matrix_service.create(dataframe)
