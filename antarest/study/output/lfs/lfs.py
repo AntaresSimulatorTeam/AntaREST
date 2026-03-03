@@ -24,10 +24,16 @@ class ILargeFileStorage(ABC):
 
     @abstractmethod
     def read_file(self, blob_id: str, target_path: Path) -> None:
+        """
+        Reads a file from the storage system and saves it to the target path.
+        """
         raise NotImplementedError()
 
     @abstractmethod
     def write_file(self, blob_id: str, source: Path | BinaryIO) -> None:
+        """
+        Writes to storage the content provided as source.
+        """
         raise NotImplementedError()
 
     @abstractmethod
