@@ -44,7 +44,7 @@ def upgrade() -> None:
             table_name,
             sa.Column("study_id", sa.String(length=36), nullable=False),
             sa.Column("area_id", sa.String(length=255), nullable=False),
-            sa.Column("timeseries", sa.JSON(), nullable=False),
+            sa.Column("ts_numbers", sa.JSON(), nullable=False),
             sa.ForeignKeyConstraint(["study_id"], ["study.id"], ondelete="CASCADE"),
             sa.PrimaryKeyConstraint("study_id", "area_id"),
         )
@@ -54,7 +54,7 @@ def upgrade() -> None:
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("area1", sa.String(length=255), nullable=False),
         sa.Column("area2", sa.String(length=255), nullable=False),
-        sa.Column("timeseries", sa.JSON(), nullable=False),
+        sa.Column("ts_numbers", sa.JSON(), nullable=False),
         sa.ForeignKeyConstraint(
             ["study_id", "area1", "area2"],
             ["link.study_id", "link.area1", "link.area2"],
@@ -67,7 +67,7 @@ def upgrade() -> None:
         "scenario_binding_constraints",
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("bc_group_id", sa.String(length=255), nullable=False),
-        sa.Column("timeseries", sa.JSON(), nullable=False),
+        sa.Column("ts_numbers", sa.JSON(), nullable=False),
         sa.ForeignKeyConstraint(["study_id"], ["study.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("study_id", "bc_group_id"),
     )
@@ -77,7 +77,7 @@ def upgrade() -> None:
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("area_id", sa.String(length=255), nullable=False),
         sa.Column("thermal_id", sa.String(length=255), nullable=False),
-        sa.Column("timeseries", sa.JSON(), nullable=False),
+        sa.Column("ts_numbers", sa.JSON(), nullable=False),
         sa.ForeignKeyConstraint(
             ["study_id", "area_id", "thermal_id"],
             ["thermal_cluster.study_id", "thermal_cluster.area_id", "thermal_cluster.thermal_id"],
@@ -91,7 +91,7 @@ def upgrade() -> None:
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("area_id", sa.String(length=255), nullable=False),
         sa.Column("renewable_id", sa.String(length=255), nullable=False),
-        sa.Column("timeseries", sa.JSON(), nullable=False),
+        sa.Column("ts_numbers", sa.JSON(), nullable=False),
         sa.ForeignKeyConstraint(
             ["study_id", "area_id", "renewable_id"],
             ["renewable_cluster.study_id", "renewable_cluster.area_id", "renewable_cluster.renewable_id"],
@@ -105,7 +105,7 @@ def upgrade() -> None:
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("area_id", sa.String(length=255), nullable=False),
         sa.Column("st_storage_id", sa.String(length=255), nullable=False),
-        sa.Column("timeseries", sa.JSON(), nullable=False),
+        sa.Column("ts_numbers", sa.JSON(), nullable=False),
         sa.ForeignKeyConstraint(
             ["study_id", "area_id", "st_storage_id"],
             ["st_storage.study_id", "st_storage.area_id", "st_storage.st_storage_id"],
@@ -120,7 +120,7 @@ def upgrade() -> None:
         sa.Column("area_id", sa.String(length=255), nullable=False),
         sa.Column("st_storage_id", sa.String(length=255), nullable=False),
         sa.Column("constraint_id", sa.String(length=255), nullable=False),
-        sa.Column("timeseries", sa.JSON(), nullable=False),
+        sa.Column("ts_numbers", sa.JSON(), nullable=False),
         sa.ForeignKeyConstraint(
             ["study_id", "area_id", "st_storage_id", "constraint_id"],
             [
@@ -136,5 +136,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    for table_name in reversed(_ALL_TABLES):
+    for table_name in _ALL_TABLES:
         op.drop_table(table_name)

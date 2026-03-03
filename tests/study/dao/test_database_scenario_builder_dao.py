@@ -145,15 +145,6 @@ def test_get_scenario_by_type_area(dao: DatabaseStudyDao) -> None:
     assert result == {"fr": {"0": 1}, "de": {"0": 2}}
 
 
-def test_get_scenario_by_type_link(dao: DatabaseStudyDao) -> None:
-    _setup_areas(dao, "fr", "de")
-    dao.save_link(Link(area1="de", area2="fr"))
-    dao.save_scenario_builder(Ruleset(ntc={"de / fr": {"0": 7}}))
-
-    result = dao.get_scenario_by_type(ScenarioType.LINK)
-    assert result == {"de / fr": {"0": 7}}
-
-
 def test_get_scenario_by_type_binding_constraints(dao: DatabaseStudyDao) -> None:
     dao.save_scenario_builder(Ruleset(binding_constraints={"group1": {"0": 5}}))
 
@@ -169,15 +160,6 @@ def test_get_scenario_by_type_thermal(dao: DatabaseStudyDao) -> None:
 
     result = dao.get_scenario_by_type(ScenarioType.THERMAL)
     assert result == {"fr": {"gas": {"0": 1}, "nuc": {"0": 2}}}
-
-
-def test_get_scenario_by_type_storage_inflows(dao: DatabaseStudyDao) -> None:
-    _setup_areas(dao, "fr")
-    dao.save_st_storage("fr", STStorage(id="battery_1", name="Battery 1"))
-    dao.save_scenario_builder(Ruleset(storage_inflows={"fr": {"battery_1": {"0": 4}}}))
-
-    result = dao.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_INFLOWS)
-    assert result == {"fr": {"battery_1": {"0": 4}}}
 
 
 def test_get_scenario_by_type_storage_constraints(dao: DatabaseStudyDao) -> None:
@@ -211,3 +193,131 @@ def test_get_scenario_by_type_does_not_mix_scenario_types(dao: DatabaseStudyDao)
 
     assert dao.get_scenario_by_type(ScenarioType.LOAD) == {"fr": {"0": 1}}
     assert dao.get_scenario_by_type(ScenarioType.WIND) == {"fr": {"0": 99}}
+
+
+def test_scenario_builder_thermal_deleted(dao: DatabaseStudyDao) -> None:
+    _setup_areas(dao, "fr")
+
+    dao.save_thermal("fr", ThermalCluster(id="gas", name="Gas"))
+    dao.save_scenario_builder(Ruleset(thermal={"fr": {"gas": {"0": 1}}}))
+
+    result = dao.get_scenario_by_type(ScenarioType.THERMAL)
+    assert result == {"fr": {"gas": {"0": 1}}}
+
+    dao.delete_thermal("fr", "gas")
+
+    result = dao.get_scenario_by_type(ScenarioType.THERMAL)
+    assert result == {}
+
+
+def test_scenario_builder_renewable_deleted(dao: DatabaseStudyDao) -> None:
+    _setup_areas(dao, "de")
+
+    dao.save_renewable("de", RenewableCluster(id="wind_farm", name="Wind Farm"))
+    dao.save_scenario_builder(Ruleset(renewable={"de": {"wind_farm": {"0": 3}}}))
+
+    result = dao.get_scenario_by_type(ScenarioType.RENEWABLE)
+    assert result == {"de": {"wind_farm": {"0": 3}}}
+
+    dao.delete_renewable("de", RenewableCluster(id="wind_farm", name="Wind Farm"))
+
+    result = dao.get_scenario_by_type(ScenarioType.RENEWABLE)
+    assert result == {}
+
+
+def test_scenario_builder_link_deleted(dao: DatabaseStudyDao) -> None:
+    _setup_areas(dao, "de", "fr")
+
+    dao.save_link(Link(area1="de", area2="fr"))
+    dao.save_scenario_builder(Ruleset(ntc={"de / fr": {"0": 7}}))
+
+    result = dao.get_scenario_by_type(ScenarioType.LINK)
+    assert result == {"de / fr": {"0": 7}}
+
+    dao.delete_link(Link(area1="de", area2="fr"))
+
+    result = dao.get_scenario_by_type(ScenarioType.LINK)
+    assert result == {}
+
+
+def test_scenario_builder_st_storage_deleted(dao: DatabaseStudyDao) -> None:
+    _setup_areas(dao, "fr")
+
+    dao.save_st_storage("fr", STStorage(id="battery_1", name="Battery 1"))
+    dao.save_scenario_builder(Ruleset(storage_inflows={"fr": {"battery_1": {"0": 4}}}))
+
+    result = dao.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_INFLOWS)
+    assert result == {"fr": {"battery_1": {"0": 4}}}
+
+    dao.delete_st_storage("fr", STStorage(id="battery_1", name="Battery 1"))
+
+    result = dao.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_INFLOWS)
+    assert result == {}
+
+
+def test_scenario_builder_st_storage_constraint_deleted(dao: DatabaseStudyDao) -> None:
+    _setup_areas(dao, "fr")
+
+    dao.save_st_storage("fr", STStorage(id="battery", name="Battery"))
+    dao.save_st_storage_additional_constraints(
+        "fr",
+        storage_id="battery",
+        constraints=[STStorageAdditionalConstraint(id="constraint_a", name="Constraint A")],
+    )
+    dao.save_scenario_builder(Ruleset(storage_constraints={"fr": {"battery": {"constraint_a": {"0": 10}}}}))
+
+    result = dao.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS)
+    assert result == {"fr": {"battery": {"constraint_a": {"0": 10}}}}
+
+    dao.delete_st_storage_additional_constraints("fr", "battery", ["constraint_a"])
+
+    result = dao.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS)
+    assert result == {}
+
+
+def test_scenario_builder_st_storage_deleted_cascades_to_constraints(dao: DatabaseStudyDao) -> None:
+    _setup_areas(dao, "fr")
+
+    dao.save_st_storage("fr", STStorage(id="battery", name="Battery"))
+    dao.save_st_storage_additional_constraints(
+        "fr",
+        storage_id="battery",
+        constraints=[STStorageAdditionalConstraint(id="c1", name="C1")],
+    )
+    dao.save_scenario_builder(
+        Ruleset(
+            storage_inflows={"fr": {"battery": {"0": 4}}},
+            storage_constraints={"fr": {"battery": {"c1": {"0": 10}}}},
+        )
+    )
+
+    assert dao.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_INFLOWS) == {"fr": {"battery": {"0": 4}}}
+    assert dao.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS) == {
+        "fr": {"battery": {"c1": {"0": 10}}}
+    }
+
+    dao.delete_st_storage("fr", STStorage(id="battery", name="Battery"))
+
+    assert dao.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_INFLOWS) == {}
+    assert dao.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS) == {}
+
+
+def test_scenario_builder_area_deleted_cascades(dao: DatabaseStudyDao) -> None:
+    _setup_areas(dao, "fr")
+
+    dao.save_thermal("fr", ThermalCluster(id="gas", name="Gas"))
+    dao.save_renewable("fr", RenewableCluster(id="wind", name="Wind"))
+    dao.save_scenario_builder(
+        Ruleset(
+            thermal={"fr": {"gas": {"0": 1}}},
+            renewable={"fr": {"wind": {"0": 2}}},
+        )
+    )
+
+    assert dao.get_scenario_by_type(ScenarioType.THERMAL) == {"fr": {"gas": {"0": 1}}}
+    assert dao.get_scenario_by_type(ScenarioType.RENEWABLE) == {"fr": {"wind": {"0": 2}}}
+
+    dao.delete_area("fr")
+
+    assert dao.get_scenario_by_type(ScenarioType.THERMAL) == {}
+    assert dao.get_scenario_by_type(ScenarioType.RENEWABLE) == {}
