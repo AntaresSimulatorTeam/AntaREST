@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -369,7 +369,7 @@ def validate_thermal_cluster_against_version(
     if cluster_data.group is not None and version < STUDY_VERSION_9_3:
         # Performs this transformation to fit with old behavior
         # Before, when giving a fake group, we used to write `other 1` instead and not crash.
-        cluster_data.group = ThermalClusterGroup(cluster_data.group)
+        cluster_data.group = ThermalClusterGroup(cluster_data.group).value
 
 
 def _initialize_field_default(cluster: ThermalCluster, field: str, default_value: Any) -> None:

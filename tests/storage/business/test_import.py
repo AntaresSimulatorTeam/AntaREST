@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -40,7 +40,9 @@ def test_import_study(tmp_path: Path) -> None:
     study_factory = Mock()
     study_factory.create_from_fs.return_value = FileStudy(Mock(), study)
 
-    study_service = RawStudyService(config=Mock(), study_factory=study_factory, cache=Mock(), matrix_service=Mock())
+    config = Mock()
+    config.storage.tmp_dir = tmp_path
+    study_service = RawStudyService(config=config, study_factory=study_factory, cache=Mock(), matrix_service=Mock())
     study_service.get = Mock()
     study_service.get_study_path = Mock()
     study_service.get.return_value = data

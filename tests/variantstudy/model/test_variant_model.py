@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -24,6 +24,7 @@ from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Role, User
 from antarest.login.utils import current_user_context
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
@@ -80,7 +81,8 @@ class TestVariantStudyService:
             owner_id=jwt_user.id,
             public_mode=PublicMode.EDIT if public_mode else PublicMode.NONE,
         )
-        root_study = raw_study_service.create(root_study)
+        context = variant_study_service.command_factory.command_context
+        FileStudyDaoFactory(context, raw_study_service.study_factory).create_study_dao(root_study)
         with db():
             # Save the root study in database
             variant_study_service.repository.save(root_study)

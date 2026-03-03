@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,12 +12,22 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List
 
-import pandas as pd
+import polars as pl
 
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 
 
 class ReadOnlyAreaDao(ABC):
+    @abstractmethod
+    def get_all_area_ids(self) -> list[str]:
+        """
+        Retrieve all physical areas of a study.
+
+        Returns:
+            The list of areas with their basic information.
+        """
+        raise NotImplementedError()
+
     @abstractmethod
     def get_all_areas_info(self) -> List[AreaInfo]:
         """
@@ -59,23 +69,30 @@ class ReadOnlyAreaDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_load(self, area_id: str) -> pd.DataFrame:
+    def get_invalid_area_ids(self, areas: list[str]) -> list[str]:
+        """
+        Check all areas exists in the study
+        """
         raise NotImplementedError()
 
     @abstractmethod
-    def get_misc_gen(self, area_id: str) -> pd.DataFrame:
+    def get_load(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_reserves(self, area_id: str) -> pd.DataFrame:
+    def get_misc_gen(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_solar(self, area_id: str) -> pd.DataFrame:
+    def get_reserves(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_wind(self, area_id: str) -> pd.DataFrame:
+    def get_solar(self, area_id: str) -> pl.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_wind(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
 

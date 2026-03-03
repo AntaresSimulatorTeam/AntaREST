@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,14 +13,14 @@
  */
 
 import type { Job } from "@/services/api/launcher/jobs/types";
+import * as api from "@/services/api/study";
+import type { GenericInfo, Link, LinkElement, StudySynthesis } from "@/types/types";
 import {
   createAction,
   createAsyncThunk,
   createEntityAdapter,
   createReducer,
 } from "@reduxjs/toolkit";
-import * as api from "../../services/api/study";
-import type { GenericInfo, Link, LinkElement, StudySynthesis } from "../../types/types";
 import {
   getDeepVariantsIds,
   getStudyMapsIds,

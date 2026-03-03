@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -61,7 +61,7 @@ export function adaptVariableViewParamsToDto(params: VariableViewParams): Variab
         ...baseParams,
         type: "st_storage",
         area_id: params.areaId,
-        storage_id: params.clusterId,
+        st_storage_id: params.clusterId,
       };
   }
 }

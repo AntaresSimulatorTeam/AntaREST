@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,6 +12,7 @@
 
 
 class APITag:
+    favorite = "Manage favorites"
     users = "Users"
     launcher = "Launch Studies"
     study_permissions = "Manage Study Permissions"
@@ -67,6 +68,7 @@ tags_metadata = [
     {
         "name": APITag.users,
     },
+    {"name": APITag.favorite},
     {
         "name": APITag.misc,
     },

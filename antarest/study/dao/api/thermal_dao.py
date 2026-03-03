@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,7 +13,7 @@
 from abc import ABC, abstractmethod
 from typing import Sequence
 
-import pandas as pd
+import polars as pl
 
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 
@@ -21,6 +21,11 @@ from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 class ReadOnlyThermalDao(ABC):
     @abstractmethod
     def get_all_thermals(self) -> dict[str, dict[str, ThermalCluster]]:
+        """
+        Returns a mapping of area ID to cluster IDs to cluster.
+
+        Note that areas with no clusters will be absent from the returned mapping.
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -36,23 +41,23 @@ class ReadOnlyThermalDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_thermal_series(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_series(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
 
@@ -86,5 +91,5 @@ class ThermalDao(ReadOnlyThermalDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def delete_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
+    def delete_thermal(self, area_id: str, thermal_id: str) -> None:
         raise NotImplementedError()

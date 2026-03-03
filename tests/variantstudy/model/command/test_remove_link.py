@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -18,7 +18,6 @@ from unittest.mock import Mock
 from zipfile import ZipFile
 
 import pytest
-from checksumdir import dirhash
 from pydantic import ValidationError
 
 from antarest.study.business.model.scenario_builder_model import RulesetUpdate
@@ -32,6 +31,7 @@ from antarest.study.storage.variantstudy.model.command.create_link import Create
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import dirhash
 from tests.variantstudy.model.command.helpers import reset_line_separator
 
 
@@ -113,7 +113,7 @@ class TestRemoveLink:
 
         # Create a ruleset in the Scenario Builder configuration for this link
         output = UpdateScenarioBuilder(
-            data={"Default Ruleset": RulesetUpdate(ntc={"area_x / area_y": {"0": 1}})},
+            data=RulesetUpdate(ntc={"area_x / area_y": {"0": 1}}),
             command_context=command_context,
             study_version=study_version,
         ).apply(study_data=empty_study)
@@ -133,7 +133,7 @@ class TestRemoveLink:
 
         # Create a ruleset in the Scenario Builder configuration for this link
         output = UpdateScenarioBuilder(
-            data={"Default Ruleset": RulesetUpdate(ntc={"area_x / area_z": {"0": 1}})},
+            data=RulesetUpdate(ntc={"area_x / area_z": {"0": 1}}),
             command_context=command_context,
             study_version=study_version,
         ).apply(study_data=empty_study)

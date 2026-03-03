@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,17 +14,21 @@ from dataclasses import dataclass
 from pathlib import PurePosixPath
 from typing import Dict, Iterator, List, Optional, Sequence
 
-import pandas as pd
+import numpy as np
+import polars as pl
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, LinkNotFound, ReferencedObjectDeletionNotAllowed
-from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.core.utils.polars import create_polars_dataframe
+from antarest.core.utils.utils import remove_first_match
+from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint, ClusterTerm, LinkTerm
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
+from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters, HydroPmax
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
@@ -42,7 +46,7 @@ from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.scenario_builder_model import (
     AnyScenarios,
-    Rulesets,
+    Ruleset,
     ScenarioType,
 )
 from antarest.study.business.model.sts_model import (
@@ -80,6 +84,7 @@ class ClusterKey:
 @dataclass(frozen=True)
 class AdditionalConstraintKey:
     area_id: str
+    storage_id: str
     constraint_id: str
 
 
@@ -92,8 +97,8 @@ def cluster_key(area_id: str, cluster_id: str) -> ClusterKey:
     return ClusterKey(area_id, cluster_id)
 
 
-def additional_constraint_key(area_id: str, constraint_id: str) -> AdditionalConstraintKey:
-    return AdditionalConstraintKey(area_id, constraint_id)
+def additional_constraint_key(area_id: str, storage_id: str, constraint_id: str) -> AdditionalConstraintKey:
+    return AdditionalConstraintKey(area_id, storage_id, constraint_id)
 
 
 class InMemoryStudyDao(StudyDao):
@@ -130,6 +135,10 @@ class InMemoryStudyDao(StudyDao):
         self._hydro_inflow_pattern: dict[str, str] = {}
         self._hydro_water_values: dict[str, str] = {}
         self._hydro_mingen: dict[str, str] = {}
+        self._hydro_max_hourly_gen_power: dict[str, str] = {}
+        self._hydro_max_hourly_pump_power: dict[str, str] = {}
+        self._hydro_max_daily_gen_energy: dict[str, str] = {}
+        self._hydro_max_daily_pump_energy: dict[str, str] = {}
         # Renewables
         self._renewables: Dict[ClusterKey, RenewableCluster] = {}
         self._renewable_series: Dict[ClusterKey, str] = {}
@@ -147,6 +156,7 @@ class InMemoryStudyDao(StudyDao):
         self._storage_cost_variation_withdrawal: Dict[ClusterKey, str] = {}
         # Short-term storages additional constraints
         self._st_storages_constraints: STStorageAdditionalConstraintsMap = {}
+        self._st_storages_constraints_matrix: Dict[AdditionalConstraintKey, str] = {}
         self._st_storages_constraints_terms: Dict[str, dict[str, str]] = {}
         # Binding constraints
         self._constraints: Dict[str, BindingConstraint] = {}
@@ -160,6 +170,8 @@ class InMemoryStudyDao(StudyDao):
         self._optimization_preferences: OptimizationPreferences = OptimizationPreferences()
         # Advanced parameters config
         self._advanced_parameters: AdvancedParameters = AdvancedParameters()
+        # Compatibility parameters config
+        self._compatibility_parameters: CompatibilityParameters = CompatibilityParameters()
         # Xpansion
         self._xpansion_candidates: dict[str, XpansionCandidate] = {}
         self._xpansion_settings: XpansionSettings = XpansionSettings()
@@ -191,8 +203,7 @@ class InMemoryStudyDao(StudyDao):
         # Layer-Area associations (layer_id -> set of area_ids)
         self._layer_areas: dict[str, set[str]] = {}
         # Scenario Builder
-        self.rulesets: Rulesets = {}
-        self.active_ruleset_name: Optional[str] = None
+        self.ruleset: Ruleset = Ruleset()
         # Load
         self._load: dict[str, str] = {}
         # Reserves
@@ -220,6 +231,10 @@ class InMemoryStudyDao(StudyDao):
         self._comments = comments
 
     @override
+    def update_antares_file(self, editor: str, last_save: float) -> None:
+        pass
+
+    @override
     def get_version(self) -> StudyVersion:
         return self._version
 
@@ -239,17 +254,17 @@ class InMemoryStudyDao(StudyDao):
             raise LinkNotFound(f"The link {area1_id} -> {area2_id} is not present in the study")
 
     @override
-    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
         matrix_id = self._link_indirect_capacities[link_key(area_from, area_to)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
         matrix_id = self._link_direct_capacities[link_key(area_from, area_to)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_link_series(self, area_from: str, area_to: str) -> pd.DataFrame:
+    def get_link_series(self, area_from: str, area_to: str) -> pl.DataFrame:
         matrix_id = self._link_capacities[link_key(area_from, area_to)]
         return self._matrix_service.get(matrix_id)
 
@@ -293,27 +308,27 @@ class InMemoryStudyDao(StudyDao):
         return cluster_key(area_id, thermal_id) in self._thermals
 
     @override
-    def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         matrix_id = self._thermal_prepro[cluster_key(area_id, thermal_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         matrix_id = self._thermal_modulation[cluster_key(area_id, thermal_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_thermal_series(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_series(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         matrix_id = self._thermal_series[cluster_key(area_id, thermal_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         matrix_id = self._thermal_fuel_cost[cluster_key(area_id, thermal_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         matrix_id = self._thermal_co2_cost[cluster_key(area_id, thermal_id)]
         return self._matrix_service.get(matrix_id)
 
@@ -347,8 +362,8 @@ class InMemoryStudyDao(StudyDao):
         self._thermal_co2_cost[cluster_key(area_id, thermal_id)] = series_id
 
     @override
-    def delete_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
-        del self._thermals[cluster_key(area_id, thermal.id)]
+    def delete_thermal(self, area_id: str, thermal_id: str) -> None:
+        del self._thermals[cluster_key(area_id, thermal_id)]
 
     @override
     def get_all_hydro_properties(self) -> Dict[str, HydroProperties]:
@@ -379,6 +394,26 @@ class InMemoryStudyDao(StudyDao):
         return HydroCorrelationMatrix.from_hydro_correlations(self._hydro_correlation)
 
     @override
+    def get_hydro_max_hourly_gen_power(self, area_id: str) -> pl.DataFrame:
+        matrix_id = self._hydro_max_hourly_gen_power[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_max_hourly_pump_power(self, area_id: str) -> pl.DataFrame:
+        matrix_id = self._hydro_max_hourly_pump_power[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_max_daily_gen_energy(self, area_id: str) -> pl.DataFrame:
+        matrix_id = self._hydro_max_daily_gen_energy[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_hydro_max_daily_pump_energy(self, area_id: str) -> pl.DataFrame:
+        matrix_id = self._hydro_max_daily_pump_energy[area_id]
+        return self._matrix_service.get(matrix_id)
+
+    @override
     def save_hydro_management(self, hydro_management: HydroManagement, area_id: str) -> None:
         self._hydro_properties[area_id].management_options = hydro_management
 
@@ -393,6 +428,56 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_hydro_correlation(self, area_id: str, correlation: HydroCorrelation) -> None:
         self._hydro_correlation[area_id] = correlation
+
+    @override
+    def save_hydro_max_hourly_gen_power(self, area_id: str, series_id: str) -> None:
+        self._hydro_max_hourly_gen_power[area_id] = series_id
+
+    @override
+    def save_hydro_max_hourly_pump_power(self, area_id: str, series_id: str) -> None:
+        self._hydro_max_hourly_pump_power[area_id] = series_id
+
+    @override
+    def save_hydro_max_daily_gen_energy(self, area_id: str, series_id: str) -> None:
+        self._hydro_max_daily_gen_energy[area_id] = series_id
+
+    @override
+    def save_hydro_max_daily_pump_energy(self, area_id: str, series_id: str) -> None:
+        self._hydro_max_daily_pump_energy[area_id] = series_id
+
+    @override
+    def convert_hydro_pmax(
+        self,
+        hydro_pmax: HydroPmax,
+    ) -> None:
+        compatibility_data = self.get_compatibility_parameters()
+        # If hydro-pmax isn't changed, we don't need to do anything
+        if compatibility_data.hydro_pmax == hydro_pmax:
+            return
+
+        areas = self._area_names
+        matrix_service = self._matrix_service
+
+        hourly = create_polars_dataframe(np.zeros((8760, 1)))
+        daily = create_polars_dataframe(np.full((365, 1), 24))
+
+        if hydro_pmax == HydroPmax.HOURLY:
+            # When converting to hourly, create and save the matrices
+            for area_id in areas:
+                self.save_hydro_max_hourly_gen_power(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly))
+                self.save_hydro_max_hourly_pump_power(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly))
+                self.save_hydro_max_daily_gen_energy(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily))
+                self.save_hydro_max_daily_pump_energy(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily))
+        else:
+            # When converting away from hourly, remove the matrices from in-memory storage
+            for area_id in areas:
+                self._hydro_max_hourly_gen_power.pop(area_id, None)
+                self._hydro_max_hourly_pump_power.pop(area_id, None)
+                self._hydro_max_daily_gen_energy.pop(area_id, None)
+                self._hydro_max_daily_pump_energy.pop(area_id, None)
+        # Update compatibility_data object and save it
+        compatibility_data.hydro_pmax = hydro_pmax
+        self.save_compatibility_parameters(compatibility_data)
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
@@ -414,7 +499,7 @@ class InMemoryStudyDao(StudyDao):
         return cluster_key(area_id, renewable_id) in self._renewables
 
     @override
-    def get_renewable_series(self, area_id: str, renewable_id: str) -> pd.DataFrame:
+    def get_renewable_series(self, area_id: str, renewable_id: str) -> pl.DataFrame:
         matrix_id = self._renewable_series[cluster_key(area_id, renewable_id)]
         return self._matrix_service.get(matrix_id)
 
@@ -444,22 +529,22 @@ class InMemoryStudyDao(StudyDao):
         return self._constraints[constraint_id]
 
     @override
-    def get_constraint_values_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_values_matrix(self, constraint_id: str) -> pl.DataFrame:
         matrix_id = self._constraints_values_matrix[constraint_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_constraint_less_term_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_less_term_matrix(self, constraint_id: str) -> pl.DataFrame:
         matrix_id = self._constraints_less_term_matrix[constraint_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_constraint_greater_term_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_greater_term_matrix(self, constraint_id: str) -> pl.DataFrame:
         matrix_id = self._constraints_greater_term_matrix[constraint_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_constraint_equal_term_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_equal_term_matrix(self, constraint_id: str) -> pl.DataFrame:
         matrix_id = self._constraints_equal_term_matrix[constraint_id]
         return self._matrix_service.get(matrix_id)
 
@@ -509,53 +594,60 @@ class InMemoryStudyDao(StudyDao):
         return cluster_key(area_id, storage_id) in self._st_storages
 
     @override
-    def get_st_storage_pmax_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_pmax_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_pmax_injection[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_pmax_withdrawal[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_st_storage_lower_rule_curve(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_lower_rule_curve(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_lower_rule_curve[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_st_storage_upper_rule_curve(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_upper_rule_curve(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_upper_rule_curve[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_st_storage_inflows(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_inflows(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_inflows[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_st_storage_cost_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_cost_injection[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_st_storage_cost_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_cost_withdrawal[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_st_storage_cost_level(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_level(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_cost_level[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_st_storage_cost_variation_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_variation_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_cost_variation_injection[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_cost_variation_withdrawal[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_st_storage_additional_constraint_matrix(
+        self, area_id: str, storage_id: str, constraint_id: str
+    ) -> pl.DataFrame:
+        matrix_id = self._st_storages_constraints_matrix[additional_constraint_key(area_id, storage_id, constraint_id)]
         return self._matrix_service.get(matrix_id)
 
     @override
@@ -632,6 +724,14 @@ class InMemoryStudyDao(StudyDao):
         return self._advanced_parameters
 
     @override
+    def get_compatibility_parameters(self) -> CompatibilityParameters:
+        return self._compatibility_parameters
+
+    @override
+    def save_compatibility_parameters(self, parameters: CompatibilityParameters) -> None:
+        self._compatibility_parameters = parameters
+
+    @override
     def save_advanced_parameters(self, parameters: AdvancedParameters) -> None:
         self._advanced_parameters = parameters
 
@@ -649,7 +749,7 @@ class InMemoryStudyDao(StudyDao):
     def save_st_storage_constraint_matrix(
         self, area_id: str, storage_id: str, constraint_id: str, series_id: str
     ) -> None:
-        self._st_storages_constraints_terms.setdefault(area_id, {})[storage_id] = series_id
+        self._st_storages_constraints_matrix[additional_constraint_key(area_id, storage_id, constraint_id)] = series_id
 
     @override
     def delete_st_storage_additional_constraints(self, area_id: str, storage_id: str, constraints: list[str]) -> None:
@@ -660,6 +760,9 @@ class InMemoryStudyDao(StudyDao):
                 constraints_to_remove.append(constraint)
         for constraint in constraints_to_remove:
             self._st_storages_constraints[area_id][storage_id].remove(constraint)
+            self._st_storages_constraints_matrix.pop(
+                additional_constraint_key(area_id, storage_id, constraint.id), None
+            )
 
     @override
     def save_st_storage_additional_constraints(
@@ -715,7 +818,7 @@ class InMemoryStudyDao(StudyDao):
         return
 
     @override
-    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pd.DataFrame:
+    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pl.DataFrame:
         return self._xpansion_resources[resource_type][filename]
 
     @override
@@ -801,12 +904,12 @@ class InMemoryStudyDao(StudyDao):
         del self._districts[district_id]
 
     @override
-    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
+    def get_invalid_area_ids(self, areas: list[str]) -> list[str]:
         # TODO make this actually work once we implement area DAO
         return list(set(areas) - set(self._area_names))
 
     @override
-    def tmp_get_all_areas(self) -> list[str]:
+    def get_all_area_ids(self) -> list[str]:
         return self._area_names
 
     @override
@@ -824,8 +927,8 @@ class InMemoryStudyDao(StudyDao):
         return self._layers
 
     @override
-    def delete_layer(self, layer: Layer) -> None:
-        self._layers.remove(layer)
+    def delete_layer(self, layer_id: str) -> None:
+        remove_first_match(self._layers, lambda layer: layer.id == layer_id)
 
     @override
     def layer_exists(self, layer_id: str) -> bool:
@@ -870,20 +973,16 @@ class InMemoryStudyDao(StudyDao):
         self._area_properties[area_id] = area_properties
 
     @override
-    def get_rulesets(self) -> Rulesets:
-        return self.rulesets
-
-    @override
-    def get_active_ruleset_name(self, default_ruleset: str = "Default Ruleset") -> str:
-        return self.active_ruleset_name or default_ruleset
+    def get_ruleset(self) -> Ruleset:
+        return self.ruleset
 
     @override
     def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
-        return self.rulesets[self.get_active_ruleset_name()].get(scenario_type)
+        return self.ruleset.get(scenario_type)
 
     @override
-    def save_scenario_builder(self, rulesets: Rulesets) -> None:
-        self.rulesets = rulesets
+    def save_scenario_builder(self, ruleset: Ruleset) -> None:
+        self.ruleset = ruleset
 
     @override
     def get_all_areas_info(self) -> List[AreaInfo]:
@@ -967,47 +1066,47 @@ class InMemoryStudyDao(StudyDao):
         self._layer_areas[layer_id] = set(area_ids)
 
     @override
-    def get_hydro_maxpower(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_maxpower(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_maxpower[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_hydro_reservoir(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_reservoir(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_reservoir[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_hydro_energy(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_energy(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_energy[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_hydro_run_of_river(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_run_of_river(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_run_of_river[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_hydro_modulation(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_modulation(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_modulation[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_hydro_credit_modulations(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_credit_modulations(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_credit_modulations[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_hydro_inflow_pattern(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_inflow_pattern(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_inflow_pattern[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_hydro_water_values(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_water_values(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_water_values[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_hydro_mingen(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_mingen(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._hydro_mingen[area_id]
         return self._matrix_service.get(matrix_id)
 
@@ -1048,27 +1147,27 @@ class InMemoryStudyDao(StudyDao):
         self._hydro_mingen[area_id] = series_id
 
     @override
-    def get_load(self, area_id: str) -> pd.DataFrame:
+    def get_load(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._load[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_misc_gen(self, area_id: str) -> pd.DataFrame:
+    def get_misc_gen(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._misc_gen[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_reserves(self, area_id: str) -> pd.DataFrame:
+    def get_reserves(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._reserves[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_solar(self, area_id: str) -> pd.DataFrame:
+    def get_solar(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._solar[area_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_wind(self, area_id: str) -> pd.DataFrame:
+    def get_wind(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._wind[area_id]
         return self._matrix_service.get(matrix_id)
 

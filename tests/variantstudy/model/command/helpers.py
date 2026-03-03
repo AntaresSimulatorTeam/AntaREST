@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -20,7 +20,7 @@ def reset_line_separator(*paths: Path) -> None:
     This utility function is used to avoid false negative in directory checksum comparison.
     The idea is to normalize text files before calculating the checksum to avoid differences in newline.
 
-    Directory checksum is done with `checksumdir.dirhash` which performs binary file reading.
+    Directory checksum is done with `tests.helpers.dirhash` which performs binary file reading.
     """
     for path in paths:
         path.write_text(path.read_text())

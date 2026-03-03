@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,6 +14,7 @@ from typing import Iterator
 
 import numpy as np
 import pandas as pd
+import polars as pl
 
 from antarest.core.serde.parquet_writer import (
     write_dataframes_in_parquet_format_by_column_sets,
@@ -24,10 +25,10 @@ from antarest.core.serde.parquet_writer import (
 def test_different_columns(tmp_path: Path) -> None:
     dataframes = iter(
         [
-            pd.DataFrame(data=[(1, 2), (3, 4)], columns=["A", "B"]),
-            pd.DataFrame(data=[(5, 6, 7), (8, 9, 10)], columns=["A", "B", "C"]),
-            pd.DataFrame(data=[(11, 12), (13, 14)], columns=["A", "B"]),
-            pd.DataFrame(data=[(15, 16, 17), (18, 19, 20)], columns=["B", "A", "D"]),
+            pl.DataFrame(data=[(1, 2), (3, 4)], schema=["A", "B"], orient="row"),
+            pl.DataFrame(data=[(5, 6, 7), (8, 9, 10)], schema=["A", "B", "C"], orient="row"),
+            pl.DataFrame(data=[(11, 12), (13, 14)], schema=["A", "B"], orient="row"),
+            pl.DataFrame(data=[(15, 16, 17), (18, 19, 20)], schema=["B", "A", "D"], orient="row"),
         ]
     )
 
@@ -62,8 +63,8 @@ def test_different_columns(tmp_path: Path) -> None:
 
 
 def test_same_columns(tmp_path: Path) -> None:
-    df1 = pd.DataFrame(data=[(10, 11), (12, 13)], columns=["A", "B"])
-    df2 = pd.DataFrame(data=[(12, 13), (14, 15)], columns=["A", "B"])
+    df1 = pl.DataFrame(data=[(10, 11), (12, 13)], schema=["A", "B"])
+    df2 = pl.DataFrame(data=[(12, 13), (14, 15)], schema=["A", "B"])
     dataframes = iter([df1, df2])
 
     files, all_cols = write_dataframes_in_parquet_format_by_column_sets(tmp_path, dataframes)
@@ -72,13 +73,13 @@ def test_same_columns(tmp_path: Path) -> None:
 
     dfs = yield_dataframes_from_parquet(files, all_cols)
 
-    pd.testing.assert_frame_equal(next(dfs), df1, check_dtype=False)
-    pd.testing.assert_frame_equal(next(dfs), df2, check_dtype=False)
+    pd.testing.assert_frame_equal(next(dfs), df1.to_pandas(), check_dtype=False)
+    pd.testing.assert_frame_equal(next(dfs), df2.to_pandas(), check_dtype=False)
 
 
 def test_no_dataframes_given(tmp_path: Path) -> None:
     # This case can happen when no column matched the ones given by the user
-    dataframes: Iterator[pd.DataFrame] = iter([])
+    dataframes: Iterator[pl.DataFrame] = iter([])
 
     all_df_names, all_cols = write_dataframes_in_parquet_format_by_column_sets(tmp_path, dataframes)
     assert all_df_names == []

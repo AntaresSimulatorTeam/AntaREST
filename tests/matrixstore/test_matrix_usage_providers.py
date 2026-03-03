@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
 
-import pandas as pd
+import polars as pl
 import pytest
 from typing_extensions import override
 
@@ -32,6 +32,7 @@ from antarest.matrixstore.model import MatrixDataSetUpdateDTO, MatrixInfoDTO, Ma
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import MatrixFrequency, RawStudy
 from antarest.study.output.output_model import OutputVariablesType, OutputVariablesViewsModel
 from antarest.study.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
@@ -109,7 +110,10 @@ def dataset_usage_provider(
 
 
 def test_raw_studies_matrix_usage_provider(
-    raw_studies_matrix_usage_provider: RawStudyMatrixUsageProvider, raw_study_service: RawStudyService, tmp_path: Path
+    raw_studies_matrix_usage_provider: RawStudyMatrixUsageProvider,
+    raw_study_service: RawStudyService,
+    tmp_path: Path,
+    command_context: CommandContext,
 ) -> None:
     matrix_name1 = "matrix_name1"
     matrix_name2 = "matrix_name2"
@@ -128,8 +132,8 @@ def test_raw_studies_matrix_usage_provider(
     )
 
     with db():
-        raw_study = raw_study_service.create(metadata_raw_study)
-        study_path = Path(raw_study.path)
+        FileStudyDaoFactory(command_context, raw_study_service.study_factory).create_study_dao(metadata_raw_study)
+        study_path = Path(metadata_raw_study.path)
         input_path = study_path / "input"
         expansion_path = study_path / "user" / "expansion"
         expansion_path.mkdir(parents=True, exist_ok=True)
@@ -318,8 +322,8 @@ def test_dataset_matrix_usage_provider(matrix_service: MatrixService, admin_user
             groups=[group.name],
         )
 
-        matrix_a = matrix_service.create(pd.DataFrame([[0]]))
-        matrix_b = matrix_service.create(pd.DataFrame([[1]]))
+        matrix_a = matrix_service.create(pl.DataFrame([[0]]))
+        matrix_b = matrix_service.create(pl.DataFrame([[1]]))
         matrices = [MatrixInfoDTO(id=matrix_a, name="A"), MatrixInfoDTO(id=matrix_b, name="B")]
 
         with current_user_context(admin_user):
@@ -342,7 +346,7 @@ def test_dataset_matrix_usage_provider(matrix_service: MatrixService, admin_user
 @with_db_context
 def test_output_variables_matrix_usage_provider(matrix_service: MatrixService) -> None:
     # Create a matrix to avoid ForeignKey issue
-    matrix_id = matrix_service.create(pd.DataFrame([0]))
+    matrix_id = matrix_service.create(pl.DataFrame([0]))
 
     with db():
         # Create a study to avoid ForeignKey issue

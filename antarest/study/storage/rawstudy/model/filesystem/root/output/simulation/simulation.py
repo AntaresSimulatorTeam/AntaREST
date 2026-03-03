@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,7 +12,8 @@
 from typing_extensions import override
 
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Mode, Simulation
+from antarest.study.business.model.config.general_model import Mode
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Simulation
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
@@ -47,17 +48,17 @@ class OutputSimulation(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
             "about-the-study": OutputSimulationAbout(self.matrix_mapper, self.config.next_file("about-the-study")),
-            "simulation": RawFileNode(self.matrix_mapper, self.config.next_file("simulation.log")),
+            "simulation": RawFileNode(self.config.next_file("simulation.log")),
             "info": OutputSimulationInfoAntaresOutput(self.config.next_file("info.antares-output")),
-            "antares-out": RawFileNode(self.matrix_mapper, self.config.next_file("antares-out.log")),
-            "antares-err": RawFileNode(self.matrix_mapper, self.config.next_file("antares-err.log")),
+            "antares-out": RawFileNode(self.config.next_file("antares-out.log")),
+            "antares-err": RawFileNode(self.config.next_file("antares-err.log")),
         }
 
         if not self.simulation.error:
             for file in self.config.path.glob("*.txt"):
                 file_name = file.name
                 if (self.config.path / file_name).exists():
-                    children[file.stem] = RawFileNode(self.matrix_mapper, self.config.next_file(file_name))
+                    children[file.stem] = RawFileNode(self.config.next_file(file_name))
 
             file_name = "execution_info"
             if (self.config.path / f"{file_name}.ini").exists():

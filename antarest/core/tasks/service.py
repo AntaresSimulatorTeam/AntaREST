@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -106,6 +106,10 @@ class ITaskService(ABC):
         Raises:
             TimeoutError: if the task is not completed before the timeout
         """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def delete_task_by_creation_date(self, task_retention_duration: int) -> int:
         raise NotImplementedError()
 
 
@@ -512,3 +516,7 @@ class TaskJobService(ITaskService):
             return task.progress
         else:
             raise UserHasNotPermissionError()
+
+    @override
+    def delete_task_by_creation_date(self, task_retention_duration: int) -> int:
+        return self.repo.delete_by_creation_date(task_retention_duration=task_retention_duration)

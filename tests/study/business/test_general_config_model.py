@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -17,7 +17,7 @@ from antares.study.version import StudyVersion
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.model.config.general_model import (
     GeneralConfig,
-    initialize_default_values,
+    initialize_general_config_against_version,
     validate_general_config_version,
 )
 from antarest.study.model import STUDY_VERSION_7_0, STUDY_VERSION_7_1, STUDY_VERSION_7_2
@@ -25,13 +25,13 @@ from antarest.study.model import STUDY_VERSION_7_0, STUDY_VERSION_7_1, STUDY_VER
 
 def test_general_config_default_values() -> None:
     config = GeneralConfig()
-    initialize_default_values(config, version=STUDY_VERSION_7_0)
+    initialize_general_config_against_version(config, version=STUDY_VERSION_7_0)
     assert config.filtering is False
     assert config.geographic_trimming is None
     assert config.thematic_trimming is None
 
     config = GeneralConfig()
-    initialize_default_values(config, version=STUDY_VERSION_7_2)
+    initialize_general_config_against_version(config, version=STUDY_VERSION_7_2)
     assert config.filtering is None
     assert config.geographic_trimming is False
     assert config.thematic_trimming is False

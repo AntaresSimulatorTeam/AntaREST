@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -187,7 +187,7 @@ class TestDownloadMatrices:
             # asserts that the result is the same as the one we get with the classic get /raw endpoint
             res = client.get(f"/v1/studies/{uuid}/raw", params={"path": path, "formatted": True})
             expected_matrix = res.json()
-            expected_matrix["columns"] = [f"TS-{n + 1}" for n in expected_matrix["columns"]]
+            expected_matrix["columns"] = [f"TS-{int(n) + 1}" for n in expected_matrix["columns"]]
 
             time_column = [
                 (start_date + datetime.timedelta(hours=i)).strftime(date_format)
@@ -362,8 +362,8 @@ class TestDownloadMatrices:
 
         # fake study_id
         res = client.get(f"/v1/studies/{fake_str}/raw/download", params={"path": raw_matrix_path, "format": "tsv"})
-        assert res.status_code == 400
-        assert "is not a valid UUID" in res.json()["description"]
+        assert res.status_code == 422
+        assert "should match pattern" in res.json()["description"]
 
         # fake path
         res = client.get(

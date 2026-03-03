@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -29,6 +29,7 @@ from antarest.core.utils.archives import extract_lines_from_archive, is_archive_
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
 )
+from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
@@ -47,7 +48,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
     FileStudyTreeConfig,
     LinkConfig,
-    Mode,
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import parse_renewable_cluster

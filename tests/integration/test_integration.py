@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -107,35 +107,21 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     )
     assert res.status_code == 200, res.json()
 
-    # Update the active ruleset
-    active_ruleset_name = "ruleset test"
-    res = client.post(
-        f"/v1/studies/{study_id}/raw?path=settings/generaldata/general/active-rules-scenario",
-        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
-        json=active_ruleset_name.title(),  # ruleset names are case-insensitive
-    )
-    assert res.status_code == 200
-
     # scenario builder
     res = client.get(
         f"/v1/studies/{study_id}/config/scenariobuilder",
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert res.status_code == 200
-    assert "Default Ruleset" in res.json()
-    initial_ruleset = res.json()["Default Ruleset"]
 
     res = client.put(
         f"/v1/studies/{study_id}/config/scenariobuilder",
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
         json={
-            active_ruleset_name: {
-                "l": {"area1": {"0": 1}},
-                "ntc": {"area1 / area2": {"1": 23}},
-                "t": {"area1": {"thermal": {"1": 2}}},
-                "hl": {"area1": {"0": 75}},
-            },
-            "Default Ruleset": {},  # Changed from previous behaviour: does not remove anymore
+            "l": {"area1": {"0": 1}},
+            "ntc": {"area1 / area2": {"1": 23}},
+            "t": {"area1": {"thermal": {"1": 2}}},
+            "hl": {"area1": {"0": 75}},
         },
     )
     assert res.status_code == 200, res.json()
@@ -145,13 +131,11 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert res.status_code == 200
-    assert res.json()[active_ruleset_name] == {
-        "l": {"area1": {"0": 1}},
-        "ntc": {"area1 / area2": {"1": 23}},
-        "t": {"area1": {"thermal": {"1": 2}}},
-        "hl": {"area1": {"0": 75}},
-    }
-    assert res.json()["Default Ruleset"] == initial_ruleset
+    result = res.json()
+    assert result["l"]["area1"] == {"0": 1}
+    assert result["ntc"]["area1 / area2"] == {"1": 23}
+    assert result["t"]["area1"]["thermal"] == {"1": 2}
+    assert result["hl"]["area1"] == {"0": 75}
 
     # config / thematic trimming
     res = client.get(
@@ -1284,14 +1268,9 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
     archive_path = tmp_path / "test2.zip"
     zip_study(study_path, archive_path)
 
-    # Asserts the import fails
+    # Asserts the import success
     res = client.post("/v1/studies/_import", files={"study": io.BytesIO(archive_path.read_bytes())})
-    assert res.status_code == 422
-    assert res.json()["exception"] == "StudyImportFailed"
-    assert (
-        res.json()["description"]
-        == "Study 'A' could not be imported: AntaresWeb doesn't support the value 'hourly' for the flag 'hydro-pmax'"
-    )
+    assert res.status_code == 201
 
 
 def test_import_with_editor(

@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -143,7 +143,7 @@ class TestEditMatrix:
         # The web application generates a query using a list of Matrix Edit Instructions,
         # each containing different coordinates. The first coordinate represents the row
         # ndex, and the second coordinate represents the column index.
-        # In the example bellow, the user selects the rows 4 to 6 inclusive and the column 5.
+        # In the example below, the user selects the rows 4 to 6 inclusive and the column 5.
         res = client.put(
             f"/v1/studies/{study_id}/matrix?path=input/links/{area_from_q}/{area_to_q}_parameters",
             headers={"Authorization": f"Bearer {user_access_token}"},

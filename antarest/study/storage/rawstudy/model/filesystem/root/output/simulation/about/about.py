@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -24,9 +24,9 @@ class OutputSimulationAbout(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            "areas": RawFileNode(self.matrix_mapper, self.config.next_file("areas.txt")),
-            "comments": RawFileNode(self.matrix_mapper, self.config.next_file("comments.txt")),
-            "links": RawFileNode(self.matrix_mapper, self.config.next_file("links.txt")),
+            "areas": RawFileNode(self.config.next_file("areas.txt")),
+            "comments": RawFileNode(self.config.next_file("comments.txt")),
+            "links": RawFileNode(self.config.next_file("links.txt")),
             # TODO "map": OutputSimulationAboutMap(self.context, self.config.next_file("map")),
             "study": OutputSimulationAboutStudy(self.config.next_file("study.ini")),
             "parameters": GeneralData(self.config.next_file("parameters.ini")),

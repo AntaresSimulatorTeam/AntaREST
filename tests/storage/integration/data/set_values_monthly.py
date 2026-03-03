@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -4214,5 +4214,4 @@ set_values_monthly = {
             0.0,
         ],
     ],
-    "index": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"],
 }

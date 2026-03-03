@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -20,6 +20,7 @@ from antares.study.version import StudyVersion
 
 from antarest.core.utils.dict_utils import iter_nested, iter_nested_2, iter_nested_3
 from antarest.study.business.model.scenario_builder_model import (
+    DEFAULT_RULESET_NAME,
     RANDOM,
     AreaItemsScenarios,
     AreaScenarios,
@@ -27,8 +28,6 @@ from antarest.study.business.model.scenario_builder_model import (
     LinkScenarios,
     RandType,
     Ruleset,
-    Rulesets,
-    RulesetsUpdate,
     RulesetUpdate,
     ScenarioType,
     StorageConstraintsScenarios,
@@ -128,11 +127,8 @@ def serialize_ruleset(ruleset: Ruleset, version: StudyVersion) -> dict[str, Rule
     return dict(sorted(section.items()))
 
 
-def serialize_rulesets(rulesets: Rulesets, version: StudyVersion) -> RulesetsFileData:
-    sections = {}
-    for ruleset_name, ruleset in rulesets.items():
-        sections[ruleset_name] = serialize_ruleset(ruleset, version)
-    return sections
+def serialize_ruleset_to_file_data(ruleset: Ruleset, version: StudyVersion) -> RulesetsFileData:
+    return {DEFAULT_RULESET_NAME: serialize_ruleset(ruleset, version)}
 
 
 T = TypeVar("T")
@@ -239,22 +235,24 @@ def parse_ruleset_update(ruleset_data: RulesetFileData) -> RulesetUpdate:
     return _parse_ruleset(ruleset_data, cls=RulesetUpdate)
 
 
-def parse_rulesets_from_any(data: Any, version: StudyVersion) -> Rulesets:
+def parse_ruleset_from_any(data: Any, version: StudyVersion) -> Ruleset:
     rulesets_data = cast(RulesetsFileData, data)
-    return parse_rulesets(rulesets_data, version)
+    if DEFAULT_RULESET_NAME in rulesets_data:
+        section = rulesets_data[DEFAULT_RULESET_NAME]
+    elif rulesets_data:
+        section = next(iter(rulesets_data.values()))
+    else:
+        section = {}
+    ruleset = parse_ruleset(section)
+    validate_ruleset_against_version(version, ruleset)
+    return ruleset
 
 
-def parse_rulesets(rulesets_data: RulesetsFileData, version: StudyVersion) -> Rulesets:
-    rulesets: Rulesets = {}
-    for ruleset_name, data in rulesets_data.items():
-        ruleset = parse_ruleset(data)
-        validate_ruleset_against_version(version, ruleset)
-        rulesets[ruleset_name] = ruleset
-    return rulesets
-
-
-def parse_rulesets_update(rulesets_data: RulesetsFileData) -> RulesetsUpdate:
-    rulesets: RulesetsUpdate = {}
-    for ruleset_name, data in rulesets_data.items():
-        rulesets[ruleset_name] = parse_ruleset_update(data)
-    return rulesets
+def parse_ruleset_update_from_file_data(data: RulesetsFileData) -> RulesetUpdate:
+    if DEFAULT_RULESET_NAME in data:
+        section = data[DEFAULT_RULESET_NAME]
+    elif data:
+        section = next(iter(data.values()))
+    else:
+        section = {}
+    return parse_ruleset_update(section)

@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -24,7 +24,7 @@ from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.scenario_builder_model import AreaItemsScenarios, AreaScenarios
 from antarest.study.business.model.sts_model import STStorageAdditionalConstraintCreation, STStorageCreation
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
-from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
+from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3, StorageMode
 from antarest.study.service import StudyService
 
 
@@ -55,7 +55,9 @@ def create_raw_study(study_service: StudyService, version: StudyVersion) -> str:
     """
 
     with db(), current_user_context(DEFAULT_ADMIN_USER):
-        study_id = study_service.create_study(study_name="test", version=version, group_ids=[])
+        study_id = study_service.create_study(
+            study_name="test", version=version, group_ids=[], storage_mode=StorageMode.FILESYSTEM
+        )
         _initialize_study(study_service, study_id, version)
         return study_id
 
@@ -70,7 +72,9 @@ def create_variant_study(study_service: StudyService, version: StudyVersion) -> 
      Returns its id.
     """
     with db(), current_user_context(DEFAULT_ADMIN_USER):
-        study_id = study_service.create_study(study_name="test", version=version, group_ids=[])
+        study_id = study_service.create_study(
+            study_name="test", version=version, group_ids=[], storage_mode=StorageMode.FILESYSTEM
+        )
         _initialize_study(study_service, study_id, version)
         variant_service = study_service.storage_service.variant_study_service
         variant_study = variant_service.create_variant_study(study_id, name="variant")

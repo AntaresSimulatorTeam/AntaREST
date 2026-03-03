@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 
 from antarest.core.tasks.model import TaskJob, TaskListFilter
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 
 
 class TaskJobRepository:
@@ -96,3 +97,14 @@ class TaskJobRepository:
         if task:
             session.delete(task)
             session.commit()
+
+    def delete_by_creation_date(self, task_retention_duration: int) -> int:
+        session = self.session
+        ctime = current_time()
+        deleted_rows = (
+            session.query(TaskJob)
+            .filter(TaskJob.creation_date < ctime - datetime.timedelta(days=task_retention_duration))
+            .delete()
+        )
+        session.commit()
+        return deleted_rows

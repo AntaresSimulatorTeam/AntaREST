@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import * as authApi from "@/services/api/auth";
+import * as clientApi from "@/services/api/client";
+import { isUserExpired } from "@/services/utils";
+import { closeWs, initWs, reloadWs } from "@/services/webSocket/ws";
+import type { UserInfo } from "@/types/types";
 import { createAsyncThunk, createReducer, isAnyOf } from "@reduxjs/toolkit";
 import { jwtDecode, type JwtPayload } from "jwt-decode";
-import type { UserInfo } from "../../types/types";
-import * as authApi from "../../services/api/auth";
-import * as clientApi from "../../services/api/client";
-import { isUserExpired } from "../../services/utils";
-import { closeWs, initWs, reloadWs } from "../../services/webSocket/ws";
 import { getAuthUser } from "../selectors";
 import type { AppAsyncThunkConfig } from "../store";
 import { createThunk, makeActionName } from "../utils";
@@ -88,7 +88,7 @@ export const login = createAsyncThunk<
   LoginArg | UserInfo | undefined,
   AppAsyncThunkConfig
 >(n("LOGIN"), async (arg, { dispatch, rejectWithValue }) => {
-  let user;
+  let user: UserInfo | undefined;
 
   // Authentication not required or login from localStorage
   if (!arg || "id" in arg) {

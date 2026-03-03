@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -16,14 +16,16 @@ import http
 import io
 import logging
 import os
+import shutil
 import tempfile
 from abc import ABC, abstractmethod
 from datetime import timedelta
 from pathlib import Path, PurePosixPath
-from typing import Any, BinaryIO, Callable, Dict, List, Literal, Optional, Sequence, Type, TypeAlias, cast
+from typing import Any, BinaryIO, Callable, Dict, Iterable, List, Literal, Optional, Sequence, Type, TypeAlias, cast
 from uuid import uuid4
 
 import pandas as pd
+import polars as pl
 from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from markupsafe import escape
@@ -74,6 +76,7 @@ from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintFilters
+from antarest.study.business.compatibility_parameters_management import CompatibilityParamsManager
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
@@ -104,8 +107,14 @@ from antarest.study.business.timeseries_config_management import TimeSeriesConfi
 from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
-from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
+from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
+from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
+from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
+from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
+from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.directory_service import DirectoryService
 from antarest.study.dtos import StudySynthesis
 from antarest.study.model import (
@@ -115,6 +124,7 @@ from antarest.study.model import (
     MatrixFrequency,
     MatrixIndex,
     RawStudy,
+    StorageMode,
     Study,
     StudyContentStatus,
     StudyFolder,
@@ -138,11 +148,13 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import Matri
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.synthesis import OutputSynthesis
+from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
 from antarest.study.storage.utils import (
     assert_permission,
+    create_new_empty_study,
     get_start_date,
     is_managed,
     is_study_folder,
@@ -172,6 +184,14 @@ from antarest.study.storage.variantstudy.variant_study_service import VariantStu
 logger = logging.getLogger(__name__)
 
 MAX_MISSING_STUDY_TIMEOUT = 2  # days
+MAX_BATCH_DELETE_SIZE = 100
+
+
+def _get_matrix_from_path(study_interface: StudyInterface, matrix_path: Path) -> pl.DataFrame:
+    """We give a ReadOnlyStudyDao instead of a StudyDao, but it does not matter as we only use the getter methods."""
+    mapper = RawPathToMatrixMapper(study_interface.get_study_dao())  # type: ignore
+    return mapper.get_matrix_from_path(matrix_path)
+
 
 OutputSelection: TypeAlias = Literal["all", "none"] | list[str]
 
@@ -391,6 +411,7 @@ class RawStudyInterface(StudyInterface):
         self._study = study
         self._cached_file_study: Optional[FileStudy] = None
         self._version = StudyVersion.parse(self._study.version)
+        self._matrix_service = self._raw_study_service._matrix_service
 
     @override
     @property
@@ -410,43 +431,65 @@ class RawStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        return FileStudyTreeDao(self.get_files()).read_only()
+        command_context = self._variant_study_service.command_factory.command_context
+        if self._study.storage_mode == StorageMode.DATABASE:
+            return DatabaseStudyDao(
+                self._study.id, db.session, self._matrix_service, command_context.generator_matrix_constants
+            ).read_only()
+        return FileStudyTreeDao(
+            self.get_files(), command_context.generator_matrix_constants, command_context.blob_service
+        ).read_only()
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
         study = self._study
-        should_invalidate_cache = False
-        file_study = self.get_files()
+        file_study: Optional[FileStudy] = None
 
-        for command in commands:
-            context = command.command_context
-            result = command.apply(
-                FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service),
-                listener,
+        command_context = self._variant_study_service.command_factory.command_context
+        # Build DAO based on storage mode
+        if study.storage_mode == StorageMode.DATABASE:
+            dao: StudyDao = DatabaseStudyDao(
+                study.id, db.session, self._matrix_service, command_context.generator_matrix_constants
             )
+        else:
+            file_study = self.get_files()
+            dao = FileStudyTreeDao(
+                file_study,
+                command_context.generator_matrix_constants,
+                command_context.blob_service,
+            )
+
+        # Apply all commands
+        should_invalidate_cache = False
+        for command in commands:
+            result = command.apply(dao, listener)
             if result.should_invalidate_cache:
                 should_invalidate_cache = True
             if not result.status:
                 raise CommandApplicationError(result.message)
 
-        # if commands that can't update the cache are applied, we need to invalidate it.
-        # Otherwise, we can update it.
+        # Handle cache invalidation
         if should_invalidate_cache:
             remove_from_cache(self._raw_study_service.cache, study.id)
-        else:
+        elif study.storage_mode == StorageMode.FILESYSTEM:
+            assert file_study is not None
             data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
             update_cache(self._raw_study_service.cache, study.id, data)
-        self._variant_study_service.on_parent_change(study.id)
-        self._update_editor_and_lastsave(file_study)
 
-    def _update_editor_and_lastsave(self, file_study: FileStudy) -> None:
+        # Update editor metadata
+        self._update_editor_and_lastsave(dao)
+
+        # Notify changes to child variants
+        self._variant_study_service.on_parent_change(study.id)
+
+    def _update_editor_and_lastsave(self, dao: StudyDao) -> None:
         user = self._user_service.get_identity(get_user_impersonator())
         if user:
             user_name = user.name or ""
-            study_antares = file_study.tree.get(["study", "antares"])
-            study_antares["editor"] = user_name
-            study_antares["lastsave"] = current_time()
-            file_study.tree.save(study_antares, ["study", "antares"])
+            last_save = current_time().timestamp()
+            # Update file (no-op for database storage mode)
+            dao.update_antares_file(user_name, last_save)
+            # Update DB metadata
             self._study.editor = user_name
             self._repository.save(self._study)
 
@@ -480,7 +523,10 @@ class VariantStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        return FileStudyTreeDao(self.get_files()).read_only()
+        command_context = self._variant_service.command_factory.command_context
+        return FileStudyTreeDao(
+            self.get_files(), command_context.generator_matrix_constants, command_context.blob_service
+        ).read_only()
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
@@ -561,6 +607,7 @@ class StudyService:
         self.optimization_manager = OptimizationManager(command_context)
         self.adequacy_patch_manager = AdequacyPatchManager(command_context)
         self.advanced_parameters_manager = AdvancedParamsManager(command_context)
+        self.compatibility_parameters_manager = CompatibilityParamsManager(command_context)
         self.hydro_manager = HydroManager(command_context)
         self.allocation_manager = AllocationManager(command_context)
         self.renewable_manager = RenewableManager(command_context)
@@ -585,6 +632,12 @@ class StudyService:
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
         self._outputs_access: IOutputsAccess | None = None
+        matrix_service = command_context.matrix_service
+        StudyDatabaseMatrixUsageProvider(matrix_service)
+        self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
+            StorageMode.DATABASE: DatabaseStudyDaoFactory(matrix_service, command_context.generator_matrix_constants),
+            StorageMode.FILESYSTEM: FileStudyDaoFactory(command_context, raw_study_service.study_factory),
+        }
 
     def register_output_access(self, output_access: IOutputsAccess) -> None:
         """
@@ -640,6 +693,66 @@ class StudyService:
         output = self.storage_service.get_storage(study).get_file(study, url)
 
         return output
+
+    def get_logs(self, study_id: str, output_id: str, job_id: str, err_log: bool) -> Optional[str]:
+        study = self.get_study(study_id)
+        assert_permission(study, StudyPermissionType.READ)
+        file_study = self.get_file_study(study)
+        log_locations = {
+            False: [
+                ["output", "logs", f"{job_id}-out.log"],
+                ["output", "logs", f"{output_id}-out.log"],
+                ["output", output_id, "antares-out"],
+                ["output", output_id, "simulation"],
+            ],
+            True: [
+                ["output", "logs", f"{job_id}-err.log"],
+                ["output", "logs", f"{output_id}-err.log"],
+                ["output", output_id, "antares-err"],
+            ],
+        }
+        empty_log = False
+        for log_location in log_locations[err_log]:
+            try:
+                # Assume UTF-8 but ignore errors, it's difficult to be sure of log encoding
+                # especially because of windows error messages
+                log = cast(
+                    bytes,
+                    file_study.tree.get(log_location, depth=1, formatted=True),
+                ).decode(encoding="utf-8", errors="replace")
+                # when missing file, RawFileNode return empty bytes
+                if log:
+                    return log
+                else:
+                    empty_log = True
+            except ChildNotFoundError:
+                pass
+            except KeyError:
+                pass
+        if empty_log:
+            return ""
+        raise ChildNotFoundError(f"Logs for {output_id} of study {study_id} were not found")
+
+    def save_logs(
+        self,
+        study_id: str,
+        job_id: str,
+        log_suffix: str,
+        log_data: str,
+    ) -> None:
+        logger.info(f"Saving logs for job {job_id} of study {study_id}")
+        stopwatch = StopWatch()
+        study = self.get_study(study_id)
+        file_study = self.get_file_study(study)
+        file_study.tree.save(
+            bytes(log_data, encoding="utf-8"),
+            [
+                "output",
+                "logs",
+                f"{job_id}-{log_suffix}",
+            ],
+        )
+        logger.info(f"Saved logs for job {job_id} in {stopwatch}s")
 
     def get_comments(self, study_id: str) -> str:
         """
@@ -868,16 +981,22 @@ class StudyService:
         return self.storage_service.get_storage(study).get_study_path(study)
 
     def create_study(
-        self, study_name: str, version: Optional[StudyVersion], group_ids: List[str], directory: str = ""
+        self,
+        study_name: str,
+        version: Optional[StudyVersion],
+        group_ids: List[str],
+        storage_mode: StorageMode = StorageMode.FILESYSTEM,
+        directory: str = "",
     ) -> str:
         """
-        Creates a study with the specified study name, version, group IDs, and user parameters.
+        Creates a study with the specified study name, version, group IDs, and storage mode.
 
         Args:
             study_name: The name of the study to create.
             version: The version number of the study to choose the template for creation.
             group_ids: A possibly empty list of user group IDs to associate with the study.
             directory: Optional directory path where the study will be created (e.g., 'project/subfolder').
+            storage_mode: The storage mode for the study (FILESYSTEM or DATABASE).
 
         Returns:
             str: The ID of the newly created study.
@@ -905,14 +1024,15 @@ class StudyService:
             created_at=now_utc,
             updated_at=now_utc,
             version=f"{version or NEW_DEFAULT_STUDY_VERSION:ddd}",
+            storage_mode=storage_mode,
             directory_id=directory_id,
             owner=owner,
             groups=groups,
         )
 
-        raw = self.storage_service.raw_study_service.create(raw)
-
-        self._save_study(raw)
+        raw.content_status = StudyContentStatus.VALID
+        self.repository.save(raw)
+        self._study_dao_factories[raw.storage_mode].create_study_dao(raw)
 
         self.event_bus.push(
             Event(
@@ -922,7 +1042,7 @@ class StudyService:
             )
         )
 
-        logger.info("study %s created by user %s", raw.id, get_user_id())
+        logger.info("study %s created by user %s with storage_mode=%s", raw.id, get_user_id(), storage_mode)
         return str(raw.id)
 
     def get_user_name(self) -> str:
@@ -1327,9 +1447,7 @@ class StudyService:
                     )
             stopwatch = StopWatch()
             archive_dir(tmp_study_path, target, archive_format=archive_format)
-            stopwatch.log_elapsed(
-                lambda x: logger.info(f"Study {path_study} exported ({target.suffix} format) in {x}s")
-            )
+            logger.info(f"Study {path_study} exported ({target.suffix} format) in {stopwatch}s")
         return target
 
     def export_study_flat(
@@ -1347,6 +1465,51 @@ class StudyService:
             for output_id in output_list:
                 self._get_outputs_access().write_output_to_dir(study.id, output_id, dest / "output")
 
+    @staticmethod
+    def _prefetch_study_info(study: Study) -> Any:
+        # This prefetches the workspace because it is lazy-loaded and the object is deleted
+        # before using the workspace attribute in raw study deletion.
+        # See https://github.com/AntaresSimulatorTeam/AntaREST/issues/606
+        if isinstance(study, RawStudy):
+            _ = study.workspace
+            return study.to_enhanced_json_summary()
+        return study.to_json_summary()
+
+    @staticmethod
+    def _validate_children_deletion(
+        study: Study, allow_children_deletion: bool, variant_service: VariantStudyService
+    ) -> None:
+        """Validate that study can be deleted when it has variant children."""
+        if variant_service.has_children(study) and not allow_children_deletion:
+            raise StudyDeletionNotAllowed(study.id, "Study has variant children")
+
+    def _await_generation_tasks(self, studies: Iterable[Study], timeout: int = 600) -> None:
+        """Wait for any pending generation tasks on variant studies."""
+        generation_tasks = [
+            s.generation_task for s in studies if isinstance(s, VariantStudy) and s.generation_task is not None
+        ]
+        for task_id in generation_tasks:
+            self.task_service.await_task(task_id, timeout)
+
+    def _delete_study_from_filesystem(self, study: Study) -> None:
+        """Delete study files from disk (handles both archived and unarchived studies)."""
+        if self.assert_study_unarchived(study=study, raise_exception=False):
+            self.storage_service.get_storage(study).delete(study)
+        elif isinstance(study, RawStudy):
+            os.unlink(self.storage_service.raw_study_service.find_archive_path(study))
+
+    def _notify_study_deleted(self, study: Study, study_info: Any) -> None:
+        """Push deletion event, log the action, and run deletion callbacks."""
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DELETED,
+                payload=study_info,
+                permissions=PermissionInfo.from_study(study),
+            )
+        )
+        logger.info("study %s deleted by user %s", study.id, get_user_id())
+        self._on_study_delete(uuid=study.id)
+
     def delete_study(self, uuid: str, children: bool) -> None:
         """
         Delete study and all its children
@@ -1355,59 +1518,82 @@ class StudyService:
             uuid: study uuid
             children: delete children or not
         """
-        study = self.get_study(uuid)
-        assert_permission(study, StudyPermissionType.WRITE)
+        self.delete_studies([uuid], with_variants=children)
 
-        study_info = study.to_json_summary()
+    def delete_studies(self, study_ids: List[str], with_variants: bool) -> None:
+        """
+        Delete multiple studies in batch.
 
-        # this prefetch the workspace because it is lazy loaded and the object is deleted
-        # before using workspace attribute in raw study deletion
-        # see https://github.com/AntaresSimulatorTeam/AntaREST/issues/606
-        if isinstance(study, RawStudy):
-            _ = study.workspace
-            study_info = study.to_enhanced_json_summary()
+        Args:
+            study_ids: List of study UUIDs to delete
+            with_variants: Whether to delete variant studies as well
+
+        Raises:
+            StudyNotFoundError: If any study is not found
+            UserHasNotPermissionError: If user lacks permission for any study
+            StudyDeletionNotAllowed: If a study has variants and with_variants=False
+            HTTPException(BAD_REQUEST): If study_ids is empty or exceeds MAX_BATCH_DELETE_SIZE
+        """
+        if not study_ids:
+            raise HTTPException(
+                status_code=http.HTTPStatus.BAD_REQUEST,
+                detail="study_ids list cannot be empty",
+            )
+
+        if len(study_ids) > MAX_BATCH_DELETE_SIZE:
+            raise HTTPException(
+                status_code=http.HTTPStatus.BAD_REQUEST,
+                detail=f"Cannot delete more than {MAX_BATCH_DELETE_SIZE} studies at once. Got {len(study_ids)} studies.",
+            )
+
+        logger.warning(
+            "Batch delete requested for %d studies (with_variants=%s)",
+            len(study_ids),
+            with_variants,
+        )
 
         variant_service = self.storage_service.variant_study_service
 
-        if variant_service.has_children(study):
-            if not children:
-                raise StudyDeletionNotAllowed(study.id, "Study has variant children")
+        studies_to_check = []
+        for study_id in study_ids:
+            study = self.get_study(study_id)
+            assert_permission(study, StudyPermissionType.WRITE)
+            studies_to_check.append(study)
 
-            variant_service.walk_children(
-                study.id,
-                lambda s: self.delete_study(s.id, True),
-                bottom_first=True,
-                include_parent=False,
-            )
+        studies_to_delete: Dict[str, Study] = {}
+        study_infos: Dict[str, Any] = {}
 
-        # If the study is a variant, and its snapshot is generating,
-        # we need to wait until it's done to delete it to avoid any fs issues
-        if isinstance(study, VariantStudy) and study.generation_task:
-            self.task_service.await_task(study.generation_task, 600)
+        for study in studies_to_check:
+            if study.id in studies_to_delete:
+                continue
+            self._validate_children_deletion(study, with_variants, variant_service)
 
-        for output in self._get_outputs_access().list_outputs(study.id):
-            self._get_outputs_access().delete_output(study.id, output.id)
+            if variant_service.has_children(study):
 
-        self.repository.delete(study.id)
+                def collect_study(s: Study) -> None:
+                    assert_permission(s, StudyPermissionType.WRITE)
+                    study_infos[s.id] = self._prefetch_study_info(s)
+                    studies_to_delete[s.id] = s
 
-        # delete the files afterward for
-        # if the study cannot be deleted from database for foreign key reason
-        if self.assert_study_unarchived(study=study, raise_exception=False):
-            self.storage_service.get_storage(study).delete(study)
-        else:
-            if isinstance(study, RawStudy):
-                os.unlink(self.storage_service.raw_study_service.find_archive_path(study))
+                variant_service.walk_children(
+                    study.id,
+                    collect_study,
+                    bottom_first=True,
+                    include_parent=True,
+                )
+            else:
+                study_infos[study.id] = self._prefetch_study_info(study)
+                studies_to_delete[study.id] = study
 
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DELETED,
-                payload=study_info,
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
-        logger.info("study %s deleted by user %s", uuid, get_user_id())
+        self._await_generation_tasks(studies_to_delete.values())
+        for study in studies_to_delete.values():
+            for output in self._get_outputs_access().list_outputs(study.id):
+                self._get_outputs_access().delete_output(study.id, output.id)
+        self.repository.delete(*studies_to_delete.keys())
 
-        self._on_study_delete(uuid=uuid)
+        for study in studies_to_delete.values():
+            self._delete_study_from_filesystem(study)
+            self._notify_study_deleted(study, study_infos[study.id])
 
     def import_study(
         self,
@@ -1597,7 +1783,16 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
 
-        self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
+        # We need to handle matrices differently if our study is stored in DB
+        if study.storage_mode == StorageMode.DATABASE:
+            context = self.storage_service.variant_study_service.command_factory.command_context
+            command = ReplaceMatrix(
+                target=url, matrix=new, command_context=context, study_version=StudyVersion.parse(study.version)
+            )
+            self.get_study_interface(study).add_commands([command])
+
+        else:
+            self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
 
         self.event_bus.push(
             Event(
@@ -2323,31 +2518,39 @@ class StudyService:
                 hydro_matrix = self.correlation_manager.get_correlation_matrix(study_interface)
             return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
 
-        # Checks that the provided path refers to a matrix
-        node = self.get_file_study(study).tree.get_node(list(url))
-        if isinstance(node, MatrixNode):
-            df_matrix = node.parse_as_dataframe()
-        elif isinstance(node, (OutputSeriesMatrix, OutputSynthesis)):
-            df_matrix = pd.DataFrame(**node.load())  # type: ignore
+        # We need to handle matrices differently if our study is stored in DB
+        if study.storage_mode == StorageMode.DATABASE:
+            pandas_df = _get_matrix_from_path(study_interface, matrix_path).to_pandas()
+
         else:
-            raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
+            # Checks that the provided path refers to a matrix
+            node = self.get_file_study(study).tree.get_node(list(url))
+            if isinstance(node, MatrixNode):
+                pandas_df = node.parse_as_dataframe().to_pandas()
+            elif isinstance(node, OutputSeriesMatrix):
+                pandas_df = node.parse_dataframe()
+                pandas_df.columns = pd.Index(pandas_df.columns)
+            elif isinstance(node, OutputSynthesis):
+                pandas_df = pd.DataFrame(**node.load())
+            else:
+                raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 
         if with_index:
             matrix_index = self.get_input_matrix_startdate(study_id, path)
             time_column = pd.date_range(
-                start=matrix_index.start_date, periods=len(df_matrix), freq=matrix_index.level.value[0]
+                start=matrix_index.start_date, periods=len(pandas_df), freq=matrix_index.level.value[0]
             )
-            df_matrix.index = time_column
+            pandas_df.index = time_column
 
         adjust_matrix_columns_index(
-            df_matrix,
+            pandas_df,
             path,
             with_index=with_index,
             with_header=with_header,
             study_version=study_interface.version,
         )
 
-        return df_matrix
+        return pandas_df
 
     def asserts_no_thermal_in_binding_constraints(self, study: Study, area_id: str, cluster_ids: Sequence[str]) -> None:
         """
@@ -2463,20 +2666,28 @@ class StudyService:
         """
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
-        file_study = self.get_file_study(study)
-        url = [item for item in path.split("/") if item]
-        node, relative_url = file_study.tree.get_node_and_remainder(url)
+        self.assert_study_unarchived(study)
 
-        # Return a dataframe when possible instead of less memory & computation - efficient python objects
-        if isinstance(node, MatrixNode):
-            return node.parse_as_dataframe()
+        # We need to handle matrices differently if our study is stored in DB
+        if study.storage_mode == StorageMode.DATABASE:
+            return _get_matrix_from_path(self.get_study_interface(study), Path(path))
 
-        return node.get(url=relative_url, depth=depth, formatted=formatted)
+        else:
+            file_study = self.get_file_study(study)
+            url = [item for item in path.split("/") if item]
+            node, relative_url = file_study.tree.get_node_and_remainder(url)
+
+            # Return a dataframe when possible instead of less memory & computation - efficient python objects
+            if isinstance(node, MatrixNode):
+                return node.parse_as_dataframe()
+
+            return node.get(url=relative_url, depth=depth, formatted=formatted)
 
     def get_study_data(self, uuid: str) -> StudyDataDTO:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
+        dao = study_interface.get_study_dao()
 
         ##########################
         # Study metadata
@@ -2490,15 +2701,15 @@ class StudyService:
         # Areas
         ##########################
 
-        area_properties = self.area_manager.get_all_area_properties(study_interface)
-        area_names = {a.id: a.name for a in self.area_manager.get_all_areas_info(study_interface)}
-        thermal_clusters = self.thermal_manager.get_all_thermals_props(study_interface)
-        st_storages = self.st_storage_manager.get_all_storages_props(study_interface)
-        st_storages_constraints = self.st_storage_manager.get_all_additional_constraints(study_interface)
-        hydro_properties = self.hydro_manager.get_all_hydro_properties(study_interface)
+        area_properties = dao.get_all_area_properties()
+        area_names = {a.id: a.name for a in dao.get_all_areas_info()}
+        thermal_clusters = dao.get_all_thermals()
+        st_storages = dao.get_all_st_storages()
+        st_storages_constraints = dao.get_all_st_storage_additional_constraints()
+        hydro_properties = dao.get_all_hydro_properties()
 
         try:
-            renewable_clusters = self.renewable_manager.get_all_renewables_props(study_interface)
+            renewable_clusters = dao.get_all_renewables()
         except ChildNotFoundError:  # Can happen, according to the enr-modeling
             renewable_clusters = {}
 
@@ -2511,11 +2722,11 @@ class StudyService:
                 "thermals": thermal_clusters.get(area_id, {}).values(),
                 "renewables": renewable_clusters.get(area_id, {}).values(),
                 "st_storages": [],
-                "ui": self.area_manager.get_area_ui(study_interface, area_id),
+                "ui": dao.get_area_ui(area_id),
             }
 
             # Hydro
-            hydro_allocation = self.allocation_manager.get_allocation_for_area(study_interface, area_id)
+            hydro_allocation = dao.get_hydro_allocation(area_id)
             area["hydro"] = {
                 "allocation": hydro_allocation,
                 "management_options": hydro_properties[area_id].management_options,
@@ -2536,7 +2747,7 @@ class StudyService:
         # Links and BCs
         ##########################
 
-        obj["links"] = self.links_manager.get_all_links(study_interface)
+        obj["links"] = dao.get_links()
         obj["binding_constraints"] = self.binding_constraint_manager.get_binding_constraints(study_interface)
 
         ##########################
@@ -2544,13 +2755,13 @@ class StudyService:
         ##########################
 
         obj["settings"] = {
-            "time_series": self.ts_config_manager.get_timeseries_configuration(study_interface),
-            "general": self.general_manager.get_general_config(study_interface),
-            "advanced_parameters": self.advanced_parameters_manager.get_advanced_parameters(study_interface),
-            "playlist": self.playlist_manager.get_playlist(study_interface),
-            "thematic_trimming": self.thematic_trimming_manager.get_thematic_trimming(study_interface),
-            "optimization": self.optimization_manager.get_optimization_preferences(study_interface),
-            "adequacy_patch": self.adequacy_patch_manager.get_adequacy_patch_parameters(study_interface),
+            "time_series": dao.get_timeseries_config(),
+            "general": dao.get_general_config(),
+            "advanced_parameters": dao.get_advanced_parameters(),
+            "playlist": dao.get_playlist_config(),
+            "thematic_trimming": dao.get_thematic_trimming(),
+            "optimization": dao.get_optimization_preferences(),
+            "adequacy_patch": dao.get_adequacy_patch_parameters(),
         }
 
         ##########################
@@ -2560,8 +2771,8 @@ class StudyService:
         try:
             xpansion_settings = self.get_xpansion_settings(uuid)
             if xpansion_settings.additional_constraints:
-                xpansion_constraint = self.xpansion_manager.get_resource_content(
-                    study_interface, XpansionResourceFileType.CONSTRAINTS, xpansion_settings.additional_constraints
+                xpansion_constraint = dao.get_xpansion_resource(
+                    XpansionResourceFileType.CONSTRAINTS, xpansion_settings.additional_constraints
                 )
                 assert isinstance(xpansion_constraint, bytes)
                 constraint_as_dict = IniReader().read(io.StringIO(xpansion_constraint.decode("utf-8")))
@@ -2581,7 +2792,7 @@ class StudyService:
 
             xpansion = {
                 "settings": xpansion_settings,
-                "candidates": self.xpansion_manager.get_candidates(study_interface),
+                "candidates": dao.get_all_xpansion_candidates(),
                 "constraints": constraints,
             }
 
@@ -2595,3 +2806,30 @@ class StudyService:
         ##########################
 
         return StudyDataDTO.model_validate(obj)
+
+    def write_study_as_file_study(
+        self, study_id: str, path: Path, with_outputs: bool = False, normalize_matrices: bool = False
+    ) -> None:
+        study = self.get_study(study_id)
+        assert_permission(study, StudyPermissionType.READ)
+        source_dao = self.get_study_interface(study).get_study_dao()
+
+        # Create empty study on the filesystem
+        study_version = StudyVersion.parse(study.version)
+        assert study.name is not None
+        create_new_empty_study(study_version, path, study.name, study.author or "Unknown")
+
+        # Create the FileStudyDAO
+        file_study = self.storage_service.raw_study_service.study_factory.create_from_fs(
+            path, with_matrix_normalization=normalize_matrices, study_id="", use_cache=False
+        )
+        context = self.storage_service.variant_study_service.command_factory.command_context
+        file_study_dao = FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service)
+        # Write the given study input in the filesystem
+        converter = StudyConverter(source_dao, file_study_dao, study_version, context.matrix_service)
+        converter.convert_study_inputs()
+
+        # Copy the `output` folder if asked
+        output_src_path = Path(study.path) / "output"
+        if with_outputs and output_src_path.exists():
+            shutil.copytree(output_src_path, path / "output", dirs_exist_ok=True)

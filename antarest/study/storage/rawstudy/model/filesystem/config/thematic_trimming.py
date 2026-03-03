@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -98,6 +98,9 @@ class ThematicTrimmingFileData(AntaresBaseModel, populate_by_name=True):
     profit_by_plant: bool | None = Field(default=None, alias="Profit by plant")
     # since v8.4
     bc_marg_cost: bool | None = Field(default=None, alias="BC. MARG. COST")
+    # since v8.5
+    lmr_viol: bool | None = Field(default=None, alias="LMR VIOL.")
+    dtg_mrg_csr: bool | None = Field(default=None, alias="DTG MRG CSR")
     # since v8.6
     sts_inj_by_plant: bool | None = Field(default=None, alias="STS inj by plant")
     sts_withdrawal_by_plant: bool | None = Field(default=None, alias="STS withdrawal by plant")
@@ -129,6 +132,18 @@ class ThematicTrimmingFileData(AntaresBaseModel, populate_by_name=True):
     other5_injection: bool | None = Field(default=None, alias="Other5_injection")
     other5_withdrawal: bool | None = Field(default=None, alias="Other5_withdrawal")
     other5_level: bool | None = Field(default=None, alias="Other5_level")
+    nh3_emis: bool | None = Field(default=None, alias="NH3 EMIS.")
+    nox_emis: bool | None = Field(default=None, alias="NOX EMIS.")
+    pm2_5_emis: bool | None = Field(default=None, alias="PM2_5 EMIS.")
+    pm5_emis: bool | None = Field(default=None, alias="PM5 EMIS.")
+    pm10_emis: bool | None = Field(default=None, alias="PM10 EMIS.")
+    op1_emis: bool | None = Field(default=None, alias="OP1 EMIS.")
+    op2_emis: bool | None = Field(default=None, alias="OP2 EMIS.")
+    op3_emis: bool | None = Field(default=None, alias="OP3 EMIS.")
+    op4_emis: bool | None = Field(default=None, alias="OP4 EMIS.")
+    op5_emis: bool | None = Field(default=None, alias="OP5 EMIS.")
+    so2_emis: bool | None = Field(default=None, alias="SO2 EMIS.")
+    nmvoc_emis: bool | None = Field(default=None, alias="NMVOC EMIS.")
     # Since v8.8
     sts_cashflow_by_cluster: bool | None = Field(default=None, alias="STS Cashflow By Cluster")
     npcap_hours: bool | None = Field(default=None, alias="NPCAP HOURS")

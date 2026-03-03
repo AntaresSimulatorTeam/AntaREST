@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -136,6 +136,10 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env: Any)
     launcher_parameters = LauncherParametersDTO(other_options="solver-logs")
     sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, solver_version_8_8)
     assert sim_args == ["--solver-logs"]
+
+    launcher_parameters = LauncherParametersDTO(other_options="export-mps")
+    sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, solver_version_8_8)
+    assert sim_args == ["--named-mps-problems"]
 
     for solver in ["coin", "xpress"]:
         launcher_parameters = LauncherParametersDTO(other_options=solver)

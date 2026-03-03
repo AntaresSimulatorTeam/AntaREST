@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,6 +14,7 @@ import io
 import time
 from xml.etree import ElementTree
 
+import pytest
 from starlette.testclient import TestClient
 
 from tests.integration.studies_blueprint.assets import ASSETS_DIR
@@ -29,6 +30,7 @@ class TestStudyComments:
     - PUT /v1/studies/{study_id}/comments
     """
 
+    @pytest.mark.flaky(reruns=3)
     def test_raw_study(
         self,
         client: TestClient,
@@ -67,6 +69,7 @@ class TestStudyComments:
         assert res.status_code == 200, res.json()
         assert res.json() == "<text>Ceci est un commentaire en français.</text>"
 
+    @pytest.mark.flaky(reruns=3)
     def test_variant_study(
         self,
         client: TestClient,

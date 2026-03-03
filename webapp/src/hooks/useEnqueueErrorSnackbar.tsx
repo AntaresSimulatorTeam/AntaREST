@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import SnackErrorMessage from "@/components/SnackErrorMessage";
 import { useSnackbar, type ProviderContext } from "notistack";
 import { useCallback } from "react";
 import type { L } from "ts-toolbelt";
-import SnackErrorMessage from "../components/common/SnackErrorMessage";
 
 type EnqueueErrorType = ProviderContext["enqueueSnackbar"];
 

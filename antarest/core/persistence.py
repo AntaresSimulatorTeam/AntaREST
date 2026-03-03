@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -16,6 +16,7 @@ from io import StringIO
 from pathlib import Path
 
 from alembic.config import Config
+from alembic.script import ScriptDirectory
 from alembic.util import CommandError
 from sqlalchemy.orm import DeclarativeBase
 
@@ -45,10 +46,9 @@ def upgrade_db(config_file: Path) -> None:
         )
         raise e
 
-    alembic_cfg.stdout = StringIO()
-    command.heads(alembic_cfg)
-    head_output = alembic_cfg.stdout.getvalue()
-    head = head_output.split(" ")[0].strip()
+    script = ScriptDirectory.from_config(alembic_cfg)
+    head = script.get_current_head()  # Raises if we have 2 different heads
+    assert head is not None
     if current_version != head:
         logger.info(f"Upgrading database from {current_version} to {head}")
         command.upgrade(alembic_cfg, head)

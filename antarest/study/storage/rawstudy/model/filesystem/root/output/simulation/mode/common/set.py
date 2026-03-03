@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -38,7 +38,6 @@ class OutputSimulationSet(FolderNode):
                 file_name = f"{output_type}-{freq}.txt"
                 if (self.config.path / file_name).exists():
                     children[f"{output_type}-{freq}"] = AreaOutputSeriesMatrix(
-                        self.matrix_mapper,
                         self.config.next_file(file_name),
                         freq,
                         self.set,

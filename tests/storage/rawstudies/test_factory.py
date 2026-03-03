@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -33,8 +33,8 @@ def test_renewable_subtree() -> None:
     json_tree = tree.get([], depth=-1)
     assert json_tree is not None
     assert json_tree["input"]["renewables"]["series"]["area"] == {
-        "la_rochelle": {"series": "matrixfile://series.txt"},
-        "oleron": {"series": "matrixfile://series.txt"},
+        "la_rochelle": {"series": "matrix://series.txt"},
+        "oleron": {"series": "matrix://series.txt"},
     }
     clusters = tree.get(["input", "renewables", "clusters", "area", "list"], depth=3)
     assert clusters == {

@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,20 +10,18 @@
 #
 # This file is part of the Antares project.
 from antares.study.version import StudyVersion
-from checksumdir import dirhash
 
 from antarest.study.business.model.renewable_cluster_model import RenewableClusterCreation, TimeSeriesInterpretation
+from antarest.study.business.model.scenario_builder_model import RulesetUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling
-from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import (
-    parse_rulesets_update,
-)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import dirhash
 from tests.variantstudy.model.command.helpers import reset_line_separator
 
 
@@ -60,7 +58,7 @@ class TestRemoveRenewablesCluster:
 
         # Add scenario builder data
         output = UpdateScenarioBuilder(
-            data=parse_rulesets_update({"Default Ruleset": {f"r,{area_id},0,{cluster_name.lower()}": 1}}),
+            data=RulesetUpdate(renewable={area_id: {cluster_name.lower(): {"0": 1}}}),
             command_context=command_context,
             study_version=study_version,
         ).apply(study_data=empty_study)

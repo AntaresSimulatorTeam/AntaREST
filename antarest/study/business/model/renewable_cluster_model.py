@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -173,7 +173,7 @@ def validate_renewable_cluster_against_version(
     if cluster_data.group is not None and version < STUDY_VERSION_9_3:
         # Performs this transformation to fit with old behavior
         # Before, when giving a fake group, we used to write `other res 1` instead and not crash.
-        cluster_data.group = RenewableClusterGroup(cluster_data.group)
+        cluster_data.group = RenewableClusterGroup(cluster_data.group).value
 
 
 def create_renewable_cluster(cluster_data: RenewableClusterCreation, version: StudyVersion) -> RenewableCluster:

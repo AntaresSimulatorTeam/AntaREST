@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -51,7 +51,7 @@ def create_app(service: Mock) -> FastAPI:
 
 def test_run() -> None:
     job = uuid4()
-    study = "my-study"
+    study = str(uuid4())
 
     service = Mock()
     service.run_study.return_value = str(job)

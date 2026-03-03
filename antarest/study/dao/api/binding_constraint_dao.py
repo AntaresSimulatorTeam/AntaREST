@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,7 +13,7 @@
 from abc import ABC, abstractmethod
 from typing import Sequence
 
-import pandas as pd
+import polars as pl
 
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 
@@ -28,19 +28,19 @@ class ReadOnlyConstraintDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_constraint_values_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_values_matrix(self, constraint_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_constraint_less_term_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_less_term_matrix(self, constraint_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_constraint_greater_term_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_greater_term_matrix(self, constraint_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_constraint_equal_term_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_equal_term_matrix(self, constraint_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,9 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { defineConfig } from "vite";
+import path from "node:path";
+import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react-swc";
-import path from "path";
+import { defineConfig } from "vite";
 
 //! Keep '0.0.0.0', because 'localhost' may not working on Mac
 const SERVER_URL = "http://0.0.0.0:8080";
@@ -48,7 +49,14 @@ export default defineConfig(({ mode }) => {
       // https://esbuild.github.io/api/#pure
       pure: mode === "production" ? ["console"] : [],
     },
-    plugins: [react({ devTarget: "es2022" })],
+    plugins: [
+      // Please make sure that '@tanstack/router-plugin' is passed before '@vitejs/plugin-react'
+      tanstackRouter({
+        target: "react",
+        autoCodeSplitting: true,
+      }),
+      react({ devTarget: "es2022" }),
+    ],
     server: {
       port: 3000,
       strictPort: true,

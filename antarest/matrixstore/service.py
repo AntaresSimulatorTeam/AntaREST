@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -21,9 +21,10 @@ from typing import Callable, Iterable, Iterator, List, Optional, Sequence
 
 import numpy as np
 import pandas as pd
+import polars as pl
 import py7zr
 from fastapi import UploadFile
-from pandas.api.types import infer_dtype
+from polars import String
 from typing_extensions import override
 
 from antarest.core.config import Config, InternalMatrixFormat
@@ -35,12 +36,14 @@ from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.login.service import LoginService
 from antarest.login.utils import require_current_user
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound, MatrixNotSupported
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import (
+    NEW_MATRIX_VERSION,
     Matrix,
     MatrixContent,
     MatrixDataSet,
@@ -50,6 +53,7 @@ from antarest.matrixstore.model import (
     MatrixDescriptionDTO,
     MatrixInfoDTO,
     MatrixMetadataDTO,
+    MatrixMismatchDTO,
     MatrixReference,
     MatrixReferencesDTO,
 )
@@ -77,17 +81,10 @@ logger = logging.getLogger(__name__)
 
 MATRIX_PROTOCOL_PREFIX = "matrix://"
 
-LEGACY_MATRIX_VERSION = 1
-NEW_MATRIX_VERSION = 2
-"""
-Version 1 matrices were not saved with a header, unlike version 2 ones.
-Therefore, we rely on this version to know how to read the matrices
-"""
-
 
 class ISimpleMatrixService(ABC):
     @abstractmethod
-    def add_predefined_matrix(self, matrix_factory: Callable[[], pd.DataFrame]) -> str:
+    def add_predefined_matrix(self, matrix_factory: Callable[[], pl.DataFrame]) -> str:
         """
         Registers a predefined matrix which will not created with factory function when requested.
 
@@ -97,28 +94,22 @@ class ISimpleMatrixService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def create(self, data: pd.DataFrame) -> str:
+    def create(self, data: pl.DataFrame) -> str:
         """
         Creates a new matrix object with the specified data.
-
-        Warning:
-            DataFrame indexes are ignored, therefore providing one with a non-default one will raise an exception.
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def create_batch(self, data: Iterator[pd.DataFrame]) -> list[str]:
+    def create_batch(self, data: Iterator[pl.DataFrame]) -> list[str]:
         """
         Creates several matrices with the specified data.
         Returns the list of the created matrices ids.
-
-        Warning:
-            DataFrame indexes are ignored, therefore providing one with a non-default one will raise an exception.
         """
         raise NotImplementedError()
 
     @abstractmethod
-    def get(self, matrix_id: str) -> pd.DataFrame:
+    def get(self, matrix_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
@@ -161,7 +152,7 @@ class ISimpleMatrixService(ABC):
         if isinstance(matrix, str):
             return matrix.removeprefix(MATRIX_PROTOCOL_PREFIX)
         elif isinstance(matrix, list):
-            return self.create(pd.DataFrame(data=matrix))
+            return self.create(create_polars_dataframe(matrix))
         else:
             raise TypeError(f"Invalid type for matrix: {type(matrix)}")
 
@@ -169,29 +160,33 @@ class ISimpleMatrixService(ABC):
     def get_matrices_references(self, disk_usage: bool) -> dict[str, MatrixReferencesDTO]:
         raise NotImplementedError
 
+    @abstractmethod
+    def synchronize_matrix_store(self, dry_run: bool) -> dict[str, MatrixMismatchDTO]:
+        raise NotImplementedError
+
 
 class SimpleMatrixService(ISimpleMatrixService):
     def __init__(self, matrix_content_repository: MatrixContentRepository):
         self.matrix_content_repository = matrix_content_repository
         self.usage_providers: List[IMatrixUsageProvider] = []
-        self._predefined_matrices: dict[str, Callable[[], pd.DataFrame]] = {}
+        self._predefined_matrices: dict[str, Callable[[], pl.DataFrame]] = {}
 
     @override
-    def add_predefined_matrix(self, matrix_factory: Callable[[], pd.DataFrame]) -> str:
+    def add_predefined_matrix(self, matrix_factory: Callable[[], pl.DataFrame]) -> str:
         matrix_id = compute_hash(matrix_factory())
         self._predefined_matrices[matrix_id] = matrix_factory
         return matrix_id
 
     @override
-    def create(self, data: pd.DataFrame) -> str:
+    def create(self, data: pl.DataFrame) -> str:
         return self.matrix_content_repository.save(data).hash
 
     @override
-    def create_batch(self, data: Iterator[pd.DataFrame]) -> list[str]:
+    def create_batch(self, data: Iterator[pl.DataFrame]) -> list[str]:
         return [self.matrix_content_repository.save(df).hash for df in data]
 
     @override
-    def get(self, matrix_id: str) -> pd.DataFrame:
+    def get(self, matrix_id: str) -> pl.DataFrame:
         if matrix_id in self._predefined_matrices:
             return self._predefined_matrices[matrix_id]()
         return self.matrix_content_repository.get(matrix_id, matrix_version=NEW_MATRIX_VERSION)
@@ -221,8 +216,12 @@ class SimpleMatrixService(ISimpleMatrixService):
     def get_matrices_references(self, disk_usage: bool) -> dict[str, MatrixReferencesDTO]:
         raise NotImplementedError
 
+    @override
+    def synchronize_matrix_store(self, dry_run: bool) -> dict[str, MatrixMismatchDTO]:
+        return {}
 
-def check_dataframe_compliance(df: pd.DataFrame) -> None:
+
+def check_dataframe_compliance(df: pl.DataFrame) -> None:
     """
     Checks compliance with the matrix store assumptions.
 
@@ -235,19 +234,14 @@ def check_dataframe_compliance(df: pd.DataFrame) -> None:
     by to_hdf5, therefore we use `infer_dtype` to check object dtype are actually
     strings.
     """
-    if df.empty:
+    if df.is_empty():
         return
 
-    if not df.index.equals(pd.RangeIndex(0, df.shape[0])):
-        raise MatrixNotSupported("The matrixstore doesn't support dataframes with a non-default index")
-
-    supported_dtypes = [np.number, np.datetime64]
-    for k, dtype in enumerate(list(df.dtypes)):
-        if not any(np.issubdtype(dtype.type, supported_type) for supported_type in supported_dtypes):
-            if infer_dtype(df[df.columns[k]]) != "string":
-                raise MatrixNotSupported(
-                    f"Supported matrix data types are 'string, np.number, datetime' and you provided {dtype}"
-                )
+    for dtype in df.dtypes:
+        if not (dtype.is_numeric() or dtype.is_temporal() or dtype == String):
+            raise MatrixNotSupported(
+                f"Supported matrix data types are 'number, datetime, string' and you provided {dtype}"
+            )
 
 
 def _matrix_to_dto(matrix: Matrix) -> MatrixMetadataDTO:
@@ -278,15 +272,15 @@ class MatrixService(ISimpleMatrixService):
         self.config = config
         self.usage_providers: List[IMatrixUsageProvider] = []
         self._create_dataset_usage_provider()
-        self._predefined_matrices: dict[str, Callable[[], pd.DataFrame]] = {}
+        self._predefined_matrices: dict[str, Callable[[], pl.DataFrame]] = {}
 
     @override
-    def add_predefined_matrix(self, matrix_factory: Callable[[], pd.DataFrame]) -> str:
+    def add_predefined_matrix(self, matrix_factory: Callable[[], pl.DataFrame]) -> str:
         matrix_id = compute_hash(matrix_factory())
         self._predefined_matrices[matrix_id] = matrix_factory
         return matrix_id
 
-    def _create(self, data: pd.DataFrame) -> tuple[str, Matrix | None]:
+    def _create(self, data: pl.DataFrame) -> tuple[str, Matrix | None]:
         check_dataframe_compliance(data)
         matrix_metadata = self.matrix_content_repository.save(data)
         matrix_id = matrix_metadata.hash
@@ -298,7 +292,7 @@ class MatrixService(ISimpleMatrixService):
         return matrix_id, matrix
 
     @override
-    def create(self, data: pd.DataFrame) -> str:
+    def create(self, data: pl.DataFrame) -> str:
         """
         Creates a new matrix object with the specified data.
 
@@ -328,7 +322,7 @@ class MatrixService(ISimpleMatrixService):
         return matrix_id
 
     @override
-    def create_batch(self, data: Iterator[pd.DataFrame]) -> list[str]:
+    def create_batch(self, data: Iterator[pl.DataFrame]) -> list[str]:
         matrices = []
         matrices_ids = []
         for df in data:
@@ -374,9 +368,9 @@ class MatrixService(ISimpleMatrixService):
                 else:
                     with py7zr.SevenZipFile(buffer, "r") as szf:
                         for info in szf.list():
-                            if info.is_directory or info.filename in EXCLUDED_FILES:  # type:ignore
+                            if info.is_directory or info.filename in EXCLUDED_FILES:
                                 continue
-                            file_content = next(iter(szf.read(info.filename).values()))
+                            file_content = next(iter(szf.read([info.filename]).values()))
                             matrix_id = self._file_importation(file_content.read(), is_json=is_json)
                             matrix_info.append(MatrixInfoDTO(id=matrix_id, name=info.filename))
                             szf.reset()
@@ -398,12 +392,12 @@ class MatrixService(ISimpleMatrixService):
         """
         if is_json:
             obj = from_json(file)
-            df = pd.DataFrame(data=obj["data"], index=obj["index"], columns=obj["columns"])
-            return self.create(df)
+            pandas_df = pd.DataFrame(data=obj["data"], index=obj["index"], columns=obj["columns"])
+            return self.create(pl.from_pandas(pandas_df))
         # noinspection PyTypeChecker
         matrix = np.loadtxt(io.BytesIO(file), delimiter="\t", dtype=np.float64, ndmin=2)
         matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
-        return self.create(pd.DataFrame(data=matrix))
+        return self.create(create_polars_dataframe(matrix))
 
     def get_dataset(self, id: str) -> Optional[MatrixDataSet]:
         dataset = self.repo_dataset.get(id)
@@ -481,7 +475,7 @@ class MatrixService(ISimpleMatrixService):
         return id
 
     @override
-    def get(self, matrix_id: str) -> pd.DataFrame:
+    def get(self, matrix_id: str) -> pl.DataFrame:
         """
         Get a matrix object from the database and the matrix content repository.
 
@@ -599,7 +593,7 @@ class MatrixService(ISimpleMatrixService):
                     # noinspection PyTypeChecker
                     np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")
             archive_dir(Path(tmpdir), export_path, archive_format=ArchiveFormat.ZIP)
-            stopwatch.log_elapsed(lambda x: logger.info(f"Matrix dataset exported (zipped mode) in {x}s"))
+            logger.info(f"Matrix dataset exported (zipped mode) in {stopwatch}s")
         return str(export_path)
 
     def download_dataset(self, dataset_id: str) -> FileDownloadTaskDTO:
@@ -698,3 +692,30 @@ class MatrixService(ISimpleMatrixService):
                 references_dto[matrix_id].refs.append(ref_dto)
 
         return references_dto
+
+    @override
+    def synchronize_matrix_store(self, dry_run: bool) -> dict[str, MatrixMismatchDTO]:
+        db_matrices = {m.id for m in self.repo.get_matrices()}
+        fs_matrices = self.matrix_content_repository.get_all_matrices_on_the_filesystem()
+        only_fs_matrices = fs_matrices - db_matrices
+        only_db_matrices = db_matrices - fs_matrices
+
+        result = {}
+        for matrix in only_db_matrices:
+            result[matrix] = MatrixMismatchDTO(database=True, filesystem=False)
+            if not dry_run:
+                logger.info(f"Removing matrix {matrix} from database as it has no match on the filesystem")
+                self.repo.delete(matrix)
+
+        new_matrices = []
+        for matrix in only_fs_matrices:
+            result[matrix] = MatrixMismatchDTO(database=False, filesystem=True)
+            if not dry_run:
+                logger.info(f"Creating matrix {matrix} inside database as it exists on the filesystem")
+                # For that we have to find what's the matrix version as it's used for parsing.
+                new_matrices.append(self.matrix_content_repository.infer_matrix_characteristics(matrix))
+
+        if new_matrices:
+            self.repo.save_batch(new_matrices)
+
+        return result

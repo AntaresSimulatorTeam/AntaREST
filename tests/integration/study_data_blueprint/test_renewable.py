@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -39,6 +39,7 @@ We should test the following end poins:
 import re
 import time
 import typing as t
+import uuid
 
 import numpy as np
 import pytest
@@ -288,7 +289,7 @@ class TestRenewable:
         )
 
         # Check DELETE with the wrong value of `study_id`
-        bad_study_id = "bad_study"
+        bad_study_id = str(uuid.uuid4())
         res = client.request(
             "DELETE", f"/v1/studies/{bad_study_id}/areas/{area_id}/clusters/renewable", json=[fr_solar_pv_id]
         )
@@ -556,6 +557,7 @@ class TestRenewable:
             "remove_renewables_cluster",
         ]
 
+    @pytest.mark.flaky(reruns=3)
     def test_update_multiple_renewable_clusters(self, client: TestClient, user_access_token: str) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 

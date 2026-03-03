@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import type { Frequency } from "@/components/App/Singlestudy/explore/Results/ResultDetails/utils";
+import type { Frequency } from "@/routes/_authenticated/studies/$studyId/explore/outputs/$outputId/-utils";
+import type { TableExportFormatValue } from "../../raw/types";
 
 export interface ThermalClusterVariablesDTO {
   name: string;
@@ -90,7 +91,7 @@ export type VariableViewParamsDTO =
   | (VariableViewBaseParamsDTO & { type: "link"; area_from_id: string; area_to_id: string })
   | (VariableViewBaseParamsDTO & { type: "thermal"; area_id: string; thermal_id: string })
   | (VariableViewBaseParamsDTO & { type: "renewable"; area_id: string; renewable_id: string })
-  | (VariableViewBaseParamsDTO & { type: "st_storage"; area_id: string; storage_id: string });
+  | (VariableViewBaseParamsDTO & { type: "st_storage"; area_id: string; st_storage_id: string });
 
 export interface GetVariablesListParams {
   studyId: string;
@@ -113,4 +114,13 @@ export interface MaterializeVariableViewParams {
   studyId: string;
   outputId: string;
   params: VariableViewParams;
+}
+
+export interface ExportVariableViewParams {
+  studyId: string;
+  outputId: string;
+  params: VariableViewParams;
+  format?: TableExportFormatValue;
+  header?: boolean;
+  index?: boolean;
 }

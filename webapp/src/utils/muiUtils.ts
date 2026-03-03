@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,6 +13,15 @@
  */
 
 import type { SxProps, Theme } from "@mui/material";
+
+export function truncateTextSx(maxWidth?: number) {
+  return {
+    maxWidth,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  } satisfies SxProps<Theme>;
+}
 
 /**
  * Merges two `sx` props.

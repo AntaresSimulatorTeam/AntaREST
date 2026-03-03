@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,7 +14,7 @@ import logging
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import redis
 from sqlalchemy import create_engine
@@ -39,6 +39,9 @@ from antarest.core.remote.remote_executor import RemoteWorkerExecutor
 from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.tasks.service import ITaskService
 from antarest.eventbus.main import build_eventbus
+from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteStudyRepository
+from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
+from antarest.favorite.web import create_favorite_routes
 from antarest.launcher.main import build_launcher
 from antarest.launcher.service import LauncherService
 from antarest.login.main import build_login
@@ -47,6 +50,7 @@ from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.adapters import adapt_output_service_to_study_service
+from antarest.study.dao.database.database_blob_usage_provider import DatabaseBlobUsageProvider
 from antarest.study.main import build_study_service
 from antarest.study.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
 from antarest.study.output.lfs.dir_lfs import DirLargeFileStorage
@@ -55,6 +59,7 @@ from antarest.study.output.storage.file_output_storage import InStudyFileOutputS
 from antarest.study.output.storage.output_storage import IOutputStorage
 from antarest.study.output.storage.repository import OutputMetadataRepository
 from antarest.study.output.storage.v2_output_storage import V2OutputStorage
+from antarest.study.output.variable_view_gc import VariableViewGarbageCollector
 from antarest.study.service import StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
@@ -68,7 +73,7 @@ from antarest.worker.worker import AbstractWorker
 logger = logging.getLogger(__name__)
 
 
-SESSION_ARGS: Mapping[str, bool] = {
+SESSION_ARGS: dict[str, bool] = {
     "autocommit": False,
     "expire_on_commit": False,
     "autoflush": False,
@@ -88,14 +93,17 @@ class Module(StrEnum):
     ARCHIVE_WORKER = "archive_worker"
     AUTO_ARCHIVER = "auto_archiver"
     BLOB_GC = "blob_gc"
+    VARIABLE_VIEW_GC = "variable_view_gc"
 
 
 def init_db_engine(
-    config_file: Path,
     config: Config,
     auto_upgrade_db: bool,
+    config_file: Path | None = None,
 ) -> Engine:
     if auto_upgrade_db:
+        if not config_file:
+            raise ValueError("config_file must be provided when auto_upgrade_db is True")
         upgrade_db(config_file)
     connect_args: Dict[str, Any] = {}
     if config.db.db_url.startswith("sqlite"):
@@ -131,9 +139,9 @@ def new_redis_instance(config: RedisConfig) -> redis.Redis:  # type: ignore
         port=config.port,
         password=config.password,
         db=0,
-        retry_on_error=[redis.ConnectionError, redis.TimeoutError],  # type: ignore
+        retry_on_error=[redis.ConnectionError, redis.TimeoutError],
     )
-    return redis_client  # type: ignore
+    return redis_client
 
 
 def create_event_bus(app_ctxt: Optional[AppBuildContext], config: Config) -> Tuple[IEventBus, Optional[redis.Redis]]:  # type: ignore
@@ -155,6 +163,26 @@ class CoreServices:
     study_service: StudyService
     output_service: OutputService
     blob_service: BlobService
+    favorite_study_service: FavoriteStudyService
+    favorite_directory_service: FavoriteDirectoryService
+
+
+def build_favorite_service(
+    config: Config,
+    app_ctxt: Optional[AppBuildContext] = None,
+) -> tuple[FavoriteStudyService, FavoriteDirectoryService]:
+    favorite_repository = FavoriteStudyRepository()
+    favorite_study_service = FavoriteStudyService(favorite_study_repository=favorite_repository)
+
+    favorite_directory_repository = FavoriteDirectoryRepository()
+    favorite_directory_service = FavoriteDirectoryService(favorite_directory_repository=favorite_directory_repository)
+
+    if app_ctxt:
+        app_ctxt.api_root.include_router(
+            create_favorite_routes(favorite_study_service, favorite_directory_service, config=config)
+        )
+
+    return favorite_study_service, favorite_directory_service
 
 
 # TODO: move it elswhere ?
@@ -229,6 +257,7 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         service=None,
     )
     blob_service = build_blob_service(config=config, service=None)
+    blob_service.register_usage_provider(DatabaseBlobUsageProvider())
     study_service = build_study_service(
         app_ctxt,
         config,
@@ -252,6 +281,8 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         matrix_service=matrix_service,
     )
 
+    favorite_study_service, favorite_directory_service = build_favorite_service(config=config, app_ctxt=app_ctxt)
+
     if app_ctxt:
         app_ctxt.api_root.include_router(create_output_routes(output_service, filetransfer_service, config))
 
@@ -265,6 +296,8 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         study_service=study_service,
         output_service=output_service,
         blob_service=blob_service,
+        favorite_study_service=favorite_study_service,
+        favorite_directory_service=favorite_directory_service,
     )
 
 
@@ -282,6 +315,14 @@ def create_blob_gc(config: Config, blob_service: BlobService) -> BlobGarbageColl
         blob_service=blob_service,
         sleeping_time=config.storage.blob_gc_sleeping_time,
         dry_run=config.storage.blob_gc_dry_run,
+    )
+
+
+def create_variable_view_gc(config: Config) -> VariableViewGarbageCollector:
+    return VariableViewGarbageCollector(
+        sleeping_time=config.storage.variable_view_gc_sleeping_time,
+        dry_run=config.storage.variable_view_gc_dry_run,
+        retention_time=config.storage.variable_view_gc_retention_days,
     )
 
 
@@ -336,6 +377,8 @@ class Services:
     event_bus: IEventBus
     study: StudyService
     matrix: MatrixService
+    favorite_study: FavoriteStudyService
+    favorite_directory: FavoriteDirectoryService
     user: LoginService
     cache: ICache
     maintenance: MaintenanceService
@@ -343,6 +386,7 @@ class Services:
     matrix_gc: Optional[MatrixGarbageCollector] = None
     auto_archiver: Optional[AutoArchiveService] = None
     blob_gc: Optional[BlobGarbageCollector] = None
+    variable_view_gc: Optional[VariableViewGarbageCollector] = None
 
 
 def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_all: bool = False) -> Services:
@@ -379,12 +423,18 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
     if config.server.services and Module.AUTO_ARCHIVER.value in config.server.services or create_all:
         auto_archiver = AutoArchiveService(core_services.study_service, core_services.output_service, config)
 
+    variable_view_gc = None
+    if config.server.services and Module.VARIABLE_VIEW_GC.value in config.server.services or create_all:
+        variable_view_gc = create_variable_view_gc(config)
+
     return Services(
         watcher=watcher,
         explorer=explorer_service,
         event_bus=core_services.event_bus,
         study=core_services.study_service,
         matrix=core_services.matrix_service,
+        favorite_study=core_services.favorite_study_service,
+        favorite_directory=core_services.favorite_directory_service,
         user=core_services.login_service,
         cache=core_services.cache,
         maintenance=maintenance_service,
@@ -392,4 +442,5 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
         matrix_gc=matrix_garbage_collector,
         auto_archiver=auto_archiver,
         blob_gc=blob_garbage_collector,
+        variable_view_gc=variable_view_gc,
     )

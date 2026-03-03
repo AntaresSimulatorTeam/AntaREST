@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Callable, Iterator, TypeAlias
 
 import pandas as pd
+import polars as pl
 from fastapi import HTTPException
 from starlette.responses import FileResponse
 
@@ -110,7 +111,7 @@ def _export_file(
 
 
 def export_df_chunks(
-    tmp_path: Path, file_download_path: Path, df_chunks: Iterator[pd.DataFrame], export_format: TableExportFormat
+    tmp_path: Path, file_download_path: Path, df_chunks: Iterator[pl.DataFrame], export_format: TableExportFormat
 ) -> None:
     """
     We need to harmonize all dataframes as we could be aggregating dataframes with different columns.

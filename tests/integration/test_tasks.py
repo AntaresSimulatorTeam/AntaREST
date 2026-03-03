@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -34,7 +34,7 @@ def test_list_tasks(client: TestClient, user_access_token: str, internal_study_i
     assert task_2.status == TaskStatus.COMPLETED, task_2
     expected_task_list.append(task_2)
 
-    res_tasks = client.get("/v1/tasks", params={})
+    res_tasks = client.get("/v1/tasks")
     res_task_list = res_tasks.json()
     for task in res_task_list:
         task_dto = TaskDTO(**task)
@@ -44,21 +44,21 @@ def test_list_tasks(client: TestClient, user_access_token: str, internal_study_i
     assert actual_task_list == expected_task_list
 
     # Getting all COMPLETED tasks and ensuring there's 2 of them
-    res_tasks = client.get("/v1/tasks?status=COMPLETED", params={})
+    res_tasks = client.get("/v1/tasks", params={"status": "COMPLETED"})
     res_task_completed_list = res_tasks.json()
     assert len(res_task_completed_list) == 2
     for task_status in res_task_completed_list:
         assert task_status["status"] == TaskStatus.COMPLETED.value, task_status
 
     # Getting COMPLETED tasks, this time with his status value instead of a string
-    res_tasks = client.get("/v1/tasks?status=3", params={})
+    res_tasks = client.get("/v1/tasks", params={"status": "3"})
     res_task_completed_list = res_tasks.json()
     assert len(res_task_completed_list) == 2
 
     # Getting all RUNNING tasks and making sure there's none
-    res_tasks_running = client.get("/v1/tasks?status=RUNNING", params={}).json()
+    res_tasks_running = client.get("/v1/tasks", params={"status": "RUNNING"}).json()
     assert len(res_tasks_running) == 0
 
     # Putting a non-existent status in the GET to have an error
-    res_tasks_non_existent = client.get("/v1/tasks?status=NON_EXISTENT", params={})
+    res_tasks_non_existent = client.get("/v1/tasks", params={"status": "NON_EXISTENT"})
     assert res_tasks_non_existent.status_code == 422, res_tasks_non_existent

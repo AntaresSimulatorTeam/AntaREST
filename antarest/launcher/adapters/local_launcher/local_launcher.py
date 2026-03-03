@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -195,6 +195,10 @@ class LocalLauncher(AbstractLauncher):
         # Use solver logs
         if "solver-logs" in options:
             simulator_args += ["--solver-logs"]
+
+        # Export MPS problems
+        if "export-mps" in options:
+            simulator_args += ["--named-mps-problems"]
 
         # Call the right solver
         linear_solver = ""

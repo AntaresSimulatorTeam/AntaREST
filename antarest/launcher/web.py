@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -17,6 +17,7 @@ from uuid import UUID
 from fastapi import APIRouter, Query
 from pydantic import Field
 
+from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.utils.web import APITag
@@ -49,11 +50,11 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Run study",
     )
     def run(
-        study_id: str,
-        launcher: Optional[str] = None,
+        study_id: UuidStr,
+        launcher: Optional[SanitizedStr] = None,
         launcher_parameters: LauncherParametersDTO = LauncherParametersDTO(),
-        solver_presets_id: Optional[str] = None,
-        version: Optional[str] = None,
+        solver_presets_id: Optional[SanitizedStr] = None,
+        version: Optional[SanitizedStr] = None,
     ) -> JobCreationDTO:
         logger.info(f"Launching study {study_id} with options {launcher_parameters}")
         selected_launcher = launcher if launcher is not None else config.launcher.default
@@ -73,7 +74,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Retrieve jobs",
     )
     def get_job(
-        study: Optional[str] = None, filter_orphans: bool = True, latest: Optional[int] = None
+        study: Optional[SanitizedStr] = None, filter_orphans: bool = True, latest: Optional[int] = None
     ) -> List[JobResultDTO]:
         logger.info(f"Fetching execution jobs for study {study or '<all>'}")
         return [job.to_dto() for job in service.get_jobs(study, filter_orphans, latest)]
@@ -82,7 +83,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         "/jobs/{job_id}/logs",
         summary="Retrieve job logs from job id",
     )
-    def get_job_log(job_id: str, log_type: LogType = LogType.STDOUT) -> str | None:
+    def get_job_log(job_id: SanitizedStr, log_type: LogType = LogType.STDOUT) -> str | None:
         logger.info(f"Fetching logs for job {job_id}")
         return service.get_log(job_id, log_type)
 
@@ -90,7 +91,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         "/jobs/{job_id}/output",
         summary="Export job output",
     )
-    def export_job_output(job_id: str) -> FileDownloadTaskDTO:
+    def export_job_output(job_id: SanitizedStr) -> FileDownloadTaskDTO:
         logger.info(f"Exporting output for job {job_id}")
         return service.download_output(job_id)
 
@@ -99,7 +100,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Kill job",
     )
     def kill_job(
-        job_id: str,
+        job_id: SanitizedStr,
     ) -> JobResultDTO:
         logger.info(f"Killing job {job_id}")
 
@@ -117,7 +118,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         "/jobs/{job_id}/progress",
         summary="Retrieve job progress from job id",
     )
-    def get_progress(job_id: str) -> int:
+    def get_progress(job_id: SanitizedStr) -> int:
         logger.info(f"Fetching job progress of job {job_id}")
         return int(service.get_launch_progress(job_id))
 
@@ -126,7 +127,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Remove job",
         responses={204: {"description": "Job removed"}},
     )
-    def remove_result(job_id: str) -> None:
+    def remove_result(job_id: SanitizedStr) -> None:
         logger.info(f"Removing job {job_id}")
         service.remove_job(job_id)
 
@@ -142,7 +143,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         "/load",
         summary="Get the SLURM cluster or local machine load",
     )
-    def get_load(launcher_id: Optional[str] = None) -> LauncherLoadDTO:
+    def get_load(launcher_id: Optional[SanitizedStr] = None) -> LauncherLoadDTO:
         logger.info("Fetching launcher load")
         try:
             return service.get_load(launcher_id)
@@ -163,7 +164,8 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         deprecated=True,
     )
     def get_solver_versions(
-        launcher_id: str | None = None, solver: Annotated[str | None, Query(deprecated=True)] = None
+        launcher_id: SanitizedStr | None = None,
+        solver: Annotated[SanitizedStr | None, Query(deprecated=True)] = None,
     ) -> Annotated[list[str], Field(examples=[["820", "880", "920"]])]:
         """
         Get list of supported solver versions for the specified launcher.
@@ -191,7 +193,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         "/solver-presets/{solver_presets_id}",
         summary="Retrieve solver presets by ID",
     )
-    def get_solver_presets(solver_presets_id: str) -> SolverPresets:
+    def get_solver_presets(solver_presets_id: SanitizedStr) -> SolverPresets:
         logger.info(f"Retrieving solver presets for ID {solver_presets_id}")
         return service.get_solver_presets(solver_presets_id)
 
@@ -207,7 +209,9 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         "/solver-presets/{solver_presets_id}",
         summary="Update an existing solver preset",
     )
-    def update_solver_presets(solver_presets_id: str, solver_presets_update: SolverPresetsUpdate) -> SolverPresets:
+    def update_solver_presets(
+        solver_presets_id: SanitizedStr, solver_presets_update: SolverPresetsUpdate
+    ) -> SolverPresets:
         logger.info(f"Updating solver preset for ID {solver_presets_id}")
         return service.update_solver_presets(solver_presets_id, solver_presets_update)
 
@@ -215,7 +219,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         "/solver-presets/{solver_presets_id}",
         summary="Delete a solver preset",
     )
-    def delete_solver_presets(solver_presets_id: str) -> None:
+    def delete_solver_presets(solver_presets_id: SanitizedStr) -> None:
         logger.info(f"Deleting solver preset for ID {solver_presets_id}")
         service.delete_solver_presets(solver_presets_id)
 

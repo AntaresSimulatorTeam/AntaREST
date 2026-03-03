@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -23,6 +23,7 @@ from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
 )
+from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
@@ -89,37 +90,6 @@ class AreaConfig(AntaresBaseModel, extra="forbid"):
     st_storages: List[STStorage] = []
     # Since v9.2, dictionary storage ID -> constraints
     st_storages_additional_constraints: dict[str, list[STStorageAdditionalConstraint]] = {}
-
-
-class Mode(EnumIgnoreCase):
-    """
-    Simulation mode of an Antares study.
-    """
-
-    ECONOMY = "Economy"
-    ADEQUACY = "Adequacy"
-    EXPANSION = "Expansion"
-
-    def get_output_suffix(self) -> str:
-        if self == Mode.ECONOMY:
-            return "eco"
-        elif self == Mode.ADEQUACY:
-            return "adq"
-        elif self == Mode.EXPANSION:
-            return "exp"
-        else:
-            raise ValueError(f"Unknown mode: {self}")
-
-    @staticmethod
-    def from_output_suffix(suffix: str) -> "Mode":
-        if suffix == "eco":
-            return Mode.ECONOMY
-        elif suffix == "adq":
-            return Mode.ADEQUACY
-        elif suffix == "exp":
-            return Mode.EXPANSION
-        else:
-            raise ValueError(f"Unknown suffix: {suffix}")
 
 
 class Simulation(AntaresBaseModel):

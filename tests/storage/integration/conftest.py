@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -45,12 +45,7 @@ from tests.helpers import create_raw_study
 UUID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 
 
-@pytest.fixture
-def sta_mini_path(tmp_path: Path) -> Path:
-    return tmp_path / "studies" / "STA-mini"
-
-
-@pytest.fixture
+@pytest.fixture(scope="session")
 def sta_mini_zip_path(project_path: Path) -> Path:
     return project_path / "examples/studies/STA-mini.zip"
 
@@ -167,15 +162,5 @@ def services(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path) -> tup
 
 
 @pytest.fixture
-def storage_service(services: tuple[StudyService, OutputService]) -> StudyService:
+def storage_service(services: tuple[StudyService, OutputService, Config]) -> StudyService:
     return services[0]
-
-
-@pytest.fixture(name="output_service")
-def output_service_fixture(services: tuple[StudyService, OutputService]) -> OutputService:
-    return services[1]
-
-
-@pytest.fixture
-def config(services: tuple[StudyService, OutputService, Config]) -> Config:
-    return services[2]

@@ -83,19 +83,10 @@ Optional (for specific deployment modes):
    cd AntaREST
    ```
 
-2. **Set up Python environment**
+2. **Install Python dependencies**
 
    ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   python3 -m pip install --upgrade pip
-   ```
-
-3. **Install Python dependencies**
-
-   ```bash
-   pip install -e .                     # Install package in editable mode
-   pip install -r requirements-dev.txt  # Install development dependencies
+   uv sync  # Install all dependencies including dev
    ```
 
 4. **Install frontend dependencies**
@@ -149,7 +140,7 @@ The API will be available at `http://localhost:8080` and the frontend at `http:/
 ```bash
 export ANTAREST_CONF=resources/application.yaml
 export GUNICORN_WORKERS=4
-gunicorn --config conf/gunicorn.py --worker-class=uvicorn.workers.UvicornWorker antarest.wsgi:app
+uv run gunicorn --config conf/gunicorn.py --worker-class=uvicorn.workers.UvicornWorker antarest.wsgi:app
 ```
 
 **Note**: In production, we now use an alternative deployment mode where Gunicorn is not used for load balancing. Instead, we start multiple independent workers on different ports, allowing upstream load balancing to be handled by tools like nginx.

@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,7 +12,7 @@
 from abc import abstractmethod
 from typing import Iterator, Sequence
 
-import pandas as pd
+import polars as pl
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
@@ -21,6 +21,7 @@ from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
+from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
@@ -32,7 +33,7 @@ from antarest.study.business.model.hydro_model import HydroManagement, HydroProp
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.scenario_builder_model import AnyScenarios, Rulesets, ScenarioType
+from antarest.study.business.model.scenario_builder_model import AnyScenarios, Ruleset, ScenarioType
 from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
@@ -56,6 +57,10 @@ from antarest.study.dao.api.advanced_parameters_dao import AdvancedParametersDao
 from antarest.study.dao.api.area_dao import AreaDao, ReadOnlyAreaDao
 from antarest.study.dao.api.area_properties_dao import AreaPropertiesDao, ReadOnlyAreaPropertiesDao
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
+from antarest.study.dao.api.compatibility_parameters_dao import (
+    CompatibilityParametersDao,
+    ReadOnlyCompatibilityParametersDao,
+)
 from antarest.study.dao.api.district_dao import DistrictDao, ReadOnlyDistrictDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
@@ -87,6 +92,7 @@ class ReadOnlyStudyDao(
     ReadOnlyGeneralConfigDao,
     ReadOnlyOptimizationPreferencesDao,
     ReadOnlyAdvancedParametersDao,
+    ReadOnlyCompatibilityParametersDao,
     ReadOnlyXpansionDao,
     ReadOnlyThematicTrimmingDao,
     ReadOnlyAdequacyPatchParametersDao,
@@ -119,6 +125,7 @@ class StudyDao(
     GeneralConfigDao,
     OptimizationPreferencesDao,
     AdvancedParametersDao,
+    CompatibilityParametersDao,
     XpansionDao,
     ThematicTrimmingDao,
     AdequacyPatchParametersDao,
@@ -154,6 +161,20 @@ class StudyDao(
     def save_comments(self, comments: str) -> None:
         raise NotImplementedError()
 
+    @abstractmethod
+    def update_antares_file(self, editor: str, last_save: float) -> None:
+        """
+        Update the study.antares file with editor and last save timestamp.
+
+        For file-based storage, this updates the actual file.
+        For database storage, this is a no-op (metadata is stored in DB).
+
+        Args:
+            editor: The name of the user who made the last edit.
+            last_save: Unix timestamp of the last save.
+        """
+        raise NotImplementedError()
+
 
 class ReadOnlyAdapter(ReadOnlyStudyDao):
     """
@@ -184,15 +205,15 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.link_exists(area1_id, area2_id)
 
     @override
-    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
         return self._adaptee.get_link_indirect_capacities(area_from, area_to)
 
     @override
-    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pd.DataFrame:
+    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
         return self._adaptee.get_link_direct_capacities(area_from, area_to)
 
     @override
-    def get_link_series(self, area_from: str, area_to: str) -> pd.DataFrame:
+    def get_link_series(self, area_from: str, area_to: str) -> pl.DataFrame:
         return self._adaptee.get_link_series(area_from, area_to)
 
     @override
@@ -212,23 +233,23 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.thermal_exists(area_id, thermal_id)
 
     @override
-    def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self._adaptee.get_thermal_prepro(area_id, thermal_id)
 
     @override
-    def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self._adaptee.get_thermal_modulation(area_id, thermal_id)
 
     @override
-    def get_thermal_series(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_series(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self._adaptee.get_thermal_series(area_id, thermal_id)
 
     @override
-    def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self._adaptee.get_thermal_fuel_cost(area_id, thermal_id)
 
     @override
-    def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+    def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self._adaptee.get_thermal_co2_cost(area_id, thermal_id)
 
     @override
@@ -248,7 +269,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.renewable_exists(area_id, renewable_id)
 
     @override
-    def get_renewable_series(self, area_id: str, renewable_id: str) -> pd.DataFrame:
+    def get_renewable_series(self, area_id: str, renewable_id: str) -> pl.DataFrame:
         return self._adaptee.get_renewable_series(area_id, renewable_id)
 
     @override
@@ -260,19 +281,19 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_constraint(constraint_id)
 
     @override
-    def get_constraint_values_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_values_matrix(self, constraint_id: str) -> pl.DataFrame:
         return self._adaptee.get_constraint_values_matrix(constraint_id)
 
     @override
-    def get_constraint_less_term_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_less_term_matrix(self, constraint_id: str) -> pl.DataFrame:
         return self._adaptee.get_constraint_less_term_matrix(constraint_id)
 
     @override
-    def get_constraint_greater_term_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_greater_term_matrix(self, constraint_id: str) -> pl.DataFrame:
         return self._adaptee.get_constraint_greater_term_matrix(constraint_id)
 
     @override
-    def get_constraint_equal_term_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_equal_term_matrix(self, constraint_id: str) -> pl.DataFrame:
         return self._adaptee.get_constraint_equal_term_matrix(constraint_id)
 
     @override
@@ -292,44 +313,50 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.st_storage_exists(area_id, storage_id)
 
     @override
-    def get_st_storage_pmax_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_pmax_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._adaptee.get_st_storage_pmax_injection(area_id, storage_id)
 
     @override
-    def get_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._adaptee.get_st_storage_pmax_withdrawal(area_id, storage_id)
 
     @override
-    def get_st_storage_lower_rule_curve(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_lower_rule_curve(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._adaptee.get_st_storage_lower_rule_curve(area_id, storage_id)
 
     @override
-    def get_st_storage_upper_rule_curve(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_upper_rule_curve(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._adaptee.get_st_storage_upper_rule_curve(area_id, storage_id)
 
     @override
-    def get_st_storage_inflows(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_inflows(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._adaptee.get_st_storage_inflows(area_id, storage_id)
 
     @override
-    def get_st_storage_cost_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._adaptee.get_st_storage_cost_injection(area_id, storage_id)
 
     @override
-    def get_st_storage_cost_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._adaptee.get_st_storage_cost_withdrawal(area_id, storage_id)
 
     @override
-    def get_st_storage_cost_level(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_level(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._adaptee.get_st_storage_cost_level(area_id, storage_id)
 
     @override
-    def get_st_storage_cost_variation_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_variation_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._adaptee.get_st_storage_cost_variation_injection(area_id, storage_id)
 
     @override
-    def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+    def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._adaptee.get_st_storage_cost_variation_withdrawal(area_id, storage_id)
+
+    @override
+    def get_st_storage_additional_constraint_matrix(
+        self, area_id: str, storage_id: str, constraint_id: str
+    ) -> pl.DataFrame:
+        return self._adaptee.get_st_storage_additional_constraint_matrix(area_id, storage_id, constraint_id)
 
     @override
     def get_all_hydro_properties(self) -> dict[str, HydroProperties]:
@@ -360,39 +387,39 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_hydro_correlation_matrix()
 
     @override
-    def get_hydro_maxpower(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_maxpower(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_maxpower(area_id)
 
     @override
-    def get_hydro_reservoir(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_reservoir(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_reservoir(area_id)
 
     @override
-    def get_hydro_energy(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_energy(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_energy(area_id)
 
     @override
-    def get_hydro_run_of_river(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_run_of_river(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_run_of_river(area_id)
 
     @override
-    def get_hydro_modulation(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_modulation(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_modulation(area_id)
 
     @override
-    def get_hydro_credit_modulations(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_credit_modulations(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_credit_modulations(area_id)
 
     @override
-    def get_hydro_inflow_pattern(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_inflow_pattern(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_inflow_pattern(area_id)
 
     @override
-    def get_hydro_water_values(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_water_values(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_water_values(area_id)
 
     @override
-    def get_hydro_mingen(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_mingen(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_mingen(area_id)
 
     @override
@@ -406,6 +433,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_advanced_parameters(self) -> AdvancedParameters:
         return self._adaptee.get_advanced_parameters()
+
+    @override
+    def get_compatibility_parameters(self) -> CompatibilityParameters:
+        return self._adaptee.get_compatibility_parameters()
 
     @override
     def get_all_st_storage_additional_constraints(self) -> STStorageAdditionalConstraintsMap:
@@ -442,7 +473,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.checks_xpansion_settings_are_correct(settings)
 
     @override
-    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pd.DataFrame:
+    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pl.DataFrame:
         return self._adaptee.get_xpansion_resource(resource_type, filename)
 
     @override
@@ -482,12 +513,12 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.district_exists(district_id)
 
     @override
-    def tmp_get_all_areas(self) -> list[str]:
-        return self._adaptee.tmp_get_all_areas()
+    def get_all_area_ids(self) -> list[str]:
+        return self._adaptee.get_all_area_ids()
 
     @override
-    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
-        return self._adaptee.get_invalid_areas_in_district(areas)
+    def get_invalid_area_ids(self, areas: list[str]) -> list[str]:
+        return self._adaptee.get_invalid_area_ids(areas)
 
     @override
     def get_layers(self) -> Sequence[Layer]:
@@ -510,12 +541,8 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_all_area_properties()
 
     @override
-    def get_rulesets(self) -> Rulesets:
-        return self._adaptee.get_rulesets()
-
-    @override
-    def get_active_ruleset_name(self, default_ruleset: str = "Default Ruleset") -> str:
-        return self._adaptee.get_active_ruleset_name(default_ruleset)
+    def get_ruleset(self) -> Ruleset:
+        return self._adaptee.get_ruleset()
 
     @override
     def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
@@ -538,21 +565,37 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_all_user_resources()
 
     @override
-    def get_load(self, area_id: str) -> pd.DataFrame:
+    def get_load(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_load(area_id)
 
     @override
-    def get_misc_gen(self, area_id: str) -> pd.DataFrame:
+    def get_misc_gen(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_misc_gen(area_id)
 
     @override
-    def get_reserves(self, area_id: str) -> pd.DataFrame:
+    def get_reserves(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_reserves(area_id)
 
     @override
-    def get_solar(self, area_id: str) -> pd.DataFrame:
+    def get_solar(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_solar(area_id)
 
     @override
-    def get_wind(self, area_id: str) -> pd.DataFrame:
+    def get_wind(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_wind(area_id)
+
+    @override
+    def get_hydro_max_hourly_gen_power(self, area_id: str) -> pl.DataFrame:
+        return self._adaptee.get_hydro_max_hourly_gen_power(area_id)
+
+    @override
+    def get_hydro_max_hourly_pump_power(self, area_id: str) -> pl.DataFrame:
+        return self._adaptee.get_hydro_max_hourly_pump_power(area_id)
+
+    @override
+    def get_hydro_max_daily_gen_energy(self, area_id: str) -> pl.DataFrame:
+        return self._adaptee.get_hydro_max_daily_gen_energy(area_id)
+
+    @override
+    def get_hydro_max_daily_pump_energy(self, area_id: str) -> pl.DataFrame:
+        return self._adaptee.get_hydro_max_daily_pump_energy(area_id)

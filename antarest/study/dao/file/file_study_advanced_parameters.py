@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -62,3 +62,4 @@ class FileStudyAdvancedParametersDao(AdvancedParametersDao, ABC):
                 general_data[key][field] = value
 
         file_study.tree.save(general_data, GENERAL_DATA_PATH)
+        file_study.config.enr_modelling = parameters.renewable_generation_modelling.value

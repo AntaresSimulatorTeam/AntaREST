@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -61,6 +61,6 @@ def test_get_additional_constraints(
             assert constraints == {
                 "area1": {
                     "additional_constraints": "json://additional-constraints.ini",
-                    "matrix": "matrixfile://matrix.txt",
+                    "matrix": "matrix://matrix.txt",
                 }
             }

@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
+from typing import Annotated
 
 from fastapi import APIRouter, Body
 
@@ -40,7 +41,7 @@ def create_maintenance_api(service: MaintenanceService, config: Config) -> APIRo
         return service.get_maintenance_status()
 
     @bp.post("/core/maintenance", include_in_schema=False)
-    def set_maintenance_status(maintenance: bool, current_user: JWTUser = auth.required()) -> None:
+    def set_maintenance_status(maintenance: bool, current_user: Annotated[JWTUser, auth.required()]) -> None:
         return service.set_maintenance_status(maintenance)
 
     @bp.get("/core/maintenance/message", include_in_schema=False)
@@ -48,7 +49,9 @@ def create_maintenance_api(service: MaintenanceService, config: Config) -> APIRo
         return service.get_message_info()
 
     @bp.post("/core/maintenance/message", include_in_schema=False)
-    def set_message_info(message: str = Body(default=""), current_user: JWTUser = auth.required()) -> None:
+    def set_message_info(
+        current_user: Annotated[JWTUser, auth.required()], message: Annotated[str, Body()] = ""
+    ) -> None:
         return service.set_message_info(message)
 
     return bp

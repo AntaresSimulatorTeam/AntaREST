@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -13,7 +13,7 @@
 import logging
 from typing import List
 
-import pandas as pd
+import polars as pl
 from fastapi import UploadFile
 
 from antarest.core.exceptions import (
@@ -21,6 +21,7 @@ from antarest.core.exceptions import (
     MatrixImportFailed,
     XpansionFileAlreadyExistsError,
 )
+from antarest.core.utils.string import sanitize_for_log
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionCandidate,
@@ -170,6 +171,7 @@ class XpansionManager:
         filename = file.filename
         if not filename:
             raise FileImportFailed("A filename is required")
+        filename = sanitize_for_log(filename, "filename must not contain newline characters.")
         logger.info(f"Adding xpansion {resource_type} resource file {filename} to study '{study.id}'")
 
         # checks the file doesn't already exist
@@ -201,7 +203,7 @@ class XpansionManager:
 
     def get_resource_content(
         self, study: StudyInterface, resource_type: XpansionResourceFileType, filename: str
-    ) -> bytes | pd.DataFrame:
+    ) -> bytes | pl.DataFrame:
         logger.info(f"Getting xpansion {resource_type} resource file '{filename}' from study '{study.id}'")
         return study.get_study_dao().get_xpansion_resource(resource_type, filename)
 

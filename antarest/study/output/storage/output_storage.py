@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -16,17 +16,17 @@ from enum import StrEnum
 from pathlib import Path
 from typing import BinaryIO, Iterator, Optional, Sequence
 
-import pandas as pd
+import polars as pl
 from pydantic import ConfigDict
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
+from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency, MatrixIndex
 from antarest.study.output.output_model import OutputVariablesList
 from antarest.study.output.utils import QueryFileType
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
 logger = logging.getLogger(__name__)
@@ -194,7 +194,7 @@ class IOutputStorage(ABC):
         columns_names: Sequence[str],
         transform_columns_headers: bool,
         mc_years: Optional[Sequence[int]] = None,
-    ) -> Iterator[pd.DataFrame]:
+    ) -> Iterator[pl.DataFrame]:
         """
         Aggregates output data based on several filtering conditions, as a stream of dataframes.
         """

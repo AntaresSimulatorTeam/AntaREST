@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,12 +12,12 @@
 
 from typing import Any, Dict, List, Optional, Sequence
 
-import pandas as pd
+from antares.study.version import StudyVersion
 
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.model import MatrixData
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
 from antarest.study.model import STUDY_VERSION_8_2
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -45,7 +45,7 @@ def validate_matrix(matrix: List[List[MatrixData]] | str, values: Dict[str, Any]
 
     matrix_service: ISimpleMatrixService = values["command_context"].matrix_service
     if isinstance(matrix, list):
-        return MATRIX_PROTOCOL_PREFIX + matrix_service.create(data=pd.DataFrame(matrix))
+        return MATRIX_PROTOCOL_PREFIX + matrix_service.create(create_polars_dataframe(matrix))
     elif isinstance(matrix, str):
         if not matrix:
             raise ValueError("The matrix ID cannot be empty")
@@ -66,20 +66,20 @@ def strip_matrix_protocol(matrix_uri: List[List[float]] | str | None) -> str:
 
 class AliasDecoder:
     @staticmethod
-    def links_series(alias: str, study: FileStudy) -> str:
+    def links_series(alias: str, study_version: StudyVersion) -> str:
         data = alias.split("/")
         area_from = data[1]
         area_to = data[2]
-        if study.config.version < STUDY_VERSION_8_2:
+        if study_version < STUDY_VERSION_8_2:
             return f"input/links/{area_from}/{area_to}"
         return f"input/links/{area_from}/{area_to}_parameters"
 
     @staticmethod
-    def decode(alias: str, study: FileStudy) -> str:
+    def decode(alias: str, study_version: StudyVersion) -> str:
         alias_map = {"@links_series": AliasDecoder.links_series}
         alias_code = alias.split("/")[0]
         if alias_code in alias_map:
-            return alias_map[alias_code](alias, study)
+            return alias_map[alias_code](alias, study_version)
         raise NotImplementedError(f"Alias {alias} not implemented")
 
 

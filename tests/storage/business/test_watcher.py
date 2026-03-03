@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -83,6 +83,7 @@ def build_study_service(
     variant_study_service: VariantStudyService = Mock(spec=VariantStudyService),
     task_service: ITaskService = Mock(spec=ITaskService),
 ) -> StudyService:
+    raw_study_service.study_factory = Mock()
     return StudyService(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,

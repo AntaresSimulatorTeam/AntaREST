@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,14 +10,14 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from typing import cast
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
 from antarest.study.business.model.scenario_builder_model import (
+    DEFAULT_RULESET_NAME,
     AnyScenarios,
     Ruleset,
-    Rulesets,
     ScenarioType,
     initialize_ruleset_with_version,
     update_ruleset,
@@ -26,83 +26,60 @@ from antarest.study.dao.api.scenario_builder_dao import ScenarioBuilderDao
 from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import (
     SCENARIO_TYPE_SYMBOLS,
     RulesetFileData,
+    parse_ruleset_from_any,
     parse_ruleset_update,
-    parse_rulesets_from_any,
-    serialize_rulesets,
+    serialize_ruleset_to_file_data,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
+if TYPE_CHECKING:
+    from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+
 SCENARIO_BUILDER_PATH = ["settings", "scenariobuilder"]
-ACTIVE_RULESET_URL = ["settings", "generaldata", "general", "active-rules-scenario"]
 NB_YEARS_URL = ["settings", "generaldata", "general", "nbyears"]
 
 
 class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
     @abstractmethod
+    def get_impl(self) -> "FileStudyTreeDao":
+        pass
+
+    @abstractmethod
     def get_file_study(self) -> FileStudy:
         pass
 
     @override
-    def get_rulesets(self) -> Rulesets:
+    def get_ruleset(self) -> Ruleset:
         """
         Load the scenario builder configuration from the study directory.
         """
         study_data = self.get_file_study()
         scenario_builder_data = study_data.tree.get(["settings", "scenariobuilder"])
-        return parse_rulesets_from_any(scenario_builder_data, study_data.config.version)
-
-    @override
-    def get_active_ruleset_name(self, default_ruleset: str = "Default Ruleset") -> str:
-        """
-        Get the active ruleset name stored in the configuration at the following path:
-        ``settings/generaldata.ini``, in the section "general", key "active-rules-scenario".
-
-        Args:
-            default_ruleset: Name of the default ruleset
-
-        Returns:
-            The active ruleset name if found in the configuration, or the default ruleset name if missing.
-        """
-        study_data = self.get_file_study()
-        try:
-            active_ruleset = cast(str, study_data.tree.get(ACTIVE_RULESET_URL))
-        except KeyError:
-            active_ruleset = default_ruleset
-        else:
-            # In some old studies, the active ruleset is stored in lowercase.
-            if not active_ruleset or active_ruleset.lower() == "default ruleset":
-                active_ruleset = default_ruleset
-        return active_ruleset
+        return parse_ruleset_from_any(scenario_builder_data, study_data.config.version)
 
     def _get_nb_years(self) -> int:
-        study_data = self.get_file_study()
-        try:
-            nb_years = cast(int, study_data.tree.get(NB_YEARS_URL))
-        except KeyError:
-            nb_years = 1
-        return nb_years
+        return self.get_impl().get_general_config().nb_years
 
     @staticmethod
     def _extract_ruleset_data(file_study: FileStudy, ruleset_name: str, scenario_type: ScenarioType) -> RulesetFileData:
         """
-        Extracts from file study only the relevant data for the provided ruleset name and scenario type.
+        Extracts from the file study only the relevant data for the provided ruleset name and scenario type.
         """
         try:
             suffix = SCENARIO_TYPE_SYMBOLS[scenario_type]
             url = ["settings", "scenariobuilder", ruleset_name, suffix]
-            return cast(RulesetFileData, file_study.tree.get(url))
+            return file_study.tree.get(url)
         except KeyError:
             return {}
 
     def _read_ruleset(self, scenario_type: ScenarioType) -> Ruleset:
         """
-        Read a ruleset JSON file by name from the rulesets directory.
+        Read the ruleset.
         """
         study_data = self.get_file_study()
         study_version = study_data.config.version
-        ruleset_name = self.get_active_ruleset_name()
         nb_years = self._get_nb_years()
-        ruleset_config = self._extract_ruleset_data(study_data, ruleset_name, scenario_type)
+        ruleset_config = self._extract_ruleset_data(study_data, DEFAULT_RULESET_NAME, scenario_type)
 
         complete_ruleset = initialize_ruleset_with_version(
             years=[str(y) for y in range(0, nb_years)],
@@ -125,10 +102,10 @@ class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
         return ruleset.get(scenario_type)
 
     @override
-    def save_scenario_builder(self, rulesets: Rulesets) -> None:
+    def save_scenario_builder(self, ruleset: Ruleset) -> None:
         """
         Save the scenario builder configuration to the study directory.
         """
         study_data = self.get_file_study()
 
-        study_data.tree.save(serialize_rulesets(rulesets, study_data.config.version), SCENARIO_BUILDER_PATH)
+        study_data.tree.save(serialize_ruleset_to_file_data(ruleset, study_data.config.version), SCENARIO_BUILDER_PATH)

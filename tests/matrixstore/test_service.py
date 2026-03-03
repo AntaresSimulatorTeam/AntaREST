@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -15,25 +15,31 @@ import io
 import json
 import re
 import typing as t
+import uuid
 import zipfile
 from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
+import polars as pl
 import pytest
 from fastapi import UploadFile
+from sqlalchemy import select
 from starlette.datastructures import Headers
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.roles import RoleType
+from antarest.core.serde.matrix_export import write_dataframe_in_tsv_format
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, GroupDTO, Identity, UserInfo
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound, MatrixNotSupported
 from antarest.matrixstore.model import (
+    NEW_MATRIX_VERSION,
     Matrix,
     MatrixDataSet,
     MatrixDataSetDTO,
@@ -41,14 +47,15 @@ from antarest.matrixstore.model import (
     MatrixDataSetUpdateDTO,
     MatrixInfoDTO,
     MatrixMetadataDTO,
+    MatrixMismatchDTO,
 )
 from antarest.matrixstore.parsing import load_matrix
 from antarest.matrixstore.repository import compute_hash
-from antarest.matrixstore.service import NEW_MATRIX_VERSION, MatrixService, check_dataframe_compliance
+from antarest.matrixstore.service import MatrixService, check_dataframe_compliance
 from tests.conftest import PROJECT_DIR
 from tests.helpers import with_db_context
 
-MatrixType = t.List[t.List[float]]
+MatrixType = list[list[float]]
 TEST_MATRIX = [[1, 2, 3], [4, 5, 6]]
 resource_path = (
     PROJECT_DIR
@@ -59,7 +66,7 @@ resource_path = (
     / "aggregate_areas_raw_data"
     / "test-01-all.result.tsv"
 )
-AGGREGATION_DF = pd.read_csv(resource_path, sep="\t")
+AGGREGATION_DF = pl.read_csv(resource_path, separator="\t")
 
 
 class TestMatrixService:
@@ -68,7 +75,7 @@ class TestMatrixService:
         """Creates a new matrix object with the specified data."""
         # when a matrix is created (inserted) in the service
         data = TEST_MATRIX
-        df_to_save = pd.DataFrame(data)
+        df_to_save = create_polars_dataframe(data)
         matrix_id = matrix_service.create(df_to_save)
 
         # A "real" hash value is calculated
@@ -95,7 +102,7 @@ class TestMatrixService:
         matrix_repo = matrix_service.repo
         matrix_repo.save = Mock(side_effect=Exception("database error"))
         with pytest.raises(Exception, match="database error"):
-            matrix_service.create(pd.DataFrame(TEST_MATRIX))
+            matrix_service.create(create_polars_dataframe(TEST_MATRIX))
 
         # the associated matrix file must not be deleted
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
@@ -111,7 +118,7 @@ class TestMatrixService:
         """Get a matrix object from the database and the matrix content repository."""
         # when a matrix is created (inserted) in the service
         data = TEST_MATRIX
-        matrix_id = matrix_service.create(pd.DataFrame(data))
+        matrix_id = matrix_service.create(create_polars_dataframe(data))
 
         # nominal_case: we can retrieve the matrix and its content
         with db():
@@ -119,8 +126,7 @@ class TestMatrixService:
 
         assert df is not None, f"Missing Matrix object {matrix_id}"
         assert df.to_numpy().tolist() == data
-        assert list(df.index) == list(range(len(data)))
-        assert list(df.columns) == list(range(len(data[0])))
+        assert list(df.columns) == ["0", "1", "2"]
 
         # missing_case: the matrix is missing in the database
         with db():
@@ -195,7 +201,7 @@ class TestMatrixService:
 
         with db():
             for matrix in matrices:
-                mat = pd.read_csv(matrix)
+                mat = pl.read_csv(matrix)
                 matrix_service.create(mat)
 
             actual_matrices = matrix_service.get_matrices()
@@ -213,7 +219,7 @@ class TestMatrixService:
         """Test the exists method."""
         # when a matrix is created (inserted) in the service
         data = TEST_MATRIX
-        matrix_id = matrix_service.create(pd.DataFrame(data))
+        matrix_id = matrix_service.create(create_polars_dataframe(data))
 
         # nominal_case: we can retrieve the matrix and its content
         with db():
@@ -224,22 +230,24 @@ class TestMatrixService:
     @with_db_context
     def test_same_hash_with_int_and_float_matrices(self, matrix_service: MatrixService) -> None:
         data = TEST_MATRIX
-        matrix_id = matrix_service.create(pd.DataFrame(data))
+        matrix_id = matrix_service.create(create_polars_dataframe(data))
         data_as_float = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
-        matrix_id_as_float = matrix_service.create(pd.DataFrame(data_as_float))
+        matrix_id_as_float = matrix_service.create(create_polars_dataframe(data_as_float))
         assert matrix_id == matrix_id_as_float
 
     @with_db_context
     def test_different_hash_with_same_matrices_with_different_headers(self, matrix_service: MatrixService) -> None:
-        data = TEST_MATRIX
-        matrix_id = matrix_service.create(pd.DataFrame(data))
-        other_matrix_id = matrix_service.create(pd.DataFrame(data=data, columns=["c1", "c2", "c3"]))
+        df1 = pl.DataFrame(np.array(TEST_MATRIX))
+        matrix_id = matrix_service.create(df1)
+        df1.columns = ["c1", "c2", "c3"]
+        other_matrix_id = matrix_service.create(df1)
         assert matrix_id != other_matrix_id
 
     @with_db_context
     def test_ability_to_save_matrices_with_strings(self, matrix_service: MatrixService) -> None:
         data = [["area_1", "area_2", "area_3"], [1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
-        matrix_service.create(pd.DataFrame(data=data, columns=["c1", "c2", "c3"], dtype=pd.StringDtype()))
+        df = pd.DataFrame(data=data, columns=["c1", "c2", "c3"], dtype=pd.StringDtype())
+        matrix_service.create(create_polars_dataframe(df))
 
     @with_db_context
     @pytest.mark.parametrize("matrix_format", ["tsv", "hdf", "parquet", "feather"])
@@ -254,7 +262,7 @@ class TestMatrixService:
         """Delete a matrix object from the matrix content repository and the database."""
         # when a matrix is created (inserted) in the service
         data = TEST_MATRIX
-        matrix_id = matrix_service.create(pd.DataFrame(data))
+        matrix_id = matrix_service.create(pl.DataFrame(data))
 
         # When the matrix id deleted
         with db():
@@ -339,14 +347,19 @@ class TestMatrixService:
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
         content_path = bucket_dir.joinpath(f"{info.id}.tsv")
         actual = load_matrix(InternalMatrixFormat.TSV, content_path, matrix_version=NEW_MATRIX_VERSION)
-        assert actual.to_numpy().all() == matrix.all()
+        if actual.is_empty():
+            assert matrix.size == 0
+            expected_height = 0
+        else:
+            assert (actual.to_numpy() == matrix).all()
+            expected_height = matrix.shape[0]
 
-        # A matrix object is stored in the database
+            # A matrix object is stored in the database
         with db():
             obj = matrix_service.repo.get(info.id)
             assert obj is not None, f"Missing Matrix object {info.id}"
             assert obj.width == matrix.shape[1]
-            assert obj.height == matrix.shape[0]
+            assert obj.height == expected_height
             now = current_time()
             assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
 
@@ -359,12 +372,12 @@ class TestMatrixService:
         Check that the matrices are correctly imported.
         """
         # Prepare the matrix data to import
-        data_list: t.List[MatrixType] = [
+        data_list: list[MatrixType] = [
             TEST_MATRIX,
             [[7, 8, 9, 10, 11], [17, 18, 19, 20, 21], [27, 28, 29, 30, 31]],
             [[]],
         ]
-        matrix_list: t.List[np.ndarray[t.Any, np.dtype[np.float64]]] = [
+        matrix_list: list[np.ndarray[t.Any, np.dtype[np.float64]]] = [
             np.array(data, dtype=np.float64) for data in data_list
         ]
         if content_type == "application/json":
@@ -409,14 +422,19 @@ class TestMatrixService:
             bucket_dir = matrix_service.matrix_content_repository.bucket_dir
             content_path = bucket_dir.joinpath(f"{info.id}.tsv")
             actual = load_matrix(InternalMatrixFormat.TSV, content_path, matrix_version=NEW_MATRIX_VERSION)
-            assert actual.to_numpy().all() == matrix.all()
+            if actual.is_empty():
+                assert matrix.size == 0
+                expected_height = 0
+            else:
+                assert (actual.to_numpy() == matrix).all()
+                expected_height = matrix.shape[0]
 
             # A matrix object is stored in the database
             with db():
                 obj = matrix_service.repo.get(info.id)
                 assert obj is not None, f"Missing Matrix object {info.id}"
                 assert obj.width == (matrix.shape[1] if matrix.size else 0)
-                assert obj.height == matrix.shape[0]
+                assert obj.height == expected_height
                 now = current_time()
                 assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
 
@@ -598,10 +616,10 @@ def test_hashing_method() -> None:
     Non-Regression Test for the hashing method
     It's really important as the whole matrix-store behavior relies on this function
     """
-    df = pd.DataFrame(TEST_MATRIX)
+    df = create_polars_dataframe(TEST_MATRIX)
     assert compute_hash(df) == "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0"
 
-    other_df = pd.DataFrame(data=8760 * [1.0])
+    other_df = create_polars_dataframe(np.array(8760 * [1.0]))
     assert compute_hash(other_df) == "c5c2c006f733e34ed0748a363bc049e58a4e79c35ce592f6f70788c266a89a66"
 
     assert compute_hash(AGGREGATION_DF) == "fa164563176cb9130c34c5799138f88dd9eb18e8a6054a2f117c58fcf2a8b519"
@@ -609,27 +627,22 @@ def test_hashing_method() -> None:
 
 def test_check_compliance_method() -> None:
     # Success
-    df = pd.DataFrame(data=TEST_MATRIX)
+    df = create_polars_dataframe(TEST_MATRIX)
     check_dataframe_compliance(df)
 
-    df = pd.DataFrame(data=["test"], dtype=pd.StringDtype())
+    df = create_polars_dataframe(np.array(["test"]))
     check_dataframe_compliance(df)
 
-    df = pd.DataFrame(data=[datetime.datetime(2025, 4, 16)])
+    df = pl.DataFrame([datetime.datetime(2025, 4, 16)])
     check_dataframe_compliance(df)
 
     # Error
-    df = pd.DataFrame(index=["A", "B"], data=TEST_MATRIX)
-    with pytest.raises(
-        MatrixNotSupported, match=re.escape("The matrixstore doesn't support dataframes with a non-default index")
-    ):
-        check_dataframe_compliance(df)
 
-    df = pd.DataFrame(data=[[b"fake_byte/n"]])
+    df = create_polars_dataframe([[b"fake_byte/n"]])
     with pytest.raises(
         MatrixNotSupported,
         match=re.escape(
-            "Could not save the matrix: Supported matrix data types are 'string, np.number, datetime' and you provided object"
+            "Could not save the matrix: Supported matrix data types are 'number, datetime, string' and you provided Binary"
         ),
     ):
         check_dataframe_compliance(df)
@@ -640,3 +653,84 @@ def _create_upload_file(filename: str, file: t.IO[bytes] = None, content_type: s
     headers = Headers(headers={"content-type": content_type})
     # noinspection PyTypeChecker,PyArgumentList
     return UploadFile(filename=filename, file=file, headers=headers)
+
+
+@with_db_context
+@pytest.mark.parametrize("dry_run", [True, False])
+def test_synchronize_matrix_store(matrix_service: MatrixService, dry_run: bool) -> None:
+    # Ensures when no matrix exist, we return no mismatch
+    assert matrix_service.synchronize_matrix_store(dry_run) == {}
+
+    # Create one matrix in DB but not present in the FS.
+    now = current_time()
+    session = db.session
+    matrix_id = str(uuid.uuid4())
+    session.add(Matrix(id=matrix_id, width=0, height=0, created_at=now, version=1))
+    session.commit()
+
+    # We should return the mismatch
+    assert matrix_service.synchronize_matrix_store(dry_run) == {
+        matrix_id: MatrixMismatchDTO(database=True, filesystem=False)
+    }
+
+    # If `dry_run` is False, we should remove the matrix from DB
+    db_content = session.execute(select(Matrix)).fetchall()
+    if not dry_run:
+        assert db_content == []
+    else:
+        assert len(db_content) == 1
+
+    # Create one matrix on the FS that also exists in DB
+    if not dry_run:
+        session.add(Matrix(id=matrix_id, width=0, height=0, created_at=now, version=1))
+        session.commit()
+    bucket_dir = matrix_service.matrix_content_repository.bucket_dir
+    (bucket_dir / f"{matrix_id}.tsv").touch()
+
+    # Asserts no mismatch is returned
+    assert matrix_service.synchronize_matrix_store(dry_run) == {}
+
+    # Remove the matrix from DB. Now we have only a matrix existing on the FS.
+    # We should return the mismatch
+    matrix_service.repo.delete(matrix_id)
+    assert matrix_service.synchronize_matrix_store(dry_run) == {
+        matrix_id: MatrixMismatchDTO(database=False, filesystem=True)
+    }
+
+    # If `dry_run` is False, we should add the matrix in DB
+    db_content = session.execute(select(Matrix)).fetchall()
+    if dry_run:
+        assert db_content == []
+    else:
+        assert len(db_content) == 1
+
+
+@with_db_context
+def test_infer_matrix_characteristics(matrix_service: MatrixService) -> None:
+    """Ensures we're able to find a matrix version if we know it's previously calculated hash"""
+    content_repo = matrix_service.matrix_content_repository
+
+    # Create a matrix in v2 with values not supported in v1.
+    matrix_id = matrix_service.create(AGGREGATION_DF)
+    matrix = content_repo.infer_matrix_characteristics(matrix_id)
+    assert matrix.version == 2
+    assert matrix.height == 14
+    assert matrix.width == 124
+
+    # Create a matrix in v2 with values supported in v1.
+    df = create_polars_dataframe(TEST_MATRIX)
+    matrix_id = matrix_service.create(df)  # Saves the matrix with its headers, so v2.
+    matrix = content_repo.infer_matrix_characteristics(matrix_id)
+    assert matrix.version == 2
+    assert matrix.height == 2
+    assert matrix.width == 3
+
+    # Create a matrix in v1
+    df = create_polars_dataframe([[1.1, 1.1], [1.1, 1.1]])
+    bucket_dir = content_repo.bucket_dir
+    matrix_id = compute_hash(df)
+    write_dataframe_in_tsv_format(df, bucket_dir / f"{matrix_id}.tsv", headers=False)  # No headers means v1.
+    matrix = content_repo.infer_matrix_characteristics(matrix_id)
+    assert matrix.version == 1
+    assert matrix.height == 2
+    assert matrix.width == 2

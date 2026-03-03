@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,93 +10,44 @@
 #
 # This file is part of the Antares project.
 
-"""Tests for the matrix garbage collection Celery task."""
+"""Tests for matrix GC task."""
 
 from unittest.mock import Mock
 
 import pytest
 
-from antarest.maintenance.tasks.gc_matrix import _delete_unused_saved_matrices
+from antarest.maintenance.tasks.gc_matrix import _delete_matrices
+from antarest.maintenance.tasks.gc_matrix_task import clean_matrices_task
 
 
-class TestDeleteUnusedSavedMatrices:
-    """Unit tests for _delete_unused_saved_matrices helper function."""
-
+class TestDeleteMatrices:
     def test_deletes_matrices_when_not_dry_run(self):
-        """Test that matrices are deleted when dry_run is False."""
-        mock_matrix_service = Mock()
-        unused_matrices = {"matrix1", "matrix2", "matrix3"}
+        mock_service = Mock()
+        _delete_matrices(mock_service, {"m1", "m2", "m3"}, dry_run=False)
 
-        _delete_unused_saved_matrices(
-            matrix_service=mock_matrix_service,
-            unused_matrices=unused_matrices,
-            dry_run=False,
-        )
+        assert mock_service.delete.call_count == 3
+        mock_service.delete.assert_any_call("m1")
+        mock_service.delete.assert_any_call("m2")
+        mock_service.delete.assert_any_call("m3")
 
-        assert mock_matrix_service.delete.call_count == 3
-        mock_matrix_service.delete.assert_any_call("matrix1")
-        mock_matrix_service.delete.assert_any_call("matrix2")
-        mock_matrix_service.delete.assert_any_call("matrix3")
+    def test_does_not_delete_when_dry_run(self):
+        mock_service = Mock()
+        _delete_matrices(mock_service, {"m1", "m2"}, dry_run=True)
+        mock_service.delete.assert_not_called()
 
-    def test_does_not_delete_matrices_when_dry_run(self):
-        """Test that matrices are NOT deleted when dry_run is True."""
-        mock_matrix_service = Mock()
-        unused_matrices = {"matrix1", "matrix2"}
-
-        _delete_unused_saved_matrices(
-            matrix_service=mock_matrix_service,
-            unused_matrices=unused_matrices,
-            dry_run=True,
-        )
-
-        mock_matrix_service.delete.assert_not_called()
-
-    def test_handles_empty_set(self):
-        """Test that empty set of matrices is handled correctly."""
-        mock_matrix_service = Mock()
-
-        _delete_unused_saved_matrices(
-            matrix_service=mock_matrix_service,
-            unused_matrices=set(),
-            dry_run=False,
-        )
-
-        mock_matrix_service.delete.assert_not_called()
+    def test_empty_set(self):
+        mock_service = Mock()
+        _delete_matrices(mock_service, set(), dry_run=False)
+        mock_service.delete.assert_not_called()
 
     def test_returns_failure_count(self):
-        """Test that failures are counted correctly."""
-        mock_matrix_service = Mock()
-        mock_matrix_service.delete.side_effect = [None, Exception("fail"), None]
-
-        failures = _delete_unused_saved_matrices(
-            matrix_service=mock_matrix_service,
-            unused_matrices={"m1", "m2", "m3"},
-            dry_run=False,
-        )
-
+        mock_service = Mock()
+        mock_service.delete.side_effect = [None, Exception("fail"), None]
+        failures = _delete_matrices(mock_service, {"m1", "m2", "m3"}, dry_run=False)
         assert failures == 1
 
 
-class TestCleanMatricesTaskWiring:
-    """Tests for the Celery task wiring (context extraction)."""
-
-    def test_raises_when_context_not_in_app_conf(self):
-        """Test that clean_matrices_task raises when maintenance_ctx is not in app.conf."""
-
-        from antarest.maintenance.app import celery_app
-
-        # Temporarily remove maintenance_ctx from app.conf if it exists
-        original_ctx = getattr(celery_app.conf, "maintenance_ctx", None)
-        try:
-            # Ensure maintenance_ctx is not set (or set to None)
-            celery_app.conf.maintenance_ctx = None
-
-            with pytest.raises(RuntimeError, match="MaintenanceContext not found in app.conf"):
-                # Call the task directly (synchronously, not via Celery)
-                from antarest.maintenance.tasks.gc_matrix_task import clean_matrices_task
-
-                clean_matrices_task.run()
-        finally:
-            # Restore original state
-            if original_ctx is not None:
-                celery_app.conf.maintenance_ctx = original_ctx
+class TestCleanMatricesTask:
+    def test_raises_without_context(self, with_no_maintenance_ctx):
+        with pytest.raises(RuntimeError, match="MaintenanceContext not in app.conf"):
+            clean_matrices_task.run()

@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import numpy as np
-from checksumdir import dirhash
 
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintFrequency,
@@ -32,6 +31,7 @@ from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_c
 )
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import dirhash
 from tests.variantstudy.model.command.helpers import reset_line_separator
 
 
@@ -105,7 +105,7 @@ class TestRemoveCluster:
 
             # Add scenario builder data
             output = UpdateScenarioBuilder(
-                data={"Default Ruleset": RulesetUpdate(thermal={area_id: {cluster_name.lower(): {"0": 1}}})},
+                data=RulesetUpdate(thermal={area_id: {cluster_name.lower(): {"0": 1}}}),
                 command_context=command_context,
                 study_version=study_version,
             ).apply(study_data=empty_study)

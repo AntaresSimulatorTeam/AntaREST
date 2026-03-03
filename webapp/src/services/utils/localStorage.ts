@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -13,16 +13,15 @@
  */
 
 import * as RA from "ramda-adjunct";
+import type { FolderDTO } from "@/queries/explorer/schemas";
+import type { StudiesState, StudyFilters } from "@/redux/ducks/studies";
+import type { UIState } from "@/redux/ducks/ui";
+import type { TableTemplate } from "@/routes/_authenticated/studies/$studyId/explore/tablemode/-utils";
+import type { StudySortConfig, UserInfo } from "@/types/types";
 import packages from "../../../package.json";
-import type { UserInfo } from "../../types/types";
-import type { TableTemplate } from "../../components/App/Singlestudy/explore/TableModeList/utils";
-import type { StudiesSortConf, StudiesState, StudyFilters } from "../../redux/ducks/studies";
-import type { UIState } from "../../redux/ducks/ui";
 import { TABLE_MODE_TYPES_ALIASES } from "../api/studies/tableMode/constants";
-import type { FolderDTO } from "@/components/App/Studies/StudyTree/types";
 
 export const StorageKey = {
-  Version: "version",
   AuthUser: "authUser",
   // Studies
   StudiesFavorites: "studies.favorites",
@@ -39,15 +38,14 @@ export const StorageKey = {
 type Key = (typeof StorageKey)[keyof typeof StorageKey] | string;
 
 const APP_NAME = packages.name;
-const SHARED_KEYS = [StorageKey.Version, StorageKey.AuthUser];
+const SHARED_KEYS = [StorageKey.AuthUser];
 
 interface TypeFromKey {
-  [StorageKey.Version]: string;
   [StorageKey.AuthUser]: UserInfo;
   [StorageKey.StudiesFavorites]: StudiesState["favorites"];
-  [StorageKey.StudiesSort]: Partial<StudiesSortConf>;
+  [StorageKey.StudiesSort]: Partial<StudySortConfig>;
   [StorageKey.StudiesFilters]: Partial<StudyFilters>;
-  [StorageKey.StudiesModelTableModeTemplates]: Array<Omit<TableTemplate, "id">>;
+  [StorageKey.StudiesModelTableModeTemplates]: TableTemplate[];
   [StorageKey.StudyTreeFolders]: FolderDTO[];
   [StorageKey.TasksFilterUser]: string;
   [StorageKey.UIMenuCollapsed]: UIState["menuOpen"];

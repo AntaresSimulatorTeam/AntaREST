@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,12 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { initAxiosClient } from "./api/client";
-import { initRawAxiosClient } from "./api/auth";
 import { getBackEndConfig, getVersionInfo } from "@/services/api/root";
 import type { BackEndConfig, VersionInfoDTO } from "@/services/api/root/types";
-
-const isDevEnv = process.env.NODE_ENV === "development";
+import { initRawAxiosClient } from "./api/auth";
+import { initAxiosClient } from "./api/client";
 
 export interface Config extends BackEndConfig {
   baseUrl: string;
@@ -40,7 +38,7 @@ let config: Config = {
   },
 };
 
-if (isDevEnv) {
+if (import.meta.env.DEV) {
   config = {
     ...config,
     baseUrl: "http://localhost:3000",

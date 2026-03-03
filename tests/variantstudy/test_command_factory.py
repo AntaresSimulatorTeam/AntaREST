@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -20,6 +20,7 @@ import pytest
 
 from antarest.blobstore.service import BlobService
 from antarest.matrixstore.service import MatrixService
+from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
@@ -593,24 +594,22 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_SCENARIO_BUILDER.value,
-            version=2,
+            version=3,
             args={
                 "data": {
-                    "ruleset test": {
-                        "binding_constraints": {},
-                        "hydro": {},
-                        "hydro_final_levels": {},
-                        "hydro_generation_power": {},
-                        "hydro_initial_levels": {},
-                        "load": {"area1": {"0": 1}},
-                        "ntc": {"area1 / area2": {"1": 23}},
-                        "renewable": {},
-                        "solar": {},
-                        "storage_constraints": {},
-                        "storage_inflows": {},
-                        "thermal": {"area1": {"thermal": {"1": ""}}},
-                        "wind": {},
-                    }
+                    "binding_constraints": {},
+                    "hydro": {},
+                    "hydro_final_levels": {},
+                    "hydro_generation_power": {},
+                    "hydro_initial_levels": {},
+                    "load": {"area1": {"0": 1}},
+                    "ntc": {"area1 / area2": {"1": 23}},
+                    "renewable": {},
+                    "solar": {},
+                    "storage_constraints": {},
+                    "storage_inflows": {},
+                    "thermal": {"area1": {"thermal": {"1": ""}}},
+                    "wind": {},
                 }
             },
             study_version=STUDY_VERSION_8_8,
@@ -1038,6 +1037,24 @@ COMMANDS = [
         None,
         id="replace_hydro_correlation",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.CONVERT_HYDRO_PMAX.value,
+            args={"hydro_pmax": HydroPmax.HOURLY},
+            study_version=STUDY_VERSION_9_2,
+        ),
+        None,
+        id="convert_hydro_pmax",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.CONVERT_HYDRO_PMAX.value,
+            args={"hydro_pmax": HydroPmax.DAILY},
+            study_version=STUDY_VERSION_9_2,
+        ),
+        None,
+        id="convert_hydro_pmax_daily",
+    ),
 ]
 
 
@@ -1406,14 +1423,12 @@ def test_parse_update_scenario_builder_v1(command_factory: CommandFactory) -> No
     command = commands[0]
     dto = command.to_dto()
     assert dto.action == "update_scenario_builder"
-    assert dto.version == 2
+    assert dto.version == 3
     assert dto.args == {
         "data": {
-            "ruleset test": {
-                "load": {"area1": {"0": 1}},
-                "ntc": {"area1 / area2": {"1": 23}},
-                "thermal": {"area1": {"thermal": {"1": ""}}},
-            }
+            "load": {"area1": {"0": 1}},
+            "ntc": {"area1 / area2": {"1": 23}},
+            "thermal": {"area1": {"thermal": {"1": ""}}},
         }
     }
 

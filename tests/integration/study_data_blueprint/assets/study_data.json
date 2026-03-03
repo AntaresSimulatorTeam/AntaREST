@@ -1799,7 +1799,21 @@
                 "unspEnrg": true,
                 "wind": true,
                 "windOffshore": true,
-                "windOnshore": true
+                "windOnshore": true,
+                "lmrViol": true,
+                "dtgMrgCsr": true,
+                "nh3Emis": true,
+                "noxEmis": true,
+                "pm25Emis": true,
+                "pm5Emis": true,
+                "pm10Emis": true,
+                "op1Emis": true,
+                "op2Emis": true,
+                "op3Emis": true,
+                "op4Emis": true,
+                "op5Emis": true,
+                "so2Emis": true,
+                "nmvocEmis": true
             },
             "timeSeries": {"thermal": {"number": 1}}
         },
@@ -1820,7 +1834,9 @@
                 "solver": "Xpress",
                 "timelimit": 1000000000000,
                 "uc_type": "expansion_fast",
-                "yearly-weights": ""
+                "yearly-weights": "",
+                "cutCoefficientTolerance": 0.005,
+                "masterSolutionTolerance": 0.0001
             }
         }
     }

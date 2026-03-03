@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -19,13 +19,14 @@ from antarest.study.business.model.config.general_model import (
     BuildingMode,
     DayNumberType,
     GeneralConfig,
+    Mode,
     Month,
     WeekDay,
-    initialize_default_values,
+    initialize_general_config_against_version,
     validate_general_config_version,
 )
+from antarest.study.business.model.scenario_builder_model import DEFAULT_RULESET_NAME
 from antarest.study.model import STUDY_VERSION_8
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 
 
 class GeneralFileData(AntaresBaseModel):
@@ -50,9 +51,12 @@ class GeneralFileData(AntaresBaseModel):
     derated: bool | None = Field(default=None)
     custom_scenario: bool | None = Field(default=None, alias="custom-scenario")
     custom_ts_numbers: bool | None = Field(default=None, alias="custom-ts-numbers")
+    active_rules_scenario: str | None = Field(default=None, alias="active-rules-scenario")
 
     def to_model(self) -> GeneralConfig:
-        data = self.model_dump(exclude_none=True, exclude={"derated", "custom_scenario", "custom_ts_numbers"})
+        data = self.model_dump(
+            exclude_none=True, exclude={"derated", "custom_scenario", "custom_ts_numbers", "active_rules_scenario"}
+        )
         if self.derated is True:
             data["building_mode"] = BuildingMode.DERATED
         elif self.custom_scenario is True:
@@ -72,6 +76,8 @@ class GeneralFileData(AntaresBaseModel):
                 data["custom_scenario"] = config.building_mode == BuildingMode.CUSTOM
             else:
                 data["custom_ts_numbers"] = config.building_mode == BuildingMode.CUSTOM
+        if config.building_mode == BuildingMode.CUSTOM:
+            data["active_rules_scenario"] = DEFAULT_RULESET_NAME.lower()
         return cls.model_validate(data)
 
 
@@ -80,7 +86,7 @@ def parse_general_config(data: Dict[str, Any], version: StudyVersion) -> General
     config_data.update(data["output"])
     config = GeneralFileData.model_validate(config_data).to_model()
     validate_general_config_version(config, version)
-    initialize_default_values(config, version)
+    initialize_general_config_against_version(config, version)
     return config
 
 

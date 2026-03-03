@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,8 +12,8 @@
 from pathlib import Path
 
 from antarest.core.serde.ini_reader import IniReader
+from antarest.study.business.model.config.general_model import Mode
 from antarest.study.output.storage.output_storage import OutputDetails
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 
 DUPLICATE_KEYS = [
     "playlist_year_weight",

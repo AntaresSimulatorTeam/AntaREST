@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -31,5 +31,5 @@ class LayerDao(ReadOnlyLayerDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def delete_layer(self, layer: Layer) -> None:
+    def delete_layer(self, layer_id: str) -> None:
         raise NotImplementedError()

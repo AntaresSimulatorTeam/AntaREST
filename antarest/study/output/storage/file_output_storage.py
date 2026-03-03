@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -18,7 +18,7 @@ from pathlib import Path, PurePosixPath
 from typing import BinaryIO, Callable, Iterator, Optional, Sequence, cast
 from uuid import uuid4
 
-import pandas as pd
+import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import (
@@ -225,13 +225,13 @@ class InStudyFileOutputStorage(IOutputStorage):
             if isinstance(output, Path):
                 t = StopWatch()
                 shutil.copytree(output, tmp_output_dir)
-                t.log_elapsed(lambda x: logger.info(f"Copied output for {study_id} in {x}s"))
+                logger.info(f"Copied output for {study_id} in {t}s")
             else:
                 # in case of stream, it's assumed to be an archive which we extract to the temporary output directory
                 t = StopWatch()
                 extract_archive(output, tmp_output_dir)
                 fix_study_root(tmp_output_dir)
-                t.log_elapsed(lambda x: logger.info(f"Extracted output for {study_id} in {x}s"))
+                logger.info(f"Extracted output for {study_id} in {t}s")
 
             # Add log files
             _add_logs(tmp_output_dir, logs)
@@ -347,7 +347,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         stopwatch = StopWatch()
         if not path_output_zip.exists():
             archive_dir(path_output, target, archive_format=ArchiveFormat.ZIP)
-        stopwatch.log_elapsed(lambda x: logger.info(f"Output {output_id} from study {study_id} exported in {x}s"))
+        logger.info(f"Output {output_id} from study {study_id} exported in {stopwatch}s")
 
     @override
     def output_exists(self, study_id: str, output_id: str) -> bool:
@@ -449,7 +449,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         columns_names: Sequence[str],
         transform_columns_headers: bool,
         mc_years: Optional[Sequence[int]] = None,
-    ) -> Iterator[pd.DataFrame]:
+    ) -> Iterator[pl.DataFrame]:
         study_outputs = self._outputs_provider.get_outputs(study_id)
         aggregator_manager = AggregatorManager(
             study_outputs.outputs_path / output_id,

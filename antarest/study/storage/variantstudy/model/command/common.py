@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -99,6 +99,7 @@ class CommandName(Enum):
     UPDATE_TIMESERIES_CONFIG = "update_time"
     REPLACE_HYDRO_ALLOCATION = "replace_hydro_allocation"
     REPLACE_HYDRO_CORRELATION = "replace_hydro_correlation"
+    CONVERT_HYDRO_PMAX = "convert_hydro_pmax"
 
 
 @dataclass(frozen=True)

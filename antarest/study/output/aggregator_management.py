@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,26 +12,28 @@
 import logging
 import warnings
 from pathlib import Path
-from typing import Dict, Iterator, List, MutableSequence, Optional, Sequence
+from typing import Dict, Iterator, List, MutableSequence, Optional, Sequence, cast
 
-import numpy as np
 import pandas as pd
 import polars as pl
-from polars.exceptions import ComputeError
 
 from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
 from antarest.study.model import MatrixFrequency
 from antarest.study.output.utils import (
     MCYEAR_COL,
+    TIME_ID_COL,
     MCAllAreasQueryFile,
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
     MCRoot,
+    MultipleOutputHeaders,
+    OutputDataFrame,
     QueryFileType,
+    SingleOutputHeaders,
     concatenate_dataframe_multi_indexed_columns,
     get_start_column,
     normalize_df_column_names,
-    parse_headers,
+    parse_output_file,
 )
 
 # We use pandas.DataFrame.stack() without the `future_stack` keyword as its 2 times faster
@@ -43,8 +45,6 @@ AREA_COL = "area"
 """Column name for the area."""
 LINK_COL = "link"
 """Column name for the link."""
-TIME_ID_COL = "timeId"
-"""Column name for the time index."""
 CLUSTER_ID_COL = "cluster"
 """Column name for the cluster id."""
 MC_YEAR_INDEX = 0
@@ -57,7 +57,7 @@ ACTUAL_COLUMN_COMPONENT = 1
 logger = logging.getLogger(__name__)
 
 
-def _columns_ordering(df_cols: List[str], column_name: str, is_details: bool, mc_root: MCRoot) -> Sequence[str]:
+def _columns_ordering(df_cols: List[str], column_name: str, is_details: bool, mc_root: MCRoot) -> list[str]:
     # original columns
     org_cols = df_cols.copy()
     if is_details:
@@ -121,35 +121,14 @@ class AggregatorManager:
         self._output_first_column = get_start_column(self.frequency)
         self.transform_columns_headers = transform_columns_headers
 
-    def _parse_output_file(self, file_path: Path, normalize_column_names: bool) -> pd.DataFrame:
-        content = file_path.read_text(encoding="utf-8")
-        output_headers = parse_headers(content, self._output_first_column)
-        try:
-            polars_df = pl.read_csv(
-                file_path, skip_lines=7, separator="\t", has_header=False, null_values="N/A", n_threads=1
-            )
-        except ComputeError:
-            # Happens if polars wrongly inferred the schema. If so, we specify that he shouldn't try.
-            # This way the parsing does not fail, but it is significantly slower.
-            # This case does not seem to happen very often.
-            polars_df = pl.read_csv(
-                file_path,
-                skip_lines=7,
-                separator="\t",
-                has_header=False,
-                null_values="N/A",
-                infer_schema=False,
-                n_threads=1,
-            )
-
-        df = polars_df[polars_df.columns[self._output_first_column :]].to_pandas().astype(np.float64)
-
-        df.columns = pd.MultiIndex.from_tuples(output_headers)  # type: ignore
+    def _parse_output_file(self, file_path: Path, normalize_column_names: bool) -> OutputDataFrame:
+        output_data = parse_output_file(file_path, self._output_first_column)
 
         if normalize_column_names:
-            df.columns = pd.Index(normalize_df_column_names(self.mc_root, output_headers))
+            headers = cast(MultipleOutputHeaders, output_data.headers)
+            output_data.headers = normalize_df_column_names(self.mc_root, headers)
 
-        return df
+        return output_data
 
     def _filter_ids(self, folder_path: Path) -> List[str]:
         if self.output_type == "areas":
@@ -210,11 +189,18 @@ class AggregatorManager:
             raise MCRootNotHandled(f"Unknown Monte Carlo root: {self.mc_root}")
         return all_output_files
 
-    def columns_filtering(self, df: pd.DataFrame, is_details: bool) -> pd.DataFrame:
+    def _ensures_typing(self, headers: list[str] | list[list[str]]) -> list[str]:
+        # Method used to fix mypy typing inside `columns_filtering` method
+        if not self.transform_columns_headers:
+            multiple_headers = cast(MultipleOutputHeaders, headers)
+            return [col[0] for col in multiple_headers]
+        return cast(SingleOutputHeaders, headers)
+
+    def columns_filtering(self, data: OutputDataFrame, is_details: bool) -> OutputDataFrame:
         # columns filtering
         lower_case_columns = [c.lower() for c in self.columns_names]
         if lower_case_columns:
-            df_columns = [col[0] for col in df.columns] if not self.transform_columns_headers else df.columns.to_list()
+            df_columns = self._ensures_typing(data.headers)
             if is_details:
                 filtered_columns = [CLUSTER_ID_COL, TIME_ID_COL] + [
                     c for c in df_columns if any(regex in c.lower() for regex in lower_case_columns)
@@ -223,10 +209,15 @@ class AggregatorManager:
                 filtered_columns = [c for c in df_columns if any(regex in c.lower() for regex in lower_case_columns)]
             else:
                 filtered_columns = [c for c in df_columns if c.lower() in lower_case_columns]
-            df = df.loc[:, filtered_columns]
-        return df
 
-    def _process_df(self, file_path: Path, is_details: bool) -> pd.DataFrame:
+            indices = [k for k, c in enumerate(df_columns) if c in filtered_columns]
+            data.data = data.data.select([data.data.columns[i] for i in indices])
+            headers = cast(MultipleOutputHeaders, data.headers)
+            data.headers = [headers[i] for i in indices]
+
+        return data
+
+    def _process_df(self, file_path: Path, is_details: bool) -> OutputDataFrame:
         """
         Process the output file to return a DataFrame with the correct columns and values
             - In the case of a details file, the DataFrame, the columns include two parts cluster name + actual column name
@@ -243,10 +234,12 @@ class AggregatorManager:
             the DataFrame with the correct columns and values
         """
         normalize_cols = self.transform_columns_headers and not is_details
-        df = self._parse_output_file(file_path, normalize_column_names=normalize_cols)
+        output_data = self._parse_output_file(file_path, normalize_column_names=normalize_cols)
         if not self.transform_columns_headers or not is_details:
-            return df
+            return output_data
 
+        df = output_data.data.to_pandas()
+        df.columns = pd.MultiIndex.from_tuples(output_data.headers)  # type: ignore
         nb_clusters = df.columns.get_level_values(CLUSTER_ID_COMPONENT).nunique()
         # actual columns without the cluster id (NODU, production etc.)
         actual_cols = sorted(df.columns.get_level_values(ACTUAL_COLUMN_COMPONENT).unique())
@@ -262,9 +255,10 @@ class AggregatorManager:
 
         # Add the TIME_ID column and reindex to have the columns in the right order
         final_df[TIME_ID_COL] = (final_df.index // nb_clusters) + 1
-        return final_df.reindex(columns=[CLUSTER_ID_COL, TIME_ID_COL] + list(actual_cols))
+        pandas_df = final_df.reindex(columns=[CLUSTER_ID_COL, TIME_ID_COL] + list(actual_cols))
+        return OutputDataFrame(headers=pandas_df.columns.tolist(), data=pl.DataFrame(pandas_df))
 
-    def _build_dataframes(self, files: Sequence[Path]) -> Iterator[pd.DataFrame]:
+    def _build_dataframes(self, files: Sequence[Path]) -> Iterator[pl.DataFrame]:
         if self.mc_root not in [MCRoot.MC_IND, MCRoot.MC_ALL]:
             raise MCRootNotHandled(f"Unknown Monte Carlo root: {self.mc_root}")
         is_details = self.query_file in [
@@ -277,35 +271,44 @@ class AggregatorManager:
         ]
 
         for k, file_path in enumerate(files):
-            df = self._process_df(file_path, is_details)
+            output_data = self._process_df(file_path, is_details)
 
             # columns filtering
-            df = self.columns_filtering(df, is_details)
+            output_data = self.columns_filtering(output_data, is_details)
 
             if not self.transform_columns_headers:
-                concatenate_dataframe_multi_indexed_columns(df)
+                concatenate_dataframe_multi_indexed_columns(output_data)
+
+            # Starting from here, output_data.headers are just a list of strings.
+            # We can use them as columns for our dataframe.
+            df = output_data.data
+            df.columns = cast(SingleOutputHeaders, output_data.headers)
 
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
-            new_column_order = _columns_ordering(df.columns.tolist(), column_name, is_details, self.mc_root)
+            new_column_order = _columns_ordering(df.columns, column_name, is_details, self.mc_root)
 
             if self.mc_root == MCRoot.MC_IND:
                 # add column for links/areas
                 relative_path_parts = file_path.relative_to(self.mc_ind_path).parts
-                df[column_name] = relative_path_parts[AREA_OR_LINK_INDEX__IND]
+                data = relative_path_parts[AREA_OR_LINK_INDEX__IND]
+                df = df.with_columns(pl.lit(data).alias(column_name))
+
                 # add column to record the Monte Carlo year
-                df[MCYEAR_COL] = int(relative_path_parts[MC_YEAR_INDEX])
+                value = int(relative_path_parts[MC_YEAR_INDEX])
+                df = df.with_columns(pl.lit(value).alias(MCYEAR_COL))
             else:
                 # add column for links/areas
                 relative_path_parts = file_path.relative_to(self.mc_all_path).parts
-                df[column_name] = relative_path_parts[AREA_OR_LINK_INDEX__ALL]
+                data = relative_path_parts[AREA_OR_LINK_INDEX__ALL]
+                df = df.with_columns(pl.lit(data).alias(column_name))
 
             if self.transform_columns_headers:
                 # add a column for the time id
                 if not is_details:
-                    df[TIME_ID_COL] = range(1, len(df) + 1)
+                    df = df.with_row_index(TIME_ID_COL, offset=1)
 
                 # Reorganize the columns
-                df = df.reindex(columns=pd.Index(new_column_order))
+                df = df.select(new_column_order)
 
             yield df
 
@@ -319,7 +322,7 @@ class AggregatorManager:
         else:
             raise MCRootNotHandled(f"Unknown Monte Carlo root: {self.mc_root}")
 
-    def aggregate_output_data(self) -> Iterator[pd.DataFrame]:
+    def aggregate_output_data(self) -> Iterator[pl.DataFrame]:
         """
         Aggregates the output data of a study and returns it as a DataFrame
         """

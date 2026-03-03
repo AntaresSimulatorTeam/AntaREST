@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,16 +12,16 @@
  * This file is part of the Antares project.
  */
 
+import type { Response } from "@/components/utils/UsePromiseCond";
+import { PromiseStatus, type TPromiseStatus } from "@/hooks/usePromise";
+import type { StudyMetadata } from "@/types/types";
 import { useState } from "react";
 import { useAsync } from "react-use";
-import type { StudyMetadata } from "../../types/types";
 import type { AppState } from "../ducks";
 import { createStudySynthesis } from "../ducks/studySyntheses";
+import { getStudySynthesis } from "../selectors";
 import useAppDispatch from "./useAppDispatch";
 import useAppSelector from "./useAppSelector";
-import { getStudySynthesis } from "../selectors";
-import { PromiseStatus, type TPromiseStatus } from "../../hooks/usePromise";
-import type { Response } from "../../components/common/utils/UsePromiseCond";
 
 export interface UseStudySynthesisProps<T> {
   studyId: StudyMetadata["id"];

@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -61,7 +61,7 @@ class LayerManager:
             raise LayerNotAllowedToBeDeleted(layer_id)
 
         if not self.layer_exists(study, layer_id):
-            raise LayerNotFound
+            raise LayerNotFound(layer_id)
 
         command = RemoveLayer(
             layer_id=layer_id,

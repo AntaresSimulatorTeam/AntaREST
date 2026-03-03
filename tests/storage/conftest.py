@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -62,6 +62,10 @@ class SimpleSyncTaskService(ITaskService):
 
     @override
     def await_task(self, task_id: str, timeout_sec: Optional[int] = None) -> None:
+        pass
+
+    @override
+    def delete_task_by_creation_date(self, task_retention_duration: int) -> int:
         pass
 
 

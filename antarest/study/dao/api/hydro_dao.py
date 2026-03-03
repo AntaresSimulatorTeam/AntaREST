@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,8 +12,9 @@
 from abc import ABC, abstractmethod
 from typing import Dict
 
-import pandas as pd
+import polars as pl
 
+from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.business.model.hydro_model import (
@@ -53,39 +54,55 @@ class ReadOnlyHydroDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_maxpower(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_maxpower(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_reservoir(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_reservoir(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_energy(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_energy(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_run_of_river(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_run_of_river(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_modulation(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_modulation(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_credit_modulations(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_credit_modulations(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_inflow_pattern(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_inflow_pattern(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_water_values(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_water_values(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_mingen(self, area_id: str) -> pd.DataFrame:
+    def get_hydro_mingen(self, area_id: str) -> pl.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_max_hourly_gen_power(self, area_id: str) -> pl.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_max_hourly_pump_power(self, area_id: str) -> pl.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_max_daily_gen_energy(self, area_id: str) -> pl.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_max_daily_pump_energy(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
 
@@ -140,4 +157,27 @@ class HydroDao(ReadOnlyHydroDao):
 
     @abstractmethod
     def save_hydro_mingen(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_max_hourly_gen_power(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_max_hourly_pump_power(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_max_daily_gen_energy(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_max_daily_pump_energy(self, area_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def convert_hydro_pmax(
+        self,
+        hydro_pmax: HydroPmax,
+    ) -> None:
         raise NotImplementedError()

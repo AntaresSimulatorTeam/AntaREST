@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import type { AxiosRequestConfig } from "axios";
+import type { MatrixDataDTO } from "@/components/Matrix/shared/types";
 import type {
   XpansionCandidate,
   XpansionSettings,
-} from "../../components/App/Singlestudy/explore/Xpansion/types";
+} from "@/routes/_authenticated/studies/$studyId/explore/xpansion/-shared/types";
+import type { AxiosRequestConfig } from "axios";
 import client from "./client";
-import type { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
 
 export const createXpansionConfiguration = async (uuid: string): Promise<void> => {
   const res = await client.post(`/v1/studies/${uuid}/extensions/xpansion`);

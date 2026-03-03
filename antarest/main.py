@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -15,7 +15,7 @@ import copy
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, AsyncGenerator, Dict, Optional, Tuple, cast
+from typing import Any, AsyncGenerator, Optional, Tuple
 
 import pydantic
 import uvicorn
@@ -227,12 +227,12 @@ def fastapi_app(
     app_ctxt = AppBuildContext(application, api_root)
 
     # Database
-    engine = init_db_engine(config_file, config, auto_upgrade_db)
+    engine = init_db_engine(config, auto_upgrade_db, config_file)
     application.add_middleware(DBSessionMiddleware, custom_engine=engine, session_args=SESSION_ARGS)
     # Since Starlette Version 0.24.0, the middlewares are lazily built inside this function
     # But we need to instantiate this middleware as it's needed for the study service.
     # So we manually instantiate it here.
-    DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
+    DBSessionMiddleware(None, custom_engine=engine, session_args=SESSION_ARGS)
 
     # TODO move that elsewhere
     @AuthJWT.load_config  # type: ignore
@@ -275,6 +275,8 @@ def fastapi_app(
         services.auto_archiver.start()
     if services.blob_gc and Module.BLOB_GC in config.server.services:
         services.blob_gc.start()
+    if services.variable_view_gc and Module.VARIABLE_VIEW_GC in config.server.services:
+        services.variable_view_gc.start()
 
     customize_openapi(application)
 

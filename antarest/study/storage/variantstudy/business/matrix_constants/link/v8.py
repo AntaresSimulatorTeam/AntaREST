@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -9,8 +9,19 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import pandas as pd
 
-link = pd.DataFrame([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760)
-direct = pd.DataFrame([[1.0]] * 8760)
-indirect = pd.DataFrame([[1.0]] * 8760)
+import polars as pl
+
+from antarest.core.utils.polars import create_polars_dataframe
+
+
+def link() -> pl.DataFrame:
+    return create_polars_dataframe([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760)
+
+
+def direct() -> pl.DataFrame:
+    return create_polars_dataframe([[0.0]] * 8760)
+
+
+def indirect() -> pl.DataFrame:
+    return create_polars_dataframe([[0.0]] * 8760)

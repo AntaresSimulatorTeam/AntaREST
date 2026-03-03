@@ -1,0 +1,135 @@
+/**
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
+import DataGridSkeleton from "@/components/DataGridSkeleton";
+import FilterableMatrixGrid, {
+  type FilterableMatrixGridHandle,
+} from "@/components/Matrix/components/FilterableMatrixGrid";
+import {
+  isNonEmptyMatrix,
+  type DateTimeMetadataDTO,
+  type DateTimes,
+  type EnhancedGridColumn,
+} from "@/components/Matrix/shared/types";
+import EmptyView from "@/components/page/EmptyView";
+import UsePromiseCond from "@/components/utils/UsePromiseCond";
+import type { UsePromiseResponse } from "@/hooks/usePromise";
+import type {
+  VariablesListDTO,
+  VariableViewMatrixDTO,
+} from "@/services/api/studies/outputs/variableViews/types";
+import GridOffIcon from "@mui/icons-material/GridOff";
+import { isAxiosError } from "axios";
+import { useTranslation } from "react-i18next";
+import { isAreaOrDistrict, isLink, type Item } from "../../../-utils";
+import ProcessButton from "./ProcessButton";
+
+interface VariableMatrixProps {
+  variablesMetadata: VariablesListDTO | null;
+  selectedItem: Item;
+  onMaterializeVariable: () => void;
+  isMaterializing: boolean;
+  variableViewDataRes: UsePromiseResponse<VariableViewMatrixDTO | null>;
+  resultColumns: EnhancedGridColumn[];
+  matrixGridRef: React.RefObject<FilterableMatrixGridHandle | null>;
+  dateTime?: DateTimes;
+  dateTimeMetadata?: DateTimeMetadataDTO;
+}
+
+function hasVariablesForItem(variablesMetadata: VariablesListDTO, selectedItem: Item): boolean {
+  // Variable-per-variable always uses mcInd
+  const data = variablesMetadata.mcInd;
+
+  if (isAreaOrDistrict(selectedItem)) {
+    return data.areas.some((area) => area.name === selectedItem.id);
+  }
+
+  if (isLink(selectedItem)) {
+    return data.links.some(
+      (link) => link.area1Name === selectedItem.area1 && link.area2Name === selectedItem.area2,
+    );
+  }
+
+  return false;
+}
+
+function VariableMatrix({
+  variablesMetadata,
+  selectedItem,
+  onMaterializeVariable,
+  isMaterializing,
+  variableViewDataRes,
+  resultColumns,
+  matrixGridRef,
+  dateTime,
+  dateTimeMetadata,
+}: VariableMatrixProps) {
+  const { t } = useTranslation();
+
+  if (!variablesMetadata || !hasVariablesForItem(variablesMetadata, selectedItem)) {
+    return <EmptyView title={t("study.outputs.noVariablesForArea")} icon={GridOffIcon} />;
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
+  return (
+    <UsePromiseCond
+      response={variableViewDataRes}
+      ifPending={() => <DataGridSkeleton />}
+      ifFulfilled={(matrix) => {
+        if (!matrix || !isNonEmptyMatrix(matrix.data)) {
+          return <EmptyView title={t("study.outputs.noData")} icon={GridOffIcon} />;
+        }
+
+        return (
+          <FilterableMatrixGrid
+            ref={matrixGridRef}
+            key={`grid-${matrix.columns.length}`}
+            data={matrix.data}
+            rows={matrix.data.length}
+            columns={resultColumns}
+            dateTime={dateTime}
+            timeFrequency={dateTimeMetadata?.level}
+            readOnly
+          />
+        );
+      }}
+      ifRejected={(err) => {
+        const error = isAxiosError(err) ? err.response?.data : undefined;
+        const status = error?.status;
+        const taskId = error?.task_id;
+
+        // NOT_FOUND status with no task ID means data not materialized yet
+        if (status === "NOT_FOUND" && taskId === null) {
+          // TODO: update the status to "NOT_MATERIALIZED" + handle the ongoing materialization
+          // state using the taskId and the "IN_PROGRESS" status
+          return (
+            <EmptyView
+              title={t("study.outputs.scanRequired")}
+              icon={GridOffIcon}
+              actions={<ProcessButton onClick={onMaterializeVariable} loading={isMaterializing} />}
+            />
+          );
+        }
+
+        // Other 404 errors (variable doesn't exist, invalid data, etc.)
+        return <EmptyView title={t("data.error.matrix")} icon={GridOffIcon} />;
+      }}
+    />
+  );
+}
+
+export default VariableMatrix;

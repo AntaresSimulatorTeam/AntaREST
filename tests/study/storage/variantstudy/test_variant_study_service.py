@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -24,11 +24,12 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import current_time, sanitize_uuid
+from antarest.core.utils.utils import current_time
 from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import Study
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -166,7 +167,8 @@ class TestVariantStudyService:
         db.session.commit()
 
         ## Prepare the RAW Study
-        raw_study_service.create(raw_study)
+        context = variant_study_service.command_factory.command_context
+        FileStudyDaoFactory(context, raw_study_service.study_factory).create_study_dao(raw_study)
         study_version = StudyVersion.parse(raw_study.version)
 
         with current_user_context(jwt_user):
@@ -288,7 +290,8 @@ class TestVariantStudyService:
         db.session.commit()
 
         # Set up the Raw Study
-        raw_study_service.create(raw_study)
+        context = variant_study_service.command_factory.command_context
+        FileStudyDaoFactory(context, raw_study_service.study_factory).create_study_dao(raw_study)
 
         # Variant studies
         variant_list = []
@@ -299,7 +302,7 @@ class TestVariantStudyService:
                 variant_study = variant_study_service.create_variant_study(raw_study.id, "Variant{}".format(str(index)))
                 variant_list.append(variant_study)
                 # Generate a snapshot for each variant
-                variant_study_service.generate(sanitize_uuid(variant_list[index].id), False, False)
+                variant_study_service.generate(variant_list[index].id, False, False)
 
                 # Modify the `created_at` and `updated_at` attributes in DB.
                 with db():

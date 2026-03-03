@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -17,22 +17,25 @@ from pathlib import PurePosixPath
 from typing import Annotated, Dict, Optional, Sequence
 
 from antares.study.version import StudyVersion
-from fastapi import APIRouter, Query, UploadFile
+from fastapi import APIRouter, HTTPException, Query, UploadFile
 from markupsafe import escape
 from pydantic import NonNegativeInt
 
+from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.config import Config
 from antarest.core.exceptions import BadArchiveContent, BadZipBinary, IncorrectArgumentsForCopy
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.model import PublicMode
 from antarest.core.utils.archives import ArchiveFormat
-from antarest.core.utils.utils import sanitize_string, sanitize_uuid, validate_folder_path, validate_study_name
+from antarest.core.utils.utils import sanitize_string, validate_folder_path, validate_study_name
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.login.utils import require_current_user
 from antarest.study.dtos import StudySynthesis
 from antarest.study.model import (
+    DeleteManyStudies,
     MatrixIndex,
+    StorageMode,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
 )
@@ -71,34 +74,46 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         summary="Get Studies",
     )
     def get_studies(
-        name: str = Query(
-            "",
-            description=(
-                "Filter studies based on their name."
-                "Case-insensitive search for studies whose name contains the specified value."
+        name: Annotated[
+            SanitizedStr,
+            Query(
+                description=(
+                    "Filter studies based on their name."
+                    "Case-insensitive search for studies whose name contains the specified value."
+                ),
+                alias="name",
             ),
-            alias="name",
-        ),
-        managed: Optional[bool] = Query(None, description="Filter studies based on their management status."),
-        archived: Optional[bool] = Query(None, description="Filter studies based on their archive status."),
-        variant: Optional[bool] = Query(None, description="Filter studies based on their variant status."),
-        versions: str = Query("", description="Comma-separated list of versions for filtering.", pattern=QUERY_REGEX),
-        users: str = Query("", description="Comma-separated list of user IDs for filtering.", pattern=QUERY_REGEX),
-        groups: str = Query("", description="Comma-separated list of group IDs for filtering."),
-        tags: str = Query("", description="Comma-separated list of tags for filtering."),
-        study_ids: str = Query("", description="Comma-separated list of study IDs for filtering.", alias="studyIds"),
-        exists: Optional[bool] = Query(None, description="Filter studies based on their existence on disk."),
-        workspace: str = Query("", description="Filter studies based on their workspace."),
-        folder: str = Query("", description="Filter studies based on their folder."),
-        sort_by: StudySortBy = Query(
-            None,
-            description="Sort studies based on their name (case-insensitive) or creation date.",
-            alias="sortBy",
-        ),
-        page_nb: NonNegativeInt = Query(0, description="Page number (starting from 0).", alias="pageNb"),
-        page_size: NonNegativeInt = Query(
-            0, description="Number of studies per page (0 = no limit).", alias="pageSize"
-        ),
+        ] = "",
+        managed: Annotated[
+            Optional[bool], Query(description="Filter studies based on their management status.")
+        ] = None,
+        archived: Annotated[Optional[bool], Query(description="Filter studies based on their archive status.")] = None,
+        variant: Annotated[Optional[bool], Query(description="Filter studies based on their variant status.")] = None,
+        versions: Annotated[
+            SanitizedStr, Query(description="Comma-separated list of versions for filtering.", pattern=QUERY_REGEX)
+        ] = "",
+        users: Annotated[
+            SanitizedStr, Query(description="Comma-separated list of user IDs for filtering.", pattern=QUERY_REGEX)
+        ] = "",
+        groups: Annotated[SanitizedStr, Query(description="Comma-separated list of group IDs for filtering.")] = "",
+        tags: Annotated[SanitizedStr, Query(description="Comma-separated list of tags for filtering.")] = "",
+        study_ids: Annotated[
+            SanitizedStr, Query(description="Comma-separated list of study IDs for filtering.", alias="studyIds")
+        ] = "",
+        exists: Annotated[Optional[bool], Query(description="Filter studies based on their existence on disk.")] = None,
+        workspace: Annotated[SanitizedStr, Query(description="Filter studies based on their workspace.")] = "",
+        folder: Annotated[SanitizedStr, Query(description="Filter studies based on their folder.")] = "",
+        sort_by: Annotated[
+            StudySortBy | None,
+            Query(
+                description="Sort studies based on their name (case-insensitive) or creation date.",
+                alias="sortBy",
+            ),
+        ] = None,
+        page_nb: Annotated[NonNegativeInt, Query(description="Page number (starting from 0).", alias="pageNb")] = 0,
+        page_size: Annotated[
+            NonNegativeInt, Query(description="Number of studies per page (0 = no limit).", alias="pageSize")
+        ] = 0,
     ) -> Dict[str, StudyMetadataDTO]:
         """
         Get the list of studies matching the specified criteria.
@@ -159,18 +174,24 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         summary="Count Studies",
     )
     def count_studies(
-        name: str = Query("", description="Case-insensitive: filter studies based on their name.", alias="name"),
-        managed: Optional[bool] = Query(None, description="Management status filter."),
-        archived: Optional[bool] = Query(None, description="Archive status filter."),
-        variant: Optional[bool] = Query(None, description="Variant status filter."),
-        versions: str = Query("", description="Comma-separated versions filter.", pattern=QUERY_REGEX),
-        users: str = Query("", description="Comma-separated user IDs filter.", pattern=QUERY_REGEX),
-        groups: str = Query("", description="Comma-separated group IDs filter."),
-        tags: str = Query("", description="Comma-separated tags filter."),
-        study_ids: str = Query("", description="Comma-separated study IDs filter.", alias="studyIds"),
-        exists: Optional[bool] = Query(None, description="Existence on disk filter."),
-        workspace: str = Query("", description="Workspace filter."),
-        folder: str = Query("", description="Study folder filter."),
+        name: Annotated[
+            SanitizedStr, Query(description="Case-insensitive: filter studies based on their name.", alias="name")
+        ] = "",
+        managed: Annotated[Optional[bool], Query(description="Management status filter.")] = None,
+        archived: Annotated[Optional[bool], Query(description="Archive status filter.")] = None,
+        variant: Annotated[Optional[bool], Query(description="Variant status filter.")] = None,
+        versions: Annotated[
+            SanitizedStr, Query(description="Comma-separated versions filter.", pattern=QUERY_REGEX)
+        ] = "",
+        users: Annotated[SanitizedStr, Query(description="Comma-separated user IDs filter.", pattern=QUERY_REGEX)] = "",
+        groups: Annotated[SanitizedStr, Query(description="Comma-separated group IDs filter.")] = "",
+        tags: Annotated[SanitizedStr, Query(description="Comma-separated tags filter.")] = "",
+        study_ids: Annotated[
+            SanitizedStr, Query(description="Comma-separated study IDs filter.", alias="studyIds")
+        ] = "",
+        exists: Annotated[Optional[bool], Query(description="Existence on disk filter.")] = None,
+        workspace: Annotated[SanitizedStr, Query(description="Workspace filter.")] = "",
+        folder: Annotated[SanitizedStr, Query(description="Study folder filter.")] = "",
     ) -> int:
         """
         Get the number of studies matching the specified criteria.
@@ -222,7 +243,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         status_code=HTTPStatus.CREATED,
         summary="Import Study",
     )
-    def import_study(study: UploadFile, groups: str = "") -> str:
+    def import_study(study: UploadFile, groups: SanitizedStr = "") -> str:
         """
         Upload and import a compressed study from your computer to the Antares Web server.
 
@@ -254,7 +275,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         status_code=HTTPStatus.OK,
         summary="Upgrade study to the target version (or next version if not specified)",
     )
-    def upgrade_study(uuid: str, target_version: str = "") -> str:
+    def upgrade_study(uuid: SanitizedStr, target_version: SanitizedStr = "") -> str:
         """
         Upgrade a study to the target version or the next version if the target
         version is not specified.
@@ -307,13 +328,13 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         summary="Copy Study",
     )
     def copy_study(
-        uuid: str,
-        study_name: str,
-        output_ids: Annotated[list[str], Query(default_factory=list)],
+        uuid: SanitizedStr,
+        study_name: SanitizedStr,
+        output_ids: Annotated[list[SanitizedStr], Query(default_factory=list)],
         with_outputs: bool | None = None,
-        groups: str = "",
+        groups: SanitizedStr = "",
         use_task: bool = True,
-        destination_folder: str = "",
+        destination_folder: SanitizedStr = "",
     ) -> str:
         """
         This endpoint enables you to duplicate a study and place it in a specified location.
@@ -338,13 +359,12 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         group_ids_raw = _split_comma_separated_values(groups, default=[group.id for group in user.groups])
         group_ids = [sanitize_string(gid) for gid in group_ids_raw]
 
-        uuid_sanitized = sanitize_uuid(uuid)
         destination_name_sanitized = validate_study_name(escape(study_name))
 
         output_selection = _output_selection(with_outputs, output_ids)
 
         task_id = study_service.copy_study(
-            src_uuid=uuid_sanitized,
+            src_uuid=uuid,
             dest_study_name=destination_name_sanitized,
             group_ids=group_ids,
             use_task=use_task,
@@ -358,7 +378,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{uuid}/move",
         summary="Move study",
     )
-    def move_study(uuid: str, folder_dest: str) -> None:
+    def move_study(uuid: SanitizedStr, folder_dest: SanitizedStr) -> None:
         logger.info(f"Moving study {uuid} into folder '{folder_dest}'")
         study_service.move_study(uuid, validate_folder_path(folder_dest))
 
@@ -368,22 +388,43 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         summary="Create a new empty study",
     )
     def create_study(
-        name: str,
-        version: str | None = None,
-        groups: str = "",
-        directory: str = Query(
-            "", description="Directory path where the study will be created (e.g., 'project/subfolder')"
-        ),
+        name: SanitizedStr,
+        version: SanitizedStr | None = None,
+        groups: SanitizedStr = "",
+        directory: Annotated[
+            SanitizedStr,
+            Query(description="Directory path where the study will be created (e.g., 'project/subfolder')"),
+        ] = "",
+        storage_mode: StorageMode = StorageMode.FILESYSTEM,
     ) -> str:
+        """
+        Create a new empty study.
+
+        Args:
+        - `name`: The name of the study to create.
+        - `version`: The version of the study (optional).
+        - `groups`: Comma-separated list of group IDs to associate with the study.
+        - `storage_mode`: Storage mode for the study ("filesystem" or "database"). Defaults to "filesystem".
+        - `directory`: The name of the directory
+        Returns:
+        - The ID of the newly created study.
+        """
+        if storage_mode == StorageMode.DATABASE and not config.storage.study_storage.database_mode_enabled:
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_IMPLEMENTED,
+                detail="Database storage mode is not enabled on this server",
+            )
         study_version = StudyVersion.parse(version) if version else None
-        logger.info(f"Creating new study '{name}'")
+        logger.info(f"Creating new study '{name}' with storage_mode={storage_mode}")
         name_sanitized = validate_study_name(escape(name))
         group_ids = _split_comma_separated_values(groups)
         group_ids = [sanitize_string(gid) for gid in group_ids]
 
         directory_path_sanitized = validate_folder_path(directory) if directory else ""
 
-        uuid = study_service.create_study(name_sanitized, study_version, group_ids, directory=directory_path_sanitized)
+        uuid = study_service.create_study(
+            name_sanitized, study_version, group_ids, storage_mode=storage_mode, directory=directory_path_sanitized
+        )
 
         return uuid
 
@@ -392,7 +433,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         summary="Return study synthesis",
     )
     def get_study_synthesis(uuid: str) -> StudySynthesis:
-        study_id = sanitize_uuid(uuid)
+        study_id = sanitize_string(uuid)
         logger.info(f"Return a synthesis for study '{study_id}'")
         return study_service.get_study_synthesis(study_id)
 
@@ -400,76 +441,77 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{uuid}/matrixindex",
         summary="Return study input matrix start date index",
     )
-    def get_study_matrix_index(uuid: str, path: str = "") -> MatrixIndex:
-        study_id = sanitize_uuid(uuid)
-        logger.info(f"Return the start date for input matrix '{study_id}'")
-        return study_service.get_input_matrix_startdate(study_id, path)
+    def get_study_matrix_index(uuid: SanitizedStr, path: SanitizedStr = "") -> MatrixIndex:
+        logger.info(f"Return the start date for input matrix '{uuid}'")
+        return study_service.get_input_matrix_startdate(uuid, path)
 
     @bp.get(
         "/studies/{uuid}/export",
         summary="Export Study",
     )
     def export_study(
-        uuid: str, no_output: Optional[bool] = False, compression: ArchiveFormat = ArchiveFormat.ZIP
+        uuid: SanitizedStr, no_output: Optional[bool] = False, compression: ArchiveFormat = ArchiveFormat.ZIP
     ) -> FileDownloadTaskDTO:
         logger.info(f"Exporting study {uuid}")
-        uuid_sanitized = sanitize_uuid(uuid)
 
-        return study_service.export_study(uuid_sanitized, not no_output, compression)
+        return study_service.export_study(uuid, not no_output, compression)
 
     @bp.delete(
         "/studies/{uuid}",
         status_code=HTTPStatus.OK,
         summary="Delete Study",
     )
-    def delete_study(uuid: str, children: bool = False) -> None:
+    def delete_study(uuid: SanitizedStr, children: bool = False) -> None:
         logger.info(f"Deleting study {uuid}")
-        uuid_sanitized = sanitize_uuid(uuid)
+        study_service.delete_study(uuid, children)
 
-        study_service.delete_study(uuid_sanitized, children)
+    @bp.delete(
+        "/studies",
+        status_code=HTTPStatus.NO_CONTENT,
+        summary="Delete Multiple Studies",
+    )
+    def delete_studies(data: DeleteManyStudies) -> None:
+        logger.info(f"Deleting multiple studies: {data.study_ids}")
+        study_service.delete_studies(data.study_ids, data.with_variants)
 
     @bp.put(
         "/studies/{uuid}/owner/{user_id}",
         tags=[APITag.study_permissions],
         summary="Change study owner",
     )
-    def change_owner(uuid: str, user_id: int) -> None:
+    def change_owner(uuid: SanitizedStr, user_id: int) -> None:
         logger.info(f"Changing owner to {user_id} for study {uuid}")
-        uuid_sanitized = sanitize_uuid(uuid)
-        study_service.change_owner(uuid_sanitized, user_id)
+        study_service.change_owner(uuid, user_id)
 
     @bp.put(
         "/studies/{uuid}/groups/{group_id}",
         tags=[APITag.study_permissions],
         summary="Add a group association",
     )
-    def add_group(uuid: str, group_id: str) -> None:
+    def add_group(uuid: SanitizedStr, group_id: SanitizedStr) -> None:
         logger.info(f"Adding group {group_id} to study {uuid}")
-        uuid_sanitized = sanitize_uuid(uuid)
         group_id = sanitize_string(group_id)
-        study_service.add_group(uuid_sanitized, group_id)
+        study_service.add_group(uuid, group_id)
 
     @bp.delete(
         "/studies/{uuid}/groups/{group_id}",
         tags=[APITag.study_permissions],
         summary="Remove a group association",
     )
-    def remove_group(uuid: str, group_id: str) -> None:
+    def remove_group(uuid: SanitizedStr, group_id: SanitizedStr) -> None:
         logger.info(f"Removing group {group_id} to study {uuid}")
-        uuid_sanitized = sanitize_uuid(uuid)
         group_id = sanitize_string(group_id)
 
-        study_service.remove_group(uuid_sanitized, group_id)
+        study_service.remove_group(uuid, group_id)
 
     @bp.put(
         "/studies/{uuid}/public_mode/{mode}",
         tags=[APITag.study_permissions],
         summary="Set study public mode",
     )
-    def set_public_mode(uuid: str, mode: PublicMode) -> None:
+    def set_public_mode(uuid: SanitizedStr, mode: PublicMode) -> None:
         logger.info(f"Setting public mode to {mode} for study {uuid}")
-        uuid_sanitized = sanitize_uuid(uuid)
-        study_service.set_public_mode(uuid_sanitized, mode)
+        study_service.set_public_mode(uuid, mode)
 
     @bp.get(
         "/studies/_versions",
@@ -483,7 +525,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{uuid}",
         summary="Get Study information",
     )
-    def get_study_metadata(uuid: str) -> StudyMetadataDTO:
+    def get_study_metadata(uuid: SanitizedStr) -> StudyMetadataDTO:
         logger.info(f"Fetching study {uuid} metadata")
         study_metadata = study_service.get_study_information(uuid)
         return study_metadata
@@ -492,7 +534,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{uuid}",
         summary="Update Study information",
     )
-    def update_study_metadata(uuid: str, study_metadata_patch: StudyMetadataPatchDTO) -> StudyMetadataDTO:
+    def update_study_metadata(uuid: SanitizedStr, study_metadata_patch: StudyMetadataPatchDTO) -> StudyMetadataDTO:
         logger.info(f"Updating metadata for study {uuid}")
         if study_metadata_patch.name:
             study_metadata_patch.name = validate_study_name(study_metadata_patch.name)
@@ -503,25 +545,23 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{study_id}/archive",
         summary="Archive a study",
     )
-    def archive_study(study_id: str) -> str:
+    def archive_study(study_id: UuidStr) -> str:
         logger.info(f"Archiving study {study_id}")
-        study_id = sanitize_uuid(study_id)
         return study_service.archive(study_id)
 
     @bp.put(
         "/studies/{study_id}/unarchive",
         summary="Unarchive a study",
     )
-    def unarchive_study(study_id: str) -> str:
+    def unarchive_study(study_id: UuidStr) -> str:
         logger.info(f"Unarchiving study {study_id}")
-        study_id = sanitize_uuid(study_id)
         return study_service.unarchive(study_id)
 
     @bp.get(
         "/studies/{uuid}/disk-usage",
         summary="Compute study disk usage",
     )
-    def study_disk_usage(uuid: str) -> int:
+    def study_disk_usage(uuid: SanitizedStr) -> int:
         """
         Compute disk usage of an input study
 
@@ -538,14 +578,13 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{study_id}/normalize",
         summary="Move study matrices into the matrix-store and replace them with symbolic links.",
     )
-    def normalize_study(study_id: str) -> None:
+    def normalize_study(study_id: UuidStr) -> None:
         """
         This endpoint iterates over every matrix inside a study.
         For each, it saves them inside the application's matrix-store.
         Then, it replaces the matrix inside the study with a symbolic link to the matrix inside the matrix-store.
         """
         logger.info(f"Normalizing study {study_id}")
-        study_id = sanitize_uuid(study_id)
         return study_service.normalize_study_by_id(study_id)
 
     return bp

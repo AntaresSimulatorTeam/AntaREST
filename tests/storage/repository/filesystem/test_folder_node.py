@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -235,14 +235,8 @@ def test_delete(tmp_path: Path) -> None:
                         matrix_mapper=Mock(),
                         config=config.next_file("sub_folder").next_file("area_list.ini"),
                     ),
-                    "data_node": RawFileNode(
-                        matrix_mapper=Mock(),
-                        config=config.next_file("sub_folder").next_file("data.txt"),
-                    ),
-                    "data_link_node": RawFileNode(
-                        matrix_mapper=Mock(),
-                        config=config.next_file("sub_folder").next_file("data_link.txt"),
-                    ),
+                    "data_node": RawFileNode(config=config.next_file("sub_folder").next_file("data.txt")),
+                    "data_link_node": RawFileNode(config=config.next_file("sub_folder").next_file("data_link.txt")),
                 },
             ),
         },

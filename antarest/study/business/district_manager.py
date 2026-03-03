@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -50,7 +50,7 @@ class DistrictManager:
         Returns:
             The (unordered) list of districts.
         """
-        all_areas = study.get_study_dao().tmp_get_all_areas()
+        all_areas = study.get_study_dao().get_all_area_ids()
         return [district.to_dto(all_areas) for district in study.get_study_dao().get_districts()]
 
     def create_district(
@@ -77,7 +77,7 @@ class DistrictManager:
         if study_dao.district_exists(district_id):
             raise DistrictAlreadyExist(district_id)
 
-        invalid_areas = study_dao.get_invalid_areas_in_district(district_creation.areas or [])
+        invalid_areas = study_dao.get_invalid_area_ids(district_creation.areas or [])
         if invalid_areas:
             raise AreaNotFound(*invalid_areas)
 
@@ -87,7 +87,7 @@ class DistrictManager:
             study_version=study.version,
         )
         study.add_commands([command])
-        all_areas = study_dao.tmp_get_all_areas()
+        all_areas = study_dao.get_all_area_ids()
         return create_district(district_creation, district_id).to_dto(all_areas)  #
 
     def update_district(
@@ -115,7 +115,7 @@ class DistrictManager:
         if not study_dao.district_exists(district_id):
             raise DistrictNotFound(district_id)
 
-        invalid_areas = study_dao.get_invalid_areas_in_district(district_update.areas or [])
+        invalid_areas = study_dao.get_invalid_area_ids(district_update.areas or [])
         if invalid_areas:
             raise AreaNotFound(*invalid_areas)
 

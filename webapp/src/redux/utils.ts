@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,7 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import { createAction, type ActionCreatorWithPayload, type EntityState } from "@reduxjs/toolkit";
+import {
+  createAction,
+  type ActionCreatorWithPayload,
+  type EntityId,
+  type EntityState,
+} from "@reduxjs/toolkit";
 import * as R from "ramda";
 import packages from "../../package.json";
 import type { AppState } from "./ducks";
@@ -25,7 +30,7 @@ export enum FetchStatus {
   Failed = "failed",
 }
 
-export interface AsyncEntityState<T> extends EntityState<T> {
+export interface AsyncEntityState<T extends { id: EntityId }> extends EntityState<T, T["id"]> {
   status: FetchStatus;
   error?: string;
 }

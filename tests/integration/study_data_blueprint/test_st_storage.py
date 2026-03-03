@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,6 +12,7 @@
 
 import re
 import typing as t
+import uuid
 from unittest.mock import ANY
 
 import numpy as np
@@ -343,7 +344,7 @@ class TestSTStorage:
         assert obj["exception"] == "CommandApplicationError"
 
         # Check delete with the wrong value of `study_id`
-        bad_study_id = "bad_study"
+        bad_study_id = str(uuid.uuid4())
         res = client.request(
             "DELETE", f"/v1/studies/{bad_study_id}/areas/{area_id}/storages", json=[siemens_battery_id]
         )

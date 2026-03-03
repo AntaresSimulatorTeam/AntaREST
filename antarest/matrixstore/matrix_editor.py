@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -124,12 +124,11 @@ class Operation(AntaresBaseModel):
         """
         Computes the operation on the given value or matrix.
         """
-        if use_coords:
+        if use_coords or self.operation != "=":
             return OPERATIONS[self.operation](x, self.value)  # type: ignore
-        if self.operation == "=":
-            x.loc[~x.isnull()] = self.value
-            return x
-        return OPERATIONS[self.operation](x, self.value)  # type: ignore
+
+        x.loc[~x.isnull()] = self.value
+        return x
 
     @override
     def __str__(self) -> str:

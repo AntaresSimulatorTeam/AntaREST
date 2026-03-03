@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -12,7 +12,7 @@
 
 
 import enum
-from typing import Any, Iterable, Literal, Mapping, TypeAlias, cast
+from typing import Any, Final, Iterable, Literal, Mapping, TypeAlias, cast
 
 from antares.study.version import StudyVersion
 from pydantic import Field
@@ -21,6 +21,8 @@ from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.study_index import StudyIndex
 from antarest.study.model import STUDY_VERSION_8_7, STUDY_VERSION_9_2, STUDY_VERSION_9_3
+
+DEFAULT_RULESET_NAME: Final[str] = "Default Ruleset"
 
 
 class ScenarioType(enum.StrEnum):
@@ -123,9 +125,6 @@ class Ruleset(AntaresBaseModel, populate_by_name=True, extra="forbid"):
         _set_by_type(self, scenario_type, scenarios)
 
 
-Rulesets: TypeAlias = dict[str, Ruleset]
-
-
 class RulesetUpdate(AntaresBaseModel, populate_by_name=True, extra="forbid"):
     """
     An update to a Ruleset object.
@@ -216,9 +215,6 @@ def _set_by_type(self: Ruleset | RulesetUpdate, scenario_type: ScenarioType, sce
             raise ValueError(f"Unknown scenario type {scenario_type}")
 
 
-RulesetsUpdate: TypeAlias = dict[str, RulesetUpdate]
-
-
 def _create_1_level_scenarios_mapping(names: Iterable[str], years: list[str]) -> _OneLevelScenarios:
     """
     Initializes a scenario mapping filled with random.
@@ -251,7 +247,7 @@ def _get_scenario_types_according_to_version(version: StudyVersion) -> set[Scena
     if version < STUDY_VERSION_9_3:
         all_scenario_types.remove(ScenarioType.SHORT_TERM_STORAGE_INFLOWS)
         all_scenario_types.remove(ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS)
-    return all_scenario_types  # type: ignore
+    return all_scenario_types
 
 
 def initialize_ruleset_with_version(
@@ -373,14 +369,3 @@ def update_ruleset(base: Ruleset, update: RulesetUpdate, version: StudyVersion) 
     _update_3_levels_mapping(base.storage_constraints, update.storage_constraints)
     # Validate the final ruleset
     validate_ruleset_against_version(version, base)
-
-
-def update_rulesets(base: Rulesets, update: RulesetsUpdate, version: StudyVersion) -> None:
-    lower_case_base = {k.lower(): v for k, v in base.items()}
-    for name, ruleset_update in update.items():
-        if name.lower() not in lower_case_base:
-            ruleset = Ruleset()
-            update_ruleset(ruleset, ruleset_update, version)
-            base[name] = ruleset
-        else:
-            update_ruleset(lower_case_base[name.lower()], ruleset_update, version)

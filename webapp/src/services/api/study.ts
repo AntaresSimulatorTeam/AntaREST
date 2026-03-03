@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
  *
  * See AUTHORS.txt
  *
@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import type { FolderDTO, WorkspaceDTO } from "@/components/App/Studies/StudyTree/types";
-import { compactSemanticVersion } from "@/utils/versionUtils";
 import type { AxiosRequestConfig } from "axios";
 import * as RA from "ramda-adjunct";
+import type { FolderDTO, WorkspaceDTO } from "@/queries/explorer/schemas";
+import { compactSemanticVersion } from "@/utils/versionUtils";
 import type { StudyMapDistrict } from "../../redux/ducks/studyMaps";
 import type {
   AreasConfig,
@@ -192,8 +192,18 @@ export const upgradeStudy = async (studyId: string, targetVersion: string): Prom
   });
 };
 
-export const deleteStudy = async (sid: string, deleteAllChildren?: boolean): Promise<void> => {
-  const res = await client.delete(`/v1/studies/${sid}?children=${deleteAllChildren || false}`);
+export const deleteStudy = async (studyId: string, deleteChildren = false): Promise<void> => {
+  const res = await client.delete(`/v1/studies/${studyId}?children=${deleteChildren}`);
+  return res.data;
+};
+
+export const deleteStudies = async (params: {
+  studyIds: string[];
+  withVariants?: boolean;
+}): Promise<void> => {
+  const res = await client.delete("/v1/studies", {
+    data: { withVariants: true, ...params },
+  });
   return res.data;
 };
 

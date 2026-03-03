@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -41,8 +41,6 @@ class FileStudyUserResourceDao(UserResourcesDao, ABC):
     @override
     def get_all_user_resources(self) -> Iterator[UserResourceDataCreation]:
         blob_service = self.get_impl()._blob_service
-        assert blob_service is not None
-
         user_path = self.get_file_study().config.study_path / "user"
         if user_path.exists():
             all_files = user_path.rglob("*")
@@ -68,10 +66,7 @@ class FileStudyUserResourceDao(UserResourcesDao, ABC):
         content: bytes | dict[str, str] = {}
         if resource_data.blob_id:
             # We need to fetch the actual content inside the blob store
-            blob_service = self.get_impl()._blob_service
-            if blob_service is None:
-                raise ValueError("Blob service not available in DAO")
-            content = blob_service.get(resource_data.blob_id)
+            content = self.get_impl()._blob_service.get(resource_data.blob_id)
 
         # Creates the tree recursively to be able to create a resource inside a non-existing folder.
         nested_dict: dict[str, Any] = {url[-1]: content}

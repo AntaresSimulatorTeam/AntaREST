@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -38,6 +38,18 @@ class TestUpdateAdvancedParameters:
         general_data_content["other preferences"]["power-fluctuations"] = "minimize ramping"
 
         assert general_data_content == study.tree.get(["settings", "generaldata"])
+
+    def test_enr_modelling_synced_in_memory(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
+        study = empty_study_880
+        assert study.config.enr_modelling == "aggregated"
+
+        parameters = AdvancedParametersUpdate(renewable_generation_modelling="clusters")
+        command = UpdateAdvancedParameters(
+            parameters=parameters, command_context=command_context, study_version=study.config.version
+        )
+        command.apply(study_data=study)
+
+        assert study.config.enr_modelling == "clusters"
 
     def test_error_cases(self, command_context: CommandContext) -> None:
         # Give fields that do not match the version

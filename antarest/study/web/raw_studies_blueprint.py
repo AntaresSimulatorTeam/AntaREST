@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,22 +14,21 @@ import http
 import io
 import logging
 from pathlib import Path, PurePosixPath
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal, TypeAlias
 
-import numpy as np
-import pandas as pd
 import polars as pl
 from fastapi import APIRouter, Body, File, HTTPException
 from fastapi.params import Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
+from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.config import Config
 from antarest.core.exceptions import IncorrectPathError
 from antarest.core.model import SUB_JSON
 from antarest.core.serde.json import from_json, to_json
 from antarest.core.serde.matrix_export import TableExportFormat, simplify_dataframe
 from antarest.core.swagger import get_path_examples
-from antarest.core.utils.utils import sanitize_string, sanitize_uuid
+from antarest.core.utils.utils import sanitize_string
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
@@ -71,8 +70,10 @@ CONTENT_TYPES = {
     ".antares": ("text/plain", "utf-8"),
 }
 
-DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
-PATH_TYPE = Annotated[str, Query(openapi_examples=get_path_examples())]
+ExportFormatQuery: TypeAlias = Annotated[
+    TableExportFormat, Query(alias="format", description="Export format", title="Export Format")
+]
+PATH_TYPE = Annotated[SanitizedStr, Query(openapi_examples=get_path_examples())]
 
 
 class MatrixFormat(EnumIgnoreCase):
@@ -81,32 +82,34 @@ class MatrixFormat(EnumIgnoreCase):
     ARROW_UNCOMPRESSED = "arrow uncompressed"
     PLAIN = "plain"
 
-    def serialize_dataframe(self, dataframe: pd.DataFrame) -> Response:
-        np_type: type[np.int32] | type[np.int64] = np.int64
+    def serialize_dataframe(self, dataframe: pl.DataFrame) -> Response:
+        polars_type: type[pl.Int32] | type[pl.Int64] = pl.Int64
         # For textual formats, int64 and int32 are represented in the same way, so we use int64 to catch bigger numbers.
         # For the arrow format, on the other hand, the size of an int32 is half the size of an int64 so we prefer int32.
         if self in {MatrixFormat.ARROW_COMPRESSED, MatrixFormat.ARROW_UNCOMPRESSED}:
-            np_type = np.int32
-        dataframe = simplify_dataframe(dataframe, np_type)
+            polars_type = pl.Int32
+        dataframe = simplify_dataframe(dataframe, polars_type)
 
         if self == MatrixFormat.PLAIN:
-            if dataframe.empty:
+            if dataframe.is_empty():
                 return Response(content=b"", media_type="application/octet-stream")
             string_buffer = io.StringIO()
-            pl.from_pandas(dataframe).write_csv(string_buffer, separator="\t", include_header=False)
+            dataframe.write_csv(string_buffer, separator="\t", include_header=False)
             return Response(content=string_buffer.getvalue(), media_type="text/csv")
 
         buffer = io.BytesIO()
         if self == MatrixFormat.JSON:
-            dataframe.to_json(buffer, orient="split")
-            return Response(content=buffer.getvalue(), media_type="application/json")
+            # We have to do `to_json(DataFrame.to_dict())` to keep the NaNs for backward compatibility.
+            # The method DataFrame.to_json() is faster but use null instead of NaNs.
+            content = to_json(dataframe.to_pandas().to_dict(orient="split"))
+            return Response(content=content, media_type="application/json")
 
         else:
-            compression_mapping = {
-                MatrixFormat.ARROW_COMPRESSED: None,
+            compression_mapping: dict[MatrixFormat, Literal["zstd", "uncompressed"]] = {
+                MatrixFormat.ARROW_COMPRESSED: "zstd",
                 MatrixFormat.ARROW_UNCOMPRESSED: "uncompressed",
             }
-            dataframe.to_feather(buffer, compression=compression_mapping[self])
+            dataframe.write_ipc(buffer, compression=compression_mapping[self])
             return Response(content=buffer.getvalue(), media_type="application/vnd.apache.arrow.file")
 
 
@@ -131,7 +134,7 @@ def create_raw_study_routes(
         summary="Retrieve Raw Data from Study: JSON, Text, or File Attachment",
     )
     def get_study_data(
-        uuid: str,
+        uuid: UuidStr,
         path: PATH_TYPE = "/",
         depth: int = 3,
         formatted: bool = True,
@@ -155,7 +158,7 @@ def create_raw_study_routes(
 
         output = study_service.get_raw_content(uuid, path, depth, formatted)
 
-        if isinstance(output, pd.DataFrame):
+        if isinstance(output, pl.DataFrame):
             if matrix_format is None:
                 matrix_format = MatrixFormat.JSON if formatted else MatrixFormat.PLAIN
             return matrix_format.serialize_dataframe(output)
@@ -217,7 +220,7 @@ def create_raw_study_routes(
         "/studies/{uuid}/raw/original-file",
         summary="Retrieve Raw file from a Study folder in its original format",
     )
-    def get_study_file(uuid: str, path: PATH_TYPE = "/") -> Response:
+    def get_study_file(uuid: UuidStr, path: PATH_TYPE = "/") -> Response:
         """
         Fetches for a file in its original format from a study folder
 
@@ -246,9 +249,9 @@ def create_raw_study_routes(
         summary="Delete files or folders located inside the 'User' folder",
     )
     def delete_file(
-        uuid: str,
+        uuid: UuidStr,
         path: Annotated[
-            str,
+            SanitizedStr,
             Query(
                 openapi_examples={
                     "user/wind_solar/synthesis_windSolar.xlsx": {"value": "user/wind_solar/synthesis_windSolar.xlsx"}
@@ -256,7 +259,6 @@ def create_raw_study_routes(
             ),
         ] = "/",
     ) -> None:
-        uuid = sanitize_uuid(uuid)
         logger.info(f"Deleting path {path} inside study {uuid}")
         study_service.delete_user_file_or_folder(uuid, path)
 
@@ -265,7 +267,7 @@ def create_raw_study_routes(
         status_code=http.HTTPStatus.OK,
         summary="Update study by posting formatted data",
     )
-    def edit_study(uuid: str, path: PATH_TYPE = "/", data: SUB_JSON = Body(default="")) -> Any:
+    def edit_study(uuid: UuidStr, path: PATH_TYPE = "/", data: Annotated[SUB_JSON, Body()] = "") -> Any:
         """
         Same endpoint as the PUT one.
         Only difference is that it cannot create an empty folder.
@@ -280,10 +282,10 @@ def create_raw_study_routes(
         summary="Update data by posting a Raw file or by creating folder(s)",
     )
     def replace_study_file(
-        uuid: str,
+        uuid: UuidStr,
         path: PATH_TYPE = "/",
-        file: bytes = File(default=None),
-        create_missing: bool = Query(default=True, deprecated=True),  # type: ignore
+        file: Annotated[bytes | None, File()] = None,
+        create_missing: Annotated[bool, Query(deprecated=True)] = True,
         resource_type: ResourceType = ResourceType.FILE,
     ) -> None:
         """
@@ -303,7 +305,7 @@ def create_raw_study_routes(
             raise HTTPException(status_code=422, detail="Argument mismatch: Must give a content to create a file")
 
         path = sanitize_string(path)
-        if resource_type == ResourceType.FOLDER:  # type: ignore
+        if resource_type == ResourceType.FOLDER:
             logger.info(f"Creating folder {path} for study {uuid}")
             study_service.create_user_folder(uuid, path)
         else:
@@ -315,17 +317,18 @@ def create_raw_study_routes(
         summary="Download a matrix in a given format",
     )
     def get_matrix(
-        uuid: str,
-        matrix_path: str = Query(  # type: ignore
-            ..., alias="path", description="Relative path of the matrix to download", title="Matrix Path"
-        ),
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,  # type: ignore
-        with_header: bool = Query(  # type: ignore
-            True, alias="header", description="Whether to include the header or not", title="With Header"
-        ),
-        with_index: bool = Query(  # type: ignore
-            True, alias="index", description="Whether to include the index or not", title="With Index"
-        ),
+        uuid: UuidStr,
+        matrix_path: Annotated[
+            SanitizedStr,
+            Query(alias="path", description="Relative path of the matrix to download", title="Matrix Path"),
+        ],
+        export_format: ExportFormatQuery = TableExportFormat.CSV,
+        with_header: Annotated[
+            bool, Query(alias="header", description="Whether to include the header or not", title="With Header")
+        ] = True,
+        with_index: Annotated[
+            bool, Query(alias="index", description="Whether to include the index or not", title="With Index")
+        ] = True,
     ) -> FileResponse:
         """
         Download a matrix in a given format.
@@ -344,7 +347,6 @@ def create_raw_study_routes(
         logger.info(f"Exporting matrix '{matrix_path}' to {export_format} format for study '{uuid}'")
 
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
-        uuid = sanitize_uuid(uuid)
         matrix_path = sanitize_string(matrix_path)
 
         df_matrix = study_service.get_matrix_with_index_and_header(

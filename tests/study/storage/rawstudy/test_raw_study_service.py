@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -135,14 +135,11 @@ def test_export_study_flat(
     # Collect all files by types to prepare the comparison
     src_study_files = set()
     src_matrices = set()
-    src_outputs = set()
     for study_file in raw_study_path.rglob("*.*"):
         relpath = study_file.relative_to(raw_study_path).as_posix()
         if study_file.suffixes == [".txt", ".link"]:
             src_matrices.add(relpath.replace(".link", ""))
-        elif relpath.startswith("output/"):
-            src_outputs.add(relpath)
-        else:
+        elif not relpath.startswith("output/"):
             src_study_files.add(relpath)
 
     # Run the export

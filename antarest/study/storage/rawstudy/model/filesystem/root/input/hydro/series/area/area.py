@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -14,15 +14,15 @@ from typing import Any, Dict
 
 from typing_extensions import override
 
-from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_6, MatrixFrequency
+from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_6, STUDY_VERSION_9_2, MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
-from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
     default_scenario_daily,
     default_scenario_hourly,
     default_scenario_monthly,
 )
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 
 class InputHydroSeriesArea(FolderNode):
@@ -53,4 +53,21 @@ class InputHydroSeriesArea(FolderNode):
                 freq=MatrixFrequency.HOURLY,
                 default_empty=default_scenario_hourly,
             )
+
+        if study_version >= STUDY_VERSION_9_2:
+            hydro_series_matrices["maxHourlyGenPower"] = InputSeriesMatrix(
+                self.matrix_mapper,
+                self.config.next_file("maxHourlyGenPower.txt"),
+                freq=MatrixFrequency.HOURLY,
+                default_empty=default_scenario_hourly,
+                should_exist=False,
+            )
+            hydro_series_matrices["maxHourlyPumpPower"] = InputSeriesMatrix(
+                self.matrix_mapper,
+                self.config.next_file("maxHourlyPumpPower.txt"),
+                freq=MatrixFrequency.HOURLY,
+                default_empty=default_scenario_hourly,
+                should_exist=False,
+            )
+
         return hydro_series_matrices

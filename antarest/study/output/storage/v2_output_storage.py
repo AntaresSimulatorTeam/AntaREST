@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -15,7 +15,7 @@ import uuid
 from pathlib import Path
 from typing import BinaryIO, Iterator, Optional, Sequence
 
-import pandas as pd
+import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import OutputNotFound
@@ -23,6 +23,7 @@ from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_arc
 from antarest.core.utils.utils import StopWatch
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
+from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency, MatrixIndex, StudySimResultDTO, StudySimSettingsDTO
 from antarest.study.output.filestudy.extract_metadata import extract_metadata
 from antarest.study.output.lfs.lfs import ILargeFileStorage
@@ -35,7 +36,6 @@ from antarest.study.output.storage.output_storage import (
 )
 from antarest.study.output.storage.repository import DbOutputMetadata, OutputMetadataRepository
 from antarest.study.output.utils import QueryFileType
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 from antarest.study.storage.utils import extract_output_name, fix_study_root
 
@@ -173,7 +173,7 @@ class V2OutputStorage(IOutputStorage):
                     nb_years=output_details.nb_years,
                 )
             )
-            timer.log_elapsed(lambda duration: logger.info(f"Output imported to internal storage in {duration}s."))
+            logger.info(f"Output imported to internal storage in {timer}s.")
             return output_name
         finally:
             shutil.rmtree(tmp_dir, ignore_errors=True)
@@ -269,7 +269,7 @@ class V2OutputStorage(IOutputStorage):
         columns_names: Sequence[str],
         transform_columns_headers: bool,
         mc_years: Optional[Sequence[int]] = None,
-    ) -> Iterator[pd.DataFrame]:
+    ) -> Iterator[pl.DataFrame]:
         # TODO: at import time, extract to parquet files
         raise NotImplementedError()
 

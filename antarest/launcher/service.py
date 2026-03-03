@@ -1,4 +1,4 @@
-# Copyright (c) 2025, RTE (https://www.rte-france.com)
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -544,7 +544,7 @@ class LauncherService:
             logger.info("Re zipping output for transfer")
             zip_path = output_true_path.parent / f"{output_true_path.name}.zip"
             archive_dir(output_true_path, target_archive_path=zip_path, archive_format=ArchiveFormat.ZIP)
-            stopwatch.log_elapsed(lambda x: logger.info(f"Zipped output for job {job_id} in {x}s"))
+            logger.info(f"Zipped output for job {job_id} in {stopwatch}s")
             final_output_path = zip_path
         else:
             final_output_path = output_true_path
@@ -667,10 +667,8 @@ class LauncherService:
 
         if launcher is None:
             raise ValueError(f"Job {job_id} has no launcher")
-        launch_progress_json: Dict[str, float] = self.launchers[launcher].cache.get(id=f"Launch_Progress_{job_id}") or {
-            "progress": 0.0
-        }
-        return launch_progress_json.get("progress", 0)
+        launch_progress_json = self.launchers[launcher].cache.get(id=f"Launch_Progress_{job_id}") or {"progress": 0.0}
+        return float(launch_progress_json.get("progress", 0.0))
 
     def create_solver_presets(self, solver_presets_creation: SolverPresetsCreation) -> SolverPresets:
         """
