@@ -11,10 +11,12 @@
 # This file is part of the Antares project.
 
 import contextlib
+import re
 import uuid
 from typing import TYPE_CHECKING, Any, List, Mapping, Optional
 
 import bcrypt
+from pydantic import field_validator
 from sqlalchemy import Boolean, Enum, ForeignKey, Integer, Sequence, String
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.exc import IntegrityError
@@ -64,6 +66,39 @@ class BotCreateDTO(AntaresBaseModel):
 class UserCreateDTO(AntaresBaseModel):
     name: str
     password: str
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        """
+        Validate password meets security requirements.
+
+        Requirements (must match frontend validation):
+        - Length: 8-50 characters
+        - At least one lowercase letter
+        - At least one uppercase letter
+        - At least one digit
+        - At least one special character
+
+        Raises:
+            ValueError: If password doesn't meet requirements
+        """
+        if not (8 <= len(v) <= 50):
+            raise ValueError("Password must be between 8 and 50 characters")
+
+        if not re.search(r"[a-z]", v):
+            raise ValueError("Password must contain at least one lowercase letter")
+
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Password must contain at least one uppercase letter")
+
+        if not re.search(r"\d", v):
+            raise ValueError("Password must contain at least one digit")
+
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
+            raise ValueError("Password must contain at least one special character (!@#$%^&*(),.?\":{}|<>)")
+
+        return v
 
 
 class GroupDTO(AntaresBaseModel):
