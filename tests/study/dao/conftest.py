@@ -128,13 +128,15 @@ class RealCaseStudy:
     dataframes: list[pl.DataFrame]
 
 
-def build_real_case_study(dao: StudyDao) -> RealCaseStudy:
+def get_matrix_service_from_dao(dao: StudyDao) -> ISimpleMatrixService:
     if isinstance(dao, DatabaseStudyDao):
-        matrix_service = dao._matrix_service
+        return dao._matrix_service
     else:
-        generator_matrix_constants = dao._generator_matrix_constants
-        generator_matrix_constants.init_constant_matrices()
-        matrix_service = generator_matrix_constants.matrix_service
+        return dao._generator_matrix_constants.matrix_service
+
+
+def build_real_case_study(dao: StudyDao) -> RealCaseStudy:
+    matrix_service = get_matrix_service_from_dao(dao)
     # Create matrices in the matrix-store with different contents to diversify tests.
     base_data = [[1, 2.5], [3, 4.7]]
     dataframes = [pl.DataFrame(data=[[a + i, b + i] for a, b in base_data], orient="row") for i in range(38)]
