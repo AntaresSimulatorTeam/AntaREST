@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import contextlib
+import copy
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -20,8 +21,10 @@ from antares.study.version import StudyVersion
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from antarest.core.interfaces.cache import ICache
 from antarest.dbmodel import Base
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -67,7 +70,8 @@ def build_filesystem_dao(
     Create a test study in filesystem mode and create a FileStudyTreeDao instance for testing.
     """
     # Put matrix_service in common
-    study_factory._matrix_mapper_factory._matrix_service = command_context.matrix_service
+    factory = copy.deepcopy(study_factory)
+    factory._matrix_mapper_factory._matrix_service = command_context.matrix_service
     # Create the study
     study_id = str(uuid.uuid4())
     study = create_study(id=study_id, name="Test Study", version=str(version), path=str(study_path / "my_study"))
@@ -93,8 +97,11 @@ def db_dao_930(db_session: Session, matrix_service: ISimpleMatrixService) -> Dat
 
 @pytest.fixture
 def fs_dao_930(
-    db_session: Session, command_context: CommandContext, study_factory: StudyFactory, tmp_path: Path
+    db_session: Session, command_context: CommandContext, tmp_path: Path, core_cache: ICache
 ) -> FileStudyTreeDao:
+    study_factory = StudyFactory(
+        matrix_mapper_factory=MatrixUriMapperFactory(command_context.matrix_service), cache=core_cache
+    )
     return build_filesystem_dao(db_session, STUDY_VERSION_9_3, command_context, study_factory, tmp_path)
 
 
