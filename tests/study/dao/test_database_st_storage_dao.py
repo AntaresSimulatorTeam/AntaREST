@@ -39,8 +39,8 @@ from antarest.study.dao.database.models.st_storage import (
 )
 
 
-def test_save_st_storage(dao_930: DatabaseStudyDao) -> None:
-    dao = dao_930
+def test_save_st_storage(db_dao_930: DatabaseStudyDao) -> None:
+    dao = db_dao_930
     dao.save_area("area_1")
 
     dao.save_st_storage(

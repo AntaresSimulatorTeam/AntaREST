@@ -84,19 +84,19 @@ def dao(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseSt
 
 
 @pytest.fixture
-def dao_bd_930(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
+def db_dao_930(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
     return build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
 
 
 @pytest.fixture
-def dao_fs_930(
+def fs_dao_930(
     db_session: Session, command_context: CommandContext, study_factory: StudyFactory, tmp_path: Path
 ) -> FileStudyTreeDao:
     return build_filesystem_dao(db_session, STUDY_VERSION_9_3, command_context, study_factory, tmp_path)
 
 
 @pytest.fixture(scope="session")
-def dao_bd_930_shared() -> DatabaseStudyDao:
+def db_dao_930_shared() -> DatabaseStudyDao:
     return build_shared_db_dao(STUDY_VERSION_9_3, InMemorySimpleMatrixService())
 
 
@@ -110,7 +110,7 @@ def build_shared_db_dao(study_version: StudyVersion, matrix_service: ISimpleMatr
 
 
 @pytest.fixture
-def dao_bd_920(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
+def db_dao_920(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
     return build_db_dao(db_session, matrix_service, STUDY_VERSION_9_2)
 
 

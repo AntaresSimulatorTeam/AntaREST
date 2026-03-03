@@ -709,8 +709,8 @@ class TestConvertHydroPmax:
     compatibility parameter is only available from version 9.2 so we use dao_bd_920 in the tests below.
     """
 
-    def test_roundtrip(self, dao_bd_920: DatabaseStudyDao) -> None:
-        dao = dao_bd_920
+    def test_roundtrip(self, db_dao_920: DatabaseStudyDao) -> None:
+        dao = db_dao_920
         dao.save_area("Paris")
         dao.save_area("London")
 
@@ -729,9 +729,9 @@ class TestConvertHydroPmax:
             with pytest.raises(ValueError):
                 dao.get_hydro_max_hourly_gen_power(area_id)
 
-    def test_convert_hourly_noop_preserves_custom_matrices(self, dao_bd_920: DatabaseStudyDao) -> None:
+    def test_convert_hourly_noop_preserves_custom_matrices(self, db_dao_920: DatabaseStudyDao) -> None:
         """Converting to HOURLY when already HOURLY does not overwrite manually saved matrices."""
-        dao = dao_bd_920
+        dao = db_dao_920
         dao.save_area("Paris")
         dao.convert_hydro_pmax(HydroPmax.HOURLY)
 
@@ -754,9 +754,9 @@ class TestConvertHydroPmax:
         pl.testing.assert_frame_equal(dao.get_hydro_max_daily_gen_energy("paris"), pl.DataFrame({"0": [99.0] * 365}))
         pl.testing.assert_frame_equal(dao.get_hydro_max_daily_pump_energy("paris"), pl.DataFrame({"0": [99.0] * 365}))
 
-    def test_no_areas(self, dao_bd_920: DatabaseStudyDao) -> None:
+    def test_no_areas(self, db_dao_920: DatabaseStudyDao) -> None:
         """Converting with no areas still updates the compat param."""
-        dao = dao_bd_920
+        dao = db_dao_920
         dao.convert_hydro_pmax(HydroPmax.HOURLY)
         assert dao.get_compatibility_parameters().hydro_pmax == HydroPmax.HOURLY
         dao.convert_hydro_pmax(HydroPmax.DAILY)
