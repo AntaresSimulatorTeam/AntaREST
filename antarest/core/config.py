@@ -194,6 +194,7 @@ class StorageConfig:
     tasks_gc_retention_days: int = 30
     tasks_gc_sleeping_time: int = 86400
     tasks_gc_dry_run: bool = False
+    disk_usage_dry_run: bool = False
     study_storage: StudyStorageConfig = StudyStorageConfig()
 
     @classmethod
