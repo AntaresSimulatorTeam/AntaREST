@@ -285,7 +285,7 @@ function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
             <ListSubheader
               key={group.name}
               sx={(theme) => ({
-                backgroundColor: theme.palette.background.paper,
+                backgroundColor: theme.vars.palette.background.paper,
                 backgroundImage: theme.vars.overlays[1],
               })}
             >

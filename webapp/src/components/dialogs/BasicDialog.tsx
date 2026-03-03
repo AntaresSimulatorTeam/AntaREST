@@ -47,7 +47,7 @@ const AlertBorder = styled("span", {
   top: 0,
   width: "100%",
   borderTop: "4px solid",
-  borderColor: theme.palette[$type].main,
+  borderColor: theme.vars.palette[$type].main,
 }));
 
 const titleIconByAlert: Record<AlertValue, SvgIconComponent> = {

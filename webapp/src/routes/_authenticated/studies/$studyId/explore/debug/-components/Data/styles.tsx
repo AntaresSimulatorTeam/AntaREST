@@ -26,5 +26,5 @@ export const Filename = styled((props: { children?: string }) => (
   flex: 1,
   overflow: "hidden",
   textOverflow: "ellipsis",
-  color: theme.palette.text.secondary,
+  color: theme.vars.palette.text.secondary,
 }));

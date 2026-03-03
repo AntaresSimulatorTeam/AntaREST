@@ -15,28 +15,29 @@
 import FolderIcon from "@mui/icons-material/Folder";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import type { SxProps, Theme } from "@mui/material";
+import { transparentizeColor } from "../../../../../../utils/muiUtils";
 
 export const treeNodeIcons = {
   folder: FolderIcon,
   folderOpen: FolderOpenIcon,
 };
 
-export const treeItemStyles: SxProps<Theme> = {
+export const treeItemStyles: SxProps<Theme> = (theme) => ({
   "& > .MuiTreeItem-content": {
     borderRadius: 1,
     px: 1,
     py: 0.25,
     "&:hover": {
-      backgroundColor: (theme) => `${theme.palette.info.main}10`,
+      backgroundColor: transparentizeColor(theme.vars.palette.info.main, 95),
     },
     "&.Mui-selected": {
-      backgroundColor: (theme) => `${theme.palette.info.main}20`,
+      backgroundColor: transparentizeColor(theme.vars.palette.info.main, 85),
       "&:hover": {
-        backgroundColor: (theme) => `${theme.palette.info.main}30`,
+        backgroundColor: transparentizeColor(theme.vars.palette.info.main, 80),
       },
     },
     "&.Mui-selected.Mui-focused": {
-      backgroundColor: (theme) => `${theme.palette.info.main}25`,
+      backgroundColor: transparentizeColor(theme.vars.palette.info.main, 85),
     },
 
     "& .MuiTreeItem-iconContainer": {
@@ -45,7 +46,7 @@ export const treeItemStyles: SxProps<Theme> = {
         backgroundColor: "transparent",
       },
       "& svg": {
-        color: (theme) => theme.palette.info.main,
+        color: theme.vars.palette.info.main,
         fontSize: "1.2rem",
       },
     },
@@ -54,7 +55,7 @@ export const treeItemStyles: SxProps<Theme> = {
     fontSize: 14,
     fontWeight: 450,
   },
-};
+});
 
 export const editableRowStyles: SxProps<Theme> = {
   display: "flex",
@@ -63,7 +64,7 @@ export const editableRowStyles: SxProps<Theme> = {
   borderRadius: 1,
   px: 1,
   py: 0.25,
-  backgroundColor: (theme) => `${theme.palette.info.main}08`,
+  backgroundColor: (theme) => transparentizeColor(theme.vars.palette.info.main, 97),
 };
 
 export const textFieldStyles: SxProps<Theme> = {

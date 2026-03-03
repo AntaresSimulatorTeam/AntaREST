@@ -64,7 +64,7 @@ interface Props {
 
 const TinyText = styled(Typography)(({ theme }) => ({
   fontSize: "16px",
-  color: theme.palette.text.secondary,
+  color: theme.vars.palette.text.secondary,
 }));
 
 const StudyCard = memo((props: Props) => {

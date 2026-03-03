@@ -27,9 +27,9 @@ const StyledList = styled(FixedSizeList)(({ theme }) => ({
     cursor: "pointer",
     "&:hover": {
       textDecoration: "underline",
-      color: theme.palette.text.primary,
+      color: theme.vars.palette.text.primary,
       "&>svg": {
-        color: `${theme.palette.text.primary} !important`,
+        color: `${theme.vars.palette.text.primary} !important`,
       },
     },
   },
