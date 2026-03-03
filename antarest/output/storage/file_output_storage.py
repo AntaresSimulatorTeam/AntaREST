@@ -34,21 +34,21 @@ from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_arc
 from antarest.core.utils.utils import StopWatch
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
-from antarest.study.model import (
-    DEFAULT_WORKSPACE_NAME,
-    MatrixFrequency,
-    MatrixIndex,
-)
-from antarest.study.output.aggregator_management import AggregatorManager
-from antarest.study.output.output_model import OutputVariablesList
-from antarest.study.output.storage.output_storage import (
+from antarest.output.aggregator_management import AggregatorManager
+from antarest.output.output_model import OutputVariablesList
+from antarest.output.storage.output_storage import (
     IOutputStorage,
     OutputDetails,
     OutputMetadata,
     OutputStorageType,
 )
-from antarest.study.output.utils import QueryFileType
-from antarest.study.output.variables_management import extract_variables_list
+from antarest.output.utils import QueryFileType
+from antarest.output.variables_management import extract_variables_list
+from antarest.study.model import (
+    DEFAULT_WORKSPACE_NAME,
+    MatrixFrequency,
+    MatrixIndex,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (

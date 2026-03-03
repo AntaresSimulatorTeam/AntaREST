@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from antarest.study.output.filestudy.extract_metadata import extract_metadata
+from antarest.output.filestudy.extract_metadata import extract_metadata
 
 
 @pytest.fixture

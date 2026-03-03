@@ -15,8 +15,8 @@ import pytest
 from sqlalchemy import Engine
 
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.output.storage.repository import DbOutputMetadata, OutputMetadataRepository
 from antarest.study.model import Study
-from antarest.study.output.storage.repository import DbOutputMetadata, OutputMetadataRepository
 from antarest.study.repository import StudyMetadataRepository
 
 

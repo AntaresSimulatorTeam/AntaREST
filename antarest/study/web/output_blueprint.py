@@ -30,22 +30,22 @@ from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.dict_utils import remove_nones
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.study.model import MatrixFrequency, MatrixIndex, StudyDownloadDTO
-from antarest.study.output.output_model import (
+from antarest.output.output_model import (
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesType,
     OutputVariablesViewResponse,
 )
-from antarest.study.output.output_service import OutputService
-from antarest.study.output.storage.output_storage import OutputDetails, OutputStorageType
-from antarest.study.output.utils import (
+from antarest.output.output_service import OutputService
+from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
+from antarest.output.utils import (
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
 )
-from antarest.study.output.variables_management import OutputItemId
+from antarest.output.variables_management import OutputItemId
+from antarest.study.model import MatrixFrequency, MatrixIndex, StudyDownloadDTO
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
 logger = logging.getLogger(__name__)

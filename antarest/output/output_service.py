@@ -45,32 +45,25 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.model import (
-    MatrixAggregationResultDTO,
-    MatrixFrequency,
-    MatrixIndex,
-    StudyDownloadDTO,
-    StudyDownloadType,
-)
-from antarest.study.output.aggregator_management import (
+from antarest.output.aggregator_management import (
     AREA_COL,
     CLUSTER_ID_COL,
     LINK_COL,
 )
-from antarest.study.output.output_model import (
+from antarest.output.output_model import (
     OutputVariables,
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesViewResponse,
     OutputVariablesViewStatus,
 )
-from antarest.study.output.storage.output_storage import (
+from antarest.output.storage.output_storage import (
     IOutputStorage,
     OutputDetails,
     OutputMetadata,
     OutputStorageType,
 )
-from antarest.study.output.utils import (
+from antarest.output.utils import (
     MCYEAR_COL,
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
@@ -80,7 +73,7 @@ from antarest.study.output.utils import (
     add_time_index_to_dataframe,
     split_concatenated_columns_from_dataframe,
 )
-from antarest.study.output.variables_management import (
+from antarest.output.variables_management import (
     OutputItemId,
     check_output_variable_exists,
     create_output_view_db_model,
@@ -88,7 +81,14 @@ from antarest.study.output.variables_management import (
     get_output_view_inside_db,
     get_query_file,
 )
-from antarest.study.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
+from antarest.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
+from antarest.study.model import (
+    MatrixAggregationResultDTO,
+    MatrixFrequency,
+    MatrixIndex,
+    StudyDownloadDTO,
+    StudyDownloadType,
+)
 from antarest.study.storage.df_download import export_df_chunks
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestUI,

@@ -24,18 +24,18 @@ from antarest.core.utils.utils import StopWatch
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.lfs.lfs import ILargeFileStorage
-from antarest.study.business.model.config.general_model import Mode
-from antarest.study.model import MatrixFrequency, MatrixIndex, StudySimResultDTO, StudySimSettingsDTO
-from antarest.study.output.filestudy.extract_metadata import extract_metadata
-from antarest.study.output.output_model import OutputVariablesList
-from antarest.study.output.storage.output_storage import (
+from antarest.output.filestudy.extract_metadata import extract_metadata
+from antarest.output.output_model import OutputVariablesList
+from antarest.output.storage.output_storage import (
     IOutputStorage,
     OutputDetails,
     OutputMetadata,
     OutputStorageType,
 )
-from antarest.study.output.storage.repository import DbOutputMetadata, OutputMetadataRepository
-from antarest.study.output.utils import QueryFileType
+from antarest.output.storage.repository import DbOutputMetadata, OutputMetadataRepository
+from antarest.output.utils import QueryFileType
+from antarest.study.business.model.config.general_model import Mode
+from antarest.study.model import MatrixFrequency, MatrixIndex, StudySimResultDTO, StudySimSettingsDTO
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 from antarest.study.storage.utils import extract_output_name, fix_study_root
 

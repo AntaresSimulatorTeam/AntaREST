@@ -13,10 +13,10 @@
 from typing import Dict, List
 
 from antarest.core.serde import AntaresBaseModel
+from antarest.output.storage.output_storage import OutputDetails
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.district_model import District
 from antarest.study.model import StudyVersionInt
-from antarest.study.output.storage.output_storage import OutputDetails
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
     EnrModelling,

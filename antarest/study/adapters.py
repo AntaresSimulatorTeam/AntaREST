@@ -13,8 +13,8 @@ from pathlib import Path
 
 from typing_extensions import override
 
-from antarest.study.output.output_service import OutputService
-from antarest.study.output.storage.output_storage import OutputDetails, OutputMetadata
+from antarest.output.output_service import OutputService
+from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
 from antarest.study.service import IOutputsAccess
 
 

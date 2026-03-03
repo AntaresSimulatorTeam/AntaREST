@@ -50,16 +50,16 @@ from antarest.login.service import LoginService
 from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
+from antarest.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
+from antarest.output.output_service import OutputService
+from antarest.output.storage.file_output_storage import InStudyFileOutputStorage
+from antarest.output.storage.output_storage import IOutputStorage
+from antarest.output.storage.repository import OutputMetadataRepository
+from antarest.output.storage.v2_output_storage import V2OutputStorage
+from antarest.output.variable_view_gc import VariableViewGarbageCollector
 from antarest.study.adapters import adapt_output_service_to_study_service
 from antarest.study.dao.database.database_blob_usage_provider import DatabaseBlobUsageProvider
 from antarest.study.main import build_study_service
-from antarest.study.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
-from antarest.study.output.output_service import OutputService
-from antarest.study.output.storage.file_output_storage import InStudyFileOutputStorage
-from antarest.study.output.storage.output_storage import IOutputStorage
-from antarest.study.output.storage.repository import OutputMetadataRepository
-from antarest.study.output.storage.v2_output_storage import V2OutputStorage
-from antarest.study.output.variable_view_gc import VariableViewGarbageCollector
 from antarest.study.service import StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer

@@ -12,8 +12,8 @@
 from pathlib import Path
 
 from antarest.core.serde.ini_reader import IniReader
+from antarest.output.storage.output_storage import OutputDetails
 from antarest.study.business.model.config.general_model import Mode
-from antarest.study.output.storage.output_storage import OutputDetails
 
 DUPLICATE_KEYS = [
     "playlist_year_weight",

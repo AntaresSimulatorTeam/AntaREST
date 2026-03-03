@@ -43,12 +43,12 @@ from antarest.login.repository import (
 from antarest.login.service import LoginService
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory
+from antarest.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
+from antarest.output.output_service import OutputService
+from antarest.output.storage.file_output_storage import InStudyFileOutputStorage
 from antarest.study.adapters import adapt_output_service_to_study_service
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import STUDY_VERSION_9_3
-from antarest.study.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
-from antarest.study.output.output_service import OutputService
-from antarest.study.output.storage.file_output_storage import InStudyFileOutputStorage
 from antarest.study.repository import DirectoryRepository, StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory

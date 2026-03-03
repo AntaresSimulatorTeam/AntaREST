@@ -22,7 +22,7 @@ from antarest.launcher.repository import JobResultRepository, SolverPresetsRepos
 from antarest.launcher.service import LauncherService
 from antarest.launcher.web import create_launcher_api
 from antarest.login.service import LoginService
-from antarest.study.output.output_service import OutputService
+from antarest.output.output_service import OutputService
 from antarest.study.service import StudyService
 
 

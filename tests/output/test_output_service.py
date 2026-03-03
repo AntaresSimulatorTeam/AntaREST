@@ -22,15 +22,11 @@ from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.utils import current_time
+from antarest.output.output_service import IStudyMetadataProvider, OutputService, StudyMetadata
+from antarest.output.storage.file_output_storage import FileStudyOutputs, IFileOutputsProvider, InStudyFileOutputStorage
 from antarest.study.model import (
     RawStudy,
     Study,
-)
-from antarest.study.output.output_service import IStudyMetadataProvider, OutputService, StudyMetadata
-from antarest.study.output.storage.file_output_storage import (
-    FileStudyOutputs,
-    IFileOutputsProvider,
-    InStudyFileOutputStorage,
 )
 from antarest.study.storage.utils import is_output_archived
 from antarest.study.storage.variantstudy.model.command_context import CommandContext

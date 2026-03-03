@@ -15,7 +15,7 @@ from unittest.mock import Mock
 
 from antarest.core.config import Config, StorageConfig
 from antarest.core.filetransfer.model import FileDownloadDTO, FileDownloadTaskDTO
-from antarest.study.output.output_service import OutputService
+from antarest.output.output_service import OutputService
 from tests.storage.conftest import SimpleFileTransferManager
 from tests.storage.integration.conftest import UUID
 from tests.storage.web.test_studies_bp import create_test_client

@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 import pytest
 
-from antarest.study.output.output_model import OutputVariablesType
-from antarest.study.output.variables_management import (
+from antarest.output.output_model import OutputVariablesType
+from antarest.output.variables_management import (
     AreaOutputId,
     LinkOutputId,
     OutputItemId,
