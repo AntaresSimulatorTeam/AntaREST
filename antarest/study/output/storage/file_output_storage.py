@@ -164,7 +164,7 @@ def _copy_file(src: Path, dst_root: Path, dst: PurePosixPath) -> None:
     Copies src to dst inside dst_root, dst_root being either a dict or a zip file.
     """
     if is_zip(dst_root):
-        with zipfile.ZipFile(dst_root) as zf:
+        with zipfile.ZipFile(dst_root, mode="w") as zf:
             zf.write(src, str(dst))
     else:
         shutil.copyfile(src, dst_root / dst)
@@ -468,7 +468,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         return extract_variables_list(study_outputs.outputs_path / output_id)
 
     @override
-    def get_logs(self, study_id: str, output_id: str, job_id: str, log_type: LogType) -> str:
+    def get_logs(self, study_id: str, output_id: str, log_type: LogType) -> str:
         study_outputs = self._outputs_provider.get_outputs(study_id)
         file_study = study_outputs.get_file_study()
 

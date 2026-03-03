@@ -415,7 +415,7 @@ class LauncherService:
 
         launcher_logs: str
         if job_result.output_id:
-            launcher_logs = self.output_service.get_logs(job_result.study_id, job_result.output_id, job_id, log_type)
+            launcher_logs = self.output_service.get_logs(job_result.study_id, job_result.output_id, log_type)
         else:
             if job_result.launcher is None:
                 raise ValueError(f"Job {job_id} has no launcher")
@@ -668,7 +668,7 @@ class LauncherService:
         if launcher is None:
             raise ValueError(f"Job {job_id} has no launcher")
         launch_progress_json: Dict[str, float] = self.launchers[launcher].cache.get(id=f"Launch_Progress_{job_id}") or {
-            "progress": 0
+            "progress": 0.0
         }
         return launch_progress_json.get("progress", 0)
 

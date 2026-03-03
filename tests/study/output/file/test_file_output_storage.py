@@ -29,6 +29,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
+from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
@@ -377,6 +378,22 @@ def test_import_output_directory(
         OutputMetadata(id="20201014-1422eco-hello", in_study=True, archived=False)
     ]
 
+    # Import directory with logs and suffix
+    out_logs = tmp_path / "out.log"
+    out_logs.write_text("some log")
+    err_logs = tmp_path / "err.log"
+    err_logs.write_text("some error")
+    file_output_storage.import_output(
+        "my-study", output_dir, output_name_suffix="other", logs=SimulationLogs(out_logs, err_logs)
+    )
+    assert file_output_storage.list_outputs("my-study") == [
+        OutputMetadata(id="20201014-1422eco-hello", in_study=True, archived=False),
+        OutputMetadata(id="20201014-1422eco-other", in_study=True, archived=False),
+    ]
+
+    assert file_output_storage.get_logs("my-study", "20201014-1422eco-other", LogType.STDOUT) == "some log"
+    assert file_output_storage.get_logs("my-study", "20201014-1422eco-other", LogType.STDERR) == "some error"
+
 
 def test_import_output_zip_should_import_it_as_archived(
     file_output_storage: InStudyFileOutputStorage, tmp_path: Path, sta_mini_zip_path: Path
@@ -395,11 +412,29 @@ def test_import_output_zip_should_import_it_as_archived(
     archive_dir(src_dir_path=output_dir, target_archive_path=zip_path, remove_source_dir=True)
 
     # Import zip file
-    file_output_storage.import_output("my-study", zip_path)
+    output_id = file_output_storage.import_output("my-study", zip_path)
 
+    assert output_id == "20201014-1422eco-hello"
     assert file_output_storage.list_outputs("my-study") == [
         OutputMetadata(id="20201014-1422eco-hello", in_study=True, archived=True)
     ]
+
+    # Import zip file with logs and suffix. Suffix will not work, since we don't update it in-zip !
+    # TODO: check it was already not the case
+    out_logs = tmp_path / "out.log"
+    out_logs.write_text("some log")
+    err_logs = tmp_path / "err.log"
+    err_logs.write_text("some error")
+    output_id = file_output_storage.import_output(
+        "my-study", zip_path, output_name_suffix="other", logs=SimulationLogs(out_logs, err_logs)
+    )
+    assert output_id == "20201014-1422eco-other"
+    assert file_output_storage.list_outputs("my-study") == [
+        OutputMetadata(id="20201014-1422eco-hello", in_study=True, archived=True),
+    ]
+
+    assert file_output_storage.get_logs("my-study", "20201014-1422eco-hello", LogType.STDOUT) == "some log"
+    assert file_output_storage.get_logs("my-study", "20201014-1422eco-hello", LogType.STDERR) == "some error"
 
 
 @pytest.mark.parametrize("archive_format", [ArchiveFormat.ZIP, ArchiveFormat.SEVEN_ZIP])

@@ -16,8 +16,8 @@ import math
 import os
 import re
 import shutil
-import tempfile
 from datetime import datetime, timedelta
+from io import StringIO
 from pathlib import Path
 from typing import List, Optional, Sequence, cast
 from uuid import uuid4
@@ -46,7 +46,6 @@ from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.utils.archives import is_archive_format
-from antarest.core.utils.utils import StopWatch
 from antarest.login.utils import require_current_user
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -163,17 +162,20 @@ def is_output_archived(path_output: Path) -> bool:
 
 
 def extract_output_name(path_output: Path, new_suffix_name: Optional[str] = None) -> str:
+    """
+    Constructs the full output name such as "20201014-1422eco-hello" from the info.antares-output file content.
+
+    If new_suffix_name is provided, replaces the part suffix part ("hello" in the example) with that new suffix,
+    and updates the file so that it's consistent with that new suffix.
+
+    Warning: the update part will not work for zip files, which don't allow in place updates.
+    """
     ini_reader = IniReader()
     archived = is_output_archived(path_output)
     if archived:
-        temp_dir = tempfile.TemporaryDirectory()
-        s = StopWatch()
         with ZipFile(path_output, "r") as zip_obj:
-            zip_obj.extract("info.antares-output", temp_dir.name)
-            info_antares_output = ini_reader.read(Path(temp_dir.name) / "info.antares-output")
-        s.log_elapsed(lambda x: logger.info(f"info.antares_output has been read in {x}s"))
-        temp_dir.cleanup()
-
+            content = zip_obj.read("info.antares-output")
+            info_antares_output = ini_reader.read(StringIO(content.decode("utf-8")))
     else:
         info_antares_output = ini_reader.read(path_output / "info.antares-output")
 
@@ -188,8 +190,7 @@ def extract_output_name(path_output: Path, new_suffix_name: Optional[str] = None
         suffix_name = new_suffix_name
         general_info["name"] = suffix_name
         if not archived:
-            ini_writer = IniWriter()
-            ini_writer.write(info_antares_output, path_output / "info.antares-output")
+            IniWriter().write(info_antares_output, path_output / "info.antares-output")
         else:
             logger.warning("Could not rewrite the new name inside the output: the output is archived")
 

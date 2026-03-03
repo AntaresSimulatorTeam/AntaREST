@@ -93,17 +93,20 @@ class IOutputStorage(ABC):
         """
         Import an outputs to the storage.
 
-        Accepts either:
+        Currently accepts either:
          - a binary IO, in which case either a zip or 7z file is expected, with no nested directories.
-         - a path to zip file, with no nested directories.
+         - a path to a zip file, with no nested directories.
          - a path to a directory, where the actual output dir could be a child of that directory.
 
-        Note that in the case of a zip file path, the output will be considered archived.
+        In the case of a zip file path, the output will be considered archived.
+
+        This behaviour is inherited from legacy implementation, it should be clarified.
 
         Args:
             study_id: the study id
-            output: Path to the output, either zipped or not.
-            output_name: Optional name suffix to append to the output name
+            output: either a path to a directory or a zip, or binary IO corresponding to the content of an archive.
+            output_name_suffix: Optional name suffix to append to the output name, for example "hello" will
+                                appear at the end of the output name as "20201014-1422eco-hello"
 
         Returns: the output identifier inside the study
         """
@@ -203,7 +206,7 @@ class IOutputStorage(ABC):
         """
 
     @abstractmethod
-    def get_logs(self, study_id: str, output_id: str, job_id: str, log_type: LogType) -> str:
+    def get_logs(self, study_id: str, output_id: str, log_type: LogType) -> str:
         """
         Retrieve logs.
         """

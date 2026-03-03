@@ -859,6 +859,6 @@ class OutputService:
     def list_outputs(self, study_id: str) -> Iterable[OutputMetadata]:
         return itertools.chain(*(s.list_outputs(study_id) for s in self._storages))
 
-    def get_logs(self, study_id: str, output_id: str, job_id: str, log_type: LogType) -> str:
+    def get_logs(self, study_id: str, output_id: str, log_type: LogType) -> str:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-        return self._find_output_storage(study_id, output_id).get_logs(study_id, output_id, job_id, log_type)
+        return self._find_output_storage(study_id, output_id).get_logs(study_id, output_id, log_type)

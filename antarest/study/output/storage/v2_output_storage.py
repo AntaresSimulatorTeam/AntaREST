@@ -283,6 +283,6 @@ class V2OutputStorage(IOutputStorage):
         raise NotImplementedError()
 
     @override
-    def get_logs(self, study_id: str, output_id: str, job_id: str, log_type: LogType) -> str:
+    def get_logs(self, study_id: str, output_id: str, log_type: LogType) -> str:
         # TODO: at import time, extract log files and store them in database
         raise NotImplementedError()

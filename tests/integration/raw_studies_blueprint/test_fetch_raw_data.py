@@ -564,10 +564,12 @@ class TestFetchRawData:
         assert res.status_code == 200
         task_id = res.json()
         wait_for(
-            lambda: client.get(
-                f"/v1/tasks/{task_id}",
-            ).json()["status"]
-            == 3
+            lambda: (
+                client.get(
+                    f"/v1/tasks/{task_id}",
+                ).json()["status"]
+                == 3
+            )
         )
 
         # retrieve a `Desktop.ini` file from inside the archive
