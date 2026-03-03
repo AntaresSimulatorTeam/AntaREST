@@ -13,9 +13,10 @@ import zipfile
 from io import BytesIO
 from pathlib import Path
 
-from integration.test_helpers.download import download_to_file
-from integration.test_helpers.outputs import create_minimal_output_zip_from_name
 from starlette.testclient import TestClient
+
+from tests.integration.test_helpers.download import download_to_file
+from tests.integration.test_helpers.outputs import create_minimal_output_zip_from_name
 
 
 def _zip_namelist(zip_path: Path) -> set[str]:

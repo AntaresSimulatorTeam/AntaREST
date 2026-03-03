@@ -12,8 +12,9 @@
 import io
 from pathlib import Path
 
-from integration.assets import ASSETS_DIR
 from starlette.testclient import TestClient
+
+from tests.integration.assets import ASSETS_DIR
 
 
 def test_import(admin_client: TestClient, internal_study_id: str, tmp_path: Path) -> None:

@@ -14,8 +14,6 @@ from pathlib import Path
 from unittest.mock import Mock
 from zipfile import ZipFile
 
-from integration.test_helpers.outputs import create_minimal_output_dir_from_name
-
 from antarest.blobstore.service import BlobService
 from antarest.core.config import InternalMatrixFormat
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
@@ -34,6 +32,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 from tests.conftest import empty_study_fixture
 from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import create_raw_study, dirhash, with_db_context
+from tests.integration.test_helpers.outputs import create_minimal_output_dir_from_name
 
 
 def test_export_flat_export_all_files_except_output(
