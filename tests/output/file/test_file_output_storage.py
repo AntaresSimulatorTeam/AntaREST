@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import datetime
 import os
 import shutil
 import tempfile
@@ -368,10 +369,12 @@ def test_import_output_directory(
     # Import directory
     file_output_storage.import_output("my-study", output_dir)
 
-    expected_output_dir = study_dir / "output" / "20201014-1422eco-hello"
+    # Cannot hard code the expected formatted date because it depends on the locale
+    expected_date = datetime.datetime(2020, 10, 14, 14, 22, 0, tzinfo=datetime.timezone.utc).strftime("%Y%m%d-%H%M")
+    expected_output_dir = study_dir / "output" / f"{expected_date}eco-hello"
     assert expected_output_dir.exists()
     assert file_output_storage.list_outputs("my-study") == [
-        OutputMetadata(id="20201014-1422eco-hello", in_study=True, archived=False)
+        OutputMetadata(id=f"{expected_date}eco-hello", in_study=True, archived=False)
     ]
 
     # Import directory with logs and suffix
@@ -383,12 +386,12 @@ def test_import_output_directory(
         "my-study", output_dir, output_name_suffix="other", logs=SimulationLogs(out_logs, err_logs)
     )
     assert file_output_storage.list_outputs("my-study") == [
-        OutputMetadata(id="20201014-1422eco-hello", in_study=True, archived=False),
-        OutputMetadata(id="20201014-1422eco-other", in_study=True, archived=False),
+        OutputMetadata(id=f"{expected_date}eco-hello", in_study=True, archived=False),
+        OutputMetadata(id=f"{expected_date}eco-other", in_study=True, archived=False),
     ]
 
-    assert file_output_storage.get_logs("my-study", "20201014-1422eco-other", LogType.STDOUT) == "some log"
-    assert file_output_storage.get_logs("my-study", "20201014-1422eco-other", LogType.STDERR) == "some error"
+    assert file_output_storage.get_logs("my-study", f"{expected_date}eco-other", LogType.STDOUT) == "some log"
+    assert file_output_storage.get_logs("my-study", f"{expected_date}eco-other", LogType.STDERR) == "some error"
 
 
 def test_import_output_zip_should_import_it_as_archived(
@@ -410,9 +413,11 @@ def test_import_output_zip_should_import_it_as_archived(
     # Import zip file
     output_id = file_output_storage.import_output("my-study", zip_path)
 
-    assert output_id == "20201014-1422eco-hello"
+    # Cannot hard code the expected formatted date because it depends on the locale
+    expected_date = datetime.datetime(2020, 10, 14, 14, 22, 0, tzinfo=datetime.timezone.utc).strftime("%Y%m%d-%H%M")
+    assert output_id == f"{expected_date}eco-hello"
     assert file_output_storage.list_outputs("my-study") == [
-        OutputMetadata(id="20201014-1422eco-hello", in_study=True, archived=True)
+        OutputMetadata(id=f"{expected_date}eco-hello", in_study=True, archived=True)
     ]
 
     # Import zip file with logs and suffix
@@ -423,16 +428,16 @@ def test_import_output_zip_should_import_it_as_archived(
     output_id = file_output_storage.import_output(
         "my-study", zip_path, output_name_suffix="other", logs=SimulationLogs(out_logs, err_logs)
     )
-    assert output_id == "20201014-1422eco-other"
+    assert output_id == f"{expected_date}eco-other"
     assert file_output_storage.list_outputs("my-study") == [
-        OutputMetadata(id="20201014-1422eco-hello", in_study=True, archived=True),
-        OutputMetadata(id="20201014-1422eco-other", in_study=True, archived=True),
+        OutputMetadata(id=f"{expected_date}eco-hello", in_study=True, archived=True),
+        OutputMetadata(id=f"{expected_date}eco-other", in_study=True, archived=True),
     ]
 
-    file_output_storage.unarchive_study_output("my-study", "20201014-1422eco-other")
+    file_output_storage.unarchive_study_output("my-study", f"{expected_date}eco-other")
 
-    assert file_output_storage.get_logs("my-study", "20201014-1422eco-other", LogType.STDOUT) == "some log"
-    assert file_output_storage.get_logs("my-study", "20201014-1422eco-other", LogType.STDERR) == "some error"
+    assert file_output_storage.get_logs("my-study", f"{expected_date}eco-other", LogType.STDOUT) == "some log"
+    assert file_output_storage.get_logs("my-study", f"{expected_date}eco-other", LogType.STDERR) == "some error"
 
 
 @pytest.mark.parametrize("archive_format", [ArchiveFormat.ZIP, ArchiveFormat.SEVEN_ZIP])
@@ -461,6 +466,9 @@ def test_import_output_archive_stream(
     with open(archive_path, "rb") as f:
         file_output_storage.import_output("my-study", f)
 
+    # Cannot hard code the expected formatted date because it depends on the locale
+    expected_date = datetime.datetime(2020, 10, 14, 14, 22, 0, tzinfo=datetime.timezone.utc).strftime("%Y%m%d-%H%M")
+
     assert file_output_storage.list_outputs("my-study") == [
-        OutputMetadata(id="20201014-1422eco-hello", in_study=True, archived=False)
+        OutputMetadata(id=f"{expected_date}eco-hello", in_study=True, archived=False)
     ]
