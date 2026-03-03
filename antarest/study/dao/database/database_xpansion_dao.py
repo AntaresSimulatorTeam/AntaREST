@@ -35,6 +35,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionAdequacyPattern,
     XpansionCandidate,
+    XpansionLink,
     XpansionResourceFileType,
     XpansionSensitivitySettings,
     XpansionSettings,
@@ -89,9 +90,8 @@ class DatabaseXpansionDao(XpansionDao):
         area_from = data.pop("link_area_from")
         area_to = data.pop("link_area_to")
         del data["study_id"]
-        # Pass the link as a string so the XpansionLinkStr validator parses it.
-        data["link"] = f"{area_from} - {area_to}"
-        return XpansionCandidate(**data)
+        data["link"] = XpansionLink(area_from=area_from, area_to=area_to).serialize()
+        return XpansionCandidate.model_validate(data)
 
     def _assert_link_exists(self, candidate: XpansionCandidate) -> None:
         area_from = candidate.link.area_from
@@ -121,6 +121,7 @@ class DatabaseXpansionDao(XpansionDao):
         result = self._db_session.execute(
             delete(XPANSION_SETTINGS_TABLE).where(XPANSION_SETTINGS_TABLE.c.study_id == self._study_id)
         )
+        # need this assert so mypy don't yell when I access rowcount
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
             raise XpansionConfigurationDoesNotExist(self._study_id)
@@ -201,11 +202,20 @@ class DatabaseXpansionDao(XpansionDao):
 
     @override
     def checks_xpansion_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
-        # Projection validity is enforced at save time by the DB FK RESTRICT on
-        # xpansion_sensitivity_projection → xpansion_candidate.
         # File existence checks for additional_constraints and yearly_weights
         # require blob storage access, which is not yet available in the database DAO.
-        pass
+        if not settings.sensitivity_config or not settings.sensitivity_config.projection:
+            return
+        projection = settings.sensitivity_config.projection
+        existing = {
+            row.name
+            for row in self._db_session.execute(
+                select(XPANSION_CANDIDATE_TABLE.c.name).where(XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
+            ).fetchall()
+        }
+        missing = [name for name in projection if name not in existing]
+        if missing:
+            raise CandidateNotFoundError(f"Candidates not found: {', '.join(missing)}")
 
     # ------------------------------------------------------------------
     # XpansionDao — candidates
@@ -252,6 +262,7 @@ class DatabaseXpansionDao(XpansionDao):
                     & (XPANSION_CANDIDATE_TABLE.c.name == candidate_name)
                 )
             )
+            # need this assert so mypy don't yell when I access rowcount
             assert isinstance(result, CursorResult)
             if result.rowcount == 0:
                 raise CandidateNotFoundError(f"The candidate '{candidate_name}' does not exist")

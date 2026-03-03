@@ -32,20 +32,22 @@ Scenario per iteration
   16. delete_xpansion_configuration
 
 Usage (standalone — run from project root):
-    python -m tests.study.dao.bench_database_xpansion_dao [iterations]
+    python -m tests.study.dao.bench_database_xpansion_dao \\
+        --db-url "postgresql://USER:PASS@localhost/antarest_bench" [-n ITERATIONS] [--warmup N]
 
 Usage (pytest, smoke-level):
     pytest tests/study/dao/bench_database_xpansion_dao.py -v -s
 """
 
+import argparse
+import gc
 import statistics
-import sys
 import time
 import uuid
 from contextlib import contextmanager
 from typing import Generator
 
-from sqlalchemy import StaticPool, create_engine
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from antarest.dbmodel import Base
@@ -66,13 +68,13 @@ from tests.helpers import create_study
 # Infrastructure helpers
 # ---------------------------------------------------------------------------
 
+_DEFAULT_DB_URL = "postgresql://antarest:antarest@localhost/antarest_bench"
 
-def _build_engine():
-    engine = create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
+
+def _build_engine(db_url: str):
+    # Use a small pool — mirrors a real application setup.
+    engine = create_engine(db_url, pool_size=5, max_overflow=0)
+
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
     return engine
@@ -189,6 +191,27 @@ def _run_scenario(dao: DatabaseStudyDao, timer: "Timer") -> None:
 # ---------------------------------------------------------------------------
 
 
+def _trimmed_mean(samples: list[float], cut: float = 0.05) -> float:
+    """Mean after dropping the bottom `cut` and top `cut` fraction of samples."""
+    s = sorted(samples)
+    k = int(len(s) * cut)
+    trimmed = s[k : len(s) - k] if k > 0 else s
+    return statistics.mean(trimmed)
+
+
+def _make_stats(samples: list[float]) -> dict:
+    return {
+        "n": len(samples),
+        "mean_ms": statistics.mean(samples) * 1_000,
+        "tmean_ms": _trimmed_mean(samples) * 1_000,
+        "median_ms": statistics.median(samples) * 1_000,
+        "stdev_ms": statistics.stdev(samples) * 1_000 if len(samples) > 1 else 0.0,
+        "min_ms": min(samples) * 1_000,
+        "max_ms": max(samples) * 1_000,
+        "total_ms": sum(samples) * 1_000,
+    }
+
+
 class Timer:
     def __init__(self) -> None:
         self._buckets: dict[str, list[float]] = {}
@@ -200,17 +223,7 @@ class Timer:
         self._buckets.setdefault(name, []).append(time.perf_counter() - t0)
 
     def stats(self) -> dict[str, dict]:
-        return {
-            name: {
-                "n": len(s),
-                "mean_ms": statistics.mean(s) * 1_000,
-                "stdev_ms": statistics.stdev(s) * 1_000 if len(s) > 1 else 0.0,
-                "min_ms": min(s) * 1_000,
-                "max_ms": max(s) * 1_000,
-                "total_ms": sum(s) * 1_000,
-            }
-            for name, s in self._buckets.items()
-        }
+        return {name: _make_stats(s) for name, s in self._buckets.items()}
 
 
 # ---------------------------------------------------------------------------
@@ -218,35 +231,77 @@ class Timer:
 # ---------------------------------------------------------------------------
 
 
-def run_benchmark(iterations: int) -> dict[str, dict]:
-    engine = _build_engine()
+def _populate_background_data(
+    make_session: sessionmaker, matrix_service: InMemorySimpleMatrixService, n: int
+) -> list[DatabaseStudyDao]:
+    """Insert n xpansion configurations with 3 candidates each. Returns the DAOs for later cleanup."""
+    session = make_session()
+    daos = []
+    for i in range(n):
+        dao = _build_dao(session, matrix_service)
+        dao.save_area("Paris")
+        dao.save_area("Lyon")
+        dao.create_xpansion_configuration()
+        dao.save_xpansion_candidate(_candidate(f"bg_cand_{i}_a", "lyon", "paris"))
+        dao.save_xpansion_candidate(_candidate(f"bg_cand_{i}_b", "lyon", "paris", cost=2_000.0))
+        dao.save_xpansion_candidate(_candidate(f"bg_cand_{i}_c", "lyon", "paris", cost=500.0))
+        daos.append(dao)
+    session.close()
+    return daos
+
+
+def _delete_background_data(daos: list[DatabaseStudyDao], timer: "Timer") -> None:
+    """Delete all background configurations — runs after measurement so deletes hit a full table."""
+    for dao in daos:
+        with timer.measure("delete_xpansion_configuration (background)"):
+            dao.delete_xpansion_configuration()
+
+
+def run_benchmark(
+    iterations: int, db_url: str = _DEFAULT_DB_URL, warmup: int = 50, background_rows: int = 1_000
+) -> dict[str, dict]:
+    engine = _build_engine(db_url)
     matrix_service = InMemorySimpleMatrixService()
     make_session = sessionmaker(bind=engine)
 
-    timer = Timer()
-    scenario_times: list[float] = []
+    _null_timer = Timer()  # discarded — absorbs warmup allocations
 
-    for _ in range(iterations):
-        session = make_session()
-        dao = _build_dao(session, matrix_service)
+    gc.collect()
+    gc.disable()
+    try:
+        # Populate background data so inserts/deletes run against non-empty tables.
+        background_daos = _populate_background_data(make_session, matrix_service, background_rows)
 
-        t0 = time.perf_counter()
-        _run_scenario(dao, timer)
-        scenario_times.append(time.perf_counter() - t0)
+        # Warmup: prime SQLAlchemy's statement cache and the connection pool.
+        for _ in range(warmup):
+            session = make_session()
+            dao = _build_dao(session, matrix_service)
+            _run_scenario(dao, _null_timer)
+            session.close()
 
-        session.close()
+        # Measurement.
+        timer = Timer()
+        scenario_times: list[float] = []
+        for _ in range(iterations):
+            session = make_session()
+            dao = _build_dao(session, matrix_service)
 
+            t0 = time.perf_counter()
+            _run_scenario(dao, timer)
+            scenario_times.append(time.perf_counter() - t0)
+
+            session.close()
+
+        # Delete background data — all deletes happen here, against a full table.
+        _delete_background_data(background_daos, timer)
+    finally:
+        gc.enable()
+
+    Base.metadata.drop_all(engine)
     engine.dispose()
 
     stats = timer.stats()
-    stats["[scenario total]"] = {
-        "n": len(scenario_times),
-        "mean_ms": statistics.mean(scenario_times) * 1_000,
-        "stdev_ms": statistics.stdev(scenario_times) * 1_000 if len(scenario_times) > 1 else 0.0,
-        "min_ms": min(scenario_times) * 1_000,
-        "max_ms": max(scenario_times) * 1_000,
-        "total_ms": sum(scenario_times) * 1_000,
-    }
+    stats["[scenario total]"] = _make_stats(scenario_times)
     return stats
 
 
@@ -258,8 +313,11 @@ _COL = 48
 
 
 def print_results(stats: dict[str, dict]) -> None:
-    header = f"{'Operation':<{_COL}} {'n':>6}  {'mean':>9}  {'cv':>7}  {'min':>9}  {'max':>9}  {'total':>11}"
-    sep = f"{'-' * _COL} {'-' * 6}  {'-' * 9}  {'-' * 7}  {'-' * 9}  {'-' * 9}  {'-' * 11}"
+    header = (
+        f"{'Operation':<{_COL}} {'n':>6}  {'mean':>9}  {'t.mean':>9}  {'median':>9}  {'cv':>7}  "
+        f"{'min':>9}  {'max':>9}  {'total':>11}"
+    )
+    sep = f"{'-' * _COL} {'-' * 6}  {'-' * 9}  {'-' * 9}  {'-' * 9}  {'-' * 7}  {'-' * 9}  {'-' * 9}  {'-' * 11}"
     print(f"\n{header}\n{sep}")
 
     for name, s in stats.items():
@@ -270,6 +328,8 @@ def print_results(stats: dict[str, dict]) -> None:
             f"{label:<{_COL}} "
             f"{s['n']:>6}  "
             f"{s['mean_ms']:>8.3f}ms  "
+            f"{s['tmean_ms']:>8.3f}ms  "
+            f"{s['median_ms']:>8.3f}ms  "
             f"{cv:>6.1f}%  "
             f"{s['min_ms']:>8.3f}ms  "
             f"{s['max_ms']:>8.3f}ms  "
@@ -283,8 +343,24 @@ def print_results(stats: dict[str, dict]) -> None:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    n = int(sys.argv[1]) if len(sys.argv) > 1 else 2_000
-    print(f"Running {n} iterations …")
-    print("(run as: python -m tests.study.dao.bench_database_xpansion_dao [N])")
-    stats = run_benchmark(iterations=n)
+    parser = argparse.ArgumentParser(description="Benchmark DatabaseXpansionDao")
+    parser.add_argument("-n", "--iterations", type=int, default=2_000, help="Number of iterations (default: 2000)")
+    parser.add_argument("--warmup", type=int, default=50, help="Warmup iterations, not measured (default: 50)")
+    parser.add_argument(
+        "--background-rows", type=int, default=1_000, help="Background configs pre-inserted (default: 1000)"
+    )
+    parser.add_argument(
+        "--db-url",
+        default=_DEFAULT_DB_URL,
+        help=f"SQLAlchemy DB URL (default: {_DEFAULT_DB_URL})",
+    )
+    args = parser.parse_args()
+
+    print(f"DB              : {args.db_url}")
+    print(f"Background rows : {args.background_rows}")
+    print(f"Warmup          : {args.warmup}")
+    print(f"Runs            : {args.iterations}")
+    stats = run_benchmark(
+        iterations=args.iterations, db_url=args.db_url, warmup=args.warmup, background_rows=args.background_rows
+    )
     print_results(stats)
