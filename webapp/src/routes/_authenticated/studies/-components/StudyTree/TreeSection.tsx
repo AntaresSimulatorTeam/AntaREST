@@ -70,8 +70,8 @@ const variantStyles: Record<
   },
   external: {
     container: (theme) => ({
-      backgroundColor: transparentizeColor(theme.vars.palette.grey[500], 95),
-      borderLeft: `3px solid ${theme.vars.palette.grey[500]}`,
+      backgroundColor: transparentizeColor(theme.vars.palette.action.disabled, 80),
+      borderLeft: `3px solid ${theme.vars.palette.action.disabled}`,
       p: 0.5,
     }),
     icon: {

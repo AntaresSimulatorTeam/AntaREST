@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import { transparentizeColor } from "@/utils/muiUtils";
 import FolderIcon from "@mui/icons-material/Folder";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import StorageIcon from "@mui/icons-material/Storage";
@@ -26,8 +25,6 @@ export const treeNodeIcons = {
 
 export const treeItemStyles: SxProps<Theme> = (theme) => ({
   "& > .MuiTreeItem-content": {
-    borderRadius: 1,
-    px: 1,
     py: 0.25,
     "&:hover": {
       backgroundColor: theme.vars.palette.action.hover,
@@ -39,7 +36,7 @@ export const treeItemStyles: SxProps<Theme> = (theme) => ({
       },
     },
     "&.Mui-selected.Mui-focused": {
-      backgroundColor: transparentizeColor(theme.vars.palette.info.main, 85),
+      backgroundColor: theme.vars.palette.action.selected,
     },
     "& .MuiTreeItem-iconContainer": {
       mr: 0.5,
@@ -49,13 +46,11 @@ export const treeItemStyles: SxProps<Theme> = (theme) => ({
       "& svg": {
         color: theme.vars.palette.text.secondary,
         fontSize: "1.2rem",
-        opacity: 0.7,
       },
     },
     "& > .MuiTreeItem-label": {
       fontSize: 14,
       fontWeight: 450,
-      color: theme.vars.palette.text.secondary,
     },
   },
 });
@@ -63,14 +58,9 @@ export const treeItemStyles: SxProps<Theme> = (theme) => ({
 export const workspaceItemStyles: SxProps<Theme> = [
   treeItemStyles,
   {
-    "& > .MuiTreeItem-content": {
-      "& .MuiTreeItem-iconContainer svg": {
-        fontSize: "1.1rem",
-        opacity: 0.8,
-      },
-      "& > .MuiTreeItem-label": {
-        color: "inherit",
-      },
+    "& > .MuiTreeItem-content .MuiTreeItem-iconContainer svg": {
+      fontSize: "1.1rem",
+      opacity: 0.8,
     },
   },
 ];

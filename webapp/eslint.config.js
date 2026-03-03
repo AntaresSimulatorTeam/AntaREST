@@ -85,7 +85,11 @@ export default [
           patterns: [
             {
               group: ["@mui/material/*"],
-              message: 'Import from "@mui/material" ',
+              message: 'Import from "@mui/material"',
+            },
+            {
+              group: ["@mui/x-tree-view/*"],
+              message: 'Import from "@mui/x-tree-view"',
             },
             {
               group: ["react"],

@@ -12,25 +12,23 @@
  * This file is part of the Antares project.
  */
 
-import { Box, CircularProgress, type SxProps, type Theme, Tooltip } from "@mui/material";
-import { TreeItem, type TreeItemProps } from "@mui/x-tree-view/TreeItem";
-import { Children } from "react";
 import { mergeSxProp } from "@/utils/muiUtils";
+import { Box, CircularProgress, type SxProps, type Theme, Tooltip } from "@mui/material";
+import { TreeItem, type TreeItemProps } from "@mui/x-tree-view";
+import { Children } from "react";
 
 export interface TreeItemEnhancedProps extends TreeItemProps {
   loading?: boolean;
   disableTooltip?: boolean;
 }
 
-////////////////////////////////////////////////////////////////
-// Utils
-////////////////////////////////////////////////////////////////
+/**
+ * Utils
+ */
 
 function getStyles(canExpand: boolean): SxProps<Theme> {
   return {
     "& > .MuiTreeItem-content": {
-      p: 0,
-      alignItems: "normal",
       // Expand/collapse icon
       "& > .MuiTreeItem-iconContainer": {
         alignItems: "center",
@@ -78,9 +76,9 @@ function withLoading(label: TreeItemEnhancedProps["label"], loading: boolean) {
   );
 }
 
-////////////////////////////////////////////////////////////////
-// Component
-////////////////////////////////////////////////////////////////
+/**
+ * Component
+ */
 
 function TreeItemEnhanced({
   onClick,
@@ -93,6 +91,10 @@ function TreeItemEnhanced({
   const canExpand = Children.toArray(rest.children).length > 0;
   const enhancedLabel = withLoading(withTooltip(label, disableTooltip), loading);
   const styles = getStyles(canExpand);
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
 
   const handleClick: NonNullable<TreeItemEnhancedProps["onClick"]> = (event) => {
     // The item is not selected if the click is on the expand/collapse icon
