@@ -16,7 +16,6 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
-from helpers import with_admin_user, with_db_context
 from sqlalchemy import create_engine
 
 from antarest.blobstore.repository import BlobContentRepository
@@ -58,6 +57,7 @@ from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from tests.helpers import with_admin_user, with_db_context
 
 # TODO: remove that file
 
