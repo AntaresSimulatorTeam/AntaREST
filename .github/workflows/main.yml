@@ -9,9 +9,9 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: 3.11
       - name: Install uv
@@ -37,9 +37,9 @@ jobs:
 
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: 3.11
       - name: Install uv
@@ -53,7 +53,7 @@ jobs:
         run: uv run --frozen pytest --cov antarest --cov-report xml -n 4 --dist=worksteal
       - name: Archive code coverage results
         if: matrix.os == 'ubuntu-22.04'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: python-code-coverage-report
           path: coverage.xml
@@ -62,13 +62,13 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout github repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22.13.0
       - name: Cache node modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: webapp/node_modules
           key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
@@ -85,13 +85,13 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout github repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22.13.0
       - name: Restore node modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: webapp/node_modules
           key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
@@ -105,13 +105,13 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout github repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22.13.0
       - name: Restore node modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: webapp/node_modules
           key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
@@ -125,13 +125,13 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout github repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22.13.0
       - name: Restore node modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: webapp/node_modules
           key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
@@ -147,13 +147,13 @@ jobs:
     runs-on: ubuntu-22.04
     needs: [python-test, npm-test]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Download python coverage report
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: python-code-coverage-report
       - name: SonarCloud Scan
-        uses: sonarsource/sonarcloud-github-action@v3.1.0
+        uses: sonarsource/sonarcloud-github-action@v5.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
