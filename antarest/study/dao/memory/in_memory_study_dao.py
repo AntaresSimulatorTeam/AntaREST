@@ -874,13 +874,13 @@ class InMemoryStudyDao(StudyDao):
         self._xpansion_resources[XpansionResourceFileType.CONSTRAINTS][filename] = content
 
     @override
-    def save_xpansion_capacity(self, filename: str, series: str) -> None:
-        content = series.encode("utf-8")
+    def save_xpansion_capacity(self, filename: str, series_id: str) -> None:
+        content = series_id.encode("utf-8")
         self._xpansion_resources[XpansionResourceFileType.CAPACITIES][filename] = content
 
     @override
-    def save_xpansion_weight(self, filename: str, series: str) -> None:
-        content = series.encode("utf-8")
+    def save_xpansion_weight(self, filename: str, series_id: str) -> None:
+        content = series_id.encode("utf-8")
         self._xpansion_resources[XpansionResourceFileType.WEIGHTS][filename] = content
 
     @override
