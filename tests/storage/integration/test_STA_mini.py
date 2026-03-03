@@ -492,8 +492,15 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service: StudyService, c
     sta_mini_output_zip_path = Path(sta_mini_output_zip_filepath)
 
     study_output_data = io.BytesIO(sta_mini_output_zip_path.read_bytes())
+
     result = client.post(
-        f"/v1/studies/{UUID}/output",
+        "/v1/studies",
+        params={"name": "test"},
+    )
+    assert result.status_code == 201
+
+    result = client.post(
+        f"/v1/studies/{result.json()}/output",
         files={"output": study_output_data},
     )
 
