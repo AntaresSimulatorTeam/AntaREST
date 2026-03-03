@@ -23,11 +23,11 @@ from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToM
 from tests.study.dao.conftest import build_db_dao, build_real_case_study
 
 
-def test_get_matrix_from_path(dao_bd_930: DatabaseStudyDao, dao_fs_930: FileStudyTreeDao) -> None:
+def test_get_matrix_from_path(db_dao_930: DatabaseStudyDao, fs_dao_930: FileStudyTreeDao) -> None:
     ##########################
     # Set Up
     ##########################
-    for dao in [dao_bd_930, dao_fs_930]:
+    for dao in [db_dao_930, fs_dao_930]:
         result = build_real_case_study(dao)
         (
             load_df,
