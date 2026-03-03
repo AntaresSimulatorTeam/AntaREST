@@ -164,7 +164,7 @@ def _copy_file(src: Path, dst_root: Path, dst: PurePosixPath) -> None:
     Copies src to dst inside dst_root, dst_root being either a dict or a zip file.
     """
     if is_zip(dst_root):
-        with zipfile.ZipFile(dst_root, mode="w") as zf:
+        with zipfile.ZipFile(dst_root, mode="a") as zf:
             zf.write(src, str(dst))
     else:
         shutil.copyfile(src, dst_root / dst)

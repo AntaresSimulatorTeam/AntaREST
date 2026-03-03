@@ -419,8 +419,7 @@ def test_import_output_zip_should_import_it_as_archived(
         OutputMetadata(id="20201014-1422eco-hello", in_study=True, archived=True)
     ]
 
-    # Import zip file with logs and suffix. Suffix will not work, since we don't update it in-zip !
-    # TODO: check it was already not the case
+    # Import zip file with logs and suffix
     out_logs = tmp_path / "out.log"
     out_logs.write_text("some log")
     err_logs = tmp_path / "err.log"
@@ -431,9 +430,9 @@ def test_import_output_zip_should_import_it_as_archived(
     assert output_id == "20201014-1422eco-other"
     assert file_output_storage.list_outputs("my-study") == [
         OutputMetadata(id="20201014-1422eco-hello", in_study=True, archived=True),
+        OutputMetadata(id="20201014-1422eco-other", in_study=True, archived=True),
     ]
 
-    # TODO: fix this
     file_output_storage.unarchive_study_output("my-study", "20201014-1422eco-other")
 
     assert file_output_storage.get_logs("my-study", "20201014-1422eco-other", LogType.STDOUT) == "some log"
