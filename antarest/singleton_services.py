@@ -12,7 +12,7 @@
 
 import time
 from pathlib import Path
-from typing import Dict, List, cast
+from typing import List
 
 from antarest.core.config import Config
 from antarest.core.interfaces.service import IService
@@ -36,7 +36,7 @@ def _init(config_file: Path, services_list: List[Module]) -> list[IService]:
     res = get_local_path() / "resources"
     config = Config.from_yaml_file(res=res, file=config_file)
     engine = init_db_engine(config, False, config_file)
-    DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
+    DBSessionMiddleware(None, custom_engine=engine, session_args=SESSION_ARGS)
     configure_logger(config)
 
     core_services = create_core_services(None, config)

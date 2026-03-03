@@ -122,7 +122,7 @@ class FileOutputStorage(IOutputStorage):
             else:
                 extract_archive_from_stream(output, path_output, tmp_dir=self._tmp_dir)
 
-            stopwatch.log_elapsed(lambda elapsed_time: logger.info(f"Copied output for {study_id} in {elapsed_time}s"))
+            logger.info(f"Copied output for {study_id} in {stopwatch}s")
             fix_study_root(path_output)
             output_full_name = extract_output_name(path_output, output_name)
             extension = f"{ArchiveFormat.ZIP}" if is_zipped else ""
@@ -225,7 +225,7 @@ class FileOutputStorage(IOutputStorage):
         stopwatch = StopWatch()
         if not path_output_zip.exists():
             archive_dir(path_output, target, archive_format=ArchiveFormat.ZIP)
-        stopwatch.log_elapsed(lambda x: logger.info(f"Output {output_id} from study {study_id} exported in {x}s"))
+        logger.info(f"Output {output_id} from study {study_id} exported in {stopwatch}s")
 
     @override
     def output_exists(self, study_id: str, output_id: str) -> bool:

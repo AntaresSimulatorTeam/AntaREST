@@ -134,60 +134,58 @@ def test_nominal_case(storage_service, tmp_path: Path, command_context: CommandC
     )
 
     # Scenario builder
-    assert file_study_dao.get_rulesets() == {
-        "Default Ruleset": Ruleset(
-            load={"de": {"0": 1}, "es": {"0": 1}, "fr": {"0": 1}, "it": {"0": 1}},
-            thermal={
-                "de": {
-                    "01_solar": {"0": 1},
-                    "02_wind_on": {"0": 1},
-                    "03_wind_off": {"0": 1},
-                    "04_res": {"0": 1},
-                    "05_nuclear": {"0": 1},
-                    "06_coal": {"0": 1},
-                    "07_gas": {"0": 1},
-                    "08_non-res": {"0": 1},
-                    "09_hydro_pump": {"0": 1},
-                },
-                "es": {
-                    "01_solar": {"0": 1},
-                    "02_wind_on": {"0": 1},
-                    "03_wind_off": {"0": 1},
-                    "04_res": {"0": 1},
-                    "05_nuclear": {"0": 1},
-                    "06_coal": {"0": 1},
-                    "07_gas": {"0": 1},
-                    "08_non-res": {"0": 1},
-                    "09_hydro_pump": {"0": 1},
-                },
-                "fr": {
-                    "01_solar": {"0": 1},
-                    "02_wind_on": {"0": 1},
-                    "03_wind_off": {"0": 1},
-                    "04_res": {"0": 1},
-                    "05_nuclear": {"0": 1},
-                    "06_coal": {"0": 1},
-                    "07_gas": {"0": 1},
-                    "08_non-res": {"0": 1},
-                    "09_hydro_pump": {"0": 1},
-                },
-                "it": {
-                    "01_solar": {"0": 1},
-                    "02_wind_on": {"0": 1},
-                    "03_wind_off": {"0": 1},
-                    "04_res": {"0": 1},
-                    "05_nuclear": {"0": 1},
-                    "06_coal": {"0": 1},
-                    "07_gas": {"0": 1},
-                    "08_non-res": {"0": 1},
-                    "09_hydro_pump": {"0": 1},
-                },
+    assert file_study_dao.get_ruleset() == Ruleset(
+        load={"de": {"0": 1}, "es": {"0": 1}, "fr": {"0": 1}, "it": {"0": 1}},
+        thermal={
+            "de": {
+                "01_solar": {"0": 1},
+                "02_wind_on": {"0": 1},
+                "03_wind_off": {"0": 1},
+                "04_res": {"0": 1},
+                "05_nuclear": {"0": 1},
+                "06_coal": {"0": 1},
+                "07_gas": {"0": 1},
+                "08_non-res": {"0": 1},
+                "09_hydro_pump": {"0": 1},
             },
-            hydro={"de": {"0": 1}, "es": {"0": 1}, "fr": {"0": 1}, "it": {"0": 1}},
-            wind={"de": {"0": 1}, "es": {"0": 1}, "fr": {"0": 1}, "it": {"0": 1}},
-            solar={"de": {"0": 1}, "es": {"0": 1}, "fr": {"0": 1}, "it": {"0": 1}},
-        )
-    }
+            "es": {
+                "01_solar": {"0": 1},
+                "02_wind_on": {"0": 1},
+                "03_wind_off": {"0": 1},
+                "04_res": {"0": 1},
+                "05_nuclear": {"0": 1},
+                "06_coal": {"0": 1},
+                "07_gas": {"0": 1},
+                "08_non-res": {"0": 1},
+                "09_hydro_pump": {"0": 1},
+            },
+            "fr": {
+                "01_solar": {"0": 1},
+                "02_wind_on": {"0": 1},
+                "03_wind_off": {"0": 1},
+                "04_res": {"0": 1},
+                "05_nuclear": {"0": 1},
+                "06_coal": {"0": 1},
+                "07_gas": {"0": 1},
+                "08_non-res": {"0": 1},
+                "09_hydro_pump": {"0": 1},
+            },
+            "it": {
+                "01_solar": {"0": 1},
+                "02_wind_on": {"0": 1},
+                "03_wind_off": {"0": 1},
+                "04_res": {"0": 1},
+                "05_nuclear": {"0": 1},
+                "06_coal": {"0": 1},
+                "07_gas": {"0": 1},
+                "08_non-res": {"0": 1},
+                "09_hydro_pump": {"0": 1},
+            },
+        },
+        hydro={"de": {"0": 1}, "es": {"0": 1}, "fr": {"0": 1}, "it": {"0": 1}},
+        wind={"de": {"0": 1}, "es": {"0": 1}, "fr": {"0": 1}, "it": {"0": 1}},
+        solar={"de": {"0": 1}, "es": {"0": 1}, "fr": {"0": 1}, "it": {"0": 1}},
+    )
 
     # Area properties
     assert file_study_dao.get_all_area_properties() == {

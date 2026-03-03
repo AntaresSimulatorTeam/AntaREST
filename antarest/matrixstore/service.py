@@ -368,9 +368,9 @@ class MatrixService(ISimpleMatrixService):
                 else:
                     with py7zr.SevenZipFile(buffer, "r") as szf:
                         for info in szf.list():
-                            if info.is_directory or info.filename in EXCLUDED_FILES:  # type:ignore
+                            if info.is_directory or info.filename in EXCLUDED_FILES:
                                 continue
-                            file_content = next(iter(szf.read(info.filename).values()))
+                            file_content = next(iter(szf.read([info.filename]).values()))
                             matrix_id = self._file_importation(file_content.read(), is_json=is_json)
                             matrix_info.append(MatrixInfoDTO(id=matrix_id, name=info.filename))
                             szf.reset()
@@ -593,7 +593,7 @@ class MatrixService(ISimpleMatrixService):
                     # noinspection PyTypeChecker
                     np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")
             archive_dir(Path(tmpdir), export_path, archive_format=ArchiveFormat.ZIP)
-            stopwatch.log_elapsed(lambda x: logger.info(f"Matrix dataset exported (zipped mode) in {x}s"))
+            logger.info(f"Matrix dataset exported (zipped mode) in {stopwatch}s")
         return str(export_path)
 
     def download_dataset(self, dataset_id: str) -> FileDownloadTaskDTO:

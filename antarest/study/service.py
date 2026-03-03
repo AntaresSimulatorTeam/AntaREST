@@ -697,7 +697,7 @@ class StudyService:
                 f"{job_id}-{log_suffix}",
             ],
         )
-        stopwatch.log_elapsed(lambda d: logger.info(f"Saved logs for job {job_id} in {d}s"))
+        logger.info(f"Saved logs for job {job_id} in {stopwatch}s")
 
     def get_comments(self, study_id: str) -> str:
         """
@@ -2599,6 +2599,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
+        dao = study_interface.get_study_dao()
 
         ##########################
         # Study metadata
@@ -2612,15 +2613,15 @@ class StudyService:
         # Areas
         ##########################
 
-        area_properties = self.area_manager.get_all_area_properties(study_interface)
-        area_names = {a.id: a.name for a in self.area_manager.get_all_areas_info(study_interface)}
-        thermal_clusters = self.thermal_manager.get_all_thermals_props(study_interface)
-        st_storages = self.st_storage_manager.get_all_storages_props(study_interface)
-        st_storages_constraints = self.st_storage_manager.get_all_additional_constraints(study_interface)
-        hydro_properties = self.hydro_manager.get_all_hydro_properties(study_interface)
+        area_properties = dao.get_all_area_properties()
+        area_names = {a.id: a.name for a in dao.get_all_areas_info()}
+        thermal_clusters = dao.get_all_thermals()
+        st_storages = dao.get_all_st_storages()
+        st_storages_constraints = dao.get_all_st_storage_additional_constraints()
+        hydro_properties = dao.get_all_hydro_properties()
 
         try:
-            renewable_clusters = self.renewable_manager.get_all_renewables_props(study_interface)
+            renewable_clusters = dao.get_all_renewables()
         except ChildNotFoundError:  # Can happen, according to the enr-modeling
             renewable_clusters = {}
 
@@ -2633,11 +2634,11 @@ class StudyService:
                 "thermals": thermal_clusters.get(area_id, {}).values(),
                 "renewables": renewable_clusters.get(area_id, {}).values(),
                 "st_storages": [],
-                "ui": self.area_manager.get_area_ui(study_interface, area_id),
+                "ui": dao.get_area_ui(area_id),
             }
 
             # Hydro
-            hydro_allocation = self.allocation_manager.get_allocation_for_area(study_interface, area_id)
+            hydro_allocation = dao.get_hydro_allocation(area_id)
             area["hydro"] = {
                 "allocation": hydro_allocation,
                 "management_options": hydro_properties[area_id].management_options,
@@ -2658,7 +2659,7 @@ class StudyService:
         # Links and BCs
         ##########################
 
-        obj["links"] = self.links_manager.get_all_links(study_interface)
+        obj["links"] = dao.get_links()
         obj["binding_constraints"] = self.binding_constraint_manager.get_binding_constraints(study_interface)
 
         ##########################
@@ -2666,13 +2667,13 @@ class StudyService:
         ##########################
 
         obj["settings"] = {
-            "time_series": self.ts_config_manager.get_timeseries_configuration(study_interface),
-            "general": self.general_manager.get_general_config(study_interface),
-            "advanced_parameters": self.advanced_parameters_manager.get_advanced_parameters(study_interface),
-            "playlist": self.playlist_manager.get_playlist(study_interface),
-            "thematic_trimming": self.thematic_trimming_manager.get_thematic_trimming(study_interface),
-            "optimization": self.optimization_manager.get_optimization_preferences(study_interface),
-            "adequacy_patch": self.adequacy_patch_manager.get_adequacy_patch_parameters(study_interface),
+            "time_series": dao.get_timeseries_config(),
+            "general": dao.get_general_config(),
+            "advanced_parameters": dao.get_advanced_parameters(),
+            "playlist": dao.get_playlist_config(),
+            "thematic_trimming": dao.get_thematic_trimming(),
+            "optimization": dao.get_optimization_preferences(),
+            "adequacy_patch": dao.get_adequacy_patch_parameters(),
         }
 
         ##########################
@@ -2682,8 +2683,8 @@ class StudyService:
         try:
             xpansion_settings = self.get_xpansion_settings(uuid)
             if xpansion_settings.additional_constraints:
-                xpansion_constraint = self.xpansion_manager.get_resource_content(
-                    study_interface, XpansionResourceFileType.CONSTRAINTS, xpansion_settings.additional_constraints
+                xpansion_constraint = dao.get_xpansion_resource(
+                    XpansionResourceFileType.CONSTRAINTS, xpansion_settings.additional_constraints
                 )
                 assert isinstance(xpansion_constraint, bytes)
                 constraint_as_dict = IniReader().read(io.StringIO(xpansion_constraint.decode("utf-8")))
@@ -2703,7 +2704,7 @@ class StudyService:
 
             xpansion = {
                 "settings": xpansion_settings,
-                "candidates": self.xpansion_manager.get_candidates(study_interface),
+                "candidates": dao.get_all_xpansion_candidates(),
                 "constraints": constraints,
             }
 

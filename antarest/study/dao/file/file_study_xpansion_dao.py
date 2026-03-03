@@ -24,7 +24,6 @@ from antarest.core.exceptions import (
     XpansionCandidateDeletionError,
     XpansionConfigurationAlreadyExists,
     XpansionConfigurationDoesNotExist,
-    XpansionFileAlreadyExistsError,
     XpansionFileNotFoundError,
 )
 from antarest.study.business.model.xpansion_model import (
@@ -231,12 +230,12 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         self.save_resource(XpansionResourceFileType.CONSTRAINTS, filename, content)
 
     @override
-    def save_xpansion_capacity(self, filename: str, series: str) -> None:
-        self.save_resource(XpansionResourceFileType.CAPACITIES, filename, series)
+    def save_xpansion_capacity(self, filename: str, series_id: str) -> None:
+        self.save_resource(XpansionResourceFileType.CAPACITIES, filename, series_id)
 
     @override
-    def save_xpansion_weight(self, filename: str, series: str) -> None:
-        self.save_resource(XpansionResourceFileType.WEIGHTS, filename, series)
+    def save_xpansion_weight(self, filename: str, series_id: str) -> None:
+        self.save_resource(XpansionResourceFileType.WEIGHTS, filename, series_id)
 
     @override
     def save_xpansion_adequacy_criterion(self, criterion: XpansionAdequacyCriterion) -> None:
@@ -255,9 +254,6 @@ class FileStudyXpansionDao(XpansionDao, ABC):
     def save_resource(self, resource_type: XpansionResourceFileType, filename: str, data: bytes | str) -> None:
         file_study = self.get_file_study()
         url = self.get_resource_dir(resource_type)
-        if filename in file_study.tree.get(url):
-            raise XpansionFileAlreadyExistsError(f"File '{filename}' already exists")
-
         file_study.tree.save(data=data, url=url + [filename])
 
     @staticmethod

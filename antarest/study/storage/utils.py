@@ -173,7 +173,7 @@ def extract_output_name(path_output: Path, new_suffix_name: Optional[str] = None
         with ZipFile(path_output, "r") as zip_obj:
             zip_obj.extract("info.antares-output", temp_dir.name)
             info_antares_output = ini_reader.read(Path(temp_dir.name) / "info.antares-output")
-        s.log_elapsed(lambda x: logger.info(f"info.antares_output has been read in {x}s"))
+        logger.info(f"info.antares_output has been read in {s}s")
         temp_dir.cleanup()
 
     else:
