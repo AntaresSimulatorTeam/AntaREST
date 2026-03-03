@@ -96,11 +96,11 @@ class XpansionDao(ReadOnlyXpansionDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_xpansion_capacity(self, filename: str, series: str) -> None:
+    def save_xpansion_capacity(self, filename: str, series_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_xpansion_weight(self, filename: str, series: str) -> None:
+    def save_xpansion_weight(self, filename: str, series_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
