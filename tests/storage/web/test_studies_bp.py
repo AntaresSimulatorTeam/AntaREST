@@ -34,6 +34,7 @@ from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
 from antarest.core.utils.archives import ArchiveFormat
 from antarest.matrixstore.service import MatrixService
+from antarest.output.output_blueprint import create_output_routes
 from antarest.output.output_service import OutputService
 from antarest.study.main import build_study_service
 from antarest.study.model import (
@@ -46,7 +47,6 @@ from antarest.study.model import (
     StudyMetadataDTO,
 )
 from antarest.study.service import StudyService
-from antarest.study.web.output_blueprint import create_output_routes
 from tests.helpers import with_admin_user
 from tests.storage.integration.conftest import UUID
 

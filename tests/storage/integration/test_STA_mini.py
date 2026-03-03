@@ -31,6 +31,7 @@ from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.output.output_blueprint import create_output_routes
 from antarest.output.output_model import OutputVariables, OutputVariablesInformation
 from antarest.study.main import add_study_routes
 from antarest.study.service import StudyService
@@ -39,7 +40,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.prepro.area.area import default_energy
 from antarest.study.storage.variantstudy.business.matrix_constants.common import fixed_4_columns
-from antarest.study.web.output_blueprint import create_output_routes
 from tests.helpers import assert_study, with_admin_user, with_db_context
 from tests.storage.integration.conftest import UUID
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
