@@ -226,11 +226,11 @@ class DatabaseStudyDao(
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
-    def save_xpansion_capacity(self, filename: str, series: str) -> None:
+    def save_xpansion_capacity(self, filename: str, series_id: str) -> None:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
-    def save_xpansion_weight(self, filename: str, series: str) -> None:
+    def save_xpansion_weight(self, filename: str, series_id: str) -> None:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
 
     @override
