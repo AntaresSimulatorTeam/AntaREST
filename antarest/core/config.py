@@ -145,26 +145,6 @@ class DbConfig:
 
 
 @dataclass(frozen=True)
-class OutputStorageConfig:
-    """
-    Configuration for "new style" internal output storage
-    """
-
-    enable: bool = False
-    default: bool = False
-    archive_dir: Path = Path("./output-archives")
-
-    @classmethod
-    def from_dict(cls, data: JSON) -> "OutputStorageConfig":
-        defaults = cls()
-        return OutputStorageConfig(
-            enable=data.get("enable", defaults.enable),
-            default=data.get("default", defaults.default),
-            archive_dir=Path(data.get("archive_dir", str(defaults.archive_dir))),
-        )
-
-
-@dataclass(frozen=True)
 class StudyStorageConfig:
     """
     Sub config object dedicated to study storage configuration (from study.storage in YAML)
@@ -216,8 +196,6 @@ class StorageConfig:
     tasks_gc_dry_run: bool = False
     study_storage: StudyStorageConfig = StudyStorageConfig()
 
-    output: OutputStorageConfig = OutputStorageConfig()
-
     @classmethod
     def from_dict(cls, data: JSON, desktop_mode: bool = False) -> "StorageConfig":
         if data.get("auto_archive_sleeping_time") and data.get("auto_archive_cron"):
@@ -268,7 +246,6 @@ class StorageConfig:
             watcher_scan_dry_run=data.get("watcher_scan_dry_run", defaults.watcher_scan_dry_run),
             tasks_gc_retention_days=data.get("tasks_gc_retention_days", defaults.tasks_gc_retention_days),
             study_storage=StudyStorageConfig.from_dict(data.get("study", {}).get("storage", {})),
-            output=OutputStorageConfig.from_dict(data["output"]) if "output" in data else defaults.output,
         )
 
     @classmethod
