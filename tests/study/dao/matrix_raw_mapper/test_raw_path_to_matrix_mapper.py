@@ -23,11 +23,11 @@ from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToM
 from tests.study.dao.conftest import build_db_dao, build_real_case_study
 
 
-def test_get_matrix_from_path(dao_930: DatabaseStudyDao, dao_fs_930: FileStudyTreeDao) -> None:
+def test_get_matrix_from_path(dao_bd_930: DatabaseStudyDao, dao_fs_930: FileStudyTreeDao) -> None:
     ##########################
     # Set Up
     ##########################
-    for dao in [dao_930, dao_fs_930]:
+    for dao in [dao_bd_930, dao_fs_930]:
         result = build_real_case_study(dao)
         (
             load_df,
@@ -218,11 +218,11 @@ def test_get_matrix_from_path(dao_930: DatabaseStudyDao, dao_fs_930: FileStudyTr
         # todo: We're missing BC and Xpansion tests as they are not yet implemented in DB.
 
 
-def test_save_matrix_from_path(dao_930: DatabaseStudyDao) -> None:
+def test_save_matrix_from_path(dao_bd_930: DatabaseStudyDao) -> None:
     ##########################
     # Set Up
     ##########################
-    dao = dao_930
+    dao = dao_bd_930
     result = build_real_case_study(dao)
     area_id, area2 = result.area1, result.area2
     thermal_id, renewable_id, st_storage_id = result.thermal_id, result.renewable_id, result.sts_id
@@ -470,8 +470,8 @@ def test_save_matrix_from_path(dao_930: DatabaseStudyDao) -> None:
         Path("input/hydro/series/area/file"),  # Not a real matrix file even if in the right folder
     ],
 )
-def test_error_cases(dao_930_shared: DatabaseStudyDao, incorrect_path: Path) -> None:
-    mapper = RawPathToMatrixMapper(dao_930_shared)
+def test_error_cases(dao_bd_930_shared: DatabaseStudyDao, incorrect_path: Path) -> None:
+    mapper = RawPathToMatrixMapper(dao_bd_930_shared)
 
     path_pattern = incorrect_path.as_posix().replace("/", r"[\\/]")
     pattern = f"The provided path does not point to a valid matrix: '{path_pattern}'"
@@ -483,10 +483,10 @@ def test_error_cases(dao_930_shared: DatabaseStudyDao, incorrect_path: Path) -> 
         mapper.save_matrix_from_path(incorrect_path, "")
 
 
-def test_version_specifics(dao_930: DatabaseStudyDao) -> None:
-    dao_81 = build_db_dao(dao_930._db_session, dao_930._matrix_service, STUDY_VERSION_8_1)
+def test_version_specifics(dao_bd_930: DatabaseStudyDao) -> None:
+    dao_81 = build_db_dao(dao_bd_930._db_session, dao_bd_930._matrix_service, STUDY_VERSION_8_1)
     mapper_81 = RawPathToMatrixMapper(dao_81)
-    mapper_93 = RawPathToMatrixMapper(dao_930)
+    mapper_93 = RawPathToMatrixMapper(dao_bd_930)
 
     ##########################
     # Links

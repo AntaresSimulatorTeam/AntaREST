@@ -706,61 +706,58 @@ class TestConvertHydroPmax:
     """
     Tests for convert_hydro_pmax conversion logic.
 
-    compatibility parameter is only available from version 9.2 so we use dao_920 in the tests below.
+    compatibility parameter is only available from version 9.2 so we use dao_bd_920 in the tests below.
     """
 
-    def test_roundtrip(self, dao_920: DatabaseStudyDao) -> None:
-        dao_920.save_area("Paris")
-        dao_920.save_area("London")
+    def test_roundtrip(self, dao_bd_920: DatabaseStudyDao) -> None:
+        dao = dao_bd_920
+        dao.save_area("Paris")
+        dao.save_area("London")
 
-        dao_920.convert_hydro_pmax(HydroPmax.HOURLY)
-        assert dao_920.get_compatibility_parameters().hydro_pmax == HydroPmax.HOURLY
+        dao.convert_hydro_pmax(HydroPmax.HOURLY)
+        assert dao.get_compatibility_parameters().hydro_pmax == HydroPmax.HOURLY
         expected_daily = np.full((365, 1), 24.0)
         for area_id in ["paris", "london"]:
-            assert dao_920.get_hydro_max_hourly_gen_power(area_id).is_empty()
-            assert dao_920.get_hydro_max_hourly_pump_power(area_id).is_empty()
-            assert (dao_920.get_hydro_max_daily_gen_energy(area_id).to_numpy() == expected_daily).all()
-            assert (dao_920.get_hydro_max_daily_pump_energy(area_id).to_numpy() == expected_daily).all()
+            assert dao.get_hydro_max_hourly_gen_power(area_id).is_empty()
+            assert dao.get_hydro_max_hourly_pump_power(area_id).is_empty()
+            assert (dao.get_hydro_max_daily_gen_energy(area_id).to_numpy() == expected_daily).all()
+            assert (dao.get_hydro_max_daily_pump_energy(area_id).to_numpy() == expected_daily).all()
 
-        dao_920.convert_hydro_pmax(HydroPmax.DAILY)
-        assert dao_920.get_compatibility_parameters().hydro_pmax == HydroPmax.DAILY
+        dao.convert_hydro_pmax(HydroPmax.DAILY)
+        assert dao.get_compatibility_parameters().hydro_pmax == HydroPmax.DAILY
         for area_id in ["paris", "london"]:
             with pytest.raises(ValueError):
-                dao_920.get_hydro_max_hourly_gen_power(area_id)
+                dao.get_hydro_max_hourly_gen_power(area_id)
 
-    def test_convert_hourly_noop_preserves_custom_matrices(self, dao_920: DatabaseStudyDao) -> None:
+    def test_convert_hourly_noop_preserves_custom_matrices(self, dao_bd_920: DatabaseStudyDao) -> None:
         """Converting to HOURLY when already HOURLY does not overwrite manually saved matrices."""
-        dao_920.save_area("Paris")
-        dao_920.convert_hydro_pmax(HydroPmax.HOURLY)
+        dao = dao_bd_920
+        dao.save_area("Paris")
+        dao.convert_hydro_pmax(HydroPmax.HOURLY)
 
         # Overwrite the default matrices with custom values
-        matrix_service = dao_920._matrix_service
+        matrix_service = dao._matrix_service
         custom_hourly = matrix_service.create(pl.DataFrame({"0": [1.0, 2.0, 3.0]}))
         custom_daily = matrix_service.create(pl.DataFrame({"0": [99.0] * 365}))
-        dao_920.save_hydro_max_hourly_gen_power("paris", custom_hourly)
-        dao_920.save_hydro_max_hourly_pump_power("paris", custom_hourly)
-        dao_920.save_hydro_max_daily_gen_energy("paris", custom_daily)
-        dao_920.save_hydro_max_daily_pump_energy("paris", custom_daily)
+        dao.save_hydro_max_hourly_gen_power("paris", custom_hourly)
+        dao.save_hydro_max_hourly_pump_power("paris", custom_hourly)
+        dao.save_hydro_max_daily_gen_energy("paris", custom_daily)
+        dao.save_hydro_max_daily_pump_energy("paris", custom_daily)
 
         # Converting to HOURLY again is a no-op: custom values must be preserved
-        dao_920.convert_hydro_pmax(HydroPmax.HOURLY)
+        dao.convert_hydro_pmax(HydroPmax.HOURLY)
 
+        pl.testing.assert_frame_equal(dao.get_hydro_max_hourly_gen_power("paris"), pl.DataFrame({"0": [1.0, 2.0, 3.0]}))
         pl.testing.assert_frame_equal(
-            dao_920.get_hydro_max_hourly_gen_power("paris"), pl.DataFrame({"0": [1.0, 2.0, 3.0]})
+            dao.get_hydro_max_hourly_pump_power("paris"), pl.DataFrame({"0": [1.0, 2.0, 3.0]})
         )
-        pl.testing.assert_frame_equal(
-            dao_920.get_hydro_max_hourly_pump_power("paris"), pl.DataFrame({"0": [1.0, 2.0, 3.0]})
-        )
-        pl.testing.assert_frame_equal(
-            dao_920.get_hydro_max_daily_gen_energy("paris"), pl.DataFrame({"0": [99.0] * 365})
-        )
-        pl.testing.assert_frame_equal(
-            dao_920.get_hydro_max_daily_pump_energy("paris"), pl.DataFrame({"0": [99.0] * 365})
-        )
+        pl.testing.assert_frame_equal(dao.get_hydro_max_daily_gen_energy("paris"), pl.DataFrame({"0": [99.0] * 365}))
+        pl.testing.assert_frame_equal(dao.get_hydro_max_daily_pump_energy("paris"), pl.DataFrame({"0": [99.0] * 365}))
 
-    def test_no_areas(self, dao_920: DatabaseStudyDao) -> None:
+    def test_no_areas(self, dao_bd_920: DatabaseStudyDao) -> None:
         """Converting with no areas still updates the compat param."""
-        dao_920.convert_hydro_pmax(HydroPmax.HOURLY)
-        assert dao_920.get_compatibility_parameters().hydro_pmax == HydroPmax.HOURLY
-        dao_920.convert_hydro_pmax(HydroPmax.DAILY)
-        assert dao_920.get_compatibility_parameters().hydro_pmax == HydroPmax.DAILY
+        dao = dao_bd_920
+        dao.convert_hydro_pmax(HydroPmax.HOURLY)
+        assert dao.get_compatibility_parameters().hydro_pmax == HydroPmax.HOURLY
+        dao.convert_hydro_pmax(HydroPmax.DAILY)
+        assert dao.get_compatibility_parameters().hydro_pmax == HydroPmax.DAILY
