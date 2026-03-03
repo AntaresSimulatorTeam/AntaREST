@@ -18,6 +18,7 @@ from typing import Annotated, Any, Literal, TypeAlias
 
 import polars as pl
 from fastapi import APIRouter, Body, File, HTTPException
+from fastapi.openapi.models import Example
 from fastapi.params import Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
@@ -27,7 +28,6 @@ from antarest.core.exceptions import IncorrectPathError
 from antarest.core.model import SUB_JSON
 from antarest.core.serde.json import from_json, to_json
 from antarest.core.serde.matrix_export import TableExportFormat, simplify_dataframe
-from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_string
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -73,7 +73,38 @@ CONTENT_TYPES = {
 ExportFormatQuery: TypeAlias = Annotated[
     TableExportFormat, Query(alias="format", description="Export format", title="Export Format")
 ]
-PATH_TYPE = Annotated[SanitizedStr, Query(openapi_examples=get_path_examples())]
+
+_sim = "{sim} = simulation index <br/>"
+_area = "{area} = area name to select <br/>"
+_link = "{link} = link name to select <br/>"
+_attachment = "User-defined file attachment <br/>"
+
+# noinspection SpellCheckingInspection
+_path_examples: list[tuple[str, str]] = [
+    ("layers/layers", ""),
+    ("settings/generaldata", ""),
+    ("output/{sim}/about-the-study/parameters", _sim),
+    ("output/{sim}/about-the-study/study", _sim),
+    ("output/{sim}/info(.antares-output)", _sim),
+    ("input/areas/{area}/optimization", _area),
+    ("input/areas/{area}/ui", _area),
+    ("input/bindingconstraints/bindingconstraints", ""),
+    ("input/hydro/hydro", ""),
+    ("input/links/{area}/properties/{link}", _area + _link),
+    ("input/load/prepro/{area}/settings", _area),
+    ("input/solar/prepro/{area}/settings", _area),
+    ("input/thermal/clusters/{area}/list", _area),
+    ("input/thermal/areas", ""),
+    ("input/wind/prepro/{area}/settings", _area),
+    ("user/wind_solar/synthesis_windSolar.xlsx", _attachment),
+]
+
+
+def _get_path_examples() -> dict[str, Example]:
+    return {url: {"value": url, "description": des} for url, des in _path_examples}
+
+
+PATH_TYPE = Annotated[SanitizedStr, Query(openapi_examples=_get_path_examples())]
 
 
 class MatrixFormat(EnumIgnoreCase):
