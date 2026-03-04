@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { transparentizeColor } from "@/utils/muiUtils";
+import { withOpacity } from "@/utils/muiUtils";
 import FolderIcon from "@mui/icons-material/Folder";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import type { SxProps, Theme } from "@mui/material";
@@ -26,18 +26,17 @@ export const treeItemStyles: SxProps<Theme> = (theme) => ({
   "& > .MuiTreeItem-content": {
     py: 0.25,
     "&:hover": {
-      backgroundColor: transparentizeColor(theme.vars.palette.info.main, 95),
+      backgroundColor: withOpacity(theme.vars.palette.info.main, 0.05),
     },
     "&.Mui-selected": {
-      backgroundColor: transparentizeColor(theme.vars.palette.info.main, 85),
+      backgroundColor: withOpacity(theme.vars.palette.info.main, 0.15),
       "&:hover": {
-        backgroundColor: transparentizeColor(theme.vars.palette.info.main, 80),
+        backgroundColor: withOpacity(theme.vars.palette.info.main, 0.2),
       },
     },
     "&.Mui-selected.Mui-focused": {
-      backgroundColor: transparentizeColor(theme.vars.palette.info.main, 85),
+      backgroundColor: withOpacity(theme.vars.palette.info.main, 0.15),
     },
-
     "& .MuiTreeItem-iconContainer": {
       mr: 0.5,
       "&:hover": {
@@ -62,7 +61,7 @@ export const editableRowStyles: SxProps<Theme> = {
   borderRadius: 1,
   px: 1,
   py: 0.25,
-  backgroundColor: (theme) => transparentizeColor(theme.vars.palette.info.main, 97),
+  backgroundColor: (theme) => withOpacity(theme.vars.palette.info.main, 0.03),
 };
 
 export const textFieldStyles: SxProps<Theme> = {

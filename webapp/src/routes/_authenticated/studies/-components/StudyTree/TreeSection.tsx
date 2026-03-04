@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { transparentizeColor } from "@/utils/muiUtils";
+import { withOpacity } from "@/utils/muiUtils";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import HomeIcon from "@mui/icons-material/Home";
 import {
@@ -51,7 +51,7 @@ const variantStyles: Record<
 > = {
   managed: {
     container: (theme) => ({
-      backgroundColor: transparentizeColor(theme.vars.palette.info.main, 95),
+      backgroundColor: withOpacity(theme.vars.palette.info.main, 0.05),
       borderLeft: `3px solid ${theme.vars.palette.info.main}`,
       p: 0.5,
     }),
@@ -70,7 +70,7 @@ const variantStyles: Record<
   },
   external: {
     container: (theme) => ({
-      backgroundColor: transparentizeColor(theme.vars.palette.action.disabled, 80),
+      backgroundColor: withOpacity(theme.vars.palette.action.disabled, 0.2),
       borderLeft: `3px solid ${theme.vars.palette.action.disabled}`,
       p: 0.5,
     }),
