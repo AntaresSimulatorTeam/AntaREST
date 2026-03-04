@@ -45,7 +45,8 @@ class OutputMetadata:
     Attributes:
         id:       unique identifier of the output
         in_study: whether the output is stored in the study file tree. Here the abstraction is clearly leaky,
-                  but we need it for compatibility with existing file studies.
+                  but we need it for compatibility with existing file studies, at archival time, to decide if
+                  the study should be archived separately or not.
     """
 
     id: str
@@ -54,6 +55,10 @@ class OutputMetadata:
 
 
 class OutputDetails(AntaresBaseModel):
+    """
+    More detailed metadata about a study output.
+    """
+
     model_config = ConfigDict(
         frozen=True,
         alias_generator=to_camel,
