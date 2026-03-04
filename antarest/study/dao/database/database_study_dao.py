@@ -122,11 +122,15 @@ class DatabaseStudyDao(
 
     @override
     def get_comments(self) -> str:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        stmt = select(Study.comments).where(Study.id == self._study_id)
+        return self._db_session.execute(stmt).scalar_one()
 
     @override
     def save_comments(self, comments: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        stmt = select(Study).where(Study.id == self._study_id)
+        study = self._db_session.execute(stmt).scalar_one()
+        study.comments = comments
+        self._db_session.commit()
 
     @override
     def update_antares_file(self, editor: str, last_save: float) -> None:

@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -36,7 +37,7 @@ from antarest.study.business.model.config.optimization_config_model import (
 from antarest.study.business.model.config.playlist_model import Playlist, PlaylistValues
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration, TimeSeriesType
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.model import STUDY_VERSION_9_3
+from antarest.study.model import STUDY_VERSION_9_3, Study
 from tests.study.dao.conftest import build_dao
 
 
@@ -141,3 +142,18 @@ def test_compatibility_parameters(db_session: Session, matrix_service: ISimpleMa
     new_parameters = CompatibilityParameters(hydro_pmax=HydroPmax.HOURLY)
     dao.save_compatibility_parameters(new_parameters)
     assert dao.get_compatibility_parameters() == new_parameters
+
+
+def test_get_comments_returns_empty_string_by_default(dao: DatabaseStudyDao) -> None:
+    assert dao.get_comments() == ""
+
+
+def test_save_comments_persists_value(dao: DatabaseStudyDao, db_session: Session) -> None:
+    comments = "test comment study"
+
+    dao.save_comments(comments)
+
+    assert dao.get_comments() == comments
+
+    stmt = select(Study.comments).where(Study.id == dao.get_study_id())
+    assert db_session.execute(stmt).scalar_one() == comments

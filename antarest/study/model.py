@@ -40,6 +40,7 @@ from sqlalchemy import (
     Integer,
     PrimaryKeyConstraint,
     String,
+    Text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from typing_extensions import override
@@ -298,6 +299,7 @@ class Study(Base):
     version: Mapped[str] = mapped_column(String(255), index=True)
     author: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     editor: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    comments: Mapped[str] = mapped_column(Text(), nullable=False, default="")
     horizon: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
     updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
@@ -354,6 +356,7 @@ class Study(Base):
             and other.name == self.name
             and other.type == self.type
             and other.version == self.version
+            and other.comments == self.comments
             and other.created_at == self.created_at
             and other.updated_at == self.updated_at
             and other.path == self.path
