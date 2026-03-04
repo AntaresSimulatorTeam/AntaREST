@@ -21,12 +21,12 @@ describe("stringUtils", () => {
       expect(isSearchMatching("TEST", "test")).toBeTruthy();
       expect(isSearchMatching("es", "test")).toBeTruthy();
       expect(isSearchMatching("t", "TesT")).toBeTruthy();
+      expect(isSearchMatching("", "test")).toBeTruthy();
     });
 
     test("should not match when single search doesn't exist in single value", () => {
       expect(isSearchMatching("testd", "test")).toBeFalsy();
       expect(isSearchMatching("a", "test")).toBeFalsy();
-      expect(isSearchMatching("", "test")).toBeFalsy();
     });
 
     test("should match a single search against multiple values", () => {
@@ -34,6 +34,7 @@ describe("stringUtils", () => {
       expect(isSearchMatching("TEST2", ["test1", "test2"])).toBeTruthy();
       expect(isSearchMatching("es", ["test1", "test2"])).toBeTruthy();
       expect(isSearchMatching("t", ["TesT1", "TesT2"])).toBeTruthy();
+      expect(isSearchMatching("", ["TesT1", "TesT2"])).toBeTruthy();
     });
 
     test("should not match when single search doesn't exist in any value", () => {
@@ -41,7 +42,6 @@ describe("stringUtils", () => {
       expect(isSearchMatching("TEST3", ["test1", "test2"])).toBeFalsy();
       expect(isSearchMatching("3", ["test1", "test2"])).toBeFalsy();
       expect(isSearchMatching("a", ["TesT1", "TesT2"])).toBeFalsy();
-      expect(isSearchMatching("", ["TesT1", "TesT2"])).toBeFalsy();
     });
 
     test("should match when any search term is found in a single value", () => {
@@ -49,13 +49,13 @@ describe("stringUtils", () => {
       expect(isSearchMatching(["a", "test"], "test")).toBeTruthy();
       expect(isSearchMatching(["a", "TEST"], "test")).toBeTruthy();
       expect(isSearchMatching(["a", "t"], "TesT")).toBeTruthy();
+      expect(isSearchMatching([""], "test")).toBeTruthy();
     });
 
-    test("should not match when any search term is missing from a single value", () => {
+    test("should not match when all search terms are missing from a single value", () => {
       expect(isSearchMatching(["testd"], "test")).toBeFalsy();
       expect(isSearchMatching(["a", "b"], "test")).toBeFalsy();
       expect(isSearchMatching(["a", "TESTD"], "test")).toBeFalsy();
-      expect(isSearchMatching([""], "test")).toBeFalsy();
       expect(isSearchMatching([], "test")).toBeFalsy();
     });
 
@@ -63,12 +63,13 @@ describe("stringUtils", () => {
       expect(isSearchMatching(["test1", "test2"], ["test2", "test3"])).toBeTruthy();
       expect(isSearchMatching(["TEST", "a"], ["test2", "test3"])).toBeTruthy();
       expect(isSearchMatching(["t", "a"], ["TesT2", "TesT3"])).toBeTruthy();
+      expect(isSearchMatching(["", "t"], ["TesT2", "TesT3"])).toBeTruthy();
+      expect(isSearchMatching([""], ["TesT2", "TesT3"])).toBeTruthy();
     });
 
-    test("should not match when any search term is missing from multiple values", () => {
+    test("should not match when all search terms are missing from multiple values", () => {
       expect(isSearchMatching(["test1", "test2"], ["test3", "test4"])).toBeFalsy();
       expect(isSearchMatching(["TEST1"], ["test3", "test4"])).toBeFalsy();
-      expect(isSearchMatching([""], ["test3", "test4"])).toBeFalsy();
       expect(isSearchMatching([], ["test3", "test4"])).toBeFalsy();
     });
   });

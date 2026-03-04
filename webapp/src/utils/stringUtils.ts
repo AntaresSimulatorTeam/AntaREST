@@ -22,24 +22,12 @@ export const isSearchMatching = R.curry(
   (searches: string | string[], values: string | string[]) => {
     const normalizedValues = RA.ensureArray(values).map(normalize);
 
-    return RA.ensureArray(searches).find((search) => {
+    return RA.ensureArray(searches).some((search) => {
       const normalizedSearch = normalize(search);
-      return normalizedValues.find((value) => value.includes(normalizedSearch));
+      return normalizedValues.some((value) => value.includes(normalizedSearch));
     });
   },
 );
-
-// export const isSearchMatching = R.curry(
-//   (searches: string | string[], values: string | string[]) => {
-//     const normalize = R.o(R.toLower, deburr);
-//     const normalizedValues = RA.ensureArray(values).map(normalize);
-
-//     return RA.ensureArray(searches).every((search) => {
-//       const normalizedSearch = normalize(search);
-//       return normalizedValues.some((value) => value.includes(normalizedSearch));
-//     });
-//   },
-// );
 
 /**
  * Formats a string by replacing placeholders with specified values.

@@ -38,9 +38,9 @@ function SearchMultipleFE({
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
-  /////////////////////////////////////////////§///////////////////
+  ////////////////////////////////////////////////////////////////
 
-  const handleChange: CheckboxesTagsFEProps["onChange"] = (event) => {
+  const handleChange: CheckboxesTagsFEProps<string, false, true>["onChange"] = (event) => {
     const newValue = event.target.value;
     onChange?.(event);
     onSearchValuesChange?.(newValue);
