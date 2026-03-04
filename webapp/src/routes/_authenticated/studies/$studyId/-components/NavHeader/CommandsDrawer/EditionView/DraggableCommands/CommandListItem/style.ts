@@ -35,12 +35,12 @@ export const StyledAccordion = styled(Accordion)(({ theme }) => ({
 
 export const StyledDeleteIcon = styled(DeleteIcon)(({ theme }) => ({
   flex: "0 0 24px",
-  color: theme.palette.error.light,
+  color: theme.vars.palette.error.light,
   margin: theme.spacing(0, 2),
   cursor: "pointer",
   alignSelf: "center",
   "&:hover": {
-    color: theme.palette.error.main,
+    color: theme.vars.palette.error.main,
   },
 }));
 

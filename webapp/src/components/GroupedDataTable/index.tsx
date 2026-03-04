@@ -14,6 +14,7 @@
 
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useOperationInProgressCount from "@/hooks/useOperationInProgressCount";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 import useUpdatedRef from "@/hooks/useUpdatedRef";
 import { toError } from "@/utils/fnUtils";
 import { appendColon } from "@/utils/i18nUtils";
@@ -39,19 +40,19 @@ import ConfirmationDialog from "../dialogs/ConfirmationDialog";
 import RouterLink from "../router/RouterLink";
 import CreateDialog from "./CreateDialog";
 import DuplicateDialog from "./DuplicateDialog";
-import type { TRow } from "./types";
-import { generateUniqueValue, getTableOptionsForAlign } from "./utils";
+import type { RowData } from "./types";
+import { generateUniqueValue, getDarkModeFixStyles, getTableOptionsForAlign } from "./utils";
 
 export interface GroupedDataTableProps<
   TGroups extends string[],
-  TData extends TRow<TGroups[number]>,
+  TData extends RowData<TGroups[number]>,
 > {
   data: TData[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   columns: Array<MRT_ColumnDef<TData, any>>;
   groups: TGroups;
   allowNewGroups?: boolean;
-  onCreate?: (values: TRow<TGroups[number]>) => Promise<TData>;
+  onCreate?: (values: RowData<TGroups[number]>) => Promise<TData>;
   onDuplicate?: (row: TData, newName: string) => Promise<TData>;
   onDelete?: (rows: TData[]) => PromiseAny | void;
   onNameClick?: (row: TData) => void;
@@ -59,7 +60,9 @@ export interface GroupedDataTableProps<
   onDataChange?: (data: TData[]) => void;
   isLoading?: boolean;
   deleteConfirmationMessage?: string | ((rows: TData[]) => string);
-  fillPendingRow?: (pendingRow: TRow<TGroups[number]>) => TRow<TGroups[number]> & Partial<TData>;
+  fillPendingRow?: (
+    pendingRow: RowData<TGroups[number]>,
+  ) => RowData<TGroups[number]> & Partial<TData>;
 }
 
 // Use ids to identify default columns (instead of `accessorKey`),
@@ -68,7 +71,7 @@ export interface GroupedDataTableProps<
 const GROUP_COLUMN_ID = "_group";
 const NAME_COLUMN_ID = "_name";
 
-function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[number]>>({
+function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroups[number]>>({
   data,
   columns,
   groups,
@@ -89,8 +92,9 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const callbacksRef = useUpdatedRef({ onNameClick, nameLinkOptions });
-  const pendingRows = useRef<Array<TRow<TGroups[number]>>>([]);
+  const pendingRows = useRef<Array<RowData<TGroups[number]>>>([]);
   const { createOps, deleteOps, totalOps } = useOperationInProgressCount();
+  const { isDarkMode } = useThemeColorScheme();
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => onDataChange?.(tableData), [tableData]);
@@ -282,6 +286,7 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
     // Styles
     muiTablePaperProps: { sx: { display: "flex", flexDirection: "column" } }, // Allow to have scroll
     ...getTableOptionsForAlign("right"),
+    ...getDarkModeFixStyles(isDarkMode),
   });
 
   const selectedRows = table.getSelectedRowModel().rows.map((row) => row.original);
@@ -291,7 +296,7 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
   // Optimistic
   ////////////////////////////////////////////////////////////////
 
-  const addPendingRow = (row: TRow<TGroups[number]>) => {
+  const addPendingRow = (row: RowData<TGroups[number]>) => {
     const pendingRow = fillPendingRow?.(row) || row;
 
     pendingRows.current.push(pendingRow);
@@ -303,14 +308,14 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
     return pendingRow;
   };
 
-  const removePendingRow = (row: TRow<TGroups[number]>) => {
+  const removePendingRow = (row: RowData<TGroups[number]>) => {
     if (isPendingRow(row)) {
       pendingRows.current = pendingRows.current.filter((r) => r !== row);
       setTableData((prev) => prev.filter((r) => r !== row));
     }
   };
 
-  function isPendingRow(row: TRow<TGroups[number]>) {
+  function isPendingRow(row: RowData<TGroups[number]>) {
     return pendingRows.current.includes(row);
   }
 
@@ -324,7 +329,7 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreate = async (values: TRow<TGroups[number]>) => {
+  const handleCreate = async (values: RowData<TGroups[number]>) => {
     closeDialog();
 
     if (!onCreate) {

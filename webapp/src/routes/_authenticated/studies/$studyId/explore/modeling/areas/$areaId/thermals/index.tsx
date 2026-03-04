@@ -14,7 +14,7 @@
 
 import GroupedDataTable from "@/components/GroupedDataTable";
 import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
-import type { TRow } from "@/components/GroupedDataTable/types";
+import type { RowData } from "@/components/GroupedDataTable/types";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import {
@@ -124,7 +124,7 @@ function Thermals() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreate = async (values: TRow) => {
+  const handleCreate = async (values: RowData) => {
     const cluster = await createThermalCluster(study.id, areaId, values);
     return addClusterCapacity(cluster);
   };

@@ -27,18 +27,26 @@ const pulsatingAnimation = keyframes`
   }
 `;
 
-export const BorderedPulsating = styled(Box)(({ theme: { palette } }) => ({
-  "&::before": {
-    content: '""',
-    position: "absolute",
-    height: "inherit",
-    width: "inherit",
-    border: `1px solid ${palette.mode === "dark" ? palette.secondary.main : palette.primary.main}`,
-    borderRadius: "50%",
-    animation: `${pulsatingAnimation} 2s infinite`,
-    boxShadow: `0 0px 10px 0 ${palette.mode === "dark" ? palette.secondary.main : palette.primary.main}`,
+export const BorderedPulsating = styled(Box)(({ theme }) => [
+  {
+    "&::before": {
+      content: '""',
+      position: "absolute",
+      height: "inherit",
+      width: "inherit",
+      border: `1px solid ${theme.vars.palette.primary.main}`,
+      borderRadius: "50%",
+      animation: `${pulsatingAnimation} 2s infinite`,
+      boxShadow: `0 0px 10px 0 ${theme.vars.palette.primary.main}`,
+    },
   },
-}));
+  theme.applyStyles("dark", {
+    "&::before": {
+      border: `1px solid ${theme.vars.palette.secondary.main}`,
+      boxShadow: `0 0px 10px 0 ${theme.vars.palette.secondary.main}`,
+    },
+  }),
+]);
 
 export interface LogoProps {
   size?: number;

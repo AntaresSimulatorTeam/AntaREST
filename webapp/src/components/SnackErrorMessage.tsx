@@ -20,7 +20,7 @@ import {
   Card,
   CardActions,
   Collapse,
-  Grid,
+  GridLegacy as Grid,
   IconButton,
   Paper,
   styled,

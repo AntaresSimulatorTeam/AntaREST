@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import TreeItemEnhanced from "@/components/TreeItemEnhanced";
+import { sortByName } from "@/services/utils";
 import RadarIcon from "@mui/icons-material/Radar";
 import { Tooltip } from "@mui/material";
 import * as R from "ramda";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import TreeItemEnhanced from "@/components/TreeItemEnhanced";
-import { sortByName } from "@/services/utils";
 import { treeItemStyles, treeNodeIcons, workspaceItemStyles } from "./styles";
 import type { ExternalTreeNodeMetadata, ExternalTreeNodeProps } from "./types";
 
@@ -29,12 +29,7 @@ const filterScannedStudies = R.reject<ExternalTreeNodeMetadata>(
 const isWorkspacePath = (path: string): boolean =>
   path.startsWith("/") && !path.slice(1).includes("/");
 
-function ExternalTreeNode({
-  node,
-  itemsLoading,
-  onNodeClick,
-  exploredFolders,
-}: ExternalTreeNodeProps) {
+function ExternalTreeNode({ node, itemsLoading, exploredFolders }: ExternalTreeNodeProps) {
   const { hasChildren, children, path, name, isStudyFolder, alias } = node;
   const { t } = useTranslation();
 
@@ -82,7 +77,6 @@ function ExternalTreeNode({
     <TreeItemEnhanced
       itemId={path}
       label={label}
-      onClick={() => onNodeClick(path)}
       loading={isLoading}
       slots={{
         collapseIcon: isWorkspace ? treeNodeIcons.workspace : treeNodeIcons.folderOpen,
@@ -105,7 +99,6 @@ function ExternalTreeNode({
           key={child.path}
           node={child}
           itemsLoading={itemsLoading}
-          onNodeClick={onNodeClick}
           exploredFolders={exploredFolders}
         />
       ))}
