@@ -22,7 +22,6 @@ import pytest
 from fastapi import HTTPException
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine.base import Engine
-from study.service.test_service import build_study_service
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import DummyEventBusService, EventType, IEventBus
@@ -55,8 +54,7 @@ from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.helpers import create_raw_study, with_admin_user, with_db_context
-
-# from tests.storage.test_service import build_study_service
+from tests.study.service.test_service import build_study_service
 
 
 @pytest.fixture(name="db_engine", autouse=True)
