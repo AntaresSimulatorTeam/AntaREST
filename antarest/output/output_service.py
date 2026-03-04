@@ -345,11 +345,14 @@ class OutputService:
     ) -> Optional[str]:
         """
         Import specific output simulation inside study
+
         Args:
             uuid: study uuid
             output: zip file with simulation folder or simulation folder path
             output_name_suffix: optional suffix name for the output
             auto_unzip: add a task to unzip the output after import
+            storage_type: in which storage the output should be stored
+            logs: simulation logs that should be stored for that output
 
         Returns: output simulation json formatted
 
