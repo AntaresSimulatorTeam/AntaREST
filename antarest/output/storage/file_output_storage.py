@@ -30,7 +30,14 @@ from antarest.core.exceptions import (
 )
 from antarest.core.interfaces.cache import ICache
 from antarest.core.remote.remote_executor import IRemoteExecutor
-from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, is_zip, unarchive, unzip
+from antarest.core.utils.archives import (
+    ArchiveFormat,
+    archive_dir,
+    extract_archive,
+    extract_archive_from_path,
+    is_zip,
+    unzip,
+)
 from antarest.core.utils.utils import StopWatch
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
@@ -316,7 +323,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         if path_output.is_dir():
             shutil.copytree(path_output, parent / output_id, dirs_exist_ok=False)
         elif path_output_zip.is_file():
-            unarchive(path_output_zip, parent / output_id)
+            extract_archive_from_path(path_output_zip, parent / output_id)
         else:
             raise OutputNotFound(output_id)
 

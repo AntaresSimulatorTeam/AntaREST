@@ -79,19 +79,6 @@ def archive_dir(
         shutil.rmtree(src_dir_path)
 
 
-def unarchive(archive: Path, dst: Path) -> None:
-    fmt = find_archive_format(archive)
-    match fmt:
-        case ArchiveFormat.ZIP:
-            with zipfile.ZipFile(archive, mode="r") as f:
-                f.extractall(dst)
-        case ArchiveFormat.SEVEN_ZIP:
-            with py7zr.SevenZipFile(archive, mode="r") as f:
-                f.extractall(dst)
-        case _:
-            raise BadArchiveContent(f"Unsupported archive format {fmt}")
-
-
 def extract_archive_from_path(archive_path: Path, target_dir: Path) -> None:
     """
     Extract an archive from a file path, using the native 7z CLI when available.
@@ -155,17 +142,6 @@ def read_in_zip(
     finally:
         if tmp_dir is not None:
             tmp_dir.cleanup()
-
-
-def find_archive_format(path: Path) -> Optional[ArchiveFormat]:
-    # Read the first few bytes to identify the file format
-    with open(path, "rb") as f:
-        file_format = f.read(4)
-    if file_format[:4] == b"PK\x03\x04":
-        return ArchiveFormat.ZIP
-    elif file_format[:2] == b"7z":
-        return ArchiveFormat.SEVEN_ZIP
-    raise BadArchiveContent("Unsupported archive format.")
 
 
 def extract_archive_from_stream(stream: BinaryIO, target_dir: Path, tmp_dir: Optional[Path] = None) -> None:
