@@ -100,6 +100,7 @@ function Output() {
       splitMinSize={[293, 150]}
       list={list}
       disableSearch={listType === "synthesis"}
+      multipleSearches
       actions={
         <Stack sx={{ overflow: "auto" }}>
           <BackButton linkOptions={{ to: ".." }} />

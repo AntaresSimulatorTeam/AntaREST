@@ -16,11 +16,30 @@ import deburr from "lodash/deburr";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 
-export const isSearchMatching = R.curry((search: string, values: string | string[]) => {
-  const format = R.o(R.toLower, deburr);
-  const isMatching = R.o(R.includes(format(search)), format);
-  return RA.ensureArray(values).find(isMatching);
-});
+const normalize = R.o(R.toLower, deburr);
+
+export const isSearchMatching = R.curry(
+  (searches: string | string[], values: string | string[]) => {
+    const normalizedValues = RA.ensureArray(values).map(normalize);
+
+    return RA.ensureArray(searches).find((search) => {
+      const normalizedSearch = normalize(search);
+      return normalizedValues.find((value) => value.includes(normalizedSearch));
+    });
+  },
+);
+
+// export const isSearchMatching = R.curry(
+//   (searches: string | string[], values: string | string[]) => {
+//     const normalize = R.o(R.toLower, deburr);
+//     const normalizedValues = RA.ensureArray(values).map(normalize);
+
+//     return RA.ensureArray(searches).every((search) => {
+//       const normalizedSearch = normalize(search);
+//       return normalizedValues.some((value) => value.includes(normalizedSearch));
+//     });
+//   },
+// );
 
 /**
  * Formats a string by replacing placeholders with specified values.
