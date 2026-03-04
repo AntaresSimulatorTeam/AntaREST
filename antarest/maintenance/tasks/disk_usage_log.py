@@ -82,15 +82,13 @@ def check_disk_usage(config: Config) -> None:
             )
 
 
-def disk_usage_logging(config: Config, dry_run: bool) -> DiskUsageTaskResult:
-    logger.info(f"Registering disk usage metrics (dry_run={dry_run})")
+def disk_usage_logging(config: Config) -> DiskUsageTaskResult:
     try:
         with db():
             with create_lock(db.session, LockId.DISK_USAGE):
-                if not dry_run:
-                    logger.info("Starting disk usage logging")
-                    check_disk_usage(config)
-                    logger.info("Disk usage logging finished")
+                logger.info("Starting disk usage logging")
+                check_disk_usage(config)
+                logger.info("Disk usage logging finished")
 
     except LockNotAcquired:
         logger.warning(f"Could not acquire lock {LockId.DISK_USAGE}, another disk usage logging is probably running")

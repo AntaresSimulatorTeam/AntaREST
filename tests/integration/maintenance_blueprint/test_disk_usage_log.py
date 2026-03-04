@@ -22,12 +22,12 @@ from antarest.maintenance.tasks.disk_usage_log import disk_usage_logging
 class TestDiskUsageLogIntegration:
     def test_disk_usage_log(self):
         with db():
-            result = disk_usage_logging(Config(), False)
+            result = disk_usage_logging(Config())
         assert result.status == BackGroundTaskStatus.SUCCESS
 
     def test_returns_skipped_when_lock_held(self):
         with db():
             with create_lock(db.session, lock_id=LockId.DISK_USAGE):
-                result = disk_usage_logging(Config(), False)
+                result = disk_usage_logging(Config())
 
             assert result.status == BackGroundTaskStatus.SKIPPED

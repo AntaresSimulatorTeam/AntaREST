@@ -27,4 +27,4 @@ def disk_usage_log_task(self: MaintenanceTask) -> DiskUsageTaskResult:
 
     logger.info("Registering disk usage metrics")
 
-    return disk_usage_logging(ctx.config, ctx.config.storage.disk_usage_dry_run)
+    return disk_usage_logging(ctx.config)
