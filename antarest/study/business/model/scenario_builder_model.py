@@ -94,8 +94,8 @@ class Ruleset(AntaresBaseModel, populate_by_name=True, extra="forbid"):
     """
     A ruleset defines, for each item in the study, a mapping of MC year to the data to be used.
 
-    In the vast majority of cases, the data is simply a timeseries number to be used,
-    but for specific cases it can be an actual value, like the level of an hydro reservoir.
+    In the vast majority of cases, the data is simply a ts number to be used,
+    but for specific cases it can be an actual value, like the level of a hydro reservoir.
     """
 
     load: AreaScenarios = Field(default_factory=dict)
