@@ -566,9 +566,9 @@ export const convertSize = (bytes: number): string => {
 
 const sizeRanges = [
   { limit: 0, color: "default" }, // Size is unknown or not calculated
-  { limit: 5 * BYTES_PER_GB, color: "var(--mui-palette-success-main)" }, // Size is 0 to 5 GB
-  { limit: 25 * BYTES_PER_GB, color: "var(--mui-palette-warning-main)" }, // Size is 5 GB to 25 GB
-  { limit: Infinity, color: "var(--mui-palette-error-main)" }, // Size is 25 GB and above
+  { limit: 5 * BYTES_PER_GB, color: "success.main" }, // Size is 0 to 5 GB
+  { limit: 25 * BYTES_PER_GB, color: "warning.main" }, // Size is 5 GB to 25 GB
+  { limit: Infinity, color: "error.main" }, // Size is 25 GB and above
 ];
 
 export const getColorForSize = (bytes: number): string => {
