@@ -44,7 +44,7 @@ def test_garbage_collection(db_dao: DatabaseStudyDao, db_session: Session, tmp_p
     provider = StudyDatabaseMatrixUsageProvider(matrix_service)
     matrix_service.register_usage_provider(provider)
 
-    result = build_real_case_study(dao)
+    result = build_real_case_study(dao, matrix_service)
     (
         load_df,
         solar_df,

@@ -87,18 +87,29 @@ def db_dao(db_session: Session, matrix_service: ISimpleMatrixService) -> Databas
 
 
 @pytest.fixture
-def db_dao_930(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
-    return build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
+def db_dao_930(db_dao_930_and_matrix_service) -> DatabaseStudyDao:
+    return db_dao_930_and_matrix_service[0]
 
 
 @pytest.fixture
-def fs_dao_930(
+def db_dao_930_and_matrix_service(
+    db_session: Session, matrix_service: ISimpleMatrixService
+) -> tuple[DatabaseStudyDao, ISimpleMatrixService]:
+    return build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3), matrix_service
+
+
+@pytest.fixture
+def fs_dao_930_and_matrix_service(
     db_session: Session, command_context: CommandContext, tmp_path: Path, core_cache: ICache
-) -> FileStudyTreeDao:
-    study_factory = StudyFactory(
-        matrix_mapper_factory=MatrixUriMapperFactory(command_context.matrix_service), cache=core_cache
-    )
-    return build_filesystem_dao(db_session, STUDY_VERSION_9_3, command_context, study_factory, tmp_path)
+) -> tuple[FileStudyTreeDao, ISimpleMatrixService]:
+    matrix_service = command_context.matrix_service
+    study_factory = StudyFactory(matrix_mapper_factory=MatrixUriMapperFactory(matrix_service), cache=core_cache)
+    return build_filesystem_dao(db_session, STUDY_VERSION_9_3, command_context, study_factory, tmp_path), matrix_service
+
+
+@pytest.fixture
+def fs_dao_930(fs_dao_930_and_matrix_service) -> FileStudyTreeDao:
+    return fs_dao_930_and_matrix_service[0]
 
 
 @pytest.fixture(scope="session")
@@ -138,8 +149,7 @@ def get_matrix_service_from_dao(dao: StudyDao) -> ISimpleMatrixService:
         return dao._generator_matrix_constants.matrix_service
 
 
-def build_real_case_study(dao: StudyDao) -> RealCaseStudy:
-    matrix_service = get_matrix_service_from_dao(dao)
+def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -> RealCaseStudy:
     # Create matrices in the matrix-store with different contents to diversify tests.
     base_data = [[1, 2.5], [3, 4.7]]
     dataframes = [pl.DataFrame(data=[[a + i, b + i] for a, b in base_data], orient="row") for i in range(38)]

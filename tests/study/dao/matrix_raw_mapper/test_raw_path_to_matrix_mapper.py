@@ -16,6 +16,7 @@ import polars as pl
 import pytest
 
 from antarest.core.exceptions import IncorrectPathError
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_8_1
@@ -23,12 +24,16 @@ from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToM
 from tests.study.dao.conftest import build_db_dao, build_real_case_study, get_matrix_service_from_dao
 
 
-def test_get_matrix_from_path(db_dao_930: DatabaseStudyDao, fs_dao_930: FileStudyTreeDao) -> None:
+def test_get_matrix_from_path(
+    db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, ISimpleMatrixService],
+    fs_dao_930_and_matrix_service: tuple[FileStudyTreeDao, ISimpleMatrixService],
+) -> None:
     ##########################
     # Set Up
     ##########################
-    for dao in [db_dao_930, fs_dao_930]:
-        result = build_real_case_study(dao)
+    for fixture in [db_dao_930_and_matrix_service, fs_dao_930_and_matrix_service]:
+        dao, matrix_service = fixture
+        result = build_real_case_study(dao, matrix_service)
         (
             load_df,
             solar_df,
@@ -218,7 +223,10 @@ def test_get_matrix_from_path(db_dao_930: DatabaseStudyDao, fs_dao_930: FileStud
         # todo: We're missing BC and Xpansion tests as they are not yet implemented in DB.
 
 
-def test_save_matrix_from_path(db_dao_930: DatabaseStudyDao, fs_dao_930: FileStudyTreeDao) -> None:
+def test_save_matrix_from_path(
+    db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, ISimpleMatrixService],
+    fs_dao_930_and_matrix_service: tuple[FileStudyTreeDao, ISimpleMatrixService],
+) -> None:
     ##########################
     # Set Up
     ##########################
@@ -230,8 +238,9 @@ def test_save_matrix_from_path(db_dao_930: DatabaseStudyDao, fs_dao_930: FileStu
         matrix_id = get_matrix_service_from_dao(dao).create(matrix)
         return matrix_id, matrix
 
-    for dao in [db_dao_930, fs_dao_930]:
-        result = build_real_case_study(dao)
+    for fixture in [db_dao_930_and_matrix_service, fs_dao_930_and_matrix_service]:
+        dao, matrix_service = fixture
+        result = build_real_case_study(dao, matrix_service)
         area_id, area2 = result.area1, result.area2
         thermal_id, renewable_id, st_storage_id = result.thermal_id, result.renewable_id, result.sts_id
         constraint_id = result.sts_constraint_id
