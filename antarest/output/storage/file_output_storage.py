@@ -33,8 +33,8 @@ from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.utils.archives import (
     ArchiveFormat,
     archive_dir,
-    extract_archive,
     extract_archive_from_path,
+    extract_archive_from_stream,
     is_zip,
     unzip,
 )
@@ -236,7 +236,7 @@ class InStudyFileOutputStorage(IOutputStorage):
             else:
                 # in case of stream, it's assumed to be an archive which we extract to the temporary output directory
                 t = StopWatch()
-                extract_archive(output, tmp_output_dir)
+                extract_archive_from_stream(output, tmp_output_dir)
                 fix_study_root(tmp_output_dir)
                 logger.info(f"Extracted output for {study_id} in {t}s")
 

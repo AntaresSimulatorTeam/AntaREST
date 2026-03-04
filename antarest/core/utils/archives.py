@@ -182,10 +182,6 @@ def extract_archive_from_stream(stream: BinaryIO, target_dir: Path, tmp_dir: Opt
         raise BadArchiveContent
 
 
-def extract_archive(stream: BinaryIO, target_dir: Path) -> None:
-    extract_archive_from_stream(stream, target_dir)
-
-
 def extract_file_to_tmp_dir(archive_path: Path, inside_archive_path: Path) -> Tuple[Path, Any]:
     str_inside_archive_path = str(inside_archive_path).replace("\\", "/")
     tmp_dir = tempfile.TemporaryDirectory()
