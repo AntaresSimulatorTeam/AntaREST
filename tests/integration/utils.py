@@ -23,18 +23,17 @@ from antarest.core.tasks.model import TaskDTO, TaskStatus
 
 logger = logging.getLogger(__name__)
 
+IS_WINDOWS = sys.platform == "win32"
+
 
 def wait_for(predicate: Callable[[], bool], timeout: float = 10, sleep_time: float = 1) -> None:
-    end = time.time() + timeout
+    end = time.time() + duration_threshold(timeout)
     while time.time() < end:
         with contextlib.suppress(Exception):
             if predicate():
                 return
         time.sleep(sleep_time)
     raise TimeoutError(f"task is still in progress after {timeout} seconds")
-
-
-IS_WINDOWS = sys.platform == "win32"
 
 
 def is_windows_ci() -> bool:
