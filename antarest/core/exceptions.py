@@ -399,7 +399,7 @@ class OutputAlreadyUnarchived(HTTPException):
 
 class OutputAlreadyExists(HTTPException):
     """
-    Exception raised when a user wants to unarchive an output which is already unarchived.
+    Exception raised when a user wants to import an output which already exists.
     """
 
     def __init__(self, output_id: str) -> None:
