@@ -27,7 +27,7 @@ export function truncateTextSx(maxWidth?: number) {
  * Transparentizes a color by mixing it with transparent.
  *
  * @param color - The color to transparentize, in any valid CSS color format (e.g., hex, rgb, rgba, hsl).
- * Support of variables (e.g., `var(--my-color)`).
+ * Supports variables (e.g., `var(--my-color)`).
  * @param transparency - The percentage of transparency to apply (0-100).
  * @returns A new color string that is a mix of the original color and transparent.
  */

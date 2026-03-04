@@ -41,8 +41,10 @@ export const BorderedPulsating = styled(Box)(({ theme }) => [
     },
   },
   theme.applyStyles("dark", {
-    border: `1px solid ${theme.palette.secondary.main}`,
-    boxShadow: `0 0px 10px 0 ${theme.palette.secondary.main}`,
+    "&::before": {
+      border: `1px solid ${theme.palette.secondary.main}`,
+      boxShadow: `0 0px 10px 0 ${theme.palette.secondary.main}`,
+    },
   }),
 ]);
 

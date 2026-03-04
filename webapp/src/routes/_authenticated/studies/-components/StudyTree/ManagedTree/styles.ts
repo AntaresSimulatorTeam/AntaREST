@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import { transparentizeColor } from "@/utils/muiUtils";
 import FolderIcon from "@mui/icons-material/Folder";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import type { SxProps, Theme } from "@mui/material";
-import { transparentizeColor } from "../../../../../../utils/muiUtils";
 
 export const treeNodeIcons = {
   folder: FolderIcon,
