@@ -571,15 +571,6 @@ class StudySimSettingsDTO(AntaresBaseModel):
     playlist: Optional[List[int]] = None
 
 
-class StudySimResultDTO(AntaresBaseModel):
-    name: str
-    type: str
-    settings: StudySimSettingsDTO
-    completionDate: str  # TODO: delete ? seems never filled with actual information
-    status: str  # TODO: delete ? seems never filled with actual information
-    archived: bool
-
-
 class StudyDownloadType(enum.StrEnum):
     LINK = "LINK"
     DISTRICT = "DISTRICT"
