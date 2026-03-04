@@ -1,4 +1,4 @@
-"""add_comments_column_to_study
+"""add_comments_table
 
 Revision ID: 8a9a91f6a2bc
 Revises: c11cfe5728b0
@@ -18,10 +18,14 @@ depends_on = None
 
 
 def upgrade() -> None:
-    with op.batch_alter_table("study", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("comments", sa.Text(), nullable=False, server_default=""))
+    op.create_table(
+        "comments",
+        sa.Column("study_id", sa.String(length=36), nullable=False),
+        sa.Column("comments", sa.Text(), nullable=False, server_default=""),
+        sa.ForeignKeyConstraint(["study_id"], ["study.id"], ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("study_id"),
+    )
 
 
 def downgrade() -> None:
-    with op.batch_alter_table("study", schema=None) as batch_op:
-        batch_op.drop_column("comments")
+    op.drop_table("comments")
