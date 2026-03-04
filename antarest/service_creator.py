@@ -209,7 +209,7 @@ def build_output_service(
 
     output_service = OutputService(
         studies_repository=study_service_as_studies_repository(study_service),
-        storage=storages,
+        storages=storages,
         task_service=task_service,
         file_transfer_manager=filetransfer_service,
         matrix_service=matrix_service,

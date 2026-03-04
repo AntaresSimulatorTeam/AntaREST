@@ -113,7 +113,7 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
         file_transfer_manager=Mock(),
         tmp_dir=tmp_path,
         studies_repository=studies_metadata_repository,
-        storage=output_storage,
+        storages=[output_storage],
         task_service=task_service,
     )
 
@@ -168,7 +168,7 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
         file_transfer_manager=Mock(),
         tmp_dir=tmp_path,
         studies_repository=studies_metadata_repository,
-        storage=output_storage,
+        storages=[output_storage],
         task_service=task_service,
     )
 
