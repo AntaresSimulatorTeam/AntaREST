@@ -360,6 +360,8 @@ class OutputService:
         output_id = self._get_storage(storage_type).import_output(uuid, output, output_name_suffix, logs)
         logger.info("output added to study %s by user %s", uuid, get_user_id())
 
+        # Optimized path for studies stored on external devices, that will then be unarchived there.
+        # TODO: as commented elsewhere, that workflow should be refactored to not span multiple files
         if output_id and isinstance(output, Path) and output.suffix == ArchiveFormat.ZIP and auto_unzip:
             self.unarchive_output(uuid, output_id)
 

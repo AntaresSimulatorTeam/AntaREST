@@ -508,18 +508,12 @@ class LauncherService:
         additional_logs: SimulationLogs,
     ) -> Optional[str]:
         """
-        TODO: clarify contract for the output_path param: a zip, a path ? ...
+        In the current state (2026-03-04), we actually always get a parent directory of the output here.
+        We never get a zip. Zip support was partially added in the past when planning to get an output
+        zip directly from antares-launcher, but it was never completed.
 
-              With local launcher, we get the "study / output" path of the launcher workspace, so it's the parent of
-              the actual output path, which will be a directory ? And the log paths are taken from another dir.
-
-              With slurm launcher, it looks like we never go into save_logs be cause we always have a zipped
-              output ? output_path is " study / job_id / output" located in the slurm workspace.
-              A priori antares-launcher fait bien un unzip de tout.
-
-              Bottomline:
-              we always get a directory. TODO: check with command line launcher though
-
+        TODO: we should clarify this whole workflow, including the "optimized path" for studies stored
+              on external devices, see comment below.
         """
         logger.info(f"Importing output for job {job_id}")
         with db():
@@ -563,6 +557,7 @@ class LauncherService:
                         final_output_path,
                         output_name_suffix=job_launch_params.output_suffix,
                         auto_unzip=job_launch_params.auto_unzip,
+                        logs=additional_logs,
                     )
             except StudyNotFoundError:
                 return self._import_fallback_output(
