@@ -22,9 +22,9 @@ export interface TreeItemEnhancedProps extends TreeItemProps {
   disableTooltip?: boolean;
 }
 
-/**
- * Utils
- */
+////////////////////////////////////////////////////////////////
+// Utils
+////////////////////////////////////////////////////////////////
 
 function getStyles(canExpand: boolean): SxProps<Theme> {
   return {
@@ -76,9 +76,9 @@ function withLoading(label: TreeItemEnhancedProps["label"], loading: boolean) {
   );
 }
 
-/**
- * Component
- */
+////////////////////////////////////////////////////////////////
+// Component
+////////////////////////////////////////////////////////////////
 
 function TreeItemEnhanced({
   onClick,
