@@ -14,6 +14,8 @@ from unittest.mock import MagicMock
 
 import numpy as np
 import polars as pl
+from helpers import with_admin_user
+from storage.integration.conftest import UUID
 
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.study.business.model.area_model import AreaUIData
@@ -55,8 +57,6 @@ from antarest.study.model import STUDY_VERSION_7_0, STUDY_VERSION_9_2
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import with_admin_user
-from tests.storage.integration.conftest import UUID
 
 
 @with_admin_user

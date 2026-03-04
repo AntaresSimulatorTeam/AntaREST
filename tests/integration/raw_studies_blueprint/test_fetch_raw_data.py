@@ -21,6 +21,8 @@ from unittest.mock import ANY
 import numpy as np
 import pandas as pd
 import pytest
+from integration.raw_studies_blueprint.assets import ASSETS_DIR
+from integration.utils import wait_for
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
@@ -29,8 +31,6 @@ from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.prepro.area.thermal.thermal import (
     default_data_matrix,
 )
-from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
-from tests.integration.utils import wait_for
 
 
 class TestFetchRawData:

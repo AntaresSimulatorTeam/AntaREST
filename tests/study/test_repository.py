@@ -14,6 +14,8 @@ import typing as t
 from unittest.mock import Mock
 
 import pytest
+from db_statement_recorder import DBStatementRecorder
+from helpers import create_raw_study, create_variant_study
 from sqlalchemy.orm import Session
 
 from antarest.core.interfaces.cache import ICache
@@ -28,8 +30,6 @@ from antarest.study.repository import (
     StudyPagination,
     StudySortBy,
 )
-from tests.db_statement_recorder import DBStatementRecorder
-from tests.helpers import create_raw_study, create_variant_study
 
 
 @pytest.mark.parametrize(

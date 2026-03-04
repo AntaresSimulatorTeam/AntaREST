@@ -13,11 +13,11 @@
 import datetime
 from unittest.mock import Mock
 
+from helpers import create_raw_study, create_variant_study
 from sqlalchemy.orm import Session
 
 from antarest.core.interfaces.cache import ICache
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
-from tests.helpers import create_raw_study, create_variant_study
 
 
 class TestVariantStudyRepository:

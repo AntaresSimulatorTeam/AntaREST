@@ -29,7 +29,7 @@ class DBStatementRecorder(contextlib.AbstractContextManager):  # type: ignore
 
     Usage::
 
-        from tests.db_statement_logger import DBStatementRecorder
+        from db_statement_logger import DBStatementRecorder
 
         db_session = ...
         with DBStatementRecorder(db_session.bind) as db_recorder:

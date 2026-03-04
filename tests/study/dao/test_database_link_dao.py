@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import pytest
+from db_statement_recorder import DBStatementRecorder
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -18,7 +19,6 @@ from antarest.study.business.model.common import FilterOption
 from antarest.study.business.model.link_model import DEFAULT_COLOR, AssetType, Link, LinkStyle, TransmissionCapacity
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.link import LINK_TABLE
-from tests.db_statement_recorder import DBStatementRecorder
 
 
 def _create_default_link(dao: DatabaseStudyDao) -> None:

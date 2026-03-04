@@ -23,8 +23,15 @@ import pandas as pd
 import polars as pl
 import pytest
 from fastapi import FastAPI
+from helpers import assert_study, with_admin_user, with_db_context
 from sqlalchemy import Engine
 from starlette.testclient import TestClient
+from storage.integration.conftest import UUID
+from storage.integration.data.de_details_hourly import de_details_hourly
+from storage.integration.data.de_fr_values_hourly import de_fr_values_hourly
+from storage.integration.data.digest_file import digest_file
+from storage.integration.data.set_id_annual import set_id_annual
+from storage.integration.data.set_values_monthly import set_values_monthly
 
 from antarest.core.application import create_app_ctxt
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
@@ -40,13 +47,6 @@ from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import 
 from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.prepro.area.area import default_energy
 from antarest.study.storage.variantstudy.business.matrix_constants.common import fixed_4_columns
 from antarest.study.web.output_blueprint import create_output_routes
-from tests.helpers import assert_study, with_admin_user, with_db_context
-from tests.storage.integration.conftest import UUID
-from tests.storage.integration.data.de_details_hourly import de_details_hourly
-from tests.storage.integration.data.de_fr_values_hourly import de_fr_values_hourly
-from tests.storage.integration.data.digest_file import digest_file
-from tests.storage.integration.data.set_id_annual import set_id_annual
-from tests.storage.integration.data.set_values_monthly import set_values_monthly
 
 
 @pytest.fixture

@@ -12,6 +12,7 @@
 import pytest
 from antares.study.version import StudyVersion
 from sqlalchemy.orm import Session
+from study.dao.conftest import build_dao
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.config.adequacy_patch_model import (
@@ -33,7 +34,6 @@ from antarest.study.business.model.thematic_trimming_model import (
     initialize_thematic_trimming_against_version,
 )
 from antarest.study.model import STUDY_REFERENCE_TEMPLATES, STUDY_VERSION_8_3, STUDY_VERSION_9_2
-from tests.study.dao.conftest import build_dao
 
 
 @pytest.mark.parametrize("version", STUDY_REFERENCE_TEMPLATES)

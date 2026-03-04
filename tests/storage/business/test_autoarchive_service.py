@@ -13,6 +13,8 @@
 import datetime
 from unittest.mock import Mock
 
+from helpers import create_raw_study, create_variant_study, with_db_context
+
 from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.utils import current_time
@@ -22,7 +24,6 @@ from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.output.output_service import OutputService
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
-from tests.helpers import create_raw_study, create_variant_study, with_db_context
 
 
 @with_db_context

@@ -11,11 +11,12 @@
 # This file is part of the Antares project.
 import copy
 
+from helpers import file_study_interface
+
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters, PriceTakingOrder
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import file_study_interface
 
 EXPECTED_PARAMS = AdequacyPatchParameters(
     enable_adequacy_patch=False,

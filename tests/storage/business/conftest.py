@@ -13,6 +13,7 @@ from pathlib import Path
 
 import pytest
 from antares.study.version.create_app import CreateApp
+from helpers import file_study_interface
 
 from antarest.blobstore.service import IBlobService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
@@ -27,7 +28,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import file_study_interface
 
 
 @pytest.fixture

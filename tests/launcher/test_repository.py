@@ -14,12 +14,13 @@ import datetime
 from unittest.mock import Mock
 from uuid import uuid4
 
+from helpers import create_raw_study, with_db_context
+
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.model import JobLog, JobLogType, JobResult, JobStatus
 from antarest.launcher.repository import JobResultRepository
 from antarest.login.model import Identity
 from antarest.study.repository import StudyMetadataRepository
-from tests.helpers import create_raw_study, with_db_context
 
 
 @with_db_context

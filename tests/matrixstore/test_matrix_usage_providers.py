@@ -18,6 +18,7 @@ from unittest.mock import Mock
 
 import polars as pl
 import pytest
+from helpers import create_raw_study, with_admin_user, with_db_context
 from typing_extensions import override
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME, InternalMatrixFormat
@@ -56,7 +57,6 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import create_raw_study, with_admin_user, with_db_context
 
 
 @pytest.fixture

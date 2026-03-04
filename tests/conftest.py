@@ -16,6 +16,11 @@ from typing import Callable
 import pytest
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
+from conftest_db import db_engine_fixture, db_middleware_fixture, db_session_fixture  # noqa: F401
+from conftest_instances import admin_user  # noqa: F401
+
+# noinspection PyUnresolvedReferences
+from conftest_services import *  # noqa: F403
 
 from antarest.blobstore.in_memory import InMemoryBlobService
 from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteStudyRepository
@@ -36,11 +41,6 @@ from antarest.study.model import (
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from tests.conftest_db import db_engine_fixture, db_middleware_fixture, db_session_fixture  # noqa: F401
-from tests.conftest_instances import admin_user  # noqa: F401
-
-# noinspection PyUnresolvedReferences
-from tests.conftest_services import *  # noqa: F403
 
 HERE = Path(__file__).parent.resolve()
 PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists()))

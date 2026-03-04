@@ -21,6 +21,7 @@ from typing import Any, AnyStr, List, Optional
 import pandas
 import pytest
 from pandas.errors import EmptyDataError
+from storage.business.assets import ASSETS_DIR
 
 from antarest.core.exceptions import UnsupportedStudyVersion
 from antarest.core.serde.ini_reader import IniReader
@@ -32,7 +33,6 @@ from antarest.study.storage.study_upgrader import (
     check_versions_coherence,
     find_next_version,
 )
-from tests.storage.business.assets import ASSETS_DIR
 
 MAPPING_TRANSMISSION_CAPACITIES = {
     True: "local-values",

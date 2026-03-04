@@ -14,6 +14,8 @@ from pathlib import Path
 from unittest.mock import ANY, Mock
 
 import pytest
+from helpers import with_admin_user
+from storage.conftest import SimpleSyncTaskService
 
 from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.model import PublicMode, StudyPermissionType
@@ -30,8 +32,6 @@ from antarest.study.output.output_service import IStudyMetadataProvider, OutputS
 from antarest.study.storage.utils import is_output_archived
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.worker.archive_worker import ArchiveTaskArgs
-from tests.helpers import with_admin_user
-from tests.storage.conftest import SimpleSyncTaskService
 
 
 def test_is_output_archived(tmp_path: Path) -> None:

@@ -11,12 +11,12 @@
 # This file is part of the Antares project.
 
 
+from integration.study_data_blueprint import ASSETS_DIR
+from integration.utils import wait_task_completion
 from starlette.testclient import TestClient
 
 from antarest.core.serde.json import from_json
 from antarest.core.tasks.model import TaskStatus
-from tests.integration.study_data_blueprint import ASSETS_DIR
-from tests.integration.utils import wait_task_completion
 
 
 def test_study_data(client: TestClient, user_access_token: str, internal_study_id: str) -> None:

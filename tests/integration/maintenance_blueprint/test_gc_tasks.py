@@ -15,6 +15,8 @@
 from datetime import datetime
 from unittest.mock import patch
 
+from helpers import with_admin_user
+
 from antarest.core.tasks.model import TaskDTO, TaskJob, TaskListFilter, TaskStatus
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.tasks.service import ITaskService
@@ -22,7 +24,6 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import create_lock
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, LockId
 from antarest.maintenance.tasks.gc_tasks import clean_tasks
-from tests.helpers import with_admin_user
 
 
 class TestTasksGCIntegration:

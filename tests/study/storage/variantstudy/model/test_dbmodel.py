@@ -18,6 +18,7 @@ from pathlib import Path
 
 import pytest
 from antares.study.version import StudyVersion
+from helpers import create_raw_study, create_variant_study
 from sqlalchemy.orm import Session
 
 from antarest.core.model import PublicMode
@@ -25,7 +26,6 @@ from antarest.core.roles import RoleType
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Role, User
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
-from tests.helpers import create_raw_study, create_variant_study
 
 
 @pytest.fixture(name="user_id")

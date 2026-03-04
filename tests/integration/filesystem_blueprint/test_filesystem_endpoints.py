@@ -16,11 +16,10 @@ import re
 import typing as t
 from pathlib import Path
 
+from integration.conftest import RESOURCES_DIR
 from pytest_mock import MockerFixture
 from starlette.testclient import TestClient
 from typing_extensions import override
-
-from tests.integration.conftest import RESOURCES_DIR
 
 
 class AnyDiskUsagePercent:

@@ -15,13 +15,13 @@ from typing import Optional
 import numpy as np
 import polars as pl
 import pytest
+from helpers import with_admin_user
 from polars.testing import assert_frame_equal
+from storage.integration.conftest import UUID
 
 from antarest.core.model import SUB_JSON
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.study.service import StudyService
-from tests.helpers import with_admin_user
-from tests.storage.integration.conftest import UUID
 
 
 def assert_with_errors(

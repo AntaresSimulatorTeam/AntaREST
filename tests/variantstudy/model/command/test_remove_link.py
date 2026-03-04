@@ -18,7 +18,9 @@ from unittest.mock import Mock
 from zipfile import ZipFile
 
 import pytest
+from helpers import dirhash
 from pydantic import ValidationError
+from variantstudy.model.command.helpers import reset_line_separator
 
 from antarest.study.business.model.scenario_builder_model import RulesetUpdate
 from antarest.study.model import STUDY_VERSION_8_8
@@ -31,8 +33,6 @@ from antarest.study.storage.variantstudy.model.command.create_link import Create
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import dirhash
-from tests.variantstudy.model.command.helpers import reset_line_separator
 
 
 class TestRemoveLink:

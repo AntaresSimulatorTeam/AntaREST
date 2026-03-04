@@ -15,10 +15,10 @@ import sys
 from typing import List, Union
 
 import pytest
+from launcher.assets import ASSETS_DIR
 from typing_extensions import override
 
 from antarest.launcher.adapters.log_parser import LaunchProgressDTO
-from tests.launcher.assets import ASSETS_DIR
 
 
 @pytest.mark.parametrize(

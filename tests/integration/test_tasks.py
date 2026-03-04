@@ -9,10 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from integration.utils import wait_task_completion
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
-from tests.integration.utils import wait_task_completion
 
 
 def test_list_tasks(client: TestClient, user_access_token: str, internal_study_id: str):

@@ -13,12 +13,12 @@
 import uuid
 
 import pytest
+from helpers import create_raw_study
 from sqlalchemy.orm import Session
 
 from antarest.login.model import Identity
 from antarest.study.model import Directory
 from antarest.study.repository import DirectoryRepository
-from tests.helpers import create_raw_study
 
 
 @pytest.fixture

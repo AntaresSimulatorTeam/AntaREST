@@ -20,13 +20,13 @@ from pathlib import Path
 
 import pytest
 from fastapi import FastAPI
+from integration.assets import ASSETS_DIR
+from integration.utils import wait_task_completion
 from starlette.testclient import TestClient
 
 from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
 from antarest.core.tasks.model import TaskStatus
-from tests.integration.assets import ASSETS_DIR
-from tests.integration.utils import wait_task_completion
 
 # URL used to create or list studies
 STUDIES_URL = "/v1/studies"

@@ -18,6 +18,7 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 from antares.study.version import StudyVersion
+from helpers import create_raw_study, with_db_context
 
 from antarest.blobstore.service import IBlobService
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
@@ -38,7 +39,6 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import create_raw_study, with_db_context
 
 # noinspection SpellCheckingInspection
 EXPECTED_DENORMALIZED = {

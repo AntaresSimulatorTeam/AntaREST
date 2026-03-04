@@ -22,6 +22,7 @@ from uuid import uuid4
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
+from helpers import with_admin_user
 from sqlalchemy import create_engine
 
 from antarest.core.config import (
@@ -71,7 +72,6 @@ from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import with_admin_user
 
 
 class TestLauncherService:

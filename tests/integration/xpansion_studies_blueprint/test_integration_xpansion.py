@@ -18,11 +18,11 @@ from unittest.mock import ANY
 from urllib.parse import urljoin
 
 import pytest
+from integration.utils import wait_task_completion
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
 from antarest.study.business.model.xpansion_model import XpansionCandidate
-from tests.integration.utils import wait_task_completion
 
 
 def _create_area(

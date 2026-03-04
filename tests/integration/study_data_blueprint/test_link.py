@@ -11,10 +11,10 @@
 # This file is part of the Antares project.
 
 import pytest
+from integration.prepare_proxy import PreparerProxy
 from starlette.testclient import TestClient
 
 from antarest.study.business.model.link_model import TransmissionCapacity
-from tests.integration.prepare_proxy import PreparerProxy
 
 
 class TestLink:

@@ -14,12 +14,12 @@ import io
 
 import numpy as np
 import pytest
+from integration.assets import ASSETS_DIR
+from integration.prepare_proxy import PreparerProxy
+from integration.utils import wait_task_completion
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
-from tests.integration.assets import ASSETS_DIR
-from tests.integration.prepare_proxy import PreparerProxy
-from tests.integration.utils import wait_task_completion
 
 TIMESERIES_ASSETS_DIR = ASSETS_DIR.joinpath("timeseries_generation")
 

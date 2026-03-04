@@ -12,13 +12,13 @@
 
 import pytest
 from fastapi import HTTPException
+from helpers import create_study, with_db_context
 
 from antarest.core.jwt import JWTUser
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.favorite.model import FavoriteStudyDTO
 from antarest.favorite.service import FavoriteStudyService
 from antarest.login.utils import current_user_context
-from tests.helpers import create_study, with_db_context
 
 
 @with_db_context

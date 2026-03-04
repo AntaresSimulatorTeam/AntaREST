@@ -17,6 +17,7 @@ import pandas as pd
 import polars as pl
 import pytest
 from fastapi import UploadFile
+from helpers import file_study_interface
 from polars.testing import assert_frame_equal
 
 from antarest.core.exceptions import (
@@ -48,7 +49,6 @@ from antarest.study.business.xpansion_management import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
-from tests.helpers import file_study_interface
 
 
 def make_areas(area_manager: AreaManager, study: StudyInterface) -> None:

@@ -14,6 +14,8 @@ import zipfile
 from pathlib import Path
 
 import pytest
+from helpers import file_study_interface
+from study.business.areas.assets import ASSETS_DIR
 
 import antarest.study.storage.rawstudy.model.filesystem.config.files
 from antarest.blobstore.in_memory import InMemoryBlobService
@@ -33,8 +35,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import file_study_interface
-from tests.study.business.areas.assets import ASSETS_DIR
 
 
 class TestThermalClusterGroup:

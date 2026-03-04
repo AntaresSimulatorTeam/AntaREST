@@ -13,6 +13,7 @@ import datetime
 import uuid
 
 import pytest
+from helpers import create_raw_study
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -20,7 +21,6 @@ from antarest.core.tasks.model import TaskJob, TaskJobLog
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Password, User
 from antarest.study.model import RawStudy
-from tests.helpers import create_raw_study
 
 
 def test_database_constraints(db_session: Session) -> None:

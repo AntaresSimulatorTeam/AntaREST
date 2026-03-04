@@ -13,6 +13,7 @@ import re
 
 import numpy as np
 import pytest
+from helpers import file_study_interface
 
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.model.hydro_correlation_model import (
@@ -23,7 +24,6 @@ from antarest.study.business.model.hydro_correlation_model import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import file_study_interface
 
 
 def _set_up(command_context: CommandContext, study: FileStudy) -> None:

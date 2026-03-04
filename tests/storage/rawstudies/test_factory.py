@@ -12,13 +12,14 @@
 
 from unittest.mock import Mock
 
+from storage.rawstudies.samples import ASSETS_DIR
+
 from antarest.core.interfaces.cache import study_config_cache_key
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from tests.storage.rawstudies.samples import ASSETS_DIR
 
 
 def test_renewable_subtree() -> None:

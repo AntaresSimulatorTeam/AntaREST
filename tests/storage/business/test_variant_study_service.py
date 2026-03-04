@@ -15,6 +15,7 @@ from typing import Any
 from unittest.mock import Mock
 
 import pytest
+from helpers import create_variant_study
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyNotFoundError, VariantGenerationError
@@ -30,7 +31,6 @@ from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import create_variant_study
 
 
 def build_config(study_path: Path) -> Config:

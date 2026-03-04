@@ -18,6 +18,7 @@ from typing import Any, Iterable, Mapping
 from zipfile import ZipFile
 
 import pytest
+from storage.business.assets import ASSETS_DIR
 
 from antarest.core.serde.ini_writer import write_ini_file
 from antarest.study.business.model.binding_constraint_model import (
@@ -60,7 +61,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from tests.storage.business.assets import ASSETS_DIR
 
 
 @pytest.fixture(name="study_path")

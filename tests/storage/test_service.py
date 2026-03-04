@@ -25,7 +25,9 @@ from unittest.mock import ANY, Mock, patch, seal
 import pytest
 from _pytest.logging import LogCaptureFixture
 from antares.study.version import StudyVersion
+from db_statement_recorder import DBStatementRecorder
 from fastapi import HTTPException
+from helpers import create_raw_study, create_study, create_variant_study, with_admin_user, with_db_context
 from sqlalchemy.orm import Session
 
 from antarest.blobstore.service import BlobService
@@ -83,8 +85,6 @@ from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.db_statement_recorder import DBStatementRecorder
-from tests.helpers import create_raw_study, create_study, create_variant_study, with_admin_user, with_db_context
 
 JWT_USER = JWTUser(id=0, impersonator=0, type="users")
 

@@ -11,6 +11,8 @@
 # This file is part of the Antares project.
 
 
+from helpers import file_study_interface
+
 from antarest.study.business.model.config.optimization_config_model import (
     OptimizationPreferences,
     TransmissionCapacities,
@@ -18,7 +20,6 @@ from antarest.study.business.model.config.optimization_config_model import (
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import file_study_interface
 
 
 def test_missing_section(empty_study_880: FileStudy, command_context: CommandContext) -> None:

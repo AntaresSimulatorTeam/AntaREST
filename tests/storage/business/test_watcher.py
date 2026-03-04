@@ -19,8 +19,10 @@ from unittest import mock
 from unittest.mock import Mock
 
 import pytest
+from helpers import create_study
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
+from storage.conftest import SimpleSyncTaskService
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import CannotAccessInternalWorkspace, ScanDisabled
@@ -39,8 +41,6 @@ from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import create_study
-from tests.storage.conftest import SimpleSyncTaskService
 
 
 def build_config(root: Path, desktop_mode: bool = False) -> Config:

@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import pytest
+from db_statement_recorder import DBStatementRecorder
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -17,7 +18,6 @@ from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.area import AREA_TABLE
-from tests.db_statement_recorder import DBStatementRecorder
 
 
 def test_save_area_creates_area_with_default_properties(db_session: Session, dao: DatabaseStudyDao) -> None:

@@ -16,6 +16,7 @@ from pathlib import Path
 
 import pytest
 from antares.study.version import StudyVersion
+from helpers import AnyUUID, create_raw_study, with_admin_user, with_db_context
 from sqlalchemy import event
 
 from antarest.core.jwt import JWTGroup, JWTUser
@@ -31,7 +32,6 @@ from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO, CommandDTOAPI
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import AnyUUID, create_raw_study, with_admin_user, with_db_context
 
 
 class TestVariantStudyService:

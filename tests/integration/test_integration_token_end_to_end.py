@@ -15,12 +15,12 @@ import typing as t
 from unittest.mock import ANY
 
 import numpy as np
+from integration.assets import ASSETS_DIR
+from integration.utils import wait_for
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
 from antarest.launcher.model import JobResultDTO, JobStatus
-from tests.integration.assets import ASSETS_DIR
-from tests.integration.utils import wait_for
 
 
 def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str) -> None:

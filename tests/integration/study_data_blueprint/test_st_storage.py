@@ -18,13 +18,13 @@ from unittest.mock import ANY
 import numpy as np
 import pytest
 from antares.study.version import StudyVersion
+from integration.utils import wait_task_completion
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageFileData, parse_st_storage
-from tests.integration.utils import wait_task_completion
 
 _ST_STORAGE_860 = parse_st_storage(STUDY_VERSION_8_6, data={"name": "dummy"})
 _ST_STORAGE_880 = parse_st_storage(STUDY_VERSION_8_8, data={"name": "dummy"})

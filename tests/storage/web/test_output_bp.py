@@ -14,6 +14,10 @@ from http import HTTPStatus
 from pathlib import Path
 from unittest.mock import Mock
 
+from storage.conftest import SimpleFileTransferManager
+from storage.integration.conftest import UUID
+from storage.web.test_studies_bp import create_test_client
+
 from antarest.core.config import Config, StorageConfig
 from antarest.core.filetransfer.model import FileDownloadDTO, FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -22,9 +26,6 @@ from antarest.study.model import (
     StudySimSettingsDTO,
 )
 from antarest.study.output.output_service import OutputService
-from tests.storage.conftest import SimpleFileTransferManager
-from tests.storage.integration.conftest import UUID
-from tests.storage.web.test_studies_bp import create_test_client
 
 
 def test_output_whole_download(tmp_path: Path) -> None:

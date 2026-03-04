@@ -11,6 +11,8 @@
 # This file is part of the Antares project.
 
 import numpy as np
+from helpers import dirhash
+from variantstudy.model.command.helpers import reset_line_separator
 
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintFrequency,
@@ -31,8 +33,6 @@ from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_c
 )
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import dirhash
-from tests.variantstudy.model.command.helpers import reset_line_separator
 
 
 class TestRemoveCluster:

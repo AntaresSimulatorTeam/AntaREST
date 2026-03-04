@@ -13,11 +13,12 @@
 from typing import Awaitable, Callable, List
 from unittest.mock import MagicMock, Mock
 
+from helpers import auto_retry_assert
+
 from antarest.core.config import Config, EventBusConfig, RedisConfig
 from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.eventbus.main import build_eventbus
-from tests.helpers import auto_retry_assert
 
 
 def test_service_factory() -> None:

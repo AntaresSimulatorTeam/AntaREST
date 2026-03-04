@@ -14,6 +14,8 @@
 
 import uuid
 
+from helpers import create_study
+
 from antarest.blobstore.service import BlobService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import create_lock
@@ -22,7 +24,6 @@ from antarest.maintenance.tasks.gc_blob import clean_blobs
 from antarest.study.business.model.user_model import ResourceType
 from antarest.study.dao.database.database_blob_usage_provider import DatabaseBlobUsageProvider
 from antarest.study.dao.database.models.user_resources import USER_RESOURCES_TABLE
-from tests.helpers import create_study
 
 
 class TestCleanBlobsIntegration:

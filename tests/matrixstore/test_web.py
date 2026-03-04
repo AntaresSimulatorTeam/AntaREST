@@ -17,6 +17,8 @@ from unittest.mock import Mock
 import numpy as np
 import polars as pl
 from fastapi import FastAPI
+from helpers import with_admin_user
+from login.test_web import create_auth_token
 from starlette.testclient import TestClient
 
 from antarest.core.application import create_app_ctxt
@@ -27,8 +29,6 @@ from antarest.login.auth import JwtSettings
 from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.model import MatrixDescriptionDTO, MatrixInfoDTO, MatrixReference, MatrixReferencesDTO
 from antarest.matrixstore.web import MatrixDTO
-from tests.helpers import with_admin_user
-from tests.login.test_web import create_auth_token
 
 
 def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:

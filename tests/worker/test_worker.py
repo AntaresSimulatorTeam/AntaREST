@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import List
 from unittest.mock import MagicMock
 
+from helpers import auto_retry_assert
 from typing_extensions import override
 
 from antarest.core.config import Config
@@ -23,7 +24,6 @@ from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.tasks.model import TaskResult
 from antarest.eventbus.main import build_eventbus
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
-from tests.helpers import auto_retry_assert
 
 
 class DummyWorker(AbstractWorker):

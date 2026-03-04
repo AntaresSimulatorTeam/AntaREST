@@ -13,12 +13,12 @@ from pathlib import Path
 from typing import Callable
 
 import pytest
+from db_statement_recorder import DBStatementRecorder
 from sqlalchemy import Column, Engine, Integer, MetaData, String, Table, create_engine, select
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 
 from antarest.study.dao.database.sql_utils import generic_upsert_multiple, upsert_multiple, upsert_one
-from tests.db_statement_recorder import DBStatementRecorder
 
 METADATA = MetaData()
 

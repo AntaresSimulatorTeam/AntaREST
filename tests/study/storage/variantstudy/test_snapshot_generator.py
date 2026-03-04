@@ -22,6 +22,15 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 from antares.study.version import StudyVersion
+from db_statement_recorder import DBStatementRecorder
+from helpers import (
+    AnyUUID,
+    create_raw_study,
+    create_study,
+    create_variant_study,
+    with_admin_user,
+    with_db_context,
+)
 from typing_extensions import override
 
 from antarest.core.cache.business.local_chache import LocalCache
@@ -42,15 +51,6 @@ from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, Vari
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator, search_ref_study
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.db_statement_recorder import DBStatementRecorder
-from tests.helpers import (
-    AnyUUID,
-    create_raw_study,
-    create_study,
-    create_variant_study,
-    with_admin_user,
-    with_db_context,
-)
 
 logger = logging.getLogger(__name__)
 

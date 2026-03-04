@@ -13,6 +13,7 @@ from typing import Any
 from unittest.mock import patch
 
 import pytest
+from helpers import file_study_interface
 
 from antarest.core.exceptions import AreaNotFound, DistrictAlreadyExist, DistrictNotFound
 from antarest.study.business.district_manager import DistrictManager
@@ -24,7 +25,6 @@ from antarest.study.storage.variantstudy.model.command.create_district import Cr
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import file_study_interface
 
 
 def _check_add_commands(patched_func: Any, expected_cls: Any) -> None:

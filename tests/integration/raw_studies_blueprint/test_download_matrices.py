@@ -16,11 +16,11 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from integration.utils import wait_task_completion
 from pandas._testing import assert_frame_equal
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
-from tests.integration.utils import wait_task_completion
 
 
 class Proxy:

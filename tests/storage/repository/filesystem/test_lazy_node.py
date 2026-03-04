@@ -14,12 +14,12 @@ from pathlib import Path
 from typing import List, Optional
 from unittest.mock import Mock
 
+from storage.repository.filesystem.matrix.test_matrix_node import MockMatrixNode
 from typing_extensions import override
 
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperManaged
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
-from tests.storage.repository.filesystem.matrix.test_matrix_node import MockMatrixNode
 
 
 class MockLazyNode(LazyNode[str, str, str]):

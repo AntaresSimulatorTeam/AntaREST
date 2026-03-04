@@ -19,6 +19,7 @@ from zipfile import ZipFile
 
 import py7zr
 import pytest
+from helpers import create_raw_study
 
 from antarest.blobstore.repository import BlobContentRepository
 from antarest.blobstore.service import BlobService
@@ -40,7 +41,6 @@ from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.output.output_service import OutputService
 from antarest.study.service import StudyService
-from tests.helpers import create_raw_study
 
 UUID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 

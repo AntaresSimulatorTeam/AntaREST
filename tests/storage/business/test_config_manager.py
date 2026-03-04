@@ -14,6 +14,7 @@ from typing import Any
 
 import pytest
 from antares.study.version import StudyVersion
+from helpers import file_study_interface
 
 from antarest.study.business.model.thematic_trimming_model import (
     ThematicTrimming,
@@ -33,7 +34,6 @@ from antarest.study.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import file_study_interface
 
 
 @pytest.mark.parametrize(

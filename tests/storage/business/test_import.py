@@ -18,13 +18,13 @@ from unittest.mock import Mock
 
 import py7zr
 import pytest
+from helpers import create_raw_study
 
 from antarest.core.exceptions import BadArchiveContent, StudyValidationError
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import fix_study_root
-from tests.helpers import create_raw_study
 
 
 def test_import_study(tmp_path: Path) -> None:

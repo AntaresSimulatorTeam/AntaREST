@@ -14,10 +14,10 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
+from helpers import with_db_context
 
 from antarest.core.config import Config, StorageConfig
 from antarest.launcher.extensions.adequacy_patch.extension import AdequacyPatchExtension
-from tests.helpers import with_db_context
 
 
 @with_db_context

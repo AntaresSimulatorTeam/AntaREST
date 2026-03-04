@@ -18,12 +18,12 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from integration.assets import ASSETS_DIR as INTEGRATION_ASSETS_DIR
+from integration.raw_studies_blueprint.assets import ASSETS_DIR
 from starlette.testclient import TestClient
 
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.utils import current_time
-from tests.integration.assets import ASSETS_DIR as INTEGRATION_ASSETS_DIR
-from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
 
 # define the requests parameters for the `economy/mc-ind` outputs aggregation
 AREAS_REQUESTS__IND = [

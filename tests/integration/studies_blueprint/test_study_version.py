@@ -16,11 +16,11 @@ import zipfile
 from pathlib import Path
 
 from antares.study.version.upgrade_app import UpgradeApp
+from integration.assets import ASSETS_DIR
 from starlette.testclient import TestClient
 
 from antarest.core.serde.ini_reader import read_ini
 from antarest.study.model import STUDY_VERSION_9_2
-from tests.integration.assets import ASSETS_DIR
 
 
 class TestStudyVersions:

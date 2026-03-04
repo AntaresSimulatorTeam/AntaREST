@@ -14,10 +14,10 @@ import io
 import typing as t
 
 import pandas as pd
+from integration.utils import wait_task_completion
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
-from tests.integration.utils import wait_task_completion
 
 
 class PreparerProxy:

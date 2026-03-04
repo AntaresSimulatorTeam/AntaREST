@@ -12,12 +12,12 @@
 from typing import Any
 
 import pytest
+from helpers import file_study_interface
 
 from antarest.study.business.model.config.playlist_model import Playlist, PlaylistValues
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import file_study_interface
 
 
 @pytest.mark.parametrize(

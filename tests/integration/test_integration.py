@@ -19,15 +19,15 @@ from unittest.mock import ANY
 
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
+from integration.assets import ASSETS_DIR
+from integration.prepare_proxy import PreparerProxy
+from integration.utils import wait_for
 from starlette.testclient import TestClient
 
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.storage.variantstudy.model.command.common import CommandName
-from tests.integration.assets import ASSETS_DIR
-from tests.integration.prepare_proxy import PreparerProxy
-from tests.integration.utils import wait_for
 
 
 def test_main(client: TestClient, admin_access_token: str) -> None:

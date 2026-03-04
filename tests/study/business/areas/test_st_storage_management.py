@@ -12,6 +12,7 @@
 
 
 import pytest
+from helpers import file_study_interface
 
 from antarest.core.exceptions import ChildNotFoundError, STStorageNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -28,7 +29,6 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import file_study_interface
 
 EXPECTED_STORAGES = {
     "de": [

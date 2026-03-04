@@ -18,14 +18,14 @@ import typing as t
 from pathlib import Path
 
 import pytest
+from integration.assets import ASSETS_DIR
+from integration.utils import wait_task_completion
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.study.model import Study
-from tests.integration.assets import ASSETS_DIR
-from tests.integration.utils import wait_task_completion
 
 
 @pytest.fixture(name="base_study_id")

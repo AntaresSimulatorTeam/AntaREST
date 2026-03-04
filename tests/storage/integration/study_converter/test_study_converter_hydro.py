@@ -13,6 +13,7 @@
 import polars as pl
 import pytest
 from sqlalchemy.orm import Session
+from study.dao.conftest import build_dao
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters, HydroPmax
@@ -22,7 +23,6 @@ from antarest.study.business.model.hydro_model import HydroManagement, InflowStr
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
-from tests.study.dao.conftest import build_dao
 
 
 def _setup_area_with_hydro(dao: DatabaseStudyDao, area_name: str) -> str:

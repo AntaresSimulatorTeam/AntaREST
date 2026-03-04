@@ -13,6 +13,8 @@
 from pathlib import Path
 from unittest.mock import Mock
 
+from helpers import file_study_interface
+
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.link_management import LinkManager
@@ -30,7 +32,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
-from tests.helpers import file_study_interface
 
 
 def test_area_crud(

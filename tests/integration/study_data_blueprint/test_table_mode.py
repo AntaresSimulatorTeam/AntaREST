@@ -14,10 +14,10 @@ import copy
 import typing as t
 
 import pytest
+from integration.utils import wait_task_completion
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
-from tests.integration.utils import wait_task_completion
 
 # noinspection SpellCheckingInspection
 POLLUTANTS_860 = ("nh3", "nmvoc", "nox", "op1", "op2", "op3", "op4", "op5", "pm10", "pm25", "pm5", "so2")

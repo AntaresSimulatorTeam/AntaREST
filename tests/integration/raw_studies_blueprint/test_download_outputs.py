@@ -11,11 +11,11 @@
 # This file is part of the Antares project.
 import json
 
+from integration.raw_studies_blueprint.assets import ASSETS_DIR as assets_dir
 from py7zr import py7zr
 from starlette.testclient import TestClient
 
 from antarest.core.serde.json import from_json
-from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR as assets_dir
 
 ASSETS_DIR = assets_dir / "output_downloads_list"
 

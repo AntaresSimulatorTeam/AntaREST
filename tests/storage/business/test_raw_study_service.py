@@ -20,6 +20,7 @@ from unittest.mock import Mock
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
+from helpers import create_raw_study, with_admin_user, with_db_context
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyDeletionNotAllowed, StudyNotFoundError
@@ -30,7 +31,6 @@ from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.output.file_output_storage import FileOutputStorage, FileStudyOutputs, IFileOutputsProvider
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from tests.helpers import create_raw_study, with_admin_user, with_db_context
 
 
 def build_config(

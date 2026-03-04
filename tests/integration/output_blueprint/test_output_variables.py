@@ -13,6 +13,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from integration.raw_studies_blueprint.assets import ASSETS_DIR as assets_dir
+from integration.utils import wait_task_completion
 from starlette.testclient import TestClient
 
 from antarest.core.serde.json import from_json
@@ -20,8 +22,6 @@ from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import MatrixFrequency
 from antarest.study.output.output_model import OutputVariables, OutputVariablesViewsModel
-from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR as assets_dir
-from tests.integration.utils import wait_task_completion
 
 ASSETS_DIR = assets_dir / "output_variables_list"
 

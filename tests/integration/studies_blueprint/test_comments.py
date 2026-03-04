@@ -15,11 +15,10 @@ import time
 from xml.etree import ElementTree
 
 import pytest
+from integration.studies_blueprint.assets import ASSETS_DIR
+from integration.utils import duration_threshold
 from starlette.testclient import TestClient
-
-from tests.integration.studies_blueprint.assets import ASSETS_DIR
-from tests.integration.utils import duration_threshold
-from tests.xml_compare import compare_elements
+from xml_compare import compare_elements
 
 
 class TestStudyComments:

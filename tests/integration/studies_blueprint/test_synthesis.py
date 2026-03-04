@@ -17,10 +17,9 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from integration.studies_blueprint.assets import ASSETS_DIR
+from integration.utils import duration_threshold
 from starlette.testclient import TestClient
-
-from tests.integration.studies_blueprint.assets import ASSETS_DIR
-from tests.integration.utils import duration_threshold
 
 
 def _compare_resource_file(actual: dict[str, Any], res_path: Path) -> None:

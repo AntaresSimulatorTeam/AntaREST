@@ -16,6 +16,7 @@ from dataclasses import dataclass
 import polars as pl
 import pytest
 from antares.study.version import StudyVersion
+from helpers import create_study
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -30,7 +31,6 @@ from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3, StorageMode
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
-from tests.helpers import create_study
 
 
 def build_dao(db_session: Session, matrix_service: ISimpleMatrixService, version: StudyVersion) -> DatabaseStudyDao:

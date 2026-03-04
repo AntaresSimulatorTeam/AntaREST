@@ -14,10 +14,10 @@ import shutil
 import zipfile
 from pathlib import Path
 
+from integration.assets import ASSETS_DIR as INTEGRATION_ASSETS_DIR
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
-from tests.integration.assets import ASSETS_DIR as INTEGRATION_ASSETS_DIR
 
 
 class TestNormalization:

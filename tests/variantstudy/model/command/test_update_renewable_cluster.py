@@ -9,6 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from helpers import dirhash
+
 from antarest.core.serde.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -16,7 +18,6 @@ from antarest.study.storage.variantstudy.model.command.create_renewables_cluster
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_renewables_clusters import UpdateRenewablesClusters
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import dirhash
 
 
 class TestUpdateRenewableCluster:

@@ -20,8 +20,10 @@ from pathlib import Path, PurePosixPath
 from unittest.mock import Mock, call
 
 from fastapi import FastAPI
+from helpers import with_admin_user
 from markupsafe import Markup
 from starlette.testclient import TestClient
+from storage.integration.conftest import UUID
 
 from antarest.blobstore.service import BlobService
 from antarest.core.application import create_app_ctxt
@@ -47,8 +49,6 @@ from antarest.study.model import (
 from antarest.study.output.output_service import OutputService
 from antarest.study.service import StudyService
 from antarest.study.web.output_blueprint import create_output_routes
-from tests.helpers import with_admin_user
-from tests.storage.integration.conftest import UUID
 
 ADMIN = JWTUser(
     id=1,

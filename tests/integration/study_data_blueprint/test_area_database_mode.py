@@ -24,9 +24,8 @@ DAO methods are implemented.
 """
 
 import pytest
+from integration.prepare_proxy import PreparerProxy
 from starlette.testclient import TestClient
-
-from tests.integration.prepare_proxy import PreparerProxy
 
 # Reason for xfail - CREATE_AREA command requires methods not yet implemented in DatabaseStudyDao
 DATABASE_MODE_INCOMPLETE = (

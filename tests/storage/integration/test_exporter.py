@@ -20,7 +20,10 @@ from unittest.mock import Mock
 import py7zr
 import pytest
 from fastapi import FastAPI
+from helpers import create_raw_study, with_admin_user
 from starlette.testclient import TestClient
+from storage.conftest import SimpleFileTransferManager, SimpleSyncTaskService
+from storage.integration.conftest import UUID
 
 from antarest.blobstore.service import BlobService
 from antarest.core.application import create_app_ctxt
@@ -31,9 +34,6 @@ from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
-from tests.helpers import create_raw_study, with_admin_user
-from tests.storage.conftest import SimpleFileTransferManager, SimpleSyncTaskService
-from tests.storage.integration.conftest import UUID
 
 
 def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> bytes:

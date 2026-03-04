@@ -17,6 +17,7 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
+from storage.repository.filesystem.utils import CheckSubNode, MiddleNode
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.model import STUDY_VERSION_8
@@ -27,7 +28,6 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFi
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.list import InputAreasList
-from tests.storage.repository.filesystem.utils import CheckSubNode, MiddleNode
 
 
 def build_tree() -> INode[t.Any, t.Any, t.Any]:

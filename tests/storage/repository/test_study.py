@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 
+from helpers import create_raw_study, create_study, create_variant_study
 from sqlalchemy.orm import Session
 
 from antarest.core.cache.business.local_chache import LocalCache
@@ -19,7 +20,6 @@ from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, User
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyContentStatus
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
-from tests.helpers import create_raw_study, create_study, create_variant_study
 
 
 def test_lifecycle(db_session: Session) -> None:

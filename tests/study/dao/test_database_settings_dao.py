@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 from sqlalchemy.orm import Session
+from study.dao.conftest import build_dao
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters, PriceTakingOrder
@@ -37,7 +38,6 @@ from antarest.study.business.model.config.playlist_model import Playlist, Playli
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration, TimeSeriesType
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.model import STUDY_VERSION_9_3
-from tests.study.dao.conftest import build_dao
 
 
 def test_nominal_case(dao: DatabaseStudyDao) -> None:

@@ -23,6 +23,7 @@ from unittest.mock import Mock
 
 import numpy as np
 import polars as pl
+from conftest_instances import create_admin_user
 from numpy import typing as npt
 from polars.testing import assert_frame_equal
 from typing_extensions import override
@@ -34,7 +35,6 @@ from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
-from tests.conftest_instances import create_admin_user
 
 
 def dirhash(dirname: Union[str, Path], hashfunc: str = "md5") -> str:

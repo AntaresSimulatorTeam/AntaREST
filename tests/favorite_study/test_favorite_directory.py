@@ -14,6 +14,7 @@ from unittest.mock import Mock
 
 import pytest
 from fastapi import HTTPException
+from helpers import with_db_context
 
 from antarest.core.jwt import JWTUser
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -22,7 +23,6 @@ from antarest.login.utils import current_user_context
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import Directory
 from antarest.study.repository import DirectoryRepository
-from tests.helpers import with_db_context
 
 
 @pytest.fixture

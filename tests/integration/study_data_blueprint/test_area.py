@@ -11,9 +11,8 @@
 # This file is part of the Antares project.
 
 import pytest
+from integration.prepare_proxy import PreparerProxy
 from starlette.testclient import TestClient
-
-from tests.integration.prepare_proxy import PreparerProxy
 
 
 class TestArea:

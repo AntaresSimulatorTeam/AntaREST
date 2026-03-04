@@ -17,6 +17,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from helpers import create_raw_study, with_admin_user, with_db_context
 
 from antarest.core.model import PublicMode
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -29,7 +30,6 @@ from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
-from tests.helpers import create_raw_study, with_admin_user, with_db_context
 
 
 class TestRawStudyService:
