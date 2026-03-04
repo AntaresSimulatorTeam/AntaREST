@@ -1015,7 +1015,9 @@ class TestLauncherService:
         job_repository.get.return_value = job_result
 
         # fake import_output function that checks the current user
-        def fake_import_output(uuid: str, output: Path, output_name_suffix: None, auto_unzip: bool) -> None:
+        def fake_import_output(
+            uuid: str, output: Path, output_name_suffix: None, auto_unzip: bool, logs: SimulationLogs
+        ) -> None:
             assert get_current_user() == jwt_user
 
         output_service = Mock()
