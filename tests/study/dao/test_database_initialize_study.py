@@ -33,14 +33,14 @@ from antarest.study.business.model.thematic_trimming_model import (
     initialize_thematic_trimming_against_version,
 )
 from antarest.study.model import STUDY_REFERENCE_TEMPLATES, STUDY_VERSION_8_3, STUDY_VERSION_9_2
-from tests.study.dao.conftest import build_dao
+from tests.study.dao.conftest import build_db_dao
 
 
 @pytest.mark.parametrize("version", STUDY_REFERENCE_TEMPLATES)
 def test_initialize_study(db_session: Session, matrix_service: ISimpleMatrixService, version: str) -> None:
     """Test that the study is initialized with the right default values"""
     study_version = StudyVersion.parse(version)
-    dao = build_dao(db_session, matrix_service, study_version)
+    dao = build_db_dao(db_session, matrix_service, study_version)
     assert dao.get_layers() == [Layer(id="0", name="All", areas=[])]
 
     expected_general_config = GeneralConfig()

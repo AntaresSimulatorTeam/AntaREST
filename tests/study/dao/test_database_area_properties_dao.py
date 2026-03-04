@@ -20,7 +20,8 @@ from antarest.study.dao.database.models.area import AREA_TABLE
 from tests.db_statement_recorder import DBStatementRecorder
 
 
-def test_save_area_creates_area_with_default_properties(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_save_area_creates_area_with_default_properties(db_session: Session, db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("Paris")
     study_id = dao.get_study_id()
 
@@ -53,7 +54,8 @@ def test_save_area_creates_area_with_default_properties(db_session: Session, dao
     assert not rows
 
 
-def test_multiple_areas(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_multiple_areas(db_session: Session, db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("Paris")
     dao.save_area("London")
 
@@ -66,7 +68,8 @@ def test_multiple_areas(db_session: Session, dao: DatabaseStudyDao) -> None:
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
-def test_error_cases(dao: DatabaseStudyDao) -> None:
+def test_error_cases(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     # Try to get properties for a fake area
     with pytest.raises(AreaNotFound, match="Area is not found: 'fake_area'"):
         dao.get_area_properties("fake_area")
@@ -76,7 +79,8 @@ def test_error_cases(dao: DatabaseStudyDao) -> None:
         dao.save_area_properties("fake_area", AreaProperties())
 
 
-def test_modify_properties(dao: DatabaseStudyDao) -> None:
+def test_modify_properties(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     area_id = "paris"
     dao.save_area(area_id)
 

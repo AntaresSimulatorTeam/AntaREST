@@ -38,7 +38,8 @@ from antarest.study.dao.database.models.thermal import (
 )
 
 
-def test_save_thermal_creates_cluster(dao: DatabaseStudyDao) -> None:
+def test_save_thermal_creates_cluster(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("Paris")
 
     thermal = ThermalCluster(
@@ -106,7 +107,8 @@ def test_save_thermal_creates_cluster(dao: DatabaseStudyDao) -> None:
         dao.save_thermal("nonexistent", thermal)
 
 
-def test_save_thermal_overwrites_existing(dao: DatabaseStudyDao) -> None:
+def test_save_thermal_overwrites_existing(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("Paris")
 
     dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas", nominal_capacity=100.0))
@@ -116,7 +118,8 @@ def test_save_thermal_overwrites_existing(dao: DatabaseStudyDao) -> None:
     assert result.nominal_capacity == 200.0
 
 
-def test_save_multiple_thermal_clusters(dao: DatabaseStudyDao) -> None:
+def test_save_multiple_thermal_clusters(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("Paris")
 
     dao.save_thermals(
@@ -156,7 +159,8 @@ def test_save_multiple_thermal_clusters(dao: DatabaseStudyDao) -> None:
         )
 
 
-def test_get_one_thermal_cluster(dao: DatabaseStudyDao) -> None:
+def test_get_one_thermal_cluster(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("Paris")
     dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas"))
 
@@ -171,7 +175,8 @@ def test_get_one_thermal_cluster(dao: DatabaseStudyDao) -> None:
         dao.get_thermal("nonexistent", "gas")
 
 
-def test_get_all_thermals(dao: DatabaseStudyDao) -> None:
+def test_get_all_thermals(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("Paris")
     dao.save_area("London")
 
@@ -187,7 +192,8 @@ def test_get_all_thermals(dao: DatabaseStudyDao) -> None:
         dao.get_all_thermals_for_area("nonexistent")
 
 
-def test_delete_thermal(dao: DatabaseStudyDao) -> None:
+def test_delete_thermal(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("Paris")
     thermal = ThermalCluster(id="gas", name="Gas")
     dao.save_thermal("paris", thermal)
@@ -209,11 +215,12 @@ def test_delete_thermal(dao: DatabaseStudyDao) -> None:
         dao.delete_thermal("paris", "gas")
 
 
-def test_thermal_exists_returns_false_for_unknown_area(dao: DatabaseStudyDao) -> None:
-    assert not dao.thermal_exists("nonexistent", "gas")
+def test_thermal_exists_returns_false_for_unknown_area(db_dao: DatabaseStudyDao) -> None:
+    assert not db_dao.thermal_exists("nonexistent", "gas")
 
 
-def test_thermal_matrices_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_thermal_matrices_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("Paris")
     dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas"))
 
@@ -244,7 +251,8 @@ def test_thermal_matrices_lifecycle(db_session: Session, dao: DatabaseStudyDao) 
         assert db_session.execute(select(THERMAL_CO2_COST_TABLE)).fetchall() == []
 
 
-def test_get_thermal_matrix_raises_when_missing(dao: DatabaseStudyDao) -> None:
+def test_get_thermal_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("Paris")
     dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas"))
 
@@ -262,7 +270,8 @@ def test_get_thermal_matrix_raises_when_missing(dao: DatabaseStudyDao) -> None:
             getter("nonexistent", "gas")
 
 
-def test_save_thermal_matrix_raises_when_missing(dao: DatabaseStudyDao) -> None:
+def test_save_thermal_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("Paris")
 
     savers = [
@@ -280,7 +289,8 @@ def test_save_thermal_matrix_raises_when_missing(dao: DatabaseStudyDao) -> None:
             saver("nonexistent", "gas", "missing-matrix-id")
 
 
-def test_area_with_no_clusters_are_absent_from_clusters_dict(dao: DatabaseStudyDao) -> None:
+def test_area_with_no_clusters_are_absent_from_clusters_dict(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("germany")
     dao.save_area("italy")
 
