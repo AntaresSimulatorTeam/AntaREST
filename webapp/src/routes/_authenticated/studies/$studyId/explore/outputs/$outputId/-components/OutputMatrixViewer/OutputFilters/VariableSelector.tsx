@@ -82,9 +82,9 @@ function VariableSelector({
 
   const isVariableValid = variableOptions.includes(selectedVariable);
 
-  // Auto-select first variable when switching item types or when no valid variable is selected
+  // Auto-select first variable when switching item types
   useEffect(() => {
-    if (!isVariableValid && variablesMetadata) {
+    if (variablesMetadata) {
       let firstVariable = "";
 
       // For cluster data types, get the first variable from the selected cluster
@@ -107,7 +107,6 @@ function VariableSelector({
       }
     }
   }, [
-    isVariableValid,
     variablesMetadata,
     selectedItem,
     dataType,
