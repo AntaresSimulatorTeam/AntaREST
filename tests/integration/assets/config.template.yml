@@ -26,11 +26,6 @@ storage:
     ext:
       path:  {{ext_workspace_path}}
 
-  output:
-    enable: true
-    default: false
-    archive_dir: {{output_archive_dir}}
-
 launcher:
   default: local_id
   launchers:
