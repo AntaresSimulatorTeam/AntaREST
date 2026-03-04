@@ -12,10 +12,10 @@
 from io import BytesIO
 from pathlib import Path
 
-from integration.utils import wait_task_completion
 from starlette.testclient import TestClient
 
 from tests.integration.test_helpers.outputs import create_minimal_output_zip_from_name
+from tests.integration.utils import wait_task_completion
 
 
 def test_copy_with_editor_preservation(client: TestClient, admin_access_token: str) -> None:
