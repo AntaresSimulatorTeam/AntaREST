@@ -21,14 +21,16 @@ from antarest.study.dao.database.models.link import LINK_TABLE
 from tests.db_statement_recorder import DBStatementRecorder
 
 
-def _create_default_link(dao: DatabaseStudyDao) -> None:
+def _create_default_link(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("Paris")
     dao.save_area("London")
     link = Link(area1="paris", area2="london")
     dao.save_link(link)
 
 
-def test_create_link_with_default_properties(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_create_link_with_default_properties(db_session: Session, db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     study_id = dao.get_study_id()
     dao.save_area("Paris")
     dao.save_area("London")
@@ -63,7 +65,8 @@ def test_create_link_with_default_properties(db_session: Session, dao: DatabaseS
     assert created_link == link
 
 
-def test_exists_method(dao: DatabaseStudyDao) -> None:
+def test_exists_method(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     # Asserts at first the link does not exist
     assert dao.link_exists("london", "paris") is False
 
@@ -74,7 +77,8 @@ def test_exists_method(dao: DatabaseStudyDao) -> None:
     assert dao.link_exists("london", "paris") is True
 
 
-def test_get_method(dao: DatabaseStudyDao) -> None:
+def test_get_method(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     with pytest.raises(LinkNotFound):
         dao.get_link("london", "paris")
 
@@ -84,7 +88,8 @@ def test_get_method(dao: DatabaseStudyDao) -> None:
     dao.get_link("london", "paris")
 
 
-def test_get_all_links(dao: DatabaseStudyDao, db_session: Session) -> None:
+def test_get_all_links(db_dao: DatabaseStudyDao, db_session: Session) -> None:
+    dao = db_dao
     _create_default_link(dao)
     dao.save_area("Berlin")
     dao.save_link(Link(area1="paris", area2="berlin"))
@@ -97,7 +102,8 @@ def test_get_all_links(dao: DatabaseStudyDao, db_session: Session) -> None:
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
-def test_delete_link(dao: DatabaseStudyDao, db_session: Session) -> None:
+def test_delete_link(db_dao: DatabaseStudyDao, db_session: Session) -> None:
+    dao = db_dao
     link = Link(area1="paris", area2="london")
     with pytest.raises(LinkNotFound):
         dao.delete_link(link)
@@ -113,7 +119,8 @@ def test_delete_link(dao: DatabaseStudyDao, db_session: Session) -> None:
     assert rows == []
 
 
-def test_save_link(dao: DatabaseStudyDao) -> None:
+def test_save_link(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     _create_default_link(dao)
 
     # Save the link with new properties
@@ -131,7 +138,8 @@ def test_save_link(dao: DatabaseStudyDao) -> None:
         dao.save_link(Link(area1="paris", area2="fake_area"))
 
 
-def test_delete_area(dao: DatabaseStudyDao, db_session: Session) -> None:
+def test_delete_area(db_dao: DatabaseStudyDao, db_session: Session) -> None:
+    dao = db_dao
     _create_default_link(dao)
     dao.save_area("Toulouse")
     dao.save_link(Link(area1="paris", area2="toulouse"))
