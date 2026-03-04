@@ -26,10 +26,9 @@ import {
   TextField,
   Tooltip,
   Typography,
+  type SelectChangeEvent,
   type TextFieldProps,
 } from "@mui/material";
-// eslint-disable-next-line @typescript-eslint/no-restricted-imports
-import type { SelectInputProps } from "@mui/material/Select/SelectInput";
 import type { TFunction } from "i18next";
 import startCase from "lodash/startCase";
 import * as R from "ramda";
@@ -181,7 +180,7 @@ function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleChange: SelectInputProps["onChange"] = (event) => {
+  const handleChange = (event: SelectChangeEvent<unknown>) => {
     const value = event.target.value as OptionValue & (AllowedValue[] | OptionValue[]);
 
     onChange?.({ target: { value, name: event.target.name } });
