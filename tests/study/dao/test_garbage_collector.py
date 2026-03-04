@@ -22,10 +22,11 @@ from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataS
 from antarest.matrixstore.service import MatrixService
 from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from tests.study.dao.conftest import build_real_case_db_study
+from tests.study.dao.conftest import build_real_case_study
 
 
-def test_garbage_collection(dao: DatabaseStudyDao, db_session: Session, tmp_path: Path) -> None:
+def test_garbage_collection(db_dao: DatabaseStudyDao, db_session: Session, tmp_path: Path) -> None:
+    dao = db_dao
     # Create a real matrix_service
     bucket_dir = tmp_path / "matrix_store"
     matrix_service = MatrixService(
@@ -43,7 +44,7 @@ def test_garbage_collection(dao: DatabaseStudyDao, db_session: Session, tmp_path
     provider = StudyDatabaseMatrixUsageProvider(matrix_service)
     matrix_service.register_usage_provider(provider)
 
-    result = build_real_case_db_study(dao)
+    result = build_real_case_study(dao, matrix_service)
     (
         load_df,
         solar_df,

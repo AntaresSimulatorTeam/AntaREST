@@ -39,8 +39,8 @@ from antarest.study.dao.database.models.st_storage import (
 )
 
 
-def test_save_st_storage(dao_930: DatabaseStudyDao) -> None:
-    dao = dao_930
+def test_save_st_storage(db_dao_930: DatabaseStudyDao) -> None:
+    dao = db_dao_930
     dao.save_area("area_1")
 
     dao.save_st_storage(
@@ -83,7 +83,8 @@ def test_save_st_storage(dao_930: DatabaseStudyDao) -> None:
         dao.save_st_storage("nonexistent", STStorage(id="st_storage_id", name="st-storage"))
 
 
-def test_save_multiple_st_storages(dao: DatabaseStudyDao) -> None:
+def test_save_multiple_st_storages(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("area_1")
 
     dao.save_st_storages(
@@ -114,7 +115,8 @@ def test_save_multiple_st_storages(dao: DatabaseStudyDao) -> None:
         )
 
 
-def test_get_all_st_storages(dao: DatabaseStudyDao) -> None:
+def test_get_all_st_storages(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("area_1")
     dao.save_area("area_2")
 
@@ -127,7 +129,8 @@ def test_get_all_st_storages(dao: DatabaseStudyDao) -> None:
     assert all_storages["area_2"]["st_storage_id_2"].id == "st_storage_id_2"
 
 
-def test_get_st_storage_raises_when_missing(dao: DatabaseStudyDao) -> None:
+def test_get_st_storage_raises_when_missing(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("area_1")
     dao.save_st_storage("area_1", STStorage(id="st_storage_id_1", name="st-storage-1"))
 
@@ -138,17 +141,19 @@ def test_get_st_storage_raises_when_missing(dao: DatabaseStudyDao) -> None:
         dao.get_st_storage("nonexistent", "st_storage_id_1")
 
 
-def test_st_storage_exists(dao: DatabaseStudyDao) -> None:
+def test_st_storage_exists(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("area_1")
     dao.save_st_storage("area_1", STStorage(id="st_storage_id_1", name="st-storage-1", efficiency=0.8))
     assert dao.st_storage_exists("area_1", "st_storage_id_1")
 
 
-def test_st_storage_exists_returns_false_for_unknown(dao: DatabaseStudyDao) -> None:
-    assert not dao.st_storage_exists("nonexistent", "st_storage_id_1")
+def test_st_storage_exists_returns_false_for_unknown(db_dao: DatabaseStudyDao) -> None:
+    assert not db_dao.st_storage_exists("nonexistent", "st_storage_id_1")
 
 
-def test_delete_st_storage(dao: DatabaseStudyDao) -> None:
+def test_delete_st_storage(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("area_1")
 
     dao.save_st_storage("area_1", STStorage(id="st_storage_id_1", name="st-storage-1", efficiency=0.8))
@@ -166,7 +171,8 @@ def test_delete_st_storage(dao: DatabaseStudyDao) -> None:
         dao.get_st_storage("area_1", "st_storage_id_1")
 
 
-def test_save_additional_constraints(dao: DatabaseStudyDao) -> None:
+def test_save_additional_constraints(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("area_1")
     dao.save_st_storage("area_1", STStorage(id="st_storage_id_1", name="st-storage-1", efficiency=0.8))
 
@@ -192,7 +198,8 @@ def test_save_additional_constraints(dao: DatabaseStudyDao) -> None:
         )
 
 
-def test_delete_additional_constraints(dao: DatabaseStudyDao) -> None:
+def test_delete_additional_constraints(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("area_1")
     dao.save_st_storage("area_1", STStorage(id="st_storage_id_1", name="st-storage-1", efficiency=0.8))
 
@@ -211,7 +218,8 @@ def test_delete_additional_constraints(dao: DatabaseStudyDao) -> None:
     assert len(dao.get_all_st_storage_additional_constraints()["area_1"]["st_storage_id_1"]) == 1
 
 
-def test_get_all_additional_constraints(dao: DatabaseStudyDao) -> None:
+def test_get_all_additional_constraints(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("area_1")
     dao.save_st_storage("area_1", STStorage(id="st_storage_id_1", name="st-storage-1"))
 
@@ -229,7 +237,8 @@ def test_get_all_additional_constraints(dao: DatabaseStudyDao) -> None:
     assert dao.get_st_storage_additional_constraints("area_1", "st_storage_id_2") == []
 
 
-def test_st_storage_matrices_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_st_storage_matrices_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("area_1")
     dao.save_st_storage("area_1", STStorage(id="battery", name="Battery"))
 
@@ -308,7 +317,8 @@ def test_st_storage_matrices_lifecycle(db_session: Session, dao: DatabaseStudyDa
         assert db_session.execute(select(COST_VARIATION_WITHDRAWAL_TABLE)).fetchall() == []
 
 
-def test_get_st_storage_matrix_raises_when_missing(dao: DatabaseStudyDao) -> None:
+def test_get_st_storage_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("area_1")
     dao.save_st_storage("area_1", STStorage(id="battery", name="Battery"))
 
@@ -331,7 +341,8 @@ def test_get_st_storage_matrix_raises_when_missing(dao: DatabaseStudyDao) -> Non
             getter("nonexistent", "battery")
 
 
-def test_save_st_storage_matrix_raises_when_missing(dao: DatabaseStudyDao) -> None:
+def test_save_st_storage_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("area_1")
 
     savers = [
@@ -353,7 +364,8 @@ def test_save_st_storage_matrix_raises_when_missing(dao: DatabaseStudyDao) -> No
             saver("nonexistent", "battery", "missing-matrix-id")
 
 
-def test_constraint_matrix_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_constraint_matrix_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("area_1")
     dao.save_st_storage("area_1", STStorage(id="battery", name="Battery"))
     dao.save_st_storage_additional_constraints(
@@ -385,7 +397,8 @@ def test_constraint_matrix_lifecycle(db_session: Session, dao: DatabaseStudyDao)
         assert db_session.execute(select(ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE)).fetchall() == []
 
 
-def test_area_with_no_storages_absent_from_dict(dao: DatabaseStudyDao) -> None:
+def test_area_with_no_storages_absent_from_dict(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("area_1")
     dao.save_area("area_2")
 
