@@ -344,16 +344,15 @@ class InStudyFileOutputStorage(IOutputStorage):
         path_output = study_outputs.outputs_path / output_id
         path_output_zip = study_outputs.outputs_path / f"{output_id}{ArchiveFormat.ZIP}"
 
-        if path_output_zip.exists():
-            shutil.copyfile(path_output_zip, target)
-            return None
-
         if not path_output.exists() and not path_output_zip.exists():
             raise OutputNotFound(output_id)
 
+        if path_output_zip.exists():
+            shutil.copyfile(path_output_zip, target)
+            return
+
         stopwatch = StopWatch()
-        if not path_output_zip.exists():
-            archive_dir(path_output, target, archive_format=ArchiveFormat.ZIP)
+        archive_dir(path_output, target, archive_format=ArchiveFormat.ZIP)
         logger.info(f"Output {output_id} from study {study_id} exported in {stopwatch}s")
 
     @override
