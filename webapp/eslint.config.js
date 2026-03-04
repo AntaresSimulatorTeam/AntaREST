@@ -136,6 +136,36 @@ export default [
           ],
         },
       ],
+      "no-restricted-syntax": [
+        "error",
+        // https://github.com/mui/material-ui/issues/31096#issuecomment-2950173248
+        {
+          selector:
+            ":not(MemberExpression[property.name=mode]) > MemberExpression[property.name=palette] > Identifier[name=theme]",
+          message: "Don't use the palette directly. Use the CSS variable from `theme.vars.palette`",
+        },
+        {
+          selector:
+            "MemberExpression[property.name=mode] > MemberExpression[property.name=palette] > Identifier[name=theme]",
+          message: "Don't use the palette mode directly. Use the hook `useThemeColorScheme`",
+        },
+        {
+          selector: "Literal[value=/var\\(--joy-/]",
+          message: "Don't use css vars directly. Import from `theme.vars`",
+        },
+        {
+          selector: "Literal[value=/var\\(--mui-/]",
+          message: "Don't use css vars directly. Import from `theme.vars`",
+        },
+        {
+          selector: "TemplateElement[value.cooked=/var\\(--joy-/]",
+          message: "Don't use css vars directly. Import from `theme.vars`",
+        },
+        {
+          selector: "TemplateElement[value.cooked=/var\\(--mui-/]",
+          message: "Don't use css vars directly. Import from `theme.vars`",
+        },
+      ],
       "no-use-before-define": [
         "error",
         {

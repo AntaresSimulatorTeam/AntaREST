@@ -34,16 +34,16 @@ export const BorderedPulsating = styled(Box)(({ theme }) => [
       position: "absolute",
       height: "inherit",
       width: "inherit",
-      border: `1px solid ${theme.palette.primary.main}`,
+      border: `1px solid ${theme.vars.palette.primary.main}`,
       borderRadius: "50%",
       animation: `${pulsatingAnimation} 2s infinite`,
-      boxShadow: `0 0px 10px 0 ${theme.palette.primary.main}`,
+      boxShadow: `0 0px 10px 0 ${theme.vars.palette.primary.main}`,
     },
   },
   theme.applyStyles("dark", {
     "&::before": {
-      border: `1px solid ${theme.palette.secondary.main}`,
-      boxShadow: `0 0px 10px 0 ${theme.palette.secondary.main}`,
+      border: `1px solid ${theme.vars.palette.secondary.main}`,
+      boxShadow: `0 0px 10px 0 ${theme.vars.palette.secondary.main}`,
     },
   }),
 ]);
