@@ -150,15 +150,7 @@ export default [
           message: "Don't use the palette mode directly. Use the hook `useThemeColorScheme`",
         },
         {
-          selector: "Literal[value=/var\\(--joy-/]",
-          message: "Don't use css vars directly. Import from `theme.vars`",
-        },
-        {
           selector: "Literal[value=/var\\(--mui-/]",
-          message: "Don't use css vars directly. Import from `theme.vars`",
-        },
-        {
-          selector: "TemplateElement[value.cooked=/var\\(--joy-/]",
           message: "Don't use css vars directly. Import from `theme.vars`",
         },
         {
