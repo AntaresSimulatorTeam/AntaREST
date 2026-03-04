@@ -14,7 +14,7 @@
 
 import GroupedDataTable from "@/components/GroupedDataTable";
 import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
-import type { TRow } from "@/components/GroupedDataTable/types";
+import type { RowData } from "@/components/GroupedDataTable/types";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { checkRouteAvailability } from "@/utils/routerUtils";
 import { Box, Tooltip } from "@mui/material";
@@ -149,7 +149,7 @@ function Storages() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreate = (values: TRow) => {
+  const handleCreate = (values: RowData) => {
     return createStorage(study.id, areaId, values);
   };
 
