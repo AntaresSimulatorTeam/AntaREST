@@ -23,7 +23,7 @@ const muiPopComp = {
       // Set z-index higher than modals (1300) to avoid overlapping issues.
       zIndex: theme.zIndex.modal + 150, // 1450
       ".MuiList-root": theme.applyStyles("light", {
-        backgroundColor: theme.palette.background.paper,
+        backgroundColor: theme.vars.palette.background.paper,
       }),
     }),
   },
@@ -147,7 +147,7 @@ export default {
       {
         props: { disabled: false },
         style: ({ theme }) =>
-          theme.applyStyles("light", { backgroundColor: theme.palette.background.paper }),
+          theme.applyStyles("light", { backgroundColor: theme.vars.palette.background.paper }),
       },
     ],
   },
@@ -264,10 +264,10 @@ export default {
   MuiTableCell: {
     styleOverrides: {
       body: ({ theme }) => ({
-        borderColor: theme.palette.divider,
+        borderColor: theme.vars.palette.divider,
       }),
       stickyHeader: ({ theme }) => ({
-        borderColor: theme.palette.divider,
+        borderColor: theme.vars.palette.divider,
       }),
     },
   },

@@ -32,7 +32,7 @@ import useStudy from "../../-hooks/useStudy";
 
 const TinyText = styled(Typography)(({ theme }) => ({
   fontSize: 12,
-  color: theme.palette.text.secondary,
+  color: theme.vars.palette.text.secondary,
 }));
 
 interface Props {

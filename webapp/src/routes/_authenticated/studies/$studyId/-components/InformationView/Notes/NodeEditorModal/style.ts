@@ -48,10 +48,10 @@ export const EditorContainer = styled(Box)(({ theme }) => ({
 export const EditorButton = styled(Typography)(({ theme }) => ({
   margin: theme.spacing(0, 2),
   fontSize: "1em",
-  color: theme.palette.text.primary,
+  color: theme.vars.palette.text.primary,
   cursor: "pointer",
   "&:hover": {
-    color: theme.palette.secondary.main,
+    color: theme.vars.palette.secondary.main,
   },
 }));
 
