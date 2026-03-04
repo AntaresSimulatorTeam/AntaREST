@@ -66,11 +66,13 @@ function CheckboxesTagsFE<
   onChange,
   name = "",
   placeholder,
+  slotProps,
   ...rest
 }: CheckboxesTagsFEProps<T, DisableClearable, FreeSolo>) {
   return (
     <Autocomplete
       {...rest}
+      slotProps={{ ...slotProps, chip: { size: "small", ...slotProps?.chip } }}
       getOptionLabel={getOptionLabel}
       multiple
       disableCloseOnSelect
