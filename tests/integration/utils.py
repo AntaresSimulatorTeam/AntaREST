@@ -54,7 +54,7 @@ def duration_threshold(base_duration: float) -> float:
 
 def wait_task_completion(
     client: TestClient,
-    access_token: str,
+    access_token: str | None,
     task_id: str,
     *,
     base_timeout: float = 10,
@@ -67,7 +67,7 @@ def wait_task_completion(
     res = client.request(
         "GET",
         f"/v1/tasks/{task_id}",
-        headers={"Authorization": f"Bearer {access_token}"},
+        headers={"Authorization": f"Bearer {access_token}"} if access_token else {},
         params=params,
     )
     if res.status_code == 200:

@@ -12,6 +12,7 @@
 from io import BytesIO
 from pathlib import Path
 
+from integration.utils import wait_task_completion
 from starlette.testclient import TestClient
 
 from tests.integration.test_helpers.outputs import create_minimal_output_zip_from_name
@@ -293,6 +294,8 @@ def copy_with_output_test(client: TestClient, study_id: str) -> None:
     # Archive one of the outputs
     archive = client.post(f"/v1/studies/{study_id}/outputs/20231002-1023eco/_archive")
     assert archive.status_code == 200
+    task_id = archive.json()
+    wait_task_completion(client, None, task_id)
 
     # Check they are correctly created
     res = client.get(f"/v1/studies/{study_id}/outputs")
