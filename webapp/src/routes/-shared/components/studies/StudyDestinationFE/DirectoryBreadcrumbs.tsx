@@ -28,7 +28,7 @@ import type { BreadcrumbSegment } from "./types";
 
 interface Props {
   breadcrumbs: BreadcrumbSegment[];
-  newDirectoryPath: string;
+  newSubdirectoriesPath: string;
   disabled: boolean;
   canGoUp: boolean;
   /** Forwarded ref for the InputBase inside the breadcrumbs bar. */
@@ -43,7 +43,7 @@ interface Props {
 
 function DirectoryBreadcrumbs({
   breadcrumbs,
-  newDirectoryPath,
+  newSubdirectoriesPath,
   disabled,
   canGoUp,
   inputRef,
@@ -80,6 +80,7 @@ function DirectoryBreadcrumbs({
       {/* Breadcrumb track + new directory input */}
       <Box sx={breadcrumbTrackSx}>
         {breadcrumbs.map((segment: BreadcrumbSegment, index: number) => (
+          // Key is safe: only the root segment has a null id, and there's only one root per breadcrumb trail
           <React.Fragment key={segment.id ?? "__root__"}>
             {index > 0 && (
               <ChevronRightIcon sx={{ fontSize: 13, color: "text.disabled", flexShrink: 0 }} />
@@ -102,12 +103,12 @@ function DirectoryBreadcrumbs({
         <InputBase
           inputRef={inputRef}
           name={name}
-          value={newDirectoryPath}
+          value={newSubdirectoriesPath}
           onChange={onNewPathChange}
           onKeyDown={onNewPathKeyDown}
           disabled={disabled}
           placeholder={t("studies.destination.newDirectoryPath")}
-          sx={getNewDirectoryInputSx(!!newDirectoryPath)}
+          sx={getNewDirectoryInputSx(!!newSubdirectoriesPath)}
           inputProps={{
             "aria-label": t("studies.destination.newDirectoryPath"),
           }}

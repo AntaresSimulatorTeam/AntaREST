@@ -12,6 +12,10 @@
  * This file is part of the Antares project.
  */
 
+// `any` is intentional for TContext and SubmitReturnValue defaults: these types are meant to be
+// inferred at the call site. Using `unknown` would force every consumer that extends
+// FormDialogProps to explicitly specify both type arguments even when they don't care about them.
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import SaveIcon from "@mui/icons-material/Save";
 import { Button } from "@mui/material";
 import * as RA from "ramda-adjunct";
@@ -30,8 +34,8 @@ type SuperType<TFieldValues extends FieldValues, TContext, SubmitReturnValue> = 
 
 export interface FormDialogProps<
   TFieldValues extends FieldValues = FieldValues,
-  TContext = unknown,
-  SubmitReturnValue = unknown,
+  TContext = any,
+  SubmitReturnValue = any,
 > extends SuperType<TFieldValues, TContext, SubmitReturnValue> {
   cancelButtonText?: string;
   onCancel: VoidFunction;

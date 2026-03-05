@@ -13,15 +13,16 @@
  */
 
 import type { Directory } from "@/services/api/directories/types";
-import type { DirectoryValue } from "./types";
+import { sortByName } from "@/services/utils";
+import type { DirectoryDestination } from "./types";
 
 /**
- * Builds an O(1) lookup index from a flat directory list.
+ * Creates a `Map` from a flat directory list for O(1) id-based lookups.
  *
- * @param directories - Flat array of Directory objects.
- * @returns Map of directory id → Directory.
+ * @param directories - Flat array of {@link Directory} objects.
+ * @returns `Map` of directory id → {@link Directory}.
  */
-export function buildDirectoryIndex(directories: Directory[]): Map<string, Directory> {
+export function mapDirectoriesById(directories: Directory[]): Map<string, Directory> {
   return new Map(directories.map((directory) => [directory.id, directory]));
 }
 
@@ -33,9 +34,7 @@ export function buildDirectoryIndex(directories: Directory[]): Map<string, Direc
  * @returns Sorted array of direct child directories.
  */
 export function getDirectChildren(parentId: string | null, directories: Directory[]): Directory[] {
-  return directories
-    .filter((directory) => directory.parentId === parentId)
-    .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+  return sortByName(directories.filter((directory) => directory.parentId === parentId));
 }
 
 /**
@@ -44,7 +43,7 @@ export function getDirectChildren(parentId: string | null, directories: Director
  * E.g. for root → a → b → c, returns [a, b, c].
  *
  * @param id - Directory id to start from.
- * @param index - Pre-built directory index from {@link buildDirectoryIndex}.
+ * @param index - Pre-built directory map from {@link mapDirectoriesById}.
  * @returns Ordered array from root ancestor to the given directory.
  */
 export function getDirectoryAncestors(id: string, index: Map<string, Directory>): Directory[] {
@@ -60,27 +59,27 @@ export function getDirectoryAncestors(id: string, index: Map<string, Directory>)
 }
 
 /**
- * Resolves a {@link DirectoryValue} into the slash-separated directory path
+ * Resolves a {@link DirectoryDestination} into the slash-separated directory path
  * that legacy API endpoints (`moveStudy`, `copyStudy`) expect.
  *
- * The selected directory ID is resolved to its ancestor name chain, then
- * joined with `newDirectoryPath` (the optional path of new sub-directories
+ * The active directory ID is resolved to its ancestor name chain, then
+ * joined with `newSubdirectoriesPath` (the optional path of new sub-directories
  * to create). Only present parts are joined, so the result is always clean.
  *
  * TODO: Move to the API layer once the Tanstack Query migration is complete.
  *
- * @param directory - The structured directory value from the form.
+ * @param directory - The structured directory destination from the form.
  * @param directories - Flat directory list (should be freshly fetched at call time).
  * @returns Slash-separated directory path (e.g. `"directoryA/subB/newDir"`), or `""` for root.
  */
-export function toDirectoryPath(directory: DirectoryValue, directories: Directory[]): string {
-  const index = buildDirectoryIndex(directories);
+export function toDirectoryPath(directory: DirectoryDestination, directories: Directory[]): string {
+  const index = mapDirectoriesById(directories);
 
-  const base = directory.id
-    ? getDirectoryAncestors(directory.id, index)
+  const base = directory.directoryId
+    ? getDirectoryAncestors(directory.directoryId, index)
         .map((dir) => dir.name)
         .join("/")
     : "";
 
-  return [base, directory.newDirectoryPath].filter(Boolean).join("/");
+  return [base, directory.newSubdirectoriesPath].filter(Boolean).join("/");
 }

@@ -23,13 +23,13 @@ export interface BreadcrumbSegment {
   active?: boolean;
 }
 
-export interface DirectoryValue {
-  /** Selected directory ID, or `null` for the managed root. */
-  id: string | null;
+export interface DirectoryDestination {
+  /** ID of the currently active directory in the explorer, or `null` for the managed root. */
+  directoryId: string | null;
   /**
-   * Slash-separated path of new sub-directories to create beneath the selected
+   * Slash-separated path of new sub-directories to create beneath the active
    * directory (e.g. `"a"` or `"a/b/c"`).
    * Empty string when an existing directory was selected as-is.
    */
-  newDirectoryPath: string;
+  newSubdirectoriesPath: string;
 }

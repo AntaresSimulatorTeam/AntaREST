@@ -23,13 +23,13 @@ export { toDirectoryPath } from "../../StudyDestinationFE/utils";
 // Schema
 ////////////////////////////////////////////////////////////////
 
-const directoryValueSchema = z.object({
-  id: z.string().nullable(),
-  newDirectoryPath: z.string().transform((v) => v.trim().split("/").filter(Boolean).join("/")),
+const destinationSchema = z.object({
+  directoryId: z.string().nullable(),
+  newSubdirectoriesPath: z.string().transform((v) => v.trim().split("/").filter(Boolean).join("/")),
 });
 
 export const formSchema = z.object({
-  directory: directoryValueSchema,
+  destination: destinationSchema,
   redirect: z.boolean(),
 });
 
@@ -91,20 +91,20 @@ export function computeAllowSubmitOnPristine(
  * directory tree to find the deepest directory that was created.
  * Otherwise the selected directory ID is returned as-is.
  *
- * @param directory - Parsed directory value from the form.
+ * @param destination - Parsed destination value from the form.
  * @param directories - Freshly-fetched directory list (includes newly created dirs).
  * @returns The directory ID to redirect to, or `null` for root.
  */
 export function resolveRedirectDirectoryId(
-  directory: MoveResult["directory"],
+  destination: MoveResult["destination"],
   directories: Directory[],
 ): string | null {
-  if (!directory.newDirectoryPath) {
-    return directory.id;
+  if (!destination.newSubdirectoriesPath) {
+    return destination.directoryId;
   }
 
-  const segments = directory.newDirectoryPath.split("/").filter(Boolean);
-  let currentId = directory.id;
+  const segments = destination.newSubdirectoriesPath.split("/").filter(Boolean);
+  let currentId = destination.directoryId;
 
   for (const segment of segments) {
     const child = directories.find(

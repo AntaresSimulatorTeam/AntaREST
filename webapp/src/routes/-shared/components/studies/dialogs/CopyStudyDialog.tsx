@@ -30,7 +30,7 @@ import SaveAsIcon from "@mui/icons-material/SaveAs";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import StudyDestinationFE from "../StudyDestinationFE";
-import type { DirectoryValue } from "../StudyDestinationFE/types";
+import type { DirectoryDestination } from "../StudyDestinationFE/types";
 import { toDirectoryPath } from "../StudyDestinationFE/utils";
 
 interface Props {
@@ -41,7 +41,7 @@ interface Props {
 
 interface DefaultValues {
   studyName: string;
-  directory: DirectoryValue;
+  destination: DirectoryDestination;
   outputIds?: Array<StudyOutput["name"]>;
 }
 
@@ -58,7 +58,7 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
 
   const defaultValues: DefaultValues = {
     studyName: `${study.name} (${t("studies.copySuffix")})`,
-    directory: { id: study.directoryId ?? null, newDirectoryPath: "" },
+    destination: { directoryId: study.directoryId ?? null, newSubdirectoriesPath: "" },
   };
 
   ////////////////////////////////////////////////////////////////
@@ -66,10 +66,10 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({
-    values: { studyName, directory, outputIds = [] },
+    values: { studyName, destination, outputIds = [] },
   }: SubmitHandlerPlus<DefaultValues>) => {
     // TODO: This should be moved to the API layer when Tan stack migration is done.
-    const directoryPath = toDirectoryPath(directory, directories);
+    const directoryPath = toDirectoryPath(destination, directories);
 
     return copyStudy({
       studyId: study.id,
@@ -106,7 +106,7 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
             rules={{ validate: validateStudyName }}
             autoFocus
           />
-          <StudyDestinationFE name="directory" control={control} />
+          <StudyDestinationFE name="destination" control={control} />
           <UsePromiseCond
             response={outputsRes}
             ifPending={() => (

@@ -20,7 +20,7 @@ import { type Mock, vi } from "vitest";
 import { directoryQueries } from "@/queries/directories/queries";
 import type { Directory } from "@/services/api/directories/types";
 import { StudyDestinationFE } from "..";
-import type { DirectoryValue } from "../types";
+import type { DirectoryDestination } from "../types";
 
 // Mock react-i18next so translated keys are returned as-is.
 vi.mock("react-i18next", () => ({
@@ -63,10 +63,10 @@ function makeDirectories(): Directory[] {
 // Utils
 ////////////////////////////////////////////////////////////////
 
-const ROOT_DIRECTORY: DirectoryValue = { id: null, newDirectoryPath: "" };
+const ROOT_DIRECTORY: DirectoryDestination = { directoryId: null, newSubdirectoriesPath: "" };
 
 interface RenderOptions {
-  value?: DirectoryValue;
+  value?: DirectoryDestination;
   onChange?: Mock;
   onBlur?: Mock;
   children?: React.ReactNode;
@@ -165,7 +165,7 @@ describe("StudyDestinationFE", () => {
 
   describe("initial rendering with pre-set value", () => {
     test("navigates directly to the directory matching the ID", () => {
-      renderComponent({ value: { id: "a2", newDirectoryPath: "" } });
+      renderComponent({ value: { directoryId: "a2", newSubdirectoriesPath: "" } });
 
       // Should show children of subA2 (id: "a2")
       expect(getDirectoryNames()).toEqual(["deep"]);
@@ -175,12 +175,12 @@ describe("StudyDestinationFE", () => {
       expect(screen.getByRole("button", { name: "directoryA" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "subA2" })).toBeInTheDocument();
 
-      // No new directory path since the value has an empty newDirectoryPath
+      // No new directory path since the value has an empty newSubdirectoriesPath
       expect(getNewDirectoryPathInput().value).toBe("");
     });
 
     test("navigates to a root-level directory", () => {
-      renderComponent({ value: { id: "a", newDirectoryPath: "" } });
+      renderComponent({ value: { directoryId: "a", newSubdirectoriesPath: "" } });
 
       // Should show children of directoryA
       expect(getDirectoryNames()).toEqual(["subA1", "subA2"]);
@@ -189,18 +189,18 @@ describe("StudyDestinationFE", () => {
       expect(screen.getByRole("button", { name: "directoryA" })).toBeInTheDocument();
     });
 
-    test("populates the new directory path input when newDirectoryPath is provided", () => {
-      renderComponent({ value: { id: "a", newDirectoryPath: "newChild" } });
+    test("populates the new directory path input when newSubdirectoriesPath is provided", () => {
+      renderComponent({ value: { directoryId: "a", newSubdirectoriesPath: "newChild" } });
 
       // Should show children of directoryA (the known directory)
       expect(getDirectoryNames()).toEqual(["subA1", "subA2"]);
 
-      // New directory path input shows the provided newDirectoryPath
+      // New directory path input shows the provided newSubdirectoriesPath
       expect(getNewDirectoryPathInput().value).toBe("newChild");
     });
 
     test("falls back to root when the directoryId is not found or null", () => {
-      renderComponent({ value: { id: "not-found", newDirectoryPath: "" } });
+      renderComponent({ value: { directoryId: "not-found", newSubdirectoriesPath: "" } });
 
       // Should be at root
       expect(getDirectoryNames()).toEqual(["directoryA", "directoryB", "directoryC"]);
@@ -208,7 +208,7 @@ describe("StudyDestinationFE", () => {
       expect(getGoUpButton()).toBeDisabled();
 
       // Also test with null directoryId
-      renderComponent({ value: { id: null, newDirectoryPath: "" } });
+      renderComponent({ value: { directoryId: null, newSubdirectoriesPath: "" } });
 
       expect(getDirectoryNames()).toEqual(["directoryA", "directoryB", "directoryC"]);
       expect(getGoUpButton()).toBeDisabled();
@@ -216,7 +216,7 @@ describe("StudyDestinationFE", () => {
     });
 
     test("navigates to a deeply nested directory", () => {
-      renderComponent({ value: { id: "a2d", newDirectoryPath: "" } });
+      renderComponent({ value: { directoryId: "a2d", newSubdirectoriesPath: "" } });
 
       // "deep" is a leaf no children
       expect(screen.getByText("studies.destination.noSubDirectories")).toBeInTheDocument();
@@ -241,7 +241,7 @@ describe("StudyDestinationFE", () => {
 
       // onChange emitted the structured value
       expect(onChange).toHaveBeenCalledWith({
-        target: { value: { id: "a", newDirectoryPath: "" } },
+        target: { value: { directoryId: "a", newSubdirectoriesPath: "" } },
       });
     });
   });
@@ -260,7 +260,7 @@ describe("StudyDestinationFE", () => {
 
     test("navigates correctly from a deeply nested directory", async () => {
       const user = userEvent.setup();
-      renderComponent({ value: { id: "a2d", newDirectoryPath: "" } });
+      renderComponent({ value: { directoryId: "a2d", newSubdirectoriesPath: "" } });
 
       // Currently in "deep" (child of subA2)
       expect(screen.getByText("studies.destination.noSubDirectories")).toBeInTheDocument();
@@ -293,7 +293,7 @@ describe("StudyDestinationFE", () => {
 
       expect(getDirectoryNames()).toEqual(["directoryA", "directoryB", "directoryC"]);
       expect(onChange).toHaveBeenLastCalledWith({
-        target: { value: { id: null, newDirectoryPath: "" } },
+        target: { value: { directoryId: null, newSubdirectoriesPath: "" } },
       });
     });
   });
@@ -315,7 +315,7 @@ describe("StudyDestinationFE", () => {
       // Should have gone up to root
       expect(getDirectoryNames()).toEqual(["directoryA", "directoryB", "directoryC"]);
       expect(onChange).toHaveBeenLastCalledWith({
-        target: { value: { id: null, newDirectoryPath: "" } },
+        target: { value: { directoryId: null, newSubdirectoriesPath: "" } },
       });
     });
 
@@ -350,7 +350,7 @@ describe("StudyDestinationFE", () => {
       // The new directory path should still be present
       expect(getNewDirectoryPathInput().value).toBe("extra");
       expect(onChange).toHaveBeenLastCalledWith({
-        target: { value: { id: "a", newDirectoryPath: "extra" } },
+        target: { value: { directoryId: "a", newSubdirectoriesPath: "extra" } },
       });
     });
   });
@@ -363,13 +363,13 @@ describe("StudyDestinationFE", () => {
       // 1. Navigate into directoryA
       await clickDirectory(user, "directoryA");
       expect(onChange).toHaveBeenLastCalledWith({
-        target: { value: { id: "a", newDirectoryPath: "" } },
+        target: { value: { directoryId: "a", newSubdirectoriesPath: "" } },
       });
 
       // 2. Navigate into subA2
       await clickDirectory(user, "subA2");
       expect(onChange).toHaveBeenLastCalledWith({
-        target: { value: { id: "a2", newDirectoryPath: "" } },
+        target: { value: { directoryId: "a2", newSubdirectoriesPath: "" } },
       });
 
       // 3. Type a new sub-directory path
@@ -377,7 +377,7 @@ describe("StudyDestinationFE", () => {
       await user.click(input);
       await user.type(input, "new-directory");
       expect(onChange).toHaveBeenLastCalledWith({
-        target: { value: { id: "a2", newDirectoryPath: "new-directory" } },
+        target: { value: { directoryId: "a2", newSubdirectoriesPath: "new-directory" } },
       });
 
       // 4. Click the directoryA breadcrumb to jump back
@@ -386,7 +386,7 @@ describe("StudyDestinationFE", () => {
       // new directory path should be preserved
       expect(getNewDirectoryPathInput().value).toBe("new-directory");
       expect(onChange).toHaveBeenLastCalledWith({
-        target: { value: { id: "a", newDirectoryPath: "new-directory" } },
+        target: { value: { directoryId: "a", newSubdirectoriesPath: "new-directory" } },
       });
 
       // 5. Clear the new directory path and go to root
@@ -395,7 +395,7 @@ describe("StudyDestinationFE", () => {
 
       expect(getDirectoryNames()).toEqual(["directoryA", "directoryB", "directoryC"]);
       expect(onChange).toHaveBeenLastCalledWith({
-        target: { value: { id: null, newDirectoryPath: "" } },
+        target: { value: { directoryId: null, newSubdirectoriesPath: "" } },
       });
     });
   });

@@ -18,10 +18,7 @@ import { TOKEN_FORM_DEFAULT_VALUES, type TokenFormDefaultValues } from "../utils
 import TokenForm from "./TokenForm";
 
 export interface TokenFormDialogProps
-  extends Omit<
-    FormDialogProps<TokenFormDefaultValues, unknown, string>,
-    "children" | "maxWidth" | "titleIcon"
-  > {
+  extends Omit<FormDialogProps<TokenFormDefaultValues>, "children" | "maxWidth" | "titleIcon"> {
   defaultValues?: TokenFormDefaultValues;
   readOnly?: boolean;
 }

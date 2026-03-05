@@ -31,7 +31,7 @@ import { moveStudy } from "@/services/api/study";
 import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import StudyDestinationFE from "../../StudyDestinationFE";
-import type { DirectoryValue } from "../../StudyDestinationFE/types";
+import type { DirectoryDestination } from "../../StudyDestinationFE/types";
 import {
   computeAllowSubmitOnPristine,
   type FormValues,
@@ -43,7 +43,7 @@ import {
 
 export interface MoveResult {
   directoryPath: string;
-  directory: DirectoryValue;
+  destination: DirectoryDestination;
   redirect: boolean;
   results: Array<PromiseSettledResult<unknown>>;
   directories: Directory[];
@@ -66,7 +66,7 @@ function MoveStudyDialog({ open, onClose, studies }: Props) {
   const allowSubmitOnPristine = computeAllowSubmitOnPristine(initialDirectoryId, studies);
 
   const defaultValues = {
-    directory: { id: initialDirectoryId, newDirectoryPath: "" },
+    destination: { directoryId: initialDirectoryId, newSubdirectoriesPath: "" },
     redirect: true,
   };
 
@@ -75,10 +75,10 @@ function MoveStudyDialog({ open, onClose, studies }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async (data: SubmitHandlerPlus<FormValues>): Promise<MoveResult> => {
-    const { directory, redirect } = formSchema.parse(data.values);
+    const { destination, redirect } = formSchema.parse(data.values);
 
     // TODO: This adapter should be moved to the API layer when Tan stack migration is done.
-    const directoryPath = toDirectoryPath(directory, directories);
+    const directoryPath = toDirectoryPath(destination, directories);
 
     // Run moves sequentially so the first call creates any new directory
     // and subsequent calls reuse it (parallel calls would race and create duplicates).
@@ -102,7 +102,7 @@ function MoveStudyDialog({ open, onClose, studies }: Props) {
     // otherwise the existing cache is still valid.
     let updatedDirectories = directories;
 
-    if (directory.newDirectoryPath) {
+    if (destination.newSubdirectoriesPath) {
       await queryClient.invalidateQueries({
         queryKey: directoryQueries.list().queryKey,
       });
@@ -110,12 +110,12 @@ function MoveStudyDialog({ open, onClose, studies }: Props) {
       updatedDirectories = queryClient.getQueryData(directoryQueries.list().queryKey) ?? [];
     }
 
-    return { directoryPath, directory, redirect, results, directories: updatedDirectories };
+    return { directoryPath, destination, redirect, results, directories: updatedDirectories };
   };
 
   const handleSubmitSuccessful = (
     _data: SubmitHandlerPlus<FormValues>,
-    { directoryPath, directory, redirect, results, directories: updatedDirectories }: MoveResult,
+    { directoryPath, destination, redirect, results, directories: updatedDirectories }: MoveResult,
   ) => {
     const failed = results.reduce<StudyMetadata[]>((acc, result, i) => {
       if (result.status === "rejected") {
@@ -152,7 +152,7 @@ function MoveStudyDialog({ open, onClose, studies }: Props) {
     }
 
     if (redirect) {
-      const directoryId = resolveRedirectDirectoryId(directory, updatedDirectories);
+      const directoryId = resolveRedirectDirectoryId(destination, updatedDirectories);
 
       dispatch(
         updateStudyFilters({
@@ -187,7 +187,7 @@ function MoveStudyDialog({ open, onClose, studies }: Props) {
       submitButtonText={t("global.move")}
     >
       {({ control }) => (
-        <StudyDestinationFE name="directory" control={control}>
+        <StudyDestinationFE name="destination" control={control}>
           <CheckBoxFE
             name="redirect"
             control={control}

@@ -54,6 +54,7 @@ function DirectoryList({ childDirectories, allDirectories, onDirectoryClick }: P
               aria-label={directory.name}
               onClick={() => onDirectoryClick(directory)}
               onKeyDown={(event) => {
+                // Check for Enter key or Space key (accessibility requirement for interactive elements)
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
                   onDirectoryClick(directory);

@@ -24,16 +24,16 @@ import { combineValidators } from "@/utils/validation/utils";
 import DirectoryBreadcrumbs from "./DirectoryBreadcrumbs";
 import DirectoryList from "./DirectoryList";
 import { containerSx, explorerPanelSx } from "./styles";
-import type { BreadcrumbSegment, DirectoryValue } from "./types";
-import { buildDirectoryIndex, getDirectChildren, getDirectoryAncestors } from "./utils";
+import type { BreadcrumbSegment, DirectoryDestination } from "./types";
+import { getDirectChildren, getDirectoryAncestors, mapDirectoriesById } from "./utils";
 
-const ROOT_DIRECTORY: DirectoryValue = { id: null, newDirectoryPath: "" };
+const ROOT_DIRECTORY: DirectoryDestination = { directoryId: null, newSubdirectoriesPath: "" };
 
 interface Props {
   /** Current structured value managed by React Hook Form (or parent). */
-  value?: DirectoryValue;
-  defaultValue?: DirectoryValue;
-  onChange?: (event: { target: { value: DirectoryValue } }) => void;
+  value?: DirectoryDestination;
+  defaultValue?: DirectoryDestination;
+  onChange?: (event: { target: { value: DirectoryDestination } }) => void;
   onBlur?: () => void;
   name?: string;
   disabled?: boolean;
@@ -56,21 +56,24 @@ function StudyDestinationFE({
   inputRef,
   children,
 }: Props) {
-  const { data: directories } = useSuspenseQuery(directoryQueries.list());
-
-  const index = useMemo(() => buildDirectoryIndex(directories), [directories]);
-
-  const [selection, setSelection] = useState<DirectoryValue>(() => {
-    const initial = value ?? ROOT_DIRECTORY;
-    const { id } = initial;
-
-    // Validate the ID and fall back to root when stale / invalid.
-    const validId = id !== null && index.has(id) ? id : null;
-
-    return { id: validId, newDirectoryPath: initial.newDirectoryPath };
+  const {
+    data: { directories, directoriesById },
+  } = useSuspenseQuery({
+    ...directoryQueries.list(),
+    select: (directories) => ({ directories, directoriesById: mapDirectoriesById(directories) }),
   });
 
-  const { id: currentDirId, newDirectoryPath } = selection;
+  const [selection, setSelection] = useState<DirectoryDestination>(() => {
+    const initial = value ?? ROOT_DIRECTORY;
+    const { directoryId } = initial;
+
+    // Validate the ID and fall back to root when stale / invalid.
+    const validId = directoryId !== null && directoriesById.has(directoryId) ? directoryId : null;
+
+    return { directoryId: validId, newSubdirectoriesPath: initial.newSubdirectoriesPath };
+  });
+
+  const { directoryId: currentDirId, newSubdirectoriesPath } = selection;
 
   const childDirectories = useMemo(
     () => getDirectChildren(currentDirId, directories),
@@ -84,7 +87,7 @@ function StudyDestinationFE({
       return [{ ...root, active: true }];
     }
 
-    const ancestors = getDirectoryAncestors(currentDirId, index);
+    const ancestors = getDirectoryAncestors(currentDirId, directoriesById);
 
     return [
       root,
@@ -94,15 +97,15 @@ function StudyDestinationFE({
         active: index === ancestors.length - 1,
       })),
     ];
-  }, [currentDirId, index]);
+  }, [currentDirId, directoriesById]);
 
   const emitChange = (directoryId: string | null, path: string) => {
-    onChange?.({ target: { value: { id: directoryId, newDirectoryPath: path } } });
+    onChange?.({ target: { value: { directoryId, newSubdirectoriesPath: path } } });
   };
 
   const navigateTo = (directoryId: string | null) => {
-    setSelection((prev) => ({ ...prev, id: directoryId }));
-    emitChange(directoryId, newDirectoryPath);
+    setSelection((prev) => ({ ...prev, directoryId }));
+    emitChange(directoryId, newSubdirectoriesPath);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -111,18 +114,18 @@ function StudyDestinationFE({
 
   const handleGoUp = () => {
     if (currentDirId) {
-      navigateTo(index.get(currentDirId)?.parentId ?? null);
+      navigateTo(directoriesById.get(currentDirId)?.parentId ?? null);
     }
   };
 
   const handleNewPathChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const updated = event.target.value;
-    setSelection((prev) => ({ ...prev, newDirectoryPath: updated }));
+    setSelection((prev) => ({ ...prev, newSubdirectoriesPath: updated }));
     emitChange(currentDirId, updated);
   };
 
   const handleNewPathKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Backspace" && !newDirectoryPath && currentDirId) {
+    if (event.key === "Backspace" && !newSubdirectoriesPath && currentDirId) {
       event.preventDefault();
       handleGoUp();
     }
@@ -145,7 +148,7 @@ function StudyDestinationFE({
       <Box sx={explorerPanelSx(error)}>
         <DirectoryBreadcrumbs
           breadcrumbs={breadcrumbs}
-          newDirectoryPath={newDirectoryPath}
+          newSubdirectoriesPath={newSubdirectoriesPath}
           disabled={disabled}
           canGoUp={currentDirId !== null}
           inputRef={inputRef}
@@ -180,11 +183,11 @@ function StudyDestinationFE({
 
 const StudyDestinationFEWithReactHookFormSupport = reactHookFormSupport({
   defaultValue: ROOT_DIRECTORY,
-  preValidate: (value: DirectoryValue) =>
+  preValidate: (value: DirectoryDestination) =>
     combineValidators(
       validatePath({ allowEmpty: true, allowToStartWithSlash: false, allowToEndWithSlash: false }),
       validateString({ specialChars: { chars: "/", mode: "allow" }, allowEmpty: true }),
-    )(value.newDirectoryPath),
+    )(value.newSubdirectoriesPath),
 })(StudyDestinationFE);
 
 export { StudyDestinationFE };

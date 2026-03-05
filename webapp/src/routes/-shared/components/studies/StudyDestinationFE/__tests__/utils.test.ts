@@ -14,7 +14,7 @@
 
 import type { Directory } from "@/services/api/directories/types";
 import {
-  buildDirectoryIndex,
+  mapDirectoriesById,
   getDirectChildren,
   getDirectoryAncestors,
   toDirectoryPath,
@@ -44,10 +44,10 @@ function makeDirectories(): Directory[] {
   ];
 }
 
-describe("buildDirectoryIndex", () => {
+describe("mapDirectoriesById", () => {
   test("every directory is retrievable by its id", () => {
     const directories = makeDirectories();
-    const index = buildDirectoryIndex(directories);
+    const index = mapDirectoriesById(directories);
 
     expect(index.size).toBe(directories.length);
 
@@ -57,7 +57,7 @@ describe("buildDirectoryIndex", () => {
   });
 
   test("returns an empty map for an empty array", () => {
-    expect(buildDirectoryIndex([]).size).toBe(0);
+    expect(mapDirectoriesById([]).size).toBe(0);
   });
 });
 
@@ -85,7 +85,7 @@ describe("getDirectChildren", () => {
 });
 
 describe("getDirectoryAncestors", () => {
-  const index = buildDirectoryIndex(makeDirectories());
+  const index = mapDirectoriesById(makeDirectories());
 
   test("returns a single-element array for a root-level directory", () => {
     const ids = getDirectoryAncestors("a", index).map((directory) => directory.id);
@@ -102,36 +102,42 @@ describe("toDirectoryPath", () => {
   const directories = makeDirectories();
 
   test('returns "" for root with no new directory path', () => {
-    expect(toDirectoryPath({ id: null, newDirectoryPath: "" }, directories)).toBe("");
+    expect(toDirectoryPath({ directoryId: null, newSubdirectoriesPath: "" }, directories)).toBe("");
   });
 
   test("returns the directory name for a root-level directory", () => {
-    expect(toDirectoryPath({ id: "a", newDirectoryPath: "" }, directories)).toBe("directoryA");
+    expect(toDirectoryPath({ directoryId: "a", newSubdirectoriesPath: "" }, directories)).toBe(
+      "directoryA",
+    );
   });
 
   test("returns the full nested string for a deeply nested directory", () => {
-    expect(toDirectoryPath({ id: "a2d", newDirectoryPath: "" }, directories)).toBe(
+    expect(toDirectoryPath({ directoryId: "a2d", newSubdirectoriesPath: "" }, directories)).toBe(
       "directoryA/subA2/deep",
     );
   });
 
   test("returns directory string + new directory path when both are present", () => {
-    expect(toDirectoryPath({ id: "a2", newDirectoryPath: "newDir" }, directories)).toBe(
-      "directoryA/subA2/newDir",
-    );
+    expect(
+      toDirectoryPath({ directoryId: "a2", newSubdirectoriesPath: "newDir" }, directories),
+    ).toBe("directoryA/subA2/newDir");
   });
 
   test("returns just the new directory path when id is null", () => {
-    expect(toDirectoryPath({ id: null, newDirectoryPath: "new" }, directories)).toBe("new");
+    expect(toDirectoryPath({ directoryId: null, newSubdirectoriesPath: "new" }, directories)).toBe(
+      "new",
+    );
   });
 
   test("returns directory string + multi-segment new directory path", () => {
-    expect(toDirectoryPath({ id: "a", newDirectoryPath: "x/y/z" }, directories)).toBe(
+    expect(toDirectoryPath({ directoryId: "a", newSubdirectoriesPath: "x/y/z" }, directories)).toBe(
       "directoryA/x/y/z",
     );
   });
 
   test('returns "" for unknown id with no new directory path', () => {
-    expect(toDirectoryPath({ id: "nonexistent", newDirectoryPath: "" }, directories)).toBe("");
+    expect(
+      toDirectoryPath({ directoryId: "nonexistent", newSubdirectoriesPath: "" }, directories),
+    ).toBe("");
   });
 });
