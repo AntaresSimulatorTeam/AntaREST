@@ -15,9 +15,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Optional
 
-from antarest.core.tasks.action import TaskActionRegistry
+from antarest.core.tasks.action import TaskActionParams, TaskActionRegistry
 from antarest.core.tasks.model import TaskResult
 from antarest.core.tasks.service import ITaskNotifier
 from antarest.service_creator import CoreServices
@@ -25,8 +25,14 @@ from antarest.service_creator import CoreServices
 logger = logging.getLogger(__name__)
 
 
-@TaskActionRegistry.register("watcher_scan")
-def handle_watcher_scan(services: CoreServices, params: dict[str, Any], notifier: ITaskNotifier) -> TaskResult:
+class WatcherScanParams(TaskActionParams):
+    recursive: bool = True
+    workspace: Optional[str] = None
+    path: Optional[str] = None
+
+
+@TaskActionRegistry.register("watcher_scan", WatcherScanParams)
+def handle_watcher_scan(services: CoreServices, params: WatcherScanParams, notifier: ITaskNotifier) -> TaskResult:
     """Execute a watcher scan.
 
     Note: This handler needs the Watcher instance which is not part of CoreServices.
@@ -36,9 +42,6 @@ def handle_watcher_scan(services: CoreServices, params: dict[str, Any], notifier
     """
     from antarest.study.storage.rawstudy.watcher import Watcher
 
-    recursive = params.get("recursive", True)
-    workspace = params.get("workspace")
-    path = params.get("path")
     config = services.study_service.storage_service.raw_study_service.config
 
     watcher = Watcher(
@@ -46,5 +49,5 @@ def handle_watcher_scan(services: CoreServices, params: dict[str, Any], notifier
         study_service=services.study_service,
         task_service=services.task_service,
     )
-    watcher.scan(recursive, workspace, path)
+    watcher.scan(params.recursive, params.workspace, params.path)
     return TaskResult(success=True, message="Scan completed")

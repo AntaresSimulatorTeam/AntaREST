@@ -16,9 +16,8 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any
 
-from antarest.core.tasks.action import TaskActionRegistry
+from antarest.core.tasks.action import TaskActionParams, TaskActionRegistry
 from antarest.core.tasks.model import TaskResult
 from antarest.core.tasks.service import ITaskNotifier
 from antarest.service_creator import CoreServices
@@ -26,21 +25,25 @@ from antarest.service_creator import CoreServices
 logger = logging.getLogger(__name__)
 
 
-@TaskActionRegistry.register("export_matrices")
-def handle_export_matrices(services: CoreServices, params: dict[str, Any], notifier: ITaskNotifier) -> TaskResult:
+class ExportMatricesParams(TaskActionParams):
+    matrix_list: list[str]
+    dataset_name: str
+    export_path: str
+    export_id: str
+
+
+@TaskActionRegistry.register("export_matrices", ExportMatricesParams)
+def handle_export_matrices(services: CoreServices, params: ExportMatricesParams, notifier: ITaskNotifier) -> TaskResult:
     matrix_service = services.matrix_service
-    matrix_list = params["matrix_list"]
-    dataset_name = params["dataset_name"]
-    export_path = Path(params["export_path"])
-    export_id = params["export_id"]
+    export_path = Path(params.export_path)
 
     try:
-        matrix_service.create_matrix_files(matrix_ids=matrix_list, export_path=export_path)
-        services.file_transfer_manager.set_ready(export_id)
+        matrix_service.create_matrix_files(matrix_ids=params.matrix_list, export_path=export_path)
+        services.file_transfer_manager.set_ready(params.export_id)
         return TaskResult(
             success=True,
-            message=f"Matrix dataset {dataset_name} successfully exported",
+            message=f"Matrix dataset {params.dataset_name} successfully exported",
         )
     except Exception as e:
-        services.file_transfer_manager.fail(export_id, str(e))
+        services.file_transfer_manager.fail(params.export_id, str(e))
         raise e

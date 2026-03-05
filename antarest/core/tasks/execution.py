@@ -97,10 +97,11 @@ def execute_task(
                 db.session.commit()
             logger.info(f"Task {task_id} set to RUNNING")
 
-            handler = TaskActionRegistry.get_handler(action.action_type)
+            handler, params_model = TaskActionRegistry.get_handler(action.action_type)
+            validated_params = params_model.model_validate(action.params)
             with db():
                 result = handler(
-                    core_services, action.params, TaskLogAndProgressRecorder(task_id, db.session, event_bus)
+                    core_services, validated_params, TaskLogAndProgressRecorder(task_id, db.session, event_bus)
                 )
 
             status = TaskStatus.COMPLETED if result.success else TaskStatus.FAILED

@@ -43,8 +43,9 @@ class SimpleSyncTaskService(ITaskService):
         custom_event_messages: Optional[CustomTaskEventMessages],
     ) -> str:
         if self._core_services is not None:
-            handler = TaskActionRegistry.get_handler(action.action_type)
-            handler(self._core_services, action.params, NoopNotifier())
+            handler, params_model = TaskActionRegistry.get_handler(action.action_type)
+            validated_params = params_model.model_validate(action.params)
+            handler(self._core_services, validated_params, NoopNotifier())
         return str(uuid.uuid4())
 
     @override

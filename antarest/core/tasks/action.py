@@ -21,7 +21,7 @@ functions that can be looked up both in-process and in Celery workers.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Protocol
+from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.tasks.model import TaskResult
@@ -40,44 +40,56 @@ class TaskActionDescriptor(AntaresBaseModel, extra="forbid"):
     """JSON-serializable parameters for the handler."""
 
 
-class TaskActionHandler(Protocol):
-    """Signature expected by registered action handlers."""
+class TaskActionParams(AntaresBaseModel):
+    """Base class for typed task action parameters.
 
-    def __call__(
-        self,
-        services: CoreServices,
-        params: dict[str, Any],
-        notifier: ITaskNotifier,
-    ) -> TaskResult: ...
+    Each action type should define a subclass with its specific fields.
+    """
+
+
+# Type alias for handler callables that accept validated params.
+# We use Any for the params argument because each handler receives
+# its own specific TaskActionParams subclass.
+TaskActionHandler = Callable[["CoreServices", Any, "ITaskNotifier"], TaskResult]
+
+_HandlerEntry = tuple[TaskActionHandler, type[TaskActionParams]]
 
 
 class TaskActionRegistry:
     """Global registry mapping action type strings to handler callables."""
 
-    _handlers: ClassVar[dict[str, TaskActionHandler]] = {}
+    _handlers: ClassVar[dict[str, _HandlerEntry]] = {}
 
     @classmethod
-    def register(cls, action_type: str) -> Callable[[TaskActionHandler], TaskActionHandler]:
+    def register(
+        cls, action_type: str, params_model: type[TaskActionParams]
+    ) -> Callable[[TaskActionHandler], TaskActionHandler]:
         """Decorator to register a handler for a given action type.
 
         Usage::
 
-            @TaskActionRegistry.register("archive_study")
-            def handle_archive_study(services, params, notifier):
+            class ArchiveStudyParams(TaskActionParams):
+                study_id: str
+
+            @TaskActionRegistry.register("archive_study", ArchiveStudyParams)
+            def handle_archive_study(services, params: ArchiveStudyParams, notifier):
                 ...
         """
 
         def decorator(fn: TaskActionHandler) -> TaskActionHandler:
             if action_type in cls._handlers:
                 raise ValueError(f"Action type '{action_type}' is already registered")
-            cls._handlers[action_type] = fn
+            cls._handlers[action_type] = (fn, params_model)
             return fn
 
         return decorator
 
     @classmethod
-    def get_handler(cls, action_type: str) -> TaskActionHandler:
-        """Look up a handler by action type.
+    def get_handler(cls, action_type: str) -> _HandlerEntry:
+        """Look up a handler and its params model by action type.
+
+        Returns:
+            A tuple of (handler_function, params_model_class).
 
         Raises:
             KeyError: if the action type is not registered.

@@ -18,7 +18,7 @@ import logging
 from pathlib import Path
 from typing import Any, Optional
 
-from antarest.core.tasks.action import TaskActionRegistry
+from antarest.core.tasks.action import TaskActionParams, TaskActionRegistry
 from antarest.core.tasks.model import TaskResult
 from antarest.core.tasks.service import ITaskNotifier
 from antarest.core.utils.utils import StopWatch
@@ -27,79 +27,121 @@ from antarest.service_creator import CoreServices
 logger = logging.getLogger(__name__)
 
 
-@TaskActionRegistry.register("archive_output")
-def handle_archive_output(services: CoreServices, params: dict[str, Any], notifier: ITaskNotifier) -> TaskResult:
+class ArchiveOutputParams(TaskActionParams):
+    study_id: str
+    output_id: str
+
+
+class UnarchiveOutputParams(TaskActionParams):
+    study_id: str
+    output_id: str
+
+
+class ExportOutputParams(TaskActionParams):
+    study_id: str
+    output_id: str
+    export_path: str
+    export_id: str
+    study_name: str
+
+
+class AggregateOutputParams(TaskActionParams):
+    study_id: str
+    output_id: str
+    query_file_type: str
+    query_file_value: str
+    frequency: str
+    export_format: str
+    columns_names: list[str]
+    ids_to_consider: list[str]
+    file_path: str
+    transform_columns_headers: bool = True
+    mc_years: Optional[list[int]] = None
+    export_id: Optional[str] = None
+
+
+class MaterializeOutputViewParams(TaskActionParams):
+    study_id: str
+    output_id: str
+    variable_name: str
+    frequency: str
+    output_item_id: Any
+
+
+@TaskActionRegistry.register("archive_output", ArchiveOutputParams)
+def handle_archive_output(services: CoreServices, params: ArchiveOutputParams, notifier: ITaskNotifier) -> TaskResult:
     output_service = services.output_service
-    study_id = params["study_id"]
-    output_id = params["output_id"]
 
     try:
         stopwatch = StopWatch()
-        output_service._storage.archive_study_output(study_id, output_id)
-        stopwatch.log_elapsed(lambda x: logger.info(f"Output {output_id} of study {study_id} archived in {x}s"))
+        output_service._storage.archive_study_output(params.study_id, params.output_id)
+        stopwatch.log_elapsed(
+            lambda x: logger.info(f"Output {params.output_id} of study {params.study_id} archived in {x}s")
+        )
         return TaskResult(
             success=True,
-            message=f"Study output {study_id}/{output_id} successfully archived",
+            message=f"Study output {params.study_id}/{params.output_id} successfully archived",
         )
     except Exception as e:
         logger.warning(
-            f"Could not archive the output {study_id}/{output_id}",
+            f"Could not archive the output {params.study_id}/{params.output_id}",
             exc_info=e,
         )
         raise e
 
 
-@TaskActionRegistry.register("unarchive_output")
-def handle_unarchive_output(services: CoreServices, params: dict[str, Any], notifier: ITaskNotifier) -> TaskResult:
+@TaskActionRegistry.register("unarchive_output", UnarchiveOutputParams)
+def handle_unarchive_output(
+    services: CoreServices, params: UnarchiveOutputParams, notifier: ITaskNotifier
+) -> TaskResult:
     output_service = services.output_service
-    study_id = params["study_id"]
-    output_id = params["output_id"]
 
     try:
         stopwatch = StopWatch()
-        output_service._storage.unarchive_study_output(study_id, output_id)
-        stopwatch.log_elapsed(lambda x: logger.info(f"Output {output_id} of study {study_id} unarchived in {x}s"))
+        output_service._storage.unarchive_study_output(params.study_id, params.output_id)
+        stopwatch.log_elapsed(
+            lambda x: logger.info(f"Output {params.output_id} of study {params.study_id} unarchived in {x}s")
+        )
         return TaskResult(
             success=True,
-            message=f"Study output {study_id}/{output_id} successfully unarchived",
+            message=f"Study output {params.study_id}/{params.output_id} successfully unarchived",
         )
     except Exception as e:
         logger.warning(
-            f"Could not unarchive the output {study_id}/{output_id}",
+            f"Could not unarchive the output {params.study_id}/{params.output_id}",
             exc_info=e,
         )
         raise e
 
 
-@TaskActionRegistry.register("export_output")
-def handle_export_output(services: CoreServices, params: dict[str, Any], notifier: ITaskNotifier) -> TaskResult:
+@TaskActionRegistry.register("export_output", ExportOutputParams)
+def handle_export_output(services: CoreServices, params: ExportOutputParams, notifier: ITaskNotifier) -> TaskResult:
     output_service = services.output_service
-    study_uuid = params["study_id"]
-    output_uuid = params["output_id"]
-    export_path = Path(params["export_path"])
-    export_id = params["export_id"]
-    study_name = params["study_name"]
+    export_path = Path(params.export_path)
 
     try:
         output_service._storage.export_output(
-            study_id=study_uuid,
-            output_id=output_uuid,
+            study_id=params.study_id,
+            output_id=params.output_id,
             target=export_path,
         )
-        services.file_transfer_manager.set_ready(export_id)
+        services.file_transfer_manager.set_ready(params.export_id)
         return TaskResult(
             success=True,
-            message=f"Study output {study_name}/{output_uuid} successfully exported",
+            message=f"Study output {params.study_name}/{params.output_id} successfully exported",
         )
     except Exception as e:
-        services.file_transfer_manager.fail(export_id, str(e))
+        services.file_transfer_manager.fail(params.export_id, str(e))
         raise e
 
 
-@TaskActionRegistry.register("aggregate_output")
-def handle_aggregate_output(services: CoreServices, params: dict[str, Any], notifier: ITaskNotifier) -> TaskResult:
+@TaskActionRegistry.register("aggregate_output", AggregateOutputParams)
+def handle_aggregate_output(
+    services: CoreServices, params: AggregateOutputParams, notifier: ITaskNotifier
+) -> TaskResult:
     from antarest.core.serde.matrix_export import TableExportFormat
     from antarest.study.output.aggregation_queries import (  # type: ignore[import-untyped]
+        MatrixFrequency,
         MCAllAreasQueryFile,
         MCAllLinksQueryFile,
         MCIndAreasQueryFile,
@@ -108,23 +150,9 @@ def handle_aggregate_output(services: CoreServices, params: dict[str, Any], noti
     from antarest.study.storage.df_download import export_df_chunks
 
     output_service = services.output_service
-    uuid = params["study_id"]
-    output_id = params["output_id"]
-    query_file_type = params["query_file_type"]
-    query_file_value = params["query_file_value"]
-    frequency_value = params["frequency"]
-    export_format_value = params["export_format"]
-    columns_names = params["columns_names"]
-    ids_to_consider = params["ids_to_consider"]
-    file_path = Path(params["file_path"])
-    transform_columns_headers = params.get("transform_columns_headers", True)
-    mc_years = params.get("mc_years")
-    export_id: Optional[str] = params.get("export_id")
-
-    from antarest.study.output.aggregation_queries import MatrixFrequency
-
-    frequency = MatrixFrequency(frequency_value)
-    export_format = TableExportFormat(export_format_value)
+    file_path = Path(params.file_path)
+    frequency = MatrixFrequency(params.frequency)
+    export_format = TableExportFormat(params.export_format)
 
     # Reconstruct the query file enum
     query_file_map = {
@@ -133,64 +161,57 @@ def handle_aggregate_output(services: CoreServices, params: dict[str, Any], noti
         "MCIndLinksQueryFile": MCIndLinksQueryFile,
         "MCAllLinksQueryFile": MCAllLinksQueryFile,
     }
-    query_file_cls = query_file_map[query_file_type]
-    query_file = query_file_cls(query_file_value)
+    query_file_cls = query_file_map[params.query_file_type]
+    query_file = query_file_cls(params.query_file_value)
 
     try:
         stopwatch = StopWatch()
-        logger.info(f"Launch aggregation step for output '{output_id}' of study '{uuid}'.")
+        logger.info(f"Launch aggregation step for output '{params.output_id}' of study '{params.study_id}'.")
 
         results = output_service._storage.aggregate_output_data(
-            uuid,
-            output_id,
+            params.study_id,
+            params.output_id,
             query_file,
             frequency,
-            ids_to_consider,
-            columns_names,
-            transform_columns_headers,
-            mc_years,
+            params.ids_to_consider,
+            params.columns_names,
+            params.transform_columns_headers,
+            params.mc_years,
         )
         export_df_chunks(output_service._tmp_dir, file_path, results, export_format)
 
         stopwatch.log_elapsed(lambda x: logger.info(f"Created aggregated outputs file '{file_path}' in {x}s."))
 
-        if export_id:
-            services.file_transfer_manager.set_ready(export_id, use_notification=False)
+        if params.export_id:
+            services.file_transfer_manager.set_ready(params.export_id, use_notification=False)
 
         logger.info(f"Aggregated output file '{file_path}' is ready for download.")
         return TaskResult(
             success=True,
-            message=f"Successfully aggregated output data for study '{uuid}'. Results are stored in '{file_path}'.",
+            message=f"Successfully aggregated output data for study '{params.study_id}'. Results are stored in '{file_path}'.",
         )
 
     except Exception as e:
-        if export_id:
-            services.file_transfer_manager.fail(export_id, str(e))
+        if params.export_id:
+            services.file_transfer_manager.fail(params.export_id, str(e))
         raise e
 
 
-@TaskActionRegistry.register("materialize_output_view")
+@TaskActionRegistry.register("materialize_output_view", MaterializeOutputViewParams)
 def handle_materialize_output_view(
-    services: CoreServices, params: dict[str, Any], notifier: ITaskNotifier
+    services: CoreServices, params: MaterializeOutputViewParams, notifier: ITaskNotifier
 ) -> TaskResult:
+    from pydantic import TypeAdapter
+
+    from antarest.study.output.aggregation_queries import MatrixFrequency
     from antarest.study.output.output_service import OutputVariablesViewMaterializationTask
     from antarest.study.output.variables_management import OutputItemId
 
     output_service = services.output_service
-    study_id = params["study_id"]
-    output_id = params["output_id"]
-    variable_name = params["variable_name"]
-    frequency_value = params["frequency"]
-    output_item_id_data = params["output_item_id"]
-
-    from pydantic import TypeAdapter
-
-    from antarest.study.output.aggregation_queries import MatrixFrequency
-
-    frequency = MatrixFrequency(frequency_value)
-    output_item_id: OutputItemId = TypeAdapter(OutputItemId).validate_python(output_item_id_data)
+    frequency = MatrixFrequency(params.frequency)
+    output_item_id: OutputItemId = TypeAdapter(OutputItemId).validate_python(params.output_item_id)
 
     task = OutputVariablesViewMaterializationTask(
-        study_id, output_id, output_service, variable_name, frequency, output_item_id
+        params.study_id, params.output_id, output_service, params.variable_name, frequency, output_item_id
     )
     return task.run_task(notifier)

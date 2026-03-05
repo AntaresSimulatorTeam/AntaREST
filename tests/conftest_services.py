@@ -94,8 +94,9 @@ class SynchTaskService(ITaskService):
         custom_event_messages: t.Optional[CustomTaskEventMessages],
     ) -> str:
         if self.core_services is not None:
-            handler = TaskActionRegistry.get_handler(action.action_type)
-            self._task_result = handler(self.core_services, action.params, NoopNotifier())
+            handler, params_model = TaskActionRegistry.get_handler(action.action_type)
+            validated_params = params_model.model_validate(action.params)
+            self._task_result = handler(self.core_services, validated_params, NoopNotifier())
         else:
             self._task_result = TaskResult(success=True, message="ok")
         return str(uuid.uuid4())

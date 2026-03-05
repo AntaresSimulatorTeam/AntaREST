@@ -31,7 +31,7 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.persistence import Base
 from antarest.core.requests import MustBeAuthenticatedError, UserHasNotPermissionError
-from antarest.core.tasks.action import TaskActionDescriptor, TaskActionRegistry
+from antarest.core.tasks.action import TaskActionDescriptor, TaskActionParams, TaskActionRegistry
 from antarest.core.tasks.model import (
     TaskJob,
     TaskJobLog,
@@ -94,25 +94,25 @@ def _clean_test_handlers() -> t.Generator[None, None, None]:
 def _register_test_handlers() -> None:
     """Register test-specific action handlers."""
 
-    def _test_fail(services: t.Any, params: dict, notifier: ITaskNotifier) -> TaskResult:
+    def _test_fail(services: t.Any, params: TaskActionParams, notifier: ITaskNotifier) -> TaskResult:
         raise Exception("this action failed")
 
-    def _test_ok(services: t.Any, params: dict, notifier: ITaskNotifier) -> TaskResult:
+    def _test_ok(services: t.Any, params: TaskActionParams, notifier: ITaskNotifier) -> TaskResult:
         notifier.notify_message("start")
         notifier.notify_message("end")
         return TaskResult(success=True, message="OK")
 
-    def _test_action_task(services: t.Any, params: dict, notifier: ITaskNotifier) -> TaskResult:
+    def _test_action_task(services: t.Any, params: TaskActionParams, notifier: ITaskNotifier) -> TaskResult:
         notifier.notify_message("start")
         current_user = get_current_user()
         notifier.notify_message("end")
         return TaskResult(success=True, message="success", return_value=str(current_user.id))
 
-    def _test_long_task(services: t.Any, params: dict, notifier: ITaskNotifier) -> TaskResult:
+    def _test_long_task(services: t.Any, params: TaskActionParams, notifier: ITaskNotifier) -> TaskResult:
         time.sleep(3)
         return TaskResult(success=True, message="success")
 
-    def _test_dummy_task(services: t.Any, params: dict, notifier: ITaskNotifier) -> TaskResult:
+    def _test_dummy_task(services: t.Any, params: TaskActionParams, notifier: ITaskNotifier) -> TaskResult:
         return TaskResult(success=True, message="success")
 
     for name, fn in [
@@ -123,7 +123,7 @@ def _register_test_handlers() -> None:
         ("test_dummy_task", _test_dummy_task),
     ]:
         if name not in TaskActionRegistry._handlers:
-            TaskActionRegistry._handlers[name] = fn
+            TaskActionRegistry._handlers[name] = (fn, TaskActionParams)
 
 
 @pytest.fixture
