@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from dataclasses import dataclass
 from typing import Any, Optional, Self
 
 from pydantic import model_validator
@@ -16,12 +17,14 @@ from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.sts_model import (
+    STStorage,
     STStorageUpdates,
     update_st_storage,
     validate_st_storage_against_version,
 )
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
+    CommandApplicationResult,
     CommandName,
     CommandOutput,
     command_failed,
@@ -30,6 +33,11 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+
+@dataclass(frozen=True)
+class UpdateSTStoragesResult(CommandApplicationResult):
+    data: dict[str, list[STStorage]]
 
 
 class UpdateSTStorages(ICommand):
@@ -86,7 +94,8 @@ class UpdateSTStorages(ICommand):
         for area_id, new_storages in memory_mapping.items():
             study_data.save_st_storages(area_id, new_storages)
 
-        return command_succeeded("The short-term storages were successfully updated.")
+        result = UpdateSTStoragesResult(data=memory_mapping)
+        return command_succeeded("The short-term storages were successfully updated.", result=result)
 
     @override
     def to_dto(self) -> CommandDTO:
