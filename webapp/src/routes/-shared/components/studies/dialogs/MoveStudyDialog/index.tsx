@@ -17,6 +17,7 @@ import type { DialogProps } from "@mui/material";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "@tanstack/react-router";
 import FormDialog from "@/components/dialogs/FormDialog";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
@@ -58,6 +59,7 @@ function MoveStudyDialog({ open, onClose, studies }: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
   const initialDirectoryId = getInitialDirectoryId(studies);
@@ -161,6 +163,8 @@ function MoveStudyDialog({ open, onClose, studies }: Props) {
           },
         }),
       );
+
+      navigate({ to: "/studies" });
     }
   };
 
