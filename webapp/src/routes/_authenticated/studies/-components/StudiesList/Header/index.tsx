@@ -60,6 +60,7 @@ function Header({
   // Derived state
   const studiesById = useAppSelector(getStudiesById);
   const selectedStudies = selectedStudyIds.map((id) => studiesById[id]).filter(Boolean);
+  const selectedManagedStudies = selectedStudies.filter((s) => s.managed);
 
   const isDesktopMode = import.meta.env.MODE === "desktop";
   const isReferenceStudyTypeActive = filters.type === "references";
@@ -195,8 +196,9 @@ function Header({
 
           <BatchActions
             selectedCount={selectedStudyIds.length}
+            managedCount={selectedManagedStudies.length}
             onLaunch={handleLaunchStudies}
-            onMove={activeTree === "managed" ? handleMoveStudies : undefined}
+            onMove={selectedManagedStudies.length > 0 ? handleMoveStudies : undefined}
             onDelete={handleDeleteStudies}
             onDeselectAll={handleDeselectAll}
           />
@@ -233,7 +235,7 @@ function Header({
 
       {confirmMoveStudies && selectedStudies.length > 0 && (
         <MoveStudyDialog
-          studies={selectedStudies}
+          studies={selectedManagedStudies}
           open={confirmMoveStudies}
           onClose={handleCloseMoveDialog}
         />

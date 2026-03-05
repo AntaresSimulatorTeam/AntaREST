@@ -21,15 +21,18 @@ import { useTranslation } from "react-i18next";
 
 interface BatchActionsProps {
   selectedCount: number;
+  /** Number of selected studies that are managed (and therefore movable). */
+  managedCount?: number;
   onLaunch: () => void;
   onDelete: () => void;
   onDeselectAll: () => void;
-  /** If not provided, the Move button is not rendered (only used for managed studies) */
+  /** If not provided, the Move button is not rendered (only managed studies can be moved). */
   onMove?: () => void;
 }
 
 function BatchActions({
   selectedCount,
+  managedCount,
   onLaunch,
   onDelete,
   onDeselectAll,
@@ -41,6 +44,13 @@ function BatchActions({
     return null;
   }
 
+  const isMixedSelection =
+    onMove !== undefined && managedCount !== undefined && managedCount < selectedCount;
+
+  const moveTooltip = isMixedSelection
+    ? t("studies.moveOnlyManagedStudies", { count: managedCount, total: selectedCount })
+    : t("global.move");
+
   return (
     <>
       <Tooltip title={t("studies.batchMode")}>
@@ -49,9 +59,14 @@ function BatchActions({
         </Button>
       </Tooltip>
       {onMove && (
-        <Tooltip title={t("global.move")}>
+        <Tooltip title={moveTooltip}>
           <Button onClick={onMove} color="inherit" startIcon={<DriveFileMoveIcon />}>
             {t("global.move")}
+            {isMixedSelection && (
+              <Typography component="span" variant="caption" sx={{ ml: 0.5, opacity: 0.7 }}>
+                ({managedCount}/{selectedCount})
+              </Typography>
+            )}
           </Button>
         </Tooltip>
       )}

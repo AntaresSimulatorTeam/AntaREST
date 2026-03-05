@@ -821,6 +821,8 @@
   "studies.filters.disableReferenceType": "Show reference and variant studies",
   "studies.filters.management": "Management",
   "studies.filters.archive": "Archive",
+  "studies.moveOnlyManagedStudies_one": "Only {{count}} of {{total}} selected studies is managed and will be moved",
+  "studies.moveOnlyManagedStudies_other": "Only {{count}} of {{total}} selected studies are managed and will be moved",
   "studies.deselectAll": "Deselect all studies\n",
   "studies.scanFolder": "Scan folder",
   "studies.recursiveScan": "Recursive scan",
