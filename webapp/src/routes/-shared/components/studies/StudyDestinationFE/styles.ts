@@ -99,6 +99,8 @@ export const directoryListSx: SxProps<Theme> = {
   m: 0,
   p: 0,
   listStyle: "none",
+  display: "flex",
+  flexDirection: "column",
   minHeight: 500,
   overflowY: "auto",
   bgcolor: "background.paper",
@@ -109,7 +111,7 @@ export const emptyStateSx: SxProps<Theme> = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  height: "100%",
+  flex: 1,
 };
 
 export const getDirectoryRowSx: SxProps<Theme> = {
