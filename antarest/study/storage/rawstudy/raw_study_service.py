@@ -221,7 +221,6 @@ class RawStudyService(AbstractStorageService):
 
         shutil.copytree(src_path, dest_path, ignore=shutil.ignore_patterns("output"))
 
-        # TODO: now we create the config too early without the outputs, maybe ?
         study = self.study_factory.create_from_fs(dest_path, is_managed(src_meta), study_id=dest_study.id)
 
         update_antares_info(dest_study, study.tree, update_author=False)
