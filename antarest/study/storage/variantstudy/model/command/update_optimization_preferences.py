@@ -9,19 +9,31 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from dataclasses import dataclass
 from typing import Optional
 
 from typing_extensions import override
 
 from antarest.study.business.model.config.optimization_config_model import (
+    OptimizationPreferences,
     OptimizationPreferencesUpdate,
     update_optimization_preferences,
 )
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandApplicationResult,
+    CommandName,
+    CommandOutput,
+    command_succeeded,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+
+@dataclass(frozen=True)
+class UpdateOptimizationPreferencesResult(CommandApplicationResult):
+    data: OptimizationPreferences
 
 
 class UpdateOptimizationPreferences(ICommand):
@@ -44,7 +56,8 @@ class UpdateOptimizationPreferences(ICommand):
         current_config = study_data.get_optimization_preferences()
         new_config = update_optimization_preferences(current_config, self.parameters)
         study_data.save_optimization_preferences(new_config)
-        return command_succeeded("Optimization config updated successfully.")
+        result = UpdateOptimizationPreferencesResult(data=new_config)
+        return command_succeeded("Optimization config updated successfully.", result=result)
 
     @override
     def to_dto(self) -> CommandDTO:
