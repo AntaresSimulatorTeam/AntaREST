@@ -59,7 +59,7 @@ class ReplaceMatrix(ICommand):
         mapper = RawPathToMatrixMapper(study_data)
         assert isinstance(self.matrix, str)
         mapper.save_matrix_from_path(Path(self.target), self.matrix)
-        return command_succeeded(message=f"Matrix '{self.target}' has been successfully replaced.")
+        return command_succeeded(message=f"Matrix '{self.target}' has been successfully replaced.", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

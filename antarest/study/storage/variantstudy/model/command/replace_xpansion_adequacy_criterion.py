@@ -52,7 +52,7 @@ class ReplaceXpansionAdequacyCriterion(ICommand):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         study_data.save_xpansion_adequacy_criterion(self.criterion)
-        return command_succeeded(message="Xpansion security criterion replaced successfully")
+        return command_succeeded(message="Xpansion security criterion replaced successfully", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

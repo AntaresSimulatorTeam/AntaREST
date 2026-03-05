@@ -65,7 +65,7 @@ class ReplaceXpansionCandidate(ICommand):
             study_data.checks_xpansion_candidate_can_be_deleted(self.candidate_name)
 
         study_data.save_xpansion_candidate(candidate, old_name)
-        return command_succeeded(message=f"Candidate {self.candidate_name} replaced successfully")
+        return command_succeeded(message=f"Candidate {self.candidate_name} replaced successfully", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

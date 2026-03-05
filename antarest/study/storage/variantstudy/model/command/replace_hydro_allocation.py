@@ -42,7 +42,7 @@ class ReplaceHydroAllocation(ICommand):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         study_data.save_hydro_allocation(self.area_id, self.allocation)
-        return command_succeeded(message=f"Hydro allocation for area {self.area_id} replaced successfully")
+        return command_succeeded(message=f"Hydro allocation for area {self.area_id} replaced successfully", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

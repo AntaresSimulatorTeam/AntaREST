@@ -41,7 +41,9 @@ class ReplaceHydroCorrelation(ICommand):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         study_data.save_hydro_correlation(self.area_id, self.correlation)
-        return command_succeeded(message=f"Hydro correlation for area {self.area_id} replaced successfully")
+        return command_succeeded(
+            message=f"Hydro correlation for area {self.area_id} replaced successfully", result=None
+        )
 
     @override
     def to_dto(self) -> CommandDTO:
