@@ -212,7 +212,7 @@ def test_copy_study(tmp_path: Path) -> None:
         dest_study_name="study-copied",
         destination_folder=PurePosixPath(),
         group_ids=["admin"],
-        outputs_selection="none",
+        outputs_selection=[],
         use_task=True,
     )
     assert result.status_code == HTTPStatus.CREATED
