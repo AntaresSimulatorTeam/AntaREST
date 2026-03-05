@@ -507,10 +507,7 @@ class InStudyFileOutputStorage(IOutputStorage):
             try:
                 # Assume UTF-8 but ignore errors, it's difficult to be sure of log encoding
                 # especially because of windows error messages
-                log = cast(
-                    bytes,
-                    file_study.tree.get(log_location, depth=1, formatted=True),
-                ).decode(encoding="utf-8", errors="replace")
+                log = cast(bytes, file_study.tree.get(log_location, depth=1)).decode(encoding="utf-8", errors="replace")
                 # when missing file, RawFileNode return empty bytes
                 if log:
                     return log
