@@ -72,7 +72,7 @@ function CheckboxesTagsFE<
   return (
     <Autocomplete
       {...rest}
-      slotProps={{ ...slotProps, chip: { size: "small", ...slotProps?.chip } }}
+      slotProps={{ chip: { size: "small" }, ...slotProps }}
       getOptionLabel={getOptionLabel}
       multiple
       disableCloseOnSelect
