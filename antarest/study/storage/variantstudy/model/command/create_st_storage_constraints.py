@@ -9,19 +9,23 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-
+from dataclasses import dataclass
 from typing import Optional, Self
 
 from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.core.model import LowerCaseId
-from antarest.study.business.model.sts_model import STStorageAdditionalConstraintCreation, create_st_storage_constraint
+from antarest.study.business.model.sts_model import (
+    STStorageAdditionalConstraint,
+    STStorageAdditionalConstraintCreation,
+    create_st_storage_constraint,
+)
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
 from antarest.study.storage.variantstudy.model.command.common import (
+    CommandApplicationResult,
     CommandName,
     CommandOutput,
     command_failed,
@@ -30,6 +34,11 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+
+@dataclass(frozen=True)
+class CreateSTStorageAdditionalConstraintsResult(CommandApplicationResult):
+    data: list[STStorageAdditionalConstraint]
 
 
 # noinspection SpellCheckingInspection
@@ -88,9 +97,9 @@ class CreateSTStorageAdditionalConstraints(ICommand):
         for constraint in constraints:
             study_data.save_st_storage_constraint_matrix(self.area_id, self.storage_id, constraint.id, null_matrix)
 
-        return command_succeeded(
-            f"Short-term storage additional constraints successfully added to storage {self.storage_id} in area '{self.area_id}'."
-        )
+        result = CreateSTStorageAdditionalConstraintsResult(data=constraints)
+        msg = f"Short-term storage additional constraints successfully added to storage {self.storage_id} in area '{self.area_id}'."
+        return command_succeeded(message=msg, result=result)
 
     @override
     def to_dto(self) -> CommandDTO:

@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+from dataclasses import dataclass
 from typing import Any, Dict, Final, Optional, Self
 
 from antares.study.version import StudyVersion
@@ -17,6 +17,7 @@ from pydantic import ValidationInfo, model_validator
 from typing_extensions import override
 
 from antarest.study.business.model.renewable_cluster_model import (
+    RenewableCluster,
     RenewableClusterCreation,
     create_renewable_cluster,
     validate_renewable_cluster_against_version,
@@ -25,6 +26,7 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import parse_renewable_cluster
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
 from antarest.study.storage.variantstudy.model.command.common import (
+    CommandApplicationResult,
     CommandName,
     CommandOutput,
     command_failed,
@@ -33,6 +35,11 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+
+@dataclass(frozen=True)
+class CreateRenewablesClusterResult(CommandApplicationResult):
+    data: RenewableCluster
 
 
 class CreateRenewablesCluster(ICommand):
@@ -90,7 +97,8 @@ class CreateRenewablesCluster(ICommand):
         null_matrix = self.command_context.generator_matrix_constants.get_null_matrix()
         study_data.save_renewable_series(self.area_id, lower_renewable_id, null_matrix)
 
-        return command_succeeded(f"Renewable cluster '{renewable_id}' added to area '{self.area_id}'.")
+        result = CreateRenewablesClusterResult(data=renewable)
+        return command_succeeded(f"Renewable cluster '{renewable_id}' added to area '{self.area_id}'.", result=result)
 
     @override
     def to_dto(self) -> CommandDTO:
