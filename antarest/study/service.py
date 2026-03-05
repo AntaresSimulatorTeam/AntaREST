@@ -193,7 +193,7 @@ def _get_matrix_from_path(study_interface: StudyInterface, matrix_path: Path) ->
     return mapper.get_matrix_from_path(matrix_path)
 
 
-OutputSelection: TypeAlias = Literal["all", "none"] | list[str]
+OutputSelection: TypeAlias = Literal["all"] | list[str]
 
 
 def get_disk_usage(path: str | Path) -> int:
@@ -1240,8 +1240,6 @@ class StudyService:
             match outputs_selection:
                 case "all":
                     output_names = [o.id for o in self._get_outputs_access().list_outputs(origin_study.id)]
-                case "none":
-                    output_names = []
                 case selected_outputs:
                     output_names = selected_outputs
 

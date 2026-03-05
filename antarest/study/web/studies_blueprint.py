@@ -318,9 +318,9 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
             else:
                 return "all"
         elif with_outputs is None:
-            return output_ids if output_ids else "none"
+            return output_ids if output_ids else []
         else:
-            return "none"
+            return []
 
     @bp.post(
         "/studies/{uuid}/copy",
