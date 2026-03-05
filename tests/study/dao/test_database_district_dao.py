@@ -22,7 +22,8 @@ from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
 class TestDatabaseDistrictDao:
-    def test_save_district_creates_district(self, dao: DatabaseStudyDao) -> None:
+    def test_save_district_creates_district(self, db_dao: DatabaseStudyDao) -> None:
+        dao = db_dao
         district = District(id="d1", name="District 1", comments="test")
         dao.save_district(district)
 
@@ -32,7 +33,8 @@ class TestDatabaseDistrictDao:
         assert result.output is True
         assert result.comments == "test"
 
-    def test_save_district_with_areas(self, dao: DatabaseStudyDao) -> None:
+    def test_save_district_with_areas(self, db_dao: DatabaseStudyDao) -> None:
+        dao = db_dao
         dao.save_area("Paris")
         dao.save_area("London")
 
@@ -42,24 +44,28 @@ class TestDatabaseDistrictDao:
         result = dao.get_district("d1")
         assert set(result.add_areas) == {"paris", "london"}
 
-    def test_save_district_raises_on_invalid_area(self, dao: DatabaseStudyDao) -> None:
+    def test_save_district_raises_on_invalid_area(self, db_dao: DatabaseStudyDao) -> None:
+        dao = db_dao
         district = District(id="d1", name="District 1", add_areas=["nonexistent"])
         with pytest.raises(AreaNotFound):
             dao.save_district(district)
 
-    def test_save_district_overwrites_existing(self, dao: DatabaseStudyDao) -> None:
+    def test_save_district_overwrites_existing(self, db_dao: DatabaseStudyDao) -> None:
+        dao = db_dao
         dao.save_district(District(id="d1", name="District 1", comments="v1"))
         dao.save_district(District(id="d1", name="District 1", comments="v2"))
 
         result = dao.get_district("d1")
         assert result.comments == "v2"
 
-    def test_remove_district(self, dao: DatabaseStudyDao) -> None:
+    def test_remove_district(self, db_dao: DatabaseStudyDao) -> None:
+        dao = db_dao
         dao.save_district(District(id="d1", name="District 1"))
         dao.remove_district("d1")
         assert not dao.district_exists("d1")
 
-    def test_get_districts_returns_all(self, dao: DatabaseStudyDao) -> None:
+    def test_get_districts_returns_all(self, db_dao: DatabaseStudyDao) -> None:
+        dao = db_dao
         dao.save_district(District(id="d1", name="District 1"))
         dao.save_district(District(id="d2", name="District 2"))
 
@@ -67,17 +73,20 @@ class TestDatabaseDistrictDao:
         assert len(districts) == 2
         assert {d.id for d in districts} == {"d1", "d2"}
 
-    def test_get_district_raises_if_not_found(self, dao: DatabaseStudyDao) -> None:
+    def test_get_district_raises_if_not_found(self, db_dao: DatabaseStudyDao) -> None:
+        dao = db_dao
         with pytest.raises(DistrictConfigNotFound):
             dao.get_district("nonexistent")
 
-    def test_district_exists(self, dao: DatabaseStudyDao) -> None:
+    def test_district_exists(self, db_dao: DatabaseStudyDao) -> None:
+        dao = db_dao
         assert not dao.district_exists("d1")
         dao.save_district(District(id="d1", name="District 1"))
 
         assert dao.district_exists("d1")
 
-    def test_save_district_with_apply_filter(self, dao: DatabaseStudyDao) -> None:
+    def test_save_district_with_apply_filter(self, db_dao: DatabaseStudyDao) -> None:
+        dao = db_dao
         dao.save_area("Paris")
 
         district = District(
@@ -92,7 +101,8 @@ class TestDatabaseDistrictDao:
         assert result.apply_filter == DistrictApplyFilter.add_all
         assert result.subtract_areas == ["paris"]
 
-    def test_delete_area_removes_area_from_districts(self, dao: DatabaseStudyDao) -> None:
+    def test_delete_area_removes_area_from_districts(self, db_dao: DatabaseStudyDao) -> None:
+        dao = db_dao
         dao.save_area("Paris")
         dao.save_area("London")
 
@@ -116,7 +126,8 @@ class TestDatabaseDistrictDao:
         d3 = dao.get_district("d3")
         assert d3.add_areas == ["london"]
 
-    def test_delete_area_removes_area_from_subtract_areas(self, dao: DatabaseStudyDao) -> None:
+    def test_delete_area_removes_area_from_subtract_areas(self, db_dao: DatabaseStudyDao) -> None:
+        dao = db_dao
         dao.save_area("Paris")
 
         dao.save_district(

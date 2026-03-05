@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-export interface TRow<T = string> {
+export interface RowData<T = string> {
   name: string;
   group: T;
 }

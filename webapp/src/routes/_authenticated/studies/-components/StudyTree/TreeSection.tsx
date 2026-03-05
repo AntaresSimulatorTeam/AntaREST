@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import { withOpacity } from "@/utils/muiUtils";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import HomeIcon from "@mui/icons-material/Home";
 import {
-  alpha,
   Box,
   Collapse,
   IconButton,
@@ -50,11 +50,11 @@ const variantStyles: Record<
   }
 > = {
   managed: {
-    container: {
-      backgroundColor: (theme) => `${theme.palette.info.main}08`,
-      borderLeft: (theme) => `3px solid ${theme.palette.info.main}`,
+    container: (theme) => ({
+      backgroundColor: withOpacity(theme.vars.palette.info.main, 0.05),
+      borderLeft: `3px solid ${theme.vars.palette.info.main}`,
       p: 0.5,
-    },
+    }),
     icon: {
       display: "flex",
       alignItems: "center",
@@ -69,11 +69,11 @@ const variantStyles: Record<
     },
   },
   external: {
-    container: {
-      backgroundColor: (theme) => alpha(theme.palette.action.disabled, 0.05),
-      borderLeft: (theme) => `3px solid ${theme.palette.action.disabled}`,
+    container: (theme) => ({
+      backgroundColor: withOpacity(theme.vars.palette.action.disabled, 0.2),
+      borderLeft: `3px solid ${theme.vars.palette.action.disabled}`,
       p: 0.5,
-    },
+    }),
     icon: {
       display: "flex",
       alignItems: "center",

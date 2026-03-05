@@ -22,7 +22,7 @@ from antarest.study.business.model.hydro_model import HydroManagement, InflowStr
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
-from tests.study.dao.conftest import build_dao
+from tests.study.dao.conftest import build_db_dao
 
 
 def _setup_area_with_hydro(dao: DatabaseStudyDao, area_name: str) -> str:
@@ -61,8 +61,8 @@ class TestConvertHydroPmaxMatrices:
         self, db_session: Session, matrix_service: ISimpleMatrixService
     ) -> None:
         """When source is v9.2+ with HOURLY pmax, the 4 pmax matrices should be copied."""
-        source_dao = build_dao(db_session, matrix_service, STUDY_VERSION_9_2)
-        target_dao = build_dao(db_session, matrix_service, STUDY_VERSION_9_2)
+        source_dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_2)
+        target_dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_2)
 
         area_id = _setup_area_with_hydro(source_dao, "Paris")
 
@@ -105,8 +105,8 @@ class TestConvertHydroPmaxMatrices:
         self, db_session: Session, matrix_service: ISimpleMatrixService
     ) -> None:
         """When source is v9.2+ with DAILY pmax (default), no pmax matrices should be created."""
-        source_dao = build_dao(db_session, matrix_service, STUDY_VERSION_9_2)
-        target_dao = build_dao(db_session, matrix_service, STUDY_VERSION_9_2)
+        source_dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_2)
+        target_dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_2)
 
         area_id = _setup_area_with_hydro(source_dao, "Paris")
 
@@ -131,8 +131,8 @@ class TestConvertHydroPmaxMatrices:
 
     def test_convert_hydro_pre_v92_skips_pmax(self, db_session: Session, matrix_service: ISimpleMatrixService) -> None:
         """When source is pre-v9.2, pmax logic is skipped entirely."""
-        source_dao = build_dao(db_session, matrix_service, STUDY_VERSION_8_8)
-        target_dao = build_dao(db_session, matrix_service, STUDY_VERSION_8_8)
+        source_dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
+        target_dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
 
         area_id = _setup_area_with_hydro(source_dao, "Paris")
         target_dao.save_area("Paris")

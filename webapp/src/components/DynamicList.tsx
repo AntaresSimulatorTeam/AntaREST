@@ -13,7 +13,7 @@
  */
 
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
-import { Divider, Grid, IconButton } from "@mui/material";
+import { Divider, GridLegacy as Grid, IconButton } from "@mui/material";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import SelectFE from "./fieldEditors/SelectFE";

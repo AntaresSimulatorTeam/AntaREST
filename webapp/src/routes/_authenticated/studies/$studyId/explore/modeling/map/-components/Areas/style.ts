@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { styled, Box } from "@mui/material";
-import { HuePicker } from "react-color";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { Box, styled } from "@mui/material";
+import { HuePicker } from "react-color";
 
 export const AreasContainer = styled(Box)(() => ({
   width: "100%",
@@ -46,16 +46,16 @@ export const AreaColorPicker = styled(Box)(({ theme }) => ({
     boxShadow: "none",
     "& > div > input, > div > div > div > input": {
       backgroundColor: "rgba(0,0,0,0)",
-      color: `${theme.palette.text.secondary} !important`,
+      color: `${theme.vars.palette.text.secondary} !important`,
     },
   },
 }));
 
 export const AreaDeleteIcon = styled(DeleteIcon)(({ theme }) => ({
   cursor: "pointer",
-  color: theme.palette.error.light,
+  color: theme.vars.palette.error.light,
   "&:hover": {
-    color: theme.palette.error.main,
+    color: theme.vars.palette.error.main,
   },
 }));
 
@@ -72,7 +72,7 @@ export const AreaLinkTitle = styled("div")(({ theme }) => ({
   flexFlow: "row nowrap",
   justifyContent: "flex-start",
   alignItems: "center",
-  color: theme.palette.text.secondary,
+  color: theme.vars.palette.text.secondary,
   fontWeight: "bold",
 }));
 
@@ -86,12 +86,12 @@ export const AreaLinkContainer = styled("div")(() => ({
 
 export const AreaLinkLabel = styled("div")(({ theme }) => ({
   fontWeight: "bold",
-  color: theme.palette.text.secondary,
+  color: theme.vars.palette.text.secondary,
 }));
 
 export const AreaLinkContent = styled("div")(({ theme }) => ({
   cursor: "pointer",
-  color: theme.palette.text.secondary,
+  color: theme.vars.palette.text.secondary,
   padding: theme.spacing(1.5),
   fontSize: 18,
   "&:hover": {

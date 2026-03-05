@@ -13,7 +13,7 @@
  */
 
 import { getParentPaths } from "@/utils/pathUtils";
-import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
+import { SimpleTreeView } from "@mui/x-tree-view";
 import { useContext } from "react";
 import type { TreeFolder } from "../../-utils";
 import DebugContext from "../DebugContext";
@@ -34,7 +34,7 @@ function Tree({ data, currentPath, expandedItems, setExpandedItems }: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleExpandedItemsChange = (event: React.SyntheticEvent, itemIds: string[]) => {
+  const handleExpandedItemsChange = (_event: React.SyntheticEvent | null, itemIds: string[]) => {
     setExpandedItems(itemIds);
   };
 
