@@ -31,7 +31,6 @@ from antarest.core.exceptions import (
     XpansionConfigurationAlreadyExists,
     XpansionConfigurationDoesNotExist,
 )
-from antarest.core.serde.json import to_json_string
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionAdequacyPattern,
@@ -148,45 +147,27 @@ class DatabaseXpansionDao(XpansionDao):
             capex=data.pop("sensitivity_capex"),
             projection=_PROJECTION_ADAPTER.validate_json(data.pop("sensitivity_projection")),
         )
-        # Nullable columns: map NULL back to the empty-string default.
-        data["yearly_weights"] = data.get("yearly_weights") or ""
-        data["additional_constraints"] = data.get("additional_constraints") or ""
-
         return XpansionSettings(sensitivity_config=sensitivity_config, **data)
 
     @override
     def save_xpansion_settings(self, settings: XpansionSettings) -> None:
-        sensitivity = settings.sensitivity_config
+        data = settings.model_dump()
+        sensitivity = data.pop("sensitivity_config")
         values: dict[str, Any] = {
             "study_id": self._study_id,
-            "master": settings.master,
-            "uc_type": settings.uc_type,
-            "optimality_gap": settings.optimality_gap,
-            "relative_gap": settings.relative_gap,
-            "relaxed_optimality_gap": settings.relaxed_optimality_gap,
-            "max_iteration": settings.max_iteration,
-            "solver": settings.solver,
-            "log_level": settings.log_level,
-            "separation_parameter": settings.separation_parameter,
-            "batch_size": settings.batch_size,
-            # Store empty strings as NULL so the nullable column is consistent.
-            "yearly_weights": settings.yearly_weights or None,
-            "additional_constraints": settings.additional_constraints or None,
-            "timelimit": settings.timelimit,
-            "master_solution_tolerance": settings.master_solution_tolerance,
-            "cut_coefficient_tolerance": settings.cut_coefficient_tolerance,
-            "sensitivity_epsilon": sensitivity.epsilon,
-            "sensitivity_capex": sensitivity.capex,
-            "sensitivity_projection": to_json_string(sensitivity.projection),
+            **data,
+            "sensitivity_epsilon": sensitivity["epsilon"],
+            "sensitivity_capex": sensitivity["capex"],
+            "sensitivity_projection": _PROJECTION_ADAPTER.dump_json(sensitivity["projection"]).decode(),
         }
         upsert_one(self._db_session, XPANSION_SETTINGS_TABLE, values)
         self._db_session.commit()
 
     @override
     def checks_xpansion_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
-        # File existence checks for additional_constraints and yearly_weights
-        # require blob storage access, which is not yet available in the database DAO.
-        # Pydantic validation of the settings object still applies upstream.
+        # TODO: validate additional_constraints and yearly_weights against blob storage
+        #  once blob storage is wired up for database mode.
+        #  See FileStudyXpansionDao.checks_xpansion_settings_are_correct for the reference implementation.
         if settings.sensitivity_config and settings.sensitivity_config.projection is not None:
             stmt = select(XPANSION_CANDIDATE_TABLE.c.name).where(XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
             existing_names = {row.name for row in self._db_session.execute(stmt)}
@@ -218,7 +199,8 @@ class DatabaseXpansionDao(XpansionDao):
     def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
         values = self._candidate_to_row(candidate)
         if old_id and old_id != candidate.name:
-            # Rename: the PK changes, so delete the old row and insert a new one.
+            # The PK of this table is composed of study_id and name
+            # So renaming a candidate requires deleting the old row and inserting a new one.
             self._db_session.execute(
                 delete(XPANSION_CANDIDATE_TABLE).where(
                     (XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
@@ -246,8 +228,9 @@ class DatabaseXpansionDao(XpansionDao):
     @override
     def checks_xpansion_candidate_coherence(self, candidate: XpansionCandidate) -> None:
         self._assert_link_exists(candidate)
-        # Link-profile file validation requires blob storage access.
-        # Not yet implemented for database storage mode.
+        # TODO: validate link-profile fields (link_profile, direct_link_profile, etc.)
+        #  against blob storage once blob storage is wired up for database mode.
+        #  See FileStudyXpansionDao._assert_link_profile_are_files for the reference implementation.
 
     @override
     def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
