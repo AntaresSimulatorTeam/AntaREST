@@ -98,45 +98,63 @@ class IFileOutputsProvider(ABC):
     def get_outputs(self, study_id: str) -> FileStudyOutputs: ...
 
 
+def _output_path(outputs_root: Path, output_name: str) -> Path:
+    """
+    Path for an unarchived output.
+    """
+    return outputs_root / output_name
+
+
+def _archived_output_path(outputs_root: Path, output_name: str) -> Path:
+    """
+    Path for an archived output. Only zip is currently supported.
+    """
+    return outputs_root / f"{output_name}{ArchiveFormat.ZIP}"
+
+
+def _output_paths(outputs_root: Path, output_name: str) -> tuple[Path, Path]:
+    """
+    Returns (output_path, archived_output_path) for convenience.
+    """
+    return _output_path(outputs_root, output_name), _archived_output_path(outputs_root, output_name)
+
+
 def _find_archived_output(outputs_root: Path, output_name: str) -> Path | None:
-    possible_paths = [outputs_root / f"{output_name}{ext}" for ext in ArchiveFormat]
-    return next((path for path in possible_paths if path.exists()), None)
+    possible_path = _archived_output_path(outputs_root, output_name)
+    return possible_path if possible_path.exists() else None
 
 
 def _copy_output(src_outputs_root: Path, output_id: str, dest_outputs_root: Path) -> None:
     """
     Copies one output from one "outputs" dir to another, keeping the archived state unchanged.
     """
-    src_folder = src_outputs_root / output_id
+    src_folder = _output_path(src_outputs_root, output_id)
 
     if _output_exists(dest_outputs_root, output_id):
         raise OutputAlreadyExists(output_id)
 
     if src_folder.exists():
-        shutil.copytree(src_folder, dest_outputs_root / output_id)
+        shutil.copytree(src_folder, _output_path(dest_outputs_root, output_id))
     elif archive_path := _find_archived_output(src_outputs_root, output_id):
         # The src output could be archived
         dest_outputs_root.mkdir(exist_ok=True)
-        dest_path = dest_outputs_root
-        shutil.copy(archive_path, dest_path)
+        shutil.copy(archive_path, dest_outputs_root)
     else:
         raise OutputNotFound(output_id)
 
 
 def _is_output_archived(outputs_root: Path, output_id: str) -> bool:
-    output_path = outputs_root / output_id
+    output_path = _output_path(outputs_root, output_id)
     if output_path.is_dir():
         return False
-    zip_path = outputs_root / f"{output_id}{ArchiveFormat.ZIP}"
-    if zip_path.is_file():
+    archive_path = _archived_output_path(outputs_root, output_id)
+    if archive_path.is_file():
         return True
     raise OutputNotFound(output_id)
 
 
 def _output_exists(outputs_root: Path, output_id: str) -> bool:
-    output_path = outputs_root / output_id
-    zip_path = outputs_root / f"{output_id}{ArchiveFormat.ZIP}"
-    return output_path.is_dir() or zip_path.is_file()
+    return _output_path(outputs_root, output_id).is_dir() or _archived_output_path(outputs_root, output_id).is_file()
 
 
 def _import_zip_as_archived(
@@ -147,7 +165,7 @@ def _import_zip_as_archived(
     t = StopWatch()
 
     output_full_name = extract_output_name(output_zip_path, output_name_suffix)
-    final_path = study_outputs_path / f"{output_full_name}.zip"
+    final_path = _archived_output_path(study_outputs_path, output_full_name)
     study_outputs_path.mkdir(exist_ok=True)
     shutil.copyfile(output_zip_path, final_path)
 
@@ -162,13 +180,13 @@ def _import_dir(output_dir: Path, study_outputs_path: Path, output_name_suffix: 
     output_full_name = extract_output_name(output_dir, output_name_suffix)
 
     # Moving temporary directory to actual directory
-    output_dir.rename(study_outputs_path / output_full_name)
+    output_dir.rename(_output_path(study_outputs_path, output_full_name))
     return output_full_name
 
 
 def _copy_file(src: Path, dst_root: Path, dst: PurePosixPath) -> None:
     """
-    Copies src to dst inside dst_root, dst_root being either a dict or a zip file.
+    Copies src to dst inside dst_root, dst_root being either a plain directory, or a zip file.
     """
     if is_zip(dst_root):
         with zipfile.ZipFile(dst_root, mode="a") as zf:
@@ -245,7 +263,7 @@ class InStudyFileOutputStorage(IOutputStorage):
 
             # Moving temporary directory to actual directory
             output_name = extract_output_name(tmp_output_dir, output_name_suffix)
-            tmp_output_dir.rename(study_outputs.outputs_path / output_name)
+            tmp_output_dir.rename(_output_path(study_outputs.outputs_path, output_name))
 
             remove_from_cache(self._cache, study_id)
 
@@ -299,15 +317,16 @@ class InStudyFileOutputStorage(IOutputStorage):
         Delete a simulation output
         """
         study_outputs = self._outputs_provider.get_outputs(study_id)
-        output_path = study_outputs.outputs_path / output_id
+
+        if not _output_exists(study_outputs.outputs_path, output_id):
+            raise OutputNotFound(output_id)
+
+        output_path, archived_output_path = _output_paths(study_outputs.outputs_path, output_id)
         if output_path.exists() and output_path.is_dir():
             shutil.rmtree(output_path, ignore_errors=True)
-        else:
-            archived_output_path = study_outputs.outputs_path / f"{output_id}.zip"
-            if archived_output_path.exists():
-                archived_output_path.unlink()
-            else:
-                raise OutputNotFound(output_id)
+        if archived_output_path.exists():
+            archived_output_path.unlink()
+
         remove_from_cache(self._cache, study_id)
 
     @override
@@ -317,15 +336,14 @@ class InStudyFileOutputStorage(IOutputStorage):
         """
         study_outputs = self._outputs_provider.get_outputs(study_id)
 
-        path_output = study_outputs.outputs_path / output_id
-        path_output_zip = study_outputs.outputs_path / f"{output_id}{ArchiveFormat.ZIP}"
-
-        if path_output.is_dir():
-            shutil.copytree(path_output, parent / output_id, dirs_exist_ok=False)
-        elif path_output_zip.is_file():
-            extract_archive_from_path(path_output_zip, parent / output_id)
-        else:
+        if not _output_exists(study_outputs.outputs_path, output_id):
             raise OutputNotFound(output_id)
+
+        output_path, archived_output_path = _output_paths(study_outputs.outputs_path, output_id)
+        if output_path.is_dir():
+            shutil.copytree(output_path, parent / output_id, dirs_exist_ok=False)
+        elif archived_output_path.is_file():
+            extract_archive_from_path(archived_output_path, parent / output_id)
 
     @override
     def export_output(self, study_id: str, output_id: str, target: Path) -> None:
@@ -341,18 +359,17 @@ class InStudyFileOutputStorage(IOutputStorage):
 
         logger.info(f"Exporting output {output_id} from study {study_id}")
 
-        path_output = study_outputs.outputs_path / output_id
-        path_output_zip = study_outputs.outputs_path / f"{output_id}{ArchiveFormat.ZIP}"
-
-        if not path_output.exists() and not path_output_zip.exists():
+        if not _output_exists(study_outputs.outputs_path, output_id):
             raise OutputNotFound(output_id)
 
-        if path_output_zip.exists():
-            shutil.copyfile(path_output_zip, target)
+        output_path, archived_output_path = _output_paths(study_outputs.outputs_path, output_id)
+
+        if archived_output_path.exists():
+            shutil.copyfile(archived_output_path, target)
             return
 
         stopwatch = StopWatch()
-        archive_dir(path_output, target, archive_format=ArchiveFormat.ZIP)
+        archive_dir(output_path, target, archive_format=ArchiveFormat.ZIP)
         logger.info(f"Output {output_id} from study {study_id} exported in {stopwatch}s")
 
     @override
@@ -375,16 +392,16 @@ class InStudyFileOutputStorage(IOutputStorage):
             raise OutputAlreadyArchived(output_id)
 
         archive_dir(
-            study_outputs.outputs_path / output_id,
-            study_outputs.outputs_path / f"{output_id}{ArchiveFormat.ZIP}",
+            _output_path(study_outputs.outputs_path, output_id),
+            _archived_output_path(study_outputs.outputs_path, output_id),
             remove_source_dir=True,
             archive_format=ArchiveFormat.ZIP,
         )
         remove_from_cache(self._cache, study_id)
 
     def _remote_unarchive(self, output_id: str, study_outputs: FileStudyOutputs) -> None:
-        dest = study_outputs.outputs_path / output_id
-        src = study_outputs.outputs_path / f"{output_id}{ArchiveFormat.ZIP}"
+        dest = _output_path(study_outputs.outputs_path, output_id)
+        src = _archived_output_path(study_outputs.outputs_path, output_id)
         self._remote_executor.execute_remote_task(
             f"unarchive_{study_outputs.study_workspace}",
             ArchiveTaskArgs(src=str(src), dest=str(dest)).model_dump(mode="json"),
@@ -409,7 +426,7 @@ class InStudyFileOutputStorage(IOutputStorage):
             outputs_path = study_outputs.outputs_path
             try:
                 # TODO: should remove the zip ?
-                unzip(outputs_path / output_id, outputs_path / f"{output_id}{ArchiveFormat.ZIP}")
+                unzip(_output_path(outputs_path, output_id), _archived_output_path(outputs_path, output_id))
                 remove_from_cache(self._cache, study_id)
             except Exception as e:
                 # TODO: we should probably raise here and remove partially unzipped files
@@ -458,7 +475,7 @@ class InStudyFileOutputStorage(IOutputStorage):
     ) -> Iterator[pl.DataFrame]:
         study_outputs = self._outputs_provider.get_outputs(study_id)
         aggregator_manager = AggregatorManager(
-            study_outputs.outputs_path / output_id,
+            _output_path(study_outputs.outputs_path, output_id),
             query_file,
             frequency,
             ids_to_consider,
@@ -471,7 +488,7 @@ class InStudyFileOutputStorage(IOutputStorage):
     @override
     def extract_variables_list(self, study_id: str, output_id: str) -> OutputVariablesList:
         study_outputs = self._outputs_provider.get_outputs(study_id)
-        return extract_variables_list(study_outputs.outputs_path / output_id)
+        return extract_variables_list(_output_path(study_outputs.outputs_path, output_id))
 
     @override
     def get_logs(self, study_id: str, output_id: str, log_type: LogType) -> str:
