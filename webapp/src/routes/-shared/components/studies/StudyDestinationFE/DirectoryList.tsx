@@ -53,13 +53,6 @@ function DirectoryList({ childDirectories, allDirectories, onDirectoryClick }: P
               aria-selected={false}
               aria-label={directory.name}
               onClick={() => onDirectoryClick(directory)}
-              onKeyDown={(event) => {
-                // Check for Enter key or Space key (accessibility requirement for interactive elements)
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  onDirectoryClick(directory);
-                }
-              }}
               sx={getDirectoryRowSx}
             >
               <FolderIcon sx={{ fontSize: 18, color: "info.main", flexShrink: 0 }} />
