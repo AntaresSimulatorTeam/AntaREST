@@ -9,16 +9,31 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from dataclasses import dataclass
 from typing import Dict, Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.area_properties_model import AreaPropertiesUpdate, update_area_properties
+from antarest.study.business.model.area_properties_model import (
+    AreaProperties,
+    AreaPropertiesUpdate,
+    update_area_properties,
+)
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandApplicationResult,
+    CommandName,
+    CommandOutput,
+    command_succeeded,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+
+@dataclass(frozen=True)
+class UpdateAreasPropertiesResult(CommandApplicationResult):
+    data: dict[str, AreaProperties]
 
 
 class UpdateAreasProperties(ICommand):
@@ -37,15 +52,23 @@ class UpdateAreasProperties(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        """
+        We validate ALL objects before saving them.
+        This way, if some data is invalid, we're not modifying the study partially only.
+        """
+        memory_mapping = {}
         for area_id, area_properties in self.properties.items():
             current_properties = study_data.get_area_properties(area_id)
 
             new_properties = update_area_properties(current_properties, area_properties)
+            memory_mapping[area_id] = new_properties
 
+        for area_id, new_properties in memory_mapping.items():
             study_data.save_area_properties(area_id, new_properties)
 
-        updated_areas = ", ".join(self.properties.keys())
-        return command_succeeded(message=f"Areas properties updated: {updated_areas}")
+        result = UpdateAreasPropertiesResult(data=memory_mapping)
+        message = f"Areas properties updated: {', '.join(self.properties.keys())}"
+        return command_succeeded(message=message, result=result)
 
     @override
     def to_dto(self) -> CommandDTO:
