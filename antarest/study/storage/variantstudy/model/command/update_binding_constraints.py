@@ -11,12 +11,14 @@
 # This file is part of the Antares project.
 
 import typing as t
+from dataclasses import dataclass
 
 from pydantic import model_validator
 from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import Final, override
 
 from antarest.study.business.model.binding_constraint_model import (
+    BindingConstraint,
     BindingConstraintUpdates,
     update_binding_constraint,
     validate_binding_constraint_against_version,
@@ -26,6 +28,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     parse_binding_constraint_for_update,
 )
 from antarest.study.storage.variantstudy.model.command.common import (
+    CommandApplicationResult,
     CommandName,
     CommandOutput,
     command_failed,
@@ -34,6 +37,11 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+
+@dataclass(frozen=True)
+class UpdateBindingConstraintsResult(CommandApplicationResult):
+    data: list[BindingConstraint]
 
 
 class UpdateBindingConstraints(ICommand):
@@ -93,7 +101,8 @@ class UpdateBindingConstraints(ICommand):
             new_constraints.append(new_constraint)
 
         study_data.save_constraints(new_constraints)
-        return command_succeeded("All binding constraints updated")
+        result = UpdateBindingConstraintsResult(data=new_constraints)
+        return command_succeeded("All binding constraints updated", result=result)
 
     @override
     def to_dto(self) -> CommandDTO:
