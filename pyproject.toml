@@ -50,7 +50,7 @@ dependencies = [
     # Note: celery[redis]~=5.5.x requires redis<6.0.0
     "celery[redis]~=5.6.2",
     "redis~=5.3.1",
-    "SQLAlchemy~=2.0.41",
+    "sqlalchemy==2.0.25",
     "tables==3.10.2",
     "typing_extensions~=4.15.0",
     "xlsxwriter~=3.2.0",
