@@ -67,7 +67,9 @@ class ReplaceUserResource(ICommand):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         study_data.save_user_resource(self.data)
-        return command_succeeded(message=f"{self.data.resource_type} {self.data.path} has been successfully created.")
+        return command_succeeded(
+            message=f"{self.data.resource_type} {self.data.path} has been successfully created.", result=None
+        )
 
     @override
     def to_dto(self) -> CommandDTO:
