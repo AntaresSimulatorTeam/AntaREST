@@ -9,16 +9,17 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+from dataclasses import dataclass
 from typing import Any, Dict, Final, Optional
 
 from pydantic import ValidationInfo, field_validator, model_validator
 from typing_extensions import override
 
-from antarest.study.business.model.district_model import DistrictCreation, create_district
+from antarest.study.business.model.district_model import District, DistrictCreation, create_district
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.variantstudy.model.command.common import (
+    CommandApplicationResult,
     CommandName,
     CommandOutput,
     command_failed,
@@ -27,6 +28,11 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+
+@dataclass(frozen=True)
+class CreateDistrictResult(CommandApplicationResult):
+    data: District
 
 
 class CreateDistrict(ICommand):
@@ -89,7 +95,8 @@ class CreateDistrict(ICommand):
 
         study_data.save_district(new_district_definition)
 
-        return command_succeeded(message=district_id)
+        result = CreateDistrictResult(data=new_district_definition)
+        return command_succeeded(message=district_id, result=result)
 
     @override
     def to_dto(self) -> CommandDTO:

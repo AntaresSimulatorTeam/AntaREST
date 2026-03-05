@@ -33,7 +33,7 @@ def command_failed(message: str) -> CommandOutput:
 
 
 def command_succeeded(
-    message: str, should_invalidate_cache: bool = False, result: CommandApplicationResult | None = None
+    message: str, result: CommandApplicationResult | None, should_invalidate_cache: bool = False
 ) -> CommandOutput:
     return CommandOutput(True, message, result, should_invalidate_cache)
 

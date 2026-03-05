@@ -107,7 +107,7 @@ class CreateArea(ICommand):
         study_data.save_reserves(area_id, constants.get_default_reserves())
         study_data.save_misc_gen(area_id, constants.get_default_miscgen())
 
-        return command_succeeded(message=f"Area '{self.area_name}' created")
+        return command_succeeded(message=f"Area '{self.area_name}' created", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:
