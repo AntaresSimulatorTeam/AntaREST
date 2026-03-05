@@ -22,9 +22,9 @@ service stack from MaintenanceContext.
 from __future__ import annotations
 
 import logging
-import time
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence
+from typing import List, Optional, Sequence
 
+from celery.exceptions import TimeoutError as CeleryTimeoutError
 from celery.result import AsyncResult
 from sqlalchemy import select
 from typing_extensions import override
@@ -34,6 +34,7 @@ from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.tasks.action import TaskActionDescriptor
+from antarest.core.tasks.celery_model import CeleryTaskMapping
 from antarest.core.tasks.model import (
     CustomTaskEventMessages,
     TaskDTO,
@@ -52,9 +53,6 @@ from antarest.core.tasks.service import (
 )
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.utils import require_current_user
-
-if TYPE_CHECKING:
-    pass
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +73,16 @@ class CeleryTaskService(ITaskService):
         self.repo = repository
         self.event_bus = event_bus
         self._listeners = list(listeners) if listeners else []
-        self._celery_tasks: Dict[str, str] = {}  # task_id -> celery_task_id
+
+    def _save_celery_mapping(self, task_id: str, celery_id: str) -> None:
+        mapping = CeleryTaskMapping(task_id=task_id, celery_id=celery_id)
+        db.session.add(mapping)
+        db.session.commit()
+
+    def _get_celery_id(self, task_id: str) -> Optional[str]:
+        return db.session.execute(
+            select(CeleryTaskMapping.celery_id).where(CeleryTaskMapping.task_id == task_id)
+        ).scalar()
 
     @override
     def add_task(
@@ -131,7 +138,7 @@ class CeleryTaskService(ITaskService):
             },
             queue=TASK_ACTIONS_QUEUE,
         )
-        self._celery_tasks[task.id] = async_result.id
+        self._save_celery_mapping(task.id, async_result.id)
 
         return str(task.id)
 
@@ -154,20 +161,23 @@ class CeleryTaskService(ITaskService):
 
     @override
     def await_task(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
-        logger.warning(f"Task '{task_id}' dispatched to Celery, will poll for task completion from db")
-        end = time.time() + timeout_sec
-        while time.time() < end:
-            task_status = db.session.execute(select(TaskJob.status).where(TaskJob.id == task_id)).scalar()
-            if task_status is None:
-                logger.error(f"Awaited task '{task_id}' was not found")
-                return
-            if TaskStatus(task_status).is_final():
-                return
-            logger.info("Sleeping 2 seconds...")
-            time.sleep(2)
-        error_msg = f"Timeout while awaiting task '{task_id}'"
-        logger.warning(error_msg)
-        raise TimeoutError(error_msg)
+        celery_id = self._get_celery_id(task_id)
+        if celery_id is None:
+            logger.warning(f"No Celery mapping found for task '{task_id}', cannot await")
+            return
+
+        from antarest.maintenance.app import celery_app
+
+        result: AsyncResult = AsyncResult(celery_id, app=celery_app)  # type: ignore[type-arg]
+        try:
+            # execute_task handles all exceptions internally and writes
+            # the final status to DB before returning, so .get() will
+            # not propagate task-level exceptions.
+            result.get(timeout=timeout_sec)
+        except CeleryTimeoutError as exc:
+            error_msg = f"Timeout while awaiting task '{task_id}'"
+            logger.warning(error_msg)
+            raise TimeoutError(error_msg) from exc
 
     def cancel_task(self, task_id: str) -> None:
         task = self.repo.get_or_raise(task_id)
@@ -175,12 +185,12 @@ class CeleryTaskService(ITaskService):
         if not (user.is_site_admin() or task.owner_id == user.impersonator):
             raise UserHasNotPermissionError()
 
-        celery_task_id = self._celery_tasks.get(task_id)
-        if celery_task_id:
+        celery_id = self._get_celery_id(task_id)
+        if celery_id:
             from antarest.maintenance.app import celery_app
 
-            celery_app.control.revoke(celery_task_id, terminate=True)
-            logger.info(f"Revoked Celery task {celery_task_id} for task {task_id}")
+            celery_app.control.revoke(celery_id, terminate=True)
+            logger.info(f"Revoked Celery task {celery_id} for task {task_id}")
 
         task.status = TaskStatus.CANCELLED.value
         self.repo.save(task)

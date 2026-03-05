@@ -103,7 +103,6 @@ def handle_copy_study(services: CoreServices, params: dict[str, Any], notifier: 
     if owner_id is not None:
         study.owner = study_service.user_service.get_user(owner_id)
     if group_entity_ids:
-
         study.groups = [study_service.user_service.get_group(gid) for gid in group_entity_ids]
 
     study_service._save_study(study)
