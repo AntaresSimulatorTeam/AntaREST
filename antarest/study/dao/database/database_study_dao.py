@@ -48,6 +48,8 @@ from antarest.study.dao.database.database_study_settings_dao import DatabaseStud
 from antarest.study.dao.database.database_thematic_trimming_dao import DatabaseThematicTrimmingDao
 from antarest.study.dao.database.database_thermal_dao import DatabaseThermalDao
 from antarest.study.dao.database.database_user_resources import DatabaseUserResourcesDao
+from antarest.study.dao.database.models.comments import COMMENTS_TABLE
+from antarest.study.dao.database.sql_utils import upsert_one
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -124,11 +126,14 @@ class DatabaseStudyDao(
 
     @override
     def get_comments(self) -> str:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        stmt = select(COMMENTS_TABLE.c.comments).where(COMMENTS_TABLE.c.study_id == self._study_id)
+        comments = self._db_session.execute(stmt).scalar_one_or_none()
+        return comments if comments is not None else ""
 
     @override
     def save_comments(self, comments: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        upsert_one(self._db_session, COMMENTS_TABLE, {"study_id": self._study_id, "comments": comments})
+        self._db_session.commit()
 
     @override
     def update_antares_file(self, editor: str, last_save: float) -> None:
