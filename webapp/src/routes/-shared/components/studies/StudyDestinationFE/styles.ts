@@ -12,7 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { alpha, type SxProps, type Theme } from "@mui/material";
+import type { SxProps, Theme } from "@mui/material";
+import { withOpacity } from "@/utils/muiUtils";
 
 /** Outer flex-column wrapper for the full component. */
 export const containerSx: SxProps<Theme> = {
@@ -27,7 +28,7 @@ export const explorerPanelSx = (error: boolean): SxProps<Theme> => ({
   borderColor: error ? "error.main" : "divider",
   borderRadius: 1,
   overflow: "hidden",
-  backgroundColor: (theme) => `${theme.palette.background.paper}30`,
+  backgroundColor: (theme) => withOpacity(theme.vars.palette.background.paper, 0.19),
 });
 
 /** Toolbar row that houses the go-up button, breadcrumbs, and new directory input. */
@@ -39,7 +40,7 @@ export const directoryBreadcrumbsSx: SxProps<Theme> = {
   minHeight: 40,
   borderBottom: "1px solid",
   borderColor: "divider",
-  bgcolor: (theme) => `${theme.palette.info.main}0D`,
+  bgcolor: (theme) => withOpacity(theme.vars.palette.info.main, 0.05),
 };
 
 /**
@@ -75,9 +76,9 @@ export const getBreadcrumbSegmentSx = (active: boolean): SxProps<Theme> => ({
   flexShrink: 0,
   whiteSpace: "nowrap",
   transition: "background-color 150ms, color 150ms",
-  bgcolor: active ? (theme) => alpha(theme.palette.info.main, 0.08) : "transparent",
+  bgcolor: active ? (theme) => withOpacity(theme.vars.palette.info.main, 0.08) : "transparent",
   "&:hover:not(:disabled)": {
-    bgcolor: (theme) => alpha(theme.palette.info.main, active ? 0.16 : 0.06),
+    bgcolor: (theme) => withOpacity(theme.vars.palette.info.main, active ? 0.16 : 0.06),
   },
 });
 
@@ -119,18 +120,14 @@ export const getDirectoryRowSx: SxProps<Theme> = {
   py: 1,
   cursor: "pointer",
   userSelect: "none",
-  transition: "background-color 100ms",
-  // Zebra striping lives on the row so hover/active always take precedence
-  "&:nth-of-type(even)": {
-    bgcolor: (theme) => alpha(theme.palette.info.main, 0.04),
-  },
+  transition: "background-color 200ms",
   "&:hover": {
-    bgcolor: (theme) => alpha(theme.palette.info.main, 0.12),
+    bgcolor: (theme) => withOpacity(theme.vars.palette.info.main, 0.12),
   },
   "&:focus-visible": {
     outline: "none",
   },
   "&:active": {
-    bgcolor: (theme) => alpha(theme.palette.info.main, 0.2),
+    bgcolor: (theme) => withOpacity(theme.vars.palette.info.main, 0.2),
   },
 };
