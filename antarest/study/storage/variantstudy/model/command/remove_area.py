@@ -38,7 +38,7 @@ class RemoveArea(ICommand):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         study_data.delete_area(self.id)
-        return command_succeeded(message=f"Area '{self.id}' deleted")
+        return command_succeeded(message=f"Area '{self.id}' deleted", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

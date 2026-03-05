@@ -65,7 +65,9 @@ class RemoveCluster(ICommand):
 
         # Delete the cluster
         study_data.delete_thermal(self.area_id, thermal.id)
-        return command_succeeded(f"Thermal cluster '{self.cluster_id}' inside area '{self.area_id}' deleted")
+        return command_succeeded(
+            f"Thermal cluster '{self.cluster_id}' inside area '{self.area_id}' deleted", result=None
+        )
 
     @override
     def to_dto(self) -> CommandDTO:

@@ -40,7 +40,7 @@ class CreateXpansionConstraint(ICommand):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         study_data.save_xpansion_constraint(self.filename, self.data)
-        return command_succeeded(message=f"Xpansion constraint {self.filename} created successfully")
+        return command_succeeded(message=f"Xpansion constraint {self.filename} created successfully", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

@@ -173,7 +173,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
             for thermal_id, series in values.items():
                 study_data.save_thermal_series(area_id, thermal_id, series)
 
-        return command_succeeded(message="All time series were generated successfully")
+        return command_succeeded(message="All time series were generated successfully", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:
