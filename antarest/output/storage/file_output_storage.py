@@ -383,17 +383,20 @@ class InStudyFileOutputStorage(IOutputStorage):
         if _is_output_archived(study_outputs.outputs_path, output_id):
             raise OutputAlreadyArchived(output_id)
 
-        archive_dir(
-            _output_path(study_outputs.outputs_path, output_id),
-            _archived_output_path(study_outputs.outputs_path, output_id),
-            remove_source_dir=True,
-            archive_format=ArchiveFormat.ZIP,
-        )
+        output_path, archived_output_path = _output_paths(study_outputs.outputs_path, output_id)
+        # If exists, we assume it's a valid archive.
+        if not archived_output_path.is_file():
+            archive_dir(
+                output_path,
+                archived_output_path,
+                archive_format=ArchiveFormat.ZIP,
+            )
+        shutil.rmtree(output_path)
+
         remove_from_cache(self._cache, study_id)
 
     def _remote_unarchive(self, output_id: str, study_outputs: FileStudyOutputs) -> None:
-        dest = _output_path(study_outputs.outputs_path, output_id)
-        src = _archived_output_path(study_outputs.outputs_path, output_id)
+        dest, src = _output_paths(study_outputs.outputs_path, output_id)
         self._remote_executor.execute_remote_task(
             f"unarchive_{study_outputs.study_workspace}",
             ArchiveTaskArgs(src=str(src), dest=str(dest)).model_dump(mode="json"),
@@ -417,7 +420,8 @@ class InStudyFileOutputStorage(IOutputStorage):
             study_outputs = self._outputs_provider.get_outputs(study_id)
             output_path, archived_output_path = _output_paths(study_outputs.outputs_path, output_id)
             try:
-                # TODO: should remove the zip ?
+                # Note: here we don't remove the archived version, allows to speed up a subsequent archival,
+                #       but at some disk usage cost for unarchived studies.
                 unzip(output_path, archived_output_path)
                 remove_from_cache(self._cache, study_id)
             except Exception as e:
