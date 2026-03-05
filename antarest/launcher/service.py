@@ -593,6 +593,8 @@ class LauncherService:
         raise JobNotFound()
 
     def _download_fallback_output(self, job_id: str) -> FileDownloadTaskDTO:
+        from antarest.core.tasks.actions.launcher_actions import ExportLauncherResultParams
+
         output_path = self._get_job_output_fallback_path(job_id)
         if output_path.exists():
             logger.info(f"Exporting {job_id} fallback output")
@@ -604,11 +606,11 @@ class LauncherService:
             task_id = self.task_service.add_task(
                 TaskActionDescriptor(
                     action_type="export_launcher_result",
-                    params={
-                        "output_path": str(output_path),
-                        "export_path": str(export_path),
-                        "export_id": export_id,
-                    },
+                    params=ExportLauncherResultParams(
+                        output_path=str(output_path),
+                        export_path=str(export_path),
+                        export_id=export_id,
+                    ).model_dump(),
                 ),
                 export_name,
                 task_type=TaskType.EXPORT,

@@ -611,6 +611,8 @@ class MatrixService(ISimpleMatrixService):
         return self.download_matrix_list([mtx_info.matrix_id for mtx_info in dataset.matrices], dataset.id)
 
     def download_matrix_list(self, matrix_list: Sequence[str], dataset_name: str) -> FileDownloadTaskDTO:
+        from antarest.core.tasks.actions.matrix_actions import ExportMatricesParams
+
         logger.info(f"Exporting matrix dataset {dataset_name}")
         export_name = f"Exporting matrix dataset {dataset_name}"
         export_file_download = self.file_transfer_manager.request_download(
@@ -622,12 +624,12 @@ class MatrixService(ISimpleMatrixService):
         task_id = self.task_service.add_task(
             TaskActionDescriptor(
                 action_type="export_matrices",
-                params={
-                    "matrix_list": list(matrix_list),
-                    "dataset_name": dataset_name,
-                    "export_path": str(export_path),
-                    "export_id": export_id,
-                },
+                params=ExportMatricesParams(
+                    matrix_list=list(matrix_list),
+                    dataset_name=dataset_name,
+                    export_path=str(export_path),
+                    export_id=export_id,
+                ).model_dump(),
             ),
             export_name,
             task_type=TaskType.EXPORT,

@@ -1238,6 +1238,8 @@ class StudyService:
         Returns:
             The newly created study.
         """
+        from antarest.core.tasks.actions.study_actions import CopyStudyParams
+
         if output_ids and with_outputs is False:
             raise IncorrectArgumentsForCopy("output_ids can only be used with with_outputs=True")
 
@@ -1249,16 +1251,16 @@ class StudyService:
 
         action = TaskActionDescriptor(
             action_type="copy_study",
-            params={
-                "src_uuid": src_uuid,
-                "dest_study_name": dest_study_name,
-                "group_ids": group_ids,
-                "destination_folder": str(destination_folder),
-                "output_ids": output_ids,
-                "with_outputs": with_outputs,
-                "owner_id": owner.id if owner else None,
-                "group_entity_ids": [g.id for g in groups],
-            },
+            params=CopyStudyParams(
+                src_uuid=src_uuid,
+                dest_study_name=dest_study_name,
+                group_ids=group_ids,
+                destination_folder=str(destination_folder),
+                output_ids=output_ids,
+                with_outputs=with_outputs,
+                owner_id=owner.id if owner else None,
+                group_entity_ids=[g.id for g in groups],
+            ).model_dump(),
         )
 
         if use_task:
@@ -1351,6 +1353,8 @@ class StudyService:
             archive_format: allow to choose between compression format
 
         """
+        from antarest.core.tasks.actions.study_actions import ExportStudyParams
+
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
@@ -1367,13 +1371,13 @@ class StudyService:
         task_id = self.task_service.add_task(
             TaskActionDescriptor(
                 action_type="export_study",
-                params={
-                    "study_id": uuid,
-                    "outputs": outputs,
-                    "archive_format": archive_format.value,
-                    "export_path": str(export_path),
-                    "export_id": export_id,
-                },
+                params=ExportStudyParams(
+                    study_id=uuid,
+                    outputs=outputs,
+                    archive_format=archive_format.value,
+                    export_path=str(export_path),
+                    export_id=export_id,
+                ).model_dump(),
             ),
             export_name,
             task_type=TaskType.EXPORT,
@@ -2017,6 +2021,8 @@ class StudyService:
         )
 
     def archive(self, uuid: str) -> str:
+        from antarest.core.tasks.actions.study_actions import ArchiveStudyParams
+
         logger.info(f"Archiving study {uuid}")
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
@@ -2039,7 +2045,7 @@ class StudyService:
             raise TaskAlreadyRunning()
 
         return self.task_service.add_task(
-            TaskActionDescriptor(action_type="archive_study", params={"study_id": uuid}),
+            TaskActionDescriptor(action_type="archive_study", params=ArchiveStudyParams(study_id=uuid).model_dump()),
             f"Study {study.name} archiving",
             task_type=TaskType.ARCHIVE,
             ref_id=study.id,
@@ -2048,6 +2054,8 @@ class StudyService:
         )
 
     def unarchive(self, uuid: str) -> str:
+        from antarest.core.tasks.actions.study_actions import UnarchiveStudyParams
+
         study = self.get_study(uuid)
         if not study.archived:
             raise HTTPException(http.HTTPStatus.BAD_REQUEST, "Study is not archived")
@@ -2067,7 +2075,9 @@ class StudyService:
             raise UnsupportedOperationOnThisStudyType(study.id, "unarchive", "raw")
 
         return self.task_service.add_task(
-            TaskActionDescriptor(action_type="unarchive_study", params={"study_id": uuid}),
+            TaskActionDescriptor(
+                action_type="unarchive_study", params=UnarchiveStudyParams(study_id=uuid).model_dump()
+            ),
             f"Study {study.name} unarchiving",
             task_type=TaskType.UNARCHIVE,
             ref_id=study.id,
@@ -2260,6 +2270,8 @@ class StudyService:
             raise BadEditInstructionException(str(exc)) from exc
 
     def generate_timeseries(self, study: Study, outage_details: bool) -> str:
+        from antarest.core.tasks.actions.study_actions import GenerateTimeseriesParams
+
         task_name = f"Generating thermal timeseries for study {study.name} ({study.id})"
         study_tasks = self.task_service.list_tasks(
             TaskListFilter(
@@ -2274,7 +2286,7 @@ class StudyService:
         return self.task_service.add_task(
             TaskActionDescriptor(
                 action_type="generate_timeseries",
-                params={"study_id": study.id, "outage_details": outage_details},
+                params=GenerateTimeseriesParams(study_id=study.id, outage_details=outage_details).model_dump(),
             ),
             task_name,
             task_type=TaskType.THERMAL_CLUSTER_SERIES_GENERATION,
@@ -2284,6 +2296,8 @@ class StudyService:
         )
 
     def upgrade_study(self, study_id: str, target_version: str) -> str:
+        from antarest.core.tasks.actions.study_actions import UpgradeStudyParams
+
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
@@ -2323,7 +2337,7 @@ class StudyService:
         return self.task_service.add_task(
             TaskActionDescriptor(
                 action_type="upgrade_study",
-                params={"study_id": study_id, "target_version": str(parsed_target_version)},
+                params=UpgradeStudyParams(study_id=study_id, target_version=str(parsed_target_version)).model_dump(),
             ),
             task_name,
             task_type=TaskType.UPGRADE_STUDY,

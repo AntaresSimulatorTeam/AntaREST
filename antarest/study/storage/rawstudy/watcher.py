@@ -148,13 +148,15 @@ class Watcher(IService):
             path: relative path to folder to scan
             recursive: if true, scan recursively all subfolders otherwise only the first level
         """
+        from antarest.core.tasks.actions.watcher_actions import WatcherScanParams
+
         if self.config.desktop_mode and recursive:
             raise ScanDisabled("Recursive scan disables when desktop mode is on")
 
         return self.task_service.add_task(
             action=TaskActionDescriptor(
                 action_type="watcher_scan",
-                params={"recursive": recursive, "workspace": workspace, "path": path},
+                params=WatcherScanParams(recursive=recursive, workspace=workspace, path=path).model_dump(),
             ),
             name=f"Scanning {workspace}/{path}",
             task_type=TaskType.SCAN,

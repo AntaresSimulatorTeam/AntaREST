@@ -249,6 +249,8 @@ class OutputService:
         )
 
     def unarchive_output(self, study_id: str, output_id: str) -> Optional[str]:
+        from antarest.core.tasks.actions.output_actions import UnarchiveOutputParams
+
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
         metadata = self._studies_repository.get_study_metadata(study_id)
 
@@ -273,7 +275,7 @@ class OutputService:
         task_id = self._task_service.add_task(
             TaskActionDescriptor(
                 action_type="unarchive_output",
-                params={"study_id": study_id, "output_id": output_id},
+                params=UnarchiveOutputParams(study_id=study_id, output_id=output_id).model_dump(),
             ),
             task_name,
             task_type=TaskType.UNARCHIVE,
@@ -348,10 +350,13 @@ class OutputService:
     def export_output(self, study_uuid: str, output_uuid: str) -> FileDownloadTaskDTO:
         """
         Export study output to a zip file.
+
         Args:
             study_uuid: study id
             output_uuid: output id
         """
+        from antarest.core.tasks.actions.output_actions import ExportOutputParams
+
         self._studies_repository.assert_permission(study_uuid, StudyPermissionType.READ)
         metadata = self._studies_repository.get_study_metadata(study_uuid)
 
@@ -366,13 +371,13 @@ class OutputService:
         task_id = self._task_service.add_task(
             TaskActionDescriptor(
                 action_type="export_output",
-                params={
-                    "study_id": study_uuid,
-                    "output_id": output_uuid,
-                    "export_path": str(export_path),
-                    "export_id": export_id,
-                    "study_name": metadata.name,
-                },
+                params=ExportOutputParams(
+                    study_id=study_uuid,
+                    output_id=output_uuid,
+                    export_path=str(export_path),
+                    export_id=export_id,
+                    study_name=metadata.name,
+                ).model_dump(),
             ),
             export_name,
             task_type=TaskType.EXPORT,
@@ -511,6 +516,8 @@ class OutputService:
         output_id: str,
         force: bool = False,
     ) -> Optional[str]:
+        from antarest.core.tasks.actions.output_actions import ArchiveOutputParams
+
         self._studies_repository.assert_permission(study_id, StudyPermissionType.WRITE)
         metadata = self._studies_repository.get_study_metadata(study_id)
 
@@ -537,7 +544,7 @@ class OutputService:
         task_id = self._task_service.add_task(
             TaskActionDescriptor(
                 action_type="archive_output",
-                params={"study_id": study_id, "output_id": output_id},
+                params=ArchiveOutputParams(study_id=study_id, output_id=output_id).model_dump(),
             ),
             task_name,
             task_type=TaskType.ARCHIVE,
@@ -627,25 +634,27 @@ class OutputService:
         Returns:
             Aggregation task id
         """
+        from antarest.core.tasks.actions.output_actions import AggregateOutputParams
+
         self._studies_repository.assert_permission(uuid, StudyPermissionType.READ)
 
         task_id = self._task_service.add_task(
             TaskActionDescriptor(
                 action_type="aggregate_output",
-                params={
-                    "study_id": uuid,
-                    "output_id": output_id,
-                    "query_file_type": type(query_file).__name__,
-                    "query_file_value": query_file.value,
-                    "frequency": frequency.value,
-                    "export_format": export_format.value,
-                    "columns_names": list(columns_names),
-                    "ids_to_consider": list(ids_to_consider),
-                    "file_path": str(file_path),
-                    "transform_columns_headers": transform_columns_headers,
-                    "mc_years": list(mc_years) if mc_years else None,
-                    "export_id": export_id,
-                },
+                params=AggregateOutputParams(
+                    study_id=uuid,
+                    output_id=output_id,
+                    query_file_type=type(query_file).__name__,
+                    query_file_value=query_file.value,
+                    frequency=frequency.value,
+                    export_format=export_format.value,
+                    columns_names=list(columns_names),
+                    ids_to_consider=list(ids_to_consider),
+                    file_path=str(file_path),
+                    transform_columns_headers=transform_columns_headers,
+                    mc_years=list(mc_years) if mc_years else None,
+                    export_id=export_id,
+                ).model_dump(),
             ),
             f"Aggregate output {output_id} of study {uuid}.",
             task_type=TaskType.OUTPUT_AGGREGATION,
@@ -744,6 +753,8 @@ class OutputService:
         If the view is already registered in DB, raise an HTTP Conflict error.
         Else, launch a task that fetches the required data and stores it inside the database.
         """
+        from antarest.core.tasks.actions.output_actions import MaterializeOutputViewParams
+
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
 
         db_model = get_output_view_inside_db(study_id, output_id, variable_name, frequency, output_item_id)
@@ -765,13 +776,13 @@ class OutputService:
         return self._task_service.add_task(
             TaskActionDescriptor(
                 action_type="materialize_output_view",
-                params={
-                    "study_id": study_id,
-                    "output_id": output_id,
-                    "variable_name": variable_name,
-                    "frequency": frequency.value,
-                    "output_item_id": output_item_id.model_dump(),
-                },
+                params=MaterializeOutputViewParams(
+                    study_id=study_id,
+                    output_id=output_id,
+                    variable_name=variable_name,
+                    frequency=frequency.value,
+                    output_item_id=output_item_id.model_dump(),
+                ).model_dump(),
             ),
             task_name,
             task_type=TaskType.OUTPUT_VARIABLES_VIEW_MATERIALIZATION,

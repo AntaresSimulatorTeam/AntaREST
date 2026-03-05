@@ -32,6 +32,7 @@ from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.persistence import Base
 from antarest.core.requests import MustBeAuthenticatedError, UserHasNotPermissionError
 from antarest.core.tasks.action import TaskActionDescriptor, TaskActionParams, TaskActionRegistry
+from antarest.core.tasks.actions.study_actions import GenerateTimeseriesParams
 from antarest.core.tasks.model import (
     TaskJob,
     TaskJobLog,
@@ -555,7 +556,7 @@ nominalcapacity = 14.0
     task_id = study_service.task_service.add_task(
         TaskActionDescriptor(
             action_type="generate_timeseries",
-            params={"study_id": raw_study.id, "outage_details": False},
+            params=GenerateTimeseriesParams(study_id=raw_study.id, outage_details=False).model_dump(),
         ),
         "test_generation",
         task_type=TaskType.THERMAL_CLUSTER_SERIES_GENERATION,

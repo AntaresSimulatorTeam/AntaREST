@@ -663,6 +663,8 @@ class VariantStudyService(AbstractStorageService):
         from_scratch: bool = False,
         listener: Optional[ICommandListener] = None,
     ) -> str:
+        from antarest.core.tasks.actions.variant_actions import GenerateVariantParams
+
         study_id = metadata.id
         with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study_id}.lock")):
             logger.info(f"Starting variant study {study_id} generation")
@@ -686,11 +688,11 @@ class VariantStudyService(AbstractStorageService):
             metadata.generation_task = self.task_service.add_task(
                 action=TaskActionDescriptor(
                     action_type="generate_variant",
-                    params={
-                        "study_id": study_id,
-                        "denormalize": denormalize,
-                        "from_scratch": from_scratch,
-                    },
+                    params=GenerateVariantParams(
+                        study_id=study_id,
+                        denormalize=denormalize,
+                        from_scratch=from_scratch,
+                    ).model_dump(),
                 ),
                 name=f"Generation of {metadata.id} study",
                 task_type=TaskType.VARIANT_GENERATION,
@@ -933,6 +935,8 @@ class VariantStudyService(AbstractStorageService):
         Raises:
             UserHasNotPermissionError
         """
+        from antarest.core.tasks.actions.variant_actions import ClearAllSnapshotsParams
+
         user = require_current_user()
         if not (user.is_site_admin() or user.is_admin_token()):
             raise UserHasNotPermissionError()
@@ -942,7 +946,7 @@ class VariantStudyService(AbstractStorageService):
         return self.task_service.add_task(
             TaskActionDescriptor(
                 action_type="clear_all_snapshots",
-                params={"retention_seconds": retention_time.total_seconds()},
+                params=ClearAllSnapshotsParams(retention_seconds=retention_time.total_seconds()).model_dump(),
             ),
             task_name,
             task_type=TaskType.SNAPSHOT_CLEARING,
