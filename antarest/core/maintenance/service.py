@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import logging
-from threading import Thread
 from typing import Callable, Optional
 
 from fastapi import HTTPException
@@ -25,7 +24,6 @@ from antarest.core.maintenance.repository import MaintenanceRepository
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.login.utils import get_current_user
-from antarest.maintenance.tasks.disk_usage_log import check_disk_usage
 
 logger = logging.getLogger(__name__)
 
@@ -42,15 +40,6 @@ class MaintenanceService:
         self.repo = repository
         self.event_bus = event_bus
         self.cache = cache
-        self._init()
-
-    def _init(self) -> None:
-        self.thread = Thread(
-            target=check_disk_usage,
-            name=self.__class__.__name__,
-            daemon=True,
-        )
-        self.thread.start()
 
     def _get_maintenance_data(
         self,
