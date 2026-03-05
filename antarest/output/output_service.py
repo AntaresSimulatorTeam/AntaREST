@@ -200,6 +200,22 @@ class OutputVariablesViewMaterializationTask:
 
 
 class OutputService:
+    """
+    Service to manage the outputs of studies.
+
+    It relies on a list of `IOutputStorage` implementations, which are responsible for actually storing the outputs.
+    Note that the first storage will be considered the default one to used when no storage type is specified.
+
+    Args:
+        storages: List of storage which can be used to actually store data.
+                  The first storage will be considered the default one to used when no storage type is specified.
+        task_service: Task service to use to run tasks. Will be used to run long tasks in the background (export ...)
+        file_transfer_manager: Will receive the files produced by export features.
+        matrix_service: Service to manage the matrices of outputs. Used in particular for storing variables views.
+        tmp_dir: Temporary directory to use for storing intermediate files.
+        studies_repository: In charge of providing access to studies metadata, in particular access rights.
+    """
+
     def __init__(
         self,
         storages: Sequence[IOutputStorage],
@@ -225,6 +241,9 @@ class OutputService:
         raise OutputNotFound(output_id)
 
     def _get_storage(self, storage_type: OutputStorageType | None) -> IOutputStorage:
+        """
+        Returns the storage for the specified type, or the first one (which is then the default one).
+        """
         if not storage_type:
             return self._storages[0]
         for storage in self._storages:
