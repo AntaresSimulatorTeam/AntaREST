@@ -341,6 +341,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         """
         Export and compresses study inside zip
         Args:
+            study_id: study id
             output_id: output id
             target: path of the file to export to
 
@@ -414,17 +415,19 @@ class InStudyFileOutputStorage(IOutputStorage):
             remove_from_cache(self._cache, study_id)
         else:
             study_outputs = self._outputs_provider.get_outputs(study_id)
-            outputs_path = study_outputs.outputs_path
+            output_path, archived_output_path = _output_paths(study_outputs.outputs_path, output_id)
             try:
                 # TODO: should remove the zip ?
-                unzip(_output_path(outputs_path, output_id), _archived_output_path(outputs_path, output_id))
+                unzip(output_path, archived_output_path)
                 remove_from_cache(self._cache, study_id)
             except Exception as e:
-                # TODO: we should probably raise here and remove partially unzipped files
                 logger.warning(
                     f"Failed to unarchive study {study_id} output {output_id}",
                     exc_info=e,
                 )
+                if output_path.exists() and output_path.is_dir():
+                    shutil.rmtree(output_path, ignore_errors=True)
+                raise
 
     @override
     def get_digest(self, study_id: str, output_id: str) -> DigestUI:
