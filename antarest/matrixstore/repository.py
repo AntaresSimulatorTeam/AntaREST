@@ -59,6 +59,7 @@ class MatrixDataSetRepository:
         else:
             self.session.add(matrix_user_metadata)
 
+        self.session.commit()
         logger.debug(f"Matrix dataset {matrix_user_metadata.id} for user {matrix_user_metadata.owner_id} saved")
         return matrix_user_metadata
 
@@ -98,6 +99,7 @@ class MatrixDataSetRepository:
     def delete(self, dataset_id: str) -> None:
         dataset = self.session.get(MatrixDataSet, dataset_id)
         self.session.delete(dataset)
+        self.session.commit()
 
 
 class MatrixRepository:
@@ -124,12 +126,13 @@ class MatrixRepository:
             self.session.add(matrix)
             merged_matrix = matrix
 
+        self.session.commit()
         return merged_matrix
 
     def save_batch(self, matrices: list[Matrix]) -> None:
         try:
             self.session.add_all(matrices)
-            self.session.flush()
+            self.session.commit()
         except IntegrityError:
             # Can happen if one the matrices is already inside DB.
             self.session.rollback()
@@ -153,6 +156,7 @@ class MatrixRepository:
         matrix = self.session.get(Matrix, matrix_hash)
         if matrix:
             self.session.delete(matrix)
+            self.session.commit()
             logger.debug(f"Matrix {matrix_hash} deleted")
         else:
             logger.warning(f"Trying to delete matrix {matrix_hash}, but was not found in database!")
