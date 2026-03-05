@@ -175,15 +175,6 @@ def _import_zip_as_archived(
     return output_full_name
 
 
-def _import_dir(output_dir: Path, study_outputs_path: Path, output_name_suffix: str | None) -> str:
-    # Make sure that output files are just under that path, no nested directories.
-    output_full_name = extract_output_name(output_dir, output_name_suffix)
-
-    # Moving temporary directory to actual directory
-    output_dir.rename(_output_path(study_outputs_path, output_full_name))
-    return output_full_name
-
-
 def _copy_file(src: Path, dst_root: Path, dst: PurePosixPath) -> None:
     """
     Copies src to dst inside dst_root, dst_root being either a plain directory, or a zip file.
