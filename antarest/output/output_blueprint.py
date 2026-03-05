@@ -341,7 +341,6 @@ def create_output_routes(
             f"from files '{query_file}-{frequency}.txt'"
         )
 
-        # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
