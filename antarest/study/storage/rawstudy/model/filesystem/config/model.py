@@ -95,8 +95,6 @@ class AreaConfig(AntaresBaseModel, extra="forbid"):
 class Simulation(AntaresBaseModel):
     """
     Object linked to /output/<simulation_name>/about-the-study/** information
-
-    # TODO: Used in "config" and therefore inside filestudy implementation, but is it used elsewhere ?
     """
 
     name: str
