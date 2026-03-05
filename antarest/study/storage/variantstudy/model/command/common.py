@@ -9,15 +9,21 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 from dataclasses import dataclass, field
 from enum import Enum
+
+
+@dataclass(frozen=True)
+class CommandApplicationResult:
+    pass
 
 
 @dataclass(frozen=True)
 class CommandOutput:
     status: bool
     message: str
+    # Result of the command to be used by the managers to return the application result.
+    result: CommandApplicationResult | None = None
     # If the command cannot guarantee the study config is still valid after it was applied, this should be set to True.
     should_invalidate_cache: bool = False
 
@@ -26,8 +32,10 @@ def command_failed(message: str) -> CommandOutput:
     return CommandOutput(False, message)
 
 
-def command_succeeded(message: str, should_invalidate_cache: bool = False) -> CommandOutput:
-    return CommandOutput(True, message, should_invalidate_cache)
+def command_succeeded(
+    message: str, should_invalidate_cache: bool = False, result: CommandApplicationResult | None = None
+) -> CommandOutput:
+    return CommandOutput(True, message, result, should_invalidate_cache)
 
 
 class FilteringOptions:
