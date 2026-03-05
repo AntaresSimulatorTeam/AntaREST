@@ -182,13 +182,6 @@ def build_favorite_service(
     return favorite_study_service, favorite_directory_service
 
 
-# TODO: move it elswhere ?
-def _delete_study_outputs(storage: IOutputStorage, study_id: str) -> None:
-    outputs = storage.list_outputs(study_id)
-    for output in outputs:
-        storage.delete_output(study_id, output.id)
-
-
 def build_output_service(
     app_ctxt: Optional[AppBuildContext],
     study_service: StudyService,
