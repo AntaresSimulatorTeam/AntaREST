@@ -69,6 +69,7 @@ class TestCleanVariableViewsIntegration:
         with db():
             matrix_id = matrix_service.create(matrix_data)
             db.session.add(_create_study(study_id))
+            db.session.flush()
             db.session.add(
                 _create_variable_view(
                     study_id=study_id,
@@ -101,6 +102,7 @@ class TestCleanVariableViewsIntegration:
         with db():
             matrix_id = matrix_service.create(matrix_data)
             db.session.add(_create_study(study_id))
+            db.session.flush()
             db.session.add(
                 _create_variable_view(
                     study_id=study_id,
@@ -130,6 +132,7 @@ class TestCleanVariableViewsIntegration:
         with db():
             matrix_id = matrix_service.create(matrix_data)
             db.session.add(_create_study(study_id))
+            db.session.flush()
             db.session.add(
                 _create_variable_view(
                     study_id=study_id,
@@ -169,6 +172,7 @@ class TestCleanVariableViewsIntegration:
             matrix_id_old = matrix_service.create(matrix_data)
             matrix_id_recent = matrix_service.create(matrix_data)
             db.session.add(_create_study(study_id))
+            db.session.flush()
 
             # Old view - should be deleted
             db.session.add(

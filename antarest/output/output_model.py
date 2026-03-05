@@ -26,7 +26,7 @@ from sqlalchemy import (
     PrimaryKeyConstraint,
     String,
 )
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
@@ -140,10 +140,6 @@ class OutputVariablesViewsModel(Base):
     st_storage_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     matrix_id: Mapped[str] = mapped_column(String, ForeignKey("matrix.id"), nullable=False)
     last_read: Mapped[datetime] = mapped_column(DateTime)
-
-    # Seems necessary so that sqlalchemy understands that the 2 models are related.
-    # Without this, we get foreign key constraint errors when inserting both an matrix and a view in the same commit.
-    matrix = relationship("Matrix")
 
 
 class OutputVariablesViewStatus(StrEnum):
