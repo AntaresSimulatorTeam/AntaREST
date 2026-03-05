@@ -98,8 +98,6 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
     study_mock.name = study_name
 
     cache_mock = Mock()
-    task_service = SimpleSyncTaskService()  # using a plain task executor to make sure the executor is called before
-    # the end
     remote_executor: IRemoteExecutor = Mock(spec=IRemoteExecutor)
     file_outputs_provider = _file_outputs_provider(study_mock)
     output_storage = FileOutputStorage(
@@ -107,6 +105,10 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
     )
 
     studies_metadata_repository = _studies_repository(study_mock)
+
+    # Build a minimal core_services proxy so the handler can access output_service
+    from types import SimpleNamespace
+
     output_service = OutputService(
         matrix_service=Mock(),
         cache=cache_mock,
@@ -114,8 +116,11 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
         tmp_dir=tmp_path,
         studies_repository=studies_metadata_repository,
         storage=output_storage,
-        task_service=task_service,
+        task_service=Mock(),  # placeholder, replaced below
     )
+    mock_core = SimpleNamespace(output_service=output_service)
+    task_service = SimpleSyncTaskService(core_services=mock_core)
+    output_service._task_service = task_service
 
     output_id = "some-output"
     remote_executor.execute_remote_task.return_value = TaskResult(success=True, message="OK")  # type: ignore

@@ -29,8 +29,9 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
-from antarest.core.tasks.model import TaskResult, TaskType
-from antarest.core.tasks.service import ITaskNotifier, ITaskService
+from antarest.core.tasks.action import TaskActionDescriptor
+from antarest.core.tasks.model import TaskType
+from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, is_zip, read_in_zip
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch, concat_files, concat_files_to_str, current_time
@@ -600,18 +601,15 @@ class LauncherService:
             export_path = Path(export_file_download.path)
             export_id = export_file_download.id
 
-            def export_task(_: ITaskNotifier) -> TaskResult:
-                try:
-                    #
-                    archive_dir(output_path, export_path, archive_format=ArchiveFormat.ZIP)
-                    self.file_transfer_manager.set_ready(export_id)
-                    return TaskResult(success=True, message="")
-                except Exception as e:
-                    self.file_transfer_manager.fail(export_id, str(e))
-                    raise e
-
             task_id = self.task_service.add_task(
-                export_task,
+                TaskActionDescriptor(
+                    action_type="export_launcher_result",
+                    params={
+                        "output_path": str(output_path),
+                        "export_path": str(export_path),
+                        "export_id": export_id,
+                    },
+                ),
                 export_name,
                 task_type=TaskType.EXPORT,
                 ref_id=None,

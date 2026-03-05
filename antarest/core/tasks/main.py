@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+import logging
 from typing import Optional
 
 import prometheus_client
@@ -21,6 +22,8 @@ from antarest.core.metrics import TasksMetricsRecorder
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.tasks.service import ITaskService, TaskJobService
 from antarest.core.tasks.web import create_tasks_api
+
+logger = logging.getLogger(__name__)
 
 
 def build_taskjob_manager(
@@ -34,9 +37,17 @@ def build_taskjob_manager(
     if config.metrics.prometheus:
         listeners.append(TasksMetricsRecorder(prometheus_client.REGISTRY))
 
-    service = TaskJobService(config, repository, event_bus, listeners=listeners)
+    service: ITaskService
+    if config.celery.broker_url:
+        from antarest.core.tasks.celery_service import CeleryTaskService
+
+        logger.info("Using CeleryTaskService for task execution")
+        service = CeleryTaskService(config, repository, event_bus, listeners=listeners)
+    else:
+        logger.info("Using TaskJobService (in-process) for task execution")
+        service = TaskJobService(config, repository, event_bus, listeners=listeners)
 
     if app_ctxt:
-        app_ctxt.api_root.include_router(create_tasks_api(service, config))
+        app_ctxt.api_root.include_router(create_tasks_api(service, config))  # type: ignore[arg-type]
 
     return service

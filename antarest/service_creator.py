@@ -258,7 +258,7 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
     if app_ctxt:
         app_ctxt.api_root.include_router(create_output_routes(output_service, filetransfer_service, config))
 
-    return CoreServices(
+    core_services = CoreServices(
         cache=cache,
         event_bus=event_bus,
         task_service=task_service,
@@ -271,6 +271,18 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         favorite_study_service=favorite_study_service,
         favorite_directory_service=favorite_directory_service,
     )
+
+    # Two-phase init: set core_services on services that need it
+    from antarest.core.tasks.service import TaskJobService
+
+    if isinstance(task_service, TaskJobService):
+        task_service.set_core_services(core_services)
+    study_service.set_core_services(core_services)
+
+    # Ensure action handlers are registered
+    import antarest.core.tasks.actions  # noqa: F401
+
+    return core_services
 
 
 def create_matrix_gc(config: Config, matrix_service: MatrixService) -> MatrixGarbageCollector:

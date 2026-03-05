@@ -23,12 +23,15 @@ from fastapi import HTTPException
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine.base import Engine
 
+# Ensure production action handlers are registered
+import antarest.core.tasks.actions  # noqa: F401
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import DummyEventBusService, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.persistence import Base
 from antarest.core.requests import MustBeAuthenticatedError, UserHasNotPermissionError
+from antarest.core.tasks.action import TaskActionDescriptor, TaskActionRegistry
 from antarest.core.tasks.model import (
     TaskJob,
     TaskJobLog,
@@ -48,7 +51,6 @@ from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context, get_current_user
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.service import ThermalClusterTimeSeriesGeneratorTask
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
@@ -80,9 +82,56 @@ def task_repo() -> TaskJobRepository:
     return TaskJobRepository()
 
 
+@pytest.fixture(autouse=True)
+def _clean_test_handlers() -> t.Generator[None, None, None]:
+    """Save/restore the handler registry so test registrations don't leak."""
+    original = dict(TaskActionRegistry._handlers)
+    yield
+    TaskActionRegistry._handlers.clear()
+    TaskActionRegistry._handlers.update(original)
+
+
+def _register_test_handlers() -> None:
+    """Register test-specific action handlers."""
+
+    def _test_fail(services: t.Any, params: dict, notifier: ITaskNotifier) -> TaskResult:
+        raise Exception("this action failed")
+
+    def _test_ok(services: t.Any, params: dict, notifier: ITaskNotifier) -> TaskResult:
+        notifier.notify_message("start")
+        notifier.notify_message("end")
+        return TaskResult(success=True, message="OK")
+
+    def _test_action_task(services: t.Any, params: dict, notifier: ITaskNotifier) -> TaskResult:
+        notifier.notify_message("start")
+        current_user = get_current_user()
+        notifier.notify_message("end")
+        return TaskResult(success=True, message="success", return_value=str(current_user.id))
+
+    def _test_long_task(services: t.Any, params: dict, notifier: ITaskNotifier) -> TaskResult:
+        time.sleep(3)
+        return TaskResult(success=True, message="success")
+
+    def _test_dummy_task(services: t.Any, params: dict, notifier: ITaskNotifier) -> TaskResult:
+        return TaskResult(success=True, message="success")
+
+    for name, fn in [
+        ("test_fail", _test_fail),
+        ("test_ok", _test_ok),
+        ("test_action_task", _test_action_task),
+        ("test_long_task", _test_long_task),
+        ("test_dummy_task", _test_dummy_task),
+    ]:
+        if name not in TaskActionRegistry._handlers:
+            TaskActionRegistry._handlers[name] = fn
+
+
 @pytest.fixture
 def task_service(core_config: Config, event_bus: IEventBus, task_repo: TaskJobRepository) -> TaskJobService:
-    return TaskJobService(config=core_config, repository=task_repo, event_bus=event_bus)
+    _register_test_handlers()
+    service = TaskJobService(config=core_config, repository=task_repo, event_bus=event_bus)
+    service.set_core_services(Mock())
+    return service
 
 
 @with_admin_user
@@ -126,11 +175,9 @@ def test_service(task_repo: TaskJobRepository, task_service: TaskJobService) -> 
     # Test Case: add a task that fails and wait for it
     # ================================================
 
-    # noinspection PyUnusedLocal
-    def action_fail(notifier: ITaskNotifier) -> TaskResult:
-        raise Exception("this action failed")
-
-    failed_id = service.add_task(action_fail, "failed action", TaskType.COPY, None, None, None)
+    failed_id = service.add_task(
+        TaskActionDescriptor(action_type="test_fail"), "failed action", TaskType.COPY, None, None, None
+    )
     service.await_task(failed_id, timeout_sec=2)
 
     failed_task = task_repo.get(failed_id)
@@ -143,12 +190,7 @@ def test_service(task_repo: TaskJobRepository, task_service: TaskJobService) -> 
     # Test Case: add a task that succeeds and wait for it
     # ===================================================
 
-    def action_ok(notifier: ITaskNotifier) -> TaskResult:
-        notifier.notify_message("start")
-        notifier.notify_message("end")
-        return TaskResult(success=True, message="OK")
-
-    ok_id = service.add_task(action_ok, None, TaskType.COPY, None, None, None)
+    ok_id = service.add_task(TaskActionDescriptor(action_type="test_ok"), None, TaskType.COPY, None, None, None)
     service.await_task(ok_id, timeout_sec=2)
 
     ok_task = task_repo.get(ok_id)
@@ -505,17 +547,16 @@ nominalcapacity = 14.0
     #  TEST CASE
     # =======================
 
-    task = ThermalClusterTimeSeriesGeneratorTask(
-        raw_study.id,
-        repository=study_service.repository,
-        storage_service=study_service.storage_service,
-        event_bus=study_service.event_bus,
-        study_interface_supplier=study_service.get_study_interface,
-        thermal_outage_details=False,
-    )
+    # Set up mock CoreServices so the handler can access study_service
+    mock_core_services = Mock()
+    mock_core_services.study_service = study_service
+    task_job_service.set_core_services(mock_core_services)
 
     task_id = study_service.task_service.add_task(
-        task,
+        TaskActionDescriptor(
+            action_type="generate_timeseries",
+            params={"study_id": raw_study.id, "outage_details": False},
+        ),
         "test_generation",
         task_type=TaskType.THERMAL_CLUSTER_SERIES_GENERATION,
         ref_id=raw_study.id,
@@ -554,6 +595,8 @@ def test_task_user(core_config: Config, event_bus: IEventBus) -> None:
     """
     Check if the user who submit a task is actually the owner of this task.
     """
+    _register_test_handlers()
+
     # Create a user who has no admin rights
     regular_user = User(id=99, name="regular")
     db.session.add(regular_user)
@@ -564,21 +607,11 @@ def test_task_user(core_config: Config, event_bus: IEventBus) -> None:
     # Launch the task
     task_job_repository = TaskJobRepository()
     task_job_service = TaskJobService(config=core_config, repository=task_job_repository, event_bus=event_bus)
-
-    # Newly created user initialize a task
-    def action_task(notifier: ITaskNotifier) -> TaskResult:
-        notifier.notify_message("start")
-
-        # get current user
-        current_user = get_current_user()
-
-        notifier.notify_message("end")
-        # must set the task 'result' field at regular_user.id
-        return TaskResult(success=True, message="success", return_value=str(current_user.id))
+    task_job_service.set_core_services(Mock())
 
     with current_user_context(jwt_user):
         result = task_job_service.add_task(
-            action=action_task,
+            action=TaskActionDescriptor(action_type="test_action_task"),
             name="task_test_2",
             task_type=TaskType.SCAN,
             ref_id=None,
@@ -599,6 +632,8 @@ def test_task_user(core_config: Config, event_bus: IEventBus) -> None:
 
 @with_db_context
 def test_get_tasks(core_config: Config, event_bus: IEventBus):
+    _register_test_handlers()
+
     # Create a user who has no admin rights
     regular_user = User(id=99, name="regular")
     db.session.add(regular_user)
@@ -608,21 +643,11 @@ def test_get_tasks(core_config: Config, event_bus: IEventBus):
 
     task_job_repository = TaskJobRepository()
     task_job_service = TaskJobService(config=core_config, event_bus=event_bus, repository=task_job_repository)
-
-    # Newly created user initialize a task
-    def action_task(notifier: ITaskNotifier) -> TaskResult:
-        notifier.notify_message("start")
-
-        # get current user
-        current_user = get_current_user()
-
-        notifier.notify_message("end")
-        # must set the task 'result' field at regular_user.id
-        return TaskResult(success=True, message="success", return_value=str(current_user.id))
+    task_job_service.set_core_services(Mock())
 
     with current_user_context(jwt_user):
         task_1 = task_job_service.add_task(
-            action=action_task,
+            action=TaskActionDescriptor(action_type="test_action_task"),
             name="task_test_2",
             task_type=TaskType.SCAN,
             ref_id=None,
@@ -634,7 +659,7 @@ def test_get_tasks(core_config: Config, event_bus: IEventBus):
 
     with current_user_context(jwt_user):
         task_2 = task_job_service.add_task(
-            action=action_task,
+            action=TaskActionDescriptor(action_type="test_action_task"),
             name="task_test_3",
             task_type=TaskType.EXPORT,
             ref_id=None,
@@ -646,7 +671,7 @@ def test_get_tasks(core_config: Config, event_bus: IEventBus):
 
     with current_user_context(jwt_user):
         task_3 = task_job_service.add_task(
-            action=action_task,
+            action=TaskActionDescriptor(action_type="test_action_task"),
             name="task_test_4",
             task_type=TaskType.COPY,
             ref_id=None,
@@ -680,12 +705,9 @@ def test_task_timeout_other_worker(task_repo: TaskJobRepository, task_service: T
 @with_admin_user
 def test_task_timeout_this_worker(task_service: TaskJobService) -> None:
     with db():
-
-        def long_task(notifier: ITaskNotifier) -> TaskResult:
-            time.sleep(3)
-            return TaskResult(success=True, message="success")
-
-        task_id = task_service.add_task(long_task, "a", TaskType.SCAN, None, None, None)
+        task_id = task_service.add_task(
+            TaskActionDescriptor(action_type="test_long_task"), "a", TaskType.SCAN, None, None, None
+        )
 
     with pytest.raises(TimeoutError):
         with db():
@@ -697,11 +719,9 @@ def test_task_timeout_this_worker(task_service: TaskJobService) -> None:
 @with_admin_user
 def test_memory_leak_fix(task_service: TaskJobService) -> None:
     with db():
-
-        def dummy_task(notifier: ITaskNotifier) -> TaskResult:
-            return TaskResult(success=True, message="success")
-
-        task_id = task_service.add_task(dummy_task, "a", TaskType.SCAN, None, None, None)
+        task_id = task_service.add_task(
+            TaskActionDescriptor(action_type="test_dummy_task"), "a", TaskType.SCAN, None, None, None
+        )
 
     with db():
         task_service.await_task(task_id, 1)

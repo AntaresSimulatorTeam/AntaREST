@@ -30,8 +30,9 @@ from typing_extensions import override
 from antarest.core.config import Config
 from antarest.core.exceptions import CleanDisabled, ScanDisabled
 from antarest.core.interfaces.service import IService
-from antarest.core.tasks.model import TaskResult, TaskType
-from antarest.core.tasks.service import ITaskNotifier, ITaskService
+from antarest.core.tasks.action import TaskActionDescriptor
+from antarest.core.tasks.model import TaskType
+from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
@@ -150,13 +151,11 @@ class Watcher(IService):
         if self.config.desktop_mode and recursive:
             raise ScanDisabled("Recursive scan disables when desktop mode is on")
 
-        # noinspection PyUnusedLocal
-        def scan_task(notifier: ITaskNotifier) -> TaskResult:
-            self.scan(recursive, workspace, path)
-            return TaskResult(success=True, message="Scan completed")
-
         return self.task_service.add_task(
-            action=scan_task,
+            action=TaskActionDescriptor(
+                action_type="watcher_scan",
+                params={"recursive": recursive, "workspace": workspace, "path": path},
+            ),
             name=f"Scanning {workspace}/{path}",
             task_type=TaskType.SCAN,
             ref_id=None,

@@ -62,13 +62,16 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> 
     repo = Mock()
     repo.get.return_value = md
 
+    from types import SimpleNamespace
+
     build_ctxt = create_app_ctxt(FastAPI(title=__name__))
     ftm = SimpleFileTransferManager(Config(storage=StorageConfig(tmp_dir=tmp_dir)))
-    build_study_service(
+    task_service = SimpleSyncTaskService()
+    study_service = build_study_service(
         build_ctxt,
         cache=Mock(),
         user_service=Mock(),
-        task_service=SimpleSyncTaskService(),
+        task_service=task_service,
         file_transfer_manager=ftm,
         matrix_service=Mock(spec=MatrixService),
         blob_service=Mock(spec=BlobService),
@@ -76,6 +79,8 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> 
         metadata_repository=repo,
         config=config,
     )
+    # Wire core_services so the export handler can access study_service
+    task_service._core_services = SimpleNamespace(study_service=study_service)
 
     # Simulate the download of data using a streamed request
     client = TestClient(build_ctxt.build())

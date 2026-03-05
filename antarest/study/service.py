@@ -19,7 +19,7 @@ import os
 import shutil
 from datetime import timedelta
 from pathlib import Path, PurePosixPath
-from typing import Any, BinaryIO, Callable, Dict, Iterable, List, Optional, Sequence, Type, cast
+from typing import TYPE_CHECKING, Any, BinaryIO, Callable, Dict, Iterable, List, Optional, Sequence, Type, cast
 from uuid import uuid4
 
 import pandas as pd
@@ -55,8 +55,9 @@ from antarest.core.jwt import JWTGroup
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.ini_reader import IniReader
+from antarest.core.tasks.action import TaskActionDescriptor
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
-from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
+from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat, is_archive_format
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch, current_time
@@ -176,6 +177,9 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+
+if TYPE_CHECKING:
+    from antarest.service_creator import CoreServices
 
 logger = logging.getLogger(__name__)
 
@@ -581,6 +585,7 @@ class StudyService:
         )
         self.cache_service = cache_service
         self.config = config
+        self._core_services: Optional["CoreServices"] = None
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
         matrix_service = command_context.matrix_service
         StudyDatabaseMatrixUsageProvider(matrix_service)
@@ -588,6 +593,16 @@ class StudyService:
             StorageMode.DATABASE: DatabaseStudyDaoFactory(matrix_service, command_context.generator_matrix_constants),
             StorageMode.FILESYSTEM: FileStudyDaoFactory(command_context, raw_study_service.study_factory),
         }
+
+    def set_core_services(self, core_services: "CoreServices") -> None:
+        """Set core services reference after construction (two-phase init)."""
+        self._core_services = core_services
+
+    @property
+    def core_services(self) -> "CoreServices":
+        if self._core_services is None:
+            raise RuntimeError("CoreServices not set on StudyService. Call set_core_services() first.")
+        return self._core_services
 
     def add_on_deletion_callback(self, callback: Callable[[str], None]) -> None:
         self.on_deletion_callbacks.append(callback)
@@ -1232,8 +1247,32 @@ class StudyService:
 
         owner, groups = self._validate_and_prepare_permissions(group_ids)
 
-        def copy_task(notifier: ITaskNotifier) -> TaskResult:
-            origin_study = self.get_study(src_uuid)
+        action = TaskActionDescriptor(
+            action_type="copy_study",
+            params={
+                "src_uuid": src_uuid,
+                "dest_study_name": dest_study_name,
+                "group_ids": group_ids,
+                "destination_folder": str(destination_folder),
+                "output_ids": output_ids,
+                "with_outputs": with_outputs,
+                "owner_id": owner.id if owner else None,
+                "group_entity_ids": [g.id for g in groups],
+            },
+        )
+
+        if use_task:
+            task_or_study_id = self.task_service.add_task(
+                action,
+                f"Study {src_study.name} ({src_uuid}) copy",
+                task_type=TaskType.COPY,
+                ref_id=src_study.id,
+                progress=None,
+                custom_event_messages=None,
+            )
+        else:
+            # Synchronous copy: execute directly without going through the handler
+            origin_study = src_study
             study = self.storage_service.get_storage(origin_study).copy(
                 origin_study,
                 dest_study_name,
@@ -1243,17 +1282,16 @@ class StudyService:
                 with_outputs,
             )
 
-            study.owner = owner
-            study.groups = groups
+            if owner:
+                study.owner = owner
+            if groups:
+                study.groups = groups
 
             self._save_study(study)
             self.storage_service.raw_study_service.normalize_study(study)
 
-            # Copying all jobs associated with the study
             jobs = self.job_result_repository.find_by_study_and_output_ids(origin_study.id, output_ids)
-
             new_jobs = [job.copy_jobs_for_study(study.id) for job in jobs]
-
             if new_jobs:
                 self.job_result_repository.save_all(new_jobs)
 
@@ -1271,24 +1309,7 @@ class StudyService:
                 study.id,
                 get_user_id(),
             )
-            return TaskResult(
-                success=True,
-                message=f"Study {src_uuid} successfully copied to {study.id}",
-                return_value=study.id,
-            )
-
-        if use_task:
-            task_or_study_id = self.task_service.add_task(
-                copy_task,
-                f"Study {src_study.name} ({src_uuid}) copy",
-                task_type=TaskType.COPY,
-                ref_id=src_study.id,
-                progress=None,
-                custom_event_messages=None,
-            )
-        else:
-            res = copy_task(NoopNotifier())
-            task_or_study_id = res.return_value or ""
+            task_or_study_id = study.id
 
         return task_or_study_id
 
@@ -1343,20 +1364,17 @@ class StudyService:
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
 
-        def export_task(notifier: ITaskNotifier) -> TaskResult:
-            try:
-                target_study = self.get_study(uuid)
-                self.storage_service.get_storage(target_study).export_study(
-                    target_study, export_path, outputs, archive_format
-                )
-                self.file_transfer_manager.set_ready(export_id)
-                return TaskResult(success=True, message=f"Study {uuid} successfully exported")
-            except Exception as e:
-                self.file_transfer_manager.fail(export_id, str(e))
-                raise e
-
         task_id = self.task_service.add_task(
-            export_task,
+            TaskActionDescriptor(
+                action_type="export_study",
+                params={
+                    "study_id": uuid,
+                    "outputs": outputs,
+                    "archive_format": archive_format.value,
+                    "export_path": str(export_path),
+                    "export_id": export_id,
+                },
+            ),
             export_name,
             task_type=TaskType.EXPORT,
             ref_id=study.id,
@@ -2020,23 +2038,8 @@ class StudyService:
         ):
             raise TaskAlreadyRunning()
 
-        def archive_task(notifier: ITaskNotifier) -> TaskResult:
-            study_to_archive = self.get_study(uuid)
-            study_to_archive = assert_raw(study_to_archive)
-            self.storage_service.raw_study_service.archive(study_to_archive)
-            study_to_archive.archived = True
-            self.repository.save(study_to_archive)
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_EDITED,
-                    payload=study_to_archive.to_json_summary(),
-                    permissions=PermissionInfo.from_study(study_to_archive),
-                )
-            )
-            return TaskResult(success=True, message="ok")
-
         return self.task_service.add_task(
-            archive_task,
+            TaskActionDescriptor(action_type="archive_study", params={"study_id": uuid}),
             f"Study {study.name} archiving",
             task_type=TaskType.ARCHIVE,
             ref_id=study.id,
@@ -2063,26 +2066,8 @@ class StudyService:
         if not isinstance(study, RawStudy):
             raise UnsupportedOperationOnThisStudyType(study.id, "unarchive", "raw")
 
-        def unarchive_task(notifier: ITaskNotifier) -> TaskResult:
-            study_to_archive = self.get_study(uuid)
-            study_to_archive = assert_raw(study_to_archive)
-            self.storage_service.raw_study_service.unarchive(study_to_archive)
-            study_to_archive.archived = False
-
-            os.unlink(self.storage_service.raw_study_service.find_archive_path(study_to_archive))
-            self.repository.save(study_to_archive)
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_EDITED,
-                    payload=study_to_archive.to_json_summary(),
-                    permissions=PermissionInfo.from_study(study_to_archive),
-                )
-            )
-            remove_from_cache(cache=self.cache_service, root_id=uuid)
-            return TaskResult(success=True, message="ok")
-
         return self.task_service.add_task(
-            unarchive_task,
+            TaskActionDescriptor(action_type="unarchive_study", params={"study_id": uuid}),
             f"Study {study.name} unarchiving",
             task_type=TaskType.UNARCHIVE,
             ref_id=study.id,
@@ -2286,17 +2271,11 @@ class StudyService:
         if len(study_tasks) > 0:
             raise TaskAlreadyRunning()
 
-        thermal_cluster_timeseries_generation_task = ThermalClusterTimeSeriesGeneratorTask(
-            study.id,
-            repository=self.repository,
-            storage_service=self.storage_service,
-            event_bus=self.event_bus,
-            study_interface_supplier=self.get_study_interface,
-            thermal_outage_details=outage_details,
-        )
-
         return self.task_service.add_task(
-            thermal_cluster_timeseries_generation_task,
+            TaskActionDescriptor(
+                action_type="generate_timeseries",
+                params={"study_id": study.id, "outage_details": outage_details},
+            ),
             task_name,
             task_type=TaskType.THERMAL_CLUSTER_SERIES_GENERATION,
             ref_id=study.id,
@@ -2341,17 +2320,11 @@ class StudyService:
         if len(study_tasks) > 0:
             raise TaskAlreadyRunning()
 
-        study_upgrader_task = StudyUpgraderTask(
-            study_id,
-            parsed_target_version,
-            repository=self.repository,
-            storage_service=self.storage_service,
-            cache_service=self.cache_service,
-            event_bus=self.event_bus,
-        )
-
         return self.task_service.add_task(
-            study_upgrader_task,
+            TaskActionDescriptor(
+                action_type="upgrade_study",
+                params={"study_id": study_id, "target_version": str(parsed_target_version)},
+            ),
             task_name,
             task_type=TaskType.UPGRADE_STUDY,
             ref_id=study.id,

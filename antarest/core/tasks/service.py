@@ -14,7 +14,7 @@ import time
 from abc import ABC, abstractmethod
 from concurrent.futures import Future, ThreadPoolExecutor
 from http import HTTPStatus
-from typing import Awaitable, Callable, Dict, List, Optional, Sequence, TypeAlias
+from typing import TYPE_CHECKING, Awaitable, Callable, Dict, List, Optional, Sequence
 
 from fastapi import HTTPException
 from sqlalchemy import select, update
@@ -24,9 +24,9 @@ from typing_extensions import override
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
 from antarest.core.jwt import JWTUser
-from antarest.core.logging.utils import task_context
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
+from antarest.core.tasks.action import TaskActionDescriptor
 from antarest.core.tasks.model import (
     CustomTaskEventMessages,
     TaskDTO,
@@ -34,14 +34,15 @@ from antarest.core.tasks.model import (
     TaskJob,
     TaskJobLog,
     TaskListFilter,
-    TaskResult,
     TaskStatus,
     TaskType,
 )
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import current_time, retry
 from antarest.login.utils import get_current_user, require_current_user
+
+if TYPE_CHECKING:
+    from antarest.service_creator import CoreServices
 
 logger = logging.getLogger(__name__)
 
@@ -64,14 +65,11 @@ class ITaskNotifier(ABC):
         raise NotImplementedError()
 
 
-Task: TypeAlias = Callable[[ITaskNotifier], TaskResult]
-
-
 class ITaskService(ABC):
     @abstractmethod
     def add_task(
         self,
-        action: Task,
+        action: TaskActionDescriptor,
         name: Optional[str],
         task_type: TaskType,
         ref_id: Optional[str],
@@ -221,11 +219,22 @@ class TaskJobService(ITaskService):
         self.threadpool = ThreadPoolExecutor(max_workers=config.tasks.max_workers, thread_name_prefix="taskjob_")
         self.event_bus.add_listener(self.create_task_event_callback(), [EventType.TASK_CANCEL_REQUEST])
         self._listeners = list(listeners) if listeners else []
+        self._core_services: Optional["CoreServices"] = None
+
+    def set_core_services(self, core_services: "CoreServices") -> None:
+        """Set core services reference after construction (two-phase init)."""
+        self._core_services = core_services
+
+    @property
+    def core_services(self) -> "CoreServices":
+        if self._core_services is None:
+            raise RuntimeError("CoreServices not set on TaskJobService. Call set_core_services() first.")
+        return self._core_services
 
     @override
     def add_task(
         self,
-        action: Task,
+        action: TaskActionDescriptor,
         name: Optional[str],
         task_type: TaskType,
         ref_id: Optional[str],
@@ -256,7 +265,7 @@ class TaskJobService(ITaskService):
 
     def _launch_task(
         self,
-        action: Task,
+        action: TaskActionDescriptor,
         task: TaskJob,
         custom_event_messages: Optional[CustomTaskEventMessages],
     ) -> None:
@@ -350,15 +359,15 @@ class TaskJobService(ITaskService):
     def await_task(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
         if task_id in self.tasks:
             try:
-                logger.info(f"🤔 Awaiting task '{task_id}' {timeout_sec}s...")
+                logger.info(f"Awaiting task '{task_id}' {timeout_sec}s...")
                 self.tasks[task_id].result(timeout_sec)
-                logger.info(f"📌 Task '{task_id}' done.")
+                logger.info(f"Task '{task_id}' done.")
             except TimeoutError as timeout_exc:
                 error_msg = f"Timeout while awaiting task '{task_id}'"
                 logger.warning(error_msg)
                 raise TimeoutError(error_msg) from timeout_exc
             except Exception as exc:
-                logger.critical(f"🤕 Task '{task_id}' failed: {exc}.")
+                logger.critical(f"Task '{task_id}' failed: {exc}.")
                 raise
         else:
             logger.warning(f"Task '{task_id}' not handled by this worker, will poll for task completion from db")
@@ -370,7 +379,7 @@ class TaskJobService(ITaskService):
                     return
                 if TaskStatus(task_status).is_final():
                     return
-                logger.info("💤 Sleeping 2 seconds...")
+                logger.info("Sleeping 2 seconds...")
                 time.sleep(2)
             error_msg = f"Timeout while awaiting task '{task_id}'"
             logger.warning(error_msg)
@@ -378,137 +387,30 @@ class TaskJobService(ITaskService):
 
     def _run_task(
         self,
-        callback: Task,
+        action: TaskActionDescriptor,
         task_id: str,
         task_type: TaskType,
         jwt_user: JWTUser,
         custom_event_messages: Optional[CustomTaskEventMessages] = None,
     ) -> None:
-        # We need to catch all exceptions so that the calling thread is guaranteed
-        # to not die
-        with task_context(task_id=task_id, user=jwt_user):
-            try:
-                status = TaskStatus.FAILED
-                for listener in self._listeners:
-                    listener.on_task_start(task_id, task_type)
+        from antarest.core.tasks.execution import execute_task
 
-                # attention: this function is executed in a thread, not in the main process
-                with db():
-                    # Important to keep this retry for now,
-                    # in case commit is not visible (read from replica ...)
-                    task = retry(lambda: self.repo.get_or_raise(task_id))
-                    study_id = task.ref_id
-
-                self.event_bus.push(
-                    Event(
-                        type=EventType.TASK_RUNNING,
-                        payload=TaskEventPayload(
-                            id=task_id,
-                            message=(
-                                custom_event_messages.running
-                                if custom_event_messages is not None
-                                else f"Task {task_id} is running"
-                            ),
-                            type=task_type,
-                            study_id=study_id,
-                        ).model_dump(),
-                        permissions=PermissionInfo(public_mode=PublicMode.READ),
-                        channel=EventChannelDirectory.TASK + task_id,
-                    )
-                )
-
-                logger.info(f"Starting task {task_id}")
-                with db():
-                    stmt = update(TaskJob).where(TaskJob.id == task_id).values(status=TaskStatus.RUNNING.value)
-                    db.session.execute(stmt)
-                    db.session.commit()
-                logger.info(f"Task {task_id} set to RUNNING")
-
-                with db():
-                    # We must use the DB session attached to the current thread
-                    result = callback(TaskLogAndProgressRecorder(task_id, db.session, self.event_bus))
-
-                status = TaskStatus.COMPLETED if result.success else TaskStatus.FAILED
-                logger.info(f"Task {task_id} ended with status {status}")
-
-                with db():
-                    # Do not use the `timezone.utc` timezone to preserve a naive datetime.
-                    completion_date = current_time() if status.is_final() else None
-                    stmt = (
-                        update(TaskJob)
-                        .where(TaskJob.id == task_id)
-                        .values(
-                            status=status.value,
-                            result_msg=result.message,
-                            result_status=result.success,
-                            result=result.return_value,
-                            completion_date=completion_date,
-                        )
-                    )
-                    db.session.execute(stmt)
-                    db.session.commit()
-
-                event_type = {True: EventType.TASK_COMPLETED, False: EventType.TASK_FAILED}[result.success]
-                event_msg = {True: "completed", False: "failed"}[result.success]
-                self.event_bus.push(
-                    Event(
-                        type=event_type,
-                        payload=TaskEventPayload(
-                            id=task_id,
-                            message=(
-                                custom_event_messages.end
-                                if custom_event_messages is not None
-                                else f"Task {task_id} {event_msg}"
-                            ),
-                            type=task_type,
-                            study_id=study_id,
-                        ).model_dump(),
-                        permissions=PermissionInfo(public_mode=PublicMode.READ),
-                        channel=EventChannelDirectory.TASK + task_id,
-                    )
-                )
-            except Exception as exc:
-                err_msg = f"Task {task_id} failed: Unhandled exception {exc}"
-                logger.error(err_msg, exc_info=exc)
-
-                try:
-                    with db():
-                        stmt = (
-                            update(TaskJob)
-                            .where(TaskJob.id == task_id)
-                            .values(
-                                status=TaskStatus.FAILED.value,
-                                result_msg=str(exc),
-                                result_status=False,
-                                completion_date=current_time(),
-                            )
-                        )
-                        db.session.execute(stmt)
-                        db.session.commit()
-
-                    message = err_msg if custom_event_messages is None else custom_event_messages.end
-                    self.event_bus.push(
-                        Event(
-                            type=EventType.TASK_FAILED,
-                            payload=TaskEventPayload(
-                                id=task_id, message=message, type=task_type, study_id=study_id
-                            ).model_dump(),
-                            permissions=PermissionInfo(public_mode=PublicMode.READ),
-                            channel=EventChannelDirectory.TASK + task_id,
-                        )
-                    )
-                except Exception as inner_exc:
-                    logger.error(
-                        f"An exception occurred while handling execution error of task {task_id}: {inner_exc}",
-                        exc_info=inner_exc,
-                    )
-            finally:
-                for listener in self._listeners:
-                    listener.on_task_end(task_id, task_type, status)
-
-                # Task has been updated in database, we can safely remove it from running tasks
-                if task_id in self.tasks:
-                    del self.tasks[task_id]
+        try:
+            execute_task(
+                task_id=task_id,
+                task_type=task_type,
+                action=action,
+                core_services=self.core_services,
+                event_bus=self.event_bus,
+                repo=self.repo,
+                jwt_user=jwt_user,
+                custom_event_messages=custom_event_messages,
+                listeners=self._listeners,
+            )
+        finally:
+            # Task has been updated in database, we can safely remove it from running tasks
+            if task_id in self.tasks:
+                del self.tasks[task_id]
 
     def get_task_progress(self, task_id: str) -> Optional[int]:
         task = self.repo.get_or_raise(task_id)

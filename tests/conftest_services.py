@@ -25,13 +25,16 @@ from unittest.mock import Mock
 import pytest
 from typing_extensions import override
 
+# Ensure production action handlers are registered
+import antarest.core.tasks.actions  # noqa: F401
 from antarest.blobstore.repository import BlobContentRepository
 from antarest.blobstore.service import BlobService
 from antarest.core.config import Config, InternalMatrixFormat, StorageConfig, WorkspaceConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
+from antarest.core.tasks.action import TaskActionDescriptor, TaskActionRegistry
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskResult, TaskStatus, TaskType
-from antarest.core.tasks.service import ITaskService, NoopNotifier, Task
+from antarest.core.tasks.service import ITaskService, NoopNotifier
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import current_time
 from antarest.eventbus.business.local_eventbus import LocalEventBus
@@ -76,20 +79,25 @@ __all__ = (
 
 
 class SynchTaskService(ITaskService):
-    def __init__(self) -> None:
+    def __init__(self, core_services: t.Optional[object] = None) -> None:
         self._task_result: t.Optional[TaskResult] = None
+        self.core_services = core_services
 
     @override
     def add_task(
         self,
-        action: Task,
+        action: TaskActionDescriptor,
         name: t.Optional[str],
         task_type: t.Optional[TaskType],
         ref_id: t.Optional[str],
         progress: t.Optional[int],
         custom_event_messages: t.Optional[CustomTaskEventMessages],
     ) -> str:
-        self._task_result = action(NoopNotifier())
+        if self.core_services is not None:
+            handler = TaskActionRegistry.get_handler(action.action_type)
+            self._task_result = handler(self.core_services, action.params, NoopNotifier())
+        else:
+            self._task_result = TaskResult(success=True, message="ok")
         return str(uuid.uuid4())
 
     @override
@@ -394,7 +402,7 @@ def variant_study_service_fixture(
     event_bus: IEventBus,
     core_config: Config,
     simple_matrix_service: ISimpleMatrixService,
-) -> VariantStudyService:
+) -> t.Generator[VariantStudyService, None, None]:
     """
     Fixture that creates a VariantStudyService instance.
 
@@ -411,7 +419,9 @@ def variant_study_service_fixture(
     Returns:
         An instance of the VariantStudyService class with the provided dependencies.
     """
-    return VariantStudyService(
+    from types import SimpleNamespace
+
+    variant_study_service = VariantStudyService(
         task_service=task_service,
         cache=core_cache,
         raw_study_service=raw_study_service,
@@ -422,6 +432,14 @@ def variant_study_service_fixture(
         config=core_config,
         matrix_service=simple_matrix_service,
     )
+
+    # Wire core_services on the (session-scoped) task service so action handlers can execute.
+    # Build a minimal proxy that satisfies the handler's access patterns.
+    mock_storage = SimpleNamespace(variant_study_service=variant_study_service)
+    mock_study_service = SimpleNamespace(storage_service=mock_storage)
+    task_service.core_services = SimpleNamespace(study_service=mock_study_service)
+    yield variant_study_service
+    task_service.core_services = None
 
 
 @pytest.fixture(name="study_storage_service")

@@ -14,7 +14,7 @@ import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, BinaryIO, Callable, Optional, Sequence
+from typing import Any, BinaryIO, Optional, Sequence
 
 import pandas as pd
 import polars as pl
@@ -35,12 +35,13 @@ from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.serde.parquet_writer import (
     yield_dataframes_from_parquet,
 )
+from antarest.core.tasks.action import TaskActionDescriptor
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.files import temp_file_path
-from antarest.core.utils.utils import StopWatch, current_time
+from antarest.core.utils.utils import current_time
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import (
@@ -83,7 +84,6 @@ from antarest.study.output.variables_management import (
     get_query_file,
 )
 from antarest.study.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
-from antarest.study.storage.df_download import export_df_chunks
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestUI,
 )
@@ -270,26 +270,11 @@ class OutputService:
         if len(list(filter(lambda t: t.name in archive_task_names, study_tasks))):
             raise TaskAlreadyRunning()
 
-        def unarchive_output_task(notifier: ITaskNotifier) -> TaskResult:
-            try:
-                stopwatch = StopWatch()
-                self._storage.unarchive_study_output(study_id, output_id)
-                stopwatch.log_elapsed(
-                    lambda x: logger.info(f"Output {output_id} of study {study_id} unarchived in {x}s")
-                )
-                return TaskResult(
-                    success=True,
-                    message=f"Study output {study_id}/{output_id} successfully unarchived",
-                )
-            except Exception as e:
-                logger.warning(
-                    f"Could not unarchive the output {study_id}/{output_id}",
-                    exc_info=e,
-                )
-                raise e
-
         task_id = self._task_service.add_task(
-            unarchive_output_task,
+            TaskActionDescriptor(
+                action_type="unarchive_output",
+                params={"study_id": study_id, "output_id": output_id},
+            ),
             task_name,
             task_type=TaskType.UNARCHIVE,
             ref_id=study_id,
@@ -378,24 +363,17 @@ class OutputService:
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
 
-        def export_task(notifier: ITaskNotifier) -> TaskResult:
-            try:
-                self._storage.export_output(
-                    study_id=study_uuid,
-                    output_id=output_uuid,
-                    target=export_path,
-                )
-                self._file_transfer_manager.set_ready(export_id)
-                return TaskResult(
-                    success=True,
-                    message=f"Study output {metadata.name}/{output_uuid} successfully exported",
-                )
-            except Exception as e:
-                self._file_transfer_manager.fail(export_id, str(e))
-                raise e
-
         task_id = self._task_service.add_task(
-            export_task,
+            TaskActionDescriptor(
+                action_type="export_output",
+                params={
+                    "study_id": study_uuid,
+                    "output_id": output_uuid,
+                    "export_path": str(export_path),
+                    "export_id": export_id,
+                    "study_name": metadata.name,
+                },
+            ),
             export_name,
             task_type=TaskType.EXPORT,
             ref_id=study_uuid,
@@ -556,24 +534,11 @@ class OutputService:
             if len(list(filter(lambda t: t.name in archive_task_names, study_tasks))):
                 raise TaskAlreadyRunning()
 
-        def archive_output_task(notifier: ITaskNotifier) -> TaskResult:
-            try:
-                stopwatch = StopWatch()
-                self._storage.archive_study_output(study_id, output_id)
-                stopwatch.log_elapsed(lambda x: logger.info(f"Output {output_id} of study {study_id} archived in {x}s"))
-                return TaskResult(
-                    success=True,
-                    message=f"Study output {study_id}/{output_id} successfully archived",
-                )
-            except Exception as e:
-                logger.warning(
-                    f"Could not archive the output {study_id}/{output_id}",
-                    exc_info=e,
-                )
-                raise e
-
         task_id = self._task_service.add_task(
-            archive_output_task,
+            TaskActionDescriptor(
+                action_type="archive_output",
+                params={"study_id": study_id, "output_id": output_id},
+            ),
             task_name,
             task_type=TaskType.ARCHIVE,
             ref_id=study_id,
@@ -624,8 +589,7 @@ class OutputService:
             ids_to_consider,
             file_download_path,
             mc_years=mc_years,
-            on_success=lambda: self._file_transfer_manager.set_ready(download_id, use_notification=False),
-            on_failure=lambda e: self._file_transfer_manager.fail(download_id, str(e)),
+            export_id=download_id,
         )
 
         return download_id
@@ -642,8 +606,7 @@ class OutputService:
         file_path: Path,
         transform_columns_headers: bool = True,
         mc_years: Optional[Sequence[int]] = None,
-        on_success: Optional[Callable[[], None]] = None,
-        on_failure: Optional[Callable[[Exception], None]] = None,
+        export_id: Optional[str] = None,
     ) -> str:
         """
         Starts a task aggregating output data based on several filtering conditions.
@@ -659,50 +622,31 @@ class OutputService:
             file_path: path of the file where output aggregation data will be stored
             transform_columns_headers: If False, keeps the output columns as written by the Simulator
             mc_years: list of monte-carlo years, if empty, all years are selected (only for mc-ind)
-            on_success: callback to be called when the task is completed successfully
-            on_failure: callback to be called when the task fails with an exception
+            export_id: optional file download ID to mark as ready/failed on completion
 
         Returns:
             Aggregation task id
         """
         self._studies_repository.assert_permission(uuid, StudyPermissionType.READ)
 
-        def aggregate_output_task(notifier: ITaskNotifier) -> TaskResult:
-            try:
-                stopwatch = StopWatch()
-                logger.info(f"Launch aggregation step for output '{output_id}' of study '{uuid}'.")
-
-                results = self._storage.aggregate_output_data(
-                    uuid,
-                    output_id,
-                    query_file,
-                    frequency,
-                    ids_to_consider,
-                    columns_names,
-                    transform_columns_headers,
-                    mc_years,
-                )
-                export_df_chunks(self._tmp_dir, file_path, results, export_format)
-
-                stopwatch.log_elapsed(lambda x: logger.info(f"Created aggregated outputs file '{file_path}' in {x}s."))
-
-                if on_success:
-                    on_success()
-
-                logger.info(f"Aggregated output file '{file_path}' is ready for download.")
-                return TaskResult(
-                    success=True,
-                    message=f"Successfully aggregated output data for study '{uuid}'."
-                    f" Results are stored in '{file_path}'.",
-                )
-
-            except Exception as e:
-                if on_failure:
-                    on_failure(e)
-                raise e
-
         task_id = self._task_service.add_task(
-            aggregate_output_task,
+            TaskActionDescriptor(
+                action_type="aggregate_output",
+                params={
+                    "study_id": uuid,
+                    "output_id": output_id,
+                    "query_file_type": type(query_file).__name__,
+                    "query_file_value": query_file.value,
+                    "frequency": frequency.value,
+                    "export_format": export_format.value,
+                    "columns_names": list(columns_names),
+                    "ids_to_consider": list(ids_to_consider),
+                    "file_path": str(file_path),
+                    "transform_columns_headers": transform_columns_headers,
+                    "mc_years": list(mc_years) if mc_years else None,
+                    "export_id": export_id,
+                },
+            ),
             f"Aggregate output {output_id} of study {uuid}.",
             task_type=TaskType.OUTPUT_AGGREGATION,
             ref_id=uuid,
@@ -818,12 +762,17 @@ class OutputService:
         check_output_variable_exists(output_id, variable_name, available_variables, output_item_id)
 
         # Materialize the view
-        task = OutputVariablesViewMaterializationTask(
-            study_id, output_id, self, variable_name, frequency, output_item_id
-        )
-
         return self._task_service.add_task(
-            task,
+            TaskActionDescriptor(
+                action_type="materialize_output_view",
+                params={
+                    "study_id": study_id,
+                    "output_id": output_id,
+                    "variable_name": variable_name,
+                    "frequency": frequency.value,
+                    "output_item_id": output_item_id.model_dump(),
+                },
+            ),
             task_name,
             task_type=TaskType.OUTPUT_VARIABLES_VIEW_MATERIALIZATION,
             ref_id=study_id,

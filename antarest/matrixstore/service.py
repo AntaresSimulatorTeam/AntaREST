@@ -32,8 +32,9 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.json import from_json
-from antarest.core.tasks.model import TaskResult, TaskType
-from antarest.core.tasks.service import ITaskNotifier, ITaskService
+from antarest.core.tasks.action import TaskActionDescriptor
+from antarest.core.tasks.model import TaskType
+from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.polars import create_polars_dataframe
@@ -618,20 +619,21 @@ class MatrixService(ISimpleMatrixService):
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
 
-        def export_task(notifier: ITaskNotifier) -> TaskResult:
-            try:
-                self.create_matrix_files(matrix_ids=matrix_list, export_path=export_path)
-                self.file_transfer_manager.set_ready(export_id)
-                return TaskResult(
-                    success=True,
-                    message=f"Matrix dataset {dataset_name} successfully exported",
-                )
-            except Exception as e:
-                self.file_transfer_manager.fail(export_id, str(e))
-                raise e
-
         task_id = self.task_service.add_task(
-            export_task, export_name, task_type=TaskType.EXPORT, ref_id=None, progress=None, custom_event_messages=None
+            TaskActionDescriptor(
+                action_type="export_matrices",
+                params={
+                    "matrix_list": list(matrix_list),
+                    "dataset_name": dataset_name,
+                    "export_path": str(export_path),
+                    "export_id": export_id,
+                },
+            ),
+            export_name,
+            task_type=TaskType.EXPORT,
+            ref_id=None,
+            progress=None,
+            custom_event_messages=None,
         )
 
         return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)

@@ -16,27 +16,35 @@ from unittest.mock import Mock
 
 from typing_extensions import override
 
+# Ensure production action handlers are registered
+import antarest.core.tasks.actions  # noqa: F401
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownload
 from antarest.core.filetransfer.repository import FileDownloadRepository
 from antarest.core.filetransfer.service import FileTransferManager
+from antarest.core.tasks.action import TaskActionDescriptor, TaskActionRegistry
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskStatus, TaskType
-from antarest.core.tasks.service import ITaskService, NoopNotifier, Task
+from antarest.core.tasks.service import ITaskService, NoopNotifier
 from antarest.core.utils.utils import current_time
 
 
 class SimpleSyncTaskService(ITaskService):
+    def __init__(self, core_services: Optional[object] = None) -> None:
+        self._core_services = core_services
+
     @override
     def add_task(
         self,
-        action: Task,
+        action: TaskActionDescriptor,
         name: Optional[str],
         task_type: Optional[TaskType],
         ref_id: Optional[str],
         progress: Optional[int],
         custom_event_messages: Optional[CustomTaskEventMessages],
     ) -> str:
-        action(NoopNotifier())
+        if self._core_services is not None:
+            handler = TaskActionRegistry.get_handler(action.action_type)
+            handler(self._core_services, action.params, NoopNotifier())
         return str(uuid.uuid4())
 
     @override

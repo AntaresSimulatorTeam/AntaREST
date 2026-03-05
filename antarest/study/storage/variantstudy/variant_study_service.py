@@ -41,6 +41,7 @@ from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import JSON, PermissionInfo, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.json import to_json_string
+from antarest.core.tasks.action import TaskActionDescriptor
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService, TaskNotFoundError
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -77,7 +78,6 @@ from antarest.study.storage.variantstudy.model.model import (
     VariantTreeDTO,
 )
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
-from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -683,31 +683,15 @@ class VariantStudyService(AbstractStorageService):
             # db context, so we need to fetch the id attribute before
             study_id = metadata.id
 
-            def callback(notifier: ITaskNotifier) -> TaskResult:
-                generator = SnapshotGenerator(
-                    cache=self.cache,
-                    raw_study_service=self.raw_study_service,
-                    command_factory=self.command_factory,
-                    study_factory=self.study_factory,
-                    repository=self.repository,
-                )
-                generate_result = generator.generate_snapshot(
-                    study_id,
-                    denormalize=denormalize,
-                    from_scratch=from_scratch,
-                    notifier=notifier,
-                    listener=listener,
-                )
-                return TaskResult(
-                    success=generate_result.success,
-                    message=(
-                        f"{study_id} generated successfully" if generate_result.success else f"{study_id} not generated"
-                    ),
-                    return_value=generate_result.model_dump_json(),
-                )
-
             metadata.generation_task = self.task_service.add_task(
-                action=callback,
+                action=TaskActionDescriptor(
+                    action_type="generate_variant",
+                    params={
+                        "study_id": study_id,
+                        "denormalize": denormalize,
+                        "from_scratch": from_scratch,
+                    },
+                ),
                 name=f"Generation of {metadata.id} study",
                 task_type=TaskType.VARIANT_GENERATION,
                 ref_id=study_id,
@@ -955,10 +939,11 @@ class VariantStudyService(AbstractStorageService):
 
         task_name = f"Cleaning all snapshot updated or accessed at least {humanize.precisedelta(retention_time)} ago."
 
-        snapshot_clearing_task_instance = SnapshotCleanerTask(variant_study_service=self, retention_time=retention_time)
-
         return self.task_service.add_task(
-            snapshot_clearing_task_instance,
+            TaskActionDescriptor(
+                action_type="clear_all_snapshots",
+                params={"retention_seconds": retention_time.total_seconds()},
+            ),
             task_name,
             task_type=TaskType.SNAPSHOT_CLEARING,
             ref_id=None,

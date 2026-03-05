@@ -44,6 +44,9 @@ logger = logging.getLogger(__name__)
 MAINTENANCE_QUEUE = "maintenance"
 
 
+TASK_ACTIONS_QUEUE = "task_actions"
+
+
 class TaskName(StrEnum):
     WATCHER_SCAN = "watcher_scan"
     MATRICES_CLEANER = "matrices_cleaner"
@@ -51,6 +54,7 @@ class TaskName(StrEnum):
     AUTO_ARCHIVER = "auto_archiver"
     VARIABLE_VIEW_CLEANER = "variable_view_cleaner"
     TASKS_CLEANER = "tasks_cleaner"
+    RUN_TASK_ACTION = "run_task_action"
 
 
 def _mask_url_credentials(url: str) -> str:
@@ -81,10 +85,14 @@ celery_app.conf.update(
     task_time_limit=7200,
     worker_send_task_events=True,
     task_send_sent_event=True,
-    task_routes={name: {"queue": MAINTENANCE_QUEUE} for name in TaskName},
+    task_routes={
+        **{name: {"queue": MAINTENANCE_QUEUE} for name in TaskName if name != TaskName.RUN_TASK_ACTION},
+        TaskName.RUN_TASK_ACTION: {"queue": TASK_ACTIONS_QUEUE},
+    },
 )
 
 celery_app.autodiscover_tasks(["antarest.maintenance.tasks"])
+celery_app.conf.include = [*celery_app.conf.get("include", []), "antarest.core.tasks.celery_task"]
 
 load_config()
 _apply_celery_config(celery_app, get_config().celery)
