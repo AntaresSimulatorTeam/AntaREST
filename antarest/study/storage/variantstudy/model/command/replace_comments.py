@@ -39,7 +39,7 @@ class ReplaceComments(ICommand):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         study_data.save_comments(self.comments)
-        return command_succeeded(message=f"Comment '{self.comments}' has been successfully replaced.")
+        return command_succeeded(message=f"Comment '{self.comments}' has been successfully replaced.", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

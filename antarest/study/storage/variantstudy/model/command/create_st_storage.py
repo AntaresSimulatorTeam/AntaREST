@@ -9,8 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-
+from dataclasses import dataclass
 from typing import Any, Dict, Final, List, Optional, Self, TypeAlias, cast
 
 import numpy as np
@@ -20,7 +19,7 @@ from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
 from antarest.matrixstore.model import MatrixData
-from antarest.study.business.model.sts_model import STStorageCreation, validate_st_storage_against_version
+from antarest.study.business.model.sts_model import STStorage, STStorageCreation, validate_st_storage_against_version
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -29,6 +28,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.validation import A
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import (
+    CommandApplicationResult,
     CommandName,
     CommandOutput,
     InnerMatrices,
@@ -40,6 +40,11 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 MatrixType: TypeAlias = Optional[list[list[MatrixData]] | str]
+
+
+@dataclass(frozen=True)
+class CreateSTStorageResult(CommandApplicationResult):
+    data: STStorage
 
 
 # noinspection SpellCheckingInspection
@@ -217,7 +222,10 @@ class CreateSTStorage(ICommand):
             matrix = matrices["cost_variation_withdrawal"]
             study_data.save_st_storage_cost_variation_withdrawal(self.area_id, storage.id, matrix)
 
-        return command_succeeded(f"Short-term storage '{storage.id}' successfully added to area '{self.area_id}'.")
+        result = CreateSTStorageResult(data=storage)
+        return command_succeeded(
+            f"Short-term storage '{storage.id}' successfully added to area '{self.area_id}'.", result=result
+        )
 
     @override
     def to_dto(self) -> CommandDTO:

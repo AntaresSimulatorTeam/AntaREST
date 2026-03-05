@@ -146,7 +146,7 @@ class CreateLink(AbstractLinkCommand, ICommand):
             study_data.save_link_direct_capacities(area_from, area_to, str(direct))
             study_data.save_link_indirect_capacities(area_from, area_to, str(indirect))
 
-        return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' created")
+        return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' created", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

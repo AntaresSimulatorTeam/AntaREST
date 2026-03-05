@@ -77,7 +77,7 @@ class UpdateConfig(ICommand):
         study_data.tree.save(self.data, url)
 
         self.update_in_config(study_data.config)
-        return command_succeeded(message="ok", should_invalidate_cache=True)
+        return command_succeeded(message="ok", should_invalidate_cache=True, result=None)
 
     @override
     def to_dto(self) -> CommandDTO:
