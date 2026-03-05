@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 from abc import ABCMeta
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, Final, List, Optional, Self, TypeAlias
 
@@ -24,6 +25,7 @@ from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.model.binding_constraint_model import (
     DEFAULT_TIMESTEP,
+    BindingConstraint,
     BindingConstraintCreation,
     BindingConstraintFrequency,
     BindingConstraintMatrices,
@@ -41,6 +43,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import (
+    CommandApplicationResult,
     CommandName,
     CommandOutput,
     InnerMatrices,
@@ -63,6 +66,11 @@ class TermMatrices(Enum):
     LESS = "less_term_matrix"
     GREATER = "greater_term_matrix"
     EQUAL = "equal_term_matrix"
+
+
+@dataclass(frozen=True)
+class CreateBindingConstraintResult(CommandApplicationResult):
+    data: BindingConstraint
 
 
 def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixType, version: StudyVersion) -> None:
@@ -326,7 +334,8 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
                 assert isinstance(matrix, str)
                 study_data.save_constraint_less_term_matrix(constraint.id, matrix)
 
-        return command_succeeded(f"Binding constraint '{constraint.id}' created successfully.")
+        result = CreateBindingConstraintResult(data=constraint)
+        return command_succeeded(f"Binding constraint '{constraint.id}' created successfully.", result=result)
 
     @override
     def to_dto(self) -> CommandDTO:
