@@ -37,7 +37,7 @@ class RemoveXpansionConfiguration(ICommand):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         study_data.delete_xpansion_configuration()
-        return command_succeeded(message="Xpansion configuration removed successfully")
+        return command_succeeded(message="Xpansion configuration removed successfully", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

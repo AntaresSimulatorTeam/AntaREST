@@ -54,7 +54,7 @@ class RemoveMultipleSTStorageConstraints(ICommand):
                 return command_failed(f"Short-term storage constraint '{constraint_id}' not found.")
 
         study_data.delete_st_storage_additional_constraints(self.area_id, self.storage_id, self.ids)
-        return command_succeeded("Short-term storage constraints successfully removed.")
+        return command_succeeded("Short-term storage constraints successfully removed.", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

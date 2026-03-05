@@ -55,7 +55,7 @@ class RemoveMultipleBindingConstraints(ICommand):
             constraints.append(all_bcs[bc_id])
         study_data.delete_constraints(constraints)
 
-        return command_succeeded("Binding constraints successfully removed.")
+        return command_succeeded("Binding constraints successfully removed.", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

@@ -37,7 +37,7 @@ class RemoveLayer(ICommand):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput:
         study_data.delete_layer(self.layer_id)
-        return command_succeeded(f"Layer {self.layer_id} deleted successfully.")
+        return command_succeeded(f"Layer {self.layer_id} deleted successfully.", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

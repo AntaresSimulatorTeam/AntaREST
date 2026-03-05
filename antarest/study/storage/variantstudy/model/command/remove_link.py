@@ -75,7 +75,7 @@ class RemoveLink(ICommand):
 
         study_data.delete_link(Link(**{"area1": self.area1, "area2": self.area2}))
 
-        return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' deleted")
+        return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' deleted", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

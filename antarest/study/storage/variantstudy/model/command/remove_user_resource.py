@@ -45,7 +45,7 @@ class RemoveUserResource(ICommand):
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         resource_path = PurePosixPath(self.data.path)
         study_data.delete_user_resource(resource_path)
-        return command_succeeded(message=f"Resource {resource_path} removed successfully.")
+        return command_succeeded(message=f"Resource {resource_path} removed successfully.", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

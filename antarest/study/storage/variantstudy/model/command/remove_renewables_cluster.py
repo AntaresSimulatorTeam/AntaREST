@@ -50,7 +50,9 @@ class RemoveRenewablesCluster(ICommand):
         renewable = study_data.get_renewable(self.area_id, self.cluster_id)
         study_data.delete_renewable(self.area_id, renewable)
 
-        return command_succeeded(f"Renewable cluster '{self.cluster_id}' inside area '{self.area_id}' deleted")
+        return command_succeeded(
+            f"Renewable cluster '{self.cluster_id}' inside area '{self.area_id}' deleted", result=None
+        )
 
     @override
     def to_dto(self) -> CommandDTO:

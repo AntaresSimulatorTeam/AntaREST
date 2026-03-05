@@ -43,7 +43,7 @@ class RemoveXpansionResource(ICommand):
 
         study_data.delete_xpansion_resource(self.resource_type, self.filename)
 
-        return command_succeeded(message=f"Xpansion resource {self.filename} removed successfully")
+        return command_succeeded(message=f"Xpansion resource {self.filename} removed successfully", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:
