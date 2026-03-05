@@ -231,35 +231,7 @@ class Timer:
 # ---------------------------------------------------------------------------
 
 
-def _populate_background_data(
-    make_session: sessionmaker, matrix_service: InMemorySimpleMatrixService, n: int
-) -> list[DatabaseStudyDao]:
-    """Insert n xpansion configurations with 3 candidates each. Returns the DAOs for later cleanup."""
-    session = make_session()
-    daos = []
-    for i in range(n):
-        dao = _build_dao(session, matrix_service)
-        dao.save_area("Paris")
-        dao.save_area("Lyon")
-        dao.create_xpansion_configuration()
-        dao.save_xpansion_candidate(_candidate(f"bg_cand_{i}_a", "lyon", "paris"))
-        dao.save_xpansion_candidate(_candidate(f"bg_cand_{i}_b", "lyon", "paris", cost=2_000.0))
-        dao.save_xpansion_candidate(_candidate(f"bg_cand_{i}_c", "lyon", "paris", cost=500.0))
-        daos.append(dao)
-    session.close()
-    return daos
-
-
-def _delete_background_data(daos: list[DatabaseStudyDao], timer: "Timer") -> None:
-    """Delete all background configurations — runs after measurement so deletes hit a full table."""
-    for dao in daos:
-        with timer.measure("delete_xpansion_configuration (background)"):
-            dao.delete_xpansion_configuration()
-
-
-def run_benchmark(
-    iterations: int, db_url: str = _DEFAULT_DB_URL, warmup: int = 50, background_rows: int = 1_000
-) -> dict[str, dict]:
+def run_benchmark(iterations: int, db_url: str = _DEFAULT_DB_URL, warmup: int = 50) -> dict[str, dict]:
     engine = _build_engine(db_url)
     matrix_service = InMemorySimpleMatrixService()
     make_session = sessionmaker(bind=engine)
@@ -269,9 +241,6 @@ def run_benchmark(
     gc.collect()
     gc.disable()
     try:
-        # Populate background data so inserts/deletes run against non-empty tables.
-        background_daos = _populate_background_data(make_session, matrix_service, background_rows)
-
         # Warmup: prime SQLAlchemy's statement cache and the connection pool.
         for _ in range(warmup):
             session = make_session()
@@ -291,9 +260,6 @@ def run_benchmark(
             scenario_times.append(time.perf_counter() - t0)
 
             session.close()
-
-        # Delete background data — all deletes happen here, against a full table.
-        _delete_background_data(background_daos, timer)
     finally:
         gc.enable()
 
@@ -347,20 +313,14 @@ if __name__ == "__main__":
     parser.add_argument("-n", "--iterations", type=int, default=2_000, help="Number of iterations (default: 2000)")
     parser.add_argument("--warmup", type=int, default=50, help="Warmup iterations, not measured (default: 50)")
     parser.add_argument(
-        "--background-rows", type=int, default=1_000, help="Background configs pre-inserted (default: 1000)"
-    )
-    parser.add_argument(
         "--db-url",
         default=_DEFAULT_DB_URL,
         help=f"SQLAlchemy DB URL (default: {_DEFAULT_DB_URL})",
     )
     args = parser.parse_args()
 
-    print(f"DB              : {args.db_url}")
-    print(f"Background rows : {args.background_rows}")
-    print(f"Warmup          : {args.warmup}")
-    print(f"Runs            : {args.iterations}")
-    stats = run_benchmark(
-        iterations=args.iterations, db_url=args.db_url, warmup=args.warmup, background_rows=args.background_rows
-    )
+    print(f"DB     : {args.db_url}")
+    print(f"Warmup : {args.warmup}")
+    print(f"Runs   : {args.iterations}")
+    stats = run_benchmark(iterations=args.iterations, db_url=args.db_url, warmup=args.warmup)
     print_results(stats)

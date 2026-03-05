@@ -134,53 +134,36 @@ class DatabaseXpansionDao(XpansionDao):
 
     @override
     def get_xpansion_settings(self) -> XpansionSettings:
-        stmt = select(XPANSION_SETTINGS_TABLE).where(XPANSION_SETTINGS_TABLE.c.study_id == self._study_id)
-        row = self._db_session.execute(stmt).fetchone()
-        if not row:
+        stmt = (
+            select(XPANSION_SETTINGS_TABLE, XPANSION_SENSITIVITY_PROJECTION_TABLE.c.candidate_name)
+            .outerjoin(
+                XPANSION_SENSITIVITY_PROJECTION_TABLE,
+                XPANSION_SETTINGS_TABLE.c.study_id == XPANSION_SENSITIVITY_PROJECTION_TABLE.c.study_id,
+            )
+            .where(XPANSION_SETTINGS_TABLE.c.study_id == self._study_id)
+        )
+        rows = self._db_session.execute(stmt).fetchall()
+        if not rows:
             raise XpansionConfigurationDoesNotExist(self._study_id)
 
-        data = get_row_representation_as_dict(row)
+        data = get_row_representation_as_dict(rows[0])
         del data["study_id"]
-
-        projection_rows = self._db_session.execute(
-            select(XPANSION_SENSITIVITY_PROJECTION_TABLE.c.candidate_name).where(
-                XPANSION_SENSITIVITY_PROJECTION_TABLE.c.study_id == self._study_id
-            )
-        ).fetchall()
         sensitivity_config = XpansionSensitivitySettings(
             epsilon=data.pop("sensitivity_epsilon"),
             capex=data.pop("sensitivity_capex"),
-            projection=[r.candidate_name for r in projection_rows],
+            projection=[r.candidate_name for r in rows if r.candidate_name is not None],
         )
-        # Nullable columns: map NULL back to the empty-string default.
-        data["yearly_weights"] = data.get("yearly_weights") or ""
-        data["additional_constraints"] = data.get("additional_constraints") or ""
-
         return XpansionSettings(sensitivity_config=sensitivity_config, **data)
 
     @override
     def save_xpansion_settings(self, settings: XpansionSettings) -> None:
-        sensitivity = settings.sensitivity_config
+        data = settings.model_dump()
+        sensitivity = data.pop("sensitivity_config")
         values: dict[str, Any] = {
             "study_id": self._study_id,
-            "master": settings.master,
-            "uc_type": settings.uc_type,
-            "optimality_gap": settings.optimality_gap,
-            "relative_gap": settings.relative_gap,
-            "relaxed_optimality_gap": settings.relaxed_optimality_gap,
-            "max_iteration": settings.max_iteration,
-            "solver": settings.solver,
-            "log_level": settings.log_level,
-            "separation_parameter": settings.separation_parameter,
-            "batch_size": settings.batch_size,
-            # Store empty strings as NULL so the nullable column is consistent.
-            "yearly_weights": settings.yearly_weights or None,
-            "additional_constraints": settings.additional_constraints or None,
-            "timelimit": settings.timelimit,
-            "master_solution_tolerance": settings.master_solution_tolerance,
-            "cut_coefficient_tolerance": settings.cut_coefficient_tolerance,
-            "sensitivity_epsilon": sensitivity.epsilon,
-            "sensitivity_capex": sensitivity.capex,
+            **data,
+            "sensitivity_epsilon": sensitivity["epsilon"],
+            "sensitivity_capex": sensitivity["capex"],
         }
         upsert_one(self._db_session, XPANSION_SETTINGS_TABLE, values)
         # Replace projection rows: delete existing, then insert the new list.
@@ -189,11 +172,11 @@ class DatabaseXpansionDao(XpansionDao):
                 XPANSION_SENSITIVITY_PROJECTION_TABLE.c.study_id == self._study_id
             )
         )
-        if sensitivity.projection:
+        if sensitivity["projection"]:
             try:
                 self._db_session.execute(
                     insert(XPANSION_SENSITIVITY_PROJECTION_TABLE),
-                    [{"study_id": self._study_id, "candidate_name": name} for name in sensitivity.projection],
+                    [{"study_id": self._study_id, "candidate_name": name} for name in sensitivity["projection"]],
                 )
             except IntegrityError:
                 self._db_session.rollback()
@@ -204,6 +187,9 @@ class DatabaseXpansionDao(XpansionDao):
     def checks_xpansion_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
         # File existence checks for additional_constraints and yearly_weights
         # require blob storage access, which is not yet available in the database DAO.
+        # TODO: validate additional_constraints and yearly_weights against blob storage
+        #  once blob storage is wired up for database mode.
+        #  See FileStudyXpansionDao.checks_xpansion_settings_are_correct for the reference implementation.
         if not settings.sensitivity_config or not settings.sensitivity_config.projection:
             return
         projection = settings.sensitivity_config.projection
@@ -241,7 +227,8 @@ class DatabaseXpansionDao(XpansionDao):
     def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
         values = self._candidate_to_row(candidate)
         if old_id and old_id != candidate.name:
-            # Rename: the PK changes, so delete the old row and insert a new one.
+            # The PK of this table is composed of study_id and name
+            # So renaming a candidate requires deleting the old row and inserting a new one.
             self._db_session.execute(
                 delete(XPANSION_CANDIDATE_TABLE).where(
                     (XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
@@ -274,8 +261,9 @@ class DatabaseXpansionDao(XpansionDao):
     @override
     def checks_xpansion_candidate_coherence(self, candidate: XpansionCandidate) -> None:
         self._assert_link_exists(candidate)
-        # Link-profile file validation requires blob storage access.
-        # Not yet implemented for database storage mode.
+        # TODO: validate link-profile fields (link_profile, direct_link_profile, etc.)
+        #  against blob storage once blob storage is wired up for database mode.
+        #  See FileStudyXpansionDao._assert_link_profile_are_files for the reference implementation.
 
     @override
     def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
@@ -292,21 +280,26 @@ class DatabaseXpansionDao(XpansionDao):
 
     @override
     def get_xpansion_adequacy_criterion(self) -> XpansionAdequacyCriterion:
-        row = self._db_session.execute(
-            select(XPANSION_ADEQUACY_CRITERION_V2_TABLE).where(
-                XPANSION_ADEQUACY_CRITERION_V2_TABLE.c.study_id == self._study_id
+        stmt = (
+            select(
+                XPANSION_ADEQUACY_CRITERION_V2_TABLE,
+                XPANSION_ADEQUACY_PATTERN_TABLE.c.area,
+                XPANSION_ADEQUACY_PATTERN_TABLE.c.criterion,
             )
-        ).fetchone()
-        if not row:
+            .outerjoin(
+                XPANSION_ADEQUACY_PATTERN_TABLE,
+                XPANSION_ADEQUACY_CRITERION_V2_TABLE.c.study_id == XPANSION_ADEQUACY_PATTERN_TABLE.c.study_id,
+            )
+            .where(XPANSION_ADEQUACY_CRITERION_V2_TABLE.c.study_id == self._study_id)
+        )
+        rows = self._db_session.execute(stmt).fetchall()
+        if not rows:
             return XpansionAdequacyCriterion()
 
-        pattern_rows = self._db_session.execute(
-            select(XPANSION_ADEQUACY_PATTERN_TABLE).where(XPANSION_ADEQUACY_PATTERN_TABLE.c.study_id == self._study_id)
-        ).fetchall()
-        patterns = [XpansionAdequacyPattern(area=r.area, criterion=r.criterion) for r in pattern_rows]
+        patterns = [XpansionAdequacyPattern(area=r.area, criterion=r.criterion) for r in rows if r.area is not None]
         return XpansionAdequacyCriterion(
-            stopping_threshold=row.stopping_threshold,
-            criterion_count_threshold=row.criterion_count_threshold,
+            stopping_threshold=rows[0].stopping_threshold,
+            criterion_count_threshold=rows[0].criterion_count_threshold,
             patterns=patterns,
         )
 
