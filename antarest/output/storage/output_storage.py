@@ -94,7 +94,7 @@ class IOutputStorage(ABC):
         output: BinaryIO | Path,
         output_name_suffix: Optional[str] = None,
         logs: SimulationLogs = SimulationLogs.no_logs(),
-    ) -> Optional[str]:
+    ) -> str:
         """
         Import an outputs to the storage.
 

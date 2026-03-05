@@ -24,6 +24,7 @@ from starlette.responses import FileResponse
 
 from antarest.core.exceptions import (
     OutputAlreadyArchived,
+    OutputAlreadyExists,
     OutputAlreadyUnarchived,
     OutputNotFound,
     TaskAlreadyRunning,
@@ -373,14 +374,26 @@ class OutputService:
             storage_type: in which storage the output should be stored
             logs: simulation logs that should be stored for that output
 
-        Returns: output simulation json formatted
-
+        Returns:
+            output identifier inside the study
         """
         logger.info(f"Importing new output for study {uuid}")
         self._studies_repository.assert_permission(uuid, StudyPermissionType.RUN)
 
-        output_id = self._get_storage(storage_type).import_output(uuid, output, output_name_suffix, logs)
-        logger.info("output added to study %s by user %s", uuid, get_user_id())
+        storage = self._get_storage(storage_type)
+        output_id = storage.import_output(uuid, output, output_name_suffix, logs)
+
+        # for now we just check after the fact that this output_id was actually not conflicting,
+        # should be improved in the future so that all storages have access to the already existing IDs.
+        for other_storage in [s for s in self._storages if s is not storage]:
+            if other_storage.output_exists(uuid, output_id):
+                logger.warning(
+                    f"Output {output_id} already exists in storage {other_storage.storage_type}, removing it from storage {storage.storage_type}"
+                )
+                storage.delete_output(uuid, output_id)
+                raise OutputAlreadyExists(output_id)
+
+        logger.info(f"output added to study {uuid}")
 
         # Optimized path for studies stored on external devices, that will then be unarchived there.
         # TODO: as commented elsewhere, that workflow should be refactored to not span multiple files

@@ -11,12 +11,13 @@
 # This file is part of the Antares project.
 import uuid
 import zipfile
+from io import BytesIO
 from pathlib import Path
 from unittest.mock import ANY, Mock
 
 import pytest
 
-from antarest.core.exceptions import TaskAlreadyRunning
+from antarest.core.exceptions import OutputAlreadyExists, TaskAlreadyRunning
 from antarest.core.model import PublicMode, StudyPermissionType
 from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus, TaskType
@@ -24,6 +25,7 @@ from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.utils import current_time
 from antarest.output.output_service import IStudyMetadataProvider, OutputService, StudyMetadata
 from antarest.output.storage.file_output_storage import FileStudyOutputs, IFileOutputsProvider, InStudyFileOutputStorage
+from antarest.output.storage.output_storage import IOutputStorage, OutputStorageType
 from antarest.study.model import (
     RawStudy,
     Study,
@@ -248,3 +250,38 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
         progress=None,
         custom_event_messages=None,
     )
+
+
+def test_already_existing_study_raises_error_and_deletes_output() -> None:
+    # TODO: remove or at least adapt this test when pre-check of the output id is implemented
+
+    # Storage 1 will say that the output already exists
+    storage1 = Mock(spec=IOutputStorage)
+    storage1.storage_type = OutputStorageType.IN_STUDY_FILE_TREE
+    storage1.output_exists.return_value = True
+
+    # Storage 2 will receive the new output, but it will be deleted afterwards
+    storage2 = Mock(spec=IOutputStorage)
+    storage2.storage_type = OutputStorageType.V2
+    storage2.import_output.return_value = "output_id"
+
+    studies_repo = Mock(spec=IStudyMetadataProvider)
+    studies_repo.get_study_metadata.return_value = StudyMetadata("id", "name")
+
+    output_service = OutputService(
+        storages=[storage1, storage2],
+        matrix_service=Mock(),
+        file_transfer_manager=Mock(),
+        tmp_dir=Mock(),
+        studies_repository=studies_repo,
+        task_service=Mock(),
+    )
+
+    # Output
+    with pytest.raises(OutputAlreadyExists):
+        output_service.import_output("id", BytesIO(), storage_type=OutputStorageType.V2)
+
+    storage1.import_output.assert_not_called()
+
+    storage2.import_output.assert_called()
+    storage2.delete_output.assert_called_with("id", "output_id")

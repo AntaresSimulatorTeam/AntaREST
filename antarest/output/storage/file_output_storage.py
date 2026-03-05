@@ -215,7 +215,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         output: BinaryIO | Path,
         output_name_suffix: Optional[str] = None,
         logs: SimulationLogs = SimulationLogs.no_logs(),
-    ) -> Optional[str]:
+    ) -> str:
         """
         Starts by creating a temporary output directory inside the output dir, then copies the provided output into it.
 
