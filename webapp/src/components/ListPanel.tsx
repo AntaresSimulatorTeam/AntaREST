@@ -40,7 +40,7 @@ export interface ListPanelProps<TItem extends ListPanelItem = ListPanelItem> {
   onAdd?: VoidFunction;
   actions?: React.ReactNode;
   disableSearch?: boolean;
-  multipleSearches?: boolean;
+  multipleSearch?: boolean;
   slotProps?: {
     listItem?: Omit<ListItemProps, "children">;
   };
@@ -56,7 +56,7 @@ function ListPanel<TItem extends ListPanelItem>({
   actions,
   renderItem,
   disableSearch = false,
-  multipleSearches = false,
+  multipleSearch = false,
   slotProps,
 }: ListPanelProps<TItem>) {
   const [searchValues, setSearchValues] = useState<string[]>([]);
@@ -98,7 +98,7 @@ function ListPanel<TItem extends ListPanelItem>({
       )}
       {!disableSearch &&
         list.length > 0 &&
-        (multipleSearches ? (
+        (multipleSearch ? (
           <SearchMultipleFE
             value={searchValues}
             onSearchValuesChange={setSearchValues}

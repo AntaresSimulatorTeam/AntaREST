@@ -39,7 +39,7 @@ interface ListViewProps<TItemData = unknown> {
   onAdd?: ListPanelProps["onAdd"];
   actions?: ListPanelProps["actions"];
   disableSearch?: ListPanelProps["disableSearch"];
-  multipleSearches?: ListPanelProps["multipleSearches"];
+  multipleSearch?: ListPanelProps["multipleSearch"];
   renderItemView?: (item: { id: ListPanelItem["id"]; data?: TItemData }) => React.ReactNode;
 }
 
@@ -51,7 +51,7 @@ function ListView<TItemData>({
   onAdd,
   actions,
   disableSearch,
-  multipleSearches,
+  multipleSearch,
   renderItemView,
 }: ListViewProps<TItemData>) {
   const [activeItem, setActiveItem] = useState(list[0]);
@@ -90,7 +90,7 @@ function ListView<TItemData>({
         onAdd={onAdd}
         actions={actions}
         disableSearch={disableSearch}
-        multipleSearches={multipleSearches}
+        multipleSearch={multipleSearch}
         renderItem={(item) => (
           <ListItemButton
             onClick={() => setActiveItem(item)}
