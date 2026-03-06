@@ -1,8 +1,8 @@
-"""add xpansion tables
+"""add_xpansion_tables
 
-Revision ID: 3a7f9c2d1e8b
-Revises: 7e3fd21b1c65
-Create Date: 2026-02-27 00:00:00.000000
+Revision ID: 31ed7828f0de
+Revises: 8a9a91f6a2bc
+Create Date: 2026-03-06 12:08:58.827623
 
 """
 
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "3a7f9c2d1e8b"
-down_revision = "7e3fd21b1c65"
+revision = "31ed7828f0de"
+down_revision = "8a9a91f6a2bc"
 branch_labels = None
 depends_on = None
 
