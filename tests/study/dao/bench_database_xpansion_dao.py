@@ -61,7 +61,7 @@ from antarest.study.business.model.xpansion_model import (
 )
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
-from antarest.study.model import STUDY_VERSION_8_8, StorageMode
+from antarest.study.model import STUDY_VERSION_8_8, StorageMode, Study
 from tests.helpers import create_study
 
 # ---------------------------------------------------------------------------
@@ -179,11 +179,11 @@ def _run_scenario(dao: DatabaseStudyDao, timer: "Timer") -> None:
     with timer.measure("get_xpansion_settings (re-read)"):
         dao.get_xpansion_settings()
 
-    with timer.measure("delete_xpansion_candidate"):
-        dao.delete_xpansion_candidate("backup_link")
+    # with timer.measure("delete_xpansion_candidate"):
+    #     dao.delete_xpansion_candidate("backup_link")
 
-    with timer.measure("delete_xpansion_configuration"):
-        dao.delete_xpansion_configuration()
+    # with timer.measure("delete_xpansion_configuration"):
+    #     dao.delete_xpansion_configuration()
 
 
 # ---------------------------------------------------------------------------
@@ -231,7 +231,40 @@ class Timer:
 # ---------------------------------------------------------------------------
 
 
-def run_benchmark(iterations: int, db_url: str = _DEFAULT_DB_URL, warmup: int = 50) -> dict[str, dict]:
+def _populate_background_data(make_session, matrix_service: InMemorySimpleMatrixService, n: int) -> list[str]:
+    """Insert n xpansion configurations with 3 candidates each. Returns study IDs for later cleanup."""
+    study_ids = []
+    for i in range(n):
+        session = make_session()
+        dao = _build_dao(session, matrix_service)
+        dao.save_area("Paris")
+        dao.save_area("Lyon")
+        dao.create_xpansion_configuration()
+        dao.save_xpansion_candidate(_candidate(f"bg_cand_{i}_a", "lyon", "paris"))
+        dao.save_xpansion_candidate(_candidate(f"bg_cand_{i}_b", "lyon", "paris", cost=2_000.0))
+        dao.save_xpansion_candidate(_candidate(f"bg_cand_{i}_c", "lyon", "paris", cost=500.0))
+        study_ids.append(dao.get_study_id())
+        session.close()
+    return study_ids
+
+
+def _delete_all(
+    make_session, matrix_service: InMemorySimpleMatrixService, study_ids: list[str], timer: "Timer"
+) -> None:
+    """Delete all xpansion configurations — runs after all scenarios are created."""
+    for study_id in study_ids:
+        session = make_session()
+        factory = DatabaseStudyDaoFactory(matrix_service, session)
+        study = session.get(Study, study_id)
+        dao = factory.create_study_dao(study)
+        with timer.measure("delete_xpansion_configuration"):
+            dao.delete_xpansion_configuration()
+        session.close()
+
+
+def run_benchmark(
+    iterations: int, db_url: str = _DEFAULT_DB_URL, warmup: int = 50, background_rows: int = 1_000
+) -> dict[str, dict]:
     engine = _build_engine(db_url)
     matrix_service = InMemorySimpleMatrixService()
     make_session = sessionmaker(bind=engine)
@@ -241,6 +274,13 @@ def run_benchmark(iterations: int, db_url: str = _DEFAULT_DB_URL, warmup: int = 
     gc.collect()
     gc.disable()
     try:
+        # Populate background data so operations run against non-empty tables.
+        if background_rows:
+            print(f"Inserting {background_rows} background rows…")
+            background_study_ids = _populate_background_data(make_session, matrix_service, background_rows)
+        else:
+            background_study_ids = []
+
         # Warmup: prime SQLAlchemy's statement cache and the connection pool.
         for _ in range(warmup):
             session = make_session()
@@ -248,9 +288,10 @@ def run_benchmark(iterations: int, db_url: str = _DEFAULT_DB_URL, warmup: int = 
             _run_scenario(dao, _null_timer)
             session.close()
 
-        # Measurement.
+        # Measurement: create all scenarios without deleting.
         timer = Timer()
         scenario_times: list[float] = []
+        measurement_study_ids: list[str] = []
         for _ in range(iterations):
             session = make_session()
             dao = _build_dao(session, matrix_service)
@@ -259,7 +300,12 @@ def run_benchmark(iterations: int, db_url: str = _DEFAULT_DB_URL, warmup: int = 
             _run_scenario(dao, timer)
             scenario_times.append(time.perf_counter() - t0)
 
+            measurement_study_ids.append(dao.get_study_id())
             session.close()
+
+        # Delete all — background + measurement — against a full table.
+        all_study_ids = background_study_ids + measurement_study_ids
+        _delete_all(make_session, matrix_service, all_study_ids, timer)
     finally:
         gc.enable()
 
@@ -313,14 +359,20 @@ if __name__ == "__main__":
     parser.add_argument("-n", "--iterations", type=int, default=2_000, help="Number of iterations (default: 2000)")
     parser.add_argument("--warmup", type=int, default=50, help="Warmup iterations, not measured (default: 50)")
     parser.add_argument(
+        "--background-rows", type=int, default=1_000, help="Background configs pre-inserted (default: 1000)"
+    )
+    parser.add_argument(
         "--db-url",
         default=_DEFAULT_DB_URL,
         help=f"SQLAlchemy DB URL (default: {_DEFAULT_DB_URL})",
     )
     args = parser.parse_args()
 
-    print(f"DB     : {args.db_url}")
-    print(f"Warmup : {args.warmup}")
-    print(f"Runs   : {args.iterations}")
-    stats = run_benchmark(iterations=args.iterations, db_url=args.db_url, warmup=args.warmup)
+    print(f"DB              : {args.db_url}")
+    print(f"Background rows : {args.background_rows}")
+    print(f"Warmup          : {args.warmup}")
+    print(f"Runs            : {args.iterations}")
+    stats = run_benchmark(
+        iterations=args.iterations, db_url=args.db_url, warmup=args.warmup, background_rows=args.background_rows
+    )
     print_results(stats)
