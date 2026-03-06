@@ -81,6 +81,7 @@ function ExternalTreeNode({ node, itemsLoading, exploredFolders }: ExternalTreeN
       slots={{
         collapseIcon: isWorkspace ? treeNodeIcons.workspace : treeNodeIcons.folderOpen,
         expandIcon: isWorkspace ? treeNodeIcons.workspace : treeNodeIcons.folder,
+        endIcon: isWorkspace ? treeNodeIcons.workspace : treeNodeIcons.folder,
       }}
       disableTooltip
       sx={isWorkspace ? workspaceItemStyles : treeItemStyles}
