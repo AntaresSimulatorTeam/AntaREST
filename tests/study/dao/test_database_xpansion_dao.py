@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import Table, select
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import (
@@ -40,6 +40,18 @@ from antarest.study.dao.database.models.xpansion import (
 )
 
 
+def _assert_tables_empty(db_session: Session, tables: list[Table], study_id: str) -> None:
+    for table in tables:
+        rows = db_session.execute(select(table).where(table.c.study_id == study_id)).fetchall()
+        assert rows == [], f"{table.name}: expected no rows for study {study_id}, found {len(rows)}"
+
+
+def _assert_tables_have_row(db_session: Session, tables: list[Table], study_id: str) -> None:
+    for table in tables:
+        row = db_session.execute(select(table).where(table.c.study_id == study_id)).fetchone()
+        assert row is not None, f"{table.name}: expected a row for study {study_id}"
+
+
 def _make_candidate(name: str, area_from: str, area_to: str, cost: float = 1000.0) -> XpansionCandidate:
     """Helper to build a minimal XpansionCandidate using the max_investment format."""
     return XpansionCandidate(
@@ -61,19 +73,8 @@ class TestXpansionConfiguration:
         dao.create_xpansion_configuration()
 
         with db_session:
-            assert (
-                db_session.execute(
-                    select(XPANSION_SETTINGS_TABLE).where(XPANSION_SETTINGS_TABLE.c.study_id == dao.get_study_id())
-                ).fetchone()
-                is not None
-            )
-            assert (
-                db_session.execute(
-                    select(XPANSION_ADEQUACY_CRITERION_V2_TABLE).where(
-                        XPANSION_ADEQUACY_CRITERION_V2_TABLE.c.study_id == dao.get_study_id()
-                    )
-                ).fetchone()
-                is not None
+            _assert_tables_have_row(
+                db_session, [XPANSION_SETTINGS_TABLE, XPANSION_ADEQUACY_CRITERION_V2_TABLE], dao.get_study_id()
             )
 
         # --- duplicate create raises ---
@@ -93,25 +94,10 @@ class TestXpansionConfiguration:
         dao.delete_xpansion_configuration()
 
         with db_session:
-            assert (
-                db_session.execute(
-                    select(XPANSION_SETTINGS_TABLE).where(XPANSION_SETTINGS_TABLE.c.study_id == dao.get_study_id())
-                ).fetchone()
-                is None
-            )
-            assert (
-                db_session.execute(
-                    select(XPANSION_CANDIDATE_TABLE).where(XPANSION_CANDIDATE_TABLE.c.study_id == dao.get_study_id())
-                ).fetchall()
-                == []
-            )
-            assert (
-                db_session.execute(
-                    select(XPANSION_ADEQUACY_CRITERION_V2_TABLE).where(
-                        XPANSION_ADEQUACY_CRITERION_V2_TABLE.c.study_id == dao.get_study_id()
-                    )
-                ).fetchone()
-                is None
+            _assert_tables_empty(
+                db_session,
+                [XPANSION_SETTINGS_TABLE, XPANSION_CANDIDATE_TABLE, XPANSION_ADEQUACY_CRITERION_V2_TABLE],
+                dao.get_study_id(),
             )
 
         # --- delete non-existent raises ---
@@ -336,8 +322,7 @@ class TestXpansionCandidates:
 class TestXpansionAdequacyCriterion:
     """Tests for Xpansion adequacy criterion CRUD operations."""
 
-    def test_get_adequacy_criterion_returns_default_when_no_row(self, dao: DatabaseStudyDao) -> None:
-        """get_xpansion_adequacy_criterion should return default values whether or not a row exists."""
+    def test_save_and_get_adequacy_criterion(self, dao: DatabaseStudyDao) -> None:
         # --- no configuration: returns default ---
         assert dao.get_xpansion_adequacy_criterion() == XpansionAdequacyCriterion()
 
@@ -349,10 +334,6 @@ class TestXpansionAdequacyCriterion:
         assert result.criterion_count_threshold == defaults.criterion_count_threshold
         assert result.patterns == defaults.patterns
 
-    def test_save_and_get_adequacy_criterion(self, dao: DatabaseStudyDao) -> None:
-        """Adequacy criterion should round-trip, upsert, and raise for missing areas."""
-        # --- setup ---
-        dao.create_xpansion_configuration()
         dao.save_area("Paris")
         dao.save_area("Lyon")
 
@@ -408,41 +389,16 @@ class TestCascadeDelete:
 
         # --- assert all rows gone ---
         with db_session:
-            assert (
-                db_session.execute(
-                    select(XPANSION_SETTINGS_TABLE).where(XPANSION_SETTINGS_TABLE.c.study_id == dao.get_study_id())
-                ).fetchone()
-                is None
-            )
-            assert (
-                db_session.execute(
-                    select(XPANSION_CANDIDATE_TABLE).where(XPANSION_CANDIDATE_TABLE.c.study_id == dao.get_study_id())
-                ).fetchall()
-                == []
-            )
-            assert (
-                db_session.execute(
-                    select(XPANSION_SENSITIVITY_PROJECTION_TABLE).where(
-                        XPANSION_SENSITIVITY_PROJECTION_TABLE.c.study_id == dao.get_study_id()
-                    )
-                ).fetchall()
-                == []
-            )
-            assert (
-                db_session.execute(
-                    select(XPANSION_ADEQUACY_CRITERION_V2_TABLE).where(
-                        XPANSION_ADEQUACY_CRITERION_V2_TABLE.c.study_id == dao.get_study_id()
-                    )
-                ).fetchone()
-                is None
-            )
-            assert (
-                db_session.execute(
-                    select(XPANSION_ADEQUACY_PATTERN_TABLE).where(
-                        XPANSION_ADEQUACY_PATTERN_TABLE.c.study_id == dao.get_study_id()
-                    )
-                ).fetchall()
-                == []
+            _assert_tables_empty(
+                db_session,
+                [
+                    XPANSION_SETTINGS_TABLE,
+                    XPANSION_CANDIDATE_TABLE,
+                    XPANSION_SENSITIVITY_PROJECTION_TABLE,
+                    XPANSION_ADEQUACY_CRITERION_V2_TABLE,
+                    XPANSION_ADEQUACY_PATTERN_TABLE,
+                ],
+                dao.get_study_id(),
             )
 
     def test_recreate_configuration_after_delete(self, dao: DatabaseStudyDao) -> None:
