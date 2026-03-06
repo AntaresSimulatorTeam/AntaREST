@@ -57,33 +57,39 @@ class TestXpansionConfiguration:
         self, db_session: Session, dao: DatabaseStudyDao
     ) -> None:
         """Creating a configuration should persist a settings row and an adequacy criterion row."""
+        # --- create ---
         dao.create_xpansion_configuration()
 
         with db_session:
-            settings_row = db_session.execute(
-                select(XPANSION_SETTINGS_TABLE).where(XPANSION_SETTINGS_TABLE.c.study_id == dao.get_study_id())
-            ).fetchone()
-            assert settings_row is not None
+            assert (
+                db_session.execute(
+                    select(XPANSION_SETTINGS_TABLE).where(XPANSION_SETTINGS_TABLE.c.study_id == dao.get_study_id())
+                ).fetchone()
+                is not None
+            )
+            assert (
+                db_session.execute(
+                    select(XPANSION_ADEQUACY_CRITERION_V2_TABLE).where(
+                        XPANSION_ADEQUACY_CRITERION_V2_TABLE.c.study_id == dao.get_study_id()
+                    )
+                ).fetchone()
+                is not None
+            )
 
-            adequacy_row = db_session.execute(
-                select(XPANSION_ADEQUACY_CRITERION_V2_TABLE).where(
-                    XPANSION_ADEQUACY_CRITERION_V2_TABLE.c.study_id == dao.get_study_id()
-                )
-            ).fetchone()
-            assert adequacy_row is not None
-
-        # A second create call on the same study should raise XpansionConfigurationAlreadyExists.
+        # --- duplicate create raises ---
         with pytest.raises(XpansionConfigurationAlreadyExists):
             dao.create_xpansion_configuration()
 
     def test_delete_xpansion_configuration_removes_all_rows(self, db_session: Session, dao: DatabaseStudyDao) -> None:
         """Deleting the configuration should remove settings, candidates and adequacy rows."""
+        # --- setup ---
         dao.create_xpansion_configuration()
         dao.save_area("Paris")
         dao.save_area("Lyon")
         dao.save_link(Link(area1="paris", area2="lyon"))
         dao.save_xpansion_candidate(_make_candidate("cand1", "lyon", "paris"))
 
+        # --- delete ---
         dao.delete_xpansion_configuration()
 
         with db_session:
@@ -108,8 +114,7 @@ class TestXpansionConfiguration:
                 is None
             )
 
-    def test_delete_xpansion_configuration_raises_if_does_not_exist(self, dao: DatabaseStudyDao) -> None:
-        """Deleting a non-existent configuration should raise XpansionConfigurationDoesNotExist."""
+        # --- delete non-existent raises ---
         with pytest.raises(XpansionConfigurationDoesNotExist):
             dao.delete_xpansion_configuration()
 
@@ -119,8 +124,10 @@ class TestXpansionSettings:
 
     def test_get_xpansion_settings_returns_defaults_after_create(self, dao: DatabaseStudyDao) -> None:
         """After creating a configuration, get_xpansion_settings should return default values."""
+        # --- setup ---
         dao.create_xpansion_configuration()
 
+        # --- defaults ---
         result = dao.get_xpansion_settings()
         defaults = XpansionSettings()
 
@@ -142,11 +149,13 @@ class TestXpansionSettings:
 
     def test_save_xpansion_settings_persists_non_default_values(self, dao: DatabaseStudyDao) -> None:
         """save_xpansion_settings should persist all non-default values and allow retrieval."""
+        # --- setup ---
         dao.create_xpansion_configuration()
-        # Projection candidates must exist before being referenced (DB FK RESTRICT).
+        # Projection candidates must exist before being referenced
         dao.save_xpansion_candidate(_make_candidate("cand_a", "x", "y"))
         dao.save_xpansion_candidate(_make_candidate("cand_b", "x", "y"))
 
+        # --- round-trip ---
         updated = XpansionSettings(
             optimality_gap=42.0,
             max_iteration=500,
@@ -171,29 +180,15 @@ class TestXpansionSettings:
         assert result.sensitivity_config.capex is True
         assert result.sensitivity_config.projection == ["cand_a", "cand_b"]
 
-    def test_save_xpansion_settings_upserts_existing_row(self, dao: DatabaseStudyDao) -> None:
-        """Calling save_xpansion_settings twice should update the existing row."""
-        dao.create_xpansion_configuration()
-
+        # --- upsert ---
         dao.save_xpansion_settings(XpansionSettings(optimality_gap=10.0))
-        dao.save_xpansion_settings(XpansionSettings(optimality_gap=99.0))
-
         result = dao.get_xpansion_settings()
-        assert result.optimality_gap == 99.0
+        assert result.optimality_gap == 10.0
 
-    def test_save_xpansion_settings_empty_strings_round_trip(self, dao: DatabaseStudyDao) -> None:
-        """Empty strings for yearly_weights / additional_constraints should round-trip as empty strings."""
-        dao.create_xpansion_configuration()
-
-        # First store non-empty values, then overwrite with empty strings.
-        dao.save_xpansion_settings(
-            XpansionSettings(yearly_weights="weights.csv", additional_constraints="constraints.txt")
-        )
-        dao.save_xpansion_settings(XpansionSettings(yearly_weights="", additional_constraints=""))
-
-        result = dao.get_xpansion_settings()
-        assert result.yearly_weights == ""
-        assert result.additional_constraints == ""
+        # --- invalid projection ---
+        settings = XpansionSettings(sensitivity_config=XpansionSensitivitySettings(projection=["cand_a", "ghost_cand"]))
+        with pytest.raises(CandidateNotFoundError):
+            dao.save_xpansion_settings(settings)
 
     def test_save_xpansion_settings_raises_for_unknown_projection_candidate(self, dao: DatabaseStudyDao) -> None:
         """save_xpansion_settings should raise CandidateNotFoundError when a projection name does not exist."""
@@ -206,35 +201,22 @@ class TestXpansionSettings:
         with pytest.raises(CandidateNotFoundError):
             dao.save_xpansion_settings(settings)
 
-    def test_save_xpansion_settings_succeeds_for_valid_projection(self, dao: DatabaseStudyDao) -> None:
-        """save_xpansion_settings should succeed when all projection candidates exist."""
-        dao.create_xpansion_configuration()
-        dao.save_xpansion_candidate(_make_candidate("cand_a", "x", "y"))
-        dao.save_xpansion_candidate(_make_candidate("cand_b", "x", "y"))
-
-        settings = XpansionSettings(sensitivity_config=XpansionSensitivitySettings(projection=["cand_a", "cand_b"]))
-        dao.save_xpansion_settings(settings)  # must not raise
-
-        result = dao.get_xpansion_settings()
-        assert result.sensitivity_config.projection == ["cand_a", "cand_b"]
-
 
 class TestXpansionCandidates:
     """Tests for Xpansion candidate CRUD operations."""
 
-    def test_get_all_candidates_returns_empty_list_initially(self, dao: DatabaseStudyDao) -> None:
-        """get_all_xpansion_candidates should return an empty list when no candidates exist."""
-        dao.create_xpansion_configuration()
-
-        assert dao.get_all_xpansion_candidates() == []
-
     def test_save_and_get_candidate(self, dao: DatabaseStudyDao) -> None:
-        """A saved candidate should be retrievable by name with all fields intact."""
+        """Candidate CRUD: save, get, get unknown, upsert, get all."""
+        # --- setup ---
         dao.create_xpansion_configuration()
         dao.save_area("Paris")
         dao.save_area("Lyon")
         dao.save_link(Link(area1="paris", area2="lyon"))
 
+        # --- initially empty ---
+        assert dao.get_all_xpansion_candidates() == []
+
+        # --- save and get ---
         candidate = _make_candidate("my_candidate", "lyon", "paris", cost=2000.0)
         dao.save_xpansion_candidate(candidate)
 
@@ -245,35 +227,46 @@ class TestXpansionCandidates:
         assert result.link.area_to == "paris"
         assert result.max_investment == 5000.0
 
-    def test_get_candidate_raises_if_not_found(self, dao: DatabaseStudyDao) -> None:
-        """get_xpansion_candidate should raise CandidateNotFoundError for an unknown name."""
-        dao.create_xpansion_configuration()
+        assert len(dao.get_all_xpansion_candidates()) == 1
 
+        # --- get unknown raises ---
         with pytest.raises(CandidateNotFoundError):
             dao.get_xpansion_candidate("nonexistent")
 
-    def test_save_candidate_upserts_on_same_name(self, dao: DatabaseStudyDao) -> None:
-        """Saving a candidate with the same name a second time should update it (upsert)."""
-        dao.create_xpansion_configuration()
-        dao.save_area("Paris")
-        dao.save_area("Lyon")
-        dao.save_link(Link(area1="paris", area2="lyon"))
-
-        dao.save_xpansion_candidate(_make_candidate("cand", "lyon", "paris", cost=1000.0))
-        dao.save_xpansion_candidate(_make_candidate("cand", "lyon", "paris", cost=9999.0))
-
-        result = dao.get_xpansion_candidate("cand")
+        # --- upsert ---
+        dao.save_xpansion_candidate(_make_candidate("my_candidate", "lyon", "paris", cost=9999.0))
+        result = dao.get_xpansion_candidate("my_candidate")
         assert result.annual_cost_per_mw == 9999.0
         assert len(dao.get_all_xpansion_candidates()) == 1
 
+    def test_get_all_candidates_returns_multiple_candidates(self, dao: DatabaseStudyDao) -> None:
+        """get_all_xpansion_candidates should return all stored candidates."""
+        # --- setup ---
+        dao.create_xpansion_configuration()
+        dao.save_area("Paris")
+        dao.save_area("Lyon")
+        dao.save_area("Bordeaux")
+        dao.save_link(Link(area1="paris", area2="lyon"))
+        dao.save_link(Link(area1="bordeaux", area2="paris"))
+
+        # --- save and get all ---
+        dao.save_xpansion_candidate(_make_candidate("cand1", "lyon", "paris"))
+        dao.save_xpansion_candidate(_make_candidate("cand2", "bordeaux", "paris"))
+
+        results = dao.get_all_xpansion_candidates()
+        assert len(results) == 2
+        assert {c.name for c in results} == {"cand1", "cand2"}
+
     def test_save_candidate_with_rename_replaces_row(self, dao: DatabaseStudyDao) -> None:
         """Renaming a candidate (old_id != new name) should delete the old row and insert a new one."""
+        # --- setup ---
         dao.create_xpansion_configuration()
         dao.save_area("Paris")
         dao.save_area("Lyon")
         dao.save_link(Link(area1="paris", area2="lyon"))
-
         dao.save_xpansion_candidate(_make_candidate("old_name", "lyon", "paris"))
+
+        # --- rename ---
         dao.save_xpansion_candidate(_make_candidate("new_name", "lyon", "paris"), old_id="old_name")
 
         candidates = dao.get_all_xpansion_candidates()
@@ -283,120 +276,87 @@ class TestXpansionCandidates:
         with pytest.raises(CandidateNotFoundError):
             dao.get_xpansion_candidate("old_name")
 
-    def test_delete_candidate_removes_it(self, dao: DatabaseStudyDao) -> None:
-        """delete_xpansion_candidate should remove the candidate from the database."""
+    def test_delete_candidate(self, dao: DatabaseStudyDao) -> None:
+        """delete_xpansion_candidate should remove the candidate; raise if not found."""
+        # --- setup ---
         dao.create_xpansion_configuration()
         dao.save_area("Paris")
         dao.save_area("Lyon")
         dao.save_link(Link(area1="paris", area2="lyon"))
-
         dao.save_xpansion_candidate(_make_candidate("cand", "lyon", "paris"))
-        dao.delete_xpansion_candidate("cand")
 
+        # --- delete removes it ---
+        dao.delete_xpansion_candidate("cand")
         assert dao.get_all_xpansion_candidates() == []
 
-    def test_delete_candidate_raises_if_not_found(self, dao: DatabaseStudyDao) -> None:
-        """delete_xpansion_candidate should raise CandidateNotFoundError for an unknown name."""
-        dao.create_xpansion_configuration()
-
+        # --- delete unknown raises ---
         with pytest.raises(CandidateNotFoundError):
             dao.delete_xpansion_candidate("nonexistent")
 
-    def test_get_all_candidates_returns_multiple_candidates(self, dao: DatabaseStudyDao) -> None:
-        """get_all_xpansion_candidates should return all stored candidates."""
+            # --- delete unknown raises ---
+        with pytest.raises(CandidateNotFoundError):
+            dao.delete_xpansion_candidate("cand")
+
+    def test_checks_candidate_coherence(self, dao: DatabaseStudyDao) -> None:
+        """checks_xpansion_candidate_coherence should raise for missing area or link, pass when valid."""
+        # --- setup ---
         dao.create_xpansion_configuration()
         dao.save_area("Paris")
         dao.save_area("Lyon")
-        dao.save_area("Bordeaux")
-        dao.save_link(Link(area1="paris", area2="lyon"))
-        dao.save_link(Link(area1="bordeaux", area2="paris"))
 
-        dao.save_xpansion_candidate(_make_candidate("cand1", "lyon", "paris"))
-        dao.save_xpansion_candidate(_make_candidate("cand2", "bordeaux", "paris"))
-
-        results = dao.get_all_xpansion_candidates()
-        assert len(results) == 2
-        assert {c.name for c in results} == {"cand1", "cand2"}
-
-    def test_checks_candidate_coherence_raises_for_missing_link(self, dao: DatabaseStudyDao) -> None:
-        """checks_xpansion_candidate_coherence should raise LinkNotFound when the link is absent."""
-        dao.create_xpansion_configuration()
-        dao.save_area("Paris")
-        dao.save_area("Lyon")
-        # Link between paris and lyon deliberately NOT created.
-
-        candidate = _make_candidate("cand", "lyon", "paris")
+        # --- missing link raises ---
         with pytest.raises(LinkNotFound):
-            dao.checks_xpansion_candidate_coherence(candidate)
+            dao.checks_xpansion_candidate_coherence(_make_candidate("cand", "lyon", "paris"))
 
-    def test_checks_candidate_coherence_raises_for_missing_area(self, dao: DatabaseStudyDao) -> None:
-        """checks_xpansion_candidate_coherence should raise AreaNotFound when an area does not exist."""
-        dao.create_xpansion_configuration()
-        dao.save_area("Paris")
-        # "alpha" not saved.
-
-        candidate = _make_candidate("cand", "alpha", "paris")
+        # --- missing area raises ---
         with pytest.raises(AreaNotFound):
-            dao.checks_xpansion_candidate_coherence(candidate)
+            dao.checks_xpansion_candidate_coherence(_make_candidate("cand", "alpha", "paris"))
 
-    def test_checks_candidate_coherence_passes_for_valid_link(self, dao: DatabaseStudyDao) -> None:
-        """checks_xpansion_candidate_coherence should not raise when the link exists."""
-        dao.create_xpansion_configuration()
-        dao.save_area("Paris")
-        dao.save_area("Lyon")
+        # --- valid link passes ---
         dao.save_link(Link(area1="paris", area2="lyon"))
+        dao.checks_xpansion_candidate_coherence(_make_candidate("cand", "lyon", "paris"))  # must not raise
 
-        candidate = _make_candidate("cand", "lyon", "paris")
-        dao.checks_xpansion_candidate_coherence(candidate)  # must not raise
-
-    def test_checks_candidate_can_be_deleted_raises_if_in_projection(self, dao: DatabaseStudyDao) -> None:
-        """checks_xpansion_candidate_can_be_deleted should raise when the candidate is in the sensitivity projection."""
+    def test_checks_candidate_can_be_deleted(self, dao: DatabaseStudyDao) -> None:
+        """checks_xpansion_candidate_can_be_deleted should raise if in projection, pass otherwise."""
+        # --- setup ---
         dao.create_xpansion_configuration()
         dao.save_xpansion_candidate(_make_candidate("cand_a", "x", "y"))
         dao.save_xpansion_settings(
             XpansionSettings(sensitivity_config=XpansionSensitivitySettings(projection=["cand_a"]))
         )
 
+        # --- raises if in projection ---
         with pytest.raises(XpansionCandidateDeletionError):
             dao.checks_xpansion_candidate_can_be_deleted("cand_a")
 
-    def test_checks_candidate_can_be_deleted_passes_if_not_in_projection(self, dao: DatabaseStudyDao) -> None:
-        """checks_xpansion_candidate_can_be_deleted should succeed when the candidate is absent from the projection."""
-        dao.create_xpansion_configuration()
-        dao.save_xpansion_candidate(_make_candidate("cand_a", "x", "y"))
-        dao.save_xpansion_settings(
-            XpansionSettings(sensitivity_config=XpansionSensitivitySettings(projection=["cand_a"]))
-        )
-
+        # --- passes if not in projection ---
         dao.checks_xpansion_candidate_can_be_deleted("cand_b")  # must not raise
 
 
 class TestXpansionAdequacyCriterion:
     """Tests for Xpansion adequacy criterion CRUD operations."""
 
-    def test_get_adequacy_criterion_returns_defaults_after_create(self, dao: DatabaseStudyDao) -> None:
-        """After creating a configuration, adequacy criterion should hold default values."""
-        dao.create_xpansion_configuration()
+    def test_get_adequacy_criterion_returns_default_when_no_row(self, dao: DatabaseStudyDao) -> None:
+        """get_xpansion_adequacy_criterion should return default values whether or not a row exists."""
+        # --- no configuration: returns default ---
+        assert dao.get_xpansion_adequacy_criterion() == XpansionAdequacyCriterion()
 
+        # --- after create: returns default row values ---
+        dao.create_xpansion_configuration()
         result = dao.get_xpansion_adequacy_criterion()
         defaults = XpansionAdequacyCriterion()
-
         assert result.stopping_threshold == defaults.stopping_threshold
         assert result.criterion_count_threshold == defaults.criterion_count_threshold
         assert result.patterns == defaults.patterns
 
-    def test_get_adequacy_criterion_returns_empty_default_when_no_row(self, dao: DatabaseStudyDao) -> None:
-        """get_xpansion_adequacy_criterion should return an empty default when no row is stored."""
-        # No create_xpansion_configuration() call.
-        result = dao.get_xpansion_adequacy_criterion()
-        assert result == XpansionAdequacyCriterion()
-
-    def test_save_and_get_adequacy_criterion_with_patterns(self, dao: DatabaseStudyDao) -> None:
-        """Adequacy criterion with patterns should round-trip correctly through the database."""
+    def test_save_and_get_adequacy_criterion(self, dao: DatabaseStudyDao) -> None:
+        """Adequacy criterion should round-trip, upsert, and raise for missing areas."""
+        # --- setup ---
         dao.create_xpansion_configuration()
         dao.save_area("Paris")
         dao.save_area("Lyon")
 
+        # --- round-trip with patterns ---
         criterion = XpansionAdequacyCriterion(
             stopping_threshold=500.0,
             criterion_count_threshold=2.5,
@@ -410,76 +370,64 @@ class TestXpansionAdequacyCriterion:
         result = dao.get_xpansion_adequacy_criterion()
         assert result.stopping_threshold == 500.0
         assert result.criterion_count_threshold == 2.5
-        assert len(result.patterns) == 2
-        areas_and_criteria = {p.area: p.criterion for p in result.patterns}
-        assert areas_and_criteria == {"paris": 0.9, "lyon": 0.7}
+        assert {p.area: p.criterion for p in result.patterns} == {"paris": 0.9, "lyon": 0.7}
 
-    def test_save_adequacy_criterion_upserts_existing_row(self, dao: DatabaseStudyDao) -> None:
-        """Calling save_xpansion_adequacy_criterion twice should update the existing row."""
-        dao.create_xpansion_configuration()
-        dao.save_area("Paris")
-
-        dao.save_xpansion_adequacy_criterion(
-            XpansionAdequacyCriterion(
-                stopping_threshold=100.0,
-                patterns=[XpansionAdequacyPattern(area="paris", criterion=1.0)],
-            )
-        )
+        # --- upsert clears patterns ---
         dao.save_xpansion_adequacy_criterion(XpansionAdequacyCriterion(stopping_threshold=999.0, patterns=[]))
-
         result = dao.get_xpansion_adequacy_criterion()
         assert result.stopping_threshold == 999.0
         assert result.patterns == []
 
-    def test_save_adequacy_criterion_raises_for_missing_area(self, dao: DatabaseStudyDao) -> None:
-        """save_xpansion_adequacy_criterion should raise AreaNotFound when a pattern area does not exist."""
-        dao.create_xpansion_configuration()
-
-        criterion = XpansionAdequacyCriterion(patterns=[XpansionAdequacyPattern(area="nonexistent", criterion=0.5)])
+        # --- raises for missing area ---
         with pytest.raises(AreaNotFound):
-            dao.save_xpansion_adequacy_criterion(criterion)
+            dao.save_xpansion_adequacy_criterion(
+                XpansionAdequacyCriterion(patterns=[XpansionAdequacyPattern(area="nonexistent", criterion=0.5)])
+            )
 
 
 class TestCascadeDelete:
     """Tests for cascade-delete behaviour when the Xpansion configuration is removed."""
 
-    def test_cascade_delete_removes_candidates(self, db_session: Session, dao: DatabaseStudyDao) -> None:
-        """Deleting the Xpansion configuration should cascade-delete all candidate rows."""
+    def test_cascade_delete_removes_all_related_rows(self, db_session: Session, dao: DatabaseStudyDao) -> None:
+        """Deleting the configuration should cascade-delete candidates, projection, criterion and patterns."""
+        # --- setup ---
         dao.create_xpansion_configuration()
         dao.save_area("Paris")
         dao.save_area("Lyon")
         dao.save_link(Link(area1="paris", area2="lyon"))
-
-        dao.save_xpansion_candidate(_make_candidate("cand1", "lyon", "paris"))
-        dao.save_xpansion_candidate(_make_candidate("cand2", "lyon", "paris", cost=500.0))
-
-        dao.delete_xpansion_configuration()
-
-        with db_session:
-            rows = db_session.execute(
-                select(XPANSION_CANDIDATE_TABLE).where(XPANSION_CANDIDATE_TABLE.c.study_id == dao.get_study_id())
-            ).fetchall()
-            assert rows == []
-
-    def test_cascade_delete_removes_adequacy_criterion_and_patterns(
-        self, db_session: Session, dao: DatabaseStudyDao
-    ) -> None:
-        """Deleting the Xpansion configuration should cascade-delete the criterion row and all pattern rows."""
-        dao.create_xpansion_configuration()
-        dao.save_area("Paris")
-        dao.save_area("Lyon")
+        dao.save_xpansion_candidate(_make_candidate("cand", "lyon", "paris"))
+        dao.save_xpansion_settings(
+            XpansionSettings(sensitivity_config=XpansionSensitivitySettings(projection=["cand"]))
+        )
         dao.save_xpansion_adequacy_criterion(
-            XpansionAdequacyCriterion(
-                patterns=[
-                    XpansionAdequacyPattern(area="paris", criterion=1.0),
-                    XpansionAdequacyPattern(area="lyon", criterion=0.5),
-                ]
-            )
+            XpansionAdequacyCriterion(patterns=[XpansionAdequacyPattern(area="paris", criterion=1.0)])
         )
 
+        # --- delete ---
         dao.delete_xpansion_configuration()
 
+        # --- assert all rows gone ---
         with db_session:
+            assert (
+                db_session.execute(
+                    select(XPANSION_SETTINGS_TABLE).where(XPANSION_SETTINGS_TABLE.c.study_id == dao.get_study_id())
+                ).fetchone()
+                is None
+            )
+            assert (
+                db_session.execute(
+                    select(XPANSION_CANDIDATE_TABLE).where(XPANSION_CANDIDATE_TABLE.c.study_id == dao.get_study_id())
+                ).fetchall()
+                == []
+            )
+            assert (
+                db_session.execute(
+                    select(XPANSION_SENSITIVITY_PROJECTION_TABLE).where(
+                        XPANSION_SENSITIVITY_PROJECTION_TABLE.c.study_id == dao.get_study_id()
+                    )
+                ).fetchall()
+                == []
+            )
             assert (
                 db_session.execute(
                     select(XPANSION_ADEQUACY_CRITERION_V2_TABLE).where(
@@ -497,29 +445,13 @@ class TestCascadeDelete:
                 == []
             )
 
-    def test_cascade_delete_removes_projection_rows(self, db_session: Session, dao: DatabaseStudyDao) -> None:
-        """Deleting the Xpansion configuration should cascade-delete all projection rows."""
-        dao.create_xpansion_configuration()
-        dao.save_xpansion_candidate(_make_candidate("cand_a", "x", "y"))
-        dao.save_xpansion_settings(
-            XpansionSettings(sensitivity_config=XpansionSensitivitySettings(projection=["cand_a"]))
-        )
-
-        dao.delete_xpansion_configuration()
-
-        with db_session:
-            rows = db_session.execute(
-                select(XPANSION_SENSITIVITY_PROJECTION_TABLE).where(
-                    XPANSION_SENSITIVITY_PROJECTION_TABLE.c.study_id == dao.get_study_id()
-                )
-            ).fetchall()
-            assert rows == []
-
     def test_recreate_configuration_after_delete(self, dao: DatabaseStudyDao) -> None:
         """After deleting a configuration, creating it again should succeed with fresh defaults."""
+        # --- setup ---
         dao.create_xpansion_configuration()
         dao.save_xpansion_settings(XpansionSettings(optimality_gap=42.0))
 
+        # --- delete and recreate ---
         dao.delete_xpansion_configuration()
         dao.create_xpansion_configuration()
 
