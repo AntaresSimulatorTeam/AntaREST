@@ -23,7 +23,7 @@ import {
   StudyOutputDownloadType,
   type Area,
   type District,
-  type FileStudyTreeConfigDTO,
+  type StudySynthesis,
   type StudyOutputDownloadDTO,
 } from "../../../../../../../types/types";
 import Filter from "./Filter";
@@ -41,7 +41,7 @@ const Root = styled(Box)(({ theme }) => ({
 
 interface PropTypes {
   output: string;
-  synthesis: FileStudyTreeConfigDTO | undefined;
+  synthesis: StudySynthesis | undefined;
   filter: StudyOutputDownloadDTO;
   setFilter: (filter: StudyOutputDownloadDTO) => void;
 }
@@ -88,7 +88,7 @@ function ExportFilterModal(props: PropTypes) {
     if (synthesis) {
       if (output in synthesis.outputs) {
         const outputs = synthesis.outputs[output];
-        setByYear({ isByYear: outputs?.by_year, nbYear: outputs?.nbyears });
+        setByYear({ isByYear: outputs?.byYear, nbYear: outputs?.nbYears });
         setAreaList(synthesis.areas);
         setDistrictList(synthesis.districts);
       }

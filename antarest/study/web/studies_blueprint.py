@@ -23,7 +23,7 @@ from pydantic import NonNegativeInt
 
 from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.config import Config
-from antarest.core.exceptions import BadArchiveContent, BadZipBinary
+from antarest.core.exceptions import BadArchiveContent, BadZipBinary, IncorrectArgumentsForCopy
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.model import PublicMode
 from antarest.core.utils.archives import ArchiveFormat
@@ -31,6 +31,7 @@ from antarest.core.utils.utils import sanitize_string, validate_folder_path, val
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.login.utils import require_current_user
+from antarest.study.dtos import StudySynthesis
 from antarest.study.model import (
     DeleteManyStudies,
     MatrixIndex,
@@ -39,8 +40,7 @@ from antarest.study.model import (
     StudyMetadataPatchDTO,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyPagination, StudySortBy
-from antarest.study.service import StudyService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
+from antarest.study.service import OutputSelection, StudyService
 
 logger = logging.getLogger(__name__)
 
@@ -298,6 +298,30 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         # returns the task ID
         return study_service.upgrade_study(uuid, target_version)
 
+    def _output_selection(with_outputs: bool | None, output_ids: list[str]) -> OutputSelection:
+        """
+        Translates API input to OutputSelection type.
+
+        Output copy behavior:
+            - If `with_outputs` is True and `output_ids` are specified: only the specified outputs are copied.
+            - If `with_outputs` is True and `output_ids` is empty: all outputs are copied.
+            - If `with_outputs` is False and `output_ids` are specified: an error is raised (incoherent configuration).
+            - If `with_outputs` is False: no outputs are copied
+            - If `with_outputs` is None and `output_ids` are specified: outputs will be copied; behaves like `with_outputs=True`.
+            - If `with_outputs` is None and `output_ids` is empty: no outputs are copied.
+        """
+        if with_outputs is False and output_ids:
+            raise IncorrectArgumentsForCopy("output_ids can only be used with with_outputs=True")
+        if with_outputs:
+            if output_ids:
+                return output_ids
+            else:
+                return "all"
+        elif with_outputs is None:
+            return output_ids if output_ids else []
+        else:
+            return []
+
     @bp.post(
         "/studies/{uuid}/copy",
         status_code=HTTPStatus.CREATED,
@@ -337,14 +361,15 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
         destination_name_sanitized = validate_study_name(escape(study_name))
 
+        output_selection = _output_selection(with_outputs, output_ids)
+
         task_id = study_service.copy_study(
             src_uuid=uuid,
             dest_study_name=destination_name_sanitized,
             group_ids=group_ids,
-            with_outputs=with_outputs,
             use_task=use_task,
             destination_folder=PurePosixPath(destination_folder),
-            output_ids=output_ids,
+            outputs_selection=output_selection,
         )
 
         return task_id
@@ -407,9 +432,10 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{uuid}/synthesis",
         summary="Return study synthesis",
     )
-    def get_study_synthesis(uuid: SanitizedStr) -> FileStudyTreeConfigDTO:
-        logger.info(f"Return a synthesis for study '{uuid}'")
-        return study_service.get_study_synthesis(uuid)
+    def get_study_synthesis(uuid: str) -> StudySynthesis:
+        study_id = sanitize_string(uuid)
+        logger.info(f"Return a synthesis for study '{study_id}'")
+        return study_service.get_study_synthesis(study_id)
 
     @bp.get(
         "/studies/{uuid}/matrixindex",

@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import os
 import random
 import textwrap
 import uuid
@@ -31,6 +30,7 @@ from antarest.core.config import (
     TimeLimitConfig,
 )
 from antarest.core.jwt import JWTUser
+from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     LOG_DIR_NAME,
     WORKSPACE_LOCK_FILE_NAME,
@@ -282,7 +282,6 @@ def test_run_study(
         cache=Mock(),
     )
 
-    slurm_launcher._clean_local_workspace = Mock()
     slurm_launcher.start = Mock()
     slurm_launcher._delete_workspace_file = Mock()
 
@@ -365,21 +364,6 @@ def test_check_state(tmp_path: Path, launcher_config: SlurmConfig) -> None:
     slurm_launcher.stop.assert_called_once()
 
 
-def test_clean_local_workspace(tmp_path: Path, launcher_config: SlurmConfig) -> None:
-    slurm_launcher = SlurmLauncher(
-        config=launcher_config,
-        callbacks=Mock(),
-        event_bus=Mock(),
-        use_private_workspace=False,
-        cache=Mock(),
-    )
-    (launcher_config.local_workspace / "machin.txt").touch()
-
-    assert os.listdir(launcher_config.local_workspace)
-    slurm_launcher._clean_local_workspace()
-    assert not os.listdir(launcher_config.local_workspace)
-
-
 # noinspection PyUnresolvedReferences
 def test_import_study_output(launcher_config: SlurmConfig, tmp_path: Path) -> None:
     slurm_launcher = SlurmLauncher(
@@ -390,11 +374,11 @@ def test_import_study_output(launcher_config: SlurmConfig, tmp_path: Path) -> No
         cache=Mock(),
     )
     slurm_launcher.callbacks.import_output.return_value = "output"
-    res = slurm_launcher._import_study_output("1")
+    res = slurm_launcher._import_study_output("1", xpansion_mode=None, log_dir=None)
     slurm_launcher.callbacks.import_output.assert_called_once_with(
-        "1",
-        launcher_config.local_workspace / "OUTPUT" / "1" / "output",
-        {},
+        job_id="1",
+        output_path=launcher_config.local_workspace / "OUTPUT" / "1" / "output",
+        additional_logs=SimulationLogs(None, None),
     )
     assert res == "output"
 
@@ -409,7 +393,7 @@ def test_import_study_output(launcher_config: SlurmConfig, tmp_path: Path) -> No
     output_dir = launcher_config.local_workspace / "OUTPUT" / "1" / "output" / "output_name"
     output_dir.mkdir(parents=True)
 
-    slurm_launcher._import_study_output("1", "r")
+    slurm_launcher._import_study_output("1", xpansion_mode="r", log_dir=None)
     assert (output_dir / "results" / "something_else").exists()
     assert (output_dir / "results" / "something_else").read_text() == "world"
 
@@ -420,14 +404,11 @@ def test_import_study_output(launcher_config: SlurmConfig, tmp_path: Path) -> No
     log_info.touch()
     log_error.touch()
     slurm_launcher.callbacks.import_output.reset_mock()
-    slurm_launcher._import_study_output("1", None, str(log_dir))
+    slurm_launcher._import_study_output("1", xpansion_mode=None, log_dir=str(log_dir))
     slurm_launcher.callbacks.import_output.assert_called_once_with(
-        "1",
-        launcher_config.local_workspace / "OUTPUT" / "1" / "output",
-        {
-            "antares-out.log": [log_info],
-            "antares-err.log": [log_error],
-        },
+        job_id="1",
+        output_path=launcher_config.local_workspace / "OUTPUT" / "1" / "output",
+        additional_logs=SimulationLogs(out=log_info, err=log_error),
     )
 
 

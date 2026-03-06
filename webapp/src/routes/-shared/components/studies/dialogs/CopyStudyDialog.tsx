@@ -23,7 +23,7 @@ import usePromise from "@/hooks/usePromise";
 import { directoryQueries } from "@/queries/directories/queries";
 import { copyStudy } from "@/services/api/studies";
 import { getStudyOutputs } from "@/services/api/study";
-import type { StudyMetadata, StudyOutput } from "@/types/types";
+import type { StudyMetadata, OutputDetails } from "@/types/types";
 import { validateStudyName } from "@/utils/studiesUtils";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
 import SaveAsIcon from "@mui/icons-material/SaveAs";
@@ -42,7 +42,7 @@ interface Props {
 interface DefaultValues {
   studyName: string;
   destination: DirectoryDestination;
-  outputIds?: Array<StudyOutput["name"]>;
+  outputIds?: Array<OutputDetails["name"]>;
 }
 
 function CopyStudyDialog({ study, open, onClose }: Props) {

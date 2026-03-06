@@ -11,8 +11,9 @@
 # This file is part of the Antares project.
 import pytest
 
-from antarest.study.output.output_model import OutputVariablesType
-from antarest.study.output.variables_management import (
+from antarest.output.output_blueprint import _to_item_id
+from antarest.output.output_model import OutputVariablesType
+from antarest.output.variables_management import (
     AreaOutputId,
     LinkOutputId,
     OutputItemId,
@@ -20,7 +21,6 @@ from antarest.study.output.variables_management import (
     ShortTermStorageOutputId,
     ThermalClusterOutputId,
 )
-from antarest.study.web.output_blueprint import _to_item_id
 
 
 # fmt: off
