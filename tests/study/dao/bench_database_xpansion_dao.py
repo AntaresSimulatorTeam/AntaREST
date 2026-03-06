@@ -62,6 +62,7 @@ from antarest.study.business.model.xpansion_model import (
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.model import STUDY_VERSION_8_8, StorageMode, Study
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from tests.helpers import create_study
 
 # ---------------------------------------------------------------------------
@@ -87,7 +88,8 @@ def _build_dao(session: Session, matrix_service: InMemorySimpleMatrixService) ->
         study.storage_mode = StorageMode.DATABASE
         session.add(study)
         session.commit()
-        factory = DatabaseStudyDaoFactory(matrix_service, session)
+        generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
+        factory = DatabaseStudyDaoFactory(matrix_service, generator_matrix_constants, session=session)
         return factory.create_study_dao(study)
 
 
@@ -254,7 +256,8 @@ def _delete_all(
     """Delete all xpansion configurations — runs after all scenarios are created."""
     for study_id in study_ids:
         session = make_session()
-        factory = DatabaseStudyDaoFactory(matrix_service, session)
+        generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
+        factory = DatabaseStudyDaoFactory(matrix_service, generator_matrix_constants, session=session)
         study = session.get(Study, study_id)
         dao = factory.create_study_dao(study)
         with timer.measure("delete_xpansion_configuration"):
