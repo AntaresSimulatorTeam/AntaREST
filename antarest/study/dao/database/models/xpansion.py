@@ -17,17 +17,18 @@ Design decisions:
   - xpansion_settings                    : flat row per study; sensitivity scalars are inlined.
   - xpansion_candidate                   : one row per candidate (individual CRUD, 13 typed fields).
   - xpansion_sensitivity_projection      : one row per projection entry. PK = (study_id, candidate_name).
-                                           FK RESTRICT to xpansion_candidate enforces referential integrity
-                                           at DB level (replaces app-level checks).
+                                           FK CASCADE to xpansion_candidate: projection rows are removed
+                                           when a candidate is deleted. App-level checks
+                                           (checks_xpansion_candidate_can_be_deleted) prevent deletion
+                                           of candidates still referenced in projection.
   - xpansion_adequacy_criterion_v2       : flat row per study; scalars only (no patterns).
   - xpansion_adequacy_pattern            : one row per XpansionAdequacyPattern. PK = (study_id, area).
 
 Cascade chain:
-  study → xpansion_settings → xpansion_candidate → xpansion_sensitivity_projection (RESTRICT on candidate)
-                             → xpansion_sensitivity_projection (CASCADE on settings)
+  study → xpansion_settings → xpansion_candidate → xpansion_sensitivity_projection (CASCADE)
                              → xpansion_adequacy_criterion_v2 → xpansion_adequacy_pattern
   Deleting xpansion_settings (i.e. the xpansion configuration) therefore cascades
-  to candidates, projection entries, the adequacy criterion, and transitively to all its patterns.
+  to candidates, and transitively to projection entries, the adequacy criterion, and all its patterns.
 """
 
 from sqlalchemy import Boolean, Column, Enum, Float, ForeignKeyConstraint, Integer, String, Table
@@ -128,16 +129,10 @@ XPANSION_SENSITIVITY_PROJECTION_TABLE = Table(
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("candidate_name", String(255), nullable=False, primary_key=True),
     ForeignKeyConstraint(
-        ["study_id"],
-        ["xpansion_settings.study_id"],
-        name="fk_xpansion_sensitivity_projection_settings",
-        ondelete="CASCADE",
-    ),
-    ForeignKeyConstraint(
         ["study_id", "candidate_name"],
         ["xpansion_candidate.study_id", "xpansion_candidate.name"],
         name="fk_xpansion_sensitivity_projection_candidate",
-        ondelete="RESTRICT",
+        ondelete="CASCADE",
     ),
 )
 

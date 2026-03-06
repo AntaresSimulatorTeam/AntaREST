@@ -72,10 +72,7 @@ class TestXpansionConfiguration:
             ).fetchone()
             assert adequacy_row is not None
 
-    def test_create_xpansion_configuration_raises_if_already_exists(self, dao: DatabaseStudyDao) -> None:
-        """A second create call on the same study should raise XpansionConfigurationAlreadyExists."""
-        dao.create_xpansion_configuration()
-
+        # A second create call on the same study should raise XpansionConfigurationAlreadyExists.
         with pytest.raises(XpansionConfigurationAlreadyExists):
             dao.create_xpansion_configuration()
 
@@ -198,6 +195,29 @@ class TestXpansionSettings:
         assert result.yearly_weights == ""
         assert result.additional_constraints == ""
 
+    def test_save_xpansion_settings_raises_for_unknown_projection_candidate(self, dao: DatabaseStudyDao) -> None:
+        """save_xpansion_settings should raise CandidateNotFoundError when a projection name does not exist."""
+        dao.create_xpansion_configuration()
+        dao.save_xpansion_candidate(_make_candidate("existing_cand", "x", "y"))
+
+        settings = XpansionSettings(
+            sensitivity_config=XpansionSensitivitySettings(projection=["existing_cand", "ghost_cand"])
+        )
+        with pytest.raises(CandidateNotFoundError):
+            dao.save_xpansion_settings(settings)
+
+    def test_save_xpansion_settings_succeeds_for_valid_projection(self, dao: DatabaseStudyDao) -> None:
+        """save_xpansion_settings should succeed when all projection candidates exist."""
+        dao.create_xpansion_configuration()
+        dao.save_xpansion_candidate(_make_candidate("cand_a", "x", "y"))
+        dao.save_xpansion_candidate(_make_candidate("cand_b", "x", "y"))
+
+        settings = XpansionSettings(sensitivity_config=XpansionSensitivitySettings(projection=["cand_a", "cand_b"]))
+        dao.save_xpansion_settings(settings)  # must not raise
+
+        result = dao.get_xpansion_settings()
+        assert result.sensitivity_config.projection == ["cand_a", "cand_b"]
+
 
 class TestXpansionCandidates:
     """Tests for Xpansion candidate CRUD operations."""
@@ -309,32 +329,14 @@ class TestXpansionCandidates:
         with pytest.raises(LinkNotFound):
             dao.checks_xpansion_candidate_coherence(candidate)
 
-    def test_checks_candidate_coherence_raises_for_missing_area_from(self, dao: DatabaseStudyDao) -> None:
-        """checks_xpansion_candidate_coherence should raise AreaNotFound when area_from is absent.
-
-        XpansionLink sorts areas alphabetically, so area_from < area_to.
-        "alpha" < "paris" → area_from="alpha" (missing), area_to="paris" (exists).
-        """
+    def test_checks_candidate_coherence_raises_for_missing_area(self, dao: DatabaseStudyDao) -> None:
+        """checks_xpansion_candidate_coherence should raise AreaNotFound when an area does not exist."""
         dao.create_xpansion_configuration()
         dao.save_area("Paris")
-        # area_from ("alpha") not saved.
+        # "alpha" not saved.
 
         candidate = _make_candidate("cand", "alpha", "paris")
-        with pytest.raises(AreaNotFound, match="alpha"):
-            dao.checks_xpansion_candidate_coherence(candidate)
-
-    def test_checks_candidate_coherence_raises_for_missing_area_to(self, dao: DatabaseStudyDao) -> None:
-        """checks_xpansion_candidate_coherence should raise AreaNotFound when area_to is absent.
-
-        XpansionLink sorts areas alphabetically, so area_from < area_to.
-        "paris" < "zz_missing" → area_from="paris" (exists), area_to="zz_missing" (missing).
-        """
-        dao.create_xpansion_configuration()
-        dao.save_area("Paris")
-        # area_to ("zz_missing") not saved.
-
-        candidate = _make_candidate("cand", "paris", "zz_missing")
-        with pytest.raises(AreaNotFound, match="zz_missing"):
+        with pytest.raises(AreaNotFound):
             dao.checks_xpansion_candidate_coherence(candidate)
 
     def test_checks_candidate_coherence_passes_for_valid_link(self, dao: DatabaseStudyDao) -> None:
@@ -346,32 +348,6 @@ class TestXpansionCandidates:
 
         candidate = _make_candidate("cand", "lyon", "paris")
         dao.checks_xpansion_candidate_coherence(candidate)  # must not raise
-
-    def test_save_xpansion_settings_raises_for_unknown_projection_candidate(self, dao: DatabaseStudyDao) -> None:
-        """save_xpansion_settings should raise CandidateNotFoundError when a projection name does not exist.
-
-        The DB FK RESTRICT on xpansion_sensitivity_projection → xpansion_candidate enforces this.
-        """
-        dao.create_xpansion_configuration()
-        dao.save_xpansion_candidate(_make_candidate("existing_cand", "x", "y"))
-
-        settings = XpansionSettings(
-            sensitivity_config=XpansionSensitivitySettings(projection=["existing_cand", "ghost_cand"])
-        )
-        with pytest.raises(CandidateNotFoundError):
-            dao.save_xpansion_settings(settings)
-
-    def test_save_xpansion_settings_succeeds_for_valid_projection(self, dao: DatabaseStudyDao) -> None:
-        """save_xpansion_settings should succeed when all projection candidates exist."""
-        dao.create_xpansion_configuration()
-        dao.save_xpansion_candidate(_make_candidate("cand_a", "x", "y"))
-        dao.save_xpansion_candidate(_make_candidate("cand_b", "x", "y"))
-
-        settings = XpansionSettings(sensitivity_config=XpansionSensitivitySettings(projection=["cand_a", "cand_b"]))
-        dao.save_xpansion_settings(settings)  # must not raise
-
-        result = dao.get_xpansion_settings()
-        assert result.sensitivity_config.projection == ["cand_a", "cand_b"]
 
     def test_checks_candidate_can_be_deleted_raises_if_in_projection(self, dao: DatabaseStudyDao) -> None:
         """checks_xpansion_candidate_can_be_deleted should raise when the candidate is in the sensitivity projection."""

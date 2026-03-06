@@ -82,16 +82,10 @@ def upgrade() -> None:
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("candidate_name", sa.String(length=255), nullable=False),
         sa.ForeignKeyConstraint(
-            ["study_id"],
-            ["xpansion_settings.study_id"],
-            name=op.f("fk_xpansion_sensitivity_projection_settings"),
-            ondelete="CASCADE",
-        ),
-        sa.ForeignKeyConstraint(
             ["study_id", "candidate_name"],
             ["xpansion_candidate.study_id", "xpansion_candidate.name"],
             name=op.f("fk_xpansion_sensitivity_projection_candidate"),
-            ondelete="RESTRICT",
+            ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("study_id", "candidate_name", name=op.f("pk_xpansion_sensitivity_projection")),
     )

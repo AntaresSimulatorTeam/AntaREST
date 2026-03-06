@@ -148,6 +148,7 @@ class DatabaseXpansionDao(XpansionDao):
 
         data = get_row_representation_as_dict(rows[0])
         del data["study_id"]
+        del data["candidate_name"]
         sensitivity_config = XpansionSensitivitySettings(
             epsilon=data.pop("sensitivity_epsilon"),
             capex=data.pop("sensitivity_capex"),
@@ -227,14 +228,16 @@ class DatabaseXpansionDao(XpansionDao):
     def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
         values = self._candidate_to_row(candidate)
         if old_id and old_id != candidate.name:
-            # The PK of this table is composed of study_id and name
-            # So renaming a candidate requires deleting the old row and inserting a new one.
-            self._db_session.execute(
+            # The PK is (study_id, name), so renaming requires delete + insert.
+            result = self._db_session.execute(
                 delete(XPANSION_CANDIDATE_TABLE).where(
                     (XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
                     & (XPANSION_CANDIDATE_TABLE.c.name == old_id)
                 )
             )
+            assert isinstance(result, CursorResult)
+            if result.rowcount == 0:
+                raise CandidateNotFoundError(f"The candidate '{old_id}' does not exist")
             self._db_session.execute(insert(XPANSION_CANDIDATE_TABLE).values(values))
         else:
             upsert_one(self._db_session, XPANSION_CANDIDATE_TABLE, values)
@@ -242,21 +245,17 @@ class DatabaseXpansionDao(XpansionDao):
 
     @override
     def delete_xpansion_candidate(self, candidate_name: str) -> None:
-        try:
-            result = self._db_session.execute(
-                delete(XPANSION_CANDIDATE_TABLE).where(
-                    (XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
-                    & (XPANSION_CANDIDATE_TABLE.c.name == candidate_name)
-                )
+        result = self._db_session.execute(
+            delete(XPANSION_CANDIDATE_TABLE).where(
+                (XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
+                & (XPANSION_CANDIDATE_TABLE.c.name == candidate_name)
             )
-            # need this assert so mypy don't yell when I access rowcount
-            assert isinstance(result, CursorResult)
-            if result.rowcount == 0:
-                raise CandidateNotFoundError(f"The candidate '{candidate_name}' does not exist")
-            self._db_session.commit()
-        except IntegrityError:
-            self._db_session.rollback()
-            raise XpansionCandidateDeletionError(self._study_id, candidate_name)
+        )
+        # need this assert so mypy don't yell when I access rowcount
+        assert isinstance(result, CursorResult)
+        if result.rowcount == 0:
+            raise CandidateNotFoundError(f"The candidate '{candidate_name}' does not exist")
+        self._db_session.commit()
 
     @override
     def checks_xpansion_candidate_coherence(self, candidate: XpansionCandidate) -> None:
