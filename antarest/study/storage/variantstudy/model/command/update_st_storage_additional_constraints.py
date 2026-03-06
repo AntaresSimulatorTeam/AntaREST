@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from dataclasses import dataclass
 from typing import Optional, Self
 
 from pydantic import TypeAdapter, model_validator
@@ -23,9 +22,9 @@ from antarest.study.business.model.sts_model import (
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandApplicationResult,
     CommandName,
     CommandOutput,
+    CommandResult,
     command_failed,
     command_succeeded,
 )
@@ -34,11 +33,6 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 _CONSTRAINTS_TYPE_ADAPTER = TypeAdapter(type=STStorageAdditionalConstraintUpdates)
-
-
-@dataclass(frozen=True)
-class UpdateSTStorageAdditionalConstraintsResult(CommandApplicationResult):
-    data: dict[str, dict[str, list[STStorageAdditionalConstraint]]]
 
 
 class UpdateSTStorageAdditionalConstraints(ICommand):
@@ -93,7 +87,7 @@ class UpdateSTStorageAdditionalConstraints(ICommand):
             for storage_id, new_constraints in data.items():
                 study_data.save_st_storage_additional_constraints(area_id, storage_id, new_constraints)
 
-        result = UpdateSTStorageAdditionalConstraintsResult(data=memory_mapping)
+        result = CommandResult[dict[str, dict[str, list[STStorageAdditionalConstraint]]]](data=memory_mapping)
         return command_succeeded(
             "The short-term storage additional constraints were successfully updated.", result=result
         )

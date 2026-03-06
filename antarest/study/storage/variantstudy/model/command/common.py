@@ -11,11 +11,20 @@
 # This file is part of the Antares project.
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Generic, TypeVar
 
 
 @dataclass(frozen=True)
 class CommandApplicationResult:
     pass
+
+
+T = TypeVar("T")
+
+
+@dataclass(frozen=True)
+class CommandResult(CommandApplicationResult, Generic[T]):
+    data: T
 
 
 @dataclass(frozen=True)

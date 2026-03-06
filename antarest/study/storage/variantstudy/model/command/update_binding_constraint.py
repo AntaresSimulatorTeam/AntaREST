@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from dataclasses import dataclass
 from typing import Any, Optional, Self
 
 from antares.study.version import StudyVersion
@@ -33,9 +32,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     parse_binding_constraint_for_update,
 )
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandApplicationResult,
     CommandName,
     CommandOutput,
+    CommandResult,
     InnerMatrices,
     command_succeeded,
 )
@@ -47,11 +46,6 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
 )
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-
-@dataclass(frozen=True)
-class UpdateBindingConstraintResult(CommandApplicationResult):
-    data: BindingConstraint
 
 
 class UpdateBindingConstraint(AbstractBindingConstraintCommand):
@@ -162,7 +156,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
                     assert isinstance(self.matrices.less_term_matrix, str)
                     study_data.save_constraint_less_term_matrix(constraint.id, self.matrices.less_term_matrix)
 
-        result = UpdateBindingConstraintResult(data=constraint)
+        result = CommandResult[BindingConstraint](data=constraint)
         return command_succeeded(f"Binding constraint '{constraint.id}' updated successfully.", result=result)
 
     @override

@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import typing as t
-from dataclasses import dataclass
 from typing import Any
 
 from pydantic import field_validator, model_validator
@@ -21,19 +20,14 @@ from typing_extensions import override
 from antarest.study.business.model.area_model import AreaUI, AreaUIUpdate, update_area_ui
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandApplicationResult,
     CommandName,
     CommandOutput,
+    CommandResult,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-
-@dataclass(frozen=True)
-class UpdateAreaUIResult(CommandApplicationResult):
-    data: AreaUI
 
 
 class UpdateAreaUI(ICommand):
@@ -108,7 +102,7 @@ class UpdateAreaUI(ICommand):
         area_ui = update_area_ui(current_ui, self.parameters)
 
         study_data.save_area_ui(self.area_id, self.layer, area_ui)
-        result = UpdateAreaUIResult(data=area_ui)
+        result = CommandResult[AreaUI](data=area_ui)
         return command_succeeded(message=f"area '{self.area_id}' UI updated", result=result)
 
     @override

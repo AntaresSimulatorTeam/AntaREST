@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 import typing as t
-from dataclasses import dataclass
 from typing import Any, Dict, Final, List, Optional, Self
 
 from antares.study.version import StudyVersion
@@ -34,9 +33,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandApplicationResult,
     CommandName,
     CommandOutput,
+    CommandResult,
     InnerMatrices,
     command_failed,
     command_succeeded,
@@ -46,11 +45,6 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 OptionalMatrixData: t.TypeAlias = List[List[MatrixData]] | str | None
-
-
-@dataclass(frozen=True)
-class CreateClusterResult(CommandApplicationResult):
-    data: ThermalCluster
 
 
 class CreateCluster(ICommand):
@@ -129,7 +123,7 @@ class CreateCluster(ICommand):
             study_data.save_thermal_fuel_cost(self.area_id, lower_thermal_id, null_matrix)
             study_data.save_thermal_co2_cost(self.area_id, lower_thermal_id, null_matrix)
 
-        result = CreateClusterResult(thermal)
+        result = CommandResult[ThermalCluster](data=thermal)
         return command_succeeded(f"Thermal cluster '{thermal.id}' added to area '{self.area_id}'.", result=result)
 
     @override

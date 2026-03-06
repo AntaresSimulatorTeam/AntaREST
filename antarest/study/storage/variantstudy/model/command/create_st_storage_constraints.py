@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from dataclasses import dataclass
 from typing import Optional, Self
 
 from pydantic import model_validator
@@ -25,20 +24,15 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandApplicationResult,
     CommandName,
     CommandOutput,
+    CommandResult,
     command_failed,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-
-@dataclass(frozen=True)
-class CreateSTStorageAdditionalConstraintsResult(CommandApplicationResult):
-    data: list[STStorageAdditionalConstraint]
 
 
 # noinspection SpellCheckingInspection
@@ -97,7 +91,7 @@ class CreateSTStorageAdditionalConstraints(ICommand):
         for constraint in constraints:
             study_data.save_st_storage_constraint_matrix(self.area_id, self.storage_id, constraint.id, null_matrix)
 
-        result = CreateSTStorageAdditionalConstraintsResult(data=constraints)
+        result = CommandResult[list[STStorageAdditionalConstraint]](data=constraints)
         msg = f"Short-term storage additional constraints successfully added to storage {self.storage_id} in area '{self.area_id}'."
         return command_succeeded(message=msg, result=result)
 

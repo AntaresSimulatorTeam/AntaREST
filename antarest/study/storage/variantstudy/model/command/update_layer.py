@@ -12,9 +12,14 @@
 
 from typing_extensions import override
 
-from antarest.study.business.model.layer_model import LayerUpdate, update_layer_name
+from antarest.study.business.model.layer_model import Layer, LayerUpdate, update_layer_name
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+    CommandOutput,
+    CommandResult,
+    command_succeeded,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -39,7 +44,8 @@ class UpdateLayer(ICommand):
         current_layers = list(study_data.get_layers())
         new_layer = update_layer_name(current_layers, self.parameters)
         study_data.save_layer(new_layer)
-        return CommandOutput(status=True, message=f"Layer {self.parameters.name} updated successfully")
+        result = CommandResult[Layer](data=new_layer)
+        return command_succeeded(message=f"Layer {self.parameters.name} updated successfully", result=result)
 
     @override
     def to_dto(self) -> CommandDTO:

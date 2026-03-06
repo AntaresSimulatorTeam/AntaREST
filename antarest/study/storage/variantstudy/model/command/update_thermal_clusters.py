@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from dataclasses import dataclass
 from typing import Any, Optional, Self
 
 from pydantic import model_validator
@@ -24,20 +23,15 @@ from antarest.study.business.model.thermal_cluster_model import (
 )
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandApplicationResult,
     CommandName,
     CommandOutput,
+    CommandResult,
     command_failed,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-
-@dataclass(frozen=True)
-class UpdateThermalClustersResult(CommandApplicationResult):
-    data: dict[str, list[ThermalCluster]]
 
 
 class UpdateThermalClusters(ICommand):
@@ -92,7 +86,7 @@ class UpdateThermalClusters(ICommand):
         for area_id, new_clusters in memory_mapping.items():
             study_data.save_thermals(area_id, new_clusters)
 
-        result = UpdateThermalClustersResult(data=memory_mapping)
+        result = CommandResult[dict[str, list[ThermalCluster]]](data=memory_mapping)
         return command_succeeded("All thermal clusters updated", result=result)
 
     @override

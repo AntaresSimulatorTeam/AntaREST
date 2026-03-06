@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from dataclasses import dataclass
 from typing import Any, Dict, Final, Optional
 
 from pydantic import model_validator
@@ -19,19 +18,14 @@ from typing_extensions import override
 from antarest.study.business.model.config.playlist_model import Playlist, PlaylistUpdate, update_playlist
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandApplicationResult,
     CommandName,
     CommandOutput,
+    CommandResult,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-
-@dataclass(frozen=True)
-class UpdatePlaylistResult(CommandApplicationResult):
-    data: Playlist
 
 
 class UpdatePlaylist(ICommand):
@@ -79,7 +73,7 @@ class UpdatePlaylist(ICommand):
         current_config = study_data.get_playlist_config()
         new_playlist = update_playlist(current_config, self.playlist)
         study_data.save_playlist_config(new_playlist)
-        result = UpdatePlaylistResult(data=new_playlist)
+        result = CommandResult[Playlist](data=new_playlist)
         return command_succeeded("Playlist has been updated successfully.", result=result)
 
     @override

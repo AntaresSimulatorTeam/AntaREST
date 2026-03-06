@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from dataclasses import dataclass
 from typing import Optional
 
 from pydantic import model_validator
@@ -23,19 +22,14 @@ from antarest.study.business.model.thematic_trimming_model import (
 )
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandApplicationResult,
     CommandName,
     CommandOutput,
+    CommandResult,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-
-@dataclass(frozen=True)
-class UpdateThematicTrimmingResult(CommandApplicationResult):
-    data: ThematicTrimming
 
 
 class UpdateThematicTrimming(ICommand):
@@ -63,7 +57,7 @@ class UpdateThematicTrimming(ICommand):
         current_thematic_trimming = study_data.get_thematic_trimming()
         final_thematic_trimming = update_thematic_trimming(current_thematic_trimming, self.parameters)
         study_data.save_thematic_trimming(final_thematic_trimming)
-        result = UpdateThematicTrimmingResult(data=final_thematic_trimming)
+        result = CommandResult[ThematicTrimming](data=final_thematic_trimming)
         return command_succeeded("Thematic trimming updated successfully.", result=result)
 
     @override

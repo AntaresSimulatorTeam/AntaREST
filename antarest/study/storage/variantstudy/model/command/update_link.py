@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from dataclasses import dataclass
 from typing import Any, Optional
 
 from pydantic import model_validator
@@ -20,20 +19,15 @@ from antarest.study.business.model.link_model import Link, LinkUpdate, update_li
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.config.link import parse_link_for_update
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandApplicationResult,
     CommandName,
     CommandOutput,
+    CommandResult,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.create_link import AbstractLinkCommand
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-
-@dataclass(frozen=True)
-class UpdateLinkResult(CommandApplicationResult):
-    data: Link
 
 
 class UpdateLink(AbstractLinkCommand, ICommand):
@@ -84,7 +78,7 @@ class UpdateLink(AbstractLinkCommand, ICommand):
         if self.indirect:
             study_data.save_link_indirect_capacities(self.area1, self.area2, str(self.indirect))
 
-        result = UpdateLinkResult(data=new_link)
+        result = CommandResult[Link](data=new_link)
         return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' updated", result=result)
 
     @override

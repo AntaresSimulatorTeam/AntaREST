@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from dataclasses import dataclass
 from typing import Dict, Optional
 
 from typing_extensions import override
@@ -21,19 +20,14 @@ from antarest.study.business.model.area_properties_model import (
 )
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandApplicationResult,
     CommandName,
     CommandOutput,
+    CommandResult,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-
-@dataclass(frozen=True)
-class UpdateAreasPropertiesResult(CommandApplicationResult):
-    data: dict[str, AreaProperties]
 
 
 class UpdateAreasProperties(ICommand):
@@ -66,7 +60,7 @@ class UpdateAreasProperties(ICommand):
         for area_id, new_properties in memory_mapping.items():
             study_data.save_area_properties(area_id, new_properties)
 
-        result = UpdateAreasPropertiesResult(data=memory_mapping)
+        result = CommandResult[dict[str, AreaProperties]](data=memory_mapping)
         message = f"Areas properties updated: {', '.join(self.properties.keys())}"
         return command_succeeded(message=message, result=result)
 

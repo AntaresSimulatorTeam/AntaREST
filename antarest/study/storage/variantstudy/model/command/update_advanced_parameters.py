@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from dataclasses import dataclass
 
 from pydantic import model_validator
 from typing_extensions import override
@@ -22,19 +21,14 @@ from antarest.study.business.model.config.advanced_parameters_model import (
 )
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandApplicationResult,
     CommandName,
     CommandOutput,
+    CommandResult,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-
-@dataclass(frozen=True)
-class UpdateAdvancedParametersResult(CommandApplicationResult):
-    data: AdvancedParameters
 
 
 class UpdateAdvancedParameters(ICommand):
@@ -61,7 +55,7 @@ class UpdateAdvancedParameters(ICommand):
         current_parameters = study_data.get_advanced_parameters()
         new_parameters = update_advanced_parameters(current_parameters, self.parameters)
         study_data.save_advanced_parameters(new_parameters)
-        result = UpdateAdvancedParametersResult(new_parameters)
+        result = CommandResult[AdvancedParameters](data=new_parameters)
         return command_succeeded("Advanced parameters updated successfully.", result=result)
 
     @override

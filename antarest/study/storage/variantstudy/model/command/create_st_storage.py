@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from dataclasses import dataclass
 from typing import Any, Dict, Final, List, Optional, Self, TypeAlias, cast
 
 import numpy as np
@@ -28,9 +27,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.validation import A
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandApplicationResult,
     CommandName,
     CommandOutput,
+    CommandResult,
     InnerMatrices,
     command_failed,
     command_succeeded,
@@ -40,11 +39,6 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 MatrixType: TypeAlias = Optional[list[list[MatrixData]] | str]
-
-
-@dataclass(frozen=True)
-class CreateSTStorageResult(CommandApplicationResult):
-    data: STStorage
 
 
 # noinspection SpellCheckingInspection
@@ -222,7 +216,7 @@ class CreateSTStorage(ICommand):
             matrix = matrices["cost_variation_withdrawal"]
             study_data.save_st_storage_cost_variation_withdrawal(self.area_id, storage.id, matrix)
 
-        result = CreateSTStorageResult(data=storage)
+        result = CommandResult[STStorage](data=storage)
         return command_succeeded(
             f"Short-term storage '{storage.id}' successfully added to area '{self.area_id}'.", result=result
         )

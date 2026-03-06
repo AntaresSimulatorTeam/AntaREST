@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from dataclasses import dataclass
 from typing import Optional
 
 from pydantic import model_validator
@@ -23,19 +22,14 @@ from antarest.study.business.model.hydro_model import (
 )
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandApplicationResult,
     CommandName,
     CommandOutput,
+    CommandResult,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-
-@dataclass(frozen=True)
-class UpdateHydroManagementResult(CommandApplicationResult):
-    data: HydroManagement
 
 
 class UpdateHydroManagement(ICommand):
@@ -66,7 +60,7 @@ class UpdateHydroManagement(ICommand):
 
         study_data.save_hydro_management(updated_hydro_management, self.area_id)
 
-        result = UpdateHydroManagementResult(data=updated_hydro_management)
+        result = CommandResult[HydroManagement](data=updated_hydro_management)
         return command_succeeded(f"Hydro properties in '{self.area_id}' updated.", result=result)
 
     @override

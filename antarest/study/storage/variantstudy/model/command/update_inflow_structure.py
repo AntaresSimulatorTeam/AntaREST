@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from dataclasses import dataclass
 from typing import Optional
 
 from typing_extensions import override
@@ -21,19 +20,14 @@ from antarest.study.business.model.hydro_model import (
 )
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandApplicationResult,
     CommandName,
     CommandOutput,
+    CommandResult,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-
-@dataclass(frozen=True)
-class UpdateInflowStructureResult(CommandApplicationResult):
-    data: InflowStructure
 
 
 class UpdateInflowStructure(ICommand):
@@ -59,7 +53,7 @@ class UpdateInflowStructure(ICommand):
 
         study_data.save_inflow_structure(updated_inflow_structure, self.area_id)
 
-        result = UpdateInflowStructureResult(data=updated_inflow_structure)
+        result = CommandResult[InflowStructure](data=updated_inflow_structure)
         return command_succeeded(f"Inflow properties in '{self.area_id}' updated.", result=result)
 
     @override

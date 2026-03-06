@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from dataclasses import dataclass
 from typing import Optional
 
 from typing_extensions import override
@@ -17,19 +16,14 @@ from typing_extensions import override
 from antarest.study.business.model.config.general_model import GeneralConfig, GeneralConfigUpdate, update_general_config
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
-    CommandApplicationResult,
     CommandName,
     CommandOutput,
+    CommandResult,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-
-@dataclass(frozen=True)
-class UpdateGeneralConfigResult(CommandApplicationResult):
-    data: GeneralConfig
 
 
 class UpdateGeneralConfig(ICommand):
@@ -51,7 +45,7 @@ class UpdateGeneralConfig(ICommand):
         current_config = study_data.get_general_config()
         new_config = update_general_config(current_config, self.parameters)
         study_data.save_general_config(new_config)
-        result = UpdateGeneralConfigResult(data=new_config)
+        result = CommandResult[GeneralConfig](data=new_config)
         return command_succeeded("General config updated successfully.", result=result)
 
     @override
