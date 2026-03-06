@@ -179,11 +179,11 @@ def _run_scenario(dao: DatabaseStudyDao, timer: "Timer") -> None:
     with timer.measure("get_xpansion_settings (re-read)"):
         dao.get_xpansion_settings()
 
-    with timer.measure("delete_xpansion_candidate"):
-        dao.delete_xpansion_candidate("backup_link")
+    # with timer.measure("delete_xpansion_candidate"):
+    #     dao.delete_xpansion_candidate("backup_link")
 
-    with timer.measure("delete_xpansion_configuration"):
-        dao.delete_xpansion_configuration()
+    # with timer.measure("delete_xpansion_configuration"):
+    #     dao.delete_xpansion_configuration()
 
 
 # ---------------------------------------------------------------------------
