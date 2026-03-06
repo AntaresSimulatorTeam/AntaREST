@@ -15,7 +15,7 @@ import copy
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, AsyncGenerator, Dict, Optional, Tuple, cast
+from typing import Any, AsyncGenerator, Optional, Tuple
 
 import pydantic
 import uvicorn
@@ -35,7 +35,6 @@ from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.filesystem_blueprint import create_file_system_blueprint
 from antarest.core.logging.utils import LoggingMiddleware, configure_logger
 from antarest.core.metrics import add_metrics
-from antarest.core.swagger import customize_openapi
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import get_local_path
 from antarest.core.utils.web import tags_metadata
@@ -232,7 +231,7 @@ def fastapi_app(
     # Since Starlette Version 0.24.0, the middlewares are lazily built inside this function
     # But we need to instantiate this middleware as it's needed for the study service.
     # So we manually instantiate it here.
-    DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
+    DBSessionMiddleware(None, custom_engine=engine, session_args=SESSION_ARGS)
 
     # TODO move that elsewhere
     @AuthJWT.load_config  # type: ignore
@@ -277,8 +276,6 @@ def fastapi_app(
         services.blob_gc.start()
     if services.variable_view_gc and Module.VARIABLE_VIEW_GC in config.server.services:
         services.variable_view_gc.start()
-
-    customize_openapi(application)
 
     add_metrics(application, config)
 

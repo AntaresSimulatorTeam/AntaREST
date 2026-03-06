@@ -13,48 +13,38 @@ from abc import ABC, abstractmethod
 
 from antarest.study.business.model.scenario_builder_model import (
     AnyScenarios,
-    Rulesets,
+    Ruleset,
     ScenarioType,
 )
 
 
 class ReadOnlyScenarioBuilderDao(ABC):
     @abstractmethod
-    def get_rulesets(self) -> Rulesets:
+    def get_ruleset(self) -> Ruleset:
         """
-        Get all rulesets by name.
+        Get the ruleset.
 
         Returns:
-            The rulesets.
+            The ruleset.
         """
 
-        raise NotImplementedError()
-
-    @abstractmethod
-    def get_active_ruleset_name(self, default_ruleset: str = "Default Ruleset") -> str:
-        """
-        Get the active ruleset name.
-
-        Args:
-            default_ruleset: Name of the default ruleset
-
-        Returns:
-            The active ruleset name if found, or the default ruleset name if missing.
-        """
         raise NotImplementedError()
 
     @abstractmethod
     def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
         """
-        Get a scenario, from the active ruleset, by its type (name).
+        Get a scenario, from the ruleset, by its type.
+
+        Args:
+            scenario_type: The scenario type to retrieve.
         """
         raise NotImplementedError()
 
 
 class ScenarioBuilderDao(ReadOnlyScenarioBuilderDao):
     @abstractmethod
-    def save_scenario_builder(self, rulesets: Rulesets) -> None:
+    def save_scenario_builder(self, ruleset: Ruleset) -> None:
         """
-        Save rulesets.
+        Save ruleset.
         """
         raise NotImplementedError()

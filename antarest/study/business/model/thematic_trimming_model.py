@@ -502,6 +502,12 @@ def validate_thematic_trimming_against_version(
         _check_version(thematic_trimming, field, version)
 
 
+def initialize_thematic_trimming_against_version(thematic_trimming: ThematicTrimming, version: StudyVersion) -> None:
+    validate_thematic_trimming_against_version(thematic_trimming, version)
+    for field in get_thematic_trimming_fields_according_to_version(version):
+        setattr(thematic_trimming, field, True)
+
+
 def update_thematic_trimming(trimming: ThematicTrimming, data: ThematicTrimmingUpdate) -> ThematicTrimming:
     """
     Updates the thematic trimming according to the provided update data.

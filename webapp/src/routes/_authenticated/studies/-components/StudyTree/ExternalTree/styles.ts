@@ -23,22 +23,20 @@ export const treeNodeIcons = {
   folderOpen: FolderOpenIcon,
 };
 
-export const treeItemStyles: SxProps<Theme> = {
+export const treeItemStyles: SxProps<Theme> = (theme) => ({
   "& > .MuiTreeItem-content": {
-    borderRadius: 1,
-    px: 1,
     py: 0.25,
     "&:hover": {
-      backgroundColor: (theme) => theme.palette.action.hover,
+      backgroundColor: theme.vars.palette.action.hover,
     },
     "&.Mui-selected": {
-      backgroundColor: (theme) => theme.palette.action.selected,
+      backgroundColor: theme.vars.palette.action.selected,
       "&:hover": {
-        backgroundColor: (theme) => theme.palette.action.hover,
+        backgroundColor: theme.vars.palette.action.hover,
       },
     },
     "&.Mui-selected.Mui-focused": {
-      backgroundColor: (theme) => `${theme.palette.info.main}25`,
+      backgroundColor: theme.vars.palette.action.selected,
     },
     "& .MuiTreeItem-iconContainer": {
       mr: 0.5,
@@ -46,30 +44,23 @@ export const treeItemStyles: SxProps<Theme> = {
         backgroundColor: "transparent",
       },
       "& svg": {
-        color: (theme) => theme.palette.text.secondary,
+        color: theme.vars.palette.text.secondary,
         fontSize: "1.2rem",
-        opacity: 0.7,
       },
     },
+    "& > .MuiTreeItem-label": {
+      fontSize: 14,
+      fontWeight: 450,
+    },
   },
-  "& > .MuiTreeItem-content > .MuiTreeItem-label": {
-    fontSize: 14,
-    fontWeight: 450,
-    color: (theme) => theme.palette.text.secondary,
-  },
-};
+});
 
-export const workspaceItemStyles: SxProps<Theme> = {
-  ...treeItemStyles,
-  "& > .MuiTreeItem-content": {
-    ...(treeItemStyles["& > .MuiTreeItem-content"] as object),
-    "& .MuiTreeItem-iconContainer svg": {
+export const workspaceItemStyles: SxProps<Theme> = [
+  treeItemStyles,
+  {
+    "& > .MuiTreeItem-content .MuiTreeItem-iconContainer svg": {
       fontSize: "1.1rem",
       opacity: 0.8,
     },
   },
-  "& > .MuiTreeItem-content > .MuiTreeItem-label": {
-    fontSize: 14,
-    fontWeight: 450,
-  },
-};
+];

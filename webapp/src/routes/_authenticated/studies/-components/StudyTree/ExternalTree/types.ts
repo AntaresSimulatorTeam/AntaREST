@@ -27,7 +27,6 @@ export interface ExternalTreeNodeMetadata {
 export interface ExternalTreeNodeProps {
   node: ExternalTreeNodeMetadata;
   itemsLoading: string[];
-  onNodeClick: (id: string) => void;
   exploredFolders: string[];
 }
 

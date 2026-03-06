@@ -92,11 +92,11 @@ export interface StudyMap {
   currentLayer?: StudyLayer["id"];
 }
 
-const studyMapsAdapter = createEntityAdapter<StudyMap>({
-  selectId: (studyMap) => studyMap.studyId,
+const studyMapsAdapter = createEntityAdapter({
+  selectId: (studyMap: StudyMap) => studyMap.studyId,
 });
 
-export interface StudyMapsState extends EntityState<StudyMap> {
+export interface StudyMapsState extends EntityState<StudyMap, StudyMap["studyId"]> {
   currentLayer: StudyLayer["id"];
   layers: Record<StudyLayer["id"], StudyLayer>;
   districts: Record<StudyMapDistrict["id"], StudyMapDistrict>;

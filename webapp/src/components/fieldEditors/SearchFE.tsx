@@ -22,20 +22,13 @@ import { useTranslation } from "react-i18next";
 import { useUpdateEffect } from "react-use";
 
 interface SearchFEProps
-  extends Omit<TextFieldProps, "type" | "value" | "defaultValue" | "placeholder"> {
+  extends Omit<TextFieldProps, "type" | "value" | "defaultValue" | "placeholder" | "slotProps"> {
   value?: string;
   defaultValue?: string;
   onSearchValueChange?: (value: string) => void;
 }
 
-function SearchFE({
-  onSearchValueChange,
-  onChange,
-  slotProps,
-  className,
-  sx,
-  ...rest
-}: SearchFEProps) {
+function SearchFE({ onSearchValueChange, onChange, className, sx, ...rest }: SearchFEProps) {
   const { t } = useTranslation();
   const [isFieldFilled, setIsFieldFilled] = useState(
     RA.isString(rest.value) ? !!rest.value : !!rest.defaultValue,
@@ -77,9 +70,7 @@ function SearchFE({
         sx,
       )}
       slotProps={{
-        ...slotProps,
         input: {
-          ...slotProps?.input,
           startAdornment: (
             <InputAdornment
               position="start"

@@ -113,7 +113,7 @@ class TestRemoveLink:
 
         # Create a ruleset in the Scenario Builder configuration for this link
         output = UpdateScenarioBuilder(
-            data={"Default Ruleset": RulesetUpdate(ntc={"area_x / area_y": {"0": 1}})},
+            data=RulesetUpdate(ntc={"area_x / area_y": {"0": 1}}),
             command_context=command_context,
             study_version=study_version,
         ).apply(study_data=empty_study)
@@ -133,7 +133,7 @@ class TestRemoveLink:
 
         # Create a ruleset in the Scenario Builder configuration for this link
         output = UpdateScenarioBuilder(
-            data={"Default Ruleset": RulesetUpdate(ntc={"area_x / area_z": {"0": 1}})},
+            data=RulesetUpdate(ntc={"area_x / area_z": {"0": 1}}),
             command_context=command_context,
             study_version=study_version,
         ).apply(study_data=empty_study)

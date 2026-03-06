@@ -12,13 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getLatestStudyVersion } from "@/redux/selectors";
-import { archiveStudy, unarchiveStudy } from "@/services/api/study";
-import type { StudyMetadata } from "@/types/types";
-import { toError } from "@/utils/fnUtils";
-import { type SvgIconComponent } from "@mui/icons-material";
+import type { SvgIconComponent } from "@mui/icons-material";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import BoltIcon from "@mui/icons-material/Bolt";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
@@ -32,6 +26,12 @@ import UpgradeIcon from "@mui/icons-material/Upgrade";
 import { ListItemIcon, ListItemText, Menu, MenuItem, type MenuProps } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getLatestStudyVersion } from "@/redux/selectors";
+import { archiveStudy, unarchiveStudy } from "@/services/api/study";
+import type { StudyMetadata } from "@/types/types";
+import { toError } from "@/utils/fnUtils";
 import CopyStudyDialog from "./dialogs/CopyStudyDialog";
 import DeleteStudyDialog from "./dialogs/DeleteStudyDialog";
 import ExportModal from "./dialogs/ExportModal";
@@ -159,7 +159,7 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy, variant
       )}
       {openDialog === "upgrade" && <UpgradeStudyDialog open study={study} onClose={closeDialog} />}
       {openDialog === "export" && <ExportModal open study={study} onClose={closeDialog} />}
-      {openDialog === "move" && <MoveStudyDialog open study={study} onClose={closeDialog} />}
+      {openDialog === "move" && <MoveStudyDialog open studies={[study]} onClose={closeDialog} />}
       {openDialog === "copy" && <CopyStudyDialog open study={study} onClose={closeDialog} />}
       {openDialog === "delete" && (
         <DeleteStudyDialog

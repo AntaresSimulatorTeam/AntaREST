@@ -64,7 +64,7 @@ interface Props {
 
 const TinyText = styled(Typography)(({ theme }) => ({
   fontSize: "16px",
-  color: theme.palette.text.secondary,
+  color: theme.vars.palette.text.secondary,
 }));
 
 const StudyCard = memo((props: Props) => {
@@ -281,7 +281,11 @@ const StudyCard = memo((props: Props) => {
               color={isDarkMode ? "primary" : "secondary"}
             />
           )}
-          <Chip label={study.workspace} color={study.managed ? "info" : "default"} />
+          {study.managed ? (
+            <Chip label={t("studies.managedStudy")} color="info" />
+          ) : (
+            <Chip label={study.workspace} />
+          )}
           {study.tags?.map((tag) => (
             <Chip key={tag} label={tag} sx={{ bgcolor: colors.indigo[300] }} />
           ))}

@@ -12,40 +12,22 @@
  * This file is part of the Antares project.
  */
 
-import type { FilterableMatrixGridHandle } from "@/components/Matrix/components/FilterableMatrixGrid";
-import { Column } from "@/components/Matrix/shared/constants";
-import type { ResultMatrixDTO } from "@/components/Matrix/shared/types";
-import {
-  generateCustomColumns,
-  generateDateTime,
-  generateResultColumns,
-  groupResultColumns,
-} from "@/components/Matrix/shared/utils";
-import SplitView from "@/components/page/SplitView/index";
-import useThemeColorScheme from "@/hooks/useThemeColorScheme";
-import type { AreaWithId, LinkElement, MatrixIndex } from "@/types/types";
+import BackButton from "@/components/buttons/BackButton";
+import ListView, { type ListViewItem } from "@/components/page/list/ListView";
+import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import { getStudyDistricts } from "@/services/api/study";
+import { sortByName } from "@/services/utils";
+import AutoAwesomeMotionIcon from "@mui/icons-material/AutoAwesomeMotion";
+import { Stack, Tab, Tabs } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import usePromise from "../../../../../../../hooks/usePromise";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getAreas, getLinks } from "../../../../../../../redux/selectors";
-import { getStudyMatrixIndex } from "../../../../../../../services/api/matrix";
-import { getStudyData } from "../../../../../../../services/api/study";
-import { isSearchMatching } from "../../../../../../../utils/stringUtils";
-import ResultItemSelector from "./-components/ResultItemSelector";
-import ResultMatrixViewer from "./-components/ResultMatrixViewer";
-import SynthesisViewer, { type SynthesisData } from "./-components/SynthesisViewer";
+import OutputMatrixViewer from "./-components/OutputMatrixViewer";
+import SynthesisViewer from "./-components/SynthesisViewer";
 import useStudyOutput from "./-hooks/useStudyOutput";
-import { useVariablePerVariable } from "./-hooks/useVariablePerVariable";
-import {
-  createPath,
-  SYNTHESIS_ITEMS,
-  type DataType,
-  type Frequency,
-  type MonteCarloMode,
-  type OutputItemType,
-} from "./-utils";
+import { isDistrict, SYNTHESIS_ITEMS, type Item, type ListType } from "./-utils";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/outputs/$outputId/")(
   {
@@ -53,276 +35,58 @@ export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/o
   },
 );
 
-type SetResultColHeaders = (headers: string[][], indices: number[]) => void;
-
 function Output() {
   const { t } = useTranslation();
-  const { isDarkMode } = useThemeColorScheme();
   const { studyId, outputId } = Route.useParams();
-  const navigate = Route.useNavigate();
+  const [listType, setListType] = useState<ListType>("areas");
 
-  const [mcMode, setMcMode] = useState<MonteCarloMode>("mc-all");
-  const [dataType, setDataType] = useState<DataType>("values");
-  const [frequency, setFrequency] = useState<Frequency>("hourly");
-  const [year, setYear] = useState(-1);
-  const [itemType, setItemType] = useState<OutputItemType>("areas");
-  const [selectedItemId, setSelectedItemId] = useState("");
-  const [selectedClusterId, setSelectedClusterId] = useState("");
-  const [searchValue, setSearchValue] = useState("");
-  const [resultColHeaders, setResultColHeaders] = useState<string[][]>([]);
-  const [headerIndices, setHeaderIndices] = useState<number[]>([]);
-
-  const matrixGridRef = useRef<FilterableMatrixGridHandle>(null);
-  const isSynthesis = itemType === "synthesis";
-  const isVariablePerVariable = mcMode === "variable-per-variable";
   const areas = useAppSelector((state) => getAreas(state, studyId));
   const links = useAppSelector((state) => getLinks(state, studyId));
 
-  const { data: output } = useStudyOutput({ studyId, outputId });
-
-  useEffect(() => {
-    if (mcMode === "mc-all") {
-      setYear(-1);
-    } else if (mcMode === "mc-ind" && year <= 0) {
-      setYear(1);
-    }
-  }, [mcMode, year]);
-
-  const items = useMemo(() => {
-    const currentItems = (itemType === "areas" ? areas : links) as Array<{
-      id: string;
-      name: string;
-      label?: string;
-    }>;
-
-    return Array.isArray(currentItems) ? currentItems : [];
-  }, [itemType, areas, links]);
-
-  const filteredItems = useMemo(() => {
-    if (isSynthesis) {
-      return SYNTHESIS_ITEMS;
-    }
-
-    if (!searchValue.trim()) {
-      return items;
-    }
-
-    return items.filter((item) => isSearchMatching(searchValue, item.label || item.name));
-  }, [isSynthesis, items, searchValue]);
-
-  const selectedItem = filteredItems.find((item) => item.id === selectedItemId) as
-    | AreaWithId
-    | LinkElement
-    | undefined;
-
-  const {
-    variablesMetadata,
-    timeIndexMetadata,
-    selectedVariable,
-    setSelectedVariable,
-    isMaterializing,
-    handleMaterializeVariable,
-    variableViewDataRes,
-  } = useVariablePerVariable({
-    studyId,
-    outputId,
-    isEnabled: isVariablePerVariable,
-    itemType,
-    frequency,
-    selectedItemId,
-    selectedItem,
-    dataType,
-    selectedClusterId,
+  const { data: districts = [] } = usePromiseWithSnackbarError(() => getStudyDistricts(studyId), {
+    deps: [studyId],
+    errorMessage: t("study.outputs.error.loadDistricts"),
   });
 
-  // Reset variable and cluster selections when dataType changes in variable-per-variable mode
-  useEffect(() => {
-    if (isVariablePerVariable) {
-      setSelectedVariable("");
-      setSelectedClusterId("");
+  const { data: output } = useStudyOutput({ studyId, outputId });
+
+  const list = useMemo<Array<ListViewItem<Item | undefined>>>(() => {
+    if (listType === "areas") {
+      const adaptedDistricts = districts.map((district) => ({
+        ...district,
+        // In the `output` folder of the studies, district and area folders share the same
+        // hierarchy level. Area folders are named using their IDs, whereas district folders
+        // are named using the `@ ` prefix followed by their IDs.
+        id: `@ ${district.id}`,
+      }));
+
+      // Areas are already sorted in redux state
+      return [...areas, ...sortByName(adaptedDistricts)].map((item) => ({
+        id: item.id,
+        label: item.name,
+        icon: isDistrict(item) ? <AutoAwesomeMotionIcon color="info" /> : undefined,
+        data: item,
+      }));
     }
-  }, [dataType, isVariablePerVariable, setSelectedVariable]);
-
-  // Auto-select first item if none selected
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <Using length to avoid reference issues>
-  useEffect(() => {
-    if (!selectedItem && filteredItems.length > 0) {
-      setSelectedItemId(filteredItems[0].id);
+    if (listType === "links") {
+      return links.map((link) => ({
+        id: link.id,
+        label: link.label,
+        data: link,
+      }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredItems.length, selectedItem]);
-
-  const path = useMemo(() => {
-    if (output && selectedItem && !isSynthesis) {
-      return createPath({
-        output,
-        item: selectedItem,
-        dataType,
-        frequency,
-        year,
-      });
+    if (listType === "synthesis") {
+      return SYNTHESIS_ITEMS;
     }
-    return "";
-  }, [output, selectedItem, isSynthesis, dataType, frequency, year]);
-
-  const matrixRes = usePromise<ResultMatrixDTO | undefined>(
-    async () => {
-      if (!output || !selectedItem || isSynthesis || !path || isVariablePerVariable) {
-        return new Promise(() => {
-          // Intentionally never resolves to keep promise in pending state
-          // Prevents invalid "No data" while loading
-        });
-      }
-
-      const res = await getStudyData(studyId, path);
-
-      // Handle string response (may contain NaN/Infinity)
-      // TODO: This should be handled at the API level
-      if (typeof res === "string") {
-        const fixed = res.replace(/NaN/g, '"NaN"').replace(/Infinity/g, '"Infinity"');
-        const parsed = JSON.parse(fixed);
-
-        return {
-          ...parsed,
-          indices: Array.from({ length: parsed.columns.length }, (_, i) => i),
-        };
-      }
-
-      return {
-        ...res,
-        indices: Array.from({ length: res.columns.length }, (_, i) => i),
-      };
-    },
-    {
-      resetDataOnReload: true,
-      resetErrorOnReload: true,
-      deps: [studyId, path, !!output, !!selectedItem, isSynthesis, isVariablePerVariable],
-    },
-  );
-
-  // Transform the matrix data by keeping only the columns that match our filters
-  // headerIndices contains the original positions of our kept columns, ensuring
-  // the data stays aligned with its corresponding headers
-  const filteredData = useMemo(() => {
-    if (!matrixRes.data?.data) {
-      return [];
-    }
-
-    return matrixRes.data.data.map((row) => headerIndices.map((index) => row[index]));
-  }, [matrixRes.data, headerIndices]);
-
-  const synthesisRes = usePromise<SynthesisData | null>(
-    () => {
-      if (outputId && selectedItem && isSynthesis) {
-        const path = `output/${outputId}/economy/mc-all/grid/${selectedItem.id}`;
-        return getStudyData(studyId, path);
-      }
-
-      return Promise.resolve(null);
-    },
-    {
-      deps: [studyId, outputId, selectedItem, isSynthesis],
-    },
-  );
-
-  const { data: dateTimeMetadata } = usePromise<MatrixIndex | undefined>(
-    () => {
-      // Skip fetching in variable-per-variable mode
-      if (isVariablePerVariable || !path) {
-        return Promise.resolve(undefined);
-      }
-
-      return getStudyMatrixIndex(studyId, path);
-    },
-    {
-      deps: [studyId, path, isVariablePerVariable],
-    },
-  );
-
-  const dateTime = useMemo(
-    () => dateTimeMetadata && generateDateTime(dateTimeMetadata),
-    [dateTimeMetadata],
-  );
-
-  const variableViewDateTime = useMemo(
-    () => timeIndexMetadata && generateDateTime(timeIndexMetadata),
-    [timeIndexMetadata],
-  );
-
-  const resultColumns = useMemo(() => {
-    if (!matrixRes.data || resultColHeaders.length === 0) {
-      return [];
-    }
-
-    return groupResultColumns(
-      [
-        {
-          id: "date",
-          title: "Date",
-          type: Column.DateTime,
-          editable: false,
-        },
-        ...generateResultColumns({ titles: resultColHeaders }),
-      ],
-      isDarkMode,
-    );
-  }, [matrixRes.data, resultColHeaders, isDarkMode]);
-
-  const variableViewColumns = useMemo(() => {
-    if (!variableViewDataRes.data || !variableViewDataRes.data.columns) {
-      return [];
-    }
-
-    return [
-      {
-        id: "date",
-        title: "Date",
-        type: Column.DateTime,
-        editable: false,
-      },
-      ...generateCustomColumns({
-        titles: variableViewDataRes.data.columns.map((col) => `${t("global.year")} ${col}`),
-      }),
-    ];
-  }, [variableViewDataRes.data, t]);
+    return [];
+  }, [listType, areas, districts, links]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleItemTypeChange = useCallback(
-    (_event: React.SyntheticEvent, newValue: OutputItemType) => {
-      if (newValue && newValue !== itemType) {
-        setItemType(newValue);
-      }
-    },
-    [itemType],
-  );
-
-  const handleColHeadersChange = useCallback<SetResultColHeaders>((headers, indices) => {
-    setResultColHeaders(headers);
-    setHeaderIndices(indices);
-  }, []);
-
-  const handleSetSelectedItemId = useCallback((item: { id: string }) => {
-    setSelectedItemId(item.id);
-  }, []);
-
-  const handleToggleFilter = useCallback(() => {
-    matrixGridRef.current?.toggleFilter();
-  }, []);
-
-  const handleSearchChange = useCallback(
-    (value: string) => {
-      if (value !== searchValue) {
-        setSearchValue(value);
-      }
-    },
-    [searchValue],
-  );
-
-  const handleClusterSelect = (clusterId: string) => {
-    setSelectedClusterId(clusterId);
+  const handleListTypeChange = (_event: React.SyntheticEvent, newType: ListType) => {
+    setListType(newType);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -330,59 +94,29 @@ function Output() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <SplitView splitId="results" minSize={[150, 400]}>
-      <ResultItemSelector
-        itemType={itemType}
-        onItemTypeChange={handleItemTypeChange}
-        output={output}
-        filteredItems={filteredItems}
-        selectedItemId={selectedItemId}
-        onSetSelectedItemId={handleSetSelectedItemId}
-        onSearchChange={handleSearchChange}
-        onNavigateBack={() => navigate({ to: ".." })}
-      />
-
-      {isSynthesis ? (
-        <SynthesisViewer synthesisRes={synthesisRes} />
-      ) : (
-        <ResultMatrixViewer
-          matrixRes={matrixRes}
-          resultColHeaders={resultColHeaders}
-          filteredData={filteredData}
-          resultColumns={resultColumns}
-          matrixGridRef={matrixGridRef}
-          dateTime={dateTime}
-          dateTimeMetadata={dateTimeMetadata}
-          mcMode={mcMode}
-          setMcMode={setMcMode}
-          year={year}
-          setYear={setYear}
-          dataType={dataType}
-          setDataType={setDataType}
-          frequency={frequency}
-          setFrequency={setFrequency}
-          output={output}
-          studyId={studyId}
-          outputId={outputId}
-          path={path}
-          onColHeadersChange={handleColHeadersChange}
-          onToggleFilter={handleToggleFilter}
-          variablesMetadata={variablesMetadata ?? null}
-          itemType={itemType}
-          selectedItemId={selectedItemId}
-          selectedItem={selectedItem}
-          selectedVariable={selectedVariable}
-          onVariableSelect={setSelectedVariable}
-          onMaterializeVariable={handleMaterializeVariable}
-          isMaterializing={isMaterializing}
-          variableViewDataRes={variableViewDataRes}
-          variableViewColumns={variableViewColumns}
-          variableViewDateTime={variableViewDateTime}
-          variableViewTimeIndexMetadata={timeIndexMetadata}
-          selectedClusterId={selectedClusterId}
-          onClusterSelect={handleClusterSelect}
-        />
-      )}
-    </SplitView>
+    <ListView
+      splitId="results"
+      // Minimum left panel size to prevent the tabs scrollbar (supports EN and FR label lengths)
+      splitMinSize={[293, 150]}
+      list={list}
+      disableSearch={listType === "synthesis"}
+      multipleSearch
+      actions={
+        <Stack sx={{ overflow: "auto" }}>
+          <BackButton linkOptions={{ to: ".." }} />
+          <Tabs value={listType} onChange={handleListTypeChange} size="extra-small">
+            <Tab label={t("study.areas")} value="areas" />
+            <Tab label={t("study.links")} value="links" />
+            {output?.synthesis && <Tab label={t("study.synthesis")} value="synthesis" />}
+          </Tabs>
+        </Stack>
+      }
+      renderItemView={({ id, data }) => {
+        if (data) {
+          return <OutputMatrixViewer output={output} selectedItem={data} />;
+        }
+        return <SynthesisViewer gridId={id} />;
+      }}
+    />
   );
 }

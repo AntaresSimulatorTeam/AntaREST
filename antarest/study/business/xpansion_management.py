@@ -21,6 +21,7 @@ from antarest.core.exceptions import (
     MatrixImportFailed,
     XpansionFileAlreadyExistsError,
 )
+from antarest.core.utils.string import sanitize_for_log
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionCandidate,
@@ -170,6 +171,7 @@ class XpansionManager:
         filename = file.filename
         if not filename:
             raise FileImportFailed("A filename is required")
+        filename = sanitize_for_log(filename, "filename must not contain newline characters.")
         logger.info(f"Adding xpansion {resource_type} resource file {filename} to study '{study.id}'")
 
         # checks the file doesn't already exist

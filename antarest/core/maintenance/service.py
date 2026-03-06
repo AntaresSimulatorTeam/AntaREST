@@ -11,13 +11,9 @@
 # This file is part of the Antares project.
 
 import logging
-import shutil
-import time
-from threading import Thread
 from typing import Callable, Optional
 
 from fastapi import HTTPException
-from prometheus_client import REGISTRY, CollectorRegistry, Gauge
 
 from antarest.core.config import Config
 from antarest.core.configdata.model import ConfigDataAppKeys
@@ -25,42 +21,11 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.maintenance.model import MaintenanceMode
 from antarest.core.maintenance.repository import MaintenanceRepository
-from antarest.core.metrics import WORKER_ID
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.login.utils import get_current_user
 
 logger = logging.getLogger(__name__)
-
-
-class WorkspaceDiskUsageMetrics:
-    def __init__(self, registry: CollectorRegistry) -> None:
-        self._disk_used_gauge = Gauge(
-            "workspaces_disk_used_bytes",
-            "Disk usage in bytes",
-            ["worker_id", "workspace"],
-            multiprocess_mode="liveall",
-            registry=registry,
-        )
-        self._disk_free_gauge = Gauge(
-            "workspaces_disk_free_bytes",
-            "Free disk space in bytes",
-            ["worker_id", "workspace"],
-            multiprocess_mode="liveall",
-            registry=registry,
-        )
-        self._disk_total_gauge = Gauge(
-            "workspaces_disk_total_bytes",
-            "Total disk space in bytes",
-            ["worker_id", "workspace"],
-            multiprocess_mode="liveall",
-            registry=registry,
-        )
-
-    def update_disk_usage(self, workspace: str, free: int, used: int, total: int) -> None:
-        self._disk_free_gauge.labels(WORKER_ID, workspace).set(free)
-        self._disk_used_gauge.labels(WORKER_ID, workspace).set(used)
-        self._disk_total_gauge.labels(WORKER_ID, workspace).set(total)
 
 
 class MaintenanceService:
@@ -75,36 +40,6 @@ class MaintenanceService:
         self.repo = repository
         self.event_bus = event_bus
         self.cache = cache
-        self._metrics = WorkspaceDiskUsageMetrics(REGISTRY) if config.metrics.prometheus else None
-        self._init()
-
-    def _init(self) -> None:
-        self.thread = Thread(
-            target=self.check_disk_usage,
-            name=self.__class__.__name__,
-            daemon=True,
-        )
-        self.thread.start()
-
-    def check_disk_usage(self) -> None:
-        while True:
-            for name, workspace in self.config.storage.workspaces.items():
-                try:
-                    usage = shutil.disk_usage(workspace.path)
-                    logger.info(
-                        f"Disk usage for {name}: {(100 * usage.used / usage.total):.2f}%"
-                        f" ({(usage.free / 1000000000):.3f}GB free)"
-                    )
-
-                    if self._metrics:
-                        self._metrics.update_disk_usage(name, free=usage.free, used=usage.used, total=usage.total)
-
-                except Exception as e:
-                    logger.error(
-                        f"Failed to check disk usage for disk {workspace.path}",
-                        exc_info=e,
-                    )
-            time.sleep(3600)
 
     def _get_maintenance_data(
         self,

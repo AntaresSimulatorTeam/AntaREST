@@ -12,11 +12,12 @@
 
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import Annotated, List, Optional
 
 from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
 from starlette.responses import FileResponse
 
+from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -63,7 +64,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
     bp = APIRouter(prefix="/v1", tags=[APITag.matrix], dependencies=[auth.required()])
 
     @bp.post("/matrix", description="Upload a new matrix")
-    def create(matrix: List[List[MatrixData]] = Body(description="matrix dto", default=[])) -> str:
+    def create(matrix: Annotated[List[List[MatrixData]], Body(description="matrix dto")] = []) -> str:
         logger.info("Creating new matrix")
         return service.create(create_polars_dataframe(matrix))
 
@@ -72,8 +73,8 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         description="Import a new matrix or zip matrices",
     )
     def create_by_importation(
+        file: Annotated[UploadFile, File()],
         json: bool = False,
-        file: UploadFile = File(...),
     ) -> list[MatrixInfoDTO]:
         logger.info("Importing new matrix dataset")
         return service.create_by_importation(file, is_json=json)
@@ -89,7 +90,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         return service.get_matrices()
 
     @bp.get("/matrix/{id}")
-    def get(id: str) -> MatrixDTO:
+    def get(id: SanitizedStr) -> MatrixDTO:
         logger.info("Fetching matrix")
         df = service.get(id)
         return MatrixDTO(id=id, index=list(range(len(df))), columns=list(df.columns), data=df.to_numpy())
@@ -100,9 +101,12 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         response_model_exclude_none=True,
     )
     def get_matrices_references(
-        disk_usage: bool = Query(
-            ..., alias="disk_usage", description="Determine if the disk usage should be displayed", title="Disk Usage"
-        ),
+        disk_usage: Annotated[
+            bool,
+            Query(
+                alias="disk_usage", description="Determine if the disk usage should be displayed", title="Disk Usage"
+            ),
+        ],
     ) -> dict[str, MatrixReferencesDTO]:
         user = require_current_user()
         logger.info("Fetching matrices references")
@@ -113,7 +117,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
 
     @bp.post("/matrixdataset")
     def create_dataset(
-        metadata: MatrixDataSetUpdateDTO = Body(...), matrices: List[MatrixInfoDTO] = Body(...)
+        metadata: Annotated[MatrixDataSetUpdateDTO, Body()], matrices: Annotated[List[MatrixInfoDTO], Body()]
     ) -> MatrixDataSetDTO:
         logger.info(f"Creating new matrix dataset metadata {metadata.name}")
         return service.create_dataset(metadata, matrices).to_dto()
@@ -121,14 +125,14 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
     @bp.put(
         "/matrixdataset/{id}/metadata",
     )
-    def update_dataset_metadata(id: str, metadata: MatrixDataSetUpdateDTO) -> MatrixDataSetDTO:
+    def update_dataset_metadata(id: SanitizedStr, metadata: MatrixDataSetUpdateDTO) -> MatrixDataSetDTO:
         logger.info(f"Updating matrix dataset metadata {id}")
         return service.update_dataset(id, metadata).to_dto()
 
     @bp.get(
         "/matrixdataset/_search",
     )
-    def query_datasets(name: Optional[str], filter_own: bool = False) -> List[MatrixDataSetDTO]:
+    def query_datasets(name: Optional[SanitizedStr], filter_own: bool = False) -> List[MatrixDataSetDTO]:
         logger.info("Searching matrix dataset metadata")
         return service.list(name, filter_own)
 
@@ -136,7 +140,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         "/matrixdataset/{dataset_id}/download",
         summary="Download dataset",
     )
-    def download_dataset(dataset_id: str) -> FileDownloadTaskDTO:
+    def download_dataset(dataset_id: SanitizedStr) -> FileDownloadTaskDTO:
         logger.info(f"Download {dataset_id} matrix dataset")
         return service.download_dataset(dataset_id)
 
@@ -145,8 +149,8 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         summary="Download matrix content",
     )
     def download_matrix(
-        matrix_id: str,
-        tmp_export_file: Path = Depends(ftm.request_tmp_file),
+        matrix_id: SanitizedStr,
+        tmp_export_file: Annotated[Path, Depends(ftm.request_tmp_file)],
     ) -> FileResponse:
         logger.info(f"Download {matrix_id} matrix")
         service.download_matrix(matrix_id, tmp_export_file)
@@ -157,7 +161,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         )
 
     @bp.delete("/matrixdataset/{id}")
-    def delete_datasets(id: str) -> None:
+    def delete_datasets(id: SanitizedStr) -> None:
         logger.info(f"Removing matrix dataset metadata {id}")
         service.delete_dataset(id)
 

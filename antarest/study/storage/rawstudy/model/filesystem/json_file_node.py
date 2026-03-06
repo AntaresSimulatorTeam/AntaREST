@@ -12,7 +12,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from typing_extensions import override
 
@@ -50,7 +50,7 @@ class JsonReader(IReader):
             raise TypeError(repr(type(path)))
 
         try:
-            return cast(JSON, from_json(content))
+            return from_json(content)
         except json.JSONDecodeError as exc:
             err_msg = f"Failed to parse JSON file '{path}'"
             raise ValueError(err_msg) from exc
