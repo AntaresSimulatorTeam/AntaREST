@@ -14,20 +14,21 @@ import logging
 from http import HTTPStatus
 from io import BytesIO
 from pathlib import Path
-from typing import Annotated, Any, Sequence
+from typing import Annotated, Any, Sequence, TypeAlias
 
 import pandas as pd
 from fastapi import APIRouter, Depends, Query, UploadFile
 from pydantic import TypeAdapter
 from starlette.responses import FileResponse, Response
 
+from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.serde.json import to_json
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.dict_utils import remove_nones
-from antarest.core.utils.utils import sanitize_string, sanitize_uuid
+from antarest.core.utils.utils import sanitize_string
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import MatrixFrequency, MatrixIndex, StudyDownloadDTO, StudySimResultDTO
@@ -49,7 +50,9 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
+ExportFormatQuery: TypeAlias = Annotated[
+    TableExportFormat, Query(alias="format", description="Export format", title="Export Format")
+]
 
 download_expiration_time_query: Any = Query(
     gt=0,
@@ -118,18 +121,16 @@ def create_output_routes(
         status_code=HTTPStatus.ACCEPTED,
         summary="Import Output",
     )
-    def import_output(uuid: str, output: UploadFile) -> str | None:
+    def import_output(uuid: UuidStr, output: UploadFile) -> str | None:
         logger.info(f"Importing output for study {uuid}")
-        uuid_sanitized = sanitize_uuid(uuid)
-        output_id = output_service.import_output(uuid_sanitized, output.file)
+        output_id = output_service.import_output(uuid, output.file)
         return output_id
 
     @bp.get(
         "/studies/{study_id}/outputs/{output_id}/variables",
         summary="Get outputs data variables",
     )
-    def output_variables_information(study_id: str, output_id: str) -> OutputVariablesInformation:
-        study_id = sanitize_uuid(study_id)
+    def output_variables_information(study_id: UuidStr, output_id: SanitizedStr) -> OutputVariablesInformation:
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching whole output of the simulation {output_id} for study {study_id}")
         return output_service.get_output_variables_information(study_id, output_id)
@@ -138,8 +139,7 @@ def create_output_routes(
         "/studies/{study_id}/outputs/{output_id}/export",
         summary="Get outputs data",
     )
-    def output_export(study_id: str, output_id: str) -> FileDownloadTaskDTO:
-        study_id = sanitize_uuid(study_id)
+    def output_export(study_id: UuidStr, output_id: SanitizedStr) -> FileDownloadTaskDTO:
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching whole output of the simulation {output_id} for study {study_id}")
         return output_service.export_output(study_uuid=study_id, output_uuid=output_id)
@@ -149,12 +149,14 @@ def create_output_routes(
         summary="Get time index for output matrices by frequency",
     )
     def get_output_time_index(
-        uuid: str,
-        output_id: str,
-        frequency: MatrixFrequency = Query(
-            MatrixFrequency.HOURLY,
-            description="Temporal frequency (hourly, daily, weekly, monthly, annual)",
-        ),
+        uuid: UuidStr,
+        output_id: SanitizedStr,
+        frequency: Annotated[
+            MatrixFrequency,
+            Query(
+                description="Temporal frequency (hourly, daily, weekly, monthly, annual)",
+            ),
+        ] = MatrixFrequency.HOURLY,
     ) -> MatrixIndex:
         """
         Get the time indexing information (start date, step count, etc.) for output matrices
@@ -168,20 +170,18 @@ def create_output_routes(
         Returns:
         - MatrixIndex containing start_date, steps, first_week_size, and level.
         """
-        study_id = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
-        logger.info(f"Getting time index for study '{study_id}', output '{output_id}' at frequency '{frequency}'")
-        return output_service.get_output_time_index(study_id, output_id, frequency)
+        logger.info(f"Getting time index for study '{uuid}', output '{output_id}' at frequency '{frequency}'")
+        return output_service.get_output_time_index(uuid, output_id, frequency)
 
     @bp.post("/studies/{study_id}/outputs/{output_id}/download", summary="Get outputs data")
     def output_download(
-        study_id: str,
-        output_id: str,
+        study_id: UuidStr,
+        output_id: SanitizedStr,
         data: StudyDownloadDTO,
-        use_task: bool = Query(default=False, deprecated=True),
-        tmp_export_file: Path = Depends(file_transfer_manager.request_tmp_file),
+        tmp_export_file: Annotated[Path, Depends(file_transfer_manager.request_tmp_file)],
+        use_task: Annotated[bool, Query(deprecated=True)] = False,
     ) -> FileResponse:
-        study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching batch outputs of simulation {output_id} for study {study_id}")
 
@@ -191,8 +191,7 @@ def create_output_routes(
         "/studies/{study_id}/outputs/{output_id}",
         summary="Delete a simulation output",
     )
-    def delete_output(study_id: str, output_id: str) -> None:
-        study_id = sanitize_uuid(study_id)
+    def delete_output(study_id: UuidStr, output_id: SanitizedStr) -> None:
         output_id = sanitize_string(output_id)
         logger.info(f"FDeleting output {output_id} from study {study_id}")
         output_service.delete_output(study_id, output_id)
@@ -201,8 +200,7 @@ def create_output_routes(
         "/studies/{study_id}/outputs/{output_id}/_archive",
         summary="Archive output",
     )
-    def archive_output(study_id: str, output_id: str) -> str | None:
-        study_id = sanitize_uuid(study_id)
+    def archive_output(study_id: UuidStr, output_id: SanitizedStr) -> str | None:
         output_id = sanitize_string(output_id)
         logger.info(f"Archiving of the output {output_id} of the study {study_id}")
 
@@ -213,8 +211,7 @@ def create_output_routes(
         "/studies/{study_id}/outputs/{output_id}/_unarchive",
         summary="Unarchive output",
     )
-    def unarchive_output(study_id: str, output_id: str) -> str | None:
-        study_id = sanitize_uuid(study_id)
+    def unarchive_output(study_id: UuidStr, output_id: SanitizedStr) -> str | None:
         output_id = sanitize_string(output_id)
         logger.info(f"Unarchiving of the output {output_id} of the study {study_id}")
 
@@ -225,8 +222,7 @@ def create_output_routes(
         "/private/studies/{study_id}/outputs/{output_id}/digest-ui",
         summary="Display an output digest file for the front-end",
     )
-    def get_digest_file(study_id: str, output_id: str) -> DigestUI:
-        study_id = sanitize_uuid(study_id)
+    def get_digest_file(study_id: UuidStr, output_id: SanitizedStr) -> DigestUI:
         output_id = sanitize_string(output_id)
         logger.info(f"Retrieving the digest file for the output {output_id} of the study {study_id}")
         return output_service.get_digest_file(study_id, output_id)
@@ -235,9 +231,8 @@ def create_output_routes(
         "/studies/{study_id}/outputs",
         summary="Get global information about a study simulation result",
     )
-    def sim_result(study_id: str) -> list[StudySimResultDTO]:
+    def sim_result(study_id: UuidStr) -> list[StudySimResultDTO]:
         logger.info(f"Fetching output list for study {study_id}")
-        study_id = sanitize_uuid(study_id)
         content = output_service.get_study_sim_result(study_id)
         return content
 
@@ -246,14 +241,14 @@ def create_output_routes(
         summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs individual Outputs",
     )
     def aggregate_areas_raw_data(
-        uuid: str,
-        output_id: str,
+        uuid: UuidStr,
+        output_id: SanitizedStr,
         query_file: MCIndAreasQueryFile,
         frequency: MatrixFrequency,
-        mc_years: str = "",
-        areas_ids: str = "",
-        columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        mc_years: SanitizedStr = "",
+        areas_ids: SanitizedStr = "",
+        columns_names: SanitizedStr = "",
+        export_format: ExportFormatQuery = TableExportFormat.CSV,
         download_expiration_time: Annotated[int, download_expiration_time_query] = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         # noinspection SpellCheckingInspection
@@ -281,7 +276,6 @@ def create_output_routes(
         )
 
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
-        uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
@@ -307,14 +301,14 @@ def create_output_routes(
         include_in_schema=False,
     )
     def redirect_aggregate_areas_raw_data(
-        uuid: str,
-        output_id: str,
+        uuid: UuidStr,
+        output_id: SanitizedStr,
         query_file: MCIndAreasQueryFile,
         frequency: MatrixFrequency,
-        mc_years: str = "",
-        areas_ids: str = "",
-        columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        mc_years: SanitizedStr = "",
+        areas_ids: SanitizedStr = "",
+        columns_names: SanitizedStr = "",
+        export_format: ExportFormatQuery = TableExportFormat.CSV,
     ) -> str:
         return aggregate_areas_raw_data(
             uuid, output_id, query_file, frequency, mc_years, areas_ids, columns_names, export_format
@@ -325,14 +319,14 @@ def create_output_routes(
         summary="Retrieve Aggregated Links Raw Data from Study Economy MCs individual Outputs",
     )
     def aggregate_links_raw_data(
-        uuid: str,
-        output_id: str,
+        uuid: UuidStr,
+        output_id: SanitizedStr,
         query_file: MCIndLinksQueryFile,
         frequency: MatrixFrequency,
-        mc_years: str = "",
-        links_ids: str = "",
-        columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        mc_years: SanitizedStr = "",
+        links_ids: SanitizedStr = "",
+        columns_names: SanitizedStr = "",
+        export_format: ExportFormatQuery = TableExportFormat.CSV,
         download_expiration_time: Annotated[int, download_expiration_time_query] = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         """
@@ -359,7 +353,6 @@ def create_output_routes(
         )
 
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
-        uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
@@ -384,14 +377,14 @@ def create_output_routes(
         include_in_schema=False,
     )
     def redirect_aggregate_links_raw_data(
-        uuid: str,
-        output_id: str,
+        uuid: UuidStr,
+        output_id: SanitizedStr,
         query_file: MCIndLinksQueryFile,
         frequency: MatrixFrequency,
-        mc_years: str = "",
-        links_ids: str = "",
-        columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        mc_years: SanitizedStr = "",
+        links_ids: SanitizedStr = "",
+        columns_names: SanitizedStr = "",
+        export_format: ExportFormatQuery = TableExportFormat.CSV,
     ) -> str:
         return aggregate_links_raw_data(
             uuid, output_id, query_file, frequency, mc_years, links_ids, columns_names, export_format
@@ -402,13 +395,13 @@ def create_output_routes(
         summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs All Outputs",
     )
     def aggregate_areas_raw_data__all(
-        uuid: str,
-        output_id: str,
+        uuid: UuidStr,
+        output_id: SanitizedStr,
         query_file: MCAllAreasQueryFile,
         frequency: MatrixFrequency,
-        areas_ids: str = "",
-        columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        areas_ids: SanitizedStr = "",
+        columns_names: SanitizedStr = "",
+        export_format: ExportFormatQuery = TableExportFormat.CSV,
         download_expiration_time: Annotated[int, download_expiration_time_query] = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         # noinspection SpellCheckingInspection
@@ -435,7 +428,6 @@ def create_output_routes(
         )
 
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
-        uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
@@ -460,13 +452,13 @@ def create_output_routes(
         include_in_schema=False,
     )
     def redirect_aggregate_areas_raw_data__all(
-        uuid: str,
-        output_id: str,
+        uuid: UuidStr,
+        output_id: SanitizedStr,
         query_file: MCAllAreasQueryFile,
         frequency: MatrixFrequency,
-        areas_ids: str = "",
-        columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        areas_ids: SanitizedStr = "",
+        columns_names: SanitizedStr = "",
+        export_format: ExportFormatQuery = TableExportFormat.CSV,
     ) -> str:
         return aggregate_areas_raw_data__all(
             uuid, output_id, query_file, frequency, areas_ids, columns_names, export_format
@@ -477,13 +469,13 @@ def create_output_routes(
         summary="Retrieve Aggregated Links Raw Data from Study Economy MC-All Outputs",
     )
     def aggregate_links_raw_data__all(
-        uuid: str,
-        output_id: str,
+        uuid: UuidStr,
+        output_id: SanitizedStr,
         query_file: MCAllLinksQueryFile,
         frequency: MatrixFrequency,
-        links_ids: str = "",
-        columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        links_ids: SanitizedStr = "",
+        columns_names: SanitizedStr = "",
+        export_format: ExportFormatQuery = TableExportFormat.CSV,
         download_expiration_time: Annotated[int, download_expiration_time_query] = DEFAULT_DOWNLOAD_EXPIRATION_TIME,
     ) -> str:
         """
@@ -509,7 +501,6 @@ def create_output_routes(
         )
 
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
-        uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
@@ -536,13 +527,13 @@ def create_output_routes(
         include_in_schema=False,
     )
     def redirect_aggregate_links_raw_data__all(
-        uuid: str,
-        output_id: str,
+        uuid: UuidStr,
+        output_id: SanitizedStr,
         query_file: MCAllLinksQueryFile,
         frequency: MatrixFrequency,
-        links_ids: str = "",
-        columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        links_ids: SanitizedStr = "",
+        columns_names: SanitizedStr = "",
+        export_format: ExportFormatQuery = TableExportFormat.CSV,
     ) -> str:
         return aggregate_links_raw_data__all(
             uuid, output_id, query_file, frequency, links_ids, columns_names, export_format
@@ -552,8 +543,7 @@ def create_output_routes(
         "/studies/{uuid}/output/{output_id}/variables-list",
         summary="Retrieves the list of variables for a given output",
     )
-    def get_output_variables_list(uuid: str, output_id: str) -> OutputVariablesList:
-        uuid = sanitize_uuid(uuid)
+    def get_output_variables_list(uuid: UuidStr, output_id: SanitizedStr) -> OutputVariablesList:
         output_id = sanitize_string(output_id)
         return output_service.get_output_variables_list(uuid, output_id)
 
@@ -566,24 +556,23 @@ def create_output_routes(
         },
     )
     def get_output_variables_view(
-        uuid: str,
-        output_id: str,
-        variable_name: str,
+        uuid: UuidStr,
+        output_id: SanitizedStr,
+        variable_name: SanitizedStr,
         frequency: MatrixFrequency,
         type: OutputVariablesType,
-        area_id: str | None = None,
-        area_from_id: str | None = None,
-        area_to_id: str | None = None,
-        thermal_id: str | None = None,
-        renewable_id: str | None = None,
-        st_storage_id: str | None = None,
+        area_id: SanitizedStr | None = None,
+        area_from_id: SanitizedStr | None = None,
+        area_to_id: SanitizedStr | None = None,
+        thermal_id: SanitizedStr | None = None,
+        renewable_id: SanitizedStr | None = None,
+        st_storage_id: SanitizedStr | None = None,
     ) -> Response:
         """
         Fetches the variables view for a given output and a given configuration.
         If the view does not exist in DB yet, returns an HTTP 404 response.
         The user will have to use the endpoint `POST /variables-views/materialize` with the same configuration first.
         """
-        uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
         item_id = _to_item_id(
@@ -606,26 +595,25 @@ def create_output_routes(
         summary="Export the variables view for a given output and a given configuration in a given format",
     )
     def export_output_variables_view(
-        uuid: str,
-        output_id: str,
-        variable_name: str,
+        uuid: UuidStr,
+        output_id: SanitizedStr,
+        variable_name: SanitizedStr,
         frequency: MatrixFrequency,
         type: OutputVariablesType,
-        area_id: str | None = None,
-        area_from_id: str | None = None,
-        area_to_id: str | None = None,
-        thermal_id: str | None = None,
-        renewable_id: str | None = None,
-        st_storage_id: str | None = None,
+        area_id: SanitizedStr | None = None,
+        area_from_id: SanitizedStr | None = None,
+        area_to_id: SanitizedStr | None = None,
+        thermal_id: SanitizedStr | None = None,
+        renewable_id: SanitizedStr | None = None,
+        st_storage_id: SanitizedStr | None = None,
         export_format: TableExportFormat = TableExportFormat.CSV,
-        with_header: bool = Query(
-            True, alias="header", description="Whether to include the header or not", title="With Header"
-        ),
-        with_index: bool = Query(
-            True, alias="index", description="Whether to include the index or not", title="With Index"
-        ),
+        with_header: Annotated[
+            bool, Query(alias="header", description="Whether to include the header or not", title="With Header")
+        ] = True,
+        with_index: Annotated[
+            bool, Query(alias="index", description="Whether to include the index or not", title="With Index")
+        ] = True,
     ) -> Response:
-        uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
         item_id = _to_item_id(
@@ -650,24 +638,23 @@ def create_output_routes(
         summary="Materialize the variables view for a given output and a given configuration",
     )
     def materialize_output_variables_view(
-        uuid: str,
-        output_id: str,
-        variable_name: str,
+        uuid: UuidStr,
+        output_id: SanitizedStr,
+        variable_name: SanitizedStr,
         frequency: MatrixFrequency,
         type: OutputVariablesType,
-        area_id: str | None = None,
-        area_from_id: str | None = None,
-        area_to_id: str | None = None,
-        thermal_id: str | None = None,
-        renewable_id: str | None = None,
-        st_storage_id: str | None = None,
+        area_id: SanitizedStr | None = None,
+        area_from_id: SanitizedStr | None = None,
+        area_to_id: SanitizedStr | None = None,
+        thermal_id: SanitizedStr | None = None,
+        renewable_id: SanitizedStr | None = None,
+        st_storage_id: SanitizedStr | None = None,
     ) -> str:
         """
         Materializes a variables view for a given output and a given configuration.
         If the view is already registered in DB, raise an HTTP Conflict error.
         The user should use the endpoint `GET /variables-views/data` with the same configuration.
         """
-        uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
         item_id = _to_item_id(
             type=type,

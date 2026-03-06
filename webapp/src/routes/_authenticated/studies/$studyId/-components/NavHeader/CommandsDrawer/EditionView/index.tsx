@@ -27,7 +27,6 @@ import debug from "debug";
 import debounce from "lodash/debounce";
 import { useSnackbar } from "notistack";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { DropResult } from "react-beautiful-dnd";
 import { useTranslation } from "react-i18next";
 import { useMountedState } from "react-use";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
@@ -40,7 +39,6 @@ import {
   getCommand,
   getCommands,
   getStudyTask,
-  moveCommand,
   replaceCommands,
   updateCommand,
 } from "../../../../../../../../services/api/variant";
@@ -58,7 +56,6 @@ import {
   fromCommandDTOToCommandItem,
   fromCommandDTOToJsonCommand,
   isTaskFinal,
-  reorder,
   updateCommandResults,
 } from "./utils";
 
@@ -85,27 +82,7 @@ function EditionView(props: Props) {
   const [commands, setCommands] = useState<CommandItem[]>([]);
   const [loaded, setLoaded] = useState(false);
   const taskFetchPeriod = 3000;
-  const taskTimeoutId = useRef<NodeJS.Timeout>();
-
-  const onDragEnd = async ({ destination, source }: DropResult) => {
-    // dropped outside the list or same place
-    if (!destination || source.index === destination.index) {
-      return;
-    }
-    const oldCommands = commands.concat([]);
-    try {
-      const elm = commands[source.index];
-      const newItems = reorder(commands, source.index, destination.index);
-      setCommands(newItems.map((item) => ({ ...item, results: undefined })));
-      await moveCommand(studyId, elm.id as string, destination.index);
-      enqueueSnackbar(t("variants.success.commandMoved"), {
-        variant: "success",
-      });
-    } catch (e) {
-      setCommands(oldCommands);
-      enqueueErrorSnackbar(t("variants.error.moveCommand"), e as AxiosError);
-    }
-  };
+  const taskTimeoutId = useRef<NodeJS.Timeout>(undefined);
 
   const onSave = async (index: number) => {
     try {
@@ -484,7 +461,6 @@ function EditionView(props: Props) {
             generationStatus={generationStatus}
             expandedIndex={expandedIndex}
             generationIndex={currentCommandGenerationIndex}
-            onDragEnd={onDragEnd}
             onDelete={onDelete}
             onArgsUpdate={onArgsUpdate}
             onSave={onSave}

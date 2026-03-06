@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { withOpacity } from "@/utils/muiUtils";
 import FolderIcon from "@mui/icons-material/Folder";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import type { SxProps, Theme } from "@mui/material";
@@ -21,50 +22,46 @@ export const treeNodeIcons = {
   folderOpen: FolderOpenIcon,
 };
 
-export const treeItemStyles: SxProps<Theme> = {
+export const treeItemStyles: SxProps<Theme> = (theme) => ({
   "& > .MuiTreeItem-content": {
-    borderRadius: 1,
-    px: 1,
     py: 0.25,
     "&:hover": {
-      backgroundColor: (theme) => `${theme.palette.info.main}10`,
+      backgroundColor: withOpacity(theme.vars.palette.info.main, 0.05),
     },
     "&.Mui-selected": {
-      backgroundColor: (theme) => `${theme.palette.info.main}20`,
+      backgroundColor: withOpacity(theme.vars.palette.info.main, 0.15),
       "&:hover": {
-        backgroundColor: (theme) => `${theme.palette.info.main}30`,
+        backgroundColor: withOpacity(theme.vars.palette.info.main, 0.2),
       },
     },
     "&.Mui-selected.Mui-focused": {
-      backgroundColor: (theme) => `${theme.palette.info.main}25`,
+      backgroundColor: withOpacity(theme.vars.palette.info.main, 0.15),
     },
-
     "& .MuiTreeItem-iconContainer": {
       mr: 0.5,
       "&:hover": {
         backgroundColor: "transparent",
       },
       "& svg": {
-        color: (theme) => theme.palette.info.main,
+        color: theme.vars.palette.info.main,
         fontSize: "1.2rem",
       },
     },
-  },
-  "& > .MuiTreeItem-content > .MuiTreeItem-label": {
-    fontSize: 14,
-    fontWeight: 450,
-  },
-};
-
-export const editableTreeItemStyles: SxProps<Theme> = {
-  ...treeItemStyles,
-  "& > .MuiTreeItem-content": {
-    ...(treeItemStyles["& > .MuiTreeItem-content"] as object),
-    backgroundColor: (theme) => `${theme.palette.info.main}08`,
-    "&:hover": {
-      backgroundColor: (theme) => `${theme.palette.info.main}12`,
+    "& > .MuiTreeItem-label": {
+      fontSize: 14,
+      fontWeight: 450,
     },
   },
+});
+
+export const editableRowStyles: SxProps<Theme> = {
+  display: "flex",
+  alignItems: "center",
+  gap: 0.5,
+  borderRadius: 1,
+  px: 1,
+  py: 0.25,
+  backgroundColor: (theme) => withOpacity(theme.vars.palette.info.main, 0.03),
 };
 
 export const textFieldStyles: SxProps<Theme> = {

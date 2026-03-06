@@ -13,6 +13,7 @@
  */
 
 import { Box } from "@mui/material";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import CustomScrollbar from "@/components/CustomScrollbar";
@@ -20,12 +21,15 @@ import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { updateStudyFilters, updateStudySortConfig } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getStudyFilters, getStudySortConfig } from "@/redux/selectors";
+import { getStudyFilters, getStudySortConfig, getStudiesById } from "@/redux/selectors";
+import { directoryQueries } from "@/queries/directories/queries";
 import { scanFolder } from "@/services/api/study";
 import type { StudySortConfig } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
+import { getDescendantIds } from "@/routes/_authenticated/studies/-components/StudyTree/ManagedTree/utils";
 import BatchActions from "./BatchActions";
 import DeleteStudiesDialog from "./DeleteStudiesDialog";
+import MoveStudyDialog from "@/routes/-shared/components/studies/dialogs/MoveStudyDialog";
 import FilterControls from "./FilterControls";
 import { useBreadcrumbs } from "./hooks/useBreadcrumbs";
 import NavigationBreadcrumbs from "./NavigationBreadcrumbs";
@@ -51,8 +55,13 @@ function Header({
   const [confirmFolderScan, setConfirmFolderScan] = useState(false);
   const [isRecursiveScan, setIsRecursiveScan] = useState(false);
   const [confirmDeleteStudies, setConfirmDeleteStudies] = useState(false);
+  const [confirmMoveStudies, setConfirmMoveStudies] = useState(false);
 
   // Derived state
+  const studiesById = useAppSelector(getStudiesById);
+  const selectedStudies = selectedStudyIds.map((id) => studiesById[id]).filter(Boolean);
+  const selectedManagedStudies = selectedStudies.filter((s) => s.managed);
+
   const isDesktopMode = import.meta.env.MODE === "desktop";
   const isReferenceStudyTypeActive = filters.type === "references";
   const canScan = activeTree === "external" && external.path !== "";
@@ -64,6 +73,8 @@ function Header({
     externalPath: external.path,
   });
 
+  const { data: directories } = useSuspenseQuery(directoryQueries.list());
+
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
@@ -73,7 +84,10 @@ function Header({
       dispatch(
         updateStudyFilters({
           activeTree: "managed",
-          managed: { directoryId: item.id },
+          managed: {
+            directoryId: item.id,
+            directoryIds: item.id ? getDescendantIds(item.id, directories) : null,
+          },
         }),
       );
     } else {
@@ -114,6 +128,15 @@ function Header({
 
   const handleCloseDeleteDialog = () => {
     setConfirmDeleteStudies(false);
+    setSelectedStudyIds([]);
+  };
+
+  const handleMoveStudies = () => {
+    setConfirmMoveStudies(true);
+  };
+
+  const handleCloseMoveDialog = () => {
+    setConfirmMoveStudies(false);
     setSelectedStudyIds([]);
   };
 
@@ -173,7 +196,9 @@ function Header({
 
           <BatchActions
             selectedCount={selectedStudyIds.length}
+            managedCount={selectedManagedStudies.length}
             onLaunch={handleLaunchStudies}
+            onMove={selectedManagedStudies.length > 0 ? handleMoveStudies : undefined}
             onDelete={handleDeleteStudies}
             onDeselectAll={handleDeselectAll}
           />
@@ -207,6 +232,14 @@ function Header({
         open={confirmDeleteStudies}
         onClose={handleCloseDeleteDialog}
       />
+
+      {confirmMoveStudies && selectedStudies.length > 0 && (
+        <MoveStudyDialog
+          studies={selectedManagedStudies}
+          open={confirmMoveStudies}
+          onClose={handleCloseMoveDialog}
+        />
+      )}
     </>
   );
 }

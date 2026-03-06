@@ -12,10 +12,11 @@
 
 import logging
 from datetime import timedelta
-from typing import Optional
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import UserHasNotPermissionError
@@ -48,8 +49,8 @@ logger = logging.getLogger(__name__)
 
 
 class UserCredentials(AntaresBaseModel):
-    username: str
-    password: str
+    username: SanitizedStr
+    password: SanitizedStr
 
 
 def _generate_tokens(user: JWTUser, jwt_manager: AuthJWT, expire: Optional[timedelta] = None) -> CredentialsDTO:
@@ -129,7 +130,7 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
         return service.get_all_groups(details)
 
     @bp.get("/groups/{id}")
-    def groups_get_id(id: str, details: bool = False) -> GroupDetailDTO | GroupDTO:
+    def groups_get_id(id: SanitizedStr, details: bool = False) -> GroupDetailDTO | GroupDTO:
         logger.info(f"Fetching group {id} info")
         group: GroupDetailDTO | GroupDTO | None = None
         if details:
@@ -153,12 +154,12 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
         return service.save_group(group).to_dto()
 
     @bp.delete("/groups/{id}")
-    def groups_delete(id: str) -> None:
+    def groups_delete(id: SanitizedStr) -> None:
         logger.info(f"Removing group {id}")
         service.delete_group(id)
 
     @bp.get("/roles/group/{group}")
-    def roles_get_all(group: str) -> list[RoleDetailDTO]:
+    def roles_get_all(group: SanitizedStr) -> list[RoleDetailDTO]:
         logger.info(f"Fetching roles for group {group}")
         return [r.to_dto() for r in service.get_all_roles_in_group(group=group)]
 
@@ -168,12 +169,12 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
         return service.save_role(role).to_dto()
 
     @bp.delete("/roles/{group}/{user}")
-    def roles_delete(user: int, group: str) -> None:
+    def roles_delete(user: int, group: SanitizedStr) -> None:
         logger.info(f"Remove role in group {group} for {user}")
         service.delete_role(user, group)
 
     @bp.post("/bots", summary="Create bot token")
-    def bots_create(create: BotCreateDTO, jwt_manager: AuthJWT = Depends()) -> str:
+    def bots_create(create: BotCreateDTO, jwt_manager: Annotated[AuthJWT, Depends(AuthJWT)]) -> str:
         logger.info(f"Creating new bot '{create.name}'")
         bot = service.save_bot(create)
         groups = []
@@ -245,7 +246,7 @@ def create_login_api(service: LoginService) -> APIRouter:
     @bp.post("/login", summary="Login")
     def login(
         credentials: UserCredentials,
-        jwt_manager: AuthJWT = Depends(),
+        jwt_manager: Annotated[AuthJWT, Depends(AuthJWT)],
     ) -> CredentialsDTO:
         logger.info(f"New login for {credentials.username}")
         user = service.authenticate(credentials.username, credentials.password)
@@ -261,7 +262,7 @@ def create_login_api(service: LoginService) -> APIRouter:
         "/refresh",
         summary="Refresh access token",
     )
-    def refresh(jwt_manager: AuthJWT = Depends()) -> CredentialsDTO:
+    def refresh(jwt_manager: Annotated[AuthJWT, Depends(AuthJWT)]) -> CredentialsDTO:
         jwt_manager.jwt_refresh_token_required()
         identity = from_json(jwt_manager.get_jwt_subject())
         logger.debug(f"Refreshing access token for {identity['id']}")

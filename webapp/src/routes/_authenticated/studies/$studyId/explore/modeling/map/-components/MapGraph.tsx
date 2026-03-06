@@ -37,7 +37,7 @@ interface Props {
   width: number;
   links: LinkProperties[];
   nodes: StudyMapNode[];
-  graph: React.RefObject<Graph<StudyMapNode & GraphNode, LinkProperties & GraphLink>>;
+  graph: React.RefObject<Graph<StudyMapNode & GraphNode, LinkProperties & GraphLink> | null>;
   onNodePositionChange: (id: string, x: number, y: number) => void;
   zoomLevel: number;
   setZoomLevel: DebouncedFunc<(zoom: number) => void>;

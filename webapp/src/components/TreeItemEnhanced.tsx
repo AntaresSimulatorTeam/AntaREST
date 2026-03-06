@@ -13,63 +13,96 @@
  */
 
 import { mergeSxProp } from "@/utils/muiUtils";
-import { Box, CircularProgress, Tooltip } from "@mui/material";
-import { TreeItem, type TreeItemProps } from "@mui/x-tree-view/TreeItem";
-import * as R from "ramda";
+import { Box, CircularProgress, type SxProps, type Theme, Tooltip } from "@mui/material";
+import { TreeItem, type TreeItemProps } from "@mui/x-tree-view";
 import { Children } from "react";
 
 export interface TreeItemEnhancedProps extends TreeItemProps {
   loading?: boolean;
+  disableTooltip?: boolean;
 }
+
+////////////////////////////////////////////////////////////////
+// Utils
+////////////////////////////////////////////////////////////////
+
+function getStyles(canExpand: boolean): SxProps<Theme> {
+  return {
+    "& > .MuiTreeItem-content": {
+      // Expand/collapse icon
+      "& > .MuiTreeItem-iconContainer": {
+        alignItems: "center",
+        borderTopLeftRadius: "inherit",
+        borderBottomLeftRadius: "inherit",
+        "&:hover": {
+          background: canExpand ? "inherit" : "none",
+        },
+      },
+      "& > .MuiTreeItem-label": {
+        py: 0.5,
+        whiteSpace: "nowrap",
+        textOverflow: "ellipsis",
+        overflow: "hidden",
+      },
+    },
+  };
+}
+
+function withTooltip(label: TreeItemEnhancedProps["label"], disableTooltip: boolean) {
+  if (disableTooltip || typeof label !== "string") {
+    return label;
+  }
+
+  return (
+    <Tooltip title={label}>
+      <span>{label}</span>
+    </Tooltip>
+  );
+}
+
+function withLoading(label: TreeItemEnhancedProps["label"], loading: boolean) {
+  if (!loading) {
+    return label;
+  }
+
+  return (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      {/* Wrapped with a <Box> to prevent display issue when item is expanded */}
+      <Box>
+        <CircularProgress size={12} color="secondary" />
+      </Box>
+      {label}
+    </Box>
+  );
+}
+
+////////////////////////////////////////////////////////////////
+// Component
+////////////////////////////////////////////////////////////////
 
 function TreeItemEnhanced({
   onClick,
   sx,
-  label: labelFromProps,
-  loading,
+  label,
+  loading = false,
+  disableTooltip = false,
   ...rest
 }: TreeItemEnhancedProps) {
   const canExpand = Children.toArray(rest.children).length > 0;
-
-  ////////////////////////////////////////////////////////////////
-  // Label
-  ////////////////////////////////////////////////////////////////
-
-  const addLabelTooltip = (label: TreeItemEnhancedProps["label"]) => {
-    return typeof label === "string" ? (
-      <Tooltip title={label}>
-        <span>{label}</span>
-      </Tooltip>
-    ) : (
-      label
-    );
-  };
-
-  const addLabelLoading = (label: TreeItemEnhancedProps["label"]) => {
-    return loading ? (
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        {/* Wrapped with a <Box> to prevent display issue when item is expanded */}
-        <Box>
-          <CircularProgress size={12} color="secondary" />
-        </Box>
-        {label}
-      </Box>
-    ) : (
-      label
-    );
-  };
-
-  const enhanceLabel = R.compose(addLabelLoading, addLabelTooltip);
+  const enhancedLabel = withLoading(withTooltip(label, disableTooltip), loading);
+  const styles = getStyles(canExpand);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleClick: TreeItemEnhancedProps["onClick"] = (event) => {
-    const { target } = event;
-
+  const handleClick: NonNullable<TreeItemEnhancedProps["onClick"]> = (event) => {
     // The item is not selected if the click is on the expand/collapse icon
-    if (canExpand && target instanceof Element && target.closest(".MuiTreeItem-iconContainer")) {
+    if (
+      canExpand &&
+      event.target instanceof Element &&
+      event.target.closest(".MuiTreeItem-iconContainer")
+    ) {
       return;
     }
 
@@ -81,35 +114,7 @@ function TreeItemEnhanced({
   ////////////////////////////////////////////////////////////////
 
   return (
-    <TreeItem
-      {...rest}
-      onClick={handleClick}
-      label={enhanceLabel(labelFromProps)}
-      sx={mergeSxProp(
-        {
-          "& > .MuiTreeItem-content": {
-            p: 0,
-            alignItems: "normal",
-            // Expand/collapse icon
-            "& > .MuiTreeItem-iconContainer": {
-              alignItems: "center",
-              borderTopLeftRadius: "inherit",
-              borderBottomLeftRadius: "inherit",
-              "&:hover": {
-                background: canExpand ? "inherit" : "none",
-              },
-            },
-            "& > .MuiTreeItem-label": {
-              py: 0.5,
-              whiteSpace: "nowrap",
-              textOverflow: "ellipsis",
-              overflow: "hidden",
-            },
-          },
-        },
-        sx,
-      )}
-    />
+    <TreeItem {...rest} onClick={handleClick} label={enhancedLabel} sx={mergeSxProp(styles, sx)} />
   );
 }
 

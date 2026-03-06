@@ -59,7 +59,7 @@ function JSONEditor({
   ...options
 }: JSONEditorProps) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const editorRef = useRef<JSONEditorClass>();
+  const editorRef = useRef<JSONEditorClass>(undefined);
   const onSaveRef = useUpdatedRef(onSave);
   const callbackOptionsRef = useUpdatedRef<Partial<JSONEditorOptions>>(
     R.pickBy(RA.isFunction, options),

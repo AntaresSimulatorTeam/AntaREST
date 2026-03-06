@@ -27,8 +27,6 @@ from typing_extensions import override
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
-from antarest.study.business.model.scenario_builder_model import AnyScenarios, Rulesets, ScenarioType
-from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
 from antarest.study.dao.database.database_area_properties_dao import DatabaseAreaPropertiesDao
@@ -37,13 +35,18 @@ from antarest.study.dao.database.database_hydro_dao import DatabaseHydroDao
 from antarest.study.dao.database.database_layer_dao import DatabaseLayerDao
 from antarest.study.dao.database.database_link_dao import DatabaseLinkDao
 from antarest.study.dao.database.database_renewable_dao import DatabaseRenewableDao
+from antarest.study.dao.database.database_scenario_builder_dao import DatabaseScenarioBuilderDao
 from antarest.study.dao.database.database_st_storage_dao import DatabaseStStorageDao
 from antarest.study.dao.database.database_study_settings_dao import DatabaseStudySettingsDao
+from antarest.study.dao.database.database_thematic_trimming_dao import DatabaseThematicTrimmingDao
 from antarest.study.dao.database.database_thermal_dao import DatabaseThermalDao
 from antarest.study.dao.database.database_user_resources import DatabaseUserResourcesDao
 from antarest.study.dao.database.database_xpansion_dao import DatabaseXpansionDao
+from antarest.study.dao.database.models.comments import COMMENTS_TABLE
+from antarest.study.dao.database.sql_utils import upsert_one
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
 class DatabaseStudyDao(
@@ -59,19 +62,29 @@ class DatabaseStudyDao(
     DatabaseRenewableDao,
     DatabaseUserResourcesDao,
     DatabaseStStorageDao,
+    DatabaseThematicTrimmingDao,
+    DatabaseScenarioBuilderDao,
     DatabaseXpansionDao,
 ):
     """
     Database implementation of StudyDao.
     """
 
-    def __init__(self, study_id: str, db_session: Session, matrix_service: ISimpleMatrixService) -> None:
+    def __init__(
+        self,
+        study_id: str,
+        db_session: Session,
+        matrix_service: ISimpleMatrixService,
+        generator_matrix_constants: GeneratorMatrixConstants,
+    ) -> None:
         """
         Initialize DatabaseStudyDao.
 
         Args:
             study_id: The study ID for database queries
             db_session: SQLAlchemy session for database operations
+            matrix_service: Matrix storage service
+            generator_matrix_constants: Predefined matrix constants generator
         """
         DatabaseAreaDao.__init__(self, study_id, db_session)
         DatabaseAreaPropertiesDao.__init__(self, study_id, db_session)
@@ -84,8 +97,11 @@ class DatabaseStudyDao(
         DatabaseRenewableDao.__init__(self, study_id, db_session)
         DatabaseUserResourcesDao.__init__(self, study_id, db_session)
         DatabaseStStorageDao.__init__(self, study_id, db_session)
+        DatabaseThematicTrimmingDao.__init__(self, study_id, db_session)
+        DatabaseScenarioBuilderDao.__init__(self, study_id, db_session)
         DatabaseXpansionDao.__init__(self, study_id, db_session)
         self._matrix_service = matrix_service
+        self._generator_matrix_constants = generator_matrix_constants
 
     # Implementation of abstract methods required by StudyDao
     @override
@@ -106,11 +122,14 @@ class DatabaseStudyDao(
 
     @override
     def get_comments(self) -> str:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        stmt = select(COMMENTS_TABLE.c.comments).where(COMMENTS_TABLE.c.study_id == self._study_id)
+        comments = self._db_session.execute(stmt).scalar_one_or_none()
+        return comments if comments is not None else ""
 
     @override
     def save_comments(self, comments: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        upsert_one(self._db_session, COMMENTS_TABLE, {"study_id": self._study_id, "comments": comments})
+        self._db_session.commit()
 
     @override
     def update_antares_file(self, editor: str, last_save: float) -> None:
@@ -179,28 +198,4 @@ class DatabaseStudyDao(
 
     @override
     def get_constraint_equal_term_matrix(self, constraint_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_thematic_trimming(self, trimming: ThematicTrimming) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_thematic_trimming(self) -> ThematicTrimming:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_scenario_builder(self, rulesets: Rulesets) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_rulesets(self) -> Rulesets:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_active_ruleset_name(self, default_ruleset: str = "Default Ruleset") -> str:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
         raise NotImplementedError("This method is not yet implemented for database storage mode")

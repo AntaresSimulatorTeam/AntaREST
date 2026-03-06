@@ -14,7 +14,7 @@
 
 import GroupedDataTable from "@/components/GroupedDataTable";
 import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
-import type { TRow } from "@/components/GroupedDataTable/types";
+import type { RowData } from "@/components/GroupedDataTable/types";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { checkRouteAvailability } from "@/utils/routerUtils";
 import { Box, Tooltip } from "@mui/material";
@@ -47,14 +47,15 @@ function Storages() {
   const { areaId } = Route.useParams();
   const { t } = useTranslation();
 
-  const { data: storages = [], isLoading } = usePromiseWithSnackbarError(
-    () => getStorages(study.id, areaId),
-    {
-      resetDataOnReload: true,
-      errorMessage: t("studies.error.retrieveData"),
-      deps: [study.id, areaId],
-    },
-  );
+  const {
+    data: storages = [],
+    isLoading,
+    status,
+  } = usePromiseWithSnackbarError(() => getStorages(study.id, areaId), {
+    resetDataOnReload: true,
+    errorMessage: t("studies.error.retrieveData"),
+    deps: [study.id, areaId],
+  });
 
   const [totals, setTotals] = useState(getStoragesTotals(storages));
 
@@ -148,7 +149,7 @@ function Storages() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreate = (values: TRow) => {
+  const handleCreate = (values: RowData) => {
     return createStorage(study.id, areaId, values);
   };
 
@@ -173,6 +174,7 @@ function Storages() {
 
   return (
     <GroupedDataTable
+      key={status}
       isLoading={isLoading}
       data={storages || []}
       columns={columns}

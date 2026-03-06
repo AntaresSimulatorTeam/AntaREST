@@ -73,7 +73,7 @@ const TYPE_OPTIONS = [
 function TermsFE() {
   const { t } = useTranslation();
   const { control } = useFormContext<BindingConstraint>();
-  const newTermTypeRef = useRef<BindingConstraintTermType>();
+  const newTermTypeRef = useRef<BindingConstraintTermType>(undefined);
 
   const { fields, append, update, remove } = useFieldArray({
     control,

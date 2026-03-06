@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Typography, Button, styled } from "@mui/material";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import { Box, Button, styled, Typography } from "@mui/material";
 
 export const Fields = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -37,32 +37,32 @@ export const SelectFields = styled(Box)(({ theme }) => ({
 }));
 
 export const Title = styled(Typography)(({ theme }) => ({
-  color: theme.palette.text.primary,
+  color: theme.vars.palette.text.primary,
   fontSize: "1.25rem",
   fontWeight: 400,
   lineHeight: 1.334,
 }));
 
 export const HoverButton = styled(Button)(({ theme }) => ({
-  color: theme.palette.action.active,
-  borderColor: theme.palette.text.disabled,
+  color: theme.vars.palette.action.active,
+  borderColor: theme.vars.palette.text.disabled,
   "&:hover": {
     backgroundColor: "rgba(255,255,255,0.11)",
-    borderColor: theme.palette.text.primary,
-    color: theme.palette.text.primary,
+    borderColor: theme.vars.palette.text.primary,
+    color: theme.vars.palette.text.primary,
   },
 }));
 
 export const ActiveButton = styled(Button)(({ theme }) => ({
-  backgroundColor: `${theme.palette.secondary.main} !important`,
+  backgroundColor: `${theme.vars.palette.secondary.main} !important`,
   color: `white !important`,
-  borderColor: `${theme.palette.secondary.main} !important`,
+  borderColor: `${theme.vars.palette.secondary.main} !important`,
 }));
 
 export const StyledVisibilityIcon = styled(VisibilityIcon)(({ theme }) => ({
   marginLeft: theme.spacing(1),
   marginRight: theme.spacing(1),
-  color: theme.palette.action.active,
+  color: theme.vars.palette.action.active,
   "&:hover": {
     color: "white",
     cursor: "pointer",
@@ -71,9 +71,9 @@ export const StyledVisibilityIcon = styled(VisibilityIcon)(({ theme }) => ({
 
 export const StyledDeleteIcon = styled(DeleteIcon)(({ theme }) => ({
   cursor: "pointer",
-  color: theme.palette.error.light,
+  color: theme.vars.palette.error.light,
   "&:hover": {
-    color: theme.palette.error.main,
+    color: theme.vars.palette.error.main,
   },
 }));
 

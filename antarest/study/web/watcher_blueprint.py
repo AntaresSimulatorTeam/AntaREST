@@ -17,6 +17,7 @@ from typing import List
 
 from fastapi import APIRouter
 
+from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -50,7 +51,7 @@ def create_watcher_routes(
         "/watcher/_scan",
         summary="Launch scan in selected directory",
     )
-    def scan_dir(path: str, recursive: bool = True) -> str:
+    def scan_dir(path: SanitizedStr, recursive: bool = True) -> str:
         if path:
             # The front actually sends <workspace>/<path/to/folder>
             try:

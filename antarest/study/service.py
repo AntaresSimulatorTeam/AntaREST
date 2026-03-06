@@ -23,6 +23,7 @@ from typing import Any, BinaryIO, Callable, Dict, Iterable, List, Optional, Sequ
 from uuid import uuid4
 
 import pandas as pd
+import polars as pl
 from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from markupsafe import escape
@@ -144,6 +145,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import Matri
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.synthesis import OutputSynthesis
+from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
@@ -180,6 +182,12 @@ logger = logging.getLogger(__name__)
 
 MAX_MISSING_STUDY_TIMEOUT = 2  # days
 MAX_BATCH_DELETE_SIZE = 100
+
+
+def _get_matrix_from_path(study_interface: StudyInterface, matrix_path: Path) -> pl.DataFrame:
+    """We give a ReadOnlyStudyDao instead of a StudyDao, but it does not matter as we only use the getter methods."""
+    mapper = RawPathToMatrixMapper(study_interface.get_study_dao())  # type: ignore
+    return mapper.get_matrix_from_path(matrix_path)
 
 
 def get_disk_usage(path: str | Path) -> int:
@@ -417,9 +425,11 @@ class RawStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        if self._study.storage_mode == StorageMode.DATABASE:
-            return DatabaseStudyDao(self._study.id, db.session, self._matrix_service).read_only()
         command_context = self._variant_study_service.command_factory.command_context
+        if self._study.storage_mode == StorageMode.DATABASE:
+            return DatabaseStudyDao(
+                self._study.id, db.session, self._matrix_service, command_context.generator_matrix_constants
+            ).read_only()
         return FileStudyTreeDao(
             self.get_files(), command_context.generator_matrix_constants, command_context.blob_service
         ).read_only()
@@ -429,12 +439,14 @@ class RawStudyInterface(StudyInterface):
         study = self._study
         file_study: Optional[FileStudy] = None
 
+        command_context = self._variant_study_service.command_factory.command_context
         # Build DAO based on storage mode
         if study.storage_mode == StorageMode.DATABASE:
-            dao: StudyDao = DatabaseStudyDao(study.id, db.session, self._matrix_service)
+            dao: StudyDao = DatabaseStudyDao(
+                study.id, db.session, self._matrix_service, command_context.generator_matrix_constants
+            )
         else:
             file_study = self.get_files()
-            command_context = self._variant_study_service.command_factory.command_context
             dao = FileStudyTreeDao(
                 file_study,
                 command_context.generator_matrix_constants,
@@ -580,7 +592,7 @@ class StudyService:
         matrix_service = command_context.matrix_service
         StudyDatabaseMatrixUsageProvider(matrix_service)
         self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
-            StorageMode.DATABASE: DatabaseStudyDaoFactory(matrix_service),
+            StorageMode.DATABASE: DatabaseStudyDaoFactory(matrix_service, command_context.generator_matrix_constants),
             StorageMode.FILESYSTEM: FileStudyDaoFactory(command_context, raw_study_service.study_factory),
         }
 
@@ -685,7 +697,7 @@ class StudyService:
                 f"{job_id}-{log_suffix}",
             ],
         )
-        stopwatch.log_elapsed(lambda d: logger.info(f"Saved logs for job {job_id} in {d}s"))
+        logger.info(f"Saved logs for job {job_id} in {stopwatch}s")
 
     def get_comments(self, study_id: str) -> str:
         """
@@ -1691,7 +1703,16 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
 
-        self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
+        # We need to handle matrices differently if our study is stored in DB
+        if study.storage_mode == StorageMode.DATABASE:
+            context = self.storage_service.variant_study_service.command_factory.command_context
+            command = ReplaceMatrix(
+                target=url, matrix=new, command_context=context, study_version=StudyVersion.parse(study.version)
+            )
+            self.get_study_interface(study).add_commands([command])
+
+        else:
+            self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
 
         self.event_bus.push(
             Event(
@@ -2409,17 +2430,22 @@ class StudyService:
                 hydro_matrix = self.correlation_manager.get_correlation_matrix(study_interface)
             return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
 
-        # Checks that the provided path refers to a matrix
-        node = self.get_file_study(study).tree.get_node(list(url))
-        if isinstance(node, MatrixNode):
-            pandas_df = node.parse_as_dataframe().to_pandas()
-        elif isinstance(node, OutputSeriesMatrix):
-            pandas_df = node.parse_dataframe()
-            pandas_df.columns = pd.Index(pandas_df.columns)
-        elif isinstance(node, OutputSynthesis):
-            pandas_df = pd.DataFrame(**node.load())
+        # We need to handle matrices differently if our study is stored in DB
+        if study.storage_mode == StorageMode.DATABASE:
+            pandas_df = _get_matrix_from_path(study_interface, matrix_path).to_pandas()
+
         else:
-            raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
+            # Checks that the provided path refers to a matrix
+            node = self.get_file_study(study).tree.get_node(list(url))
+            if isinstance(node, MatrixNode):
+                pandas_df = node.parse_as_dataframe().to_pandas()
+            elif isinstance(node, OutputSeriesMatrix):
+                pandas_df = node.parse_dataframe()
+                pandas_df.columns = pd.Index(pandas_df.columns)
+            elif isinstance(node, OutputSynthesis):
+                pandas_df = pd.DataFrame(**node.load())
+            else:
+                raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 
         if with_index:
             matrix_index = self.get_input_matrix_startdate(study_id, path)
@@ -2553,20 +2579,27 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
-        file_study = self.get_file_study(study)
-        url = [item for item in path.split("/") if item]
-        node, relative_url = file_study.tree.get_node_and_remainder(url)
 
-        # Return a dataframe when possible instead of less memory & computation - efficient python objects
-        if isinstance(node, MatrixNode):
-            return node.parse_as_dataframe()
+        # We need to handle matrices differently if our study is stored in DB
+        if study.storage_mode == StorageMode.DATABASE:
+            return _get_matrix_from_path(self.get_study_interface(study), Path(path))
 
-        return node.get(url=relative_url, depth=depth, formatted=formatted)
+        else:
+            file_study = self.get_file_study(study)
+            url = [item for item in path.split("/") if item]
+            node, relative_url = file_study.tree.get_node_and_remainder(url)
+
+            # Return a dataframe when possible instead of less memory & computation - efficient python objects
+            if isinstance(node, MatrixNode):
+                return node.parse_as_dataframe()
+
+            return node.get(url=relative_url, depth=depth, formatted=formatted)
 
     def get_study_data(self, uuid: str) -> StudyDataDTO:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
+        dao = study_interface.get_study_dao()
 
         ##########################
         # Study metadata
@@ -2580,15 +2613,15 @@ class StudyService:
         # Areas
         ##########################
 
-        area_properties = self.area_manager.get_all_area_properties(study_interface)
-        area_names = {a.id: a.name for a in self.area_manager.get_all_areas_info(study_interface)}
-        thermal_clusters = self.thermal_manager.get_all_thermals_props(study_interface)
-        st_storages = self.st_storage_manager.get_all_storages_props(study_interface)
-        st_storages_constraints = self.st_storage_manager.get_all_additional_constraints(study_interface)
-        hydro_properties = self.hydro_manager.get_all_hydro_properties(study_interface)
+        area_properties = dao.get_all_area_properties()
+        area_names = {a.id: a.name for a in dao.get_all_areas_info()}
+        thermal_clusters = dao.get_all_thermals()
+        st_storages = dao.get_all_st_storages()
+        st_storages_constraints = dao.get_all_st_storage_additional_constraints()
+        hydro_properties = dao.get_all_hydro_properties()
 
         try:
-            renewable_clusters = self.renewable_manager.get_all_renewables_props(study_interface)
+            renewable_clusters = dao.get_all_renewables()
         except ChildNotFoundError:  # Can happen, according to the enr-modeling
             renewable_clusters = {}
 
@@ -2601,11 +2634,11 @@ class StudyService:
                 "thermals": thermal_clusters.get(area_id, {}).values(),
                 "renewables": renewable_clusters.get(area_id, {}).values(),
                 "st_storages": [],
-                "ui": self.area_manager.get_area_ui(study_interface, area_id),
+                "ui": dao.get_area_ui(area_id),
             }
 
             # Hydro
-            hydro_allocation = self.allocation_manager.get_allocation_for_area(study_interface, area_id)
+            hydro_allocation = dao.get_hydro_allocation(area_id)
             area["hydro"] = {
                 "allocation": hydro_allocation,
                 "management_options": hydro_properties[area_id].management_options,
@@ -2626,7 +2659,7 @@ class StudyService:
         # Links and BCs
         ##########################
 
-        obj["links"] = self.links_manager.get_all_links(study_interface)
+        obj["links"] = dao.get_links()
         obj["binding_constraints"] = self.binding_constraint_manager.get_binding_constraints(study_interface)
 
         ##########################
@@ -2634,13 +2667,13 @@ class StudyService:
         ##########################
 
         obj["settings"] = {
-            "time_series": self.ts_config_manager.get_timeseries_configuration(study_interface),
-            "general": self.general_manager.get_general_config(study_interface),
-            "advanced_parameters": self.advanced_parameters_manager.get_advanced_parameters(study_interface),
-            "playlist": self.playlist_manager.get_playlist(study_interface),
-            "thematic_trimming": self.thematic_trimming_manager.get_thematic_trimming(study_interface),
-            "optimization": self.optimization_manager.get_optimization_preferences(study_interface),
-            "adequacy_patch": self.adequacy_patch_manager.get_adequacy_patch_parameters(study_interface),
+            "time_series": dao.get_timeseries_config(),
+            "general": dao.get_general_config(),
+            "advanced_parameters": dao.get_advanced_parameters(),
+            "playlist": dao.get_playlist_config(),
+            "thematic_trimming": dao.get_thematic_trimming(),
+            "optimization": dao.get_optimization_preferences(),
+            "adequacy_patch": dao.get_adequacy_patch_parameters(),
         }
 
         ##########################
@@ -2650,8 +2683,8 @@ class StudyService:
         try:
             xpansion_settings = self.get_xpansion_settings(uuid)
             if xpansion_settings.additional_constraints:
-                xpansion_constraint = self.xpansion_manager.get_resource_content(
-                    study_interface, XpansionResourceFileType.CONSTRAINTS, xpansion_settings.additional_constraints
+                xpansion_constraint = dao.get_xpansion_resource(
+                    XpansionResourceFileType.CONSTRAINTS, xpansion_settings.additional_constraints
                 )
                 assert isinstance(xpansion_constraint, bytes)
                 constraint_as_dict = IniReader().read(io.StringIO(xpansion_constraint.decode("utf-8")))
@@ -2671,7 +2704,7 @@ class StudyService:
 
             xpansion = {
                 "settings": xpansion_settings,
-                "candidates": self.xpansion_manager.get_candidates(study_interface),
+                "candidates": dao.get_all_xpansion_candidates(),
                 "constraints": constraints,
             }
 

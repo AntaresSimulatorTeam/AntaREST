@@ -36,17 +36,17 @@ export const BoxParam = styled(Box)(({ theme }) => ({
 }));
 
 export const ParamTitle = styled(Typography)(({ theme }) => ({
-  color: theme.palette.text.primary,
+  color: theme.vars.palette.text.primary,
   marginRight: theme.spacing(1),
   fontWeight: "500",
 }));
 
 export const StyledDownloadIcon = styled(DownloadIcon)(({ theme }) => ({
-  color: theme.palette.primary.main,
+  color: theme.vars.palette.primary.main,
   marginLeft: theme.spacing(2),
   marginRight: theme.spacing(2),
   "&:hover": {
-    color: theme.palette.primary.light,
+    color: theme.vars.palette.primary.light,
   },
 }));
 

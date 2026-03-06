@@ -14,20 +14,21 @@ import http
 import io
 import logging
 from pathlib import Path, PurePosixPath
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, TypeAlias
 
 import polars as pl
 from fastapi import APIRouter, Body, File, HTTPException
+from fastapi.openapi.models import Example
 from fastapi.params import Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
+from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.config import Config
 from antarest.core.exceptions import IncorrectPathError
 from antarest.core.model import SUB_JSON
 from antarest.core.serde.json import from_json, to_json
 from antarest.core.serde.matrix_export import TableExportFormat, simplify_dataframe
-from antarest.core.swagger import get_path_examples
-from antarest.core.utils.utils import sanitize_string, sanitize_uuid
+from antarest.core.utils.utils import sanitize_string
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
@@ -69,8 +70,41 @@ CONTENT_TYPES = {
     ".antares": ("text/plain", "utf-8"),
 }
 
-DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
-PATH_TYPE = Annotated[str, Query(openapi_examples=get_path_examples())]
+ExportFormatQuery: TypeAlias = Annotated[
+    TableExportFormat, Query(alias="format", description="Export format", title="Export Format")
+]
+
+_sim = "{sim} = simulation index <br/>"
+_area = "{area} = area name to select <br/>"
+_link = "{link} = link name to select <br/>"
+_attachment = "User-defined file attachment <br/>"
+
+# noinspection SpellCheckingInspection
+_path_examples: list[tuple[str, str]] = [
+    ("layers/layers", ""),
+    ("settings/generaldata", ""),
+    ("output/{sim}/about-the-study/parameters", _sim),
+    ("output/{sim}/about-the-study/study", _sim),
+    ("output/{sim}/info(.antares-output)", _sim),
+    ("input/areas/{area}/optimization", _area),
+    ("input/areas/{area}/ui", _area),
+    ("input/bindingconstraints/bindingconstraints", ""),
+    ("input/hydro/hydro", ""),
+    ("input/links/{area}/properties/{link}", _area + _link),
+    ("input/load/prepro/{area}/settings", _area),
+    ("input/solar/prepro/{area}/settings", _area),
+    ("input/thermal/clusters/{area}/list", _area),
+    ("input/thermal/areas", ""),
+    ("input/wind/prepro/{area}/settings", _area),
+    ("user/wind_solar/synthesis_windSolar.xlsx", _attachment),
+]
+
+
+def _get_path_examples() -> dict[str, Example]:
+    return {url: {"value": url, "description": des} for url, des in _path_examples}
+
+
+PATH_TYPE = Annotated[SanitizedStr, Query(openapi_examples=_get_path_examples())]
 
 
 class MatrixFormat(EnumIgnoreCase):
@@ -131,7 +165,7 @@ def create_raw_study_routes(
         summary="Retrieve Raw Data from Study: JSON, Text, or File Attachment",
     )
     def get_study_data(
-        uuid: str,
+        uuid: UuidStr,
         path: PATH_TYPE = "/",
         depth: int = 3,
         formatted: bool = True,
@@ -217,7 +251,7 @@ def create_raw_study_routes(
         "/studies/{uuid}/raw/original-file",
         summary="Retrieve Raw file from a Study folder in its original format",
     )
-    def get_study_file(uuid: str, path: PATH_TYPE = "/") -> Response:
+    def get_study_file(uuid: UuidStr, path: PATH_TYPE = "/") -> Response:
         """
         Fetches for a file in its original format from a study folder
 
@@ -246,9 +280,9 @@ def create_raw_study_routes(
         summary="Delete files or folders located inside the 'User' folder",
     )
     def delete_file(
-        uuid: str,
+        uuid: UuidStr,
         path: Annotated[
-            str,
+            SanitizedStr,
             Query(
                 openapi_examples={
                     "user/wind_solar/synthesis_windSolar.xlsx": {"value": "user/wind_solar/synthesis_windSolar.xlsx"}
@@ -256,7 +290,6 @@ def create_raw_study_routes(
             ),
         ] = "/",
     ) -> None:
-        uuid = sanitize_uuid(uuid)
         logger.info(f"Deleting path {path} inside study {uuid}")
         study_service.delete_user_file_or_folder(uuid, path)
 
@@ -265,7 +298,7 @@ def create_raw_study_routes(
         status_code=http.HTTPStatus.OK,
         summary="Update study by posting formatted data",
     )
-    def edit_study(uuid: str, path: PATH_TYPE = "/", data: SUB_JSON = Body(default="")) -> Any:
+    def edit_study(uuid: UuidStr, path: PATH_TYPE = "/", data: Annotated[SUB_JSON, Body()] = "") -> Any:
         """
         Same endpoint as the PUT one.
         Only difference is that it cannot create an empty folder.
@@ -280,10 +313,10 @@ def create_raw_study_routes(
         summary="Update data by posting a Raw file or by creating folder(s)",
     )
     def replace_study_file(
-        uuid: str,
+        uuid: UuidStr,
         path: PATH_TYPE = "/",
-        file: bytes = File(default=None),
-        create_missing: bool = Query(default=True, deprecated=True),  # type: ignore
+        file: Annotated[bytes | None, File()] = None,
+        create_missing: Annotated[bool, Query(deprecated=True)] = True,
         resource_type: ResourceType = ResourceType.FILE,
     ) -> None:
         """
@@ -303,7 +336,7 @@ def create_raw_study_routes(
             raise HTTPException(status_code=422, detail="Argument mismatch: Must give a content to create a file")
 
         path = sanitize_string(path)
-        if resource_type == ResourceType.FOLDER:  # type: ignore
+        if resource_type == ResourceType.FOLDER:
             logger.info(f"Creating folder {path} for study {uuid}")
             study_service.create_user_folder(uuid, path)
         else:
@@ -315,17 +348,18 @@ def create_raw_study_routes(
         summary="Download a matrix in a given format",
     )
     def get_matrix(
-        uuid: str,
-        matrix_path: str = Query(  # type: ignore
-            ..., alias="path", description="Relative path of the matrix to download", title="Matrix Path"
-        ),
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,  # type: ignore
-        with_header: bool = Query(  # type: ignore
-            True, alias="header", description="Whether to include the header or not", title="With Header"
-        ),
-        with_index: bool = Query(  # type: ignore
-            True, alias="index", description="Whether to include the index or not", title="With Index"
-        ),
+        uuid: UuidStr,
+        matrix_path: Annotated[
+            SanitizedStr,
+            Query(alias="path", description="Relative path of the matrix to download", title="Matrix Path"),
+        ],
+        export_format: ExportFormatQuery = TableExportFormat.CSV,
+        with_header: Annotated[
+            bool, Query(alias="header", description="Whether to include the header or not", title="With Header")
+        ] = True,
+        with_index: Annotated[
+            bool, Query(alias="index", description="Whether to include the index or not", title="With Index")
+        ] = True,
     ) -> FileResponse:
         """
         Download a matrix in a given format.
@@ -344,7 +378,6 @@ def create_raw_study_routes(
         logger.info(f"Exporting matrix '{matrix_path}' to {export_format} format for study '{uuid}'")
 
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
-        uuid = sanitize_uuid(uuid)
         matrix_path = sanitize_string(matrix_path)
 
         df_matrix = study_service.get_matrix_with_index_and_header(

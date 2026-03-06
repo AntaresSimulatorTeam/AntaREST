@@ -31,7 +31,7 @@ function ColorPickerFE(props: ColorPickerFEProps) {
   const { value, defaultValue, onChange, sx, inputRef, ...textFieldProps } = props;
   const [currentColor, setCurrentColor] = useState(defaultValue || value || "");
   const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const internalRef = useRef<HTMLInputElement>();
+  const internalRef = useRef<HTMLInputElement>(undefined);
   const pickerWrapperRef = useRef(null);
 
   useUpdateEffect(() => {

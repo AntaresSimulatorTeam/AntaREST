@@ -14,7 +14,7 @@ import logging
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import redis
 from sqlalchemy import create_engine
@@ -68,7 +68,7 @@ from antarest.worker.worker import AbstractWorker
 logger = logging.getLogger(__name__)
 
 
-SESSION_ARGS: Mapping[str, bool] = {
+SESSION_ARGS: dict[str, bool] = {
     "autocommit": False,
     "expire_on_commit": False,
     "autoflush": False,
@@ -134,9 +134,9 @@ def new_redis_instance(config: RedisConfig) -> redis.Redis:  # type: ignore
         port=config.port,
         password=config.password,
         db=0,
-        retry_on_error=[redis.ConnectionError, redis.TimeoutError],  # type: ignore
+        retry_on_error=[redis.ConnectionError, redis.TimeoutError],
     )
-    return redis_client  # type: ignore
+    return redis_client
 
 
 def create_event_bus(app_ctxt: Optional[AppBuildContext], config: Config) -> Tuple[IEventBus, Optional[redis.Redis]]:  # type: ignore

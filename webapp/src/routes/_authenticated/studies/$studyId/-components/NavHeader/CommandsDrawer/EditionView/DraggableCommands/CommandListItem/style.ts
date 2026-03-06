@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { Accordion, Box, styled } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/HighlightOff";
+import { Accordion, Box, styled } from "@mui/material";
 
 export const ItemContainer = styled(Box, {
   shouldForwardProp: (prop) => prop !== "onTopVisible",
@@ -25,32 +25,22 @@ export const ItemContainer = styled(Box, {
   boxSizing: "border-box",
 }));
 
-export const DraggableAccorderon = styled(Accordion, {
-  shouldForwardProp: (prop) => prop !== "isDragging",
-})<{ isDragging?: boolean }>(({ theme, isDragging }) => ({
+export const StyledAccordion = styled(Accordion)(({ theme }) => ({
   flex: 1,
   boxSizing: "border-box",
   maxWidth: "800px",
   width: "100%",
-  margin: "0 auto",
-  ...(isDragging
-    ? {
-        borderColor: theme.palette.secondary.main,
-        boxShadow: `0px 0px 2px rgb(8, 58, 30), 0px 0px 10px ${theme.palette.secondary.main}`,
-      }
-    : {
-        margin: theme.spacing(0, 0.2),
-      }),
+  margin: theme.spacing(0, 0.2),
 }));
 
 export const StyledDeleteIcon = styled(DeleteIcon)(({ theme }) => ({
   flex: "0 0 24px",
-  color: theme.palette.error.light,
+  color: theme.vars.palette.error.light,
   margin: theme.spacing(0, 2),
   cursor: "pointer",
   alignSelf: "center",
   "&:hover": {
-    color: theme.palette.error.main,
+    color: theme.vars.palette.error.main,
   },
 }));
 

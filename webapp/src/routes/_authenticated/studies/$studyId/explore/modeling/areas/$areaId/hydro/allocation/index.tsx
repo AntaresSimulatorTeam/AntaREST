@@ -14,7 +14,7 @@
 
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import { Grid } from "@mui/material";
+import { GridLegacy as Grid } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import HydroMatrixDialog from "../-components/HydroMatrixDialog";

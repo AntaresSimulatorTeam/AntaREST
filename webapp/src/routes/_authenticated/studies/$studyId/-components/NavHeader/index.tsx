@@ -68,7 +68,7 @@ function NavHeader() {
       spacing={1}
       sx={[
         { px: 1 },
-        !isExplorer && { borderBottom: (theme) => `1px solid ${theme.palette.divider}` },
+        !isExplorer && { borderBottom: (theme) => `1px solid ${theme.vars.palette.divider}` },
       ]}
     >
       <Breadcrumb />

@@ -33,7 +33,7 @@ from antarest.study.business.model.hydro_model import HydroManagement, HydroProp
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.scenario_builder_model import AnyScenarios, Rulesets, ScenarioType
+from antarest.study.business.model.scenario_builder_model import AnyScenarios, Ruleset, ScenarioType
 from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
@@ -541,12 +541,8 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_all_area_properties()
 
     @override
-    def get_rulesets(self) -> Rulesets:
-        return self._adaptee.get_rulesets()
-
-    @override
-    def get_active_ruleset_name(self, default_ruleset: str = "Default Ruleset") -> str:
-        return self._adaptee.get_active_ruleset_name(default_ruleset)
+    def get_ruleset(self) -> Ruleset:
+        return self._adaptee.get_ruleset()
 
     @override
     def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:

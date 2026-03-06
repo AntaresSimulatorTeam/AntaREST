@@ -184,7 +184,6 @@ class DatabaseThermalDao(ThermalDao):
             # Means the DELETE had no effect so the thermal did not exist
             self._raise_the_right_exception(area_id, thermal_id)
 
-        # TODO: depending on scenariobuilder implementation, we may need to delete some stuff from scenario builder here
         session.commit()
 
     @override
