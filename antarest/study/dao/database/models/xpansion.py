@@ -174,7 +174,7 @@ XPANSION_ADEQUACY_PATTERN_TABLE = Table(
     ForeignKeyConstraint(
         ["study_id"],
         ["xpansion_adequacy_criterion.study_id"],
-        name="fk_xpansion_adequacy_pattern_criterion_v2",
+        name="fk_xpansion_adequacy_pattern_criterion",
         ondelete="CASCADE",
     ),
     ForeignKeyConstraint(
