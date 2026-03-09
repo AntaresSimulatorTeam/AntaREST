@@ -121,7 +121,6 @@ class DatabaseXpansionDao(XpansionDao):
         result = self._db_session.execute(
             delete(XPANSION_SETTINGS_TABLE).where(XPANSION_SETTINGS_TABLE.c.study_id == self._study_id)
         )
-        # need this assert so mypy don't yell when I access rowcount
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
             raise XpansionConfigurationDoesNotExist(self._study_id)
@@ -251,7 +250,6 @@ class DatabaseXpansionDao(XpansionDao):
                 & (XPANSION_CANDIDATE_TABLE.c.name == candidate_name)
             )
         )
-        # need this assert so mypy don't yell when I access rowcount
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
             raise CandidateNotFoundError(f"The candidate '{candidate_name}' does not exist")
