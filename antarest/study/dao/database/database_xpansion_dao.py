@@ -165,15 +165,23 @@ class DatabaseXpansionDao(XpansionDao):
 
     @override
     def checks_xpansion_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
+        # File existence checks for additional_constraints and yearly_weights
+        # require blob storage access, which is not yet available in the database DAO.
         # TODO: validate additional_constraints and yearly_weights against blob storage
         #  once blob storage is wired up for database mode.
         #  See FileStudyXpansionDao.checks_xpansion_settings_are_correct for the reference implementation.
-        if settings.sensitivity_config and settings.sensitivity_config.projection is not None:
-            stmt = select(XPANSION_CANDIDATE_TABLE.c.name).where(XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
-            existing_names = {row.name for row in self._db_session.execute(stmt)}
-            invalid = [name for name in settings.sensitivity_config.projection if name not in existing_names]
-            if invalid:
-                raise CandidateNotFoundError(f"Candidates not found in projection: {', '.join(invalid)}")
+        if not settings.sensitivity_config or not settings.sensitivity_config.projection:
+            return
+        projection = settings.sensitivity_config.projection
+        existing = {
+            row.name
+            for row in self._db_session.execute(
+                select(XPANSION_CANDIDATE_TABLE.c.name).where(XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
+            ).fetchall()
+        }
+        missing = [name for name in projection if name not in existing]
+        if missing:
+            raise CandidateNotFoundError(f"Candidates not found: {', '.join(missing)}")
 
     # ------------------------------------------------------------------
     # XpansionDao — candidates
