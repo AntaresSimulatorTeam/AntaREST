@@ -21,12 +21,12 @@ Design decisions:
                                            when a candidate is deleted. App-level checks
                                            (checks_xpansion_candidate_can_be_deleted) prevent deletion
                                            of candidates still referenced in projection.
-  - xpansion_adequacy_criterion_v2       : flat row per study; scalars only (no patterns).
+  - xpansion_adequacy_criterion          : flat row per study; scalars only (no patterns).
   - xpansion_adequacy_pattern            : one row per XpansionAdequacyPattern. PK = (study_id, area).
 
 Cascade chain:
   study → xpansion_settings → xpansion_candidate → xpansion_sensitivity_projection (CASCADE)
-                             → xpansion_adequacy_criterion_v2 → xpansion_adequacy_pattern
+                             → xpansion_adequacy_criterion → xpansion_adequacy_pattern
   Deleting xpansion_settings (i.e. the xpansion configuration) therefore cascades
   to candidates, and transitively to projection entries, the adequacy criterion, and all its patterns.
 """
@@ -137,7 +137,7 @@ XPANSION_SENSITIVITY_PROJECTION_TABLE = Table(
 )
 
 # ---------------------------------------------------------------------------
-# xpansion_adequacy_criterion_v2  (1-to-1 with xpansion_settings)
+# xpansion_adequacy_criterion  (1-to-1 with xpansion_settings)
 #
 # Holds XpansionAdequacyCriterion scalars only.
 # Patterns live in xpansion_adequacy_pattern (one row each).
@@ -153,16 +153,16 @@ XPANSION_ADEQUACY_CRITERION_TABLE = Table(
     ForeignKeyConstraint(
         ["study_id"],
         ["xpansion_settings.study_id"],
-        name="fk_xpansion_adequacy_criterion_v2_settings",
+        name="fk_xpansion_adequacy_criterion_settings",
         ondelete="CASCADE",
     ),
 )
 
 # ---------------------------------------------------------------------------
-# xpansion_adequacy_pattern  (1-to-many with xpansion_adequacy_criterion_v2)
+# xpansion_adequacy_pattern  (1-to-many with xpansion_adequacy_criterion)
 #
 # One row per XpansionAdequacyPattern. PK = (study_id, area).
-# FK → xpansion_adequacy_criterion_v2 so that deleting the criterion cascades here.
+# FK → xpansion_adequacy_criterion so that deleting the criterion cascades here.
 # ---------------------------------------------------------------------------
 
 XPANSION_ADEQUACY_PATTERN_TABLE = Table(
@@ -173,7 +173,7 @@ XPANSION_ADEQUACY_PATTERN_TABLE = Table(
     Column("criterion", Float(), nullable=False),
     ForeignKeyConstraint(
         ["study_id"],
-        ["xpansion_adequacy_criterion_v2.study_id"],
+        ["xpansion_adequacy_criterion.study_id"],
         name="fk_xpansion_adequacy_pattern_criterion_v2",
         ondelete="CASCADE",
     ),
