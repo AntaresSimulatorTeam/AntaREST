@@ -1,7 +1,7 @@
 """add_xpansion_tables
 
-Revision ID: 31ed7828f0de
-Revises: 8a9a91f6a2bc
+Revision ID: 3a7f9c2d1e8b
+Revises: 6f8e2a9c1b3d
 Create Date: 2026-03-06 12:08:58.827623
 
 """
@@ -12,7 +12,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "3a7f9c2d1e8b"
-down_revision = "8a9a91f6a2bc"
+down_revision = "6f8e2a9c1b3d"
 branch_labels = None
 depends_on = None
 
