@@ -195,8 +195,11 @@ class TestXpansionSettings:
         """checks_xpansion_settings_are_correct should validate projection candidate existence."""
         # --- setup ---
         db_dao.create_xpansion_configuration()
-        db_dao.save_xpansion_candidate(_make_candidate("existing_cand", "x", "y"))
-        db_dao.save_xpansion_candidate(_make_candidate("cand_b", "x", "y"))
+        db_dao.save_area("Paris")
+        db_dao.save_area("Lyon")
+        db_dao.save_link(Link(area1="paris", area2="lyon"))
+        db_dao.save_xpansion_candidate(_make_candidate("existing_cand", "lyon", "paris"))
+        db_dao.save_xpansion_candidate(_make_candidate("cand_b", "lyon", "paris", cost=500.0))
 
         # --- unknown projection candidate raises ---
         with pytest.raises(CandidateNotFoundError, match="ghost_cand"):
