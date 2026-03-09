@@ -21,13 +21,16 @@ import type { SubmitHandlerPlus } from "@/components/Form/types";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
 import { directoryQueries } from "@/queries/directories/queries";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { copyStudy } from "@/services/api/studies";
+import { getTask } from "@/services/api/tasks";
 import { getStudyOutputs } from "@/services/api/study";
 import type { StudyMetadata, OutputDetails } from "@/types/types";
 import { validateStudyName } from "@/utils/studiesUtils";
+import { toError } from "@/utils/fnUtils";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
 import SaveAsIcon from "@mui/icons-material/SaveAs";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import StudyDestinationFE from "../StudyDestinationFE";
 import type { DirectoryDestination } from "../StudyDestinationFE/types";
@@ -49,6 +52,8 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
   const { t } = useTranslation();
   const isVariant = study.type === "variantstudy";
   const Icon = isVariant ? SaveAsIcon : FileCopyOutlinedIcon;
+  const queryClient = useQueryClient();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
   const outputsRes = usePromise(async () => {
@@ -65,18 +70,32 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({
+  const handleSubmit = async ({
     values: { studyName, destination, outputIds = [] },
   }: SubmitHandlerPlus<DefaultValues>) => {
     // TODO: This should be moved to the API layer when Tan stack migration is done.
     const directoryPath = toDirectoryPath(destination, directories);
 
-    return copyStudy({
+    const taskId = await copyStudy({
       studyId: study.id,
       studyName: studyName.trim(),
       destinationFolder: directoryPath,
       outputIds,
     });
+
+    // Poll task completion in the background, then refresh
+    // the directory list so the dialog is not blocked while the task runs.
+    getTask({ id: taskId, waitForCompletion: true })
+      .then(() => {
+        if (destination.newSubdirectoriesPath) {
+          queryClient.invalidateQueries({ queryKey: directoryQueries.list().queryKey });
+        }
+      })
+      .catch((err) => {
+        enqueueErrorSnackbar(t("studies.error.copyStudy"), toError(err));
+      });
+
+    return taskId;
   };
 
   ////////////////////////////////////////////////////////////////
