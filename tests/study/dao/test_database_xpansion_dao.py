@@ -28,7 +28,9 @@ from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyPattern,
     XpansionCandidate,
     XpansionSensitivitySettings,
+    XpansionSensitivitySettingsUpdate,
     XpansionSettings,
+    XpansionSettingsUpdate,
 )
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.xpansion import (
@@ -188,6 +190,33 @@ class TestXpansionSettings:
         )
         with pytest.raises(CandidateNotFoundError):
             db_dao.save_xpansion_settings(settings)
+
+    def test_checks_xpansion_settings_correct(self, db_dao: DatabaseStudyDao) -> None:
+        """checks_xpansion_settings_are_correct should validate projection candidate existence."""
+        # --- setup ---
+        db_dao.create_xpansion_configuration()
+        db_dao.save_xpansion_candidate(_make_candidate("existing_cand", "x", "y"))
+        db_dao.save_xpansion_candidate(_make_candidate("cand_b", "x", "y"))
+
+        # --- unknown projection candidate raises ---
+        with pytest.raises(CandidateNotFoundError, match="ghost_cand"):
+            db_dao.checks_xpansion_settings_are_correct(
+                XpansionSettingsUpdate(
+                    sensitivity_config=XpansionSensitivitySettingsUpdate(projection=["existing_cand", "ghost_cand"])
+                )
+            )
+
+        # --- valid projection passes ---
+        db_dao.checks_xpansion_settings_are_correct(
+            XpansionSettingsUpdate(
+                sensitivity_config=XpansionSensitivitySettingsUpdate(projection=["existing_cand", "cand_b"])
+            )
+        )  # must not raise
+
+        # --- None projection skips validation ---
+        db_dao.checks_xpansion_settings_are_correct(
+            XpansionSettingsUpdate(sensitivity_config=XpansionSensitivitySettingsUpdate(projection=None))
+        )  # must not raise
 
 
 class TestXpansionCandidates:
