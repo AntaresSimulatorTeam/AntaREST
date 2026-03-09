@@ -29,7 +29,7 @@ import {
   unarchiveOutput,
 } from "@/services/api/study";
 import { convertUTCToLocalTime } from "@/services/utils";
-import type { StudyOutput } from "@/types/types";
+import type { OutputDetails } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import type { EmptyObject } from "@/utils/tsUtils";
 import ArchiveIcon from "@mui/icons-material/Archive";
@@ -57,7 +57,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { compareDesc, parseISO } from "date-fns";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/outputs/")({
   component: Outputs,
 });
@@ -67,7 +66,7 @@ interface OutputDetail {
   creationDate?: string;
   completionDate?: string;
   job?: Job;
-  output?: StudyOutput;
+  output?: OutputDetails;
   archived?: boolean;
   isRunning: boolean;
 }
@@ -285,7 +284,7 @@ function Outputs() {
       {output.job && <LaunchJobLogView job={output.job} logButton logErrorButton />}
 
       {/* Digest button */}
-      {output.job?.status === "success" && output.output?.settings?.output?.synthesis && (
+      {output.job?.status === "success" && output.output?.synthesis && (
         <Box sx={{ height: "24px", margin: 0.5 }}>
           <Tooltip title="Digest">
             <EqualizerIcon

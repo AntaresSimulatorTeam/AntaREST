@@ -25,7 +25,7 @@ from tests.integration.utils import duration_threshold
 
 def _compare_resource_file(actual: dict[str, Any], res_path: Path) -> None:
     # note: private data are masked in the resource file
-    masked = dict.fromkeys(["study_path", "path", "output_path", "study_id"], "DUMMY_VALUE")
+    masked = dict.fromkeys(["study_id"], "DUMMY_VALUE")
     actual.update(masked)
     if res_path.exists():
         # Compare the actual synthesis with the expected one

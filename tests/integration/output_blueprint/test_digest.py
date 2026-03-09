@@ -41,12 +41,11 @@ class TestDigest:
         assert area_matrix["columns"][:3] == [[""], ["OV. COST", "Euro", "EXP"], ["OP. COST", "Euro", "EXP"]]
 
         # Asserts we have a 404 Exception when the output doesn't exist
-        fake_output = "fake_output"
-        res = client.get(f"/v1/private/studies/{internal_study_id}/outputs/{fake_output}/digest-ui")
+        res = client.get(f"/v1/private/studies/{internal_study_id}/outputs/fake_output/digest-ui")
         assert res.status_code == 404
         assert res.json() == {
-            "description": f"'{fake_output}' not a child of Output",
-            "exception": "ChildNotFoundError",
+            "description": "Output 'fake_output' not found",
+            "exception": "OutputNotFound",
         }
 
         # Asserts we have a 404 Exception when the digest file doesn't exist

@@ -10,23 +10,26 @@
 #
 # This file is part of the Antares project.
 import uuid
+import zipfile
+from io import BytesIO
 from pathlib import Path
 from unittest.mock import ANY, Mock
 
 import pytest
 
-from antarest.core.exceptions import TaskAlreadyRunning
+from antarest.core.exceptions import OutputAlreadyExists, TaskAlreadyRunning
 from antarest.core.model import PublicMode, StudyPermissionType
 from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.utils import current_time
+from antarest.output.output_service import IStudyMetadataProvider, OutputService, StudyMetadata
+from antarest.output.storage.file_output_storage import FileStudyOutputs, IFileOutputsProvider, InStudyFileOutputStorage
+from antarest.output.storage.output_storage import IOutputStorage, OutputStorageType
 from antarest.study.model import (
     RawStudy,
     Study,
 )
-from antarest.study.output.file_output_storage import FileOutputStorage, FileStudyOutputs, IFileOutputsProvider
-from antarest.study.output.output_service import IStudyMetadataProvider, OutputService, StudyMetadata
 from antarest.study.storage.utils import is_output_archived
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.worker.archive_worker import ArchiveTaskArgs
@@ -102,24 +105,26 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
     # the end
     remote_executor: IRemoteExecutor = Mock(spec=IRemoteExecutor)
     file_outputs_provider = _file_outputs_provider(study_mock)
-    output_storage = FileOutputStorage(
-        cache=cache_mock, outputs_provider=file_outputs_provider, remote_executor=remote_executor, tmp_dir=tmp_path
+    output_storage = InStudyFileOutputStorage(
+        cache=cache_mock, outputs_provider=file_outputs_provider, remote_executor=remote_executor
     )
 
     studies_metadata_repository = _studies_repository(study_mock)
     output_service = OutputService(
         matrix_service=Mock(),
-        cache=cache_mock,
         file_transfer_manager=Mock(),
         tmp_dir=tmp_path,
         studies_repository=studies_metadata_repository,
-        storage=output_storage,
+        storages=[output_storage],
         task_service=task_service,
     )
 
     output_id = "some-output"
-    remote_executor.execute_remote_task.return_value = TaskResult(success=True, message="OK")  # type: ignore
-    (tmp_path / "output" / f"{output_id}.zip").mkdir(parents=True, exist_ok=True)
+    remote_executor.execute_remote_task.return_value = TaskResult(success=True, message="OK")
+    output_dir = Path(study_mock.path) / "output"
+    output_dir.mkdir()
+    with zipfile.ZipFile(tmp_path / "output" / f"{output_id}.zip", "w") as zf:
+        zf.writestr("fake-file", "")
 
     # Asks for unarchive
     output_service.unarchive_output(study_id, output_id)
@@ -155,18 +160,17 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
     cache_mock = Mock()
     task_service = Mock(spec=ITaskService)
     file_outputs_provider = _file_outputs_provider(study_mock)
-    output_storage = FileOutputStorage(
-        cache=cache_mock, outputs_provider=file_outputs_provider, remote_executor=Mock(), tmp_dir=tmp_path
+    output_storage = InStudyFileOutputStorage(
+        cache=cache_mock, outputs_provider=file_outputs_provider, remote_executor=Mock()
     )
 
     studies_metadata_repository = _studies_repository(study_mock)
     output_service = OutputService(
         matrix_service=Mock(),
-        cache=cache_mock,
         file_transfer_manager=Mock(),
         tmp_dir=tmp_path,
         studies_repository=studies_metadata_repository,
-        storage=output_storage,
+        storages=[output_storage],
         task_service=task_service,
     )
 
@@ -246,3 +250,38 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
         progress=None,
         custom_event_messages=None,
     )
+
+
+def test_already_existing_study_raises_error_and_deletes_output() -> None:
+    # TODO: remove or at least adapt this test when pre-check of the output id is implemented
+
+    # Storage 1 will say that the output already exists
+    storage1 = Mock(spec=IOutputStorage)
+    storage1.storage_type = OutputStorageType.IN_STUDY_FILE_TREE
+    storage1.output_exists.return_value = True
+
+    # Storage 2 will receive the new output, but it will be deleted afterwards
+    storage2 = Mock(spec=IOutputStorage)
+    storage2.storage_type = OutputStorageType.V2
+    storage2.import_output.return_value = "output_id"
+
+    studies_repo = Mock(spec=IStudyMetadataProvider)
+    studies_repo.get_study_metadata.return_value = StudyMetadata("id", "name")
+
+    output_service = OutputService(
+        storages=[storage1, storage2],
+        matrix_service=Mock(),
+        file_transfer_manager=Mock(),
+        tmp_dir=Mock(),
+        studies_repository=studies_repo,
+        task_service=Mock(),
+    )
+
+    # Output
+    with pytest.raises(OutputAlreadyExists):
+        output_service.import_output("id", BytesIO(), storage_type=OutputStorageType.V2)
+
+    storage1.import_output.assert_not_called()
+
+    storage2.import_output.assert_called()
+    storage2.delete_output.assert_called_with("id", "output_id")

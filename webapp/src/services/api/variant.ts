@@ -14,9 +14,9 @@
 
 import type {
   CommandDTO,
-  FileStudyTreeConfigDTO,
   StudyMetadata,
   StudyMetadataDTO,
+  StudySynthesis,
   VariantTree,
 } from "../../types/types";
 import { convertStudyDtoToMetadata, convertVariantTreeDTO } from "../utils";
@@ -124,7 +124,7 @@ export const getTask = async (id: string, withLogs = false): Promise<TaskDTO> =>
   return res.data;
 };
 
-export const getStudySynthesis = async (studyId: string): Promise<FileStudyTreeConfigDTO> => {
+export const getStudySynthesis = async (studyId: string): Promise<StudySynthesis> => {
   const res = await client.get(`/v1/studies/${studyId}/synthesis`);
   return res.data;
 };

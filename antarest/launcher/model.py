@@ -219,6 +219,7 @@ class JobResult(Base):
     msg: Mapped[Optional[str]] = mapped_column(String())
     output_id: Mapped[Optional[str]] = mapped_column(String())
     exit_code: Mapped[Optional[int]] = mapped_column(Integer)
+
     solver_stats: Mapped[Optional[str]] = mapped_column(String(), nullable=True)
     owner_id: Mapped[Optional[int]] = mapped_column(
         Integer(), ForeignKey(Identity.id, ondelete="SET NULL"), nullable=True

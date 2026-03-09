@@ -397,6 +397,16 @@ class OutputAlreadyUnarchived(HTTPException):
         super().__init__(HTTPStatus.EXPECTATION_FAILED, message)
 
 
+class OutputAlreadyExists(HTTPException):
+    """
+    Exception raised when a user wants to import an output which already exists.
+    """
+
+    def __init__(self, output_id: str) -> None:
+        message = f"Output '{output_id}' already exists"
+        super().__init__(HTTPStatus.CONFLICT, message)
+
+
 class OutputSubFolderNotFound(HTTPException):
     """
     Exception raised when an output sub folders do not exist

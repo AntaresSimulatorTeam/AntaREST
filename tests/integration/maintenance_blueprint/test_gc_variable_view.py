@@ -22,8 +22,8 @@ from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
 from antarest.maintenance.tasks.gc_variable_view import clean_variable_views
 from antarest.matrixstore.service import MatrixService
+from antarest.output.output_model import OutputVariablesType, OutputVariablesViewsModel
 from antarest.study.model import MatrixFrequency, RawStudy
-from antarest.study.output.output_model import OutputVariablesType, OutputVariablesViewsModel
 
 
 def _create_study(study_id: str) -> RawStudy:
@@ -69,6 +69,7 @@ class TestCleanVariableViewsIntegration:
         with db():
             matrix_id = matrix_service.create(matrix_data)
             db.session.add(_create_study(study_id))
+            db.session.flush()
             db.session.add(
                 _create_variable_view(
                     study_id=study_id,
@@ -101,6 +102,7 @@ class TestCleanVariableViewsIntegration:
         with db():
             matrix_id = matrix_service.create(matrix_data)
             db.session.add(_create_study(study_id))
+            db.session.flush()
             db.session.add(
                 _create_variable_view(
                     study_id=study_id,
@@ -130,6 +132,7 @@ class TestCleanVariableViewsIntegration:
         with db():
             matrix_id = matrix_service.create(matrix_data)
             db.session.add(_create_study(study_id))
+            db.session.flush()
             db.session.add(
                 _create_variable_view(
                     study_id=study_id,
@@ -169,6 +172,7 @@ class TestCleanVariableViewsIntegration:
             matrix_id_old = matrix_service.create(matrix_data)
             matrix_id_recent = matrix_service.create(matrix_data)
             db.session.add(_create_study(study_id))
+            db.session.flush()
 
             # Old view - should be deleted
             db.session.add(

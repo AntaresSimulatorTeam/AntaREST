@@ -23,18 +23,17 @@ from antarest.core.tasks.model import TaskDTO, TaskStatus
 
 logger = logging.getLogger(__name__)
 
+IS_WINDOWS = sys.platform == "win32"
+
 
 def wait_for(predicate: Callable[[], bool], timeout: float = 10, sleep_time: float = 1) -> None:
-    end = time.time() + timeout
+    end = time.time() + duration_threshold(timeout)
     while time.time() < end:
         with contextlib.suppress(Exception):
             if predicate():
                 return
         time.sleep(sleep_time)
     raise TimeoutError(f"task is still in progress after {timeout} seconds")
-
-
-IS_WINDOWS = sys.platform == "win32"
 
 
 def is_windows_ci() -> bool:
@@ -54,7 +53,7 @@ def duration_threshold(base_duration: float) -> float:
 
 def wait_task_completion(
     client: TestClient,
-    access_token: str,
+    access_token: str | None,
     task_id: str,
     *,
     base_timeout: float = 10,
@@ -67,7 +66,7 @@ def wait_task_completion(
     res = client.request(
         "GET",
         f"/v1/tasks/{task_id}",
-        headers={"Authorization": f"Bearer {access_token}"},
+        headers={"Authorization": f"Bearer {access_token}"} if access_token else {},
         params=params,
     )
     if res.status_code == 200:

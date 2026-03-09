@@ -22,11 +22,11 @@ import type {
   AllClustersAndLinks,
   AreaWithId,
   Cluster,
-  FileStudyTreeConfigDTO,
   GroupDetailsDTO,
   LinkElement,
   StudyMetadata,
   StudySortConfig,
+  StudySynthesis,
   UserDetailsDTO,
 } from "../types/types";
 import { filterStudies } from "../utils/studiesUtils";
@@ -216,7 +216,7 @@ export const getStudySynthesesState = (state: AppState): StudySynthesesState =>
   state.studySyntheses;
 
 const studySynthesesSelectors = createEntityAdapter({
-  selectId: (studyData: FileStudyTreeConfigDTO) => studyData.study_id,
+  selectId: (studyData: StudySynthesis) => studyData.study_id,
 }).getSelectors(getStudySynthesesState);
 
 export const getStudySynthesisById = studySynthesesSelectors.selectEntities;

@@ -1,9 +1,17 @@
 {
-  "study_path": "DUMMY_VALUE",
-  "path": "DUMMY_VALUE",
   "study_id": "DUMMY_VALUE",
   "version": 700,
-  "output_path": "DUMMY_VALUE",
+  "districts": {
+    "all areas": {
+      "id": "all areas",
+      "output": false,
+      "comments": "Spatial aggregates on all areas",
+      "addAreas": [],
+      "subtractAreas": [],
+      "name": "All areas",
+      "applyFilter": "add-all"
+    }
+  },
   "areas": {
     "de": {
       "name": "DE",
@@ -1493,21 +1501,7 @@
       "st_storages_additional_constraints": {}
     }
   },
-  "districts": {
-    "all areas": {
-      "name": "All areas",
-      "applyFilter": "add-all",
-      "addAreas": [],
-      "subtractAreas": [],
-      "output": false,
-      "comments": "Spatial aggregates on all areas",
-      "id": "all areas"
-    }
-  },
   "outputs": {},
   "bindings": [],
-  "store_new_set": true,
-  "archive_input_series": [],
-  "enr_modelling": "aggregated",
-  "archive_path": null
+  "enr_modelling": "aggregated"
 }

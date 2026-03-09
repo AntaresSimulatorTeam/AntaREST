@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import datetime
-import typing as t
 import zipfile
 from pathlib import Path
 
@@ -31,190 +30,152 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from tests.helpers import create_raw_study, with_admin_user, with_db_context
 
+# noinspection SpellCheckingInspection
+"""
+This class uses the `db_middleware` instance which is automatically created
+for each test method (the fixture has `autouse=True`).
+"""
 
-class TestRawStudyService:
+
+@pytest.mark.parametrize(
+    "denormalize",
+    [
+        pytest.param(True, id="denormalize_yes"),
+        pytest.param(False, id="denormalize_no"),
+    ],
+)
+@with_db_context
+@with_admin_user
+def test_export_study_flat(
+    tmp_path: Path,
+    raw_study_service: RawStudyService,
+    command_factory: CommandFactory,
+    study_service: StudyService,
+    # pytest parameters
+    denormalize: bool,
+) -> None:
+    # Prepare database objects
+    # noinspection PyArgumentList
+    user = User(id=0, name="admin")
+    db.session.add(user)
+    db.session.commit()
+
+    # noinspection PyArgumentList
+    group = Group(id="my-group", name="group")
+    db.session.add(group)
+    db.session.commit()
+
+    raw_study_path = tmp_path / "My RAW Study"
+    # noinspection PyArgumentList
+    raw_study = create_raw_study(
+        id="my_raw_study",
+        name=raw_study_path.name,
+        version="860",
+        author="John Smith",
+        created_at=datetime.datetime(2023, 7, 15, 16, 45),
+        updated_at=datetime.datetime(2023, 7, 19, 8, 15),
+        last_access=current_time(),
+        public_mode=PublicMode.FULL,
+        owner=user,
+        groups=[group],
+        path=str(raw_study_path),
+    )
+    db.session.add(raw_study)
+    db.session.commit()
+
+    # Prepare the RAW Study
+
+    command_context = command_factory.command_context
+
+    FileStudyDaoFactory(command_context, raw_study_service.study_factory).create_study_dao(raw_study)
+
+    create_area_fr = CreateArea(command_context=command_context, area_name="fr", study_version=raw_study.version)
+
     # noinspection SpellCheckingInspection
-    """
-    This class uses the `db_middleware` instance which is automatically created
-    for each test method (the fixture has `autouse=True`).
-    """
+    pmax_injection = np.random.rand(8760, 1)
+    inflows = np.random.uniform(0, 1000, size=(8760, 1))
 
-    @pytest.mark.parametrize(
-        "outputs",
-        [
-            pytest.param(True, id="outputs_yes"),
-            pytest.param(False, id="no_outputs"),
-        ],
+    # noinspection PyArgumentList,PyTypeChecker
+    create_st_storage = CreateSTStorage(
+        command_context=command_context,
+        area_id="fr",
+        parameters=STStorageCreation(
+            name="Storage1",
+            group=STStorageGroup.BATTERY,
+            injection_nominal_capacity=1500,
+            withdrawal_nominal_capacity=1500,
+            reservoir_capacity=20000,
+            efficiency=0.94,
+            initial_level_optim=True,
+        ),
+        pmax_injection=pmax_injection.tolist(),
+        inflows=inflows.tolist(),
+        study_version=raw_study.version,
     )
-    @pytest.mark.parametrize(
-        "output_filter",
-        [
-            # fmt:off
-            pytest.param(None, id="no_filter"),
-            pytest.param(["20230802-1425eco"], id="folder"),
-            pytest.param(["20230802-1628eco"], id="zipped"),
-            pytest.param(["20230802-1425eco", "20230802-1628eco"], id="both"),
-            # fmt:on
-        ],
-    )
-    @pytest.mark.parametrize(
-        "denormalize",
-        [
-            pytest.param(True, id="denormalize_yes"),
-            pytest.param(False, id="denormalize_no"),
-        ],
-    )
-    @with_db_context
-    @with_admin_user
-    def test_export_study_flat(
-        self,
-        tmp_path: Path,
-        raw_study_service: RawStudyService,
-        command_factory: CommandFactory,
-        study_service: StudyService,
-        # pytest parameters
-        outputs: bool,
-        output_filter: t.Optional[t.List[str]],
-        denormalize: bool,
-    ) -> None:
-        # Prepare database objects
-        # noinspection PyArgumentList
-        user = User(id=0, name="admin")
-        db.session.add(user)
-        db.session.commit()
 
-        # noinspection PyArgumentList
-        group = Group(id="my-group", name="group")
-        db.session.add(group)
-        db.session.commit()
+    study_service.get_study_interface(raw_study).add_commands([create_area_fr, create_st_storage])
 
-        raw_study_path = tmp_path / "My RAW Study"
-        # noinspection PyArgumentList
-        raw_study = create_raw_study(
-            id="my_raw_study",
-            name=raw_study_path.name,
-            version="860",
-            author="John Smith",
-            created_at=datetime.datetime(2023, 7, 15, 16, 45),
-            updated_at=datetime.datetime(2023, 7, 19, 8, 15),
-            last_access=current_time(),
-            public_mode=PublicMode.FULL,
-            owner=user,
-            groups=[group],
-            path=str(raw_study_path),
-        )
-        db.session.add(raw_study)
-        db.session.commit()
-
-        # Prepare the RAW Study
-        command_context = command_factory.command_context
-        FileStudyDaoFactory(command_context, raw_study_service.study_factory).create_study_dao(raw_study)
-
-        create_area_fr = CreateArea(command_context=command_context, area_name="fr", study_version=raw_study.version)
-
-        # noinspection SpellCheckingInspection
-        pmax_injection = np.random.rand(8760, 1)
-        inflows = np.random.uniform(0, 1000, size=(8760, 1))
-
-        # noinspection PyArgumentList,PyTypeChecker
-        create_st_storage = CreateSTStorage(
-            command_context=command_context,
-            area_id="fr",
-            parameters=STStorageCreation(
-                name="Storage1",
-                group=STStorageGroup.BATTERY,
-                injection_nominal_capacity=1500,
-                withdrawal_nominal_capacity=1500,
-                reservoir_capacity=20000,
-                efficiency=0.94,
-                initial_level_optim=True,
-            ),
-            pmax_injection=pmax_injection.tolist(),
-            inflows=inflows.tolist(),
-            study_version=raw_study.version,
-        )
-
-        study_service.get_study_interface(raw_study).add_commands([create_area_fr, create_st_storage])
-
-        # Prepare fake outputs
-        my_solver_outputs = ["20230802-1425eco", "20230802-1628eco.zip"]
-        for filename in my_solver_outputs:
-            output_path = raw_study_path / "output" / filename
-            # To simplify the checking, there is only one file in each output:
-            if output_path.suffix.lower() == ".zip":
-                # Create a fake ZIP file
-                output_path.parent.mkdir(exist_ok=True, parents=True)
-                with zipfile.ZipFile(
-                    output_path,
-                    mode="w",
-                    compression=zipfile.ZIP_DEFLATED,
-                ) as zf:
-                    zf.writestr("simulation.log", data="Simulation done")
-            else:
-                # Create a directory
-                output_path.mkdir(exist_ok=True, parents=True)
-                (output_path / "simulation.log").write_text("Simulation done")
-
-        # Collect all files by types to prepare the comparison
-        src_study_files = set()
-        src_matrices = set()
-        src_outputs = set()
-        for study_file in raw_study_path.rglob("*.*"):
-            relpath = study_file.relative_to(raw_study_path).as_posix()
-            if study_file.suffixes == [".txt", ".link"]:
-                src_matrices.add(relpath.replace(".link", ""))
-            elif relpath.startswith("output/"):
-                src_outputs.add(relpath)
-            else:
-                src_study_files.add(relpath)
-
-        # Run the export
-        target_path = tmp_path / raw_study_path.with_suffix(".exported").name
-        raw_study_service.export_study_flat(
-            raw_study,
-            target_path,
-            outputs=outputs,
-            output_list_filter=output_filter,
-            denormalize=denormalize,
-        )
-
-        # Collect the resulting files
-        res_study_files = set()
-        res_matrices = set()
-        res_outputs = set()
-        for study_file in target_path.rglob("*.*"):
-            relpath = study_file.relative_to(target_path).as_posix()
-            if study_file.suffixes == [".txt", ".link"]:
-                res_matrices.add(relpath.replace(".link", ""))
-            elif relpath.startswith("output/"):
-                res_outputs.add(relpath)
-            else:
-                res_study_files.add(relpath)
-
-        # Check the matrice
-        # If de-normalization is enabled, the previous loop won't find the matrices
-        # because the matrix extensions are ".txt" instead of ".txt.link".
-        # Therefore, it is necessary to move the corresponding ".txt" files
-        # from `res_study_files` to `res_matrices`.
-        if denormalize:
-            assert not res_matrices, "All matrices must be denormalized"
-            res_matrices = {f for f in res_study_files if f in src_matrices}
-            res_study_files -= res_matrices
-        assert res_matrices == src_matrices
-
-        # Check the outputs
-        if outputs:
-            # If `outputs` is True the filtering can occurs
-            if output_filter is None:
-                expected_filter = {f.replace(".zip", "") for f in my_solver_outputs}
-            else:
-                expected_filter = set(output_filter)
-            expected = {f"output/{output_name}/simulation.log" for output_name in expected_filter}
-            assert res_outputs == expected
+    # Prepare fake outputs
+    my_solver_outputs = ["20230802-1425eco", "20230802-1628eco.zip"]
+    for filename in my_solver_outputs:
+        output_path = raw_study_path / "output" / filename
+        # To simplify the checking, there is only one file in each output:
+        if output_path.suffix.lower() == ".zip":
+            # Create a fake ZIP file
+            output_path.parent.mkdir(exist_ok=True, parents=True)
+            with zipfile.ZipFile(
+                output_path,
+                mode="w",
+                compression=zipfile.ZIP_DEFLATED,
+            ) as zf:
+                zf.writestr("simulation.log", data="Simulation done")
         else:
-            # If `outputs` is False, no output must be exported
-            # whatever the value of the `output_list_filter` is
-            assert not res_outputs
+            # Create a directory
+            output_path.mkdir(exist_ok=True, parents=True)
+            (output_path / "simulation.log").write_text("Simulation done")
 
-        # Check the study files
-        assert res_study_files == src_study_files
+    # Collect all files by types to prepare the comparison
+    src_study_files = set()
+    src_matrices = set()
+    for study_file in raw_study_path.rglob("*.*"):
+        relpath = study_file.relative_to(raw_study_path).as_posix()
+        if study_file.suffixes == [".txt", ".link"]:
+            src_matrices.add(relpath.replace(".link", ""))
+        elif not relpath.startswith("output/"):
+            src_study_files.add(relpath)
+
+    # Run the export
+    target_path = tmp_path / raw_study_path.with_suffix(".exported").name
+    raw_study_service.export_study_flat(
+        raw_study,
+        target_path,
+        denormalize=denormalize,
+    )
+
+    # Collect the resulting files
+    res_study_files = set()
+    res_matrices = set()
+    for study_file in target_path.rglob("*.*"):
+        relpath = study_file.relative_to(target_path).as_posix()
+
+        # we should not export outputs
+        assert not relpath.startswith("output")
+
+        if study_file.suffixes == [".txt", ".link"]:
+            res_matrices.add(relpath.replace(".link", ""))
+        else:
+            res_study_files.add(relpath)
+
+    # Check the matrice
+    # If de-normalization is enabled, the previous loop won't find the matrices
+    # because the matrix extensions are ".txt" instead of ".txt.link".
+    # Therefore, it is necessary to move the corresponding ".txt" files
+    # from `res_study_files` to `res_matrices`.
+    if denormalize:
+        assert not res_matrices, "All matrices must be denormalized"
+        res_matrices = {f for f in res_study_files if f in src_matrices}
+        res_study_files -= res_matrices
+    assert res_matrices == src_matrices
+
+    # Check the study files
+    assert res_study_files == src_study_files
