@@ -21,10 +21,8 @@ import type { SubmitHandlerPlus } from "@/components/Form/types";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
 import { directoryQueries } from "@/queries/directories/queries";
-import { fetchStudies } from "@/redux/ducks/studies";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { copyStudy } from "@/services/api/studies";
-import { TaskStatus } from "@/services/api/tasks/constants";
 import { getTask } from "@/services/api/tasks";
 import { getStudyOutputs } from "@/services/api/study";
 import type { StudyMetadata, OutputDetails } from "@/types/types";
@@ -55,7 +53,7 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
   const isVariant = study.type === "variantstudy";
   const Icon = isVariant ? SaveAsIcon : FileCopyOutlinedIcon;
   const queryClient = useQueryClient();
-  const dispatch = useAppDispatch();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
   const outputsRes = usePromise(async () => {
@@ -78,29 +76,24 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
     // TODO: This should be moved to the API layer when Tan stack migration is done.
     const directoryPath = toDirectoryPath(destination, directories);
 
-    const copiedStudyId = await copyStudy({
+    const taskId = await copyStudy({
       studyId: study.id,
       studyName: studyName.trim(),
       destinationFolder: directoryPath,
       outputIds,
     });
 
-    const copyTask = await getTask({
-      id: copiedStudyId,
-      waitForCompletion: true,
-    });
+    // Poll task completion in the background, then refresh
+    // the directory list so the dialog is not blocked while the task runs.
+    getTask({ id: taskId, waitForCompletion: true })
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: directoryQueries.list().queryKey });
+      })
+      .catch((err) => {
+        enqueueErrorSnackbar(t("studies.error.copyStudy"), toError(err));
+      });
 
-    if (copyTask.status !== TaskStatus.Completed || !copyTask.result?.success) {
-      throw toError(copyTask.result?.message ?? "Study copy failed");
-    }
-
-    await queryClient.refetchQueries({
-      queryKey: directoryQueries.list().queryKey,
-    });
-
-    await dispatch(fetchStudies());
-
-    return copyTask.result.return_value ?? copiedStudyId;
+    return taskId;
   };
 
   ////////////////////////////////////////////////////////////////
