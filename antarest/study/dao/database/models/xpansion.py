@@ -14,19 +14,24 @@
 SQLAlchemy Core table definitions for Xpansion storage.
 
 Design decisions:
-  - xpansion_settings           : flat row per study; sensitivity scalars are inlined;
-                                  sensitivity_projection stored as JSON Text.
-  - xpansion_candidate          : one row per candidate (individual CRUD, 13 typed fields).
-  - xpansion_adequacy_criterion : flat row per study; patterns stored as JSON Text.
+  - xpansion_settings                    : flat row per study; sensitivity scalars are inlined.
+  - xpansion_candidate                   : one row per candidate (individual CRUD, 13 typed fields).
+  - xpansion_sensitivity_projection      : one row per projection entry. PK = (study_id, candidate_name).
+                                           FK CASCADE to xpansion_candidate: projection rows are removed
+                                           when a candidate is deleted. App-level checks
+                                           (checks_xpansion_candidate_can_be_deleted) prevent deletion
+                                           of candidates still referenced in projection.
+  - xpansion_adequacy_criterion_v2       : flat row per study; scalars only (no patterns).
+  - xpansion_adequacy_pattern            : one row per XpansionAdequacyPattern. PK = (study_id, area).
 
 Cascade chain:
-  study → xpansion_settings → xpansion_candidate
-                             → xpansion_adequacy_criterion
-  Deleting xpansion_settings (i.e. the xpansion configuration) therefore
-  cascades to both candidates and the adequacy criterion.
+  study → xpansion_settings → xpansion_candidate → xpansion_sensitivity_projection (CASCADE)
+                             → xpansion_adequacy_criterion_v2 → xpansion_adequacy_pattern
+  Deleting xpansion_settings (i.e. the xpansion configuration) therefore cascades
+  to candidates, and transitively to projection entries, the adequacy criterion, and all its patterns.
 """
 
-from sqlalchemy import Boolean, Column, Enum, Float, ForeignKeyConstraint, Integer, String, Table, Text
+from sqlalchemy import Boolean, Column, Enum, Float, ForeignKeyConstraint, Integer, String, Table
 
 from antarest.dbmodel import Base
 from antarest.study.business.model.xpansion_model import Master, Solver, UcType
@@ -67,7 +72,6 @@ XPANSION_SETTINGS_TABLE = Table(
     # --- XpansionSensitivitySettings (inlined) ---
     Column("sensitivity_epsilon", Float(), nullable=False),
     Column("sensitivity_capex", Boolean(), nullable=False),
-    Column("sensitivity_projection", Text(), nullable=False),  # JSON: ["cand_a", "cand_b"]
     ForeignKeyConstraint(
         ["study_id"],
         ["study.id"],
@@ -111,10 +115,33 @@ XPANSION_CANDIDATE_TABLE = Table(
 )
 
 # ---------------------------------------------------------------------------
-# xpansion_adequacy_criterion  (1-to-1 with xpansion_settings)
+# xpansion_sensitivity_projection  (1-to-many with xpansion_candidate)
 #
-# Holds XpansionAdequacyCriterion scalars and the patterns list as JSON Text.
-# FK → xpansion_settings for the same cascade reason as candidates.
+# One row per entry in XpansionSensitivitySettings.projection. PK = (study_id, candidate_name).
+# FK → xpansion_settings (CASCADE): projection rows are removed when the configuration is deleted.
+# FK → xpansion_candidate (RESTRICT): the DB prevents deleting a candidate that is still referenced
+# in the projection, replacing the equivalent application-level pre-check.
+# ---------------------------------------------------------------------------
+
+XPANSION_SENSITIVITY_PROJECTION_TABLE = Table(
+    "xpansion_sensitivity_projection",
+    metadata,
+    Column("study_id", String(36), nullable=False, primary_key=True),
+    Column("candidate_name", String(255), nullable=False, primary_key=True),
+    ForeignKeyConstraint(
+        ["study_id", "candidate_name"],
+        ["xpansion_candidate.study_id", "xpansion_candidate.name"],
+        name="fk_xpansion_sensitivity_projection_candidate",
+        ondelete="CASCADE",
+    ),
+)
+
+# ---------------------------------------------------------------------------
+# xpansion_adequacy_criterion_v2  (1-to-1 with xpansion_settings)
+#
+# Holds XpansionAdequacyCriterion scalars only.
+# Patterns live in xpansion_adequacy_pattern (one row each).
+# FK → xpansion_settings so that deleting the xpansion configuration cascades here.
 # ---------------------------------------------------------------------------
 
 XPANSION_ADEQUACY_CRITERION_TABLE = Table(
@@ -123,11 +150,37 @@ XPANSION_ADEQUACY_CRITERION_TABLE = Table(
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("stopping_threshold", Float(), nullable=False),
     Column("criterion_count_threshold", Float(), nullable=False),
-    Column("patterns", Text(), nullable=False),  # JSON: [{"area": "x", "criterion": 1.0}]
     ForeignKeyConstraint(
         ["study_id"],
         ["xpansion_settings.study_id"],
-        name="fk_xpansion_adequacy_criterion_settings",
+        name="fk_xpansion_adequacy_criterion_v2_settings",
+        ondelete="CASCADE",
+    ),
+)
+
+# ---------------------------------------------------------------------------
+# xpansion_adequacy_pattern  (1-to-many with xpansion_adequacy_criterion_v2)
+#
+# One row per XpansionAdequacyPattern. PK = (study_id, area).
+# FK → xpansion_adequacy_criterion_v2 so that deleting the criterion cascades here.
+# ---------------------------------------------------------------------------
+
+XPANSION_ADEQUACY_PATTERN_TABLE = Table(
+    "xpansion_adequacy_pattern",
+    metadata,
+    Column("study_id", String(36), nullable=False, primary_key=True),
+    Column("area", String(255), nullable=False, primary_key=True),
+    Column("criterion", Float(), nullable=False),
+    ForeignKeyConstraint(
+        ["study_id"],
+        ["xpansion_adequacy_criterion_v2.study_id"],
+        name="fk_xpansion_adequacy_pattern_criterion_v2",
+        ondelete="CASCADE",
+    ),
+    ForeignKeyConstraint(
+        ["study_id", "area"],
+        ["area.study_id", "area.area_id"],
+        name="fk_xpansion_adequacy_pattern_study_id_area_area",
         ondelete="CASCADE",
     ),
 )
