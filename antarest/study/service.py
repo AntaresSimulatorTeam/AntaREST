@@ -1233,6 +1233,7 @@ class StudyService:
 
             study.owner = owner
             study.groups = groups
+            study.directory_id = self.directory_service.get_directory_by_path(destination_folder.as_posix())
 
             self._save_study(study)
             self.storage_service.raw_study_service.normalize_study(study)
