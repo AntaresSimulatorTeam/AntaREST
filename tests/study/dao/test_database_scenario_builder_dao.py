@@ -35,6 +35,7 @@ def test_save_empty_ruleset(db_dao: DatabaseStudyDao) -> None:
 
 def test_save_ruleset_with_area_scenarios(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
+    _setup_areas(dao, "fr", "de")
     ruleset = Ruleset(
         load={"fr": {"0": 1, "1": 2}},
         wind={"de": {"0": 3}},
@@ -48,6 +49,7 @@ def test_save_ruleset_with_area_scenarios(db_dao: DatabaseStudyDao) -> None:
 
 def test_save_ruleset_with_all_area_types(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
+    _setup_areas(dao, "fr")
     ruleset = Ruleset(
         load={"fr": {"0": 1}},
         hydro={"fr": {"0": 2}},
@@ -140,6 +142,7 @@ def test_save_ruleset_with_storage_constraints(db_dao: DatabaseStudyDao) -> None
 
 def test_save_replaces_previous_ruleset(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
+    _setup_areas(dao, "fr", "de")
     dao.save_scenario_builder(Ruleset(load={"fr": {"0": 1}}))
     dao.save_scenario_builder(Ruleset(wind={"de": {"0": 2}}))
     result = dao.get_ruleset()
@@ -150,6 +153,7 @@ def test_save_replaces_previous_ruleset(db_dao: DatabaseStudyDao) -> None:
 
 def test_get_scenario_by_type_area(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
+    _setup_areas(dao, "fr", "de")
     dao.save_scenario_builder(Ruleset(load={"fr": {"0": 1}, "de": {"0": 2}}))
 
     result = dao.get_scenario_by_type(ScenarioType.LOAD)
@@ -200,6 +204,7 @@ def test_get_scenario_by_type_returns_empty_when_no_data(db_dao: DatabaseStudyDa
 
 def test_get_scenario_by_type_does_not_mix_scenario_types(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
+    _setup_areas(dao, "fr")
     dao.save_scenario_builder(
         Ruleset(
             load={"fr": {"0": 1}},
