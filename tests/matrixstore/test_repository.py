@@ -389,3 +389,15 @@ class TestMatrixContentRepository:
             assert matrix_id == matrix_hash
             matrix = matrix_content_repo.get(matrix_hash, matrix_version=2)
             assert matrix.is_empty()
+
+    def test_get_all_matrices_on_the_filesystem(self, tmp_path: Path) -> None:
+        """Only files with known matrix format extensions should be returned (lock files and other files excluded)."""
+        repo = MatrixContentRepository(tmp_path, InternalMatrixFormat.TSV)
+        bucket_dir = repo.bucket_dir
+
+        (bucket_dir / "abc123.tsv").touch()
+        (bucket_dir / "def456.hdf").touch()
+        (bucket_dir / "abc123.tsv.lock").touch()  # lock file → excluded
+        (bucket_dir / "other.tmp").touch()  # unknown extension → excluded
+
+        assert repo.get_all_matrices_on_the_filesystem() == {"abc123", "def456"}

@@ -403,4 +403,5 @@ class MatrixContentRepository:
         return Matrix(id=matrix_id, width=width, height=height, created_at=current_time(), version=version)
 
     def get_all_matrices_on_the_filesystem(self) -> set[str]:
-        return {f.stem for f in self.bucket_dir.iterdir() if not f.name.endswith(LOCK_SUFFIX)}
+        known_suffixes = {f".{fmt}" for fmt in InternalMatrixFormat}
+        return {f.stem for f in self.bucket_dir.iterdir() if f.suffix in known_suffixes}
