@@ -292,7 +292,6 @@ class TestXpansionCandidates:
         with pytest.raises(CandidateNotFoundError):
             db_dao.delete_xpansion_candidate("nonexistent")
 
-        # --- delete unknown raises ---
         with pytest.raises(CandidateNotFoundError):
             db_dao.delete_xpansion_candidate("cand")
 
