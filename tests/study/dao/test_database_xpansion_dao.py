@@ -292,6 +292,7 @@ class TestXpansionCandidates:
         with pytest.raises(CandidateNotFoundError):
             db_dao.delete_xpansion_candidate("nonexistent")
 
+        # --- delete unknown raises ---
         with pytest.raises(CandidateNotFoundError):
             db_dao.delete_xpansion_candidate("cand")
 
@@ -321,6 +322,7 @@ class TestXpansionCandidates:
         db_dao.save_xpansion_settings(
             XpansionSettings(sensitivity_config=XpansionSensitivitySettings(projection=["cand_a"]))
         )
+        db_dao.save_xpansion_candidate(_make_candidate("cand_a", "x", "y"))
 
         # --- raises if in projection ---
         with pytest.raises(XpansionCandidateDeletionError):
