@@ -397,7 +397,7 @@ class TestMatrixContentRepository:
 
         (bucket_dir / "abc123.tsv").touch()
         (bucket_dir / "def456.hdf").touch()
-        (bucket_dir / "abc123.tsv.lock").touch()  # lock file → excluded
-        (bucket_dir / "other.tmp").touch()  # unknown extension → excluded
+        (bucket_dir / "abc123.tsv.lock").touch()
+        (bucket_dir / "other.tmp").touch()
 
         assert repo.get_all_matrices_on_the_filesystem() == {"abc123", "def456"}
