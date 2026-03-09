@@ -319,10 +319,10 @@ class TestXpansionCandidates:
         """checks_xpansion_candidate_can_be_deleted should raise if in projection, pass otherwise."""
         # --- setup ---
         db_dao.create_xpansion_configuration()
+        db_dao.save_xpansion_candidate(_make_candidate("cand_a", "x", "y"))
         db_dao.save_xpansion_settings(
             XpansionSettings(sensitivity_config=XpansionSensitivitySettings(projection=["cand_a"]))
         )
-        db_dao.save_xpansion_candidate(_make_candidate("cand_a", "x", "y"))
 
         # --- raises if in projection ---
         with pytest.raises(XpansionCandidateDeletionError):
