@@ -165,11 +165,8 @@ class DatabaseXpansionDao(XpansionDao):
 
     @override
     def checks_xpansion_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
-        # File existence checks for additional_constraints and yearly_weights
-        # require blob storage access, which is not yet available in the database DAO.
         # TODO: validate additional_constraints and yearly_weights against blob storage
         #  once blob storage is wired up for database mode.
-        #  See FileStudyXpansionDao.checks_xpansion_settings_are_correct for the reference implementation.
         if not settings.sensitivity_config or not settings.sensitivity_config.projection:
             return
         projection = settings.sensitivity_config.projection
