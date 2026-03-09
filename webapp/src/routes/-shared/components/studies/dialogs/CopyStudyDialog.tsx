@@ -87,7 +87,9 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
     // the directory list so the dialog is not blocked while the task runs.
     getTask({ id: taskId, waitForCompletion: true })
       .then(() => {
-        queryClient.invalidateQueries({ queryKey: directoryQueries.list().queryKey });
+        if (destination.newSubdirectoriesPath) {
+          queryClient.invalidateQueries({ queryKey: directoryQueries.list().queryKey });
+        }
       })
       .catch((err) => {
         enqueueErrorSnackbar(t("studies.error.copyStudy"), toError(err));
