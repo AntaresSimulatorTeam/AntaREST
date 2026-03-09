@@ -15,7 +15,8 @@ import pytest
 from sqlalchemy import Engine
 
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
-from antarest.output.storage.repository import DbOutputMetadata, OutputMetadataRepository
+from antarest.launcher.model import LogType
+from antarest.output.storage.repository import DbOutputMetadata, OutputRepository
 from antarest.study.model import Study
 from antarest.study.repository import StudyMetadataRepository
 
@@ -31,11 +32,11 @@ def study_repo(init_db) -> StudyMetadataRepository:
 
 
 @pytest.fixture
-def output_repo(init_db) -> OutputMetadataRepository:
-    return OutputMetadataRepository()
+def output_repo(init_db) -> OutputRepository:
+    return OutputRepository()
 
 
-def test_repo(study_repo: StudyMetadataRepository, output_repo: OutputMetadataRepository) -> None:
+def test_repo(study_repo: StudyMetadataRepository, output_repo: OutputRepository) -> None:
     with db():
         assert list(output_repo.get_all()) == []
 
@@ -127,3 +128,35 @@ def test_repo(study_repo: StudyMetadataRepository, output_repo: OutputMetadataRe
         output_repo.delete("study_id_1", "output_1")
         assert output_repo.get(study_id="study_id_1", output_name="output_1") is None
         assert len(list(output_repo.get_all())) == 2
+
+
+def test_get_and_save_logs(study_repo: StudyMetadataRepository, output_repo: OutputRepository) -> None:
+    with db():
+        assert list(output_repo.get_all()) == []
+
+        # The FK constraints enforces us to create a study first.
+        study_repo.save(Study(id="study_id_1", name="name", version="9.2", path=""))
+        study_repo.save(Study(id="study_id_2", name="name", version="9.2", path=""))
+
+        output_repo.save(
+            DbOutputMetadata(
+                study_id="study_id_1",
+                output_name="output_1",
+                archived=False,
+                mode="Economy",
+                synthesis=True,
+                nb_years=1,
+                by_year=True,
+            )
+        )
+
+    with db():
+        assert output_repo.get_log("study_id_1", "output_1", LogType.STDOUT) == ""
+        assert output_repo.get_log("study_id_1", "output_1", LogType.STDERR) == ""
+
+    with db():
+        output_repo.save_log("study_id_1", "output_1", LogType.STDOUT, "out log")
+        output_repo.save_log("study_id_1", "output_1", LogType.STDERR, "err log")
+
+        assert output_repo.get_log("study_id_1", "output_1", LogType.STDOUT) == "out log"
+        assert output_repo.get_log("study_id_1", "output_1", LogType.STDERR) == "err log"

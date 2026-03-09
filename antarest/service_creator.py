@@ -55,7 +55,7 @@ from antarest.output.output_blueprint import create_output_routes
 from antarest.output.output_service import OutputService
 from antarest.output.storage.file_output_storage import InStudyFileOutputStorage
 from antarest.output.storage.output_storage import IOutputStorage
-from antarest.output.storage.repository import OutputMetadataRepository
+from antarest.output.storage.repository import OutputRepository
 from antarest.output.storage.v2_output_storage import V2OutputStorage
 from antarest.output.variable_view_gc import VariableViewGarbageCollector
 from antarest.study.adapters import adapt_output_service_to_study_service
@@ -190,7 +190,7 @@ def build_output_storage_list(config: Config, file_output_storage: InStudyFileOu
         return [file_output_storage]
     tmp_dir = config.storage.tmp_dir / "outputs"
     lfs = DirLargeFileStorage(config.storage.archive_dir)
-    v2_storage = V2OutputStorage(tmp_dir=tmp_dir, archive_storage=lfs, metadata_repository=OutputMetadataRepository())
+    v2_storage = V2OutputStorage(tmp_dir=tmp_dir, archive_storage=lfs, output_repository=OutputRepository())
 
     if config.storage.output.default:
         return [v2_storage, file_output_storage]

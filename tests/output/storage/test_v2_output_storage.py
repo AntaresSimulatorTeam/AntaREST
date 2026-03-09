@@ -20,9 +20,11 @@ from sqlalchemy import Engine
 
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.launcher.adapters.abstractlauncher import SimulationLogs
+from antarest.launcher.model import LogType
 from antarest.lfs.dir_lfs import DirLargeFileStorage
 from antarest.lfs.lfs import ILargeFileStorage
-from antarest.output.storage.repository import OutputMetadataRepository
+from antarest.output.storage.repository import OutputRepository
 from antarest.output.storage.v2_output_storage import V2OutputStorage
 from antarest.study.model import Study
 from antarest.study.repository import StudyMetadataRepository
@@ -39,8 +41,8 @@ def study_repo(init_db) -> StudyMetadataRepository:
 
 
 @pytest.fixture
-def output_repo(init_db) -> OutputMetadataRepository:
-    return OutputMetadataRepository()
+def output_repo(init_db) -> OutputRepository:
+    return OutputRepository()
 
 
 @pytest.fixture(scope="session")
@@ -72,10 +74,10 @@ def lfs(tmp_path: Path) -> ILargeFileStorage:
 
 @pytest.fixture
 def storage(
-    tmp_path: Path, study_repo: StudyMetadataRepository, output_repo: OutputMetadataRepository, lfs: ILargeFileStorage
+    tmp_path: Path, study_repo: StudyMetadataRepository, output_repo: OutputRepository, lfs: ILargeFileStorage
 ) -> V2OutputStorage:
     storage_tmp_dir = tmp_path / "storage" / "tmp"
-    storage = V2OutputStorage(archive_storage=lfs, tmp_dir=storage_tmp_dir, metadata_repository=output_repo)
+    storage = V2OutputStorage(archive_storage=lfs, tmp_dir=storage_tmp_dir, output_repository=output_repo)
     return storage
 
 
@@ -182,3 +184,32 @@ def test_import_archive_stream(
     with db():
         assert storage.output_exists(study_id=study_id, output_id="20201014-1427eco")
         assert not storage.is_output_archived(study_id=study_id, output_id="20201014-1427eco")
+
+
+def test_import_output_with_existing_logs(storage: V2OutputStorage, study_id: str, output_path: Path) -> None:
+    with db():
+        output_name = storage.import_output(study_id, output_path)
+        assert output_name == "20201014-1427eco"
+
+        assert storage.output_exists(study_id, "20201014-1427eco")
+
+        out_logs = storage.get_logs(study_id, "20201014-1427eco", LogType.STDOUT)
+        assert len(out_logs.splitlines()) == 239
+        assert storage.get_logs(study_id, "20201014-1427eco", LogType.STDERR) == ""
+
+
+def test_import_output_override_logs(
+    storage: V2OutputStorage, study_id: str, output_path: Path, tmp_path: Path
+) -> None:
+    out_path = tmp_path / "out.log"
+    err_path = tmp_path / "err.log"
+    out_path.write_text("out log")
+    err_path.write_text("err log")
+    with db():
+        output_name = storage.import_output(study_id, output_path, logs=SimulationLogs(out_path, err_path))
+        assert output_name == "20201014-1427eco"
+
+        assert storage.output_exists(study_id, "20201014-1427eco")
+
+        assert storage.get_logs(study_id, "20201014-1427eco", LogType.STDOUT) == "out log"
+        assert storage.get_logs(study_id, "20201014-1427eco", LogType.STDERR) == "err log"

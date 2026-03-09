@@ -57,8 +57,10 @@ def generic_upsert_multiple(
     if not values:
         return
 
+    prototype_value = values[0]
+
     key_columns = _key_columns(table)
-    update_columns = _update_columns(table)
+    update_columns = [c for c in _update_columns(table) if c in prototype_value]
 
     # First a select to identify existing rows
     def _key(vals: dict[str, Any]) -> tuple[Any, ...]:
@@ -120,10 +122,12 @@ def upsert_multiple(
     if not values:
         return
 
+    prototype_value = values[0]
+
     dialect = session.get_bind().dialect.name
     if dialect in {"postgresql", "sqlite"}:
         key_columns = _key_columns(table)
-        update_columns = _update_columns(table)
+        update_columns = [c for c in _update_columns(table) if c.name in prototype_value]
 
         # Note: the postgres and sqlite syntax requires to explicitly
         # state the list of columns that we want to update, hence the set_ clause.
