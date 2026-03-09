@@ -62,10 +62,7 @@ def reindex_table(config: Path) -> None:
 
     engine = sqlalchemy.create_engine(str(config_obj.db.db_admin_url), echo=False)
 
-    with engine.connect() as connection:
-        with connection.begin():
-            pass
-
+    with engine.connect() as connection, connection.begin():
         connection = connection.execution_options(autocommit=True)
         connection.execute(text("VACUUM ANALYSE study"))
         connection.execute(text("REINDEX INDEX study_pkey"))
