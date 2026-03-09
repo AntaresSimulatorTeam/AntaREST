@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from sqlalchemy import Boolean, Column, Enum, Float, ForeignKeyConstraint, Integer, String, Table
+from sqlalchemy import JSON, Boolean, Column, Enum, Float, ForeignKeyConstraint, Integer, String, Table
 
 from antarest.dbmodel import Base
 from antarest.study.business.model.xpansion_model import Master, Solver, UcType
@@ -43,6 +43,7 @@ XPANSION_SETTINGS_TABLE = Table(
     # --- XpansionSensitivitySettings (inlined) ---
     Column("sensitivity_epsilon", Float(), nullable=False),
     Column("sensitivity_capex", Boolean(), nullable=False),
+    Column("sensitivity_projection", JSON(), nullable=False),  # JSON: ["cand_a", "cand_b"]
     ForeignKeyConstraint(
         ["study_id"],
         ["study.id"],
@@ -77,49 +78,17 @@ XPANSION_CANDIDATE_TABLE = Table(
     ),
 )
 
-XPANSION_SENSITIVITY_PROJECTION_TABLE = Table(
-    "xpansion_sensitivity_projection",
-    metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
-    Column("candidate_name", String(255), nullable=False, primary_key=True),
-    ForeignKeyConstraint(
-        ["study_id", "candidate_name"],
-        ["xpansion_candidate.study_id", "xpansion_candidate.name"],
-        name="fk_xpansion_sensitivity_projection_candidate",
-        ondelete="CASCADE",
-    ),
-)
-
 XPANSION_ADEQUACY_CRITERION_TABLE = Table(
     "xpansion_adequacy_criterion",
     metadata,
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("stopping_threshold", Float(), nullable=False),
     Column("criterion_count_threshold", Float(), nullable=False),
+    Column("patterns", JSON(), nullable=False),  # JSON: [{"area": "x", "criterion": 1.0}]
     ForeignKeyConstraint(
         ["study_id"],
         ["xpansion_settings.study_id"],
         name="fk_xpansion_adequacy_criterion_settings",
-        ondelete="CASCADE",
-    ),
-)
-
-XPANSION_ADEQUACY_PATTERN_TABLE = Table(
-    "xpansion_adequacy_pattern",
-    metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
-    Column("area", String(255), nullable=False, primary_key=True),
-    Column("criterion", Float(), nullable=False),
-    ForeignKeyConstraint(
-        ["study_id"],
-        ["xpansion_adequacy_criterion.study_id"],
-        name="fk_xpansion_adequacy_pattern_criterion",
-        ondelete="CASCADE",
-    ),
-    ForeignKeyConstraint(
-        ["study_id", "area"],
-        ["area.study_id", "area.area_id"],
-        name="fk_xpansion_adequacy_pattern_study_id_area_area",
         ondelete="CASCADE",
     ),
 )

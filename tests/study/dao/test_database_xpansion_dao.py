@@ -35,9 +35,7 @@ from antarest.study.business.model.xpansion_model import (
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.xpansion import (
     XPANSION_ADEQUACY_CRITERION_TABLE,
-    XPANSION_ADEQUACY_PATTERN_TABLE,
     XPANSION_CANDIDATE_TABLE,
-    XPANSION_SENSITIVITY_PROJECTION_TABLE,
     XPANSION_SETTINGS_TABLE,
 )
 
@@ -141,9 +139,6 @@ class TestXpansionSettings:
         """save_xpansion_settings should persist all non-default values and allow retrieval."""
         # --- setup ---
         db_dao.create_xpansion_configuration()
-        # Projection candidates must exist before being referenced
-        db_dao.save_xpansion_candidate(_make_candidate("cand_a", "x", "y"))
-        db_dao.save_xpansion_candidate(_make_candidate("cand_b", "x", "y"))
 
         # --- round-trip ---
         updated = XpansionSettings(
@@ -174,22 +169,6 @@ class TestXpansionSettings:
         db_dao.save_xpansion_settings(XpansionSettings(optimality_gap=10.0))
         result = db_dao.get_xpansion_settings()
         assert result.optimality_gap == 10.0
-
-        # --- invalid projection ---
-        settings = XpansionSettings(sensitivity_config=XpansionSensitivitySettings(projection=["cand_a", "ghost_cand"]))
-        with pytest.raises(CandidateNotFoundError):
-            db_dao.save_xpansion_settings(settings)
-
-    def test_save_xpansion_settings_raises_for_unknown_projection_candidate(self, db_dao: DatabaseStudyDao) -> None:
-        """save_xpansion_settings should raise CandidateNotFoundError when a projection name does not exist."""
-        db_dao.create_xpansion_configuration()
-        db_dao.save_xpansion_candidate(_make_candidate("existing_cand", "x", "y"))
-
-        settings = XpansionSettings(
-            sensitivity_config=XpansionSensitivitySettings(projection=["existing_cand", "ghost_cand"])
-        )
-        with pytest.raises(CandidateNotFoundError):
-            db_dao.save_xpansion_settings(settings)
 
     def test_checks_xpansion_settings_correct(self, db_dao: DatabaseStudyDao) -> None:
         """checks_xpansion_settings_are_correct should validate projection candidate existence."""
@@ -313,7 +292,6 @@ class TestXpansionCandidates:
         with pytest.raises(CandidateNotFoundError):
             db_dao.delete_xpansion_candidate("nonexistent")
 
-            # --- delete unknown raises ---
         with pytest.raises(CandidateNotFoundError):
             db_dao.delete_xpansion_candidate("cand")
 
@@ -340,7 +318,6 @@ class TestXpansionCandidates:
         """checks_xpansion_candidate_can_be_deleted should raise if in projection, pass otherwise."""
         # --- setup ---
         db_dao.create_xpansion_configuration()
-        db_dao.save_xpansion_candidate(_make_candidate("cand_a", "x", "y"))
         db_dao.save_xpansion_settings(
             XpansionSettings(sensitivity_config=XpansionSensitivitySettings(projection=["cand_a"]))
         )
@@ -404,7 +381,7 @@ class TestCascadeDelete:
     """Tests for cascade-delete behaviour when the Xpansion configuration is removed."""
 
     def test_cascade_delete_removes_all_related_rows(self, db_session: Session, db_dao: DatabaseStudyDao) -> None:
-        """Deleting the configuration should cascade-delete candidates, projection, criterion and patterns."""
+        """Deleting the configuration should cascade-delete candidates and the adequacy criterion."""
         # --- setup ---
         db_dao.create_xpansion_configuration()
         db_dao.save_area("Paris")
@@ -425,13 +402,7 @@ class TestCascadeDelete:
         with db_session:
             _assert_tables_empty(
                 db_session,
-                [
-                    XPANSION_SETTINGS_TABLE,
-                    XPANSION_CANDIDATE_TABLE,
-                    XPANSION_SENSITIVITY_PROJECTION_TABLE,
-                    XPANSION_ADEQUACY_CRITERION_TABLE,
-                    XPANSION_ADEQUACY_PATTERN_TABLE,
-                ],
+                [XPANSION_SETTINGS_TABLE, XPANSION_CANDIDATE_TABLE, XPANSION_ADEQUACY_CRITERION_TABLE],
                 db_dao.get_study_id(),
             )
 

@@ -42,6 +42,7 @@ def upgrade() -> None:
         sa.Column("cut_coefficient_tolerance", sa.Float(), nullable=False),
         sa.Column("sensitivity_epsilon", sa.Float(), nullable=False),
         sa.Column("sensitivity_capex", sa.Boolean(), nullable=False),
+        sa.Column("sensitivity_projection", sa.JSON(), nullable=False),
         sa.ForeignKeyConstraint(
             ["study_id"],
             ["study.id"],
@@ -78,23 +79,11 @@ def upgrade() -> None:
     )
 
     op.create_table(
-        "xpansion_sensitivity_projection",
-        sa.Column("study_id", sa.String(length=36), nullable=False),
-        sa.Column("candidate_name", sa.String(length=255), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["study_id", "candidate_name"],
-            ["xpansion_candidate.study_id", "xpansion_candidate.name"],
-            name=op.f("fk_xpansion_sensitivity_projection_candidate"),
-            ondelete="CASCADE",
-        ),
-        sa.PrimaryKeyConstraint("study_id", "candidate_name", name=op.f("pk_xpansion_sensitivity_projection")),
-    )
-
-    op.create_table(
         "xpansion_adequacy_criterion",
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("stopping_threshold", sa.Float(), nullable=False),
         sa.Column("criterion_count_threshold", sa.Float(), nullable=False),
+        sa.Column("patterns", sa.JSON(), nullable=False),
         sa.ForeignKeyConstraint(
             ["study_id"],
             ["xpansion_settings.study_id"],
@@ -104,31 +93,9 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("study_id", name=op.f("pk_xpansion_adequacy_criterion")),
     )
 
-    op.create_table(
-        "xpansion_adequacy_pattern",
-        sa.Column("study_id", sa.String(length=36), nullable=False),
-        sa.Column("area", sa.String(length=255), nullable=False),
-        sa.Column("criterion", sa.Float(), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["study_id"],
-            ["xpansion_adequacy_criterion.study_id"],
-            name=op.f("fk_xpansion_adequacy_pattern_criterion"),
-            ondelete="CASCADE",
-        ),
-        sa.ForeignKeyConstraint(
-            ["study_id", "area"],
-            ["area.study_id", "area.area_id"],
-            name=op.f("fk_xpansion_adequacy_pattern_study_id_area_area"),
-            ondelete="CASCADE",
-        ),
-        sa.PrimaryKeyConstraint("study_id", "area", name=op.f("pk_xpansion_adequacy_pattern")),
-    )
-
 
 def downgrade() -> None:
-    op.drop_table("xpansion_adequacy_pattern")
     op.drop_table("xpansion_adequacy_criterion")
-    op.drop_table("xpansion_sensitivity_projection")
     op.drop_table("xpansion_candidate")
     op.drop_table("xpansion_settings")
     if op.get_context().dialect.name == "postgresql":
