@@ -44,6 +44,7 @@ from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudySer
 from antarest.favorite.web import create_favorite_routes
 from antarest.launcher.main import build_launcher
 from antarest.launcher.service import LauncherService
+from antarest.lfs.dir_lfs import DirLargeFileStorage
 from antarest.login.main import build_login
 from antarest.login.service import LoginService
 from antarest.matrixstore.main import build_matrix_service
@@ -54,6 +55,8 @@ from antarest.output.output_blueprint import create_output_routes
 from antarest.output.output_service import OutputService
 from antarest.output.storage.file_output_storage import InStudyFileOutputStorage
 from antarest.output.storage.output_storage import IOutputStorage
+from antarest.output.storage.repository import OutputMetadataRepository
+from antarest.output.storage.v2_output_storage import V2OutputStorage
 from antarest.output.variable_view_gc import VariableViewGarbageCollector
 from antarest.study.adapters import adapt_output_service_to_study_service
 from antarest.study.dao.database.database_blob_usage_provider import DatabaseBlobUsageProvider
@@ -182,6 +185,19 @@ def build_favorite_service(
     return favorite_study_service, favorite_directory_service
 
 
+def build_output_storage_list(config: Config, file_output_storage: InStudyFileOutputStorage) -> list[IOutputStorage]:
+    if not config.storage.output.enable:
+        return [file_output_storage]
+    tmp_dir = config.storage.tmp_dir / "outputs"
+    lfs = DirLargeFileStorage(config.storage.archive_dir)
+    v2_storage = V2OutputStorage(tmp_dir=tmp_dir, archive_storage=lfs, metadata_repository=OutputMetadataRepository())
+
+    if config.storage.output.default:
+        return [v2_storage, file_output_storage]
+    else:
+        return [file_output_storage, v2_storage]
+
+
 def build_output_service(
     app_ctxt: Optional[AppBuildContext],
     study_service: StudyService,
@@ -198,7 +214,8 @@ def build_output_service(
         cache=cache,
         remote_executor=remote_executor,
     )
-    storages: list[IOutputStorage] = [file_output_storage]
+
+    storages = build_output_storage_list(config, file_output_storage)
 
     output_service = OutputService(
         studies_repository=study_service_as_studies_repository(study_service),
