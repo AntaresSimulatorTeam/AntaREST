@@ -344,3 +344,16 @@ def test_scenario_builder_area_deleted_cascades(db_dao: DatabaseStudyDao) -> Non
 
     assert dao.get_scenario_by_type(ScenarioType.THERMAL) == {}
     assert dao.get_scenario_by_type(ScenarioType.RENEWABLE) == {}
+
+
+def test_scenario_builder_area_deleted_cascades_load(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
+    _setup_areas(dao, "fr")
+
+    dao.save_scenario_builder(Ruleset(load={"fr": {"0": 1}}))
+
+    assert dao.get_scenario_by_type(ScenarioType.LOAD) == {"fr": {"0": 1}}
+
+    dao.delete_area("fr")
+
+    assert dao.get_scenario_by_type(ScenarioType.LOAD) == {}
