@@ -21,13 +21,18 @@ import type { SubmitHandlerPlus } from "@/components/Form/types";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
 import { directoryQueries } from "@/queries/directories/queries";
+import { fetchStudies } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import { copyStudy } from "@/services/api/studies";
+import { TaskStatus } from "@/services/api/tasks/constants";
+import { getTask } from "@/services/api/tasks";
 import { getStudyOutputs } from "@/services/api/study";
 import type { StudyMetadata, OutputDetails } from "@/types/types";
 import { validateStudyName } from "@/utils/studiesUtils";
+import { toError } from "@/utils/fnUtils";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
 import SaveAsIcon from "@mui/icons-material/SaveAs";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import StudyDestinationFE from "../StudyDestinationFE";
 import type { DirectoryDestination } from "../StudyDestinationFE/types";
@@ -49,6 +54,8 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
   const { t } = useTranslation();
   const isVariant = study.type === "variantstudy";
   const Icon = isVariant ? SaveAsIcon : FileCopyOutlinedIcon;
+  const queryClient = useQueryClient();
+  const dispatch = useAppDispatch();
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
   const outputsRes = usePromise(async () => {
@@ -65,18 +72,35 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({
+  const handleSubmit = async ({
     values: { studyName, destination, outputIds = [] },
   }: SubmitHandlerPlus<DefaultValues>) => {
     // TODO: This should be moved to the API layer when Tan stack migration is done.
     const directoryPath = toDirectoryPath(destination, directories);
 
-    return copyStudy({
+    const copiedStudyId = await copyStudy({
       studyId: study.id,
       studyName: studyName.trim(),
       destinationFolder: directoryPath,
       outputIds,
     });
+
+    const copyTask = await getTask({
+      id: copiedStudyId,
+      waitForCompletion: true,
+    });
+
+    if (copyTask.status !== TaskStatus.Completed || !copyTask.result?.success) {
+      throw toError(copyTask.result?.message ?? "Study copy failed");
+    }
+
+    await queryClient.refetchQueries({
+      queryKey: directoryQueries.list().queryKey,
+    });
+
+    await dispatch(fetchStudies());
+
+    return copyTask.result.return_value ?? copiedStudyId;
   };
 
   ////////////////////////////////////////////////////////////////
