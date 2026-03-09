@@ -391,7 +391,6 @@ class TestMatrixContentRepository:
             assert matrix.is_empty()
 
     def test_get_all_matrices_on_the_filesystem(self, tmp_path: Path) -> None:
-        """Only files with known matrix format extensions should be returned (lock files and other files excluded)."""
         repo = MatrixContentRepository(tmp_path, InternalMatrixFormat.TSV)
         bucket_dir = repo.bucket_dir
 
