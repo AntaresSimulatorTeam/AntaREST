@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from collections import Counter
 from typing import Annotated, Optional, TypeAlias
 
 from pydantic import BeforeValidator, Field, PlainSerializer, field_validator
@@ -66,8 +67,7 @@ class XpansionSensitivitySettings(AntaresBaseModel):
     @field_validator("projection")
     @classmethod
     def no_duplicate_candidates(cls, v: list[str]) -> list[str]:
-        seen: set[str] = set()
-        duplicates = [name for name in v if name in seen or seen.add(name)]  # type: ignore[func-returns-value]
+        duplicates = [name for name, count in Counter(v).items() if count > 1]
         if duplicates:
             raise ValueError(f"Duplicate candidates in projection: {', '.join(duplicates)}")
         return v
@@ -291,3 +291,11 @@ class XpansionAdequacyCriterion(AntaresBaseModel, populate_by_name=True, alias_g
     stopping_threshold: float = Field(default=1e6, ge=0)
     criterion_count_threshold: float = Field(default=1, ge=0)
     patterns: list[XpansionAdequacyPattern] = Field(default_factory=list)
+
+    @field_validator("patterns")
+    @classmethod
+    def no_duplicate_areas(cls, v: list[XpansionAdequacyPattern]) -> list[XpansionAdequacyPattern]:
+        duplicates = [area for area, count in Counter(p.area for p in v).items() if count > 1]
+        if duplicates:
+            raise ValueError(f"Duplicate areas in patterns: {', '.join(duplicates)}")
+        return v

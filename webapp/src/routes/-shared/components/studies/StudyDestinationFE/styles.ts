@@ -101,7 +101,8 @@ export const directoryListSx: SxProps<Theme> = {
   listStyle: "none",
   display: "flex",
   flexDirection: "column",
-  minHeight: 500,
+  minHeight: 400,
+  maxHeight: 700,
   overflowY: "auto",
   bgcolor: "background.paper",
 };
