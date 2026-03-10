@@ -16,22 +16,18 @@ from antarest.study.business.model.xpansion_model import Master, Solver, UcType
 
 metadata = Base.metadata
 
-_MASTER_ENUM = Enum(Master, name="xpansion_master")
-_UC_TYPE_ENUM = Enum(UcType, name="xpansion_uc_type")
-_SOLVER_ENUM = Enum(Solver, name="xpansion_solver")
-
 XPANSION_SETTINGS_TABLE = Table(
     "xpansion_settings",
     metadata,
     Column("study_id", String(36), nullable=False, primary_key=True),
     # --- XpansionSettings scalars ---
-    Column("master", _MASTER_ENUM, nullable=False),
-    Column("uc_type", _UC_TYPE_ENUM, nullable=False),
+    Column("master", Enum(Master, name="xpansion_master"), nullable=False),
+    Column("uc_type", Enum(UcType, name="xpansion_uc_type"), nullable=False),
     Column("optimality_gap", Float(), nullable=False),
     Column("relative_gap", Float(), nullable=False),
     Column("relaxed_optimality_gap", Float(), nullable=False),
     Column("max_iteration", Integer(), nullable=False),
-    Column("solver", _SOLVER_ENUM, nullable=False),
+    Column("solver", Enum(Solver, name="xpansion_solver"), nullable=False),
     Column("log_level", Integer(), nullable=False),
     Column("separation_parameter", Float(), nullable=False),
     Column("batch_size", Integer(), nullable=False),

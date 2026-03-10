@@ -16,22 +16,18 @@ down_revision = "6f8e2a9c1b3d"
 branch_labels = None
 depends_on = None
 
-_MASTER_ENUM = sa.Enum("integer", "relaxed", name="xpansion_master")
-_UC_TYPE_ENUM = sa.Enum("expansion_fast", "expansion_accurate", name="xpansion_uc_type")
-_SOLVER_ENUM = sa.Enum("Cbc", "Coin", "Xpress", name="xpansion_solver")
-
 
 def upgrade() -> None:
     op.create_table(
         "xpansion_settings",
         sa.Column("study_id", sa.String(length=36), nullable=False),
-        sa.Column("master", _MASTER_ENUM, nullable=False),
-        sa.Column("uc_type", _UC_TYPE_ENUM, nullable=False),
+        sa.Column("master", sa.Enum("integer", "relaxed", name="xpansion_master"), nullable=False),
+        sa.Column("uc_type", sa.Enum("expansion_fast", "expansion_accurate", name="xpansion_uc_type"), nullable=False),
         sa.Column("optimality_gap", sa.Float(), nullable=False),
         sa.Column("relative_gap", sa.Float(), nullable=False),
         sa.Column("relaxed_optimality_gap", sa.Float(), nullable=False),
         sa.Column("max_iteration", sa.Integer(), nullable=False),
-        sa.Column("solver", _SOLVER_ENUM, nullable=False),
+        sa.Column("solver", sa.Enum("Cbc", "Coin", "Xpress", name="xpansion_solver"), nullable=False),
         sa.Column("log_level", sa.Integer(), nullable=False),
         sa.Column("separation_parameter", sa.Float(), nullable=False),
         sa.Column("batch_size", sa.Integer(), nullable=False),
