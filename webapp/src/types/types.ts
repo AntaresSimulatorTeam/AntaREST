@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import type z from "zod";
 import type { StudySortConfigSchema } from "@/routes/_authenticated/studies/-components/StudiesList/Header/studySortUtils";
+import type z from "zod";
 import type { TaskTypeValue } from "../services/api/tasks/types";
 
 export type IdType = number | string;
@@ -298,12 +298,12 @@ export interface AreaWithId extends Area {
 
 export interface District {
   id: string;
-  name?: string;
-  addAreas?: string[];
-  subtractAreas?: string[];
-  applyFilter?: string;
-  comments?: string;
+  name: string;
   output: boolean;
+  comments: string;
+  addAreas: string[];
+  subtractAreas: string[];
+  applyFilter: string;
 }
 
 export interface StudySynthesis {

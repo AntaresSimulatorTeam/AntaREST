@@ -23,7 +23,7 @@ import {
   Tooltip,
   type ListItemProps,
 } from "@mui/material";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import SearchFE from "./fieldEditors/SearchFE";
 import SearchMultipleFE from "./fieldEditors/SearchMultipleFE";
@@ -60,23 +60,24 @@ function ListPanel<TItem extends ListPanelItem>({
   slotProps,
 }: ListPanelProps<TItem>) {
   const [searchValues, setSearchValues] = useState<string[]>([]);
+  // Used when `multipleSearch` is true to keep track of the current input value
+  const [inputSearchValue, setInputSearchValue] = useState("");
   const { t } = useTranslation();
   const hasActions = !!onAdd || !!actions;
 
-  ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
+  const filteredList = useMemo(() => {
+    const searches = inputSearchValue ? [...searchValues, inputSearchValue] : searchValues;
 
-  const getFilteredList = () => {
-    if (disableSearch || searchValues.length === 0) {
+    if (disableSearch || searches.length === 0) {
       return list;
     }
-    return list.filter((item) => isSearchMatching(searchValues, item.label));
-  };
+
+    return list.filter((item) => isSearchMatching(searches, item.label));
+  }, [list, searchValues, inputSearchValue, disableSearch]);
 
   ////////////////////////////////////////////////////////////////
   // JSX
-  ////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////§
 
   return (
     <Stack direction="column">
@@ -102,6 +103,7 @@ function ListPanel<TItem extends ListPanelItem>({
           <SearchMultipleFE
             value={searchValues}
             onSearchValuesChange={setSearchValues}
+            onInputValueChange={setInputSearchValue}
             size="extra-small"
             fullWidth
             sx={{ p: 1, pb: 0 }}
@@ -116,7 +118,7 @@ function ListPanel<TItem extends ListPanelItem>({
           />
         ))}
       <List dense sx={{ overflow: "auto" }}>
-        {getFilteredList().map((item) => (
+        {filteredList.map((item) => (
           <Tooltip key={item.id} title={item.label} placement="right">
             <ListItem
               disablePadding
