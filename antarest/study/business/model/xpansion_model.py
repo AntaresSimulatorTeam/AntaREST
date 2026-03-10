@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing import Annotated, Optional, TypeAlias
 
-from pydantic import BeforeValidator, Field, PlainSerializer
+from pydantic import BeforeValidator, Field, PlainSerializer, field_validator
 from pydantic.alias_generators import to_camel
 
 from antarest.core.exceptions import (
@@ -62,6 +62,15 @@ class XpansionSensitivitySettings(AntaresBaseModel):
     epsilon: float = Field(default=0, ge=0)
     projection: list[str] = Field(default_factory=list)
     capex: bool = Field(default=False)
+
+    @field_validator("projection")
+    @classmethod
+    def no_duplicate_candidates(cls, v: list[str]) -> list[str]:
+        seen: set[str] = set()
+        duplicates = [name for name in v if name in seen or seen.add(name)]  # type: ignore[func-returns-value]
+        if duplicates:
+            raise ValueError(f"Duplicate candidates in projection: {', '.join(duplicates)}")
+        return v
 
 
 class XpansionSensitivitySettingsUpdate(AntaresBaseModel):
