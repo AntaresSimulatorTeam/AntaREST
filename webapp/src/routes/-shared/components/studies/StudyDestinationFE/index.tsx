@@ -41,8 +41,6 @@ interface Props {
   helperText?: React.ReactNode;
   /** Forwarded to the hidden InputBase inside the address bar (for RHF ref). */
   inputRef?: React.Ref<HTMLInputElement>;
-  /** Optional content rendered below the explorer panel (e.g. a checkbox). */
-  children?: React.ReactNode;
 }
 
 function StudyDestinationFE({
@@ -54,7 +52,6 @@ function StudyDestinationFE({
   error = false,
   helperText,
   inputRef,
-  children,
 }: Props) {
   const {
     data: { directories, directoriesById },
@@ -171,8 +168,6 @@ function StudyDestinationFE({
           {helperText}
         </Typography>
       )}
-
-      {children}
     </Box>
   );
 }
@@ -189,7 +184,7 @@ const StudyDestinationFEWithReactHookFormSupport = reactHookFormSupport({
       validateString({
         allowEmpty: true,
         allowSpaces: true,
-        specialChars: { chars: "._-/", mode: "allow" },
+        specialChars: { chars: "_-/", mode: "allow" },
       }),
     )(value.newSubdirectoriesPath),
 })(StudyDestinationFE);
