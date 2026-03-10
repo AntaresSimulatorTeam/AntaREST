@@ -186,7 +186,11 @@ const StudyDestinationFEWithReactHookFormSupport = reactHookFormSupport({
   preValidate: (value: DirectoryDestination) =>
     combineValidators(
       validatePath({ allowEmpty: true, allowToStartWithSlash: false, allowToEndWithSlash: false }),
-      validateString({ specialChars: { chars: "/", mode: "allow" }, allowEmpty: true }),
+      validateString({
+        allowEmpty: true,
+        allowSpaces: true,
+        specialChars: { chars: "._-/", mode: "allow" },
+      }),
     )(value.newSubdirectoriesPath),
 })(StudyDestinationFE);
 
