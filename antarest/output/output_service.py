@@ -684,11 +684,36 @@ class OutputService:
 
         return download_id
 
+    def aggregate_output_data(
+        self,
+        uuid: str,
+        output_id: str,
+        query_file: QueryFileType,
+        frequency: MatrixFrequency,
+        columns_names: Sequence[str],
+        ids_to_consider: Sequence[str],
+        transform_columns_headers: bool = True,
+        mc_years: Optional[Sequence[int]] = None,
+    ) -> pl.DataFrame:
+        chunks = list(
+            self._find_output_storage(uuid, output_id).aggregate_output_data(
+                study_id=uuid,
+                output_id=output_id,
+                query_file=query_file,
+                frequency=frequency,
+                ids_to_consider=ids_to_consider,
+                columns_names=columns_names,
+                transform_columns_headers=transform_columns_headers,
+                mc_years=mc_years,
+            )
+        )
+        return pl.concat(chunks, how="vertical_relaxed") if chunks else pl.DataFrame()
+
     def start_aggregate_output_data(
         self,
         uuid: str,
         output_id: str,
-        query_file: MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile,
+        query_file: QueryFileType,
         frequency: MatrixFrequency,
         export_format: TableExportFormat,
         columns_names: Sequence[str],
@@ -727,14 +752,14 @@ class OutputService:
                 logger.info(f"Launch aggregation step for output '{output_id}' of study '{uuid}'.")
 
                 results = self._find_output_storage(uuid, output_id).aggregate_output_data(
-                    uuid,
-                    output_id,
-                    query_file,
-                    frequency,
-                    ids_to_consider,
-                    columns_names,
-                    transform_columns_headers,
-                    mc_years,
+                    study_id=uuid,
+                    output_id=output_id,
+                    query_file=query_file,
+                    frequency=frequency,
+                    ids_to_consider=ids_to_consider,
+                    columns_names=columns_names,
+                    transform_columns_headers=transform_columns_headers,
+                    mc_years=mc_years,
                 )
                 export_df_chunks(self._tmp_dir, file_path, results, export_format)
 

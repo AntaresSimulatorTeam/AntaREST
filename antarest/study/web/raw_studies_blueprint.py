@@ -31,6 +31,7 @@ from antarest.core.serde.matrix_export import TableExportFormat, simplify_datafr
 from antarest.core.utils.utils import sanitize_string
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
+from antarest.output.utils import parse_raw_output_matrix_path
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.user_model import ResourceType
 from antarest.study.service import StudyService
@@ -186,6 +187,14 @@ def create_raw_study_routes(
         or a file attachment (Microsoft Office document, TSV/TSV file...).
         """
         logger.info(f"📘 Fetching data at {path} (depth={depth}) from study {uuid}")
+
+        if parse_raw_output_matrix_path([item for item in path.split("/") if item]) is not None and (
+            matrix_format is not None or not formatted
+        ):
+            dataframe = study_service.get_raw_output_matrix_dataframe(uuid, path)
+            if matrix_format is None:
+                matrix_format = MatrixFormat.JSON if formatted else MatrixFormat.PLAIN
+            return matrix_format.serialize_dataframe(dataframe)
 
         output = study_service.get_raw_content(uuid, path, depth, formatted)
 

@@ -112,6 +112,7 @@ class IOutputStorage(ABC):
             output: either a path to a directory or a zip, or binary IO corresponding to the content of an archive.
             output_name_suffix: Optional name suffix to append to the output name, for example "hello" will
                                 appear at the end of the output name as "20201014-1422eco-hello"
+            logs: paths to simulation logs (out and err)
 
         Returns: the output identifier inside the study
         """
