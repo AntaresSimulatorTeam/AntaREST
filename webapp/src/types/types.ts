@@ -296,6 +296,10 @@ export interface AreaWithId extends Area {
   id: string;
 }
 
+export type DistrictApplyFilter = "add-all" | "remove-all";
+
+// Used only in study synthesis. The /districts endpoint returns a different object.
+// Will be removed after migrating from Redux to dedicated endpoints with TanStack Query.
 export interface District {
   id: string;
   name: string;
@@ -303,7 +307,7 @@ export interface District {
   comments: string;
   addAreas: string[];
   subtractAreas: string[];
-  applyFilter: string;
+  applyFilter: DistrictApplyFilter;
 }
 
 export interface StudySynthesis {
