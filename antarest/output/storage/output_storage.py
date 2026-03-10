@@ -205,9 +205,9 @@ class IOutputStorage(ABC):
         """
 
     @abstractmethod
-    def extract_variables_list(self, study_id: str, output_id: str) -> OutputVariablesList:
+    def get_variables_list(self, study_id: str, output_id: str) -> OutputVariablesList:
         """
-        Extract variables list from output.
+        Get variables list of this output.
         """
 
     @abstractmethod

@@ -16,7 +16,7 @@ from sqlalchemy import Engine
 
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.launcher.model import LogType
-from antarest.output.storage.repository import DbOutputMetadata, OutputRepository
+from antarest.output.storage.v2.repository import DbOutputMetadataV2, OutputV2Repository
 from antarest.study.model import Study
 from antarest.study.repository import StudyMetadataRepository
 
@@ -32,21 +32,21 @@ def study_repo(init_db) -> StudyMetadataRepository:
 
 
 @pytest.fixture
-def output_repo(init_db) -> OutputRepository:
-    return OutputRepository()
+def output_repo(init_db) -> OutputV2Repository:
+    return OutputV2Repository()
 
 
-def test_repo(study_repo: StudyMetadataRepository, output_repo: OutputRepository) -> None:
+def test_repo(study_repo: StudyMetadataRepository, output_repo: OutputV2Repository) -> None:
     with db():
-        assert list(output_repo.get_all()) == []
+        assert list(output_repo.search_output_metadata()) == []
 
         # The FK constraints enforces us to create a study first.
         study_repo.save(Study(id="study_id_1", name="name", version="9.2", path=""))
         study_repo.save(Study(id="study_id_2", name="name", version="9.2", path=""))
 
         # 3 results, 2 for the same study, 1 is archived
-        output_repo.save(
-            DbOutputMetadata(
+        output_repo.save_output_metadata(
+            DbOutputMetadataV2(
                 study_id="study_id_1",
                 output_name="output_1",
                 archived=False,
@@ -56,8 +56,8 @@ def test_repo(study_repo: StudyMetadataRepository, output_repo: OutputRepository
                 by_year=True,
             )
         )
-        output_repo.save(
-            DbOutputMetadata(
+        output_repo.save_output_metadata(
+            DbOutputMetadataV2(
                 study_id="study_id_1",
                 output_name="output_2",
                 archived=True,
@@ -67,8 +67,8 @@ def test_repo(study_repo: StudyMetadataRepository, output_repo: OutputRepository
                 by_year=True,
             )
         )
-        output_repo.save(
-            DbOutputMetadata(
+        output_repo.save_output_metadata(
+            DbOutputMetadataV2(
                 study_id="study_id_2",
                 output_name="output_1",
                 archived=False,
@@ -80,10 +80,10 @@ def test_repo(study_repo: StudyMetadataRepository, output_repo: OutputRepository
         )
 
         # Get all
-        assert len(list(output_repo.get_all())) == 3
+        assert len(list(output_repo.search_output_metadata())) == 3
 
         # Get only first study outputs
-        study_1_outputs = list(output_repo.get_all(study_id="study_id_1"))
+        study_1_outputs = list(output_repo.search_output_metadata(study_id="study_id_1"))
         assert len(study_1_outputs) == 2
         output_1, output_2 = study_1_outputs[0], study_1_outputs[1]
         assert output_1.output_name == "output_1"
@@ -99,19 +99,19 @@ def test_repo(study_repo: StudyMetadataRepository, output_repo: OutputRepository
         assert output_2.nb_years == 12
 
         # get only one output
-        output_2 = output_repo.get(study_id="study_id_1", output_name="output_2")
+        output_2 = output_repo.get_output_metadata(study_id="study_id_1", output_name="output_2")
         assert output_2.output_name == "output_2"
 
         # get one output which does not exist
-        assert output_repo.get(study_id="study_id_2", output_name="not_found") is None
+        assert output_repo.get_output_metadata(study_id="study_id_2", output_name="not_found") is None
 
         # get archived ones
-        archived_outputs = list(output_repo.get_all(archived=True))
+        archived_outputs = list(output_repo.search_output_metadata(archived=True))
         assert len(archived_outputs) == 1
         assert archived_outputs[0].output_name == "output_2"
 
         # get unarchived ones
-        unarchived_outputs = list(output_repo.get_all(archived=False))
+        unarchived_outputs = list(output_repo.search_output_metadata(archived=False))
         assert len(unarchived_outputs) == 2
         assert [(o.study_id, o.output_name) for o in unarchived_outputs] == [
             ("study_id_1", "output_1"),
@@ -119,27 +119,27 @@ def test_repo(study_repo: StudyMetadataRepository, output_repo: OutputRepository
         ]
 
         # Update one output (archive status)
-        output_1 = output_repo.get(study_id="study_id_1", output_name="output_1")
+        output_1 = output_repo.get_output_metadata(study_id="study_id_1", output_name="output_1")
         output_1.archived = True
-        output_repo.save(output_1)
-        assert len(list(output_repo.get_all(archived=True))) == 2
+        output_repo.save_output_metadata(output_1)
+        assert len(list(output_repo.search_output_metadata(archived=True))) == 2
 
         # Delete one output
-        output_repo.delete("study_id_1", "output_1")
-        assert output_repo.get(study_id="study_id_1", output_name="output_1") is None
-        assert len(list(output_repo.get_all())) == 2
+        output_repo.delete_output("study_id_1", "output_1")
+        assert output_repo.get_output_metadata(study_id="study_id_1", output_name="output_1") is None
+        assert len(list(output_repo.search_output_metadata())) == 2
 
 
-def test_get_and_save_logs(study_repo: StudyMetadataRepository, output_repo: OutputRepository) -> None:
+def test_get_and_save_logs(study_repo: StudyMetadataRepository, output_repo: OutputV2Repository) -> None:
     with db():
-        assert list(output_repo.get_all()) == []
+        assert list(output_repo.search_output_metadata()) == []
 
         # The FK constraints enforces us to create a study first.
         study_repo.save(Study(id="study_id_1", name="name", version="9.2", path=""))
         study_repo.save(Study(id="study_id_2", name="name", version="9.2", path=""))
 
-        output_repo.save(
-            DbOutputMetadata(
+        output_repo.save_output_metadata(
+            DbOutputMetadataV2(
                 study_id="study_id_1",
                 output_name="output_1",
                 archived=False,

@@ -53,11 +53,12 @@ from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
 from antarest.output.output_blueprint import create_output_routes
 from antarest.output.output_service import OutputService
-from antarest.output.storage.file_output_storage import InStudyFileOutputStorage
+from antarest.output.storage.file.file_output_storage import InStudyFileOutputStorage
+from antarest.output.storage.file.repository import FileOutputRepository
 from antarest.output.storage.output_storage import IOutputStorage
-from antarest.output.storage.repository import OutputRepository
-from antarest.output.storage.v2_output_storage import V2OutputStorage
-from antarest.output.variable_view_gc import VariableViewGarbageCollector
+from antarest.output.storage.v2.repository import OutputV2Repository
+from antarest.output.storage.v2.v2_output_storage import V2OutputStorage
+from antarest.output.variable_view.gc import VariableViewGarbageCollector
 from antarest.study.adapters import adapt_output_service_to_study_service
 from antarest.study.dao.database.database_blob_usage_provider import DatabaseBlobUsageProvider
 from antarest.study.main import build_study_service
@@ -190,7 +191,7 @@ def build_output_storage_list(config: Config, file_output_storage: InStudyFileOu
         return [file_output_storage]
     tmp_dir = config.storage.tmp_dir / "outputs"
     lfs = DirLargeFileStorage(config.storage.archive_dir)
-    v2_storage = V2OutputStorage(tmp_dir=tmp_dir, archive_storage=lfs, output_repository=OutputRepository())
+    v2_storage = V2OutputStorage(tmp_dir=tmp_dir, archive_storage=lfs, repository=OutputV2Repository())
 
     if config.storage.output.default:
         return [v2_storage, file_output_storage]
@@ -213,6 +214,7 @@ def build_output_service(
         outputs_provider=study_service_as_file_outputs_provider(study_service),
         cache=cache,
         remote_executor=remote_executor,
+        repository=FileOutputRepository(),
     )
 
     storages = build_output_storage_list(config, file_output_storage)

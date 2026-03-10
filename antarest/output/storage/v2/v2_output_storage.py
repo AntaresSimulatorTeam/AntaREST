@@ -24,7 +24,11 @@ from antarest.core.utils.utils import StopWatch
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.lfs.lfs import ILargeFileStorage
-from antarest.output.filestudy.file_output_utils import extract_output_details, find_simulation_log
+from antarest.output.filestudy.file_output_utils import (
+    extract_output_details,
+    extract_variables_list,
+    find_simulation_log,
+)
 from antarest.output.output_model import OutputVariablesList
 from antarest.output.storage.output_storage import (
     IOutputStorage,
@@ -32,7 +36,10 @@ from antarest.output.storage.output_storage import (
     OutputMetadata,
     OutputStorageType,
 )
-from antarest.output.storage.repository import DbOutputMetadata, OutputRepository
+from antarest.output.storage.v2.repository import (
+    DbOutputMetadataV2,
+    OutputV2Repository,
+)
 from antarest.output.utils import QueryFileType
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency, MatrixIndex
@@ -94,16 +101,16 @@ class V2OutputStorage(IOutputStorage):
     The tmp directory will be used on import or unarchival to store uncompressed files.
     """
 
-    def __init__(self, tmp_dir: Path, output_repository: OutputRepository, archive_storage: ILargeFileStorage) -> None:
+    def __init__(self, tmp_dir: Path, repository: OutputV2Repository, archive_storage: ILargeFileStorage) -> None:
         self._archive_storage = archive_storage
-        self._output_repository = output_repository
+        self._repository = repository
         self._tmp_dir = tmp_dir
 
-    def _get_metadata(self, study_id: str, output_name: str) -> DbOutputMetadata | None:
-        return self._output_repository.get(study_id, output_name)
+    def _get_metadata(self, study_id: str, output_name: str) -> DbOutputMetadataV2 | None:
+        return self._repository.get_output_metadata(study_id, output_name)
 
-    def _require_metadata(self, study_id: str, output_name: str) -> DbOutputMetadata:
-        metadata = self._output_repository.get(study_id, output_name)
+    def _require_metadata(self, study_id: str, output_name: str) -> DbOutputMetadataV2:
+        metadata = self._repository.get_output_metadata(study_id, output_name)
         if metadata is None:
             raise OutputNotFound(f"Output {output_name} does not exist.")
         return metadata
@@ -138,8 +145,8 @@ class V2OutputStorage(IOutputStorage):
 
             # TODO here: extract all required data: variables list, time index, digest, parquet files
 
-            self._output_repository.save(
-                DbOutputMetadata(
+            self._repository.save_output_metadata(
+                DbOutputMetadataV2(
                     study_id=study_id,
                     output_name=output_name,
                     archived=False,
@@ -152,6 +159,9 @@ class V2OutputStorage(IOutputStorage):
 
             self._save_logs(study_id, output_name, logs, dir_path)
 
+            variables_list = extract_variables_list(dir_path)
+            self._repository.save_output_variables_list(study_id, output_name, variables_list)
+
             logger.info(f"Output imported to internal storage in {timer}s.")
             return output_name
         finally:
@@ -161,17 +171,17 @@ class V2OutputStorage(IOutputStorage):
         out_log = logs.out or find_simulation_log(output_dir, LogType.STDOUT)
         if out_log:
             log_content = out_log.read_text(encoding="utf-8")
-            self._output_repository.save_log(study_id, output_id, LogType.STDOUT, log_content)
+            self._repository.save_log(study_id, output_id, LogType.STDOUT, log_content)
         err_log = logs.err or find_simulation_log(output_dir, LogType.STDERR)
         if err_log:
             log_content = err_log.read_text(encoding="utf-8")
-            self._output_repository.save_log(study_id, output_id, LogType.STDERR, log_content)
+            self._repository.save_log(study_id, output_id, LogType.STDERR, log_content)
 
     @override
     def list_outputs(self, study_id: str) -> list[OutputMetadata]:
         return [
             OutputMetadata(id=o.output_name, in_study=False, archived=o.archived)
-            for o in self._output_repository.get_all(study_id)
+            for o in self._repository.search_output_metadata(study_id)
         ]
 
     @override
@@ -179,7 +189,7 @@ class V2OutputStorage(IOutputStorage):
         """
         Get the list of output for a study.
         """
-        metadata = self._output_repository.get(study_id, output_id)
+        metadata = self._repository.get_output_metadata(study_id, output_id)
         if metadata is None:
             raise OutputNotFound(output_id)
         return OutputDetails(
@@ -204,7 +214,7 @@ class V2OutputStorage(IOutputStorage):
         logger.info(f"Deleting output {study_id}/{output_id} from internal storage.")
         self._require_metadata(study_id, output_id)
         self._archive_storage.delete_file(_archive_id(study_id, output_id))
-        self._output_repository.delete(study_id, output_id)
+        self._repository.delete_output(study_id, output_id)
 
     @override
     def export_output(self, study_id: str, output_id: str, target: Path) -> None:
@@ -227,7 +237,7 @@ class V2OutputStorage(IOutputStorage):
         logger.info(f"Archiving output {study_id}/{output_id} in internal storage.")
         metadata = self._require_metadata(study_id, output_id)
         metadata.archived = True
-        self._output_repository.save(metadata)
+        self._repository.save_output_metadata(metadata)
 
     @override
     def unarchive_study_output(self, study_id: str, output_id: str) -> None:
@@ -235,12 +245,30 @@ class V2OutputStorage(IOutputStorage):
         logger.info(f"Unarchiving output {study_id}/{output_id} in internal storage.")
         metadata = self._require_metadata(study_id, output_id)
         metadata.archived = False
-        self._output_repository.save(metadata)
+        self._repository.save_output_metadata(metadata)
 
     @override
     def get_digest(self, study_id: str, output_id: str) -> DigestUI:
         # TODO: at import time, extract and dave either as file or in DB
         raise NotImplementedError()
+
+    @override
+    def get_variables_list(self, study_id: str, output_id: str) -> OutputVariablesList:
+        """
+        Get variables list of this output.
+        """
+        result = self._repository.get_output_variables_list(study_id, output_id)
+        if not result:
+            raise ValueError(f"Variables list not found for output {study_id}/{output_id}.")
+        return result
+
+    @override
+    def write_output_to_dir(self, study_id: str, output_id: str, parent: Path) -> None:
+        raise NotImplementedError()
+
+    @override
+    def get_logs(self, study_id: str, output_id: str, log_type: LogType) -> str:
+        return self._repository.get_log(study_id, output_id, log_type)
 
     @override
     def get_output_time_index(self, study_id: str, output_id: str, frequency: MatrixFrequency) -> MatrixIndex:
@@ -261,16 +289,3 @@ class V2OutputStorage(IOutputStorage):
     ) -> Iterator[pl.DataFrame]:
         # TODO: at import time, extract to parquet files
         raise NotImplementedError()
-
-    @override
-    def extract_variables_list(self, study_id: str, output_id: str) -> OutputVariablesList:
-        # TODO: at import time, extract metadata and save it to DB
-        raise NotImplementedError()
-
-    @override
-    def write_output_to_dir(self, study_id: str, output_id: str, parent: Path) -> None:
-        raise NotImplementedError()
-
-    @override
-    def get_logs(self, study_id: str, output_id: str, log_type: LogType) -> str:
-        return self._output_repository.get_log(study_id, output_id, log_type)

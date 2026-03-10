@@ -24,8 +24,8 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.lfs.dir_lfs import DirLargeFileStorage
 from antarest.lfs.lfs import ILargeFileStorage
-from antarest.output.storage.repository import OutputRepository
-from antarest.output.storage.v2_output_storage import V2OutputStorage
+from antarest.output.storage.v2.repository import OutputV2Repository
+from antarest.output.storage.v2.v2_output_storage import V2OutputStorage
 from antarest.study.model import Study
 from antarest.study.repository import StudyMetadataRepository
 
@@ -41,8 +41,8 @@ def study_repo(init_db) -> StudyMetadataRepository:
 
 
 @pytest.fixture
-def output_repo(init_db) -> OutputRepository:
-    return OutputRepository()
+def output_repo(init_db) -> OutputV2Repository:
+    return OutputV2Repository()
 
 
 @pytest.fixture(scope="session")
@@ -74,10 +74,10 @@ def lfs(tmp_path: Path) -> ILargeFileStorage:
 
 @pytest.fixture
 def storage(
-    tmp_path: Path, study_repo: StudyMetadataRepository, output_repo: OutputRepository, lfs: ILargeFileStorage
+    tmp_path: Path, study_repo: StudyMetadataRepository, output_repo: OutputV2Repository, lfs: ILargeFileStorage
 ) -> V2OutputStorage:
     storage_tmp_dir = tmp_path / "storage" / "tmp"
-    storage = V2OutputStorage(archive_storage=lfs, tmp_dir=storage_tmp_dir, output_repository=output_repo)
+    storage = V2OutputStorage(archive_storage=lfs, tmp_dir=storage_tmp_dir, repository=output_repo)
     return storage
 
 

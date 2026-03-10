@@ -44,7 +44,7 @@ from antarest.output.utils import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
 )
-from antarest.output.variables_management import OutputItemId
+from antarest.output.variable_view.model import OutputItemId
 from antarest.study.model import MatrixFrequency, MatrixIndex, StudyDownloadDTO
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 

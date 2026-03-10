@@ -32,7 +32,8 @@ from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.output.output_blueprint import create_output_routes
-from antarest.output.output_model import OutputVariables, OutputVariablesInformation
+from antarest.output.output_model import OutputVariablesInformation
+from antarest.output.storage.file.repository import DbOutputVariables
 from antarest.study.main import add_study_routes
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.common.prepro import default_k
@@ -510,7 +511,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service: StudyService, c
 def _clean_db() -> None:
     """Cleans the OutputVariables table for other tests"""
     with db():
-        db.session.query(OutputVariables).delete()
+        db.session.query(DbOutputVariables).delete()
         db.session.commit()
 
 

@@ -29,7 +29,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.output.output_model import OutputVariablesViewsModel
+from antarest.output.variable_view.db import OutputVariablesViewsModel
 
 logger = logging.getLogger(__name__)
 

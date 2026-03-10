@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from antarest.output.filestudy.extract_metadata import extract_metadata
+from antarest.output.filestudy.file_output_utils import extract_output_details
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ def output_path(tmp_path: Path, sta_mini_zip_path: Path) -> Path:
 
 
 def test_extract_output_metadata(output_path: Path):
-    metadata = extract_metadata(output_path)
+    metadata = extract_output_details(output_path)
     assert metadata.name == "20201014-1427eco"
     assert metadata.mode == "Economy"
     assert not metadata.archived

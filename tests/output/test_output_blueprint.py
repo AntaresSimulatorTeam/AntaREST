@@ -13,7 +13,7 @@ import pytest
 
 from antarest.output.output_blueprint import _to_item_id
 from antarest.output.output_model import OutputVariablesType
-from antarest.output.variables_management import (
+from antarest.output.variable_view.model import (
     AreaOutputId,
     LinkOutputId,
     OutputItemId,

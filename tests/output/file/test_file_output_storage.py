@@ -35,7 +35,11 @@ from antarest.launcher.model import LogType
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.output.storage.file_output_storage import FileStudyOutputs, IFileOutputsProvider, InStudyFileOutputStorage
+from antarest.output.storage.file.file_output_storage import (
+    FileStudyOutputs,
+    IFileOutputsProvider,
+    InStudyFileOutputStorage,
+)
 from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
@@ -104,7 +108,9 @@ def file_output_storage(
 
     outputs_provider = SimpleFileOutputsProvider(studies_dir, matrix_service)
 
-    return InStudyFileOutputStorage(outputs_provider=outputs_provider, cache=LocalCache(), remote_executor=executor)
+    return InStudyFileOutputStorage(
+        outputs_provider=outputs_provider, cache=LocalCache(), remote_executor=executor, repository=Mock()
+    )
 
 
 def test_file_output_storage(file_output_storage):
