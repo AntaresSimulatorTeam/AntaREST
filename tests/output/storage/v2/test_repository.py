@@ -54,6 +54,12 @@ def test_repo(study_repo: StudyMetadataRepository, output_repo: OutputV2Reposito
                 synthesis=True,
                 nb_years=1,
                 by_year=True,
+                start_month=1,
+                january_first_weekday=4,
+                leap_year=False,
+                start_day=1,
+                end_day=365,
+                first_weekday=1,
             )
         )
         output_repo.save_output_metadata(
@@ -65,6 +71,12 @@ def test_repo(study_repo: StudyMetadataRepository, output_repo: OutputV2Reposito
                 synthesis=False,
                 nb_years=12,
                 by_year=True,
+                start_month=1,
+                january_first_weekday=4,
+                leap_year=False,
+                start_day=1,
+                end_day=365,
+                first_weekday=1,
             )
         )
         output_repo.save_output_metadata(
@@ -76,6 +88,12 @@ def test_repo(study_repo: StudyMetadataRepository, output_repo: OutputV2Reposito
                 synthesis=True,
                 nb_years=24,
                 by_year=False,
+                start_month=1,
+                january_first_weekday=4,
+                leap_year=False,
+                start_day=1,
+                end_day=365,
+                first_weekday=1,
             )
         )
 
@@ -147,6 +165,12 @@ def test_get_and_save_logs(study_repo: StudyMetadataRepository, output_repo: Out
                 synthesis=True,
                 nb_years=1,
                 by_year=True,
+                start_month=1,
+                january_first_weekday=4,
+                leap_year=False,
+                start_day=1,
+                end_day=365,
+                first_weekday=1,
             )
         )
 

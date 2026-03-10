@@ -41,8 +41,10 @@ class DbOutputMetadataV2(Base):
     by_year: Mapped[bool] = mapped_column(Boolean(), nullable=False)
     nb_years: Mapped[int] = mapped_column(Integer(), nullable=False)
 
-    # Definition of the year
+    # Definition of the 12-month range
+    # TODO: enum
     start_month: Mapped[int] = mapped_column(Integer(), nullable=False)
+    # TODO: enum
     january_first_weekday: Mapped[int] = mapped_column(Integer(), nullable=False)
     leap_year: Mapped[bool] = mapped_column(Boolean(), nullable=False)
 
@@ -51,6 +53,7 @@ class DbOutputMetadataV2(Base):
     end_day: Mapped[int] = mapped_column(Integer(), nullable=False)
 
     # For weekkly aggregation
+    # TODO: enum
     first_weekday: Mapped[int] = mapped_column(Integer(), nullable=False)
 
 
