@@ -50,6 +50,55 @@ class TestMove:
         res.raise_for_status()
         res = client.get(f"/v1/studies/{study_id}")
         assert res.json()["folder"] is None
+        res = client.get(f"/v1/studies/{variant_id}")
+        assert res.json()["folder"] is None
+
+    def test_move_variant_is_rejected(self, client: TestClient, user_access_token: str) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        res = client.post("/v1/studies?name=study_parent")
+        assert res.status_code == 201
+        study_id = res.json()
+
+        res = client.post(f"/v1/studies/{study_id}/variants?name=Variant1")
+        assert res.status_code == 200
+        variant_id = res.json()
+
+        res = client.put(f"/v1/studies/{variant_id}/move", params={"folder_dest": "folder1"})
+        assert res.status_code == 400
+        assert res.json()["exception"] == "UnsupportedOperationOnThisStudyType"
+
+    def test_move_raw_propagates_to_variant_tree(self, client: TestClient, user_access_token: str) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        res = client.post("/v1/studies?name=study_parent")
+        assert res.status_code == 201
+        parent_id = res.json()
+
+        res = client.post(f"/v1/studies/{parent_id}/variants?name=Variant1")
+        assert res.status_code == 200
+        variant_id = res.json()
+
+        res = client.post(f"/v1/studies/{variant_id}/variants?name=Variant2")
+        assert res.status_code == 200
+        subvariant_id = res.json()
+
+        res = client.put(f"/v1/studies/{parent_id}/move", params={"folder_dest": "project/subfolder"})
+        assert res.status_code == 200
+
+        res = client.get(f"/v1/studies/{parent_id}")
+        parent = res.json()
+        res = client.get(f"/v1/studies/{variant_id}")
+        variant = res.json()
+        res = client.get(f"/v1/studies/{subvariant_id}")
+        subvariant = res.json()
+
+        assert parent["folder"] == f"project/subfolder/{parent_id}"
+        assert variant["folder"] == f"project/subfolder/{variant_id}"
+        assert subvariant["folder"] == f"project/subfolder/{subvariant_id}"
+        assert parent["directory_id"] is not None
+        assert variant["directory_id"] == parent["directory_id"]
+        assert subvariant["directory_id"] == parent["directory_id"]
 
     def test_move_with_auto_directory_creation(self, client: TestClient, user_access_token: str) -> None:
         """Test that move creates missing directories automatically."""
