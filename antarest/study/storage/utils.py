@@ -19,13 +19,14 @@ import shutil
 from datetime import datetime, timedelta
 from io import StringIO
 from pathlib import Path
-from typing import List, Optional, Sequence, cast
+from typing import Any, List, Optional, Sequence, cast
 from uuid import uuid4
 from zipfile import ZipFile
 
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
 from antares.study.version.upgrade_app import is_temporary_upgrade_dir
+from pydantic import ConfigDict
 
 from antarest.core.config import Config, WorkspaceConfig
 from antarest.core.exceptions import (
@@ -43,6 +44,7 @@ from antarest.core.interfaces.cache import (
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
+from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.utils.archives import is_archive_format
@@ -292,10 +294,70 @@ MONTHS = {
 DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 
-def get_start_date(
-    file_study: FileStudy,
-    output_id: Optional[str] = None,
-    level: MatrixFrequency = MatrixFrequency.HOURLY,
+class SimulationRangeDefinition(AntaresBaseModel):
+    """
+    Definition of the time range for a simulation.
+
+    Together, the starting month, january 1st and leapyear define the 12-months target range.
+    Then the actually simulated range may be reduced with simulation_start and simulation_end
+    parameters, which define the first and last day to be simulated in that 12-months range.
+    first_weekday is only used for weekly aggregation of data in the output, it defines on which
+    day the week starts.
+
+    Attributes:
+        starting_month: index of the month in which the simulation starts (1-12)
+        january_1st_weekday: weekday of january 1st in the simulated year
+        leap_year: whether the simulated year is a leap year
+        start_day: first day of the actual simulated range inside the 12-months range
+        end_day: last day of the actual simulated range inside the 12-months range
+        first_weekday: only used to determine where weeks should be "cut", when computing weekly aggregates.
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    # together, those parameters define the 12-months range
+    starting_month: int
+    january_1st_weekday: int
+    leap_year: bool
+
+    # possible reduction of simulated range
+    start_day: int
+    end_day: int
+
+    # defines where weeks are "cut" in weekly aggregation of outputs
+    first_weekday: int
+
+
+def parse_simulation_range(config: dict[str, Any]) -> SimulationRangeDefinition:
+    """
+    Parses a dictionary as defined in the "general" section of generaldata.ini or parameters.ini
+    """
+
+    starting_month = cast(str, config.get("first-month-in-year"))
+    starting_day = cast(str, config.get("january.1st"))
+    leapyear = cast(bool, config.get("leapyear"))
+    first_week_day = cast(str, config.get("first.weekday"))
+    simulation_start = cast(int, config.get("simulation.start"))
+    simulation_end = cast(int, config.get("simulation.end"))
+
+    starting_month_index = MONTHS[starting_month.title()]
+    starting_day_index = DAY_NAMES.index(starting_day.title())
+    first_week_day_index = DAY_NAMES.index(first_week_day)
+
+    return SimulationRangeDefinition(
+        starting_month=starting_month_index,
+        january_1st_weekday=starting_day_index,
+        leap_year=leapyear,
+        start_day=simulation_start,
+        end_day=simulation_end,
+        first_weekday=first_week_day_index,
+    )
+
+
+def get_matrix_index(
+    simulation_range: SimulationRangeDefinition,
+    is_output: bool,
+    level: MatrixFrequency,
 ) -> MatrixIndex:
     """
     Retrieve the index (start date and step count) for output or input matrices
@@ -306,16 +368,13 @@ def get_start_date(
         level: granularity of the steps
 
     """
-    config = FileStudyHelpers.get_config(file_study, output_id)["general"]
-    starting_month = cast(str, config.get("first-month-in-year"))
-    starting_day = cast(str, config.get("january.1st"))
-    leapyear = cast(bool, config.get("leapyear"))
-    first_week_day = cast(str, config.get("first.weekday"))
-    start_offset = cast(int, config.get("simulation.start"))
-    end = cast(int, config.get("simulation.end"))
+    starting_month_index = simulation_range.starting_month
+    starting_day_index = simulation_range.january_1st_weekday
+    leapyear = simulation_range.leap_year
+    first_week_day_index = simulation_range.first_weekday
+    start_offset = simulation_range.start_day
+    end = simulation_range.end_day
 
-    starting_month_index = MONTHS[starting_month.title()]
-    starting_day_index = DAY_NAMES.index(starting_day.title())
     target_year = 2018
     while True:
         if leapyear == calendar.isleap(target_year + (starting_month_index > 2)):
@@ -324,12 +383,10 @@ def get_start_date(
                 break
         target_year += 1
 
-    start_offset_days = timedelta(days=(0 if output_id is None else start_offset - 1))
+    start_offset_days = timedelta(days=(0 if not is_output else start_offset - 1))
     start_date = datetime(target_year, starting_month_index, 1) + start_offset_days
 
-    def _get_steps(
-        daily_steps: int, temporality: MatrixFrequency, begin_date: datetime, is_output: Optional[str] = None
-    ) -> int:
+    def _get_steps(daily_steps: int, temporality: MatrixFrequency, begin_date: datetime, is_output: bool) -> int:
         temporality_mapping = {
             MatrixFrequency.DAILY: daily_steps,
             MatrixFrequency.HOURLY: daily_steps * 24,
@@ -345,10 +402,9 @@ def get_start_date(
 
         return temporality_mapping[temporality]
 
-    days_count = MATRIX_INPUT_DAYS_COUNT if output_id is None else end - start_offset + 1
-    steps = _get_steps(days_count, level, start_date, output_id)
+    days_count = MATRIX_INPUT_DAYS_COUNT if not is_output else end - start_offset + 1
+    steps = _get_steps(days_count, level, start_date, is_output)
 
-    first_week_day_index = DAY_NAMES.index(first_week_day)
     first_week_offset = 0
     for first_week_offset in range(7):
         first_day = start_date + timedelta(days=first_week_offset)
@@ -362,6 +418,25 @@ def get_start_date(
         first_week_size=first_week_size,
         level=level,
     )
+
+
+def get_start_date(
+    file_study: FileStudy,
+    output_id: Optional[str] = None,
+    level: MatrixFrequency = MatrixFrequency.HOURLY,
+) -> MatrixIndex:
+    """
+    Retrieve the index (start date and step count) for output or input matrices
+
+    Args:
+        file_study: Study data
+        output_id: id of the output, if None, then it's the start date of the input matrices
+        level: granularity of the steps
+
+    """
+    config = FileStudyHelpers.get_config(file_study, output_id)["general"]
+    simulation_range = parse_simulation_range(config)
+    return get_matrix_index(simulation_range, output_id is not None, level)
 
 
 def is_folder_safe(workspace: WorkspaceConfig, folder: str) -> bool:

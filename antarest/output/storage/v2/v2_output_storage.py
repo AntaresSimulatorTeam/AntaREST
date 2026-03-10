@@ -19,6 +19,7 @@ import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import OutputNotFound
+from antarest.core.serde.ini_reader import IniReader
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive_from_stream
 from antarest.core.utils.utils import StopWatch
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
@@ -44,7 +45,13 @@ from antarest.output.utils import QueryFileType
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency, MatrixIndex
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
-from antarest.study.storage.utils import extract_output_name, fix_study_root
+from antarest.study.storage.utils import (
+    SimulationRangeDefinition,
+    extract_output_name,
+    fix_study_root,
+    get_matrix_index,
+    parse_simulation_range,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +96,34 @@ def _write_temporary_files(tmp_dir: Path, output: BinaryIO | Path) -> tuple[Path
         shutil.rmtree(dir_path, ignore_errors=True)
         raise
     return archive_path, dir_path
+
+
+def _extract_simulation_range(output_dir: Path) -> SimulationRangeDefinition:
+    parameters_path = output_dir / "about-the-study" / "parameters.ini"
+    parameters = IniReader().read(parameters_path)
+    return parse_simulation_range(parameters["general"])
+
+
+def _db_metadata_to_simulation_range(metadata: DbOutputMetadataV2) -> SimulationRangeDefinition:
+    return SimulationRangeDefinition(
+        starting_month=metadata.start_month,
+        january_1st_weekday=metadata.january_first_weekday,
+        leap_year=metadata.leap_year,
+        start_day=metadata.start_day,
+        end_day=metadata.end_day,
+        first_weekday=metadata.first_weekday,
+    )
+
+
+def _db_metadata_to_details(metadata: DbOutputMetadataV2) -> OutputDetails:
+    return OutputDetails(
+        name=metadata.output_name,
+        mode=Mode(metadata.mode),
+        synthesis=metadata.synthesis,
+        by_year=metadata.by_year,
+        nb_years=metadata.nb_years,
+        archived=metadata.archived,
+    )
 
 
 class V2OutputStorage(IOutputStorage):
@@ -145,6 +180,8 @@ class V2OutputStorage(IOutputStorage):
 
             # TODO here: extract all required data: variables list, time index, digest, parquet files
 
+            simulation_range = _extract_simulation_range(dir_path)
+
             self._repository.save_output_metadata(
                 DbOutputMetadataV2(
                     study_id=study_id,
@@ -154,6 +191,12 @@ class V2OutputStorage(IOutputStorage):
                     synthesis=output_details.synthesis,
                     by_year=output_details.by_year,
                     nb_years=output_details.nb_years,
+                    start_month=simulation_range.starting_month,
+                    january_first_weekday=simulation_range.january_1st_weekday,
+                    leap_year=simulation_range.leap_year,
+                    start_day=simulation_range.start_day,
+                    end_day=simulation_range.start_day,
+                    first_weekday=simulation_range.first_weekday,
                 )
             )
 
@@ -192,14 +235,7 @@ class V2OutputStorage(IOutputStorage):
         metadata = self._repository.get_output_metadata(study_id, output_id)
         if metadata is None:
             raise OutputNotFound(output_id)
-        return OutputDetails(
-            name=metadata.output_name,
-            mode=Mode(metadata.mode),
-            synthesis=metadata.synthesis,
-            by_year=metadata.by_year,
-            nb_years=metadata.nb_years,
-            archived=metadata.archived,
-        )
+        return _db_metadata_to_details(metadata)
 
     @override
     def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:
@@ -208,7 +244,7 @@ class V2OutputStorage(IOutputStorage):
 
     @override
     def delete_output(self, study_id: str, output_id: str) -> None:
-        # TODO: we should have some sort of synchronization so that
+        # TODO: we should have some sort of async behaviour so that
         #       the output appears deleted asap.
         #       Maybe only mark it deleted, and have it removed in the background.
         logger.info(f"Deleting output {study_id}/{output_id} from internal storage.")
@@ -272,8 +308,9 @@ class V2OutputStorage(IOutputStorage):
 
     @override
     def get_output_time_index(self, study_id: str, output_id: str, frequency: MatrixFrequency) -> MatrixIndex:
-        # TODO: at import time, save necessary metadata for that
-        raise NotImplementedError()
+        metadata = self._require_metadata(study_id, output_id)
+        simulation_range = _db_metadata_to_simulation_range(metadata)
+        return get_matrix_index(simulation_range, is_output=True, level=frequency)
 
     @override
     def aggregate_output_data(

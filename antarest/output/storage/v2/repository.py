@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing import Iterator
 
-from sqlalchemy import Column, ForeignKeyConstraint, Integer, String, Table, delete, select
+from sqlalchemy import Boolean, Column, ForeignKeyConstraint, Integer, String, Table, delete, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from antarest.core.persistence import Base
@@ -29,16 +29,29 @@ class DbOutputMetadataV2(Base):
     #              to mark an output for deletion and delete it later, or just to
     #              delete output after deleting the study itself
     study_id: Mapped[str] = mapped_column(
+        String(),
         primary_key=True,
         nullable=False,
     )
-    output_name: Mapped[str] = mapped_column(primary_key=True, nullable=False)
-    archived: Mapped[bool] = mapped_column(nullable=False)
+    output_name: Mapped[str] = mapped_column(String(), primary_key=True, nullable=False)
+    archived: Mapped[bool] = mapped_column(Boolean(), nullable=False)
     # TODO: enum ?
-    mode: Mapped[str] = mapped_column(nullable=False)
-    synthesis: Mapped[bool] = mapped_column(nullable=False)
-    by_year: Mapped[bool] = mapped_column(nullable=False)
-    nb_years: Mapped[int] = mapped_column(nullable=False)
+    mode: Mapped[str] = mapped_column(String(), nullable=False)
+    synthesis: Mapped[bool] = mapped_column(Boolean(), nullable=False)
+    by_year: Mapped[bool] = mapped_column(Boolean(), nullable=False)
+    nb_years: Mapped[int] = mapped_column(Integer(), nullable=False)
+
+    # Definition of the year
+    start_month: Mapped[int] = mapped_column(Integer(), nullable=False)
+    january_first_weekday: Mapped[int] = mapped_column(Integer(), nullable=False)
+    leap_year: Mapped[bool] = mapped_column(Boolean(), nullable=False)
+
+    # Definition of the simulation range
+    start_day: Mapped[int] = mapped_column(Integer(), nullable=False)
+    end_day: Mapped[int] = mapped_column(Integer(), nullable=False)
+
+    # For weekkly aggregation
+    first_weekday: Mapped[int] = mapped_column(Integer(), nullable=False)
 
 
 OUTPUT_LOGS_TABLE = Table(
@@ -72,7 +85,7 @@ class DbOutputVariablesV2(Base):
     )
 
     study_id: Mapped[str] = mapped_column(String(36), nullable=False, primary_key=True)
-    output_id: Mapped[str] = mapped_column(String, nullable=False, primary_key=True)
+    output_id: Mapped[str] = mapped_column(String(), nullable=False, primary_key=True)
     variables_list_version: Mapped[int] = mapped_column(Integer, nullable=False)
     variables_list: Mapped[str] = mapped_column(String(), nullable=False)
 
