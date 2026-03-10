@@ -33,6 +33,7 @@ function SearchMultipleFE({
   onChange,
   onSearchValuesChange,
   onInputValueChange,
+  onInputChange,
   className,
   ...rest
 }: SearchMultipleFEProps) {
@@ -48,7 +49,8 @@ function SearchMultipleFE({
     onSearchValuesChange?.(newValue);
   };
 
-  const handleInputChange: SearchMultipleFEProps["onInputChange"] = (_, value) => {
+  const handleInputChange: SearchMultipleFEProps["onInputChange"] = (event, value, reason) => {
+    onInputChange?.(event, value, reason);
     onInputValueChange?.(value);
   };
 

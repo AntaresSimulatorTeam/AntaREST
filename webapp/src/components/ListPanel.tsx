@@ -25,6 +25,7 @@ import {
 } from "@mui/material";
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useUpdateEffect } from "react-use";
 import SearchFE from "./fieldEditors/SearchFE";
 import SearchMultipleFE from "./fieldEditors/SearchMultipleFE";
 
@@ -66,18 +67,25 @@ function ListPanel<TItem extends ListPanelItem>({
   const hasActions = !!onAdd || !!actions;
 
   const filteredList = useMemo(() => {
-    const searches = inputSearchValue ? [...searchValues, inputSearchValue] : searchValues;
+    const searches =
+      multipleSearch && inputSearchValue ? [...searchValues, inputSearchValue] : searchValues;
 
     if (disableSearch || searches.length === 0) {
       return list;
     }
 
     return list.filter((item) => isSearchMatching(searches, item.label));
-  }, [list, searchValues, inputSearchValue, disableSearch]);
+  }, [multipleSearch, searchValues, inputSearchValue, disableSearch, list]);
+
+  // Reset search values when switching between single and multiple search modes
+  useUpdateEffect(() => {
+    setSearchValues([]);
+    setInputSearchValue("");
+  }, [multipleSearch]);
 
   ////////////////////////////////////////////////////////////////
   // JSX
-  ////////////////////////////////////////////////////////////////§
+  ////////////////////////////////////////////////////////////////
 
   return (
     <Stack direction="column">
