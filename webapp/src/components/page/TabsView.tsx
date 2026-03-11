@@ -42,6 +42,7 @@ export interface TabsViewProps {
   divider?: boolean;
   disablePadding?: boolean;
   disableGutters?: boolean;
+  primaryActions?: React.ReactNode;
   secondaryActions?: React.ReactNode;
 }
 
@@ -60,6 +61,7 @@ function TabsView({
   divider = false,
   disablePadding = false,
   disableGutters = false,
+  primaryActions,
   secondaryActions,
 }: TabsViewProps) {
   const matchRoute = useMatchRoute();
@@ -103,21 +105,25 @@ function TabsView({
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box
+    <Stack
       className="TabsView"
+      direction="column"
       sx={{
-        display: "flex",
-        flexDirection: "column",
         width: 1,
         height: 1,
       }}
     >
       <TabContext value={activeTabValue}>
-        <Stack sx={[divider && { borderBottom: 1, borderColor: "divider" }]}>
+        <Stack alignItems="normal" sx={[divider && { borderBottom: 1, borderColor: "divider" }]}>
           {onBack && (
             <BackButton
               {...(typeof onBack === "function" ? { onClick: onBack } : { linkOptions: onBack })}
             />
+          )}
+          {primaryActions && (
+            <Stack gap={1} sx={{ px: 1 }}>
+              {primaryActions}
+            </Stack>
           )}
           <TabList onChange={handleChange} sx={{ flex: 1 }}>
             {tabs.map((tab) => (
@@ -154,7 +160,7 @@ function TabsView({
           ))
         )}
       </TabContext>
-    </Box>
+    </Stack>
   );
 }
 

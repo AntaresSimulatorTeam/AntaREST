@@ -640,7 +640,7 @@
   "study.modeling.clusters.newCluster": "New cluster",
   "study.modeling.clusters.clusterGroup": "Cluster's group",
   "study.modeling.clusters.operatingParameters": "Operating parameters",
-  "study.modeling.clusters.thermal.pollutants": "Pollutant emission rates",
+  "study.modeling.clusters.thermal.otherEmissionRates": "Other emission rates",
   "study.modeling.clusters.unitcount": "Unit",
   "study.modeling.clusters.enabled": "Enabled",
   "study.modeling.clusters.nominalCapacity": "Nominal capacity (MW)",

@@ -87,7 +87,7 @@ function ThermalLayout() {
           },
         },
       ]}
-      secondaryActions={
+      primaryActions={
         <SelectFE
           label={t("study.modeling.thermals.select")}
           value={thermalId}
