@@ -1305,11 +1305,7 @@ class StudyService:
             self._apply_study_move(study_to_move, folder_dest, directory_id)
 
     def _get_variant_descendants(self, study_id: str) -> List[VariantStudy]:
-        descendants: List[VariantStudy] = []
-        for child in self.storage_service.variant_study_service.get_children(parent_id=study_id):
-            descendants.append(child)
-            descendants.extend(self._get_variant_descendants(child.id))
-        return descendants
+        return self.storage_service.variant_study_service.repository.get_all_descendants(study_id)
 
     def _apply_study_move(self, study: Study, folder_dest: str, directory_id: str | None) -> None:
         study.folder = folder_dest.rstrip("/") + f"/{study.id}" if folder_dest else None
