@@ -1761,7 +1761,8 @@ def test_move_raw_study_fails_without_write_access_on_variant_children(tmp_path:
     repository.get.return_value = parent
 
     variant_study_service = Mock(spec=VariantStudyService)
-    variant_study_service.get_children.side_effect = lambda parent_id: [variant] if parent_id == "parent" else []
+    variant_study_service.repository = Mock()
+    variant_study_service.repository.get_all_descendants.return_value = [variant]
 
     service = build_study_service(
         raw_study_service=Mock(spec=RawStudyService),
