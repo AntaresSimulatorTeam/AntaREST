@@ -70,7 +70,7 @@ function StudyTree() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box>
+    <Box sx={{ height: "100%", display: "flex", flexDirection: "column", overflow: "hidden" }}>
       <TreeSection
         variant="managed"
         title={t("studies.tree.managed")}

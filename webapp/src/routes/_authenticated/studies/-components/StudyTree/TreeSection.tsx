@@ -12,19 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import CustomScrollbar from "@/components/CustomScrollbar";
 import { withOpacity } from "@/utils/muiUtils";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import HomeIcon from "@mui/icons-material/Home";
-import {
-  Box,
-  Collapse,
-  IconButton,
-  Stack,
-  type SxProps,
-  type Theme,
-  Tooltip,
-  Typography,
-} from "@mui/material";
+import { Box, IconButton, Stack, type SxProps, type Theme, Tooltip, Typography } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -33,7 +25,6 @@ type TreeSectionVariant = "managed" | "external";
 interface TreeSectionProps {
   variant: TreeSectionVariant;
   title: string;
-  subtitle?: string;
   icon: React.ReactNode;
   children: React.ReactNode;
   onAddDirectory?: () => void;
@@ -47,7 +38,6 @@ const variantStyles: Record<
     icon: SxProps<Theme>;
     title: SxProps<Theme>;
     subtitle?: SxProps<Theme>;
-    content: SxProps<Theme>;
   }
 > = {
   managed: {
@@ -56,10 +46,6 @@ const variantStyles: Record<
       borderLeft: `3px solid ${theme.vars.palette.info.main}`,
       p: 0.5,
     }),
-    content: {
-      maxHeight: "50vh",
-      overflow: "auto",
-    },
     icon: {
       display: "flex",
       alignItems: "center",
@@ -79,10 +65,6 @@ const variantStyles: Record<
       borderLeft: `3px solid ${theme.vars.palette.action.disabled}`,
       p: 0.5,
     }),
-    content: {
-      maxHeight: "50vh",
-      overflow: "auto",
-    },
     icon: {
       display: "flex",
       alignItems: "center",
@@ -115,7 +97,12 @@ function TreeSection({
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={styles.container}>
+    <Box
+      sx={[
+        styles.container,
+        { flex: isCollapsed ? "0 0 auto" : 1, minHeight: 0, display: "flex", flexDirection: "column" },
+      ]}
+    >
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
         <Stack
           direction="row"
@@ -149,9 +136,11 @@ function TreeSection({
           )}
         </Stack>
       </Stack>
-      <Collapse in={!isCollapsed}>
-        <Box sx={styles.content}>{children}</Box>
-      </Collapse>
+      {!isCollapsed && (
+        <Box sx={{ flex: 1, minHeight: 0 }}>
+          <CustomScrollbar style={{ height: "100%" }}>{children}</CustomScrollbar>
+        </Box>
+      )}
     </Box>
   );
 }
