@@ -47,6 +47,7 @@ const variantStyles: Record<
     icon: SxProps<Theme>;
     title: SxProps<Theme>;
     subtitle?: SxProps<Theme>;
+    content: SxProps<Theme>;
   }
 > = {
   managed: {
@@ -55,6 +56,10 @@ const variantStyles: Record<
       borderLeft: `3px solid ${theme.vars.palette.info.main}`,
       p: 0.5,
     }),
+    content: {
+      maxHeight: "50vh",
+      overflow: "auto",
+    },
     icon: {
       display: "flex",
       alignItems: "center",
@@ -74,6 +79,10 @@ const variantStyles: Record<
       borderLeft: `3px solid ${theme.vars.palette.action.disabled}`,
       p: 0.5,
     }),
+    content: {
+      maxHeight: "50vh",
+      overflow: "auto",
+    },
     icon: {
       display: "flex",
       alignItems: "center",
@@ -140,7 +149,9 @@ function TreeSection({
           )}
         </Stack>
       </Stack>
-      <Collapse in={!isCollapsed}>{children}</Collapse>
+      <Collapse in={!isCollapsed}>
+        <Box sx={styles.content}>{children}</Box>
+      </Collapse>
     </Box>
   );
 }
