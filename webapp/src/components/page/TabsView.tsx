@@ -42,7 +42,7 @@ export interface TabsViewProps {
   divider?: boolean;
   disablePadding?: boolean;
   disableGutters?: boolean;
-  extraActions?: React.ReactNode;
+  secondaryActions?: React.ReactNode;
 }
 
 function isRouteTab(tab: RouteTab | ContentTab): tab is RouteTab {
@@ -60,7 +60,7 @@ function TabsView({
   divider = false,
   disablePadding = false,
   disableGutters = false,
-  extraActions,
+  secondaryActions,
 }: TabsViewProps) {
   const matchRoute = useMatchRoute();
   const hasRouteTabs = isRouteTabs(tabs);
@@ -113,12 +113,7 @@ function TabsView({
       }}
     >
       <TabContext value={activeTabValue}>
-        <Box
-          sx={[
-            (!!onBack || !!extraActions) && { display: "flex" },
-            divider && { borderBottom: 1, borderColor: "divider" },
-          ]}
-        >
+        <Stack sx={[divider && { borderBottom: 1, borderColor: "divider" }]}>
           {onBack && (
             <BackButton
               {...(typeof onBack === "function" ? { onClick: onBack } : { linkOptions: onBack })}
@@ -141,12 +136,12 @@ function TabsView({
               />
             ))}
           </TabList>
-          {extraActions && (
+          {secondaryActions && (
             <Stack gap={1} sx={{ pr: 1 }}>
-              {extraActions}
+              {secondaryActions}
             </Stack>
           )}
-        </Box>
+        </Stack>
         {hasRouteTabs ? (
           <Box sx={panelSx}>
             <Outlet />

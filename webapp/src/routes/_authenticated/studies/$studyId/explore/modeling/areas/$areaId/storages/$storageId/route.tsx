@@ -108,7 +108,7 @@ function StorageLayout() {
           }),
         },
       ].filter(Boolean)}
-      extraActions={
+      secondaryActions={
         <SelectFE
           label={t("study.modeling.storages.select")}
           value={storageId}

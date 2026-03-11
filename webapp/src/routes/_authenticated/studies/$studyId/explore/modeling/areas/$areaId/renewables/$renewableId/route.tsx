@@ -87,7 +87,7 @@ function RenewablesLayout() {
           }),
         },
       ]}
-      extraActions={
+      secondaryActions={
         <SelectFE
           label={t("study.modeling.renewables.select")}
           value={params.renewableId}
