@@ -29,7 +29,13 @@ import {
 } from "../selectors";
 import type { AppAsyncThunkConfig, AppDispatch, AppThunk } from "../store";
 import { makeActionName } from "../utils";
-import { deleteStudyMap, setStudyMap } from "./studyMaps";
+import {
+  createStudyMapDistrict,
+  deleteStudyMap,
+  deleteStudyMapDistrict,
+  setStudyMap,
+  updateStudyMapDistrict,
+} from "./studyMaps";
 
 export const studySynthesesAdapter = createEntityAdapter({
   selectId: (studyData: StudySynthesis) => studyData.study_id,
@@ -210,5 +216,38 @@ export default createReducer(initialState, (builder) => {
     })
     .addCase(setCurrentBindingConst, (draftState, action) => {
       draftState.currentBindingConst = action.payload;
+    })
+    .addCase(createStudyMapDistrict.fulfilled, (draftState, action) => {
+      const { studyId, district } = action.payload;
+      const synthesis = draftState.entities[studyId];
+
+      if (synthesis) {
+        synthesis.districts[district.id] = {
+          id: district.id,
+          name: district.name,
+          output: district.output,
+          comments: district.comments,
+          addAreas: district.areas,
+          // Default values when creating a district
+          subtractAreas: [],
+          applyFilter: "remove-all",
+        };
+      }
+    })
+    .addCase(updateStudyMapDistrict.fulfilled, (draftState, action) => {
+      const { studyId, districtId, output, comments, areas } = action.payload;
+      const synthesis = draftState.entities[studyId];
+
+      if (synthesis) {
+        synthesis.districts[districtId].output = output;
+        synthesis.districts[districtId].comments = comments;
+        if (areas) {
+          synthesis.districts[districtId].addAreas = areas;
+        }
+      }
+    })
+    .addCase(deleteStudyMapDistrict.fulfilled, (draftState, action) => {
+      const { studyId, districtId } = action.payload;
+      delete draftState.entities[studyId]?.districts[districtId];
     });
 });

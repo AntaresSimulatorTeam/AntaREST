@@ -12,13 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import type { AxiosRequestConfig } from "axios";
-import * as RA from "ramda-adjunct";
 import type { FolderDTO, WorkspaceDTO } from "@/queries/explorer/schemas";
 import { compactSemanticVersion } from "@/utils/versionUtils";
+import type { AxiosRequestConfig } from "axios";
+import * as RA from "ramda-adjunct";
 import type { StudyMapDistrict } from "../../redux/ducks/studyMaps";
 import type {
   AreasConfig,
+  DistrictApplyFilter,
   MatrixAggregationResult,
   OutputDetails,
   StudyLayer,
@@ -409,7 +410,7 @@ export async function updateStudyDistrict(
   output: StudyMapDistrict["output"],
   comments: StudyMapDistrict["comments"],
   areas?: StudyMapDistrict["areas"],
-  applyFilter?: string,
+  applyFilter?: DistrictApplyFilter,
 ): Promise<void> {
   await client.put(`v1/studies/${studyId}/districts/${districtId}`, {
     output,
