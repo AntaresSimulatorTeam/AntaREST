@@ -402,6 +402,18 @@ class MatrixContentRepository:
         height, width = df.shape
         return Matrix(id=matrix_id, width=width, height=height, created_at=current_time(), version=version)
 
-    def get_all_matrices_on_the_filesystem(self) -> set[str]:
+    def get_all_matrices_on_the_filesystem(self) -> tuple[set[str], set[Path]]:
         known_suffixes = {f".{fmt}" for fmt in InternalMatrixFormat}
-        return {f.stem for f in self.bucket_dir.iterdir() if f.suffix in known_suffixes}
+        matrices = set()
+        invalid_files = set()
+
+        for file_path in self.bucket_dir.iterdir():
+            if file_path.name.endswith(LOCK_SUFFIX):
+                continue
+
+            if file_path.suffix in known_suffixes:
+                matrices.add(file_path.stem)
+            elif file_path.is_file():
+                invalid_files.add(file_path)
+
+        return matrices, invalid_files

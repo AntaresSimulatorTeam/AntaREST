@@ -396,7 +396,13 @@ class TestMatrixContentRepository:
 
         (bucket_dir / "abc123.tsv").touch()
         (bucket_dir / "def456.hdf").touch()
+        invalid_file = bucket_dir / "no_suffix_matrix"
+        invalid_file.touch()
+        invalid_file_with_unknown_suffix = bucket_dir / "other.tmp"
+        invalid_file_with_unknown_suffix.touch()
         (bucket_dir / "abc123.tsv.lock").touch()
-        (bucket_dir / "other.tmp").touch()
 
-        assert repo.get_all_matrices_on_the_filesystem() == {"abc123", "def456"}
+        matrices, invalid_files = repo.get_all_matrices_on_the_filesystem()
+
+        assert matrices == {"abc123", "def456"}
+        assert invalid_files == {invalid_file, invalid_file_with_unknown_suffix}
