@@ -55,6 +55,7 @@ from antarest.study.output.adapters import study_service_as_file_outputs_provide
 from antarest.study.output.file_output_storage import FileOutputStorage
 from antarest.study.output.output_service import OutputService
 from antarest.study.output.variable_view_gc import VariableViewGarbageCollector
+from antarest.study.repository import StudyDiskSpaceRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
@@ -160,6 +161,7 @@ class CoreServices:
     blob_service: BlobService
     favorite_study_service: FavoriteStudyService
     favorite_directory_service: FavoriteDirectoryService
+    study_disk_space_repository: StudyDiskSpaceRepository
 
 
 def build_favorite_service(
@@ -255,6 +257,8 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
 
     favorite_study_service, favorite_directory_service = build_favorite_service(config=config, app_ctxt=app_ctxt)
 
+    study_disk_space_repository = StudyDiskSpaceRepository()
+
     if app_ctxt:
         app_ctxt.api_root.include_router(create_output_routes(output_service, filetransfer_service, config))
 
@@ -270,6 +274,7 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         blob_service=blob_service,
         favorite_study_service=favorite_study_service,
         favorite_directory_service=favorite_directory_service,
+        study_disk_space_repository=study_disk_space_repository,
     )
 
 

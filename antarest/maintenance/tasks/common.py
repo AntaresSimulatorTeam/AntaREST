@@ -98,6 +98,7 @@ class LockId(IntEnum):
     WATCHER_SCAN = 1004
     VARIABLE_VIEW_GC = 1005
     TASKS_GC = 1006
+    STUDY_DISK_SPACE = 1008
 
 
 class WatcherScanTaskResult(AntaresBaseModel):
