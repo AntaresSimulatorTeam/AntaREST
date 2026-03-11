@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import logging
 import shutil
+import tempfile
 import uuid
 from pathlib import Path
 from typing import BinaryIO, Iterator, Optional, Sequence
@@ -20,7 +21,12 @@ from typing_extensions import override
 
 from antarest.core.exceptions import OutputNotFound
 from antarest.core.serde.ini_reader import IniReader
-from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive_from_stream
+from antarest.core.utils.archives import (
+    ArchiveFormat,
+    archive_dir,
+    extract_archive_from_path,
+    extract_archive_from_stream,
+)
 from antarest.core.utils.utils import StopWatch
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
@@ -69,7 +75,7 @@ def _write_temporary_files(tmp_dir: Path, output: BinaryIO | Path) -> tuple[Path
     Returns:
         the path to the compressed archive, and the path to the uncompressed directory.
     """
-    archive_path = tmp_dir / f"{uuid.uuid4()}"
+    archive_path = tmp_dir / f"{uuid.uuid4()}.zip"
     dir_path = tmp_dir / f"{uuid.uuid4()}"
     try:
         if isinstance(output, Path):
@@ -90,6 +96,9 @@ def _write_temporary_files(tmp_dir: Path, output: BinaryIO | Path) -> tuple[Path
 
         # Still needed to ensure the output is not in a sub-directory
         fix_study_root(dir_path)
+        # TODO: optimize this, we should not do it when not needed (when the layout was OK)
+        archive_path.unlink()
+        archive_dir(dir_path, archive_path, remove_source_dir=False, archive_format=ArchiveFormat.ZIP)
 
     except Exception:
         shutil.rmtree(archive_path, ignore_errors=True)
@@ -300,7 +309,10 @@ class V2OutputStorage(IOutputStorage):
 
     @override
     def write_output_to_dir(self, study_id: str, output_id: str, parent: Path) -> None:
-        raise NotImplementedError()
+        with tempfile.TemporaryDirectory(dir=self._tmp_dir) as tmp_dir:
+            tmp_archive_path = Path(tmp_dir) / "output.zip"
+            self._archive_storage.read_file(_archive_id(study_id, output_id), tmp_archive_path)
+            extract_archive_from_path(tmp_archive_path, parent / output_id)
 
     @override
     def get_logs(self, study_id: str, output_id: str, log_type: LogType) -> str:

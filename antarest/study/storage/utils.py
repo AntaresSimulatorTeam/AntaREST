@@ -47,7 +47,6 @@ from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
-from antarest.core.utils.archives import is_archive_format
 from antarest.login.model import Group
 from antarest.login.utils import require_current_user
 from antarest.study.business.model.config.general_model import Mode
@@ -119,10 +118,6 @@ def fix_study_root(study_path: Path) -> None:
     Args:
         study_path: the study initial root path
     """
-    # TODO: what if it is a zipped output ?
-    if is_archive_format(study_path.suffix):
-        return None
-
     if not study_path.is_dir():
         raise StudyValidationError("Not a directory: '{study_path}'")
 

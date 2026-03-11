@@ -554,3 +554,28 @@ def test_import_output_variable_list(storage: V2OutputStorage, study_id: str, ou
             },
             "mc_ind": {"areas": [], "links": []},
         }
+
+
+@pytest.mark.parametrize("nested", [False, True])
+@pytest.mark.parametrize("archive_format", [ArchiveFormat.ZIP, ArchiveFormat.SEVEN_ZIP])
+def test_write_imported_output_to_dir(
+    storage: V2OutputStorage,
+    study_id: str,
+    output_path: Path,
+    archive_format: ArchiveFormat,
+    nested: bool,
+    tmp_path: Path,
+):
+    archive_path = create_archive(archive_format, nested, output_path, tmp_path)
+    with db():
+        with open(archive_path, "rb") as archive_io:
+            output_name = storage.import_output(study_id, archive_io)
+
+    assert output_name == "20201014-1427eco"
+    with db():
+        assert storage.output_exists(study_id=study_id, output_id="20201014-1427eco")
+        parent_dir = tmp_path / "export"
+        parent_dir.mkdir()
+        storage.write_output_to_dir(study_id, "20201014-1427eco", parent_dir)
+        assert (parent_dir / "20201014-1427eco").exists()
+        assert (parent_dir / "20201014-1427eco" / "about-the-study" / "parameters.ini").exists()
