@@ -25,6 +25,7 @@ import * as studyDataApi from "@/services/api/studydata";
 import type {
   AreaLayerColor,
   AreaLayerPosition,
+  DistrictApplyFilter,
   LinkElement,
   StudyLayer,
   StudyMetadata,
@@ -547,7 +548,7 @@ export const updateStudyMapDistrict = createAsyncThunk<
     output: StudyMapDistrict["output"];
     comments: StudyMapDistrict["comments"];
     areas?: StudyMapDistrict["areas"];
-    applyFilter?: string;
+    applyFilter?: DistrictApplyFilter;
   }
 >(n("UPDATE_STUDY_MAP_DISTRICT"), async (data, { rejectWithValue }) => {
   try {
