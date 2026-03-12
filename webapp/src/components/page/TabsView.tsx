@@ -42,7 +42,8 @@ export interface TabsViewProps {
   divider?: boolean;
   disablePadding?: boolean;
   disableGutters?: boolean;
-  extraActions?: React.ReactNode;
+  primaryActions?: React.ReactNode;
+  secondaryActions?: React.ReactNode;
 }
 
 function isRouteTab(tab: RouteTab | ContentTab): tab is RouteTab {
@@ -60,7 +61,8 @@ function TabsView({
   divider = false,
   disablePadding = false,
   disableGutters = false,
-  extraActions,
+  primaryActions,
+  secondaryActions,
 }: TabsViewProps) {
   const matchRoute = useMatchRoute();
   const hasRouteTabs = isRouteTabs(tabs);
@@ -103,26 +105,25 @@ function TabsView({
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box
+    <Stack
       className="TabsView"
+      direction="column"
       sx={{
-        display: "flex",
-        flexDirection: "column",
         width: 1,
         height: 1,
       }}
     >
       <TabContext value={activeTabValue}>
-        <Box
-          sx={[
-            (!!onBack || !!extraActions) && { display: "flex" },
-            divider && { borderBottom: 1, borderColor: "divider" },
-          ]}
-        >
+        <Stack alignItems="normal" sx={[divider && { borderBottom: 1, borderColor: "divider" }]}>
           {onBack && (
             <BackButton
               {...(typeof onBack === "function" ? { onClick: onBack } : { linkOptions: onBack })}
             />
+          )}
+          {primaryActions && (
+            <Stack gap={1} sx={{ px: 1 }}>
+              {primaryActions}
+            </Stack>
           )}
           <TabList onChange={handleChange} sx={{ flex: 1 }}>
             {tabs.map((tab) => (
@@ -141,12 +142,12 @@ function TabsView({
               />
             ))}
           </TabList>
-          {extraActions && (
+          {secondaryActions && (
             <Stack gap={1} sx={{ pr: 1 }}>
-              {extraActions}
+              {secondaryActions}
             </Stack>
           )}
-        </Box>
+        </Stack>
         {hasRouteTabs ? (
           <Box sx={panelSx}>
             <Outlet />
@@ -159,7 +160,7 @@ function TabsView({
           ))
         )}
       </TabContext>
-    </Box>
+    </Stack>
   );
 }
 

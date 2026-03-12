@@ -252,7 +252,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
     return (
       <ErrorView
         error={errors.root[ROOT_FETCH_ERROR_KEY].message || t("form.asyncDefaultValues.error")}
-        extraActions={getExtraActions()}
+        secondaryActions={getExtraActions()}
       />
     );
   }
