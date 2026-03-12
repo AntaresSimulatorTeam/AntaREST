@@ -12,15 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { Checkbox, type CheckboxProps, Tooltip } from "@mui/material";
+import type { StudyMetadata } from "@/types/types";
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
-import { toggleFavorite } from "@/redux/ducks/studies";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import { Checkbox, type CheckboxProps, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { StudyMetadata } from "@/types/types";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { isStudyFavorite } from "@/redux/selectors";
 
 interface Props {
   studyId: StudyMetadata["id"];
@@ -28,8 +24,7 @@ interface Props {
 }
 
 function FavoriteStudyToggle({ studyId, size }: Props) {
-  const isFavorite = useAppSelector((state) => isStudyFavorite(state, studyId));
-  const dispatch = useAppDispatch();
+  const isFavorite = false;
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -37,7 +32,6 @@ function FavoriteStudyToggle({ studyId, size }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleChange = () => {
-    dispatch(toggleFavorite(studyId));
   };
 
   ////////////////////////////////////////////////////////////////

@@ -30,11 +30,10 @@ import {
   createEntityAdapter,
   createReducer,
 } from "@reduxjs/toolkit";
-import * as R from "ramda";
 import { isAxiosError } from "axios";
+import * as R from "ramda";
 import type { O } from "ts-toolbelt";
-import { getFavoriteStudyIds } from "../selectors";
-import type { AppAsyncThunkConfig, AppThunk } from "../store";
+import type { AppAsyncThunkConfig } from "../store";
 import { FetchStatus, createThunk, makeActionName, type AsyncEntityState } from "../utils";
 import { setDefaultAreaLinkSelection } from "./studySyntheses";
 
@@ -69,7 +68,6 @@ export interface StudiesState extends AsyncEntityState<StudyMetadata> {
   prevStudyId: string;
   scrollPosition: number;
   versionList: string[];
-  favorites: Array<StudyMetadata["id"]>;
   filters: StudyFilters;
   sort: StudySortConfig;
 }
@@ -143,8 +141,6 @@ export const setStudyScrollPosition = createAction<StudiesState["scrollPosition"
   n("SET_SCROLL_POSITION"),
 );
 
-export const setFavoriteStudies = createAction<StudiesState["favorites"]>(n("SET_FAVORITES"));
-
 export const updateStudyFilters = createAction<O.Partial<StudyFilters, "deep">>(
   n("UPDATE_FILTERS"),
 );
@@ -155,7 +151,6 @@ export const updateStudySortConfig = createAction<Partial<StudySortConfig>>(
 
 export const updateStudiesFromLocalStorage = createAction<
   O.Nullable<{
-    favorites: StudiesState["favorites"];
     sort: Partial<StudySortConfig>;
   }>
 >(n("UPDATE_FROM_LOCAL_STORAGE"));
@@ -236,11 +231,6 @@ export const deleteStudy = createAsyncThunk<
     }
   }
 
-  const state = getState();
-  const currentFavorites = getFavoriteStudyIds(state);
-  const newFavorites = currentFavorites.filter((fav) => fav !== studyId);
-  dispatch(setFavoriteStudies(newFavorites));
-
   return studyId;
 });
 
@@ -265,20 +255,6 @@ export const fetchStudies = createAsyncThunk<StudyMetadata[], undefined, AppAsyn
   },
 );
 
-export const toggleFavorite =
-  (studyId: StudyMetadata["id"]): AppThunk =>
-  (dispatch, getState) => {
-    const state = getState();
-    const currentFavorites = getFavoriteStudyIds(state);
-    const isFav = !!currentFavorites.find((fav) => fav === studyId);
-
-    dispatch(
-      setFavoriteStudies(
-        isFav ? currentFavorites.filter((fav) => fav !== studyId) : [...currentFavorites, studyId],
-      ),
-    );
-  };
-
 ////////////////////////////////////////////////////////////////
 // Reducer
 ////////////////////////////////////////////////////////////////
@@ -286,9 +262,7 @@ export const toggleFavorite =
 export default createReducer(initialState, (builder) => {
   builder
     .addCase(updateStudiesFromLocalStorage, (draftState, action) => {
-      const { favorites, sort } = action.payload;
-      draftState.favorites = favorites || [];
-      Object.assign(draftState.sort, sort);
+      Object.assign(draftState.sort, action.payload.sort);
     })
     .addCase(createStudy.fulfilled, studiesAdapter.addOne)
     .addCase(setStudy.fulfilled, studiesAdapter.setOne)
@@ -307,9 +281,6 @@ export default createReducer(initialState, (builder) => {
       draftState.error = isAxiosError(action.payload)
         ? action.payload.message
         : action.error.message;
-    })
-    .addCase(setFavoriteStudies, (draftState, action) => {
-      draftState.favorites = action.payload;
     })
     .addCase(updateStudyFilters, (draftState, action) => {
       draftState.filters = R.mergeDeepRight(
