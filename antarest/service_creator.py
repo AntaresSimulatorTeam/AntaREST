@@ -277,9 +277,6 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
 
     favorite_study_service, favorite_directory_service = build_favorite_service(config=config, app_ctxt=app_ctxt)
 
-    if app_ctxt:
-        app_ctxt.api_root.include_router(create_output_routes(output_service, filetransfer_service, config))
-
     return CoreServices(
         cache=cache,
         event_bus=event_bus,
