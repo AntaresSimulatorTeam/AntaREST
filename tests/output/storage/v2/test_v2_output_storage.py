@@ -600,3 +600,49 @@ def test_copy_output(
 
         assert storage.output_exists(study_id, "20201014-1427eco")
         assert storage.output_exists("my-copy", "20201014-1427eco")
+
+        # Verify the copied output has the same details
+        src_details = storage.get_output_details(study_id, "20201014-1427eco")
+        copy_details = storage.get_output_details("my-copy", "20201014-1427eco")
+        assert src_details == copy_details
+
+        # Verify the copied output has the same logs
+        src_out_logs = storage.get_logs(study_id, "20201014-1427eco", LogType.STDOUT)
+        copy_out_logs = storage.get_logs("my-copy", "20201014-1427eco", LogType.STDOUT)
+        assert copy_out_logs == src_out_logs
+        assert len(copy_out_logs.splitlines()) == 239
+
+        src_err_logs = storage.get_logs(study_id, "20201014-1427eco", LogType.STDERR)
+        copy_err_logs = storage.get_logs("my-copy", "20201014-1427eco", LogType.STDERR)
+        assert copy_err_logs == src_err_logs
+        assert copy_err_logs == ""
+
+        # Verify the copied output has the same variables list
+        src_variables = storage.get_variables_list(study_id, "20201014-1427eco")
+        copy_variables = storage.get_variables_list("my-copy", "20201014-1427eco")
+        assert copy_variables.model_dump() == src_variables.model_dump()
+
+        # Verify the copied output can be exported
+        export_path = tmp_path / "copied-export.zip"
+        storage.export_output("my-copy", "20201014-1427eco", target=export_path)
+        assert export_path.exists()
+        assert zipfile.is_zipfile(export_path)
+
+        # Verify the copied output can be archived and unarchived
+        assert not storage.is_output_archived("my-copy", "20201014-1427eco")
+        storage.archive_study_output("my-copy", "20201014-1427eco")
+        assert storage.is_output_archived("my-copy", "20201014-1427eco")
+        storage.unarchive_study_output("my-copy", "20201014-1427eco")
+        assert not storage.is_output_archived("my-copy", "20201014-1427eco")
+
+        # Verify the copied output has the same time index
+        src_hourly_index = storage.get_output_time_index(study_id, "20201014-1427eco", MatrixFrequency.HOURLY)
+        copy_hourly_index = storage.get_output_time_index("my-copy", "20201014-1427eco", MatrixFrequency.HOURLY)
+        assert copy_hourly_index == src_hourly_index
+
+        # Verify the copied output can be written to directory
+        parent_dir = tmp_path / "copied-export-dir"
+        parent_dir.mkdir()
+        storage.write_output_to_dir("my-copy", "20201014-1427eco", parent_dir)
+        assert (parent_dir / "20201014-1427eco").exists()
+        assert (parent_dir / "20201014-1427eco" / "about-the-study" / "parameters.ini").exists()
