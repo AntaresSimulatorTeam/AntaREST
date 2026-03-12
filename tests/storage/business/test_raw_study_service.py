@@ -25,7 +25,7 @@ from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyDeletionNotAllowed, StudyNotFoundError
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.model import PublicMode
-from antarest.output.storage.file.file_output_storage import (
+from antarest.output.storage.file.storage import (
     FileStudyOutputs,
     IFileOutputsProvider,
     InStudyFileOutputStorage,

@@ -51,7 +51,7 @@ from antarest.output.aggregator_management import (
     CLUSTER_ID_COL,
     LINK_COL,
 )
-from antarest.output.output_model import (
+from antarest.output.model import (
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesViewResponse,

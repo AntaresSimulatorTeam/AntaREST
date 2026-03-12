@@ -35,7 +35,7 @@ from antarest.core.tasks.service import ITaskService
 from antarest.login.model import User
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
-from antarest.output.output_service import OutputService
+from antarest.output.service import OutputService
 from antarest.service_creator import build_output_service
 from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME

@@ -37,7 +37,7 @@ from antarest.output.filestudy.file_output_utils import (
     extract_variables_list,
     find_simulation_log,
 )
-from antarest.output.output_model import OutputVariablesList
+from antarest.output.model import OutputVariablesList
 from antarest.output.storage.output_storage import (
     IOutputStorage,
     OutputDetails,

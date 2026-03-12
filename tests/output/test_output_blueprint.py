@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 import pytest
 
-from antarest.output.output_blueprint import _to_item_id
-from antarest.output.output_model import OutputVariablesType
+from antarest.output.model import OutputVariablesType
+from antarest.output.routes import _to_item_id
 from antarest.output.variable_view.model import (
     AreaOutputId,
     LinkOutputId,

@@ -20,7 +20,7 @@ from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixRepository
 from antarest.matrixstore.service import MatrixService
-from antarest.output.storage.file.file_output_storage import (
+from antarest.output.storage.file.storage import (
     FileStudyOutputs,
     IFileOutputsProvider,
     InStudyFileOutputStorage,

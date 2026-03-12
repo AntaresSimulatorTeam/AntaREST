@@ -30,13 +30,13 @@ from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.dict_utils import remove_nones
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.output.output_model import (
+from antarest.output.model import (
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesType,
     OutputVariablesViewResponse,
 )
-from antarest.output.output_service import OutputService
+from antarest.output.service import OutputService
 from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
 from antarest.output.utils import (
     MCAllAreasQueryFile,

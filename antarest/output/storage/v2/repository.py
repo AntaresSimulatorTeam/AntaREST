@@ -17,7 +17,7 @@ from sqlalchemy.orm import Mapped, Session, mapped_column
 from antarest.core.persistence import Base
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.model import LogType
-from antarest.output.output_model import OutputVariablesList
+from antarest.output.model import OutputVariablesList
 from antarest.study.dao.database.sql_utils import upsert_one
 
 

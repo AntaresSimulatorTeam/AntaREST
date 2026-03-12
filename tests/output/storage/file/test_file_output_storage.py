@@ -35,7 +35,7 @@ from antarest.launcher.model import LogType
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.output.storage.file.file_output_storage import (
+from antarest.output.storage.file.storage import (
     FileStudyOutputs,
     IFileOutputsProvider,
     InStudyFileOutputStorage,

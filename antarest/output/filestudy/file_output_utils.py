@@ -16,7 +16,7 @@ from typing import Any, Iterator
 from antarest.core.serde.ini_reader import IniReader
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
-from antarest.output.output_model import OutputVariablesList
+from antarest.output.model import OutputVariablesList
 from antarest.output.storage.output_storage import OutputDetails
 from antarest.output.utils import (
     MCAllAreasQueryFile,

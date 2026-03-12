@@ -19,7 +19,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.dbmodel import Base
-from antarest.output.output_model import OutputVariablesType
+from antarest.output.model import OutputVariablesType
 from antarest.output.variable_view.model import (
     AreaOutputId,
     LinkOutputId,

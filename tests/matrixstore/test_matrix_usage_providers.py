@@ -31,7 +31,7 @@ from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixDataSetUpdateDTO, MatrixInfoDTO, MatrixReference
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
-from antarest.output.output_model import OutputVariablesType
+from antarest.output.model import OutputVariablesType
 from antarest.output.variable_view.db import OutputVariablesViewsModel
 from antarest.output.variable_view.matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation

@@ -51,13 +51,13 @@ from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
-from antarest.output.output_blueprint import create_output_routes
-from antarest.output.output_service import OutputService
-from antarest.output.storage.file.file_output_storage import InStudyFileOutputStorage
+from antarest.output.routes import create_output_routes
+from antarest.output.service import OutputService
 from antarest.output.storage.file.repository import FileOutputRepository
+from antarest.output.storage.file.storage import InStudyFileOutputStorage
 from antarest.output.storage.output_storage import IOutputStorage
 from antarest.output.storage.v2.repository import OutputV2Repository
-from antarest.output.storage.v2.v2_output_storage import V2OutputStorage
+from antarest.output.storage.v2.storage import V2OutputStorage
 from antarest.output.variable_view.gc import VariableViewGarbageCollector
 from antarest.study.adapters import adapt_output_service_to_study_service
 from antarest.study.dao.database.database_blob_usage_provider import DatabaseBlobUsageProvider
