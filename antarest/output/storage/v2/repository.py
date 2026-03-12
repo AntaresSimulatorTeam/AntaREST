@@ -52,7 +52,7 @@ class DbOutputMetadataV2(Base):
     start_day: Mapped[int] = mapped_column(Integer(), nullable=False)
     end_day: Mapped[int] = mapped_column(Integer(), nullable=False)
 
-    # For weekkly aggregation
+    # For weekly aggregation
     # TODO: enum
     first_weekday: Mapped[int] = mapped_column(Integer(), nullable=False)
 

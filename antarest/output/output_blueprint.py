@@ -188,7 +188,7 @@ def create_output_routes(
         summary="Delete a simulation output",
     )
     def delete_output(study_id: UuidStr, output_id: SanitizedStr) -> None:
-        logger.info(f"FDeleting output {output_id} from study {study_id}")
+        logger.info(f"Deleting output {output_id} from study {study_id}")
         output_service.delete_output(study_id, output_id)
 
     @bp.post(
