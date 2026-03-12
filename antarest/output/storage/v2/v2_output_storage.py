@@ -27,6 +27,7 @@ from antarest.core.utils.archives import (
     extract_archive_from_path,
     extract_archive_from_stream,
 )
+from antarest.core.utils.sqlalchemy import clone_orm_object
 from antarest.core.utils.utils import StopWatch
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
@@ -248,8 +249,26 @@ class V2OutputStorage(IOutputStorage):
 
     @override
     def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:
-        # TODO: copy all relevant data: archive, parquet files, DB metadata
-        pass
+        with tempfile.TemporaryDirectory(dir=self._tmp_dir) as tmp_dir:
+            tmp_archive_path = Path(tmp_dir) / "output.zip"
+            self._archive_storage.read_file(_archive_id(src_study_id, output_id), tmp_archive_path)
+            self._archive_storage.write_file(_archive_id(target_study_id, output_id), tmp_archive_path)
+
+        metadata = self._require_metadata(src_study_id, output_id)
+        copy_metadata = clone_orm_object(DbOutputMetadataV2, metadata)
+        copy_metadata.study_id = target_study_id
+        copy_metadata.output_name = output_id
+        self._repository.save_output_metadata(copy_metadata)
+
+        out_log = self._repository.get_log(src_study_id, output_id, LogType.STDOUT)
+        err_log = self._repository.get_log(src_study_id, output_id, LogType.STDERR)
+        self._repository.save_log(target_study_id, output_id, LogType.STDOUT, out_log)
+        self._repository.save_log(target_study_id, output_id, LogType.STDERR, err_log)
+
+        variables_list = self._repository.get_output_variables_list(src_study_id, output_id)
+        if variables_list is None:
+            raise ValueError(f"Variables list not found for output {src_study_id}/{output_id}.")
+        self._repository.save_output_variables_list(target_study_id, output_id, variables_list)
 
     @override
     def delete_output(self, study_id: str, output_id: str) -> None:

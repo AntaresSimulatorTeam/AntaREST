@@ -579,3 +579,24 @@ def test_write_imported_output_to_dir(
         storage.write_output_to_dir(study_id, "20201014-1427eco", parent_dir)
         assert (parent_dir / "20201014-1427eco").exists()
         assert (parent_dir / "20201014-1427eco" / "about-the-study" / "parameters.ini").exists()
+
+
+def test_copy_output(
+    study_repo: StudyMetadataRepository,
+    storage: V2OutputStorage,
+    study_id: str,
+    output_path: Path,
+    tmp_path: Path,
+):
+    with db():
+        study_repo.save(Study(id="my-copy", name="name", version="9.2", path=""))
+
+        output_name = storage.import_output(study_id, output_path)
+        assert output_name == "20201014-1427eco"
+
+        assert storage.output_exists(study_id, "20201014-1427eco")
+
+        storage.copy_output(study_id, "my-copy", "20201014-1427eco")
+
+        assert storage.output_exists(study_id, "20201014-1427eco")
+        assert storage.output_exists("my-copy", "20201014-1427eco")
