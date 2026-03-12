@@ -19,24 +19,48 @@ depends_on = None
 
 def upgrade():
     op.create_table(
-        "output_metadata",
+        "output_v2_metadata",
         sa.Column("study_id", sa.String(), nullable=False, primary_key=True),
         sa.Column("output_name", sa.String(), nullable=False, primary_key=True),
-        sa.Column("type", sa.String(), nullable=False),
         sa.Column("archived", sa.Boolean(), nullable=False),
+        sa.Column("mode", sa.String(), nullable=False),
+        sa.Column("synthesis", sa.Boolean(), nullable=False),
+        sa.Column("by_year", sa.Boolean(), nullable=False),
+        sa.Column("nb_years", sa.Integer(), nullable=False),
+        sa.Column("start_month", sa.Integer(), nullable=False),
+        sa.Column("january_first_weekday", sa.Integer(), nullable=False),
+        sa.Column("leap_year", sa.Boolean(), nullable=False),
+        sa.Column("start_day", sa.Integer(), nullable=False),
+        sa.Column("end_day", sa.Integer(), nullable=False),
+        sa.Column("first_weekday", sa.Integer(), nullable=False),
     )
     op.create_table(
-        "output_logs",
+        "output_v2_logs",
         sa.Column("study_id", sa.String(), primary_key=True, nullable=False),
         sa.Column("output_id", sa.String(), primary_key=True, nullable=False),
         sa.Column("out", sa.String(), nullable=True),
         sa.Column("err", sa.String(), nullable=True),
         sa.ForeignKeyConstraint(
-            ["study_id", "output_id"], ["output_metadata.study_id", "output_metadata.output_name"], ondelete="CASCADE"
+            ["study_id", "output_id"],
+            ["output_v2_metadata.study_id", "output_v2_metadata.output_name"],
+            ondelete="CASCADE",
+        ),
+    )
+    op.create_table(
+        "output_v2_variables",
+        sa.Column("study_id", sa.String(36), primary_key=True, nullable=False),
+        sa.Column("output_id", sa.String(), primary_key=True, nullable=False),
+        sa.Column("variables_list_version", sa.Integer(), nullable=False),
+        sa.Column("variables_list", sa.String(), nullable=False),
+        sa.ForeignKeyConstraint(
+            ["study_id", "output_id"],
+            ["output_v2_metadata.study_id", "output_v2_metadata.output_name"],
+            ondelete="CASCADE",
         ),
     )
 
 
 def downgrade():
-    op.drop_table("output_logs")
-    op.drop_table("output_metadata")
+    op.drop_table("output_v2_variables")
+    op.drop_table("output_v2_logs")
+    op.drop_table("output_v2_metadata")
