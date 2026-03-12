@@ -10,6 +10,8 @@
 #
 # This file is part of the Antares project.
 
+import logging
+import time
 from typing import Optional
 
 from antarest.blobstore.service import IBlobService
@@ -89,8 +91,11 @@ def build_study_service(
     )
 
     if not generator_matrix_constants:
+        t0 = time.perf_counter()
         generator_matrix_constants = GeneratorMatrixConstants(matrix_service=matrix_service)
         generator_matrix_constants.init_constant_matrices()
+        t1 = time.perf_counter()
+        logging.getLogger(__name__).info(f"[BENCH] Matrix constants initialization: {(t1 - t0) * 1000:.1f}ms")
     command_factory = CommandFactory(
         generator_matrix_constants=generator_matrix_constants, matrix_service=matrix_service, blob_service=blob_service
     )

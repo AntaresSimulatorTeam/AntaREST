@@ -13,6 +13,7 @@
 import argparse
 import copy
 import logging
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, AsyncGenerator, Optional, Tuple
@@ -197,8 +198,14 @@ def fastapi_app(
     mount_front: bool = True,
     auto_upgrade_db: bool = False,
 ) -> Tuple[FastAPI, Services]:
+    total_start = time.perf_counter()
     res = resource_path or get_local_path() / "resources"
+
+    t0 = time.perf_counter()
     config = Config.from_yaml_file(res=res, file=config_file)
+    t1 = time.perf_counter()
+    logger.info(f"[BENCH] Config loading: {(t1 - t0) * 1000:.1f}ms")
+
     configure_logger(config)
 
     logger.info("Initiating application")
@@ -226,7 +233,10 @@ def fastapi_app(
     app_ctxt = AppBuildContext(application, api_root)
 
     # Database
+    t0 = time.perf_counter()
     engine = init_db_engine(config, auto_upgrade_db, config_file)
+    t1 = time.perf_counter()
+    logger.info(f"[BENCH] Database engine init: {(t1 - t0) * 1000:.1f}ms")
     application.add_middleware(DBSessionMiddleware, custom_engine=engine, session_args=SESSION_ARGS)
     # Since Starlette Version 0.24.0, the middlewares are lazily built inside this function
     # But we need to instantiate this middleware as it's needed for the study service.
@@ -244,6 +254,7 @@ def fastapi_app(
             authjwt_cookie_csrf_protect=False,
         )
 
+    t0 = time.perf_counter()
     application.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -251,13 +262,33 @@ def fastapi_app(
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    t1 = time.perf_counter()
+    logger.info(f"[BENCH] CORS middleware: {(t1 - t0) * 1000:.1f}ms")
+
+    t0 = time.perf_counter()
     api_root.include_router(create_utils_routes(config))
+    t1 = time.perf_counter()
+    logger.info(f"[BENCH] Utils routes: {(t1 - t0) * 1000:.1f}ms")
+
+    t0 = time.perf_counter()
     api_root.include_router(create_file_system_blueprint(config))
+    t1 = time.perf_counter()
+    logger.info(f"[BENCH] Filesystem blueprint: {(t1 - t0) * 1000:.1f}ms")
 
+    t0 = time.perf_counter()
     add_exception_handlers(application)
+    t1 = time.perf_counter()
+    logger.info(f"[BENCH] Exception handlers: {(t1 - t0) * 1000:.1f}ms")
 
+    t0 = time.perf_counter()
     init_admin_user(engine=engine, session_args=SESSION_ARGS, admin_password=config.security.admin_pwd)
+    t1 = time.perf_counter()
+    logger.info(f"[BENCH] Admin user init: {(t1 - t0) * 1000:.1f}ms")
+
+    t0 = time.perf_counter()
     services = create_services(config, app_ctxt)
+    t1 = time.perf_counter()
+    logger.info(f"[BENCH] Service creation: {(t1 - t0) * 1000:.1f}ms")
 
     application.include_router(api_root)
 
@@ -265,8 +296,11 @@ def fastapi_app(
     # those singleton services must be "started" ONLY when explictly asked.
     # Typically for a production multi-process deployment, they should not be started
     # for each HTTP worker, but only for one dedicated background worker.
+    t0 = time.perf_counter()
     if services.watcher and Module.WATCHER in config.server.services:
         services.watcher.start()
+    t1 = time.perf_counter()
+    logger.info(f"[BENCH] Watcher startup: {(t1 - t0) * 1000:.1f}ms")
 
     if services.matrix_gc and Module.MATRIX_GC in config.server.services:
         services.matrix_gc.start()
@@ -291,6 +325,8 @@ def fastapi_app(
     # by inner middlewares are correctly logged with the context of the request.
     application.add_middleware(LoggingMiddleware)
 
+    total_end = time.perf_counter()
+    logger.info(f"[BENCH] Total fastapi_app: {(total_end - total_start) * 1000:.1f}ms")
     return application, services
 
 

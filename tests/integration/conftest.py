@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import shutil
 import sys
+import time
 import typing as t
 import uuid
 import zipfile
@@ -46,12 +47,19 @@ def initial_db_file(tmp_path_factory: TempPathFactory) -> Path:
     """
     Initializing the database schema is a costly operation: we perform it only once
     here for the test session, and then copy the database file to each integration test.
+    We also create the admin user here to avoid bcrypt hashing in every test.
     """
     tmp_dir = tmp_path_factory.mktemp(basename=f"initial_db_file-{uuid.uuid4()}")
     db_path = tmp_dir / "db.sqlite"
     db_url = f"sqlite:///{db_path}"
     engine = create_engine(db_url, echo=False)
     Base.metadata.create_all(engine)
+
+    # Create admin user once per session to avoid bcrypt hashing in every test
+    from antarest.login.model import init_admin_user
+    from antarest.service_creator import SESSION_ARGS
+
+    init_admin_user(engine=engine, session_args=SESSION_ARGS, admin_password="admin")
 
     return db_path
 
@@ -68,9 +76,11 @@ def db_path(tmp_path: Path, initial_db_file: Path) -> Path:
 
 @pytest.fixture
 def app_and_services(tmp_path: Path, db_path: Path) -> Iterable[tuple[FastAPI, Services]]:
+    total_start = time.perf_counter()
     db_url = f"sqlite:///{db_path}"
 
     # Prepare the directories used by the repos
+    t0 = time.perf_counter()
     matrix_dir = tmp_path / "matrix_store"
     blob_dir = tmp_path / "blob_store"
     archive_dir = tmp_path / "archive_dir"
@@ -85,13 +95,19 @@ def app_and_services(tmp_path: Path, db_path: Path) -> Iterable[tuple[FastAPI, S
     tmp_dir.mkdir()
     default_workspace.mkdir()
     ext_workspace_path.mkdir()
+    t1 = time.perf_counter()
+    print(f"[BENCH FIXTURE] Directory creation: {(t1 - t0) * 1000:.1f}ms")
 
     # Extract the sample study
+    t0 = time.perf_counter()
     sta_mini_zip_path = ASSETS_DIR.joinpath("STA-mini.zip")
     with zipfile.ZipFile(sta_mini_zip_path) as zip_output:
         zip_output.extractall(path=ext_workspace_path)
+    t1 = time.perf_counter()
+    print(f"[BENCH FIXTURE] ZIP extraction: {(t1 - t0) * 1000:.1f}ms")
 
     # Generate a "config.yml" file for the app
+    t0 = time.perf_counter()
     template_loader = jinja2.FileSystemLoader(searchpath=ASSETS_DIR)
     template_env = jinja2.Environment(loader=template_loader)
     template = template_env.get_template("config.template.yml")
@@ -112,8 +128,13 @@ def app_and_services(tmp_path: Path, db_path: Path) -> Iterable[tuple[FastAPI, S
                 output_archive_dir=str(output_archive_dir),
             )
         )
+    t1 = time.perf_counter()
+    print(f"[BENCH FIXTURE] Config generation: {(t1 - t0) * 1000:.1f}ms")
 
+    t0 = time.perf_counter()
     app, services = fastapi_app(config_path, RESOURCES_DIR, mount_front=False)
+    t1 = time.perf_counter()
+    print(f"[BENCH FIXTURE] fastapi_app creation: {(t1 - t0) * 1000:.1f}ms")
 
     def is_study_scanned():
         with db():
@@ -122,7 +143,13 @@ def app_and_services(tmp_path: Path, db_path: Path) -> Iterable[tuple[FastAPI, S
             )
             return len(studies) == 1
 
+    t0 = time.perf_counter()
     wait_for(is_study_scanned, timeout=10, sleep_time=0.01)
+    t1 = time.perf_counter()
+    print(f"[BENCH FIXTURE] Watcher wait: {(t1 - t0) * 1000:.1f}ms")
+
+    total_end = time.perf_counter()
+    print(f"[BENCH FIXTURE] Total app_and_services fixture: {(total_end - total_start) * 1000:.1f}ms")
 
     yield app, services
     services.watcher.stop()

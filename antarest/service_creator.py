@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
+import time
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -218,11 +219,34 @@ def build_output_service(
 
 
 def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) -> CoreServices:
+    total_start = time.perf_counter()
+
+    t0 = time.perf_counter()
     event_bus, redis_client = create_event_bus(app_ctxt, config)
+    t1 = time.perf_counter()
+    logger.info(f"[BENCH]   Event bus creation: {(t1 - t0) * 1000:.1f}ms")
+
+    t0 = time.perf_counter()
     cache = build_cache(config=config, redis_client=redis_client)
+    t1 = time.perf_counter()
+    logger.info(f"[BENCH]   Cache creation: {(t1 - t0) * 1000:.1f}ms")
+
+    t0 = time.perf_counter()
     task_service = build_taskjob_manager(app_ctxt, config, event_bus)
+    t1 = time.perf_counter()
+    logger.info(f"[BENCH]   Task manager creation: {(t1 - t0) * 1000:.1f}ms")
+
+    t0 = time.perf_counter()
     filetransfer_service = build_filetransfer_service(app_ctxt, event_bus, config)
+    t1 = time.perf_counter()
+    logger.info(f"[BENCH]   File transfer creation: {(t1 - t0) * 1000:.1f}ms")
+
+    t0 = time.perf_counter()
     login_service = build_login(app_ctxt, config, event_bus=event_bus)
+    t1 = time.perf_counter()
+    logger.info(f"[BENCH]   Login service creation: {(t1 - t0) * 1000:.1f}ms")
+
+    t0 = time.perf_counter()
     matrix_service = build_matrix_service(
         app_ctxt,
         config=config,
@@ -231,8 +255,16 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         user_service=login_service,
         service=None,
     )
+    t1 = time.perf_counter()
+    logger.info(f"[BENCH]   Matrix service creation: {(t1 - t0) * 1000:.1f}ms")
+
+    t0 = time.perf_counter()
     blob_service = build_blob_service(config=config, service=None)
     blob_service.register_usage_provider(DatabaseBlobUsageProvider())
+    t1 = time.perf_counter()
+    logger.info(f"[BENCH]   Blob service creation: {(t1 - t0) * 1000:.1f}ms")
+
+    t0 = time.perf_counter()
     study_service = build_study_service(
         app_ctxt,
         config,
@@ -244,7 +276,10 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         event_bus=event_bus,
         blob_service=blob_service,
     )
+    t1 = time.perf_counter()
+    logger.info(f"[BENCH]   Study service creation: {(t1 - t0) * 1000:.1f}ms")
 
+    t0 = time.perf_counter()
     output_service = build_output_service(
         app_ctxt=app_ctxt,
         cache=cache,
@@ -255,8 +290,16 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         config=config,
         matrix_service=matrix_service,
     )
+    t1 = time.perf_counter()
+    logger.info(f"[BENCH]   Output service creation: {(t1 - t0) * 1000:.1f}ms")
 
+    t0 = time.perf_counter()
     favorite_study_service, favorite_directory_service = build_favorite_service(config=config, app_ctxt=app_ctxt)
+    t1 = time.perf_counter()
+    logger.info(f"[BENCH]   Favorite service creation: {(t1 - t0) * 1000:.1f}ms")
+
+    total_end = time.perf_counter()
+    logger.info(f"[BENCH] Total core services creation: {(total_end - total_start) * 1000:.1f}ms")
 
     if app_ctxt:
         app_ctxt.api_root.include_router(create_output_routes(output_service, filetransfer_service, config))

@@ -347,10 +347,13 @@ def init_admin_user(engine: Engine, session_args: Mapping[str, Any], admin_passw
             session.commit()
 
     with make_session() as session:
-        user = User(id=ADMIN_ID, name=ADMIN_NAME, password=Password(admin_password))
-        with contextlib.suppress(IntegrityError):
-            session.add(user)
-            session.commit()
+        # Check if user already exists before hashing password (bcrypt is slow)
+        existing_user = session.get(User, ADMIN_ID)
+        if existing_user is None:
+            user = User(id=ADMIN_ID, name=ADMIN_NAME, password=Password(admin_password))
+            with contextlib.suppress(IntegrityError):
+                session.add(user)
+                session.commit()
 
     with make_session() as session:
         role = Role(type=RoleType.ADMIN, identity_id=ADMIN_ID, group_id=GROUP_ID)
