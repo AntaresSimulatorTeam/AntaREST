@@ -16,9 +16,7 @@ from typing import Any, Iterator
 from antarest.core.serde.ini_reader import IniReader
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
-from antarest.output.model import OutputVariablesList
-from antarest.output.storage.output_storage import OutputDetails
-from antarest.output.utils import (
+from antarest.output.filestudy.utils import (
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
@@ -29,6 +27,8 @@ from antarest.output.utils import (
     normalize_df_column_names,
     parse_headers,
 )
+from antarest.output.model import OutputVariablesList
+from antarest.output.storage.output_storage import OutputDetails
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency
 

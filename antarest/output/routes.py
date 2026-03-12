@@ -30,6 +30,12 @@ from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.dict_utils import remove_nones
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
+from antarest.output.filestudy.utils import (
+    MCAllAreasQueryFile,
+    MCAllLinksQueryFile,
+    MCIndAreasQueryFile,
+    MCIndLinksQueryFile,
+)
 from antarest.output.model import (
     OutputVariablesInformation,
     OutputVariablesList,
@@ -38,12 +44,6 @@ from antarest.output.model import (
 )
 from antarest.output.service import OutputService
 from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
-from antarest.output.utils import (
-    MCAllAreasQueryFile,
-    MCAllLinksQueryFile,
-    MCIndAreasQueryFile,
-    MCIndLinksQueryFile,
-)
 from antarest.output.variable_view.model import OutputItemId
 from antarest.study.model import MatrixFrequency, MatrixIndex, StudyDownloadDTO
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI

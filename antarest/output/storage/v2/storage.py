@@ -37,6 +37,7 @@ from antarest.output.filestudy.file_output_utils import (
     extract_variables_list,
     find_simulation_log,
 )
+from antarest.output.filestudy.utils import QueryFileType
 from antarest.output.model import OutputVariablesList
 from antarest.output.storage.output_storage import (
     IOutputStorage,
@@ -48,7 +49,6 @@ from antarest.output.storage.v2.repository import (
     DbOutputMetadataV2,
     OutputV2Repository,
 )
-from antarest.output.utils import QueryFileType
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency, MatrixIndex
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI

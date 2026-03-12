@@ -14,8 +14,8 @@ from typing import Annotated, Literal, Tuple, TypeAlias
 from pydantic import BaseModel, Field
 
 from antarest.core.exceptions import OutputVariablesViewError
+from antarest.output.filestudy.utils import MCIndAreasQueryFile, MCIndLinksQueryFile, QueryFileType
 from antarest.output.model import OutputVariablesList
-from antarest.output.utils import MCIndAreasQueryFile, MCIndLinksQueryFile, QueryFileType
 
 
 class ThermalClusterOutputId(BaseModel, extra="forbid"):

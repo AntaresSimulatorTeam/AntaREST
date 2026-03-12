@@ -46,10 +46,20 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.output.aggregator_management import (
+from antarest.output.filestudy.aggregator_management import (
     AREA_COL,
     CLUSTER_ID_COL,
     LINK_COL,
+)
+from antarest.output.filestudy.utils import (
+    MCYEAR_COL,
+    MCAllAreasQueryFile,
+    MCAllLinksQueryFile,
+    MCIndAreasQueryFile,
+    MCIndLinksQueryFile,
+    QueryFileType,
+    add_time_index_to_dataframe,
+    split_concatenated_columns_from_dataframe,
 )
 from antarest.output.model import (
     OutputVariablesInformation,
@@ -62,16 +72,6 @@ from antarest.output.storage.output_storage import (
     OutputDetails,
     OutputMetadata,
     OutputStorageType,
-)
-from antarest.output.utils import (
-    MCYEAR_COL,
-    MCAllAreasQueryFile,
-    MCAllLinksQueryFile,
-    MCIndAreasQueryFile,
-    MCIndLinksQueryFile,
-    QueryFileType,
-    add_time_index_to_dataframe,
-    split_concatenated_columns_from_dataframe,
 )
 from antarest.output.variable_view.db import create_output_view_db_model, get_output_view_inside_db
 from antarest.output.variable_view.matrix_usage_provider import OutputVariablesMatrixUsageProvider
