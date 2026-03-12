@@ -69,12 +69,12 @@ function FilterControls({
         size="extra-small"
         color="primary"
       >
-        <Tooltip title={t("studies.filters.strictfolder")}>
+        <Tooltip title={t("studies.filters.noDescendants")}>
           <ToggleButton value={false}>
             <FolderIcon />
           </ToggleButton>
         </Tooltip>
-        <Tooltip title={t("studies.filters.showChildrens")}>
+        <Tooltip title={t("studies.filters.showDescendants")}>
           <ToggleButton value={true}>
             <AccountTreeIcon />
           </ToggleButton>
