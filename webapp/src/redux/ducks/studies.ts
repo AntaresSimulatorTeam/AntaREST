@@ -30,6 +30,7 @@ import {
   createEntityAdapter,
   createReducer,
 } from "@reduxjs/toolkit";
+import * as R from "ramda";
 import { isAxiosError } from "axios";
 import type { O } from "ts-toolbelt";
 import { getFavoriteStudyIds } from "../selectors";
@@ -303,14 +304,10 @@ export default createReducer(initialState, (builder) => {
       draftState.favorites = action.payload;
     })
     .addCase(updateStudyFilters, (draftState, action) => {
-      const { managed, external, ...rest } = action.payload;
-      Object.assign(draftState.filters, rest);
-      if (managed) {
-        Object.assign(draftState.filters.managed, managed);
-      }
-      if (external) {
-        Object.assign(draftState.filters.external, external);
-      }
+      draftState.filters = R.mergeDeepRight(
+        draftState.filters,
+        action.payload,
+      ) as typeof draftState.filters;
       draftState.scrollPosition = 0;
     })
     .addCase(updateStudySortConfig, (draftState, action) => {

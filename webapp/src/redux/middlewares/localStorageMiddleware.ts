@@ -80,11 +80,13 @@ localStorageMiddleware.startListening({
   },
 });
 
-// When a user opens a folder, it should remain open after a page refresh.
+// Persist navigation state so the selected directory remains open after a page refresh.
+// Search and filter-panel fields are intentionally excluded.
 localStorageMiddleware.startListening({
   actionCreator: updateStudyFilters,
   effect: (_, listenerApi) => {
-    storage.setItem(StorageKey.StudiesFilters, getStudyFilters(listenerApi.getState()));
+    const { activeTree, managed, external } = getStudyFilters(listenerApi.getState());
+    storage.setItem(StorageKey.StudiesFilters, { activeTree, managed, external });
   },
 });
 
