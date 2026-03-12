@@ -224,12 +224,12 @@ def test_get_time_index(admin_client: TestClient, study_id: str, output_name: st
     # Hourly (default)
     res = client.get(f"/v1/studies/{study_id}/output/{output_name}/time-index?frequency=hourly")
     assert res.status_code == 200, res.json()
-    assert res.json() == {"first_week_size": 7, "level": "hourly", "start_date": "2018-01-01 00:00:00", "steps": 24}
+    assert res.json() == {"first_week_size": 7, "level": "hourly", "start_date": "2018-01-01 00:00:00", "steps": 168}
 
     # Daily
     res = client.get(f"/v1/studies/{study_id}/output/{output_name}/time-index?frequency=daily")
     assert res.status_code == 200, res.json()
-    assert res.json() == {"first_week_size": 7, "level": "daily", "start_date": "2018-01-01 00:00:00", "steps": 1}
+    assert res.json() == {"first_week_size": 7, "level": "daily", "start_date": "2018-01-01 00:00:00", "steps": 7}
 
     # Weekly
     res = client.get(f"/v1/studies/{study_id}/output/{output_name}/time-index?frequency=weekly")

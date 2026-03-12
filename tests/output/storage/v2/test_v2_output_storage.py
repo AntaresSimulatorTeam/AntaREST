@@ -224,11 +224,11 @@ def test_import_output_time_index(storage: V2OutputStorage, study_id: str, outpu
 
         hourly_index = storage.get_output_time_index(study_id, "20201014-1427eco", MatrixFrequency.HOURLY)
         assert hourly_index == MatrixIndex(
-            start_date="2018-01-01 00:00:00", steps=24, first_week_size=7, level=MatrixFrequency.HOURLY
+            start_date="2018-01-01 00:00:00", steps=168, first_week_size=7, level=MatrixFrequency.HOURLY
         )
         daily_index = storage.get_output_time_index(study_id, "20201014-1427eco", MatrixFrequency.DAILY)
         assert daily_index == MatrixIndex(
-            start_date="2018-01-01 00:00:00", steps=1, first_week_size=7, level=MatrixFrequency.DAILY
+            start_date="2018-01-01 00:00:00", steps=7, first_week_size=7, level=MatrixFrequency.DAILY
         )
         weekly_index = storage.get_output_time_index(study_id, "20201014-1427eco", MatrixFrequency.WEEKLY)
         assert weekly_index == MatrixIndex(

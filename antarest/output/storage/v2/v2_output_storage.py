@@ -204,7 +204,7 @@ class V2OutputStorage(IOutputStorage):
                     january_first_weekday=simulation_range.january_1st_weekday,
                     leap_year=simulation_range.leap_year,
                     start_day=simulation_range.start_day,
-                    end_day=simulation_range.start_day,
+                    end_day=simulation_range.end_day,
                     first_weekday=simulation_range.first_weekday,
                 )
             )
