@@ -13,7 +13,7 @@
  */
 
 import CustomScrollbar from "@/components/CustomScrollbar";
-import { useScrollRestoration } from "@/hooks/useScrollRestoration";
+import { useScrollRestorationOS } from "@/hooks/scroll/useScrollRestorationOS";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import HomeIcon from "@mui/icons-material/Home";
 import { Box, IconButton, Stack, Tooltip, Typography } from "@mui/material";
@@ -54,7 +54,7 @@ function TreeSection({
 }: Props) {
   const { container, iconColor, titleColor } = variantStyles[variant];
   const { t } = useTranslation();
-  const scrollEvents = useScrollRestoration(scrollKey);
+  const scrollEvents = useScrollRestorationOS(scrollKey);
 
   ////////////////////////////////////////////////////////////////
   // JSX
