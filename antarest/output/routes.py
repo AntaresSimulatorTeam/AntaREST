@@ -134,7 +134,12 @@ def create_output_routes(config: Config) -> APIRouter:
         status_code=HTTPStatus.OK,
         summary="Convert output to another storage",
     )
-    def convert_output(uuid: UuidStr, output_id: SanitizedStr, storage_type: OutputStorageType) -> str | None:
+    def convert_output(
+        uuid: UuidStr,
+        output_id: SanitizedStr,
+        storage_type: OutputStorageType,
+        output_service: OutputService = Depends(get_output_service),
+    ) -> str | None:
         logger.info(f"Converting output {uuid} / {output_id} to {storage_type} storage")
         output_service.convert_output(uuid, output_id, storage_type)
         return output_id
