@@ -12,7 +12,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "f9ecc0607cc5"
-down_revision = "8a9a91f6a2bc"
+down_revision = "6f8e2a9c1b3d"
 branch_labels = None
 depends_on = None
 
@@ -20,7 +20,7 @@ depends_on = None
 def upgrade():
     op.create_table(
         "output_v2_metadata",
-        sa.Column("study_id", sa.String(), nullable=False, primary_key=True),
+        sa.Column("study_id", sa.String(36), nullable=False, primary_key=True),
         sa.Column("output_name", sa.String(), nullable=False, primary_key=True),
         sa.Column("archived", sa.Boolean(), nullable=False),
         sa.Column("mode", sa.String(), nullable=False),
