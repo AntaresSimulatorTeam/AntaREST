@@ -532,27 +532,27 @@ def _parallel_scan_for_studies(
             if in_flight == 0:
                 done_event.set()
 
-    def _scan_one(dir_path: Path) -> None:
+    def _scan_one(dir_str: str) -> None:
         nonlocal in_flight
         try:
-            dir_key = str(dir_path)
             try:
-                current_mtime = os.stat(dir_path).st_mtime
+                current_mtime = os.stat(dir_str).st_mtime
             except OSError:
                 return
 
-            cached = _scan_cache.get(dir_key)
+            cached = _scan_cache.get(dir_str)
 
             if cached is not None and cached[0] == current_mtime:
                 # mtime unchanged: reuse cached result, update scan_id
-                _, child_paths, is_study, _ = cached
-                _scan_cache[dir_key] = (current_mtime, child_paths, is_study, scan_id)
+                child_paths = cached[1]
+                is_study = cached[2]
+                _scan_cache[dir_str] = (current_mtime, child_paths, is_study, scan_id)
                 if is_study:
-                    results.put(StudyFolder(dir_path, workspace, groups))
+                    results.put(StudyFolder(Path(dir_str), workspace, groups))
                     return
-                children = [Path(p) for p in child_paths]
             else:
                 # mtime changed or not cached: check ignore + re-scan
+                dir_path = Path(dir_str)
                 if _should_ignore_folder_compiled(dir_path, compiled_in, compiled_out):
                     return
 
@@ -560,20 +560,20 @@ def _parallel_scan_for_studies(
                 if is_study:
                     logger.debug(f"Study {dir_path.name} found in {workspace}")
                     results.put(StudyFolder(dir_path, workspace, groups))
-                    _scan_cache[dir_key] = (current_mtime, [], True, scan_id)
+                    _scan_cache[dir_str] = (current_mtime, [], True, scan_id)
                     return
 
                 if dir_path.is_dir():
-                    children = [Path(e.path) for e in os.scandir(dir_path) if e.is_dir(follow_symlinks=False)]
+                    child_paths = [e.path for e in os.scandir(dir_str) if e.is_dir(follow_symlinks=False)]
                 else:
-                    children = []
+                    child_paths = []
 
-                _scan_cache[dir_key] = (current_mtime, [str(c) for c in children], False, scan_id)
+                _scan_cache[dir_str] = (current_mtime, child_paths, False, scan_id)
 
-            if children:
+            if child_paths:
                 with lock:
-                    in_flight += len(children)
-                for child in children:
+                    in_flight += len(child_paths)
+                for child in child_paths:
                     executor.submit(_scan_one, child)
         except Exception as e:
             logger.error(f"Failed to scan dir {dir_path}", exc_info=e)
@@ -583,7 +583,7 @@ def _parallel_scan_for_studies(
     with ThreadPoolExecutor(max_workers=_SCAN_WORKERS) as executor:
         with lock:
             in_flight = 1
-        executor.submit(_scan_one, path)
+        executor.submit(_scan_one, str(path))
         done_event.wait()
 
     # Purge stale entries under this scan root
