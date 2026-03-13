@@ -474,6 +474,9 @@ def has_children(path: Path, filter_in: List[str], filter_out: List[str], show_h
 
 _SCAN_WORKERS = 32
 
+# Cache for parallel scan: {dir_path_str: (mtime, child_paths, is_study)}
+_scan_cache: dict[str, tuple[float, List[str], bool]] = {}
+
 
 def rec_scan_for_studies(
     path: Path,
@@ -530,18 +533,43 @@ def _parallel_scan_for_studies(
             if _should_ignore_folder_compiled(dir_path, compiled_in, compiled_out):
                 return
 
-            if (dir_path / "study.antares").exists():
-                logger.debug(f"Study {dir_path.name} found in {workspace}")
-                results.put(StudyFolder(dir_path, workspace, groups))
+            dir_key = str(dir_path)
+            try:
+                current_mtime = os.stat(dir_path).st_mtime
+            except OSError:
                 return
 
-            if dir_path.is_dir():
-                children = [Path(e.path) for e in os.scandir(dir_path) if e.is_dir(follow_symlinks=False)]
-                if children:
-                    with lock:
-                        in_flight += len(children)
-                    for child in children:
-                        executor.submit(_scan_one, child)
+            cached = _scan_cache.get(dir_key)
+
+            if cached is not None and cached[0] == current_mtime:
+                # mtime unchanged: reuse cached result
+                _, child_paths, is_study = cached
+                if is_study:
+                    logger.debug(f"Study {dir_path.name} found in {workspace} (cached)")
+                    results.put(StudyFolder(dir_path, workspace, groups))
+                    return
+                children = [Path(p) for p in child_paths]
+            else:
+                # mtime changed or not cached: re-scan
+                is_study = (dir_path / "study.antares").exists()
+                if is_study:
+                    logger.debug(f"Study {dir_path.name} found in {workspace}")
+                    results.put(StudyFolder(dir_path, workspace, groups))
+                    _scan_cache[dir_key] = (current_mtime, [], True)
+                    return
+
+                if dir_path.is_dir():
+                    children = [Path(e.path) for e in os.scandir(dir_path) if e.is_dir(follow_symlinks=False)]
+                else:
+                    children = []
+
+                _scan_cache[dir_key] = (current_mtime, [str(c) for c in children], False)
+
+            if children:
+                with lock:
+                    in_flight += len(children)
+                for child in children:
+                    executor.submit(_scan_one, child)
         except Exception as e:
             logger.error(f"Failed to scan dir {dir_path}", exc_info=e)
         finally:
