@@ -360,7 +360,8 @@ class Services:
     variable_view_gc: Optional[VariableViewGarbageCollector] = None
 
 
-def store_services_on_app(app: FastAPI, services: Services) -> None:
+def store_services_on_app(app: FastAPI, services: Services, config: Config) -> None:
+    app.state.config = config
     app.state.study_service = services.study
     app.state.directory_service = services.directory
     app.state.explorer = services.explorer

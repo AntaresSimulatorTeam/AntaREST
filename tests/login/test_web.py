@@ -41,6 +41,7 @@ from antarest.login.model import (
     UserInfo,
 )
 from antarest.login.web import create_login_api, create_user_api
+from antarest.main import add_exception_handlers
 
 
 def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
@@ -58,6 +59,7 @@ def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
         )
 
     app = FastAPI(title=__name__)
+    add_exception_handlers(app)
     app.state.login_service = service
     app.include_router(create_login_api())
     app.include_router(create_user_api(config))

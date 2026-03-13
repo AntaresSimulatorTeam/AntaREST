@@ -21,16 +21,18 @@ from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 from antarest.blobstore.service import BlobService
-from antarest.core.application import create_app_ctxt
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import Config, SecurityConfig, StorageConfig, WorkspaceConfig
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.eventbus import DummyEventBusService
+from antarest.main import add_exception_handlers
 from antarest.matrixstore.service import MatrixService
+from antarest.output.routes import create_output_routes
 from antarest.service_creator import build_output_service
 from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.web.studies_blueprint import create_study_routes
 from tests.helpers import create_raw_study, with_admin_user
 from tests.storage.conftest import SimpleFileTransferManager, SimpleSyncTaskService
 from tests.storage.integration.conftest import UUID
@@ -64,13 +66,12 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> 
     repo = Mock()
     repo.get.return_value = md
 
-    build_ctxt = create_app_ctxt(FastAPI(title=__name__))
     ftm = SimpleFileTransferManager(Config(storage=StorageConfig(tmp_dir=tmp_dir)))
     task_service = SimpleSyncTaskService()
     matrix_service = Mock(spec=MatrixService)
     blob_service = Mock(spec=BlobService)
-    study_service = build_study_service(
-        build_ctxt,
+    study_service, _ = build_study_service(
+        config,
         cache=cache,
         user_service=Mock(),
         task_service=task_service,
@@ -79,11 +80,9 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> 
         blob_service=blob_service,
         generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
         metadata_repository=repo,
-        config=config,
     )
 
-    build_output_service(
-        build_ctxt,
+    output_service = build_output_service(
         study_service=study_service,
         cache=cache,
         task_service=task_service,
@@ -93,8 +92,18 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> 
         config=config,
     )
 
+    app = FastAPI(title=__name__)
+    add_exception_handlers(app)
+    app.state.config = config
+    app.state.study_service = study_service
+    app.state.output_service = output_service
+    app.state.file_transfer_manager = ftm
+    app.state.task_service = task_service
+    app.include_router(create_study_routes(config))
+    app.include_router(create_output_routes(config))
+
     # Simulate the download of data using a streamed request
-    client = TestClient(build_ctxt.build())
+    client = TestClient(app)
     if client.stream is False:
         # `TestClient` is based on `Requests` (old way before AntaREST-v2.15)
         # noinspection PyArgumentList

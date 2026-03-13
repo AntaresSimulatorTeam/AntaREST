@@ -334,7 +334,7 @@ def fastapi_app(
     services = create_services(config)
 
     # 6. Store services on app.state so Depends() can resolve them
-    store_services_on_app(application, services)
+    store_services_on_app(application, services, config)
 
     # 7. Wire event bus to websocket connection manager
     connect_event_bus(services.event_bus, ws_manager)

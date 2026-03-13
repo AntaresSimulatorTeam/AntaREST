@@ -209,7 +209,7 @@ def app_and_services(
     connect_event_bus(services.event_bus, ws_manager)
 
     # Store services on the shared app so Depends() resolves them
-    store_services_on_app(application, services)
+    store_services_on_app(application, services, config)
 
     # Start the watcher so it scans the ext_workspace
     if services.watcher:
