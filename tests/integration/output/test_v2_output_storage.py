@@ -19,7 +19,10 @@ from starlette.testclient import TestClient
 from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.archives import archive_dir
 from tests.integration.utils import wait_task_completion
+from tests.test_helpers.dates import utc_to_local
 from tests.test_helpers.download import download_to_file
+
+EXPECTED_DATE = utc_to_local("20201014-1227")
 
 
 @pytest.fixture(scope="session")
@@ -61,7 +64,7 @@ def output_and_study(admin_client: TestClient, empty_study_id: str, output_zip: 
     )
     assert res.status_code == 202, res.json()
     output_name = res.json()
-    assert output_name == "20201014-1427eco"
+    assert output_name == f"{EXPECTED_DATE}eco"
     return empty_study_id, output_name
 
 
@@ -86,7 +89,7 @@ def test_import(admin_client: TestClient, empty_study_id: str, output_zip: Path)
     )
     assert res.status_code == 202, res.json()
     output_name = res.json()
-    assert output_name == "20201014-1427eco"
+    assert output_name == f"{EXPECTED_DATE}eco"
 
     # Check output metadata
     res = client.get(
@@ -98,7 +101,7 @@ def test_import(admin_client: TestClient, empty_study_id: str, output_zip: Path)
         "archived": False,
         "byYear": False,
         "mode": "Economy",
-        "name": "20201014-1427eco",
+        "name": f"{EXPECTED_DATE}eco",
         "nbYears": 1,
         "synthesis": True,
         "storageType": "V2",
@@ -345,7 +348,7 @@ def test_conversion_to_v2(admin_client: TestClient, output_zip: Path, empty_stud
     )
     assert res.status_code == 202, res.json()
     output_name = res.json()
-    assert output_name == "20201014-1427eco"
+    assert output_name == f"{EXPECTED_DATE}eco"
 
     res = client.post(
         f"/v1/studies/{study_id}/output/{output_name}/_convert?storage_type=V2",
@@ -358,7 +361,7 @@ def test_conversion_to_v2(admin_client: TestClient, output_zip: Path, empty_stud
             "archived": False,
             "byYear": False,
             "mode": "Economy",
-            "name": "20201014-1427eco",
+            "name": f"{EXPECTED_DATE}eco",
             "nbYears": 1,
             "synthesis": True,
             "storageType": "V2",
