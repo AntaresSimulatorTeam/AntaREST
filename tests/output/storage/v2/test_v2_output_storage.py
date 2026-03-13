@@ -28,6 +28,9 @@ from antarest.output.storage.v2.repository import OutputV2Repository
 from antarest.output.storage.v2.storage import V2OutputStorage
 from antarest.study.model import MatrixFrequency, MatrixIndex, Study
 from antarest.study.repository import StudyMetadataRepository
+from tests.test_helpers.dates import utc_to_local
+
+EXPECTED_DATE = utc_to_local("20201014-1227")
 
 
 @pytest.fixture
@@ -90,44 +93,44 @@ def test_storage(
 ):
     with db():
         # Check there is no output at first for that study
-        assert not storage.output_exists(study_id="my-study", output_id="20201014-1427eco")
+        assert not storage.output_exists(study_id="my-study", output_id=f"{EXPECTED_DATE}eco")
         assert storage.list_outputs(study_id="my-study") == []
 
         # Import output
         output_name = storage.import_output("my-study", output_path)
-        assert output_name == "20201014-1427eco"
+        assert output_name == f"{EXPECTED_DATE}eco"
 
         # Check output exists
-        assert storage.output_exists(study_id="my-study", output_id="20201014-1427eco")
-        assert not storage.is_output_archived(study_id="my-study", output_id="20201014-1427eco")
+        assert storage.output_exists(study_id="my-study", output_id=f"{EXPECTED_DATE}eco")
+        assert not storage.is_output_archived(study_id="my-study", output_id=f"{EXPECTED_DATE}eco")
 
         # Check output appears in list of study outputs
         study_outputs = storage.list_outputs(study_id="my-study")
         assert len(study_outputs) == 1
         study_output = study_outputs[0]
-        assert study_output.id == "20201014-1427eco"
+        assert study_output.id == f"{EXPECTED_DATE}eco"
         assert not study_output.archived
         assert len(lfs.list_files()) == 1
 
         # Check output export works
         export_path = tmp_path / "exported.zip"
-        storage.export_output(study_id="my-study", output_id="20201014-1427eco", target=export_path)
+        storage.export_output(study_id="my-study", output_id=f"{EXPECTED_DATE}eco", target=export_path)
         assert export_path.exists()
         assert zipfile.is_zipfile(export_path)
 
         # Archive output
-        storage.archive_study_output(study_id="my-study", output_id="20201014-1427eco")
-        assert storage.is_output_archived(study_id="my-study", output_id="20201014-1427eco")
+        storage.archive_study_output(study_id="my-study", output_id=f"{EXPECTED_DATE}eco")
+        assert storage.is_output_archived(study_id="my-study", output_id=f"{EXPECTED_DATE}eco")
 
         # Check we can still download it
         export_path = tmp_path / "exported-2.zip"
-        storage.export_output(study_id="my-study", output_id="20201014-1427eco", target=export_path)
+        storage.export_output(study_id="my-study", output_id=f"{EXPECTED_DATE}eco", target=export_path)
         assert export_path.exists()
         assert zipfile.is_zipfile(export_path)
 
         # Delete output
-        storage.delete_output(study_id="my-study", output_id="20201014-1427eco")
-        assert not storage.output_exists(study_id="my-study", output_id="20201014-1427eco")
+        storage.delete_output(study_id="my-study", output_id=f"{EXPECTED_DATE}eco")
+        assert not storage.output_exists(study_id="my-study", output_id=f"{EXPECTED_DATE}eco")
         assert storage.list_outputs(study_id="my-study") == []
         assert lfs.list_files() == []
 
@@ -159,10 +162,10 @@ def test_import_archive(
     with db():
         output_name = storage.import_output(study_id, archive_path)
 
-    assert output_name == "20201014-1427eco"
+    assert output_name == f"{EXPECTED_DATE}eco"
     with db():
-        assert storage.output_exists(study_id=study_id, output_id="20201014-1427eco")
-        assert not storage.is_output_archived(study_id=study_id, output_id="20201014-1427eco")
+        assert storage.output_exists(study_id=study_id, output_id=f"{EXPECTED_DATE}eco")
+        assert not storage.is_output_archived(study_id=study_id, output_id=f"{EXPECTED_DATE}eco")
 
 
 @pytest.mark.parametrize("nested", [False, True])
@@ -180,22 +183,22 @@ def test_import_archive_stream(
         with open(archive_path, "rb") as archive_io:
             output_name = storage.import_output(study_id, archive_io)
 
-    assert output_name == "20201014-1427eco"
+    assert output_name == f"{EXPECTED_DATE}eco"
     with db():
-        assert storage.output_exists(study_id=study_id, output_id="20201014-1427eco")
-        assert not storage.is_output_archived(study_id=study_id, output_id="20201014-1427eco")
+        assert storage.output_exists(study_id=study_id, output_id=f"{EXPECTED_DATE}eco")
+        assert not storage.is_output_archived(study_id=study_id, output_id=f"{EXPECTED_DATE}eco")
 
 
 def test_import_output_with_existing_logs(storage: V2OutputStorage, study_id: str, output_path: Path) -> None:
     with db():
         output_name = storage.import_output(study_id, output_path)
-        assert output_name == "20201014-1427eco"
+        assert output_name == f"{EXPECTED_DATE}eco"
 
-        assert storage.output_exists(study_id, "20201014-1427eco")
+        assert storage.output_exists(study_id, f"{EXPECTED_DATE}eco")
 
-        out_logs = storage.get_logs(study_id, "20201014-1427eco", LogType.STDOUT)
+        out_logs = storage.get_logs(study_id, f"{EXPECTED_DATE}eco", LogType.STDOUT)
         assert len(out_logs.splitlines()) == 239
-        assert storage.get_logs(study_id, "20201014-1427eco", LogType.STDERR) == ""
+        assert storage.get_logs(study_id, f"{EXPECTED_DATE}eco", LogType.STDERR) == ""
 
 
 def test_import_output_override_logs(
@@ -207,34 +210,34 @@ def test_import_output_override_logs(
     err_path.write_text("err log")
     with db():
         output_name = storage.import_output(study_id, output_path, logs=SimulationLogs(out_path, err_path))
-        assert output_name == "20201014-1427eco"
+        assert output_name == f"{EXPECTED_DATE}eco"
 
-        assert storage.output_exists(study_id, "20201014-1427eco")
+        assert storage.output_exists(study_id, f"{EXPECTED_DATE}eco")
 
-        assert storage.get_logs(study_id, "20201014-1427eco", LogType.STDOUT) == "out log"
-        assert storage.get_logs(study_id, "20201014-1427eco", LogType.STDERR) == "err log"
+        assert storage.get_logs(study_id, f"{EXPECTED_DATE}eco", LogType.STDOUT) == "out log"
+        assert storage.get_logs(study_id, f"{EXPECTED_DATE}eco", LogType.STDERR) == "err log"
 
 
 def test_import_output_time_index(storage: V2OutputStorage, study_id: str, output_path: Path) -> None:
     with db():
         output_name = storage.import_output(study_id, output_path)
-        assert output_name == "20201014-1427eco"
+        assert output_name == f"{EXPECTED_DATE}eco"
 
-        assert storage.output_exists(study_id, "20201014-1427eco")
+        assert storage.output_exists(study_id, f"{EXPECTED_DATE}eco")
 
-        hourly_index = storage.get_output_time_index(study_id, "20201014-1427eco", MatrixFrequency.HOURLY)
+        hourly_index = storage.get_output_time_index(study_id, f"{EXPECTED_DATE}eco", MatrixFrequency.HOURLY)
         assert hourly_index == MatrixIndex(
             start_date="2018-01-01 00:00:00", steps=168, first_week_size=7, level=MatrixFrequency.HOURLY
         )
-        daily_index = storage.get_output_time_index(study_id, "20201014-1427eco", MatrixFrequency.DAILY)
+        daily_index = storage.get_output_time_index(study_id, f"{EXPECTED_DATE}eco", MatrixFrequency.DAILY)
         assert daily_index == MatrixIndex(
             start_date="2018-01-01 00:00:00", steps=7, first_week_size=7, level=MatrixFrequency.DAILY
         )
-        weekly_index = storage.get_output_time_index(study_id, "20201014-1427eco", MatrixFrequency.WEEKLY)
+        weekly_index = storage.get_output_time_index(study_id, f"{EXPECTED_DATE}eco", MatrixFrequency.WEEKLY)
         assert weekly_index == MatrixIndex(
             start_date="2018-01-01 00:00:00", steps=1, first_week_size=7, level=MatrixFrequency.WEEKLY
         )
-        monthly_index = storage.get_output_time_index(study_id, "20201014-1427eco", MatrixFrequency.MONTHLY)
+        monthly_index = storage.get_output_time_index(study_id, f"{EXPECTED_DATE}eco", MatrixFrequency.MONTHLY)
         assert monthly_index == MatrixIndex(
             start_date="2018-01-01 00:00:00", steps=1, first_week_size=7, level=MatrixFrequency.MONTHLY
         )
@@ -243,11 +246,11 @@ def test_import_output_time_index(storage: V2OutputStorage, study_id: str, outpu
 def test_import_output_variable_list(storage: V2OutputStorage, study_id: str, output_path: Path) -> None:
     with db():
         output_name = storage.import_output(study_id, output_path)
-        assert output_name == "20201014-1427eco"
+        assert output_name == f"{EXPECTED_DATE}eco"
 
-        assert storage.output_exists(study_id, "20201014-1427eco")
+        assert storage.output_exists(study_id, f"{EXPECTED_DATE}eco")
 
-        variables_list = storage.get_variables_list(study_id, "20201014-1427eco")
+        variables_list = storage.get_variables_list(study_id, f"{EXPECTED_DATE}eco")
         assert variables_list.model_dump() == {
             "mc_all": {
                 "areas": [
@@ -571,14 +574,14 @@ def test_write_imported_output_to_dir(
         with open(archive_path, "rb") as archive_io:
             output_name = storage.import_output(study_id, archive_io)
 
-    assert output_name == "20201014-1427eco"
+    assert output_name == f"{EXPECTED_DATE}eco"
     with db():
-        assert storage.output_exists(study_id=study_id, output_id="20201014-1427eco")
+        assert storage.output_exists(study_id=study_id, output_id=f"{EXPECTED_DATE}eco")
         parent_dir = tmp_path / "export"
         parent_dir.mkdir()
-        storage.write_output_to_dir(study_id, "20201014-1427eco", parent_dir)
-        assert (parent_dir / "20201014-1427eco").exists()
-        assert (parent_dir / "20201014-1427eco" / "about-the-study" / "parameters.ini").exists()
+        storage.write_output_to_dir(study_id, f"{EXPECTED_DATE}eco", parent_dir)
+        assert (parent_dir / f"{EXPECTED_DATE}eco").exists()
+        assert (parent_dir / f"{EXPECTED_DATE}eco" / "about-the-study" / "parameters.ini").exists()
 
 
 def test_copy_output(
@@ -592,57 +595,57 @@ def test_copy_output(
         study_repo.save(Study(id="my-copy", name="name", version="9.2", path=""))
 
         output_name = storage.import_output(study_id, output_path)
-        assert output_name == "20201014-1427eco"
+        assert output_name == f"{EXPECTED_DATE}eco"
 
-        assert storage.output_exists(study_id, "20201014-1427eco")
+        assert storage.output_exists(study_id, f"{EXPECTED_DATE}eco")
 
-        storage.copy_output(study_id, "my-copy", "20201014-1427eco")
+        storage.copy_output(study_id, "my-copy", f"{EXPECTED_DATE}eco")
 
-        assert storage.output_exists(study_id, "20201014-1427eco")
-        assert storage.output_exists("my-copy", "20201014-1427eco")
+        assert storage.output_exists(study_id, f"{EXPECTED_DATE}eco")
+        assert storage.output_exists("my-copy", f"{EXPECTED_DATE}eco")
 
         # Verify the copied output has the same details
-        src_details = storage.get_output_details(study_id, "20201014-1427eco")
-        copy_details = storage.get_output_details("my-copy", "20201014-1427eco")
+        src_details = storage.get_output_details(study_id, f"{EXPECTED_DATE}eco")
+        copy_details = storage.get_output_details("my-copy", f"{EXPECTED_DATE}eco")
         assert src_details == copy_details
 
         # Verify the copied output has the same logs
-        src_out_logs = storage.get_logs(study_id, "20201014-1427eco", LogType.STDOUT)
-        copy_out_logs = storage.get_logs("my-copy", "20201014-1427eco", LogType.STDOUT)
+        src_out_logs = storage.get_logs(study_id, f"{EXPECTED_DATE}eco", LogType.STDOUT)
+        copy_out_logs = storage.get_logs("my-copy", f"{EXPECTED_DATE}eco", LogType.STDOUT)
         assert copy_out_logs == src_out_logs
         assert len(copy_out_logs.splitlines()) == 239
 
-        src_err_logs = storage.get_logs(study_id, "20201014-1427eco", LogType.STDERR)
-        copy_err_logs = storage.get_logs("my-copy", "20201014-1427eco", LogType.STDERR)
+        src_err_logs = storage.get_logs(study_id, f"{EXPECTED_DATE}eco", LogType.STDERR)
+        copy_err_logs = storage.get_logs("my-copy", f"{EXPECTED_DATE}eco", LogType.STDERR)
         assert copy_err_logs == src_err_logs
         assert copy_err_logs == ""
 
         # Verify the copied output has the same variables list
-        src_variables = storage.get_variables_list(study_id, "20201014-1427eco")
-        copy_variables = storage.get_variables_list("my-copy", "20201014-1427eco")
+        src_variables = storage.get_variables_list(study_id, f"{EXPECTED_DATE}eco")
+        copy_variables = storage.get_variables_list("my-copy", f"{EXPECTED_DATE}eco")
         assert copy_variables.model_dump() == src_variables.model_dump()
 
         # Verify the copied output can be exported
         export_path = tmp_path / "copied-export.zip"
-        storage.export_output("my-copy", "20201014-1427eco", target=export_path)
+        storage.export_output("my-copy", f"{EXPECTED_DATE}eco", target=export_path)
         assert export_path.exists()
         assert zipfile.is_zipfile(export_path)
 
         # Verify the copied output can be archived and unarchived
-        assert not storage.is_output_archived("my-copy", "20201014-1427eco")
-        storage.archive_study_output("my-copy", "20201014-1427eco")
-        assert storage.is_output_archived("my-copy", "20201014-1427eco")
-        storage.unarchive_study_output("my-copy", "20201014-1427eco")
-        assert not storage.is_output_archived("my-copy", "20201014-1427eco")
+        assert not storage.is_output_archived("my-copy", f"{EXPECTED_DATE}eco")
+        storage.archive_study_output("my-copy", f"{EXPECTED_DATE}eco")
+        assert storage.is_output_archived("my-copy", f"{EXPECTED_DATE}eco")
+        storage.unarchive_study_output("my-copy", f"{EXPECTED_DATE}eco")
+        assert not storage.is_output_archived("my-copy", f"{EXPECTED_DATE}eco")
 
         # Verify the copied output has the same time index
-        src_hourly_index = storage.get_output_time_index(study_id, "20201014-1427eco", MatrixFrequency.HOURLY)
-        copy_hourly_index = storage.get_output_time_index("my-copy", "20201014-1427eco", MatrixFrequency.HOURLY)
+        src_hourly_index = storage.get_output_time_index(study_id, f"{EXPECTED_DATE}eco", MatrixFrequency.HOURLY)
+        copy_hourly_index = storage.get_output_time_index("my-copy", f"{EXPECTED_DATE}eco", MatrixFrequency.HOURLY)
         assert copy_hourly_index == src_hourly_index
 
         # Verify the copied output can be written to directory
         parent_dir = tmp_path / "copied-export-dir"
         parent_dir.mkdir()
-        storage.write_output_to_dir("my-copy", "20201014-1427eco", parent_dir)
-        assert (parent_dir / "20201014-1427eco").exists()
-        assert (parent_dir / "20201014-1427eco" / "about-the-study" / "parameters.ini").exists()
+        storage.write_output_to_dir("my-copy", f"{EXPECTED_DATE}eco", parent_dir)
+        assert (parent_dir / f"{EXPECTED_DATE}eco").exists()
+        assert (parent_dir / f"{EXPECTED_DATE}eco" / "about-the-study" / "parameters.ini").exists()
