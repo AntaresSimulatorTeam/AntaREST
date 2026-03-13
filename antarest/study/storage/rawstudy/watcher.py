@@ -115,9 +115,7 @@ class Watcher(IService):
             try:
                 if not self.should_stop:
                     if not self.config.desktop_mode:
-                        t0 = time()
                         self.scan()
-                        print(f"[TIMER] Auto scan total: {time() - t0:.2f}s")
                     else:
                         self.clean_desktop_studies()
             except Exception as e:
@@ -144,9 +142,7 @@ class Watcher(IService):
 
         # noinspection PyUnusedLocal
         def scan_task(notifier: ITaskNotifier) -> TaskResult:
-            t0 = time()
             self.scan(recursive, workspace, path)
-            print(f"[TIMER] Oneshot scan total: {time() - t0:.2f}s")
             return TaskResult(success=True, message="Scan completed")
 
         return self.task_service.add_task(
@@ -182,7 +178,6 @@ class Watcher(IService):
         # max depth when we call rec_scan_for_studies
         max_depth = None if recursive else 1
 
-        t_scan_start = time()
         if workspace_directory_path is not None and workspace_name:
             workspace = get_workspace_from_config(self.config, workspace_name)
             directory_path = get_folder_from_workspace(workspace, workspace_directory_path)
@@ -202,15 +197,12 @@ class Watcher(IService):
                     logger.info(f"Workspace {name} scanned in {stopwatch.lap()}s")
         else:
             raise ValueError("Both workspace_name and directory_path must be specified")
-        print(f"[TIMER] Filesystem scan: {time() - t_scan_start:.2f}s ({len(studies)} studies found)")
-        t_sync_start = time()
         with db():
             logger.info(f"Waiting for FileLock to synchronize {directory_path or 'all studies'}")
             with FileLock(Watcher.SCAN_LOCK):
                 logger.info(f"FileLock acquired to synchronize for {directory_path or 'all studies'}")
                 self.study_service.sync_studies_on_disk(studies, directory_path, recursive)
                 logger.info(f"{directory_path or 'All studies'} synchronized in {stopwatch.since_start}s")
-        print(f"[TIMER] DB sync: {time() - t_sync_start:.2f}s")
 
     def clean_desktop_studies(
         self,
