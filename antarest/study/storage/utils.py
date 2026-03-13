@@ -16,9 +16,12 @@ import math
 import os
 import re
 import shutil
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from io import StringIO
 from pathlib import Path
+from queue import SimpleQueue
 from re import Pattern
 from typing import List, Optional, Sequence, cast
 from uuid import uuid4
@@ -469,6 +472,9 @@ def has_children(path: Path, filter_in: List[str], filter_out: List[str], show_h
     return False
 
 
+_SCAN_WORKERS = 32
+
+
 def rec_scan_for_studies(
     path: Path,
     workspace: str,
@@ -494,7 +500,63 @@ def rec_scan_for_studies(
         A list of StudyFolder objects representing found studies.
     """
     compiled_in, compiled_out = _compile_filters(filter_in, filter_out)
-    return _rec_scan_for_studies(path, workspace, groups, compiled_in, compiled_out, max_depth)
+    if max_depth is not None:
+        return _rec_scan_for_studies(path, workspace, groups, compiled_in, compiled_out, max_depth)
+    return _parallel_scan_for_studies(path, workspace, groups, compiled_in, compiled_out)
+
+
+def _parallel_scan_for_studies(
+    path: Path,
+    workspace: str,
+    groups: List[Group],
+    compiled_in: List[re.Pattern[str]],
+    compiled_out: List[re.Pattern[str]],
+) -> List[StudyFolder]:
+    results: SimpleQueue = SimpleQueue()
+    lock = threading.Lock()
+    in_flight = 0
+    done_event = threading.Event()
+
+    def _decrement() -> None:
+        nonlocal in_flight
+        with lock:
+            in_flight -= 1
+            if in_flight == 0:
+                done_event.set()
+
+    def _scan_one(dir_path: Path) -> None:
+        nonlocal in_flight
+        try:
+            if _should_ignore_folder_compiled(dir_path, compiled_in, compiled_out):
+                return
+
+            if (dir_path / "study.antares").exists():
+                logger.debug(f"Study {dir_path.name} found in {workspace}")
+                results.put(StudyFolder(dir_path, workspace, groups))
+                return
+
+            if dir_path.is_dir():
+                children = [Path(e.path) for e in os.scandir(dir_path) if e.is_dir(follow_symlinks=False)]
+                if children:
+                    with lock:
+                        in_flight += len(children)
+                    for child in children:
+                        executor.submit(_scan_one, child)
+        except Exception as e:
+            logger.error(f"Failed to scan dir {dir_path}", exc_info=e)
+        finally:
+            _decrement()
+
+    with ThreadPoolExecutor(max_workers=_SCAN_WORKERS) as executor:
+        with lock:
+            in_flight = 1
+        executor.submit(_scan_one, path)
+        done_event.wait()
+
+    studies = []
+    while not results.empty():
+        studies.append(results.get())
+    return studies
 
 
 def _rec_scan_for_studies(
