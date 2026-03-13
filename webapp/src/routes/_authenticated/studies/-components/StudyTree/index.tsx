@@ -52,7 +52,7 @@ function StudyTree() {
     dispatch(
       updateStudyFilters({
         activeTree: "external",
-        external: { path: "", strictPath: false },
+        external: { path: "" },
       }),
     );
   };

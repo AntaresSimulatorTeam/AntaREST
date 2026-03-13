@@ -32,16 +32,28 @@ const folderPredicate = R.curry((filters: StudyFilters, study: StudyMetadata) =>
       return false;
     }
 
-    // Root (null directoryId): show all managed studies (global scope)
+    // Root (null directoryId):
+    // showDescendants=false: show only studies with no directory (directoryId === null).
+    // showDescendants=true: show all managed studies (global scope).
     if (managed.directoryId === null) {
-      return true;
+      return managed.showDescendants ? true : study.directoryId === null;
     }
 
-    // A specific directory is selected: scope to that directory and its descendants.
-    // directoryIds contains the selected dir + all descendants (computed on navigation).
-    if (managed.directoryIds) {
-      return !!study.directoryId && managed.directoryIds.includes(study.directoryId);
+    // A specific directory is selected.
+    // showDescendants=false: show only studies directly in the selected directory.
+    // showDescendants=true: show studies in the selected dir + all descendants.
+    if (!managed.showDescendants) {
+      return study.directoryId === managed.directoryId;
     }
+
+    // directoryIds is the pre-computed set: selected dir + all descendants.
+    // It is always non-null here because directoryId and directoryIds are set
+    // together by every navigation handler.
+    return (
+      !!managed.directoryIds &&
+      !!study.directoryId &&
+      managed.directoryIds.includes(study.directoryId)
+    );
   }
 
   // activeTree === "external"
@@ -57,9 +69,9 @@ const folderPredicate = R.curry((filters: StudyFilters, study: StudyMetadata) =>
 
   return external.path === ""
     ? true // home: show all external studies
-    : external.strictPath
-      ? studyPath === external.path
-      : `${studyPath}/`.startsWith(`${external.path}/`);
+    : external.showDescendants
+      ? `${studyPath}/`.startsWith(`${external.path}/`)
+      : studyPath === external.path;
 });
 
 const searchPredicate = R.curry((search: StudyFilters["search"], study: StudyMetadata) => {
