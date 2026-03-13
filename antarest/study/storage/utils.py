@@ -535,9 +535,6 @@ def _parallel_scan_for_studies(
     def _scan_one(dir_path: Path) -> None:
         nonlocal in_flight
         try:
-            if _should_ignore_folder_compiled(dir_path, compiled_in, compiled_out):
-                return
-
             dir_key = str(dir_path)
             try:
                 current_mtime = os.stat(dir_path).st_mtime
@@ -551,12 +548,14 @@ def _parallel_scan_for_studies(
                 _, child_paths, is_study, _ = cached
                 _scan_cache[dir_key] = (current_mtime, child_paths, is_study, scan_id)
                 if is_study:
-                    logger.debug(f"Study {dir_path.name} found in {workspace} (cached)")
                     results.put(StudyFolder(dir_path, workspace, groups))
                     return
                 children = [Path(p) for p in child_paths]
             else:
-                # mtime changed or not cached: re-scan
+                # mtime changed or not cached: check ignore + re-scan
+                if _should_ignore_folder_compiled(dir_path, compiled_in, compiled_out):
+                    return
+
                 is_study = (dir_path / "study.antares").exists()
                 if is_study:
                     logger.debug(f"Study {dir_path.name} found in {workspace}")
