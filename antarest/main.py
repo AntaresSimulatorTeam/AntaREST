@@ -14,6 +14,7 @@ import argparse
 import copy
 import logging
 from contextlib import asynccontextmanager
+from http import HTTPStatus
 from pathlib import Path
 from typing import Any, AsyncGenerator, Optional, Tuple
 
@@ -28,22 +29,46 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from antarest import __version__
-from antarest.core.application import AppBuildContext
 from antarest.core.cli import PathType
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
 from antarest.core.filesystem_blueprint import create_file_system_blueprint
+from antarest.core.filetransfer.web import create_file_transfer_api
 from antarest.core.logging.utils import LoggingMiddleware, configure_logger
+from antarest.core.maintenance.web import create_maintenance_api
 from antarest.core.metrics import add_metrics
+from antarest.core.tasks.web import create_tasks_api
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import get_local_path
 from antarest.core.utils.web import tags_metadata
+from antarest.eventbus.web import ConnectionManager, connect_event_bus, register_websocket_routes
 from antarest.fastapi_jwt_auth import AuthJWT
+from antarest.fastapi_jwt_auth.exceptions import AuthJWTException
+from antarest.favorite.web import create_favorite_routes
 from antarest.front import add_front_app
+from antarest.launcher.web import create_launcher_api
 from antarest.login.auth import Auth, JwtSettings
 from antarest.login.model import init_admin_user
-from antarest.service_creator import SESSION_ARGS, Module, Services, create_services, init_db_engine
+from antarest.login.web import create_login_api, create_user_api
+from antarest.matrixstore.web import create_matrix_api
+from antarest.output.routes import create_output_routes
+from antarest.service_creator import (
+    SESSION_ARGS,
+    Module,
+    Services,
+    create_services,
+    init_db_engine,
+    store_services_on_app,
+)
 from antarest.singleton_services import start_all_services
+from antarest.study.web.directory_blueprint import create_directory_routes
+from antarest.study.web.explorer_blueprint import create_explorer_routes
+from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
+from antarest.study.web.studies_blueprint import create_study_routes
+from antarest.study.web.study_data_blueprint import create_study_data_routes
+from antarest.study.web.variant_blueprint import create_study_variant_routes
+from antarest.study.web.watcher_blueprint import create_watcher_routes
+from antarest.study.web.xpansion_studies_blueprint import create_xpansion_routes
 from antarest.tools.admin_lib import clean_locks
 
 logger = logging.getLogger(__name__)
@@ -190,6 +215,54 @@ def add_exception_handlers(application: FastAPI) -> None:
             status_code=500,
         )
 
+    @application.exception_handler(AuthJWTException)
+    def authjwt_exception_handler(request: Request, exc: AuthJWTException) -> Any:
+        return JSONResponse(
+            status_code=HTTPStatus.UNAUTHORIZED,
+            content={"detail": exc.message},
+        )
+
+
+def register_all_routes(api_root: APIRouter, config: Config) -> ConnectionManager:
+    """Register all API routes on the api_root router.
+
+    Routes use FastAPI's Depends() mechanism for service injection,
+    so services don't need to exist yet at registration time.
+
+    Returns the ConnectionManager for websocket event bus wiring.
+    """
+    # Utility routes (config-only, no service injection needed)
+    api_root.include_router(create_utils_routes(config))
+    api_root.include_router(create_file_system_blueprint(config))
+
+    # Study routes
+    api_root.include_router(create_study_routes(config))
+    api_root.include_router(create_raw_study_routes(config))
+    api_root.include_router(create_study_data_routes(config))
+    api_root.include_router(create_study_variant_routes(config))
+    api_root.include_router(create_xpansion_routes(config))
+    api_root.include_router(create_directory_routes(config))
+    api_root.include_router(create_watcher_routes(config))
+    api_root.include_router(create_explorer_routes(config))
+
+    # Login routes
+    api_root.include_router(create_login_api())
+    api_root.include_router(create_user_api(config))
+
+    # Core service routes
+    api_root.include_router(create_tasks_api(config))
+    api_root.include_router(create_file_transfer_api(config))
+    api_root.include_router(create_maintenance_api(config))
+
+    # Domain service routes
+    api_root.include_router(create_matrix_api(config))
+    api_root.include_router(create_launcher_api(config))
+    api_root.include_router(create_output_routes(config))
+    api_root.include_router(create_favorite_routes(config))
+
+    # Websocket route (returns manager so event bus can be wired later)
+    return register_websocket_routes(api_root, config)
+
 
 def fastapi_app(
     config_file: Path,
@@ -223,9 +296,10 @@ def fastapi_app(
 
     api_root = APIRouter(prefix=config.api_prefix)
 
-    app_ctxt = AppBuildContext(application, api_root)
+    # 1. Register all routes (services not yet created — Depends() will resolve at request time)
+    ws_manager = register_all_routes(api_root, config)
 
-    # Database
+    # 2. Database
     engine = init_db_engine(config, auto_upgrade_db, config_file)
     application.add_middleware(DBSessionMiddleware, custom_engine=engine, session_args=SESSION_ARGS)
     # Since Starlette Version 0.24.0, the middlewares are lazily built inside this function
@@ -233,7 +307,7 @@ def fastapi_app(
     # So we manually instantiate it here.
     DBSessionMiddleware(None, custom_engine=engine, session_args=SESSION_ARGS)
 
-    # TODO move that elsewhere
+    # 3. JWT config
     @AuthJWT.load_config  # type: ignore
     def get_config() -> JwtSettings:
         return JwtSettings(
@@ -244,6 +318,7 @@ def fastapi_app(
             authjwt_cookie_csrf_protect=False,
         )
 
+    # 4. Middlewares
     application.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -251,14 +326,20 @@ def fastapi_app(
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    api_root.include_router(create_utils_routes(config))
-    api_root.include_router(create_file_system_blueprint(config))
 
     add_exception_handlers(application)
 
+    # 5. Create services (no route registration — builders are pure service factories now)
     init_admin_user(engine=engine, session_args=SESSION_ARGS, admin_password=config.security.admin_pwd)
-    services = create_services(config, app_ctxt)
+    services = create_services(config)
 
+    # 6. Store services on app.state so Depends() can resolve them
+    store_services_on_app(application, services)
+
+    # 7. Wire event bus to websocket connection manager
+    connect_event_bus(services.event_bus, ws_manager)
+
+    # 8. Include all routes
     application.include_router(api_root)
 
     # Important note:

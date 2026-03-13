@@ -48,7 +48,7 @@ class MaintenanceContext:
 
         engine = init_db_engine(config, auto_upgrade_db=False)
         DBSessionMiddleware(None, custom_engine=engine, session_args=SESSION_ARGS)
-        core_services = create_core_services(app_ctxt=None, config=config)
+        core_services = create_core_services(config=config)
 
         return cls(config, core_services)
 

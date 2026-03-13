@@ -13,9 +13,10 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, Depends
 
 from antarest.core.config import Config
+from antarest.core.dependencies import get_maintenance_service
 from antarest.core.jwt import JWTUser
 from antarest.core.maintenance.service import MaintenanceService
 from antarest.login.auth import Auth
@@ -23,34 +24,31 @@ from antarest.login.auth import Auth
 logger = logging.getLogger(__name__)
 
 
-def create_maintenance_api(service: MaintenanceService, config: Config) -> APIRouter:
-    """
-    Endpoints login implementation
-    Args:
-        service: login facade service
-        config: server config
-
-    Returns:
-
-    """
+def create_maintenance_api(config: Config) -> APIRouter:
     auth = Auth(config)
     bp = APIRouter(prefix="/v1")
 
     @bp.get("/core/maintenance", include_in_schema=False)
-    def get_maintenance_status() -> bool:
+    def get_maintenance_status(service: MaintenanceService = Depends(get_maintenance_service)) -> bool:
         return service.get_maintenance_status()
 
     @bp.post("/core/maintenance", include_in_schema=False)
-    def set_maintenance_status(maintenance: bool, current_user: Annotated[JWTUser, auth.required()]) -> None:
+    def set_maintenance_status(
+        maintenance: bool,
+        current_user: Annotated[JWTUser, auth.required()],
+        service: MaintenanceService = Depends(get_maintenance_service),
+    ) -> None:
         return service.set_maintenance_status(maintenance)
 
     @bp.get("/core/maintenance/message", include_in_schema=False)
-    def get_message_info() -> str:
+    def get_message_info(service: MaintenanceService = Depends(get_maintenance_service)) -> str:
         return service.get_message_info()
 
     @bp.post("/core/maintenance/message", include_in_schema=False)
     def set_message_info(
-        current_user: Annotated[JWTUser, auth.required()], message: Annotated[str, Body()] = ""
+        current_user: Annotated[JWTUser, auth.required()],
+        message: Annotated[str, Body()] = "",
+        service: MaintenanceService = Depends(get_maintenance_service),
     ) -> None:
         return service.set_message_info(message)
 

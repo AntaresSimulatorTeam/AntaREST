@@ -16,12 +16,13 @@ from http import HTTPStatus
 from typing import Annotated, Dict, List, Literal, Mapping, Optional, Sequence
 
 import typing_extensions as te
-from fastapi import APIRouter, Body, Query
+from fastapi import APIRouter, Body, Depends, Query
 from pydantic import Field
 from starlette.responses import RedirectResponse
 
 from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.config import Config
+from antarest.core.dependencies import get_study_service
 from antarest.core.model import JSON, StudyPermissionType
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -140,7 +141,7 @@ class ClusterType(enum.StrEnum):
     THERMALS = "thermals"
 
 
-def create_study_data_routes(study_service: StudyService, config: Config) -> APIRouter:
+def create_study_data_routes(config: Config) -> APIRouter:
     """
     Endpoint implementation for studies area management
 
@@ -166,7 +167,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/comments",
         summary="Get comments",
     )
-    def get_comments(uuid: UuidStr) -> str:
+    def get_comments(
+        uuid: UuidStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> str:
         logger.info(f"Get comments of study {uuid}")
         return study_service.get_comments(uuid)
 
@@ -175,7 +179,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         status_code=HTTPStatus.NO_CONTENT,
         summary="Update comments",
     )
-    def edit_comments(uuid: UuidStr, data: CommentsDto) -> None:
+    def edit_comments(
+        uuid: UuidStr,
+        data: CommentsDto,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> None:
         logger.info(f"Editing comments for study {uuid}")
         study_service.set_comments(uuid, data.comments)
 
@@ -187,6 +195,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: UuidStr,
         type: Annotated[Optional[AreaType], Query(deprecated=True)] = None,
         ui: Annotated[bool, Query()] = False,
+        study_service: StudyService = Depends(get_study_service),
     ) -> List[AreaResponse] | Dict[str, AreaUIData]:
         logger.info(f"Fetching area list (type={type}, ui={ui}) for study {uuid}")
         if ui:
@@ -196,7 +205,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         return [AreaResponse.model_validate(area.model_dump()) for area in areas]
 
     @bp.get("/studies/{uuid}/links", summary="Get all links")
-    def get_links(uuid: UuidStr) -> List[Link]:
+    def get_links(
+        uuid: UuidStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> List[Link]:
         logger.info(f"Fetching link list for study {uuid}")
         areas_list = study_service.get_all_links(uuid)
         return areas_list
@@ -205,7 +217,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas",
         summary="Create a new area",
     )
-    def create_area(uuid: UuidStr, area_creation_info: AreaCreation) -> AreaResponse:
+    def create_area(
+        uuid: UuidStr,
+        area_creation_info: AreaCreation,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> AreaResponse:
         logger.info(f"Creating new area for study {uuid}")
         area = study_service.create_area(uuid, area_creation_info)
         return AreaResponse.model_validate(area.model_dump())
@@ -214,12 +230,19 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def create_link(
         uuid: UuidStr,
         link_creation_info: Link,
+        study_service: StudyService = Depends(get_study_service),
     ) -> Link:
         logger.info(f"Creating new link for study {uuid}")
         return study_service.create_link(uuid, link_creation_info)
 
     @bp.put("/studies/{uuid}/links/{area_from}/{area_to}", summary="Update a link")
-    def update_link(uuid: UuidStr, area_from: SanitizedStr, area_to: SanitizedStr, link_update_dto: LinkUpdate) -> Link:
+    def update_link(
+        uuid: UuidStr,
+        area_from: SanitizedStr,
+        area_to: SanitizedStr,
+        link_update_dto: LinkUpdate,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> Link:
         logger.info(f"Updating link {area_from} -> {area_to} for study {uuid}")
         return study_service.update_link(uuid, area_from, area_to, link_update_dto)
 
@@ -227,7 +250,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas/{area_id}/ui",
         summary="Update area information",
     )
-    def update_area_ui(uuid: UuidStr, area_id: SanitizedStr, area_ui: AreaUIUpdate, layer: SanitizedStr = "0") -> None:
+    def update_area_ui(
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        area_ui: AreaUIUpdate,
+        layer: SanitizedStr = "0",
+        study_service: StudyService = Depends(get_study_service),
+    ) -> None:
         logger.info(f"Updating area ui {area_id} for study {uuid}")
         study_service.update_area_ui(uuid, area_id, area_ui, layer)
 
@@ -235,7 +264,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas/{area_id}",
         summary="Delete an area",
     )
-    def delete_area(uuid: UuidStr, area_id: SanitizedStr) -> str:
+    def delete_area(
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> str:
         logger.info(f"Removing area {area_id} in study {uuid}")
         area_id = transform_name_to_id(area_id)
         study_service.delete_area(uuid, area_id)
@@ -245,7 +278,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/links/{area_from}/{area_to}",
         summary="Delete a link",
     )
-    def delete_link(uuid: UuidStr, area_from: SanitizedStr, area_to: SanitizedStr) -> str:
+    def delete_link(
+        uuid: UuidStr,
+        area_from: SanitizedStr,
+        area_to: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> str:
         logger.info(f"Removing link {area_from}%{area_to} in study {uuid}")
         area_from = transform_name_to_id(area_from)
         area_to = transform_name_to_id(area_to)
@@ -256,7 +294,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/layers",
         summary="Get all layers info",
     )
-    def get_layers(uuid: UuidStr) -> List[Layer]:
+    def get_layers(
+        uuid: UuidStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> List[Layer]:
         logger.info(f"Fetching layer list for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         return study_service.layer_manager.get_layers(study_service.get_study_interface(study))
@@ -265,7 +306,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/layers",
         summary="Create new layer",
     )
-    def create_layer(uuid: UuidStr, name: SanitizedStr) -> str:
+    def create_layer(
+        uuid: UuidStr,
+        name: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> str:
         logger.info(f"Create layer {name} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         return study_service.layer_manager.create_layer(study_service.get_study_interface(study), name)
@@ -275,7 +320,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Update layer",
     )
     def update_layer(
-        uuid: UuidStr, layer_id: SanitizedStr, name: SanitizedStr = "", areas: Optional[List[SanitizedStr]] = None
+        uuid: UuidStr,
+        layer_id: SanitizedStr,
+        name: SanitizedStr = "",
+        areas: Optional[List[SanitizedStr]] = None,
+        study_service: StudyService = Depends(get_study_service),
     ) -> None:
         logger.info(f"Updating layer {layer_id} for study {uuid} with name {name}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
@@ -290,7 +339,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Remove layer",
         status_code=HTTPStatus.NO_CONTENT,
     )
-    def remove_layer(uuid: UuidStr, layer_id: SanitizedStr) -> None:
+    def remove_layer(
+        uuid: UuidStr,
+        layer_id: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> None:
         logger.info(f"Remove layer {layer_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_service.layer_manager.remove_layer(study_service.get_study_interface(study), layer_id)
@@ -299,7 +352,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/districts",
         summary="Get the list of districts defined in this study",
     )
-    def get_districts(uuid: UuidStr) -> List[DistrictDTO]:
+    def get_districts(
+        uuid: UuidStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> List[DistrictDTO]:
         logger.info(f"Fetching districts list for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -309,7 +365,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/districts",
         summary="Create a new district in the study",
     )
-    def create_district(uuid: UuidStr, district_creation: DistrictCreation) -> DistrictDTO:
+    def create_district(
+        uuid: UuidStr,
+        district_creation: DistrictCreation,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> DistrictDTO:
         logger.info(f"Create district {district_creation.name} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -319,7 +379,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/districts/{district_id}",
         summary="Update the properties of a district",
     )
-    def update_district(uuid: UuidStr, district_id: SanitizedStr, dto: DistrictUpdate) -> None:
+    def update_district(
+        uuid: UuidStr,
+        district_id: SanitizedStr,
+        dto: DistrictUpdate,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> None:
         logger.info(f"Updating district {district_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -329,7 +394,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/districts/{district_id}",
         summary="Remove a district from a study",
     )
-    def remove_district(uuid: UuidStr, district_id: SanitizedStr) -> None:
+    def remove_district(
+        uuid: UuidStr,
+        district_id: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> None:
         logger.info(f"Remove district {district_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -340,7 +409,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Get Hydro config values for form",
         response_model_exclude_none=True,
     )
-    def get_hydro_form_values(uuid: UuidStr, area_id: SanitizedStr) -> HydroManagement:
+    def get_hydro_form_values(
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> HydroManagement:
         logger.info(msg=f"Getting Hydro management config for area {area_id} of study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -350,7 +423,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas/{area_id}/hydro/form",
         summary="Set Hydro config with values from form",
     )
-    def set_hydro_form_values(uuid: UuidStr, area_id: SanitizedStr, data: HydroManagementUpdate) -> None:
+    def set_hydro_form_values(
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        data: HydroManagementUpdate,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> None:
         logger.info(msg=f"Updating Hydro management config for area {area_id} of study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -361,7 +439,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas/{area_id}/hydro/inflow-structure",
         summary="Get inflow properties",
     )
-    def get_inflow_structure(uuid: UuidStr, area_id: SanitizedStr) -> InflowStructure:
+    def get_inflow_structure(
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> InflowStructure:
         """Get the configuration for the hydraulic inflow structure of the given area."""
         logger.info(msg=f"Getting inflow structure values for area {area_id} of study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
@@ -372,7 +454,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas/{area_id}/hydro/inflow-structure",
         summary="Update inflow properties values",
     )
-    def update_inflow_structure(uuid: UuidStr, area_id: SanitizedStr, values: InflowStructureUpdate) -> None:
+    def update_inflow_structure(
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        values: InflowStructureUpdate,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> None:
         """Update the configuration for the hydraulic inflow properties of the given area."""
         logger.info(msg=f"Updating inflow properties values for area {area_id} of study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
@@ -384,7 +471,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Edit matrix",
     )
     def edit_matrix(
-        uuid: UuidStr, path: SanitizedStr, matrix_edit_instructions: Annotated[List[MatrixEditInstruction], Body()]
+        uuid: UuidStr,
+        path: SanitizedStr,
+        matrix_edit_instructions: Annotated[List[MatrixEditInstruction], Body()],
+        study_service: StudyService = Depends(get_study_service),
     ) -> None:
         # NOTE: This Markdown documentation is reflected in the Swagger API
         """
@@ -405,7 +495,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Get thematic trimming config",
         response_model_exclude_none=True,
     )
-    def get_thematic_trimming(uuid: UuidStr) -> ThematicTrimming:
+    def get_thematic_trimming(
+        uuid: UuidStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> ThematicTrimming:
         logger.info(f"Fetching thematic trimming config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -415,7 +508,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/thematictrimming/form",
         summary="Set thematic trimming config",
     )
-    def set_thematic_trimming(uuid: UuidStr, field_values: ThematicTrimmingUpdate) -> ThematicTrimming:
+    def set_thematic_trimming(
+        uuid: UuidStr,
+        field_values: ThematicTrimmingUpdate,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> ThematicTrimming:
         logger.info(f"Updating thematic trimming config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -425,7 +522,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/playlist/form",
         summary="Get MC Scenario playlist data for table form",
     )
-    def get_playlist(uuid: UuidStr) -> PlaylistRootModel:
+    def get_playlist(
+        uuid: UuidStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> PlaylistRootModel:
         logger.info(f"Getting MC Scenario playlist data for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -439,6 +539,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def update_playlist(
         uuid: UuidStr,
         data: PlaylistUpdateRootModel,
+        study_service: StudyService = Depends(get_study_service),
     ) -> PlaylistRootModel:
         logger.info(f"Updating MC Scenario playlist table data for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
@@ -452,7 +553,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Get MC Scenario builder config",
         response_model_exclude_none=True,
     )
-    def get_scenario_builder_config(uuid: UuidStr) -> RulesetView:
+    def get_scenario_builder_config(
+        uuid: UuidStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> RulesetView:
         logger.info(f"Getting MC Scenario builder config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -462,7 +566,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
         summary="Get MC Scenario builder config",
     )
-    def get_scenario_builder_config_by_type(uuid: UuidStr, scenario_type: ScenarioType) -> Dict[str, AnyScenarios]:
+    def get_scenario_builder_config_by_type(
+        uuid: UuidStr,
+        scenario_type: ScenarioType,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> Dict[str, AnyScenarios]:
         """
         Retrieve the scenario matrix corresponding to a specified scenario type.
 
@@ -535,7 +643,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/scenariobuilder",
         summary="Set MC Scenario builder config",
     )
-    def update_scenario_builder_config(uuid: UuidStr, data: RulesetView) -> None:
+    def update_scenario_builder_config(
+        uuid: UuidStr,
+        data: RulesetView,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> None:
         logger.info(f"Updating MC Scenario builder config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -546,7 +658,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Set MC Scenario builder config",
     )
     def update_scenario_builder_config_by_type(
-        uuid: UuidStr, scenario_type: ScenarioType, data: Dict[ScenarioType, AnyScenarios]
+        uuid: UuidStr,
+        scenario_type: ScenarioType,
+        data: Dict[ScenarioType, AnyScenarios],
+        study_service: StudyService = Depends(get_study_service),
     ) -> Dict[ScenarioType, AnyScenarios]:
         """
         Update the scenario matrix corresponding to a specified scenario type.
@@ -585,7 +700,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Get General config values for form",
         response_model_exclude_none=True,
     )
-    def get_general_form_values(uuid: UuidStr) -> GeneralConfig:
+    def get_general_form_values(
+        uuid: UuidStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> GeneralConfig:
         logger.info(msg=f"Getting General management config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -595,7 +713,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/general/form",
         summary="Set General config with values from form",
     )
-    def set_general_form_values(uuid: UuidStr, config: GeneralConfigUpdate) -> GeneralConfig:
+    def set_general_form_values(
+        uuid: UuidStr,
+        config: GeneralConfigUpdate,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> GeneralConfig:
         logger.info(f"Updating General management config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -605,7 +727,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/optimization/form",
         summary="Get optimization config values for form",
     )
-    def get_optimization_form_values(uuid: UuidStr) -> OptimizationPreferences:
+    def get_optimization_form_values(
+        uuid: UuidStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> OptimizationPreferences:
         logger.info(msg=f"Getting optimization config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -616,7 +741,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Set optimization config with values from form",
     )
     def set_optimization_form_values(
-        uuid: UuidStr, field_values: OptimizationPreferencesUpdate
+        uuid: UuidStr,
+        field_values: OptimizationPreferencesUpdate,
+        study_service: StudyService = Depends(get_study_service),
     ) -> OptimizationPreferences:
         logger.info(f"Updating optimization config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
@@ -628,7 +755,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Get adequacy patch config values for form",
         response_model_exclude_none=True,
     )
-    def get_adequacy_patch_form_values(uuid: UuidStr) -> AdequacyPatchParameters:
+    def get_adequacy_patch_form_values(
+        uuid: UuidStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> AdequacyPatchParameters:
         logger.info(msg=f"Getting adequacy patch config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -639,7 +769,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Set adequacy patch config with values from form",
     )
     def set_adequacy_patch_form_values(
-        uuid: UuidStr, field_values: AdequacyPatchParametersUpdate
+        uuid: UuidStr,
+        field_values: AdequacyPatchParametersUpdate,
+        study_service: StudyService = Depends(get_study_service),
     ) -> AdequacyPatchParameters:
         logger.info(f"Updating adequacy patch config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
@@ -651,7 +783,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Gets the TS Generation config",
         response_model_exclude_none=True,
     )
-    def get_timeseries_form_values(uuid: UuidStr) -> TimeSeriesConfiguration:
+    def get_timeseries_form_values(
+        uuid: UuidStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> TimeSeriesConfiguration:
         logger.info(msg=f"Getting Time-Series generation config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -661,7 +796,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/timeseries/config",
         summary="Sets the TS Generation config",
     )
-    def set_ts_generation_config(uuid: UuidStr, field_values: TimeSeriesConfigurationUpdate) -> TimeSeriesConfiguration:
+    def set_ts_generation_config(
+        uuid: UuidStr,
+        field_values: TimeSeriesConfigurationUpdate,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> TimeSeriesConfiguration:
         logger.info(f"Updating Time-Series generation config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -671,7 +810,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/table-schema/{table_type}",
         summary="Get table schema",
     )
-    def get_table_schema(table_type: TableModeType) -> JSON:
+    def get_table_schema(
+        table_type: TableModeType,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> JSON:
         """
         Get the properties of the table columns.
 
@@ -690,6 +832,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: UuidStr,
         table_type: TableModeType,
         columns: SanitizedStr = Query("", description="A comma-separated list of columns to include in the table data"),
+        study_service: StudyService = Depends(get_study_service),
     ) -> TableDataDTO:
         """
         Get the table data for the given study and table type.
@@ -733,6 +876,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
                 ]
             ),
         ],
+        study_service: StudyService = Depends(get_study_service),
     ) -> TableDataDTO:
         """
         Update the table data for the given study and table type.
@@ -780,6 +924,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             description="Filter results based on cluster ID ('area.cluster')",
             alias="clusterId",
         ),
+        study_service: StudyService = Depends(get_study_service),
     ) -> Sequence[BindingConstraint]:
         logger.info(f"Fetching binding constraint list for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
@@ -801,7 +946,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
         summary="Get binding constraint",
     )
-    def get_binding_constraint(uuid: UuidStr, binding_constraint_id: SanitizedStr) -> BindingConstraint:
+    def get_binding_constraint(
+        uuid: UuidStr,
+        binding_constraint_id: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> BindingConstraint:
         logger.info(f"Fetching binding constraint {binding_constraint_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -812,7 +961,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Update binding constraint",
     )
     def update_binding_constraint(
-        uuid: UuidStr, binding_constraint_id: SanitizedStr, data: BindingConstraintUpdateWithMatrices
+        uuid: UuidStr,
+        binding_constraint_id: SanitizedStr,
+        data: BindingConstraintUpdateWithMatrices,
+        study_service: StudyService = Depends(get_study_service),
     ) -> BindingConstraint:
         logger.info(f"Update binding constraint {binding_constraint_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
@@ -825,7 +977,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/constraint-groups",
         summary="Get the list of binding constraint groups",
     )
-    def get_grouped_constraints(uuid: UuidStr) -> Mapping[str, Sequence[BindingConstraint]]:
+    def get_grouped_constraints(
+        uuid: UuidStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> Mapping[str, Sequence[BindingConstraint]]:
         """
         Get the list of binding constraint groups for the study.
 
@@ -846,7 +1001,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/constraint-groups/validate-all",
         summary="Validate all binding constraint groups",
     )
-    def validate_constraint_groups(uuid: UuidStr) -> bool:
+    def validate_constraint_groups(
+        uuid: UuidStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> bool:
         """
         Checks if the dimensions of the right-hand side matrices are consistent with
         the dimensions of the binding constraint matrices within the same group.
@@ -869,7 +1027,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/constraint-groups/{group}",
         summary="Get the binding constraint group",
     )
-    def get_constraints_by_group(uuid: UuidStr, group: SanitizedStr) -> Sequence[BindingConstraint]:
+    def get_constraints_by_group(
+        uuid: UuidStr,
+        group: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> Sequence[BindingConstraint]:
         """
         Get the binding constraint group for the study.
 
@@ -893,7 +1055,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/constraint-groups/{group}/validate",
         summary="Validate the binding constraint group",
     )
-    def validate_constraint_group(uuid: UuidStr, group: SanitizedStr) -> bool:
+    def validate_constraint_group(
+        uuid: UuidStr,
+        group: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> bool:
         """
         Checks if the dimensions of the right-hand side matrices are consistent with
         the dimensions of the binding constraint matrices within the same group.
@@ -915,7 +1081,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         return study_service.binding_constraint_manager.validate_constraint_group(study_interface, group)
 
     @bp.post("/studies/{uuid}/bindingconstraints", summary="Create a binding constraint")
-    def create_binding_constraint(uuid: UuidStr, data: BindingConstraintCreationWithMatrices) -> BindingConstraint:
+    def create_binding_constraint(
+        uuid: UuidStr,
+        data: BindingConstraintCreationWithMatrices,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> BindingConstraint:
         logger.info(f"Creating a new binding constraint for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -928,7 +1098,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Duplicates a given binding constraint",
     )
     def duplicate_binding_constraint(
-        uuid: UuidStr, binding_constraint_id: SanitizedStr, new_constraint_name: SanitizedStr
+        uuid: UuidStr,
+        binding_constraint_id: SanitizedStr,
+        new_constraint_name: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
     ) -> BindingConstraint:
         logger.info(f"Duplicates constraint {binding_constraint_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
@@ -941,7 +1114,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
         summary="Delete a binding constraint",
     )
-    def delete_binding_constraint(uuid: UuidStr, binding_constraint_id: SanitizedStr) -> None:
+    def delete_binding_constraint(
+        uuid: UuidStr,
+        binding_constraint_id: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> None:
         logger.info(f"Deleting the binding constraint {binding_constraint_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -953,7 +1130,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/bindingconstraints",
         summary="Delete multiple binding constraints",
     )
-    def delete_multiple_binding_constraints(uuid: UuidStr, binding_constraints_ids: List[SanitizedStr]) -> None:
+    def delete_multiple_binding_constraints(
+        uuid: UuidStr,
+        binding_constraints_ids: List[SanitizedStr],
+        study_service: StudyService = Depends(get_study_service),
+    ) -> None:
         logger.info(f"Deleting the binding constraints {binding_constraints_ids!r} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -966,7 +1147,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Deprecated, please use PUT /bindingconstraints/<id> to modify the list of terms",
         deprecated=True,
     )
-    def add_constraint_term(uuid: UuidStr, binding_constraint_id: SanitizedStr, term: ConstraintTerm) -> None:
+    def add_constraint_term(
+        uuid: UuidStr,
+        binding_constraint_id: SanitizedStr,
+        term: ConstraintTerm,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> None:
         """
         Append a new term to a given binding constraint
 
@@ -988,7 +1174,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         deprecated=True,
     )
     def add_constraint_terms(
-        uuid: UuidStr, binding_constraint_id: SanitizedStr, terms: Sequence[ConstraintTerm]
+        uuid: UuidStr,
+        binding_constraint_id: SanitizedStr,
+        terms: Sequence[ConstraintTerm],
+        study_service: StudyService = Depends(get_study_service),
     ) -> None:
         """
         Append new terms to a given binding constraint
@@ -1010,7 +1199,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Deprecated, please use PUT /bindingconstraints/<id> to modify the list of terms",
         deprecated=True,
     )
-    def update_constraint_term(uuid: UuidStr, binding_constraint_id: SanitizedStr, term: ConstraintTermUpdate) -> None:
+    def update_constraint_term(
+        uuid: UuidStr,
+        binding_constraint_id: SanitizedStr,
+        term: ConstraintTermUpdate,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> None:
         """
         Update a term for a given binding constraint
 
@@ -1032,7 +1226,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         deprecated=True,
     )
     def update_constraint_terms(
-        uuid: UuidStr, binding_constraint_id: SanitizedStr, terms: Sequence[ConstraintTermUpdate]
+        uuid: UuidStr,
+        binding_constraint_id: SanitizedStr,
+        terms: Sequence[ConstraintTermUpdate],
+        study_service: StudyService = Depends(get_study_service),
     ) -> None:
         """
         Update several terms for a given binding constraint
@@ -1054,7 +1251,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Deprecated, please use PUT /bindingconstraints/<id> to modify the list of terms",
         deprecated=True,
     )
-    def remove_constraint_term(uuid: UuidStr, binding_constraint_id: SanitizedStr, term_id: SanitizedStr) -> None:
+    def remove_constraint_term(
+        uuid: UuidStr,
+        binding_constraint_id: SanitizedStr,
+        term_id: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> None:
         logger.info(f"Remove constraint term {term_id} from {binding_constraint_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -1064,7 +1266,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/hydro/allocation/matrix",
         summary="Get the hydraulic allocation matrix for all areas",
     )
-    def get_allocation_matrix(uuid: UuidStr) -> HydroAllocationMatrix:
+    def get_allocation_matrix(
+        uuid: UuidStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> HydroAllocationMatrix:
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
         return study_service.allocation_manager.get_allocation_matrix(study_interface)
@@ -1073,7 +1278,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/hydro/allocation/form",
         summary="Get the form fields used for the allocation form",
     )
-    def get_allocation_form_fields(uuid: UuidStr, area_id: SanitizedStr) -> HydroAllocation:
+    def get_allocation_form_fields(
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> HydroAllocation:
         """
         Get the form fields used for the allocation form.
 
@@ -1108,6 +1317,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
                 ]
             ),
         ],
+        study_service: StudyService = Depends(get_study_service),
     ) -> HydroAllocation:
         """
         Update the hydraulic allocation of a given area.
@@ -1126,7 +1336,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/hydro/correlation/matrix",
         summary="Get the hydraulic correlation matrix of a study",
     )
-    def get_correlation_matrix(uuid: UuidStr) -> HydroCorrelationMatrix:
+    def get_correlation_matrix(
+        uuid: UuidStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> HydroCorrelationMatrix:
         """
         Get the hydraulic correlation matrix of a study.
 
@@ -1146,7 +1359,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/hydro/correlation/form",
         summary="Get the form fields used for the correlation form",
     )
-    def get_correlation(uuid: UuidStr, area_id: SanitizedStr) -> HydroCorrelation:
+    def get_correlation(
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> HydroCorrelation:
         """
         Get the form fields used for the correlation form.
 
@@ -1181,6 +1398,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
                 ]
             ),
         ],
+        study_service: StudyService = Depends(get_study_service),
     ) -> HydroCorrelation:
         """
         Update the hydraulic correlation of a given area.
@@ -1200,7 +1418,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Get Advanced parameters form values",
         response_model_exclude_none=True,
     )
-    def get_advanced_parameters(uuid: UuidStr) -> AdvancedParameters:
+    def get_advanced_parameters(
+        uuid: UuidStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> AdvancedParameters:
         logger.info(msg=f"Getting Advanced Parameters for study {uuid}")
 
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
@@ -1211,7 +1432,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/advancedparameters/form",
         summary="Set Advanced parameters new values",
     )
-    def set_advanced_parameters(uuid: UuidStr, field_values: AdvancedParametersUpdate) -> AdvancedParameters:
+    def set_advanced_parameters(
+        uuid: UuidStr,
+        field_values: AdvancedParametersUpdate,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> AdvancedParameters:
         logger.info(f"Updating Advanced parameters values for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -1223,7 +1448,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Get Compatibility parameters form values",
         response_model_exclude_none=True,
     )
-    def get_compatibility_parameters(uuid: UuidStr) -> CompatibilityParameters:
+    def get_compatibility_parameters(
+        uuid: UuidStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> CompatibilityParameters:
         logger.info(msg=f"Getting Compatibility Parameters for study {uuid}")
 
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
@@ -1235,7 +1463,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Set Compatibility parameters new values",
     )
     def set_compatibility_parameters(
-        uuid: UuidStr, field_values: CompatibilityParametersUpdate
+        uuid: UuidStr,
+        field_values: CompatibilityParametersUpdate,
+        study_service: StudyService = Depends(get_study_service),
     ) -> CompatibilityParameters:
         logger.info(f"Updating Compatibility parameters values for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
@@ -1248,7 +1478,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/timeseries/generate",
         summary="Generate timeseries",
     )
-    def generate_timeseries(uuid: UuidStr, outage_details: bool = Query(default=False)) -> str:
+    def generate_timeseries(
+        uuid: UuidStr,
+        outage_details: bool = Query(default=False),
+        study_service: StudyService = Depends(get_study_service),
+    ) -> str:
         """
         Generates time-series for thermal clusters and put them inside input data.
 
@@ -1265,7 +1499,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Get properties for a given area",
         response_model_exclude_none=True,
     )
-    def get_properties_form_values(uuid: UuidStr, area_id: SanitizedStr) -> AreaProperties:
+    def get_properties_form_values(
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> AreaProperties:
         logger.info("Getting properties form values for study %s and area %s", uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -1275,7 +1513,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/properties/form",
         summary="Set properties for a given area",
     )
-    def set_properties_form_values(uuid: UuidStr, area_id: SanitizedStr, form_fields: AreaPropertiesUpdate) -> None:
+    def set_properties_form_values(
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        form_fields: AreaPropertiesUpdate,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> None:
         logger.info("Setting properties form values for study %s and area %s", uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -1288,7 +1531,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
         summary="Get all renewable clusters",
     )
-    def get_renewable_clusters(uuid: UuidStr, area_id: SanitizedStr) -> Sequence[RenewableCluster]:
+    def get_renewable_clusters(
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> Sequence[RenewableCluster]:
         logger.info("Getting renewable clusters for study %s and area %s", uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -1298,7 +1545,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}",
         summary="Get a single renewable cluster",
     )
-    def get_renewable_cluster(uuid: UuidStr, area_id: SanitizedStr, cluster_id: SanitizedStr) -> RenewableCluster:
+    def get_renewable_cluster(
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        cluster_id: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> RenewableCluster:
         logger.info("Getting renewable cluster values for study %s and cluster %s", uuid, cluster_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -1322,7 +1574,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Create a new renewable cluster",
     )
     def create_renewable_cluster(
-        uuid: UuidStr, area_id: SanitizedStr, cluster_data: RenewableClusterCreation
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        cluster_data: RenewableClusterCreation,
+        study_service: StudyService = Depends(get_study_service),
     ) -> RenewableCluster:
         """
         Create a new renewable cluster.
@@ -1345,7 +1600,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Update a renewable cluster",
     )
     def update_renewable_cluster(
-        uuid: UuidStr, area_id: SanitizedStr, cluster_id: SanitizedStr, cluster_data: RenewableClusterUpdate
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        cluster_id: SanitizedStr,
+        cluster_data: RenewableClusterUpdate,
+        study_service: StudyService = Depends(get_study_service),
     ) -> RenewableCluster:
         logger.info(f"Updating renewable cluster for study '{uuid}' and cluster '{cluster_id}'")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
@@ -1358,17 +1617,26 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         deprecated=True,
     )
     def redirect_update_renewable_cluster(
-        uuid: UuidStr, area_id: SanitizedStr, cluster_id: SanitizedStr, cluster_data: RenewableClusterUpdate
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        cluster_id: SanitizedStr,
+        cluster_data: RenewableClusterUpdate,
+        study_service: StudyService = Depends(get_study_service),
     ) -> RenewableCluster:
         # We cannot perform redirection, because we have a PUT, where a PATCH is required.
-        return update_renewable_cluster(uuid, area_id, cluster_id, cluster_data)
+        return update_renewable_cluster(uuid, area_id, cluster_id, cluster_data, study_service)
 
     @bp.delete(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
         summary="Remove renewable clusters",
         status_code=HTTPStatus.NO_CONTENT,
     )
-    def delete_renewable_clusters(uuid: UuidStr, area_id: SanitizedStr, cluster_ids: Sequence[SanitizedStr]) -> None:
+    def delete_renewable_clusters(
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        cluster_ids: Sequence[SanitizedStr],
+        study_service: StudyService = Depends(get_study_service),
+    ) -> None:
         """
         Remove one or several renewable cluster(s) and it's time series.
 
@@ -1386,7 +1654,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
         summary="Get thermal clusters for a given area",
     )
-    def get_thermal_clusters(uuid: UuidStr, area_id: SanitizedStr) -> Sequence[ThermalCluster]:
+    def get_thermal_clusters(
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> Sequence[ThermalCluster]:
         """
         Retrieve the list of thermal clusters for a specified area.
 
@@ -1405,7 +1677,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}",
         summary="Get thermal configuration for a given cluster",
     )
-    def get_thermal_cluster(uuid: UuidStr, area_id: SanitizedStr, cluster_id: SanitizedStr) -> ThermalCluster:
+    def get_thermal_cluster(
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        cluster_id: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> ThermalCluster:
         """
         Retrieve the thermal clusters for a specified area.
 
@@ -1439,7 +1716,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Create a new thermal cluster for a given area",
     )
     def create_thermal_cluster(
-        uuid: UuidStr, area_id: SanitizedStr, cluster_data: ThermalClusterCreation
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        cluster_data: ThermalClusterCreation,
+        study_service: StudyService = Depends(get_study_service),
     ) -> ThermalCluster:
         """
         Create a new thermal cluster for a specified area.
@@ -1462,7 +1742,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Update thermal cluster for a given area",
     )
     def update_thermal_cluster(
-        uuid: UuidStr, area_id: SanitizedStr, cluster_id: SanitizedStr, cluster_data: ThermalClusterUpdate
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        cluster_id: SanitizedStr,
+        cluster_data: ThermalClusterUpdate,
+        study_service: StudyService = Depends(get_study_service),
     ) -> ThermalCluster:
         """
         Update the properties of a thermal cluster for a specified area.
@@ -1485,17 +1769,26 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         deprecated=True,
     )
     def redirect_update_thermal_cluster(
-        uuid: UuidStr, area_id: SanitizedStr, cluster_id: SanitizedStr, cluster_data: ThermalClusterUpdate
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        cluster_id: SanitizedStr,
+        cluster_data: ThermalClusterUpdate,
+        study_service: StudyService = Depends(get_study_service),
     ) -> ThermalCluster:
         # We cannot perform redirection, because we have a PUT, where a PATCH is required.
-        return update_thermal_cluster(uuid, area_id, cluster_id, cluster_data)
+        return update_thermal_cluster(uuid, area_id, cluster_id, cluster_data, study_service)
 
     @bp.delete(
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
         summary="Remove thermal clusters for a given area",
         status_code=HTTPStatus.NO_CONTENT,
     )
-    def delete_thermal_clusters(uuid: UuidStr, area_id: SanitizedStr, cluster_ids: Sequence[SanitizedStr]) -> None:
+    def delete_thermal_clusters(
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        cluster_ids: Sequence[SanitizedStr],
+        study_service: StudyService = Depends(get_study_service),
+    ) -> None:
         """
         Remove one or several thermal cluster(s) from a specified area.
         This endpoint removes the properties and time series of each thermal clusters.
@@ -1515,7 +1808,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}",
         summary="Get the short-term storage properties",
     )
-    def get_st_storage(uuid: UuidStr, area_id: SanitizedStr, storage_id: SanitizedStr) -> STStorage:
+    def get_st_storage(
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        storage_id: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> STStorage:
         """
         Retrieve the storages by given uuid and area id of a study.
 
@@ -1547,7 +1845,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/storages",
         summary="Get the list of short-term storage properties",
     )
-    def get_st_storages(uuid: UuidStr, area_id: SanitizedStr) -> Sequence[STStorage]:
+    def get_st_storages(
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> Sequence[STStorage]:
         """
         Retrieve the short-term storages by given uuid and area ID of a study.
 
@@ -1578,7 +1880,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/storages",
         summary="Create a new short-term storage in an area",
     )
-    def create_st_storage(uuid: UuidStr, area_id: SanitizedStr, form: STStorageCreation) -> STStorage:
+    def create_st_storage(
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        form: STStorageCreation,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> STStorage:
         """
         Create a new short-term storage in an area.
 
@@ -1620,7 +1927,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Update the short-term storage properties",
     )
     def update_st_storage(
-        uuid: UuidStr, area_id: SanitizedStr, storage_id: SanitizedStr, form: STStorageUpdate
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        storage_id: SanitizedStr,
+        form: STStorageUpdate,
+        study_service: StudyService = Depends(get_study_service),
     ) -> STStorage:
         """
         Update short-term storage of a study.
@@ -1664,7 +1975,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Remove short-term storages from an area",
         status_code=HTTPStatus.NO_CONTENT,
     )
-    def delete_st_storages(uuid: UuidStr, area_id: SanitizedStr, storage_ids: Sequence[SanitizedStr]) -> None:
+    def delete_st_storages(
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        storage_ids: Sequence[SanitizedStr],
+        study_service: StudyService = Depends(get_study_service),
+    ) -> None:
         """
         Delete short-term storages from an area.
 
@@ -1686,7 +2002,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Get all additional constraints relative to a short-term storage object",
     )
     def get_additional_constraints(
-        uuid: UuidStr, area_id: SanitizedStr, storage_id: SanitizedStr
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        storage_id: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
     ) -> list[STStorageAdditionalConstraint]:
         logger.info(f"Getting additional constraints for short-term storage {storage_id} in {area_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
@@ -1698,7 +2017,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Get a specific constraint relative to a short-term storage object",
     )
     def get_additional_constraint(
-        uuid: UuidStr, area_id: SanitizedStr, storage_id: SanitizedStr, constraint_id: SanitizedStr
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        storage_id: SanitizedStr,
+        constraint_id: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
     ) -> STStorageAdditionalConstraint:
         logger.info(
             f"Getting additional constraint {constraint_id} for short-term storage {storage_id} in {area_id} for study {uuid}"
@@ -1718,6 +2041,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         area_id: SanitizedStr,
         storage_id: SanitizedStr,
         constraints: list[STStorageAdditionalConstraintCreation],
+        study_service: StudyService = Depends(get_study_service),
     ) -> list[STStorageAdditionalConstraint]:
         logger.info(
             f"Creating additional constraint(s) for short-term storage {storage_id} in {area_id} for study {uuid}"
@@ -1737,6 +2061,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         area_id: SanitizedStr,
         storage_id: SanitizedStr,
         constraints: dict[SanitizedStr, STStorageAdditionalConstraintUpdate],
+        study_service: StudyService = Depends(get_study_service),
     ) -> list[STStorageAdditionalConstraint]:
         logger.info(
             f"Updating additional constraint(s) for short-term storage {storage_id} in {area_id} for study {uuid}"
@@ -1753,7 +2078,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Delete additional constraint(s) for a given area",
     )
     def delete_additional_constraints(
-        uuid: UuidStr, area_id: SanitizedStr, storage_id: SanitizedStr, constraints_ids: list[SanitizedStr]
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        storage_id: SanitizedStr,
+        constraints_ids: list[SanitizedStr],
+        study_service: StudyService = Depends(get_study_service),
     ) -> None:
         logger.info(
             f"Deleting short-term storage additional constraint(s) for storage {storage_id} in area {area_id} for study {uuid}"
@@ -1774,6 +2103,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         cluster_type: ClusterType,
         source_cluster_id: SanitizedStr,
         new_cluster_name: Annotated[SanitizedStr, Query(alias="newName", title="New Cluster Name")],
+        study_service: StudyService = Depends(get_study_service),
     ) -> STStorage | ThermalCluster | RenewableCluster:
         logger.info(f"Duplicates {cluster_type.value} {source_cluster_id} of {area_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
@@ -1796,7 +2126,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Fetches data for the whole study",
         response_model_exclude_none=True,
     )
-    def get_study_data(study_id: UuidStr) -> StudyDataDTO:
+    def get_study_data(
+        study_id: UuidStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> StudyDataDTO:
         """
         NOTE: This endpoint is used by antares-craft to read a study.
         """

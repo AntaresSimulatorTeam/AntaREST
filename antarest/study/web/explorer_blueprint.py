@@ -13,10 +13,11 @@
 import logging
 from typing import List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
+from antarest.core.dependencies import get_explorer
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import FolderDTO, WorkspaceDTO
@@ -25,7 +26,7 @@ from antarest.study.storage.explorer_service import Explorer
 logger = logging.getLogger(__name__)
 
 
-def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
+def create_explorer_routes(config: Config) -> APIRouter:
     """
     Endpoint implementation for explorer management
     Args:
@@ -42,7 +43,9 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
         "/explorer/{workspace}/_list_dir",
         summary="For a given directory, list sub directories.",
     )
-    def list_dir(workspace: SanitizedStr, path: SanitizedStr) -> List[FolderDTO]:
+    def list_dir(
+        workspace: SanitizedStr, path: SanitizedStr, explorer: Explorer = Depends(get_explorer)
+    ) -> List[FolderDTO]:
         """
         Endpoint to list sub directories of a given directory
         Args:
@@ -59,7 +62,7 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
         "/explorer/_list_workspaces",
         summary="List all workspaces",
     )
-    def list_workspaces() -> List[WorkspaceDTO]:
+    def list_workspaces(explorer: Explorer = Depends(get_explorer)) -> List[WorkspaceDTO]:
         """
         Endpoint to list workspaces
         Args:

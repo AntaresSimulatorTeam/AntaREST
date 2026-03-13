@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 import redis
+from fastapi import FastAPI
 from sqlalchemy import create_engine
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.pool import NullPool
@@ -24,7 +25,6 @@ from sqlalchemy.pool import NullPool
 from antarest.blobstore.blob_garbage_collector import BlobGarbageCollector
 from antarest.blobstore.main import build_blob_service
 from antarest.blobstore.service import BlobService
-from antarest.core.application import AppBuildContext
 from antarest.core.cache.main import build_cache
 from antarest.core.config import Config, RedisConfig
 from antarest.core.filetransfer.main import build_filetransfer_service
@@ -41,17 +41,15 @@ from antarest.core.tasks.service import ITaskService
 from antarest.eventbus.main import build_eventbus
 from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteStudyRepository
 from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
-from antarest.favorite.web import create_favorite_routes
 from antarest.launcher.main import build_launcher
 from antarest.launcher.service import LauncherService
 from antarest.lfs.dir_lfs import DirLargeFileStorage
-from antarest.login.main import build_login
+from antarest.login.main import build_login, set_login_service_for_denylist
 from antarest.login.service import LoginService
 from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
-from antarest.output.routes import create_output_routes
 from antarest.output.service import OutputService
 from antarest.output.storage.file.repository import FileOutputRepository
 from antarest.output.storage.file.storage import InStudyFileOutputStorage
@@ -61,13 +59,12 @@ from antarest.output.storage.v2.storage import V2OutputStorage
 from antarest.output.variable_view.gc import VariableViewGarbageCollector
 from antarest.study.adapters import adapt_output_service_to_study_service
 from antarest.study.dao.database.database_blob_usage_provider import DatabaseBlobUsageProvider
+from antarest.study.directory_service import DirectoryService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
 from antarest.study.storage.rawstudy.watcher import Watcher
-from antarest.study.web.explorer_blueprint import create_explorer_routes
-from antarest.study.web.watcher_blueprint import create_watcher_routes
 from antarest.worker.archive_worker import ArchiveWorker
 from antarest.worker.worker import AbstractWorker
 
@@ -145,10 +142,10 @@ def new_redis_instance(config: RedisConfig) -> redis.Redis:  # type: ignore
     return redis_client
 
 
-def create_event_bus(app_ctxt: Optional[AppBuildContext], config: Config) -> Tuple[IEventBus, Optional[redis.Redis]]:  # type: ignore
+def create_event_bus(config: Config) -> Tuple[IEventBus, Optional[redis.Redis]]:  # type: ignore
     redis_client = new_redis_instance(config.redis) if config.redis is not None else None
     return (
-        build_eventbus(app_ctxt, config, True, redis_client),
+        build_eventbus(config, True, redis_client),
         redis_client,
     )
 
@@ -162,26 +159,19 @@ class CoreServices:
     login_service: LoginService
     matrix_service: MatrixService
     study_service: StudyService
+    directory_service: DirectoryService
     output_service: OutputService
     blob_service: BlobService
     favorite_study_service: FavoriteStudyService
     favorite_directory_service: FavoriteDirectoryService
 
 
-def build_favorite_service(
-    config: Config,
-    app_ctxt: Optional[AppBuildContext] = None,
-) -> tuple[FavoriteStudyService, FavoriteDirectoryService]:
+def build_favorite_service() -> tuple[FavoriteStudyService, FavoriteDirectoryService]:
     favorite_repository = FavoriteStudyRepository()
     favorite_study_service = FavoriteStudyService(favorite_study_repository=favorite_repository)
 
     favorite_directory_repository = FavoriteDirectoryRepository()
     favorite_directory_service = FavoriteDirectoryService(favorite_directory_repository=favorite_directory_repository)
-
-    if app_ctxt:
-        app_ctxt.api_root.include_router(
-            create_favorite_routes(favorite_study_service, favorite_directory_service, config=config)
-        )
 
     return favorite_study_service, favorite_directory_service
 
@@ -200,7 +190,6 @@ def build_output_storage_list(config: Config, file_output_storage: InStudyFileOu
 
 
 def build_output_service(
-    app_ctxt: Optional[AppBuildContext],
     study_service: StudyService,
     cache: ICache,
     task_service: ITaskService,
@@ -230,20 +219,16 @@ def build_output_service(
 
     study_service.register_output_access(adapt_output_service_to_study_service(output_service))
 
-    if app_ctxt:
-        app_ctxt.api_root.include_router(create_output_routes(output_service, filetransfer_service, config))
-
     return output_service
 
 
-def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) -> CoreServices:
-    event_bus, redis_client = create_event_bus(app_ctxt, config)
+def create_core_services(config: Config) -> CoreServices:
+    event_bus, redis_client = create_event_bus(config)
     cache = build_cache(config=config, redis_client=redis_client)
-    task_service = build_taskjob_manager(app_ctxt, config, event_bus)
-    filetransfer_service = build_filetransfer_service(app_ctxt, event_bus, config)
-    login_service = build_login(app_ctxt, config, event_bus=event_bus)
+    task_service = build_taskjob_manager(config, event_bus)
+    filetransfer_service = build_filetransfer_service(event_bus, config)
+    login_service = build_login(config, event_bus=event_bus)
     matrix_service = build_matrix_service(
-        app_ctxt,
         config=config,
         file_transfer_manager=filetransfer_service,
         task_service=task_service,
@@ -252,8 +237,7 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
     )
     blob_service = build_blob_service(config=config, service=None)
     blob_service.register_usage_provider(DatabaseBlobUsageProvider())
-    study_service = build_study_service(
-        app_ctxt,
+    study_service, directory_service = build_study_service(
         config,
         matrix_service=matrix_service,
         cache=cache,
@@ -265,7 +249,6 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
     )
 
     output_service = build_output_service(
-        app_ctxt=app_ctxt,
         cache=cache,
         study_service=study_service,
         task_service=task_service,
@@ -275,7 +258,7 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         matrix_service=matrix_service,
     )
 
-    favorite_study_service, favorite_directory_service = build_favorite_service(config=config, app_ctxt=app_ctxt)
+    favorite_study_service, favorite_directory_service = build_favorite_service()
 
     return CoreServices(
         cache=cache,
@@ -285,6 +268,7 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         login_service=login_service,
         matrix_service=matrix_service,
         study_service=study_service,
+        directory_service=directory_service,
         output_service=output_service,
         blob_service=blob_service,
         favorite_study_service=favorite_study_service,
@@ -319,7 +303,6 @@ def create_variable_view_gc(config: Config) -> VariableViewGarbageCollector:
 
 def create_watcher(
     config: Config,
-    app_ctxt: Optional[AppBuildContext],
     study_service: Optional[StudyService] = None,
 ) -> Watcher:
     if study_service:
@@ -329,25 +312,18 @@ def create_watcher(
             task_service=study_service.task_service,
         )
     else:
-        core_services = create_core_services(app_ctxt, config)
+        core_services = create_core_services(config)
         watcher = Watcher(
             config=config,
             study_service=core_services.study_service,
             task_service=core_services.task_service,
         )
 
-    if app_ctxt:
-        app_ctxt.api_root.include_router(create_watcher_routes(watcher=watcher, config=config))
-
     return watcher
 
 
-def create_explorer(config: Config, app_ctxt: Optional[AppBuildContext]) -> Explorer:
-    explorer = Explorer(config=config)
-    if app_ctxt:
-        app_ctxt.api_root.include_router(create_explorer_routes(config=config, explorer=explorer))
-
-    return explorer
+def create_explorer(config: Config) -> Explorer:
+    return Explorer(config=config)
 
 
 def create_archive_worker(
@@ -357,7 +333,7 @@ def create_archive_worker(
     event_bus: Optional[IEventBus] = None,
 ) -> AbstractWorker:
     if not event_bus:
-        event_bus, _ = create_event_bus(None, config)
+        event_bus, _ = create_event_bus(config)
     return ArchiveWorker(event_bus, workspace, local_root, config)
 
 
@@ -367,12 +343,16 @@ class Services:
     explorer: Explorer
     event_bus: IEventBus
     study: StudyService
+    directory: DirectoryService
     matrix: MatrixService
     favorite_study: FavoriteStudyService
     favorite_directory: FavoriteDirectoryService
     user: LoginService
     cache: ICache
     maintenance: MaintenanceService
+    task_service: ITaskService
+    file_transfer_manager: FileTransferManager
+    output_service: OutputService
     launcher: Optional[LauncherService] = None
     matrix_gc: Optional[MatrixGarbageCollector] = None
     auto_archiver: Optional[AutoArchiveService] = None
@@ -380,15 +360,31 @@ class Services:
     variable_view_gc: Optional[VariableViewGarbageCollector] = None
 
 
-def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_all: bool = False) -> Services:
-    core_services = create_core_services(app_ctxt, config)
+def store_services_on_app(app: FastAPI, services: Services) -> None:
+    app.state.study_service = services.study
+    app.state.directory_service = services.directory
+    app.state.explorer = services.explorer
+    app.state.watcher = services.watcher
+    app.state.login_service = services.user
+    app.state.launcher_service = services.launcher
+    app.state.matrix_service = services.matrix
+    app.state.file_transfer_manager = services.file_transfer_manager
+    app.state.output_service = services.output_service
+    app.state.favorite_study_service = services.favorite_study
+    app.state.favorite_directory_service = services.favorite_directory
+    app.state.task_service = services.task_service
+    app.state.maintenance_service = services.maintenance
+    set_login_service_for_denylist(services.user)
+
+
+def create_services(config: Config, create_all: bool = False) -> Services:
+    core_services = create_core_services(config)
 
     maintenance_service = build_maintenance_manager(
-        app_ctxt, config=config, cache=core_services.cache, event_bus=core_services.event_bus
+        config=config, cache=core_services.cache, event_bus=core_services.event_bus
     )
 
     launcher = build_launcher(
-        app_ctxt,
         config,
         study_service=core_services.study_service,
         output_service=core_services.output_service,
@@ -399,8 +395,8 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
         cache=core_services.cache,
     )
 
-    watcher = create_watcher(config=config, app_ctxt=app_ctxt, study_service=core_services.study_service)
-    explorer_service = create_explorer(config=config, app_ctxt=app_ctxt)
+    watcher = create_watcher(config=config, study_service=core_services.study_service)
+    explorer_service = create_explorer(config=config)
 
     matrix_garbage_collector = None
     if config.server.services and Module.MATRIX_GC.value in config.server.services or create_all:
@@ -423,12 +419,16 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
         explorer=explorer_service,
         event_bus=core_services.event_bus,
         study=core_services.study_service,
+        directory=core_services.directory_service,
         matrix=core_services.matrix_service,
         favorite_study=core_services.favorite_study_service,
         favorite_directory=core_services.favorite_directory_service,
         user=core_services.login_service,
         cache=core_services.cache,
         maintenance=maintenance_service,
+        task_service=core_services.task_service,
+        file_transfer_manager=core_services.file_transfer_manager,
+        output_service=core_services.output_service,
         launcher=launcher,
         matrix_gc=matrix_garbage_collector,
         auto_archiver=auto_archiver,

@@ -17,12 +17,13 @@ from pathlib import PurePosixPath
 from typing import Annotated, Dict, Optional, Sequence
 
 from antares.study.version import StudyVersion
-from fastapi import APIRouter, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
 from markupsafe import escape
 from pydantic import NonNegativeInt
 
 from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.config import Config
+from antarest.core.dependencies import get_study_service
 from antarest.core.exceptions import BadArchiveContent, BadZipBinary, IncorrectArgumentsForCopy
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.model import PublicMode
@@ -56,11 +57,10 @@ def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) ->
     return list(collections.OrderedDict.fromkeys(values))
 
 
-def create_study_routes(study_service: StudyService, config: Config) -> APIRouter:
+def create_study_routes(config: Config) -> APIRouter:
     """
     Endpoint implementation for studies management
     Args:
-        study_service: study service facade to handle request
         config: main server configuration
 
     Returns:
@@ -74,6 +74,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         summary="Get Studies",
     )
     def get_studies(
+        study_service: StudyService = Depends(get_study_service),
         name: Annotated[
             SanitizedStr,
             Query(
@@ -174,6 +175,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         summary="Count Studies",
     )
     def count_studies(
+        study_service: StudyService = Depends(get_study_service),
         name: Annotated[
             SanitizedStr, Query(description="Case-insensitive: filter studies based on their name.", alias="name")
         ] = "",
@@ -243,7 +245,9 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         status_code=HTTPStatus.CREATED,
         summary="Import Study",
     )
-    def import_study(study: UploadFile, groups: SanitizedStr = "") -> str:
+    def import_study(
+        study: UploadFile, groups: SanitizedStr = "", study_service: StudyService = Depends(get_study_service)
+    ) -> str:
         """
         Upload and import a compressed study from your computer to the Antares Web server.
 
@@ -275,7 +279,9 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         status_code=HTTPStatus.OK,
         summary="Upgrade study to the target version (or next version if not specified)",
     )
-    def upgrade_study(uuid: SanitizedStr, target_version: SanitizedStr = "") -> str:
+    def upgrade_study(
+        uuid: SanitizedStr, target_version: SanitizedStr = "", study_service: StudyService = Depends(get_study_service)
+    ) -> str:
         """
         Upgrade a study to the target version or the next version if the target
         version is not specified.
@@ -335,6 +341,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         groups: SanitizedStr = "",
         use_task: bool = True,
         destination_folder: SanitizedStr = "",
+        study_service: StudyService = Depends(get_study_service),
     ) -> str:
         """
         This endpoint enables you to duplicate a study and place it in a specified location.
@@ -378,7 +385,9 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{uuid}/move",
         summary="Move study",
     )
-    def move_study(uuid: SanitizedStr, folder_dest: SanitizedStr) -> None:
+    def move_study(
+        uuid: SanitizedStr, folder_dest: SanitizedStr, study_service: StudyService = Depends(get_study_service)
+    ) -> None:
         logger.info(f"Moving study {uuid} into folder '{folder_dest}'")
         study_service.move_study(uuid, validate_folder_path(folder_dest))
 
@@ -396,6 +405,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
             Query(description="Directory path where the study will be created (e.g., 'project/subfolder')"),
         ] = "",
         storage_mode: StorageMode = StorageMode.FILESYSTEM,
+        study_service: StudyService = Depends(get_study_service),
     ) -> str:
         """
         Create a new empty study.
@@ -432,7 +442,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{uuid}/synthesis",
         summary="Return study synthesis",
     )
-    def get_study_synthesis(uuid: str) -> StudySynthesis:
+    def get_study_synthesis(uuid: str, study_service: StudyService = Depends(get_study_service)) -> StudySynthesis:
         study_id = sanitize_string(uuid)
         logger.info(f"Return a synthesis for study '{study_id}'")
         return study_service.get_study_synthesis(study_id)
@@ -441,7 +451,9 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{uuid}/matrixindex",
         summary="Return study input matrix start date index",
     )
-    def get_study_matrix_index(uuid: SanitizedStr, path: SanitizedStr = "") -> MatrixIndex:
+    def get_study_matrix_index(
+        uuid: SanitizedStr, path: SanitizedStr = "", study_service: StudyService = Depends(get_study_service)
+    ) -> MatrixIndex:
         logger.info(f"Return the start date for input matrix '{uuid}'")
         return study_service.get_input_matrix_startdate(uuid, path)
 
@@ -450,7 +462,10 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         summary="Export Study",
     )
     def export_study(
-        uuid: SanitizedStr, no_output: Optional[bool] = False, compression: ArchiveFormat = ArchiveFormat.ZIP
+        uuid: SanitizedStr,
+        no_output: Optional[bool] = False,
+        compression: ArchiveFormat = ArchiveFormat.ZIP,
+        study_service: StudyService = Depends(get_study_service),
     ) -> FileDownloadTaskDTO:
         logger.info(f"Exporting study {uuid}")
 
@@ -461,7 +476,9 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         status_code=HTTPStatus.OK,
         summary="Delete Study",
     )
-    def delete_study(uuid: SanitizedStr, children: bool = False) -> None:
+    def delete_study(
+        uuid: SanitizedStr, children: bool = False, study_service: StudyService = Depends(get_study_service)
+    ) -> None:
         logger.info(f"Deleting study {uuid}")
         study_service.delete_study(uuid, children)
 
@@ -470,7 +487,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         status_code=HTTPStatus.NO_CONTENT,
         summary="Delete Multiple Studies",
     )
-    def delete_studies(data: DeleteManyStudies) -> None:
+    def delete_studies(data: DeleteManyStudies, study_service: StudyService = Depends(get_study_service)) -> None:
         logger.info(f"Deleting multiple studies: {data.study_ids}")
         study_service.delete_studies(data.study_ids, data.with_variants)
 
@@ -479,7 +496,9 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         tags=[APITag.study_permissions],
         summary="Change study owner",
     )
-    def change_owner(uuid: SanitizedStr, user_id: int) -> None:
+    def change_owner(
+        uuid: SanitizedStr, user_id: int, study_service: StudyService = Depends(get_study_service)
+    ) -> None:
         logger.info(f"Changing owner to {user_id} for study {uuid}")
         study_service.change_owner(uuid, user_id)
 
@@ -488,7 +507,9 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         tags=[APITag.study_permissions],
         summary="Add a group association",
     )
-    def add_group(uuid: SanitizedStr, group_id: SanitizedStr) -> None:
+    def add_group(
+        uuid: SanitizedStr, group_id: SanitizedStr, study_service: StudyService = Depends(get_study_service)
+    ) -> None:
         logger.info(f"Adding group {group_id} to study {uuid}")
         group_id = sanitize_string(group_id)
         study_service.add_group(uuid, group_id)
@@ -498,7 +519,9 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         tags=[APITag.study_permissions],
         summary="Remove a group association",
     )
-    def remove_group(uuid: SanitizedStr, group_id: SanitizedStr) -> None:
+    def remove_group(
+        uuid: SanitizedStr, group_id: SanitizedStr, study_service: StudyService = Depends(get_study_service)
+    ) -> None:
         logger.info(f"Removing group {group_id} to study {uuid}")
         group_id = sanitize_string(group_id)
 
@@ -509,7 +532,9 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         tags=[APITag.study_permissions],
         summary="Set study public mode",
     )
-    def set_public_mode(uuid: SanitizedStr, mode: PublicMode) -> None:
+    def set_public_mode(
+        uuid: SanitizedStr, mode: PublicMode, study_service: StudyService = Depends(get_study_service)
+    ) -> None:
         logger.info(f"Setting public mode to {mode} for study {uuid}")
         study_service.set_public_mode(uuid, mode)
 
@@ -525,7 +550,9 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{uuid}",
         summary="Get Study information",
     )
-    def get_study_metadata(uuid: SanitizedStr) -> StudyMetadataDTO:
+    def get_study_metadata(
+        uuid: SanitizedStr, study_service: StudyService = Depends(get_study_service)
+    ) -> StudyMetadataDTO:
         logger.info(f"Fetching study {uuid} metadata")
         study_metadata = study_service.get_study_information(uuid)
         return study_metadata
@@ -534,7 +561,11 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{uuid}",
         summary="Update Study information",
     )
-    def update_study_metadata(uuid: SanitizedStr, study_metadata_patch: StudyMetadataPatchDTO) -> StudyMetadataDTO:
+    def update_study_metadata(
+        uuid: SanitizedStr,
+        study_metadata_patch: StudyMetadataPatchDTO,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> StudyMetadataDTO:
         logger.info(f"Updating metadata for study {uuid}")
         if study_metadata_patch.name:
             study_metadata_patch.name = validate_study_name(study_metadata_patch.name)
@@ -545,7 +576,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{study_id}/archive",
         summary="Archive a study",
     )
-    def archive_study(study_id: UuidStr) -> str:
+    def archive_study(study_id: UuidStr, study_service: StudyService = Depends(get_study_service)) -> str:
         logger.info(f"Archiving study {study_id}")
         return study_service.archive(study_id)
 
@@ -553,7 +584,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{study_id}/unarchive",
         summary="Unarchive a study",
     )
-    def unarchive_study(study_id: UuidStr) -> str:
+    def unarchive_study(study_id: UuidStr, study_service: StudyService = Depends(get_study_service)) -> str:
         logger.info(f"Unarchiving study {study_id}")
         return study_service.unarchive(study_id)
 
@@ -561,7 +592,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{uuid}/disk-usage",
         summary="Compute study disk usage",
     )
-    def study_disk_usage(uuid: SanitizedStr) -> int:
+    def study_disk_usage(uuid: SanitizedStr, study_service: StudyService = Depends(get_study_service)) -> int:
         """
         Compute disk usage of an input study
 
@@ -578,7 +609,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         "/studies/{study_id}/normalize",
         summary="Move study matrices into the matrix-store and replace them with symbolic links.",
     )
-    def normalize_study(study_id: UuidStr) -> None:
+    def normalize_study(study_id: UuidStr, study_service: StudyService = Depends(get_study_service)) -> None:
         """
         This endpoint iterates over every matrix inside a study.
         For each, it saves them inside the application's matrix-store.

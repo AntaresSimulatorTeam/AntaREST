@@ -21,13 +21,11 @@ from unittest.mock import Mock
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
-from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.login.auth import JwtSettings
-from antarest.login.main import build_login
 from antarest.login.model import (
     Bot,
     BotCreateDTO,
@@ -42,28 +40,28 @@ from antarest.login.model import (
     UserCreateDTO,
     UserInfo,
 )
+from antarest.login.web import create_login_api, create_user_api
 
 
 def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
-    app = FastAPI(title=__name__)
+    config = Config(
+        resources_path=Path(),
+        security=SecurityConfig(disabled=auth_disabled),
+    )
 
     @AuthJWT.load_config  # type: ignore[misc]
     def get_config() -> JwtSettings:
         return JwtSettings(
             authjwt_secret_key="super-secret",
             authjwt_token_location=("headers", "cookies"),
+            authjwt_denylist_enabled=False,
         )
 
-    app_ctxt = create_app_ctxt(app)
-    build_login(
-        app_ctxt,
-        service=service,
-        config=Config(
-            resources_path=Path(),
-            security=SecurityConfig(disabled=auth_disabled),
-        ),
-    )
-    return app_ctxt.build()
+    app = FastAPI(title=__name__)
+    app.state.login_service = service
+    app.include_router(create_login_api())
+    app.include_router(create_user_api(config))
+    return app
 
 
 class TokenType(str, Enum):

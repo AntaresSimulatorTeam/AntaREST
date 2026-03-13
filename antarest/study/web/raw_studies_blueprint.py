@@ -17,13 +17,14 @@ from pathlib import Path, PurePosixPath
 from typing import Annotated, Any, Literal, TypeAlias
 
 import polars as pl
-from fastapi import APIRouter, Body, File, HTTPException
+from fastapi import APIRouter, Body, Depends, File, HTTPException
 from fastapi.openapi.models import Example
 from fastapi.params import Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
 from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.config import Config
+from antarest.core.dependencies import get_study_service
 from antarest.core.exceptions import IncorrectPathError
 from antarest.core.model import SUB_JSON
 from antarest.core.serde.json import from_json, to_json
@@ -145,7 +146,6 @@ class MatrixFormat(EnumIgnoreCase):
 
 
 def create_raw_study_routes(
-    study_service: StudyService,
     config: Config,
 ) -> APIRouter:
     """
@@ -170,6 +170,7 @@ def create_raw_study_routes(
         depth: int = 3,
         formatted: bool = True,
         matrix_format: MatrixFormat | None = None,
+        study_service: StudyService = Depends(get_study_service),
     ) -> Response:
         """
         Fetches raw data from a study, and returns the data
@@ -251,7 +252,9 @@ def create_raw_study_routes(
         "/studies/{uuid}/raw/original-file",
         summary="Retrieve Raw file from a Study folder in its original format",
     )
-    def get_study_file(uuid: UuidStr, path: PATH_TYPE = "/") -> Response:
+    def get_study_file(
+        uuid: UuidStr, path: PATH_TYPE = "/", study_service: StudyService = Depends(get_study_service)
+    ) -> Response:
         """
         Fetches for a file in its original format from a study folder
 
@@ -289,6 +292,7 @@ def create_raw_study_routes(
                 },
             ),
         ] = "/",
+        study_service: StudyService = Depends(get_study_service),
     ) -> None:
         logger.info(f"Deleting path {path} inside study {uuid}")
         study_service.delete_user_file_or_folder(uuid, path)
@@ -298,7 +302,12 @@ def create_raw_study_routes(
         status_code=http.HTTPStatus.OK,
         summary="Update study by posting formatted data",
     )
-    def edit_study(uuid: UuidStr, path: PATH_TYPE = "/", data: Annotated[SUB_JSON, Body()] = "") -> Any:
+    def edit_study(
+        uuid: UuidStr,
+        path: PATH_TYPE = "/",
+        data: Annotated[SUB_JSON, Body()] = "",
+        study_service: StudyService = Depends(get_study_service),
+    ) -> Any:
         """
         Same endpoint as the PUT one.
         Only difference is that it cannot create an empty folder.
@@ -318,6 +327,7 @@ def create_raw_study_routes(
         file: Annotated[bytes | None, File()] = None,
         create_missing: Annotated[bool, Query(deprecated=True)] = True,
         resource_type: ResourceType = ResourceType.FILE,
+        study_service: StudyService = Depends(get_study_service),
     ) -> None:
         """
         Update raw data for a study by posting a raw file or by creating folder(s).
@@ -360,6 +370,7 @@ def create_raw_study_routes(
         with_index: Annotated[
             bool, Query(alias="index", description="Whether to include the index or not", title="With Index")
         ] = True,
+        study_service: StudyService = Depends(get_study_service),
     ) -> FileResponse:
         """
         Download a matrix in a given format.
