@@ -19,6 +19,7 @@ import shutil
 from datetime import datetime, timedelta
 from io import StringIO
 from pathlib import Path
+from re import Pattern
 from typing import List, Optional, Sequence, cast
 from uuid import uuid4
 from zipfile import ZipFile
@@ -421,7 +422,17 @@ def is_ts_gen_tmp_dir(path: Path) -> bool:
     return path.name.startswith(TS_GEN_PREFIX) and "".join(path.suffixes[-2:]) == TS_GEN_SUFFIX and path.is_dir()
 
 
-def should_ignore_folder_for_scan(path: Path, filter_in: List[str], filter_out: List[str]) -> bool:
+def _compile_filters(filter_in: List[str], filter_out: List[str]) -> tuple[list[Pattern[str]], list[Pattern[str]]]:
+    """Pre-compile regex patterns for scan filtering."""
+    return (
+        [re.compile(regex) for regex in filter_in],
+        [re.compile(regex) for regex in filter_out],
+    )
+
+
+def _should_ignore_folder_compiled(
+    path: Path, compiled_in: List[re.Pattern[str]], compiled_out: List[re.Pattern[str]]
+) -> bool:
     if is_aw_no_scan(path):
         logger.info(f"No scan directive file found. Will skip further scan of folder {path}")
         return True
@@ -436,19 +447,25 @@ def should_ignore_folder_for_scan(path: Path, filter_in: List[str], filter_out: 
 
     return not (
         path.is_dir()
-        and any(re.search(regex, path.name) for regex in filter_in)
-        and not any(re.search(regex, path.name) for regex in filter_out)
+        and any(p.search(path.name) for p in compiled_in)
+        and not any(p.search(path.name) for p in compiled_out)
     )
 
 
+def should_ignore_folder_for_scan(path: Path, filter_in: List[str], filter_out: List[str]) -> bool:
+    compiled_in, compiled_out = _compile_filters(filter_in, filter_out)
+    return _should_ignore_folder_compiled(path, compiled_in, compiled_out)
+
+
 def has_children(path: Path, filter_in: List[str], filter_out: List[str], show_hidden_file: bool = False) -> bool:
-    for sub_path in path.iterdir():
+    compiled_in, compiled_out = _compile_filters(filter_in, filter_out)
+    for entry in os.scandir(path):
         try:
-            show = show_hidden_file or not sub_path.name.startswith(".")
-            if not should_ignore_folder_for_scan(sub_path, filter_in, filter_out) and show:
+            show = show_hidden_file or not entry.name.startswith(".")
+            if not _should_ignore_folder_compiled(Path(entry.path), compiled_in, compiled_out) and show:
                 return True
         except (PermissionError, OSError):
-            logger.warning(f"tried to run is_non_study_folder on {sub_path} but no permission")
+            logger.warning(f"tried to run is_non_study_folder on {entry.path} but no permission")
     return False
 
 
@@ -476,8 +493,20 @@ def rec_scan_for_studies(
     Returns:
         A list of StudyFolder objects representing found studies.
     """
+    compiled_in, compiled_out = _compile_filters(filter_in, filter_out)
+    return _rec_scan_for_studies(path, workspace, groups, compiled_in, compiled_out, max_depth)
+
+
+def _rec_scan_for_studies(
+    path: Path,
+    workspace: str,
+    groups: List[Group],
+    compiled_in: List[re.Pattern[str]],
+    compiled_out: List[re.Pattern[str]],
+    max_depth: Optional[int] = None,
+) -> List[StudyFolder]:
     try:
-        if should_ignore_folder_for_scan(path, filter_in, filter_out):
+        if _should_ignore_folder_compiled(path, compiled_in, compiled_out):
             return []
 
         if (path / "study.antares").exists():
@@ -490,12 +519,16 @@ def rec_scan_for_studies(
 
         folders: List[StudyFolder] = []
         if path.is_dir():
-            for child in path.iterdir():
+            for entry in os.scandir(path):
+                if not entry.is_dir(follow_symlinks=False):
+                    continue
                 child_max_depth = max_depth - 1 if max_depth is not None else None
                 try:
-                    folders += rec_scan_for_studies(child, workspace, groups, filter_in, filter_out, child_max_depth)
+                    folders += _rec_scan_for_studies(
+                        Path(entry.path), workspace, groups, compiled_in, compiled_out, child_max_depth
+                    )
                 except Exception as e:
-                    logger.error(f"Failed to scan dir {child}", exc_info=e)
+                    logger.error(f"Failed to scan dir {entry.path}", exc_info=e)
         return folders
     except Exception as e:
         logger.error(f"Failed to scan dir {path}", exc_info=e)
