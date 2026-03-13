@@ -18,8 +18,8 @@ from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.archives import archive_dir
-from tests.integration.test_helpers.download import download_to_file
 from tests.integration.utils import wait_task_completion
+from tests.test_helpers import download_to_file
 
 
 @pytest.fixture(scope="session")
