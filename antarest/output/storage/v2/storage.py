@@ -19,7 +19,7 @@ from typing import BinaryIO, Iterator, Optional, Sequence
 import polars as pl
 from typing_extensions import override
 
-from antarest.core.exceptions import OutputNotFound
+from antarest.core.exceptions import OutputAlreadyExists, OutputNotFound, ShouldNotHappenException
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.utils.archives import (
     ArchiveFormat,
@@ -182,15 +182,18 @@ class V2OutputStorage(IOutputStorage):
             archive_path, dir_path = _write_temporary_files(tmp_dir, output)
             output_name = extract_output_name(dir_path, output_name_suffix)
 
+            if self._get_metadata(study_id, output_name) is not None:
+                raise OutputAlreadyExists(output_name)
+
             # Write the compressed version to archive storage
             self._archive_storage.write_file(_archive_id(study_id, output_name), archive_path)
 
             # Create metadata
             output_details = extract_output_details(dir_path)
 
-            # TODO here: extract all required data: variables list, time index, digest, parquet files
-
             simulation_range = _extract_simulation_range(dir_path)
+
+            # TODO here: extract variable data
 
             self._repository.save_output_metadata(
                 DbOutputMetadataV2(
@@ -249,6 +252,10 @@ class V2OutputStorage(IOutputStorage):
 
     @override
     def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:
+
+        if self._get_metadata(target_study_id, output_id) is not None:
+            raise OutputAlreadyExists(output_id)
+
         with tempfile.TemporaryDirectory(dir=self._tmp_dir) as tmp_dir:
             tmp_archive_path = Path(tmp_dir) / "output.zip"
             self._archive_storage.read_file(_archive_id(src_study_id, output_id), tmp_archive_path)
@@ -267,7 +274,7 @@ class V2OutputStorage(IOutputStorage):
 
         variables_list = self._repository.get_output_variables_list(src_study_id, output_id)
         if variables_list is None:
-            raise ValueError(f"Variables list not found for output {src_study_id}/{output_id}.")
+            raise ShouldNotHappenException(f"Variables list not found for output {src_study_id}/{output_id}.")
         self._repository.save_output_variables_list(target_study_id, output_id, variables_list)
 
     @override
