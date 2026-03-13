@@ -133,6 +133,7 @@ def _db_metadata_to_details(metadata: DbOutputMetadataV2) -> OutputDetails:
         by_year=metadata.by_year,
         nb_years=metadata.nb_years,
         archived=metadata.archived,
+        storage_type=OutputStorageType.V2,
     )
 
 

@@ -126,6 +126,17 @@ def create_output_routes(
         output_id = output_service.import_output(uuid, output.file, storage_type=storage_type)
         return output_id
 
+    # noinspection PyShadowingBuiltins
+    @bp.post(
+        "/studies/{uuid}/output/{output_id}/_convert",
+        status_code=HTTPStatus.OK,
+        summary="Convert output to another storage",
+    )
+    def convert_output(uuid: UuidStr, output_id: SanitizedStr, storage_type: OutputStorageType) -> str | None:
+        logger.info(f"Converting output {uuid} / {output_id} to {storage_type} storage")
+        output_service.convert_output(uuid, output_id, storage_type)
+        return output_id
+
     @bp.get(
         "/studies/{study_id}/outputs/{output_id}/variables",
         summary="Get outputs data variables",

@@ -101,6 +101,7 @@ def test_import(admin_client: TestClient, empty_study_id: str, output_zip: Path)
         "name": "20201014-1427eco",
         "nbYears": 1,
         "synthesis": True,
+        "storageType": "V2",
     }, res.json()
 
 
@@ -331,3 +332,41 @@ def test_unarchive_nonexistent_output(admin_client: TestClient, empty_study_id: 
     """Unarchiving a non-existent output should return 404."""
     res = admin_client.post(f"/v1/studies/{empty_study_id}/outputs/{FAKE_OUTPUT}/_unarchive")
     assert res.status_code == 404
+
+
+def test_conversion_to_v2(admin_client: TestClient, output_zip: Path, empty_study_id: str) -> None:
+    """Test conversion of an output to V2 storage."""
+    client = admin_client
+    study_id = empty_study_id
+
+    res = client.post(
+        f"/v1/studies/{study_id}/output",
+        files={"output": io.BytesIO(output_zip.read_bytes())},
+    )
+    assert res.status_code == 202, res.json()
+    output_name = res.json()
+    assert output_name == "20201014-1427eco"
+
+    res = client.post(
+        f"/v1/studies/{study_id}/output/{output_name}/_convert?storage_type=V2",
+    )
+    assert res.status_code == 200, res.json()
+
+    res = client.get(f"/v1/studies/{study_id}/outputs")
+    assert res.json() == [
+        {
+            "archived": False,
+            "byYear": False,
+            "mode": "Economy",
+            "name": "20201014-1427eco",
+            "nbYears": 1,
+            "synthesis": True,
+            "storageType": "V2",
+        }
+    ]
+
+    # Second conversion should fail
+    res = client.post(
+        f"/v1/studies/{study_id}/output/{output_name}/_convert?storage_type=V2",
+    )
+    assert res.status_code == 400, res.json()

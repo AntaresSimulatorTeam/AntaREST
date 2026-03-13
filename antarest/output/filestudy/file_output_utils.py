@@ -28,7 +28,7 @@ from antarest.output.filestudy.utils import (
     parse_headers,
 )
 from antarest.output.model import OutputVariablesList
-from antarest.output.storage.output_storage import OutputDetails
+from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency
 
@@ -56,6 +56,7 @@ def extract_output_details(output_path: Path) -> OutputDetails:
         by_year=general["year-by-year"],
         nb_years=general["nbyears"],
         archived=False,
+        storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
     )
 
 

@@ -40,7 +40,7 @@ from antarest.output.storage.file.storage import (
     IFileOutputsProvider,
     InStudyFileOutputStorage,
 )
-from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
+from antarest.output.storage.output_storage import OutputDetails, OutputMetadata, OutputStorageType
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -130,19 +130,49 @@ def test_file_output_storage(file_output_storage):
         file_output_storage.get_output_details("STA-mini", o.id) for o in file_output_storage.list_outputs("STA-mini")
     ] == [
         OutputDetails(
-            name="20201014-1422eco-hello", mode=Mode.ECONOMY, synthesis=True, by_year=True, nb_years=1, archived=False
+            name="20201014-1422eco-hello",
+            mode=Mode.ECONOMY,
+            synthesis=True,
+            by_year=True,
+            nb_years=1,
+            archived=False,
+            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
         ),
         OutputDetails(
-            name="20201014-1425eco-goodbye", mode=Mode.ECONOMY, synthesis=True, by_year=True, nb_years=2, archived=False
+            name="20201014-1425eco-goodbye",
+            mode=Mode.ECONOMY,
+            synthesis=True,
+            by_year=True,
+            nb_years=2,
+            archived=False,
+            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
         ),
         OutputDetails(
-            name="20201014-1427eco", mode=Mode.ECONOMY, synthesis=True, by_year=False, nb_years=1, archived=False
+            name="20201014-1427eco",
+            mode=Mode.ECONOMY,
+            synthesis=True,
+            by_year=False,
+            nb_years=1,
+            archived=False,
+            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
         ),
         OutputDetails(
-            name="20201014-1430adq", mode=Mode.ADEQUACY, synthesis=True, by_year=False, nb_years=1, archived=False
+            name="20201014-1430adq",
+            mode=Mode.ADEQUACY,
+            synthesis=True,
+            by_year=False,
+            nb_years=1,
+            archived=False,
+            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
         ),
         OutputDetails(
-            name="20201014-1430adq-2", mode=Mode.ADEQUACY, synthesis=True, by_year=False, nb_years=1, archived=True
+            name="20201014-1430adq-2",
+            mode=Mode.ADEQUACY,
+            synthesis=True,
+            by_year=False,
+            nb_years=1,
+            archived=True,
+            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
         ),
         OutputDetails(
             name="20241807-1540eco-extra-outputs",
@@ -151,6 +181,7 @@ def test_file_output_storage(file_output_storage):
             by_year=True,
             nb_years=1,
             archived=False,
+            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
         ),
     ]
 
