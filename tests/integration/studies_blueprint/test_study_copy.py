@@ -14,8 +14,8 @@ from pathlib import Path
 
 from starlette.testclient import TestClient
 
-from tests.integration.test_helpers.outputs import create_minimal_output_zip_from_name
 from tests.integration.utils import wait_task_completion
+from tests.test_helpers.outputs import create_minimal_output_zip_from_name
 
 
 def test_copy_with_editor_preservation(client: TestClient, admin_access_token: str) -> None:
@@ -272,6 +272,44 @@ def test_copy_variant_with_specific_path(client: TestClient, admin_access_token:
 
     study_folder = copied_study[study_id]["folder"]
     assert study_folder == "folder/" + study_id
+
+
+def test_copy_variant_with_auto_directory_creation(client: TestClient, admin_access_token: str) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    raw = client.post("/v1/studies?name=raw")
+    assert raw.status_code == 201
+    variant = client.post(f"/v1/studies/{raw.json()}/variants", params={"name": "variant"})
+    assert variant.status_code == 200
+
+    copy = client.post(
+        f"/v1/studies/{variant.json()}/copy",
+        params={
+            "study_name": "copied-nested",
+            "use_task": False,
+            "destination_folder": "project/subfolder/deep",
+        },
+    )
+    assert copy.status_code == 201
+    copied_id = copy.json()
+
+    res = client.get(f"/v1/studies/{copied_id}")
+    assert res.status_code == 200
+    study = res.json()
+    assert study["folder"] == f"project/subfolder/deep/{copied_id}"
+    assert study["directory_id"] is not None
+
+    res = client.get("/v1/directories")
+    assert res.status_code == 200
+    directories = res.json()
+
+    project_dir = next(d for d in directories if d["name"] == "project")
+    subfolder_dir = next(d for d in directories if d["name"] == "subfolder")
+    deep_dir = next(d for d in directories if d["name"] == "deep")
+
+    assert subfolder_dir["parentId"] == project_dir["id"]
+    assert deep_dir["parentId"] == subfolder_dir["id"]
+    assert study["directory_id"] == deep_dir["id"]
 
 
 def test_copy_with_specific_output(admin_client: TestClient, internal_study_id: str, tmp_path: Path) -> None:

@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import type z from "zod";
 import type { StudySortConfigSchema } from "@/routes/_authenticated/studies/-components/StudiesList/Header/studySortUtils";
+import type z from "zod";
 import type { TaskTypeValue } from "../services/api/tasks/types";
 
 export type IdType = number | string;
@@ -296,14 +296,18 @@ export interface AreaWithId extends Area {
   id: string;
 }
 
+export type DistrictApplyFilter = "add-all" | "remove-all";
+
+// Used only in study synthesis. The /districts endpoint returns a different object.
+// Will be removed after migrating from Redux to dedicated endpoints with TanStack Query.
 export interface District {
   id: string;
-  name?: string;
-  addAreas?: string[];
-  subtractAreas?: string[];
-  applyFilter?: string;
-  comments?: string;
+  name: string;
   output: boolean;
+  comments: string;
+  addAreas: string[];
+  subtractAreas: string[];
+  applyFilter: DistrictApplyFilter;
 }
 
 export interface StudySynthesis {

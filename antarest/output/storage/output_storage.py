@@ -72,6 +72,7 @@ class OutputDetails(AntaresBaseModel):
     by_year: bool
     nb_years: int
     archived: bool
+    storage_type: OutputStorageType
 
 
 class IOutputStorage(ABC):

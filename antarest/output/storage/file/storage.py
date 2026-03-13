@@ -289,6 +289,7 @@ class InStudyFileOutputStorage(IOutputStorage):
             by_year=output_data.by_year,
             nb_years=output_data.nbyears,
             archived=output_data.archived,
+            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
         )
 
     @override

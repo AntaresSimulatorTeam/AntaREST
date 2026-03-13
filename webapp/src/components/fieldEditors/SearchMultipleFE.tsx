@@ -26,11 +26,14 @@ interface SearchMultipleFEProps
   value?: string[];
   defaultValue?: string[];
   onSearchValuesChange?: (values: string[]) => void;
+  onInputValueChange?: (value: string) => void;
 }
 
 function SearchMultipleFE({
   onChange,
   onSearchValuesChange,
+  onInputValueChange,
+  onInputChange,
   className,
   ...rest
 }: SearchMultipleFEProps) {
@@ -40,10 +43,15 @@ function SearchMultipleFE({
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleChange: CheckboxesTagsFEProps<string, false, true>["onChange"] = (event) => {
+  const handleChange: SearchMultipleFEProps["onChange"] = (event) => {
     const newValue = event.target.value;
     onChange?.(event);
     onSearchValuesChange?.(newValue);
+  };
+
+  const handleInputChange: SearchMultipleFEProps["onInputChange"] = (event, value, reason) => {
+    onInputChange?.(event, value, reason);
+    onInputValueChange?.(value);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -55,6 +63,7 @@ function SearchMultipleFE({
       {...rest}
       className={clsx("SearchMultipleFE", className)}
       onChange={handleChange}
+      onInputChange={handleInputChange}
       placeholder={t("global.search")}
       options={[]}
       freeSolo

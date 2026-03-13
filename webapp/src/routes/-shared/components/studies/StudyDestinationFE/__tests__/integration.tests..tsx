@@ -69,7 +69,6 @@ interface RenderOptions {
   value?: DirectoryDestination;
   onChange?: Mock;
   onBlur?: Mock;
-  children?: React.ReactNode;
   error?: boolean;
   helperText?: React.ReactNode;
 }
@@ -79,7 +78,6 @@ function renderComponent(options: RenderOptions = {}) {
     value = ROOT_DIRECTORY,
     onChange = vi.fn(),
     onBlur = vi.fn(),
-    children,
     error,
     helperText,
   } = options;
@@ -102,9 +100,7 @@ function renderComponent(options: RenderOptions = {}) {
           onBlur={onBlur}
           error={error}
           helperText={helperText}
-        >
-          {children}
-        </StudyDestinationFE>
+        />
       </Suspense>
     </QueryClientProvider>,
   );

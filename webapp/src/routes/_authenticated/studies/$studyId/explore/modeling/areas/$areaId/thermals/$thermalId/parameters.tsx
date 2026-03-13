@@ -71,7 +71,11 @@ function Parameters() {
         return (
           <>
             <Fieldset legend={t("study.modeling.clusters.operatingParameters")}>
-              <StringFE label={t("global.name")} name="name" control={control} disabled />
+              <SwitchFE
+                label={t("study.modeling.clusters.enabled")}
+                name="enabled"
+                control={control}
+              />
               {semver.lt(study.version, "9.3.0") ? (
                 <SelectFE
                   label={t("global.group")}
@@ -91,11 +95,7 @@ function Parameters() {
                   control={control}
                 />
               )}
-              <SwitchFE
-                label={t("study.modeling.clusters.enabled")}
-                name="enabled"
-                control={control}
-              />
+
               <SwitchFE
                 label={t("study.modeling.clusters.mustRun")}
                 name="mustRun"
@@ -219,7 +219,7 @@ function Parameters() {
                 control={control}
               />
             </Fieldset>
-            <Fieldset legend={t("study.modeling.clusters.thermal.pollutants")}>
+            <Fieldset legend={t("study.modeling.clusters.thermal.otherEmissionRates")}>
               {THERMAL_POLLUTANTS.map(
                 (name) =>
                   (name === "co2" || semver.gte(study.version, "8.6.0")) && (

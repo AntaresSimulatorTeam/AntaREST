@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import itertools
 import logging
+import tempfile
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -23,6 +24,7 @@ from fastapi import HTTPException
 from starlette.responses import FileResponse
 
 from antarest.core.exceptions import (
+    InvalidOutputConversionRequest,
     OutputAlreadyArchived,
     OutputAlreadyExists,
     OutputAlreadyUnarchived,
@@ -886,3 +888,21 @@ class OutputService:
     def get_logs(self, study_id: str, output_id: str, log_type: LogType) -> str:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
         return self._find_output_storage(study_id, output_id).get_logs(study_id, output_id, log_type)
+
+    def convert_output(self, study_id: str, output_id: str, storage_type: OutputStorageType) -> None:
+        """
+        Converts an output to a different storage.
+        """
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.WRITE)
+        current_storage = self._find_output_storage(study_id, output_id)
+        target_storage = next((s for s in self._storages if s.storage_type == storage_type), None)
+        if target_storage is None:
+            raise InvalidOutputConversionRequest(f"Storage type {storage_type} not found")
+        if current_storage == target_storage:
+            raise InvalidOutputConversionRequest(f"Output is already stored in {storage_type}")
+
+        with tempfile.TemporaryDirectory(dir=self._tmp_dir) as tmp_dir:
+            tmp_zip = Path(tmp_dir) / f"{output_id}.zip"
+            current_storage.export_output(study_id, output_id, tmp_zip)
+            target_storage.import_output(study_id, tmp_zip)
+            current_storage.delete_output(study_id, output_id)

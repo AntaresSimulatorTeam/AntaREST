@@ -13,7 +13,6 @@ import os
 import shutil
 import tempfile
 import zipfile
-from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -40,11 +39,12 @@ from antarest.output.storage.file.storage import (
     IFileOutputsProvider,
     InStudyFileOutputStorage,
 )
-from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
+from antarest.output.storage.output_storage import OutputDetails, OutputMetadata, OutputStorageType
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
+from tests.test_helpers.dates import utc_to_local
 
 
 @pytest.fixture
@@ -130,19 +130,49 @@ def test_file_output_storage(file_output_storage):
         file_output_storage.get_output_details("STA-mini", o.id) for o in file_output_storage.list_outputs("STA-mini")
     ] == [
         OutputDetails(
-            name="20201014-1422eco-hello", mode=Mode.ECONOMY, synthesis=True, by_year=True, nb_years=1, archived=False
+            name="20201014-1422eco-hello",
+            mode=Mode.ECONOMY,
+            synthesis=True,
+            by_year=True,
+            nb_years=1,
+            archived=False,
+            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
         ),
         OutputDetails(
-            name="20201014-1425eco-goodbye", mode=Mode.ECONOMY, synthesis=True, by_year=True, nb_years=2, archived=False
+            name="20201014-1425eco-goodbye",
+            mode=Mode.ECONOMY,
+            synthesis=True,
+            by_year=True,
+            nb_years=2,
+            archived=False,
+            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
         ),
         OutputDetails(
-            name="20201014-1427eco", mode=Mode.ECONOMY, synthesis=True, by_year=False, nb_years=1, archived=False
+            name="20201014-1427eco",
+            mode=Mode.ECONOMY,
+            synthesis=True,
+            by_year=False,
+            nb_years=1,
+            archived=False,
+            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
         ),
         OutputDetails(
-            name="20201014-1430adq", mode=Mode.ADEQUACY, synthesis=True, by_year=False, nb_years=1, archived=False
+            name="20201014-1430adq",
+            mode=Mode.ADEQUACY,
+            synthesis=True,
+            by_year=False,
+            nb_years=1,
+            archived=False,
+            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
         ),
         OutputDetails(
-            name="20201014-1430adq-2", mode=Mode.ADEQUACY, synthesis=True, by_year=False, nb_years=1, archived=True
+            name="20201014-1430adq-2",
+            mode=Mode.ADEQUACY,
+            synthesis=True,
+            by_year=False,
+            nb_years=1,
+            archived=True,
+            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
         ),
         OutputDetails(
             name="20241807-1540eco-extra-outputs",
@@ -151,6 +181,7 @@ def test_file_output_storage(file_output_storage):
             by_year=True,
             nb_years=1,
             archived=False,
+            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
         ),
     ]
 
@@ -360,12 +391,6 @@ def _extract_output_to_dir(study_zip: Path, output_path: str, target_dir: Path) 
         (tmp_dir / "STA-mini" / "output" / "20201014-1422eco-hello").rename(target_dir)
 
 
-def _utc_to_local_date(date_str: str) -> str:
-    """Converts a UTC date string such as "20201014-1222" to a local date string such as "20201014-1422"."""
-    utc_date = datetime.strptime(date_str, "%Y%m%d-%H%M").replace(tzinfo=timezone.utc)
-    return utc_date.astimezone().strftime("%Y%m%d-%H%M")
-
-
 def test_import_output_directory(
     file_output_storage: InStudyFileOutputStorage, tmp_path: Path, sta_mini_zip_path: Path
 ) -> None:
@@ -382,7 +407,7 @@ def test_import_output_directory(
     file_output_storage.import_output("my-study", output_dir)
 
     # Cannot hard code the expected formatted date because it depends on the locale
-    expected_date = _utc_to_local_date("20201014-1222")
+    expected_date = utc_to_local("20201014-1222")
 
     expected_output_dir = study_dir / "output" / f"{expected_date}eco-hello"
     assert expected_output_dir.exists()
@@ -427,7 +452,7 @@ def test_import_output_zip_should_import_it_as_archived(
     output_id = file_output_storage.import_output("my-study", zip_path)
 
     # Cannot hard code the expected formatted date because it depends on the locale
-    expected_date = _utc_to_local_date("20201014-1222")
+    expected_date = utc_to_local("20201014-1222")
 
     assert output_id == f"{expected_date}eco-hello"
     assert file_output_storage.list_outputs("my-study") == [
@@ -481,7 +506,7 @@ def test_import_output_archive_stream(
         file_output_storage.import_output("my-study", f)
 
     # Cannot hard code the expected formatted date because it depends on the locale
-    expected_date = _utc_to_local_date("20201014-1222")
+    expected_date = utc_to_local("20201014-1222")
 
     assert file_output_storage.list_outputs("my-study") == [
         OutputMetadata(id=f"{expected_date}eco-hello", in_study=True, archived=False)
