@@ -588,7 +588,9 @@ def _parallel_scan_for_studies(
 
     # Purge stale entries under this scan root
     root_prefix = str(path) + os.sep
-    stale_keys = [k for k, v in _scan_cache.items() if (k == str(path) or k.startswith(root_prefix)) and v[3] != scan_id]
+    stale_keys = [
+        k for k, v in _scan_cache.items() if (k == str(path) or k.startswith(root_prefix)) and v[3] != scan_id
+    ]
     for k in stale_keys:
         del _scan_cache[k]
 
