@@ -474,8 +474,9 @@ def has_children(path: Path, filter_in: List[str], filter_out: List[str], show_h
 
 _SCAN_WORKERS = 32
 
-# Cache for parallel scan: {dir_path_str: (mtime, child_paths, is_study)}
-_scan_cache: dict[str, tuple[float, List[str], bool]] = {}
+# Cache for parallel scan: {dir_path_str: (mtime, child_paths, is_study, last_seen_scan)}
+_scan_cache: dict[str, tuple[float, List[str], bool, int]] = {}
+_scan_generation: int = 0
 
 
 def rec_scan_for_studies(
@@ -515,6 +516,10 @@ def _parallel_scan_for_studies(
     compiled_in: List[re.Pattern[str]],
     compiled_out: List[re.Pattern[str]],
 ) -> List[StudyFolder]:
+    global _scan_generation
+    _scan_generation += 1
+    scan_id = _scan_generation
+
     results: SimpleQueue[StudyFolder] = SimpleQueue()
     lock = threading.Lock()
     in_flight = 0
@@ -542,8 +547,9 @@ def _parallel_scan_for_studies(
             cached = _scan_cache.get(dir_key)
 
             if cached is not None and cached[0] == current_mtime:
-                # mtime unchanged: reuse cached result
-                _, child_paths, is_study = cached
+                # mtime unchanged: reuse cached result, update scan_id
+                _, child_paths, is_study, _ = cached
+                _scan_cache[dir_key] = (current_mtime, child_paths, is_study, scan_id)
                 if is_study:
                     logger.debug(f"Study {dir_path.name} found in {workspace} (cached)")
                     results.put(StudyFolder(dir_path, workspace, groups))
@@ -555,7 +561,7 @@ def _parallel_scan_for_studies(
                 if is_study:
                     logger.debug(f"Study {dir_path.name} found in {workspace}")
                     results.put(StudyFolder(dir_path, workspace, groups))
-                    _scan_cache[dir_key] = (current_mtime, [], True)
+                    _scan_cache[dir_key] = (current_mtime, [], True, scan_id)
                     return
 
                 if dir_path.is_dir():
@@ -563,7 +569,7 @@ def _parallel_scan_for_studies(
                 else:
                     children = []
 
-                _scan_cache[dir_key] = (current_mtime, [str(c) for c in children], False)
+                _scan_cache[dir_key] = (current_mtime, [str(c) for c in children], False, scan_id)
 
             if children:
                 with lock:
@@ -580,6 +586,12 @@ def _parallel_scan_for_studies(
             in_flight = 1
         executor.submit(_scan_one, path)
         done_event.wait()
+
+    # Purge stale entries under this scan root
+    root_prefix = str(path) + os.sep
+    stale_keys = [k for k, v in _scan_cache.items() if (k == str(path) or k.startswith(root_prefix)) and v[3] != scan_id]
+    for k in stale_keys:
+        del _scan_cache[k]
 
     studies = []
     while not results.empty():
