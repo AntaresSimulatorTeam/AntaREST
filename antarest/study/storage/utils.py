@@ -515,7 +515,7 @@ def _parallel_scan_for_studies(
     compiled_in: List[re.Pattern[str]],
     compiled_out: List[re.Pattern[str]],
 ) -> List[StudyFolder]:
-    results: SimpleQueue = SimpleQueue()
+    results: SimpleQueue[StudyFolder] = SimpleQueue()
     lock = threading.Lock()
     in_flight = 0
     done_event = threading.Event()
