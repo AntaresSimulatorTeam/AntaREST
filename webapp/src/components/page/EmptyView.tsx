@@ -20,15 +20,15 @@ import { useTranslation } from "react-i18next";
 export interface EmptyViewProps {
   title?: string;
   icon?: SvgIconComponent;
-  actions?: React.ReactNode;
-  extraActions?: React.ReactNode;
+  primaryActions?: React.ReactNode;
+  secondaryActions?: React.ReactNode;
 }
 
 function EmptyView({
   title,
   icon: Icon = LiveHelpRoundedIcon,
-  actions,
-  extraActions,
+  primaryActions,
+  secondaryActions,
 }: EmptyViewProps) {
   const { t } = useTranslation();
 
@@ -44,7 +44,7 @@ function EmptyView({
         position: "relative",
       }}
     >
-      {extraActions && (
+      {secondaryActions && (
         <Box
           sx={{
             display: "flex",
@@ -54,12 +54,12 @@ function EmptyView({
             right: 0,
           }}
         >
-          {extraActions}
+          {secondaryActions}
         </Box>
       )}
       {Icon && <Icon sx={{ height: 100, width: 100, color: "text.disabled" }} />}
       <Typography color="textDisabled">{title || t("common.noContent")}</Typography>
-      {actions && <Box sx={{ display: "flex", gap: 1, m: 2 }}>{actions}</Box>}
+      {primaryActions && <Box sx={{ display: "flex", gap: 1, m: 2 }}>{primaryActions}</Box>}
     </Box>
   );
 }

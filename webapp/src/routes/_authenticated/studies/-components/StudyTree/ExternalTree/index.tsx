@@ -77,7 +77,7 @@ function ExternalTree({ studies }: ExternalTreeProps) {
     dispatch(
       updateStudyFilters({
         activeTree: "external",
-        external: { path: itemId, strictPath: filters.external.strictPath },
+        external: { path: itemId },
       }),
     );
   };

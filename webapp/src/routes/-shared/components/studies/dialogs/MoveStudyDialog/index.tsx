@@ -13,11 +13,12 @@
  */
 
 import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
-import type { DialogProps } from "@mui/material";
+import { type DialogProps } from "@mui/material";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "@tanstack/react-router";
+
 import FormDialog from "@/components/dialogs/FormDialog";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
@@ -187,7 +188,8 @@ function MoveStudyDialog({ open, onClose, studies }: Props) {
       submitButtonText={t("global.move")}
     >
       {({ control }) => (
-        <StudyDestinationFE name="destination" control={control}>
+        <>
+          <StudyDestinationFE name="destination" control={control} />
           <CheckBoxFE
             name="redirect"
             control={control}
@@ -195,7 +197,7 @@ function MoveStudyDialog({ open, onClose, studies }: Props) {
             size="small"
             sx={{ color: "text.secondary" }}
           />
-        </StudyDestinationFE>
+        </>
       )}
     </FormDialog>
   );
