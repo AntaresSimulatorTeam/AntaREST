@@ -16,7 +16,7 @@ from pathlib import Path
 from starlette.testclient import TestClient
 
 from tests.integration.utils import wait_task_completion
-from tests.test_helpers import download_to_file
+from tests.test_helpers.download import download_to_file
 from tests.test_helpers.outputs import create_minimal_output_zip_from_name
 
 
