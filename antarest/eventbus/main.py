@@ -14,25 +14,18 @@ from typing import Optional
 
 from redis import Redis
 
-from antarest.core.application import AppBuildContext
 from antarest.core.config import Config
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.business.redis_eventbus import RedisEventBus
 from antarest.eventbus.service import EventBusService
-from antarest.eventbus.web import configure_websockets
 
 
 def build_eventbus(
-    app_ctxt: Optional[AppBuildContext],
     config: Config,
     autostart: bool = True,
     redis_client: Optional[Redis] = None,  # type: ignore
 ) -> EventBusService:
-    eventbus = EventBusService(
+    return EventBusService(
         RedisEventBus(redis_client) if redis_client is not None else LocalEventBus(),
         autostart,
     )
-
-    if app_ctxt:
-        configure_websockets(app_ctxt, config, eventbus)
-    return eventbus

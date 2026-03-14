@@ -22,12 +22,13 @@ from pathlib import Path
 from typing import Iterator, Mapping, Sequence, Tuple, TypeAlias
 
 import typing_extensions as te
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import Field
 from starlette.responses import PlainTextResponse, StreamingResponse
 
 from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
+from antarest.core.dependencies import get_config
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -231,6 +232,17 @@ def _is_relative_to(path: Path, base_path: Path) -> bool:
         return False
 
 
+def _build_filesystems(config: Config) -> dict[str, Mapping[str, Path]]:
+    config_dirs: Mapping[str, Path] = {
+        "res": config.resources_path,
+        "tmp": config.storage.tmp_dir,
+        "matrix": config.storage.matrixstore,
+        "archive": config.storage.archive_dir,
+    }
+    workspace_dirs: Mapping[str, Path] = {name: ws_cfg.path for name, ws_cfg in config.storage.workspaces.items()}
+    return {"cfg": config_dirs, "ws": workspace_dirs}
+
+
 def create_file_system_blueprint(config: Config) -> APIRouter:
     """
     Create the blueprint for the file system API.
@@ -257,28 +269,19 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         dependencies=[auth.required()],
         include_in_schema=True,  # but may be disabled in the future
     )
-    config_dirs = {
-        "res": config.resources_path,
-        "tmp": config.storage.tmp_dir,
-        "matrix": config.storage.matrixstore,
-        "archive": config.storage.archive_dir,
-    }
-    workspace_dirs = {name: ws_cfg.path for name, ws_cfg in config.storage.workspaces.items()}
-    filesystems = {
-        "cfg": config_dirs,
-        "ws": workspace_dirs,
-    }
 
     # Utility functions
     # =================
 
-    def _get_mount_dirs(fs: str) -> Mapping[str, Path]:
+    def _get_mount_dirs(fs: str, cfg: Config) -> Mapping[str, Path]:
+        filesystems = _build_filesystems(cfg)
         try:
             return filesystems[fs]
         except KeyError:
             raise HTTPException(status_code=404, detail=f"Filesystem not found: '{fs}'") from None
 
-    def _get_mount_dir(fs: str, mount: str) -> Path:
+    def _get_mount_dir(fs: str, mount: str, cfg: Config) -> Path:
+        filesystems = _build_filesystems(cfg)
         try:
             return filesystems[fs][mount]
         except KeyError:
@@ -301,7 +304,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         "",
         summary="Get filesystems information",
     )
-    def list_filesystems() -> Sequence[FilesystemDTO]:
+    def list_filesystems(cfg: Config = Depends(get_config)) -> Sequence[FilesystemDTO]:
         """
         Get the list of filesystems and their mount points.
 
@@ -310,6 +313,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         - `mount_dirs`: mapping of the mount point names to their full path in Antares Web Server.
         """
 
+        filesystems = _build_filesystems(cfg)
         fs = [FilesystemDTO(name=name, mount_dirs=mount_dirs) for name, mount_dirs in filesystems.items()]
         return fs
 
@@ -317,7 +321,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         "/{fs}",
         summary="Get information of a filesystem",
     )
-    def list_mount_points(fs: FilesystemName) -> Sequence[MountPointDTO]:
+    def list_mount_points(fs: FilesystemName, cfg: Config = Depends(get_config)) -> Sequence[MountPointDTO]:
         """
         Get the path and the disk usage of the mount points in a filesystem.
 
@@ -336,14 +340,14 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         - 404 Not Found: If the specified filesystem doesn't exist.
         """
 
-        mount_dirs = _get_mount_dirs(fs)
+        mount_dirs = _get_mount_dirs(fs, cfg)
         return [MountPointDTO.from_path(name, path) for name, path in mount_dirs.items()]
 
     @bp.get(
         "/{fs}/{mount}",
         summary="Get information of a mount point",
     )
-    def get_mount_point(fs: FilesystemName, mount: MountPointName) -> MountPointDTO:
+    def get_mount_point(fs: FilesystemName, mount: MountPointName, cfg: Config = Depends(get_config)) -> MountPointDTO:
         """
         Get the path and the disk usage of a mount point.
 
@@ -363,7 +367,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         - 404 Not Found: If the specified filesystem or mount point doesn't exist.
         """
 
-        mount_dir = _get_mount_dir(fs, mount)
+        mount_dir = _get_mount_dir(fs, mount, cfg)
         return MountPointDTO.from_path(mount, mount_dir)
 
     @bp.get(
@@ -375,6 +379,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         mount: MountPointName,
         path: SanitizedStr = "",
         details: bool = False,
+        cfg: Config = Depends(get_config),
     ) -> Sequence[FileInfoDTO]:
         """
         List files and directories in a mount point.
@@ -406,7 +411,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         - 403 Forbidden: If the user has no permission to access the directory.
         """
 
-        mount_dir = _get_mount_dir(fs, mount)
+        mount_dir = _get_mount_dir(fs, mount, cfg)
 
         # The following code looks weird, but it's the only way to handle exceptions in generators.
         file_infos = []
@@ -438,6 +443,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         mount: MountPointName,
         path: SanitizedStr = "",
         encoding: SanitizedStr = "utf-8",
+        cfg: Config = Depends(get_config),
     ) -> str:
         # noinspection SpellCheckingInspection
         """
@@ -469,7 +475,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         - 417 Expectation Failed: If the specified path is not a text file or if the encoding is invalid.
         """
 
-        mount_dir = _get_mount_dir(fs, mount)
+        mount_dir = _get_mount_dir(fs, mount, cfg)
         full_path = _get_full_path(mount_dir, path)
 
         if full_path.is_dir():
@@ -496,6 +502,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         fs: FilesystemName,
         mount: MountPointName,
         path: SanitizedStr = "",
+        cfg: Config = Depends(get_config),
     ) -> StreamingResponse:
         """
         Download a file from a mount point.
@@ -517,7 +524,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         - 417 Expectation Failed: If the specified path is not a regular file.
         """
 
-        mount_dir = _get_mount_dir(fs, mount)
+        mount_dir = _get_mount_dir(fs, mount, cfg)
         full_path = _get_full_path(mount_dir, path)
 
         if full_path.is_dir():

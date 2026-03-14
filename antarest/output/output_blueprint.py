@@ -23,8 +23,8 @@ from starlette.responses import FileResponse, Response
 
 from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.config import Config
+from antarest.core.dependencies import get_output_service, get_tmp_export_file
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
-from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.serde.json import to_json
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.dict_utils import remove_nones
@@ -99,14 +99,11 @@ def _to_item_id(
     )
 
 
-def create_output_routes(
-    output_service: OutputService, file_transfer_manager: FileTransferManager, config: Config
-) -> APIRouter:
+def create_output_routes(config: Config) -> APIRouter:
     """
     Endpoint implementation for outputs management
 
     Args:
-        output_service: output service facade to handle request
         config: main server configuration
 
     Returns:
@@ -121,7 +118,12 @@ def create_output_routes(
         status_code=HTTPStatus.ACCEPTED,
         summary="Import Output",
     )
-    def import_output(uuid: UuidStr, output: UploadFile, storage_type: OutputStorageType | None = None) -> str | None:
+    def import_output(
+        uuid: UuidStr,
+        output: UploadFile,
+        output_service: OutputService = Depends(get_output_service),
+        storage_type: OutputStorageType | None = None,
+    ) -> str | None:
         logger.info(f"Importing output for study {uuid}")
         output_id = output_service.import_output(uuid, output.file, storage_type=storage_type)
         return output_id
@@ -130,7 +132,9 @@ def create_output_routes(
         "/studies/{study_id}/outputs/{output_id}/variables",
         summary="Get outputs data variables",
     )
-    def output_variables_information(study_id: UuidStr, output_id: SanitizedStr) -> OutputVariablesInformation:
+    def output_variables_information(
+        study_id: UuidStr, output_id: SanitizedStr, output_service: OutputService = Depends(get_output_service)
+    ) -> OutputVariablesInformation:
         logger.info(f"Fetching whole output of the simulation {output_id} for study {study_id}")
         return output_service.get_output_variables_information(study_id, output_id)
 
@@ -138,7 +142,9 @@ def create_output_routes(
         "/studies/{study_id}/outputs/{output_id}/export",
         summary="Get outputs data",
     )
-    def output_export(study_id: UuidStr, output_id: SanitizedStr) -> FileDownloadTaskDTO:
+    def output_export(
+        study_id: UuidStr, output_id: SanitizedStr, output_service: OutputService = Depends(get_output_service)
+    ) -> FileDownloadTaskDTO:
         logger.info(f"Fetching whole output of the simulation {output_id} for study {study_id}")
         return output_service.export_output(study_uuid=study_id, output_uuid=output_id)
 
@@ -149,6 +155,7 @@ def create_output_routes(
     def get_output_time_index(
         uuid: UuidStr,
         output_id: SanitizedStr,
+        output_service: OutputService = Depends(get_output_service),
         frequency: Annotated[
             MatrixFrequency,
             Query(
@@ -176,7 +183,8 @@ def create_output_routes(
         study_id: UuidStr,
         output_id: SanitizedStr,
         data: StudyDownloadDTO,
-        tmp_export_file: Annotated[Path, Depends(file_transfer_manager.request_tmp_file)],
+        tmp_export_file: Annotated[Path, Depends(get_tmp_export_file)],
+        output_service: OutputService = Depends(get_output_service),
         use_task: Annotated[bool, Query(deprecated=True)] = False,
     ) -> FileResponse:
         logger.info(f"Fetching batch outputs of simulation {output_id} for study {study_id}")
@@ -187,15 +195,19 @@ def create_output_routes(
         "/studies/{study_id}/outputs/{output_id}",
         summary="Delete a simulation output",
     )
-    def delete_output(study_id: UuidStr, output_id: SanitizedStr) -> None:
-        logger.info(f"FDeleting output {output_id} from study {study_id}")
+    def delete_output(
+        study_id: UuidStr, output_id: SanitizedStr, output_service: OutputService = Depends(get_output_service)
+    ) -> None:
+        logger.info(f"Deleting output {output_id} from study {study_id}")
         output_service.delete_output(study_id, output_id)
 
     @bp.post(
         "/studies/{study_id}/outputs/{output_id}/_archive",
         summary="Archive output",
     )
-    def archive_output(study_id: UuidStr, output_id: SanitizedStr) -> str | None:
+    def archive_output(
+        study_id: UuidStr, output_id: SanitizedStr, output_service: OutputService = Depends(get_output_service)
+    ) -> str | None:
         logger.info(f"Archiving of the output {output_id} of the study {study_id}")
 
         content = output_service.archive_output(study_id, output_id)
@@ -205,7 +217,9 @@ def create_output_routes(
         "/studies/{study_id}/outputs/{output_id}/_unarchive",
         summary="Unarchive output",
     )
-    def unarchive_output(study_id: UuidStr, output_id: SanitizedStr) -> str | None:
+    def unarchive_output(
+        study_id: UuidStr, output_id: SanitizedStr, output_service: OutputService = Depends(get_output_service)
+    ) -> str | None:
         logger.info(f"Unarchiving of the output {output_id} of the study {study_id}")
 
         content = output_service.unarchive_output(study_id, output_id)
@@ -215,7 +229,9 @@ def create_output_routes(
         "/private/studies/{study_id}/outputs/{output_id}/digest-ui",
         summary="Display an output digest file for the front-end",
     )
-    def get_digest_file(study_id: UuidStr, output_id: SanitizedStr) -> DigestUI:
+    def get_digest_file(
+        study_id: UuidStr, output_id: SanitizedStr, output_service: OutputService = Depends(get_output_service)
+    ) -> DigestUI:
         logger.info(f"Retrieving the digest file for the output {output_id} of the study {study_id}")
         return output_service.get_digest_file(study_id, output_id)
 
@@ -223,7 +239,9 @@ def create_output_routes(
         "/studies/{study_id}/outputs",
         summary="Get global information about a study simulation result",
     )
-    def get_outputs(study_id: UuidStr) -> list[OutputDetails]:
+    def get_outputs(
+        study_id: UuidStr, output_service: OutputService = Depends(get_output_service)
+    ) -> list[OutputDetails]:
         logger.info(f"Fetching output list for study {study_id}")
         content = output_service.get_output_details(study_id)
         return content
@@ -237,6 +255,7 @@ def create_output_routes(
         output_id: SanitizedStr,
         query_file: MCIndAreasQueryFile,
         frequency: MatrixFrequency,
+        output_service: OutputService = Depends(get_output_service),
         mc_years: SanitizedStr = "",
         areas_ids: SanitizedStr = "",
         columns_names: SanitizedStr = "",
@@ -294,13 +313,14 @@ def create_output_routes(
         output_id: SanitizedStr,
         query_file: MCIndAreasQueryFile,
         frequency: MatrixFrequency,
+        output_service: OutputService = Depends(get_output_service),
         mc_years: SanitizedStr = "",
         areas_ids: SanitizedStr = "",
         columns_names: SanitizedStr = "",
         export_format: ExportFormatQuery = TableExportFormat.CSV,
     ) -> str:
         return aggregate_areas_raw_data(
-            uuid, output_id, query_file, frequency, mc_years, areas_ids, columns_names, export_format
+            uuid, output_id, query_file, frequency, output_service, mc_years, areas_ids, columns_names, export_format
         )
 
     @bp.get(
@@ -312,6 +332,7 @@ def create_output_routes(
         output_id: SanitizedStr,
         query_file: MCIndLinksQueryFile,
         frequency: MatrixFrequency,
+        output_service: OutputService = Depends(get_output_service),
         mc_years: SanitizedStr = "",
         links_ids: SanitizedStr = "",
         columns_names: SanitizedStr = "",
@@ -368,13 +389,14 @@ def create_output_routes(
         output_id: SanitizedStr,
         query_file: MCIndLinksQueryFile,
         frequency: MatrixFrequency,
+        output_service: OutputService = Depends(get_output_service),
         mc_years: SanitizedStr = "",
         links_ids: SanitizedStr = "",
         columns_names: SanitizedStr = "",
         export_format: ExportFormatQuery = TableExportFormat.CSV,
     ) -> str:
         return aggregate_links_raw_data(
-            uuid, output_id, query_file, frequency, mc_years, links_ids, columns_names, export_format
+            uuid, output_id, query_file, frequency, output_service, mc_years, links_ids, columns_names, export_format
         )
 
     @bp.get(
@@ -386,6 +408,7 @@ def create_output_routes(
         output_id: SanitizedStr,
         query_file: MCAllAreasQueryFile,
         frequency: MatrixFrequency,
+        output_service: OutputService = Depends(get_output_service),
         areas_ids: SanitizedStr = "",
         columns_names: SanitizedStr = "",
         export_format: ExportFormatQuery = TableExportFormat.CSV,
@@ -440,12 +463,13 @@ def create_output_routes(
         output_id: SanitizedStr,
         query_file: MCAllAreasQueryFile,
         frequency: MatrixFrequency,
+        output_service: OutputService = Depends(get_output_service),
         areas_ids: SanitizedStr = "",
         columns_names: SanitizedStr = "",
         export_format: ExportFormatQuery = TableExportFormat.CSV,
     ) -> str:
         return aggregate_areas_raw_data__all(
-            uuid, output_id, query_file, frequency, areas_ids, columns_names, export_format
+            uuid, output_id, query_file, frequency, output_service, areas_ids, columns_names, export_format
         )
 
     @bp.get(
@@ -457,6 +481,7 @@ def create_output_routes(
         output_id: SanitizedStr,
         query_file: MCAllLinksQueryFile,
         frequency: MatrixFrequency,
+        output_service: OutputService = Depends(get_output_service),
         links_ids: SanitizedStr = "",
         columns_names: SanitizedStr = "",
         export_format: ExportFormatQuery = TableExportFormat.CSV,
@@ -512,19 +537,22 @@ def create_output_routes(
         output_id: SanitizedStr,
         query_file: MCAllLinksQueryFile,
         frequency: MatrixFrequency,
+        output_service: OutputService = Depends(get_output_service),
         links_ids: SanitizedStr = "",
         columns_names: SanitizedStr = "",
         export_format: ExportFormatQuery = TableExportFormat.CSV,
     ) -> str:
         return aggregate_links_raw_data__all(
-            uuid, output_id, query_file, frequency, links_ids, columns_names, export_format
+            uuid, output_id, query_file, frequency, output_service, links_ids, columns_names, export_format
         )
 
     @bp.get(
         "/studies/{uuid}/output/{output_id}/variables-list",
         summary="Retrieves the list of variables for a given output",
     )
-    def get_output_variables_list(uuid: UuidStr, output_id: SanitizedStr) -> OutputVariablesList:
+    def get_output_variables_list(
+        uuid: UuidStr, output_id: SanitizedStr, output_service: OutputService = Depends(get_output_service)
+    ) -> OutputVariablesList:
         return output_service.get_output_variables_list(uuid, output_id)
 
     @bp.get(
@@ -541,6 +569,7 @@ def create_output_routes(
         variable_name: SanitizedStr,
         frequency: MatrixFrequency,
         type: OutputVariablesType,
+        output_service: OutputService = Depends(get_output_service),
         area_id: SanitizedStr | None = None,
         area_from_id: SanitizedStr | None = None,
         area_to_id: SanitizedStr | None = None,
@@ -578,6 +607,7 @@ def create_output_routes(
         variable_name: SanitizedStr,
         frequency: MatrixFrequency,
         type: OutputVariablesType,
+        output_service: OutputService = Depends(get_output_service),
         area_id: SanitizedStr | None = None,
         area_from_id: SanitizedStr | None = None,
         area_to_id: SanitizedStr | None = None,
@@ -619,6 +649,7 @@ def create_output_routes(
         variable_name: SanitizedStr,
         frequency: MatrixFrequency,
         type: OutputVariablesType,
+        output_service: OutputService = Depends(get_output_service),
         area_id: SanitizedStr | None = None,
         area_from_id: SanitizedStr | None = None,
         area_to_id: SanitizedStr | None = None,

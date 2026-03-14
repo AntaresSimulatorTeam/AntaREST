@@ -14,11 +14,12 @@ import logging
 from typing import Annotated, Sequence
 
 import polars as pl
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile
 from starlette.responses import Response
 
 from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.config import Config
+from antarest.core.dependencies import get_study_service
 from antarest.core.model import StudyPermissionType
 from antarest.core.serde.json import to_json
 from antarest.core.utils.web import APITag
@@ -36,12 +37,11 @@ from antarest.study.service import StudyService
 logger = logging.getLogger(__name__)
 
 
-def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRouter:
+def create_xpansion_routes(config: Config) -> APIRouter:
     """
     Endpoint implementation for xpansion studies management
 
     Args:
-        study_service: study service facade to handle request
         config: main server configuration
     """
     auth = Auth(config)
@@ -51,7 +51,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         "/studies/{uuid}/extensions/xpansion",
         summary="Create Xpansion Configuration",
     )
-    def create_xpansion_configuration(uuid: UuidStr) -> None:
+    def create_xpansion_configuration(uuid: UuidStr, study_service: StudyService = Depends(get_study_service)) -> None:
         logger.info(f"Creating Xpansion Configuration for study {uuid}")
         study_service.create_xpansion_configuration(uuid=uuid)
 
@@ -59,7 +59,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         "/studies/{uuid}/extensions/xpansion",
         summary="Delete Xpansion Configuration",
     )
-    def delete_xpansion_configuration(uuid: UuidStr) -> None:
+    def delete_xpansion_configuration(uuid: UuidStr, study_service: StudyService = Depends(get_study_service)) -> None:
         logger.info(f"Deleting Xpansion Configuration for study {uuid}")
         study_service.delete_xpansion_configuration(uuid=uuid)
 
@@ -67,7 +67,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         "/studies/{uuid}/extensions/xpansion/settings",
         summary="Get Xpansion Settings",
     )
-    def get_settings(uuid: UuidStr) -> XpansionSettings:
+    def get_settings(uuid: UuidStr, study_service: StudyService = Depends(get_study_service)) -> XpansionSettings:
         logger.info(f"Fetching Xpansion Settings of the study {uuid}")
         return study_service.get_xpansion_settings(uuid=uuid)
 
@@ -75,7 +75,11 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         "/studies/{uuid}/extensions/xpansion/settings",
         summary="Update Xpansion Settings",
     )
-    def update_settings(uuid: UuidStr, xpansion_settings: XpansionSettingsUpdate) -> XpansionSettings:
+    def update_settings(
+        uuid: UuidStr,
+        xpansion_settings: XpansionSettingsUpdate,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> XpansionSettings:
         logger.info(f"Updating Xpansion Settings of Study {uuid}")
         return study_service.update_xpansion_settings(uuid, xpansion_settings)
 
@@ -83,7 +87,9 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         "/studies/{uuid}/extensions/xpansion/settings/additional-constraints",
         summary="Update Xpansion Settings Additional Constraints",
     )
-    def update_additional_constraints_settings(uuid: UuidStr, filename: SanitizedStr = "") -> XpansionSettings:
+    def update_additional_constraints_settings(
+        uuid: UuidStr, filename: SanitizedStr = "", study_service: StudyService = Depends(get_study_service)
+    ) -> XpansionSettings:
         logger.info(f"Updating Xpansion Settings of Study {uuid} with additional constraints {filename}")
         return study_service.update_xpansion_constraints_settings(uuid, filename)
 
@@ -91,7 +97,11 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         "/studies/{uuid}/extensions/xpansion/candidates",
         summary="Create Xpansion Candidate",
     )
-    def add_candidate(uuid: UuidStr, xpansion_candidate: XpansionCandidateCreation) -> XpansionCandidate:
+    def add_candidate(
+        uuid: UuidStr,
+        xpansion_candidate: XpansionCandidateCreation,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> XpansionCandidate:
         logger.info(f"Adding new candidate {xpansion_candidate.model_dump(by_alias=True)} to study {uuid}")
         return study_service.add_candidate(uuid, xpansion_candidate)
 
@@ -99,7 +109,9 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         "/studies/{uuid}/extensions/xpansion/candidates/{candidate_name}",
         summary="Get Xpansion Candidate",
     )
-    def get_candidate(uuid: UuidStr, candidate_name: SanitizedStr) -> XpansionCandidate:
+    def get_candidate(
+        uuid: UuidStr, candidate_name: SanitizedStr, study_service: StudyService = Depends(get_study_service)
+    ) -> XpansionCandidate:
         logger.info("Fetching study list")
         return study_service.get_candidate(uuid, candidate_name)
 
@@ -107,7 +119,9 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         "/studies/{uuid}/extensions/xpansion/candidates",
         summary="Get Xpansion Candidates",
     )
-    def get_candidates(uuid: UuidStr) -> Sequence[XpansionCandidate]:
+    def get_candidates(
+        uuid: UuidStr, study_service: StudyService = Depends(get_study_service)
+    ) -> Sequence[XpansionCandidate]:
         logger.info("Fetching study list")
         return study_service.get_candidates(uuid)
 
@@ -116,7 +130,10 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         summary="Update Xpansion Candidate",
     )
     def update_candidate(
-        uuid: UuidStr, candidate_name: SanitizedStr, xpansion_candidate: XpansionCandidateCreation
+        uuid: UuidStr,
+        candidate_name: SanitizedStr,
+        xpansion_candidate: XpansionCandidateCreation,
+        study_service: StudyService = Depends(get_study_service),
     ) -> XpansionCandidate:
         logger.info(f"Updating xpansion candidate {xpansion_candidate.name} of the study {uuid}")
         return study_service.replace_xpansion_candidate(uuid, candidate_name, xpansion_candidate)
@@ -125,7 +142,9 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         "/studies/{uuid}/extensions/xpansion/candidates/{candidate_name}",
         summary="Delete Xpansion Candidate",
     )
-    def delete_candidate(uuid: UuidStr, candidate_name: SanitizedStr) -> None:
+    def delete_candidate(
+        uuid: UuidStr, candidate_name: SanitizedStr, study_service: StudyService = Depends(get_study_service)
+    ) -> None:
         logger.info(f"Deleting candidate {candidate_name} of the study {uuid}")
         study_service.delete_xpansion_candidate(uuid, candidate_name)
 
@@ -134,7 +153,10 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         summary="Add Xpansion resource file",
     )
     def add_resource(
-        uuid: UuidStr, resource_type: XpansionResourceFileType, file: Annotated[UploadFile, File()]
+        uuid: UuidStr,
+        resource_type: XpansionResourceFileType,
+        file: Annotated[UploadFile, File()],
+        study_service: StudyService = Depends(get_study_service),
     ) -> None:
         logger.info(f"Add xpansion {resource_type} files in the study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
@@ -145,7 +167,12 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         "/studies/{uuid}/extensions/xpansion/resources/{resource_type}/{filename}",
         summary="Delete Xpansion resource file",
     )
-    def delete_resource(uuid: UuidStr, resource_type: XpansionResourceFileType, filename: SanitizedStr) -> None:
+    def delete_resource(
+        uuid: UuidStr,
+        resource_type: XpansionResourceFileType,
+        filename: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
+    ) -> None:
         logger.info(f"Deleting xpansion {resource_type} file from the study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -156,7 +183,10 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         summary="Getting Xpansion resource file content",
     )
     def get_resource_content(
-        uuid: UuidStr, resource_type: XpansionResourceFileType, filename: SanitizedStr
+        uuid: UuidStr,
+        resource_type: XpansionResourceFileType,
+        filename: SanitizedStr,
+        study_service: StudyService = Depends(get_study_service),
     ) -> Response:
         logger.info(f"Getting xpansion {resource_type} file {filename} from the study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
@@ -175,7 +205,9 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         "/studies/{uuid}/extensions/xpansion/resources/{resource_type}",
         summary="Getting all Xpansion resources files",
     )
-    def list_resources(uuid: UuidStr, resource_type: XpansionResourceFileType) -> list[str]:
+    def list_resources(
+        uuid: UuidStr, resource_type: XpansionResourceFileType, study_service: StudyService = Depends(get_study_service)
+    ) -> list[str]:
         logger.info(f"Getting xpansion {resource_type} resources files from the study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -185,7 +217,9 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         "/studies/{uuid}/extensions/xpansion/adequacy_criterion",
         summary="Gets the Xpansion adequacy criterion configuration",
     )
-    def get_adequacy_criterion(uuid: UuidStr) -> XpansionAdequacyCriterion:
+    def get_adequacy_criterion(
+        uuid: UuidStr, study_service: StudyService = Depends(get_study_service)
+    ) -> XpansionAdequacyCriterion:
         logger.info(f"Getting xpansion adequacy criterion from the study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -195,7 +229,9 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         "/studies/{uuid}/extensions/xpansion/adequacy_criterion",
         summary="Replace the Xpansion adequacy criterion configuration",
     )
-    def update_security_criterion(uuid: UuidStr, criterion: XpansionAdequacyCriterion) -> XpansionAdequacyCriterion:
+    def update_security_criterion(
+        uuid: UuidStr, criterion: XpansionAdequacyCriterion, study_service: StudyService = Depends(get_study_service)
+    ) -> XpansionAdequacyCriterion:
         logger.info(f"Updates xpansion adequacy criterion from the study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)

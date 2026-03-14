@@ -15,38 +15,31 @@ import logging
 from http import HTTPStatus
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from antarest.core.api_types import UuidStr
 from antarest.core.config import Config
+from antarest.core.dependencies import get_task_service
 from antarest.core.tasks.model import TaskDTO, TaskListFilter
-from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, TaskJobService
+from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 
 logger = logging.getLogger(__name__)
 
 
-def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
-    """
-    Endpoints login implementation
-
-    Args:
-        service: login facade service
-        config: server config
-
-    Returns:
-        API router
-    """
+def create_tasks_api(config: Config) -> APIRouter:
     auth = Auth(config)
     bp = APIRouter(prefix="/v1", tags=[APITag.tasks], dependencies=[auth.required()])
 
     @bp.post("/tasks", deprecated=True)
-    def list_tasks(filter: TaskListFilter) -> list[TaskDTO]:
+    def list_tasks(filter: TaskListFilter, service: ITaskService = Depends(get_task_service)) -> list[TaskDTO]:
         return service.list_tasks(filter)
 
     @bp.get("/tasks")
-    def get_task_list(task_filter: Annotated[TaskListFilter, Query()]) -> list[TaskDTO]:
+    def get_task_list(
+        task_filter: Annotated[TaskListFilter, Query()], service: ITaskService = Depends(get_task_service)
+    ) -> list[TaskDTO]:
         return service.list_tasks(task_filter)
 
     @bp.get("/tasks/{task_id}")
@@ -55,6 +48,7 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
         wait_for_completion: bool = False,
         with_logs: bool = False,
         timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT,
+        service: ITaskService = Depends(get_task_service),
     ) -> TaskDTO:
         """
         Retrieve information about a specific task.
@@ -90,7 +84,7 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
         return service.status_task(task_id, with_logs)
 
     @bp.put("/tasks/{task_id}/cancel", status_code=HTTPStatus.ACCEPTED)
-    def cancel_task(task_id: UuidStr) -> None:
+    def cancel_task(task_id: UuidStr, service: ITaskService = Depends(get_task_service)) -> None:
         logger.info(f"Requesting cancellation for task {task_id}")
         service.cancel_task(task_id)
 
@@ -98,7 +92,7 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
         "/tasks/{task_id}/progress",
         summary="Retrieve task progress from task id",
     )
-    def get_progress(task_id: UuidStr) -> Optional[int]:
+    def get_progress(task_id: UuidStr, service: ITaskService = Depends(get_task_service)) -> Optional[int]:
         logger.info(f"Fetching task progress of task {task_id}")
         return service.get_task_progress(task_id)
 

@@ -39,12 +39,12 @@ def _init(config_file: Path, services_list: List[Module]) -> list[IService]:
     DBSessionMiddleware(None, custom_engine=engine, session_args=SESSION_ARGS)
     configure_logger(config)
 
-    core_services = create_core_services(None, config)
+    core_services = create_core_services(config)
 
     services: list[IService] = []
 
     if Module.WATCHER in services_list:
-        watcher = create_watcher(config=config, app_ctxt=None, study_service=core_services.study_service)
+        watcher = create_watcher(config=config, study_service=core_services.study_service)
         services.append(watcher)
 
     if Module.MATRIX_GC in services_list:

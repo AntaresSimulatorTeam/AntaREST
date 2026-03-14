@@ -19,20 +19,22 @@ import polars as pl
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
-from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.login.auth import JwtSettings
-from antarest.matrixstore.main import build_matrix_service
+from antarest.main import add_exception_handlers
 from antarest.matrixstore.model import MatrixDescriptionDTO, MatrixInfoDTO, MatrixReference, MatrixReferencesDTO
-from antarest.matrixstore.web import MatrixDTO
+from antarest.matrixstore.web import MatrixDTO, create_matrix_api
 from tests.helpers import with_admin_user
 from tests.login.test_web import create_auth_token
 
 
 def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
-    build_ctxt = create_app_ctxt(FastAPI(title=__name__))
+    config = Config(
+        resources_path=Path(),
+        security=SecurityConfig(disabled=auth_disabled),
+    )
 
     @AuthJWT.load_config  # type: ignore[misc]
     def get_config() -> JwtSettings:
@@ -42,18 +44,13 @@ def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
             authjwt_denylist_enabled=False,
         )
 
-    build_matrix_service(
-        build_ctxt,
-        user_service=Mock(),
-        file_transfer_manager=Mock(),
-        task_service=Mock(),
-        service=service,
-        config=Config(
-            resources_path=Path(),
-            security=SecurityConfig(disabled=auth_disabled),
-        ),
-    )
-    return build_ctxt.build()
+    app = FastAPI(title=__name__)
+    add_exception_handlers(app)
+    app.state.matrix_service = service
+    app.state.file_transfer_manager = Mock()
+    app.state.task_service = Mock()
+    app.include_router(create_matrix_api(config))
+    return app
 
 
 @with_admin_user

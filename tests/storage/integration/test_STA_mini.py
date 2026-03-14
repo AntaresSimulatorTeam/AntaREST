@@ -26,20 +26,21 @@ from fastapi import FastAPI
 from sqlalchemy import Engine
 from starlette.testclient import TestClient
 
-from antarest.core.application import create_app_ctxt
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.core.utils.polars import create_polars_dataframe
+from antarest.main import add_exception_handlers
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.output.output_blueprint import create_output_routes
 from antarest.output.output_model import OutputVariables, OutputVariablesInformation
-from antarest.study.main import add_study_routes
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.common.prepro import default_k
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.prepro.area.area import default_energy
 from antarest.study.storage.variantstudy.business.matrix_constants.common import fixed_4_columns
+from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
+from antarest.study.web.studies_blueprint import create_study_routes
 from tests.helpers import assert_study, with_admin_user, with_db_context
 from tests.storage.integration.conftest import UUID
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
@@ -51,20 +52,23 @@ from tests.storage.integration.data.set_values_monthly import set_values_monthly
 
 @pytest.fixture
 def client(services, db_engine: Engine) -> TestClient:
+    study_service, output_service, config = services
     app = FastAPI(title=__name__)
     app.add_middleware(
         DBSessionMiddleware,
         custom_engine=db_engine,
         session_args={"autocommit": False, "autoflush": False},
     )
-    build_ctxt = create_app_ctxt(app)
-    study_service, output_service, config = services
-    add_study_routes(build_ctxt, study_service, Mock(), config)
-    build_ctxt.api_root.include_router(
-        create_output_routes(output_service, study_service.file_transfer_manager, config)
-    )
-
-    return TestClient(build_ctxt.build())
+    add_exception_handlers(app)
+    app.state.config = config
+    app.state.study_service = study_service
+    app.state.output_service = output_service
+    app.state.file_transfer_manager = study_service.file_transfer_manager
+    app.state.task_service = Mock()
+    app.include_router(create_study_routes(config))
+    app.include_router(create_raw_study_routes(config))
+    app.include_router(create_output_routes(config))
+    return TestClient(app)
 
 
 def assert_url_content(client: TestClient, url: str, expected_output: dict[str, Any] | str) -> None:
