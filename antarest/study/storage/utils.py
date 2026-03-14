@@ -72,6 +72,8 @@ logger = logging.getLogger(__name__)
 
 TS_GEN_PREFIX = "~"
 TS_GEN_SUFFIX = ".thermal_timeseries_gen.tmp"
+STUDY_MARKER_FILE = "study.antares"
+AW_NO_SCAN_FILE = "AW_NO_SCAN"
 
 
 def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_author: bool) -> None:
@@ -387,11 +389,11 @@ def is_folder_safe(workspace: WorkspaceConfig, folder: str) -> bool:
 
 
 def is_study_folder(path: Path) -> bool:
-    return path.is_dir() and (path / "study.antares").exists()
+    return path.is_dir() and (path / STUDY_MARKER_FILE).exists()
 
 
 def is_aw_no_scan(path: Path) -> bool:
-    return (path / "AW_NO_SCAN").exists()
+    return (path / AW_NO_SCAN_FILE).exists()
 
 
 def get_workspace_from_config(config: Config, workspace_name: str, default_allowed: bool = False) -> WorkspaceConfig:
@@ -422,7 +424,7 @@ def is_ts_gen_tmp_dir(path: Path) -> bool:
     Returns:
         True if the path is a temporary directory used for thermal timeseries generation
     """
-    return path.name.startswith(TS_GEN_PREFIX) and "".join(path.suffixes[-2:]) == TS_GEN_SUFFIX and path.is_dir()
+    return _is_ts_gen_tmp_dir_name(path) and path.is_dir()
 
 
 def _compile_filters(filter_in: List[str], filter_out: List[str]) -> tuple[list[Pattern[str]], list[Pattern[str]]]:
@@ -433,6 +435,32 @@ def _compile_filters(filter_in: List[str], filter_out: List[str]) -> tuple[list[
     )
 
 
+def _is_ts_gen_tmp_dir_name(path: Path) -> bool:
+    return path.name.startswith(TS_GEN_PREFIX) and "".join(path.suffixes[-2:]) == TS_GEN_SUFFIX
+
+
+def _matches_scan_filters(
+    folder_name: str, compiled_in: List[re.Pattern[str]], compiled_out: List[re.Pattern[str]]
+) -> bool:
+    return any(pattern.search(folder_name) for pattern in compiled_in) and not any(
+        pattern.search(folder_name) for pattern in compiled_out
+    )
+
+
+def _should_ignore_folder_by_name(
+    path: Path, compiled_in: List[re.Pattern[str]], compiled_out: List[re.Pattern[str]]
+) -> bool:
+    if is_temporary_upgrade_dir(path):
+        logger.info(f"Upgrade temporary folder found. Will skip further scan of folder {path}")
+        return True
+
+    if _is_ts_gen_tmp_dir_name(path):
+        logger.info(f"TS generation temporary folder found. Will skip further scan of folder {path}")
+        return True
+
+    return not _matches_scan_filters(path.name, compiled_in, compiled_out)
+
+
 def _should_ignore_folder_compiled(
     path: Path, compiled_in: List[re.Pattern[str]], compiled_out: List[re.Pattern[str]]
 ) -> bool:
@@ -440,19 +468,7 @@ def _should_ignore_folder_compiled(
         logger.info(f"No scan directive file found. Will skip further scan of folder {path}")
         return True
 
-    if is_temporary_upgrade_dir(path):
-        logger.info(f"Upgrade temporary folder found. Will skip further scan of folder {path}")
-        return True
-
-    if is_ts_gen_tmp_dir(path):
-        logger.info(f"TS generation temporary folder found. Will skip further scan of folder {path}")
-        return True
-
-    return not (
-        path.is_dir()
-        and any(p.search(path.name) for p in compiled_in)
-        and not any(p.search(path.name) for p in compiled_out)
-    )
+    return not path.is_dir() or _should_ignore_folder_by_name(path, compiled_in, compiled_out)
 
 
 def should_ignore_folder_for_scan(path: Path, filter_in: List[str], filter_out: List[str]) -> bool:
@@ -474,9 +490,38 @@ def has_children(path: Path, filter_in: List[str], filter_out: List[str], show_h
 
 _SCAN_WORKERS = 32
 
-# Cache for parallel scan: {dir_path_str: (mtime, child_paths, is_study, last_seen_scan)}
-_scan_cache: dict[str, tuple[float, List[str], bool, int]] = {}
+# Cache for parallel scan: {dir_path_str: (mtime, child_paths, is_study, is_ignored, last_seen_scan)}
+_scan_cache: dict[str, tuple[float, List[str], bool, bool, int]] = {}
 _scan_generation: int = 0
+
+
+def _scan_directory_entries(
+    dir_str: str,
+    compiled_in: List[re.Pattern[str]],
+    compiled_out: List[re.Pattern[str]],
+    *,
+    collect_children: bool,
+) -> tuple[bool, bool, list[str]]:
+    dir_path = Path(dir_str)
+    if _should_ignore_folder_by_name(dir_path, compiled_in, compiled_out):
+        return True, False, []
+
+    is_study = False
+    child_paths: list[str] = []
+    with os.scandir(dir_str) as entries:
+        for entry in entries:
+            if entry.name == AW_NO_SCAN_FILE:
+                logger.info(f"No scan directive file found. Will skip further scan of folder {dir_path}")
+                return True, False, []
+
+            if entry.name == STUDY_MARKER_FILE:
+                is_study = True
+                continue
+
+            if collect_children and not is_study and entry.is_dir(follow_symlinks=False):
+                child_paths.append(entry.path)
+
+    return False, is_study, [] if is_study else child_paths
 
 
 def rec_scan_for_studies(
@@ -534,6 +579,7 @@ def _parallel_scan_for_studies(
 
     def _scan_one(dir_str: str) -> None:
         nonlocal in_flight
+        dir_path = Path(dir_str)
         try:
             try:
                 current_mtime = os.stat(dir_str).st_mtime
@@ -546,29 +592,29 @@ def _parallel_scan_for_studies(
                 # mtime unchanged: reuse cached result, update scan_id
                 child_paths = cached[1]
                 is_study = cached[2]
-                _scan_cache[dir_str] = (current_mtime, child_paths, is_study, scan_id)
+                is_ignored = cached[3]
+                _scan_cache[dir_str] = (current_mtime, child_paths, is_study, is_ignored, scan_id)
+                if is_ignored:
+                    return
                 if is_study:
-                    results.put(StudyFolder(Path(dir_str), workspace, groups))
+                    results.put(StudyFolder(dir_path, workspace, groups))
                     return
             else:
-                # mtime changed or not cached: check ignore + re-scan
-                dir_path = Path(dir_str)
-                if _should_ignore_folder_compiled(dir_path, compiled_in, compiled_out):
+                is_ignored, is_study, child_paths = _scan_directory_entries(
+                    dir_str,
+                    compiled_in,
+                    compiled_out,
+                    collect_children=True,
+                )
+                _scan_cache[dir_str] = (current_mtime, child_paths, is_study, is_ignored, scan_id)
+
+                if is_ignored:
                     return
 
-                is_study = (dir_path / "study.antares").exists()
                 if is_study:
                     logger.debug(f"Study {dir_path.name} found in {workspace}")
                     results.put(StudyFolder(dir_path, workspace, groups))
-                    _scan_cache[dir_str] = (current_mtime, [], True, scan_id)
                     return
-
-                if dir_path.is_dir():
-                    child_paths = [e.path for e in os.scandir(dir_str) if e.is_dir(follow_symlinks=False)]
-                else:
-                    child_paths = []
-
-                _scan_cache[dir_str] = (current_mtime, child_paths, False, scan_id)
 
             if child_paths:
                 with lock:
@@ -589,7 +635,7 @@ def _parallel_scan_for_studies(
     # Purge stale entries under this scan root
     root_prefix = str(path) + os.sep
     stale_keys = [
-        k for k, v in _scan_cache.items() if (k == str(path) or k.startswith(root_prefix)) and v[3] != scan_id
+        k for k, v in _scan_cache.items() if (k == str(path) or k.startswith(root_prefix)) and v[4] != scan_id
     ]
     for k in stale_keys:
         del _scan_cache[k]
@@ -609,10 +655,18 @@ def _rec_scan_for_studies(
     max_depth: Optional[int] = None,
 ) -> List[StudyFolder]:
     try:
-        if _should_ignore_folder_compiled(path, compiled_in, compiled_out):
+        should_collect_children = max_depth is None or max_depth > 0
+        is_ignored, is_study, child_paths = _scan_directory_entries(
+            str(path),
+            compiled_in,
+            compiled_out,
+            collect_children=should_collect_children,
+        )
+
+        if is_ignored:
             return []
 
-        if (path / "study.antares").exists():
+        if is_study:
             logger.debug(f"Study {path.name} found in {workspace}")
             return [StudyFolder(path, workspace, groups)]
 
@@ -621,17 +675,14 @@ def _rec_scan_for_studies(
             return []
 
         folders: List[StudyFolder] = []
-        if path.is_dir():
-            for entry in os.scandir(path):
-                if not entry.is_dir(follow_symlinks=False):
-                    continue
-                child_max_depth = max_depth - 1 if max_depth is not None else None
-                try:
-                    folders += _rec_scan_for_studies(
-                        Path(entry.path), workspace, groups, compiled_in, compiled_out, child_max_depth
-                    )
-                except Exception as e:
-                    logger.error(f"Failed to scan dir {entry.path}", exc_info=e)
+        child_max_depth = max_depth - 1 if max_depth is not None else None
+        for child_path in child_paths:
+            try:
+                folders += _rec_scan_for_studies(
+                    Path(child_path), workspace, groups, compiled_in, compiled_out, child_max_depth
+                )
+            except Exception as e:
+                logger.error(f"Failed to scan dir {child_path}", exc_info=e)
         return folders
     except Exception as e:
         logger.error(f"Failed to scan dir {path}", exc_info=e)

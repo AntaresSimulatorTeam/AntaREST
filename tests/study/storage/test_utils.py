@@ -18,10 +18,11 @@ from antarest.core.config import WorkspaceConfig
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
 from antarest.core.utils.utils import current_time
+from antarest.login.model import Group
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from antarest.study.storage.utils import is_folder_safe, update_antares_info
+from antarest.study.storage.utils import is_folder_safe, rec_scan_for_studies, update_antares_info
 from tests.helpers import create_study
 
 
@@ -86,3 +87,32 @@ def test_update_antares_info_version(tmp_path: Path, version: str, expected_vers
     update_antares_info(metadata, tree, update_author=False)
     updated = read_ini(antares_study_path)
     assert str(updated["antares"]["version"]) == expected_version
+
+
+def test_rec_scan_for_studies_ignores_aw_no_scan(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+
+    valid_study = workspace / "valid_study"
+    valid_study.mkdir()
+    (valid_study / "study.antares").touch()
+
+    ignored_study = workspace / "ignored_study"
+    ignored_study.mkdir()
+    (ignored_study / "AW_NO_SCAN").touch()
+    (ignored_study / "study.antares").touch()
+
+    studies = rec_scan_for_studies(workspace, "workspace", [Group(id="g", name="g")], [".*"], [])
+
+    assert {study.path for study in studies} == {valid_study}
+
+
+def test_rec_scan_for_studies_returns_root_study_with_zero_max_depth(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "study.antares").touch()
+
+    studies = rec_scan_for_studies(workspace, "workspace", [Group(id="g", name="g")], [".*"], [], max_depth=0)
+
+    assert len(studies) == 1
+    assert studies[0].path == workspace
