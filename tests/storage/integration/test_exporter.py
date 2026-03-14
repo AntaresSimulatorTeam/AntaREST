@@ -27,7 +27,7 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.eventbus import DummyEventBusService
 from antarest.main import add_exception_handlers
 from antarest.matrixstore.service import MatrixService
-from antarest.output.routes import create_output_routes
+from antarest.output.output_blueprint import create_output_routes
 from antarest.service_creator import build_output_service
 from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
