@@ -70,6 +70,12 @@ def upgrade() -> None:
             name=op.f("fk_xpansion_candidate_settings"),
             ondelete="CASCADE",
         ),
+        sa.ForeignKeyConstraint(
+            ["study_id", "link_area_from", "link_area_to"],
+            ["link.study_id", "link.area1", "link.area2"],
+            name=op.f("fk_xpansion_candidate_link"),
+            ondelete="CASCADE",
+        ),
         sa.PrimaryKeyConstraint("study_id", "name", name=op.f("pk_xpansion_candidate")),
     )
 
@@ -82,6 +88,7 @@ def upgrade() -> None:
             ["xpansion_candidate.study_id", "xpansion_candidate.name"],
             name=op.f("fk_xpansion_sensitivity_projection_candidate"),
             ondelete="CASCADE",
+            onupdate="CASCADE",
         ),
         sa.PrimaryKeyConstraint("study_id", "candidate_name", name=op.f("pk_xpansion_sensitivity_projection")),
     )

@@ -18,7 +18,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Optional
 
 import polars as pl
-from sqlalchemy import CursorResult, delete, insert, select
+from sqlalchemy import CursorResult, delete, insert, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
@@ -222,21 +222,40 @@ class DatabaseXpansionDao(XpansionDao):
 
     @override
     def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
-        values = self._candidate_to_row(candidate)
+        """
+        Upsert a candidate.
+
+        ``old_id`` is the current name in storage and is only provided when renaming.
+
+        All cases for ``save(bob, old_id="alice")``:
+            - bob present, alice present => delete bob, update alice to bob.
+            - bob absent, alice present => delete no op, update alice to bob.
+            - bob present, alice absent => delete bob, update return 0, rollback, raise ``CandidateNotFoundError``.
+            - neither present => delete no op, update return 0, rollback, raise ``CandidateNotFoundError``.
+
+        Note : projections are updated because ON UPDATE CASCADE is used.
+        """
         if old_id and old_id != candidate.name:
-            # The PK is (study_id, name), so renaming requires delete + insert.
-            result = self._db_session.execute(
+            self._db_session.execute(
                 delete(XPANSION_CANDIDATE_TABLE).where(
+                    (XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
+                    & (XPANSION_CANDIDATE_TABLE.c.name == candidate.name)
+                )
+            )
+            result = self._db_session.execute(
+                update(XPANSION_CANDIDATE_TABLE)
+                .where(
                     (XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
                     & (XPANSION_CANDIDATE_TABLE.c.name == old_id)
                 )
+                .values(self._candidate_to_row(candidate))
             )
             assert isinstance(result, CursorResult)
             if result.rowcount == 0:
+                self._db_session.rollback()
                 raise CandidateNotFoundError(f"The candidate '{old_id}' does not exist")
-            self._db_session.execute(insert(XPANSION_CANDIDATE_TABLE).values(values))
         else:
-            upsert_one(self._db_session, XPANSION_CANDIDATE_TABLE, values)
+            upsert_one(self._db_session, XPANSION_CANDIDATE_TABLE, self._candidate_to_row(candidate))
         self._db_session.commit()
 
     @override

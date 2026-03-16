@@ -71,6 +71,12 @@ XPANSION_CANDIDATE_TABLE = Table(
         name="fk_xpansion_candidate_settings",
         ondelete="CASCADE",
     ),
+    ForeignKeyConstraint(
+        ["study_id", "link_area_from", "link_area_to"],
+        ["link.study_id", "link.area1", "link.area2"],
+        name="fk_xpansion_candidate_link",
+        ondelete="CASCADE",
+    ),
 )
 
 XPANSION_SENSITIVITY_PROJECTION_TABLE = Table(
@@ -83,6 +89,7 @@ XPANSION_SENSITIVITY_PROJECTION_TABLE = Table(
         ["xpansion_candidate.study_id", "xpansion_candidate.name"],
         name="fk_xpansion_sensitivity_projection_candidate",
         ondelete="CASCADE",
+        onupdate="CASCADE",
     ),
 )
 
