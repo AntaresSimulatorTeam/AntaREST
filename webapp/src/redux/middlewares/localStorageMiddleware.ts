@@ -23,6 +23,7 @@ import {
   updateStudySortConfig,
   updateStudyFilters,
 } from "../ducks/studies";
+import { getStudyFilters } from "../selectors";
 import { setMenuOpen } from "../ducks/ui";
 
 const localStorageMiddleware = createListenerMiddleware<AppState>();
@@ -79,14 +80,13 @@ localStorageMiddleware.startListening({
   },
 });
 
-// When a user opens a folder, it should remain open after a page refresh.
+// Persist navigation state so the selected directory remains open after a page refresh.
+// Search and filter-panel fields are intentionally excluded.
 localStorageMiddleware.startListening({
   actionCreator: updateStudyFilters,
-  effect: (action) => {
-    storage.setItem(StorageKey.StudiesFilters, (prev) => ({
-      ...prev,
-      ...action.payload,
-    }));
+  effect: (_, listenerApi) => {
+    const { activeTree, managed, external } = getStudyFilters(listenerApi.getState());
+    storage.setItem(StorageKey.StudiesFilters, { activeTree, managed, external });
   },
 });
 
