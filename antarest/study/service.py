@@ -71,7 +71,6 @@ from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
 from antarest.output.utils import (
     RAW_OUTPUT_MATRIX_HEADER_SEPARATOR,
     QueryFileType,
-    RawOutputMatrixQuery,
     parse_raw_output_matrix_path,
 )
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
@@ -584,7 +583,6 @@ class IOutputsAccess(ABC):
         frequency: MatrixFrequency,
         item_id: str,
         mc_year: Optional[int] = None,
-        transform_columns_headers: bool = True,
     ) -> pl.DataFrame:
         raise NotImplementedError()
 
@@ -2652,7 +2650,6 @@ class StudyService:
                 frequency=parsed.frequency,
                 item_id=parsed.ids_to_consider,
                 mc_year=parsed.mc_year,
-                transform_columns_headers=False,
             )
             return {
                 "columns": [tuple(col.split(RAW_OUTPUT_MATRIX_HEADER_SEPARATOR)) for col in df.columns],

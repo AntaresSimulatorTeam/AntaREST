@@ -693,7 +693,6 @@ class OutputService:
         frequency: MatrixFrequency,
         item_id: str,
         mc_year: Optional[int] = None,
-        transform_columns_headers: bool = True,
     ) -> pl.DataFrame:
         self._studies_repository.assert_permission(uuid, StudyPermissionType.READ)
         mc_years = [mc_year] if mc_year is not None else None
@@ -705,7 +704,7 @@ class OutputService:
                 frequency=frequency,
                 ids_to_consider=[item_id],
                 columns_names=[],
-                transform_columns_headers=transform_columns_headers,
+                transform_columns_headers=False,
                 mc_years=mc_years,
             )
         )
