@@ -82,6 +82,7 @@ def create_test_client(
     app.state.file_transfer_manager = file_transfer_manager
     app.state.matrix_service = Mock(spec=MatrixService)
     app.state.task_service = Mock()
+    app.state.login_service = Mock()
     app.include_router(create_study_routes())
     app.include_router(create_raw_study_routes())
     app.include_router(create_study_variant_routes())

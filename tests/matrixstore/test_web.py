@@ -50,6 +50,7 @@ def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
     app.state.matrix_service = service
     app.state.file_transfer_manager = Mock()
     app.state.task_service = Mock()
+    app.state.login_service = Mock()
     app.include_router(create_matrix_api())
     return app
 

@@ -99,6 +99,7 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> 
     app.state.output_service = output_service
     app.state.file_transfer_manager = ftm
     app.state.task_service = task_service
+    app.state.login_service = Mock()
     app.include_router(create_study_routes())
     app.include_router(create_output_routes())
 
