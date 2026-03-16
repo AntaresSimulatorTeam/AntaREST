@@ -21,6 +21,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
+from antarest.core.dependencies import get_auth_service
 from antarest.core.interfaces.eventbus import Event, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
@@ -100,7 +101,7 @@ def register_websocket_routes(api_root: APIRouter, config: Config) -> Connection
     async def connect(
         websocket: WebSocket,
         token: Annotated[SanitizedStr, Query()],
-        jwt_manager: Annotated[AuthJWT, Depends(AuthJWT)],
+        jwt_manager: Annotated[AuthJWT, Depends(get_auth_service)],
     ) -> None:
         user: Optional[JWTUser] = None
         if not config.security.disabled:

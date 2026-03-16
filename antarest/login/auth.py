@@ -12,11 +12,12 @@
 
 import logging
 from datetime import timedelta
-from typing import Annotated, Any, AsyncGenerator, Callable, Optional, Tuple, TypeAlias, Union
+from typing import Any, AsyncGenerator, Callable, Optional, Tuple, TypeAlias, Union
 
 from fastapi import Depends
 
 from antarest.core.config import Config
+from antarest.core.dependencies import AuthDep
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.json import from_json
@@ -71,9 +72,9 @@ class Auth:
             The dependency MUST be async, otherwise it's executed in a thread which will
             generally not be the same as the one of the request.
         """
-        return Depends(self._yield_current_user)
+        return Depends(self._set_current_user)
 
-    async def _yield_current_user(self, auth_jwt: Annotated[AuthJWT, Depends(AuthJWT)]) -> AsyncGenerator[None, None]:
+    async def _set_current_user(self, auth_jwt: AuthDep) -> AsyncGenerator[None, None]:
         user = self._get_current_user(auth_jwt)
         with current_user_context(user):
             yield

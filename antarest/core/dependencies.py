@@ -11,15 +11,19 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
-from typing import cast
+from typing import Annotated, Any, TypeAlias, cast
 
-from fastapi import BackgroundTasks
+from fastapi import BackgroundTasks, Depends
 from starlette.requests import Request
+from starlette.responses import Response
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.maintenance.service import MaintenanceService
+from antarest.core.serde.json import from_json
 from antarest.core.tasks.service import ITaskService
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
 from antarest.launcher.service import LauncherService
 from antarest.login.service import LoginService
@@ -90,3 +94,23 @@ def get_maintenance_service(request: Request) -> MaintenanceService:
 def get_tmp_export_file(request: Request, background_tasks: BackgroundTasks) -> Path:
     ftm: FileTransferManager = cast(FileTransferManager, request.app.state.file_transfer_manager)
     return ftm.request_tmp_file(background_tasks)
+
+
+def get_auth_service(
+    request: Request, response: Response, login_service: LoginService = Depends(get_login_service)
+) -> AuthJWT:
+
+    # Set deny list (tokens which do not exist anymore in our DB)
+
+    @AuthJWT.token_in_denylist_loader  # type: ignore
+    def check_if_token_is_revoked(decrypted_token: Any) -> bool:
+        subject = from_json(decrypted_token["sub"])
+        user_id = subject["id"]
+        token_type = subject["type"]
+        with db():
+            return token_type == "bots" and not login_service.exists_bot(user_id)
+
+    return AuthJWT(request, response)
+
+
+AuthDep: TypeAlias = Annotated[AuthJWT, Depends(get_auth_service)]

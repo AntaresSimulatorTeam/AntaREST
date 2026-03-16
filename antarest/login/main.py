@@ -10,13 +10,10 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Optional
+from typing import Optional
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
-from antarest.core.serde.json import from_json
-from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.login.ldap import LdapService
 from antarest.login.repository import (
     BotRepository,
@@ -27,22 +24,6 @@ from antarest.login.repository import (
     UserRepository,
 )
 from antarest.login.service import LoginService
-
-_login_service_ref: Optional[LoginService] = None
-
-
-def set_login_service_for_denylist(service: LoginService) -> None:
-    global _login_service_ref
-    _login_service_ref = service
-
-
-@AuthJWT.token_in_denylist_loader  # type: ignore
-def check_if_token_is_revoked(decrypted_token: Any) -> bool:
-    subject = from_json(decrypted_token["sub"])
-    user_id = subject["id"]
-    token_type = subject["type"]
-    with db():
-        return token_type == "bots" and _login_service_ref is not None and not _login_service_ref.exists_bot(user_id)
 
 
 def build_login(

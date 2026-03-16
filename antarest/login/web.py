@@ -12,13 +12,13 @@
 
 import logging
 from datetime import timedelta
-from typing import Annotated, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
-from antarest.core.dependencies import get_login_service
+from antarest.core.dependencies import AuthDep, get_login_service
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.roles import RoleType
@@ -170,7 +170,7 @@ def create_user_api(config: Config) -> APIRouter:
     @bp.post("/bots", summary="Create bot token")
     def bots_create(
         create: BotCreateDTO,
-        jwt_manager: Annotated[AuthJWT, Depends(AuthJWT)],
+        jwt_manager: AuthDep,
         service: LoginService = Depends(get_login_service),
     ) -> str:
         logger.info(f"Creating new bot '{create.name}'")
@@ -236,7 +236,7 @@ def create_login_api() -> APIRouter:
     @bp.post("/login", summary="Login")
     def login(
         credentials: UserCredentials,
-        jwt_manager: Annotated[AuthJWT, Depends(AuthJWT)],
+        jwt_manager: AuthDep,
         service: LoginService = Depends(get_login_service),
     ) -> CredentialsDTO:
         logger.info(f"New login for {credentials.username}")
@@ -250,9 +250,7 @@ def create_login_api() -> APIRouter:
         "/refresh",
         summary="Refresh access token",
     )
-    def refresh(
-        jwt_manager: Annotated[AuthJWT, Depends(AuthJWT)], service: LoginService = Depends(get_login_service)
-    ) -> CredentialsDTO:
+    def refresh(jwt_manager: AuthDep, service: LoginService = Depends(get_login_service)) -> CredentialsDTO:
         jwt_manager.jwt_refresh_token_required()
         identity = from_json(jwt_manager.get_jwt_subject())
         logger.debug(f"Refreshing access token for {identity['id']}")

@@ -43,7 +43,7 @@ from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteSt
 from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
 from antarest.launcher.main import build_launcher
 from antarest.launcher.service import LauncherService
-from antarest.login.main import build_login, set_login_service_for_denylist
+from antarest.login.main import build_login
 from antarest.login.service import LoginService
 from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
@@ -356,7 +356,6 @@ def store_services_on_app(app: FastAPI, services: Services, config: Config) -> N
     app.state.favorite_directory_service = services.favorite_directory
     app.state.task_service = services.task_service
     app.state.maintenance_service = services.maintenance
-    set_login_service_for_denylist(services.user)
 
 
 def create_services(config: Config, create_all: bool = False) -> Services:
