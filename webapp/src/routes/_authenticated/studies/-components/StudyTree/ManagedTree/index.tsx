@@ -21,7 +21,6 @@ import { getStudyFilters } from "@/redux/selectors";
 import { Box, Typography } from "@mui/material";
 import { SimpleTreeView } from "@mui/x-tree-view";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import * as R from "ramda";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import DeleteDirectoryDialog from "./DeleteDirectoryDialog";
@@ -35,7 +34,7 @@ import { buildDirectoryTree, getDescendantIds, getDirectoryPath } from "./utils"
 function ManagedTree({ isCreatingDirectory, onDirectoryCreated }: ManagedTreeProps) {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const directoryId = useAppSelector((state) => getStudyFilters(state).managed.directoryId, R.T);
+  const directoryId = useAppSelector((state) => getStudyFilters(state).managed.directoryId);
 
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
@@ -166,7 +165,7 @@ function ManagedTree({ isCreatingDirectory, onDirectoryCreated }: ManagedTreePro
       <SimpleTreeView
         expandedItems={expandedItems}
         onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
-        defaultSelectedItems={directoryId || ""}
+        selectedItems={directoryId}
         onItemClick={handleItemClick}
       >
         <ManagedTreeNode
