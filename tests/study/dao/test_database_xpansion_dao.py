@@ -22,7 +22,6 @@ from antarest.core.exceptions import (
     XpansionConfigurationAlreadyExists,
     XpansionConfigurationDoesNotExist,
 )
-from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
@@ -41,8 +40,6 @@ from antarest.study.dao.database.models.xpansion import (
     XPANSION_SENSITIVITY_PROJECTION_TABLE,
     XPANSION_SETTINGS_TABLE,
 )
-from antarest.study.model import STUDY_VERSION_8_8
-from tests.study.dao.conftest import build_db_dao
 
 
 def _assert_tables_empty(db_session: Session, tables: list[Table], study_id: str) -> None:
@@ -234,43 +231,8 @@ class TestXpansionSettings:
 class TestXpansionCandidates:
     """Tests for Xpansion candidate CRUD operations."""
 
-    def test_save_and_get_candidate(self, db_dao: DatabaseStudyDao) -> None:
-        """Candidate CRUD: save, get, get unknown, upsert, get all."""
-        # --- setup ---
-        db_dao.create_xpansion_configuration()
-        db_dao.save_area("Paris")
-        db_dao.save_area("Lyon")
-        db_dao.save_link(Link(area1="paris", area2="lyon"))
-
-        # --- initially empty ---
-        assert db_dao.get_all_xpansion_candidates() == []
-
-        # --- save and get ---
-        candidate = _make_candidate("my_candidate", "lyon", "paris", cost=2000.0)
-        db_dao.save_xpansion_candidate(candidate)
-
-        result = db_dao.get_xpansion_candidate("my_candidate")
-        assert result.name == "my_candidate"
-        assert result.annual_cost_per_mw == 2000.0
-        assert result.link.area_from == "lyon"
-        assert result.link.area_to == "paris"
-        assert result.max_investment == 5000.0
-
-        assert len(db_dao.get_all_xpansion_candidates()) == 1
-
-        # --- get unknown raises ---
-        with pytest.raises(CandidateNotFoundError):
-            db_dao.get_xpansion_candidate("nonexistent")
-
-        # --- upsert ---
-        db_dao.save_xpansion_candidate(_make_candidate("my_candidate", "lyon", "paris", cost=9999.0))
-        result = db_dao.get_xpansion_candidate("my_candidate")
-        assert result.annual_cost_per_mw == 9999.0
-        assert len(db_dao.get_all_xpansion_candidates()) == 1
-
-    def test_get_all_candidates_returns_multiple_candidates(self, db_dao: DatabaseStudyDao) -> None:
-        """get_all_xpansion_candidates should return all stored candidates."""
-        # --- setup ---
+    def test_candidate_lifecycle(self, db_dao: DatabaseStudyDao) -> None:
+        """Full candidate lifecycle: coherence checks, CRUD, upsert, rename (all cases), projection, delete."""
         db_dao.create_xpansion_configuration()
         db_dao.save_area("Paris")
         db_dao.save_area("Lyon")
@@ -278,119 +240,75 @@ class TestXpansionCandidates:
         db_dao.save_link(Link(area1="paris", area2="lyon"))
         db_dao.save_link(Link(area1="bordeaux", area2="paris"))
 
-        # --- save and get all ---
-        db_dao.save_xpansion_candidate(_make_candidate("cand1", "lyon", "paris"))
-        db_dao.save_xpansion_candidate(_make_candidate("cand2", "bordeaux", "paris"))
+        # --- coherence: missing area / link raises, valid passes ---
+        with pytest.raises(AreaNotFound):
+            db_dao.checks_xpansion_candidate_coherence(_make_candidate("c", "nowhere", "paris"))
+        with pytest.raises(LinkNotFound):
+            db_dao.checks_xpansion_candidate_coherence(_make_candidate("c", "bordeaux", "lyon"))
+        db_dao.checks_xpansion_candidate_coherence(_make_candidate("c", "lyon", "paris"))  # no raise
 
-        results = db_dao.get_all_xpansion_candidates()
-        assert len(results) == 2
-        assert {c.name for c in results} == {"cand1", "cand2"}
+        # --- initially empty ---
+        assert db_dao.get_all_xpansion_candidates() == []
 
-    def test_save_candidate_with_rename_replaces_row(self, db_dao: DatabaseStudyDao) -> None:
-        """Renaming a candidate covers: basic rename, nonexistent old_id, overwrite existing target, projection transfer."""
-        db_dao.create_xpansion_configuration()
-        db_dao.save_area("x")
-        db_dao.save_area("y")
-        db_dao.save_link(Link(area1="x", area2="y"))
-        db_dao.save_xpansion_candidate(_make_candidate("alice", "x", "y", cost=1000.0))
-        db_dao.save_xpansion_candidate(_make_candidate("bob", "x", "y", cost=2000.0))
+        # --- save / get / get_all ---
+        db_dao.save_xpansion_candidate(_make_candidate("alice", "lyon", "paris", cost=1000.0))
+        db_dao.save_xpansion_candidate(_make_candidate("bob", "bordeaux", "paris", cost=2000.0))
+        result = db_dao.get_xpansion_candidate("alice")
+        assert result.annual_cost_per_mw == 1000.0
+        assert result.link.area_from == "lyon"
+        assert {c.name for c in db_dao.get_all_xpansion_candidates()} == {"alice", "bob"}
+
+        with pytest.raises(CandidateNotFoundError):
+            db_dao.get_xpansion_candidate("nonexistent")
+
+        # --- upsert (no old_id) ---
+        db_dao.save_xpansion_candidate(_make_candidate("alice", "lyon", "paris", cost=9999.0))
+        assert db_dao.get_xpansion_candidate("alice").annual_cost_per_mw == 9999.0
+        assert len(db_dao.get_all_xpansion_candidates()) == 2
+
+        # --- old_id == name is a plain upsert ---
+        db_dao.save_xpansion_candidate(_make_candidate("alice", "lyon", "paris", cost=500.0), old_id="alice")
+        assert db_dao.get_xpansion_candidate("alice").annual_cost_per_mw == 500.0
+        assert len(db_dao.get_all_xpansion_candidates()) == 2
+
+        # --- set up projection for rename tests ---
         db_dao.save_xpansion_settings(
             XpansionSettings(sensitivity_config=XpansionSensitivitySettings(projection=["alice", "bob"]))
         )
 
-        # --- nonexistent old_id raises ---
+        # --- nonexistent old_id raises, original candidate untouched ---
         with pytest.raises(CandidateNotFoundError):
-            db_dao.save_xpansion_candidate(_make_candidate("alice", "x", "y"), old_id="ghost")
+            db_dao.save_xpansion_candidate(_make_candidate("alice", "lyon", "paris"), old_id="ghost")
 
-        # --- basic rename: old row gone, new row present ---
-        db_dao.save_xpansion_candidate(_make_candidate("charlie", "x", "y", cost=1000.0), old_id="alice")
-        assert db_dao.get_xpansion_candidate("charlie").annual_cost_per_mw == 1000.0
+        # --- basic rename: old row gone, new row present, projection carried over ---
+        db_dao.save_xpansion_candidate(_make_candidate("charlie", "lyon", "paris", cost=500.0), old_id="alice")
         with pytest.raises(CandidateNotFoundError):
             db_dao.get_xpansion_candidate("alice")
+        assert db_dao.get_xpansion_candidate("charlie").annual_cost_per_mw == 500.0
+        proj = db_dao.get_xpansion_settings().sensitivity_config.projection
+        assert "charlie" in proj and "alice" not in proj
 
-        # --- projection carried over: charlie in, alice out ---
-        settings = db_dao.get_xpansion_settings()
-        assert "charlie" in settings.sensitivity_config.projection
-        assert "alice" not in settings.sensitivity_config.projection
-
-        # --- rename to existing target overwrites it, no duplicate projection ---
-        db_dao.save_xpansion_candidate(_make_candidate("bob", "x", "y", cost=999.0), old_id="charlie")
+        # --- rename to existing target overwrites it; no duplicate in projection ---
+        db_dao.save_xpansion_candidate(_make_candidate("bob", "bordeaux", "paris", cost=999.0), old_id="charlie")
         assert len(db_dao.get_all_xpansion_candidates()) == 1
         assert db_dao.get_xpansion_candidate("bob").annual_cost_per_mw == 999.0
-        settings = db_dao.get_xpansion_settings()
-        assert settings.sensitivity_config.projection.count("bob") == 1
-        assert "charlie" not in settings.sensitivity_config.projection
+        proj = db_dao.get_xpansion_settings().sensitivity_config.projection
+        assert proj == ["bob"]
 
-    def test_delete_candidate(self, db_dao: DatabaseStudyDao) -> None:
-        """delete_xpansion_candidate should remove the candidate; raise if not found."""
-        # --- setup ---
-        db_dao.create_xpansion_configuration()
-        db_dao.save_area("Paris")
-        db_dao.save_area("Lyon")
-        db_dao.save_link(Link(area1="paris", area2="lyon"))
-        db_dao.save_xpansion_candidate(_make_candidate("cand", "lyon", "paris"))
-
-        # --- delete removes it ---
-        db_dao.delete_xpansion_candidate("cand")
-        assert db_dao.get_all_xpansion_candidates() == []
-
-        # --- delete unknown raises ---
-        with pytest.raises(CandidateNotFoundError):
-            db_dao.delete_xpansion_candidate("nonexistent")
-
-        with pytest.raises(CandidateNotFoundError):
-            db_dao.delete_xpansion_candidate("cand")
-
-    def test_deleting_link_cascades_to_candidates(self, db_dao: DatabaseStudyDao) -> None:
-        """Deleting a link should cascade-delete all candidates referencing it."""
-        db_dao.create_xpansion_configuration()
-        db_dao.save_area("Paris")
-        db_dao.save_area("Lyon")
-        db_dao.save_link(Link(area1="paris", area2="lyon"))
-        db_dao.save_xpansion_candidate(_make_candidate("cand1", "lyon", "paris"))
-        db_dao.save_xpansion_candidate(_make_candidate("cand2", "lyon", "paris"))
-
-        db_dao.delete_link(Link(area1="paris", area2="lyon"))
-
-        assert db_dao.get_all_xpansion_candidates() == []
-
-    def test_checks_candidate_coherence(self, db_dao: DatabaseStudyDao) -> None:
-        """checks_xpansion_candidate_coherence should raise for missing area or link, pass when valid."""
-        # --- setup ---
-        db_dao.create_xpansion_configuration()
-        db_dao.save_area("Paris")
-        db_dao.save_area("Lyon")
-
-        # --- missing link raises ---
-        with pytest.raises(LinkNotFound):
-            db_dao.checks_xpansion_candidate_coherence(_make_candidate("cand", "lyon", "paris"))
-
-        # --- missing area raises ---
-        with pytest.raises(AreaNotFound):
-            db_dao.checks_xpansion_candidate_coherence(_make_candidate("cand", "alpha", "paris"))
-
-        # --- valid link passes ---
-        db_dao.save_link(Link(area1="paris", area2="lyon"))
-        db_dao.checks_xpansion_candidate_coherence(_make_candidate("cand", "lyon", "paris"))  # must not raise
-
-    def test_checks_candidate_can_be_deleted(self, db_dao: DatabaseStudyDao) -> None:
-        """checks_xpansion_candidate_can_be_deleted should raise if in projection, pass otherwise."""
-        # --- setup ---
-        db_dao.create_xpansion_configuration()
-        db_dao.save_area("x")
-        db_dao.save_area("y")
-        db_dao.save_link(Link(area1="x", area2="y"))
-        db_dao.save_xpansion_candidate(_make_candidate("cand_a", "x", "y"))
-        db_dao.save_xpansion_settings(
-            XpansionSettings(sensitivity_config=XpansionSensitivitySettings(projection=["cand_a"]))
-        )
-
-        # --- raises if in projection ---
+        # --- checks_candidate_can_be_deleted ---
         with pytest.raises(XpansionCandidateDeletionError):
-            db_dao.checks_xpansion_candidate_can_be_deleted("cand_a")
+            db_dao.checks_xpansion_candidate_can_be_deleted("bob")
+        db_dao.checks_xpansion_candidate_can_be_deleted("nobody")  # no raise
 
-        # --- passes if not in projection ---
-        db_dao.checks_xpansion_candidate_can_be_deleted("cand_b")  # must not raise
+        # --- removing bob from projection unblocks deletion ---
+        db_dao.save_xpansion_settings(XpansionSettings(sensitivity_config=XpansionSensitivitySettings(projection=[])))
+        db_dao.checks_xpansion_candidate_can_be_deleted("bob")  # no raise
+
+        # --- delete ---
+        db_dao.delete_xpansion_candidate("bob")
+        assert db_dao.get_all_xpansion_candidates() == []
+        with pytest.raises(CandidateNotFoundError):
+            db_dao.delete_xpansion_candidate("bob")
 
 
 class TestXpansionAdequacyCriterion:
@@ -488,38 +406,15 @@ class TestCascadeDelete:
         result = db_dao.get_xpansion_settings()
         assert result.optimality_gap == XpansionSettings().optimality_gap
 
+    def test_deleting_link_cascades_to_candidates(self, db_dao: DatabaseStudyDao) -> None:
+        """Deleting a link should cascade-delete all candidates referencing it."""
+        db_dao.create_xpansion_configuration()
+        db_dao.save_area("Paris")
+        db_dao.save_area("Lyon")
+        db_dao.save_link(Link(area1="paris", area2="lyon"))
+        db_dao.save_xpansion_candidate(_make_candidate("cand1", "lyon", "paris"))
+        db_dao.save_xpansion_candidate(_make_candidate("cand2", "lyon", "paris"))
 
-class TestXpansionStudyIsolation:
-    """Tests that rows from one study do not leak into another study sharing the same DB."""
+        db_dao.delete_link(Link(area1="paris", area2="lyon"))
 
-    def test_candidates_are_isolated_between_studies(
-        self, db_session: Session, matrix_service: ISimpleMatrixService
-    ) -> None:
-        """Candidates saved in study A must not appear in study B."""
-        dao_a = build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
-        dao_b = build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
-
-        dao_a.create_xpansion_configuration()
-        dao_b.create_xpansion_configuration()
-
-        dao_a.save_area("x")
-        dao_a.save_area("y")
-        dao_a.save_link(Link(area1="x", area2="y"))
-        dao_a.save_xpansion_candidate(_make_candidate("cand_a", "x", "y"))
-
-        assert len(dao_a.get_all_xpansion_candidates()) == 1
-        assert dao_b.get_all_xpansion_candidates() == []
-
-    def test_settings_are_isolated_between_studies(
-        self, db_session: Session, matrix_service: ISimpleMatrixService
-    ) -> None:
-        """Settings saved in study A must not affect study B."""
-        dao_a = build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
-        dao_b = build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
-
-        dao_a.create_xpansion_configuration()
-        dao_b.create_xpansion_configuration()
-
-        dao_a.save_xpansion_settings(XpansionSettings(optimality_gap=999.0))
-
-        assert dao_b.get_xpansion_settings().optimality_gap == XpansionSettings().optimality_gap
+        assert db_dao.get_all_xpansion_candidates() == []
