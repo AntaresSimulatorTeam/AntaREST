@@ -69,8 +69,8 @@ from antarest.login.utils import get_current_user, get_user_id, get_user_imperso
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
 from antarest.output.utils import (
-    QueryFileType,
     RAW_OUTPUT_MATRIX_HEADER_SEPARATOR,
+    QueryFileType,
     RawOutputMatrixQuery,
     parse_raw_output_matrix_path,
 )
