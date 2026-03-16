@@ -246,6 +246,14 @@ export const getAreas = createSelector(getStudySynthesis, (synthesis) => {
   return [];
 });
 
+export const getDistricts = createSelector(getStudySynthesis, (synthesis) => {
+  if (synthesis) {
+    const districts = Object.values(synthesis.districts);
+    return sortByName(districts);
+  }
+  return [];
+});
+
 export const getAreasById = createSelector(getStudySynthesis, (synthesis) => {
   if (synthesis) {
     return Object.keys(synthesis.areas).reduce(
