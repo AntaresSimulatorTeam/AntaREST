@@ -12,7 +12,7 @@
 from dataclasses import dataclass
 from enum import Enum, StrEnum
 from pathlib import Path
-from typing import Iterator, Sequence, TypeAlias
+from typing import Iterator, TypeAlias
 
 import pandas as pd
 import polars as pl
@@ -22,6 +22,9 @@ from antarest.study.model import MatrixFrequency, MatrixIndex, TimeSerie
 
 """Column name for the Monte Carlo year."""
 MCYEAR_COL = "mcYear"
+
+RAW_OUTPUT_MATRIX_METADATA_COLUMNS = ("area", "link", "timeId", "mcYear", "cluster")
+RAW_OUTPUT_MATRIX_HEADER_SEPARATOR = " % "
 
 """Column name for the time index."""
 TIME_ID_COL = "timeId"
@@ -66,8 +69,8 @@ class RawOutputMatrixQuery:
     output_id: str
     query_file: QueryFileType
     frequency: MatrixFrequency
-    ids_to_consider: Sequence[str]
-    mc_years: Sequence[int] | None
+    ids_to_consider: str
+    mc_year: int | None
 
 
 _QUERY_FILE_MAP: dict[tuple[str, str], dict[str, QueryFileType]] = {
@@ -99,7 +102,7 @@ def parse_raw_output_matrix_path(path_parts: list[str]) -> RawOutputMatrixQuery 
         if len(path_parts) < 8:
             return None
         try:
-            mc_years = [int(path_parts[4])]
+            mc_year = int(path_parts[4])
         except ValueError:
             return None
         area_or_link = path_parts[5]
@@ -107,7 +110,7 @@ def parse_raw_output_matrix_path(path_parts: list[str]) -> RawOutputMatrixQuery 
     elif mc_root == "mc-all":
         area_or_link = path_parts[4]
         path_offset = 5
-        mc_years = None
+        mc_year = None
     else:
         return None
 
@@ -146,8 +149,8 @@ def parse_raw_output_matrix_path(path_parts: list[str]) -> RawOutputMatrixQuery 
         output_id=path_parts[1],
         query_file=query_file,
         frequency=frequency,
-        ids_to_consider=[item_id],
-        mc_years=mc_years,
+        ids_to_consider=item_id,
+        mc_year=mc_year,
     )
 
 

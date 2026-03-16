@@ -179,6 +179,9 @@ def build_study_service(
         def aggregate_output_data(self, *args: t.Any, **kwargs: t.Any) -> "pl.DataFrame":
             return pl.DataFrame()
 
+        def get_item_output_data(self, *args: t.Any, **kwargs: t.Any) -> "pl.DataFrame":
+            return pl.DataFrame()
+
     service.register_output_access(OutputsAccessMock())
     return service
 

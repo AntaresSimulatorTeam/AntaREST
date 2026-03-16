@@ -66,6 +66,7 @@ from antarest.output.storage.output_storage import (
 )
 from antarest.output.utils import (
     MCYEAR_COL,
+    RAW_OUTPUT_MATRIX_METADATA_COLUMNS,
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
@@ -708,6 +709,34 @@ class OutputService:
             )
         )
         return pl.concat(chunks, how="vertical_relaxed") if chunks else pl.DataFrame()
+
+    def get_item_output_data(
+        self,
+        uuid: str,
+        output_id: str,
+        query_file: QueryFileType,
+        frequency: MatrixFrequency,
+        item_id: str,
+        mc_year: Optional[int] = None,
+        transform_columns_headers: bool = True,
+    ) -> pl.DataFrame:
+        self._studies_repository.assert_permission(uuid, StudyPermissionType.READ)
+        mc_years = [mc_year] if mc_year is not None else None
+        chunks = list(
+            self._find_output_storage(uuid, output_id).aggregate_output_data(
+                study_id=uuid,
+                output_id=output_id,
+                query_file=query_file,
+                frequency=frequency,
+                ids_to_consider=[item_id],
+                columns_names=[],
+                transform_columns_headers=transform_columns_headers,
+                mc_years=mc_years,
+            )
+        )
+        df = chunks[0] if chunks else pl.DataFrame()
+        metadata_cols = [col for col in RAW_OUTPUT_MATRIX_METADATA_COLUMNS if col in df.columns]
+        return df.drop(metadata_cols) if metadata_cols else df
 
     def start_aggregate_output_data(
         self,

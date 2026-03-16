@@ -32,8 +32,8 @@ class TestParseRawOutputMatrixPath:
             output_id="20201014-1422eco",
             query_file=MCAllAreasQueryFile.VALUES,
             frequency=MatrixFrequency.HOURLY,
-            ids_to_consider=["fr"],
-            mc_years=None,
+            ids_to_consider="fr",
+            mc_year=None,
         )
 
     def test_mc_all_areas_details(self) -> None:
@@ -76,8 +76,8 @@ class TestParseRawOutputMatrixPath:
             output_id="20201014-1422eco",
             query_file=MCAllLinksQueryFile.VALUES,
             frequency=MatrixFrequency.HOURLY,
-            ids_to_consider=["fr - de"],
-            mc_years=None,
+            ids_to_consider="fr - de",
+            mc_year=None,
         )
 
     def test_mc_ind_areas(self) -> None:
@@ -88,8 +88,8 @@ class TestParseRawOutputMatrixPath:
             output_id="20201014-1422eco",
             query_file=MCIndAreasQueryFile.VALUES,
             frequency=MatrixFrequency.HOURLY,
-            ids_to_consider=["fr"],
-            mc_years=[1],
+            ids_to_consider="fr",
+            mc_year=1,
         )
 
     def test_mc_ind_links(self) -> None:
@@ -98,7 +98,7 @@ class TestParseRawOutputMatrixPath:
         )
         assert result is not None
         assert result.query_file == MCIndLinksQueryFile.VALUES
-        assert result.mc_years == [42]
+        assert result.mc_year == 42
 
     def test_adequacy_mode(self) -> None:
         result = parse_raw_output_matrix_path(

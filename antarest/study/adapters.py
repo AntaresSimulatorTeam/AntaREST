@@ -75,4 +75,25 @@ def adapt_output_service_to_study_service(output_service: OutputService) -> IOut
                 mc_years=mc_years,
             )
 
+        @override
+        def get_item_output_data(
+            self,
+            study_id: str,
+            output_id: str,
+            query_file: QueryFileType,
+            frequency: MatrixFrequency,
+            item_id: str,
+            mc_year: int | None = None,
+            transform_columns_headers: bool = True,
+        ) -> pl.DataFrame:
+            return output_service.get_item_output_data(
+                uuid=study_id,
+                output_id=output_id,
+                query_file=query_file,
+                frequency=frequency,
+                item_id=item_id,
+                mc_year=mc_year,
+                transform_columns_headers=transform_columns_headers,
+            )
+
     return OutputServiceAdapter()

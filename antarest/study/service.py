@@ -68,7 +68,12 @@ from antarest.login.service import LoginService
 from antarest.login.utils import get_current_user, get_user_id, get_user_impersonator
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
-from antarest.output.utils import QueryFileType, RawOutputMatrixQuery, parse_raw_output_matrix_path
+from antarest.output.utils import (
+    QueryFileType,
+    RAW_OUTPUT_MATRIX_HEADER_SEPARATOR,
+    RawOutputMatrixQuery,
+    parse_raw_output_matrix_path,
+)
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
 from antarest.study.business.allocation_management import AllocationManager
@@ -186,8 +191,6 @@ logger = logging.getLogger(__name__)
 
 MAX_MISSING_STUDY_TIMEOUT = 2  # days
 MAX_BATCH_DELETE_SIZE = 100
-RAW_OUTPUT_MATRIX_HEADER_SEPARATOR = " % "
-RAW_OUTPUT_MATRIX_METADATA_COLUMNS = ("area", "link", "timeId", "mcYear", "cluster")
 
 
 def _get_matrix_from_path(study_interface: StudyInterface, matrix_path: Path) -> pl.DataFrame:
@@ -583,6 +586,19 @@ class IOutputsAccess(ABC):
         ids_to_consider: Sequence[str],
         transform_columns_headers: bool = True,
         mc_years: Optional[Sequence[int]] = None,
+    ) -> pl.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_item_output_data(
+        self,
+        study_id: str,
+        output_id: str,
+        query_file: "QueryFileType",
+        frequency: MatrixFrequency,
+        item_id: str,
+        mc_year: Optional[int] = None,
+        transform_columns_headers: bool = True,
     ) -> pl.DataFrame:
         raise NotImplementedError()
 
@@ -2613,41 +2629,15 @@ class StudyService:
         self,
         uuid: str,
         parsed: RawOutputMatrixQuery,
-        *,
-        transform_columns_headers: bool,
     ) -> pl.DataFrame:
-        df = self._get_outputs_access().aggregate_output_data(
+        return self._get_outputs_access().get_item_output_data(
             study_id=uuid,
             output_id=parsed.output_id,
             query_file=parsed.query_file,
             frequency=parsed.frequency,
-            columns_names=[],  # empty means all columns
-            ids_to_consider=parsed.ids_to_consider,
-            transform_columns_headers=transform_columns_headers,
-            mc_years=parsed.mc_years,
+            item_id=parsed.ids_to_consider,
+            mc_year=parsed.mc_year,
         )
-        metadata_cols = [col for col in RAW_OUTPUT_MATRIX_METADATA_COLUMNS if col in df.columns]
-        return df.drop(metadata_cols) if metadata_cols else df
-
-    def get_raw_output_matrix_dataframe(self, uuid: str, path: str) -> pl.DataFrame:
-        """
-        Returns an output matrix as a DataFrame for callers that explicitly need matrix serialization.
-        """
-        study = self.get_study(uuid)
-        assert_permission(study, StudyPermissionType.READ)
-        self.assert_study_unarchived(study)
-
-        parsed = parse_raw_output_matrix_path([item for item in path.split("/") if item])
-        if parsed is None:
-            raise IncorrectPathError(f"The provided path does not point to a valid output matrix: '{path}'")
-        return self._read_raw_output_matrix(uuid, parsed, transform_columns_headers=True)
-
-    def _get_raw_output_matrix_legacy_content(self, uuid: str, parsed: RawOutputMatrixQuery) -> JSON:
-        df = self._read_raw_output_matrix(uuid, parsed, transform_columns_headers=False)
-        return {
-            "columns": [tuple(column.split(RAW_OUTPUT_MATRIX_HEADER_SEPARATOR)) for column in df.columns],
-            "data": df.to_numpy().tolist(),
-        }
 
     def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
         """
@@ -2670,8 +2660,20 @@ class StudyService:
         parsed = parse_raw_output_matrix_path(url)
         if parsed is not None:
             if formatted:
-                return self._get_raw_output_matrix_legacy_content(uuid, parsed)
-            return self._read_raw_output_matrix(uuid, parsed, transform_columns_headers=True)
+                df = self._get_outputs_access().get_item_output_data(
+                    study_id=uuid,
+                    output_id=parsed.output_id,
+                    query_file=parsed.query_file,
+                    frequency=parsed.frequency,
+                    item_id=parsed.ids_to_consider,
+                    mc_year=parsed.mc_year,
+                    transform_columns_headers=False,
+                )
+                return {
+                    "columns": [tuple(col.split(RAW_OUTPUT_MATRIX_HEADER_SEPARATOR)) for col in df.columns],
+                    "data": df.to_numpy().tolist(),
+                }
+            return self._read_raw_output_matrix(uuid, parsed)
 
         # We need to handle matrices differently if our study is stored in DB
         if study.storage_mode == StorageMode.DATABASE:
