@@ -76,15 +76,16 @@ def create_test_client(
 ) -> TestClient:
     app = FastAPI(title=__name__)
     add_exception_handlers(app)
+    app.state.config = CONFIG
     app.state.study_service = service
     app.state.output_service = output_service
     app.state.file_transfer_manager = file_transfer_manager
     app.state.matrix_service = Mock(spec=MatrixService)
     app.state.task_service = Mock()
-    app.include_router(create_study_routes(CONFIG))
-    app.include_router(create_raw_study_routes(CONFIG))
-    app.include_router(create_study_variant_routes(CONFIG))
-    app.include_router(create_output_routes(CONFIG))
+    app.include_router(create_study_routes())
+    app.include_router(create_raw_study_routes())
+    app.include_router(create_study_variant_routes())
+    app.include_router(create_output_routes())
     return TestClient(app, raise_server_exceptions=raise_server_exceptions)
 
 

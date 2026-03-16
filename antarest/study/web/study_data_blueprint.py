@@ -21,11 +21,9 @@ from pydantic import Field
 from starlette.responses import RedirectResponse
 
 from antarest.core.api_types import SanitizedStr, UuidStr
-from antarest.core.config import Config
-from antarest.core.dependencies import get_study_service
+from antarest.core.dependencies import auth_required, get_study_service
 from antarest.core.model import JSON, StudyPermissionType
 from antarest.core.utils.web import APITag
-from antarest.login.auth import Auth
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
@@ -141,19 +139,11 @@ class ClusterType(enum.StrEnum):
     THERMALS = "thermals"
 
 
-def create_study_data_routes(config: Config) -> APIRouter:
+def create_study_data_routes() -> APIRouter:
     """
     Endpoint implementation for studies area management
-
-    Args:
-        study_service: study service facade to handle request
-        config: main server configuration
-
-    Returns:
-        The FastAPI route for Study data management
     """
-    auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[auth.required()], tags=[APITag.study_data])
+    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth_required)], tags=[APITag.study_data])
 
     class AreaResponse(AreaInfo):
         """API view for areas with deprecated ``type`` field kept for compatibility."""

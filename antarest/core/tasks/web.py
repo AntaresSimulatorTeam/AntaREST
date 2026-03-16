@@ -18,19 +18,16 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from antarest.core.api_types import UuidStr
-from antarest.core.config import Config
-from antarest.core.dependencies import get_task_service
+from antarest.core.dependencies import auth_required, get_task_service
 from antarest.core.tasks.model import TaskDTO, TaskListFilter
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService
 from antarest.core.utils.web import APITag
-from antarest.login.auth import Auth
 
 logger = logging.getLogger(__name__)
 
 
-def create_tasks_api(config: Config) -> APIRouter:
-    auth = Auth(config)
-    bp = APIRouter(prefix="/v1", tags=[APITag.tasks], dependencies=[auth.required()])
+def create_tasks_api() -> APIRouter:
+    bp = APIRouter(prefix="/v1", tags=[APITag.tasks], dependencies=[Depends(auth_required)])
 
     @bp.post("/tasks", deprecated=True)
     def list_tasks(filter: TaskListFilter, service: ITaskService = Depends(get_task_service)) -> list[TaskDTO]:

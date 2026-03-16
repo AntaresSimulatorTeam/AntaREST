@@ -46,10 +46,11 @@ def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
 
     app = FastAPI(title=__name__)
     add_exception_handlers(app)
+    app.state.config = config
     app.state.matrix_service = service
     app.state.file_transfer_manager = Mock()
     app.state.task_service = Mock()
-    app.include_router(create_matrix_api(config))
+    app.include_router(create_matrix_api())
     return app
 
 

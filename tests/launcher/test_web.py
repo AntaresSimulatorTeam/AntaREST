@@ -37,6 +37,7 @@ def create_app(service: Mock) -> FastAPI:
     config = Config(security=SecurityConfig(disabled=True))
     app = FastAPI(title=__name__)
     add_exception_handlers(app)
+    app.state.config = config
     app.state.launcher_service = service
     app.state.study_service = Mock()
     app.state.output_service = Mock()
@@ -44,7 +45,7 @@ def create_app(service: Mock) -> FastAPI:
     app.state.file_transfer_manager = Mock()
     app.state.task_service = Mock()
     app.state.cache = Mock()
-    app.include_router(create_launcher_api(config))
+    app.include_router(create_launcher_api())
     return app
 
 

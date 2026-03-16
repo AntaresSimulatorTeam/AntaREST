@@ -16,28 +16,19 @@ from typing import List
 from fastapi import APIRouter, Depends
 
 from antarest.core.api_types import SanitizedStr
-from antarest.core.config import Config
-from antarest.core.dependencies import get_explorer
+from antarest.core.dependencies import auth_required, get_explorer
 from antarest.core.utils.web import APITag
-from antarest.login.auth import Auth
 from antarest.study.model import FolderDTO, WorkspaceDTO
 from antarest.study.storage.explorer_service import Explorer
 
 logger = logging.getLogger(__name__)
 
 
-def create_explorer_routes(config: Config) -> APIRouter:
+def create_explorer_routes() -> APIRouter:
     """
     Endpoint implementation for explorer management
-    Args:
-        explorer: explorer service facade to handle request
-        config: main server configuration
-
-    Returns:
-
     """
-    auth = Auth(config)
-    bp = APIRouter(prefix="/v1/private", tags=[APITag.explorer], dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1/private", tags=[APITag.explorer], dependencies=[Depends(auth_required)])
 
     @bp.get(
         "/explorer/{workspace}/_list_dir",

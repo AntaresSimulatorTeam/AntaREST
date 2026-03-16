@@ -34,7 +34,8 @@ def test_version() -> None:
     mock_storage_service.study_service.path_resources = Path("/")
 
     app = FastAPI(title=__name__)
-    app.include_router(create_utils_routes(Config()))
+    app.state.config = Config()
+    app.include_router(create_utils_routes())
     client = TestClient(app)
 
     path = "/version"
@@ -46,7 +47,8 @@ def test_version() -> None:
 
 def test_server_health() -> None:
     app = FastAPI(title=__name__)
-    app.include_router(create_utils_routes(Config()))
+    app.state.config = Config()
+    app.include_router(create_utils_routes())
     client = TestClient(app)
     result = client.get("/health")
     assert result.json() == {"status": "available"}

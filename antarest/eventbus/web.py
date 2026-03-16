@@ -21,7 +21,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
-from antarest.core.dependencies import get_auth_service
+from antarest.core.dependencies import get_auth_service, get_config
 from antarest.core.interfaces.eventbus import Event, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
@@ -29,7 +29,7 @@ from antarest.core.permissions import check_permission
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.json import to_json_string
 from antarest.fastapi_jwt_auth import AuthJWT
-from antarest.login.auth import Auth
+from antarest.login.auth import Auth  # still needed for Auth.get_user_from_token
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +93,7 @@ class ConnectionManager:
                 await connection.websocket.send_text(message)
 
 
-def register_websocket_routes(api_root: APIRouter, config: Config) -> ConnectionManager:
+def register_websocket_routes(api_root: APIRouter) -> ConnectionManager:
     """Register the /ws websocket route. Returns the ConnectionManager for later event bus wiring."""
     manager = ConnectionManager()
 
@@ -102,6 +102,7 @@ def register_websocket_routes(api_root: APIRouter, config: Config) -> Connection
         websocket: WebSocket,
         token: Annotated[SanitizedStr, Query()],
         jwt_manager: Annotated[AuthJWT, Depends(get_auth_service)],
+        config: Config = Depends(get_config),
     ) -> None:
         user: Optional[JWTUser] = None
         if not config.security.disabled:
@@ -146,7 +147,7 @@ def connect_event_bus(event_bus: IEventBus, manager: ConnectionManager) -> None:
     event_bus.add_listener(send_event_to_ws)
 
 
-def configure_websockets(api_root: APIRouter, config: Config, event_bus: IEventBus) -> None:
+def configure_websockets(api_root: APIRouter, event_bus: IEventBus) -> None:
     """Register websocket routes and wire the event bus (convenience wrapper)."""
-    manager = register_websocket_routes(api_root, config)
+    manager = register_websocket_routes(api_root)
     connect_event_bus(event_bus, manager)

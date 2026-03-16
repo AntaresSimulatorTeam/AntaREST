@@ -16,19 +16,16 @@ from fastapi import APIRouter, Depends
 from starlette.responses import FileResponse
 
 from antarest.core.api_types import UuidStr
-from antarest.core.config import Config
-from antarest.core.dependencies import get_file_transfer_manager
+from antarest.core.dependencies import auth_required, get_file_transfer_manager
 from antarest.core.filetransfer.model import FileDownloadDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.utils.web import APITag
-from antarest.login.auth import Auth
 
 logger = logging.getLogger(__name__)
 
 
-def create_file_transfer_api(config: Config) -> APIRouter:
-    auth = Auth(config)
-    bp = APIRouter(prefix="/v1", tags=[APITag.downloads], dependencies=[auth.required()])
+def create_file_transfer_api() -> APIRouter:
+    bp = APIRouter(prefix="/v1", tags=[APITag.downloads], dependencies=[Depends(auth_required)])
 
     @bp.get("/downloads", summary="Get available downloads")
     def get_downloads(

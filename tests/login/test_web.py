@@ -60,9 +60,10 @@ def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
 
     app = FastAPI(title=__name__)
     add_exception_handlers(app)
+    app.state.config = config
     app.state.login_service = service
     app.include_router(create_login_api())
-    app.include_router(create_user_api(config))
+    app.include_router(create_user_api())
     return app
 
 

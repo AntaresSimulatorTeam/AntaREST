@@ -19,7 +19,7 @@ from pydantic import Field
 
 from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.config import Config
-from antarest.core.dependencies import get_launcher_service
+from antarest.core.dependencies import auth_required, get_config, get_launcher_service
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.utils.web import APITag
 from antarest.launcher.model import (
@@ -35,16 +35,14 @@ from antarest.launcher.model import (
 )
 from antarest.launcher.service import LauncherService
 from antarest.launcher.ssh_client import SlurmError
-from antarest.login.auth import Auth
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_MAX_LATEST_JOBS = 200
 
 
-def create_launcher_api(config: Config) -> APIRouter:
-    auth = Auth(config)
-    bp = APIRouter(prefix="/v1/launcher", tags=[APITag.launcher], dependencies=[auth.required()])
+def create_launcher_api() -> APIRouter:
+    bp = APIRouter(prefix="/v1/launcher", tags=[APITag.launcher], dependencies=[Depends(auth_required)])
 
     @bp.post(
         "/run/{study_id}",
@@ -57,6 +55,7 @@ def create_launcher_api(config: Config) -> APIRouter:
         solver_presets_id: Optional[SanitizedStr] = None,
         version: Optional[SanitizedStr] = None,
         service: LauncherService = Depends(get_launcher_service),
+        config: Config = Depends(get_config),
     ) -> JobCreationDTO:
         logger.info(f"Launching study {study_id} with options {launcher_parameters}")
         selected_launcher = launcher if launcher is not None else config.launcher.default

@@ -17,13 +17,11 @@ import humanize
 from fastapi import APIRouter, Body, Depends
 
 from antarest.core.api_types import SanitizedStr, UuidStr
-from antarest.core.config import Config
-from antarest.core.dependencies import get_study_service
+from antarest.core.dependencies import auth_required, get_study_service
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import sanitize_string
 from antarest.core.utils.web import APITag
-from antarest.login.auth import Auth
 from antarest.study.model import StudyMetadataDTO
 from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.model.model import CommandDTOAPI, VariantTreeDTO
@@ -31,19 +29,11 @@ from antarest.study.storage.variantstudy.model.model import CommandDTOAPI, Varia
 logger = logging.getLogger(__name__)
 
 
-def create_study_variant_routes(
-    config: Config,
-) -> APIRouter:
+def create_study_variant_routes() -> APIRouter:
     """
     Endpoint implementation for studies area management
-    Args:
-        config: main server configuration
-
-    Returns:
-
     """
-    auth = Auth(config)
-    bp = APIRouter(prefix="/v1", tags=[APITag.study_variant_management], dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.study_variant_management], dependencies=[Depends(auth_required)])
 
     @bp.post(
         "/studies/{uuid}/variants",

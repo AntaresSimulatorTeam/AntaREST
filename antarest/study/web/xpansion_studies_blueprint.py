@@ -18,12 +18,10 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from starlette.responses import Response
 
 from antarest.core.api_types import SanitizedStr, UuidStr
-from antarest.core.config import Config
-from antarest.core.dependencies import get_study_service
+from antarest.core.dependencies import auth_required, get_study_service
 from antarest.core.model import StudyPermissionType
 from antarest.core.serde.json import to_json
 from antarest.core.utils.web import APITag
-from antarest.login.auth import Auth
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionCandidate,
@@ -37,15 +35,11 @@ from antarest.study.service import StudyService
 logger = logging.getLogger(__name__)
 
 
-def create_xpansion_routes(config: Config) -> APIRouter:
+def create_xpansion_routes() -> APIRouter:
     """
     Endpoint implementation for xpansion studies management
-
-    Args:
-        config: main server configuration
     """
-    auth = Auth(config)
-    bp = APIRouter(prefix="/v1", tags=[APITag.xpansion_study_management], dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.xpansion_study_management], dependencies=[Depends(auth_required)])
 
     @bp.post(
         "/studies/{uuid}/extensions/xpansion",

@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import Annotated, Any, TypeAlias, cast
 
@@ -19,6 +20,7 @@ from starlette.responses import Response
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.maintenance.service import MaintenanceService
 from antarest.core.serde.json import from_json
 from antarest.core.tasks.service import ITaskService
@@ -27,6 +29,7 @@ from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
 from antarest.launcher.service import LauncherService
 from antarest.login.service import LoginService
+from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import MatrixService
 from antarest.output.output_service import OutputService
 from antarest.study.directory_service import DirectoryService
@@ -114,3 +117,23 @@ def get_auth_service(
 
 
 AuthDep: TypeAlias = Annotated[AuthJWT, Depends(get_auth_service)]
+
+
+async def auth_required(
+    auth_jwt: AuthDep,
+    config: Config = Depends(get_config),
+) -> AsyncGenerator[None, None]:
+    """
+    A FastAPI dependency to require authentication and set the current user context.
+
+    Implementation note:
+        This dependency MUST be async, otherwise it's executed in a thread which will
+        generally not be the same as the one of the request.
+    """
+    if config.security.disabled:
+        user = DEFAULT_ADMIN_USER
+    else:
+        auth_jwt.jwt_required()
+        user = JWTUser.model_validate(from_json(auth_jwt.get_jwt_subject()))
+    with current_user_context(user):
+        yield

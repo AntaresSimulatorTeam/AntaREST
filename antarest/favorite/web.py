@@ -10,20 +10,21 @@
 #
 # This file is part of the Antares project.
 
+import logging
+
 from fastapi import APIRouter, Depends
 
 from antarest.core.api_types import UuidStr
-from antarest.core.config import Config
-from antarest.core.dependencies import get_favorite_directory_service, get_favorite_study_service
+from antarest.core.dependencies import auth_required, get_favorite_directory_service, get_favorite_study_service
 from antarest.core.utils.web import APITag
 from antarest.favorite.model import FavoriteDirectoryDTO, FavoriteStudyDTO
 from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
-from antarest.login.auth import Auth, logger
+
+logger = logging.getLogger(__name__)
 
 
-def create_favorite_routes(config: Config) -> APIRouter:
-    auth = Auth(config)
-    bp = APIRouter(prefix="/v1", tags=[APITag.favorite], dependencies=[auth.required()])
+def create_favorite_routes() -> APIRouter:
+    bp = APIRouter(prefix="/v1", tags=[APITag.favorite], dependencies=[Depends(auth_required)])
 
     @bp.get("/favorites/studies/", summary="Listing favorites for current user")
     def list_favorite_studies(

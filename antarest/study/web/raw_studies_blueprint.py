@@ -23,15 +23,13 @@ from fastapi.params import Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
 from antarest.core.api_types import SanitizedStr, UuidStr
-from antarest.core.config import Config
-from antarest.core.dependencies import get_study_service
+from antarest.core.dependencies import auth_required, get_study_service
 from antarest.core.exceptions import IncorrectPathError
 from antarest.core.model import SUB_JSON
 from antarest.core.serde.json import from_json, to_json
 from antarest.core.serde.matrix_export import TableExportFormat, simplify_dataframe
 from antarest.core.utils.utils import sanitize_string
 from antarest.core.utils.web import APITag
-from antarest.login.auth import Auth
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.user_model import ResourceType
 from antarest.study.service import StudyService
@@ -145,20 +143,11 @@ class MatrixFormat(EnumIgnoreCase):
             return Response(content=buffer.getvalue(), media_type="application/vnd.apache.arrow.file")
 
 
-def create_raw_study_routes(
-    config: Config,
-) -> APIRouter:
+def create_raw_study_routes() -> APIRouter:
     """
     Endpoint implementation for studies management
-    Args:
-        study_service: study service facade to handle request
-        config: main server configuration
-
-    Returns:
-
     """
-    auth = Auth(config)
-    bp = APIRouter(prefix="/v1", tags=[APITag.study_raw_data], dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.study_raw_data], dependencies=[Depends(auth_required)])
 
     @bp.get(
         "/studies/{uuid}/raw",

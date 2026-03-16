@@ -28,10 +28,9 @@ from starlette.responses import PlainTextResponse, StreamingResponse
 
 from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
-from antarest.core.dependencies import get_config
+from antarest.core.dependencies import auth_required, get_config
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
-from antarest.login.auth import Auth
 
 FilesystemName: TypeAlias = te.Annotated[str, Field(pattern=r"^\w+$", description="Filesystem name")]
 MountPointName: TypeAlias = te.Annotated[str, Field(pattern=r"^\w+$", description="Mount point name")]
@@ -243,7 +242,7 @@ def _build_filesystems(config: Config) -> dict[str, Mapping[str, Path]]:
     return {"cfg": config_dirs, "ws": workspace_dirs}
 
 
-def create_file_system_blueprint(config: Config) -> APIRouter:
+def create_file_system_blueprint() -> APIRouter:
     """
     Create the blueprint for the file system API.
 
@@ -255,18 +254,11 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
 
     Reading files is allowed for authenticated users, but deleting files is reserved
     for site administrators.
-
-    Args:
-        config: Application configuration.
-
-    Returns:
-        The blueprint.
     """
-    auth = Auth(config)
     bp = APIRouter(
         prefix="/v1/filesystem",
         tags=[APITag.filesystem],
-        dependencies=[auth.required()],
+        dependencies=[Depends(auth_required)],
         include_in_schema=True,  # but may be disabled in the future
     )
 

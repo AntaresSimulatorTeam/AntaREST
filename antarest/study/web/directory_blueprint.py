@@ -17,21 +17,16 @@ from typing import List
 from fastapi import APIRouter, Depends
 
 from antarest.core.api_types import UuidStr
-from antarest.core.config import Config
-from antarest.core.dependencies import get_directory_service
+from antarest.core.dependencies import auth_required, get_directory_service
 from antarest.core.utils.web import APITag
-from antarest.login.auth import Auth
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import DirectoryCreation, DirectoryMetadata, DirectoryUpdate
 
 logger = logging.getLogger(__name__)
 
 
-def create_directory_routes(
-    config: Config,
-) -> APIRouter:
-    auth = Auth(config)
-    bp = APIRouter(prefix="/v1", tags=[APITag.directory_management], dependencies=[auth.required()])
+def create_directory_routes() -> APIRouter:
+    bp = APIRouter(prefix="/v1", tags=[APITag.directory_management], dependencies=[Depends(auth_required)])
 
     @bp.get(
         "/directories",

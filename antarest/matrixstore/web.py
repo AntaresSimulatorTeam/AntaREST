@@ -18,15 +18,13 @@ from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
 from starlette.responses import FileResponse
 
 from antarest.core.api_types import SanitizedStr
-from antarest.core.config import Config
-from antarest.core.dependencies import get_matrix_service, get_tmp_export_file
+from antarest.core.dependencies import auth_required, get_matrix_service, get_tmp_export_file
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.np_array import NpArray
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.web import APITag
-from antarest.login.auth import Auth
 from antarest.login.utils import require_current_user
 from antarest.matrixstore.model import (
     MatrixData,
@@ -49,17 +47,11 @@ class MatrixDTO(AntaresBaseModel, arbitrary_types_allowed=True):
     id: str
 
 
-def create_matrix_api(config: Config) -> APIRouter:
+def create_matrix_api() -> APIRouter:
     """
     Endpoints login implementation
-    Args:
-        config: server config
-
-    Returns:
-
     """
-    auth = Auth(config)
-    bp = APIRouter(prefix="/v1", tags=[APITag.matrix], dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.matrix], dependencies=[Depends(auth_required)])
 
     @bp.post("/matrix", description="Upload a new matrix")
     def create(

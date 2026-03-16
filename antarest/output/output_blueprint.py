@@ -22,14 +22,12 @@ from pydantic import TypeAdapter
 from starlette.responses import FileResponse, Response
 
 from antarest.core.api_types import SanitizedStr, UuidStr
-from antarest.core.config import Config
-from antarest.core.dependencies import get_output_service, get_tmp_export_file
+from antarest.core.dependencies import auth_required, get_output_service, get_tmp_export_file
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.serde.json import to_json
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.dict_utils import remove_nones
 from antarest.core.utils.web import APITag
-from antarest.login.auth import Auth
 from antarest.output.output_model import (
     OutputVariablesInformation,
     OutputVariablesList,
@@ -99,18 +97,11 @@ def _to_item_id(
     )
 
 
-def create_output_routes(config: Config) -> APIRouter:
+def create_output_routes() -> APIRouter:
     """
     Endpoint implementation for outputs management
-
-    Args:
-        config: main server configuration
-
-    Returns:
-        The FastAPI route for Study data management
     """
-    auth = Auth(config)
-    bp = APIRouter(prefix="/v1", tags=[APITag.study_outputs], dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.study_outputs], dependencies=[Depends(auth_required)])
 
     # noinspection PyShadowingBuiltins
     @bp.post(

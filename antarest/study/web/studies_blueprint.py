@@ -23,14 +23,13 @@ from pydantic import NonNegativeInt
 
 from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.config import Config
-from antarest.core.dependencies import get_study_service
+from antarest.core.dependencies import auth_required, get_config, get_study_service
 from antarest.core.exceptions import BadArchiveContent, BadZipBinary, IncorrectArgumentsForCopy
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.model import PublicMode
 from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.utils import sanitize_string, validate_folder_path, validate_study_name
 from antarest.core.utils.web import APITag
-from antarest.login.auth import Auth
 from antarest.login.utils import require_current_user
 from antarest.study.dtos import StudySynthesis
 from antarest.study.model import (
@@ -57,17 +56,11 @@ def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) ->
     return list(collections.OrderedDict.fromkeys(values))
 
 
-def create_study_routes(config: Config) -> APIRouter:
+def create_study_routes() -> APIRouter:
     """
     Endpoint implementation for studies management
-    Args:
-        config: main server configuration
-
-    Returns:
-
     """
-    auth = Auth(config)
-    bp = APIRouter(prefix="/v1", tags=[APITag.study_management], dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.study_management], dependencies=[Depends(auth_required)])
 
     @bp.get(
         "/studies",
@@ -406,6 +399,7 @@ def create_study_routes(config: Config) -> APIRouter:
         ] = "",
         storage_mode: StorageMode = StorageMode.FILESYSTEM,
         study_service: StudyService = Depends(get_study_service),
+        config: Config = Depends(get_config),
     ) -> str:
         """
         Create a new empty study.

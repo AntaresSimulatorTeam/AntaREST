@@ -65,9 +65,9 @@ def client(services, db_engine: Engine) -> TestClient:
     app.state.output_service = output_service
     app.state.file_transfer_manager = study_service.file_transfer_manager
     app.state.task_service = Mock()
-    app.include_router(create_study_routes(config))
-    app.include_router(create_raw_study_routes(config))
-    app.include_router(create_output_routes(config))
+    app.include_router(create_study_routes())
+    app.include_router(create_raw_study_routes())
+    app.include_router(create_output_routes())
     return TestClient(app)
 
 

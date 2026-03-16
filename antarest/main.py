@@ -223,7 +223,7 @@ def add_exception_handlers(application: FastAPI) -> None:
         )
 
 
-def register_all_routes(api_root: APIRouter, config: Config) -> ConnectionManager:
+def register_all_routes(api_root: APIRouter) -> ConnectionManager:
     """Register all API routes on the api_root router.
 
     Routes use FastAPI's Depends() mechanism for service injection,
@@ -231,40 +231,50 @@ def register_all_routes(api_root: APIRouter, config: Config) -> ConnectionManage
 
     Returns the ConnectionManager for websocket event bus wiring.
     """
-    # Utility routes (config-only, no service injection needed)
-    api_root.include_router(create_utils_routes(config))
-    api_root.include_router(create_file_system_blueprint(config))
+    # Utility routes
+    api_root.include_router(create_utils_routes())
+    api_root.include_router(create_file_system_blueprint())
 
     # Study routes
-    api_root.include_router(create_study_routes(config))
-    api_root.include_router(create_raw_study_routes(config))
-    api_root.include_router(create_study_data_routes(config))
-    api_root.include_router(create_study_variant_routes(config))
-    api_root.include_router(create_xpansion_routes(config))
-    api_root.include_router(create_directory_routes(config))
-    api_root.include_router(create_watcher_routes(config))
-    api_root.include_router(create_explorer_routes(config))
+    api_root.include_router(create_study_routes())
+    api_root.include_router(create_raw_study_routes())
+    api_root.include_router(create_study_data_routes())
+    api_root.include_router(create_study_variant_routes())
+    api_root.include_router(create_xpansion_routes())
+    api_root.include_router(create_directory_routes())
+    api_root.include_router(create_watcher_routes())
+    api_root.include_router(create_explorer_routes())
 
     # Login routes
     api_root.include_router(create_login_api())
-    api_root.include_router(create_user_api(config))
+    api_root.include_router(create_user_api())
 
     # Core service routes
-    api_root.include_router(create_tasks_api(config))
-    api_root.include_router(create_file_transfer_api(config))
-    api_root.include_router(create_maintenance_api(config))
+    api_root.include_router(create_tasks_api())
+    api_root.include_router(create_file_transfer_api())
+    api_root.include_router(create_maintenance_api())
 
     # Domain service routes
-    api_root.include_router(create_matrix_api(config))
-    api_root.include_router(create_launcher_api(config))
-    api_root.include_router(create_output_routes(config))
-    api_root.include_router(create_favorite_routes(config))
+    api_root.include_router(create_matrix_api())
+    api_root.include_router(create_launcher_api())
+    api_root.include_router(create_output_routes())
+    api_root.include_router(create_favorite_routes())
 
     # Websocket route (returns manager so event bus can be wired later)
-    return register_websocket_routes(api_root, config)
+    return register_websocket_routes(api_root)
 
 
-def fastapi_app(
+def create_web_layer(api_prefix: str) -> tuple[APIRouter, ConnectionManager]:
+    api_root = APIRouter(prefix=api_prefix)
+
+    ws_manager = register_all_routes(api_root)
+
+    return api_root, ws_manager
+
+
+def fastapi_app_from_routes(
+    routes: APIRouter,
+    ws_manager: ConnectionManager,
     config_file: Path,
     resource_path: Optional[Path] = None,
     mount_front: bool = True,
@@ -293,11 +303,6 @@ def fastapi_app(
         lifespan=set_threadpool_size,
         openapi_url=f"{config.api_prefix}/openapi.json",
     )
-
-    api_root = APIRouter(prefix=config.api_prefix)
-
-    # 1. Register all routes (services not yet created — Depends() will resolve at request time)
-    ws_manager = register_all_routes(api_root, config)
 
     # 2. Database
     engine = init_db_engine(config, auto_upgrade_db, config_file)
@@ -340,7 +345,7 @@ def fastapi_app(
     connect_event_bus(services.event_bus, ws_manager)
 
     # 8. Include all routes
-    application.include_router(api_root)
+    application.include_router(routes)
 
     # Important note:
     # those singleton services must be "started" ONLY when explictly asked.
@@ -373,6 +378,28 @@ def fastapi_app(
     application.add_middleware(LoggingMiddleware)
 
     return application, services
+
+
+LOGGING_CONFIG = copy.deepcopy(uvicorn.config.LOGGING_CONFIG)
+# noinspection SpellCheckingInspection
+LOGGING_CONFIG["formatters"]["default"]["fmt"] = "[%(asctime)s] [%(process)s] %(levelprefix)s  %(message)s"
+# noinspection SpellCheckingInspection
+LOGGING_CONFIG["formatters"]["access"]["fmt"] = (
+    '[%(asctime)s] [%(process)s] [%(name)s] %(levelprefix)s %(client_addr)s - "%(request_line)s" %(status_code)s'
+)
+
+
+def fastapi_app(
+    config_file: Path,
+    resource_path: Optional[Path] = None,
+    mount_front: bool = True,
+    auto_upgrade_db: bool = False,
+) -> Tuple[FastAPI, Services]:
+    res = resource_path or get_local_path() / "resources"
+    config = Config.from_yaml_file(res=res, file=config_file)
+
+    routes, ws_manager = create_web_layer(config.api_prefix)
+    return fastapi_app_from_routes(routes, ws_manager, config_file, resource_path, mount_front, auto_upgrade_db)
 
 
 LOGGING_CONFIG = copy.deepcopy(uvicorn.config.LOGGING_CONFIG)

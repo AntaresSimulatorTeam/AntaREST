@@ -18,10 +18,8 @@ from typing import List
 from fastapi import APIRouter, Depends
 
 from antarest.core.api_types import SanitizedStr
-from antarest.core.config import Config
-from antarest.core.dependencies import get_watcher
+from antarest.core.dependencies import auth_required, get_watcher
 from antarest.core.utils.web import APITag
-from antarest.login.auth import Auth
 from antarest.study.storage.rawstudy.watcher import Watcher
 
 logger = logging.getLogger(__name__)
@@ -32,20 +30,11 @@ class BadPathFormatError(HTTPException):
         super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
-def create_watcher_routes(
-    config: Config,
-) -> APIRouter:
+def create_watcher_routes() -> APIRouter:
     """
     Endpoint implementation for watcher management
-    Args:
-        watcher: watcher service facade to handle request
-        config: main server configuration
-
-    Returns:
-
     """
-    auth = Auth(config)
-    bp = APIRouter(prefix="/v1", tags=[APITag.study_raw_data], dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.study_raw_data], dependencies=[Depends(auth_required)])
 
     @bp.post(
         "/watcher/_scan",
