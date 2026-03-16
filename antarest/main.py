@@ -47,7 +47,7 @@ from antarest.fastapi_jwt_auth.exceptions import AuthJWTException
 from antarest.favorite.web import create_favorite_routes
 from antarest.front import add_front_app
 from antarest.launcher.web import create_launcher_api
-from antarest.login.auth import Auth, JwtSettings
+from antarest.login.auth import JwtSettings
 from antarest.login.model import init_admin_user
 from antarest.login.web import create_login_api, create_user_api
 from antarest.matrixstore.web import create_matrix_api
@@ -318,8 +318,6 @@ def fastapi_app_from_routes(
         return JwtSettings(
             authjwt_secret_key=config.security.jwt_key,
             authjwt_token_location=("headers", "cookies"),
-            authjwt_access_token_expires=Auth.ACCESS_TOKEN_DURATION,
-            authjwt_refresh_token_expires=Auth.REFRESH_TOKEN_DURATION,
             authjwt_cookie_csrf_protect=False,
         )
 

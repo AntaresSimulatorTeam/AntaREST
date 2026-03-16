@@ -12,32 +12,33 @@
 
 from unittest.mock import Mock
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from starlette.testclient import TestClient
 
 from antarest.core.config import Config, SecurityConfig
+from antarest.core.dependencies import auth_required, get_auth_service, get_config
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.fastapi_jwt_auth import AuthJWT
-from antarest.login.auth import Auth, IdentityValidator
 from antarest.login.utils import get_current_user, require_current_user
 
 
-def create_app(security_disabled: bool, identity_validator: IdentityValidator) -> FastAPI:
-    auth = Auth(Config(security=SecurityConfig(disabled=security_disabled)), identity_validator)
-    app = FastAPI(title=__name__, dependencies=[auth.required()])
+def create_app(security_disabled: bool) -> FastAPI:
+    config = Config(security=SecurityConfig(disabled=security_disabled))
+    app = FastAPI(title=__name__, dependencies=[Depends(auth_required)])
 
     @app.get("/user")
     def get_user() -> int:
         return require_current_user().id
 
+    app.dependency_overrides[get_config] = lambda: config
+    app.dependency_overrides[get_auth_service] = lambda: Mock()
+
     return app
 
 
 def test_disabled_auth_should_use_admin_user() -> None:
-    def _should_not_reach(jwt: AuthJWT) -> JWTUser:
-        raise AssertionError("Should not reach")
 
-    app = create_app(security_disabled=True, identity_validator=_should_not_reach)
+    app = create_app(security_disabled=True)
 
     client = TestClient(app)
     assert get_current_user() is None
@@ -53,7 +54,7 @@ def test_auth_should_set_current_user() -> None:
     identidy_validator = Mock()
     identidy_validator.side_effect = (DEFAULT_ADMIN_USER, user)
 
-    app = create_app(security_disabled=False, identity_validator=identidy_validator)
+    app = create_app(security_disabled=False)
 
     client = TestClient(app)
     res = client.get("/user")
@@ -66,7 +67,7 @@ def test_auth_should_return_status_code_on_exception() -> None:
     def _raise_401(jwt: AuthJWT) -> JWTUser:
         raise HTTPException(status_code=401)
 
-    app = create_app(security_disabled=False, identity_validator=_raise_401)
+    app = create_app(security_disabled=False)
 
     client = TestClient(app)
     res = client.get("/user")

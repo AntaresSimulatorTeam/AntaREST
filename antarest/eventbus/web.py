@@ -29,7 +29,7 @@ from antarest.core.permissions import check_permission
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.json import to_json_string
 from antarest.fastapi_jwt_auth import AuthJWT
-from antarest.login.auth import Auth  # still needed for Auth.get_user_from_token
+from antarest.login.auth import get_user_from_token
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +109,9 @@ def register_websocket_routes(api_root: APIRouter) -> ConnectionManager:
             try:
                 if not token:
                     raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED)
-                user = Auth.get_user_from_token(token, jwt_manager)
+
+                # TODO: does not verify against revoked tokens ?
+                user = get_user_from_token(token, jwt_manager)
                 if user is None:
                     raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED)
             except Exception as e:
