@@ -685,31 +685,6 @@ class OutputService:
 
         return download_id
 
-    def aggregate_output_data(
-        self,
-        uuid: str,
-        output_id: str,
-        query_file: QueryFileType,
-        frequency: MatrixFrequency,
-        columns_names: Sequence[str],
-        ids_to_consider: Sequence[str],
-        transform_columns_headers: bool = True,
-        mc_years: Optional[Sequence[int]] = None,
-    ) -> pl.DataFrame:
-        chunks = list(
-            self._find_output_storage(uuid, output_id).aggregate_output_data(
-                study_id=uuid,
-                output_id=output_id,
-                query_file=query_file,
-                frequency=frequency,
-                ids_to_consider=ids_to_consider,
-                columns_names=columns_names,
-                transform_columns_headers=transform_columns_headers,
-                mc_years=mc_years,
-            )
-        )
-        return pl.concat(chunks, how="vertical_relaxed") if chunks else pl.DataFrame()
-
     def get_item_output_data(
         self,
         uuid: str,

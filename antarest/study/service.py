@@ -576,20 +576,6 @@ class IOutputsAccess(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def aggregate_output_data(
-        self,
-        study_id: str,
-        output_id: str,
-        query_file: "QueryFileType",
-        frequency: MatrixFrequency,
-        columns_names: Sequence[str],
-        ids_to_consider: Sequence[str],
-        transform_columns_headers: bool = True,
-        mc_years: Optional[Sequence[int]] = None,
-    ) -> pl.DataFrame:
-        raise NotImplementedError()
-
-    @abstractmethod
     def get_item_output_data(
         self,
         study_id: str,
@@ -2625,19 +2611,19 @@ class StudyService:
 
         self.storage_service.raw_study_service.normalize_study(study)
 
-    def _read_raw_output_matrix(
-        self,
-        uuid: str,
-        parsed: RawOutputMatrixQuery,
-    ) -> pl.DataFrame:
-        return self._get_outputs_access().get_item_output_data(
-            study_id=uuid,
-            output_id=parsed.output_id,
-            query_file=parsed.query_file,
-            frequency=parsed.frequency,
-            item_id=parsed.ids_to_consider,
-            mc_year=parsed.mc_year,
-        )
+    # def _read_raw_output_matrix(
+    #     self,
+    #     uuid: str,
+    #     parsed: RawOutputMatrixQuery,
+    # ) -> pl.DataFrame:
+    #     return self._get_outputs_access().get_item_output_data(
+    #         study_id=uuid,
+    #         output_id=parsed.output_id,
+    #         query_file=parsed.query_file,
+    #         frequency=parsed.frequency,
+    #         item_id=parsed.ids_to_consider,
+    #         mc_year=parsed.mc_year,
+    #     )
 
     def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
         """
@@ -2659,21 +2645,19 @@ class StudyService:
         # Try to route output matrix requests
         parsed = parse_raw_output_matrix_path(url)
         if parsed is not None:
-            if formatted:
-                df = self._get_outputs_access().get_item_output_data(
-                    study_id=uuid,
-                    output_id=parsed.output_id,
-                    query_file=parsed.query_file,
-                    frequency=parsed.frequency,
-                    item_id=parsed.ids_to_consider,
-                    mc_year=parsed.mc_year,
-                    transform_columns_headers=False,
-                )
-                return {
-                    "columns": [tuple(col.split(RAW_OUTPUT_MATRIX_HEADER_SEPARATOR)) for col in df.columns],
-                    "data": df.to_numpy().tolist(),
-                }
-            return self._read_raw_output_matrix(uuid, parsed)
+            df = self._get_outputs_access().get_item_output_data(
+                study_id=uuid,
+                output_id=parsed.output_id,
+                query_file=parsed.query_file,
+                frequency=parsed.frequency,
+                item_id=parsed.ids_to_consider,
+                mc_year=parsed.mc_year,
+                transform_columns_headers=False,
+            )
+            return {
+                "columns": [tuple(col.split(RAW_OUTPUT_MATRIX_HEADER_SEPARATOR)) for col in df.columns],
+                "data": df.to_numpy().tolist(),
+            }
 
         # We need to handle matrices differently if our study is stored in DB
         if study.storage_mode == StorageMode.DATABASE:

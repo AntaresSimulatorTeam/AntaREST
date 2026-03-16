@@ -176,9 +176,6 @@ def build_study_service(
         def write_output_to_dir(self, study_id: str, output_id: str, parent_dir: Path) -> None:
             pass
 
-        def aggregate_output_data(self, *args: t.Any, **kwargs: t.Any) -> "pl.DataFrame":
-            return pl.DataFrame()
-
         def get_item_output_data(self, *args: t.Any, **kwargs: t.Any) -> "pl.DataFrame":
             return pl.DataFrame()
 
