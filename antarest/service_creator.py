@@ -49,18 +49,20 @@ from antarest.login.service import LoginService
 from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
+from antarest.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
+from antarest.output.output_blueprint import create_output_routes
+from antarest.output.output_service import OutputService
+from antarest.output.storage.file_output_storage import InStudyFileOutputStorage
+from antarest.output.storage.output_storage import IOutputStorage
+from antarest.output.variable_view_gc import VariableViewGarbageCollector
+from antarest.study.adapters import adapt_output_service_to_study_service
 from antarest.study.dao.database.database_blob_usage_provider import DatabaseBlobUsageProvider
 from antarest.study.main import build_study_service
-from antarest.study.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
-from antarest.study.output.file_output_storage import FileOutputStorage
-from antarest.study.output.output_service import OutputService
-from antarest.study.output.variable_view_gc import VariableViewGarbageCollector
 from antarest.study.service import StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
 from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.study.web.explorer_blueprint import create_explorer_routes
-from antarest.study.web.output_blueprint import create_output_routes
 from antarest.study.web.watcher_blueprint import create_watcher_routes
 from antarest.worker.archive_worker import ArchiveWorker
 from antarest.worker.worker import AbstractWorker
@@ -191,22 +193,23 @@ def build_output_service(
     matrix_service: ISimpleMatrixService,
 ) -> OutputService:
     remote_executor = RemoteWorkerExecutor(event_bus, config)
-    output_storage = FileOutputStorage(
+    file_output_storage = InStudyFileOutputStorage(
         outputs_provider=study_service_as_file_outputs_provider(study_service),
         cache=cache,
         remote_executor=remote_executor,
-        tmp_dir=config.storage.tmp_dir,
     )
+    storages: list[IOutputStorage] = [file_output_storage]
 
     output_service = OutputService(
         studies_repository=study_service_as_studies_repository(study_service),
-        storage=output_storage,
+        storages=storages,
         task_service=task_service,
         file_transfer_manager=filetransfer_service,
         matrix_service=matrix_service,
         tmp_dir=config.storage.tmp_dir,
-        cache=cache,
     )
+
+    study_service.register_output_access(adapt_output_service_to_study_service(output_service))
 
     if app_ctxt:
         app_ctxt.api_root.include_router(create_output_routes(output_service, filetransfer_service, config))

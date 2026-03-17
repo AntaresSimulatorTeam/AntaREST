@@ -28,7 +28,7 @@ def _create_area_scenario_table(name: str) -> Table:
         Column("study_id", String(36), nullable=False, primary_key=True),
         Column("area_id", String(255), nullable=False, primary_key=True),
         Column("value", JSON, nullable=False),
-        ForeignKeyConstraint(["study_id"], ["study.id"], ondelete="CASCADE"),
+        ForeignKeyConstraint(("study_id", "area_id"), ["area.study_id", "area.area_id"], ondelete="CASCADE"),
     )
 
 

@@ -12,8 +12,8 @@
 import pytest
 
 from antarest.core.exceptions import OutputVariablesViewError
-from antarest.study.output.output_model import OutputVariablesList
-from antarest.study.output.variables_management import (
+from antarest.output.output_model import OutputVariablesList
+from antarest.output.variables_management import (
     AreaOutputId,
     LinkOutputId,
     OutputItemId,

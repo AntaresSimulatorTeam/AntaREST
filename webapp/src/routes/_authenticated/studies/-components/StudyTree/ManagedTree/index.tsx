@@ -79,7 +79,10 @@ function ManagedTree({ isCreatingDirectory, onDirectoryCreated }: ManagedTreePro
     dispatch(
       updateStudyFilters({
         activeTree: "managed",
-        managed: { directoryId: itemId, directoryIds: getDescendantIds(itemId, directories) },
+        managed: {
+          directoryId: itemId,
+          directoryIds: getDescendantIds(itemId, directories),
+        },
       }),
     );
   };

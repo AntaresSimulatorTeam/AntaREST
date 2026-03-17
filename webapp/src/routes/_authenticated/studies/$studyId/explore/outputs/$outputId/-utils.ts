@@ -13,26 +13,25 @@
  */
 
 import type { ListViewItem } from "@/components/page/list/ListView";
-import type { StudyMapDistrict } from "@/redux/ducks/studyMaps";
 import type {
   AreaVariablesDTO,
   RenewableClusterVariablesDTO,
   ShortTermStorageVariablesDTO,
   ThermalClusterVariablesDTO,
-  VariableViewParams,
   VariablesListDTO,
+  VariableViewParams,
 } from "@/services/api/studies/outputs/variableViews/types";
-import type { AreaWithId, LinkElement, Simulation } from "@/types/types";
+import type { AreaWithId, District, LinkElement, OutputDetails } from "@/types/types";
 
 export type ListType = "areas" | "links" | "synthesis";
 export type DataType = "values" | "details" | "details-res" | "id" | "details-STstorage";
 export type Frequency = "hourly" | "daily" | "weekly" | "monthly" | "annual";
 export type MonteCarloMode = "mc-ind" | "mc-all" | "variable-per-variable";
 
-export type Item = AreaWithId | StudyMapDistrict | LinkElement;
+export type Item = AreaWithId | District | LinkElement;
 
 interface Params {
-  output: Partial<Simulation> & { id: string; name: string };
+  output: Partial<OutputDetails> & { id: string; name: string };
   item: Item;
   dataType: DataType;
   frequency: Frequency;
@@ -45,11 +44,11 @@ export function isArea(item: Item): item is AreaWithId {
   return "links" in item;
 }
 
-export function isDistrict(item: Item): item is StudyMapDistrict {
-  return "areas" in item;
+export function isDistrict(item: Item): item is District {
+  return "addAreas" in item;
 }
 
-export function isAreaOrDistrict(item: Item): item is AreaWithId | StudyMapDistrict {
+export function isAreaOrDistrict(item: Item): item is AreaWithId | District {
   return isArea(item) || isDistrict(item);
 }
 
@@ -62,7 +61,7 @@ export function createPath(params: Params): string {
   const { id, mode = "economy" } = output;
   const isYearPeriod = year && year > 0;
   const periodFolder = isYearPeriod
-    ? `mc-ind/${Math.min(year, output.nbyears || MAX_YEAR)
+    ? `mc-ind/${Math.min(year, output.nbYears || MAX_YEAR)
         .toString()
         .padStart(5, "0")}`
     : "mc-all";

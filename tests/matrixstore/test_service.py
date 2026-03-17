@@ -706,6 +706,20 @@ def test_synchronize_matrix_store(matrix_service: MatrixService, dry_run: bool) 
 
 
 @with_db_context
+@pytest.mark.parametrize("dry_run", [True, False])
+def test_synchronize_matrix_store_removes_invalid_files(matrix_service: MatrixService, dry_run: bool) -> None:
+    invalid_file = matrix_service.matrix_content_repository.bucket_dir / "invalid_matrix"
+    invalid_file.touch()
+    invalid_file_with_unknown_suffix = matrix_service.matrix_content_repository.bucket_dir / "invalid_matrix.tmp"
+    invalid_file_with_unknown_suffix.touch()
+
+    assert matrix_service.synchronize_matrix_store(dry_run) == {}
+
+    assert invalid_file.exists() is dry_run
+    assert invalid_file_with_unknown_suffix.exists() is dry_run
+
+
+@with_db_context
 def test_infer_matrix_characteristics(matrix_service: MatrixService) -> None:
     """Ensures we're able to find a matrix version if we know it's previously calculated hash"""
     content_repo = matrix_service.matrix_content_repository

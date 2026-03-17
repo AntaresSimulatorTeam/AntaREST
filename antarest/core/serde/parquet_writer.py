@@ -18,7 +18,7 @@ import polars as pl
 import pyarrow as pa
 from pyarrow.parquet import ParquetFile, ParquetWriter
 
-from antarest.study.output.utils import MCYEAR_COL, TIME_ID_COL
+from antarest.output.utils import MCYEAR_COL, TIME_ID_COL
 
 
 def _parquet_writer(output_file: Path, schema: pa.Schema) -> ParquetWriter:

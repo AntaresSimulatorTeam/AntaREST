@@ -83,7 +83,9 @@ function Parameters() {
       {({ control }) => (
         <>
           <Fieldset legend={t("study.modeling.clusters.operatingParameters")}>
-            <StringFE label={t("global.name")} name="name" control={control} disabled />
+            {semver.gte(study.version, "8.8.0") && (
+              <SwitchFE label={t("global.enabled")} name="enabled" control={control} />
+            )}
             {semver.lt(study.version, "9.2.0") ? (
               <SelectFE
                 label={t("global.group")}
@@ -103,10 +105,6 @@ function Parameters() {
                 control={control}
               />
             )}
-            {semver.gte(study.version, "8.8.0") && (
-              <SwitchFE label={t("global.enabled")} name="enabled" control={control} />
-            )}
-            <Fieldset.Break />
             <Tooltip
               title={t("study.modeling.storages.reservoirCapacity.info")}
               arrow

@@ -15,7 +15,7 @@ import os
 import shutil
 from http import HTTPStatus
 from pathlib import Path
-from typing import Dict, List, Optional, cast
+from typing import Dict, List, Optional
 from uuid import UUID, uuid4
 
 from antares.study.version import SolverVersion
@@ -33,8 +33,8 @@ from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, is_zip, read_in_zip
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import StopWatch, concat_files, concat_files_to_str, current_time
-from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
+from antarest.core.utils.utils import StopWatch, current_time
+from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.extensions.adequacy_patch.extension import AdequacyPatchExtension
 from antarest.launcher.extensions.interface import ILauncherExtension
@@ -60,7 +60,7 @@ from antarest.launcher.model import (
 from antarest.launcher.repository import JobResultRepository, SolverPresetsRepository
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context, get_current_user, require_current_user
-from antarest.study.output.output_service import OutputService
+from antarest.output.output_service import OutputService
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from antarest.study.storage.utils import assert_permission, extract_output_name, find_single_output_path
@@ -408,31 +408,27 @@ class LauncherService:
         logs[JobLogType.AFTER if log.log_type == str(JobLogType.AFTER) else JobLogType.BEFORE].append(log.message)
         return logs
 
-    def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
+    def get_log(self, job_id: str, log_type: LogType) -> str:
         job_result = self.job_result_repository.get(str(job_id))
-        if job_result:
-            if job_result.output_id:
-                launcher_logs = (
-                    self.study_service.get_logs(
-                        job_result.study_id, job_result.output_id, job_id, log_type == LogType.STDERR
-                    )
-                    or ""
-                )
-            else:
-                if job_result.launcher is None:
-                    raise ValueError(f"Job {job_id} has no launcher")
-                self._assert_launcher_is_initialized(job_result.launcher)
-                launcher_logs = str(self.launchers[job_result.launcher].get_log(job_id, log_type) or "")
-            if log_type == LogType.STDOUT:
-                app_logs: Dict[JobLogType, List[str]] = functools.reduce(
-                    lambda logs, log: LauncherService.sort_log(log, logs),
-                    job_result.logs or [],
-                    {JobLogType.BEFORE: [], JobLogType.AFTER: []},
-                )
-                return "\n".join(app_logs[JobLogType.BEFORE] + [launcher_logs] + app_logs[JobLogType.AFTER])
-            return launcher_logs
+        if not job_result:
+            raise JobNotFound()
 
-        raise JobNotFound()
+        launcher_logs: str
+        if job_result.output_id:
+            launcher_logs = self.output_service.get_logs(job_result.study_id, job_result.output_id, log_type)
+        else:
+            if job_result.launcher is None:
+                raise ValueError(f"Job {job_id} has no launcher")
+            self._assert_launcher_is_initialized(job_result.launcher)
+            launcher_logs = self.launchers[job_result.launcher].get_log(job_id, log_type) or ""
+        if log_type == LogType.STDOUT:
+            app_logs: Dict[JobLogType, List[str]] = functools.reduce(
+                lambda logs, log: LauncherService.sort_log(log, logs),
+                job_result.logs or [],
+                {JobLogType.BEFORE: [], JobLogType.AFTER: []},
+            )
+            return "\n".join(app_logs[JobLogType.BEFORE] + [launcher_logs] + app_logs[JobLogType.AFTER])
+        return launcher_logs
 
     def _export_study(
         self,
@@ -509,87 +505,70 @@ class LauncherService:
         self,
         job_id: str,
         output_path: Path,
-        additional_logs: Dict[str, List[Path]],
+        additional_logs: SimulationLogs,
     ) -> Optional[str]:
+        """
+        In the current state (2026-03-04), we actually always get a parent directory of the output here.
+        We never get a zip. Zip support was partially added in the past when planning to get an output
+        zip directly from antares-launcher, but it was never completed.
+
+        TODO: we should clarify this whole workflow, including the "optimized path" for studies stored
+              on external devices, see comment below.
+        """
         logger.info(f"Importing output for job {job_id}")
-        study_id: Optional[str] = None
         with db():
             job_result = self.job_result_repository.get(job_id)
             if not job_result:
                 raise JobNotFound()
-
             study_id = job_result.study_id
             job_owner_id = job_result.owner_id
             job_launch_params = LauncherParametersDTO.from_launcher_params(job_result.launcher_params)
 
-            # this now can be a zip file instead of a directory !
             output_true_path = find_single_output_path(output_path)
-            output_is_zipped = is_zip(output_true_path)
-            output_suffix = cast(
-                Optional[str],
-                getattr(
-                    job_launch_params,
-                    LAUNCHER_PARAM_NAME_SUFFIX,
-                    None,
-                ),
-            )
 
             self._save_solver_stats(job_result, output_true_path)
-            if additional_logs and not output_is_zipped:
-                for log_name, log_paths in additional_logs.items():
-                    concat_files(
-                        log_paths,
-                        output_true_path / log_name,
-                    )
 
-        if study_id:
-            zip_path: Optional[Path] = None
+        zip_path: Path | None = None
+        # Optimized path for studies stored on external devices, that will then be unarchived there.
+        # TODO: that whole optimization path should be refactored to:
+        #       - be more explicit
+        #       - not affect internal studies
+        if job_launch_params.archive_output:
             stopwatch = StopWatch()
-            if not output_is_zipped and job_launch_params.archive_output:
-                logger.info("Re zipping output for transfer")
-                zip_path = output_true_path.parent / f"{output_true_path.name}.zip"
-                archive_dir(output_true_path, target_archive_path=zip_path, archive_format=ArchiveFormat.ZIP)
-                logger.info(f"Zipped output for job {job_id} in {stopwatch}s")
+            logger.info("Re zipping output for transfer")
+            zip_path = output_true_path.parent / f"{output_true_path.name}.zip"
+            archive_dir(output_true_path, target_archive_path=zip_path, archive_format=ArchiveFormat.ZIP)
+            logger.info(f"Zipped output for job {job_id} in {stopwatch}s")
+            final_output_path = zip_path
+        else:
+            final_output_path = output_true_path
 
-            final_output_path = zip_path or output_true_path
-            with db():
-                try:
-                    if additional_logs and output_is_zipped:
-                        for log_name, log_paths in additional_logs.items():
-                            log_type = LogType.from_filename(log_name)
-                            log_suffix = log_name
-                            if log_type:
-                                log_suffix = log_type.to_suffix()
-                            self.study_service.save_logs(
-                                study_id,
-                                job_id,
-                                log_suffix,
-                                concat_files_to_str(log_paths),
-                            )
+        with db():
+            try:
+                if job_owner_id:
+                    # We restore the user context as the following processes need it
+                    current_user = self.login_service.get_jwt(job_owner_id)
+                else:
+                    current_user = get_current_user()
 
-                    if job_owner_id:
-                        # We restore the user context as the following processes need it
-                        current_user = self.login_service.get_jwt(job_owner_id)
-                    else:
-                        current_user = get_current_user()
-
-                    with current_user_context(current_user):
-                        return self.output_service.import_output(
-                            study_id,
-                            final_output_path,
-                            output_suffix,
-                            job_launch_params.auto_unzip,
-                        )
-                except StudyNotFoundError:
-                    return self._import_fallback_output(
-                        job_id,
+                with current_user_context(current_user):
+                    return self.output_service.import_output(
+                        study_id,
                         final_output_path,
-                        output_suffix,
+                        output_name_suffix=job_launch_params.output_suffix,
+                        auto_unzip=job_launch_params.auto_unzip,
+                        logs=additional_logs,
                     )
-                finally:
-                    if zip_path:
-                        os.unlink(zip_path)
-        raise JobNotFound()
+            except StudyNotFoundError:
+                return self._import_fallback_output(
+                    job_id,
+                    final_output_path,
+                    job_launch_params.output_suffix,
+                )
+            finally:
+                # Delete the temporary zip file, which now has been imported
+                if zip_path:
+                    os.unlink(zip_path)
 
     def _download_fallback_output(self, job_id: str) -> FileDownloadTaskDTO:
         output_path = self._get_job_output_fallback_path(job_id)
@@ -684,7 +663,7 @@ class LauncherService:
         if launcher is None:
             raise ValueError(f"Job {job_id} has no launcher")
         launch_progress_json = self.launchers[launcher].cache.get(id=f"Launch_Progress_{job_id}") or {"progress": 0.0}
-        return cast(float, launch_progress_json.get("progress", 0.0))
+        return float(launch_progress_json.get("progress", 0.0))
 
     def create_solver_presets(self, solver_presets_creation: SolverPresetsCreation) -> SolverPresets:
         """
