@@ -235,6 +235,45 @@ def assert_raw(study: Study) -> RawStudy:
     return study
 
 
+def clone_raw_study(study: RawStudy) -> RawStudy:
+    """
+    Build a transient copy of a raw study that can safely be used outside a DB session.
+    """
+    return RawStudy(
+        id=study.id,
+        name=study.name,
+        version=study.version,
+        author=study.author,
+        editor=study.editor,
+        horizon=study.horizon,
+        created_at=study.created_at,
+        updated_at=study.updated_at,
+        last_access=study.last_access,
+        path=study.path,
+        folder=study.folder,
+        directory_id=study.directory_id,
+        parent_id=study.parent_id,
+        public_mode=study.public_mode or PublicMode.NONE,
+        owner_id=study.owner_id,
+        archived=study.archived,
+        storage_mode=study.storage_mode,
+        content_status=study.content_status,
+        workspace=study.workspace,
+        missing=study.missing,
+    )
+
+
+def sync_raw_study_metadata(source: RawStudy, target: RawStudy) -> None:
+    target.name = source.name
+    target.version = source.version
+    target.author = source.author
+    target.editor = source.editor
+    target.horizon = source.horizon
+    target.created_at = source.created_at
+    target.updated_at = source.updated_at
+    target.path = source.path
+
+
 class TaskProgressRecorder(ICommandListener):
     def __init__(self, notifier: ITaskNotifier) -> None:
         self.notifier = notifier
@@ -2057,14 +2096,11 @@ class StudyService:
 
         def archive_task(notifier: ITaskNotifier) -> TaskResult:
             with db():
-                study_to_archive = self.get_study(uuid)
-                study_to_archive = assert_raw(study_to_archive)
+                study_to_archive = clone_raw_study(assert_raw(self.get_study(uuid)))
 
-                for output in self._get_outputs_access().list_outputs(study_to_archive.id):
-                    if not output.in_study and not output.archived:
-                        self._get_outputs_access().archive_output(study_to_archive.id, output.id)
-
-                db.session.expunge(study_to_archive)
+            for output in self._get_outputs_access().list_outputs(study_to_archive.id):
+                if not output.in_study and not output.archived:
+                    self._get_outputs_access().archive_output(study_to_archive.id, output.id)
 
             self.storage_service.raw_study_service.archive(study_to_archive)
 
@@ -2113,26 +2149,25 @@ class StudyService:
 
         def unarchive_task(notifier: ITaskNotifier) -> TaskResult:
             with db():
-                study_to_archive = self.get_study(uuid)
-                study_to_archive = assert_raw(study_to_archive)
+                study_to_unarchive = clone_raw_study(assert_raw(self.get_study(uuid)))
 
-                db.session.expunge(study_to_archive)
+            archive_path = self.storage_service.raw_study_service.find_archive_path(study_to_unarchive)
 
-            archive_path = self.storage_service.raw_study_service.find_archive_path(study_to_archive)
-
-            self.storage_service.raw_study_service.unarchive(study_to_archive)
+            self.storage_service.raw_study_service.unarchive(study_to_unarchive)
 
             with db():
                 study_db = self.repository.get(uuid)
                 if study_db is None:
                     raise StudyNotFoundError(uuid)
-                study_db.archived = False
-                self.repository.save(study_db)
+                raw_study_db = assert_raw(study_db)
+                sync_raw_study_metadata(study_to_unarchive, raw_study_db)
+                raw_study_db.archived = False
+                self.repository.save(raw_study_db)
                 self.event_bus.push(
                     Event(
                         type=EventType.STUDY_EDITED,
-                        payload=study_db.to_json_summary(),
-                        permissions=PermissionInfo.from_study(study_db),
+                        payload=raw_study_db.to_json_summary(),
+                        permissions=PermissionInfo.from_study(raw_study_db),
                     )
                 )
                 remove_from_cache(cache=self.cache_service, root_id=uuid)
