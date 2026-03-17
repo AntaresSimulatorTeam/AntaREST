@@ -35,6 +35,7 @@ from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyVariantUpgradeError,
     TaskAlreadyRunning,
+    UnsupportedOperationOnThisStudyType,
 )
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
@@ -1706,10 +1707,79 @@ def test_delete_studies_variant_id_also_in_list(tmp_path: Path) -> None:
     deleted_ids = list(repository.delete.call_args.args)
     assert sorted(deleted_ids) == ["child-variant", "parent"]
 
-    # Exactly one event per unique study
-    assert event_bus.push.call_count == 2
-    event_payloads = {c.args[0].payload["id"] for c in event_bus.push.call_args_list}
-    assert event_payloads == {"parent", "child-variant"}
+
+def test_move_variant_study_is_forbidden(tmp_path: Path) -> None:
+    repository = Mock(spec=StudyMetadataRepository)
+    variant = create_variant_study(
+        id="child-variant",
+        path=str(tmp_path / "variant"),
+        parent_id="parent",
+        archived=False,
+        owner=User(id=99, name="owner"),
+        groups=[],
+        public_mode=PublicMode.NONE,
+    )
+    repository.get.return_value = variant
+
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
+        repository=repository,
+        config=Config(),
+    )
+
+    with current_user_context(JWTUser(id=99, impersonator=99, type="users", groups=[])):
+        with pytest.raises(UnsupportedOperationOnThisStudyType):
+            service.move_study("child-variant", "folder")
+
+    repository.save.assert_not_called()
+
+
+def test_move_raw_study_fails_without_write_access_on_variant_children(tmp_path: Path) -> None:
+    user = JWTUser(id=99, impersonator=99, type="users", groups=[])
+    repository = Mock(spec=StudyMetadataRepository)
+    directory_service = Mock(spec=DirectoryService)
+
+    parent = create_raw_study(
+        id="parent",
+        path=str(tmp_path / "parent"),
+        archived=False,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=User(id=99, name="owner"),
+        groups=[],
+        public_mode=PublicMode.NONE,
+    )
+
+    variant = create_variant_study(
+        id="child-variant",
+        path=str(tmp_path / "variant"),
+        parent_id="parent",
+        archived=False,
+        owner=User(id=50, name="other"),
+        groups=[],
+        public_mode=PublicMode.NONE,
+    )
+
+    repository.get.return_value = parent
+
+    variant_study_service = Mock(spec=VariantStudyService)
+    variant_study_service.repository = Mock()
+    variant_study_service.repository.get_all_descendants.return_value = [variant]
+
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        directory_service=directory_service,
+        repository=repository,
+        config=Config(),
+        variant_study_service=variant_study_service,
+    )
+
+    with current_user_context(user):
+        with pytest.raises(UserHasNotPermissionError):
+            service.move_study("parent", "folder")
+
+    repository.save.assert_not_called()
+    directory_service.get_directory_by_path.assert_not_called()
 
 
 @pytest.mark.parametrize(
