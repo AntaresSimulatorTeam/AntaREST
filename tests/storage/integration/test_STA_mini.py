@@ -27,6 +27,7 @@ from sqlalchemy import Engine
 from starlette.testclient import TestClient
 
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.main import add_exception_handlers
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
@@ -54,11 +55,8 @@ from tests.storage.integration.data.set_values_monthly import set_values_monthly
 def client(services, db_engine: Engine) -> TestClient:
     study_service, output_service, config = services
     app = FastAPI(title=__name__)
-    app.add_middleware(
-        DBSessionMiddleware,
-        custom_engine=db_engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
+    init_db_singleton(custom_engine=db_engine, session_args={"autocommit": False, "autoflush": False})
+    app.add_middleware(DBSessionMiddleware)
     add_exception_handlers(app)
     app.state.config = config
     app.state.study_service = study_service

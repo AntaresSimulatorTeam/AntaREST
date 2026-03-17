@@ -20,15 +20,20 @@ from typing import Iterable
 import jinja2
 import pytest
 from _pytest.tmpdir import TempPathFactory
-from fastapi import APIRouter, FastAPI
+from fastapi import FastAPI
 from sqlalchemy import create_engine
 from starlette.testclient import TestClient
 
+from antarest.core.config import Config
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.dbmodel import Base
-from antarest.eventbus.web import ConnectionManager
-from antarest.main import create_web_layer, fastapi_app_from_routes
+from antarest.login.model import init_admin_user
+from antarest.main import (
+    base_fastapi_app,
+    init_db,
+    inject_services,
+)
 from antarest.service_creator import Services
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
@@ -87,18 +92,14 @@ def initial_db_file(tmp_path_factory: TempPathFactory) -> Path:
     engine = create_engine(db_url, echo=False)
     Base.metadata.create_all(engine)
 
+    init_admin_user(engine, {}, "admin")
+
     return db_path
 
 
 @pytest.fixture(scope="session")
-def web_layer() -> tuple[APIRouter, ConnectionManager]:
-    """
-    Session-scoped fixture: creates the FastAPI routes and the WS manager.
-    Services and DB are injected per-test via the `app` fixture below.
-
-    Returns (routes, ws_manager) so the per-test fixture can wire event buses.
-    """
-    return create_web_layer(api_prefix="")
+def base_app(tmp_path_factory: TempPathFactory) -> FastAPI:
+    return base_fastapi_app("", "")
 
 
 @pytest.fixture
@@ -112,12 +113,8 @@ def db_path(tmp_path: Path, initial_db_file: Path) -> Path:
 
 
 @pytest.fixture
-def app_and_services(
-    web_layer: tuple[APIRouter, ConnectionManager],
-    tmp_path: Path,
-    db_path: Path,
-) -> Iterable[tuple[FastAPI, Services]]:
-    routes, ws_manager = web_layer
+def app_and_services(base_app: FastAPI, tmp_path: Path, db_path: Path) -> Iterable[tuple[FastAPI, Services]]:
+    app = base_app
 
     db_url = f"sqlite:///{db_path}"
 
@@ -131,8 +128,9 @@ def app_and_services(
     # Generate a per-test config with proper workspace paths
     config_path = tmp_path / "config.yml"
     _render_config(config_path, db_url, tmp_path)
-
-    app, services = fastapi_app_from_routes(routes, ws_manager, config_path, RESOURCES_DIR, mount_front=False)
+    config = Config.from_yaml_file(res=RESOURCES_DIR, file=config_path)
+    init_db(config, config_path, auto_upgrade=False, init_admin=False)
+    services = inject_services(app, config)
 
     # Start the watcher so it scans the ext_workspace
     services.watcher.start()

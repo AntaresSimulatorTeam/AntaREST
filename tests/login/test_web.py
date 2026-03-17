@@ -47,16 +47,8 @@ from antarest.main import add_exception_handlers
 def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
     config = Config(
         resources_path=Path(),
-        security=SecurityConfig(disabled=auth_disabled),
+        security=SecurityConfig(disabled=auth_disabled, jwt_key="super-secret"),
     )
-
-    @AuthJWT.load_config  # type: ignore[misc]
-    def get_config() -> JwtSettings:
-        return JwtSettings(
-            authjwt_secret_key="super-secret",
-            authjwt_token_location=("headers", "cookies"),
-            authjwt_denylist_enabled=False,
-        )
 
     app = FastAPI(title=__name__)
     add_exception_handlers(app)
@@ -84,6 +76,15 @@ def create_auth_token(
     ),
 ) -> Dict[str, str]:
     jwt_manager = AuthJWT()
+
+    @AuthJWT.load_config
+    def get_config() -> JwtSettings:
+        return JwtSettings(
+            authjwt_secret_key="super-secret",
+            authjwt_token_location=("headers", "cookies"),
+            authjwt_denylist_enabled=False,
+        )
+
     create_token = jwt_manager.create_access_token if type == TokenType.ACCESS else jwt_manager.create_refresh_token
     token = create_token(
         expires_time=expires_delta,

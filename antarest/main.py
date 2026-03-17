@@ -16,7 +16,7 @@ import logging
 from contextlib import asynccontextmanager
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, AsyncGenerator, Optional, Tuple
+from typing import Any, AsyncGenerator, Optional
 
 import pydantic
 import uvicorn
@@ -39,15 +39,14 @@ from antarest.core.maintenance.web import create_maintenance_api
 from antarest.core.metrics import add_metrics
 from antarest.core.tasks.web import create_tasks_api
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.core.utils.utils import get_local_path
 from antarest.core.utils.web import tags_metadata
 from antarest.eventbus.web import ConnectionManager, connect_event_bus, register_websocket_routes
-from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.fastapi_jwt_auth.exceptions import AuthJWTException
 from antarest.favorite.web import create_favorite_routes
 from antarest.front import add_front_app
 from antarest.launcher.web import create_launcher_api
-from antarest.login.auth import JwtSettings
 from antarest.login.model import init_admin_user
 from antarest.login.web import create_login_api, create_user_api
 from antarest.matrixstore.web import create_matrix_api
@@ -272,24 +271,16 @@ def create_web_layer(api_prefix: str) -> tuple[APIRouter, ConnectionManager]:
     return api_root, ws_manager
 
 
-def fastapi_app_from_routes(
-    routes: APIRouter,
-    ws_manager: ConnectionManager,
-    config_file: Path,
-    resource_path: Optional[Path] = None,
-    mount_front: bool = True,
-    auto_upgrade_db: bool = False,
-) -> Tuple[FastAPI, Services]:
-    res = resource_path or get_local_path() / "resources"
-    config = Config.from_yaml_file(res=res, file=config_file)
-    configure_logger(config)
-
+def base_fastapi_app(api_prefix: str, root_path: str) -> FastAPI:
     logger.info("Initiating application")
+
+    routes, ws_manager = create_web_layer(api_prefix=api_prefix)
 
     @asynccontextmanager
     async def set_threadpool_size(app: FastAPI) -> AsyncGenerator[None, None]:
         from anyio import to_thread
 
+        config = app.state.config
         to_thread.current_default_thread_limiter().total_tokens = config.server.worker_threadpool_size
 
         yield
@@ -298,28 +289,16 @@ def fastapi_app_from_routes(
         title="AntaREST",
         version=__version__,
         docs_url=None,
-        root_path=config.root_path,
+        root_path=root_path,
         openapi_tags=tags_metadata,
         lifespan=set_threadpool_size,
-        openapi_url=f"{config.api_prefix}/openapi.json",
+        openapi_url=f"{api_prefix}/openapi.json",
     )
 
-    # 2. Database
-    engine = init_db_engine(config, auto_upgrade_db, config_file)
-    application.add_middleware(DBSessionMiddleware, custom_engine=engine, session_args=SESSION_ARGS)
-    # Since Starlette Version 0.24.0, the middlewares are lazily built inside this function
-    # But we need to instantiate this middleware as it's needed for the study service.
-    # So we manually instantiate it here.
-    DBSessionMiddleware(None, custom_engine=engine, session_args=SESSION_ARGS)
+    application.state.ws_manager = ws_manager
 
-    # 3. JWT config
-    @AuthJWT.load_config  # type: ignore
-    def get_config() -> JwtSettings:
-        return JwtSettings(
-            authjwt_secret_key=config.security.jwt_key,
-            authjwt_token_location=("headers", "cookies"),
-            authjwt_cookie_csrf_protect=False,
-        )
+    # 2. Database
+    application.add_middleware(DBSessionMiddleware)
 
     # 4. Middlewares
     application.add_middleware(
@@ -333,17 +312,44 @@ def fastapi_app_from_routes(
     add_exception_handlers(application)
 
     # 5. Create services (no route registration — builders are pure service factories now)
-    init_admin_user(engine=engine, session_args=SESSION_ARGS, admin_password=config.security.admin_pwd)
-    services = create_services(config)
-
-    # 6. Store services on app.state so Depends() can resolve them
-    store_services_on_app(application, services, config)
-
-    # 7. Wire event bus to websocket connection manager
-    connect_event_bus(services.event_bus, ws_manager)
 
     # 8. Include all routes
     application.include_router(routes)
+
+    # It's important to add the logging middleware last, so that any log written or exception thrown
+    # by inner middlewares are correctly logged with the context of the request.
+    application.add_middleware(LoggingMiddleware)
+
+    return application
+
+
+def init_db(
+    config: Config,
+    config_file: Path,
+    auto_upgrade: bool,
+    init_admin: bool,
+) -> None:
+    engine = init_db_engine(config, auto_upgrade, config_file=config_file)
+    init_db_singleton(custom_engine=engine, session_args=SESSION_ARGS)
+    if init_admin:
+        init_admin_user(engine, SESSION_ARGS, config.security.admin_pwd)
+
+
+def inject_services(app: FastAPI, config: Config) -> Services:
+    """Inject services into the application state."""
+    # 5. Create services (no route registration — builders are pure service factories now)
+
+    # Ideally, config should not appear here but only be used for service creation
+    # however, for now some dependencies still go and read the config at runtime
+    app.state.config = config
+
+    services = create_services(config)
+
+    # 6. Store services on app.state so Depends() can resolve them
+    store_services_on_app(app, services, config)
+
+    # 7. Wire event bus to websocket connection manager
+    connect_event_bus(services.event_bus, app.state.ws_manager)
 
     # Important note:
     # those singleton services must be "started" ONLY when explictly asked.
@@ -351,7 +357,6 @@ def fastapi_app_from_routes(
     # for each HTTP worker, but only for one dedicated background worker.
     if services.watcher and Module.WATCHER in config.server.services:
         services.watcher.start()
-
     if services.matrix_gc and Module.MATRIX_GC in config.server.services:
         services.matrix_gc.start()
     if services.auto_archiver and Module.AUTO_ARCHIVER in config.server.services:
@@ -361,21 +366,7 @@ def fastapi_app_from_routes(
     if services.variable_view_gc and Module.VARIABLE_VIEW_GC in config.server.services:
         services.variable_view_gc.start()
 
-    add_metrics(application, config)
-
-    if mount_front:
-        add_front_app(application, res, config.api_prefix)
-    else:
-        # noinspection PyUnusedLocal
-        @application.get("/", include_in_schema=False)
-        def home(request: Request) -> Any:
-            return ""
-
-    # It's important to add the logging middleware last, so that any log written or exception thrown
-    # by inner middlewares are correctly logged with the context of the request.
-    application.add_middleware(LoggingMiddleware)
-
-    return application, services
+    return services
 
 
 LOGGING_CONFIG = copy.deepcopy(uvicorn.config.LOGGING_CONFIG)
@@ -392,12 +383,26 @@ def fastapi_app(
     resource_path: Optional[Path] = None,
     mount_front: bool = True,
     auto_upgrade_db: bool = False,
-) -> Tuple[FastAPI, Services]:
+) -> FastAPI:
     res = resource_path or get_local_path() / "resources"
     config = Config.from_yaml_file(res=res, file=config_file)
 
-    routes, ws_manager = create_web_layer(config.api_prefix)
-    return fastapi_app_from_routes(routes, ws_manager, config_file, resource_path, mount_front, auto_upgrade_db)
+    configure_logger(config)
+
+    app = base_fastapi_app(config.api_prefix, config.root_path)
+    init_db(config, config_file, auto_upgrade_db, init_admin=True)
+    inject_services(app, config)
+    add_metrics(app, config)
+
+    if mount_front:
+        add_front_app(app, res, config.api_prefix)
+    else:
+        # noinspection PyUnusedLocal
+        @app.get("/", include_in_schema=False)
+        def home(request: Request) -> Any:
+            return ""
+
+    return app
 
 
 LOGGING_CONFIG = copy.deepcopy(uvicorn.config.LOGGING_CONFIG)
@@ -417,7 +422,7 @@ def main() -> None:
             arguments.config_file,
             mount_front=not arguments.no_front,
             auto_upgrade_db=arguments.auto_upgrade_db,
-        )[0]
+        )
         # noinspection PyTypeChecker
         uvicorn.run(app, host="0.0.0.0", port=8080, log_config=LOGGING_CONFIG)
     else:

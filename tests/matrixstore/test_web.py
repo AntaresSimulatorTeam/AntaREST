@@ -21,8 +21,6 @@ from starlette.testclient import TestClient
 
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.fastapi_jwt_auth import AuthJWT
-from antarest.login.auth import JwtSettings
 from antarest.main import add_exception_handlers
 from antarest.matrixstore.model import MatrixDescriptionDTO, MatrixInfoDTO, MatrixReference, MatrixReferencesDTO
 from antarest.matrixstore.web import MatrixDTO, create_matrix_api
@@ -33,17 +31,8 @@ from tests.login.test_web import create_auth_token
 def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
     config = Config(
         resources_path=Path(),
-        security=SecurityConfig(disabled=auth_disabled),
+        security=SecurityConfig(disabled=auth_disabled, jwt_key="super-secret"),
     )
-
-    @AuthJWT.load_config  # type: ignore[misc]
-    def get_config() -> JwtSettings:
-        return JwtSettings(
-            authjwt_secret_key="super-secret",
-            authjwt_token_location=("headers", "cookies"),
-            authjwt_denylist_enabled=False,
-        )
-
     app = FastAPI(title=__name__)
     add_exception_handlers(app)
     app.state.config = config
@@ -67,7 +56,7 @@ def test_create() -> None:
         headers=create_auth_token(app),
         json=[[1]],
     )
-    assert res.status_code == 200
+    assert res.status_code == 200, res.json()
     assert res.json() == "matrix_hash"
 
 

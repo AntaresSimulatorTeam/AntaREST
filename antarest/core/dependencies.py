@@ -28,6 +28,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
 from antarest.launcher.service import LauncherService
+from antarest.login.auth import JwtSettings
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import MatrixService
@@ -100,18 +101,31 @@ def get_tmp_export_file(request: Request, background_tasks: BackgroundTasks) -> 
 
 
 def get_auth_service(
-    request: Request, response: Response, login_service: LoginService = Depends(get_login_service)
+    request: Request,
+    response: Response,
+    login_service: LoginService = Depends(get_login_service),
+    config: Config = Depends(get_config),
 ) -> AuthJWT:
 
-    # Set deny list (tokens which do not exist anymore in our DB)
+    if not config.security.disabled:
 
-    @AuthJWT.token_in_denylist_loader  # type: ignore
-    def check_if_token_is_revoked(decrypted_token: Any) -> bool:
-        subject = from_json(decrypted_token["sub"])
-        user_id = subject["id"]
-        token_type = subject["type"]
-        with db():
-            return token_type == "bots" and not login_service.exists_bot(user_id)
+        @AuthJWT.load_config  # type: ignore
+        def get_config() -> JwtSettings:
+            return JwtSettings(
+                authjwt_secret_key=config.security.jwt_key,
+                authjwt_token_location=("headers", "cookies"),
+                authjwt_cookie_csrf_protect=False,
+            )
+
+        # Set deny list (tokens which do not exist anymore in our DB)
+
+        @AuthJWT.token_in_denylist_loader  # type: ignore
+        def check_if_token_is_revoked(decrypted_token: Any) -> bool:
+            subject = from_json(decrypted_token["sub"])
+            user_id = subject["id"]
+            token_type = subject["type"]
+            with db():
+                return token_type == "bots" and not login_service.exists_bot(user_id)
 
     return AuthJWT(request, response)
 
@@ -135,5 +149,6 @@ async def auth_required(
     else:
         auth_jwt.jwt_required()
         user = JWTUser.model_validate(from_json(auth_jwt.get_jwt_subject()))
+
     with current_user_context(user):
         yield
