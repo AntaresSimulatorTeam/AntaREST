@@ -15,8 +15,9 @@ from pathlib import Path
 from typing import Annotated, Any, TypeAlias, cast
 
 from fastapi import BackgroundTasks, Depends
-from starlette.requests import Request
+from starlette.requests import HTTPConnection, Request
 from starlette.responses import Response
+from starlette.websockets import WebSocket
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
@@ -39,7 +40,7 @@ from antarest.study.storage.explorer_service import Explorer
 from antarest.study.storage.rawstudy.watcher import Watcher
 
 
-def get_config(request: Request) -> Config:
+def get_config(request: HTTPConnection) -> Config:
     return cast(Config, request.app.state.config)
 
 
@@ -59,7 +60,7 @@ def get_watcher(request: Request) -> Watcher:
     return cast(Watcher, request.app.state.watcher)
 
 
-def get_login_service(request: Request) -> LoginService:
+def get_login_service(request: HTTPConnection) -> LoginService:
     return cast(LoginService, request.app.state.login_service)
 
 
@@ -101,7 +102,7 @@ def get_tmp_export_file(request: Request, background_tasks: BackgroundTasks) -> 
 
 
 def get_auth_service(
-    request: Request,
+    request: HTTPConnection,
     response: Response,
     login_service: LoginService = Depends(get_login_service),
     config: Config = Depends(get_config),
@@ -127,7 +128,13 @@ def get_auth_service(
             with db():
                 return token_type == "bots" and not login_service.exists_bot(user_id)
 
-    return AuthJWT(request, response)
+    match request:
+        case Request():
+            return AuthJWT(request, response)
+        case WebSocket():
+            return AuthJWT()
+        case _:
+            raise ValueError(f"Unsupported request type: {type(request)}")
 
 
 AuthDep: TypeAlias = Annotated[AuthJWT, Depends(get_auth_service)]
