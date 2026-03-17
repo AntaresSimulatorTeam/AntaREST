@@ -11,19 +11,13 @@
 # This file is part of the Antares project.
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Generic, TypeVar
-
-
-@dataclass(frozen=True)
-class CommandApplicationResult:
-    pass
-
+from typing import Any, Generic, TypeVar
 
 T = TypeVar("T")
 
 
 @dataclass(frozen=True)
-class CommandResult(CommandApplicationResult, Generic[T]):
+class CommandResult(Generic[T]):
     data: T
 
 
@@ -32,7 +26,7 @@ class CommandOutput:
     status: bool
     message: str
     # Result of the command to be used by the managers to return the application result.
-    result: CommandApplicationResult | None = None
+    result: CommandResult[Any] | None = None
     # If the command cannot guarantee the study config is still valid after it was applied, this should be set to True.
     should_invalidate_cache: bool = False
 
@@ -42,7 +36,7 @@ def command_failed(message: str) -> CommandOutput:
 
 
 def command_succeeded(
-    message: str, result: CommandApplicationResult | None, should_invalidate_cache: bool = False
+    message: str, result: CommandResult[Any] | None, should_invalidate_cache: bool = False
 ) -> CommandOutput:
     return CommandOutput(True, message, result, should_invalidate_cache)
 
