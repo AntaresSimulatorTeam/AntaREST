@@ -74,7 +74,13 @@ def write_dataframes_in_parquet_format_by_column_sets(
                         existing_columns.add(col)
                         new_index.append(col)
 
+                if df.columns != new_index:
+                    expr = pl.lit(None, dtype=pl.Float64)
+                    df = df.select([pl.col(c) if c in df.columns else expr.alias(c) for c in new_index])
+
                 df = _adapt_polars_schema(df)
+                table = df.to_arrow()
+
                 if should_write_new_file:
                     current_writer.close()
 
@@ -82,14 +88,10 @@ def write_dataframes_in_parquet_format_by_column_sets(
                     file_paths.append(file_path)
                     file_counter += 1
 
-                    table = df.to_arrow()
-                    current_schema = table.schema
+                    # merge the current schema and the new one, to get both sets of columns:
+                    # if previous schema was A and B, and new schema is B and C, we need to have a new one with A, B, C
+                    current_schema = pa.unify_schemas([current_schema, table.schema], promote_options="permissive")
                     current_writer = _parquet_writer(file_path, current_schema)
-                else:
-                    if df.columns != new_index:
-                        expr = pl.lit(None, dtype=pl.Float64)
-                        df = df.select([pl.col(c) if c in df.columns else expr.alias(c) for c in new_index])
-                    table = df.to_arrow()
 
                 current_writer.write_table(table)
 
