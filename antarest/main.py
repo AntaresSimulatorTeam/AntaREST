@@ -219,6 +219,7 @@ def fastapi_app(
         openapi_tags=tags_metadata,
         lifespan=set_threadpool_size,
         openapi_url=f"{config.api_prefix}/openapi.json",
+        strict_content_type=False,  # Should be removed at some point, required by some known clients for now
     )
 
     api_root = APIRouter(prefix=config.api_prefix)
