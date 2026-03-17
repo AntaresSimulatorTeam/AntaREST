@@ -12,6 +12,7 @@
 import base64
 import collections
 import contextlib
+import enum
 import http
 import io
 import logging
@@ -19,6 +20,7 @@ import os
 import shutil
 import tempfile
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Callable, Dict, Iterable, List, Literal, Optional, Sequence, Type, TypeAlias, cast
@@ -131,6 +133,12 @@ from antarest.study.model import (
     StudyFolder,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
+    StudyRepairAction,
+    StudyRepairIssue,
+    StudyRepairReport,
+    StudyRepairRequest,
+    StudyRepairSeverity,
+    StudyRepairType,
 )
 from antarest.study.repository import (
     StudyFilter,
@@ -263,15 +271,40 @@ def clone_raw_study(study: RawStudy) -> RawStudy:
     )
 
 
-def sync_raw_study_metadata(source: RawStudy, target: RawStudy) -> None:
-    target.name = source.name
-    target.version = source.version
-    target.author = source.author
-    target.editor = source.editor
-    target.horizon = source.horizon
-    target.created_at = source.created_at
-    target.updated_at = source.updated_at
-    target.path = source.path
+class ArchiveConsistencyState(enum.StrEnum):
+    CONSISTENT_ARCHIVED = "consistent_archived"
+    CONSISTENT_UNARCHIVED = "consistent_unarchived"
+    DB_UNARCHIVED_ONLY_ARCHIVE = "db_unarchived_only_archive"
+    DB_ARCHIVED_ONLY_STUDY = "db_archived_only_study"
+    AMBIGUOUS = "ambiguous"
+    MISSING_DATA = "missing_data"
+
+
+@dataclass(frozen=True)
+class ArchiveConsistencyRepairSpec:
+    action_code: str
+    action_description: str
+    target_archived: bool
+    issue_message: str
+
+
+def get_archive_consistency_state(
+    *,
+    archived_in_db: bool,
+    archive_exists: bool,
+    study_exists: bool,
+) -> ArchiveConsistencyState:
+    if archived_in_db and archive_exists and not study_exists:
+        return ArchiveConsistencyState.CONSISTENT_ARCHIVED
+    if not archived_in_db and not archive_exists and study_exists:
+        return ArchiveConsistencyState.CONSISTENT_UNARCHIVED
+    if not archived_in_db and archive_exists and not study_exists:
+        return ArchiveConsistencyState.DB_UNARCHIVED_ONLY_ARCHIVE
+    if archived_in_db and not archive_exists and study_exists:
+        return ArchiveConsistencyState.DB_ARCHIVED_ONLY_STUDY
+    if archive_exists and study_exists:
+        return ArchiveConsistencyState.AMBIGUOUS
+    return ArchiveConsistencyState.MISSING_DATA
 
 
 class TaskProgressRecorder(ICommandListener):
@@ -2154,15 +2187,14 @@ class StudyService:
             archive_path = self.storage_service.raw_study_service.find_archive_path(study_to_unarchive)
 
             self.storage_service.raw_study_service.unarchive(study_to_unarchive)
+            study_to_unarchive.archived = False
 
             with db():
                 study_db = self.repository.get(uuid)
                 if study_db is None:
                     raise StudyNotFoundError(uuid)
-                raw_study_db = assert_raw(study_db)
-                sync_raw_study_metadata(study_to_unarchive, raw_study_db)
-                raw_study_db.archived = False
-                self.repository.save(raw_study_db)
+                raw_study_db = assert_raw(db.session.merge(study_to_unarchive))
+                db.session.commit()
                 self.event_bus.push(
                     Event(
                         type=EventType.STUDY_EDITED,
@@ -2183,6 +2215,168 @@ class StudyService:
             progress=None,
             custom_event_messages=None,
         )
+
+    def repair_study(self, uuid: str, repair_request: StudyRepairRequest) -> str:
+        current_user = get_current_user()
+        if current_user is None or not (current_user.is_site_admin() or current_user.is_admin_token()):
+            raise UserHasNotPermissionError()
+
+        study = self.get_study(uuid)
+        if StudyRepairType.ARCHIVE_CONSISTENCY in repair_request.repairs and not isinstance(study, RawStudy):
+            raise UnsupportedOperationOnThisStudyType(study.id, "repair", "raw")
+
+        def repair_task(notifier: ITaskNotifier) -> TaskResult:
+            report = self._run_study_repairs(uuid, repair_request, notifier)
+            message = (
+                f"Study repair completed with {len(report.issues)} issue(s) "
+                f"and {len(report.applied_actions)} action(s) applied"
+            )
+            return TaskResult(success=True, message=message, return_value=report.model_dump_json())
+
+        return self.task_service.add_task(
+            repair_task,
+            f"Repair study {study.name} ({uuid})",
+            task_type=TaskType.REPAIR_STUDY,
+            ref_id=uuid,
+            progress=None,
+            custom_event_messages=None,
+        )
+
+    def _run_study_repairs(
+        self,
+        uuid: str,
+        repair_request: StudyRepairRequest,
+        notifier: ITaskNotifier,
+    ) -> StudyRepairReport:
+        report = StudyRepairReport(study_id=uuid, dry_run=repair_request.dry_run)
+
+        if StudyRepairType.ARCHIVE_CONSISTENCY in repair_request.repairs:
+            self._repair_archive_consistency(uuid, repair_request.dry_run, report, notifier)
+
+        return report
+
+    def _repair_archive_consistency(
+        self,
+        uuid: str,
+        dry_run: bool,
+        report: StudyRepairReport,
+        notifier: ITaskNotifier,
+    ) -> None:
+        notifier.notify_message(f"Checking archive consistency for study '{uuid}'")
+
+        with db():
+            study = clone_raw_study(assert_raw(self.get_study(uuid)))
+
+        archive_exists = False
+        with contextlib.suppress(FileNotFoundError):
+            archive_exists = self.storage_service.raw_study_service.find_archive_path(study).is_file()
+
+        study_exists = Path(study.path).joinpath("study.antares").is_file()
+        state = get_archive_consistency_state(
+            archived_in_db=study.archived,
+            archive_exists=archive_exists,
+            study_exists=study_exists,
+        )
+
+        if state in {
+            ArchiveConsistencyState.CONSISTENT_ARCHIVED,
+            ArchiveConsistencyState.CONSISTENT_UNARCHIVED,
+        }:
+            return
+
+        repair_specs = {
+            ArchiveConsistencyState.DB_UNARCHIVED_ONLY_ARCHIVE: ArchiveConsistencyRepairSpec(
+                action_code="set_archived_true",
+                action_description="Mark the study as archived in database",
+                target_archived=True,
+                issue_message="Database says the study is unarchived but only the archive exists on disk",
+            ),
+            ArchiveConsistencyState.DB_ARCHIVED_ONLY_STUDY: ArchiveConsistencyRepairSpec(
+                action_code="set_archived_false",
+                action_description="Mark the study as unarchived in database",
+                target_archived=False,
+                issue_message="Database says the study is archived but only the study directory exists on disk",
+            ),
+        }
+        repair_spec = repair_specs.get(state)
+        if repair_spec is not None:
+            self._apply_archive_consistency_repair(
+                uuid=uuid,
+                dry_run=dry_run,
+                report=report,
+                notifier=notifier,
+                repair_spec=repair_spec,
+            )
+            return
+
+        if state == ArchiveConsistencyState.AMBIGUOUS:
+            report.issues.append(
+                StudyRepairIssue(
+                    code="archive_consistency_ambiguous",
+                    severity=StudyRepairSeverity.ERROR,
+                    message="Both the archive and the study directory exist on disk",
+                )
+            )
+            report.warnings.append("Ambiguous state: no automatic repair was applied")
+            return
+
+        report.issues.append(
+            StudyRepairIssue(
+                code="archive_consistency_missing_data",
+                severity=StudyRepairSeverity.ERROR,
+                message="Neither the archive nor the study directory exist on disk",
+            )
+        )
+        report.warnings.append("Irrecoverable automatically: no automatic repair was applied")
+
+    def _apply_archive_consistency_repair(
+        self,
+        uuid: str,
+        dry_run: bool,
+        report: StudyRepairReport,
+        notifier: ITaskNotifier,
+        repair_spec: ArchiveConsistencyRepairSpec,
+    ) -> None:
+        proposed_action = StudyRepairAction(
+            code=repair_spec.action_code,
+            description=repair_spec.action_description,
+            details={"archived": repair_spec.target_archived},
+        )
+        report.issues.append(
+            StudyRepairIssue(
+                code="archive_consistency_db_fs_mismatch",
+                severity=StudyRepairSeverity.ERROR,
+                message=repair_spec.issue_message,
+            )
+        )
+        report.proposed_actions.append(proposed_action)
+        if not dry_run:
+            self._set_study_archived_state(uuid, archived=repair_spec.target_archived)
+            report.applied_actions.append(
+                StudyRepairAction(
+                    code=repair_spec.action_code,
+                    description=repair_spec.action_description,
+                    details={"archived": repair_spec.target_archived},
+                )
+            )
+            notifier.notify_message(f"Marked study '{uuid}' as archived={repair_spec.target_archived} in database")
+
+    def _set_study_archived_state(self, uuid: str, archived: bool) -> None:
+        with db():
+            study_db = self.repository.get(uuid)
+            if study_db is None:
+                raise StudyNotFoundError(uuid)
+            raw_study_db = assert_raw(study_db)
+            raw_study_db.archived = archived
+            self.repository.save(raw_study_db)
+            self.event_bus.push(
+                Event(
+                    type=EventType.STUDY_EDITED,
+                    payload=raw_study_db.to_json_summary(),
+                    permissions=PermissionInfo.from_study(raw_study_db),
+                )
+            )
+            remove_from_cache(cache=self.cache_service, root_id=uuid)
 
     def _validate_and_prepare_permissions(self, group_ids: Sequence[str]) -> tuple[Any, List[Group]]:
         """

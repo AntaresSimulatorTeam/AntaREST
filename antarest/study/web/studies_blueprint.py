@@ -38,6 +38,7 @@ from antarest.study.model import (
     StorageMode,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
+    StudyRepairRequest,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyPagination, StudySortBy
 from antarest.study.service import OutputSelection, StudyService
@@ -556,6 +557,14 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     def unarchive_study(study_id: UuidStr) -> str:
         logger.info(f"Unarchiving study {study_id}")
         return study_service.unarchive(study_id)
+
+    @bp.post(
+        "/studies/{study_id}/repair",
+        summary="Repair a study",
+    )
+    def repair_study(study_id: UuidStr, repair_request: StudyRepairRequest) -> str:
+        logger.info(f"Repairing study {study_id}")
+        return study_service.repair_study(study_id, repair_request)
 
     @bp.get(
         "/studies/{uuid}/disk-usage",

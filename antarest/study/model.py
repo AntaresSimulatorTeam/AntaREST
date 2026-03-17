@@ -553,6 +553,43 @@ class StudyMetadataPatchDTO(AntaresBaseModel):
         return tags
 
 
+class StudyRepairType(StrEnum):
+    ARCHIVE_CONSISTENCY = "archive_consistency"
+
+
+class StudyRepairSeverity(StrEnum):
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
+
+
+class StudyRepairRequest(AntaresBaseModel):
+    repairs: List[StudyRepairType] = Field(default_factory=lambda: [StudyRepairType.ARCHIVE_CONSISTENCY])
+    dry_run: bool = True
+
+
+class StudyRepairIssue(AntaresBaseModel):
+    code: str
+    severity: StudyRepairSeverity
+    message: str
+    details: dict[str, Any] = Field(default_factory=dict)
+
+
+class StudyRepairAction(AntaresBaseModel):
+    code: str
+    description: str
+    details: dict[str, Any] = Field(default_factory=dict)
+
+
+class StudyRepairReport(AntaresBaseModel):
+    study_id: str
+    dry_run: bool
+    issues: List[StudyRepairIssue] = Field(default_factory=list)
+    proposed_actions: List[StudyRepairAction] = Field(default_factory=list)
+    applied_actions: List[StudyRepairAction] = Field(default_factory=list)
+    warnings: List[str] = Field(default_factory=list)
+
+
 class DeleteManyStudies(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
