@@ -9,6 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing import Iterable
+
+import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
@@ -16,9 +19,18 @@ from antarest.core.config import Config, SecurityConfig
 from antarest.core.dependencies import get_config
 
 
-def test_disable_auth(app: FastAPI, client: TestClient):
+@pytest.fixture
+def auth_disabled_app(app: FastAPI) -> Iterable[FastAPI]:
+    # Note: important to reset the dependency overrides after use, for subsequent tests
+
     config = Config(security=SecurityConfig(disabled=True))
     app.dependency_overrides[get_config] = lambda: config
+    yield app
+    app.dependency_overrides.clear()
+
+
+def test_disable_auth(auth_disabled_app: FastAPI, client: TestClient):
+    client = TestClient(auth_disabled_app)
 
     res = client.get("/v1/users")
     assert res.status_code == 200

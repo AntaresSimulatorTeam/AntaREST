@@ -222,14 +222,14 @@ def add_exception_handlers(application: FastAPI) -> None:
         )
 
 
-def register_all_routes(api_root: APIRouter) -> ConnectionManager:
-    """Register all API routes on the api_root router.
+def create_routes(api_prefix: str) -> tuple[APIRouter, ConnectionManager]:
+    """Creates all HTTP and websocket routes.
 
     Routes use FastAPI's Depends() mechanism for service injection,
     so services don't need to exist yet at registration time.
-
-    Returns the ConnectionManager for websocket event bus wiring.
     """
+    api_root = APIRouter(prefix=api_prefix)
+
     # Utility routes
     api_root.include_router(create_utils_routes())
     api_root.include_router(create_file_system_blueprint())
@@ -259,22 +259,23 @@ def register_all_routes(api_root: APIRouter) -> ConnectionManager:
     api_root.include_router(create_output_routes())
     api_root.include_router(create_favorite_routes())
 
-    # Websocket route (returns manager so event bus can be wired later)
-    return register_websocket_routes(api_root)
-
-
-def create_web_layer(api_prefix: str) -> tuple[APIRouter, ConnectionManager]:
-    api_root = APIRouter(prefix=api_prefix)
-
-    ws_manager = register_all_routes(api_root)
+    ws_manager = register_websocket_routes(api_root)
 
     return api_root, ws_manager
 
 
 def base_fastapi_app(api_prefix: str, root_path: str) -> FastAPI:
+    """
+    Creates the fastapi application without injecting services yet.
+
+    Allows in particular to re-use that application object from test to test by swapping
+    the services underneath, saving a lot of initialization cost.
+
+    Services are injected in routes using standard FastAPI dependency injection.
+    """
     logger.info("Initiating application")
 
-    routes, ws_manager = create_web_layer(api_prefix=api_prefix)
+    routes, ws_manager = create_routes(api_prefix=api_prefix)
 
     @asynccontextmanager
     async def set_threadpool_size(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -323,12 +324,10 @@ def base_fastapi_app(api_prefix: str, root_path: str) -> FastAPI:
     return application
 
 
-def init_db(
-    config: Config,
-    config_file: Path,
-    auto_upgrade: bool,
-    init_admin: bool,
-) -> None:
+def init_db(config: Config, config_file: Path, auto_upgrade: bool, init_admin: bool) -> None:
+    """
+    Creates the DB engine, sets it for use by the application, and initializes the scehma and admin user if needed.
+    """
     engine = init_db_engine(config, auto_upgrade, config_file=config_file)
     init_db_singleton(custom_engine=engine, session_args=SESSION_ARGS)
     if init_admin:
@@ -336,19 +335,19 @@ def init_db(
 
 
 def inject_services(app: FastAPI, config: Config) -> Services:
-    """Inject services into the application state."""
-    # 5. Create services (no route registration — builders are pure service factories now)
-
+    """
+    Inject services into the application state, so that they can be accessed from routes.
+    """
     # Ideally, config should not appear here but only be used for service creation
     # however, for now some dependencies still go and read the config at runtime
     app.state.config = config
 
     services = create_services(config)
 
-    # 6. Store services on app.state so Depends() can resolve them
+    # Store services on app.state so Depends() can resolve them
     store_services_on_app(app, services, config)
 
-    # 7. Wire event bus to websocket connection manager
+    # Wire event bus to websocket connection manager
     connect_event_bus(services.event_bus, app.state.ws_manager)
 
     # Important note:
@@ -390,8 +389,11 @@ def fastapi_app(
     configure_logger(config)
 
     app = base_fastapi_app(config.api_prefix, config.root_path)
+
     init_db(config, config_file, auto_upgrade_db, init_admin=True)
+
     inject_services(app, config)
+
     add_metrics(app, config)
 
     if mount_front:
