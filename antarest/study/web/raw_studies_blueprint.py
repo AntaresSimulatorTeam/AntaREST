@@ -23,7 +23,7 @@ from fastapi.params import Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
 from antarest.core.api_types import SanitizedStr, UuidStr
-from antarest.core.dependencies import auth_required, get_study_service
+from antarest.core.dependencies import StudyServiceDep, auth_required
 from antarest.core.exceptions import IncorrectPathError
 from antarest.core.model import SUB_JSON
 from antarest.core.serde.json import from_json, to_json
@@ -32,7 +32,6 @@ from antarest.core.utils.utils import sanitize_string
 from antarest.core.utils.web import APITag
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.user_model import ResourceType
-from antarest.study.service import StudyService
 from antarest.study.storage.df_download import export_file
 
 logger = logging.getLogger(__name__)
@@ -154,12 +153,12 @@ def create_raw_study_routes() -> APIRouter:
         summary="Retrieve Raw Data from Study: JSON, Text, or File Attachment",
     )
     def get_study_data(
+        study_service: StudyServiceDep,
         uuid: UuidStr,
         path: PATH_TYPE = "/",
         depth: int = 3,
         formatted: bool = True,
         matrix_format: MatrixFormat | None = None,
-        study_service: StudyService = Depends(get_study_service),
     ) -> Response:
         """
         Fetches raw data from a study, and returns the data
@@ -241,9 +240,7 @@ def create_raw_study_routes() -> APIRouter:
         "/studies/{uuid}/raw/original-file",
         summary="Retrieve Raw file from a Study folder in its original format",
     )
-    def get_study_file(
-        uuid: UuidStr, path: PATH_TYPE = "/", study_service: StudyService = Depends(get_study_service)
-    ) -> Response:
+    def get_study_file(study_service: StudyServiceDep, uuid: UuidStr, path: PATH_TYPE = "/") -> Response:
         """
         Fetches for a file in its original format from a study folder
 
@@ -272,6 +269,7 @@ def create_raw_study_routes() -> APIRouter:
         summary="Delete files or folders located inside the 'User' folder",
     )
     def delete_file(
+        study_service: StudyServiceDep,
         uuid: UuidStr,
         path: Annotated[
             SanitizedStr,
@@ -281,7 +279,6 @@ def create_raw_study_routes() -> APIRouter:
                 },
             ),
         ] = "/",
-        study_service: StudyService = Depends(get_study_service),
     ) -> None:
         logger.info(f"Deleting path {path} inside study {uuid}")
         study_service.delete_user_file_or_folder(uuid, path)
@@ -292,10 +289,10 @@ def create_raw_study_routes() -> APIRouter:
         summary="Update study by posting formatted data",
     )
     def edit_study(
+        study_service: StudyServiceDep,
         uuid: UuidStr,
         path: PATH_TYPE = "/",
         data: Annotated[SUB_JSON, Body()] = "",
-        study_service: StudyService = Depends(get_study_service),
     ) -> Any:
         """
         Same endpoint as the PUT one.
@@ -311,12 +308,12 @@ def create_raw_study_routes() -> APIRouter:
         summary="Update data by posting a Raw file or by creating folder(s)",
     )
     def replace_study_file(
+        study_service: StudyServiceDep,
         uuid: UuidStr,
         path: PATH_TYPE = "/",
         file: Annotated[bytes | None, File()] = None,
         create_missing: Annotated[bool, Query(deprecated=True)] = True,
         resource_type: ResourceType = ResourceType.FILE,
-        study_service: StudyService = Depends(get_study_service),
     ) -> None:
         """
         Update raw data for a study by posting a raw file or by creating folder(s).
@@ -347,6 +344,7 @@ def create_raw_study_routes() -> APIRouter:
         summary="Download a matrix in a given format",
     )
     def get_matrix(
+        study_service: StudyServiceDep,
         uuid: UuidStr,
         matrix_path: Annotated[
             SanitizedStr,
@@ -359,7 +357,6 @@ def create_raw_study_routes() -> APIRouter:
         with_index: Annotated[
             bool, Query(alias="index", description="Whether to include the index or not", title="With Index")
         ] = True,
-        study_service: StudyService = Depends(get_study_service),
     ) -> FileResponse:
         """
         Download a matrix in a given format.

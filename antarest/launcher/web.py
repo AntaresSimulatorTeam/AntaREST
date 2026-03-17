@@ -18,8 +18,7 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import Field
 
 from antarest.core.api_types import SanitizedStr, UuidStr
-from antarest.core.config import Config
-from antarest.core.dependencies import auth_required, get_config, get_launcher_service
+from antarest.core.dependencies import ConfigDep, LauncherServiceDep, auth_required
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.utils.web import APITag
 from antarest.launcher.model import (
@@ -33,7 +32,6 @@ from antarest.launcher.model import (
     SolverPresetsCreation,
     SolverPresetsUpdate,
 )
-from antarest.launcher.service import LauncherService
 from antarest.launcher.ssh_client import SlurmError
 
 logger = logging.getLogger(__name__)
@@ -49,13 +47,13 @@ def create_launcher_api() -> APIRouter:
         summary="Run study",
     )
     def run(
+        service: LauncherServiceDep,
+        config: ConfigDep,
         study_id: UuidStr,
         launcher: Optional[SanitizedStr] = None,
         launcher_parameters: LauncherParametersDTO = LauncherParametersDTO(),
         solver_presets_id: Optional[SanitizedStr] = None,
         version: Optional[SanitizedStr] = None,
-        service: LauncherService = Depends(get_launcher_service),
-        config: Config = Depends(get_config),
     ) -> JobCreationDTO:
         logger.info(f"Launching study {study_id} with options {launcher_parameters}")
         selected_launcher = launcher if launcher is not None else config.launcher.default
@@ -75,10 +73,10 @@ def create_launcher_api() -> APIRouter:
         summary="Retrieve jobs",
     )
     def get_job(
+        service: LauncherServiceDep,
         study: Optional[SanitizedStr] = None,
         filter_orphans: bool = True,
         latest: Optional[int] = None,
-        service: LauncherService = Depends(get_launcher_service),
     ) -> List[JobResultDTO]:
         logger.info(f"Fetching execution jobs for study {study or '<all>'}")
         return [job.to_dto() for job in service.get_jobs(study, filter_orphans, latest)]
@@ -88,9 +86,9 @@ def create_launcher_api() -> APIRouter:
         summary="Retrieve job logs from job id",
     )
     def get_job_log(
+        service: LauncherServiceDep,
         job_id: SanitizedStr,
         log_type: LogType = LogType.STDOUT,
-        service: LauncherService = Depends(get_launcher_service),
     ) -> str | None:
         logger.info(f"Fetching logs for job {job_id}")
         return service.get_log(job_id, log_type)
@@ -99,9 +97,7 @@ def create_launcher_api() -> APIRouter:
         "/jobs/{job_id}/output",
         summary="Export job output",
     )
-    def export_job_output(
-        job_id: SanitizedStr, service: LauncherService = Depends(get_launcher_service)
-    ) -> FileDownloadTaskDTO:
+    def export_job_output(service: LauncherServiceDep, job_id: SanitizedStr) -> FileDownloadTaskDTO:
         logger.info(f"Exporting output for job {job_id}")
         return service.download_output(job_id)
 
@@ -110,8 +106,8 @@ def create_launcher_api() -> APIRouter:
         summary="Kill job",
     )
     def kill_job(
+        service: LauncherServiceDep,
         job_id: SanitizedStr,
-        service: LauncherService = Depends(get_launcher_service),
     ) -> JobResultDTO:
         logger.info(f"Killing job {job_id}")
 
@@ -121,7 +117,7 @@ def create_launcher_api() -> APIRouter:
         "/jobs/{job_id}",
         summary="Retrieve job info from job id",
     )
-    def get_result(job_id: UUID, service: LauncherService = Depends(get_launcher_service)) -> JobResultDTO:
+    def get_result(service: LauncherServiceDep, job_id: UUID) -> JobResultDTO:
         logger.info(f"Fetching job info {job_id}")
         return service.get_result(job_id).to_dto()
 
@@ -129,7 +125,7 @@ def create_launcher_api() -> APIRouter:
         "/jobs/{job_id}/progress",
         summary="Retrieve job progress from job id",
     )
-    def get_progress(job_id: SanitizedStr, service: LauncherService = Depends(get_launcher_service)) -> int:
+    def get_progress(service: LauncherServiceDep, job_id: SanitizedStr) -> int:
         logger.info(f"Fetching job progress of job {job_id}")
         return int(service.get_launch_progress(job_id))
 
@@ -138,7 +134,7 @@ def create_launcher_api() -> APIRouter:
         summary="Remove job",
         responses={204: {"description": "Job removed"}},
     )
-    def remove_result(job_id: SanitizedStr, service: LauncherService = Depends(get_launcher_service)) -> None:
+    def remove_result(service: LauncherServiceDep, job_id: SanitizedStr) -> None:
         logger.info(f"Removing job {job_id}")
         service.remove_job(job_id)
 
@@ -146,7 +142,7 @@ def create_launcher_api() -> APIRouter:
         "/launchers",
         summary="Retrieve configured launchers",
     )
-    def get_launchers(service: LauncherService = Depends(get_launcher_service)) -> LauncherListDTO:
+    def get_launchers(service: LauncherServiceDep) -> LauncherListDTO:
         logger.info("Listing launchers")
         return service.get_launchers()
 
@@ -154,9 +150,7 @@ def create_launcher_api() -> APIRouter:
         "/load",
         summary="Get the SLURM cluster or local machine load",
     )
-    def get_load(
-        launcher_id: Optional[SanitizedStr] = None, service: LauncherService = Depends(get_launcher_service)
-    ) -> LauncherLoadDTO:
+    def get_load(service: LauncherServiceDep, launcher_id: Optional[SanitizedStr] = None) -> LauncherLoadDTO:
         logger.info("Fetching launcher load")
         try:
             return service.get_load(launcher_id)
@@ -177,9 +171,9 @@ def create_launcher_api() -> APIRouter:
         deprecated=True,
     )
     def get_solver_versions(
+        service: LauncherServiceDep,
         launcher_id: SanitizedStr | None = None,
         solver: Annotated[SanitizedStr | None, Query(deprecated=True)] = None,
-        service: LauncherService = Depends(get_launcher_service),
     ) -> Annotated[list[str], Field(examples=[["820", "880", "920"]])]:
         """
         Get list of supported solver versions for the specified launcher.
@@ -200,7 +194,7 @@ def create_launcher_api() -> APIRouter:
         summary="Create new solver presets",
     )
     def create_solver_presets(
-        solver_presets_creation: SolverPresetsCreation, service: LauncherService = Depends(get_launcher_service)
+        service: LauncherServiceDep, solver_presets_creation: SolverPresetsCreation
     ) -> SolverPresets:
         logger.info("Creating new solver presets")
         return service.create_solver_presets(solver_presets_creation)
@@ -209,9 +203,7 @@ def create_launcher_api() -> APIRouter:
         "/solver-presets/{solver_presets_id}",
         summary="Retrieve solver presets by ID",
     )
-    def get_solver_presets(
-        solver_presets_id: SanitizedStr, service: LauncherService = Depends(get_launcher_service)
-    ) -> SolverPresets:
+    def get_solver_presets(service: LauncherServiceDep, solver_presets_id: SanitizedStr) -> SolverPresets:
         logger.info(f"Retrieving solver presets for ID {solver_presets_id}")
         return service.get_solver_presets(solver_presets_id)
 
@@ -219,7 +211,7 @@ def create_launcher_api() -> APIRouter:
         "/solver-presets",
         summary="Retrieve all solver presets",
     )
-    def get_solver_presets_list(service: LauncherService = Depends(get_launcher_service)) -> List[SolverPresets]:
+    def get_solver_presets_list(service: LauncherServiceDep) -> List[SolverPresets]:
         logger.info("Retrieving solver presets")
         return service.get_solver_presets_list()
 
@@ -228,9 +220,9 @@ def create_launcher_api() -> APIRouter:
         summary="Update an existing solver preset",
     )
     def update_solver_presets(
+        service: LauncherServiceDep,
         solver_presets_id: SanitizedStr,
         solver_presets_update: SolverPresetsUpdate,
-        service: LauncherService = Depends(get_launcher_service),
     ) -> SolverPresets:
         logger.info(f"Updating solver preset for ID {solver_presets_id}")
         return service.update_solver_presets(solver_presets_id, solver_presets_update)
@@ -239,9 +231,7 @@ def create_launcher_api() -> APIRouter:
         "/solver-presets/{solver_presets_id}",
         summary="Delete a solver preset",
     )
-    def delete_solver_presets(
-        solver_presets_id: SanitizedStr, service: LauncherService = Depends(get_launcher_service)
-    ) -> None:
+    def delete_solver_presets(service: LauncherServiceDep, solver_presets_id: SanitizedStr) -> None:
         logger.info(f"Deleting solver preset for ID {solver_presets_id}")
         service.delete_solver_presets(solver_presets_id)
 

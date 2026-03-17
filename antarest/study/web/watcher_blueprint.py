@@ -18,9 +18,8 @@ from typing import List
 from fastapi import APIRouter, Depends
 
 from antarest.core.api_types import SanitizedStr
-from antarest.core.dependencies import auth_required, get_watcher
+from antarest.core.dependencies import WatcherDep, auth_required
 from antarest.core.utils.web import APITag
-from antarest.study.storage.rawstudy.watcher import Watcher
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +39,7 @@ def create_watcher_routes() -> APIRouter:
         "/watcher/_scan",
         summary="Launch scan in selected directory",
     )
-    def scan_dir(path: SanitizedStr, recursive: bool = True, watcher: Watcher = Depends(get_watcher)) -> str:
+    def scan_dir(watcher: WatcherDep, path: SanitizedStr, recursive: bool = True) -> str:
         if path:
             # The front actually sends <workspace>/<path/to/folder>
             try:

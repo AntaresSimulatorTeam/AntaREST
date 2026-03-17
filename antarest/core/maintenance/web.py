@@ -15,8 +15,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends
 
-from antarest.core.dependencies import auth_required, get_maintenance_service
-from antarest.core.maintenance.service import MaintenanceService
+from antarest.core.dependencies import MaintenanceServiceDep, auth_required
 
 logger = logging.getLogger(__name__)
 
@@ -25,24 +24,24 @@ def create_maintenance_api() -> APIRouter:
     bp = APIRouter(prefix="/v1")
 
     @bp.get("/core/maintenance", include_in_schema=False)
-    def get_maintenance_status(service: MaintenanceService = Depends(get_maintenance_service)) -> bool:
+    def get_maintenance_status(service: MaintenanceServiceDep) -> bool:
         return service.get_maintenance_status()
 
     @bp.post("/core/maintenance", include_in_schema=False, dependencies=[Depends(auth_required)])
     def set_maintenance_status(
+        service: MaintenanceServiceDep,
         maintenance: bool,
-        service: MaintenanceService = Depends(get_maintenance_service),
     ) -> None:
         return service.set_maintenance_status(maintenance)
 
     @bp.get("/core/maintenance/message", include_in_schema=False)
-    def get_message_info(service: MaintenanceService = Depends(get_maintenance_service)) -> str:
+    def get_message_info(service: MaintenanceServiceDep) -> str:
         return service.get_message_info()
 
     @bp.post("/core/maintenance/message", include_in_schema=False, dependencies=[Depends(auth_required)])
     def set_message_info(
+        service: MaintenanceServiceDep,
         message: Annotated[str, Body()] = "",
-        service: MaintenanceService = Depends(get_maintenance_service),
     ) -> None:
         return service.set_message_info(message)
 

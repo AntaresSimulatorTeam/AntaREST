@@ -28,7 +28,7 @@ from starlette.responses import PlainTextResponse, StreamingResponse
 
 from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
-from antarest.core.dependencies import auth_required, get_config
+from antarest.core.dependencies import ConfigDep, auth_required
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
 
@@ -296,7 +296,7 @@ def create_file_system_blueprint() -> APIRouter:
         "",
         summary="Get filesystems information",
     )
-    def list_filesystems(cfg: Config = Depends(get_config)) -> Sequence[FilesystemDTO]:
+    def list_filesystems(cfg: ConfigDep) -> Sequence[FilesystemDTO]:
         """
         Get the list of filesystems and their mount points.
 
@@ -313,7 +313,7 @@ def create_file_system_blueprint() -> APIRouter:
         "/{fs}",
         summary="Get information of a filesystem",
     )
-    def list_mount_points(fs: FilesystemName, cfg: Config = Depends(get_config)) -> Sequence[MountPointDTO]:
+    def list_mount_points(cfg: ConfigDep, fs: FilesystemName) -> Sequence[MountPointDTO]:
         """
         Get the path and the disk usage of the mount points in a filesystem.
 
@@ -339,7 +339,7 @@ def create_file_system_blueprint() -> APIRouter:
         "/{fs}/{mount}",
         summary="Get information of a mount point",
     )
-    def get_mount_point(fs: FilesystemName, mount: MountPointName, cfg: Config = Depends(get_config)) -> MountPointDTO:
+    def get_mount_point(cfg: ConfigDep, fs: FilesystemName, mount: MountPointName) -> MountPointDTO:
         """
         Get the path and the disk usage of a mount point.
 
@@ -367,11 +367,11 @@ def create_file_system_blueprint() -> APIRouter:
         summary="List files in a mount point",
     )
     def list_files(
+        cfg: ConfigDep,
         fs: FilesystemName,
         mount: MountPointName,
         path: SanitizedStr = "",
         details: bool = False,
-        cfg: Config = Depends(get_config),
     ) -> Sequence[FileInfoDTO]:
         """
         List files and directories in a mount point.
@@ -431,11 +431,11 @@ def create_file_system_blueprint() -> APIRouter:
         response_description="File content as text",
     )
     def view_file(
+        cfg: ConfigDep,
         fs: FilesystemName,
         mount: MountPointName,
         path: SanitizedStr = "",
         encoding: SanitizedStr = "utf-8",
-        cfg: Config = Depends(get_config),
     ) -> str:
         # noinspection SpellCheckingInspection
         """
@@ -491,10 +491,10 @@ def create_file_system_blueprint() -> APIRouter:
         response_description="File content as binary",
     )
     def download_file(
+        cfg: ConfigDep,
         fs: FilesystemName,
         mount: MountPointName,
         path: SanitizedStr = "",
-        cfg: Config = Depends(get_config),
     ) -> StreamingResponse:
         """
         Download a file from a mount point.

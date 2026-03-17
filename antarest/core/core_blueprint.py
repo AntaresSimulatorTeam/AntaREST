@@ -11,10 +11,9 @@
 # This file is part of the Antares project.
 
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
-from antarest.core.config import Config
-from antarest.core.dependencies import get_config
+from antarest.core.dependencies import ConfigDep
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
 from antarest.core.version_info import VersionInfoDTO, get_commit_id, get_dependencies
@@ -42,7 +41,7 @@ def create_utils_routes() -> APIRouter:
         "/version",
         summary="Get application version",
     )
-    def version_info(with_deps: bool = False, config: Config = Depends(get_config)) -> VersionInfoDTO:
+    def version_info(config: ConfigDep, with_deps: bool = False) -> VersionInfoDTO:
         """
         Returns the current version of the application, along with relevant dependency information.
 
@@ -64,7 +63,7 @@ def create_utils_routes() -> APIRouter:
         "/desktop_mode",
         summary="Get if application is running on desktop mode",
     )
-    def desktop_mode(config: Config = Depends(get_config)) -> DesktopModeDTO:
+    def desktop_mode(config: ConfigDep) -> DesktopModeDTO:
         """
         Returns weither the application is running on desktop mode.
 

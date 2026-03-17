@@ -17,13 +17,12 @@ import humanize
 from fastapi import APIRouter, Body, Depends
 
 from antarest.core.api_types import SanitizedStr, UuidStr
-from antarest.core.dependencies import auth_required, get_study_service
+from antarest.core.dependencies import StudyServiceDep, auth_required
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import sanitize_string
 from antarest.core.utils.web import APITag
 from antarest.study.model import StudyMetadataDTO
-from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.model.model import CommandDTOAPI, VariantTreeDTO
 
 logger = logging.getLogger(__name__)
@@ -44,9 +43,7 @@ def create_study_variant_routes() -> APIRouter:
             }
         },
     )
-    def create_variant(
-        uuid: UuidStr, name: SanitizedStr, study_service: StudyService = Depends(get_study_service)
-    ) -> str:
+    def create_variant(study_service: StudyServiceDep, uuid: UuidStr, name: SanitizedStr) -> str:
         """
         Creates a study variant.
 
@@ -64,7 +61,7 @@ def create_study_variant_routes() -> APIRouter:
         summary="Get children variants",
         response_model=None,  # To cope with recursive models issues
     )
-    def get_variants(uuid: UuidStr, study_service: StudyService = Depends(get_study_service)) -> VariantTreeDTO:
+    def get_variants(study_service: StudyServiceDep, uuid: UuidStr) -> VariantTreeDTO:
         logger.info(f"Fetching variant children of study {uuid}")
         variant_study_service = study_service.storage_service.variant_study_service
         return variant_study_service.get_all_variants_children(uuid)
@@ -80,7 +77,7 @@ def create_study_variant_routes() -> APIRouter:
         },
     )
     def get_parents(
-        uuid: UuidStr, direct: Optional[bool] = False, study_service: StudyService = Depends(get_study_service)
+        study_service: StudyServiceDep, uuid: UuidStr, direct: Optional[bool] = False
     ) -> Union[List[StudyMetadataDTO], Optional[StudyMetadataDTO]]:
         logger.info(f"Fetching variant parents of study {uuid}")
         variant_study_service = study_service.storage_service.variant_study_service
@@ -100,7 +97,7 @@ def create_study_variant_routes() -> APIRouter:
             }
         },
     )
-    def list_commands(uuid: UuidStr, study_service: StudyService = Depends(get_study_service)) -> List[CommandDTOAPI]:
+    def list_commands(study_service: StudyServiceDep, uuid: UuidStr) -> List[CommandDTOAPI]:
         """
         Get the list of commands of a variant.
 
@@ -118,7 +115,7 @@ def create_study_variant_routes() -> APIRouter:
         "/studies/{uuid}/commands/_matrices",
         summary="Export a variant's commands matrices",
     )
-    def export_matrices(uuid: UuidStr, study_service: StudyService = Depends(get_study_service)) -> FileDownloadTaskDTO:
+    def export_matrices(study_service: StudyServiceDep, uuid: UuidStr) -> FileDownloadTaskDTO:
         logger.info(f"Exporting commands matrices for variant study {uuid}")
         variant_study_service = study_service.storage_service.variant_study_service
         return variant_study_service.export_commands_matrices(uuid)
@@ -133,9 +130,9 @@ def create_study_variant_routes() -> APIRouter:
         },
     )
     def append_commands(
+        study_service: StudyServiceDep,
         uuid: UuidStr,
         commands: Annotated[List[CommandDTOAPI], Body()],
-        study_service: StudyService = Depends(get_study_service),
     ) -> Optional[List[str]]:
         """
         Append a list of commands to a variant study.
@@ -162,9 +159,9 @@ def create_study_variant_routes() -> APIRouter:
         },
     )
     def replace_commands(
+        study_service: StudyServiceDep,
         uuid: UuidStr,
         commands: Annotated[List[CommandDTOAPI], Body()],
-        study_service: StudyService = Depends(get_study_service),
     ) -> str:
         logger.info(f"Replacing all commands of variant study {uuid}")
         variant_study_service = study_service.storage_service.variant_study_service
@@ -180,9 +177,7 @@ def create_study_variant_routes() -> APIRouter:
             }
         },
     )
-    def append_command(
-        uuid: UuidStr, command: CommandDTOAPI, study_service: StudyService = Depends(get_study_service)
-    ) -> str:
+    def append_command(study_service: StudyServiceDep, uuid: UuidStr, command: CommandDTOAPI) -> str:
         logger.info(f"Appending new command to variant study {uuid}")
         variant_study_service = study_service.storage_service.variant_study_service
         internal_command = variant_study_service.convert_commands(uuid, [command])[0]
@@ -198,9 +193,7 @@ def create_study_variant_routes() -> APIRouter:
             }
         },
     )
-    def get_command(
-        uuid: UuidStr, cid: SanitizedStr, study_service: StudyService = Depends(get_study_service)
-    ) -> CommandDTOAPI:
+    def get_command(study_service: StudyServiceDep, uuid: UuidStr, cid: SanitizedStr) -> CommandDTOAPI:
         logger.info(f"Fetching command {cid} info of variant study {uuid}")
         variant_study_service = study_service.storage_service.variant_study_service
         sanitized_cid = sanitize_string(cid)
@@ -210,9 +203,7 @@ def create_study_variant_routes() -> APIRouter:
         "/studies/{uuid}/commands/{cid}/move",
         summary="Move a command to an other index",
     )
-    def move_command(
-        uuid: UuidStr, cid: SanitizedStr, index: int, study_service: StudyService = Depends(get_study_service)
-    ) -> None:
+    def move_command(study_service: StudyServiceDep, uuid: UuidStr, cid: SanitizedStr, index: int) -> None:
         logger.info(f"Moving command {cid} to index {index} for variant study {uuid}")
         variant_study_service = study_service.storage_service.variant_study_service
         sanitized_cid = sanitize_string(cid)
@@ -223,10 +214,10 @@ def create_study_variant_routes() -> APIRouter:
         summary="Move a command to an other index",
     )
     def update_command(
+        study_service: StudyServiceDep,
         uuid: UuidStr,
         cid: SanitizedStr,
         command: CommandDTOAPI,
-        study_service: StudyService = Depends(get_study_service),
     ) -> None:
         logger.info(f"Update command {cid} for variant study {uuid}")
         variant_study_service = study_service.storage_service.variant_study_service
@@ -238,9 +229,7 @@ def create_study_variant_routes() -> APIRouter:
         "/studies/{uuid}/commands/{cid}",
         summary="Remove a command",
     )
-    def remove_command(
-        uuid: UuidStr, cid: SanitizedStr, study_service: StudyService = Depends(get_study_service)
-    ) -> None:
+    def remove_command(study_service: StudyServiceDep, uuid: UuidStr, cid: SanitizedStr) -> None:
         logger.info(f"Removing command {cid} of variant study {uuid}")
         variant_study_service = study_service.storage_service.variant_study_service
         sanitized_cid = sanitize_string(cid)
@@ -250,7 +239,7 @@ def create_study_variant_routes() -> APIRouter:
         "/studies/{uuid}/commands",
         summary="Clear variant's commands",
     )
-    def remove_all_commands(uuid: UuidStr, study_service: StudyService = Depends(get_study_service)) -> None:
+    def remove_all_commands(study_service: StudyServiceDep, uuid: UuidStr) -> None:
         logger.info(f"Removing all commands from variant study {uuid}")
         variant_study_service = study_service.storage_service.variant_study_service
         variant_study_service.remove_all_commands(uuid)
@@ -260,10 +249,10 @@ def create_study_variant_routes() -> APIRouter:
         summary="Generate variant snapshot",
     )
     def generate_variant(
+        study_service: StudyServiceDep,
         uuid: UuidStr,
         denormalize: bool = False,
         from_scratch: bool = False,
-        study_service: StudyService = Depends(get_study_service),
     ) -> str:
         logger.info(f"Generating snapshot for variant study {uuid}")
         variant_study_service = study_service.storage_service.variant_study_service
@@ -273,7 +262,7 @@ def create_study_variant_routes() -> APIRouter:
         "/studies/{uuid}/task",
         summary="Get study generation task",
     )
-    def get_study_generation_task(uuid: UuidStr, study_service: StudyService = Depends(get_study_service)) -> TaskDTO:
+    def get_study_generation_task(study_service: StudyServiceDep, uuid: UuidStr) -> TaskDTO:
         variant_study_service = study_service.storage_service.variant_study_service
         return variant_study_service.get_study_task(uuid)
 
@@ -286,7 +275,7 @@ def create_study_variant_routes() -> APIRouter:
             }
         },
     )
-    def clear_variant_snapshots(hours: int = 24, study_service: StudyService = Depends(get_study_service)) -> str:
+    def clear_variant_snapshots(study_service: StudyServiceDep, hours: int = 24) -> str:
         """
         Endpoint that clear snapshots of variant which were updated or accessed `hours` hours ago.
 

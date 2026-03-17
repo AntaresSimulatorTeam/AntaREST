@@ -16,19 +16,17 @@ from enum import StrEnum
 from http import HTTPStatus
 from typing import Annotated, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from antarest.core.api_types import SanitizedStr
-from antarest.core.config import Config
-from antarest.core.dependencies import get_auth_service, get_config
+from antarest.core.dependencies import AuthDep, ConfigDep
 from antarest.core.interfaces.eventbus import Event, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.json import to_json_string
-from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.login.auth import get_user_from_token
 
 logger = logging.getLogger(__name__)
@@ -101,8 +99,8 @@ def register_websocket_routes(api_root: APIRouter) -> ConnectionManager:
     async def connect(
         websocket: WebSocket,
         token: Annotated[SanitizedStr, Query()],
-        jwt_manager: Annotated[AuthJWT, Depends(get_auth_service)],
-        config: Config = Depends(get_config),
+        jwt_manager: AuthDep,
+        config: ConfigDep,
     ) -> None:
         user: Optional[JWTUser] = None
         if not config.security.disabled:

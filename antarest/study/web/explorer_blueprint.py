@@ -16,10 +16,9 @@ from typing import List
 from fastapi import APIRouter, Depends
 
 from antarest.core.api_types import SanitizedStr
-from antarest.core.dependencies import auth_required, get_explorer
+from antarest.core.dependencies import ExplorerDep, auth_required
 from antarest.core.utils.web import APITag
 from antarest.study.model import FolderDTO, WorkspaceDTO
-from antarest.study.storage.explorer_service import Explorer
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +33,7 @@ def create_explorer_routes() -> APIRouter:
         "/explorer/{workspace}/_list_dir",
         summary="For a given directory, list sub directories.",
     )
-    def list_dir(
-        workspace: SanitizedStr, path: SanitizedStr, explorer: Explorer = Depends(get_explorer)
-    ) -> List[FolderDTO]:
+    def list_dir(explorer: ExplorerDep, workspace: SanitizedStr, path: SanitizedStr) -> List[FolderDTO]:
         """
         Endpoint to list sub directories of a given directory
         Args:
@@ -53,7 +50,7 @@ def create_explorer_routes() -> APIRouter:
         "/explorer/_list_workspaces",
         summary="List all workspaces",
     )
-    def list_workspaces(explorer: Explorer = Depends(get_explorer)) -> List[WorkspaceDTO]:
+    def list_workspaces(explorer: ExplorerDep) -> List[WorkspaceDTO]:
         """
         Endpoint to list workspaces
         Args:

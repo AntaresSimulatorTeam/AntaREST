@@ -15,10 +15,9 @@ import logging
 from fastapi import APIRouter, Depends
 
 from antarest.core.api_types import UuidStr
-from antarest.core.dependencies import auth_required, get_favorite_directory_service, get_favorite_study_service
+from antarest.core.dependencies import FavoriteDirectoryServiceDep, FavoriteStudyServiceDep, auth_required
 from antarest.core.utils.web import APITag
 from antarest.favorite.model import FavoriteDirectoryDTO, FavoriteStudyDTO
-from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
 
 logger = logging.getLogger(__name__)
 
@@ -28,43 +27,37 @@ def create_favorite_routes() -> APIRouter:
 
     @bp.get("/favorites/studies/", summary="Listing favorites for current user")
     def list_favorite_studies(
-        favorite_service: FavoriteStudyService = Depends(get_favorite_study_service),
+        favorite_service: FavoriteStudyServiceDep,
     ) -> list[FavoriteStudyDTO]:
         logger.info("Listing favorites for current user")
         return favorite_service.list_favorites()
 
     @bp.post("/favorites/studies/{uuid}", summary="Add a study in the list of favorite studies")
-    def add_favorite_study(
-        uuid: UuidStr, favorite_service: FavoriteStudyService = Depends(get_favorite_study_service)
-    ) -> FavoriteStudyDTO:
+    def add_favorite_study(favorite_service: FavoriteStudyServiceDep, uuid: UuidStr) -> FavoriteStudyDTO:
         logger.info(f"Adding study {uuid} as a favorite.")
         return favorite_service.add_favorite(uuid)
 
     @bp.delete("/favorites/studies/{uuid}", summary="Delete a study from the ")
-    def delete_favorite_study(
-        uuid: UuidStr, favorite_service: FavoriteStudyService = Depends(get_favorite_study_service)
-    ) -> None:
+    def delete_favorite_study(favorite_service: FavoriteStudyServiceDep, uuid: UuidStr) -> None:
         logger.info(f"Deleting study {uuid} from favorites.")
         favorite_service.delete_favorite(uuid)
 
     @bp.get("/favorites/directories", summary="Listing favorite directories for current user")
     def list_favorite_directories(
-        favorite_directory_service: FavoriteDirectoryService = Depends(get_favorite_directory_service),
+        favorite_directory_service: FavoriteDirectoryServiceDep,
     ) -> list[FavoriteDirectoryDTO]:
         logger.info("Listing favorite directories for current user")
         return favorite_directory_service.list_favorites()
 
     @bp.post("/favorites/directories/{uuid}", summary="Add a directory in the list of favorite directories")
     def add_favorite_directory(
-        uuid: UuidStr, favorite_directory_service: FavoriteDirectoryService = Depends(get_favorite_directory_service)
+        favorite_directory_service: FavoriteDirectoryServiceDep, uuid: UuidStr
     ) -> FavoriteDirectoryDTO:
         logger.info(f"Adding directory {uuid} as a favorite.")
         return favorite_directory_service.add_favorite(uuid)
 
     @bp.delete("/favorites/directories/{uuid}", summary="Delete a directory from the list of favorite directories")
-    def delete_favorite_directory(
-        uuid: UuidStr, favorite_directory_service: FavoriteDirectoryService = Depends(get_favorite_directory_service)
-    ) -> None:
+    def delete_favorite_directory(favorite_directory_service: FavoriteDirectoryServiceDep, uuid: UuidStr) -> None:
         logger.info(f"Deleting directory {uuid} from favorites.")
         favorite_directory_service.delete_favorite(uuid)
 

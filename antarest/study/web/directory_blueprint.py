@@ -17,9 +17,8 @@ from typing import List
 from fastapi import APIRouter, Depends
 
 from antarest.core.api_types import UuidStr
-from antarest.core.dependencies import auth_required, get_directory_service
+from antarest.core.dependencies import DirectoryServiceDep, auth_required
 from antarest.core.utils.web import APITag
-from antarest.study.directory_service import DirectoryService
 from antarest.study.model import DirectoryCreation, DirectoryMetadata, DirectoryUpdate
 
 logger = logging.getLogger(__name__)
@@ -33,7 +32,7 @@ def create_directory_routes() -> APIRouter:
         summary="List directories",
     )
     def list_directories(
-        directory_service: DirectoryService = Depends(get_directory_service),
+        directory_service: DirectoryServiceDep,
     ) -> List[DirectoryMetadata]:
         logger.info("Listing directories for current user")
         return directory_service.list_directories()
@@ -43,9 +42,7 @@ def create_directory_routes() -> APIRouter:
         status_code=HTTPStatus.CREATED,
         summary="Create a new directory",
     )
-    def create_directory(
-        data: DirectoryCreation, directory_service: DirectoryService = Depends(get_directory_service)
-    ) -> DirectoryMetadata:
+    def create_directory(directory_service: DirectoryServiceDep, data: DirectoryCreation) -> DirectoryMetadata:
         logger.info(f"Creating directory '{data.name}'")
         return directory_service.create_directory(data)
 
@@ -54,9 +51,9 @@ def create_directory_routes() -> APIRouter:
         summary="Update directory",
     )
     def update_directory(
+        directory_service: DirectoryServiceDep,
         directory_id: UuidStr,
         data: DirectoryUpdate,
-        directory_service: DirectoryService = Depends(get_directory_service),
     ) -> DirectoryMetadata:
         """
         Update directory name or parent.
@@ -69,9 +66,7 @@ def create_directory_routes() -> APIRouter:
         status_code=HTTPStatus.NO_CONTENT,
         summary="Delete directory",
     )
-    def delete_directory(
-        directory_id: UuidStr, directory_service: DirectoryService = Depends(get_directory_service)
-    ) -> None:
+    def delete_directory(directory_service: DirectoryServiceDep, directory_id: UuidStr) -> None:
         """
         Delete a directory only if it and all its subdirectories contain no studies.
         """

@@ -131,6 +131,21 @@ def get_auth_service(
 
 
 AuthDep: TypeAlias = Annotated[AuthJWT, Depends(get_auth_service)]
+ConfigDep: TypeAlias = Annotated[Config, Depends(get_config)]
+StudyServiceDep: TypeAlias = Annotated[StudyService, Depends(get_study_service)]
+DirectoryServiceDep: TypeAlias = Annotated[DirectoryService, Depends(get_directory_service)]
+ExplorerDep: TypeAlias = Annotated[Explorer, Depends(get_explorer)]
+WatcherDep: TypeAlias = Annotated[Watcher, Depends(get_watcher)]
+LoginServiceDep: TypeAlias = Annotated[LoginService, Depends(get_login_service)]
+LauncherServiceDep: TypeAlias = Annotated[LauncherService, Depends(get_launcher_service)]
+MatrixServiceDep: TypeAlias = Annotated[MatrixService, Depends(get_matrix_service)]
+FileTransferManagerDep: TypeAlias = Annotated[FileTransferManager, Depends(get_file_transfer_manager)]
+OutputServiceDep: TypeAlias = Annotated[OutputService, Depends(get_output_service)]
+FavoriteStudyServiceDep: TypeAlias = Annotated[FavoriteStudyService, Depends(get_favorite_study_service)]
+FavoriteDirectoryServiceDep: TypeAlias = Annotated[FavoriteDirectoryService, Depends(get_favorite_directory_service)]
+TaskServiceDep: TypeAlias = Annotated[ITaskService, Depends(get_task_service)]
+MaintenanceServiceDep: TypeAlias = Annotated[MaintenanceService, Depends(get_maintenance_service)]
+TmpExportFileDep: TypeAlias = Annotated[Path, Depends(get_tmp_export_file)]
 
 
 async def auth_required(
