@@ -2056,26 +2056,31 @@ class StudyService:
             raise TaskAlreadyRunning()
 
         def archive_task(notifier: ITaskNotifier) -> TaskResult:
-            study_to_archive = self.get_study(uuid)
-            study_to_archive = assert_raw(study_to_archive)
+            with db():
+                study_to_archive = self.get_study(uuid)
+                study_to_archive = assert_raw(study_to_archive)
 
-            # 1 - first archive related outputs that are not already archived, and not stored in-study
-            for output in self._get_outputs_access().list_outputs(study_to_archive.id):
-                if not output.in_study and not output.archived:
-                    self._get_outputs_access().archive_output(study_to_archive.id, output.id)
+                for output in self._get_outputs_access().list_outputs(study_to_archive.id):
+                    if not output.in_study and not output.archived:
+                        self._get_outputs_access().archive_output(study_to_archive.id, output.id)
 
-            # 2 - then proceed to archive the study itself
+                db.session.expunge(study_to_archive)
+
             self.storage_service.raw_study_service.archive(study_to_archive)
 
-            study_to_archive.archived = True
-            self.repository.save(study_to_archive)
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_EDITED,
-                    payload=study_to_archive.to_json_summary(),
-                    permissions=PermissionInfo.from_study(study_to_archive),
+            with db():
+                study_db = self.repository.get(uuid)
+                if study_db is None:
+                    raise StudyNotFoundError(uuid)
+                study_db.archived = True
+                self.repository.save(study_db)
+                self.event_bus.push(
+                    Event(
+                        type=EventType.STUDY_EDITED,
+                        payload=study_db.to_json_summary(),
+                        permissions=PermissionInfo.from_study(study_db),
+                    )
                 )
-            )
             return TaskResult(success=True, message="ok")
 
         return self.task_service.add_task(
@@ -2107,21 +2112,32 @@ class StudyService:
             raise UnsupportedOperationOnThisStudyType(study.id, "unarchive", "raw")
 
         def unarchive_task(notifier: ITaskNotifier) -> TaskResult:
-            study_to_archive = self.get_study(uuid)
-            study_to_archive = assert_raw(study_to_archive)
-            self.storage_service.raw_study_service.unarchive(study_to_archive)
-            study_to_archive.archived = False
+            with db():
+                study_to_archive = self.get_study(uuid)
+                study_to_archive = assert_raw(study_to_archive)
 
-            os.unlink(self.storage_service.raw_study_service.find_archive_path(study_to_archive))
-            self.repository.save(study_to_archive)
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_EDITED,
-                    payload=study_to_archive.to_json_summary(),
-                    permissions=PermissionInfo.from_study(study_to_archive),
+                db.session.expunge(study_to_archive)
+
+            archive_path = self.storage_service.raw_study_service.find_archive_path(study_to_archive)
+
+            self.storage_service.raw_study_service.unarchive(study_to_archive)
+
+            with db():
+                study_db = self.repository.get(uuid)
+                if study_db is None:
+                    raise StudyNotFoundError(uuid)
+                study_db.archived = False
+                self.repository.save(study_db)
+                self.event_bus.push(
+                    Event(
+                        type=EventType.STUDY_EDITED,
+                        payload=study_db.to_json_summary(),
+                        permissions=PermissionInfo.from_study(study_db),
+                    )
                 )
-            )
-            remove_from_cache(cache=self.cache_service, root_id=uuid)
+                remove_from_cache(cache=self.cache_service, root_id=uuid)
+
+            os.unlink(archive_path)
             return TaskResult(success=True, message="ok")
 
         return self.task_service.add_task(
