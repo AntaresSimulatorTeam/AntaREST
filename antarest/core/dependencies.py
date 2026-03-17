@@ -10,6 +10,12 @@
 #
 # This file is part of the Antares project.
 
+"""
+This module defines dependencies for all routes of the application.
+
+TODO: should probably be less "centralized" ?
+"""
+
 from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import Annotated, Any, TypeAlias, cast
@@ -107,7 +113,13 @@ def get_auth_service(
     login_service: LoginService = Depends(get_login_service),
     config: Config = Depends(get_config),
 ) -> AuthJWT:
+    """
+    Returns an AuthJWT instance which can be used for authenticating the request.
 
+    Depends on config (in particular for disabling auth), and on login service to check for revoked tokens.
+    """
+
+    # TODO: that config part would better be done not on every request, not a blocker though
     if not config.security.disabled:
 
         @AuthJWT.load_config  # type: ignore
@@ -137,6 +149,8 @@ def get_auth_service(
             raise ValueError(f"Unsupported request type: {type(request)}")
 
 
+# Type aliases to be used for injection in endpoints
+
 AuthDep: TypeAlias = Annotated[AuthJWT, Depends(get_auth_service)]
 ConfigDep: TypeAlias = Annotated[Config, Depends(get_config)]
 StudyServiceDep: TypeAlias = Annotated[StudyService, Depends(get_study_service)]
@@ -157,7 +171,7 @@ TmpExportFileDep: TypeAlias = Annotated[Path, Depends(get_tmp_export_file)]
 
 async def auth_required(
     auth_jwt: AuthDep,
-    config: Config = Depends(get_config),
+    config: ConfigDep,
 ) -> AsyncGenerator[None, None]:
     """
     A FastAPI dependency to require authentication and set the current user context.

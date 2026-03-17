@@ -273,8 +273,6 @@ def base_fastapi_app(api_prefix: str, root_path: str) -> FastAPI:
 
     Services are injected in routes using standard FastAPI dependency injection.
     """
-    logger.info("Initiating application")
-
     routes, ws_manager = create_routes(api_prefix=api_prefix)
 
     @asynccontextmanager
@@ -312,9 +310,7 @@ def base_fastapi_app(api_prefix: str, root_path: str) -> FastAPI:
 
     add_exception_handlers(application)
 
-    # 5. Create services (no route registration — builders are pure service factories now)
-
-    # 8. Include all routes
+    # 5. Include all routes
     application.include_router(routes)
 
     # It's important to add the logging middleware last, so that any log written or exception thrown
@@ -387,6 +383,8 @@ def fastapi_app(
     config = Config.from_yaml_file(res=res, file=config_file)
 
     configure_logger(config)
+
+    logger.info("Initiating application")
 
     app = base_fastapi_app(config.api_prefix, config.root_path)
 
