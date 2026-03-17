@@ -16,7 +16,6 @@ from pydantic import ValidationInfo, model_validator
 from typing_extensions import override
 
 from antarest.study.business.model.renewable_cluster_model import (
-    RenewableCluster,
     RenewableClusterCreation,
     create_renewable_cluster,
     validate_renewable_cluster_against_version,
@@ -91,7 +90,7 @@ class CreateRenewablesCluster(ICommand):
         null_matrix = self.command_context.generator_matrix_constants.get_null_matrix()
         study_data.save_renewable_series(self.area_id, lower_renewable_id, null_matrix)
 
-        result = CommandResult[RenewableCluster](data=renewable)
+        result = CommandResult(data=renewable)
         return command_succeeded(f"Renewable cluster '{renewable_id}' added to area '{self.area_id}'.", result=result)
 
     @override

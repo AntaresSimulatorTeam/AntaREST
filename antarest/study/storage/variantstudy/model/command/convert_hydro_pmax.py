@@ -38,7 +38,7 @@ class ConvertHydroPmax(ICommand):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         study_data.convert_hydro_pmax(self.hydro_pmax)
-        result = CommandResult[HydroPmax](data=self.hydro_pmax)
+        result = CommandResult(data=self.hydro_pmax)
         return command_succeeded(message="Hydro pmax converted successfully.", result=result)
 
     @override

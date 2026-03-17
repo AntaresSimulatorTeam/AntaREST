@@ -25,7 +25,6 @@ from typing import Optional
 from typing_extensions import override
 
 from antarest.study.business.model.xpansion_model import (
-    XpansionSettings,
     XpansionSettingsUpdate,
     update_xpansion_settings,
 )
@@ -64,7 +63,7 @@ class UpdateXpansionSettings(ICommand):
         current_settings = study_data.get_xpansion_settings()
         new_settings = update_xpansion_settings(current_settings, self.settings)
         study_data.save_xpansion_settings(new_settings)
-        result = CommandResult[XpansionSettings](data=new_settings)
+        result = CommandResult(data=new_settings)
         return command_succeeded(message="Xpansion settings updated successfully", result=result)
 
     @override

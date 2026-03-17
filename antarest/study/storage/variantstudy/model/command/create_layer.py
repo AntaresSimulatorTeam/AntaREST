@@ -12,7 +12,7 @@
 
 from typing_extensions import override
 
-from antarest.study.business.model.layer_model import Layer, LayerCreation, create_layer
+from antarest.study.business.model.layer_model import LayerCreation, create_layer
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -47,7 +47,7 @@ class CreateLayer(ICommand):
 
         study_data.save_layer(new_layer)
 
-        result = CommandResult[Layer](data=new_layer)
+        result = CommandResult(data=new_layer)
         return command_succeeded(message=f"Layer {self.parameters.name} created successfully", result=result)
 
     @override

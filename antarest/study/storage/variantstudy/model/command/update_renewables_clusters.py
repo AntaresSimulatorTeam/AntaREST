@@ -15,7 +15,6 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.model.renewable_cluster_model import (
-    RenewableCluster,
     RenewableClusterUpdates,
     update_renewable_cluster,
 )
@@ -77,7 +76,7 @@ class UpdateRenewablesClusters(ICommand):
         for area_id, new_clusters in memory_mapping.items():
             study_data.save_renewables(area_id, new_clusters)
 
-        result = CommandResult[dict[str, list[RenewableCluster]]](data=memory_mapping)
+        result = CommandResult(data=memory_mapping)
         return command_succeeded("The renewable clusters were successfully updated.", result=result)
 
     @override

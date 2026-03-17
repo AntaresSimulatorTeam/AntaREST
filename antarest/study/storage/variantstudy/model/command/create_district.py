@@ -14,7 +14,7 @@ from typing import Any, Dict, Final, Optional
 from pydantic import ValidationInfo, field_validator, model_validator
 from typing_extensions import override
 
-from antarest.study.business.model.district_model import District, DistrictCreation, create_district
+from antarest.study.business.model.district_model import DistrictCreation, create_district
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -89,7 +89,7 @@ class CreateDistrict(ICommand):
 
         study_data.save_district(new_district_definition)
 
-        result = CommandResult[District](data=new_district_definition)
+        result = CommandResult(data=new_district_definition)
         return command_succeeded(message=district_id, result=result)
 
     @override

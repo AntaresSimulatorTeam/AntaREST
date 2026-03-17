@@ -14,7 +14,6 @@ from typing import Optional
 from typing_extensions import override
 
 from antarest.study.business.model.config.optimization_config_model import (
-    OptimizationPreferences,
     OptimizationPreferencesUpdate,
     update_optimization_preferences,
 )
@@ -50,7 +49,7 @@ class UpdateOptimizationPreferences(ICommand):
         current_config = study_data.get_optimization_preferences()
         new_config = update_optimization_preferences(current_config, self.parameters)
         study_data.save_optimization_preferences(new_config)
-        result = CommandResult[OptimizationPreferences](data=new_config)
+        result = CommandResult(data=new_config)
         return command_succeeded("Optimization config updated successfully.", result=result)
 
     @override

@@ -18,7 +18,6 @@ from typing_extensions import override
 
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.model.binding_constraint_model import (
-    BindingConstraint,
     BindingConstraintFrequency,
     BindingConstraintMatrices,
     BindingConstraintOperator,
@@ -156,7 +155,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
                     assert isinstance(self.matrices.less_term_matrix, str)
                     study_data.save_constraint_less_term_matrix(constraint.id, self.matrices.less_term_matrix)
 
-        result = CommandResult[BindingConstraint](data=constraint)
+        result = CommandResult(data=constraint)
         return command_succeeded(f"Binding constraint '{constraint.id}' updated successfully.", result=result)
 
     @override

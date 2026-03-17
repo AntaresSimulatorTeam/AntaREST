@@ -16,7 +16,6 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.model.thermal_cluster_model import (
-    ThermalCluster,
     ThermalClusterUpdates,
     update_thermal_cluster,
     validate_thermal_cluster_against_version,
@@ -86,7 +85,7 @@ class UpdateThermalClusters(ICommand):
         for area_id, new_clusters in memory_mapping.items():
             study_data.save_thermals(area_id, new_clusters)
 
-        result = CommandResult[dict[str, list[ThermalCluster]]](data=memory_mapping)
+        result = CommandResult(data=memory_mapping)
         return command_succeeded("All thermal clusters updated", result=result)
 
     @override

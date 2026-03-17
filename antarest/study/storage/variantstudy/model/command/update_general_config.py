@@ -13,7 +13,7 @@ from typing import Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.config.general_model import GeneralConfig, GeneralConfigUpdate, update_general_config
+from antarest.study.business.model.config.general_model import GeneralConfigUpdate, update_general_config
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -45,7 +45,7 @@ class UpdateGeneralConfig(ICommand):
         current_config = study_data.get_general_config()
         new_config = update_general_config(current_config, self.parameters)
         study_data.save_general_config(new_config)
-        result = CommandResult[GeneralConfig](data=new_config)
+        result = CommandResult(data=new_config)
         return command_succeeded("General config updated successfully.", result=result)
 
     @override

@@ -15,7 +15,6 @@ from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.study.business.model.hydro_model import (
-    HydroManagement,
     HydroManagementUpdate,
     update_hydro_management,
     validate_hydro_management_against_version,
@@ -60,7 +59,7 @@ class UpdateHydroManagement(ICommand):
 
         study_data.save_hydro_management(updated_hydro_management, self.area_id)
 
-        result = CommandResult[HydroManagement](data=updated_hydro_management)
+        result = CommandResult(data=updated_hydro_management)
         return command_succeeded(f"Hydro properties in '{self.area_id}' updated.", result=result)
 
     @override

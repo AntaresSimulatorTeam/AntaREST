@@ -15,7 +15,7 @@ from pydantic import model_validator
 from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
-from antarest.study.business.model.link_model import Link, LinkUpdate, update_link
+from antarest.study.business.model.link_model import LinkUpdate, update_link
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.config.link import parse_link_for_update
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -78,7 +78,7 @@ class UpdateLink(AbstractLinkCommand, ICommand):
         if self.indirect:
             study_data.save_link_indirect_capacities(self.area1, self.area2, str(self.indirect))
 
-        result = CommandResult[Link](data=new_link)
+        result = CommandResult(data=new_link)
         return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' updated", result=result)
 
     @override

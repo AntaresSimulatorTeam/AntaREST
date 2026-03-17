@@ -14,7 +14,6 @@ from typing import Optional
 from typing_extensions import override
 
 from antarest.study.business.model.config.timeseries_config_model import (
-    TimeSeriesConfiguration,
     TimeSeriesConfigurationUpdate,
     update_timeseries_configuration,
 )
@@ -49,7 +48,7 @@ class UpdateTimeSeriesConfig(ICommand):
         current_config = study_data.get_timeseries_config()
         new_config = update_timeseries_configuration(current_config, self.parameters)
         study_data.save_timeseries_config(new_config)
-        result = CommandResult[TimeSeriesConfiguration](data=new_config)
+        result = CommandResult(data=new_config)
         return command_succeeded("Timeseries config updated successfully.", result=result)
 
     @override

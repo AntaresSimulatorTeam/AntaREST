@@ -14,7 +14,6 @@ from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.study.business.model.config.adequacy_patch_model import (
-    AdequacyPatchParameters,
     AdequacyPatchParametersUpdate,
     update_adequacy_patch_parameters,
     validate_adequacy_patch_parameters_against_version,
@@ -55,7 +54,7 @@ class UpdateAdequacyPatchParameters(ICommand):
         current_parameters = study_data.get_adequacy_patch_parameters()
         new_parameters = update_adequacy_patch_parameters(current_parameters, self.parameters)
         study_data.save_adequacy_patch_parameters(new_parameters)
-        result = CommandResult[AdequacyPatchParameters](data=new_parameters)
+        result = CommandResult(data=new_parameters)
         return command_succeeded("Adequacy-patch parameters updated successfully.", result=result)
 
     @override

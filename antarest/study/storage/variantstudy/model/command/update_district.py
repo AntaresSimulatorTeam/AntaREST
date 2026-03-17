@@ -14,7 +14,7 @@ from typing import Any, Dict, Final, Optional
 from pydantic import ConfigDict, ValidationInfo, model_validator
 from typing_extensions import override
 
-from antarest.study.business.model.district_model import District, DistrictUpdate, update_district
+from antarest.study.business.model.district_model import DistrictUpdate, update_district
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -82,7 +82,7 @@ class UpdateDistrict(ICommand):
 
         study_data.save_district(updated_district)
 
-        result = CommandResult[District](data=updated_district)
+        result = CommandResult(data=updated_district)
         return command_succeeded(message=f"District {self.id} updated successfully.", result=result)
 
     @override

@@ -14,7 +14,6 @@ from typing import Optional
 from typing_extensions import override
 
 from antarest.study.business.model.hydro_model import (
-    InflowStructure,
     InflowStructureUpdate,
     update_inflow_structure,
 )
@@ -53,7 +52,7 @@ class UpdateInflowStructure(ICommand):
 
         study_data.save_inflow_structure(updated_inflow_structure, self.area_id)
 
-        result = CommandResult[InflowStructure](data=updated_inflow_structure)
+        result = CommandResult(data=updated_inflow_structure)
         return command_succeeded(f"Inflow properties in '{self.area_id}' updated.", result=result)
 
     @override

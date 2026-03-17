@@ -17,7 +17,7 @@ from pydantic import field_validator, model_validator
 from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
-from antarest.study.business.model.area_model import AreaUI, AreaUIUpdate, update_area_ui
+from antarest.study.business.model.area_model import AreaUIUpdate, update_area_ui
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -102,7 +102,7 @@ class UpdateAreaUI(ICommand):
         area_ui = update_area_ui(current_ui, self.parameters)
 
         study_data.save_area_ui(self.area_id, self.layer, area_ui)
-        result = CommandResult[AreaUI](data=area_ui)
+        result = CommandResult(data=area_ui)
         return command_succeeded(message=f"area '{self.area_id}' UI updated", result=result)
 
     @override

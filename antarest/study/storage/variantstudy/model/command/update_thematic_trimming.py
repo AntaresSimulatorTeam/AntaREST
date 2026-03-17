@@ -15,7 +15,6 @@ from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.study.business.model.thematic_trimming_model import (
-    ThematicTrimming,
     ThematicTrimmingUpdate,
     update_thematic_trimming,
     validate_thematic_trimming_against_version,
@@ -57,7 +56,7 @@ class UpdateThematicTrimming(ICommand):
         current_thematic_trimming = study_data.get_thematic_trimming()
         final_thematic_trimming = update_thematic_trimming(current_thematic_trimming, self.parameters)
         study_data.save_thematic_trimming(final_thematic_trimming)
-        result = CommandResult[ThematicTrimming](data=final_thematic_trimming)
+        result = CommandResult(data=final_thematic_trimming)
         return command_succeeded("Thematic trimming updated successfully.", result=result)
 
     @override

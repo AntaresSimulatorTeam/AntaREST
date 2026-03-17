@@ -14,7 +14,6 @@ from typing import Optional
 from typing_extensions import override
 
 from antarest.study.business.model.xpansion_model import (
-    XpansionCandidate,
     XpansionCandidateCreation,
     create_xpansion_candidate,
 )
@@ -59,7 +58,7 @@ class CreateXpansionCandidate(ICommand):
 
         study_data.save_xpansion_candidate(candidate)
 
-        result = CommandResult[XpansionCandidate](data=candidate)
+        result = CommandResult(data=candidate)
         return command_succeeded(message=f"Candidate {self.candidate.name} created successfully", result=result)
 
     @override

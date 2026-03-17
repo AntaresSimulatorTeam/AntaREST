@@ -16,7 +16,6 @@ from typing_extensions import override
 
 from antarest.core.model import LowerCaseId
 from antarest.study.business.model.sts_model import (
-    STStorageAdditionalConstraint,
     STStorageAdditionalConstraintCreation,
     create_st_storage_constraint,
 )
@@ -91,7 +90,7 @@ class CreateSTStorageAdditionalConstraints(ICommand):
         for constraint in constraints:
             study_data.save_st_storage_constraint_matrix(self.area_id, self.storage_id, constraint.id, null_matrix)
 
-        result = CommandResult[list[STStorageAdditionalConstraint]](data=constraints)
+        result = CommandResult(data=constraints)
         msg = f"Short-term storage additional constraints successfully added to storage {self.storage_id} in area '{self.area_id}'."
         return command_succeeded(message=msg, result=result)
 

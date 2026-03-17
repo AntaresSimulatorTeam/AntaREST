@@ -24,7 +24,6 @@ from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.model.binding_constraint_model import (
     DEFAULT_TIMESTEP,
-    BindingConstraint,
     BindingConstraintCreation,
     BindingConstraintFrequency,
     BindingConstraintMatrices,
@@ -328,7 +327,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
                 assert isinstance(matrix, str)
                 study_data.save_constraint_less_term_matrix(constraint.id, matrix)
 
-        result = CommandResult[BindingConstraint](data=constraint)
+        result = CommandResult(data=constraint)
         return command_succeeded(f"Binding constraint '{constraint.id}' created successfully.", result=result)
 
     @override

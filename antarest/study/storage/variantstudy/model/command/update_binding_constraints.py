@@ -17,7 +17,6 @@ from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import Final, override
 
 from antarest.study.business.model.binding_constraint_model import (
-    BindingConstraint,
     BindingConstraintUpdates,
     update_binding_constraint,
     validate_binding_constraint_against_version,
@@ -95,7 +94,7 @@ class UpdateBindingConstraints(ICommand):
             new_constraints.append(new_constraint)
 
         study_data.save_constraints(new_constraints)
-        result = CommandResult[list[BindingConstraint]](data=new_constraints)
+        result = CommandResult(data=new_constraints)
         return command_succeeded("All binding constraints updated", result=result)
 
     @override

@@ -12,7 +12,7 @@
 
 from typing_extensions import override
 
-from antarest.study.business.model.layer_model import Layer, LayerUpdate, update_layer_name
+from antarest.study.business.model.layer_model import LayerUpdate, update_layer_name
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -44,7 +44,7 @@ class UpdateLayer(ICommand):
         current_layers = list(study_data.get_layers())
         new_layer = update_layer_name(current_layers, self.parameters)
         study_data.save_layer(new_layer)
-        result = CommandResult[Layer](data=new_layer)
+        result = CommandResult(data=new_layer)
         return command_succeeded(message=f"Layer {self.parameters.name} updated successfully", result=result)
 
     @override

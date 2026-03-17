@@ -14,7 +14,6 @@ from typing import Dict, Optional
 from typing_extensions import override
 
 from antarest.study.business.model.area_properties_model import (
-    AreaProperties,
     AreaPropertiesUpdate,
     update_area_properties,
 )
@@ -60,7 +59,7 @@ class UpdateAreasProperties(ICommand):
         for area_id, new_properties in memory_mapping.items():
             study_data.save_area_properties(area_id, new_properties)
 
-        result = CommandResult[dict[str, AreaProperties]](data=memory_mapping)
+        result = CommandResult(data=memory_mapping)
         message = f"Areas properties updated: {', '.join(self.properties.keys())}"
         return command_succeeded(message=message, result=result)
 

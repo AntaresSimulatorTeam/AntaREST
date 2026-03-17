@@ -18,7 +18,7 @@ from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
 from antarest.matrixstore.model import MatrixData
-from antarest.study.business.model.sts_model import STStorage, STStorageCreation, validate_st_storage_against_version
+from antarest.study.business.model.sts_model import STStorageCreation, validate_st_storage_against_version
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -216,7 +216,7 @@ class CreateSTStorage(ICommand):
             matrix = matrices["cost_variation_withdrawal"]
             study_data.save_st_storage_cost_variation_withdrawal(self.area_id, storage.id, matrix)
 
-        result = CommandResult[STStorage](data=storage)
+        result = CommandResult(data=storage)
         return command_succeeded(
             f"Short-term storage '{storage.id}' successfully added to area '{self.area_id}'.", result=result
         )

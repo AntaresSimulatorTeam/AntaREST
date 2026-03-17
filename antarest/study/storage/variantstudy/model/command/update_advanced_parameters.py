@@ -14,7 +14,6 @@ from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.study.business.model.config.advanced_parameters_model import (
-    AdvancedParameters,
     AdvancedParametersUpdate,
     update_advanced_parameters,
     validate_advanced_parameters_against_version,
@@ -55,7 +54,7 @@ class UpdateAdvancedParameters(ICommand):
         current_parameters = study_data.get_advanced_parameters()
         new_parameters = update_advanced_parameters(current_parameters, self.parameters)
         study_data.save_advanced_parameters(new_parameters)
-        result = CommandResult[AdvancedParameters](data=new_parameters)
+        result = CommandResult(data=new_parameters)
         return command_succeeded("Advanced parameters updated successfully.", result=result)
 
     @override

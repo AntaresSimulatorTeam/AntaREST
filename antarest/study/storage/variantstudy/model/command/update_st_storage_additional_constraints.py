@@ -87,7 +87,7 @@ class UpdateSTStorageAdditionalConstraints(ICommand):
             for storage_id, new_constraints in data.items():
                 study_data.save_st_storage_additional_constraints(area_id, storage_id, new_constraints)
 
-        result = CommandResult[dict[str, dict[str, list[STStorageAdditionalConstraint]]]](data=memory_mapping)
+        result = CommandResult(data=memory_mapping)
         return command_succeeded(
             "The short-term storage additional constraints were successfully updated.", result=result
         )

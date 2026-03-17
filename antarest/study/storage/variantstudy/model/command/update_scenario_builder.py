@@ -17,7 +17,6 @@ from typing_extensions import override
 
 from antarest.study.business.model.scenario_builder_model import (
     DEFAULT_RULESET_NAME,
-    Ruleset,
     RulesetUpdate,
     update_ruleset,
     validate_ruleset_against_version,
@@ -102,7 +101,7 @@ class UpdateScenarioBuilder(ICommand):
         ruleset = study_data.get_ruleset()
         update_ruleset(ruleset, self.data, self.study_version)
         study_data.save_scenario_builder(ruleset)
-        result = CommandResult[Ruleset](data=ruleset)
+        result = CommandResult(data=ruleset)
         return command_succeeded(message="Scenario builder updated successfully", result=result)
 
     @override

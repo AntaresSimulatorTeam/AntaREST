@@ -16,7 +16,6 @@ from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.sts_model import (
-    STStorage,
     STStorageUpdates,
     update_st_storage,
     validate_st_storage_against_version,
@@ -88,7 +87,7 @@ class UpdateSTStorages(ICommand):
         for area_id, new_storages in memory_mapping.items():
             study_data.save_st_storages(area_id, new_storages)
 
-        result = CommandResult[dict[str, list[STStorage]]](data=memory_mapping)
+        result = CommandResult(data=memory_mapping)
         return command_succeeded("The short-term storages were successfully updated.", result=result)
 
     @override
