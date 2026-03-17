@@ -147,8 +147,6 @@ def app_and_services(base_app: FastAPI, tmp_path: Path, db_path: Path) -> Iterab
     yield app, services
     services.watcher.stop()
 
-    app.state
-
 
 @pytest.fixture(name="app")
 def app_fixture(app_and_services: tuple[FastAPI, Services]) -> FastAPI:
