@@ -16,6 +16,8 @@ This module defines dependencies for all routes of the application.
 TODO: should probably be less "centralized" ?
 """
 
+from __future__ import annotations
+
 from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import Annotated, Any, TypeAlias, cast
@@ -32,7 +34,7 @@ from antarest.core.maintenance.service import MaintenanceService
 from antarest.core.serde.json import from_json
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.eventbus.web import ConnectionManager
+from antarest.eventbus.connections import ConnectionManager
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
 from antarest.launcher.service import LauncherService

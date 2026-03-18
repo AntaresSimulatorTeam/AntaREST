@@ -42,7 +42,8 @@ from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.core.utils.utils import get_local_path
 from antarest.core.utils.web import tags_metadata
-from antarest.eventbus.web import ConnectionManager, connect_event_bus, register_websocket_routes
+from antarest.eventbus.connections import ConnectionManager, connect_event_bus
+from antarest.eventbus.web import register_websocket_routes
 from antarest.fastapi_jwt_auth.exceptions import AuthJWTException
 from antarest.favorite.web import create_favorite_routes
 from antarest.front import add_front_app
