@@ -18,7 +18,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Optional
 
 import polars as pl
-from sqlalchemy import CursorResult, delete, insert, select, update
+from sqlalchemy import CursorResult, Table, asc, delete, insert, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
@@ -26,10 +26,12 @@ from typing_extensions import override
 from antarest.core.exceptions import (
     AreaNotFound,
     CandidateNotFoundError,
+    FileCurrentlyUsedInSettings,
     LinkNotFound,
     XpansionCandidateDeletionError,
     XpansionConfigurationAlreadyExists,
     XpansionConfigurationDoesNotExist,
+    XpansionFileNotFoundError,
 )
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
@@ -47,8 +49,11 @@ from antarest.study.dao.database.models.xpansion import (
     XPANSION_ADEQUACY_CRITERION_TABLE,
     XPANSION_ADEQUACY_PATTERN_TABLE,
     XPANSION_CANDIDATE_TABLE,
+    XPANSION_CAPACITY_TABLE,
+    XPANSION_CONSTRAINT_TABLE,
     XPANSION_SENSITIVITY_PROJECTION_TABLE,
     XPANSION_SETTINGS_TABLE,
+    XPANSION_WEIGHT_TABLE,
 )
 from antarest.study.dao.database.sql_utils import upsert_one
 
@@ -92,17 +97,6 @@ class DatabaseXpansionDao(XpansionDao):
         del data["study_id"]
         data["link"] = XpansionLink(area_from=area_from, area_to=area_to).serialize()
         return XpansionCandidate.model_validate(data)
-
-    def _assert_link_exists(self, candidate: XpansionCandidate) -> None:
-        area_from = candidate.link.area_from
-        area_to = candidate.link.area_to
-
-        invalid = self.get_impl().get_invalid_area_ids([area_from, area_to])
-        if invalid:
-            raise AreaNotFound(*invalid)
-
-        if not self.get_impl().link_exists(area_from, area_to):
-            raise LinkNotFound(f"The link from '{area_from}' to '{area_to}' not found")
 
     # ------------------------------------------------------------------
     # XpansionDao — configuration lifecycle
@@ -185,20 +179,18 @@ class DatabaseXpansionDao(XpansionDao):
 
     @override
     def checks_xpansion_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
-        # TODO: validate additional_constraints and yearly_weights against blob storage
-        #  once blob storage is wired up for database mode.
-        if not settings.sensitivity_config or not settings.sensitivity_config.projection:
-            return
-        projection = settings.sensitivity_config.projection
-        existing = {
-            row.name
-            for row in self._db_session.execute(
-                select(XPANSION_CANDIDATE_TABLE.c.name).where(XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
-            ).fetchall()
-        }
-        missing = [name for name in projection if name not in existing]
-        if missing:
-            raise CandidateNotFoundError(f"Candidates not found: {', '.join(missing)}")
+        for filename, table, label in [
+            (settings.additional_constraints, XPANSION_CONSTRAINT_TABLE, "constraints"),
+            (settings.yearly_weights, XPANSION_WEIGHT_TABLE, "weights"),
+        ]:
+            if filename:
+                row = self._db_session.execute(
+                    select(table.c.filename).where(
+                        (table.c.study_id == self._study_id) & (table.c.filename == filename)
+                    )
+                ).fetchone()
+                if row is None:
+                    raise XpansionFileNotFoundError(f"Additional {label} file '{filename}' does not exist")
 
     # ------------------------------------------------------------------
     # XpansionDao — candidates
@@ -273,10 +265,38 @@ class DatabaseXpansionDao(XpansionDao):
 
     @override
     def checks_xpansion_candidate_coherence(self, candidate: XpansionCandidate) -> None:
+        self._assert_link_profile_are_capacities(candidate)
         self._assert_link_exists(candidate)
-        # TODO: validate link-profile fields (link_profile, direct_link_profile, etc.)
-        #  against blob storage once blob storage is wired up for database mode.
-        #  See FileStudyXpansionDao._assert_link_profile_are_files for the reference implementation.
+
+    def _assert_link_exists(self, candidate: XpansionCandidate) -> None:
+        area_from = candidate.link.area_from
+        area_to = candidate.link.area_to
+
+        invalid = self.get_impl().get_invalid_area_ids([area_from, area_to])
+        if invalid:
+            raise AreaNotFound(*invalid)
+
+        if not self.get_impl().link_exists(area_from, area_to):
+            raise LinkNotFound(f"The link from '{area_from}' to '{area_to}' not found")
+
+    def _assert_link_profile_are_capacities(self, candidate: XpansionCandidate) -> None:
+        existing = {
+            row.filename
+            for row in self._db_session.execute(
+                select(XPANSION_CAPACITY_TABLE.c.filename).where(XPANSION_CAPACITY_TABLE.c.study_id == self._study_id)
+            ).fetchall()
+        }
+        for attr in [
+            "link_profile",
+            "already_installed_link_profile",
+            "direct_link_profile",
+            "indirect_link_profile",
+            "already_installed_direct_link_profile",
+            "already_installed_indirect_link_profile",
+        ]:
+            if link_file := getattr(candidate, attr):
+                if link_file not in existing:
+                    raise XpansionFileNotFoundError(f"The '{attr}' file '{link_file}' does not exist")
 
     @override
     def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
@@ -344,33 +364,128 @@ class DatabaseXpansionDao(XpansionDao):
         self._db_session.commit()
 
     # ------------------------------------------------------------------
-    # XpansionDao — resources (file/blob based, not yet implemented)
+    # XpansionDao — resources
     # ------------------------------------------------------------------
+
+    def _get_resource_table(self, resource_type: XpansionResourceFileType) -> Table:
+        return {
+            XpansionResourceFileType.CONSTRAINTS: XPANSION_CONSTRAINT_TABLE,
+            XpansionResourceFileType.CAPACITIES: XPANSION_CAPACITY_TABLE,
+            XpansionResourceFileType.WEIGHTS: XPANSION_WEIGHT_TABLE,
+        }[resource_type]
 
     @override
     def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pl.DataFrame:
-        raise NotImplementedError("Xpansion resource access requires blob storage — not yet implemented")
+        if resource_type == XpansionResourceFileType.CONSTRAINTS:
+            row = self._db_session.execute(
+                select(XPANSION_CONSTRAINT_TABLE.c.content).where(
+                    (XPANSION_CONSTRAINT_TABLE.c.study_id == self._study_id)
+                    & (XPANSION_CONSTRAINT_TABLE.c.filename == filename)
+                )
+            ).fetchone()
+            if row is None:
+                raise XpansionFileNotFoundError(f"Constraint file '{filename}' not found")
+            return bytes(row.content)
+        table = self._get_resource_table(resource_type)
+        row = self._db_session.execute(
+            select(table.c.matrix_id).where((table.c.study_id == self._study_id) & (table.c.filename == filename))
+        ).fetchone()
+        if row is None:
+            raise XpansionFileNotFoundError(f"Resource '{filename}' not found")
+        return self.get_impl().get_matrix(row.matrix_id)
 
     @override
     def get_xpansion_resources(self, resource_type: XpansionResourceFileType) -> list[str]:
-        raise NotImplementedError("Xpansion resource listing requires blob storage — not yet implemented")
+        table = self._get_resource_table(resource_type)
+        rows = self._db_session.execute(
+            select(table.c.filename).where(table.c.study_id == self._study_id).order_by(asc(table.c.filename))
+        ).fetchall()
+        return [row.filename for row in rows]
 
     @override
     def checks_xpansion_resource_can_be_deleted(self, resource_type: XpansionResourceFileType, filename: str) -> None:
-        raise NotImplementedError("Xpansion resource validation requires blob storage — not yet implemented")
+        if resource_type == XpansionResourceFileType.CONSTRAINTS:
+            row = self._db_session.execute(
+                select(XPANSION_SETTINGS_TABLE.c.study_id).where(
+                    (XPANSION_SETTINGS_TABLE.c.study_id == self._study_id)
+                    & (XPANSION_SETTINGS_TABLE.c.additional_constraints == filename)
+                )
+            ).fetchone()
+            if row:
+                raise FileCurrentlyUsedInSettings(resource_type, filename)
+        elif resource_type == XpansionResourceFileType.WEIGHTS:
+            row = self._db_session.execute(
+                select(XPANSION_SETTINGS_TABLE.c.study_id).where(
+                    (XPANSION_SETTINGS_TABLE.c.study_id == self._study_id)
+                    & (XPANSION_SETTINGS_TABLE.c.yearly_weights == filename)
+                )
+            ).fetchone()
+            if row:
+                raise FileCurrentlyUsedInSettings(resource_type, filename)
+        elif resource_type == XpansionResourceFileType.CAPACITIES:
+            profile_cols = [
+                XPANSION_CANDIDATE_TABLE.c.link_profile,
+                XPANSION_CANDIDATE_TABLE.c.already_installed_link_profile,
+                XPANSION_CANDIDATE_TABLE.c.direct_link_profile,
+                XPANSION_CANDIDATE_TABLE.c.indirect_link_profile,
+                XPANSION_CANDIDATE_TABLE.c.already_installed_direct_link_profile,
+                XPANSION_CANDIDATE_TABLE.c.already_installed_indirect_link_profile,
+            ]
+            row = self._db_session.execute(
+                select(XPANSION_CANDIDATE_TABLE.c.name).where(
+                    (XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
+                    & or_(*[col == filename for col in profile_cols])
+                )
+            ).fetchone()
+            if row:
+                raise FileCurrentlyUsedInSettings(resource_type, filename)
 
     @override
     def delete_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> None:
-        raise NotImplementedError("Xpansion resource deletion requires blob storage — not yet implemented")
+        table = self._get_resource_table(resource_type)
+        result = self._db_session.execute(
+            delete(table).where((table.c.study_id == self._study_id) & (table.c.filename == filename))
+        )
+        assert isinstance(result, CursorResult)
+        if result.rowcount == 0:
+            raise XpansionFileNotFoundError(f"Resource '{filename}' not found")
+        self._db_session.commit()
 
     @override
     def save_xpansion_constraint(self, filename: str, content: bytes) -> None:
-        raise NotImplementedError("Xpansion resource saving requires blob storage — not yet implemented")
+        upsert_one(
+            self._db_session,
+            XPANSION_CONSTRAINT_TABLE,
+            {
+                "study_id": self._study_id,
+                "filename": filename,
+                "content": content,
+            },
+        )
+        self._db_session.commit()
 
     @override
-    def save_xpansion_capacity(self, filename: str, series: str) -> None:
-        raise NotImplementedError("Xpansion resource saving requires blob storage — not yet implemented")
+    def save_xpansion_capacity(self, filename: str, series_id: str) -> None:
+        upsert_one(
+            self._db_session,
+            XPANSION_CAPACITY_TABLE,
+            {
+                "study_id": self._study_id,
+                "filename": filename,
+                "matrix_id": series_id,
+            },
+        )
+        self._db_session.commit()
 
     @override
-    def save_xpansion_weight(self, filename: str, series: str) -> None:
-        raise NotImplementedError("Xpansion resource saving requires blob storage — not yet implemented")
+    def save_xpansion_weight(self, filename: str, series_id: str) -> None:
+        upsert_one(
+            self._db_session,
+            XPANSION_WEIGHT_TABLE,
+            {
+                "study_id": self._study_id,
+                "filename": filename,
+                "matrix_id": series_id,
+            },
+        )
+        self._db_session.commit()
