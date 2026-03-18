@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 import redis
-from fastapi import FastAPI
 from sqlalchemy import create_engine
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.pool import NullPool
@@ -31,8 +30,6 @@ from antarest.core.filetransfer.main import build_filetransfer_service
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
-from antarest.core.maintenance.main import build_maintenance_manager
-from antarest.core.maintenance.service import MaintenanceService
 from antarest.core.metrics import add_db_metrics
 from antarest.core.persistence import upgrade_db
 from antarest.core.remote.remote_executor import RemoteWorkerExecutor
@@ -41,8 +38,6 @@ from antarest.core.tasks.service import ITaskService
 from antarest.eventbus.main import build_eventbus
 from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteStudyRepository
 from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
-from antarest.launcher.main import build_launcher
-from antarest.launcher.service import LauncherService
 from antarest.login.main import build_login
 from antarest.login.service import LoginService
 from antarest.matrixstore.main import build_matrix_service
@@ -58,7 +53,6 @@ from antarest.study.dao.database.database_blob_usage_provider import DatabaseBlo
 from antarest.study.directory_service import DirectoryService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
-from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
 from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.worker.archive_worker import ArchiveWorker
@@ -316,103 +310,3 @@ def create_archive_worker(
     if not event_bus:
         event_bus, _ = create_event_bus(config)
     return ArchiveWorker(event_bus, workspace, local_root, config)
-
-
-@dataclass(frozen=True)
-class Services:
-    watcher: Watcher
-    explorer: Explorer
-    event_bus: IEventBus
-    study: StudyService
-    directory: DirectoryService
-    matrix: MatrixService
-    favorite_study: FavoriteStudyService
-    favorite_directory: FavoriteDirectoryService
-    user: LoginService
-    cache: ICache
-    maintenance: MaintenanceService
-    task_service: ITaskService
-    file_transfer_manager: FileTransferManager
-    output_service: OutputService
-    launcher: Optional[LauncherService] = None
-    matrix_gc: Optional[MatrixGarbageCollector] = None
-    auto_archiver: Optional[AutoArchiveService] = None
-    blob_gc: Optional[BlobGarbageCollector] = None
-    variable_view_gc: Optional[VariableViewGarbageCollector] = None
-
-
-def store_services_on_app(app: FastAPI, services: Services, config: Config) -> None:
-    app.state.config = config
-    app.state.study_service = services.study
-    app.state.directory_service = services.directory
-    app.state.explorer = services.explorer
-    app.state.watcher = services.watcher
-    app.state.login_service = services.user
-    app.state.launcher_service = services.launcher
-    app.state.matrix_service = services.matrix
-    app.state.file_transfer_manager = services.file_transfer_manager
-    app.state.output_service = services.output_service
-    app.state.favorite_study_service = services.favorite_study
-    app.state.favorite_directory_service = services.favorite_directory
-    app.state.task_service = services.task_service
-    app.state.maintenance_service = services.maintenance
-
-
-def create_services(config: Config, create_all: bool = False) -> Services:
-    core_services = create_core_services(config)
-
-    maintenance_service = build_maintenance_manager(
-        config=config, cache=core_services.cache, event_bus=core_services.event_bus
-    )
-
-    launcher = build_launcher(
-        config,
-        study_service=core_services.study_service,
-        output_service=core_services.output_service,
-        login_service=core_services.login_service,
-        event_bus=core_services.event_bus,
-        task_service=core_services.task_service,
-        file_transfer_manager=core_services.file_transfer_manager,
-        cache=core_services.cache,
-    )
-
-    watcher = create_watcher(config=config, study_service=core_services.study_service)
-    explorer_service = create_explorer(config=config)
-
-    matrix_garbage_collector = None
-    if config.server.services and Module.MATRIX_GC.value in config.server.services or create_all:
-        matrix_garbage_collector = create_matrix_gc(config, core_services.matrix_service)
-
-    blob_garbage_collector = None
-    if config.server.services and Module.BLOB_GC.value in config.server.services or create_all:
-        blob_garbage_collector = create_blob_gc(config, core_services.blob_service)
-
-    auto_archiver = None
-    if config.server.services and Module.AUTO_ARCHIVER.value in config.server.services or create_all:
-        auto_archiver = AutoArchiveService(core_services.study_service, core_services.output_service, config)
-
-    variable_view_gc = None
-    if config.server.services and Module.VARIABLE_VIEW_GC.value in config.server.services or create_all:
-        variable_view_gc = create_variable_view_gc(config)
-
-    return Services(
-        watcher=watcher,
-        explorer=explorer_service,
-        event_bus=core_services.event_bus,
-        study=core_services.study_service,
-        directory=core_services.directory_service,
-        matrix=core_services.matrix_service,
-        favorite_study=core_services.favorite_study_service,
-        favorite_directory=core_services.favorite_directory_service,
-        user=core_services.login_service,
-        cache=core_services.cache,
-        maintenance=maintenance_service,
-        task_service=core_services.task_service,
-        file_transfer_manager=core_services.file_transfer_manager,
-        output_service=core_services.output_service,
-        launcher=launcher,
-        matrix_gc=matrix_garbage_collector,
-        auto_archiver=auto_archiver,
-        blob_gc=blob_garbage_collector,
-        variable_view_gc=variable_view_gc,
-    )

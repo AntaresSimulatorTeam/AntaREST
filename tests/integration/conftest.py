@@ -15,7 +15,7 @@ import typing as t
 import uuid
 import zipfile
 from pathlib import Path
-from typing import Iterable
+from typing import Generator
 
 import jinja2
 import pytest
@@ -34,7 +34,6 @@ from antarest.main import (
     init_db,
     inject_services,
 )
-from antarest.service_creator import Services
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from tests.integration.assets import ASSETS_DIR
@@ -112,8 +111,24 @@ def db_path(tmp_path: Path, initial_db_file: Path) -> Path:
     return db_path
 
 
+def _get_from_container(app: FastAPI, service_type: type):
+    """Synchronously retrieve a service from the dishka container attached to the app."""
+    import asyncio
+
+    container = app.state.dishka_container
+
+    async def _get():
+        return await container.get(service_type)
+
+    try:
+        loop = asyncio.get_running_loop()
+        return loop.run_until_complete(_get())
+    except RuntimeError:
+        return asyncio.run(_get())
+
+
 @pytest.fixture
-def app_and_services(base_app: FastAPI, tmp_path: Path, db_path: Path) -> Iterable[tuple[FastAPI, Services]]:
+def app_fixture_inner(base_app: FastAPI, tmp_path: Path, db_path: Path) -> Generator[FastAPI, None, None]:
     app = base_app
 
     db_url = f"sqlite:///{db_path}"
@@ -130,37 +145,37 @@ def app_and_services(base_app: FastAPI, tmp_path: Path, db_path: Path) -> Iterab
     _render_config(config_path, db_url, tmp_path)
     config = Config.from_yaml_file(res=RESOURCES_DIR, file=config_path)
     init_db(config, config_path, auto_upgrade=False, init_admin=False)
-    services = inject_services(app, config)
+    inject_services(app, config)
+
+    from antarest.study.storage.rawstudy.watcher import Watcher
+
+    watcher = _get_from_container(app, Watcher)
+    study_service = _get_from_container(app, StudyService)
 
     # Start the watcher so it scans the ext_workspace
-    services.watcher.start()
+    watcher.start()
 
     def is_study_scanned():
         with db():
-            studies = services.study.get_studies_information(
+            studies = study_service.get_studies_information(
                 StudyFilter(access_permissions=AccessPermissions.for_user(DEFAULT_ADMIN_USER))
             )
             return len(studies) == 1
 
     wait_for(is_study_scanned, timeout=10, sleep_time=0.01)
 
-    yield app, services
-    services.watcher.stop()
+    yield app
+    watcher.stop()
 
 
 @pytest.fixture(name="app")
-def app_fixture(app_and_services: tuple[FastAPI, Services]) -> FastAPI:
-    return app_and_services[0]
+def app_fixture(app_fixture_inner: FastAPI) -> FastAPI:
+    return app_fixture_inner
 
 
 @pytest.fixture
-def services(app_and_services: tuple[FastAPI, Services]) -> Services:
-    return app_and_services[1]
-
-
-@pytest.fixture
-def study_service(services: Services) -> StudyService:
-    return services.study
+def study_service(app: FastAPI) -> StudyService:
+    return _get_from_container(app, StudyService)
 
 
 @pytest.fixture(name="client")

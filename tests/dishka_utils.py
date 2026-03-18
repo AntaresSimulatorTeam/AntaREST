@@ -15,6 +15,7 @@ Utility to set up a dishka container on a FastAPI app for unit tests.
 Replaces the old pattern of creating AppState and setting app.state.app_state.
 """
 
+from typing import Any
 from unittest.mock import Mock
 
 from dishka import Provider, Scope, make_async_container, provide
@@ -33,7 +34,6 @@ from antarest.launcher.service import LauncherService
 from antarest.login.service import LoginService
 from antarest.matrixstore.service import MatrixService
 from antarest.output.output_service import OutputService
-from antarest.service_creator import Services
 from antarest.study.directory_service import DirectoryService
 from antarest.study.service import StudyService
 from antarest.study.storage.explorer_service import Explorer
@@ -43,12 +43,12 @@ from antarest.study.storage.rawstudy.watcher import Watcher
 class MockServicesProvider(Provider):
     """
     Provides mock services for unit tests.
-    Accepts a Config and an optional Services mock.
+    Accepts a Config and an optional services mock (duck-typed).
     """
 
     scope = Scope.APP
 
-    def __init__(self, config: Config, services: Services | None = None) -> None:
+    def __init__(self, config: Config, services: Any = None) -> None:
         super().__init__()
         self._config = config
         self._services = services
@@ -125,7 +125,7 @@ class MockServicesProvider(Provider):
         return self._services.cache if self._services else Mock(spec=ICache)
 
 
-def setup_test_dishka(app: FastAPI, config: Config, services: Services | None = None) -> None:
+def setup_test_dishka(app: FastAPI, config: Config, services: Any = None) -> None:
     """
     Set up a dishka container on a FastAPI app for unit tests.
 
@@ -134,7 +134,7 @@ def setup_test_dishka(app: FastAPI, config: Config, services: Services | None = 
 
     Usage:
         setup_test_dishka(app, config)               # all mocks
-        setup_test_dishka(app, config, services)      # real services
+        setup_test_dishka(app, config, services)      # real services (duck-typed mock)
     """
     container = make_async_container(MockServicesProvider(config, services))
     setup_dishka(container, app)

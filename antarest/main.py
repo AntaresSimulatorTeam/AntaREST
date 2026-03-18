@@ -42,7 +42,12 @@ from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.core.utils.utils import get_local_path
 from antarest.core.utils.web import tags_metadata
-from antarest.dishka_provider import ConfigProvider, ServicesProvider
+from antarest.dishka_provider import (
+    BackgroundServicesProvider,
+    ConfigProvider,
+    CoreServicesProvider,
+    InfrastructureProvider,
+)
 from antarest.eventbus.web import register_websocket_routes
 from antarest.fastapi_jwt_auth.exceptions import AuthJWTException
 from antarest.favorite.web import create_favorite_routes
@@ -55,7 +60,6 @@ from antarest.output.output_blueprint import create_output_routes
 from antarest.service_creator import (
     SESSION_ARGS,
     Module,
-    Services,
     init_db_engine,
 )
 from antarest.singleton_services import start_all_services
@@ -328,7 +332,7 @@ def init_db(config: Config, config_file: Path, auto_upgrade: bool, init_admin: b
         init_admin_user(engine, SESSION_ARGS, config.security.admin_pwd)
 
 
-def inject_services(app: FastAPI, config: Config) -> Services:
+def inject_services(app: FastAPI, config: Config) -> None:
     """
     Inject services into the application state, so that they can be accessed from routes.
 
@@ -348,7 +352,12 @@ def inject_services(app: FastAPI, config: Config) -> Services:
         except RuntimeError:
             asyncio.run(old_container.close())
 
-    container = make_async_container(ConfigProvider(config), ServicesProvider())
+    container = make_async_container(
+        ConfigProvider(config),
+        InfrastructureProvider(),
+        CoreServicesProvider(),
+        BackgroundServicesProvider(),
+    )
 
     if old_container is not None:
         # Middleware was already added on the first call; just swap the container reference
@@ -356,34 +365,21 @@ def inject_services(app: FastAPI, config: Config) -> Services:
     else:
         setup_dishka(container, app)
 
-    async def _get_services() -> Services:
-        return await container.get(Services)
-
-    try:
-        loop = asyncio.get_running_loop()
-        services = loop.run_until_complete(_get_services())
-    except RuntimeError:
-        services = asyncio.run(_get_services())
-
     # Store config on app.state for the lifespan handler (threadpool size)
     app.state.config = config
 
-    # Important note:
-    # those singleton services must be "started" ONLY when explicitly asked.
-    # Typically for a production multi-process deployment, they should not be started
-    # for each HTTP worker, but only for one dedicated background worker.
-    if services.watcher and Module.WATCHER in config.server.services:
-        services.watcher.start()
-    if services.matrix_gc and Module.MATRIX_GC in config.server.services:
-        services.matrix_gc.start()
-    if services.auto_archiver and Module.AUTO_ARCHIVER in config.server.services:
-        services.auto_archiver.start()
-    if services.blob_gc and Module.BLOB_GC in config.server.services:
-        services.blob_gc.start()
-    if services.variable_view_gc and Module.VARIABLE_VIEW_GC in config.server.services:
-        services.variable_view_gc.start()
+    # Eagerly resolve OutputService to trigger the register_output_access side effect
+    # (StudyService <-> OutputService wiring). Dishka is lazy by default.
+    async def _eager_init() -> None:
+        from antarest.output.output_service import OutputService
 
-    return services
+        await container.get(OutputService)
+
+    try:
+        loop = asyncio.get_running_loop()
+        loop.run_until_complete(_eager_init())
+    except RuntimeError:
+        asyncio.run(_eager_init())
 
 
 def fastapi_app(
