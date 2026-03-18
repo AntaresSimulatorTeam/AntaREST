@@ -12,7 +12,10 @@
 
 from typing import Dict, List
 
+from pydantic import ConfigDict
+
 from antarest.core.serde import AntaresBaseModel
+from antarest.core.utils.string import to_camel_case
 from antarest.output.storage.output_storage import OutputDetails
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.general_model import Mode
@@ -29,6 +32,8 @@ class OutputSynthesis(AntaresBaseModel):
     """
     Synthetic data about outputs of a study.
     """
+
+    model_config = ConfigDict(alias_generator=to_camel_case)
 
     name: str
     mode: Mode
@@ -53,6 +58,8 @@ class StudyDataSynthesis(AntaresBaseModel):
     """
     Synthetic data about the **input** data of a study.
     """
+
+    model_config = ConfigDict(alias_generator=to_camel_case)
 
     study_id: str
     version: StudyVersionInt
@@ -85,6 +92,8 @@ class StudySynthesis(AntaresBaseModel):
     This class could be a composition of StudyDataSynthesis and outputs, but that would be
     a breaking change of the API.
     """
+
+    model_config = ConfigDict(alias_generator=to_camel_case)
 
     study_id: str
     version: StudyVersionInt
