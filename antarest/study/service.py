@@ -159,6 +159,7 @@ from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
 from antarest.study.storage.utils import (
     assert_permission,
+    assert_permission_on_studies,
     create_new_empty_study,
     get_start_date,
     is_managed,
@@ -1307,19 +1308,26 @@ class StudyService:
 
     def move_study(self, study_id: str, folder_dest: str) -> None:
         study = self.get_study(study_id)
-        assert_permission(study, StudyPermissionType.WRITE)
         if not is_managed(study):
             raise NotAManagedStudyException(study_id)
+        if isinstance(study, VariantStudy):
+            raise UnsupportedOperationOnThisStudyType(study_id, "move", "raw")
 
-        if folder_dest:
-            new_folder = folder_dest.rstrip("/") + f"/{study.id}"
-            directory_id = self.directory_service.get_directory_by_path(folder_dest)
-            study.directory_id = directory_id
-        else:
-            new_folder = None
-            study.directory_id = None
+        studies_to_move = [study, *self._get_variant_descendants(study.id)]
+        assert_permission_on_studies(studies_to_move, StudyPermissionType.WRITE)
 
-        study.folder = new_folder
+        directory_id = self.directory_service.get_directory_by_path(folder_dest) if folder_dest else None
+
+        for study_to_move in studies_to_move:
+            self._apply_study_move(study_to_move, folder_dest, directory_id)
+
+    def _get_variant_descendants(self, study_id: str) -> List[VariantStudy]:
+        return self.storage_service.variant_study_service.repository.get_all_descendants(study_id)
+
+    def _apply_study_move(self, study: Study, folder_dest: str, directory_id: str | None) -> None:
+        study.folder = folder_dest.rstrip("/") + f"/{study.id}" if folder_dest else None
+        study.directory_id = directory_id
+
         self.repository.save(study)
         self.event_bus.push(
             Event(

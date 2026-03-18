@@ -283,6 +283,32 @@ def test_variant_manager(
         assert res.status_code == 404
 
 
+def test_create_variant_inherits_parent_directory_id(
+    client: TestClient,
+    admin_access_token: str,
+) -> None:
+    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    res = client.post("/v1/studies?name=BaseWithDirectory&directory=project/subfolder", headers=admin_headers)
+    assert res.status_code == 201
+    base_study_id = res.json()
+
+    res = client.get(f"/v1/studies/{base_study_id}", headers=admin_headers)
+    assert res.status_code == 200
+    parent_study = res.json()
+    assert parent_study["directory_id"] is not None
+
+    res = client.post(f"/v1/studies/{base_study_id}/variants?name=VariantWithDirectory", headers=admin_headers)
+    assert res.status_code == 200
+    variant_id = res.json()
+
+    res = client.get(f"/v1/studies/{variant_id}", headers=admin_headers)
+    assert res.status_code == 200
+    variant_study = res.json()
+    assert variant_study["parent_id"] == base_study_id
+    assert variant_study["directory_id"] == parent_study["directory_id"]
+
+
 def test_comments(client: TestClient, admin_access_token: str, variant_id: str) -> None:
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
