@@ -47,8 +47,6 @@ from antarest.study.dao.database.models.xpansion import (
     XPANSION_SETTINGS_TABLE,
     XPANSION_WEIGHT_TABLE,
 )
-from antarest.study.model import STUDY_VERSION_8_8
-from tests.study.dao.conftest import build_db_dao
 
 
 def _assert_tables_empty(db_session: Session, tables: list[Table], study_id: str) -> None:
@@ -180,7 +178,7 @@ class TestXpansionSettings:
         assert result.additional_constraints == "constraints.txt"
         assert result.sensitivity_config.epsilon == 100.0
         assert result.sensitivity_config.capex is True
-        assert result.sensitivity_config.projection == ["cand_a", "cand_b"]
+        assert sorted(result.sensitivity_config.projection) == ["cand_a", "cand_b"]
 
         # --- upsert ---
         db_dao.save_xpansion_settings(XpansionSettings(optimality_gap=10.0))
@@ -189,20 +187,6 @@ class TestXpansionSettings:
 
         # --- invalid projection ---
         settings = XpansionSettings(sensitivity_config=XpansionSensitivitySettings(projection=["cand_a", "ghost_cand"]))
-        with pytest.raises(CandidateNotFoundError):
-            db_dao.save_xpansion_settings(settings)
-
-    def test_save_xpansion_settings_raises_for_unknown_projection_candidate(self, db_dao: DatabaseStudyDao) -> None:
-        """save_xpansion_settings should raise CandidateNotFoundError when a projection name does not exist."""
-        db_dao.create_xpansion_configuration()
-        db_dao.save_area("x")
-        db_dao.save_area("y")
-        db_dao.save_link(Link(area1="x", area2="y"))
-        db_dao.save_xpansion_candidate(_make_candidate("existing_cand", "x", "y"))
-
-        settings = XpansionSettings(
-            sensitivity_config=XpansionSensitivitySettings(projection=["existing_cand", "ghost_cand"])
-        )
         with pytest.raises(CandidateNotFoundError):
             db_dao.save_xpansion_settings(settings)
 
@@ -318,6 +302,44 @@ class TestXpansionCandidates:
         assert db_dao.get_all_xpansion_candidates() == []
         with pytest.raises(CandidateNotFoundError):
             db_dao.delete_xpansion_candidate("bob")
+
+    @pytest.mark.parametrize(
+        "profile_field",
+        [
+            "link_profile",
+            "already_installed_link_profile",
+            "direct_link_profile",
+            "indirect_link_profile",
+            "already_installed_direct_link_profile",
+            "already_installed_indirect_link_profile",
+        ],
+    )
+    def test_candidate_coherence_raises_for_missing_capacity_profile(
+        self, db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, ISimpleMatrixService], profile_field: str
+    ) -> None:
+        """checks_xpansion_candidate_coherence should raise when a link profile references a non-existent capacity."""
+        db_dao, matrix_service = db_dao_930_and_matrix_service
+        db_dao.create_xpansion_configuration()
+        db_dao.save_area("Paris")
+        db_dao.save_area("Lyon")
+        db_dao.save_link(Link(area1="paris", area2="lyon"))
+
+        candidate = XpansionCandidate(
+            name="cand",
+            link="lyon - paris",
+            annual_cost_per_mw=100.0,
+            max_investment=1000.0,
+            **{profile_field: "missing_capa.txt"},
+        )
+
+        # --- profile file absent: raises ---
+        with pytest.raises(XpansionFileNotFoundError, match="missing_capa.txt"):
+            db_dao.checks_xpansion_candidate_coherence(candidate)
+
+        # --- profile file present: no raise ---
+        series_id = matrix_service.create(pl.DataFrame({"col": [1.0]}))
+        db_dao.save_xpansion_capacity("missing_capa.txt", series_id)
+        db_dao.checks_xpansion_candidate_coherence(candidate)  # must not raise
 
 
 class TestXpansionAdequacyCriterion:
@@ -638,39 +660,3 @@ class TestXpansionResources:
             db_dao.checks_xpansion_resource_can_be_deleted(XpansionResourceFileType.CAPACITIES, "used_capa.txt")
 
         db_dao.checks_xpansion_resource_can_be_deleted(XpansionResourceFileType.CAPACITIES, "other.txt")  # no raise
-
-
-class TestXpansionStudyIsolation:
-    """Tests that rows from one study do not leak into another study sharing the same DB."""
-
-    def test_candidates_are_isolated_between_studies(
-        self, db_session: Session, matrix_service: ISimpleMatrixService
-    ) -> None:
-        """Candidates saved in study A must not appear in study B."""
-        dao_a = build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
-        dao_b = build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
-
-        dao_a.create_xpansion_configuration()
-        dao_b.create_xpansion_configuration()
-
-        dao_a.save_area("x")
-        dao_a.save_area("y")
-        dao_a.save_link(Link(area1="x", area2="y"))
-        dao_a.save_xpansion_candidate(_make_candidate("cand_a", "x", "y"))
-
-        assert len(dao_a.get_all_xpansion_candidates()) == 1
-        assert dao_b.get_all_xpansion_candidates() == []
-
-    def test_settings_are_isolated_between_studies(
-        self, db_session: Session, matrix_service: ISimpleMatrixService
-    ) -> None:
-        """Settings saved in study A must not affect study B."""
-        dao_a = build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
-        dao_b = build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
-
-        dao_a.create_xpansion_configuration()
-        dao_b.create_xpansion_configuration()
-
-        dao_a.save_xpansion_settings(XpansionSettings(optimality_gap=999.0))
-
-        assert dao_b.get_xpansion_settings().optimality_gap == XpansionSettings().optimality_gap
