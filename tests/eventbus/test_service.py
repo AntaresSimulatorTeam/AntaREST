@@ -15,21 +15,23 @@ from unittest.mock import Mock
 
 from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.model import PermissionInfo, PublicMode
-from antarest.eventbus.main import build_eventbus
+from antarest.eventbus.business.local_eventbus import LocalEventBus
+from antarest.eventbus.business.redis_eventbus import RedisEventBus
+from antarest.eventbus.service import EventBusService
 from tests.helpers import auto_retry_assert
 
 
 def test_service_factory() -> None:
     redis_client = Mock()
-    event_bus = build_eventbus(autostart=False)
+    event_bus = EventBusService(LocalEventBus(), autostart=False)
     assert event_bus.backend.__class__.__name__ == "LocalEventBus"
 
-    event_bus = build_eventbus(autostart=False, redis_client=redis_client)
+    event_bus = EventBusService(RedisEventBus(redis_client), autostart=False)
     assert event_bus.backend.__class__.__name__ == "RedisEventBus"
 
 
 def test_lifecycle() -> None:
-    event_bus = build_eventbus(autostart=True)
+    event_bus = EventBusService(LocalEventBus(), autostart=True)
     test_bucket: List[Event] = []
 
     def append_to_bucket(

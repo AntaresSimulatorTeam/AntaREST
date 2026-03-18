@@ -10,26 +10,28 @@
 #
 # This file is part of the Antares project.
 
+import asyncio
 import time
 from pathlib import Path
 from typing import List
 
+from antarest.blobstore.blob_garbage_collector import BlobGarbageCollector
 from antarest.core.config import Config
+from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.interfaces.service import IService
 from antarest.core.logging.utils import configure_logger
 from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.core.utils.utils import get_local_path
+from antarest.dishka_provider import make_container
+from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.service_creator import (
     SESSION_ARGS,
     Module,
     create_archive_worker,
-    create_blob_gc,
-    create_core_services,
-    create_matrix_gc,
-    create_watcher,
     init_db_engine,
 )
 from antarest.study.storage.auto_archive_service import AutoArchiveService
+from antarest.study.storage.rawstudy.watcher import Watcher
 
 
 def _init(config_file: Path, services_list: List[Module]) -> list[IService]:
@@ -39,28 +41,31 @@ def _init(config_file: Path, services_list: List[Module]) -> list[IService]:
     init_db_singleton(custom_engine=engine, session_args=SESSION_ARGS)
     configure_logger(config)
 
-    core_services = create_core_services(config)
+    container = make_container(config)
+
+    async def _get(t: type):
+        return await container.get(t)
+
+    def get(t: type):
+        return asyncio.run(_get(t))
 
     services: list[IService] = []
 
     if Module.WATCHER in services_list:
-        watcher = create_watcher(config=config, study_service=core_services.study_service)
-        services.append(watcher)
+        services.append(get(Watcher))
 
     if Module.MATRIX_GC in services_list:
-        matrix_gc = create_matrix_gc(config, core_services.matrix_service)
-        services.append(matrix_gc)
+        services.append(get(MatrixGarbageCollector))
 
     if Module.BLOB_GC in services_list:
-        blob_gc = create_blob_gc(config, core_services.blob_service)
-        services.append(blob_gc)
+        services.append(get(BlobGarbageCollector))
 
     if Module.AUTO_ARCHIVER in services_list:
-        auto_archive_service = AutoArchiveService(core_services.study_service, core_services.output_service, config)
-        services.append(auto_archive_service)
+        services.append(get(AutoArchiveService))
 
     if Module.ARCHIVE_WORKER in services_list:
-        worker = create_archive_worker(config, "test", event_bus=core_services.event_bus)
+        event_bus = get(IEventBus)
+        worker = create_archive_worker(config, "test", event_bus=event_bus)
         services.append(worker)
 
     return services

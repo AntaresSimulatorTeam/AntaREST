@@ -11,50 +11,19 @@
 # This file is part of the Antares project.
 
 import logging
-from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 import redis
 from sqlalchemy import create_engine
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.pool import NullPool
 
-from antarest.blobstore.blob_garbage_collector import BlobGarbageCollector
-from antarest.blobstore.main import build_blob_service
-from antarest.blobstore.service import BlobService
-from antarest.core.cache.main import build_cache
 from antarest.core.config import Config, RedisConfig
-from antarest.core.filetransfer.main import build_filetransfer_service
-from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.metrics import add_db_metrics
 from antarest.core.persistence import upgrade_db
-from antarest.core.remote.remote_executor import RemoteWorkerExecutor
-from antarest.core.tasks.main import build_taskjob_manager
-from antarest.core.tasks.service import ITaskService
-from antarest.eventbus.main import build_eventbus
-from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteStudyRepository
-from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
-from antarest.login.main import build_login
-from antarest.login.service import LoginService
-from antarest.matrixstore.main import build_matrix_service
-from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
-from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
-from antarest.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
-from antarest.output.output_service import OutputService
-from antarest.output.storage.file_output_storage import InStudyFileOutputStorage
-from antarest.output.storage.output_storage import IOutputStorage
-from antarest.output.variable_view_gc import VariableViewGarbageCollector
-from antarest.study.adapters import adapt_output_service_to_study_service
-from antarest.study.dao.database.database_blob_usage_provider import DatabaseBlobUsageProvider
-from antarest.study.directory_service import DirectoryService
-from antarest.study.main import build_study_service
-from antarest.study.service import StudyService
-from antarest.study.storage.explorer_service import Explorer
-from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.worker.archive_worker import ArchiveWorker
 from antarest.worker.worker import AbstractWorker
 
@@ -132,175 +101,6 @@ def new_redis_instance(config: RedisConfig) -> redis.Redis:  # type: ignore
     return redis_client
 
 
-def create_event_bus(config: Config) -> Tuple[IEventBus, Optional[redis.Redis]]:  # type: ignore
-    redis_client = new_redis_instance(config.redis) if config.redis is not None else None
-    return (
-        build_eventbus(True, redis_client),
-        redis_client,
-    )
-
-
-@dataclass
-class CoreServices:
-    cache: ICache
-    event_bus: IEventBus
-    task_service: ITaskService
-    file_transfer_manager: FileTransferManager
-    login_service: LoginService
-    matrix_service: MatrixService
-    study_service: StudyService
-    directory_service: DirectoryService
-    output_service: OutputService
-    blob_service: BlobService
-    favorite_study_service: FavoriteStudyService
-    favorite_directory_service: FavoriteDirectoryService
-
-
-def build_favorite_service() -> tuple[FavoriteStudyService, FavoriteDirectoryService]:
-    favorite_repository = FavoriteStudyRepository()
-    favorite_study_service = FavoriteStudyService(favorite_study_repository=favorite_repository)
-
-    favorite_directory_repository = FavoriteDirectoryRepository()
-    favorite_directory_service = FavoriteDirectoryService(favorite_directory_repository=favorite_directory_repository)
-
-    return favorite_study_service, favorite_directory_service
-
-
-def build_output_service(
-    study_service: StudyService,
-    cache: ICache,
-    task_service: ITaskService,
-    filetransfer_service: FileTransferManager,
-    event_bus: IEventBus,
-    config: Config,
-    matrix_service: ISimpleMatrixService,
-) -> OutputService:
-    remote_executor = RemoteWorkerExecutor(event_bus, config)
-    file_output_storage = InStudyFileOutputStorage(
-        outputs_provider=study_service_as_file_outputs_provider(study_service),
-        cache=cache,
-        remote_executor=remote_executor,
-    )
-    storages: list[IOutputStorage] = [file_output_storage]
-
-    output_service = OutputService(
-        studies_repository=study_service_as_studies_repository(study_service),
-        storages=storages,
-        task_service=task_service,
-        file_transfer_manager=filetransfer_service,
-        matrix_service=matrix_service,
-        tmp_dir=config.storage.tmp_dir,
-    )
-
-    study_service.register_output_access(adapt_output_service_to_study_service(output_service))
-
-    return output_service
-
-
-def create_core_services(config: Config) -> CoreServices:
-    event_bus, redis_client = create_event_bus(config)
-    cache = build_cache(config=config, redis_client=redis_client)
-    task_service = build_taskjob_manager(config, event_bus)
-    filetransfer_service = build_filetransfer_service(event_bus, config)
-    login_service = build_login(config, event_bus=event_bus)
-    matrix_service = build_matrix_service(
-        config=config,
-        file_transfer_manager=filetransfer_service,
-        task_service=task_service,
-        user_service=login_service,
-        service=None,
-    )
-    blob_service = build_blob_service(config=config, service=None)
-    blob_service.register_usage_provider(DatabaseBlobUsageProvider())
-    study_service, directory_service = build_study_service(
-        config,
-        matrix_service=matrix_service,
-        cache=cache,
-        file_transfer_manager=filetransfer_service,
-        task_service=task_service,
-        user_service=login_service,
-        event_bus=event_bus,
-        blob_service=blob_service,
-    )
-
-    output_service = build_output_service(
-        cache=cache,
-        study_service=study_service,
-        task_service=task_service,
-        filetransfer_service=filetransfer_service,
-        event_bus=event_bus,
-        config=config,
-        matrix_service=matrix_service,
-    )
-
-    favorite_study_service, favorite_directory_service = build_favorite_service()
-
-    return CoreServices(
-        cache=cache,
-        event_bus=event_bus,
-        task_service=task_service,
-        file_transfer_manager=filetransfer_service,
-        login_service=login_service,
-        matrix_service=matrix_service,
-        study_service=study_service,
-        directory_service=directory_service,
-        output_service=output_service,
-        blob_service=blob_service,
-        favorite_study_service=favorite_study_service,
-        favorite_directory_service=favorite_directory_service,
-    )
-
-
-def create_matrix_gc(config: Config, matrix_service: MatrixService) -> MatrixGarbageCollector:
-    return MatrixGarbageCollector(
-        matrix_service=matrix_service,
-        sleeping_time=config.storage.matrix_gc_sleeping_time,
-        dry_run=config.storage.matrix_gc_dry_run,
-        retention_time=config.storage.matrix_gc_retention_time,
-    )
-
-
-def create_blob_gc(config: Config, blob_service: BlobService) -> BlobGarbageCollector:
-    return BlobGarbageCollector(
-        blob_service=blob_service,
-        sleeping_time=config.storage.blob_gc_sleeping_time,
-        dry_run=config.storage.blob_gc_dry_run,
-    )
-
-
-def create_variable_view_gc(config: Config) -> VariableViewGarbageCollector:
-    return VariableViewGarbageCollector(
-        sleeping_time=config.storage.variable_view_gc_sleeping_time,
-        dry_run=config.storage.variable_view_gc_dry_run,
-        retention_time=config.storage.variable_view_gc_retention_days,
-    )
-
-
-def create_watcher(
-    config: Config,
-    study_service: Optional[StudyService] = None,
-) -> Watcher:
-    if study_service:
-        watcher = Watcher(
-            config=config,
-            study_service=study_service,
-            task_service=study_service.task_service,
-        )
-    else:
-        core_services = create_core_services(config)
-        watcher = Watcher(
-            config=config,
-            study_service=core_services.study_service,
-            task_service=core_services.task_service,
-        )
-
-    return watcher
-
-
-def create_explorer(config: Config) -> Explorer:
-    return Explorer(config=config)
-
-
 def create_archive_worker(
     config: Config,
     workspace: str,
@@ -308,5 +108,10 @@ def create_archive_worker(
     event_bus: Optional[IEventBus] = None,
 ) -> AbstractWorker:
     if not event_bus:
-        event_bus, _ = create_event_bus(config)
+        import asyncio
+
+        from antarest.dishka_provider import make_container
+
+        container = make_container(config)
+        event_bus = asyncio.run(container.get(IEventBus))
     return ArchiveWorker(event_bus, workspace, local_root, config)

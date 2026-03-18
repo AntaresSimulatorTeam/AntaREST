@@ -28,15 +28,13 @@ from antarest.core.interfaces.eventbus import DummyEventBusService
 from antarest.main import add_exception_handlers
 from antarest.matrixstore.service import MatrixService
 from antarest.output.output_blueprint import create_output_routes
-from antarest.service_creator import build_output_service
-from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.web.studies_blueprint import create_study_routes
 from tests.dishka_utils import setup_test_dishka
 from tests.helpers import create_raw_study, with_admin_user
 from tests.storage.conftest import SimpleFileTransferManager, SimpleSyncTaskService
-from tests.storage.integration.conftest import UUID
+from tests.storage.integration.conftest import UUID, _build_output_service, _build_study_service
 
 
 def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> bytes:
@@ -71,7 +69,7 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> 
     task_service = SimpleSyncTaskService()
     matrix_service = Mock(spec=MatrixService)
     blob_service = Mock(spec=BlobService)
-    study_service, _ = build_study_service(
+    study_service = _build_study_service(
         config,
         cache=cache,
         user_service=Mock(),
@@ -83,7 +81,7 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> 
         metadata_repository=repo,
     )
 
-    output_service = build_output_service(
+    output_service = _build_output_service(
         study_service=study_service,
         cache=cache,
         task_service=task_service,

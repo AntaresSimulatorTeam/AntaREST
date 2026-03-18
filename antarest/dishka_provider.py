@@ -22,8 +22,9 @@ from typing import Optional
 
 import prometheus_client
 import redis
-from dishka import Provider, Scope, provide
+from dishka import AsyncContainer, Provider, Scope, provide
 
+from antarest.blobstore.blob_garbage_collector import BlobGarbageCollector
 from antarest.blobstore.repository import BlobContentRepository
 from antarest.blobstore.service import BlobService
 from antarest.core.cache.business.local_chache import LocalCache
@@ -57,6 +58,7 @@ from antarest.login.repository import (
     UserRepository,
 )
 from antarest.login.service import LoginService
+from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 from antarest.matrixstore.service import MatrixService
@@ -64,12 +66,14 @@ from antarest.output.adapters import study_service_as_file_outputs_provider, stu
 from antarest.output.output_service import OutputService
 from antarest.output.storage.file_output_storage import InStudyFileOutputStorage
 from antarest.output.storage.output_storage import IOutputStorage
+from antarest.output.variable_view_gc import VariableViewGarbageCollector
 from antarest.service_creator import new_redis_instance
 from antarest.study.adapters import adapt_output_service_to_study_service
 from antarest.study.dao.database.database_blob_usage_provider import DatabaseBlobUsageProvider
 from antarest.study.directory_service import DirectoryService
 from antarest.study.repository import DirectoryRepository, StudyMetadataRepository
 from antarest.study.service import StudyService
+from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -345,3 +349,46 @@ class BackgroundServicesProvider(Provider):
         ws_manager = ConnectionManager()
         connect_event_bus(event_bus, ws_manager)
         return ws_manager
+
+    @provide
+    def matrix_garbage_collector(self, config: Config, matrix_service: MatrixService) -> MatrixGarbageCollector:
+        return MatrixGarbageCollector(
+            matrix_service=matrix_service,
+            sleeping_time=config.storage.matrix_gc_sleeping_time,
+            dry_run=config.storage.matrix_gc_dry_run,
+            retention_time=config.storage.matrix_gc_retention_time,
+        )
+
+    @provide
+    def blob_garbage_collector(self, config: Config, blob_service: BlobService) -> BlobGarbageCollector:
+        return BlobGarbageCollector(
+            blob_service=blob_service,
+            sleeping_time=config.storage.blob_gc_sleeping_time,
+            dry_run=config.storage.blob_gc_dry_run,
+        )
+
+    @provide
+    def auto_archive_service(
+        self, study_service: StudyService, output_service: OutputService, config: Config
+    ) -> AutoArchiveService:
+        return AutoArchiveService(study_service, output_service, config)
+
+    @provide
+    def variable_view_garbage_collector(self, config: Config) -> VariableViewGarbageCollector:
+        return VariableViewGarbageCollector(
+            sleeping_time=config.storage.variable_view_gc_sleeping_time,
+            dry_run=config.storage.variable_view_gc_dry_run,
+            retention_time=config.storage.variable_view_gc_retention_days,
+        )
+
+
+def make_container(config: Config) -> AsyncContainer:
+    """Create a dishka async container with all providers, for use outside FastAPI."""
+    from dishka import make_async_container
+
+    return make_async_container(
+        ConfigProvider(config),
+        InfrastructureProvider(),
+        CoreServicesProvider(),
+        BackgroundServicesProvider(),
+    )

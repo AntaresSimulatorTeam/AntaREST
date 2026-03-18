@@ -19,7 +19,8 @@ from typing_extensions import override
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.tasks.model import TaskResult
-from antarest.eventbus.main import build_eventbus
+from antarest.eventbus.business.local_eventbus import LocalEventBus
+from antarest.eventbus.service import EventBusService
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
 from tests.helpers import auto_retry_assert
 
@@ -40,7 +41,7 @@ class DummyWorker(AbstractWorker):
 
 def test_simple_task(tmp_path: Path) -> None:
     task_queue = "do_stuff"
-    event_bus = build_eventbus(autostart=True)
+    event_bus = EventBusService(LocalEventBus(), autostart=True)
     command_event = Event(
         type=EventType.WORKER_TASK,
         payload=WorkerTaskCommand(
