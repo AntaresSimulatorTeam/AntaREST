@@ -15,7 +15,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends
 
-from antarest.core.dependencies import MaintenanceServiceDep, auth_required
+from antarest.dependencies import MaintenanceServiceDep, auth_required
 
 logger = logging.getLogger(__name__)
 

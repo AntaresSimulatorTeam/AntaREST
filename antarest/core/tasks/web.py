@@ -18,10 +18,10 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from antarest.core.api_types import UuidStr
-from antarest.core.dependencies import TaskServiceDep, auth_required
 from antarest.core.tasks.model import TaskDTO, TaskListFilter
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT
 from antarest.core.utils.web import APITag
+from antarest.dependencies import TaskServiceDep, auth_required
 
 logger = logging.getLogger(__name__)
 

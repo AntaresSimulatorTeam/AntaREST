@@ -23,13 +23,13 @@ from fastapi.params import Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
 from antarest.core.api_types import SanitizedStr, UuidStr
-from antarest.core.dependencies import StudyServiceDep, auth_required
 from antarest.core.exceptions import IncorrectPathError
 from antarest.core.model import SUB_JSON
 from antarest.core.serde.json import from_json, to_json
 from antarest.core.serde.matrix_export import TableExportFormat, simplify_dataframe
 from antarest.core.utils.utils import sanitize_string
 from antarest.core.utils.web import APITag
+from antarest.dependencies import StudyServiceDep, auth_required
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.user_model import ResourceType
 from antarest.study.storage.df_download import export_file

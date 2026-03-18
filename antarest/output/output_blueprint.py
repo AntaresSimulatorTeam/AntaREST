@@ -21,12 +21,12 @@ from pydantic import TypeAdapter
 from starlette.responses import FileResponse, Response
 
 from antarest.core.api_types import SanitizedStr, UuidStr
-from antarest.core.dependencies import OutputServiceDep, TmpExportFileDep, auth_required
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.serde.json import to_json
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.dict_utils import remove_nones
 from antarest.core.utils.web import APITag
+from antarest.dependencies import OutputServiceDep, TmpExportFileDep, auth_required
 from antarest.output.output_model import (
     OutputVariablesInformation,
     OutputVariablesList,

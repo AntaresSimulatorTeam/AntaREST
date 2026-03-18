@@ -19,8 +19,8 @@ from fastapi import APIRouter, HTTPException, Query
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from antarest.core.api_types import SanitizedStr
-from antarest.core.dependencies import AuthDep, ConfigDep, ConnectionManagerDep
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
+from antarest.dependencies import AuthDep, ConfigDep, ConnectionManagerDep
 from antarest.login.auth import get_user_from_token
 
 logger = logging.getLogger(__name__)

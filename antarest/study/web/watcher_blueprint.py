@@ -18,8 +18,8 @@ from typing import List
 from fastapi import APIRouter, Depends
 
 from antarest.core.api_types import SanitizedStr
-from antarest.core.dependencies import WatcherDep, auth_required
 from antarest.core.utils.web import APITag
+from antarest.dependencies import WatcherDep, auth_required
 
 logger = logging.getLogger(__name__)
 

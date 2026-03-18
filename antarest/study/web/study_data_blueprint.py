@@ -21,9 +21,9 @@ from pydantic import Field
 from starlette.responses import RedirectResponse
 
 from antarest.core.api_types import SanitizedStr, UuidStr
-from antarest.core.dependencies import StudyServiceDep, auth_required
 from antarest.core.model import JSON, StudyPermissionType
 from antarest.core.utils.web import APITag
+from antarest.dependencies import StudyServiceDep, auth_required
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager

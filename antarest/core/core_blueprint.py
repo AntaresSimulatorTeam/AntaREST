@@ -13,10 +13,10 @@
 
 from fastapi import APIRouter
 
-from antarest.core.dependencies import ConfigDep
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
 from antarest.core.version_info import VersionInfoDTO, get_commit_id, get_dependencies
+from antarest.dependencies import ConfigDep
 
 
 class StatusDTO(AntaresBaseModel):

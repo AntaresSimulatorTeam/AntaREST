@@ -16,8 +16,8 @@ from typing import List
 from fastapi import APIRouter, Depends
 
 from antarest.core.api_types import SanitizedStr
-from antarest.core.dependencies import ExplorerDep, auth_required
 from antarest.core.utils.web import APITag
+from antarest.dependencies import ExplorerDep, auth_required
 from antarest.study.model import FolderDTO, WorkspaceDTO
 
 logger = logging.getLogger(__name__)

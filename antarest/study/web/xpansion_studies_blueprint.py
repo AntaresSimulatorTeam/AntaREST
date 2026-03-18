@@ -18,10 +18,10 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from starlette.responses import Response
 
 from antarest.core.api_types import SanitizedStr, UuidStr
-from antarest.core.dependencies import StudyServiceDep, auth_required
 from antarest.core.model import StudyPermissionType
 from antarest.core.serde.json import to_json
 from antarest.core.utils.web import APITag
+from antarest.dependencies import StudyServiceDep, auth_required
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionCandidate,

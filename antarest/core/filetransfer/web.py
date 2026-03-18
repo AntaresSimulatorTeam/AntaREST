@@ -16,9 +16,9 @@ from fastapi import APIRouter, Depends
 from starlette.responses import FileResponse
 
 from antarest.core.api_types import UuidStr
-from antarest.core.dependencies import FileTransferManagerDep, auth_required
 from antarest.core.filetransfer.model import FileDownloadDTO
 from antarest.core.utils.web import APITag
+from antarest.dependencies import FileTransferManagerDep, auth_required
 
 logger = logging.getLogger(__name__)
 

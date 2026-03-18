@@ -13,10 +13,18 @@
 """
 This module defines dependencies for all routes of the application.
 
-TODO: should probably be less "centralized" ?
-"""
+Design notes:
 
-from __future__ import annotations
+for now, the definition of dependencies is centralized in that unique file,
+and imported in modules that need them.
+
+It would be cleaner to separate **declaration** of dependencies in modules,
+from their **provision** at the app level here, to avoid having this kind of circular import
+"module -> depend on app for dependencies -> depend on module services".
+
+That would require to use a real DI container such as dishka or lagom, to name
+a few --> left for future work.
+"""
 
 from collections.abc import AsyncGenerator
 from pathlib import Path

@@ -17,11 +17,11 @@ import humanize
 from fastapi import APIRouter, Body, Depends
 
 from antarest.core.api_types import SanitizedStr, UuidStr
-from antarest.core.dependencies import StudyServiceDep, auth_required
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import sanitize_string
 from antarest.core.utils.web import APITag
+from antarest.dependencies import StudyServiceDep, auth_required
 from antarest.study.model import StudyMetadataDTO
 from antarest.study.storage.variantstudy.model.model import CommandDTOAPI, VariantTreeDTO
 

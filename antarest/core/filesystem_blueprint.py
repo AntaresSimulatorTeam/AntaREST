@@ -28,9 +28,9 @@ from starlette.responses import PlainTextResponse, StreamingResponse
 
 from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
-from antarest.core.dependencies import ConfigDep, auth_required
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
+from antarest.dependencies import ConfigDep, auth_required
 
 FilesystemName: TypeAlias = te.Annotated[str, Field(pattern=r"^\w+$", description="Filesystem name")]
 MountPointName: TypeAlias = te.Annotated[str, Field(pattern=r"^\w+$", description="Mount point name")]

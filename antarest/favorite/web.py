@@ -15,8 +15,8 @@ import logging
 from fastapi import APIRouter, Depends
 
 from antarest.core.api_types import UuidStr
-from antarest.core.dependencies import FavoriteDirectoryServiceDep, FavoriteStudyServiceDep, auth_required
 from antarest.core.utils.web import APITag
+from antarest.dependencies import FavoriteDirectoryServiceDep, FavoriteStudyServiceDep, auth_required
 from antarest.favorite.model import FavoriteDirectoryDTO, FavoriteStudyDTO
 
 logger = logging.getLogger(__name__)

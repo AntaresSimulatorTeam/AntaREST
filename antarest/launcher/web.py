@@ -18,9 +18,9 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import Field
 
 from antarest.core.api_types import SanitizedStr, UuidStr
-from antarest.core.dependencies import ConfigDep, LauncherServiceDep, auth_required
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.utils.web import APITag
+from antarest.dependencies import ConfigDep, LauncherServiceDep, auth_required
 from antarest.launcher.model import (
     JobCreationDTO,
     JobResultDTO,

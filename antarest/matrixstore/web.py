@@ -17,13 +17,13 @@ from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
 from starlette.responses import FileResponse
 
 from antarest.core.api_types import SanitizedStr
-from antarest.core.dependencies import MatrixServiceDep, TmpExportFileDep, auth_required
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.np_array import NpArray
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.web import APITag
+from antarest.dependencies import MatrixServiceDep, TmpExportFileDep, auth_required
 from antarest.login.utils import require_current_user
 from antarest.matrixstore.model import (
     MatrixData,

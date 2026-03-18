@@ -17,13 +17,13 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 
 from antarest.core.api_types import SanitizedStr
-from antarest.core.dependencies import AuthDep, ConfigDep, LoginServiceDep, auth_required
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.roles import RoleType
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.json import from_json
 from antarest.core.utils.web import APITag
+from antarest.dependencies import AuthDep, ConfigDep, LoginServiceDep, auth_required
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.login.model import (
     BotCreateDTO,

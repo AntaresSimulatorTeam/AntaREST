@@ -22,13 +22,13 @@ from markupsafe import escape
 from pydantic import NonNegativeInt
 
 from antarest.core.api_types import SanitizedStr, UuidStr
-from antarest.core.dependencies import ConfigDep, StudyServiceDep, auth_required
 from antarest.core.exceptions import BadArchiveContent, BadZipBinary, IncorrectArgumentsForCopy
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.model import PublicMode
 from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.utils import sanitize_string, validate_folder_path, validate_study_name
 from antarest.core.utils.web import APITag
+from antarest.dependencies import ConfigDep, StudyServiceDep, auth_required
 from antarest.login.utils import require_current_user
 from antarest.study.dtos import StudySynthesis
 from antarest.study.model import (
