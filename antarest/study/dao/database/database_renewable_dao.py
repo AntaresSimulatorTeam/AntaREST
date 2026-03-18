@@ -142,7 +142,6 @@ class DatabaseRenewableDao(RenewableDao):
             # Means the DELETE had no effect so the renewable did not exist
             self._raise_the_right_renewable_exception(area_id, renewable_id)
 
-        # TODO: depending on scenariobuilder implementation, we may need to delete some stuff from scenario builder here
         session.commit()
 
     @override

@@ -18,7 +18,8 @@ from antarest.study.business.model.user_model import ResourceType, UserResourceD
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
-def test_save_user_resources_file(dao: DatabaseStudyDao) -> None:
+def test_save_user_resources_file(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_user_resource(
         UserResourceDataCreation(
             path=PurePosixPath("file_path"), resource_type=ResourceType.FILE, blob_id="test_blob_id"
@@ -36,7 +37,8 @@ def test_save_user_resources_file(dao: DatabaseStudyDao) -> None:
     assert len(list(dao.get_all_user_resources())) == 0
 
 
-def test_save_user_resources_folder(dao: DatabaseStudyDao) -> None:
+def test_save_user_resources_folder(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_user_resource(
         UserResourceDataCreation(path=PurePosixPath("folder_path"), resource_type=ResourceType.FOLDER)
     )
@@ -47,7 +49,8 @@ def test_save_user_resources_folder(dao: DatabaseStudyDao) -> None:
     assert result[0].blob_id is None
 
 
-def test_update_blob_id(dao: DatabaseStudyDao) -> None:
+def test_update_blob_id(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     resource = UserResourceDataCreation(
         path=PurePosixPath("file_path"), resource_type=ResourceType.FILE, blob_id="test_blob_id"
     )
@@ -63,6 +66,6 @@ def test_update_blob_id(dao: DatabaseStudyDao) -> None:
     assert result[0].blob_id == "test_blob_id_updated"
 
 
-def test_user_resources_not_exists(dao: DatabaseStudyDao) -> None:
+def test_user_resources_not_exists(db_dao: DatabaseStudyDao) -> None:
     with pytest.raises(UserResourcesNotFound):
-        dao.delete_user_resource(PurePosixPath("file_path"))
+        db_dao.delete_user_resource(PurePosixPath("file_path"))

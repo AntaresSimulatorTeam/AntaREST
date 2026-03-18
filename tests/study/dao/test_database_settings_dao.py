@@ -37,10 +37,11 @@ from antarest.study.business.model.config.playlist_model import Playlist, Playli
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration, TimeSeriesType
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.model import STUDY_VERSION_9_3
-from tests.study.dao.conftest import build_dao
+from tests.study.dao.conftest import build_db_dao
 
 
-def test_nominal_case(dao: DatabaseStudyDao) -> None:
+def test_nominal_case(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     # General Config
     new_general_config = GeneralConfig(
         mode=Mode.ECONOMY,
@@ -136,7 +137,7 @@ def test_nominal_case(dao: DatabaseStudyDao) -> None:
 
 def test_compatibility_parameters(db_session: Session, matrix_service: ISimpleMatrixService) -> None:
     # Create a study in version 9.3 to test the compatibility parameters
-    dao = build_dao(db_session, matrix_service, STUDY_VERSION_9_3)
+    dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
     assert dao.get_compatibility_parameters() == CompatibilityParameters()
     new_parameters = CompatibilityParameters(hydro_pmax=HydroPmax.HOURLY)
     dao.save_compatibility_parameters(new_parameters)
