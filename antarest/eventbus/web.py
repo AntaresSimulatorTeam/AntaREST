@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 def register_websocket_routes(api_root: APIRouter) -> None:
-    """Register the /ws websocket route. Returns the ConnectionManager for later event bus wiring."""
+    """Register the /ws websocket route"""
 
     @api_root.websocket("/ws")
     async def connect(
