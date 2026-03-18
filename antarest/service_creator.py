@@ -141,7 +141,7 @@ def new_redis_instance(config: RedisConfig) -> redis.Redis:  # type: ignore
 def create_event_bus(config: Config) -> Tuple[IEventBus, Optional[redis.Redis]]:  # type: ignore
     redis_client = new_redis_instance(config.redis) if config.redis is not None else None
     return (
-        build_eventbus(config, True, redis_client),
+        build_eventbus(True, redis_client),
         redis_client,
     )
 
