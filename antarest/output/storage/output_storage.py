@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import BinaryIO, Iterator, Optional, Sequence
 
 import polars as pl
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
@@ -54,6 +54,46 @@ class OutputMetadata:
     archived: bool
 
 
+# The following settings class are used by a known client,
+# we keep it here for compatibility reasons, but that could be removed in the future
+class OutputSettingsGeneral(AntaresBaseModel):
+    model_config = ConfigDict(
+        frozen=True,
+        populate_by_name=True,
+    )
+
+    mode: str
+    horizon: str
+    nbyears: int
+    simulation_start: int = Field(alias="simulation.start")
+    simulation_end: int = Field(alias="simulation.end")
+    january_1st: str = Field(alias="january.1st")
+    first_month_in_year: str = Field(alias="first-month-in-year")
+    first_weekday: str = Field(alias="first.weekday")
+    leapyear: bool
+    year_by_year: bool = Field(alias="year-by-year")
+    user_playlist: bool = Field(alias="user-playlist")
+
+
+class OutputSettingsOptimization(AntaresBaseModel):
+    model_config = ConfigDict(
+        frozen=True,
+        populate_by_name=True,
+    )
+    transmission_capacities: str | bool = Field(alias="transmission-capacities")
+
+
+class OutputSettings(AntaresBaseModel):
+    model_config = ConfigDict(
+        frozen=True,
+        populate_by_name=True,
+    )
+
+    general: OutputSettingsGeneral
+    optimization: OutputSettingsOptimization
+    playlist: list[int] | None = None
+
+
 class OutputDetails(AntaresBaseModel):
     """
     More detailed metadata about a study output.
@@ -72,6 +112,8 @@ class OutputDetails(AntaresBaseModel):
     by_year: bool
     nb_years: int
     archived: bool
+
+    settings: OutputSettings | None = Field(deprecated=True, default=None)
 
 
 class IOutputStorage(ABC):

@@ -36,7 +36,13 @@ from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.output.storage.file_output_storage import FileStudyOutputs, IFileOutputsProvider, InStudyFileOutputStorage
-from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
+from antarest.output.storage.output_storage import (
+    OutputDetails,
+    OutputMetadata,
+    OutputSettings,
+    OutputSettingsGeneral,
+    OutputSettingsOptimization,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -124,19 +130,129 @@ def test_file_output_storage(file_output_storage):
         file_output_storage.get_output_details("STA-mini", o.id) for o in file_output_storage.list_outputs("STA-mini")
     ] == [
         OutputDetails(
-            name="20201014-1422eco-hello", mode=Mode.ECONOMY, synthesis=True, by_year=True, nb_years=1, archived=False
+            name="20201014-1422eco-hello",
+            mode=Mode.ECONOMY,
+            synthesis=True,
+            by_year=True,
+            nb_years=1,
+            archived=False,
+            settings=OutputSettings(
+                general=OutputSettingsGeneral(
+                    mode="Economy",
+                    horizon="2030",
+                    nbyears=1,
+                    simulation_start=1,
+                    simulation_end=7,
+                    january_1st="Monday",
+                    first_month_in_year="january",
+                    first_weekday="Monday",
+                    leapyear=False,
+                    year_by_year=True,
+                    user_playlist=True,
+                ),
+                optimization=OutputSettingsOptimization(transmission_capacities=True),
+                playlist=[1],
+            ),
         ),
         OutputDetails(
-            name="20201014-1425eco-goodbye", mode=Mode.ECONOMY, synthesis=True, by_year=True, nb_years=2, archived=False
+            name="20201014-1425eco-goodbye",
+            mode=Mode.ECONOMY,
+            synthesis=True,
+            by_year=True,
+            nb_years=2,
+            archived=False,
+            settings=OutputSettings(
+                general=OutputSettingsGeneral(
+                    mode="Economy",
+                    horizon="2030",
+                    nbyears=2,
+                    simulation_start=1,
+                    simulation_end=14,
+                    january_1st="Monday",
+                    first_month_in_year="january",
+                    first_weekday="Monday",
+                    leapyear=False,
+                    year_by_year=True,
+                    user_playlist=True,
+                ),
+                optimization=OutputSettingsOptimization(transmission_capacities=True),
+                playlist=[1, 2],
+            ),
         ),
         OutputDetails(
-            name="20201014-1427eco", mode=Mode.ECONOMY, synthesis=True, by_year=False, nb_years=1, archived=False
+            name="20201014-1427eco",
+            mode=Mode.ECONOMY,
+            synthesis=True,
+            by_year=False,
+            nb_years=1,
+            archived=False,
+            settings=OutputSettings(
+                general=OutputSettingsGeneral(
+                    mode="Economy",
+                    horizon="2030",
+                    nbyears=1,
+                    simulation_start=1,
+                    simulation_end=7,
+                    january_1st="Monday",
+                    first_month_in_year="january",
+                    first_weekday="Monday",
+                    leapyear=False,
+                    year_by_year=False,
+                    user_playlist=True,
+                ),
+                optimization=OutputSettingsOptimization(transmission_capacities=True),
+                playlist=[1],
+            ),
         ),
         OutputDetails(
-            name="20201014-1430adq", mode=Mode.ADEQUACY, synthesis=True, by_year=False, nb_years=1, archived=False
+            name="20201014-1430adq",
+            mode=Mode.ADEQUACY,
+            synthesis=True,
+            by_year=False,
+            nb_years=1,
+            archived=False,
+            settings=OutputSettings(
+                general=OutputSettingsGeneral(
+                    mode="Adequacy",
+                    horizon="2030",
+                    nbyears=1,
+                    simulation_start=1,
+                    simulation_end=7,
+                    january_1st="Monday",
+                    first_month_in_year="january",
+                    first_weekday="Monday",
+                    leapyear=False,
+                    year_by_year=False,
+                    user_playlist=True,
+                ),
+                optimization=OutputSettingsOptimization(transmission_capacities=True),
+                playlist=[1],
+            ),
         ),
         OutputDetails(
-            name="20201014-1430adq-2", mode=Mode.ADEQUACY, synthesis=True, by_year=False, nb_years=1, archived=True
+            name="20201014-1430adq-2",
+            mode=Mode.ADEQUACY,
+            synthesis=True,
+            by_year=False,
+            nb_years=1,
+            archived=True,
+            settings=OutputSettings(
+                general=OutputSettingsGeneral(
+                    mode="Adequacy",
+                    horizon="2030",
+                    nbyears=1,
+                    simulation_start=1,
+                    simulation_end=7,
+                    january_1st="Monday",
+                    first_month_in_year="january",
+                    first_weekday="Monday",
+                    leapyear=False,
+                    year_by_year=False,
+                    user_playlist=True,
+                ),
+                optimization=OutputSettingsOptimization(transmission_capacities=True),
+                playlist=[1],
+            ),
         ),
         OutputDetails(
             name="20241807-1540eco-extra-outputs",
@@ -145,6 +261,23 @@ def test_file_output_storage(file_output_storage):
             by_year=True,
             nb_years=1,
             archived=False,
+            settings=OutputSettings(
+                general=OutputSettingsGeneral(
+                    mode="Economy",
+                    horizon="",
+                    nbyears=1,
+                    simulation_start=1,
+                    simulation_end=365,
+                    january_1st="Monday",
+                    first_month_in_year="january",
+                    first_weekday="Monday",
+                    leapyear=False,
+                    year_by_year=True,
+                    user_playlist=False,
+                ),
+                optimization=OutputSettingsOptimization(transmission_capacities="local-values"),
+                playlist=[],
+            ),
         ),
     ]
 
