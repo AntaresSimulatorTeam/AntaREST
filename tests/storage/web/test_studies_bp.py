@@ -31,6 +31,7 @@ from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
 from antarest.core.utils.archives import ArchiveFormat
+from antarest.dependencies import AppState
 from antarest.main import add_exception_handlers
 from antarest.matrixstore.service import MatrixService
 from antarest.output.output_blueprint import create_output_routes
@@ -74,15 +75,14 @@ def create_test_client(
     file_transfer_manager: FileTransferManager = Mock(),
     raise_server_exceptions: bool = True,
 ) -> TestClient:
+    services = Mock()
+    services.study = service
+    services.output_service = output_service
+    services.file_transfer_manager = file_transfer_manager
+    services.matrix = Mock(spec=MatrixService)
     app = FastAPI(title=__name__)
     add_exception_handlers(app)
-    app.state.config = CONFIG
-    app.state.study_service = service
-    app.state.output_service = output_service
-    app.state.file_transfer_manager = file_transfer_manager
-    app.state.matrix_service = Mock(spec=MatrixService)
-    app.state.task_service = Mock()
-    app.state.login_service = Mock()
+    app.state.app_state = AppState(config=CONFIG, services=services, ws_manager=Mock())
     app.include_router(create_study_routes())
     app.include_router(create_raw_study_routes())
     app.include_router(create_study_variant_routes())

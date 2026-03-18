@@ -21,6 +21,7 @@ from starlette.testclient import TestClient
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
+from antarest.dependencies import AppState
 from antarest.launcher.model import JobResult, JobResultDTO, JobStatus, LauncherParametersDTO, LogType
 from antarest.launcher.web import create_launcher_api
 from antarest.main import add_exception_handlers
@@ -35,16 +36,11 @@ ADMIN = JWTUser(
 
 def create_app(service: Mock) -> FastAPI:
     config = Config(security=SecurityConfig(disabled=True))
+    services = Mock()
+    services.launcher = service
     app = FastAPI(title=__name__)
     add_exception_handlers(app)
-    app.state.config = config
-    app.state.launcher_service = service
-    app.state.study_service = Mock()
-    app.state.output_service = Mock()
-    app.state.login_service = Mock()
-    app.state.file_transfer_manager = Mock()
-    app.state.task_service = Mock()
-    app.state.cache = Mock()
+    app.state.app_state = AppState(config=config, services=services, ws_manager=Mock())
     app.include_router(create_launcher_api())
     return app
 

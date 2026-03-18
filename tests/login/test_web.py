@@ -24,6 +24,7 @@ from starlette.testclient import TestClient
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
+from antarest.dependencies import AppState
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.login.auth import JwtSettings
 from antarest.login.model import (
@@ -49,11 +50,11 @@ def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
         resources_path=Path(),
         security=SecurityConfig(disabled=auth_disabled, jwt_key="super-secret"),
     )
-
+    services = Mock()
+    services.user = service
     app = FastAPI(title=__name__)
     add_exception_handlers(app)
-    app.state.config = config
-    app.state.login_service = service
+    app.state.app_state = AppState(config=config, services=services, ws_manager=Mock())
     app.include_router(create_login_api())
     app.include_router(create_user_api())
     return app

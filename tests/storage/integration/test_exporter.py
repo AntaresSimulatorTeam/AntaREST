@@ -25,6 +25,7 @@ from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import Config, SecurityConfig, StorageConfig, WorkspaceConfig
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.eventbus import DummyEventBusService
+from antarest.dependencies import AppState
 from antarest.main import add_exception_handlers
 from antarest.matrixstore.service import MatrixService
 from antarest.output.output_blueprint import create_output_routes
@@ -92,14 +93,14 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> 
         config=config,
     )
 
+    services = Mock()
+    services.study = study_service
+    services.output_service = output_service
+    services.file_transfer_manager = ftm
+    services.task_service = task_service
     app = FastAPI(title=__name__)
     add_exception_handlers(app)
-    app.state.config = config
-    app.state.study_service = study_service
-    app.state.output_service = output_service
-    app.state.file_transfer_manager = ftm
-    app.state.task_service = task_service
-    app.state.login_service = Mock()
+    app.state.app_state = AppState(config=config, services=services, ws_manager=Mock())
     app.include_router(create_study_routes())
     app.include_router(create_output_routes())
 

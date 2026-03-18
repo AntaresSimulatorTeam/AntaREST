@@ -21,6 +21,7 @@ from starlette.testclient import TestClient
 
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.dependencies import AppState
 from antarest.main import add_exception_handlers
 from antarest.matrixstore.model import MatrixDescriptionDTO, MatrixInfoDTO, MatrixReference, MatrixReferencesDTO
 from antarest.matrixstore.web import MatrixDTO, create_matrix_api
@@ -33,13 +34,11 @@ def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
         resources_path=Path(),
         security=SecurityConfig(disabled=auth_disabled, jwt_key="super-secret"),
     )
+    services = Mock()
+    services.matrix = service
     app = FastAPI(title=__name__)
     add_exception_handlers(app)
-    app.state.config = config
-    app.state.matrix_service = service
-    app.state.file_transfer_manager = Mock()
-    app.state.task_service = Mock()
-    app.state.login_service = Mock()
+    app.state.app_state = AppState(config=config, services=services, ws_manager=Mock())
     app.include_router(create_matrix_api())
     return app
 

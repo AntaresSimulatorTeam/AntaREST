@@ -20,6 +20,7 @@ from starlette.testclient import TestClient
 from antarest import __version__
 from antarest.core.config import Config, SecurityConfig, StorageConfig, WorkspaceConfig
 from antarest.core.core_blueprint import create_utils_routes
+from antarest.dependencies import AppState
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 
 CONFIG = Config(
@@ -29,13 +30,15 @@ CONFIG = Config(
 )
 
 
-def test_version() -> None:
-    mock_storage_service = Mock()
-    mock_storage_service.study_service.path_resources = Path("/")
-
+def _make_app(config: Config) -> FastAPI:
     app = FastAPI(title=__name__)
-    app.state.config = Config()
+    app.state.app_state = AppState(config=config, services=Mock(), ws_manager=Mock())
     app.include_router(create_utils_routes())
+    return app
+
+
+def test_version() -> None:
+    app = _make_app(Config())
     client = TestClient(app)
 
     path = "/version"
@@ -46,9 +49,7 @@ def test_version() -> None:
 
 
 def test_server_health() -> None:
-    app = FastAPI(title=__name__)
-    app.state.config = Config()
-    app.include_router(create_utils_routes())
+    app = _make_app(Config())
     client = TestClient(app)
     result = client.get("/health")
     assert result.json() == {"status": "available"}

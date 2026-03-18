@@ -29,6 +29,7 @@ from starlette.testclient import TestClient
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.core.utils.polars import create_polars_dataframe
+from antarest.dependencies import AppState
 from antarest.main import add_exception_handlers
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -54,16 +55,15 @@ from tests.storage.integration.data.set_values_monthly import set_values_monthly
 @pytest.fixture
 def client(services, db_engine: Engine) -> TestClient:
     study_service, output_service, config = services
+    services = Mock()
+    services.study = study_service
+    services.output_service = output_service
+    services.file_transfer_manager = study_service.file_transfer_manager
     app = FastAPI(title=__name__)
     init_db_singleton(custom_engine=db_engine, session_args={"autocommit": False, "autoflush": False})
     app.add_middleware(DBSessionMiddleware)
     add_exception_handlers(app)
-    app.state.config = config
-    app.state.study_service = study_service
-    app.state.output_service = output_service
-    app.state.file_transfer_manager = study_service.file_transfer_manager
-    app.state.task_service = Mock()
-    app.state.login_service = Mock()
+    app.state.app_state = AppState(config=config, services=services, ws_manager=Mock())
     app.include_router(create_study_routes())
     app.include_router(create_raw_study_routes())
     app.include_router(create_output_routes())
