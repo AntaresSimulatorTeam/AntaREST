@@ -42,6 +42,7 @@ from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.core.utils.utils import get_local_path
 from antarest.core.utils.web import tags_metadata
+from antarest.dependencies import AppState
 from antarest.eventbus.connections import ConnectionManager, connect_event_bus
 from antarest.eventbus.web import register_websocket_routes
 from antarest.fastapi_jwt_auth.exceptions import AuthJWTException
@@ -58,7 +59,6 @@ from antarest.service_creator import (
     Services,
     create_services,
     init_db_engine,
-    store_services_on_app,
 )
 from antarest.singleton_services import start_all_services
 from antarest.study.web.directory_blueprint import create_directory_routes
@@ -336,17 +336,15 @@ def inject_services(app: FastAPI, config: Config) -> Services:
     """
     # Ideally, config should not appear here but only be used for service creation
     # however, for now some dependencies still go and read the config at runtime
-    app.state.config = config
-
-    app.state.ws_manager = ConnectionManager()
 
     services = create_services(config)
 
-    # Store services on app.state so Depends() can resolve them
-    store_services_on_app(app, services, config)
+    ws_manager = ConnectionManager()
+    connect_event_bus(services.event_bus, ws_manager)
 
-    # Wire event bus to websocket connection manager
-    connect_event_bus(services.event_bus, app.state.ws_manager)
+    app_state = AppState(config=config, services=services, ws_manager=ws_manager)
+
+    app.state.app_state = app_state
 
     # Important note:
     # those singleton services must be "started" ONLY when explictly asked.

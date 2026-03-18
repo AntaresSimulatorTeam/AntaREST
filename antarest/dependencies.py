@@ -27,6 +27,7 @@ a few --> left for future work.
 """
 
 from collections.abc import AsyncGenerator
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated, Any, TypeAlias, cast
 
@@ -51,70 +52,89 @@ from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import MatrixService
 from antarest.output.output_service import OutputService
+from antarest.service_creator import Services
 from antarest.study.directory_service import DirectoryService
 from antarest.study.service import StudyService
 from antarest.study.storage.explorer_service import Explorer
 from antarest.study.storage.rawstudy.watcher import Watcher
 
 
+@dataclass(frozen=True)
+class AppState:
+    """
+    That class centralizes services and config of the application, aimed at being stored in app.state
+    """
+
+    config: Config
+    services: Services
+    ws_manager: ConnectionManager
+
+
+def get_app_state(request: HTTPConnection) -> AppState:
+    return cast(AppState, request.app.state.app_state)
+
+
 def get_config(request: HTTPConnection) -> Config:
-    return cast(Config, request.app.state.config)
+    return get_app_state(request).config
 
 
 def get_study_service(request: Request) -> StudyService:
-    return cast(StudyService, request.app.state.study_service)
+    return get_app_state(request).services.study
 
 
 def get_directory_service(request: Request) -> DirectoryService:
-    return cast(DirectoryService, request.app.state.directory_service)
+    return get_app_state(request).services.directory
 
 
 def get_explorer(request: Request) -> Explorer:
-    return cast(Explorer, request.app.state.explorer)
+    return get_app_state(request).services.explorer
 
 
 def get_watcher(request: Request) -> Watcher:
-    return cast(Watcher, request.app.state.watcher)
+    return get_app_state(request).services.watcher
 
 
 def get_login_service(request: HTTPConnection) -> LoginService:
-    return cast(LoginService, request.app.state.login_service)
+    return get_app_state(request).services.user
 
 
 def get_launcher_service(request: Request) -> LauncherService:
-    return cast(LauncherService, request.app.state.launcher_service)
+    launcher = get_app_state(request).services.launcher
+    if launcher is None:
+        raise ValueError("Launcher service is not configured.")
+    return launcher
 
 
 def get_matrix_service(request: Request) -> MatrixService:
-    return cast(MatrixService, request.app.state.matrix_service)
+    return get_app_state(request).services.matrix
 
 
 def get_file_transfer_manager(request: Request) -> FileTransferManager:
-    return cast(FileTransferManager, request.app.state.file_transfer_manager)
+    return get_app_state(request).services.file_transfer_manager
 
 
 def get_output_service(request: Request) -> OutputService:
-    return cast(OutputService, request.app.state.output_service)
+    return get_app_state(request).services.output_service
 
 
 def get_favorite_study_service(request: Request) -> FavoriteStudyService:
-    return cast(FavoriteStudyService, request.app.state.favorite_study_service)
+    return get_app_state(request).services.favorite_study
 
 
 def get_favorite_directory_service(request: Request) -> FavoriteDirectoryService:
-    return cast(FavoriteDirectoryService, request.app.state.favorite_directory_service)
+    return get_app_state(request).services.favorite_directory
 
 
 def get_task_service(request: Request) -> ITaskService:
-    return cast(ITaskService, request.app.state.task_service)
+    return get_app_state(request).services.task_service
 
 
 def get_maintenance_service(request: Request) -> MaintenanceService:
-    return cast(MaintenanceService, request.app.state.maintenance_service)
+    return get_app_state(request).services.maintenance
 
 
 def get_tmp_export_file(request: Request, background_tasks: BackgroundTasks) -> Path:
-    ftm: FileTransferManager = cast(FileTransferManager, request.app.state.file_transfer_manager)
+    ftm = get_app_state(request).services.file_transfer_manager
     return ftm.request_tmp_file(background_tasks)
 
 
@@ -161,7 +181,7 @@ def get_auth_service(
 
 
 def get_ws_manager(request: HTTPConnection) -> ConnectionManager:
-    return cast(ConnectionManager, request.app.state.ws_manager)
+    return get_app_state(request).ws_manager
 
 
 # Type aliases to be used for injection in endpoints
