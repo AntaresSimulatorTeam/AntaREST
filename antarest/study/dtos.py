@@ -33,7 +33,7 @@ class OutputSynthesis(AntaresBaseModel):
     Synthetic data about outputs of a study.
     """
 
-    model_config = ConfigDict(alias_generator=to_camel_case)
+    model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
     name: str
     mode: Mode
@@ -58,8 +58,6 @@ class StudyDataSynthesis(AntaresBaseModel):
     """
     Synthetic data about the **input** data of a study.
     """
-
-    model_config = ConfigDict(alias_generator=to_camel_case)
 
     study_id: str
     version: StudyVersionInt
@@ -92,8 +90,6 @@ class StudySynthesis(AntaresBaseModel):
     This class could be a composition of StudyDataSynthesis and outputs, but that would be
     a breaking change of the API.
     """
-
-    model_config = ConfigDict(alias_generator=to_camel_case)
 
     study_id: str
     version: StudyVersionInt
