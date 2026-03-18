@@ -152,7 +152,7 @@ def get_matrix_service_from_dao(dao: StudyDao) -> ISimpleMatrixService:
 def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -> RealCaseStudy:
     # Create matrices in the matrix-store with different contents to diversify tests.
     base_data = [[1, 2.5], [3, 4.7]]
-    dataframes = [pl.DataFrame(data=[[a + i, b + i] for a, b in base_data], orient="row") for i in range(38)]
+    dataframes = [pl.DataFrame(data=[[a + i, b + i] for a, b in base_data], orient="row") for i in range(40)]
     (
         load_df,
         solar_df,
@@ -192,6 +192,8 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
         hydro_max_hourly_pump_power_df,
         hydro_max_daily_gen_energy_df,
         hydro_max_daily_pump_energy_df,
+        xpansion_capacity_df,
+        xpansion_weight_df,
     ) = dataframes
 
     load_id = matrix_service.create(load_df)
@@ -232,6 +234,8 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
     hydro_max_hourly_pump_power_id = matrix_service.create(hydro_max_hourly_pump_power_df)
     hydro_max_daily_gen_energy_id = matrix_service.create(hydro_max_daily_gen_energy_df)
     hydro_max_daily_pump_energy_id = matrix_service.create(hydro_max_daily_pump_energy_df)
+    xpansion_capacity_id = matrix_service.create(xpansion_capacity_df)
+    xpansion_weight_id = matrix_service.create(xpansion_weight_df)
 
     # Create `load`, `solar`, `wind`, `reserves` and `misc-gen` matrices in DB
     area_id = "paris"
@@ -301,6 +305,11 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
     dao.save_hydro_max_hourly_pump_power(area_id, hydro_max_hourly_pump_power_id)
     dao.save_hydro_max_daily_gen_energy(area_id, hydro_max_daily_gen_energy_id)
     dao.save_hydro_max_daily_pump_energy(area_id, hydro_max_daily_pump_energy_id)
+
+    # Create xpansion capacity and weight matrices
+    dao.create_xpansion_configuration()
+    dao.save_xpansion_capacity("link_capa.txt", xpansion_capacity_id)
+    dao.save_xpansion_weight("mc_weights.csv", xpansion_weight_id)
 
     return RealCaseStudy(
         area1=area_id,
