@@ -564,7 +564,7 @@ class StudyRepairSeverity(StrEnum):
 
 
 class StudyRepairRequest(AntaresBaseModel):
-    repairs: List[StudyRepairType] = Field(default_factory=lambda: [StudyRepairType.ARCHIVE_CONSISTENCY])
+    repairs: list[StudyRepairType] = Field(default_factory=list)
     dry_run: bool = True
 
 
@@ -584,16 +584,16 @@ class StudyRepairAction(AntaresBaseModel):
 class StudyRepairReport(AntaresBaseModel):
     study_id: str
     dry_run: bool
-    issues: List[StudyRepairIssue] = Field(default_factory=list)
-    proposed_actions: List[StudyRepairAction] = Field(default_factory=list)
-    applied_actions: List[StudyRepairAction] = Field(default_factory=list)
-    warnings: List[str] = Field(default_factory=list)
+    issues: list[StudyRepairIssue] = Field(default_factory=list)
+    proposed_actions: list[StudyRepairAction] = Field(default_factory=list)
+    applied_actions: list[StudyRepairAction] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
 
 
 class DeleteManyStudies(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
-    study_ids: List[str] = Field(..., description="List of study UUIDs to delete")
+    study_ids: list[str] = Field(..., description="List of study UUIDs to delete")
     with_variants: bool = Field(default=False, description="Whether to delete variant studies as well")
 
 
