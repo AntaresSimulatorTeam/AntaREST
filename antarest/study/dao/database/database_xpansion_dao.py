@@ -21,6 +21,7 @@ import polars as pl
 from sqlalchemy import CursorResult, Table, asc, delete, insert, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.elements import ColumnElement
 from typing_extensions import override
 
 from antarest.core.exceptions import (
@@ -405,23 +406,13 @@ class DatabaseXpansionDao(XpansionDao):
     @override
     def checks_xpansion_resource_can_be_deleted(self, resource_type: XpansionResourceFileType, filename: str) -> None:
         if resource_type == XpansionResourceFileType.CONSTRAINTS:
-            row = self._db_session.execute(
-                select(XPANSION_SETTINGS_TABLE.c.study_id).where(
-                    (XPANSION_SETTINGS_TABLE.c.study_id == self._study_id)
-                    & (XPANSION_SETTINGS_TABLE.c.additional_constraints == filename)
-                )
-            ).fetchone()
-            if row:
-                raise FileCurrentlyUsedInSettings(resource_type, filename)
+            self._raise_if_settings_references_filename(
+                XPANSION_SETTINGS_TABLE.c.additional_constraints, resource_type, filename
+            )
         elif resource_type == XpansionResourceFileType.WEIGHTS:
-            row = self._db_session.execute(
-                select(XPANSION_SETTINGS_TABLE.c.study_id).where(
-                    (XPANSION_SETTINGS_TABLE.c.study_id == self._study_id)
-                    & (XPANSION_SETTINGS_TABLE.c.yearly_weights == filename)
-                )
-            ).fetchone()
-            if row:
-                raise FileCurrentlyUsedInSettings(resource_type, filename)
+            self._raise_if_settings_references_filename(
+                XPANSION_SETTINGS_TABLE.c.yearly_weights, resource_type, filename
+            )
         elif resource_type == XpansionResourceFileType.CAPACITIES:
             profile_cols = [
                 XPANSION_CANDIDATE_TABLE.c.link_profile,
@@ -439,6 +430,17 @@ class DatabaseXpansionDao(XpansionDao):
             ).fetchone()
             if row:
                 raise FileCurrentlyUsedInSettings(resource_type, filename)
+
+    def _raise_if_settings_references_filename(
+        self, col: ColumnElement[str], resource_type: XpansionResourceFileType, filename: str
+    ) -> None:
+        row = self._db_session.execute(
+            select(XPANSION_SETTINGS_TABLE.c.study_id).where(
+                (XPANSION_SETTINGS_TABLE.c.study_id == self._study_id) & (col == filename)
+            )
+        ).fetchone()
+        if row:
+            raise FileCurrentlyUsedInSettings(resource_type, filename)
 
     @override
     def delete_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> None:
