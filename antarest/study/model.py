@@ -452,7 +452,10 @@ class StudyDiskSpaceAnalysis(Base):
     __tablename__ = "study_disk_space_analysis"
 
     study_id: Mapped[str] = mapped_column(
-        String(255), ForeignKey("study.id", name="fk_study_disk_space_id", ondelete="CASCADE"), nullable=False, primary_key=True
+        String(255),
+        ForeignKey("study.id", name="fk_study_disk_space_id", ondelete="CASCADE"),
+        nullable=False,
+        primary_key=True,
     )
     disk_space: Mapped[int] = mapped_column(Integer, nullable=False)
     last_analysis_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)

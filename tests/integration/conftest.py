@@ -29,7 +29,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.dbmodel import Base
 from antarest.main import fastapi_app
 from antarest.service_creator import Services
-from antarest.study.repository import AccessPermissions, StudyFilter, StudyDiskSpaceRepository
+from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from tests.integration.assets import ASSETS_DIR
 from tests.integration.utils import wait_for
@@ -139,8 +139,6 @@ def services(app_and_services: tuple[FastAPI, Services]) -> Services:
 @pytest.fixture
 def study_service(services: Services) -> StudyService:
     return services.study
-
-
 
 
 @pytest.fixture(name="client")
