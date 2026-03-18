@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from sqlalchemy import Boolean, Column, Enum, Float, ForeignKeyConstraint, Integer, String, Table
+from sqlalchemy import Boolean, Column, Enum, Float, ForeignKeyConstraint, Integer, LargeBinary, String, Table
 
 from antarest.dbmodel import Base
 from antarest.study.business.model.xpansion_model import Master, Solver, UcType
@@ -123,6 +123,48 @@ XPANSION_ADEQUACY_PATTERN_TABLE = Table(
         ["study_id", "area"],
         ["area.study_id", "area.area_id"],
         name="fk_xpansion_adequacy_pattern_study_id_area_area",
+        ondelete="CASCADE",
+    ),
+)
+
+XPANSION_CONSTRAINT_TABLE = Table(
+    "xpansion_constraint",
+    metadata,
+    Column("study_id", String(36), nullable=False, primary_key=True),
+    Column("filename", String(255), nullable=False, primary_key=True),
+    Column("content", LargeBinary(), nullable=False),
+    ForeignKeyConstraint(
+        ["study_id"],
+        ["xpansion_settings.study_id"],
+        name="fk_xpansion_constraint_settings",
+        ondelete="CASCADE",
+    ),
+)
+
+XPANSION_CAPACITY_TABLE = Table(
+    "xpansion_capacity",
+    metadata,
+    Column("study_id", String(36), nullable=False, primary_key=True),
+    Column("filename", String(255), nullable=False, primary_key=True),
+    Column("matrix_id", String(), nullable=False),
+    ForeignKeyConstraint(
+        ["study_id"],
+        ["xpansion_settings.study_id"],
+        name="fk_xpansion_capacity_settings",
+        ondelete="CASCADE",
+    ),
+)
+
+XPANSION_WEIGHT_TABLE = Table(
+    "xpansion_weight",
+    metadata,
+    Column("study_id", String(36), nullable=False, primary_key=True),
+    Column("filename", String(255), nullable=False, primary_key=True),
+    Column("matrix_id", String(), nullable=False),
+    ForeignKeyConstraint(
+        ["study_id"],
+        ["xpansion_settings.study_id"],
+        name="fk_xpansion_weight_settings",
         ondelete="CASCADE",
     ),
 )
