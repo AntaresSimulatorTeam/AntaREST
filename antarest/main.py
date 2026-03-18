@@ -222,7 +222,7 @@ def add_exception_handlers(application: FastAPI) -> None:
         )
 
 
-def create_routes(api_prefix: str) -> tuple[APIRouter, ConnectionManager]:
+def create_routes(api_prefix: str) -> APIRouter:
     """Creates all HTTP and websocket routes.
 
     Routes use FastAPI's Depends() mechanism for service injection,
@@ -259,9 +259,9 @@ def create_routes(api_prefix: str) -> tuple[APIRouter, ConnectionManager]:
     api_root.include_router(create_output_routes())
     api_root.include_router(create_favorite_routes())
 
-    ws_manager = register_websocket_routes(api_root)
+    register_websocket_routes(api_root)
 
-    return api_root, ws_manager
+    return api_root
 
 
 def base_fastapi_app(api_prefix: str, root_path: str) -> FastAPI:
@@ -273,7 +273,7 @@ def base_fastapi_app(api_prefix: str, root_path: str) -> FastAPI:
 
     Services are injected in routes using standard FastAPI dependency injection.
     """
-    routes, ws_manager = create_routes(api_prefix=api_prefix)
+    routes = create_routes(api_prefix=api_prefix)
 
     @asynccontextmanager
     async def set_threadpool_size(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -294,12 +294,10 @@ def base_fastapi_app(api_prefix: str, root_path: str) -> FastAPI:
         openapi_url=f"{api_prefix}/openapi.json",
     )
 
-    application.state.ws_manager = ws_manager
-
     # 2. Database
     application.add_middleware(DBSessionMiddleware)
 
-    # 4. Middlewares
+    # 3. Middlewares
     application.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -310,7 +308,7 @@ def base_fastapi_app(api_prefix: str, root_path: str) -> FastAPI:
 
     add_exception_handlers(application)
 
-    # 5. Include all routes
+    # 4. Include all routes
     application.include_router(routes)
 
     # It's important to add the logging middleware last, so that any log written or exception thrown
@@ -337,6 +335,8 @@ def inject_services(app: FastAPI, config: Config) -> Services:
     # Ideally, config should not appear here but only be used for service creation
     # however, for now some dependencies still go and read the config at runtime
     app.state.config = config
+
+    app.state.ws_manager = ConnectionManager()
 
     services = create_services(config)
 

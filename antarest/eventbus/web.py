@@ -20,7 +20,7 @@ from fastapi import APIRouter, HTTPException, Query
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from antarest.core.api_types import SanitizedStr
-from antarest.core.dependencies import AuthDep, ConfigDep
+from antarest.core.dependencies import AuthDep, ConfigDep, ConnectionManagerDep
 from antarest.core.interfaces.eventbus import Event, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
@@ -91,9 +91,8 @@ class ConnectionManager:
                 await connection.websocket.send_text(message)
 
 
-def register_websocket_routes(api_root: APIRouter) -> ConnectionManager:
+def register_websocket_routes(api_root: APIRouter) -> None:
     """Register the /ws websocket route. Returns the ConnectionManager for later event bus wiring."""
-    manager = ConnectionManager()
 
     @api_root.websocket("/ws")
     async def connect(
@@ -101,6 +100,7 @@ def register_websocket_routes(api_root: APIRouter) -> ConnectionManager:
         token: Annotated[SanitizedStr, Query()],
         jwt_manager: AuthDep,
         config: ConfigDep,
+        ws_manager: ConnectionManagerDep,
     ) -> None:
         user: Optional[JWTUser] = None
         if not config.security.disabled:
@@ -118,21 +118,19 @@ def register_websocket_routes(api_root: APIRouter) -> ConnectionManager:
                     exc_info=e,
                 )
                 raise HTTPException(500, "Failed to check auth")
-        await manager.connect(websocket, user or DEFAULT_ADMIN_USER)
+        await ws_manager.connect(websocket, user or DEFAULT_ADMIN_USER)
         try:
             while True:
                 message = await websocket.receive_text()
                 try:
-                    manager.process_message(message, websocket)
+                    ws_manager.process_message(message, websocket)
                 except Exception as e:
                     logger.error(
                         f"Failed to process websocket message {message}",
                         exc_info=e,
                     )
         except WebSocketDisconnect:
-            manager.disconnect(websocket)
-
-    return manager
+            ws_manager.disconnect(websocket)
 
 
 def connect_event_bus(event_bus: IEventBus, manager: ConnectionManager) -> None:
@@ -145,9 +143,3 @@ def connect_event_bus(event_bus: IEventBus, manager: ConnectionManager) -> None:
         await manager.broadcast(to_json_string(event_data), event.permissions, event.channel)
 
     event_bus.add_listener(send_event_to_ws)
-
-
-def configure_websockets(api_root: APIRouter, event_bus: IEventBus) -> None:
-    """Register websocket routes and wire the event bus (convenience wrapper)."""
-    manager = register_websocket_routes(api_root)
-    connect_event_bus(event_bus, manager)

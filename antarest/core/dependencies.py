@@ -32,6 +32,7 @@ from antarest.core.maintenance.service import MaintenanceService
 from antarest.core.serde.json import from_json
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.eventbus.web import ConnectionManager
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
 from antarest.launcher.service import LauncherService
@@ -149,6 +150,10 @@ def get_auth_service(
             raise ValueError(f"Unsupported request type: {type(request)}")
 
 
+def get_ws_manager(request: HTTPConnection) -> ConnectionManager:
+    return cast(ConnectionManager, request.app.state.ws_manager)
+
+
 # Type aliases to be used for injection in endpoints
 
 AuthDep: TypeAlias = Annotated[AuthJWT, Depends(get_auth_service)]
@@ -167,6 +172,7 @@ FavoriteDirectoryServiceDep: TypeAlias = Annotated[FavoriteDirectoryService, Dep
 TaskServiceDep: TypeAlias = Annotated[ITaskService, Depends(get_task_service)]
 MaintenanceServiceDep: TypeAlias = Annotated[MaintenanceService, Depends(get_maintenance_service)]
 TmpExportFileDep: TypeAlias = Annotated[Path, Depends(get_tmp_export_file)]
+ConnectionManagerDep: TypeAlias = Annotated[ConnectionManager, Depends(get_ws_manager)]
 
 
 async def auth_required(
