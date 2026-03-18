@@ -91,6 +91,25 @@ class VariantStudyRepository(StudyMetadataRepository):
         result = self.session.execute(select(recursive_q.c.id))
         return [r[0] for r in result]
 
+    def get_all_descendants(self, parent_id: str) -> List[VariantStudy]:
+        """
+        Get all variant descendants of a study recursively.
+
+        Args:
+            parent_id: Identifier of the ancestor study.
+
+        Returns:
+            List of all variants descendants.
+        """
+        base_q = select(Study.id).where(Study.parent_id == parent_id)
+        cte = base_q.cte("descendants_cte", recursive=True)
+
+        recursive_q = select(Study.id).join(cte, Study.parent_id == cte.c.id)
+
+        full_cte = cte.union_all(recursive_q)
+        stmt = select(VariantStudy).where(VariantStudy.id.in_(select(full_cte.c.id)))
+        return list(self.session.execute(stmt).scalars().all())
+
     def get_all_command_blocks(self) -> List[CommandBlock]:
         """
         Get all command blocks.

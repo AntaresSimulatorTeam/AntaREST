@@ -69,6 +69,16 @@ class ReadOnlyXpansionDao(ABC):
 class XpansionDao(ReadOnlyXpansionDao):
     @abstractmethod
     def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
+        """
+        Upsert a candidate.
+
+        Args:
+            candidate: The candidate to create or update.
+            old_id: Current candidate name, only provided when renaming a candidate.
+
+        Raises:
+            CandidateNotFoundError: If ``old_id`` is provided but does not exist.
+        """
         raise NotImplementedError()
 
     @abstractmethod
