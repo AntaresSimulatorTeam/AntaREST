@@ -20,6 +20,7 @@ from antarest.maintenance.tasks.common import BackGroundTaskStatus
 from antarest.maintenance.tasks.gc_matrix import clean_matrices
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 from antarest.matrixstore.service import MatrixService
+from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from tests.study.dao.conftest import build_real_case_study
@@ -84,6 +85,8 @@ def test_garbage_collection(db_dao: DatabaseStudyDao, db_session: Session, tmp_p
         hydro_max_hourly_pump_power_df,
         hydro_max_daily_gen_energy_df,
         hydro_max_daily_pump_energy_df,
+        xpansion_capacity_df,
+        xpansion_weight_df,
     ) = result.dataframes
     area_id, area2 = result.area1, result.area2
     thermal_id, renewable_id, st_storage_id = result.thermal_id, result.renewable_id, result.sts_id
@@ -208,3 +211,9 @@ def test_garbage_collection(db_dao: DatabaseStudyDao, db_session: Session, tmp_p
 
     hydro_max_daily_pump_energy = dao.get_hydro_max_daily_pump_energy(area_id)
     pl.testing.assert_frame_equal(hydro_max_daily_pump_energy, hydro_max_daily_pump_energy_df, check_dtypes=False)
+
+    xpansion_capacity = dao.get_xpansion_resource(XpansionResourceFileType.CAPACITIES, "link_capa.txt")
+    pl.testing.assert_frame_equal(xpansion_capacity, xpansion_capacity_df, check_dtypes=False)
+
+    xpansion_weight = dao.get_xpansion_resource(XpansionResourceFileType.WEIGHTS, "mc_weights.csv")
+    pl.testing.assert_frame_equal(xpansion_weight, xpansion_weight_df, check_dtypes=False)
