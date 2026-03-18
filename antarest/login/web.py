@@ -14,6 +14,7 @@ import logging
 from datetime import timedelta
 from typing import Optional
 
+from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter, Depends, HTTPException
 
 from antarest.core.api_types import SanitizedStr
@@ -62,7 +63,7 @@ def _generate_tokens(user: JWTUser, jwt_manager: AuthJWT, expire: Optional[timed
 
 
 def create_user_api() -> APIRouter:
-    bp = APIRouter(prefix="/v1", tags=[APITag.users], dependencies=[Depends(auth_required)])
+    bp = APIRouter(prefix="/v1", tags=[APITag.users], dependencies=[Depends(auth_required)], route_class=DishkaRoute)
 
     @bp.get("/users")
     def users_get_all(service: LoginServiceDep, details: bool = False) -> list[IdentityDTO | UserInfo]:
@@ -217,7 +218,7 @@ def create_user_api() -> APIRouter:
 
 
 def create_login_api() -> APIRouter:
-    bp = APIRouter(prefix="/v1", tags=[APITag.users])
+    bp = APIRouter(prefix="/v1", tags=[APITag.users], route_class=DishkaRoute)
 
     @bp.post("/login", summary="Login")
     def login(

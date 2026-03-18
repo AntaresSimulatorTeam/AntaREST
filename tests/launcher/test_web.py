@@ -21,10 +21,10 @@ from starlette.testclient import TestClient
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
-from antarest.dependencies import AppState
 from antarest.launcher.model import JobResult, JobResultDTO, JobStatus, LauncherParametersDTO, LogType
 from antarest.launcher.web import create_launcher_api
 from antarest.main import add_exception_handlers
+from tests.dishka_utils import setup_test_dishka
 
 ADMIN = JWTUser(
     id=1,
@@ -40,8 +40,8 @@ def create_app(service: Mock) -> FastAPI:
     services.launcher = service
     app = FastAPI(title=__name__)
     add_exception_handlers(app)
-    app.state.app_state = AppState(config=config, services=services, ws_manager=Mock())
     app.include_router(create_launcher_api())
+    setup_test_dishka(app, config, services)
     return app
 
 

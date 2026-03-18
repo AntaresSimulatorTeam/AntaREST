@@ -12,7 +12,6 @@
 
 from http import HTTPStatus
 from pathlib import Path
-from unittest.mock import Mock
 
 from fastapi import FastAPI
 from starlette.testclient import TestClient
@@ -20,8 +19,8 @@ from starlette.testclient import TestClient
 from antarest import __version__
 from antarest.core.config import Config, SecurityConfig, StorageConfig, WorkspaceConfig
 from antarest.core.core_blueprint import create_utils_routes
-from antarest.dependencies import AppState
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
+from tests.dishka_utils import setup_test_dishka
 
 CONFIG = Config(
     resources_path=Path(),
@@ -32,8 +31,8 @@ CONFIG = Config(
 
 def _make_app(config: Config) -> FastAPI:
     app = FastAPI(title=__name__)
-    app.state.app_state = AppState(config=config, services=Mock(), ws_manager=Mock())
     app.include_router(create_utils_routes())
+    setup_test_dishka(app, config)
     return app
 
 

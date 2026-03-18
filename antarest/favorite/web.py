@@ -12,6 +12,7 @@
 
 import logging
 
+from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter, Depends
 
 from antarest.core.api_types import UuidStr
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_favorite_routes() -> APIRouter:
-    bp = APIRouter(prefix="/v1", tags=[APITag.favorite], dependencies=[Depends(auth_required)])
+    bp = APIRouter(prefix="/v1", tags=[APITag.favorite], dependencies=[Depends(auth_required)], route_class=DishkaRoute)
 
     @bp.get("/favorites/studies/", summary="Listing favorites for current user")
     def list_favorite_studies(

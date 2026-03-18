@@ -13,6 +13,7 @@
 import logging
 from typing import List
 
+from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter, Depends
 
 from antarest.core.api_types import SanitizedStr
@@ -27,7 +28,9 @@ def create_explorer_routes() -> APIRouter:
     """
     Endpoint implementation for explorer management
     """
-    bp = APIRouter(prefix="/v1/private", tags=[APITag.explorer], dependencies=[Depends(auth_required)])
+    bp = APIRouter(
+        prefix="/v1/private", tags=[APITag.explorer], dependencies=[Depends(auth_required)], route_class=DishkaRoute
+    )
 
     @bp.get(
         "/explorer/{workspace}/_list_dir",

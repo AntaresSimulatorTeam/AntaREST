@@ -15,6 +15,7 @@ import logging
 from http import HTTPStatus
 from typing import Annotated, Optional
 
+from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from antarest.core.api_types import UuidStr
@@ -27,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_tasks_api() -> APIRouter:
-    bp = APIRouter(prefix="/v1", tags=[APITag.tasks], dependencies=[Depends(auth_required)])
+    bp = APIRouter(prefix="/v1", tags=[APITag.tasks], dependencies=[Depends(auth_required)], route_class=DishkaRoute)
 
     @bp.post("/tasks", deprecated=True)
     def list_tasks(service: TaskServiceDep, filter: TaskListFilter) -> list[TaskDTO]:

@@ -17,6 +17,7 @@ from pathlib import PurePosixPath
 from typing import Annotated, Dict, Optional, Sequence
 
 from antares.study.version import StudyVersion
+from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
 from markupsafe import escape
 from pydantic import NonNegativeInt
@@ -59,7 +60,9 @@ def create_study_routes() -> APIRouter:
     """
     Endpoint implementation for studies management
     """
-    bp = APIRouter(prefix="/v1", tags=[APITag.study_management], dependencies=[Depends(auth_required)])
+    bp = APIRouter(
+        prefix="/v1", tags=[APITag.study_management], dependencies=[Depends(auth_required)], route_class=DishkaRoute
+    )
 
     @bp.get(
         "/studies",

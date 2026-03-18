@@ -15,6 +15,7 @@ import logging
 from http import HTTPStatus
 from typing import Annotated, Optional
 
+from dishka.integrations.fastapi import inject
 from fastapi import APIRouter, HTTPException, Query
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
@@ -30,6 +31,7 @@ def register_websocket_routes(api_root: APIRouter) -> None:
     """Register the /ws websocket route"""
 
     @api_root.websocket("/ws")
+    @inject
     async def connect(
         websocket: WebSocket,
         token: Annotated[SanitizedStr, Query()],

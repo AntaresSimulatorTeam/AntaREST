@@ -12,6 +12,7 @@
 import logging
 from pathlib import Path
 
+from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter, Depends
 from starlette.responses import FileResponse
 
@@ -24,7 +25,9 @@ logger = logging.getLogger(__name__)
 
 
 def create_file_transfer_api() -> APIRouter:
-    bp = APIRouter(prefix="/v1", tags=[APITag.downloads], dependencies=[Depends(auth_required)])
+    bp = APIRouter(
+        prefix="/v1", tags=[APITag.downloads], dependencies=[Depends(auth_required)], route_class=DishkaRoute
+    )
 
     @bp.get("/downloads", summary="Get available downloads")
     def get_downloads(

@@ -21,10 +21,10 @@ from starlette.testclient import TestClient
 
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.dependencies import AppState
 from antarest.main import add_exception_handlers
 from antarest.matrixstore.model import MatrixDescriptionDTO, MatrixInfoDTO, MatrixReference, MatrixReferencesDTO
 from antarest.matrixstore.web import MatrixDTO, create_matrix_api
+from tests.dishka_utils import setup_test_dishka
 from tests.helpers import with_admin_user
 from tests.login.test_web import create_auth_token
 
@@ -38,8 +38,8 @@ def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
     services.matrix = service
     app = FastAPI(title=__name__)
     add_exception_handlers(app)
-    app.state.app_state = AppState(config=config, services=services, ws_manager=Mock())
     app.include_router(create_matrix_api())
+    setup_test_dishka(app, config, services)
     return app
 
 

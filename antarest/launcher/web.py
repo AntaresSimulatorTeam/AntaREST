@@ -14,6 +14,7 @@ import logging
 from typing import Annotated, List, Optional
 from uuid import UUID
 
+from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter, Depends, Query
 from pydantic import Field
 
@@ -40,7 +41,9 @@ DEFAULT_MAX_LATEST_JOBS = 200
 
 
 def create_launcher_api() -> APIRouter:
-    bp = APIRouter(prefix="/v1/launcher", tags=[APITag.launcher], dependencies=[Depends(auth_required)])
+    bp = APIRouter(
+        prefix="/v1/launcher", tags=[APITag.launcher], dependencies=[Depends(auth_required)], route_class=DishkaRoute
+    )
 
     @bp.post(
         "/run/{study_id}",

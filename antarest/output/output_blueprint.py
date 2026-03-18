@@ -16,6 +16,7 @@ from io import BytesIO
 from typing import Annotated, Any, Sequence, TypeAlias
 
 import pandas as pd
+from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter, Depends, Query, UploadFile
 from pydantic import TypeAdapter
 from starlette.responses import FileResponse, Response
@@ -99,7 +100,9 @@ def create_output_routes() -> APIRouter:
     """
     Endpoint implementation for outputs management
     """
-    bp = APIRouter(prefix="/v1", tags=[APITag.study_outputs], dependencies=[Depends(auth_required)])
+    bp = APIRouter(
+        prefix="/v1", tags=[APITag.study_outputs], dependencies=[Depends(auth_required)], route_class=DishkaRoute
+    )
 
     # noinspection PyShadowingBuiltins
     @bp.post(

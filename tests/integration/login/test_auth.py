@@ -15,18 +15,17 @@ import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
-from antarest.core.config import Config, SecurityConfig
-from antarest.dependencies import get_config
+from antarest.core.config import Config
 
 
 @pytest.fixture
 def auth_disabled_app(app: FastAPI) -> Iterable[FastAPI]:
-    # Note: important to reset the dependency overrides after use, for subsequent tests
-
-    config = Config(security=SecurityConfig(disabled=True))
-    app.dependency_overrides[get_config] = lambda: config
+    # Temporarily disable security by mutating the frozen config object in-place
+    config: Config = app.state.config
+    original_disabled = config.security.disabled
+    object.__setattr__(config.security, "disabled", True)
     yield app
-    app.dependency_overrides.clear()
+    object.__setattr__(config.security, "disabled", original_disabled)
 
 
 def test_disable_auth(auth_disabled_app: FastAPI, client: TestClient):

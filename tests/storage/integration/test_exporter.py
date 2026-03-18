@@ -25,7 +25,6 @@ from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import Config, SecurityConfig, StorageConfig, WorkspaceConfig
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.eventbus import DummyEventBusService
-from antarest.dependencies import AppState
 from antarest.main import add_exception_handlers
 from antarest.matrixstore.service import MatrixService
 from antarest.output.output_blueprint import create_output_routes
@@ -34,6 +33,7 @@ from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.web.studies_blueprint import create_study_routes
+from tests.dishka_utils import setup_test_dishka
 from tests.helpers import create_raw_study, with_admin_user
 from tests.storage.conftest import SimpleFileTransferManager, SimpleSyncTaskService
 from tests.storage.integration.conftest import UUID
@@ -100,7 +100,7 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> 
     services.task_service = task_service
     app = FastAPI(title=__name__)
     add_exception_handlers(app)
-    app.state.app_state = AppState(config=config, services=services, ws_manager=Mock())
+    setup_test_dishka(app, config, services)
     app.include_router(create_study_routes())
     app.include_router(create_output_routes())
 

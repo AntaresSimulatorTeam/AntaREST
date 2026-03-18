@@ -15,6 +15,7 @@ from http import HTTPStatus
 from http.client import HTTPException
 from typing import List
 
+from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter, Depends
 
 from antarest.core.api_types import SanitizedStr
@@ -33,7 +34,9 @@ def create_watcher_routes() -> APIRouter:
     """
     Endpoint implementation for watcher management
     """
-    bp = APIRouter(prefix="/v1", tags=[APITag.study_raw_data], dependencies=[Depends(auth_required)])
+    bp = APIRouter(
+        prefix="/v1", tags=[APITag.study_raw_data], dependencies=[Depends(auth_required)], route_class=DishkaRoute
+    )
 
     @bp.post(
         "/watcher/_scan",

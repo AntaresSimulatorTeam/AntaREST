@@ -13,6 +13,7 @@
 import logging
 from typing import Annotated
 
+from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter, Body, Depends
 
 from antarest.dependencies import MaintenanceServiceDep, auth_required
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_maintenance_api() -> APIRouter:
-    bp = APIRouter(prefix="/v1")
+    bp = APIRouter(prefix="/v1", route_class=DishkaRoute)
 
     @bp.get("/core/maintenance", include_in_schema=False)
     def get_maintenance_status(service: MaintenanceServiceDep) -> bool:

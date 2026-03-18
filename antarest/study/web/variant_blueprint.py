@@ -14,6 +14,7 @@ import logging
 from typing import Annotated, List, Optional, Union
 
 import humanize
+from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter, Body, Depends
 
 from antarest.core.api_types import SanitizedStr, UuidStr
@@ -32,7 +33,12 @@ def create_study_variant_routes() -> APIRouter:
     """
     Endpoint implementation for studies area management
     """
-    bp = APIRouter(prefix="/v1", tags=[APITag.study_variant_management], dependencies=[Depends(auth_required)])
+    bp = APIRouter(
+        prefix="/v1",
+        tags=[APITag.study_variant_management],
+        dependencies=[Depends(auth_required)],
+        route_class=DishkaRoute,
+    )
 
     @bp.post(
         "/studies/{uuid}/variants",

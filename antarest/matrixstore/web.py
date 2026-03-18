@@ -13,6 +13,7 @@
 import logging
 from typing import Annotated, List, Optional
 
+from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
 from starlette.responses import FileResponse
 
@@ -49,7 +50,7 @@ def create_matrix_api() -> APIRouter:
     """
     Endpoints login implementation
     """
-    bp = APIRouter(prefix="/v1", tags=[APITag.matrix], dependencies=[Depends(auth_required)])
+    bp = APIRouter(prefix="/v1", tags=[APITag.matrix], dependencies=[Depends(auth_required)], route_class=DishkaRoute)
 
     @bp.post("/matrix", description="Upload a new matrix")
     def create(

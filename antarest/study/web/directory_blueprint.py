@@ -14,6 +14,7 @@ import logging
 from http import HTTPStatus
 from typing import List
 
+from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter, Depends
 
 from antarest.core.api_types import UuidStr
@@ -25,7 +26,9 @@ logger = logging.getLogger(__name__)
 
 
 def create_directory_routes() -> APIRouter:
-    bp = APIRouter(prefix="/v1", tags=[APITag.directory_management], dependencies=[Depends(auth_required)])
+    bp = APIRouter(
+        prefix="/v1", tags=[APITag.directory_management], dependencies=[Depends(auth_required)], route_class=DishkaRoute
+    )
 
     @bp.get(
         "/directories",

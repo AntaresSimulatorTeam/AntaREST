@@ -42,8 +42,7 @@ from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.core.utils.utils import get_local_path
 from antarest.core.utils.web import tags_metadata
-from antarest.dependencies import AppState
-from antarest.eventbus.connections import ConnectionManager, connect_event_bus
+from antarest.dishka_provider import ConfigProvider, ServicesProvider
 from antarest.eventbus.web import register_websocket_routes
 from antarest.fastapi_jwt_auth.exceptions import AuthJWTException
 from antarest.favorite.web import create_favorite_routes
@@ -57,7 +56,6 @@ from antarest.service_creator import (
     SESSION_ARGS,
     Module,
     Services,
-    create_services,
     init_db_engine,
 )
 from antarest.singleton_services import start_all_services
@@ -333,21 +331,45 @@ def init_db(config: Config, config_file: Path, auto_upgrade: bool, init_admin: b
 def inject_services(app: FastAPI, config: Config) -> Services:
     """
     Inject services into the application state, so that they can be accessed from routes.
+
+    Sets up the dishka dependency injection container and attaches it to the FastAPI app.
     """
-    # Ideally, config should not appear here but only be used for service creation
-    # however, for now some dependencies still go and read the config at runtime
+    import asyncio
 
-    services = create_services(config)
+    from dishka import AsyncContainer, make_async_container
+    from dishka.integrations.fastapi import setup_dishka
 
-    ws_manager = ConnectionManager()
-    connect_event_bus(services.event_bus, ws_manager)
+    # Close previous container if re-injecting (e.g. in tests)
+    old_container: AsyncContainer | None = getattr(app.state, "dishka_container", None)
+    if old_container is not None:
+        try:
+            loop = asyncio.get_running_loop()
+            loop.run_until_complete(old_container.close())
+        except RuntimeError:
+            asyncio.run(old_container.close())
 
-    app_state = AppState(config=config, services=services, ws_manager=ws_manager)
+    container = make_async_container(ConfigProvider(config), ServicesProvider())
 
-    app.state.app_state = app_state
+    if old_container is not None:
+        # Middleware was already added on the first call; just swap the container reference
+        app.state.dishka_container = container
+    else:
+        setup_dishka(container, app)
+
+    async def _get_services() -> Services:
+        return await container.get(Services)
+
+    try:
+        loop = asyncio.get_running_loop()
+        services = loop.run_until_complete(_get_services())
+    except RuntimeError:
+        services = asyncio.run(_get_services())
+
+    # Store config on app.state for the lifespan handler (threadpool size)
+    app.state.config = config
 
     # Important note:
-    # those singleton services must be "started" ONLY when explictly asked.
+    # those singleton services must be "started" ONLY when explicitly asked.
     # Typically for a production multi-process deployment, they should not be started
     # for each HTTP worker, but only for one dedicated background worker.
     if services.watcher and Module.WATCHER in config.server.services:

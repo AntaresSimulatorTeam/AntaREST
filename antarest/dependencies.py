@@ -13,24 +13,16 @@
 """
 This module defines dependencies for all routes of the application.
 
-Design notes:
-
-for now, the definition of dependencies is centralized in that unique file,
-and imported in modules that need them.
-
-It would be cleaner to separate **declaration** of dependencies in modules,
-from their **provision** at the app level here, to avoid having this kind of circular import
-"module -> depend on app for dependencies -> depend on module services".
-
-That would require to use a real DI container such as dishka or lagom, to name
-a few --> left for future work.
+Service dependencies are provided by dishka via FromDishka annotations.
+A few dependencies that need FastAPI-specific request context (auth, tmp files)
+remain as FastAPI Depends().
 """
 
 from collections.abc import AsyncGenerator
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated, Any, TypeAlias, cast
+from typing import Annotated, Any, TypeAlias
 
+from dishka.integrations.fastapi import FromDishka, inject
 from fastapi import BackgroundTasks, Depends
 from starlette.requests import HTTPConnection, Request
 from starlette.responses import Response
@@ -52,97 +44,39 @@ from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import MatrixService
 from antarest.output.output_service import OutputService
-from antarest.service_creator import Services
 from antarest.study.directory_service import DirectoryService
 from antarest.study.service import StudyService
 from antarest.study.storage.explorer_service import Explorer
 from antarest.study.storage.rawstudy.watcher import Watcher
 
+# Type aliases for dishka-injected dependencies (used in endpoint signatures)
 
-@dataclass(frozen=True)
-class AppState:
-    """
-    That class centralizes services and config of the application, aimed at being stored in app.state
-    """
-
-    config: Config
-    services: Services
-    ws_manager: ConnectionManager
-
-
-def get_app_state(request: HTTPConnection) -> AppState:
-    return cast(AppState, request.app.state.app_state)
-
-
-def get_config(request: HTTPConnection) -> Config:
-    return get_app_state(request).config
-
-
-def get_study_service(request: Request) -> StudyService:
-    return get_app_state(request).services.study
+ConfigDep: TypeAlias = FromDishka[Config]
+StudyServiceDep: TypeAlias = FromDishka[StudyService]
+DirectoryServiceDep: TypeAlias = FromDishka[DirectoryService]
+ExplorerDep: TypeAlias = FromDishka[Explorer]
+WatcherDep: TypeAlias = FromDishka[Watcher]
+LoginServiceDep: TypeAlias = FromDishka[LoginService]
+LauncherServiceDep: TypeAlias = FromDishka[LauncherService]
+MatrixServiceDep: TypeAlias = FromDishka[MatrixService]
+FileTransferManagerDep: TypeAlias = FromDishka[FileTransferManager]
+OutputServiceDep: TypeAlias = FromDishka[OutputService]
+FavoriteStudyServiceDep: TypeAlias = FromDishka[FavoriteStudyService]
+FavoriteDirectoryServiceDep: TypeAlias = FromDishka[FavoriteDirectoryService]
+TaskServiceDep: TypeAlias = FromDishka[ITaskService]
+MaintenanceServiceDep: TypeAlias = FromDishka[MaintenanceService]
+ConnectionManagerDep: TypeAlias = FromDishka[ConnectionManager]
 
 
-def get_directory_service(request: Request) -> DirectoryService:
-    return get_app_state(request).services.directory
+# Dependencies that still use FastAPI's Depends() because they need request context
 
 
-def get_explorer(request: Request) -> Explorer:
-    return get_app_state(request).services.explorer
-
-
-def get_watcher(request: Request) -> Watcher:
-    return get_app_state(request).services.watcher
-
-
-def get_login_service(request: HTTPConnection) -> LoginService:
-    return get_app_state(request).services.user
-
-
-def get_launcher_service(request: Request) -> LauncherService:
-    launcher = get_app_state(request).services.launcher
-    if launcher is None:
-        raise ValueError("Launcher service is not configured.")
-    return launcher
-
-
-def get_matrix_service(request: Request) -> MatrixService:
-    return get_app_state(request).services.matrix
-
-
-def get_file_transfer_manager(request: Request) -> FileTransferManager:
-    return get_app_state(request).services.file_transfer_manager
-
-
-def get_output_service(request: Request) -> OutputService:
-    return get_app_state(request).services.output_service
-
-
-def get_favorite_study_service(request: Request) -> FavoriteStudyService:
-    return get_app_state(request).services.favorite_study
-
-
-def get_favorite_directory_service(request: Request) -> FavoriteDirectoryService:
-    return get_app_state(request).services.favorite_directory
-
-
-def get_task_service(request: Request) -> ITaskService:
-    return get_app_state(request).services.task_service
-
-
-def get_maintenance_service(request: Request) -> MaintenanceService:
-    return get_app_state(request).services.maintenance
-
-
-def get_tmp_export_file(request: Request, background_tasks: BackgroundTasks) -> Path:
-    ftm = get_app_state(request).services.file_transfer_manager
-    return ftm.request_tmp_file(background_tasks)
-
-
+@inject
 def get_auth_service(
     request: HTTPConnection,
     response: Response,
-    login_service: LoginService = Depends(get_login_service),
-    config: Config = Depends(get_config),
+    login_service: FromDishka[LoginService],
+    config: FromDishka[Config],
 ) -> AuthJWT:
     """
     Returns an AuthJWT instance which can be used for authenticating the request.
@@ -180,34 +114,33 @@ def get_auth_service(
             raise ValueError(f"Unsupported request type: {type(request)}")
 
 
-def get_ws_manager(request: HTTPConnection) -> ConnectionManager:
-    return get_app_state(request).ws_manager
-
-
-# Type aliases to be used for injection in endpoints
-
 AuthDep: TypeAlias = Annotated[AuthJWT, Depends(get_auth_service)]
-ConfigDep: TypeAlias = Annotated[Config, Depends(get_config)]
-StudyServiceDep: TypeAlias = Annotated[StudyService, Depends(get_study_service)]
-DirectoryServiceDep: TypeAlias = Annotated[DirectoryService, Depends(get_directory_service)]
-ExplorerDep: TypeAlias = Annotated[Explorer, Depends(get_explorer)]
-WatcherDep: TypeAlias = Annotated[Watcher, Depends(get_watcher)]
-LoginServiceDep: TypeAlias = Annotated[LoginService, Depends(get_login_service)]
-LauncherServiceDep: TypeAlias = Annotated[LauncherService, Depends(get_launcher_service)]
-MatrixServiceDep: TypeAlias = Annotated[MatrixService, Depends(get_matrix_service)]
-FileTransferManagerDep: TypeAlias = Annotated[FileTransferManager, Depends(get_file_transfer_manager)]
-OutputServiceDep: TypeAlias = Annotated[OutputService, Depends(get_output_service)]
-FavoriteStudyServiceDep: TypeAlias = Annotated[FavoriteStudyService, Depends(get_favorite_study_service)]
-FavoriteDirectoryServiceDep: TypeAlias = Annotated[FavoriteDirectoryService, Depends(get_favorite_directory_service)]
-TaskServiceDep: TypeAlias = Annotated[ITaskService, Depends(get_task_service)]
-MaintenanceServiceDep: TypeAlias = Annotated[MaintenanceService, Depends(get_maintenance_service)]
+
+
+@inject
+def get_tmp_export_file(
+    file_transfer_manager: FromDishka[FileTransferManager], background_tasks: BackgroundTasks
+) -> Path:
+    return file_transfer_manager.request_tmp_file(background_tasks)
+
+
 TmpExportFileDep: TypeAlias = Annotated[Path, Depends(get_tmp_export_file)]
-ConnectionManagerDep: TypeAlias = Annotated[ConnectionManager, Depends(get_ws_manager)]
+
+
+# Bridge dependency to get Config from dishka for use in auth_required.
+# We don't use @inject on auth_required itself because it changes the async generator's
+# execution context, which breaks contextvars (current_user_context).
+@inject
+def _get_config_from_dishka(config: FromDishka[Config]) -> Config:
+    return config
+
+
+_ConfigViaDishka: TypeAlias = Annotated[Config, Depends(_get_config_from_dishka)]
 
 
 async def auth_required(
     auth_jwt: AuthDep,
-    config: ConfigDep,
+    config: _ConfigViaDishka,
 ) -> AsyncGenerator[None, None]:
     """
     A FastAPI dependency to require authentication and set the current user context.

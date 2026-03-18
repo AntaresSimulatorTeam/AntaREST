@@ -14,6 +14,7 @@ import logging
 from typing import Annotated, Sequence
 
 import polars as pl
+from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter, Depends, File, UploadFile
 from starlette.responses import Response
 
@@ -38,7 +39,12 @@ def create_xpansion_routes() -> APIRouter:
     """
     Endpoint implementation for xpansion studies management
     """
-    bp = APIRouter(prefix="/v1", tags=[APITag.xpansion_study_management], dependencies=[Depends(auth_required)])
+    bp = APIRouter(
+        prefix="/v1",
+        tags=[APITag.xpansion_study_management],
+        dependencies=[Depends(auth_required)],
+        route_class=DishkaRoute,
+    )
 
     @bp.post(
         "/studies/{uuid}/extensions/xpansion",

@@ -31,7 +31,6 @@ from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
 from antarest.core.utils.archives import ArchiveFormat
-from antarest.dependencies import AppState
 from antarest.main import add_exception_handlers
 from antarest.matrixstore.service import MatrixService
 from antarest.output.output_blueprint import create_output_routes
@@ -49,6 +48,7 @@ from antarest.study.service import StudyService
 from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
 from antarest.study.web.studies_blueprint import create_study_routes
 from antarest.study.web.variant_blueprint import create_study_variant_routes
+from tests.dishka_utils import setup_test_dishka
 from tests.helpers import with_admin_user
 from tests.storage.integration.conftest import UUID
 
@@ -82,11 +82,11 @@ def create_test_client(
     services.matrix = Mock(spec=MatrixService)
     app = FastAPI(title=__name__)
     add_exception_handlers(app)
-    app.state.app_state = AppState(config=CONFIG, services=services, ws_manager=Mock())
     app.include_router(create_study_routes())
     app.include_router(create_raw_study_routes())
     app.include_router(create_study_variant_routes())
     app.include_router(create_output_routes())
+    setup_test_dishka(app, CONFIG, services)
     return TestClient(app, raise_server_exceptions=raise_server_exceptions)
 
 

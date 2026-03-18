@@ -24,7 +24,6 @@ from starlette.testclient import TestClient
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
-from antarest.dependencies import AppState
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.login.auth import JwtSettings
 from antarest.login.model import (
@@ -43,6 +42,7 @@ from antarest.login.model import (
 )
 from antarest.login.web import create_login_api, create_user_api
 from antarest.main import add_exception_handlers
+from tests.dishka_utils import setup_test_dishka
 
 
 def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
@@ -54,9 +54,9 @@ def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
     services.user = service
     app = FastAPI(title=__name__)
     add_exception_handlers(app)
-    app.state.app_state = AppState(config=config, services=services, ws_manager=Mock())
     app.include_router(create_login_api())
     app.include_router(create_user_api())
+    setup_test_dishka(app, config, services)
     return app
 
 

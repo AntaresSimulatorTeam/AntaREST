@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 
+from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter
 
 from antarest.core.serde import AntaresBaseModel
@@ -31,7 +32,7 @@ def create_utils_routes() -> APIRouter:
     """
     Utility endpoints
     """
-    bp = APIRouter(tags=[APITag.misc])
+    bp = APIRouter(tags=[APITag.misc], route_class=DishkaRoute)
 
     @bp.get("/health")
     def health() -> StatusDTO:

@@ -16,6 +16,7 @@ from http import HTTPStatus
 from typing import Annotated, Dict, List, Literal, Mapping, Optional, Sequence
 
 import typing_extensions as te
+from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter, Body, Depends, Query
 from pydantic import Field
 from starlette.responses import RedirectResponse
@@ -142,7 +143,9 @@ def create_study_data_routes() -> APIRouter:
     """
     Endpoint implementation for studies area management
     """
-    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth_required)], tags=[APITag.study_data])
+    bp = APIRouter(
+        prefix="/v1", dependencies=[Depends(auth_required)], tags=[APITag.study_data], route_class=DishkaRoute
+    )
 
     class AreaResponse(AreaInfo):
         """API view for areas with deprecated ``type`` field kept for compatibility."""

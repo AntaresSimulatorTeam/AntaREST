@@ -54,6 +54,7 @@ dependencies = [
     "tables==3.10.2",
     "typing_extensions~=4.15.0",
     "xlsxwriter~=3.2.0",
+    "dishka>=1.9.1",
 ]
 
 [dependency-groups]

@@ -17,6 +17,7 @@ from pathlib import Path, PurePosixPath
 from typing import Annotated, Any, Literal, TypeAlias
 
 import polars as pl
+from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter, Body, Depends, File, HTTPException
 from fastapi.openapi.models import Example
 from fastapi.params import Query
@@ -146,7 +147,9 @@ def create_raw_study_routes() -> APIRouter:
     """
     Endpoint implementation for studies management
     """
-    bp = APIRouter(prefix="/v1", tags=[APITag.study_raw_data], dependencies=[Depends(auth_required)])
+    bp = APIRouter(
+        prefix="/v1", tags=[APITag.study_raw_data], dependencies=[Depends(auth_required)], route_class=DishkaRoute
+    )
 
     @bp.get(
         "/studies/{uuid}/raw",

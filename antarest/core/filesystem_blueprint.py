@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Iterator, Mapping, Sequence, Tuple, TypeAlias
 
 import typing_extensions as te
+from dishka.integrations.fastapi import DishkaRoute
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import Field
 from starlette.responses import PlainTextResponse, StreamingResponse
@@ -260,6 +261,7 @@ def create_file_system_blueprint() -> APIRouter:
         tags=[APITag.filesystem],
         dependencies=[Depends(auth_required)],
         include_in_schema=True,  # but may be disabled in the future
+        route_class=DishkaRoute,
     )
 
     # Utility functions

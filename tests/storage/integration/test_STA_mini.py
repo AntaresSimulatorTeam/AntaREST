@@ -29,7 +29,6 @@ from starlette.testclient import TestClient
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.core.utils.polars import create_polars_dataframe
-from antarest.dependencies import AppState
 from antarest.main import add_exception_handlers
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -43,6 +42,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.prepro.ar
 from antarest.study.storage.variantstudy.business.matrix_constants.common import fixed_4_columns
 from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
 from antarest.study.web.studies_blueprint import create_study_routes
+from tests.dishka_utils import setup_test_dishka
 from tests.helpers import assert_study, with_admin_user, with_db_context
 from tests.storage.integration.conftest import UUID
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
@@ -63,7 +63,7 @@ def client(services, db_engine: Engine) -> TestClient:
     init_db_singleton(custom_engine=db_engine, session_args={"autocommit": False, "autoflush": False})
     app.add_middleware(DBSessionMiddleware)
     add_exception_handlers(app)
-    app.state.app_state = AppState(config=config, services=services, ws_manager=Mock())
+    setup_test_dishka(app, config, services)
     app.include_router(create_study_routes())
     app.include_router(create_raw_study_routes())
     app.include_router(create_output_routes())
