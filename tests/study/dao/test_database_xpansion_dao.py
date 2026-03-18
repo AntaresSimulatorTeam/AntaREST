@@ -34,6 +34,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionResourceFileType,
     XpansionSensitivitySettings,
     XpansionSettings,
+    XpansionSettingsUpdate,
 )
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.xpansion import (
@@ -204,6 +205,36 @@ class TestXpansionSettings:
         )
         with pytest.raises(CandidateNotFoundError):
             db_dao.save_xpansion_settings(settings)
+
+    def test_checks_xpansion_settings_correct(
+        self, db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, ISimpleMatrixService]
+    ) -> None:
+        """checks_xpansion_settings_are_correct should validate that referenced constraint/weight files exist."""
+        db_dao, matrix_service = db_dao_930_and_matrix_service
+        db_dao.create_xpansion_configuration()
+
+        # --- missing constraint file raises ---
+        with pytest.raises(XpansionFileNotFoundError, match="constraints"):
+            db_dao.checks_xpansion_settings_are_correct(
+                XpansionSettingsUpdate(additional_constraints="missing_constraints.txt")
+            )
+
+        # --- missing weight file raises ---
+        with pytest.raises(XpansionFileNotFoundError, match="weights"):
+            db_dao.checks_xpansion_settings_are_correct(XpansionSettingsUpdate(yearly_weights="missing_weights.csv"))
+
+        # --- files exist: no raise ---
+        series_id = matrix_service.create(pl.DataFrame({"col": [1.0]}))
+        db_dao.save_xpansion_weight("weights.csv", series_id)
+        db_dao.save_xpansion_constraint("constraints.txt", b"some content")
+        db_dao.checks_xpansion_settings_are_correct(
+            XpansionSettingsUpdate(additional_constraints="constraints.txt", yearly_weights="weights.csv")
+        )  # must not raise
+
+        # --- None fields skip validation ---
+        db_dao.checks_xpansion_settings_are_correct(
+            XpansionSettingsUpdate(additional_constraints=None, yearly_weights=None)
+        )  # must not raise
 
 
 class TestXpansionCandidates:
