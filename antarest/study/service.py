@@ -31,6 +31,7 @@ import polars as pl
 from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from markupsafe import escape
+from sqlalchemy import inspect as sa_inspect
 from typing_extensions import override
 
 from antarest.core.config import Config
@@ -248,28 +249,8 @@ def clone_raw_study(study: RawStudy) -> RawStudy:
     """
     Build a transient copy of a raw study that can safely be used outside a DB session.
     """
-    return RawStudy(
-        id=study.id,
-        name=study.name,
-        version=study.version,
-        author=study.author,
-        editor=study.editor,
-        horizon=study.horizon,
-        created_at=study.created_at,
-        updated_at=study.updated_at,
-        last_access=study.last_access,
-        path=study.path,
-        folder=study.folder,
-        directory_id=study.directory_id,
-        parent_id=study.parent_id,
-        public_mode=study.public_mode or PublicMode.NONE,
-        owner_id=study.owner_id,
-        archived=study.archived,
-        storage_mode=study.storage_mode,
-        content_status=study.content_status,
-        workspace=study.workspace,
-        missing=study.missing,
-    )
+    attrs = {a.key: getattr(study, a.key) for a in sa_inspect(study).mapper.column_attrs}
+    return RawStudy(**attrs)
 
 
 class ArchiveConsistencyState(enum.StrEnum):
@@ -2195,19 +2176,18 @@ class StudyService:
             archive_path = self.storage_service.raw_study_service.find_archive_path(study_to_unarchive)
 
             self.storage_service.raw_study_service.unarchive(study_to_unarchive)
-            study_to_unarchive.archived = False
 
             with db():
                 study_db = self.repository.get(uuid)
                 if study_db is None:
                     raise StudyNotFoundError(uuid)
-                raw_study_db = assert_raw(db.session.merge(study_to_unarchive))
-                db.session.commit()
+                study_db.archived = False
+                self.repository.save(study_db)
                 self.event_bus.push(
                     Event(
                         type=EventType.STUDY_EDITED,
-                        payload=raw_study_db.to_json_summary(),
-                        permissions=PermissionInfo.from_study(raw_study_db),
+                        payload=study_db.to_json_summary(),
+                        permissions=PermissionInfo.from_study(study_db),
                     )
                 )
                 remove_from_cache(cache=self.cache_service, root_id=uuid)

@@ -564,7 +564,7 @@ class StudyRepairSeverity(StrEnum):
 
 
 class StudyRepairRequest(AntaresBaseModel):
-    repairs: list[StudyRepairType] = Field(default_factory=list)
+    repairs: list[StudyRepairType] = Field(default_factory=lambda: [StudyRepairType.ARCHIVE_CONSISTENCY])
     dry_run: bool = True
 
 
