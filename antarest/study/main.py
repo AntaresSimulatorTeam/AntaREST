@@ -10,10 +10,9 @@
 #
 # This file is part of the Antares project.
 
-from typing import Optional
+from typing import Optional, Tuple
 
 from antarest.blobstore.service import IBlobService
-from antarest.core.application import AppBuildContext
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
@@ -32,16 +31,9 @@ from antarest.study.storage.variantstudy.business.matrix_constants_generator imp
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from antarest.study.web.directory_blueprint import create_directory_routes
-from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
-from antarest.study.web.studies_blueprint import create_study_routes
-from antarest.study.web.study_data_blueprint import create_study_data_routes
-from antarest.study.web.variant_blueprint import create_study_variant_routes
-from antarest.study.web.xpansion_studies_blueprint import create_xpansion_routes
 
 
 def build_study_service(
-    app_ctxt: Optional[AppBuildContext],
     config: Config,
     user_service: LoginService,
     matrix_service: ISimpleMatrixService,
@@ -55,12 +47,11 @@ def build_study_service(
     study_service: Optional[StudyService] = None,
     generator_matrix_constants: Optional[GeneratorMatrixConstants] = None,
     event_bus: IEventBus = DummyEventBusService(),
-) -> StudyService:
+) -> Tuple[StudyService, DirectoryService]:
     """
     Storage module linking dependencies.
 
     Args:
-        app_ctxt: fastAPI application
         config: server config
         user_service: user service facade
         matrix_service: matrix store service
@@ -75,7 +66,7 @@ def build_study_service(
         event_bus: used by testing to inject mock. Let None to use true instantiation
 
     Returns:
-
+        A tuple of (StudyService, DirectoryService).
     """
 
     mapper_factory = MatrixUriMapperFactory(matrix_service=matrix_service)
@@ -123,24 +114,4 @@ def build_study_service(
         config=config,
     )
 
-    if app_ctxt:
-        add_study_routes(app_ctxt, study_service, directory_service, config)
-
-    return study_service
-
-
-def add_study_routes(
-    app_ctxt: AppBuildContext, study_service: StudyService, directory_service: DirectoryService, config: Config
-) -> None:
-    api_root = app_ctxt.api_root
-    api_root.include_router(create_study_routes(study_service, config))
-    api_root.include_router(create_raw_study_routes(study_service, config))
-    api_root.include_router(create_study_data_routes(study_service, config))
-    api_root.include_router(
-        create_study_variant_routes(
-            study_service=study_service,
-            config=config,
-        )
-    )
-    api_root.include_router(create_xpansion_routes(study_service, config))
-    api_root.include_router(create_directory_routes(directory_service, config))
+    return study_service, directory_service
