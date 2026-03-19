@@ -214,7 +214,6 @@ class TaskJobService(ITaskService):
         event_bus: IEventBus,
         listeners: Sequence[TaskServiceListener] | None = None,
     ):
-        self.config = config
         self.repo = repository
         self.event_bus = event_bus
         self.tasks: Dict[str, Future[None]] = {}

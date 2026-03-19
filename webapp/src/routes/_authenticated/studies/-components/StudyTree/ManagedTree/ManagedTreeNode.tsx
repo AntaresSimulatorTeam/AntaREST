@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
+import TreeItemEnhanced from "@/components/TreeItemEnhanced";
+import { TREE_ROOT_NAME } from "@/components/utils/constants";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import { Box, IconButton } from "@mui/material";
 import * as R from "ramda";
 import { useMemo } from "react";
-import TreeItemEnhanced from "@/components/TreeItemEnhanced";
-import { TREE_ROOT_NAME } from "@/components/utils/constants";
 import EditableTreeItem from "./EditableTreeItem";
 import {
   actionButtonStyles,
@@ -35,7 +35,6 @@ import type { ManagedTreeNodeProps } from "./types";
 
 function ManagedTreeNode({
   node,
-  onNodeClick,
   selectedPath,
   onAddSubDirectory,
   onSaveSubDirectory,
@@ -88,31 +87,26 @@ function ManagedTreeNode({
   // Root node is just a container - it doesn't render itself, only its children
   // Children of root node are top-level directories (parentId === null in the API)
   if (isRootNode) {
-    return (
-      <>
-        {sortedChildren.map((child) => (
-          <ManagedTreeNode
-            key={child.id}
-            node={child}
-            onNodeClick={onNodeClick}
-            selectedPath={selectedPath}
-            onAddSubDirectory={onAddSubDirectory}
-            onSaveSubDirectory={onSaveSubDirectory}
-            onCancelSubDirectory={onCancelSubDirectory}
-            isCreatingSubDirectory={isCreatingSubDirectory}
-            isCreatePending={isCreatePending}
-            onStartUpdate={onStartUpdate}
-            onSaveUpdate={onSaveUpdate}
-            onCancelUpdate={onCancelUpdate}
-            isUpdating={isUpdating}
-            isUpdatePending={isUpdatePending}
-            onDelete={onDelete}
-            isDeleting={isDeleting}
-            isDeletePending={isDeletePending}
-          />
-        ))}
-      </>
-    );
+    return sortedChildren.map((child) => (
+      <ManagedTreeNode
+        key={child.id}
+        node={child}
+        selectedPath={selectedPath}
+        onAddSubDirectory={onAddSubDirectory}
+        onSaveSubDirectory={onSaveSubDirectory}
+        onCancelSubDirectory={onCancelSubDirectory}
+        isCreatingSubDirectory={isCreatingSubDirectory}
+        isCreatePending={isCreatePending}
+        onStartUpdate={onStartUpdate}
+        onSaveUpdate={onSaveUpdate}
+        onCancelUpdate={onCancelUpdate}
+        isUpdating={isUpdating}
+        isUpdatePending={isUpdatePending}
+        onDelete={onDelete}
+        isDeleting={isDeleting}
+        isDeletePending={isDeletePending}
+      />
+    ));
   }
 
   // If this directory is in update mode, render editable item
@@ -152,7 +146,6 @@ function ManagedTreeNode({
           </Box>
         </Box>
       }
-      onClick={() => onNodeClick(path)}
       slots={{
         collapseIcon: treeNodeIcons.folderOpen,
         expandIcon: treeNodeIcons.folder,
@@ -175,7 +168,6 @@ function ManagedTreeNode({
         <ManagedTreeNode
           key={child.id}
           node={child}
-          onNodeClick={onNodeClick}
           selectedPath={selectedPath}
           onAddSubDirectory={onAddSubDirectory}
           onSaveSubDirectory={onSaveSubDirectory}

@@ -28,8 +28,8 @@ if TYPE_CHECKING:
     from antarest.blobstore.service import BlobService
     from antarest.core.config import Config
     from antarest.matrixstore.service import MatrixService
+    from antarest.output.output_service import OutputService
     from antarest.service_creator import CoreServices
-    from antarest.study.output.output_service import OutputService
     from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)

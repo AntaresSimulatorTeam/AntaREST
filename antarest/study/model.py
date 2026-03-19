@@ -17,7 +17,7 @@ import uuid
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path, PurePath, PurePosixPath
-from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, TypeAlias
+from typing import TYPE_CHECKING, Annotated, Any, List, Optional, TypeAlias
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -576,26 +576,6 @@ class DeleteManyStudies(AntaresBaseModel):
 
     study_ids: List[str] = Field(..., description="List of study UUIDs to delete")
     with_variants: bool = Field(default=False, description="Whether to delete variant studies as well")
-
-
-class StudySimSettingsDTO(AntaresBaseModel):
-    general: Dict[str, Any]
-    input: Dict[str, Any]
-    output: Dict[str, Any]
-    optimization: Dict[str, Any]
-    otherPreferences: Dict[str, Any]
-    advancedParameters: Dict[str, Any]
-    seedsMersenneTwister: Dict[str, Any]
-    playlist: Optional[List[int]] = None
-
-
-class StudySimResultDTO(AntaresBaseModel):
-    name: str
-    type: str
-    settings: StudySimSettingsDTO
-    completionDate: str
-    status: str
-    archived: bool
 
 
 class StudyDownloadType(enum.StrEnum):

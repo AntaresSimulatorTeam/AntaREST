@@ -35,6 +35,7 @@ from antarest.core.exceptions import (
     StudyNotFoundError,
     StudyVariantUpgradeError,
     TaskAlreadyRunning,
+    UnsupportedOperationOnThisStudyType,
 )
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
@@ -50,6 +51,7 @@ from antarest.login.model import Group, GroupDTO, Role, User
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import MatrixService
+from antarest.output.storage.output_storage import OutputMetadata
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -63,16 +65,21 @@ from antarest.study.model import (
     StudyMetadataDTO,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
-from antarest.study.service import MAX_BATCH_DELETE_SIZE, MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask
+from antarest.study.service import (
+    MAX_BATCH_DELETE_SIZE,
+    MAX_MISSING_STUDY_TIMEOUT,
+    IOutputsAccess,
+    StudyService,
+    StudyUpgraderTask,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
+    Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import (
     assert_permission,
@@ -135,7 +142,7 @@ def build_study_service(
     event_bus: IEventBus = Mock(spec=IEventBus),
 ) -> StudyService:
     raw_study_service.study_factory = Mock()
-    return StudyService(
+    service = StudyService(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
         directory_service=directory_service,
@@ -149,6 +156,28 @@ def build_study_service(
         cache_service=cache_service,
         config=config,
     )
+
+    class OutputsAccessMock(IOutputsAccess):
+        def list_outputs(self, study_id: str) -> list[OutputMetadata]:
+            return []
+
+        def get_outputs_details(self, study_id: str) -> dict[str, Simulation]:
+            return {}
+
+        def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:
+            pass
+
+        def delete_output(self, study_id: str, output_id: str) -> None:
+            pass
+
+        def archive_output(self, study_id: str, output_id: str) -> None:
+            pass
+
+        def write_output_to_dir(self, study_id: str, output_id: str, parent_dir: Path) -> None:
+            pass
+
+    service.register_output_access(OutputsAccessMock())
+    return service
 
 
 def study_to_dto(study: Study, folder_path: t.Optional[str] = None) -> StudyMetadataDTO:
@@ -1676,10 +1705,79 @@ def test_delete_studies_variant_id_also_in_list(tmp_path: Path) -> None:
     deleted_ids = list(repository.delete.call_args.args)
     assert sorted(deleted_ids) == ["child-variant", "parent"]
 
-    # Exactly one event per unique study
-    assert event_bus.push.call_count == 2
-    event_payloads = {c.args[0].payload["id"] for c in event_bus.push.call_args_list}
-    assert event_payloads == {"parent", "child-variant"}
+
+def test_move_variant_study_is_forbidden(tmp_path: Path) -> None:
+    repository = Mock(spec=StudyMetadataRepository)
+    variant = create_variant_study(
+        id="child-variant",
+        path=str(tmp_path / "variant"),
+        parent_id="parent",
+        archived=False,
+        owner=User(id=99, name="owner"),
+        groups=[],
+        public_mode=PublicMode.NONE,
+    )
+    repository.get.return_value = variant
+
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        directory_service=Mock(spec=DirectoryService),
+        repository=repository,
+        config=Config(),
+    )
+
+    with current_user_context(JWTUser(id=99, impersonator=99, type="users", groups=[])):
+        with pytest.raises(UnsupportedOperationOnThisStudyType):
+            service.move_study("child-variant", "folder")
+
+    repository.save.assert_not_called()
+
+
+def test_move_raw_study_fails_without_write_access_on_variant_children(tmp_path: Path) -> None:
+    user = JWTUser(id=99, impersonator=99, type="users", groups=[])
+    repository = Mock(spec=StudyMetadataRepository)
+    directory_service = Mock(spec=DirectoryService)
+
+    parent = create_raw_study(
+        id="parent",
+        path=str(tmp_path / "parent"),
+        archived=False,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=User(id=99, name="owner"),
+        groups=[],
+        public_mode=PublicMode.NONE,
+    )
+
+    variant = create_variant_study(
+        id="child-variant",
+        path=str(tmp_path / "variant"),
+        parent_id="parent",
+        archived=False,
+        owner=User(id=50, name="other"),
+        groups=[],
+        public_mode=PublicMode.NONE,
+    )
+
+    repository.get.return_value = parent
+
+    variant_study_service = Mock(spec=VariantStudyService)
+    variant_study_service.repository = Mock()
+    variant_study_service.repository.get_all_descendants.return_value = [variant]
+
+    service = build_study_service(
+        raw_study_service=Mock(spec=RawStudyService),
+        directory_service=directory_service,
+        repository=repository,
+        config=Config(),
+        variant_study_service=variant_study_service,
+    )
+
+    with current_user_context(user):
+        with pytest.raises(UserHasNotPermissionError):
+            service.move_study("parent", "folder")
+
+    repository.save.assert_not_called()
+    directory_service.get_directory_by_path.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -1720,91 +1818,6 @@ def test_create_command(
     )
 
     assert command.command_name.value == expected_name
-
-
-@with_admin_user
-def test_get_save_logs(tmp_path: Path) -> None:
-    study_id = str(uuid.uuid4())
-    study_name = "My Study"
-    study_mock = Mock(
-        spec=RawStudy,
-        archived=False,
-        id=study_id,
-        path=tmp_path,
-        owner=None,
-        groups=[],
-        public_mode=PublicMode.NONE,
-        workspace="other_workspace",
-        to_json_summary=Mock(return_value={"id": study_id, "name": study_name}),
-    )
-    # The `name` attribute cannot be mocked during creation of the mock object
-    # https://stackoverflow.com/a/62552149/1513933
-    study_mock.name = study_name
-
-    service = build_study_service(
-        raw_study_service=Mock(spec=RawStudyService),
-        directory_service=Mock(spec=DirectoryService),
-        repository=Mock(spec=StudyMetadataRepository, get=Mock(return_value=study_mock)),
-        config=Mock(spec=Config),
-    )
-
-    output_config = Mock(get_file=Mock(return_value="output_id"), archived=False)
-
-    file_study_config = FileStudyTreeConfig(tmp_path, tmp_path, "study_id", 0, archive_path=None)
-    file_study_config.outputs = {"output_id": output_config}
-
-    context = Mock()
-    context.resolver.get_matrix.return_value = None
-    service.storage_service.raw_study_service.get_raw.return_value = FileStudy(  # type: ignore
-        config=file_study_config,
-        tree=FileStudyTree(context, file_study_config),
-    )
-
-    output_path = tmp_path / "output"
-    output_path.mkdir()
-    (output_path / "output_id").mkdir()
-    (output_path / "logs").mkdir()
-
-    possible_log_paths = [
-        output_path / "output_id" / "antares-out.log",
-        output_path / "output_id" / "simulation.log",
-        output_path / "logs" / "job_id-out.log",
-        output_path / "logs" / "output_id-out.log",
-    ]
-
-    for log_path in possible_log_paths:
-        log_path.write_text("some log 2")
-        logs = service.get_logs(study_id, "output_id", "job_id", False)
-        assert logs == "some log 2"
-        log_path.unlink()
-
-        # Check invalid utf-8 characters are correctly replaced
-        log_path.write_text("Caractère invalide", encoding="latin-1")
-        logs = service.get_logs(study_id, "output_id", "job_id", False)
-        assert logs == "Caract�re invalide"
-        log_path.unlink()
-
-    service.save_logs(study_id, "job_id", "out.log", "some log")
-    assert (
-        service.get_logs(
-            study_id,
-            "output_id",
-            "job_id",
-            False,
-        )
-        == "some log"
-    )
-
-    service.save_logs(study_id, "job_id", "err.log", "some log 3")
-    assert (
-        service.get_logs(
-            study_id,
-            "output_id",
-            "job_id",
-            True,
-        )
-        == "some log 3"
-    )
 
 
 @with_admin_user

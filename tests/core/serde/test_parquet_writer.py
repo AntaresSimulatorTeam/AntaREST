@@ -26,9 +26,12 @@ def test_different_columns(tmp_path: Path) -> None:
     dataframes = iter(
         [
             pl.DataFrame(data=[(1, 2), (3, 4)], schema=["A", "B"], orient="row"),
+            # will cause a new file creation with schema A,B,C
             pl.DataFrame(data=[(5, 6, 7), (8, 9, 10)], schema=["A", "B", "C"], orient="row"),
             pl.DataFrame(data=[(11, 12), (13, 14)], schema=["A", "B"], orient="row"),
+            # will cause a new file creation with schema A,B,C,D
             pl.DataFrame(data=[(15, 16, 17), (18, 19, 20)], schema=["B", "A", "D"], orient="row"),
+            pl.DataFrame(data=[(21, 22), (23, 24)], schema=["C", "D"], orient="row"),
         ]
     )
 
@@ -60,6 +63,12 @@ def test_different_columns(tmp_path: Path) -> None:
     # values of A and B are correctly "inverted"
     expected_fourth_df = pd.DataFrame(data=[(16, 15, np.nan, 17), (19, 18, np.nan, 20)], columns=["A", "B", "C", "D"])
     pd.testing.assert_frame_equal(next(dfs), expected_fourth_df, check_dtype=False)
+
+    # values of C and D are correctly
+    expected_fifth_df = pd.DataFrame(
+        data=[(np.nan, np.nan, 21, 22), (np.nan, np.nan, 23, 24)], columns=["A", "B", "C", "D"]
+    )
+    pd.testing.assert_frame_equal(next(dfs), expected_fifth_df, check_dtype=False)
 
 
 def test_same_columns(tmp_path: Path) -> None:

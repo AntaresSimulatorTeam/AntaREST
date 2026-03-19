@@ -12,9 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import * as R from "ramda";
 import type { TableCellProps } from "@mui/material";
-import type { TRow } from "./types";
+import type { MRT_TableOptions } from "material-react-table";
+import * as R from "ramda";
+import type { RowData } from "./types";
 
 ////////////////////////////////////////////////////////////////
 // Functions
@@ -61,7 +62,7 @@ export const generateNextValue = (baseValue: string, existingValues: string[]): 
  * @param tableData - The existing table data to check against for ensuring uniqueness.
  * @returns A unique value for the specified property.
  */
-export const generateUniqueValue = (originalValue: string, tableData: TRow[]): string => {
+export const generateUniqueValue = (originalValue: string, tableData: RowData[]): string => {
   const existingValues = tableData.map((row) => row.name);
   return generateNextValue(`${originalValue} - copy`, existingValues);
 };
@@ -71,5 +72,38 @@ export function getTableOptionsForAlign(align: TableCellProps["align"]) {
     muiTableHeadCellProps: { align },
     muiTableBodyCellProps: { align },
     muiTableFooterCellProps: { align },
-  };
+  } satisfies Partial<MRT_TableOptions<RowData>>;
+}
+
+/**
+ * Generates styles to fix dark mode issues in Material React Table.
+ *
+ * Material React Table doesn't apply dark mode styles correctly since MUI v7.
+ *
+ * @param isDarkMode - A boolean indicating whether dark mode is enabled.
+ * @returns An object containing MRT theme overrides and MUI table props
+ * with custom styles for dark mode.
+ */
+export function getDarkModeFixStyles(isDarkMode: boolean) {
+  return {
+    mrtTheme: isDarkMode
+      ? {
+          baseBackgroundColor: "#1f2530",
+          selectedRowBackgroundColor: "#ffc10733",
+        }
+      : undefined,
+    muiTableProps: {
+      sx: (theme) =>
+        theme.applyStyles("dark", {
+          ".MuiTableRow-root": {
+            "&:not(.Mui-selected):hover td:after": {
+              backgroundColor: "#62666e4d",
+            },
+            ".MuiTableSortLabel-icon": {
+              fill: "#fff",
+            },
+          },
+        }),
+    },
+  } satisfies Partial<MRT_TableOptions<RowData>>;
 }

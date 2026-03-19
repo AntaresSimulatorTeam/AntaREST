@@ -30,7 +30,7 @@ function PageNotFound() {
     </RouterButton>
   ) : null;
 
-  return <EmptyView title={t("page.notFound")} icon={SearchOffIcon} actions={actions} />;
+  return <EmptyView title={t("page.notFound")} icon={SearchOffIcon} primaryActions={actions} />;
 }
 
 export default PageNotFound;

@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
-import * as R from "ramda";
-import { useCallback, useMemo } from "react";
+import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
-import { updateStudyFilters } from "@/redux/ducks/studies";
 import { getStudyFilters } from "@/redux/selectors";
 import { getParentPaths } from "@/utils/pathUtils";
+import { SimpleTreeView } from "@mui/x-tree-view";
+import * as R from "ramda";
+import { useCallback, useMemo } from "react";
 import ExternalTreeNode from "./ExternalTreeNode";
 import { useFolderExplorer } from "./hooks/useFolderExplorer";
 import { useStudyTree } from "./hooks/useStudyTree";
@@ -59,7 +59,7 @@ function ExternalTree({ studies }: ExternalTreeProps) {
    *   (but we still want to apply the filter on clicked folders)
    */
   const handleItemExpansionToggle = useCallback(
-    async (_event: React.SyntheticEvent, itemId: string, isExpanded: boolean) => {
+    async (_event: React.SyntheticEvent | null, itemId: string, isExpanded: boolean) => {
       if (!isExpanded) {
         return;
       }
@@ -73,11 +73,11 @@ function ExternalTree({ studies }: ExternalTreeProps) {
     [explorePath, updateTreeWithFolders],
   );
 
-  const handleTreeItemClick = (itemId: string) => {
+  const handleItemClick = (_event: React.MouseEvent, itemId: string) => {
     dispatch(
       updateStudyFilters({
         activeTree: "external",
-        external: { path: itemId, strictPath: filters.external.strictPath },
+        external: { path: itemId },
       }),
     );
   };
@@ -91,6 +91,7 @@ function ExternalTree({ studies }: ExternalTreeProps) {
       defaultExpandedItems={[...getParentPaths(path), path]}
       defaultSelectedItems={path}
       onItemExpansionToggle={handleItemExpansionToggle}
+      onItemClick={handleItemClick}
     >
       {studiesTree.children.map((child) => (
         <ExternalTreeNode
@@ -98,7 +99,6 @@ function ExternalTree({ studies }: ExternalTreeProps) {
           node={child}
           itemsLoading={itemsLoading}
           exploredFolders={exploredFolders}
-          onNodeClick={handleTreeItemClick}
         />
       ))}
     </SimpleTreeView>

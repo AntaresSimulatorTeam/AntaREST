@@ -18,7 +18,7 @@ import polars as pl
 import pyarrow as pa
 from pyarrow.parquet import ParquetFile, ParquetWriter
 
-from antarest.study.output.utils import MCYEAR_COL, TIME_ID_COL
+from antarest.output.utils import MCYEAR_COL, TIME_ID_COL
 
 
 def _parquet_writer(output_file: Path, schema: pa.Schema) -> ParquetWriter:
@@ -60,8 +60,7 @@ def write_dataframes_in_parquet_format_by_column_sets(
 
         first_df = _adapt_polars_schema(first_df)
         table = first_df.to_arrow()
-        current_schema = table.schema
-        current_writer = _parquet_writer(file_path, current_schema)
+        current_writer = _parquet_writer(file_path, table.schema)
         current_writer.write_table(table)
 
         while True:
@@ -74,7 +73,13 @@ def write_dataframes_in_parquet_format_by_column_sets(
                         existing_columns.add(col)
                         new_index.append(col)
 
+                if df.columns != new_index:
+                    expr = pl.lit(None, dtype=pl.Float64)
+                    df = df.select([pl.col(c) if c in df.columns else expr.alias(c) for c in new_index])
+
                 df = _adapt_polars_schema(df)
+                table = df.to_arrow()
+
                 if should_write_new_file:
                     current_writer.close()
 
@@ -82,14 +87,7 @@ def write_dataframes_in_parquet_format_by_column_sets(
                     file_paths.append(file_path)
                     file_counter += 1
 
-                    table = df.to_arrow()
-                    current_schema = table.schema
-                    current_writer = _parquet_writer(file_path, current_schema)
-                else:
-                    if df.columns != new_index:
-                        expr = pl.lit(None, dtype=pl.Float64)
-                        df = df.select([pl.col(c) if c in df.columns else expr.alias(c) for c in new_index])
-                    table = df.to_arrow()
+                    current_writer = _parquet_writer(file_path, table.schema)
 
                 current_writer.write_table(table)
 

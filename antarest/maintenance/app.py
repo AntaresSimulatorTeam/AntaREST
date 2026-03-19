@@ -52,6 +52,7 @@ class TaskName(StrEnum):
     VARIABLE_VIEW_CLEANER = "variable_view_cleaner"
     TASKS_CLEANER = "tasks_cleaner"
     DISK_SPACE_ANALYZER = "disk_space_analyzer"
+    DISK_USAGE = "disk_usage"
 
 
 def _mask_url_credentials(url: str) -> str:

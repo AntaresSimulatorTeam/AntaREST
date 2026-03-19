@@ -20,15 +20,15 @@ import SelectFE from "../fieldEditors/SelectFE";
 import StringFE from "../fieldEditors/StringFE";
 import Fieldset from "../Fieldset";
 import type { SubmitHandlerPlus } from "../Form/types";
-import type { TRow } from "./types";
+import type { RowData } from "./types";
 
 interface Props {
   open: boolean;
   onClose: VoidFunction;
-  onSubmit: (values: TRow) => Promise<void>;
+  onSubmit: (values: RowData) => Promise<void>;
   groups: string[];
   allowNewGroups: boolean;
-  existingNames: Array<TRow["name"]>;
+  existingNames: Array<RowData["name"]>;
 }
 
 function CreateDialog({ open, onClose, onSubmit, groups, allowNewGroups, existingNames }: Props) {
@@ -38,7 +38,7 @@ function CreateDialog({ open, onClose, onSubmit, groups, allowNewGroups, existin
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ values: { name, group } }: SubmitHandlerPlus<TRow>) => {
+  const handleSubmit = ({ values: { name, group } }: SubmitHandlerPlus<RowData>) => {
     return onSubmit({ name: name.trim(), group });
   };
 
