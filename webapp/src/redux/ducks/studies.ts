@@ -48,10 +48,12 @@ export interface StudyFilters {
     // All directory IDs in scope (selected dir + descendants). null = root (all managed studies).
     directoryIds: string[] | null;
     showDescendants: boolean;
+    collapsed: boolean;
   };
   external: {
     path: string;
     showDescendants: boolean;
+    collapsed: boolean;
   };
   type: "all" | "references" | "variants";
   management: "all" | "managed" | "unmanaged";
@@ -100,8 +102,14 @@ function buildInitialFilters(): StudyFilters {
     groups: [],
     tags: [],
     ...saved,
-    managed: { directoryId: null, directoryIds: null, showDescendants: false, ...saved.managed },
-    external: { path: "", showDescendants: false, ...saved.external },
+    managed: {
+      directoryId: null,
+      directoryIds: null,
+      showDescendants: false,
+      collapsed: false,
+      ...saved.managed,
+    },
+    external: { path: "", showDescendants: false, collapsed: false, ...saved.external },
   };
 }
 

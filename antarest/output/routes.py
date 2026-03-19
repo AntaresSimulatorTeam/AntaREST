@@ -13,7 +13,6 @@ import collections
 import logging
 from http import HTTPStatus
 from io import BytesIO
-from pathlib import Path
 from typing import Annotated, Any, Sequence, TypeAlias
 
 import pandas as pd
@@ -22,14 +21,12 @@ from pydantic import TypeAdapter
 from starlette.responses import FileResponse, Response
 
 from antarest.core.api_types import SanitizedStr, UuidStr
-from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
-from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.serde.json import to_json
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.dict_utils import remove_nones
 from antarest.core.utils.web import APITag
-from antarest.login.auth import Auth
+from antarest.dependencies import OutputServiceDep, TmpExportFileDep, auth_required
 from antarest.output.filestudy.utils import (
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
@@ -42,7 +39,6 @@ from antarest.output.model import (
     OutputVariablesType,
     OutputVariablesViewResponse,
 )
-from antarest.output.service import OutputService
 from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
 from antarest.output.variable_view.model import OutputItemId
 from antarest.study.model import MatrixFrequency, MatrixIndex, StudyDownloadDTO
@@ -99,21 +95,11 @@ def _to_item_id(
     )
 
 
-def create_output_routes(
-    output_service: OutputService, file_transfer_manager: FileTransferManager, config: Config
-) -> APIRouter:
+def create_output_routes() -> APIRouter:
     """
     Endpoint implementation for outputs management
-
-    Args:
-        output_service: output service facade to handle request
-        config: main server configuration
-
-    Returns:
-        The FastAPI route for Study data management
     """
-    auth = Auth(config)
-    bp = APIRouter(prefix="/v1", tags=[APITag.study_outputs], dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.study_outputs], dependencies=[Depends(auth_required)])
 
     # noinspection PyShadowingBuiltins
     @bp.post(
@@ -121,7 +107,12 @@ def create_output_routes(
         status_code=HTTPStatus.ACCEPTED,
         summary="Import Output",
     )
-    def import_output(uuid: UuidStr, output: UploadFile, storage_type: OutputStorageType | None = None) -> str | None:
+    def import_output(
+        output_service: OutputServiceDep,
+        uuid: UuidStr,
+        output: UploadFile,
+        storage_type: OutputStorageType | None = None,
+    ) -> str | None:
         logger.info(f"Importing output for study {uuid}")
         output_id = output_service.import_output(uuid, output.file, storage_type=storage_type)
         return output_id
@@ -132,7 +123,9 @@ def create_output_routes(
         status_code=HTTPStatus.OK,
         summary="Convert output to another storage",
     )
-    def convert_output(uuid: UuidStr, output_id: SanitizedStr, storage_type: OutputStorageType) -> str | None:
+    def convert_output(
+        output_service: OutputServiceDep, uuid: UuidStr, output_id: SanitizedStr, storage_type: OutputStorageType
+    ) -> str | None:
         logger.info(f"Converting output {uuid} / {output_id} to {storage_type} storage")
         output_service.convert_output(uuid, output_id, storage_type)
         return output_id
@@ -141,7 +134,9 @@ def create_output_routes(
         "/studies/{study_id}/outputs/{output_id}/variables",
         summary="Get outputs data variables",
     )
-    def output_variables_information(study_id: UuidStr, output_id: SanitizedStr) -> OutputVariablesInformation:
+    def output_variables_information(
+        output_service: OutputServiceDep, study_id: UuidStr, output_id: SanitizedStr
+    ) -> OutputVariablesInformation:
         logger.info(f"Fetching whole output of the simulation {output_id} for study {study_id}")
         return output_service.get_output_variables_information(study_id, output_id)
 
@@ -149,7 +144,9 @@ def create_output_routes(
         "/studies/{study_id}/outputs/{output_id}/export",
         summary="Get outputs data",
     )
-    def output_export(study_id: UuidStr, output_id: SanitizedStr) -> FileDownloadTaskDTO:
+    def output_export(
+        output_service: OutputServiceDep, study_id: UuidStr, output_id: SanitizedStr
+    ) -> FileDownloadTaskDTO:
         logger.info(f"Fetching whole output of the simulation {output_id} for study {study_id}")
         return output_service.export_output(study_uuid=study_id, output_uuid=output_id)
 
@@ -158,6 +155,7 @@ def create_output_routes(
         summary="Get time index for output matrices by frequency",
     )
     def get_output_time_index(
+        output_service: OutputServiceDep,
         uuid: UuidStr,
         output_id: SanitizedStr,
         frequency: Annotated[
@@ -184,10 +182,11 @@ def create_output_routes(
 
     @bp.post("/studies/{study_id}/outputs/{output_id}/download", summary="Get outputs data")
     def output_download(
+        output_service: OutputServiceDep,
+        tmp_export_file: TmpExportFileDep,
         study_id: UuidStr,
         output_id: SanitizedStr,
         data: StudyDownloadDTO,
-        tmp_export_file: Annotated[Path, Depends(file_transfer_manager.request_tmp_file)],
         use_task: Annotated[bool, Query(deprecated=True)] = False,
     ) -> FileResponse:
         logger.info(f"Fetching batch outputs of simulation {output_id} for study {study_id}")
@@ -198,7 +197,7 @@ def create_output_routes(
         "/studies/{study_id}/outputs/{output_id}",
         summary="Delete a simulation output",
     )
-    def delete_output(study_id: UuidStr, output_id: SanitizedStr) -> None:
+    def delete_output(output_service: OutputServiceDep, study_id: UuidStr, output_id: SanitizedStr) -> None:
         logger.info(f"Deleting output {output_id} from study {study_id}")
         output_service.delete_output(study_id, output_id)
 
@@ -206,7 +205,7 @@ def create_output_routes(
         "/studies/{study_id}/outputs/{output_id}/_archive",
         summary="Archive output",
     )
-    def archive_output(study_id: UuidStr, output_id: SanitizedStr) -> str | None:
+    def archive_output(output_service: OutputServiceDep, study_id: UuidStr, output_id: SanitizedStr) -> str | None:
         logger.info(f"Archiving of the output {output_id} of the study {study_id}")
 
         content = output_service.archive_output(study_id, output_id)
@@ -216,7 +215,7 @@ def create_output_routes(
         "/studies/{study_id}/outputs/{output_id}/_unarchive",
         summary="Unarchive output",
     )
-    def unarchive_output(study_id: UuidStr, output_id: SanitizedStr) -> str | None:
+    def unarchive_output(output_service: OutputServiceDep, study_id: UuidStr, output_id: SanitizedStr) -> str | None:
         logger.info(f"Unarchiving of the output {output_id} of the study {study_id}")
 
         content = output_service.unarchive_output(study_id, output_id)
@@ -226,7 +225,7 @@ def create_output_routes(
         "/private/studies/{study_id}/outputs/{output_id}/digest-ui",
         summary="Display an output digest file for the front-end",
     )
-    def get_digest_file(study_id: UuidStr, output_id: SanitizedStr) -> DigestUI:
+    def get_digest_file(output_service: OutputServiceDep, study_id: UuidStr, output_id: SanitizedStr) -> DigestUI:
         logger.info(f"Retrieving the digest file for the output {output_id} of the study {study_id}")
         return output_service.get_digest_file(study_id, output_id)
 
@@ -234,7 +233,7 @@ def create_output_routes(
         "/studies/{study_id}/outputs",
         summary="Get global information about a study simulation result",
     )
-    def get_outputs(study_id: UuidStr) -> list[OutputDetails]:
+    def get_outputs(output_service: OutputServiceDep, study_id: UuidStr) -> list[OutputDetails]:
         logger.info(f"Fetching output list for study {study_id}")
         content = output_service.get_output_details(study_id)
         return content
@@ -244,6 +243,7 @@ def create_output_routes(
         summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs individual Outputs",
     )
     def aggregate_areas_raw_data(
+        output_service: OutputServiceDep,
         uuid: UuidStr,
         output_id: SanitizedStr,
         query_file: MCIndAreasQueryFile,
@@ -301,6 +301,7 @@ def create_output_routes(
         include_in_schema=False,
     )
     def redirect_aggregate_areas_raw_data(
+        output_service: OutputServiceDep,
         uuid: UuidStr,
         output_id: SanitizedStr,
         query_file: MCIndAreasQueryFile,
@@ -311,7 +312,7 @@ def create_output_routes(
         export_format: ExportFormatQuery = TableExportFormat.CSV,
     ) -> str:
         return aggregate_areas_raw_data(
-            uuid, output_id, query_file, frequency, mc_years, areas_ids, columns_names, export_format
+            output_service, uuid, output_id, query_file, frequency, mc_years, areas_ids, columns_names, export_format
         )
 
     @bp.get(
@@ -319,6 +320,7 @@ def create_output_routes(
         summary="Retrieve Aggregated Links Raw Data from Study Economy MCs individual Outputs",
     )
     def aggregate_links_raw_data(
+        output_service: OutputServiceDep,
         uuid: UuidStr,
         output_id: SanitizedStr,
         query_file: MCIndLinksQueryFile,
@@ -375,6 +377,7 @@ def create_output_routes(
         include_in_schema=False,
     )
     def redirect_aggregate_links_raw_data(
+        output_service: OutputServiceDep,
         uuid: UuidStr,
         output_id: SanitizedStr,
         query_file: MCIndLinksQueryFile,
@@ -385,7 +388,7 @@ def create_output_routes(
         export_format: ExportFormatQuery = TableExportFormat.CSV,
     ) -> str:
         return aggregate_links_raw_data(
-            uuid, output_id, query_file, frequency, mc_years, links_ids, columns_names, export_format
+            output_service, uuid, output_id, query_file, frequency, mc_years, links_ids, columns_names, export_format
         )
 
     @bp.get(
@@ -393,6 +396,7 @@ def create_output_routes(
         summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs All Outputs",
     )
     def aggregate_areas_raw_data__all(
+        output_service: OutputServiceDep,
         uuid: UuidStr,
         output_id: SanitizedStr,
         query_file: MCAllAreasQueryFile,
@@ -447,6 +451,7 @@ def create_output_routes(
         include_in_schema=False,
     )
     def redirect_aggregate_areas_raw_data__all(
+        output_service: OutputServiceDep,
         uuid: UuidStr,
         output_id: SanitizedStr,
         query_file: MCAllAreasQueryFile,
@@ -456,7 +461,7 @@ def create_output_routes(
         export_format: ExportFormatQuery = TableExportFormat.CSV,
     ) -> str:
         return aggregate_areas_raw_data__all(
-            uuid, output_id, query_file, frequency, areas_ids, columns_names, export_format
+            output_service, uuid, output_id, query_file, frequency, areas_ids, columns_names, export_format
         )
 
     @bp.get(
@@ -464,6 +469,7 @@ def create_output_routes(
         summary="Retrieve Aggregated Links Raw Data from Study Economy MC-All Outputs",
     )
     def aggregate_links_raw_data__all(
+        output_service: OutputServiceDep,
         uuid: UuidStr,
         output_id: SanitizedStr,
         query_file: MCAllLinksQueryFile,
@@ -519,6 +525,7 @@ def create_output_routes(
         include_in_schema=False,
     )
     def redirect_aggregate_links_raw_data__all(
+        output_service: OutputServiceDep,
         uuid: UuidStr,
         output_id: SanitizedStr,
         query_file: MCAllLinksQueryFile,
@@ -528,14 +535,16 @@ def create_output_routes(
         export_format: ExportFormatQuery = TableExportFormat.CSV,
     ) -> str:
         return aggregate_links_raw_data__all(
-            uuid, output_id, query_file, frequency, links_ids, columns_names, export_format
+            output_service, uuid, output_id, query_file, frequency, links_ids, columns_names, export_format
         )
 
     @bp.get(
         "/studies/{uuid}/output/{output_id}/variables-list",
         summary="Retrieves the list of variables for a given output",
     )
-    def get_output_variables_list(uuid: UuidStr, output_id: SanitizedStr) -> OutputVariablesList:
+    def get_output_variables_list(
+        output_service: OutputServiceDep, uuid: UuidStr, output_id: SanitizedStr
+    ) -> OutputVariablesList:
         return output_service.get_output_variables_list(uuid, output_id)
 
     @bp.get(
@@ -547,6 +556,7 @@ def create_output_routes(
         },
     )
     def get_output_variables_view(
+        output_service: OutputServiceDep,
         uuid: UuidStr,
         output_id: SanitizedStr,
         variable_name: SanitizedStr,
@@ -584,6 +594,7 @@ def create_output_routes(
         summary="Export the variables view for a given output and a given configuration in a given format",
     )
     def export_output_variables_view(
+        output_service: OutputServiceDep,
         uuid: UuidStr,
         output_id: SanitizedStr,
         variable_name: SanitizedStr,
@@ -625,6 +636,7 @@ def create_output_routes(
         summary="Materialize the variables view for a given output and a given configuration",
     )
     def materialize_output_variables_view(
+        output_service: OutputServiceDep,
         uuid: UuidStr,
         output_id: SanitizedStr,
         variable_name: SanitizedStr,

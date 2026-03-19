@@ -629,6 +629,7 @@ class VariantStudyService(AbstractStorageService):
             name=name,
             parent_id=uuid,
             path=study_path,
+            directory_id=study.directory_id,
             public_mode=study.public_mode,
             created_at=now_utc,
             updated_at=now_utc,

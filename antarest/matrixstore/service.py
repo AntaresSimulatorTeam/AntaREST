@@ -696,7 +696,15 @@ class MatrixService(ISimpleMatrixService):
     @override
     def synchronize_matrix_store(self, dry_run: bool) -> dict[str, MatrixMismatchDTO]:
         db_matrices = {m.id for m in self.repo.get_matrices()}
-        fs_matrices = self.matrix_content_repository.get_all_matrices_on_the_filesystem()
+        fs_matrices, invalid_files = self.matrix_content_repository.get_all_matrices_on_the_filesystem()
+
+        for invalid_file in invalid_files:
+            if dry_run:
+                logger.warning(f"[dry-run] Would remove invalid matrix file: {invalid_file.name}")
+            else:
+                logger.warning(f"Removing invalid matrix file: {invalid_file.name}")
+                invalid_file.unlink(missing_ok=True)
+
         only_fs_matrices = fs_matrices - db_matrices
         only_db_matrices = db_matrices - fs_matrices
 

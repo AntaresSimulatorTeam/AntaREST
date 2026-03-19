@@ -17,7 +17,6 @@ import { Box } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import CustomScrollbar from "@/components/CustomScrollbar";
 import SimpleLoader from "@/components/loaders/SimpleLoader";
 import RootPage from "@/components/page/RootPage";
 import SplitView from "@/components/page/SplitView";
@@ -57,11 +56,7 @@ function Studies() {
     >
       <SplitView splitId="studies" minSize={[300, 800]}>
         {/* Left - Studies tree explorer */}
-        <CustomScrollbar>
-          <Box sx={{ overflow: "auto" }}>
-            <StudyTree />
-          </Box>
-        </CustomScrollbar>
+        <StudyTree />
 
         {/* Right - Studies list */}
         <ViewWrapper flex disablePadding>

@@ -389,3 +389,20 @@ class TestMatrixContentRepository:
             assert matrix_id == matrix_hash
             matrix = matrix_content_repo.get(matrix_hash, matrix_version=2)
             assert matrix.is_empty()
+
+    def test_get_all_matrices_on_the_filesystem(self, tmp_path: Path) -> None:
+        repo = MatrixContentRepository(tmp_path, InternalMatrixFormat.TSV)
+        bucket_dir = repo.bucket_dir
+
+        (bucket_dir / "abc123.tsv").touch()
+        (bucket_dir / "def456.hdf").touch()
+        invalid_file = bucket_dir / "no_suffix_matrix"
+        invalid_file.touch()
+        invalid_file_with_unknown_suffix = bucket_dir / "other.tmp"
+        invalid_file_with_unknown_suffix.touch()
+        (bucket_dir / "abc123.tsv.lock").touch()
+
+        matrices, invalid_files = repo.get_all_matrices_on_the_filesystem()
+
+        assert matrices == {"abc123", "def456"}
+        assert invalid_files == {invalid_file, invalid_file_with_unknown_suffix}

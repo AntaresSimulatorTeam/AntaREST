@@ -32,7 +32,7 @@ dependencies = [
     "gunicorn~=23.0.0",
     "humanize~=4.15.0",
     "jsonref~=0.2",
-    "PyJWT~=2.11.0",
+    "PyJWT~=2.12.0",
     "MarkupSafe~=2.1.5",
     "numpy~=2.4.2",
     "numexpr==2.14.1",
@@ -136,6 +136,8 @@ no_implicit_reexport = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+log_cli = false  # you may set it to true for debugging purpose
+log_cli_level = "info"
 
 [tool.coverage.run]
 omit = ["antarest/tools/admin.py", "antarest/fastapi_jwt_auth/*.py"]

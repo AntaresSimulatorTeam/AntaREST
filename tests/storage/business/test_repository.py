@@ -79,3 +79,39 @@ class TestVariantStudyRepository:
         # Ensure the root study has the 3 same children
         children = repository.get_children(parent_id=raw_study.id)
         assert children == [variant2, variant3, variant1]
+
+    def test_get_all_descendants(self, db_session: Session) -> None:
+        repository = VariantStudyRepository(cache_service=Mock(spec=ICache), session=db_session)
+
+        raw_study = create_raw_study(name="Root")
+        db_session.add(raw_study)
+        db_session.commit()
+
+        assert repository.get_all_descendants(parent_id=raw_study.id) == []
+
+        v1 = create_variant_study(name="v1", parent_id=raw_study.id)
+        v2 = create_variant_study(name="v2", parent_id=raw_study.id)
+        db_session.add_all([v1, v2])
+        db_session.commit()
+
+        v1a = create_variant_study(name="v1a", parent_id=v1.id)
+        db_session.add(v1a)
+        db_session.commit()
+
+        descendants = repository.get_all_descendants(parent_id=raw_study.id)
+        assert set(d.id for d in descendants) == {v1.id, v2.id, v1a.id}
+
+        descendants = repository.get_all_descendants(parent_id=v1.id)
+        assert [d.id for d in descendants] == [v1a.id]
+
+        assert repository.get_all_descendants(parent_id=v2.id) == []
+
+        v1a1 = create_variant_study(name="v1a1", parent_id=v1a.id)
+        db_session.add(v1a1)
+        db_session.commit()
+
+        descendants = repository.get_all_descendants(parent_id=raw_study.id)
+        assert set(d.id for d in descendants) == {v1.id, v2.id, v1a.id, v1a1.id}
+
+        descendants = repository.get_all_descendants(parent_id=v1.id)
+        assert set(d.id for d in descendants) == {v1a.id, v1a1.id}

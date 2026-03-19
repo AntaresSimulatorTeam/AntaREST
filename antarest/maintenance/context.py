@@ -20,7 +20,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from antarest.core.tasks.service import ITaskService
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.service_creator import SESSION_ARGS, create_core_services, init_db_engine
 
 if TYPE_CHECKING:
@@ -47,8 +47,8 @@ class MaintenanceContext:
         logger.info("Initializing MaintenanceContext")
 
         engine = init_db_engine(config, auto_upgrade_db=False)
-        DBSessionMiddleware(None, custom_engine=engine, session_args=SESSION_ARGS)
-        core_services = create_core_services(app_ctxt=None, config=config)
+        init_db_singleton(custom_engine=engine, session_args=SESSION_ARGS)
+        core_services = create_core_services(config=config)
 
         return cls(config, core_services)
 

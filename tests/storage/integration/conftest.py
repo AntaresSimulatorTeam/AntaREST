@@ -133,22 +133,20 @@ def services(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path) -> tup
     cache = LocalCache(config=config.cache)
 
     # Final object
-    study_service = build_study_service(
-        app_ctxt=Mock(),
+    study_service, _ = build_study_service(
+        config=config,
         cache=cache,
         file_transfer_manager=Mock(),
         task_service=task_service_mock,
         user_service=user_service,
         matrix_service=matrix_service,
         blob_service=blob_service,
-        config=config,
         metadata_repository=repo,
         variant_repository=variant_repo,
         job_result_repository=job_result_repository,
     )
 
     output_service = build_output_service(
-        app_ctxt=Mock(),
         study_service=study_service,
         config=config,
         cache=cache,
