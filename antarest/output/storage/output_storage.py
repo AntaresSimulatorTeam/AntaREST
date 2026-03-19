@@ -23,8 +23,8 @@ from pydantic.alias_generators import to_camel
 from antarest.core.serde import AntaresBaseModel
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
-from antarest.output.output_model import OutputVariablesList
-from antarest.output.utils import QueryFileType
+from antarest.output.filestudy.utils import QueryFileType
+from antarest.output.model import OutputVariablesList
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency, MatrixIndex
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
@@ -72,6 +72,7 @@ class OutputDetails(AntaresBaseModel):
     by_year: bool
     nb_years: int
     archived: bool
+    storage_type: OutputStorageType
 
 
 class IOutputStorage(ABC):
@@ -205,9 +206,9 @@ class IOutputStorage(ABC):
         """
 
     @abstractmethod
-    def extract_variables_list(self, study_id: str, output_id: str) -> OutputVariablesList:
+    def get_variables_list(self, study_id: str, output_id: str) -> OutputVariablesList:
         """
-        Extract variables list from output.
+        Get variables list of this output.
         """
 
     @abstractmethod

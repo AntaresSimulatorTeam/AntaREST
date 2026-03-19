@@ -41,16 +41,17 @@ from antarest.core.utils.archives import (
 from antarest.core.utils.utils import StopWatch
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
-from antarest.output.aggregator_management import AggregatorManager
-from antarest.output.output_model import OutputVariablesList
+from antarest.output.filestudy.aggregator_management import AggregatorManager
+from antarest.output.filestudy.file_output_utils import extract_variables_list
+from antarest.output.filestudy.utils import QueryFileType
+from antarest.output.model import OutputVariablesList
+from antarest.output.storage.file.repository import FileOutputRepository
 from antarest.output.storage.output_storage import (
     IOutputStorage,
     OutputDetails,
     OutputMetadata,
     OutputStorageType,
 )
-from antarest.output.utils import QueryFileType
-from antarest.output.variables_management import extract_variables_list
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     MatrixFrequency,
@@ -198,10 +199,17 @@ class InStudyFileOutputStorage(IOutputStorage):
     Implementation based on outputs stored in antares-solver file format, inside a study.
     """
 
-    def __init__(self, outputs_provider: IFileOutputsProvider, cache: ICache, remote_executor: IRemoteExecutor) -> None:
+    def __init__(
+        self,
+        outputs_provider: IFileOutputsProvider,
+        cache: ICache,
+        remote_executor: IRemoteExecutor,
+        repository: FileOutputRepository,
+    ) -> None:
         self._outputs_provider = outputs_provider
         self._cache = cache
         self._remote_executor = remote_executor
+        self._repository = repository
 
     @override
     @property
@@ -281,6 +289,7 @@ class InStudyFileOutputStorage(IOutputStorage):
             by_year=output_data.by_year,
             nb_years=output_data.nbyears,
             archived=output_data.archived,
+            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
         )
 
     @override
@@ -484,9 +493,21 @@ class InStudyFileOutputStorage(IOutputStorage):
         return aggregator_manager.aggregate_output_data()
 
     @override
-    def extract_variables_list(self, study_id: str, output_id: str) -> OutputVariablesList:
+    def get_variables_list(self, study_id: str, output_id: str) -> OutputVariablesList:
         study_outputs = self._outputs_provider.get_outputs(study_id)
-        return extract_variables_list(_output_path(study_outputs.outputs_path, output_id))
+
+        output_variables = self._repository.get_output_variables_list(study_id, output_id)
+        if output_variables:
+            return output_variables
+
+        # Fetches the data from stored output
+        output_dir = _output_path(study_outputs.outputs_path, output_id)
+        model = extract_variables_list(output_dir)
+
+        # Save the model inside DB for next calls
+        self._repository.save_output_variables_list(study_id, output_id, model)
+
+        return model
 
     @override
     def get_logs(self, study_id: str, output_id: str, log_type: LogType) -> str:

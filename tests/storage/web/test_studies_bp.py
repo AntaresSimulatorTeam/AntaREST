@@ -34,8 +34,8 @@ from antarest.core.utils.archives import ArchiveFormat
 from antarest.dependencies import AppState
 from antarest.main import add_exception_handlers
 from antarest.matrixstore.service import MatrixService
-from antarest.output.output_blueprint import create_output_routes
-from antarest.output.output_service import OutputService
+from antarest.output.routes import create_output_routes
+from antarest.output.service import OutputService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_REFERENCE_TEMPLATES,

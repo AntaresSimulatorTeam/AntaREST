@@ -18,7 +18,7 @@ import pandas as pd
 import polars as pl
 
 from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
-from antarest.output.utils import (
+from antarest.output.filestudy.utils import (
     MCYEAR_COL,
     TIME_ID_COL,
     MCAllAreasQueryFile,
