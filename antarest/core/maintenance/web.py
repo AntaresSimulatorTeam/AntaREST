@@ -13,44 +13,35 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, Depends
 
-from antarest.core.config import Config
-from antarest.core.jwt import JWTUser
-from antarest.core.maintenance.service import MaintenanceService
-from antarest.login.auth import Auth
+from antarest.dependencies import MaintenanceServiceDep, auth_required
 
 logger = logging.getLogger(__name__)
 
 
-def create_maintenance_api(service: MaintenanceService, config: Config) -> APIRouter:
-    """
-    Endpoints login implementation
-    Args:
-        service: login facade service
-        config: server config
-
-    Returns:
-
-    """
-    auth = Auth(config)
+def create_maintenance_api() -> APIRouter:
     bp = APIRouter(prefix="/v1")
 
     @bp.get("/core/maintenance", include_in_schema=False)
-    def get_maintenance_status() -> bool:
+    def get_maintenance_status(service: MaintenanceServiceDep) -> bool:
         return service.get_maintenance_status()
 
-    @bp.post("/core/maintenance", include_in_schema=False)
-    def set_maintenance_status(maintenance: bool, current_user: Annotated[JWTUser, auth.required()]) -> None:
+    @bp.post("/core/maintenance", include_in_schema=False, dependencies=[Depends(auth_required)])
+    def set_maintenance_status(
+        service: MaintenanceServiceDep,
+        maintenance: bool,
+    ) -> None:
         return service.set_maintenance_status(maintenance)
 
     @bp.get("/core/maintenance/message", include_in_schema=False)
-    def get_message_info() -> str:
+    def get_message_info(service: MaintenanceServiceDep) -> str:
         return service.get_message_info()
 
-    @bp.post("/core/maintenance/message", include_in_schema=False)
+    @bp.post("/core/maintenance/message", include_in_schema=False, dependencies=[Depends(auth_required)])
     def set_message_info(
-        current_user: Annotated[JWTUser, auth.required()], message: Annotated[str, Body()] = ""
+        service: MaintenanceServiceDep,
+        message: Annotated[str, Body()] = "",
     ) -> None:
         return service.set_message_info(message)
 
