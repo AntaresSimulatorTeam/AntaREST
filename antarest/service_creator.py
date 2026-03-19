@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 import redis
-from fastapi import FastAPI
 from sqlalchemy import create_engine
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.pool import NullPool
@@ -339,23 +338,6 @@ class Services:
     auto_archiver: Optional[AutoArchiveService] = None
     blob_gc: Optional[BlobGarbageCollector] = None
     variable_view_gc: Optional[VariableViewGarbageCollector] = None
-
-
-def store_services_on_app(app: FastAPI, services: Services, config: Config) -> None:
-    app.state.config = config
-    app.state.study_service = services.study
-    app.state.directory_service = services.directory
-    app.state.explorer = services.explorer
-    app.state.watcher = services.watcher
-    app.state.login_service = services.user
-    app.state.launcher_service = services.launcher
-    app.state.matrix_service = services.matrix
-    app.state.file_transfer_manager = services.file_transfer_manager
-    app.state.output_service = services.output_service
-    app.state.favorite_study_service = services.favorite_study
-    app.state.favorite_directory_service = services.favorite_directory
-    app.state.task_service = services.task_service
-    app.state.maintenance_service = services.maintenance
 
 
 def create_services(config: Config, create_all: bool = False) -> Services:

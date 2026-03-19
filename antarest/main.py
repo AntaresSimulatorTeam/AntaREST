@@ -280,7 +280,7 @@ def base_fastapi_app(api_prefix: str, root_path: str) -> FastAPI:
     async def set_threadpool_size(app: FastAPI) -> AsyncGenerator[None, None]:
         from anyio import to_thread
 
-        config = app.state.config
+        config = app.state.app_state.config
         to_thread.current_default_thread_limiter().total_tokens = config.server.worker_threadpool_size
 
         yield
