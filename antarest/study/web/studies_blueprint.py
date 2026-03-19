@@ -30,7 +30,7 @@ from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.utils import sanitize_string, validate_folder_path, validate_study_name
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.login.utils import require_current_user
+from antarest.login.utils import require_admin_user, require_current_user
 from antarest.study.dtos import StudySynthesis
 from antarest.study.model import (
     DeleteManyStudies,
@@ -559,10 +559,11 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         return study_service.unarchive(study_id)
 
     @bp.post(
-        "/studies/{study_id}/repair",
+        "/studies/{study_id}/_repair",
         summary="Repair a study",
     )
     def repair_study(study_id: UuidStr, repair_request: StudyRepairRequest) -> str:
+        require_admin_user()
         logger.info(f"Repairing study {study_id}")
         return study_service.repair_study(study_id, repair_request)
 

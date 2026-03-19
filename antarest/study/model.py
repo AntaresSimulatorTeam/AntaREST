@@ -564,11 +564,15 @@ class StudyRepairSeverity(StrEnum):
 
 
 class StudyRepairRequest(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
     repairs: list[StudyRepairType] = Field(default_factory=lambda: [StudyRepairType.ARCHIVE_CONSISTENCY])
     dry_run: bool = True
 
 
 class StudyRepairIssue(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
     code: str
     severity: StudyRepairSeverity
     message: str
@@ -576,12 +580,16 @@ class StudyRepairIssue(AntaresBaseModel):
 
 
 class StudyRepairAction(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
     code: str
     description: str
     details: dict[str, Any] = Field(default_factory=dict)
 
 
 class StudyRepairReport(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
     study_id: str
     dry_run: bool
     issues: list[StudyRepairIssue] = Field(default_factory=list)

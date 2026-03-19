@@ -2205,10 +2205,6 @@ class StudyService:
         )
 
     def repair_study(self, uuid: str, repair_request: StudyRepairRequest) -> str:
-        current_user = get_current_user()
-        if current_user is None or not (current_user.is_site_admin() or current_user.is_admin_token()):
-            raise UserHasNotPermissionError()
-
         study = self.get_study(uuid)
         if StudyRepairType.ARCHIVE_CONSISTENCY in repair_request.repairs and not isinstance(study, RawStudy):
             raise UnsupportedOperationOnThisStudyType(study.id, "repair", "raw")
@@ -2250,6 +2246,7 @@ class StudyService:
         report: StudyRepairReport,
         notifier: ITaskNotifier,
     ) -> None:
+        logger.info("Checking archive consistency for study '%s'", uuid)
         notifier.notify_message(f"Checking archive consistency for study '{uuid}'")
 
         with db():
@@ -2264,6 +2261,14 @@ class StudyService:
             archived_in_db=study.archived,
             archive_exists=archive_exists,
             study_exists=study_exists,
+        )
+        logger.info(
+            "Archive consistency state for study '%s': %s (archive_exists=%s, study_exists=%s, archived_in_db=%s)",
+            uuid,
+            state,
+            archive_exists,
+            study_exists,
+            study.archived,
         )
 
         if state in {
@@ -2338,7 +2343,20 @@ class StudyService:
             )
         )
         report.proposed_actions.append(proposed_action)
-        if not dry_run:
+        if dry_run:
+            logger.info(
+                "Dry-run: would apply action '%s' on study '%s' (archived=%s)",
+                repair_spec.action_code,
+                uuid,
+                repair_spec.target_archived,
+            )
+        else:
+            logger.info(
+                "Applying action '%s' on study '%s' (archived=%s)",
+                repair_spec.action_code,
+                uuid,
+                repair_spec.target_archived,
+            )
             self._set_study_archived_state(uuid, archived=repair_spec.target_archived)
             report.applied_actions.append(
                 StudyRepairAction(
@@ -2357,13 +2375,6 @@ class StudyService:
             raw_study_db = assert_raw(study_db)
             raw_study_db.archived = archived
             self.repository.save(raw_study_db)
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_EDITED,
-                    payload=raw_study_db.to_json_summary(),
-                    permissions=PermissionInfo.from_study(raw_study_db),
-                )
-            )
             remove_from_cache(cache=self.cache_service, root_id=uuid)
 
     def _validate_and_prepare_permissions(self, group_ids: Sequence[str]) -> tuple[Any, List[Group]]:
