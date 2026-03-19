@@ -109,6 +109,14 @@ class ITaskService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def cancel_task(self, task_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_task_progress(self, task_id: str) -> Optional[int]:
+        raise NotImplementedError()
+
+    @abstractmethod
     def delete_task_by_creation_date(self, task_retention_duration: int) -> int:
         raise NotImplementedError()
 
@@ -288,6 +296,7 @@ class TaskJobService(ITaskService):
 
         return task_event_callback
 
+    @override
     def cancel_task(self, task_id: str) -> None:
         task = self.repo.get_or_raise(task_id)
         user = require_current_user()
@@ -509,6 +518,7 @@ class TaskJobService(ITaskService):
                 if task_id in self.tasks:
                     del self.tasks[task_id]
 
+    @override
     def get_task_progress(self, task_id: str) -> Optional[int]:
         task = self.repo.get_or_raise(task_id)
         user = get_current_user()

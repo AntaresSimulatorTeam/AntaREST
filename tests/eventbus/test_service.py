@@ -11,9 +11,8 @@
 # This file is part of the Antares project.
 
 from typing import Awaitable, Callable, List
-from unittest.mock import MagicMock, Mock
+from unittest.mock import Mock
 
-from antarest.core.config import Config, EventBusConfig, RedisConfig
 from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.eventbus.main import build_eventbus
@@ -21,18 +20,16 @@ from tests.helpers import auto_retry_assert
 
 
 def test_service_factory() -> None:
-    config = Config()
     redis_client = Mock()
-    event_bus = build_eventbus(MagicMock(), config, autostart=False)
+    event_bus = build_eventbus(autostart=False)
     assert event_bus.backend.__class__.__name__ == "LocalEventBus"
-    config = Config(redis=RedisConfig(host="localhost"), eventbus=EventBusConfig())
 
-    event_bus = build_eventbus(MagicMock(), config, autostart=False, redis_client=redis_client)
+    event_bus = build_eventbus(autostart=False, redis_client=redis_client)
     assert event_bus.backend.__class__.__name__ == "RedisEventBus"
 
 
 def test_lifecycle() -> None:
-    event_bus = build_eventbus(MagicMock(), Config(), autostart=True)
+    event_bus = build_eventbus(autostart=True)
     test_bucket: List[Event] = []
 
     def append_to_bucket(

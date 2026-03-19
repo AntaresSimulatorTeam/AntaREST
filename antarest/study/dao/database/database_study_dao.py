@@ -17,7 +17,7 @@ This DAO provides database-backed storage for studies when storage_mode=DATABASE
 Uses multiple inheritance to combine specialized DAOs (like FileStudyTreeDao).
 """
 
-from typing import Optional, Self, Sequence
+from typing import Self, Sequence
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -27,13 +27,6 @@ from typing_extensions import override
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
-from antarest.study.business.model.xpansion_model import (
-    XpansionAdequacyCriterion,
-    XpansionCandidate,
-    XpansionResourceFileType,
-    XpansionSettings,
-    XpansionSettingsUpdate,
-)
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
 from antarest.study.dao.database.database_area_properties_dao import DatabaseAreaPropertiesDao
@@ -48,6 +41,7 @@ from antarest.study.dao.database.database_study_settings_dao import DatabaseStud
 from antarest.study.dao.database.database_thematic_trimming_dao import DatabaseThematicTrimmingDao
 from antarest.study.dao.database.database_thermal_dao import DatabaseThermalDao
 from antarest.study.dao.database.database_user_resources import DatabaseUserResourcesDao
+from antarest.study.dao.database.database_xpansion_dao import DatabaseXpansionDao
 from antarest.study.dao.database.models.comments import COMMENTS_TABLE
 from antarest.study.dao.database.sql_utils import upsert_one
 from antarest.study.model import Study
@@ -70,6 +64,7 @@ class DatabaseStudyDao(
     DatabaseStStorageDao,
     DatabaseThematicTrimmingDao,
     DatabaseScenarioBuilderDao,
+    DatabaseXpansionDao,
 ):
     """
     Database implementation of StudyDao.
@@ -104,6 +99,7 @@ class DatabaseStudyDao(
         DatabaseStStorageDao.__init__(self, study_id, db_session)
         DatabaseThematicTrimmingDao.__init__(self, study_id, db_session)
         DatabaseScenarioBuilderDao.__init__(self, study_id, db_session)
+        DatabaseXpansionDao.__init__(self, study_id, db_session)
         self._matrix_service = matrix_service
         self._generator_matrix_constants = generator_matrix_constants
 
@@ -202,84 +198,4 @@ class DatabaseStudyDao(
 
     @override
     def get_constraint_equal_term_matrix(self, constraint_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def delete_xpansion_candidate(self, candidate_name: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_xpansion_settings(self, settings: XpansionSettings) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def create_xpansion_configuration(self) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def delete_xpansion_configuration(self) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def delete_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_xpansion_constraint(self, filename: str, content: bytes) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_xpansion_capacity(self, filename: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_xpansion_weight(self, filename: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_xpansion_adequacy_criterion(self, criterion: XpansionAdequacyCriterion) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_all_xpansion_candidates(self) -> list[XpansionCandidate]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_xpansion_candidate(self, candidate_id: str) -> XpansionCandidate:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def checks_xpansion_candidate_coherence(self, candidate: XpansionCandidate) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_xpansion_settings(self) -> XpansionSettings:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def checks_xpansion_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_xpansion_resources(self, resource_type: XpansionResourceFileType) -> list[str]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def checks_xpansion_resource_can_be_deleted(self, resource_type: XpansionResourceFileType, filename: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_xpansion_adequacy_criterion(self) -> XpansionAdequacyCriterion:
         raise NotImplementedError("This method is not yet implemented for database storage mode")
