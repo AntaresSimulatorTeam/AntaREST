@@ -492,6 +492,7 @@ class RawStudyInterface(StudyInterface):
             dao.update_antares_file(user_name, last_save)
             # Update DB metadata
             self._study.editor = user_name
+            self._study.updated_at = current_time()
             self._repository.save(self._study)
 
 
