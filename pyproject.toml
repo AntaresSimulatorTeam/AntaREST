@@ -136,8 +136,6 @@ no_implicit_reexport = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-log_cli = false  # you may set it to true for debugging purpose
-log_cli_level = "info"
 
 [tool.coverage.run]
 omit = ["antarest/tools/admin.py", "antarest/fastapi_jwt_auth/*.py"]

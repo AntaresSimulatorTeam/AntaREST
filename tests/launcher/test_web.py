@@ -18,13 +18,12 @@ import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
+from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
-from antarest.dependencies import AppState
+from antarest.launcher.main import build_launcher
 from antarest.launcher.model import JobResult, JobResultDTO, JobStatus, LauncherParametersDTO, LogType
-from antarest.launcher.web import create_launcher_api
-from antarest.main import add_exception_handlers
 
 ADMIN = JWTUser(
     id=1,
@@ -35,14 +34,19 @@ ADMIN = JWTUser(
 
 
 def create_app(service: Mock) -> FastAPI:
-    config = Config(security=SecurityConfig(disabled=True))
-    services = Mock()
-    services.launcher = service
-    app = FastAPI(title=__name__)
-    add_exception_handlers(app)
-    app.state.app_state = AppState(config=config, services=services, ws_manager=Mock())
-    app.include_router(create_launcher_api())
-    return app
+    build_ctxt = create_app_ctxt(FastAPI(title=__name__))
+    build_launcher(
+        build_ctxt,
+        study_service=Mock(),
+        output_service=Mock(),
+        login_service=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
+        service_launcher=service,
+        config=Config(security=SecurityConfig(disabled=True)),
+        cache=Mock(),
+    )
+    return build_ctxt.build()
 
 
 def test_run() -> None:

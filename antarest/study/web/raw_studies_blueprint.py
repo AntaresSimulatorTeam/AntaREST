@@ -17,21 +17,23 @@ from pathlib import Path, PurePosixPath
 from typing import Annotated, Any, Literal, TypeAlias
 
 import polars as pl
-from fastapi import APIRouter, Body, Depends, File, HTTPException
+from fastapi import APIRouter, Body, File, HTTPException
 from fastapi.openapi.models import Example
 from fastapi.params import Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
 from antarest.core.api_types import SanitizedStr, UuidStr
+from antarest.core.config import Config
 from antarest.core.exceptions import IncorrectPathError
 from antarest.core.model import SUB_JSON
 from antarest.core.serde.json import from_json, to_json
 from antarest.core.serde.matrix_export import TableExportFormat, simplify_dataframe
 from antarest.core.utils.utils import sanitize_string
 from antarest.core.utils.web import APITag
-from antarest.dependencies import StudyServiceDep, auth_required
+from antarest.login.auth import Auth
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.user_model import ResourceType
+from antarest.study.service import StudyService
 from antarest.study.storage.df_download import export_file
 
 logger = logging.getLogger(__name__)
@@ -142,18 +144,27 @@ class MatrixFormat(EnumIgnoreCase):
             return Response(content=buffer.getvalue(), media_type="application/vnd.apache.arrow.file")
 
 
-def create_raw_study_routes() -> APIRouter:
+def create_raw_study_routes(
+    study_service: StudyService,
+    config: Config,
+) -> APIRouter:
     """
     Endpoint implementation for studies management
+    Args:
+        study_service: study service facade to handle request
+        config: main server configuration
+
+    Returns:
+
     """
-    bp = APIRouter(prefix="/v1", tags=[APITag.study_raw_data], dependencies=[Depends(auth_required)])
+    auth = Auth(config)
+    bp = APIRouter(prefix="/v1", tags=[APITag.study_raw_data], dependencies=[auth.required()])
 
     @bp.get(
         "/studies/{uuid}/raw",
         summary="Retrieve Raw Data from Study: JSON, Text, or File Attachment",
     )
     def get_study_data(
-        study_service: StudyServiceDep,
         uuid: UuidStr,
         path: PATH_TYPE = "/",
         depth: int = 3,
@@ -240,7 +251,7 @@ def create_raw_study_routes() -> APIRouter:
         "/studies/{uuid}/raw/original-file",
         summary="Retrieve Raw file from a Study folder in its original format",
     )
-    def get_study_file(study_service: StudyServiceDep, uuid: UuidStr, path: PATH_TYPE = "/") -> Response:
+    def get_study_file(uuid: UuidStr, path: PATH_TYPE = "/") -> Response:
         """
         Fetches for a file in its original format from a study folder
 
@@ -269,7 +280,6 @@ def create_raw_study_routes() -> APIRouter:
         summary="Delete files or folders located inside the 'User' folder",
     )
     def delete_file(
-        study_service: StudyServiceDep,
         uuid: UuidStr,
         path: Annotated[
             SanitizedStr,
@@ -288,12 +298,7 @@ def create_raw_study_routes() -> APIRouter:
         status_code=http.HTTPStatus.OK,
         summary="Update study by posting formatted data",
     )
-    def edit_study(
-        study_service: StudyServiceDep,
-        uuid: UuidStr,
-        path: PATH_TYPE = "/",
-        data: Annotated[SUB_JSON, Body()] = "",
-    ) -> Any:
+    def edit_study(uuid: UuidStr, path: PATH_TYPE = "/", data: Annotated[SUB_JSON, Body()] = "") -> Any:
         """
         Same endpoint as the PUT one.
         Only difference is that it cannot create an empty folder.
@@ -308,7 +313,6 @@ def create_raw_study_routes() -> APIRouter:
         summary="Update data by posting a Raw file or by creating folder(s)",
     )
     def replace_study_file(
-        study_service: StudyServiceDep,
         uuid: UuidStr,
         path: PATH_TYPE = "/",
         file: Annotated[bytes | None, File()] = None,
@@ -344,7 +348,6 @@ def create_raw_study_routes() -> APIRouter:
         summary="Download a matrix in a given format",
     )
     def get_matrix(
-        study_service: StudyServiceDep,
         uuid: UuidStr,
         matrix_path: Annotated[
             SanitizedStr,

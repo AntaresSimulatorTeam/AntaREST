@@ -26,7 +26,7 @@ from antarest.core.maintenance.service import MaintenanceService
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.persistence import Base
 from antarest.core.requests import UserHasNotPermissionError
-from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.login.utils import current_user_context
 
 
@@ -34,7 +34,8 @@ def test_service_without_cache(admin_user: Any) -> None:
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     # noinspection SpellCheckingInspection
-    init_db_singleton(
+    DBSessionMiddleware(
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )

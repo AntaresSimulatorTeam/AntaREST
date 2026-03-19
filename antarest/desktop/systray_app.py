@@ -36,7 +36,7 @@ def run_server(config_file: Path) -> None:
         config_file,
         mount_front=True,
         auto_upgrade_db=True,
-    )
+    )[0]
     # noinspection PyTypeChecker
     uvicorn.run(app, host="127.0.0.1", port=8080)
 

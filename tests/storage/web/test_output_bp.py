@@ -44,4 +44,4 @@ def test_output_whole_download(tmp_path: Path) -> None:
     res = client.get(
         f"/v1/studies/{UUID}/outputs/{output_id}/export",
     )
-    assert res.status_code == HTTPStatus.OK, res.json()
+    assert res.status_code == HTTPStatus.OK

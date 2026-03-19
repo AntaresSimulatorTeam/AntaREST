@@ -21,12 +21,13 @@ from unittest.mock import Mock
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
+from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
-from antarest.dependencies import AppState
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.login.auth import JwtSettings
+from antarest.login.main import build_login
 from antarest.login.model import (
     Bot,
     BotCreateDTO,
@@ -41,23 +42,28 @@ from antarest.login.model import (
     UserCreateDTO,
     UserInfo,
 )
-from antarest.login.web import create_login_api, create_user_api
-from antarest.main import add_exception_handlers
 
 
 def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
-    config = Config(
-        resources_path=Path(),
-        security=SecurityConfig(disabled=auth_disabled, jwt_key="super-secret"),
-    )
-    services = Mock()
-    services.user = service
     app = FastAPI(title=__name__)
-    add_exception_handlers(app)
-    app.state.app_state = AppState(config=config, services=services, ws_manager=Mock())
-    app.include_router(create_login_api())
-    app.include_router(create_user_api())
-    return app
+
+    @AuthJWT.load_config  # type: ignore[misc]
+    def get_config() -> JwtSettings:
+        return JwtSettings(
+            authjwt_secret_key="super-secret",
+            authjwt_token_location=("headers", "cookies"),
+        )
+
+    app_ctxt = create_app_ctxt(app)
+    build_login(
+        app_ctxt,
+        service=service,
+        config=Config(
+            resources_path=Path(),
+            security=SecurityConfig(disabled=auth_disabled),
+        ),
+    )
+    return app_ctxt.build()
 
 
 class TokenType(str, Enum):
@@ -77,15 +83,6 @@ def create_auth_token(
     ),
 ) -> Dict[str, str]:
     jwt_manager = AuthJWT()
-
-    @AuthJWT.load_config
-    def get_config() -> JwtSettings:
-        return JwtSettings(
-            authjwt_secret_key="super-secret",
-            authjwt_token_location=("headers", "cookies"),
-            authjwt_denylist_enabled=False,
-        )
-
     create_token = jwt_manager.create_access_token if type == TokenType.ACCESS else jwt_manager.create_refresh_token
     token = create_token(
         expires_time=expires_delta,

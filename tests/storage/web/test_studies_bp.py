@@ -23,6 +23,8 @@ from fastapi import FastAPI
 from markupsafe import Markup
 from starlette.testclient import TestClient
 
+from antarest.blobstore.service import BlobService
+from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import UrlNotMatchJsonDataError
 from antarest.core.filetransfer.model import FileDownloadDTO, FileDownloadTaskDTO
@@ -31,11 +33,10 @@ from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
 from antarest.core.utils.archives import ArchiveFormat
-from antarest.dependencies import AppState
-from antarest.main import add_exception_handlers
 from antarest.matrixstore.service import MatrixService
 from antarest.output.output_blueprint import create_output_routes
 from antarest.output.output_service import OutputService
+from antarest.study.main import build_study_service
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_REFERENCE_TEMPLATES,
@@ -46,9 +47,6 @@ from antarest.study.model import (
     StudyMetadataDTO,
 )
 from antarest.study.service import StudyService
-from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
-from antarest.study.web.studies_blueprint import create_study_routes
-from antarest.study.web.variant_blueprint import create_study_variant_routes
 from tests.helpers import with_admin_user
 from tests.storage.integration.conftest import UUID
 
@@ -75,19 +73,22 @@ def create_test_client(
     file_transfer_manager: FileTransferManager = Mock(),
     raise_server_exceptions: bool = True,
 ) -> TestClient:
-    services = Mock()
-    services.study = service
-    services.output_service = output_service
-    services.file_transfer_manager = file_transfer_manager
-    services.matrix = Mock(spec=MatrixService)
-    app = FastAPI(title=__name__)
-    add_exception_handlers(app)
-    app.state.app_state = AppState(config=CONFIG, services=services, ws_manager=Mock())
-    app.include_router(create_study_routes())
-    app.include_router(create_raw_study_routes())
-    app.include_router(create_study_variant_routes())
-    app.include_router(create_output_routes())
-    return TestClient(app, raise_server_exceptions=raise_server_exceptions)
+    app_ctxt = create_app_ctxt(FastAPI(title=__name__))
+    build_study_service(
+        app_ctxt,
+        cache=Mock(),
+        task_service=Mock(),
+        file_transfer_manager=file_transfer_manager,
+        study_service=service,
+        config=CONFIG,
+        user_service=Mock(),
+        matrix_service=Mock(spec=MatrixService),
+        blob_service=Mock(spec=BlobService),
+    )
+    app_ctxt.api_root.include_router(
+        create_output_routes(output_service=output_service, file_transfer_manager=file_transfer_manager, config=CONFIG)
+    )
+    return TestClient(app_ctxt.build(), raise_server_exceptions=raise_server_exceptions)
 
 
 def test_server() -> None:

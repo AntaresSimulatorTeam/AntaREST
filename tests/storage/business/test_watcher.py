@@ -28,7 +28,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
 from antarest.core.tasks.service import ITaskService
-from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
+from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import current_time
 from antarest.login.model import GroupDTO
 from antarest.login.service import LoginService
@@ -261,7 +261,8 @@ def test_partial_scan(tmp_path: Path, caplog: t.Any) -> None:
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     # noinspection SpellCheckingInspection
-    init_db_singleton(
+    DBSessionMiddleware(
+        None,
         custom_engine=engine,
         session_args={"autocommit": False, "autoflush": False},
     )

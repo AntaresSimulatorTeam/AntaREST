@@ -13,9 +13,11 @@
 import time
 from pathlib import Path
 from typing import List
+from unittest.mock import MagicMock
 
 from typing_extensions import override
 
+from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.tasks.model import TaskResult
@@ -40,7 +42,7 @@ class DummyWorker(AbstractWorker):
 
 def test_simple_task(tmp_path: Path) -> None:
     task_queue = "do_stuff"
-    event_bus = build_eventbus(autostart=True)
+    event_bus = build_eventbus(MagicMock(), Config(), autostart=True)
     command_event = Event(
         type=EventType.WORKER_TASK,
         payload=WorkerTaskCommand(

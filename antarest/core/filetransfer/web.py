@@ -12,24 +12,25 @@
 import logging
 from pathlib import Path
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from starlette.responses import FileResponse
 
 from antarest.core.api_types import UuidStr
+from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadDTO
+from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.utils.web import APITag
-from antarest.dependencies import FileTransferManagerDep, auth_required
+from antarest.login.auth import Auth
 
 logger = logging.getLogger(__name__)
 
 
-def create_file_transfer_api() -> APIRouter:
-    bp = APIRouter(prefix="/v1", tags=[APITag.downloads], dependencies=[Depends(auth_required)])
+def create_file_transfer_api(filetransfer_manager: FileTransferManager, config: Config) -> APIRouter:
+    auth = Auth(config)
+    bp = APIRouter(prefix="/v1", tags=[APITag.downloads], dependencies=[auth.required()])
 
     @bp.get("/downloads", summary="Get available downloads")
-    def get_downloads(
-        filetransfer_manager: FileTransferManagerDep,
-    ) -> list[FileDownloadDTO]:
+    def get_downloads() -> list[FileDownloadDTO]:
         logger.info("Retrieving downloads list.")
         return filetransfer_manager.list_downloads()
 
@@ -37,7 +38,7 @@ def create_file_transfer_api() -> APIRouter:
         "/downloads/{download_id}",
         summary="Retrieve download file",
     )
-    def fetch_download(filetransfer_manager: FileTransferManagerDep, download_id: UuidStr) -> FileResponse:
+    def fetch_download(download_id: UuidStr) -> FileResponse:
         logger.info(f"Retrieving content for download {download_id}.")
         download = filetransfer_manager.fetch_download(download_id)
         return FileResponse(
@@ -50,11 +51,7 @@ def create_file_transfer_api() -> APIRouter:
         "/downloads/{download_id}/metadata",
         summary="Retrieve information on a file's state of preparation",
     )
-    def get_download_metadata(
-        filetransfer_manager: FileTransferManagerDep,
-        download_id: UuidStr,
-        wait_for_availability: bool = False,
-    ) -> FileDownloadDTO:
+    def get_download_metadata(download_id: UuidStr, wait_for_availability: bool = False) -> FileDownloadDTO:
         logger.info(f"Retrieving metadata for download {download_id} (waiting: {wait_for_availability}).")
         return filetransfer_manager.get_download_metadata(download_id, wait_for_availability)
 

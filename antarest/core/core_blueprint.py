@@ -13,10 +13,10 @@
 
 from fastapi import APIRouter
 
+from antarest.core.config import Config
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
 from antarest.core.version_info import VersionInfoDTO, get_commit_id, get_dependencies
-from antarest.dependencies import ConfigDep
 
 
 class StatusDTO(AntaresBaseModel):
@@ -27,9 +27,12 @@ class DesktopModeDTO(AntaresBaseModel):
     desktop_mode: bool
 
 
-def create_utils_routes() -> APIRouter:
+def create_utils_routes(config: Config) -> APIRouter:
     """
     Utility endpoints
+
+    Args:
+        config: main server configuration
     """
     bp = APIRouter(tags=[APITag.misc])
 
@@ -41,7 +44,7 @@ def create_utils_routes() -> APIRouter:
         "/version",
         summary="Get application version",
     )
-    def version_info(config: ConfigDep, with_deps: bool = False) -> VersionInfoDTO:
+    def version_info(with_deps: bool = False) -> VersionInfoDTO:
         """
         Returns the current version of the application, along with relevant dependency information.
 
@@ -63,7 +66,7 @@ def create_utils_routes() -> APIRouter:
         "/desktop_mode",
         summary="Get if application is running on desktop mode",
     )
-    def desktop_mode(config: ConfigDep) -> DesktopModeDTO:
+    def desktop_mode() -> DesktopModeDTO:
         """
         Returns weither the application is running on desktop mode.
 

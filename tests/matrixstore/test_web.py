@@ -19,28 +19,41 @@ import polars as pl
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
+from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.dependencies import AppState
-from antarest.main import add_exception_handlers
+from antarest.fastapi_jwt_auth import AuthJWT
+from antarest.login.auth import JwtSettings
+from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.model import MatrixDescriptionDTO, MatrixInfoDTO, MatrixReference, MatrixReferencesDTO
-from antarest.matrixstore.web import MatrixDTO, create_matrix_api
+from antarest.matrixstore.web import MatrixDTO
 from tests.helpers import with_admin_user
 from tests.login.test_web import create_auth_token
 
 
 def create_app(service: Mock, auth_disabled: bool = False) -> FastAPI:
-    config = Config(
-        resources_path=Path(),
-        security=SecurityConfig(disabled=auth_disabled, jwt_key="super-secret"),
+    build_ctxt = create_app_ctxt(FastAPI(title=__name__))
+
+    @AuthJWT.load_config  # type: ignore[misc]
+    def get_config() -> JwtSettings:
+        return JwtSettings(
+            authjwt_secret_key="super-secret",
+            authjwt_token_location=("headers", "cookies"),
+            authjwt_denylist_enabled=False,
+        )
+
+    build_matrix_service(
+        build_ctxt,
+        user_service=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
+        service=service,
+        config=Config(
+            resources_path=Path(),
+            security=SecurityConfig(disabled=auth_disabled),
+        ),
     )
-    services = Mock()
-    services.matrix = service
-    app = FastAPI(title=__name__)
-    add_exception_handlers(app)
-    app.state.app_state = AppState(config=config, services=services, ws_manager=Mock())
-    app.include_router(create_matrix_api())
-    return app
+    return build_ctxt.build()
 
 
 @with_admin_user
@@ -55,7 +68,7 @@ def test_create() -> None:
         headers=create_auth_token(app),
         json=[[1]],
     )
-    assert res.status_code == 200, res.json()
+    assert res.status_code == 200
     assert res.json() == "matrix_hash"
 
 
