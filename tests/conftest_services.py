@@ -114,6 +114,14 @@ class SynchTaskService(ITaskService):
         pass
 
     @override
+    def cancel_task(self, task_id: str) -> None:
+        pass
+
+    @override
+    def get_task_progress(self, task_id: str) -> t.Optional[int]:
+        return None
+
+    @override
     def delete_task_by_creation_date(self, task_retention_duration: int) -> int:
         pass
 
