@@ -12,9 +12,13 @@
 
 from typing import Dict, List
 
+from pydantic import ConfigDict
+
 from antarest.core.serde import AntaresBaseModel
+from antarest.core.utils.string import to_camel_case
 from antarest.output.storage.output_storage import OutputDetails
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
 from antarest.study.model import StudyVersionInt
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -22,6 +26,32 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     EnrModelling,
     FileStudyTreeConfig,
 )
+
+
+class OutputSynthesis(AntaresBaseModel):
+    """
+    Synthetic data about outputs of a study.
+    """
+
+    model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
+
+    name: str
+    mode: Mode
+    synthesis: bool
+    by_year: bool
+    nb_years: int
+    archived: bool
+
+    @classmethod
+    def from_output_details(cls, output: OutputDetails) -> "OutputSynthesis":
+        return cls(
+            name=output.name,
+            mode=output.mode,
+            synthesis=output.synthesis,
+            by_year=output.by_year,
+            nb_years=output.nb_years,
+            archived=output.archived,
+        )
 
 
 class StudyDataSynthesis(AntaresBaseModel):
@@ -65,7 +95,7 @@ class StudySynthesis(AntaresBaseModel):
     version: StudyVersionInt
     districts: Dict[str, District] = {}
     areas: Dict[str, AreaConfig] = {}
-    outputs: Dict[str, OutputDetails] = {}
+    outputs: Dict[str, OutputSynthesis] = {}
     bindings: List[BindingConstraint] = []
     enr_modelling: EnrModelling = EnrModelling.AGGREGATED
 
@@ -78,5 +108,5 @@ class StudySynthesis(AntaresBaseModel):
             districts=synthesis.districts,
             bindings=synthesis.bindings,
             enr_modelling=synthesis.enr_modelling,
-            outputs=outputs,
+            outputs={k: OutputSynthesis.from_output_details(v) for k, v in outputs.items()},
         )
