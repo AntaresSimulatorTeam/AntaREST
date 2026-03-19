@@ -12,14 +12,13 @@
 import pytest
 from starlette.testclient import TestClient
 
-from tests.integration.prepare_proxy import PreparerProxy
-
 from antarest.study.business.model.config.optimization_config_model import (
     SimplexOptimizationRange,
     TransmissionCapacities,
     UnfeasibleProblemBehavior,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
+from tests.integration.prepare_proxy import PreparerProxy
 
 
 def test_study_settings(client: TestClient, admin_access_token: str) -> None:
