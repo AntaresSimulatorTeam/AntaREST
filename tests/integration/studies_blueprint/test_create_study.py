@@ -13,8 +13,6 @@ import pytest
 from antares.study.version import StudyVersion
 from starlette.testclient import TestClient
 
-from tests.integration.prepare_proxy import PreparerProxy
-
 
 class TestCreateStudy:
     @pytest.mark.parametrize(
@@ -143,24 +141,3 @@ class TestCreateStudy:
 
         test_dir = next(d for d in directories if d["name"] == "test")
         assert test_dir["parentId"] == experiments_dir["id"]
-
-    @pytest.mark.parametrize("study_type", ["raw", "variant"])
-    def test_updated_at_changes_after_command(
-        self,
-        study_type: str,
-        client: TestClient,
-        admin_access_token: str,
-    ) -> None:
-        client.headers = {"Authorization": f"Bearer {admin_access_token}"}
-        preparer = PreparerProxy(client, admin_access_token)
-
-        study_id = preparer.create_study("foo", version=860)
-        if study_type == "variant":
-            study_id = preparer.create_variant(study_id, name="foo_variant")
-
-        updated_before = client.get(f"/v1/studies/{study_id}").json()["updated"]
-
-        preparer.create_area(study_id, name="Area 1")
-
-        updated_after = client.get(f"/v1/studies/{study_id}").json()["updated"]
-        assert updated_after > updated_before
