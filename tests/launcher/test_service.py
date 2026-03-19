@@ -40,6 +40,7 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.core.utils.utils import current_time
 from antarest.dbmodel import Base
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
@@ -635,8 +636,7 @@ class TestLauncherService:
         engine = create_engine("sqlite:///:memory:", echo=False)
         Base.metadata.create_all(engine)
         # noinspection SpellCheckingInspection
-        DBSessionMiddleware(
-            None,
+        init_db_singleton(
             custom_engine=engine,
             session_args={"autocommit": False, "autoflush": False},
         )
