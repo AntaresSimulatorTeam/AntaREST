@@ -241,12 +241,9 @@ def create_core_services(config: Config) -> CoreServices:
         matrix_service=matrix_service,
     )
 
-    favorite_study_service, favorite_directory_service = build_favorite_service(config=config, app_ctxt=app_ctxt)
+    favorite_study_service, favorite_directory_service = build_favorite_service()
 
     study_disk_space_repository = StudyDiskSpaceRepository()
-
-    if app_ctxt:
-        app_ctxt.api_root.include_router(create_output_routes(output_service, filetransfer_service, config))
 
     return CoreServices(
         cache=cache,
