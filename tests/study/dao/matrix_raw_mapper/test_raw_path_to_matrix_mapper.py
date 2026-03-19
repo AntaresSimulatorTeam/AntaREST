@@ -17,6 +17,7 @@ import pytest
 
 from antarest.core.exceptions import IncorrectPathError
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_8_1
@@ -73,6 +74,8 @@ def test_get_matrix_from_path(
             hydro_max_hourly_pump_power_df,
             hydro_max_daily_gen_energy_df,
             hydro_max_daily_pump_energy_df,
+            xpansion_capacity_df,
+            xpansion_weight_df,
         ) = result.dataframes
         area_id, area2 = result.area1, result.area2
         thermal_id, renewable_id, st_storage_id = result.thermal_id, result.renewable_id, result.sts_id
@@ -220,7 +223,13 @@ def test_get_matrix_from_path(
         hydro_max_daily_pump_energy = mapper.get_matrix_from_path(path)
         pl.testing.assert_frame_equal(hydro_max_daily_pump_energy, hydro_max_daily_pump_energy_df, check_dtypes=False)
 
-        # todo: We're missing BC and Xpansion tests as they are not yet implemented in DB.
+        xpansion_capacity = mapper.get_matrix_from_path(Path("user/expansion/capa/link_capa.txt"))
+        pl.testing.assert_frame_equal(xpansion_capacity, xpansion_capacity_df, check_dtypes=False)
+
+        xpansion_weight = mapper.get_matrix_from_path(Path("user/expansion/weights/mc_weights.csv"))
+        pl.testing.assert_frame_equal(xpansion_weight, xpansion_weight_df, check_dtypes=False)
+
+        # todo: We're missing BC tests as they are not yet implemented in DB.
 
 
 def test_save_matrix_from_path(
@@ -457,7 +466,21 @@ def test_save_matrix_from_path(
         mapper.save_matrix_from_path(path, series_id)
         pl.testing.assert_frame_equal(dao.get_hydro_max_daily_pump_energy(area_id), df, check_dtypes=False)
 
-        # todo: We're missing BC and Xpansion tests as they are not yet implemented in DB.
+        path = Path("user/expansion/capa/link_capa.txt")
+        series_id, df = _build_random_dataframe()
+        mapper.save_matrix_from_path(path, series_id)
+        result_df = dao.get_xpansion_resource(XpansionResourceFileType.CAPACITIES, "link_capa.txt")
+        assert isinstance(result_df, pl.DataFrame)
+        pl.testing.assert_frame_equal(result_df, df, check_dtypes=False)
+
+        path = Path("user/expansion/weights/mc_weights.csv")
+        series_id, df = _build_random_dataframe()
+        mapper.save_matrix_from_path(path, series_id)
+        result_df = dao.get_xpansion_resource(XpansionResourceFileType.WEIGHTS, "mc_weights.csv")
+        assert isinstance(result_df, pl.DataFrame)
+        pl.testing.assert_frame_equal(result_df, df, check_dtypes=False)
+
+        # todo: We're missing BC tests as they are not yet implemented in DB.
 
 
 @pytest.mark.parametrize(
