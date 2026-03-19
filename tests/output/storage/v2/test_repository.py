@@ -14,7 +14,8 @@ from unittest.mock import Mock
 import pytest
 from sqlalchemy import Engine
 
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.launcher.model import LogType
 from antarest.output.storage.v2.repository import DbOutputMetadataV2, OutputV2Repository
 from antarest.study.model import Study
@@ -23,7 +24,7 @@ from antarest.study.repository import StudyMetadataRepository
 
 @pytest.fixture
 def init_db(db_engine: Engine) -> None:
-    DBSessionMiddleware(None, custom_engine=db_engine)
+    init_db_singleton(custom_engine=db_engine)
 
 
 @pytest.fixture

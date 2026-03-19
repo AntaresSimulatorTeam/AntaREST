@@ -17,7 +17,6 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import py7zr
-from antarest.output.output_blueprint import create_output_routes
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
@@ -29,6 +28,7 @@ from antarest.core.interfaces.eventbus import DummyEventBusService
 from antarest.dependencies import AppState
 from antarest.main import add_exception_handlers
 from antarest.matrixstore.service import MatrixService
+from antarest.output.routes import create_output_routes
 from antarest.service_creator import build_output_service
 from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME

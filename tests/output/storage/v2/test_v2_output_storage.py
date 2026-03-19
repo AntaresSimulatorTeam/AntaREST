@@ -19,7 +19,8 @@ import pytest
 from sqlalchemy import Engine
 
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.lfs.dir_lfs import DirLargeFileStorage
@@ -35,7 +36,7 @@ EXPECTED_DATE = utc_to_local("20201014-1227")
 
 @pytest.fixture
 def init_db(db_engine: Engine) -> None:
-    DBSessionMiddleware(None, custom_engine=db_engine)
+    init_db_singleton(custom_engine=db_engine)
 
 
 @pytest.fixture
