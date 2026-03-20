@@ -69,7 +69,6 @@ from antarest.login.utils import get_current_user, get_user_id, get_user_imperso
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
 from antarest.output.utils import (
-    RAW_OUTPUT_MATRIX_HEADER_SEPARATOR,
     QueryFileType,
     parse_raw_output_matrix_path,
 )
@@ -2651,7 +2650,7 @@ class StudyService:
         # Try to route output matrix requests
         parsed = parse_raw_output_matrix_path(url)
         if parsed is not None:
-            df = self._get_outputs_access().get_item_output_data(
+            return self._get_outputs_access().get_item_output_data(
                 study_id=uuid,
                 output_id=parsed.output_id,
                 query_file=parsed.query_file,
@@ -2659,10 +2658,6 @@ class StudyService:
                 item_id=parsed.ids_to_consider,
                 mc_year=parsed.mc_year,
             )
-            return {
-                "columns": [tuple(col.split(RAW_OUTPUT_MATRIX_HEADER_SEPARATOR)) for col in df.columns],
-                "data": df.to_numpy().tolist(),
-            }
 
         # We need to handle matrices differently if our study is stored in DB
         if study.storage_mode == StorageMode.DATABASE:
