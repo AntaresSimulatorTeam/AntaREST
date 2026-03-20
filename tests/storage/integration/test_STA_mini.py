@@ -84,7 +84,8 @@ def assert_with_errors(storage_service: StudyService, url: str, expected_output:
     output = storage_service.get_raw_content(uuid=uuid, path=url, depth=3, formatted=True)
     # The service now returns a pl.DataFrame for output matrices (the web layer handles formatting).
     # Convert back to the legacy dict format so these existing tests remain valid.
-    if isinstance(output, pl.DataFrame):
+    # Only applies to output matrices (columns contain the " % " multi-header separator).
+    if isinstance(output, pl.DataFrame) and all(RAW_OUTPUT_MATRIX_HEADER_SEPARATOR in col for col in output.columns):
         output = {
             "columns": [tuple(col.split(RAW_OUTPUT_MATRIX_HEADER_SEPARATOR)) for col in output.columns],
             "data": output.to_numpy(),
