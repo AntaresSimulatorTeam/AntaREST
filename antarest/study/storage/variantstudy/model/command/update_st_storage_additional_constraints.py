@@ -9,12 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Optional, Self
+from typing import Self
 
 from pydantic import TypeAdapter, model_validator
 from typing_extensions import override
 
 from antarest.study.business.model.sts_model import (
+    STStorageAdditionalConstraint,
     STStorageAdditionalConstraintUpdates,
     update_st_storage_constraint,
 )
@@ -57,7 +58,14 @@ class UpdateSTStorageAdditionalConstraints(ICommand):
         return self
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[dict[str, dict[str, list[STStorageAdditionalConstraint]]]]:
+        """
+        We validate ALL objects before saving them.
+        This way, if some data is invalid, we're not modifying the study partially only.
+        """
+        memory_mapping: dict[str, dict[str, list[STStorageAdditionalConstraint]]] = {}
         for area_id, value in self.additional_constraint_properties.items():
             for storage_id, values in value.items():
                 new_constraints = []
@@ -74,9 +82,15 @@ class UpdateSTStorageAdditionalConstraints(ICommand):
                     new_constraint = update_st_storage_constraint(current_constraint, updated_constraint)
                     new_constraints.append(new_constraint)
 
+                memory_mapping.setdefault(area_id, {})[storage_id] = new_constraints
+
+        for area_id, data in memory_mapping.items():
+            for storage_id, new_constraints in data.items():
                 study_data.save_st_storage_additional_constraints(area_id, storage_id, new_constraints)
 
-        return command_succeeded("The short-term storage additional constraints were successfully updated.")
+        return command_succeeded(
+            "The short-term storage additional constraints were successfully updated.", result=memory_mapping
+        )
 
     @override
     def to_dto(self) -> CommandDTO:

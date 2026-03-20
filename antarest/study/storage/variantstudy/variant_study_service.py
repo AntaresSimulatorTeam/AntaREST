@@ -658,7 +658,7 @@ class VariantStudyService(AbstractStorageService):
         metadata: VariantStudy,
         denormalize: bool = False,
         from_scratch: bool = False,
-        listener: Optional[ICommandListener] = None,
+        listener: ICommandListener | None = None,
     ) -> str:
         study_id = metadata.id
         with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study_id}.lock")):

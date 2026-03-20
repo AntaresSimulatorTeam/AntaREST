@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, List, Optional
+from typing import Any, List
 
 from pydantic import model_validator
 from typing_extensions import override
@@ -46,7 +46,7 @@ class RemoveMultipleBindingConstraints(ICommand):
         return values
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         all_bcs = study_data.get_all_constraints()
         constraints = []
         for bc_id in self.ids:
@@ -55,7 +55,7 @@ class RemoveMultipleBindingConstraints(ICommand):
             constraints.append(all_bcs[bc_id])
         study_data.delete_constraints(constraints)
 
-        return command_succeeded("Binding constraints successfully removed.")
+        return command_succeeded("Binding constraints successfully removed.", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

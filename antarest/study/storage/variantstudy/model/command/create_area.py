@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, Final, Optional
+from typing import Any, Dict, Final
 
 from pydantic import model_validator
 from pydantic_core.core_schema import ValidationInfo
@@ -62,7 +62,7 @@ class CreateArea(ICommand):
         return values
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         study_data.save_area(self.area_name)
         area_id = transform_name_to_id(self.area_name)
         study_data.save_hydro_management(HydroManagement(), area_id)
@@ -107,7 +107,7 @@ class CreateArea(ICommand):
         study_data.save_reserves(area_id, constants.get_default_reserves())
         study_data.save_misc_gen(area_id, constants.get_default_miscgen())
 
-        return command_succeeded(message=f"Area '{self.area_name}' created")
+        return command_succeeded(message=f"Area '{self.area_name}' created", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

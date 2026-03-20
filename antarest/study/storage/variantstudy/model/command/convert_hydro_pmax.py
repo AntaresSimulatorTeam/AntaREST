@@ -10,8 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import Optional
-
 from typing_extensions import override
 
 from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
@@ -36,9 +34,9 @@ class ConvertHydroPmax(ICommand):
     hydro_pmax: HydroPmax
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[HydroPmax]:
         study_data.convert_hydro_pmax(self.hydro_pmax)
-        return command_succeeded(message="Hydro pmax converted successfully.")
+        return command_succeeded(message="Hydro pmax converted successfully.", result=self.hydro_pmax)
 
     @override
     def to_dto(self) -> CommandDTO:
