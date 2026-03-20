@@ -164,9 +164,10 @@ def study_service(services: Services) -> StudyService:
 
 
 @pytest.fixture(name="client")
-def client_fixture(app: FastAPI) -> TestClient:
+def client_fixture(app: FastAPI) -> Iterable[TestClient]:
     """Get the webservice client used for unit testing"""
-    return TestClient(app, raise_server_exceptions=False)
+    with TestClient(app, raise_server_exceptions=False) as client:
+        yield client
 
 
 @pytest.fixture(name="admin_access_token")
