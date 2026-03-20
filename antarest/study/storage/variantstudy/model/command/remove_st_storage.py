@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import Optional
 
 from pydantic import Field
 from typing_extensions import override
@@ -48,7 +47,7 @@ class RemoveSTStorage(ICommand):
     storage_id: str = Field(description="Short term storage ID", pattern=r"[a-z0-9_(),& -]+")
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         if not study_data.st_storage_exists(self.area_id, self.storage_id):
             return command_failed(f"Short-term storage '{self.storage_id}' in area '{self.area_id}' does not exist")
 

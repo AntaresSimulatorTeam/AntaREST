@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Optional
 
 from typing_extensions import override
 
@@ -35,7 +34,7 @@ class RemoveXpansionConfiguration(ICommand):
     command_name: CommandName = CommandName.REMOVE_XPANSION_CONFIGURATION
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         study_data.delete_xpansion_configuration()
         return command_succeeded(message="Xpansion configuration removed successfully", result=None)
 

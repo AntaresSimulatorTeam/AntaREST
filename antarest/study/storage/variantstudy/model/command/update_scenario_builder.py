@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Dict, Final, Optional, Self
+from typing import Any, Dict, Final, Self
 
 from pydantic import TypeAdapter, model_validator
 from pydantic_core.core_schema import ValidationInfo
@@ -17,6 +17,7 @@ from typing_extensions import override
 
 from antarest.study.business.model.scenario_builder_model import (
     DEFAULT_RULESET_NAME,
+    Ruleset,
     RulesetUpdate,
     update_ruleset,
     validate_ruleset_against_version,
@@ -28,7 +29,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder im
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
-    CommandResult,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -84,7 +84,7 @@ class UpdateScenarioBuilder(ICommand):
         return self
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[Ruleset]:
         """
         Apply the command to the study data.
 
@@ -101,8 +101,7 @@ class UpdateScenarioBuilder(ICommand):
         ruleset = study_data.get_ruleset()
         update_ruleset(ruleset, self.data, self.study_version)
         study_data.save_scenario_builder(ruleset)
-        result = CommandResult(data=ruleset)
-        return command_succeeded(message="Scenario builder updated successfully", result=result)
+        return command_succeeded(message="Scenario builder updated successfully", result=ruleset)
 
     @override
     def to_dto(self) -> CommandDTO:

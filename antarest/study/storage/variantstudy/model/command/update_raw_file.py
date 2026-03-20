@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import base64
-from typing import Optional
 
 from typing_extensions import override
 
@@ -55,7 +54,7 @@ class UpdateRawFile(ICommand):
             return f"{cls}(target={target!r}, b64Data={self.b64Data!r})"
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: ICommandListener | None = None) -> CommandOutput[None]:
         url = self.target.split("/")
         tree_node = study_data.tree.get_node(url)
         if not isinstance(tree_node, RawFileNode):

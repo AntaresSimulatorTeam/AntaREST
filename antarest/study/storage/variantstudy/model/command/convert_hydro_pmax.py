@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Optional
 
 from typing_extensions import override
 
@@ -18,7 +17,6 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
-    CommandResult,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -36,10 +34,9 @@ class ConvertHydroPmax(ICommand):
     hydro_pmax: HydroPmax
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[HydroPmax]:
         study_data.convert_hydro_pmax(self.hydro_pmax)
-        result = CommandResult(data=self.hydro_pmax)
-        return command_succeeded(message="Hydro pmax converted successfully.", result=result)
+        return command_succeeded(message="Hydro pmax converted successfully.", result=self.hydro_pmax)
 
     @override
     def to_dto(self) -> CommandDTO:

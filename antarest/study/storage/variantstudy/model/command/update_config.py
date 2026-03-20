@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Generator, Optional, Tuple
+from typing import Any, Generator, Tuple
 
 import typing_extensions as te
 from typing_extensions import override
@@ -68,7 +68,7 @@ class UpdateConfig(ICommand):
                     break
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: ICommandListener | None = None) -> CommandOutput[None]:
         url = self.target.split("/")
         tree_node = study_data.tree.get_node(url)
         if not isinstance(tree_node, IniFileNode):

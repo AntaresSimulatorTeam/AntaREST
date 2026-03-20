@@ -9,19 +9,18 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import model_validator
 from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
-from antarest.study.business.model.link_model import LinkUpdate, update_link
+from antarest.study.business.model.link_model import Link, LinkUpdate, update_link
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.config.link import parse_link_for_update
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
-    CommandResult,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.create_link import AbstractLinkCommand
@@ -63,7 +62,7 @@ class UpdateLink(AbstractLinkCommand, ICommand):
         return values
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[Link]:
         current_link = study_data.get_link(self.area1, self.area2)
         new_link = update_link(current_link, self.parameters)
 
@@ -78,8 +77,7 @@ class UpdateLink(AbstractLinkCommand, ICommand):
         if self.indirect:
             study_data.save_link_indirect_capacities(self.area1, self.area2, str(self.indirect))
 
-        result = CommandResult(data=new_link)
-        return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' updated", result=result)
+        return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' updated", result=new_link)
 
     @override
     def to_dto(self) -> CommandDTO:

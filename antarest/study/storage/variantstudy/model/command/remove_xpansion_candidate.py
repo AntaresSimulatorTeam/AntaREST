@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Optional
 
 from typing_extensions import override
 
@@ -40,7 +39,7 @@ class RemoveXpansionCandidate(ICommand):
     candidate_name: str
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         study_data.checks_xpansion_candidate_can_be_deleted(self.candidate_name)
         candidate = study_data.get_xpansion_candidate(self.candidate_name)
         study_data.delete_xpansion_candidate(candidate.name)

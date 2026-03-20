@@ -14,6 +14,7 @@ from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.study.business.model.config.advanced_parameters_model import (
+    AdvancedParameters,
     AdvancedParametersUpdate,
     update_advanced_parameters,
     validate_advanced_parameters_against_version,
@@ -22,7 +23,6 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
-    CommandResult,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -50,12 +50,13 @@ class UpdateAdvancedParameters(ICommand):
         return self
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput:
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[AdvancedParameters]:
         current_parameters = study_data.get_advanced_parameters()
         new_parameters = update_advanced_parameters(current_parameters, self.parameters)
         study_data.save_advanced_parameters(new_parameters)
-        result = CommandResult(data=new_parameters)
-        return command_succeeded("Advanced parameters updated successfully.", result=result)
+        return command_succeeded("Advanced parameters updated successfully.", result=new_parameters)
 
     @override
     def to_dto(self) -> CommandDTO:

@@ -18,7 +18,7 @@ from antarest.core.exceptions import LinkValidationError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
-from antarest.study.business.model.link_model import LinkCreation, LinkUpdate, create_link
+from antarest.study.business.model.link_model import Link, LinkCreation, LinkUpdate, create_link
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_2, StudyVersionStr
 from antarest.study.storage.rawstudy.model.filesystem.config.link import parse_link
@@ -127,7 +127,7 @@ class CreateLink(AbstractLinkCommand, ICommand):
         return values
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[Link]:
         if study_data.link_exists(self.area1, self.area2):
             return command_failed(f"Link between '{self.area1}' and '{self.area2}' already exists")
 

@@ -9,11 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Dict, Optional
+from typing import Dict
 
 from typing_extensions import override
 
 from antarest.study.business.model.area_properties_model import (
+    AreaProperties,
     AreaPropertiesUpdate,
     update_area_properties,
 )
@@ -21,7 +22,6 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
-    CommandResult,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -44,7 +44,9 @@ class UpdateAreasProperties(ICommand):
     properties: Dict[str, AreaPropertiesUpdate]
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[dict[str, AreaProperties]]:
         """
         We validate ALL objects before saving them.
         This way, if some data is invalid, we're not modifying the study partially only.
@@ -59,9 +61,8 @@ class UpdateAreasProperties(ICommand):
         for area_id, new_properties in memory_mapping.items():
             study_data.save_area_properties(area_id, new_properties)
 
-        result = CommandResult(data=memory_mapping)
         message = f"Areas properties updated: {', '.join(self.properties.keys())}"
-        return command_succeeded(message=message, result=result)
+        return command_succeeded(message=message, result=memory_mapping)
 
     @override
     def to_dto(self) -> CommandDTO:

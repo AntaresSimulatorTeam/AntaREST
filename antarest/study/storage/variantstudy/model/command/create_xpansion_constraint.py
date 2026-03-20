@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import Optional
 
 from typing_extensions import override
 
@@ -38,7 +37,7 @@ class CreateXpansionConstraint(ICommand):
     data: bytes
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         study_data.save_xpansion_constraint(self.filename, self.data)
         return command_succeeded(message=f"Xpansion constraint {self.filename} created successfully", result=None)
 

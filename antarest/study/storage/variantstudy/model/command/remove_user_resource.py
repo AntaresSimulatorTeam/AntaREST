@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 from pathlib import PurePosixPath
-from typing import Optional
 
 from typing_extensions import override
 
@@ -42,7 +41,7 @@ class RemoveUserResource(ICommand):
     data: UserResourceDataRemoval
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         resource_path = PurePosixPath(self.data.path)
         study_data.delete_user_resource(resource_path)
         return command_succeeded(message=f"Resource {resource_path} removed successfully.", result=None)

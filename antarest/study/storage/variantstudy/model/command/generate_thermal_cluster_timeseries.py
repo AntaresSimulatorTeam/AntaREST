@@ -13,7 +13,7 @@
 import io
 import logging
 from pathlib import PurePosixPath
-from typing import Any, Dict, Final, Optional
+from typing import Any, Dict, Final
 
 import numpy as np
 import polars as pl
@@ -65,7 +65,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
         return values
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         series_mapping: dict[str, dict[str, str]] = {}
         # 1- Get the seed and nb_years to generate
         # NB: Default seed in IHM Legacy: 5489, default seed in web: 3005489.

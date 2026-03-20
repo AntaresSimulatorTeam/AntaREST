@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import Optional
 
 from pydantic import Field
 from typing_extensions import override
@@ -46,7 +45,7 @@ class RemoveMultipleSTStorageConstraints(ICommand):
     ids: list[str]
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         existing_constraints = study_data.get_st_storage_additional_constraints(self.area_id, self.storage_id)
         existing_ids = {c.id for c in existing_constraints}
         for constraint_id in self.ids:

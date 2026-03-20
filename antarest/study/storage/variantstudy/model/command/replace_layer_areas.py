@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional
+from typing import List
 
 from typing_extensions import override
 
@@ -39,7 +39,7 @@ class ReplaceLayerAreas(ICommand):
     area_ids: List[str]
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         study_data.save_layer_areas(self.layer_id, self.area_ids)
         return command_succeeded(message=f"Layer '{self.layer_id}' areas replaced", result=None)
 

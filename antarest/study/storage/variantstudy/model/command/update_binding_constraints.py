@@ -17,6 +17,7 @@ from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import Final, override
 
 from antarest.study.business.model.binding_constraint_model import (
+    BindingConstraint,
     BindingConstraintUpdates,
     update_binding_constraint,
     validate_binding_constraint_against_version,
@@ -28,7 +29,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
-    CommandResult,
     command_failed,
     command_succeeded,
 )
@@ -81,7 +81,9 @@ class UpdateBindingConstraints(ICommand):
         return values
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[list[BindingConstraint]]:
         all_constraints = study_data.get_all_constraints()
 
         new_constraints = []
@@ -94,8 +96,7 @@ class UpdateBindingConstraints(ICommand):
             new_constraints.append(new_constraint)
 
         study_data.save_constraints(new_constraints)
-        result = CommandResult(data=new_constraints)
-        return command_succeeded("All binding constraints updated", result=result)
+        return command_succeeded("All binding constraints updated", result=new_constraints)
 
     @override
     def to_dto(self) -> CommandDTO:

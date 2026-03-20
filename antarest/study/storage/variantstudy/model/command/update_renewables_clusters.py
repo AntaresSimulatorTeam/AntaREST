@@ -9,12 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Optional
+from typing import Any
 
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.model.renewable_cluster_model import (
+    RenewableCluster,
     RenewableClusterUpdates,
     update_renewable_cluster,
 )
@@ -22,7 +23,6 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
-    CommandResult,
     command_failed,
     command_succeeded,
 )
@@ -47,7 +47,9 @@ class UpdateRenewablesClusters(ICommand):
     cluster_properties: RenewableClusterUpdates
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[dict[str, list[RenewableCluster]]]:
         """
         We validate ALL objects before saving them.
         This way, if some data is invalid, we're not modifying the study partially only.
@@ -76,8 +78,7 @@ class UpdateRenewablesClusters(ICommand):
         for area_id, new_clusters in memory_mapping.items():
             study_data.save_renewables(area_id, new_clusters)
 
-        result = CommandResult(data=memory_mapping)
-        return command_succeeded("The renewable clusters were successfully updated.", result=result)
+        return command_succeeded("The renewable clusters were successfully updated.", result=memory_mapping)
 
     @override
     def to_dto(self) -> CommandDTO:

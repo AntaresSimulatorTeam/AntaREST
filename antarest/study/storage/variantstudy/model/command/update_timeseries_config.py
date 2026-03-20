@@ -9,11 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Optional
 
 from typing_extensions import override
 
 from antarest.study.business.model.config.timeseries_config_model import (
+    TimeSeriesConfiguration,
     TimeSeriesConfigurationUpdate,
     update_timeseries_configuration,
 )
@@ -21,7 +21,6 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
-    CommandResult,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -44,12 +43,13 @@ class UpdateTimeSeriesConfig(ICommand):
     parameters: TimeSeriesConfigurationUpdate
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[TimeSeriesConfiguration]:
         current_config = study_data.get_timeseries_config()
         new_config = update_timeseries_configuration(current_config, self.parameters)
         study_data.save_timeseries_config(new_config)
-        result = CommandResult(data=new_config)
-        return command_succeeded("Timeseries config updated successfully.", result=result)
+        return command_succeeded("Timeseries config updated successfully.", result=new_config)
 
     @override
     def to_dto(self) -> CommandDTO:

@@ -14,17 +14,13 @@ from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.study.business.model.config.adequacy_patch_model import (
+    AdequacyPatchParameters,
     AdequacyPatchParametersUpdate,
     update_adequacy_patch_parameters,
     validate_adequacy_patch_parameters_against_version,
 )
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.storage.variantstudy.model.command.common import (
-    CommandName,
-    CommandOutput,
-    CommandResult,
-    command_succeeded,
-)
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -50,12 +46,13 @@ class UpdateAdequacyPatchParameters(ICommand):
         return self
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput:
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[AdequacyPatchParameters]:
         current_parameters = study_data.get_adequacy_patch_parameters()
         new_parameters = update_adequacy_patch_parameters(current_parameters, self.parameters)
         study_data.save_adequacy_patch_parameters(new_parameters)
-        result = CommandResult(data=new_parameters)
-        return command_succeeded("Adequacy-patch parameters updated successfully.", result=result)
+        return command_succeeded("Adequacy-patch parameters updated successfully.", result=new_parameters)
 
     @override
     def to_dto(self) -> CommandDTO:

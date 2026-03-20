@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 from pydantic import Field, ValidationInfo, field_validator
 from typing_extensions import override
@@ -52,7 +52,7 @@ class ReplaceMatrix(ICommand):
         return validate_matrix(matrix, values.data)
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         if self.target[0] == "@":
             self.target = AliasDecoder.decode(self.target, self.study_version)
 

@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Optional, Self
+from typing import Self
 
 from pydantic import TypeAdapter, model_validator
 from typing_extensions import override
@@ -24,7 +24,6 @@ from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
-    CommandResult,
     command_failed,
     command_succeeded,
 )
@@ -59,7 +58,9 @@ class UpdateSTStorageAdditionalConstraints(ICommand):
         return self
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[dict[str, dict[str, list[STStorageAdditionalConstraint]]]]:
         """
         We validate ALL objects before saving them.
         This way, if some data is invalid, we're not modifying the study partially only.
@@ -87,9 +88,8 @@ class UpdateSTStorageAdditionalConstraints(ICommand):
             for storage_id, new_constraints in data.items():
                 study_data.save_st_storage_additional_constraints(area_id, storage_id, new_constraints)
 
-        result = CommandResult(data=memory_mapping)
         return command_succeeded(
-            "The short-term storage additional constraints were successfully updated.", result=result
+            "The short-term storage additional constraints were successfully updated.", result=memory_mapping
         )
 
     @override

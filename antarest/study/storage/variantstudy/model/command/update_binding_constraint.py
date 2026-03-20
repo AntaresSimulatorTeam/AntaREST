@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Optional, Self
+from typing import Any, Self
 
 from antares.study.version import StudyVersion
 from pydantic import model_validator
@@ -18,6 +18,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.model.binding_constraint_model import (
+    BindingConstraint,
     BindingConstraintFrequency,
     BindingConstraintMatrices,
     BindingConstraintOperator,
@@ -33,7 +34,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
-    CommandResult,
     InnerMatrices,
     command_succeeded,
 )
@@ -125,7 +125,9 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             self.matrices.equal_term_matrix = self.validate_matrix(self.matrices.equal_term_matrix, time_step)
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[BindingConstraint]:
         current_constraint = study_data.get_constraint(self.id)
         constraint = update_binding_constraint(current_constraint, self.parameters)
 
@@ -155,8 +157,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
                     assert isinstance(self.matrices.less_term_matrix, str)
                     study_data.save_constraint_less_term_matrix(constraint.id, self.matrices.less_term_matrix)
 
-        result = CommandResult(data=constraint)
-        return command_succeeded(f"Binding constraint '{constraint.id}' updated successfully.", result=result)
+        return command_succeeded(f"Binding constraint '{constraint.id}' updated successfully.", result=constraint)
 
     @override
     def to_dto(self) -> CommandDTO:

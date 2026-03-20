@@ -9,11 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Optional
 
 from typing_extensions import override
 
 from antarest.study.business.model.xpansion_model import (
+    XpansionCandidate,
     XpansionCandidateCreation,
     create_xpansion_candidate,
 )
@@ -21,7 +21,6 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
-    CommandResult,
     command_failed,
     command_succeeded,
 )
@@ -46,7 +45,9 @@ class CreateXpansionCandidate(ICommand):
     candidate: XpansionCandidateCreation
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[XpansionCandidate]:
         candidate = create_xpansion_candidate(self.candidate)
         candidates = study_data.get_all_xpansion_candidates()
 
@@ -58,8 +59,7 @@ class CreateXpansionCandidate(ICommand):
 
         study_data.save_xpansion_candidate(candidate)
 
-        result = CommandResult(data=candidate)
-        return command_succeeded(message=f"Candidate {self.candidate.name} created successfully", result=result)
+        return command_succeeded(message=f"Candidate {self.candidate.name} created successfully", result=candidate)
 
     @override
     def to_dto(self) -> CommandDTO:
