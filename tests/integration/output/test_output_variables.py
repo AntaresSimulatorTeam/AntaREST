@@ -27,27 +27,29 @@ from tests.integration.utils import wait_task_completion
 ASSETS_DIR = assets_dir / "output_variables_list"
 
 
-def test_get_output_variables_list(client: TestClient, user_access_token: str, internal_study_id: str):
+def test_get_output_variables_list(client: TestClient, user_access_token: str, internal_study_with_output_id: str):
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
     # Checks the endpoint works correctly
     output_id = "20201014-1425eco-goodbye"
-    res = client.get(f"/v1/studies/{internal_study_id}/output/{output_id}/variables-list")
+    res = client.get(f"/v1/studies/{internal_study_with_output_id}/output/{output_id}/variables-list")
     expected_content = from_json((ASSETS_DIR / "res1.json").read_bytes())
     assert expected_content == res.json()
 
     # Ensures we saved the data inside the DB and that we're still able to read it
     with db():
-        db_content: DbOutputVariables | None = db.session.get(DbOutputVariables, (internal_study_id, output_id))
+        db_content: DbOutputVariables | None = db.session.get(
+            DbOutputVariables, (internal_study_with_output_id, output_id)
+        )
         assert db_content is not None
-        assert db_content.study_id == internal_study_id
+        assert db_content.study_id == internal_study_with_output_id
         assert db_content.output_id == output_id
         assert db_content.variables_list_version == 1
         assert db_content.to_model().model_dump(by_alias=True) == expected_content
 
     # Checks mc-all links work properly as we didn't have any info in the first output
     output_id = "20241807-1540eco-extra-outputs"
-    res = client.get(f"/v1/studies/{internal_study_id}/output/{output_id}/variables-list")
+    res = client.get(f"/v1/studies/{internal_study_with_output_id}/output/{output_id}/variables-list")
     assert res.json()["mcAll"]["links"] == [
         {
             "area1Name": "de",
@@ -87,7 +89,7 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
 
 
 def test_get_output_variables_list_limit_case(
-    client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
+    client: TestClient, user_access_token: str, internal_study_with_output_id: str, tmp_path: Path
 ) -> None:
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
@@ -96,14 +98,16 @@ def test_get_output_variables_list_limit_case(
     folder_path = tmp_path / "ext_workspace" / "STA-mini" / "output" / output_id / "economy" / "mc-all" / "links"
     link_path = folder_path / "fr - psp-open"
     link_path.mkdir()
-    res = client.get(f"/v1/studies/{internal_study_id}/output/{output_id}/variables-list")
+    res = client.get(f"/v1/studies/{internal_study_with_output_id}/output/{output_id}/variables-list")
     assert res.status_code == 200
 
 
-def test_get_output_variables_imagrid_endpoint(client: TestClient, user_access_token: str, internal_study_id: str):
+def test_get_output_variables_imagrid_endpoint(
+    client: TestClient, user_access_token: str, internal_study_with_output_id: str
+):
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
     output_id = "20201014-1425eco-goodbye"
-    res = client.get(f"/v1/studies/{internal_study_id}/outputs/{output_id}/variables")
+    res = client.get(f"/v1/studies/{internal_study_with_output_id}/outputs/{output_id}/variables")
     expected_result = {
         "area": [
             "AVL DTG",
@@ -158,10 +162,10 @@ def test_get_output_variables_imagrid_endpoint(client: TestClient, user_access_t
     assert res.json() == expected_result
 
 
-def test_get_output_variables_view(client: TestClient, user_access_token: str, internal_study_id: str):
+def test_get_output_variables_view(client: TestClient, user_access_token: str, internal_study_with_output_id: str):
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
     output_id = "20201014-1425eco-goodbye"
-    url = f"/v1/studies/{internal_study_id}/output/{output_id}/variables-views"
+    url = f"/v1/studies/{internal_study_with_output_id}/output/{output_id}/variables-views"
 
     # Areas
     query_params = {"type": "area", "variable_name": "OP. COST", "frequency": "weekly", "area_id": "de"}
@@ -222,14 +226,14 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
         assert len(db_content) == 3
 
         first_view = db_content[0]
-        assert first_view.study_id == internal_study_id
+        assert first_view.study_id == internal_study_with_output_id
         assert first_view.output_id == output_id
         assert first_view.area_id == "de"
         assert first_view.frequency == MatrixFrequency.WEEKLY
         assert first_view.variable_name == "OP. COST"
 
         second_view = db_content[1]
-        assert first_view.study_id == internal_study_id
+        assert first_view.study_id == internal_study_with_output_id
         assert first_view.output_id == output_id
         assert second_view.area_id == "de"
         assert second_view.thermal_id == "01_solar"
@@ -237,7 +241,7 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
         assert second_view.variable_name == "NODU"
 
         third_view = db_content[2]
-        assert first_view.study_id == internal_study_id
+        assert first_view.study_id == internal_study_with_output_id
         assert first_view.output_id == output_id
         assert third_view.area_from_id == "de"
         assert third_view.area_to_id == "fr"
@@ -261,10 +265,10 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
     }
 
 
-def test_export_output_variables_view(client: TestClient, user_access_token: str, internal_study_id: str):
+def test_export_output_variables_view(client: TestClient, user_access_token: str, internal_study_with_output_id: str):
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
     output_id = "20201014-1425eco-goodbye"
-    url = f"/v1/studies/{internal_study_id}/output/{output_id}/variables-views"
+    url = f"/v1/studies/{internal_study_with_output_id}/output/{output_id}/variables-views"
     export_url = f"{url}/export"
 
     # Areas

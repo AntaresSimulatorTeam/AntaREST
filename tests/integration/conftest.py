@@ -29,6 +29,7 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.dbmodel import Base
 from antarest.login.model import init_admin_user
+from antarest.login.utils import current_user_context
 from antarest.main import (
     base_fastapi_app,
     init_db,
@@ -45,6 +46,40 @@ PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists
 RESOURCES_DIR = PROJECT_DIR.joinpath("resources")
 
 RUN_ON_WINDOWS = sys.platform == "win32"
+
+
+def _import_sta_mini_study(tmp_path: Path, services: Services, with_output: bool) -> None:
+    ext_workspace_path = tmp_path / "ext_workspace"
+
+    def is_study_scanned():
+        with db():
+            studies = services.study.get_studies_information(
+                StudyFilter(access_permissions=AccessPermissions.for_user(DEFAULT_ADMIN_USER))
+            )
+            return len(studies) == 1
+
+    # Extract the sample study
+    sta_mini_zip_path = ASSETS_DIR.joinpath("STA-mini.zip")
+    with zipfile.ZipFile(sta_mini_zip_path) as zf:
+        if with_output:
+            zf.extractall(path=ext_workspace_path)
+        else:
+            zf.extractall(path=ext_workspace_path, members=[f for f in zf.namelist() if "output/" not in f])
+
+    with current_user_context(DEFAULT_ADMIN_USER), db():
+        services.watcher.oneshot_scan(True)
+
+    wait_for(is_study_scanned, timeout=10, sleep_time=0.01)
+
+
+@pytest.fixture
+def sta_mini_study(tmp_path: Path, services: Services) -> None:
+    _import_sta_mini_study(tmp_path, services, with_output=False)
+
+
+@pytest.fixture
+def sta_mini_study_with_outputs(tmp_path: Path, services: Services) -> None:
+    _import_sta_mini_study(tmp_path, services, with_output=True)
 
 
 def _render_config(config_path: Path, db_url: str, tmp_path: Path) -> None:
@@ -132,20 +167,7 @@ def app_and_services(base_app: FastAPI, tmp_path: Path, db_path: Path) -> Iterab
     init_db(config, config_path, auto_upgrade=False, init_admin=False)
     services = inject_services(app, config)
 
-    # Start the watcher so it scans the ext_workspace
-    services.watcher.start()
-
-    def is_study_scanned():
-        with db():
-            studies = services.study.get_studies_information(
-                StudyFilter(access_permissions=AccessPermissions.for_user(DEFAULT_ADMIN_USER))
-            )
-            return len(studies) == 1
-
-    wait_for(is_study_scanned, timeout=10, sleep_time=0.01)
-
     yield app, services
-    services.watcher.stop()
 
 
 @pytest.fixture(name="app")
@@ -213,6 +235,23 @@ def user_access_token_fixture(
 def internal_study_fixture(
     client: TestClient,
     user_access_token: str,
+    sta_mini_study: None,
+) -> str:
+    """Get the ID of the internal study which is scanned by the watcher"""
+    res = client.get(
+        "/v1/studies",
+        headers={"Authorization": f"Bearer {user_access_token}"},
+    )
+    res.raise_for_status()
+    study_ids = t.cast(t.Iterable[str], res.json())
+    return next(iter(study_ids))
+
+
+@pytest.fixture(name="internal_study_with_output_id")
+def internal_study_with_output_fixture(
+    client: TestClient,
+    user_access_token: str,
+    sta_mini_study_with_outputs: None,
 ) -> str:
     """Get the ID of the internal study which is scanned by the watcher"""
     res = client.get(

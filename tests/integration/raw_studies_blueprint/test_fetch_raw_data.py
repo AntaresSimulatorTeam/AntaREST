@@ -40,7 +40,7 @@ class TestFetchRawData:
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_get_study_data(
-        self, client: TestClient, user_access_token: str, internal_study_id: str, study_type: str
+        self, client: TestClient, user_access_token: str, internal_study_with_output_id: str, study_type: str
     ) -> None:
         """
         Test the `get_study_data` endpoint for fetching raw data from a study.
@@ -62,7 +62,7 @@ class TestFetchRawData:
 
         # First copy the user resources in the Study directory
         with db():
-            study: RawStudy = db.session.get(Study, internal_study_id)
+            study: RawStudy = db.session.get(Study, internal_study_with_output_id)
             study_dir = pathlib.Path(study.path)
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
@@ -75,16 +75,16 @@ class TestFetchRawData:
         if study_type == "variant":
             # Copies the study, to convert it into a managed one.
             res = client.post(
-                f"/v1/studies/{internal_study_id}/copy",
+                f"/v1/studies/{internal_study_with_output_id}/copy",
                 headers={"Authorization": f"Bearer {user_access_token}"},
                 params={"study_name": "default", "with_outputs": False, "use_task": False},
             )
             assert res.status_code == 201
             parent_id = res.json()
             res = client.post(f"/v1/studies/{parent_id}/variants", params={"name": "variant 1"})
-            internal_study_id = res.json()
+            internal_study_with_output_id = res.json()
 
-        raw_url = f"/v1/studies/{internal_study_id}/raw"
+        raw_url = f"/v1/studies/{internal_study_with_output_id}/raw"
 
         # =============================
         #  NOMINAL CASES
@@ -141,13 +141,13 @@ class TestFetchRawData:
         assert res.status_code == 204, res.json()
         if study_type == "variant":
             # Asserts the generation succeeds
-            task_id = client.put(f"/v1/studies/{internal_study_id}/generate?from_scratch=True").json()
+            task_id = client.put(f"/v1/studies/{internal_study_with_output_id}/generate?from_scratch=True").json()
             res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
             task = res.json()
             assert task["status"] == TaskStatus.COMPLETED.value
             assert task["result"]["success"]
             # Checks created commands
-            res = client.get(f"/v1/studies/{internal_study_id}/commands")
+            res = client.get(f"/v1/studies/{internal_study_with_output_id}/commands")
             commands = res.json()
             assert len(commands) == 1
             assert commands[0]["action"] == "replace_user_resource"
@@ -547,7 +547,7 @@ class TestFetchOriginalFile:
         self,
         client: TestClient,
         user_access_token: str,
-        internal_study_id: str,
+        internal_study_with_output_id: str,
     ) -> None:
         """
         Test the `get_study_file` endpoint for fetching for a file in its original format.
@@ -562,10 +562,10 @@ class TestFetchOriginalFile:
         """
         # First copy the user resources in the Study directory
         with db():
-            study: RawStudy = db.session.get(Study, internal_study_id)
+            study: RawStudy = db.session.get(Study, internal_study_with_output_id)
             study_dir = pathlib.Path(study.path)
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
-        original_file_url = f"/v1/studies/{internal_study_id}/raw/original-file"
+        original_file_url = f"/v1/studies/{internal_study_with_output_id}/raw/original-file"
 
         shutil.copytree(
             ASSETS_DIR.joinpath("user"),
@@ -585,7 +585,7 @@ class TestFetchOriginalFile:
 
         # retrieves a txt file from the outputs
         file_path = "output/20201014-1422eco-hello/simulation"
-        res = client.get(f"/v1/studies/{internal_study_id}/raw/original-file", params={"path": file_path})
+        res = client.get(f"/v1/studies/{internal_study_with_output_id}/raw/original-file", params={"path": file_path})
         assert res.status_code == 200
         assert res.headers.get("content-disposition") == "attachment; filename=simulation.log"
         actual = res.content

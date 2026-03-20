@@ -104,6 +104,7 @@ class TestFilesystemEndpoints:
         user_access_token: str,
         admin_access_token: str,
         mocker: MockerFixture,
+        internal_study_with_output_id: str,
     ) -> None:
         """
         Test the lifecycle of the filesystem endpoints.
@@ -435,6 +436,5 @@ class TestFilesystemEndpoints:
 
         # Check the sizes
         # The size of the new study should be between 140 and 350 KB.
-        # The suze of 'STA-mini' should be between 9 and 11 MB.
         sizes.sort()
-        assert sizes == [IntegerRange(140_000, 350_000), IntegerRange(9_000_000, 11_000_000)]
+        assert sizes == [IntegerRange(140_000, 350_000)]

@@ -24,7 +24,7 @@ def _convert_nan_to_none(val):
     return None if val == "NaN" else val
 
 
-def test_get_output_variables_list(client: TestClient, user_access_token: str, internal_study_id: str):
+def test_get_output_variables_list(client: TestClient, user_access_token: str, internal_study_with_output_id: str):
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
     # Checks the endpoint works correctly
     body = {
@@ -39,7 +39,7 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
     output_id = "20201014-1425eco-goodbye"
 
     # Hourly
-    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{output_id}/download", json=body)
+    res = client.post(f"/v1/studies/{internal_study_with_output_id}/outputs/{output_id}/download", json=body)
     actual_result = res.json()
     actual_result = json.loads(json.dumps(actual_result), parse_constant=_convert_nan_to_none)
     with py7zr.SevenZipFile(ASSETS_DIR / "res1.7z", mode="r") as szf:
@@ -48,7 +48,7 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
 
     # Annual
     body["level"] = "annual"
-    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{output_id}/download", json=body)
+    res = client.post(f"/v1/studies/{internal_study_with_output_id}/outputs/{output_id}/download", json=body)
     actual_result = res.json()
     actual_result = json.loads(json.dumps(actual_result), parse_constant=_convert_nan_to_none)
     annual_result = {
@@ -222,7 +222,7 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
     body["includeClusters"] = True
     body["years"] = [1]
     body["filter"] = ["de"]
-    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{output_id}/download", json=body)
+    res = client.post(f"/v1/studies/{internal_study_with_output_id}/outputs/{output_id}/download", json=body)
     actual_result = res.json()
     actual_result = json.loads(json.dumps(actual_result), parse_constant=_convert_nan_to_none)
     expected_result = {
@@ -313,7 +313,7 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
         "filter": [],
         "columns": ["FLOW LIN.", "UCAP LIN."],
     }
-    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{output_id}/download", json=body)
+    res = client.post(f"/v1/studies/{internal_study_with_output_id}/outputs/{output_id}/download", json=body)
     actual_result = res.json()
     link_result = {
         "index": {"start_date": "2018-01-01 00:00:00", "steps": 1, "first_week_size": 7, "level": "annual"},

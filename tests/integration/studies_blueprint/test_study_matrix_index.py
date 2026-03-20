@@ -26,7 +26,7 @@ class TestStudyMatrixIndex:
         self,
         client: TestClient,
         user_access_token: str,
-        internal_study_id: str,
+        internal_study_with_output_id: str,
     ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
@@ -35,7 +35,7 @@ class TestStudyMatrixIndex:
 
         # Check the Common matrix index
         res = client.get(
-            f"/v1/studies/{internal_study_id}/matrixindex",
+            f"/v1/studies/{internal_study_with_output_id}/matrixindex",
             params={"path": "input/thermal/prepro/fr/01_solar/modulation"},
         )
         assert res.status_code == 200, res.json()
@@ -51,7 +51,8 @@ class TestStudyMatrixIndex:
 
         # Check the TS Generator matrix index
         res = client.get(
-            f"/v1/studies/{internal_study_id}/matrixindex", params={"path": "input/thermal/prepro/fr/01_solar/data"}
+            f"/v1/studies/{internal_study_with_output_id}/matrixindex",
+            params={"path": "input/thermal/prepro/fr/01_solar/data"},
         )
         assert res.status_code == 200, res.json()
         actual = res.json()
@@ -66,7 +67,8 @@ class TestStudyMatrixIndex:
 
         # Check the time series
         res = client.get(
-            f"/v1/studies/{internal_study_id}/matrixindex", params={"path": "input/thermal/series/fr/01_solar/series"}
+            f"/v1/studies/{internal_study_with_output_id}/matrixindex",
+            params={"path": "input/thermal/series/fr/01_solar/series"},
         )
         assert res.status_code == 200, res.json()
         actual = res.json()
@@ -82,7 +84,7 @@ class TestStudyMatrixIndex:
         # Check the default matrix index
         # ==============================
 
-        res = client.get(f"/v1/studies/{internal_study_id}/matrixindex")
+        res = client.get(f"/v1/studies/{internal_study_with_output_id}/matrixindex")
         assert res.status_code == 200
         actual = res.json()
         expected = {
@@ -97,7 +99,7 @@ class TestStudyMatrixIndex:
         # =========================================================================
 
         res = client.get(
-            f"/v1/studies/{internal_study_id}/matrixindex",
+            f"/v1/studies/{internal_study_with_output_id}/matrixindex",
             params={"path": "output/20201014-1427eco/economy/mc-all/areas/es/details-daily"},
         )
         assert res.status_code == 200
@@ -109,12 +111,13 @@ class TestStudyMatrixIndex:
         # =========================================================================
 
         res = client.post(
-            f"/v1/studies/{internal_study_id}/bindingconstraints", json={"name": "bc_1", "timeStep": "weekly"}
+            f"/v1/studies/{internal_study_with_output_id}/bindingconstraints",
+            json={"name": "bc_1", "timeStep": "weekly"},
         )
         res.raise_for_status()
 
         res = client.get(
-            f"/v1/studies/{internal_study_id}/matrixindex", params={"path": "input/bindingconstraints/bc_1"}
+            f"/v1/studies/{internal_study_with_output_id}/matrixindex", params={"path": "input/bindingconstraints/bc_1"}
         )
         assert res.status_code == 200
         actual = res.json()
@@ -125,7 +128,7 @@ class TestStudyMatrixIndex:
         self,
         client: TestClient,
         user_access_token: str,
-        internal_study_id: str,
+        internal_study_with_output_id: str,
     ) -> None:
         """
         Test the new time-index endpoint for outputs with different frequencies.
@@ -136,7 +139,7 @@ class TestStudyMatrixIndex:
 
         # Test with default frequency (hourly)
         # =====================================
-        res = client.get(f"/v1/studies/{internal_study_id}/output/{output_id}/time-index")
+        res = client.get(f"/v1/studies/{internal_study_with_output_id}/output/{output_id}/time-index")
         assert res.status_code == 200, res.json()
         actual = res.json()
         expected = {
@@ -150,7 +153,7 @@ class TestStudyMatrixIndex:
         # Test with daily frequency
         # =========================
         res = client.get(
-            f"/v1/studies/{internal_study_id}/output/{output_id}/time-index", params={"frequency": "daily"}
+            f"/v1/studies/{internal_study_with_output_id}/output/{output_id}/time-index", params={"frequency": "daily"}
         )
         assert res.status_code == 200, res.json()
         actual = res.json()
@@ -165,7 +168,7 @@ class TestStudyMatrixIndex:
         # Test with weekly frequency
         # ==========================
         res = client.get(
-            f"/v1/studies/{internal_study_id}/output/{output_id}/time-index", params={"frequency": "weekly"}
+            f"/v1/studies/{internal_study_with_output_id}/output/{output_id}/time-index", params={"frequency": "weekly"}
         )
         assert res.status_code == 200, res.json()
         actual = res.json()
@@ -180,7 +183,8 @@ class TestStudyMatrixIndex:
         # Test with monthly frequency
         # ===========================
         res = client.get(
-            f"/v1/studies/{internal_study_id}/output/{output_id}/time-index", params={"frequency": "monthly"}
+            f"/v1/studies/{internal_study_with_output_id}/output/{output_id}/time-index",
+            params={"frequency": "monthly"},
         )
         assert res.status_code == 200, res.json()
         actual = res.json()
@@ -195,7 +199,7 @@ class TestStudyMatrixIndex:
         # Test with annual frequency
         # ==========================
         res = client.get(
-            f"/v1/studies/{internal_study_id}/output/{output_id}/time-index", params={"frequency": "annual"}
+            f"/v1/studies/{internal_study_with_output_id}/output/{output_id}/time-index", params={"frequency": "annual"}
         )
         assert res.status_code == 200, res.json()
         actual = res.json()

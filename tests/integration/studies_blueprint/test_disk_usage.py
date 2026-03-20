@@ -22,7 +22,7 @@ class TestDiskUsage:
         self,
         client: TestClient,
         user_access_token: str,
-        internal_study_id: str,
+        internal_study_with_output_id: str,
         tmp_path: Path,
     ) -> None:
         """
@@ -35,7 +35,7 @@ class TestDiskUsage:
 
         user_headers = {"Authorization": f"Bearer {user_access_token}"}
         res = client.get(
-            f"/v1/studies/{internal_study_id}/disk-usage",
+            f"/v1/studies/{internal_study_with_output_id}/disk-usage",
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
@@ -44,7 +44,7 @@ class TestDiskUsage:
 
         # Copy the study in managed workspace in order to create a variant
         res = client.post(
-            f"/v1/studies/{internal_study_id}/copy",
+            f"/v1/studies/{internal_study_with_output_id}/copy",
             headers=user_headers,
             params={"study_name": "somewhere", "use_task": "false"},
         )

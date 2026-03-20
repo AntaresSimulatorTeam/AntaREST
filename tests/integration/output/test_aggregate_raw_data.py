@@ -408,7 +408,9 @@ class TestRawDataAggregationMCInd:
     Check the aggregation of Raw Data from studies outputs
     """
 
-    def test_area_aggregation(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    def test_area_aggregation(
+        self, client: TestClient, user_access_token: str, internal_study_with_output_id: str
+    ) -> None:
         """
         Test the aggregation of areas data
         """
@@ -416,7 +418,9 @@ class TestRawDataAggregationMCInd:
 
         for params, expected_result_filename in AREAS_REQUESTS__IND:
             output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/{output_id}", params=params)
+            res = client.get(
+                f"/v1/studies/{internal_study_with_output_id}/areas/aggregate/mc-ind/{output_id}", params=params
+            )
             assert res.status_code == 200, res.json()
             download_id = res.json()
 
@@ -438,7 +442,9 @@ class TestRawDataAggregationMCInd:
                 expected_df[col] = expected_df[col].astype(df[col].dtype)
             pd.testing.assert_frame_equal(df, expected_df)
 
-    def test_links_aggregation(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    def test_links_aggregation(
+        self, client: TestClient, user_access_token: str, internal_study_with_output_id: str
+    ) -> None:
         """
         Test the aggregation of links data
         """
@@ -446,7 +452,9 @@ class TestRawDataAggregationMCInd:
 
         for params, expected_result_filename in LINKS_REQUESTS__IND:
             output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
+            res = client.get(
+                f"/v1/studies/{internal_study_with_output_id}/links/aggregate/mc-ind/{output_id}", params=params
+            )
             assert res.status_code == 200, res.json()
             download_id = res.json()
 
@@ -470,7 +478,9 @@ class TestRawDataAggregationMCInd:
                 expected_df[col] = expected_df[col].astype(df[col].dtype)
             pd.testing.assert_frame_equal(df, expected_df)
 
-    def test_different_formats(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    def test_different_formats(
+        self, client: TestClient, user_access_token: str, internal_study_with_output_id: str
+    ) -> None:
         """
         Tests that all formats work and produce the same result
         """
@@ -478,7 +488,9 @@ class TestRawDataAggregationMCInd:
 
         for params, expected_result_filename in SAME_REQUEST_DIFFERENT_FORMATS__IND:
             output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
+            res = client.get(
+                f"/v1/studies/{internal_study_with_output_id}/links/aggregate/mc-ind/{output_id}", params=params
+            )
             assert res.status_code == 200, res.json()
             download_id = res.json()
 
@@ -510,14 +522,16 @@ class TestRawDataAggregationMCInd:
             pd.testing.assert_frame_equal(df, expected_df)
 
     def test_aggregation_errors(
-        self, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
+        self, client: TestClient, user_access_token: str, internal_study_with_output_id: str, tmp_path: Path
     ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Requesting a fake mc_year should crash
         output_id = "20201014-1425eco-goodbye"
         params = {"query_file": "values", "frequency": "hourly", "mc_years": "123456789"}
-        res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
+        res = client.get(
+            f"/v1/studies/{internal_study_with_output_id}/links/aggregate/mc-ind/{output_id}", params=params
+        )
         download_id = res.json()
         res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
         assert res.status_code == 422
@@ -525,7 +539,9 @@ class TestRawDataAggregationMCInd:
 
         # Requesting a fake link should crash
         params = {"query_file": "values", "frequency": "hourly", "links_ids": "fake_id"}
-        res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
+        res = client.get(
+            f"/v1/studies/{internal_study_with_output_id}/links/aggregate/mc-ind/{output_id}", params=params
+        )
         download_id = res.json()
         res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
         assert res.status_code == 422
@@ -533,7 +549,9 @@ class TestRawDataAggregationMCInd:
 
         # Requesting a fake_col should not crash but return an empty content
         params = {"query_file": "values", "frequency": "hourly", "columns_names": "fake_col"}
-        res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
+        res = client.get(
+            f"/v1/studies/{internal_study_with_output_id}/links/aggregate/mc-ind/{output_id}", params=params
+        )
         download_id = res.json()
         res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
         assert res.status_code == 200
@@ -546,14 +564,16 @@ class TestRawDataAggregationMCInd:
         # Asserts that wrongly typed requests send an HTTP 422 Exception
         for params in WRONGLY_TYPED_REQUESTS__IND:
             output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
+            res = client.get(
+                f"/v1/studies/{internal_study_with_output_id}/links/aggregate/mc-ind/{output_id}", params=params
+            )
             assert res.status_code == 422
             assert res.json()["exception"] == "RequestValidationError"
 
         # Asserts that requests with wrong output send an HTTP 422 Exception
         # for areas
         res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/unknown_id",
+            f"/v1/studies/{internal_study_with_output_id}/areas/aggregate/mc-ind/unknown_id",
             params={"query_file": "values", "frequency": "hourly"},
         )
         assert res.status_code == 200, res.json()
@@ -565,7 +585,7 @@ class TestRawDataAggregationMCInd:
 
         # for links
         res = client.get(
-            f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/unknown_id",
+            f"/v1/studies/{internal_study_with_output_id}/links/aggregate/mc-ind/unknown_id",
             params={"query_file": "values", "frequency": "hourly"},
         )
         download_id = res.json()
@@ -580,7 +600,7 @@ class TestRawDataAggregationMCInd:
         # delete the folder
         shutil.rmtree(mc_ind_folder)
         res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/20201014-1425eco-goodbye",
+            f"/v1/studies/{internal_study_with_output_id}/areas/aggregate/mc-ind/20201014-1425eco-goodbye",
             params={"query_file": "values", "frequency": "hourly"},
         )
         assert res.status_code == 200, res.json()
@@ -597,7 +617,9 @@ class TestRawDataAggregationMCAll:
     Check the aggregation of Raw Data from studies outputs in `economy/mc-all`
     """
 
-    def test_area_aggregation(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    def test_area_aggregation(
+        self, client: TestClient, user_access_token: str, internal_study_with_output_id: str
+    ) -> None:
         """
         Test the aggregation of areas data
         """
@@ -605,7 +627,9 @@ class TestRawDataAggregationMCAll:
 
         for params, expected_result_filename in AREAS_REQUESTS__ALL:
             output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/{output_id}", params=params)
+            res = client.get(
+                f"/v1/studies/{internal_study_with_output_id}/areas/aggregate/mc-all/{output_id}", params=params
+            )
             assert res.status_code == 200, res.json()
             download_id = res.json()
 
@@ -629,7 +653,9 @@ class TestRawDataAggregationMCAll:
                 expected_df[col] = expected_df[col].astype(df[col].dtype)
             pd.testing.assert_frame_equal(df, expected_df)
 
-    def test_links_aggregation(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    def test_links_aggregation(
+        self, client: TestClient, user_access_token: str, internal_study_with_output_id: str
+    ) -> None:
         """
         Test the aggregation of links data
         """
@@ -637,7 +663,9 @@ class TestRawDataAggregationMCAll:
 
         for params, expected_result_filename in LINKS_REQUESTS__ALL:
             output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
+            res = client.get(
+                f"/v1/studies/{internal_study_with_output_id}/links/aggregate/mc-all/{output_id}", params=params
+            )
             assert res.status_code == 200, res.json()
             download_id = res.json()
 
@@ -661,7 +689,9 @@ class TestRawDataAggregationMCAll:
                 expected_df[col] = expected_df[col].astype(df[col].dtype)
             pd.testing.assert_frame_equal(df, expected_df)
 
-    def test_different_formats(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    def test_different_formats(
+        self, client: TestClient, user_access_token: str, internal_study_with_output_id: str
+    ) -> None:
         """
         Tests that all formats work and produce the same result
         """
@@ -669,7 +699,9 @@ class TestRawDataAggregationMCAll:
 
         for params, expected_result_filename in SAME_REQUEST_DIFFERENT_FORMATS__ALL:
             output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
+            res = client.get(
+                f"/v1/studies/{internal_study_with_output_id}/links/aggregate/mc-all/{output_id}", params=params
+            )
             assert res.status_code == 200, res.json()
             download_id = res.json()
 
@@ -754,14 +786,16 @@ class TestRawDataAggregationMCAll:
             pd.testing.assert_frame_equal(df, expected_df)
 
     def test_aggregation_errors(
-        self, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
+        self, client: TestClient, user_access_token: str, internal_study_with_output_id: str, tmp_path: Path
     ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Requesting matrices that do not exist (daily outputs were not generated) should crash
         output_id = "20201014-1427eco"
         params = {"query_file": "values", "frequency": "daily"}
-        res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
+        res = client.get(
+            f"/v1/studies/{internal_study_with_output_id}/links/aggregate/mc-all/{output_id}", params=params
+        )
         download_id = res.json()
         res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
         assert res.status_code == 422
@@ -769,7 +803,9 @@ class TestRawDataAggregationMCAll:
 
         # Requesting a fake link should crash
         params = {"query_file": "values", "frequency": "monthly", "links_ids": "fake_id"}
-        res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
+        res = client.get(
+            f"/v1/studies/{internal_study_with_output_id}/links/aggregate/mc-all/{output_id}", params=params
+        )
         download_id = res.json()
         res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
         assert res.status_code == 422
@@ -777,7 +813,9 @@ class TestRawDataAggregationMCAll:
 
         # Requesting a fake_col should not crash but return an empty content
         params = {"query_file": "details", "frequency": "monthly", "columns_names": "fake_col"}
-        res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/{output_id}", params=params)
+        res = client.get(
+            f"/v1/studies/{internal_study_with_output_id}/areas/aggregate/mc-all/{output_id}", params=params
+        )
         download_id = res.json()
         res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
         assert res.status_code == 200
@@ -790,14 +828,16 @@ class TestRawDataAggregationMCAll:
         # Asserts that wrongly typed requests send an HTTP 422 Exception
         for params in WRONGLY_TYPED_REQUESTS__ALL:
             output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
+            res = client.get(
+                f"/v1/studies/{internal_study_with_output_id}/links/aggregate/mc-all/{output_id}", params=params
+            )
             assert res.status_code == 422
             assert res.json()["exception"] == "RequestValidationError"
 
         # Asserts that requests with wrong output send an HTTP 422 Exception
         # for areas
         res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/unknown_id",
+            f"/v1/studies/{internal_study_with_output_id}/areas/aggregate/mc-all/unknown_id",
             params={
                 "query_file": "values",
                 "frequency": "hourly",
@@ -811,7 +851,7 @@ class TestRawDataAggregationMCAll:
 
         # for links
         res = client.get(
-            f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/unknown_id",
+            f"/v1/studies/{internal_study_with_output_id}/links/aggregate/mc-all/unknown_id",
             params={
                 "query_file": "values",
                 "frequency": "hourly",
@@ -830,7 +870,7 @@ class TestRawDataAggregationMCAll:
         # delete the folder
         shutil.rmtree(mc_all_path)
         res = client.get(
-            f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/20241807-1540eco-extra-outputs",
+            f"/v1/studies/{internal_study_with_output_id}/links/aggregate/mc-all/20241807-1540eco-extra-outputs",
             params={"query_file": "values", "frequency": "daily"},
         )
         download_id = res.json()
@@ -842,7 +882,7 @@ class TestRawDataAggregationMCAll:
 
 class TestRawDataAggregationColumnsFormatting:
     def test_columns_formatting(
-        self, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
+        self, client: TestClient, user_access_token: str, internal_study_with_output_id: str, tmp_path: Path
     ) -> None:
         """
         Check returned columns names are post-processed
@@ -859,7 +899,7 @@ class TestRawDataAggregationColumnsFormatting:
 
         # asserts STS column names are post-processed by the back-end
         res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/{output_id}",
+            f"/v1/studies/{internal_study_with_output_id}/areas/aggregate/mc-all/{output_id}",
             params={
                 "query_file": "details-STstorage",
                 "frequency": "annual",
@@ -884,7 +924,7 @@ class TestDataAggregationCreationOperations:
         self,
         client: TestClient,
         user_access_token: str,
-        internal_study_id: str,
+        internal_study_with_output_id: str,
     ) -> None:
         """
         Test all return values when requesting the results of aggregation operations
@@ -899,7 +939,9 @@ class TestDataAggregationCreationOperations:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # create a bad aggregated output task and get its id
-        res = client.get(f"v1/studies/{internal_study_id}/outputs/fake_output_id/aggregate/areas/mc-ind", params=params)
+        res = client.get(
+            f"v1/studies/{internal_study_with_output_id}/outputs/fake_output_id/aggregate/areas/mc-ind", params=params
+        )
         assert res.json(), res.status_code == 200
 
         download_id = res.json()
@@ -914,7 +956,7 @@ class TestDataAggregationCreationOperations:
         expiration_time_in_minutes = 123
         expected_expiration_date = creation_time + datetime.timedelta(minutes=expiration_time_in_minutes)
         res = client.get(
-            f"v1/studies/{internal_study_id}/outputs/{output_id}/aggregate/areas/mc-ind",
+            f"v1/studies/{internal_study_with_output_id}/outputs/{output_id}/aggregate/areas/mc-ind",
             params={**params, "download_expiration_time": expiration_time_in_minutes},
         )
         assert res.status_code == 200
@@ -945,7 +987,9 @@ class TestDataAggregationCreationOperations:
         assert res.status_code == 200, res.content
 
 
-def test_columns_mismatch(tmp_path: Path, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+def test_columns_mismatch(
+    tmp_path: Path, client: TestClient, user_access_token: str, internal_study_with_output_id: str
+) -> None:
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
     output_id = "20201014-1422eco-hello"
@@ -969,7 +1013,9 @@ def test_columns_mismatch(tmp_path: Path, client: TestClient, user_access_token:
     shutil.copy(ASSETS_DIR / "columns_mismatch.txt", file_path)
 
     # Perform the request
-    res = client.get(f"v1/studies/{internal_study_id}/outputs/{output_id}/aggregate/areas/mc-ind", params=params)
+    res = client.get(
+        f"v1/studies/{internal_study_with_output_id}/outputs/{output_id}/aggregate/areas/mc-ind", params=params
+    )
     assert res.status_code == 200
     download_id = res.json()
 
@@ -993,7 +1039,9 @@ def test_columns_mismatch(tmp_path: Path, client: TestClient, user_access_token:
 
     # Perform the request
     params["columns_names"] = "CO2 EMIS."
-    res = client.get(f"v1/studies/{internal_study_id}/outputs/{output_id}/aggregate/areas/mc-ind", params=params)
+    res = client.get(
+        f"v1/studies/{internal_study_with_output_id}/outputs/{output_id}/aggregate/areas/mc-ind", params=params
+    )
     assert res.status_code == 200
     download_id = res.json()
 

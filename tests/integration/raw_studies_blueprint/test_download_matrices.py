@@ -118,7 +118,9 @@ class TestDownloadMatrices:
     Checks the retrieval of matrices with the endpoint GET studies/uuid/raw/download
     """
 
-    def test_download_matrices(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    def test_download_matrices(
+        self, client: TestClient, user_access_token: str, internal_study_with_output_id: str
+    ) -> None:
         user_headers = {"Authorization": f"Bearer {user_access_token}"}
         client.headers = user_headers
 
@@ -128,7 +130,7 @@ class TestDownloadMatrices:
 
         preparer = PreparerProxy(client, user_access_token)
 
-        study_820_id = preparer.copy_upgrade_study(internal_study_id, target_version=820)
+        study_820_id = preparer.copy_upgrade_study(internal_study_with_output_id, target_version=820)
 
         # Create Variant
         variant_id = preparer.create_variant(study_820_id, name="New Variant")
@@ -143,7 +145,7 @@ class TestDownloadMatrices:
         preparer.generate_snapshot(variant_id)
 
         # Prepare a managed study to test specific matrices for version 8.6
-        study_860_id = preparer.copy_upgrade_study(internal_study_id, target_version=860)
+        study_860_id = preparer.copy_upgrade_study(internal_study_with_output_id, target_version=860)
 
         # Import a Min Gen. matrix: shape=(8760, 3), with random integers between 0 and 1000
         generator = np.random.default_rng(11)
@@ -227,7 +229,7 @@ class TestDownloadMatrices:
 
         # tests links headers before v8.2
         res = client.get(
-            f"/v1/studies/{internal_study_id}/raw/download",
+            f"/v1/studies/{internal_study_with_output_id}/raw/download",
             params={"path": "input/links/de/fr", "format": "tsv", "index": False},
         )
         assert res.status_code == 200
@@ -271,7 +273,7 @@ class TestDownloadMatrices:
 
         # checks default value for an empty water_values matrix
         res = client.get(
-            f"/v1/studies/{internal_study_id}/raw/download",
+            f"/v1/studies/{internal_study_with_output_id}/raw/download",
             params={"path": "input/hydro/common/capacity/waterValues_de", "format": "tsv"},
         )
         assert res.status_code == 200
@@ -299,7 +301,7 @@ class TestDownloadMatrices:
 
         # asserts endpoint returns the right columns for output matrix
         res = client.get(
-            f"/v1/studies/{internal_study_id}/raw/download",
+            f"/v1/studies/{internal_study_with_output_id}/raw/download",
             params={
                 "path": "output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr/values-hourly",
                 "format": "tsv",
@@ -324,7 +326,7 @@ class TestDownloadMatrices:
 
         # checks default value for an empty energy matrix
         res = client.get(
-            f"/v1/studies/{internal_study_id}/raw/download",
+            f"/v1/studies/{internal_study_with_output_id}/raw/download",
             params={"path": "input/hydro/prepro/de/energy", "format": "tsv"},
         )
         assert res.status_code == 200
@@ -351,7 +353,9 @@ class TestDownloadMatrices:
 
         # test that downloading the digest file doesn't fail
         digest_path = "output/20201014-1422eco-hello/economy/mc-all/grid/digest"
-        res = client.get(f"/v1/studies/{internal_study_id}/raw/download", params={"path": digest_path, "format": "tsv"})
+        res = client.get(
+            f"/v1/studies/{internal_study_with_output_id}/raw/download", params={"path": digest_path, "format": "tsv"}
+        )
         assert res.status_code == 200
 
         # =============================

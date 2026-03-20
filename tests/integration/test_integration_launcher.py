@@ -15,7 +15,9 @@ import json
 from starlette.testclient import TestClient
 
 
-def test_solver_presets(client: TestClient, user_access_token: str, admin_access_token: str) -> None:
+def test_solver_presets(
+    client: TestClient, user_access_token: str, admin_access_token: str, internal_study_id: str
+) -> None:
     # Test creating solver presets
     payload1 = {
         "name": "test-xpress-config",
@@ -193,12 +195,7 @@ def test_solver_presets(client: TestClient, user_access_token: str, admin_access
     assert res9.status_code == 422
 
     # Test running a study with a solver presets and verify launcher params
-    get_studies_res = client.get(
-        "/v1/studies",
-        headers={"Authorization": f"Bearer {user_access_token}"},
-    )
-    studies = get_studies_res.json()
-    study_id = next(id for id in studies if studies[id]["name"] == "STA-mini")
+    study_id = internal_study_id
 
     res_run_with_conf = client.post(
         f"/v1/launcher/run/{study_id}",

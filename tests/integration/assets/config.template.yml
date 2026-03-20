@@ -17,6 +17,9 @@ storage:
   archive_dir: {{archive_dir}}
   tmp_dir: {{tmp_dir}}
   watcher_lock: false
+
+  matrixstore_format: feather
+
   study:
     storage:
       database_mode_enabled: true

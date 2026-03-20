@@ -166,7 +166,7 @@ def test_copy_variant_as_raw(client: TestClient, admin_access_token: str) -> Non
 
     all_studies = client.get("/v1/studies")
     assert variant_study.status_code == 200
-    assert len(all_studies.json()) == 4
+    assert len(all_studies.json()) == 3
 
     copied_study = client.get("/v1/studies?name=copied")
     assert copied_study.status_code == 200

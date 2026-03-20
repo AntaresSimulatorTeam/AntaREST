@@ -14,12 +14,14 @@ from starlette.testclient import TestClient
 
 
 class TestDigest:
-    def test_get_digest_endpoint(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    def test_get_digest_endpoint(
+        self, client: TestClient, user_access_token: str, internal_study_with_output_id: str
+    ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Nominal case
         output_id = "20201014-1422eco-hello"
-        res = client.get(f"/v1/private/studies/{internal_study_id}/outputs/{output_id}/digest-ui")
+        res = client.get(f"/v1/private/studies/{internal_study_with_output_id}/outputs/{output_id}/digest-ui")
         assert res.status_code == 200
         digest = res.json()
         assert list(digest.keys()) == ["area", "districts", "flowLinear", "flowQuadratic"]
@@ -41,7 +43,7 @@ class TestDigest:
         assert area_matrix["columns"][:3] == [[""], ["OV. COST", "Euro", "EXP"], ["OP. COST", "Euro", "EXP"]]
 
         # Asserts we have a 404 Exception when the output doesn't exist
-        res = client.get(f"/v1/private/studies/{internal_study_id}/outputs/fake_output/digest-ui")
+        res = client.get(f"/v1/private/studies/{internal_study_with_output_id}/outputs/fake_output/digest-ui")
         assert res.status_code == 404
         assert res.json() == {
             "description": "Output 'fake_output' not found",
@@ -50,7 +52,7 @@ class TestDigest:
 
         # Asserts we have a 404 Exception when the digest file doesn't exist
         output_wo_digest = "20201014-1430adq"
-        res = client.get(f"/v1/private/studies/{internal_study_id}/outputs/{output_wo_digest}/digest-ui")
+        res = client.get(f"/v1/private/studies/{internal_study_with_output_id}/outputs/{output_wo_digest}/digest-ui")
         assert res.status_code == 404
         assert res.json() == {
             "description": "'economy' not a child of OutputSimulation",

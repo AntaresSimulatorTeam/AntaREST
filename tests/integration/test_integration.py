@@ -29,7 +29,7 @@ from tests.integration.prepare_proxy import PreparerProxy
 from tests.integration.utils import wait_for
 
 
-def test_main(client: TestClient, admin_access_token: str) -> None:
+def test_main(client: TestClient, admin_access_token: str, sta_mini_study_with_outputs) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # create some new users
@@ -973,26 +973,28 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     ]
 
 
-def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, internal_study_id: str) -> None:
+def test_archive(
+    client: TestClient, admin_access_token: str, tmp_path: Path, internal_study_with_output_id: str
+) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # =============================
     # OUTPUT PART
     # =============================
 
-    res = client.get(f"/v1/studies/{internal_study_id}/outputs")
+    res = client.get(f"/v1/studies/{internal_study_with_output_id}/outputs")
     outputs = res.json()
     fake_output = "fake_output"
     unarchived_outputs = [output["name"] for output in outputs if not output["archived"]]
     usual_output = unarchived_outputs[0]
 
     # Archive
-    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{fake_output}/_archive")
+    res = client.post(f"/v1/studies/{internal_study_with_output_id}/outputs/{fake_output}/_archive")
     assert res.json()["exception"] == "OutputNotFound"
     assert res.json()["description"] == f"Output '{fake_output}' not found"
     assert res.status_code == 404
 
-    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{usual_output}/_archive")
+    res = client.post(f"/v1/studies/{internal_study_with_output_id}/outputs/{usual_output}/_archive")
     assert res.status_code == 200
     task_id = res.json()
     wait_for(
@@ -1004,24 +1006,24 @@ def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, in
         )
     )
 
-    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{usual_output}/_archive")
+    res = client.post(f"/v1/studies/{internal_study_with_output_id}/outputs/{usual_output}/_archive")
     assert res.json()["exception"] == "OutputAlreadyArchived"
     assert res.json()["description"] == f"Output '{usual_output}' is already archived"
     assert res.status_code == 417
 
     # Unarchive
-    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{fake_output}/_unarchive")
+    res = client.post(f"/v1/studies/{internal_study_with_output_id}/outputs/{fake_output}/_unarchive")
     assert res.json()["exception"] == "OutputNotFound"
     assert res.json()["description"] == f"Output '{fake_output}' not found"
     assert res.status_code == 404
 
     unarchived_output = unarchived_outputs[1]
-    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{unarchived_output}/_unarchive")
+    res = client.post(f"/v1/studies/{internal_study_with_output_id}/outputs/{unarchived_output}/_unarchive")
     assert res.json()["exception"] == "OutputAlreadyUnarchived"
     assert res.json()["description"] == f"Output '{unarchived_output}' is already unarchived"
     assert res.status_code == 417
 
-    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{usual_output}/_unarchive")
+    res = client.post(f"/v1/studies/{internal_study_with_output_id}/outputs/{usual_output}/_unarchive")
     assert res.status_code == 200
 
     # =============================
@@ -1124,7 +1126,9 @@ def zip_study(src_path: Path, dest_path: Path) -> None:
                 zipf.write(file_path, file_path[len_dir_path:])
 
 
-def test_import(client: TestClient, admin_access_token: str, internal_study_id: str, tmp_path: Path) -> None:
+def test_import(
+    client: TestClient, admin_access_token: str, internal_study_with_output_id: str, tmp_path: Path
+) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     zip_path = ASSETS_DIR / "STA-mini.zip"
@@ -1197,12 +1201,12 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
     # tests outputs import for .zip
     output_path_zip = ASSETS_DIR / "output_adq.zip"
     client.post(
-        f"/v1/studies/{internal_study_id}/output",
+        f"/v1/studies/{internal_study_with_output_id}/output",
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
         files={"output": io.BytesIO(output_path_zip.read_bytes())},
     )
     res = client.get(
-        f"/v1/studies/{internal_study_id}/outputs",
+        f"/v1/studies/{internal_study_with_output_id}/outputs",
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert len(res.json()) == 7
@@ -1210,12 +1214,12 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
     # tests outputs import for .7z
     output_path_seven_zip = ASSETS_DIR / "output_adq.7z"
     client.post(
-        f"/v1/studies/{internal_study_id}/output",
+        f"/v1/studies/{internal_study_with_output_id}/output",
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
         files={"output": io.BytesIO(output_path_seven_zip.read_bytes())},
     )
     res = client.get(
-        f"/v1/studies/{internal_study_id}/outputs",
+        f"/v1/studies/{internal_study_with_output_id}/outputs",
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert len(res.json()) == 8

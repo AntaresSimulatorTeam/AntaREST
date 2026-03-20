@@ -50,7 +50,7 @@ class TestStudySynthesis:
         self,
         client: TestClient,
         user_access_token: str,
-        internal_study_id: str,
+        internal_study_with_output_id: str,
     ) -> None:
         """
         This test verifies that we can retrieve the synthesis of a study.
@@ -59,7 +59,7 @@ class TestStudySynthesis:
 
         # Get the synthesis of the study and compare with the expected file
         res = client.get(
-            f"/v1/studies/{internal_study_id}/synthesis",
+            f"/v1/studies/{internal_study_with_output_id}/synthesis",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
@@ -70,7 +70,7 @@ class TestStudySynthesis:
         # Ensure the duration is relatively short
         start = time.time()
         res = client.get(
-            f"/v1/studies/{internal_study_id}/synthesis",
+            f"/v1/studies/{internal_study_with_output_id}/synthesis",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == 200, res.json()
