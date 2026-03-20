@@ -184,7 +184,8 @@ def test_archive_and_unarchive(admin_client: TestClient, study_id: str, output_n
 
     output_archives_dir = tmp_path / "output_archives"
 
-    # Check the archive is already present in the expected output
+    # Check the archive is already present in the expected dir
+    # Checks an implementation detail, but allows to verify the config is correcly taken into account
     files = os.listdir(output_archives_dir)
     assert len(files) == 1
     assert files[0] == f"{study_id}-{output_name}"
