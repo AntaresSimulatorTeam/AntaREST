@@ -12,7 +12,7 @@
 
 import pytest
 
-from antarest.output.utils import (
+from antarest.output.filestudy.utils import (
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
