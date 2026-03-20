@@ -27,20 +27,20 @@ from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.dict_utils import remove_nones
 from antarest.core.utils.web import APITag
 from antarest.dependencies import OutputServiceDep, TmpExportFileDep, auth_required
-from antarest.output.output_model import (
+from antarest.output.filestudy.utils import (
+    MCAllAreasQueryFile,
+    MCAllLinksQueryFile,
+    MCIndAreasQueryFile,
+    MCIndLinksQueryFile,
+)
+from antarest.output.model import (
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesType,
     OutputVariablesViewResponse,
 )
 from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
-from antarest.output.utils import (
-    MCAllAreasQueryFile,
-    MCAllLinksQueryFile,
-    MCIndAreasQueryFile,
-    MCIndLinksQueryFile,
-)
-from antarest.output.variables_management import OutputItemId
+from antarest.output.variable_view.model import OutputItemId
 from antarest.study.model import MatrixFrequency, MatrixIndex, StudyDownloadDTO
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
@@ -115,6 +115,19 @@ def create_output_routes() -> APIRouter:
     ) -> str | None:
         logger.info(f"Importing output for study {uuid}")
         output_id = output_service.import_output(uuid, output.file, storage_type=storage_type)
+        return output_id
+
+    # noinspection PyShadowingBuiltins
+    @bp.post(
+        "/studies/{uuid}/output/{output_id}/_convert",
+        status_code=HTTPStatus.OK,
+        summary="Convert output to another storage",
+    )
+    def convert_output(
+        output_service: OutputServiceDep, uuid: UuidStr, output_id: SanitizedStr, storage_type: OutputStorageType
+    ) -> str | None:
+        logger.info(f"Converting output {uuid} / {output_id} to {storage_type} storage")
+        output_service.convert_output(uuid, output_id, storage_type)
         return output_id
 
     @bp.get(

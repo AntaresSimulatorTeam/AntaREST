@@ -15,9 +15,9 @@ from pathlib import Path
 
 from starlette.testclient import TestClient
 
-from tests.integration.test_helpers.download import download_to_file
-from tests.integration.test_helpers.outputs import create_minimal_output_zip_from_name
 from tests.integration.utils import wait_task_completion
+from tests.test_helpers.download import download_to_file
+from tests.test_helpers.outputs import create_minimal_output_zip_from_name
 
 
 def _zip_namelist(zip_path: Path) -> set[str]:

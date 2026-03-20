@@ -22,7 +22,8 @@ from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
 from antarest.maintenance.tasks.gc_variable_view import clean_variable_views
 from antarest.matrixstore.service import MatrixService
-from antarest.output.output_model import OutputVariablesType, OutputVariablesViewsModel
+from antarest.output.model import OutputVariablesType
+from antarest.output.variable_view.db import OutputVariablesViewsModel
 from antarest.study.model import MatrixFrequency, RawStudy
 
 

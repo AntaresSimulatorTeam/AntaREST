@@ -18,7 +18,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.auto_archive import archive_old_studies
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
-from antarest.output.output_service import OutputService
+from antarest.output.service import OutputService
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService

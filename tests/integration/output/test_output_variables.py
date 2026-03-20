@@ -18,7 +18,8 @@ from starlette.testclient import TestClient
 from antarest.core.serde.json import from_json
 from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.output.output_model import OutputVariables, OutputVariablesViewsModel
+from antarest.output.storage.file.repository import DbOutputVariables
+from antarest.output.variable_view.db import OutputVariablesViewsModel
 from antarest.study.model import MatrixFrequency
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR as assets_dir
 from tests.integration.utils import wait_task_completion
@@ -37,7 +38,7 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
 
     # Ensures we saved the data inside the DB and that we're still able to read it
     with db():
-        db_content: OutputVariables | None = db.session.get(OutputVariables, (internal_study_id, output_id))
+        db_content: DbOutputVariables | None = db.session.get(DbOutputVariables, (internal_study_id, output_id))
         assert db_content is not None
         assert db_content.study_id == internal_study_id
         assert db_content.output_id == output_id
