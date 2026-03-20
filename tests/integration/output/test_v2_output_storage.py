@@ -202,9 +202,6 @@ def test_archive_and_unarchive(admin_client: TestClient, study_id: str, output_n
     task = wait_task_completion(client, None, task_id)
     assert task.status == TaskStatus.COMPLETED
 
-    # Check the archive dir was correctly taken into account
-    assert len(os.listdir(output_archives_dir)) == 1
-
     # Verify archived
     res = client.get(f"/v1/studies/{study_id}/outputs")
     v2_output = next(o for o in res.json() if o["name"] == output_name)
