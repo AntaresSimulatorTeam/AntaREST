@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import itertools
 import logging
+import tempfile
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -23,6 +24,7 @@ from fastapi import HTTPException
 from starlette.responses import FileResponse
 
 from antarest.core.exceptions import (
+    InvalidOutputConversionRequest,
     OutputAlreadyArchived,
     OutputAlreadyExists,
     OutputAlreadyUnarchived,
@@ -46,13 +48,23 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.output.aggregator_management import (
+from antarest.output.filestudy.aggregator_management import (
     AREA_COL,
     CLUSTER_ID_COL,
     LINK_COL,
 )
-from antarest.output.output_model import (
-    OutputVariables,
+from antarest.output.filestudy.utils import (
+    MCYEAR_COL,
+    RAW_OUTPUT_MATRIX_METADATA_COLUMNS,
+    MCAllAreasQueryFile,
+    MCAllLinksQueryFile,
+    MCIndAreasQueryFile,
+    MCIndLinksQueryFile,
+    QueryFileType,
+    add_time_index_to_dataframe,
+    split_concatenated_columns_from_dataframe,
+)
+from antarest.output.model import (
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesViewResponse,
@@ -64,26 +76,14 @@ from antarest.output.storage.output_storage import (
     OutputMetadata,
     OutputStorageType,
 )
-from antarest.output.utils import (
-    MCYEAR_COL,
-    RAW_OUTPUT_MATRIX_METADATA_COLUMNS,
-    MCAllAreasQueryFile,
-    MCAllLinksQueryFile,
-    MCIndAreasQueryFile,
-    MCIndLinksQueryFile,
-    QueryFileType,
-    add_time_index_to_dataframe,
-    split_concatenated_columns_from_dataframe,
-)
-from antarest.output.variables_management import (
+from antarest.output.variable_view.db import create_output_view_db_model, get_output_view_inside_db
+from antarest.output.variable_view.matrix_usage_provider import OutputVariablesMatrixUsageProvider
+from antarest.output.variable_view.model import (
     OutputItemId,
     check_output_variable_exists,
-    create_output_view_db_model,
     get_ids_for_aggregation,
-    get_output_view_inside_db,
     get_query_file,
 )
-from antarest.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.model import (
     MatrixAggregationResultDTO,
     MatrixFrequency,
@@ -797,26 +797,11 @@ class OutputService:
     def get_output_variables_list(self, study_id: str, output_id: str) -> OutputVariablesList:
         """
         Returns the list of variables concerning a given output.
-        First, try to fetch the given data inside DB.
-        If present, return the data.
-        If not, parse the output headers to build the object. Before returning it, save it inside DB for next calls.
         """
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
 
-        output_variables: OutputVariables | None = db.session.get(OutputVariables, (study_id, output_id))
-        if output_variables:
-            return output_variables.to_model()
-
-        # Fetches the data from stored output
-        model = self._find_output_storage(study_id, output_id).extract_variables_list(study_id, output_id)
-
-        # Save the model inside DB for next calls
-        db_model = OutputVariables.from_model(study_id, output_id, model)
-        db.session.add(db_model)
-        db.session.commit()
-
-        # Returns it
-        return model
+        storage = self._find_output_storage(study_id, output_id)
+        return storage.get_variables_list(study_id, output_id)
 
     def get_output_variables_information(self, study_id: str, output_id: str) -> OutputVariablesInformation:
         """
@@ -931,3 +916,21 @@ class OutputService:
     def get_logs(self, study_id: str, output_id: str, log_type: LogType) -> str:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
         return self._find_output_storage(study_id, output_id).get_logs(study_id, output_id, log_type)
+
+    def convert_output(self, study_id: str, output_id: str, storage_type: OutputStorageType) -> None:
+        """
+        Converts an output to a different storage.
+        """
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.WRITE)
+        current_storage = self._find_output_storage(study_id, output_id)
+        target_storage = next((s for s in self._storages if s.storage_type == storage_type), None)
+        if target_storage is None:
+            raise InvalidOutputConversionRequest(f"Storage type {storage_type} not found")
+        if current_storage == target_storage:
+            raise InvalidOutputConversionRequest(f"Output is already stored in {storage_type}")
+
+        with tempfile.TemporaryDirectory(dir=self._tmp_dir) as tmp_dir:
+            tmp_zip = Path(tmp_dir) / f"{output_id}.zip"
+            current_storage.export_output(study_id, output_id, tmp_zip)
+            target_storage.import_output(study_id, tmp_zip)
+            current_storage.delete_output(study_id, output_id)

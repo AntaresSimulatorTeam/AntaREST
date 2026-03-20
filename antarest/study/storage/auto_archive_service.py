@@ -27,7 +27,7 @@ from antarest.core.interfaces.service import IService
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.login.utils import current_user_context
 from antarest.maintenance.tasks.auto_archive import archive_old_studies
-from antarest.output.output_service import OutputService
+from antarest.output.service import OutputService
 from antarest.study.service import StudyService
 
 logger = logging.getLogger(__name__)

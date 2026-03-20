@@ -52,7 +52,7 @@ from antarest.launcher.web import create_launcher_api
 from antarest.login.model import init_admin_user
 from antarest.login.web import create_login_api, create_user_api
 from antarest.matrixstore.web import create_matrix_api
-from antarest.output.output_blueprint import create_output_routes
+from antarest.output.routes import create_output_routes
 from antarest.service_creator import (
     SESSION_ARGS,
     Module,

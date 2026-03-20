@@ -67,11 +67,11 @@ from antarest.login.model import Group
 from antarest.login.service import LoginService
 from antarest.login.utils import get_current_user, get_user_id, get_user_impersonator
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
-from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
-from antarest.output.utils import (
+from antarest.output.filestudy.utils import (
     QueryFileType,
     parse_raw_output_matrix_path,
 )
+from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
 from antarest.study.business.allocation_management import AllocationManager
@@ -496,6 +496,7 @@ class RawStudyInterface(StudyInterface):
             dao.update_antares_file(user_name, last_save)
             # Update DB metadata
             self._study.editor = user_name
+            self._study.updated_at = current_time()
             self._repository.save(self._study)
 
 

@@ -33,9 +33,10 @@ from antarest.dependencies import AppState
 from antarest.main import add_exception_handlers
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.output.output_blueprint import create_output_routes
-from antarest.output.output_model import OutputVariables, OutputVariablesInformation
-from antarest.output.utils import RAW_OUTPUT_MATRIX_HEADER_SEPARATOR
+from antarest.output.filestudy.utils import RAW_OUTPUT_MATRIX_HEADER_SEPARATOR
+from antarest.output.model import OutputVariablesInformation
+from antarest.output.routes import create_output_routes
+from antarest.output.storage.file.repository import DbOutputVariables
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.common.prepro import default_k
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
@@ -542,7 +543,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service: StudyService, c
 def _clean_db() -> None:
     """Cleans the OutputVariables table for other tests"""
     with db():
-        db.session.query(OutputVariables).delete()
+        db.session.query(DbOutputVariables).delete()
         db.session.commit()
 
 

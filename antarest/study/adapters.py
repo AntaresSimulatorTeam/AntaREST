@@ -14,9 +14,9 @@ from pathlib import Path
 import polars as pl
 from typing_extensions import override
 
-from antarest.output.output_service import OutputService
+from antarest.output.filestudy.utils import QueryFileType
+from antarest.output.service import OutputService
 from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
-from antarest.output.utils import QueryFileType
 from antarest.study.model import MatrixFrequency
 from antarest.study.service import IOutputsAccess
 
