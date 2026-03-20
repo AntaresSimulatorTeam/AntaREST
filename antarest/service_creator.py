@@ -42,16 +42,20 @@ from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteSt
 from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
 from antarest.launcher.main import build_launcher
 from antarest.launcher.service import LauncherService
+from antarest.lfs.dir_lfs import DirLargeFileStorage
 from antarest.login.main import build_login
 from antarest.login.service import LoginService
 from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
-from antarest.output.output_service import OutputService
-from antarest.output.storage.file_output_storage import InStudyFileOutputStorage
+from antarest.output.service import OutputService
+from antarest.output.storage.file.repository import FileOutputRepository
+from antarest.output.storage.file.storage import InStudyFileOutputStorage
 from antarest.output.storage.output_storage import IOutputStorage
-from antarest.output.variable_view_gc import VariableViewGarbageCollector
+from antarest.output.storage.v2.repository import OutputV2Repository
+from antarest.output.storage.v2.storage import V2OutputStorage
+from antarest.output.variable_view.gc import VariableViewGarbageCollector
 from antarest.study.adapters import adapt_output_service_to_study_service
 from antarest.study.dao.database.database_blob_usage_provider import DatabaseBlobUsageProvider
 from antarest.study.directory_service import DirectoryService
@@ -171,6 +175,19 @@ def build_favorite_service() -> tuple[FavoriteStudyService, FavoriteDirectorySer
     return favorite_study_service, favorite_directory_service
 
 
+def build_output_storage_list(config: Config, file_output_storage: InStudyFileOutputStorage) -> list[IOutputStorage]:
+    if not config.storage.output.enable:
+        return [file_output_storage]
+    tmp_dir = config.storage.tmp_dir / "outputs"
+    lfs = DirLargeFileStorage(config.storage.archive_dir)
+    v2_storage = V2OutputStorage(tmp_dir=tmp_dir, archive_storage=lfs, repository=OutputV2Repository())
+
+    if config.storage.output.default:
+        return [v2_storage, file_output_storage]
+    else:
+        return [file_output_storage, v2_storage]
+
+
 def build_output_service(
     study_service: StudyService,
     cache: ICache,
@@ -185,8 +202,10 @@ def build_output_service(
         outputs_provider=study_service_as_file_outputs_provider(study_service),
         cache=cache,
         remote_executor=remote_executor,
+        repository=FileOutputRepository(),
     )
-    storages: list[IOutputStorage] = [file_output_storage]
+
+    storages = build_output_storage_list(config, file_output_storage)
 
     output_service = OutputService(
         studies_repository=study_service_as_studies_repository(study_service),

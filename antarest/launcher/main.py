@@ -20,7 +20,7 @@ from antarest.core.tasks.service import ITaskService
 from antarest.launcher.repository import JobResultRepository, SolverPresetsRepository
 from antarest.launcher.service import LauncherService
 from antarest.login.service import LoginService
-from antarest.output.output_service import OutputService
+from antarest.output.service import OutputService
 from antarest.study.service import StudyService
 
 

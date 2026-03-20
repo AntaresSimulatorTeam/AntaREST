@@ -25,7 +25,11 @@ from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyDeletionNotAllowed, StudyNotFoundError
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.model import PublicMode
-from antarest.output.storage.file_output_storage import FileStudyOutputs, IFileOutputsProvider, InStudyFileOutputStorage
+from antarest.output.storage.file.storage import (
+    FileStudyOutputs,
+    IFileOutputsProvider,
+    InStudyFileOutputStorage,
+)
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -428,7 +432,9 @@ timestamp = 1599488150
                 study_workspace=DEFAULT_WORKSPACE_NAME,
             )
 
-    output_storage = InStudyFileOutputStorage(OutputsProvider(), cache=Mock(), remote_executor=Mock())
+    output_storage = InStudyFileOutputStorage(
+        OutputsProvider(), cache=Mock(), remote_executor=Mock(), repository=Mock()
+    )
 
     # Test
     expected_output_name = "20200907-1615eco-11mc"
