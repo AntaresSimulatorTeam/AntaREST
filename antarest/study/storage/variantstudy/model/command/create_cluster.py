@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import typing as t
-from typing import Any, Dict, Final, List, Optional, Self
+from typing import Any, Dict, Final, List, Self
 
 from antares.study.version import StudyVersion
 from pydantic import Field, model_validator
@@ -20,6 +20,7 @@ from typing_extensions import override
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.model.thermal_cluster_model import (
+    ThermalCluster,
     ThermalClusterCreation,
     create_thermal_cluster,
     validate_thermal_cluster_against_version,
@@ -102,7 +103,9 @@ class CreateCluster(ICommand):
         return self
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[ThermalCluster]:
         thermal = create_thermal_cluster(self.parameters, self.study_version)
         lower_thermal_id = thermal.id.lower()
         if study_data.thermal_exists(self.area_id, lower_thermal_id):
@@ -121,7 +124,7 @@ class CreateCluster(ICommand):
             study_data.save_thermal_fuel_cost(self.area_id, lower_thermal_id, null_matrix)
             study_data.save_thermal_co2_cost(self.area_id, lower_thermal_id, null_matrix)
 
-        return command_succeeded(f"Thermal cluster '{thermal.id}' added to area '{self.area_id}'.")
+        return command_succeeded(f"Thermal cluster '{thermal.id}' added to area '{self.area_id}'.", result=thermal)
 
     @override
     def to_dto(self) -> CommandDTO:

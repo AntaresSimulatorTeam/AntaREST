@@ -24,6 +24,7 @@ from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.model.binding_constraint_model import (
     DEFAULT_TIMESTEP,
+    BindingConstraint,
     BindingConstraintCreation,
     BindingConstraintFrequency,
     BindingConstraintMatrices,
@@ -297,7 +298,9 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         return self
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[BindingConstraint]:
         constraint = create_binding_constraint(self.parameters, self.study_version)
         study_data.save_constraints([constraint])
 
@@ -326,7 +329,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
                 assert isinstance(matrix, str)
                 study_data.save_constraint_less_term_matrix(constraint.id, matrix)
 
-        return command_succeeded(f"Binding constraint '{constraint.id}' created successfully.")
+        return command_succeeded(f"Binding constraint '{constraint.id}' created successfully.", result=constraint)
 
     @override
     def to_dto(self) -> CommandDTO:
