@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import io
+import os
 import zipfile
 from pathlib import Path
 
@@ -177,9 +178,16 @@ def test_delete_study_linked_to_output(admin_client: TestClient, study_id: str) 
     assert res.status_code == 200
 
 
-def test_archive_and_unarchive(admin_client: TestClient, study_id: str, output_name: str) -> None:
+def test_archive_and_unarchive(admin_client: TestClient, study_id: str, output_name: str, tmp_path: Path) -> None:
     """Test archiving and unarchiving a V2 output."""
     client = admin_client
+
+    output_archives_dir = tmp_path / "output_archives"
+
+    # Check the archive is already present in the expected output
+    files = os.listdir(output_archives_dir)
+    assert len(files) == 1
+    assert files[0] == f"{study_id}-{output_name}"
 
     # Verify not archived initially
     res = client.get(f"/v1/studies/{study_id}/outputs")
@@ -193,6 +201,9 @@ def test_archive_and_unarchive(admin_client: TestClient, study_id: str, output_n
     assert task_id is not None
     task = wait_task_completion(client, None, task_id)
     assert task.status == TaskStatus.COMPLETED
+
+    # Check the archive dir was correctly taken into account
+    assert len(os.listdir(output_archives_dir)) == 1
 
     # Verify archived
     res = client.get(f"/v1/studies/{study_id}/outputs")
