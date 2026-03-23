@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import Optional
 
 from pydantic import field_validator, model_validator
 from typing_extensions import override
@@ -69,13 +68,13 @@ class RemoveLink(ICommand):
         return self
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         if not study_data.link_exists(self.area1, self.area2):
             return command_failed(f"Link between '{self.area1}' and '{self.area2}' doesn't exists")
 
         study_data.delete_link(Link(**{"area1": self.area1, "area2": self.area2}))
 
-        return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' deleted")
+        return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' deleted", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

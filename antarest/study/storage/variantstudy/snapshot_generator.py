@@ -17,7 +17,7 @@ This module dedicated to variant snapshot generation.
 import logging
 import shutil
 from pathlib import Path
-from typing import List, NamedTuple, Optional, Sequence, Tuple
+from typing import List, NamedTuple, Sequence, Tuple
 
 from antarest.core.exceptions import VariantGenerationError
 from antarest.core.interfaces.cache import (
@@ -71,7 +71,7 @@ class SnapshotGenerator:
         denormalize: bool = True,
         from_scratch: bool = False,
         notifier: ITaskNotifier = NoopNotifier(),
-        listener: Optional[ICommandListener] = None,
+        listener: ICommandListener | None = None,
     ) -> GenerationResultInfoDTO:
         # ATTENTION: since we are making changes to disk, a file lock is needed.
         # The locking is currently done in the `VariantStudyService.generate_task` function
@@ -180,7 +180,7 @@ class SnapshotGenerator:
         file_study: FileStudy,
         variant_study: VariantStudy,
         cmd_blocks: Sequence[CommandBlock],
-        listener: Optional[ICommandListener] = None,
+        listener: ICommandListener | None = None,
     ) -> GenerationResultInfoDTO:
         commands = [self.command_factory.to_command(cb.to_dto()) for cb in cmd_blocks]
         results = apply_commands_to_variant(commands, study=file_study, metadata=variant_study, listener=listener)
