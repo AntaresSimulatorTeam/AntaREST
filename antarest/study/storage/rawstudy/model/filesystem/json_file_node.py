@@ -35,7 +35,7 @@ class JsonReader(IReader):
 
         if isinstance(path, (Path, str)):
             try:
-                with open(path, encoding="utf-8") as f:
+                with Path(path).open(encoding="utf-8") as f:
                     content = f.read()
             except FileNotFoundError:
                 # If the file is missing, an empty dictionary is returned,
@@ -63,7 +63,7 @@ class JsonWriter(IniWriter):
 
     @override
     def write(self, data: JSON, path: Path) -> None:
-        with open(path, "wb") as fh:
+        with path.open("wb") as fh:
             fh.write(to_json(data))
 
 
