@@ -223,11 +223,11 @@ class IniReader(IReader):
     def read(self, path: Any, **kwargs: Any) -> JSON:
         if isinstance(path, (Path, str)):
             try:
-                with open(path, encoding="utf-8") as f:
+                with Path(path).open(encoding="utf-8") as f:
                     sections = self._parse_ini_file(f, **kwargs)
             except UnicodeDecodeError:
                 # On windows, `.ini` files may use "cp1252" encoding
-                with open(path, encoding="cp1252") as f:
+                with Path(path).open(encoding="cp1252") as f:
                     sections = self._parse_ini_file(f, **kwargs)
             except FileNotFoundError:
                 # If the file is missing, an empty dictionary is returned.
