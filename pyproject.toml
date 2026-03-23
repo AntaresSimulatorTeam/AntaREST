@@ -88,9 +88,7 @@ test = [
 ]
 
 [project.optional-dependencies]
-desktop = [
-    "PyQt5~=5.15.6; sys_platform != 'win32'",
-]
+desktop = ["PyQt5~=5.15.6"]
 windows = [
     "win10toast; platform_system == 'Windows'",
 ]
