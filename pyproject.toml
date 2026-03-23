@@ -88,10 +88,7 @@ test = [
 ]
 
 [project.optional-dependencies]
-desktop = [
-    "PyQt5~=5.15.6",
-    "pyqt5-qt5; sys_platform != 'win32'", # pyqt5-qt5 does not provide wheels on Windows
-]
+desktop = ["PyQt6~=6.10.2"]
 windows = [
     "win10toast; platform_system == 'Windows'",
 ]
