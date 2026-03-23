@@ -12,31 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import GroupedDataTable from "@/components/GroupedDataTable";
-import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
-import type { RowData } from "@/components/GroupedDataTable/types";
+import DataGridSkeleton from "@/components/DataGridSkeleton";
+import ThermalClusterListGrid, {
+  type ThermalClusterRow,
+} from "@/components/DataGrid/examples/ThermalClusterListGrid";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
-import {
-  addClusterCapacity,
-  capacityAggregationFn,
-  getClustersWithCapacityTotals,
-  toCapacityString,
-} from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/-clustersUtils";
-import { Box } from "@mui/material";
-import { createFileRoute, linkOptions } from "@tanstack/react-router";
-import { createMRTColumnHelper } from "material-react-table";
-import { useMemo, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import semver from "semver";
-import {
-  createThermalCluster,
-  deleteThermalClusters,
-  duplicateThermalCluster,
-  getThermalClusters,
-  THERMAL_GROUPS,
-  type ThermalClusterWithCapacity,
-} from "./-utils";
+import { getThermalClusters, updateThermalCluster, type ThermalCluster } from "./-utils";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/",
@@ -44,7 +29,27 @@ export const Route = createFileRoute(
   component: Thermals,
 });
 
-const columnHelper = createMRTColumnHelper<ThermalClusterWithCapacity>();
+////////////////////////////////////////////////////////////////
+// Mapping
+////////////////////////////////////////////////////////////////
+
+function toRow(cluster: ThermalCluster): ThermalClusterRow {
+  return {
+    id: cluster.id,
+    name: cluster.name,
+    group: cluster.group,
+    enabled: cluster.enabled,
+    mustRun: cluster.mustRun,
+    unitCount: cluster.unitCount,
+    nominalCapacity: cluster.nominalCapacity,
+    marketBidCost: cluster.marketBidCost,
+    genTs: cluster.genTs,
+  };
+}
+
+////////////////////////////////////////////////////////////////
+// Component
+////////////////////////////////////////////////////////////////
 
 function Thermals() {
   const study = useStudy();
@@ -52,13 +57,13 @@ function Thermals() {
   const { t } = useTranslation();
 
   const {
-    data: clustersWithCapacity = [],
+    data: clusters = [],
     isLoading,
     status,
-  } = usePromiseWithSnackbarError<ThermalClusterWithCapacity[]>(
+  } = usePromiseWithSnackbarError(
     async () => {
-      const clusters = await getThermalClusters(study.id, areaId);
-      return clusters?.map(addClusterCapacity);
+      const list = await getThermalClusters(study.id, areaId);
+      return list.map(toRow);
     },
     {
       resetDataOnReload: true,
@@ -67,119 +72,42 @@ function Thermals() {
     },
   );
 
-  const [totals, setTotals] = useState(getClustersWithCapacityTotals(clustersWithCapacity));
-
-  const columns = useMemo(() => {
-    const { totalUnitCount, totalEnabledCapacity, totalInstalledCapacity } = totals;
-
-    return [
-      columnHelper.accessor("enabled", {
-        header: "Enabled",
-        size: 50,
-        filterVariant: "checkbox",
-        Cell: BooleanCell,
-      }),
-      columnHelper.accessor("mustRun", {
-        header: "Must Run",
-        size: 50,
-        filterVariant: "checkbox",
-        Cell: BooleanCell,
-      }),
-      columnHelper.accessor("unitCount", {
-        header: "Unit Count",
-        size: 50,
-        aggregationFn: "sum",
-        AggregatedCell: ({ cell }) => (
-          <Box sx={{ color: "info.main", fontWeight: "bold" }}>{cell.getValue()}</Box>
-        ),
-        Footer: () => <Box color="warning.main">{totalUnitCount}</Box>,
-      }),
-      columnHelper.accessor("nominalCapacity", {
-        header: "Nominal Capacity (MW)",
-        size: 220,
-        Cell: ({ cell }) => cell.getValue().toFixed(1),
-      }),
-      columnHelper.accessor((row) => toCapacityString(row.enabledCapacity, row.installedCapacity), {
-        header: "Enabled / Installed (MW)",
-        size: 220,
-        aggregationFn: capacityAggregationFn(),
-        AggregatedCell: ({ cell }) => (
-          <Box sx={{ color: "info.main", fontWeight: "bold" }}>{cell.getValue()}</Box>
-        ),
-        Footer: () => (
-          <Box color="warning.main">
-            {toCapacityString(totalEnabledCapacity, totalInstalledCapacity)}
-          </Box>
-        ),
-      }),
-      columnHelper.accessor("marketBidCost", {
-        header: "Market Bid (€/MWh)",
-        size: 50,
-        Cell: ({ cell }) => <>{cell.getValue().toFixed(2)}</>,
-      }),
-    ];
-  }, [totals]);
-
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreate = async (values: RowData) => {
-    const cluster = await createThermalCluster(study.id, areaId, values);
-    return addClusterCapacity(cluster);
-  };
+  const handleSaveRow = useCallback(
+    async (id: string, changes: Partial<ThermalClusterRow>) => {
+      await updateThermalCluster(study.id, areaId, id, changes as Partial<ThermalCluster>);
+    },
+    [study.id, areaId],
+  );
 
-  const handleDuplicate = async (row: ThermalClusterWithCapacity, newName: string) => {
-    const cluster = await duplicateThermalCluster(study.id, areaId, row.id, newName);
-
-    return { ...row, ...cluster };
-  };
-
-  const handleDelete = (rows: ThermalClusterWithCapacity[]) => {
-    const ids = rows.map((row) => row.id);
-    return deleteThermalClusters(study.id, areaId, ids);
-  };
+  const handleSaveAll = useCallback(
+    async (rows: ThermalClusterRow[]) => {
+      await Promise.all(
+        rows.map((row) =>
+          updateThermalCluster(study.id, areaId, row.id, row as Partial<ThermalCluster>),
+        ),
+      );
+    },
+    [study.id, areaId],
+  );
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
+  if (isLoading) {
+    return <DataGridSkeleton />;
+  }
+
   return (
-    <GroupedDataTable
+    <ThermalClusterListGrid
       key={status}
-      isLoading={isLoading}
-      data={clustersWithCapacity}
-      columns={columns}
-      groups={[...THERMAL_GROUPS] as string[]}
-      allowNewGroups={semver.gte(study.version, "9.3.0")}
-      onCreate={handleCreate}
-      onDuplicate={handleDuplicate}
-      onDelete={handleDelete}
-      nameLinkOptions={(row) =>
-        linkOptions({
-          to: "/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId",
-          params: {
-            studyId: study.id,
-            areaId,
-            thermalId: row.id,
-          },
-        })
-      }
-      deleteConfirmationMessage={(rows) => {
-        return t("studies.modeling.clusters.question.delete", {
-          count: rows.length,
-          clusterNames: rows.map((row) => row.name),
-        });
-      }}
-      fillPendingRow={(row) => ({
-        unitCount: 0,
-        enabledCapacity: 0,
-        installedCapacity: 0,
-        ...row,
-      })}
-      onDataChange={(data) => {
-        setTotals(getClustersWithCapacityTotals(data));
-      }}
+      clusters={clusters}
+      onSaveRow={handleSaveRow}
+      onSaveAll={handleSaveAll}
     />
   );
 }
