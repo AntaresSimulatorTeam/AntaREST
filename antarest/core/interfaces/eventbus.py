@@ -11,8 +11,9 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
+from collections.abc import Awaitable, Callable
 from enum import StrEnum
-from typing import Any, Awaitable, Callable, List, Optional, TypeAlias
+from typing import Any, TypeAlias
 
 from typing_extensions import override
 
@@ -109,7 +110,7 @@ class IEventBus(ABC):
     def add_listener(
         self,
         listener: EventListener,
-        type_filter: Optional[List[EventType]] = None,
+        type_filter: list[EventType] | None = None,
     ) -> str:
         """
         Add a new event listener in the event bus.
@@ -140,7 +141,7 @@ class IEventBus(ABC):
 
 class DummyEventBusService(IEventBus):
     def __init__(self) -> None:
-        self.events: List[Event] = []
+        self.events: list[Event] = []
 
     @override
     def queue(self, event: Event, queue: str) -> None:
@@ -165,7 +166,7 @@ class DummyEventBusService(IEventBus):
     def add_listener(
         self,
         listener: Callable[[Event], Awaitable[None]],
-        type_filter: Optional[List[EventType]] = None,
+        type_filter: list[EventType] | None = None,
     ) -> str:
         return ""
 

@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 
 import re
+from collections.abc import Sequence
 from http import HTTPStatus
-from typing import Optional, Sequence
 
 from fastapi.exceptions import HTTPException
 from typing_extensions import override
@@ -269,11 +269,11 @@ class NotAManagedStudyException(HTTPException):
 
 class TaskAlreadyRunning(HTTPException):
     def __init__(self) -> None:
-        super(TaskAlreadyRunning, self).__init__(HTTPStatus.EXPECTATION_FAILED, "Task is already running")
+        super().__init__(HTTPStatus.EXPECTATION_FAILED, "Task is already running")
 
 
 class StudyDeletionNotAllowed(HTTPException):
-    def __init__(self, uuid: str, message: Optional[str] = None) -> None:
+    def __init__(self, uuid: str, message: str | None = None) -> None:
         msg = f"Study {uuid} (not managed) is not allowed to be deleted"
         if message:
             msg += f"\n{message}"
@@ -543,7 +543,7 @@ class InvalidConstraintTerm(HTTPException):
         self,
         term_id: str,
         reason: str,
-        binding_constraint_id: Optional[str] = None,
+        binding_constraint_id: str | None = None,
     ) -> None:
         message = f"Invalid constraint term {term_id}"
         if binding_constraint_id:

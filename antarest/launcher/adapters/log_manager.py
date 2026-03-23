@@ -14,9 +14,10 @@ import contextlib
 import io
 import logging
 import time
+from collections.abc import Callable
 from pathlib import Path
 from threading import Thread
-from typing import Callable, Dict, Optional, cast
+from typing import cast
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +28,9 @@ class LogTailManager:
     def __init__(self, log_base_dir: Path) -> None:
         logger.info("Initiating Log manager")
         self.log_base_dir = log_base_dir
-        self.tracked_logs: Dict[str, Thread] = {}
+        self.tracked_logs: dict[str, Thread] = {}
 
-    def track(self, log_path: Optional[Path], handler: Callable[[str], None]) -> None:
+    def track(self, log_path: Path | None, handler: Callable[[str], None]) -> None:
         if log_path is None:
             return None
         if str(log_path) in self.tracked_logs:
@@ -51,7 +52,7 @@ class LogTailManager:
 
         return stop
 
-    def stop_tracking(self, log_path: Optional[Path]) -> None:
+    def stop_tracking(self, log_path: Path | None) -> None:
         if log_path is None:
             return None
         log_path_key = str(log_path)
@@ -60,7 +61,7 @@ class LogTailManager:
 
     def _follow(
         self,
-        log_file: Optional[Path],
+        log_file: Path | None,
         handler: Callable[[str], None],
         stop: Callable[[], bool],
     ) -> None:
@@ -71,7 +72,7 @@ class LogTailManager:
 
         # Assume UTF-8 but ignore errors, it's difficult to be sure of log encoding
         # especially because of windows error messages
-        with open(log_file, "r", encoding="utf-8", errors="replace") as fh:
+        with open(log_file, encoding="utf-8", errors="replace") as fh:
             logger.info(f"Scanning {log_file}")
             follow(cast(io.StringIO, fh), handler, stop, str(log_file))
 
@@ -80,7 +81,7 @@ def follow(
     file: io.StringIO,
     handler: Callable[[str], None],
     stop: Callable[[], bool],
-    log_file: Optional[str],
+    log_file: str | None,
 ) -> None:
     line = ""
     line_count = 0

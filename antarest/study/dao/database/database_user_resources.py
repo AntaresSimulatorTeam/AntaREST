@@ -14,8 +14,8 @@
 Database implementation of UserResourcesDao.
 """
 
+from collections.abc import Iterator
 from pathlib import PurePosixPath
-from typing import Iterator
 
 from sqlalchemy import CursorResult, delete, select
 from sqlalchemy.orm import Session
@@ -70,7 +70,7 @@ class DatabaseUserResourcesDao(UserResourcesDao):
 
     @override
     def get_all_user_resources(self) -> Iterator[UserResourceDataCreation]:
-        stmt = select(USER_RESOURCES_TABLE).where((USER_RESOURCES_TABLE.c.study_id == self._study_id))
+        stmt = select(USER_RESOURCES_TABLE).where(USER_RESOURCES_TABLE.c.study_id == self._study_id)
 
         rows = self._db_session.execute(stmt).fetchall()
 

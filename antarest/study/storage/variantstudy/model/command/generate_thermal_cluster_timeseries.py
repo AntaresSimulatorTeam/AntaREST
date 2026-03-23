@@ -13,7 +13,7 @@
 import io
 import logging
 from pathlib import PurePosixPath
-from typing import Any, Dict, Final
+from typing import Any, Final
 
 import numpy as np
 import polars as pl
@@ -57,7 +57,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
 
     @model_validator(mode="before")
     @classmethod
-    def _validate_model(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+    def _validate_model(cls, values: dict[str, Any], info: ValidationInfo) -> dict[str, Any]:
         if info.context:
             version = info.context.version
             if version < 2 and "thermal_outage_details" not in values:

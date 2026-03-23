@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import Annotated, List, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
 from starlette.responses import FileResponse
@@ -54,7 +54,7 @@ def create_matrix_api() -> APIRouter:
     @bp.post("/matrix", description="Upload a new matrix")
     def create(
         service: MatrixServiceDep,
-        matrix: Annotated[List[List[MatrixData]], Body(description="matrix dto")] = [],
+        matrix: Annotated[list[list[MatrixData]], Body(description="matrix dto")] = [],
     ) -> str:
         logger.info("Creating new matrix")
         return service.create(create_polars_dataframe(matrix))
@@ -112,7 +112,7 @@ def create_matrix_api() -> APIRouter:
     def create_dataset(
         service: MatrixServiceDep,
         metadata: Annotated[MatrixDataSetUpdateDTO, Body()],
-        matrices: Annotated[List[MatrixInfoDTO], Body()],
+        matrices: Annotated[list[MatrixInfoDTO], Body()],
     ) -> MatrixDataSetDTO:
         logger.info(f"Creating new matrix dataset metadata {metadata.name}")
         return service.create_dataset(metadata, matrices).to_dto()
@@ -130,10 +130,10 @@ def create_matrix_api() -> APIRouter:
         "/matrixdataset/_search",
     )
     def query_datasets(
-        service: MatrixServiceDep, name: Optional[SanitizedStr], filter_own: bool = False
-    ) -> List[MatrixDataSetDTO]:
+        service: MatrixServiceDep, name: SanitizedStr | None, filter_own: bool = False
+    ) -> list[MatrixDataSetDTO]:
         logger.info("Searching matrix dataset metadata")
-        return service.list(name, filter_own)
+        return service.list_datasets(name, filter_own)
 
     @bp.get(
         "/matrixdataset/{dataset_id}/download",

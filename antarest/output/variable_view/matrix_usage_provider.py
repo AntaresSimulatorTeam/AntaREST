@@ -11,9 +11,10 @@
 # This file is part of the Antares project.
 
 import logging
+from typing import Iterable
 
 from sqlalchemy import select
-from typing_extensions import Iterable, override
+from typing_extensions import override
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider

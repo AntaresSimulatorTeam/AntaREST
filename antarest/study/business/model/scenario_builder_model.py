@@ -12,7 +12,8 @@
 
 
 import enum
-from typing import Any, Final, Iterable, Literal, Mapping, TypeAlias, cast
+from collections.abc import Iterable, Mapping
+from typing import Any, Final, Literal, TypeAlias, cast
 
 from antares.study.version import StudyVersion
 from pydantic import Field

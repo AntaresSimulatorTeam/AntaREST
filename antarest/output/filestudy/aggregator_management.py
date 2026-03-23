@@ -11,8 +11,9 @@
 # This file is part of the Antares project.
 import logging
 import warnings
+from collections.abc import Iterator, MutableSequence, Sequence
 from pathlib import Path
-from typing import Dict, Iterator, List, MutableSequence, Optional, Sequence, cast
+from typing import cast
 
 import pandas as pd
 import polars as pl
@@ -57,7 +58,7 @@ ACTUAL_COLUMN_COMPONENT = 1
 logger = logging.getLogger(__name__)
 
 
-def _columns_ordering(df_cols: List[str], column_name: str, is_details: bool, mc_root: MCRoot) -> list[str]:
+def _columns_ordering(df_cols: list[str], column_name: str, is_details: bool, mc_root: MCRoot) -> list[str]:
     # original columns
     org_cols = df_cols.copy()
     if is_details:
@@ -76,11 +77,11 @@ def _columns_ordering(df_cols: List[str], column_name: str, is_details: bool, mc
 
 
 def _filtered_files_listing(
-    folders_to_check: List[Path],
+    folders_to_check: list[Path],
     query_file: str,
     frequency: str,
-) -> Dict[str, MutableSequence[str]]:
-    filtered_files: Dict[str, MutableSequence[str]] = {}
+) -> dict[str, MutableSequence[str]]:
+    filtered_files: dict[str, MutableSequence[str]] = {}
     for folder_path in folders_to_check:
         for file in folder_path.iterdir():
             if file.stem == f"{query_file}-{frequency}":
@@ -97,7 +98,7 @@ class AggregatorManager:
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
         transform_columns_headers: bool,  # False when used by the Imagrid `/download` endpoint.
-        mc_years: Optional[Sequence[int]] = None,
+        mc_years: Sequence[int] | None = None,
     ):
         self.output_path = output_path
         self.output_id = self.output_path.name
@@ -130,7 +131,7 @@ class AggregatorManager:
 
         return output_data
 
-    def _filter_ids(self, folder_path: Path) -> List[str]:
+    def _filter_ids(self, folder_path: Path) -> list[str]:
         if self.output_type == "areas":
             # Areas names filtering
             areas_ids = sorted([d.name for d in folder_path.iterdir()])

@@ -14,7 +14,7 @@ import logging
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import redis
 from sqlalchemy import create_engine
@@ -102,7 +102,7 @@ def init_db_engine(
         if not config_file:
             raise ValueError("config_file must be provided when auto_upgrade_db is True")
         upgrade_db(config_file)
-    connect_args: Dict[str, Any] = {}
+    connect_args: dict[str, Any] = {}
     if config.db.db_url.startswith("sqlite"):
         connect_args["check_same_thread"] = False
     else:
@@ -141,7 +141,7 @@ def new_redis_instance(config: RedisConfig) -> redis.Redis:  # type: ignore
     return redis_client
 
 
-def create_event_bus(config: Config) -> Tuple[IEventBus, Optional[redis.Redis]]:  # type: ignore
+def create_event_bus(config: Config) -> tuple[IEventBus, redis.Redis | None]:  # type: ignore
     redis_client = new_redis_instance(config.redis) if config.redis is not None else None
     return (
         build_eventbus(True, redis_client),
@@ -302,7 +302,7 @@ def create_variable_view_gc(config: Config) -> VariableViewGarbageCollector:
 
 def create_watcher(
     config: Config,
-    study_service: Optional[StudyService] = None,
+    study_service: StudyService | None = None,
 ) -> Watcher:
     if study_service:
         watcher = Watcher(
@@ -329,7 +329,7 @@ def create_archive_worker(
     config: Config,
     workspace: str,
     local_root: Path = Path("/"),
-    event_bus: Optional[IEventBus] = None,
+    event_bus: IEventBus | None = None,
 ) -> AbstractWorker:
     if not event_bus:
         event_bus, _ = create_event_bus(config)
@@ -352,11 +352,11 @@ class Services:
     task_service: ITaskService
     file_transfer_manager: FileTransferManager
     output_service: OutputService
-    launcher: Optional[LauncherService] = None
-    matrix_gc: Optional[MatrixGarbageCollector] = None
-    auto_archiver: Optional[AutoArchiveService] = None
-    blob_gc: Optional[BlobGarbageCollector] = None
-    variable_view_gc: Optional[VariableViewGarbageCollector] = None
+    launcher: LauncherService | None = None
+    matrix_gc: MatrixGarbageCollector | None = None
+    auto_archiver: AutoArchiveService | None = None
+    blob_gc: BlobGarbageCollector | None = None
+    variable_view_gc: VariableViewGarbageCollector | None = None
 
 
 def create_services(config: Config, create_all: bool = False) -> Services:

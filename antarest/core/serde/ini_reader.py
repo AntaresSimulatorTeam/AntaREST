@@ -12,8 +12,10 @@
 import dataclasses
 import re
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Callable, Dict, Mapping, Optional, Pattern, Sequence, TextIO, TypeAlias, cast
+from re import Pattern
+from typing import Any, TextIO, TypeAlias, cast
 
 from typing_extensions import override
 
@@ -53,7 +55,7 @@ def _convert_value(value: str) -> PrimitiveType:
 
 
 class ValueParsers:
-    def __init__(self, default_parser: ValueParser, parsers: Dict[OptionMatcher, ValueParser]):
+    def __init__(self, default_parser: ValueParser, parsers: dict[OptionMatcher, ValueParser]):
         self._default_parser = default_parser
         self._parsers = parsers
 
@@ -80,16 +82,16 @@ class IniFilter:
         option_regex: A compiled regex for matching option names.
     """
 
-    section_regex: Optional[Pattern[str]] = None
-    option_regex: Optional[Pattern[str]] = None
+    section_regex: Pattern[str] | None = None
+    option_regex: Pattern[str] | None = None
 
     @classmethod
     def from_kwargs(
         cls,
         section: str = "",
         option: str = "",
-        section_regex: Optional[str | Pattern[str]] = None,
-        option_regex: Optional[str | Pattern[str]] = None,
+        section_regex: str | Pattern[str] | None = None,
+        option_regex: str | Pattern[str] | None = None,
         **_unused: Any,  # ignore unknown options
     ) -> "IniFilter":
         """
@@ -188,7 +190,7 @@ class IniReader(IReader):
         self,
         special_keys: Sequence[str] = (),
         section_name: str = "settings",
-        value_parsers: Dict[OptionMatcher, ValueParser] | None = None,
+        value_parsers: dict[OptionMatcher, ValueParser] | None = None,
     ) -> None:
         super().__init__()
 
@@ -200,7 +202,7 @@ class IniReader(IReader):
         self._section_name = section_name
 
         # Dictionary of parsed sections and options
-        self._curr_sections: Dict[str, Dict[str, Any]] = {}
+        self._curr_sections: dict[str, dict[str, Any]] = {}
 
         # Current section name used during paring
         self._curr_section = ""
@@ -221,11 +223,11 @@ class IniReader(IReader):
     def read(self, path: Any, **kwargs: Any) -> JSON:
         if isinstance(path, (Path, str)):
             try:
-                with open(path, mode="r", encoding="utf-8") as f:
+                with open(path, encoding="utf-8") as f:
                     sections = self._parse_ini_file(f, **kwargs)
             except UnicodeDecodeError:
                 # On windows, `.ini` files may use "cp1252" encoding
-                with open(path, mode="r", encoding="cp1252") as f:
+                with open(path, encoding="cp1252") as f:
                     sections = self._parse_ini_file(f, **kwargs)
             except FileNotFoundError:
                 # If the file is missing, an empty dictionary is returned.

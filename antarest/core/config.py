@@ -18,7 +18,7 @@ import tempfile
 from dataclasses import asdict, dataclass, field
 from enum import StrEnum
 from pathlib import Path
-from typing import ClassVar, Dict, List, Optional
+from typing import ClassVar
 
 import yaml
 
@@ -46,10 +46,10 @@ class ExternalAuthConfig:
     Sub config object dedicated to external auth service
     """
 
-    url: Optional[str] = None
+    url: str | None = None
     default_group_role: RoleType = RoleType.READER
     add_ext_groups: bool = False
-    group_mapping: Dict[str, str] = field(default_factory=dict)
+    group_mapping: dict[str, str] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: JSON) -> "ExternalAuthConfig":
@@ -96,9 +96,9 @@ class WorkspaceConfig:
     Sub config object dedicated to workspace
     """
 
-    filter_in: List[str] = field(default_factory=lambda: [".*"])
-    filter_out: List[str] = field(default_factory=lambda: [])
-    groups: List[str] = field(default_factory=lambda: [])
+    filter_in: list[str] = field(default_factory=lambda: [".*"])
+    filter_out: list[str] = field(default_factory=lambda: [])
+    groups: list[str] = field(default_factory=lambda: [])
     path: Path = Path()
 
     @classmethod
@@ -119,9 +119,9 @@ class DbConfig:
     """
 
     db_url: str = ""
-    db_admin_url: Optional[str] = None
+    db_admin_url: str | None = None
     db_connect_timeout: int = 10
-    pool_recycle: Optional[int] = None
+    pool_recycle: int | None = None
     pool_pre_ping: bool = False
     pool_use_null: bool = False
     pool_max_overflow: int = 10
@@ -189,7 +189,7 @@ class StorageConfig:
     matrixstore: Path = Path("./matrixstore")
     archive_dir: Path = Path("./archives")
     tmp_dir: Path = Path(tempfile.gettempdir())
-    workspaces: Dict[str, WorkspaceConfig] = field(default_factory=dict)
+    workspaces: dict[str, WorkspaceConfig] = field(default_factory=dict)
     allow_deletion: bool = False
     watcher_lock: bool = True
     watcher_lock_delay: int = 10
@@ -271,7 +271,7 @@ class StorageConfig:
         )
 
     @classmethod
-    def validate_workspaces(cls, workspaces: Dict[str, WorkspaceConfig], desktop_mode: bool) -> None:
+    def validate_workspaces(cls, workspaces: dict[str, WorkspaceConfig], desktop_mode: bool) -> None:
         """
         Validate that no two workspaces have overlapping paths.
         """
@@ -291,7 +291,7 @@ class StorageConfig:
                     )
 
     @classmethod
-    def system_workspaces(cls) -> Dict[str, WorkspaceConfig]:
+    def system_workspaces(cls) -> dict[str, WorkspaceConfig]:
         if platform.system().lower() == "linux":
             return {"local": WorkspaceConfig(path=Path("/"))}
         elif platform.system().lower() == "windows":
@@ -312,7 +312,7 @@ class NbCoresConfig:
     default: int = 22
     max: int = 24
 
-    def to_json(self) -> Dict[str, int]:
+    def to_json(self) -> dict[str, int]:
         """
         Retrieves the number of cores parameters, returning a dictionary containing the values "min"
         (minimum allowed value), "defaultValue" (default value), and "max" (maximum allowed value)
@@ -346,7 +346,7 @@ class TimeLimitConfig:
     default: int = 48
     max: int = 48
 
-    def to_json(self) -> Dict[str, int]:
+    def to_json(self) -> dict[str, int]:
         """
         Retrieves the time limit parameters, returning a dictionary containing the values "min"
         (minimum allowed value), "defaultValue" (default value), and "max" (maximum allowed value)
@@ -372,11 +372,11 @@ class LocalConfig:
     id: str
     name: str
     type: ClassVar[LauncherType] = LauncherType.LOCAL
-    binaries: Dict[str, Path] = field(default_factory=dict)
+    binaries: dict[str, Path] = field(default_factory=dict)
     enable_nb_cores_detection: bool = True
     nb_cores: NbCoresConfig = NbCoresConfig()
     time_limit: TimeLimitConfig = TimeLimitConfig()
-    xpress_dir: Optional[str] = None
+    xpress_dir: str | None = None
     local_workspace: Path = Path("./local_workspace")
 
     @classmethod
@@ -405,7 +405,7 @@ class LocalConfig:
         )
 
     @classmethod
-    def _autodetect_nb_cores(cls) -> Dict[str, int]:
+    def _autodetect_nb_cores(cls) -> dict[str, int]:
         """
         Automatically detects the number of cores available on the user's machine
         Returns: Instance of NbCoresConfig
@@ -439,7 +439,7 @@ class SlurmConfig:
     slurm_script_path: str = ""
     partition: str = ""
     max_cores: int = 64
-    antares_versions_on_remote_server: List[str] = field(default_factory=list)
+    antares_versions_on_remote_server: list[str] = field(default_factory=list)
     enable_nb_cores_detection: bool = False
 
     @classmethod
@@ -488,7 +488,7 @@ class SlurmConfig:
         )
 
     @classmethod
-    def _autodetect_nb_cores(cls) -> Dict[str, int]:
+    def _autodetect_nb_cores(cls) -> dict[str, int]:
         raise NotImplementedError("NB Cores auto-detection is not implemented for SLURM server")
 
 
@@ -510,12 +510,12 @@ class LauncherConfig:
     """
 
     default: str = "local"
-    configs: Optional[List[LocalConfig | SlurmConfig]] = None
+    configs: list[LocalConfig | SlurmConfig] | None = None
     batch_size: int = 9999
 
     @classmethod
     def from_dict(cls, data: JSON) -> "LauncherConfig":
-        launchers: List[LocalConfig | SlurmConfig] = []
+        launchers: list[LocalConfig | SlurmConfig] = []
         defaults = cls()
         default = data.get("default", cls.default)
         batch_size = data.get("batch_size", defaults.batch_size)
@@ -537,7 +537,7 @@ class LauncherConfig:
             batch_size=batch_size,
         )
 
-    def get_slurm_configs(self) -> List[SlurmConfig]:
+    def get_slurm_configs(self) -> list[SlurmConfig]:
         return [cfg for cfg in self.configs or [] if isinstance(cfg, SlurmConfig)]
 
 
@@ -547,7 +547,7 @@ class LoggingConfig:
     Sub config object dedicated to logging
     """
 
-    logfile: Optional[Path] = None
+    logfile: Path | None = None
     json: bool = False
     level: str = "INFO"
 
@@ -569,7 +569,7 @@ class RedisConfig:
 
     host: str = "localhost"
     port: int = 6379
-    password: Optional[str] = None
+    password: str | None = None
 
     @classmethod
     def from_dict(cls, data: JSON) -> "RedisConfig":
@@ -612,7 +612,7 @@ class CacheConfig:
 @dataclass(frozen=True)
 class RemoteWorkerConfig:
     name: str
-    queues: List[str] = field(default_factory=list)
+    queues: list[str] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data: JSON) -> "RemoteWorkerConfig":
@@ -630,7 +630,7 @@ class TaskConfig:
     """
 
     max_workers: int = 5
-    remote_workers: List[RemoteWorkerConfig] = field(default_factory=list)
+    remote_workers: list[RemoteWorkerConfig] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data: JSON) -> "TaskConfig":
@@ -653,7 +653,7 @@ class ServerConfig:
     """
 
     worker_threadpool_size: int = 5
-    services: List[str] = field(default_factory=list)
+    services: list[str] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data: JSON) -> "ServerConfig":
@@ -721,7 +721,7 @@ class CeleryConfig:
         return f"redis://{password_part}{redis_config.host}:{redis_config.port}/{db}"
 
     @classmethod
-    def from_dict(cls, data: JSON, redis_config: Optional[RedisConfig] = None) -> "CeleryConfig":
+    def from_dict(cls, data: JSON, redis_config: RedisConfig | None = None) -> "CeleryConfig":
         defaults = cls()
 
         if redis_config:
@@ -750,7 +750,7 @@ class Config:
     logging: LoggingConfig = LoggingConfig()
     debug: bool = True
     resources_path: Path = Path()
-    redis: Optional[RedisConfig] = None
+    redis: RedisConfig | None = None
     eventbus: EventBusConfig = EventBusConfig()
     cache: CacheConfig = CacheConfig()
     tasks: TaskConfig = TaskConfig()
@@ -791,7 +791,7 @@ class Config:
         )
 
     @classmethod
-    def from_yaml_file(cls, file: Path, res: Optional[Path] = None) -> "Config":
+    def from_yaml_file(cls, file: Path, res: Path | None = None) -> "Config":
         """
         Parse config from yaml file.
 

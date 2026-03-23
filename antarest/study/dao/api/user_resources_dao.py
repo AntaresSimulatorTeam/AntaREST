@@ -10,8 +10,8 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
+from collections.abc import Iterator
 from pathlib import PurePosixPath
-from typing import Iterator
 
 from antarest.study.business.model.user_model import UserResourceDataCreation
 

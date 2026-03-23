@@ -180,8 +180,8 @@ def test_create_file_study_dao(tmp_path: Path, project_path: Path) -> None:
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(config.get_workspace_path() / "study1"),
         version="720",
-        created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+        created_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
+        updated_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
         author="john.doe",
     )
     FileStudyDaoFactory(Mock(), study_service.study_factory).create_study_dao(metadata)

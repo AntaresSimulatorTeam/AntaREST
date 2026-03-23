@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -39,7 +38,7 @@ class OutputSeriesMatrix(LazyNode[bytes | JSON, bytes | JSON, JSON]):
         self.freq = freq
 
     @override
-    def get_lazy_content(self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False) -> str:
+    def get_lazy_content(self, url: list[str] | None = None, depth: int = -1, expanded: bool = False) -> str:
         # noinspection SpellCheckingInspection
         return add_matrix_id_prefix(self.config.path.name)
 
@@ -73,7 +72,7 @@ class OutputSeriesMatrix(LazyNode[bytes | JSON, bytes | JSON, JSON]):
         return matrix.to_dict(orient="split", index=False)
 
     @override
-    def dump(self, data: bytes | JSON, url: Optional[List[str]] = None) -> None:
+    def dump(self, data: bytes | JSON, url: list[str] | None = None) -> None:
         raise MustNotModifyOutputException(self.config.path.name)
 
 

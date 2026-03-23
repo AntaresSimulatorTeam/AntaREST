@@ -9,9 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 from antarest.core.serde.ini_reader import IniReader
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs

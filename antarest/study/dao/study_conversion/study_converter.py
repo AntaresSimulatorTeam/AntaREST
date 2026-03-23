@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Sequence
+from collections.abc import Sequence
 
 import polars as pl
 from antares.study.version import StudyVersion

@@ -14,9 +14,10 @@ import logging
 import tempfile
 import uuid
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, BinaryIO, Callable, Iterable, Optional, Sequence
+from typing import Any, BinaryIO
 
 import pandas as pd
 import polars as pl
@@ -285,7 +286,7 @@ class OutputService:
             f"Unarchive output {study_name}/{output_id} ({study_id})",
         )
 
-    def unarchive_output(self, study_id: str, output_id: str) -> Optional[str]:
+    def unarchive_output(self, study_id: str, output_id: str) -> str | None:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
         metadata = self._studies_repository.get_study_metadata(study_id)
 
@@ -358,11 +359,11 @@ class OutputService:
         self,
         uuid: str,
         output: BinaryIO | Path,
-        output_name_suffix: Optional[str] = None,
+        output_name_suffix: str | None = None,
         auto_unzip: bool = True,
         storage_type: OutputStorageType | None = None,
         logs: SimulationLogs = SimulationLogs.no_logs(),
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Import specific output simulation inside study
 
@@ -587,7 +588,7 @@ class OutputService:
         study_id: str,
         output_id: str,
         force: bool = False,
-    ) -> Optional[str]:
+    ) -> str | None:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.WRITE)
         metadata = self._studies_repository.get_study_metadata(study_id)
 
@@ -649,7 +650,7 @@ class OutputService:
         download_name: str,
         download_log: str,
         download_expiration_time_in_minutes: int,
-        mc_years: Optional[Sequence[int]] = None,
+        mc_years: Sequence[int] | None = None,
     ) -> str:
         """
         Creates a download, and starts the task to fill it with aggregated output data.
@@ -695,9 +696,9 @@ class OutputService:
         ids_to_consider: Sequence[str],
         file_path: Path,
         transform_columns_headers: bool = True,
-        mc_years: Optional[Sequence[int]] = None,
-        on_success: Optional[Callable[[], None]] = None,
-        on_failure: Optional[Callable[[Exception], None]] = None,
+        mc_years: Sequence[int] | None = None,
+        on_success: Callable[[], None] | None = None,
+        on_failure: Callable[[Exception], None] | None = None,
     ) -> str:
         """
         Starts a task aggregating output data based on several filtering conditions.

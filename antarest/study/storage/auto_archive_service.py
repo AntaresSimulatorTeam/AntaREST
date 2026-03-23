@@ -43,7 +43,7 @@ class AutoArchiveService(IService):
     """
 
     def __init__(self, study_service: StudyService, output_service: OutputService, config: Config):
-        super(AutoArchiveService, self).__init__()
+        super().__init__()
         self.study_service = study_service
         self.output_service = output_service
         self.config = config

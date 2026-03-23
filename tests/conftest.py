@@ -10,8 +10,8 @@
 #
 # This file is part of the Antares project.
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 import pytest
 from antares.study.version import StudyVersion

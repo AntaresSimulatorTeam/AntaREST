@@ -11,7 +11,8 @@
 # This file is part of the Antares project.
 import re
 from abc import ABC, abstractmethod
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from typing_extensions import override
 

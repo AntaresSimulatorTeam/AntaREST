@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import Optional
 
 from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -18,7 +17,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 class FileStudyHelpers:
     @staticmethod
-    def get_config(study: FileStudy, output_id: Optional[str] = None) -> JSON:
+    def get_config(study: FileStudy, output_id: str | None = None) -> JSON:
         if output_id:
             config_path = [
                 "output",

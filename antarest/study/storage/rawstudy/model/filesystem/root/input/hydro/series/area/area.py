@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict
+from typing import Any
 
 from typing_extensions import override
 
@@ -31,7 +31,7 @@ class InputHydroSeriesArea(FolderNode):
         study_version = self.config.version
         freq = MatrixFrequency.DAILY if study_version >= STUDY_VERSION_6_5 else MatrixFrequency.MONTHLY
         default_empty = default_scenario_daily if study_version >= STUDY_VERSION_6_5 else default_scenario_monthly
-        hydro_series_matrices: Dict[str, INode[Any, Any, Any]] = {
+        hydro_series_matrices: dict[str, INode[Any, Any, Any]] = {
             "mod": InputSeriesMatrix(
                 self.matrix_mapper,
                 self.config.next_file("mod.txt"),

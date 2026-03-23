@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Dict, Final, Self
+from typing import Any, Final, Self
 
 from pydantic import TypeAdapter, model_validator
 from pydantic_core.core_schema import ValidationInfo
@@ -59,7 +59,7 @@ class UpdateScenarioBuilder(ICommand):
 
     @model_validator(mode="before")
     @classmethod
-    def _migrate_old_versions(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+    def _migrate_old_versions(cls, values: dict[str, Any], info: ValidationInfo) -> dict[str, Any]:
         if info.context:
             version = info.context.version
             if version == 1:

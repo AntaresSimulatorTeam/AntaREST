@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import Optional
 
 from redis import Redis
 
@@ -21,7 +20,7 @@ from antarest.eventbus.service import EventBusService
 
 def build_eventbus(
     autostart: bool = True,
-    redis_client: Optional[Redis] = None,  # type: ignore
+    redis_client: Redis | None = None,  # type: ignore
 ) -> EventBusService:
     return EventBusService(
         RedisEventBus(redis_client) if redis_client is not None else LocalEventBus(),

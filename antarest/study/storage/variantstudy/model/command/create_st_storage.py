@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Dict, Final, List, Optional, Self, TypeAlias, cast
+from typing import Any, Final, Self, TypeAlias, cast
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -37,7 +37,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-MatrixType: TypeAlias = Optional[list[list[MatrixData]] | str]
+MatrixType: TypeAlias = list[list[MatrixData]] | str | None
 
 
 # noinspection SpellCheckingInspection
@@ -86,7 +86,7 @@ class CreateSTStorage(ICommand):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_model(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+    def validate_model(cls, values: dict[str, Any], info: ValidationInfo) -> dict[str, Any]:
         if isinstance(values["parameters"], dict):
             properties_as_dict = values["parameters"]
         else:
@@ -247,7 +247,7 @@ class CreateSTStorage(ICommand):
         """
         Retrieves the list of matrix IDs.
         """
-        matrices: List[str] = []
+        matrices: list[str] = []
         for matrix_name, matrix_data in self._get_matrices().items():
             if matrix_data is not None:
                 matrices.append(strip_matrix_protocol(matrix_data))

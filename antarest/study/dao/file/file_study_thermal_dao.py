@@ -10,7 +10,8 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
 
 import polars as pl
 from typing_extensions import override

@@ -11,10 +11,11 @@
 # This file is part of the Antares project.
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import BinaryIO, Iterator, Optional, Sequence
+from typing import BinaryIO
 
 import polars as pl
 from pydantic import ConfigDict
@@ -93,7 +94,7 @@ class IOutputStorage(ABC):
         self,
         study_id: str,
         output: BinaryIO | Path,
-        output_name_suffix: Optional[str] = None,
+        output_name_suffix: str | None = None,
         logs: SimulationLogs = SimulationLogs.no_logs(),
     ) -> str:
         """
@@ -199,7 +200,7 @@ class IOutputStorage(ABC):
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
         transform_columns_headers: bool,
-        mc_years: Optional[Sequence[int]] = None,
+        mc_years: Sequence[int] | None = None,
     ) -> Iterator[pl.DataFrame]:
         """
         Aggregates output data based on several filtering conditions, as a stream of dataframes.

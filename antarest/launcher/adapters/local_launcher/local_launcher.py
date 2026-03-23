@@ -19,8 +19,9 @@ import subprocess
 import sys
 import threading
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
 from antares.study.version import SolverVersion
 from typing_extensions import override
@@ -68,8 +69,8 @@ class LocalLauncher(AbstractLauncher):
         self.log_directory = logs_path
         self.log_tail_manager = LogTailManager(self.local_workspace)
         self.submitted_jobs: dict[str, LauncherParametersDTO] = {}
-        self.job_id_to_study_id: Dict[str, Tuple[str, Path, subprocess.Popen]] = {}  # type: ignore
-        self.logs: Dict[str, str] = {}
+        self.job_id_to_study_id: dict[str, tuple[str, Path, subprocess.Popen]] = {}  # type: ignore
+        self.logs: dict[str, str] = {}
 
     def _select_best_binary(self, version: str) -> Path:
         if version in self.local_config.binaries:
@@ -146,7 +147,7 @@ class LocalLauncher(AbstractLauncher):
                 ):
                     subprocess.run(["Rscript", "post-processing.R"], cwd=export_path)
 
-                output_id: Optional[str] = None
+                output_id: str | None = None
                 if process.returncode == 0:
                     # The job succeed we need to import the output
                     try:
@@ -183,7 +184,7 @@ class LocalLauncher(AbstractLauncher):
 
     def _parse_launcher_options(
         self, launcher_parameters: LauncherParametersDTO, solver_version: SolverVersion
-    ) -> Tuple[List[str], Dict[str, Any]]:
+    ) -> tuple[list[str], dict[str, Any]]:
         simulator_args = ["--force-parallel", f"{launcher_parameters.nb_cpu}"] if launcher_parameters.nb_cpu else []
         environment_variables = os.environ.copy()
         if not launcher_parameters.other_options:
@@ -267,7 +268,7 @@ class LocalLauncher(AbstractLauncher):
         return append_to_log
 
     @override
-    def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
+    def get_log(self, job_id: str, log_type: LogType) -> str | None:
         if job_id in self.job_id_to_study_id and job_id in self.logs and log_type == LogType.STDOUT:
             return self.logs[job_id]
         job_path = self.log_directory / job_id / f"{job_id}-{log_type.to_suffix()}"
@@ -288,7 +289,7 @@ class LocalLauncher(AbstractLauncher):
             )
 
     @override
-    def get_solver_versions(self) -> List[str]:
+    def get_solver_versions(self) -> list[str]:
         return sorted(self.local_config.binaries)
 
     @override

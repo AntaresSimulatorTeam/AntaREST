@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from fastapi import HTTPException
 
@@ -44,7 +44,7 @@ class MaintenanceService:
     def _get_maintenance_data(
         self,
         cache_id: str,
-        db_call: Callable[[], Optional[str]],
+        db_call: Callable[[], str | None],
         default_value: str,
     ) -> str:
         try:
@@ -54,7 +54,7 @@ class MaintenanceService:
         except Exception as e:
             logger.error(f"Failed to retrieve cache key {cache_id}", exc_info=e)
 
-        data: Optional[str] = None
+        data: str | None = None
         try:
             data = db_call()
         except Exception as e:

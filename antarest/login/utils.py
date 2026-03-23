@@ -10,18 +10,18 @@
 #
 # This file is part of the Antares project.
 
+from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from re import escape
-from typing import Iterator, Optional
 
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import MustBeAuthenticatedError
 
-_current_user: ContextVar[Optional[JWTUser]] = ContextVar("_current_user", default=None)
+_current_user: ContextVar[JWTUser | None] = ContextVar("_current_user", default=None)
 
 
-def get_current_user() -> Optional[JWTUser]:
+def get_current_user() -> JWTUser | None:
     current_user = _current_user.get()
     return current_user
 
@@ -43,7 +43,7 @@ def get_user_impersonator() -> int:
 
 
 @contextmanager
-def current_user_context(token: Optional[JWTUser]) -> Iterator[JWTUser | None]:
+def current_user_context(token: JWTUser | None) -> Iterator[JWTUser | None]:
     reset_token = _current_user.set(token)
     try:
         yield _current_user.get()

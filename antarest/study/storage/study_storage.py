@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
-from typing import Optional, Sequence
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
@@ -83,7 +83,7 @@ class IStudyStorage(ABC):
         """
 
     @abstractmethod
-    def get_study_information(self, metadata: Study, folder_path: Optional[str] = None) -> StudyMetadataDTO:
+    def get_study_information(self, metadata: Study, folder_path: str | None = None) -> StudyMetadataDTO:
         """Get study information.
 
         Args:
@@ -96,7 +96,7 @@ class IStudyStorage(ABC):
         self,
         metadata: Study,
         use_cache: bool = True,
-        output_dir: Optional[Path] = None,
+        output_dir: Path | None = None,
     ) -> FileStudy:
         """
         Fetch a study raw tree object and its config

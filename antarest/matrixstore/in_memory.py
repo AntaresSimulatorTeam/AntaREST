@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Callable, Dict, Iterator, List, Sequence
+from collections.abc import Callable, Iterator, Sequence
 
 import polars as pl
 from typing_extensions import override
@@ -27,8 +27,8 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
     """
 
     def __init__(self) -> None:
-        self._content: Dict[str, pl.DataFrame] = {}
-        self.usage_providers: List[IMatrixUsageProvider] = []
+        self._content: dict[str, pl.DataFrame] = {}
+        self.usage_providers: list[IMatrixUsageProvider] = []
         self._predefined_matrices: dict[str, Callable[[], pl.DataFrame]] = {}
 
     @override

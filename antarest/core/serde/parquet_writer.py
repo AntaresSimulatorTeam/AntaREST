@@ -10,8 +10,8 @@
 #
 # This file is part of the Antares project.
 
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
 
 import pandas as pd
 import polars as pl

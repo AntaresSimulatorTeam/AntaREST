@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional
 
 import polars as pl
 from pydantic import Field
@@ -23,8 +22,8 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 
 
 class DigestMatrixUI(AntaresBaseModel):
-    columns: List[str | List[str]]
-    data: List[List[str]]
+    columns: list[str | list[str]]
+    data: list[list[str]]
     grouped_columns: bool = Field(alias="groupedColumns")
 
 
@@ -82,7 +81,7 @@ class DigestSynthesis(OutputSynthesis):
     @override
     def load(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
@@ -112,7 +111,7 @@ class DigestSynthesis(OutputSynthesis):
 
         Note that rows in the file may have different number of columns.
         """
-        with open(self.config.path, "r") as digest_file:
+        with open(self.config.path) as digest_file:
             # Reads the file and find the maximum number of columns in any row
             data = [row.split("\t") for row in digest_file.read().splitlines()]
             max_cols = max(len(row) for row in data)

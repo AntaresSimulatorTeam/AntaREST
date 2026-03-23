@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, List
+from typing import Any
 
 from pydantic import model_validator
 from typing_extensions import override
@@ -35,7 +35,7 @@ class RemoveMultipleBindingConstraints(ICommand):
     command_name: CommandName = CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS
 
     # Properties of the `REMOVE_MULTIPLE_BINDING_CONSTRAINTS` command:
-    ids: List[str]
+    ids: list[str]
 
     @model_validator(mode="before")
     @classmethod

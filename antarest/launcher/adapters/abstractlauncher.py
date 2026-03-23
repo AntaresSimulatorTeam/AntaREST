@@ -11,9 +11,10 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, List, NamedTuple, Optional, Protocol
+from typing import NamedTuple, Protocol
 
 from antares.study.version import SolverVersion
 
@@ -43,13 +44,13 @@ class SimulationLogs:
 
 
 class ImportCallBack(Protocol):
-    def __call__(self, job_id: str, output_path: Path, additional_logs: SimulationLogs) -> Optional[str]:
+    def __call__(self, job_id: str, output_path: Path, additional_logs: SimulationLogs) -> str | None:
         pass
 
 
 class LauncherCallbacks(NamedTuple):
     # args: job_id, job status, message, output_id
-    update_status: Callable[[str, JobStatus, Optional[str], Optional[str]], None]
+    update_status: Callable[[str, JobStatus, str | None, str | None], None]
     # args: job_id, study_id, study_export_path, launcher_params
     export_study: Callable[[str, str, Path, LauncherParametersDTO], None]
     append_before_log: Callable[[str, str], None]
@@ -76,7 +77,7 @@ class AbstractLauncher(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
+    def get_log(self, job_id: str, log_type: LogType) -> str | None:
         raise NotImplementedError()
 
     @abstractmethod
@@ -88,7 +89,7 @@ class AbstractLauncher(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_solver_versions(self) -> List[str]:
+    def get_solver_versions(self) -> list[str]:
         raise NotImplementedError()
 
     def create_update_log(self, job_id: str) -> Callable[[str], None]:
