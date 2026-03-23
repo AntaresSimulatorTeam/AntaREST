@@ -12,9 +12,7 @@
 
 import datetime
 import os
-import platform
 import re
-import time
 from pathlib import Path, PurePosixPath
 from unittest.mock import Mock
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -392,10 +390,6 @@ def test_copy_study(tmp_path: Path) -> None:
 
 def test_zipped_output(tmp_path: Path) -> None:
     # Setup
-    if not platform.platform().startswith("Windows"):
-        os.environ["TZ"] = "Europe/Paris"  # set new timezone
-        time.tzset()
-
     name = "my-study"
     study_path = tmp_path / name
     study_path.mkdir()
