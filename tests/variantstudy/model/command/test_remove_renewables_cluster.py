@@ -12,11 +12,9 @@
 from antares.study.version import StudyVersion
 
 from antarest.study.business.model.renewable_cluster_model import RenewableClusterCreation, TimeSeriesInterpretation
+from antarest.study.business.model.scenario_builder_model import RulesetUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling
-from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import (
-    parse_rulesets_update,
-)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
@@ -60,7 +58,7 @@ class TestRemoveRenewablesCluster:
 
         # Add scenario builder data
         output = UpdateScenarioBuilder(
-            data=parse_rulesets_update({"Default Ruleset": {f"r,{area_id},0,{cluster_name.lower()}": 1}}),
+            data=RulesetUpdate(renewable={area_id: {cluster_name.lower(): {"0": 1}}}),
             command_context=command_context,
             study_version=study_version,
         ).apply(study_data=empty_study)

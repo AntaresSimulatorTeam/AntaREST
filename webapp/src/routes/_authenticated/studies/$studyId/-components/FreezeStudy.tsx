@@ -25,16 +25,7 @@ import {
   subscribeWsChannels,
   unsubscribeWsChannels,
 } from "@/services/webSocket/ws";
-import {
-  Backdrop,
-  Button,
-  List,
-  ListItem,
-  ListItemText,
-  Paper,
-  Typography,
-  useTheme,
-} from "@mui/material";
+import { Backdrop, Button, List, ListItem, ListItemText, Paper, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useStudy from "../-hooks/useStudy";
@@ -67,7 +58,6 @@ function FreezeStudy() {
   const { t } = useTranslation();
   const hasLoadingTask = !!blockingTasks.find(isLoadingTask);
   const blockingTasksRef = useUpdatedRef(blockingTasks);
-  const theme = useTheme();
 
   // Fetch blocking tasks and subscribe to their WebSocket channels
   useEffect(() => {
@@ -196,7 +186,7 @@ function FreezeStudy() {
   return (
     <Backdrop
       open={blockingTasks.length > 0}
-      sx={{ position: "absolute", zIndex: theme.zIndex.tooltip + 1 }}
+      sx={{ position: "absolute", zIndex: (theme) => theme.zIndex.tooltip + 1 }}
     >
       <Paper
         sx={{

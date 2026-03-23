@@ -17,16 +17,16 @@ import { createLinkId } from "@/services/api/studies/links/utils";
 import { getHighestVersion } from "@/utils/versionUtils";
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
 import type { F } from "ts-toolbelt";
-import { isGroupAdmin, isUserAdmin, nameToId, sortByName } from "../services/utils";
+import { isGroupAdmin, isUserAdmin, nameToId, sortByName, sortByProp } from "../services/utils";
 import type {
   AllClustersAndLinks,
   AreaWithId,
   Cluster,
-  FileStudyTreeConfigDTO,
   GroupDetailsDTO,
   LinkElement,
   StudyMetadata,
   StudySortConfig,
+  StudySynthesis,
   UserDetailsDTO,
 } from "../types/types";
 import { filterStudies } from "../utils/studiesUtils";
@@ -215,8 +215,8 @@ export const getGroup = groupsSelectors.selectById;
 export const getStudySynthesesState = (state: AppState): StudySynthesesState =>
   state.studySyntheses;
 
-const studySynthesesSelectors = createEntityAdapter<FileStudyTreeConfigDTO>({
-  selectId: (studyData) => studyData.study_id,
+const studySynthesesSelectors = createEntityAdapter({
+  selectId: (studyData: StudySynthesis) => studyData.study_id,
 }).getSelectors(getStudySynthesesState);
 
 export const getStudySynthesisById = studySynthesesSelectors.selectEntities;
@@ -243,6 +243,14 @@ export const getAreas = createSelector(getStudySynthesis, (synthesis) => {
     return sortByName(areas);
   }
 
+  return [];
+});
+
+export const getDistricts = createSelector(getStudySynthesis, (synthesis) => {
+  if (synthesis) {
+    const districts = Object.values(synthesis.districts);
+    return sortByName(districts);
+  }
   return [];
 });
 
@@ -298,7 +306,7 @@ export const getLinks = createSelector(getStudySynthesis, (synthesis) => {
       });
     });
   }
-  return links;
+  return sortByProp("label", links);
 });
 
 export const getCurrentLinkId = (state: AppState): StudySynthesesState["currentLink"] => {
@@ -386,8 +394,8 @@ export const getStudyOutput = createSelector(
 
 export const getStudyMapsState = (state: AppState): StudyMapsState => state.studyMaps;
 
-const studyMapsSelectors = createEntityAdapter<StudyMap>({
-  selectId: (studyMap) => studyMap.studyId,
+const studyMapsSelectors = createEntityAdapter({
+  selectId: (studyMap: StudyMap) => studyMap.studyId,
 }).getSelectors(getStudyMapsState);
 
 export const getStudyMapsById = studyMapsSelectors.selectEntities;

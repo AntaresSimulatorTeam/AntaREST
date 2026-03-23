@@ -368,9 +368,9 @@ class MatrixService(ISimpleMatrixService):
                 else:
                     with py7zr.SevenZipFile(buffer, "r") as szf:
                         for info in szf.list():
-                            if info.is_directory or info.filename in EXCLUDED_FILES:  # type:ignore
+                            if info.is_directory or info.filename in EXCLUDED_FILES:
                                 continue
-                            file_content = next(iter(szf.read(info.filename).values()))
+                            file_content = next(iter(szf.read([info.filename]).values()))
                             matrix_id = self._file_importation(file_content.read(), is_json=is_json)
                             matrix_info.append(MatrixInfoDTO(id=matrix_id, name=info.filename))
                             szf.reset()
@@ -593,7 +593,7 @@ class MatrixService(ISimpleMatrixService):
                     # noinspection PyTypeChecker
                     np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")
             archive_dir(Path(tmpdir), export_path, archive_format=ArchiveFormat.ZIP)
-            stopwatch.log_elapsed(lambda x: logger.info(f"Matrix dataset exported (zipped mode) in {x}s"))
+            logger.info(f"Matrix dataset exported (zipped mode) in {stopwatch}s")
         return str(export_path)
 
     def download_dataset(self, dataset_id: str) -> FileDownloadTaskDTO:
@@ -696,7 +696,15 @@ class MatrixService(ISimpleMatrixService):
     @override
     def synchronize_matrix_store(self, dry_run: bool) -> dict[str, MatrixMismatchDTO]:
         db_matrices = {m.id for m in self.repo.get_matrices()}
-        fs_matrices = self.matrix_content_repository.get_all_matrices_on_the_filesystem()
+        fs_matrices, invalid_files = self.matrix_content_repository.get_all_matrices_on_the_filesystem()
+
+        for invalid_file in invalid_files:
+            if dry_run:
+                logger.warning(f"[dry-run] Would remove invalid matrix file: {invalid_file.name}")
+            else:
+                logger.warning(f"Removing invalid matrix file: {invalid_file.name}")
+                invalid_file.unlink(missing_ok=True)
+
         only_fs_matrices = fs_matrices - db_matrices
         only_db_matrices = db_matrices - fs_matrices
 

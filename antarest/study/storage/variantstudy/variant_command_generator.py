@@ -36,8 +36,8 @@ class CmdNotifier:
         self.study_id = study_id
         self.total_count = total_count
 
-    def __call__(self, x: float) -> None:
-        logger.info(f"Command {self.index}/{self.total_count} [{self.study_id}] applied in {x}s")
+    def log(self, elapsed: float) -> None:
+        logger.info(f"Command {self.index}/{self.total_count} [{self.study_id}] applied in {elapsed}s")
 
 
 def _generate(
@@ -58,8 +58,6 @@ def _generate(
 
     # Prepare the stopwatch
     cmd_notifier = CmdNotifier(metadata.id, len(all_commands))
-    stopwatch.reset_current()
-
     # Store all the outputs
     for index, cmd in enumerate(all_commands, 1):
         try:
@@ -79,7 +77,7 @@ def _generate(
         results.details.append(detail)
 
         cmd_notifier.index = index
-        stopwatch.log_elapsed(cmd_notifier)
+        cmd_notifier.log(stopwatch.lap())
 
         # stop variant generation as soon as a command fails
         if not output.status:
@@ -92,13 +90,8 @@ def _generate(
 
     results.success = all(detail["status"] for detail in results.details)  # type: ignore
 
-    data_type = isinstance(data, FileStudy)
-    stopwatch.log_elapsed(
-        lambda x: logger.info(
-            f"Variant generation done in {x}s" if data_type else f"Variant light generation done in {x}s"
-        ),
-        since_start=True,
-    )
+    generation_type = "Variant generation" if isinstance(data, FileStudy) else "Variant light generation"
+    logger.info(f"{generation_type} done in {stopwatch.since_start}s")
     return results
 
 

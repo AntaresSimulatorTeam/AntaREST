@@ -17,7 +17,7 @@ import uuid
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path, PurePath, PurePosixPath
-from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, TypeAlias
+from typing import TYPE_CHECKING, Annotated, Any, List, Optional, TypeAlias
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -553,31 +553,56 @@ class StudyMetadataPatchDTO(AntaresBaseModel):
         return tags
 
 
+class StudyRepairType(StrEnum):
+    ARCHIVE_CONSISTENCY = "archive_consistency"
+
+
+class StudyRepairSeverity(StrEnum):
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
+
+
+class StudyRepairRequest(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    repairs: list[StudyRepairType] = Field(default_factory=lambda: [StudyRepairType.ARCHIVE_CONSISTENCY])
+    dry_run: bool = True
+
+
+class StudyRepairIssue(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    code: str
+    severity: StudyRepairSeverity
+    message: str
+    details: dict[str, Any] = Field(default_factory=dict)
+
+
+class StudyRepairAction(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    code: str
+    description: str
+    details: dict[str, Any] = Field(default_factory=dict)
+
+
+class StudyRepairReport(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    study_id: str
+    dry_run: bool
+    issues: list[StudyRepairIssue] = Field(default_factory=list)
+    proposed_actions: list[StudyRepairAction] = Field(default_factory=list)
+    applied_actions: list[StudyRepairAction] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+
 class DeleteManyStudies(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
-    study_ids: List[str] = Field(..., description="List of study UUIDs to delete")
+    study_ids: list[str] = Field(..., description="List of study UUIDs to delete")
     with_variants: bool = Field(default=False, description="Whether to delete variant studies as well")
-
-
-class StudySimSettingsDTO(AntaresBaseModel):
-    general: Dict[str, Any]
-    input: Dict[str, Any]
-    output: Dict[str, Any]
-    optimization: Dict[str, Any]
-    otherPreferences: Dict[str, Any]
-    advancedParameters: Dict[str, Any]
-    seedsMersenneTwister: Dict[str, Any]
-    playlist: Optional[List[int]] = None
-
-
-class StudySimResultDTO(AntaresBaseModel):
-    name: str
-    type: str
-    settings: StudySimSettingsDTO
-    completionDate: str
-    status: str
-    archived: bool
 
 
 class StudyDownloadType(enum.StrEnum):

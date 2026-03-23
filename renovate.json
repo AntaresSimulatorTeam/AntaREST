@@ -1,0 +1,59 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits"
+  ],
+  "dependencyDashboard": true,
+  "labels": ["dependencies"],
+  "baseBranches": ["dev"],
+  "enabledManagers": ["pep621", "github-actions"],
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "minimumReleaseAge": "5 days",
+  "schedule": ["after 9am and before 6pm every weekday"],
+  "timezone": "Europe/Paris",
+  "commitMessagePrefix": "chore(deps):",
+  "commitMessageAction": "update",
+  "packageRules": [
+    {
+      "description": "Group all Python minor/patch updates in one PR",
+      "matchManagers": ["pep621"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "python dependencies (minor/patch)",
+      "labels": ["dependencies", "minor or patch"]
+    },
+    {
+      "description": "Major updates: one PR per package, require dashboard approval",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true,
+      "minimumReleaseAge": "30 days",
+      "labels": ["dependencies", "major"]
+    },
+    {
+      "description": "Group GitHub Actions minor/patch updates",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "github-actions (minor/patch)"
+    },
+    {
+      "description": "Security updates bypass schedule and release age",
+      "matchCategories": ["security"],
+      "schedule": ["at any time"],
+      "minimumReleaseAge": "0 days",
+      "prPriority": 10,
+      "labels": ["dependencies", "security"]
+    },
+    {
+      "description": "Internal Antares packages: require dashboard approval",
+      "matchPackagePrefixes": ["Antares-", "antares-"],
+      "dependencyDashboardApproval": true,
+      "labels": ["dependencies", "internal"]
+    },
+    {
+      "description": "Pin Python and Node versions",
+      "matchDepNames": ["python", "node"],
+      "enabled": false
+    }
+  ]
+}

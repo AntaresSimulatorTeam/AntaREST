@@ -12,20 +12,26 @@
 import base64
 import collections
 import contextlib
+import enum
 import http
 import io
 import logging
 import os
 import shutil
+import tempfile
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path, PurePosixPath
-from typing import Any, BinaryIO, Callable, Dict, Iterable, List, Optional, Sequence, Type, cast
+from typing import Any, BinaryIO, Callable, Dict, Iterable, List, Literal, Optional, Sequence, Type, TypeAlias, cast
 from uuid import uuid4
 
 import pandas as pd
+import polars as pl
 from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from markupsafe import escape
+from sqlalchemy import inspect as sa_inspect
 from typing_extensions import override
 
 from antarest.core.config import Config
@@ -33,7 +39,6 @@ from antarest.core.exceptions import (
     BadEditInstructionException,
     ChildNotFoundError,
     CommandApplicationError,
-    IncorrectArgumentsForCopy,
     IncorrectPathError,
     MatrixImportFailed,
     NotAManagedStudyException,
@@ -57,7 +62,7 @@ from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
-from antarest.core.utils.archives import ArchiveFormat, is_archive_format
+from antarest.core.utils.archives import ArchiveFormat, archive_dir, is_archive_format
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.launcher.repository import JobResultRepository
@@ -65,6 +70,7 @@ from antarest.login.model import Group
 from antarest.login.service import LoginService
 from antarest.login.utils import get_current_user, get_user_id, get_user_impersonator
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
+from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
 from antarest.study.business.allocation_management import AllocationManager
@@ -114,6 +120,7 @@ from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.directory_service import DirectoryService
+from antarest.study.dtos import StudySynthesis
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -127,6 +134,12 @@ from antarest.study.model import (
     StudyFolder,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
+    StudyRepairAction,
+    StudyRepairIssue,
+    StudyRepairReport,
+    StudyRepairRequest,
+    StudyRepairSeverity,
+    StudyRepairType,
 )
 from antarest.study.repository import (
     StudyFilter,
@@ -144,11 +157,13 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import Matri
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.synthesis import OutputSynthesis
+from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
 from antarest.study.storage.utils import (
     assert_permission,
+    assert_permission_on_studies,
     create_new_empty_study,
     get_start_date,
     is_managed,
@@ -180,6 +195,15 @@ logger = logging.getLogger(__name__)
 
 MAX_MISSING_STUDY_TIMEOUT = 2  # days
 MAX_BATCH_DELETE_SIZE = 100
+
+
+def _get_matrix_from_path(study_interface: StudyInterface, matrix_path: Path) -> pl.DataFrame:
+    """We give a ReadOnlyStudyDao instead of a StudyDao, but it does not matter as we only use the getter methods."""
+    mapper = RawPathToMatrixMapper(study_interface.get_study_dao())  # type: ignore
+    return mapper.get_matrix_from_path(matrix_path)
+
+
+OutputSelection: TypeAlias = Literal["all"] | list[str]
 
 
 def get_disk_usage(path: str | Path) -> int:
@@ -219,6 +243,50 @@ def assert_raw(study: Study) -> RawStudy:
     if not isinstance(study, RawStudy):
         raise TypeError("Study must be a RawStudy")
     return study
+
+
+def clone_raw_study(study: RawStudy) -> RawStudy:
+    """
+    Build a transient copy of a raw study that can safely be used outside a DB session.
+    """
+    attrs = {a.key: getattr(study, a.key) for a in sa_inspect(study).mapper.column_attrs}
+    return RawStudy(**attrs)
+
+
+class ArchiveConsistencyState(enum.StrEnum):
+    CONSISTENT_ARCHIVED = "consistent_archived"
+    CONSISTENT_UNARCHIVED = "consistent_unarchived"
+    DB_UNARCHIVED_ONLY_ARCHIVE = "db_unarchived_only_archive"
+    DB_ARCHIVED_ONLY_STUDY = "db_archived_only_study"
+    AMBIGUOUS = "ambiguous"
+    MISSING_DATA = "missing_data"
+
+
+@dataclass(frozen=True)
+class ArchiveConsistencyRepairSpec:
+    action_code: str
+    action_description: str
+    target_archived: bool
+    issue_message: str
+
+
+def get_archive_consistency_state(
+    *,
+    archived_in_db: bool,
+    archive_exists: bool,
+    study_exists: bool,
+) -> ArchiveConsistencyState:
+    if archived_in_db and archive_exists and not study_exists:
+        return ArchiveConsistencyState.CONSISTENT_ARCHIVED
+    if not archived_in_db and not archive_exists and study_exists:
+        return ArchiveConsistencyState.CONSISTENT_UNARCHIVED
+    if not archived_in_db and archive_exists and not study_exists:
+        return ArchiveConsistencyState.DB_UNARCHIVED_ONLY_ARCHIVE
+    if archived_in_db and not archive_exists and study_exists:
+        return ArchiveConsistencyState.DB_ARCHIVED_ONLY_STUDY
+    if archive_exists and study_exists:
+        return ArchiveConsistencyState.AMBIGUOUS
+    return ArchiveConsistencyState.MISSING_DATA
 
 
 class TaskProgressRecorder(ICommandListener):
@@ -417,9 +485,11 @@ class RawStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        if self._study.storage_mode == StorageMode.DATABASE:
-            return DatabaseStudyDao(self._study.id, db.session, self._matrix_service).read_only()
         command_context = self._variant_study_service.command_factory.command_context
+        if self._study.storage_mode == StorageMode.DATABASE:
+            return DatabaseStudyDao(
+                self._study.id, db.session, self._matrix_service, command_context.generator_matrix_constants
+            ).read_only()
         return FileStudyTreeDao(
             self.get_files(), command_context.generator_matrix_constants, command_context.blob_service
         ).read_only()
@@ -429,12 +499,14 @@ class RawStudyInterface(StudyInterface):
         study = self._study
         file_study: Optional[FileStudy] = None
 
+        command_context = self._variant_study_service.command_factory.command_context
         # Build DAO based on storage mode
         if study.storage_mode == StorageMode.DATABASE:
-            dao: StudyDao = DatabaseStudyDao(study.id, db.session, self._matrix_service)
+            dao: StudyDao = DatabaseStudyDao(
+                study.id, db.session, self._matrix_service, command_context.generator_matrix_constants
+            )
         else:
             file_study = self.get_files()
-            command_context = self._variant_study_service.command_factory.command_context
             dao = FileStudyTreeDao(
                 file_study,
                 command_context.generator_matrix_constants,
@@ -516,6 +588,42 @@ class VariantStudyInterface(StudyInterface):
         self._variant_service.append_commands(self._study.id, transform_command_to_dto(commands, force_aggregate=True))
 
 
+class IOutputsAccess(ABC):
+    """
+    Access to outputs data.
+
+    The abstraction is quite leaky: the behaviour for outputs stored in-study is kept
+    unchanched for backward compat, and stays mainly implemented in raw study service.
+
+    Lightweight interface to the output service, with only a few methods that are legitimate to
+    use by studies being an aggregate of study input data and output data.
+    """
+
+    @abstractmethod
+    def list_outputs(self, study_id: str) -> list[OutputMetadata]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_outputs_details(self, study_id: str) -> dict[str, OutputDetails]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def delete_output(self, study_id: str, output_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def archive_output(self, study_id: str, output_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def write_output_to_dir(self, study_id: str, output_id: str, parent_dir: Path) -> None:
+        raise NotImplementedError()
+
+
 class StudyService:
     """
     Storage module facade service to handle studies management.
@@ -577,12 +685,25 @@ class StudyService:
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: List[Callable[[str], None]] = []
+        self._outputs_access: IOutputsAccess | None = None
         matrix_service = command_context.matrix_service
         StudyDatabaseMatrixUsageProvider(matrix_service)
         self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
-            StorageMode.DATABASE: DatabaseStudyDaoFactory(matrix_service),
+            StorageMode.DATABASE: DatabaseStudyDaoFactory(matrix_service, command_context.generator_matrix_constants),
             StorageMode.FILESYSTEM: FileStudyDaoFactory(command_context, raw_study_service.study_factory),
         }
+
+    def register_output_access(self, output_access: IOutputsAccess) -> None:
+        """
+        Study and output features have some dependencies on each other, therefore we need to
+        register one of them after construction.
+        """
+        self._outputs_access = output_access
+
+    def _get_outputs_access(self) -> IOutputsAccess:
+        if not self._outputs_access:
+            raise RuntimeError("Access to outputs from study service is not registered")
+        return self._outputs_access
 
     def add_on_deletion_callback(self, callback: Callable[[str], None]) -> None:
         self.on_deletion_callbacks.append(callback)
@@ -626,66 +747,6 @@ class StudyService:
         output = self.storage_service.get_storage(study).get_file(study, url)
 
         return output
-
-    def get_logs(self, study_id: str, output_id: str, job_id: str, err_log: bool) -> Optional[str]:
-        study = self.get_study(study_id)
-        assert_permission(study, StudyPermissionType.READ)
-        file_study = self.get_file_study(study)
-        log_locations = {
-            False: [
-                ["output", "logs", f"{job_id}-out.log"],
-                ["output", "logs", f"{output_id}-out.log"],
-                ["output", output_id, "antares-out"],
-                ["output", output_id, "simulation"],
-            ],
-            True: [
-                ["output", "logs", f"{job_id}-err.log"],
-                ["output", "logs", f"{output_id}-err.log"],
-                ["output", output_id, "antares-err"],
-            ],
-        }
-        empty_log = False
-        for log_location in log_locations[err_log]:
-            try:
-                # Assume UTF-8 but ignore errors, it's difficult to be sure of log encoding
-                # especially because of windows error messages
-                log = cast(
-                    bytes,
-                    file_study.tree.get(log_location, depth=1, formatted=True),
-                ).decode(encoding="utf-8", errors="replace")
-                # when missing file, RawFileNode return empty bytes
-                if log:
-                    return log
-                else:
-                    empty_log = True
-            except ChildNotFoundError:
-                pass
-            except KeyError:
-                pass
-        if empty_log:
-            return ""
-        raise ChildNotFoundError(f"Logs for {output_id} of study {study_id} were not found")
-
-    def save_logs(
-        self,
-        study_id: str,
-        job_id: str,
-        log_suffix: str,
-        log_data: str,
-    ) -> None:
-        logger.info(f"Saving logs for job {job_id} of study {study_id}")
-        stopwatch = StopWatch()
-        study = self.get_study(study_id)
-        file_study = self.get_file_study(study)
-        file_study.tree.save(
-            bytes(log_data, encoding="utf-8"),
-            [
-                "output",
-                "logs",
-                f"{job_id}-{log_suffix}",
-            ],
-        )
-        stopwatch.log_elapsed(lambda d: logger.info(f"Saved logs for job {job_id} in {d}s"))
 
     def get_comments(self, study_id: str) -> str:
         """
@@ -990,7 +1051,7 @@ class StudyService:
                 return curr_user.to_dto().name
         return "Unknown"
 
-    def get_study_synthesis(self, study_id: str) -> FileStudyTreeConfigDTO:
+    def get_study_synthesis(self, study_id: str) -> StudySynthesis:
         """
         Get the synthesis of a study.
 
@@ -1003,8 +1064,9 @@ class StudyService:
         assert_permission(study, StudyPermissionType.READ)
         study.last_access = current_time()
         self.repository.save(study)
-        study_storage_service = self.storage_service.get_storage(study)
-        return study_storage_service.get_synthesis(study)
+        input_synthesis = self.storage_service.get_storage(study).get_synthesis(study)
+        outputs = self._get_outputs_access().get_outputs_details(study.id)
+        return StudySynthesis.aggregate(input_synthesis, outputs)
 
     def get_input_matrix_startdate(self, study_id: str, path: Optional[str]) -> MatrixIndex:
         study = self.get_study(study_id)
@@ -1190,21 +1252,12 @@ class StudyService:
         group_ids: List[str],
         use_task: bool,
         destination_folder: PurePosixPath,
-        output_ids: List[str],
-        with_outputs: bool | None,
+        outputs_selection: OutputSelection,
     ) -> str:
         """
         Create a new study by copying a reference study.
 
         This method is responsible for duplicating a study, optionally including its outputs.
-
-        Output copy behavior:
-            - If `with_outputs` is True and `output_ids` are specified: only the specified outputs are copied.
-            - If `with_outputs` is True and `output_ids` is empty: all outputs are copied.
-            - If `with_outputs` is False and `output_ids` are specified: an error is raised (incoherent configuration).
-            - If `with_outputs` is False: no outputs are copied
-            - If `with_outputs` is None and `output_ids` are specified: outputs will be copied; behaves like `with_outputs=True`.
-            - If `with_outputs` is None and `output_ids` is empty: no outputs are copied.
 
         Args:
             src_uuid: The source study that you want to copy.
@@ -1212,14 +1265,10 @@ class StudyService:
             group_ids: A list of groups to assign to the destination study.
             use_task: indicate if the task job service should be used
             destination_folder: The path where the destination study should be created. If not provided, the default path will be used.
-            output_ids: A list of output names that you want to include in the destination study.
-            with_outputs: Indicates whether to copy the outputs as well.
-
+            outputs_selection: selection of outputs to copy
         Returns:
             The newly created study.
         """
-        if output_ids and with_outputs is False:
-            raise IncorrectArgumentsForCopy("output_ids can only be used with with_outputs=True")
 
         src_study = self.get_study(src_uuid)
         assert_permission(src_study, StudyPermissionType.READ)
@@ -1234,22 +1283,28 @@ class StudyService:
                 dest_study_name,
                 group_ids,
                 destination_folder,
-                output_ids,
-                with_outputs,
             )
 
             study.owner = owner
             study.groups = groups
+            study.directory_id = self.directory_service.get_directory_by_path(destination_folder.as_posix())
 
             self._save_study(study)
             self.storage_service.raw_study_service.normalize_study(study)
 
+            match outputs_selection:
+                case "all":
+                    output_names = [o.id for o in self._get_outputs_access().list_outputs(origin_study.id)]
+                case selected_outputs:
+                    output_names = selected_outputs
+
+            for output_name in output_names:
+                self._get_outputs_access().copy_output(origin_study.id, study.id, output_name)
+
             # Copying all jobs associated with the study
-            jobs = self.job_result_repository.find_by_study_and_output_ids(origin_study.id, output_ids)
-
-            new_jobs = [job.copy_jobs_for_study(study.id) for job in jobs]
-
-            if new_jobs:
+            if output_names:
+                jobs = self.job_result_repository.find_by_study_and_output_ids(origin_study.id, output_names)
+                new_jobs = [job.copy_jobs_for_study(study.id) for job in jobs]
                 self.job_result_repository.save_all(new_jobs)
 
             self.event_bus.push(
@@ -1289,19 +1344,26 @@ class StudyService:
 
     def move_study(self, study_id: str, folder_dest: str) -> None:
         study = self.get_study(study_id)
-        assert_permission(study, StudyPermissionType.WRITE)
         if not is_managed(study):
             raise NotAManagedStudyException(study_id)
+        if isinstance(study, VariantStudy):
+            raise UnsupportedOperationOnThisStudyType(study_id, "move", "raw")
 
-        if folder_dest:
-            new_folder = folder_dest.rstrip("/") + f"/{study.id}"
-            directory_id = self.directory_service.get_directory_by_path(folder_dest)
-            study.directory_id = directory_id
-        else:
-            new_folder = None
-            study.directory_id = None
+        studies_to_move = [study, *self._get_variant_descendants(study.id)]
+        assert_permission_on_studies(studies_to_move, StudyPermissionType.WRITE)
 
-        study.folder = new_folder
+        directory_id = self.directory_service.get_directory_by_path(folder_dest) if folder_dest else None
+
+        for study_to_move in studies_to_move:
+            self._apply_study_move(study_to_move, folder_dest, directory_id)
+
+    def _get_variant_descendants(self, study_id: str) -> List[VariantStudy]:
+        return self.storage_service.variant_study_service.repository.get_all_descendants(study_id)
+
+    def _apply_study_move(self, study: Study, folder_dest: str, directory_id: str | None) -> None:
+        study.folder = folder_dest.rstrip("/") + f"/{study.id}" if folder_dest else None
+        study.directory_id = directory_id
+
         self.repository.save(study)
         self.event_bus.push(
             Event(
@@ -1341,9 +1403,7 @@ class StudyService:
         def export_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 target_study = self.get_study(uuid)
-                self.storage_service.get_storage(target_study).export_study(
-                    target_study, export_path, outputs, archive_format
-                )
+                self._do_export_study(target_study, export_path, outputs, archive_format)
                 self.file_transfer_manager.set_ready(export_id)
                 return TaskResult(success=True, message=f"Study {uuid} successfully exported")
             except Exception as e:
@@ -1361,6 +1421,35 @@ class StudyService:
 
         return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
 
+    def _do_export_study(self, metadata: Study, target: Path, outputs: bool, archive_format: ArchiveFormat) -> Path:
+        """
+        Export and compress the study to an archive file.
+
+        Args:
+            metadata: Study metadata object.
+            target: Path of the file to export to.
+            outputs: Flag to indicate whether to include the output folder inside the exportation.
+            archive_format:
+
+        Returns:
+            Path to the archive file containing the study files compressed inside.
+        """
+        path_study = Path(metadata.path)
+        with tempfile.TemporaryDirectory(dir=self.config.storage.tmp_dir) as tmpdir:
+            logger.info(f"Exporting study {metadata.id} to temporary path {tmpdir}")
+            tmp_study_path = Path(tmpdir) / "tmp_copy"
+            self.storage_service.get_storage(metadata).export_study_flat(metadata, tmp_study_path)
+            if outputs:
+                outputs_access = self._get_outputs_access()
+                for output_metadata in outputs_access.list_outputs(metadata.id):
+                    self._get_outputs_access().write_output_to_dir(
+                        metadata.id, output_metadata.id, tmp_study_path / "output"
+                    )
+            stopwatch = StopWatch()
+            archive_dir(tmp_study_path, target, archive_format=archive_format)
+            logger.info(f"Study {path_study} exported ({target.suffix} format) in {stopwatch}s")
+        return target
+
     def export_study_flat(
         self,
         uuid: str,
@@ -1371,9 +1460,10 @@ class StudyService:
         study = self.get_study(uuid)
         self.assert_study_unarchived(study)
 
-        return self.storage_service.get_storage(study).export_study_flat(
-            study, dest, len(output_list or []) > 0, output_list
-        )
+        self.storage_service.get_storage(study).export_study_flat(study, dest)
+        if output_list:
+            for output_id in output_list:
+                self._get_outputs_access().write_output_to_dir(study.id, output_id, dest / "output")
 
     @staticmethod
     def _prefetch_study_info(study: Study) -> Any:
@@ -1476,7 +1566,6 @@ class StudyService:
         for study in studies_to_check:
             if study.id in studies_to_delete:
                 continue
-
             self._validate_children_deletion(study, with_variants, variant_service)
 
             if variant_service.has_children(study):
@@ -1497,6 +1586,9 @@ class StudyService:
                 studies_to_delete[study.id] = study
 
         self._await_generation_tasks(studies_to_delete.values())
+        for study in studies_to_delete.values():
+            for output in self._get_outputs_access().list_outputs(study.id):
+                self._get_outputs_access().delete_output(study.id, output.id)
         self.repository.delete(*studies_to_delete.keys())
 
         for study in studies_to_delete.values():
@@ -1691,7 +1783,16 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
 
-        self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
+        # We need to handle matrices differently if our study is stored in DB
+        if study.storage_mode == StorageMode.DATABASE:
+            context = self.storage_service.variant_study_service.command_factory.command_context
+            command = ReplaceMatrix(
+                target=url, matrix=new, command_context=context, study_version=StudyVersion.parse(study.version)
+            )
+            self.get_study_interface(study).add_commands([command])
+
+        else:
+            self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
 
         self.event_bus.push(
             Event(
@@ -2016,18 +2117,28 @@ class StudyService:
             raise TaskAlreadyRunning()
 
         def archive_task(notifier: ITaskNotifier) -> TaskResult:
-            study_to_archive = self.get_study(uuid)
-            study_to_archive = assert_raw(study_to_archive)
+            with db():
+                study_to_archive = clone_raw_study(assert_raw(self.get_study(uuid)))
+
+            for output in self._get_outputs_access().list_outputs(study_to_archive.id):
+                if not output.in_study and not output.archived:
+                    self._get_outputs_access().archive_output(study_to_archive.id, output.id)
+
             self.storage_service.raw_study_service.archive(study_to_archive)
-            study_to_archive.archived = True
-            self.repository.save(study_to_archive)
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_EDITED,
-                    payload=study_to_archive.to_json_summary(),
-                    permissions=PermissionInfo.from_study(study_to_archive),
+
+            with db():
+                study_db = self.repository.get(uuid)
+                if study_db is None:
+                    raise StudyNotFoundError(uuid)
+                study_db.archived = True
+                self.repository.save(study_db)
+                self.event_bus.push(
+                    Event(
+                        type=EventType.STUDY_EDITED,
+                        payload=study_db.to_json_summary(),
+                        permissions=PermissionInfo.from_study(study_db),
+                    )
                 )
-            )
             return TaskResult(success=True, message="ok")
 
         return self.task_service.add_task(
@@ -2059,21 +2170,29 @@ class StudyService:
             raise UnsupportedOperationOnThisStudyType(study.id, "unarchive", "raw")
 
         def unarchive_task(notifier: ITaskNotifier) -> TaskResult:
-            study_to_archive = self.get_study(uuid)
-            study_to_archive = assert_raw(study_to_archive)
-            self.storage_service.raw_study_service.unarchive(study_to_archive)
-            study_to_archive.archived = False
+            with db():
+                study_to_unarchive = clone_raw_study(assert_raw(self.get_study(uuid)))
 
-            os.unlink(self.storage_service.raw_study_service.find_archive_path(study_to_archive))
-            self.repository.save(study_to_archive)
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_EDITED,
-                    payload=study_to_archive.to_json_summary(),
-                    permissions=PermissionInfo.from_study(study_to_archive),
+            archive_path = self.storage_service.raw_study_service.find_archive_path(study_to_unarchive)
+
+            self.storage_service.raw_study_service.unarchive(study_to_unarchive)
+
+            with db():
+                study_db = self.repository.get(uuid)
+                if study_db is None:
+                    raise StudyNotFoundError(uuid)
+                study_db.archived = False
+                self.repository.save(study_db)
+                self.event_bus.push(
+                    Event(
+                        type=EventType.STUDY_EDITED,
+                        payload=study_db.to_json_summary(),
+                        permissions=PermissionInfo.from_study(study_db),
+                    )
                 )
-            )
-            remove_from_cache(cache=self.cache_service, root_id=uuid)
+                remove_from_cache(cache=self.cache_service, root_id=uuid)
+
+            os.unlink(archive_path)
             return TaskResult(success=True, message="ok")
 
         return self.task_service.add_task(
@@ -2084,6 +2203,179 @@ class StudyService:
             progress=None,
             custom_event_messages=None,
         )
+
+    def repair_study(self, uuid: str, repair_request: StudyRepairRequest) -> str:
+        study = self.get_study(uuid)
+        if StudyRepairType.ARCHIVE_CONSISTENCY in repair_request.repairs and not isinstance(study, RawStudy):
+            raise UnsupportedOperationOnThisStudyType(study.id, "repair", "raw")
+
+        def repair_task(notifier: ITaskNotifier) -> TaskResult:
+            report = self._run_study_repairs(uuid, repair_request, notifier)
+            message = (
+                f"Study repair completed with {len(report.issues)} issue(s) "
+                f"and {len(report.applied_actions)} action(s) applied"
+            )
+            return TaskResult(success=True, message=message, return_value=report.model_dump_json())
+
+        return self.task_service.add_task(
+            repair_task,
+            f"Repair study {study.name} ({uuid})",
+            task_type=TaskType.REPAIR_STUDY,
+            ref_id=uuid,
+            progress=None,
+            custom_event_messages=None,
+        )
+
+    def _run_study_repairs(
+        self,
+        uuid: str,
+        repair_request: StudyRepairRequest,
+        notifier: ITaskNotifier,
+    ) -> StudyRepairReport:
+        report = StudyRepairReport(study_id=uuid, dry_run=repair_request.dry_run)
+
+        if StudyRepairType.ARCHIVE_CONSISTENCY in repair_request.repairs:
+            self._repair_archive_consistency(uuid, repair_request.dry_run, report, notifier)
+
+        return report
+
+    def _repair_archive_consistency(
+        self,
+        uuid: str,
+        dry_run: bool,
+        report: StudyRepairReport,
+        notifier: ITaskNotifier,
+    ) -> None:
+        logger.info("Checking archive consistency for study '%s'", uuid)
+        notifier.notify_message(f"Checking archive consistency for study '{uuid}'")
+
+        with db():
+            study = clone_raw_study(assert_raw(self.get_study(uuid)))
+
+        archive_exists = False
+        with contextlib.suppress(FileNotFoundError):
+            archive_exists = self.storage_service.raw_study_service.find_archive_path(study).is_file()
+
+        study_exists = Path(study.path).joinpath("study.antares").is_file()
+        state = get_archive_consistency_state(
+            archived_in_db=study.archived,
+            archive_exists=archive_exists,
+            study_exists=study_exists,
+        )
+        logger.info(
+            "Archive consistency state for study '%s': %s (archive_exists=%s, study_exists=%s, archived_in_db=%s)",
+            uuid,
+            state,
+            archive_exists,
+            study_exists,
+            study.archived,
+        )
+
+        if state in {
+            ArchiveConsistencyState.CONSISTENT_ARCHIVED,
+            ArchiveConsistencyState.CONSISTENT_UNARCHIVED,
+        }:
+            return
+
+        repair_specs = {
+            ArchiveConsistencyState.DB_UNARCHIVED_ONLY_ARCHIVE: ArchiveConsistencyRepairSpec(
+                action_code="set_archived_true",
+                action_description="Mark the study as archived in database",
+                target_archived=True,
+                issue_message="Database says the study is unarchived but only the archive exists on disk",
+            ),
+            ArchiveConsistencyState.DB_ARCHIVED_ONLY_STUDY: ArchiveConsistencyRepairSpec(
+                action_code="set_archived_false",
+                action_description="Mark the study as unarchived in database",
+                target_archived=False,
+                issue_message="Database says the study is archived but only the study directory exists on disk",
+            ),
+        }
+        repair_spec = repair_specs.get(state)
+        if repair_spec is not None:
+            self._apply_archive_consistency_repair(
+                uuid=uuid,
+                dry_run=dry_run,
+                report=report,
+                notifier=notifier,
+                repair_spec=repair_spec,
+            )
+            return
+
+        if state == ArchiveConsistencyState.AMBIGUOUS:
+            report.issues.append(
+                StudyRepairIssue(
+                    code="archive_consistency_ambiguous",
+                    severity=StudyRepairSeverity.ERROR,
+                    message="Both the archive and the study directory exist on disk",
+                )
+            )
+            report.warnings.append("Ambiguous state: no automatic repair was applied")
+            return
+
+        report.issues.append(
+            StudyRepairIssue(
+                code="archive_consistency_missing_data",
+                severity=StudyRepairSeverity.ERROR,
+                message="Neither the archive nor the study directory exist on disk",
+            )
+        )
+        report.warnings.append("Irrecoverable automatically: no automatic repair was applied")
+
+    def _apply_archive_consistency_repair(
+        self,
+        uuid: str,
+        dry_run: bool,
+        report: StudyRepairReport,
+        notifier: ITaskNotifier,
+        repair_spec: ArchiveConsistencyRepairSpec,
+    ) -> None:
+        proposed_action = StudyRepairAction(
+            code=repair_spec.action_code,
+            description=repair_spec.action_description,
+            details={"archived": repair_spec.target_archived},
+        )
+        report.issues.append(
+            StudyRepairIssue(
+                code="archive_consistency_db_fs_mismatch",
+                severity=StudyRepairSeverity.ERROR,
+                message=repair_spec.issue_message,
+            )
+        )
+        report.proposed_actions.append(proposed_action)
+        if dry_run:
+            logger.info(
+                "Dry-run: would apply action '%s' on study '%s' (archived=%s)",
+                repair_spec.action_code,
+                uuid,
+                repair_spec.target_archived,
+            )
+        else:
+            logger.info(
+                "Applying action '%s' on study '%s' (archived=%s)",
+                repair_spec.action_code,
+                uuid,
+                repair_spec.target_archived,
+            )
+            self._set_study_archived_state(uuid, archived=repair_spec.target_archived)
+            report.applied_actions.append(
+                StudyRepairAction(
+                    code=repair_spec.action_code,
+                    description=repair_spec.action_description,
+                    details={"archived": repair_spec.target_archived},
+                )
+            )
+            notifier.notify_message(f"Marked study '{uuid}' as archived={repair_spec.target_archived} in database")
+
+    def _set_study_archived_state(self, uuid: str, archived: bool) -> None:
+        with db():
+            study_db = self.repository.get(uuid)
+            if study_db is None:
+                raise StudyNotFoundError(uuid)
+            raw_study_db = assert_raw(study_db)
+            raw_study_db.archived = archived
+            self.repository.save(raw_study_db)
+            remove_from_cache(cache=self.cache_service, root_id=uuid)
 
     def _validate_and_prepare_permissions(self, group_ids: Sequence[str]) -> tuple[Any, List[Group]]:
         """
@@ -2409,17 +2701,22 @@ class StudyService:
                 hydro_matrix = self.correlation_manager.get_correlation_matrix(study_interface)
             return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
 
-        # Checks that the provided path refers to a matrix
-        node = self.get_file_study(study).tree.get_node(list(url))
-        if isinstance(node, MatrixNode):
-            pandas_df = node.parse_as_dataframe().to_pandas()
-        elif isinstance(node, OutputSeriesMatrix):
-            pandas_df = node.parse_dataframe()
-            pandas_df.columns = pd.Index(pandas_df.columns)
-        elif isinstance(node, OutputSynthesis):
-            pandas_df = pd.DataFrame(**node.load())
+        # We need to handle matrices differently if our study is stored in DB
+        if study.storage_mode == StorageMode.DATABASE:
+            pandas_df = _get_matrix_from_path(study_interface, matrix_path).to_pandas()
+
         else:
-            raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
+            # Checks that the provided path refers to a matrix
+            node = self.get_file_study(study).tree.get_node(list(url))
+            if isinstance(node, MatrixNode):
+                pandas_df = node.parse_as_dataframe().to_pandas()
+            elif isinstance(node, OutputSeriesMatrix):
+                pandas_df = node.parse_dataframe()
+                pandas_df.columns = pd.Index(pandas_df.columns)
+            elif isinstance(node, OutputSynthesis):
+                pandas_df = pd.DataFrame(**node.load())
+            else:
+                raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 
         if with_index:
             matrix_index = self.get_input_matrix_startdate(study_id, path)
@@ -2553,20 +2850,27 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
-        file_study = self.get_file_study(study)
-        url = [item for item in path.split("/") if item]
-        node, relative_url = file_study.tree.get_node_and_remainder(url)
 
-        # Return a dataframe when possible instead of less memory & computation - efficient python objects
-        if isinstance(node, MatrixNode):
-            return node.parse_as_dataframe()
+        # We need to handle matrices differently if our study is stored in DB
+        if study.storage_mode == StorageMode.DATABASE:
+            return _get_matrix_from_path(self.get_study_interface(study), Path(path))
 
-        return node.get(url=relative_url, depth=depth, formatted=formatted)
+        else:
+            file_study = self.get_file_study(study)
+            url = [item for item in path.split("/") if item]
+            node, relative_url = file_study.tree.get_node_and_remainder(url)
+
+            # Return a dataframe when possible instead of less memory & computation - efficient python objects
+            if isinstance(node, MatrixNode):
+                return node.parse_as_dataframe()
+
+            return node.get(url=relative_url, depth=depth, formatted=formatted)
 
     def get_study_data(self, uuid: str) -> StudyDataDTO:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
+        dao = study_interface.get_study_dao()
 
         ##########################
         # Study metadata
@@ -2580,15 +2884,15 @@ class StudyService:
         # Areas
         ##########################
 
-        area_properties = self.area_manager.get_all_area_properties(study_interface)
-        area_names = {a.id: a.name for a in self.area_manager.get_all_areas_info(study_interface)}
-        thermal_clusters = self.thermal_manager.get_all_thermals_props(study_interface)
-        st_storages = self.st_storage_manager.get_all_storages_props(study_interface)
-        st_storages_constraints = self.st_storage_manager.get_all_additional_constraints(study_interface)
-        hydro_properties = self.hydro_manager.get_all_hydro_properties(study_interface)
+        area_properties = dao.get_all_area_properties()
+        area_names = {a.id: a.name for a in dao.get_all_areas_info()}
+        thermal_clusters = dao.get_all_thermals()
+        st_storages = dao.get_all_st_storages()
+        st_storages_constraints = dao.get_all_st_storage_additional_constraints()
+        hydro_properties = dao.get_all_hydro_properties()
 
         try:
-            renewable_clusters = self.renewable_manager.get_all_renewables_props(study_interface)
+            renewable_clusters = dao.get_all_renewables()
         except ChildNotFoundError:  # Can happen, according to the enr-modeling
             renewable_clusters = {}
 
@@ -2601,11 +2905,11 @@ class StudyService:
                 "thermals": thermal_clusters.get(area_id, {}).values(),
                 "renewables": renewable_clusters.get(area_id, {}).values(),
                 "st_storages": [],
-                "ui": self.area_manager.get_area_ui(study_interface, area_id),
+                "ui": dao.get_area_ui(area_id),
             }
 
             # Hydro
-            hydro_allocation = self.allocation_manager.get_allocation_for_area(study_interface, area_id)
+            hydro_allocation = dao.get_hydro_allocation(area_id)
             area["hydro"] = {
                 "allocation": hydro_allocation,
                 "management_options": hydro_properties[area_id].management_options,
@@ -2626,7 +2930,7 @@ class StudyService:
         # Links and BCs
         ##########################
 
-        obj["links"] = self.links_manager.get_all_links(study_interface)
+        obj["links"] = dao.get_links()
         obj["binding_constraints"] = self.binding_constraint_manager.get_binding_constraints(study_interface)
 
         ##########################
@@ -2634,13 +2938,13 @@ class StudyService:
         ##########################
 
         obj["settings"] = {
-            "time_series": self.ts_config_manager.get_timeseries_configuration(study_interface),
-            "general": self.general_manager.get_general_config(study_interface),
-            "advanced_parameters": self.advanced_parameters_manager.get_advanced_parameters(study_interface),
-            "playlist": self.playlist_manager.get_playlist(study_interface),
-            "thematic_trimming": self.thematic_trimming_manager.get_thematic_trimming(study_interface),
-            "optimization": self.optimization_manager.get_optimization_preferences(study_interface),
-            "adequacy_patch": self.adequacy_patch_manager.get_adequacy_patch_parameters(study_interface),
+            "time_series": dao.get_timeseries_config(),
+            "general": dao.get_general_config(),
+            "advanced_parameters": dao.get_advanced_parameters(),
+            "playlist": dao.get_playlist_config(),
+            "thematic_trimming": dao.get_thematic_trimming(),
+            "optimization": dao.get_optimization_preferences(),
+            "adequacy_patch": dao.get_adequacy_patch_parameters(),
         }
 
         ##########################
@@ -2650,8 +2954,8 @@ class StudyService:
         try:
             xpansion_settings = self.get_xpansion_settings(uuid)
             if xpansion_settings.additional_constraints:
-                xpansion_constraint = self.xpansion_manager.get_resource_content(
-                    study_interface, XpansionResourceFileType.CONSTRAINTS, xpansion_settings.additional_constraints
+                xpansion_constraint = dao.get_xpansion_resource(
+                    XpansionResourceFileType.CONSTRAINTS, xpansion_settings.additional_constraints
                 )
                 assert isinstance(xpansion_constraint, bytes)
                 constraint_as_dict = IniReader().read(io.StringIO(xpansion_constraint.decode("utf-8")))
@@ -2671,7 +2975,7 @@ class StudyService:
 
             xpansion = {
                 "settings": xpansion_settings,
-                "candidates": self.xpansion_manager.get_candidates(study_interface),
+                "candidates": dao.get_all_xpansion_candidates(),
                 "constraints": constraints,
             }
 

@@ -137,13 +137,13 @@ function Tasks() {
   };
 
   const renderStatus = (job: Job) => {
-    let color = theme.palette.grey[400];
+    let color = theme.vars.palette.grey[400];
     if (job.status === "success") {
-      color = theme.palette.success.main;
+      color = theme.vars.palette.success.main;
     } else if (job.status === "failed") {
-      color = theme.palette.error.main;
+      color = theme.vars.palette.error.main;
     } else if (job.status === "running") {
-      color = theme.palette.warning.main;
+      color = theme.vars.palette.warning.main;
     }
     return <FiberManualRecordIcon style={{ color, fontSize: "10px", marginRight: "8px" }} />;
   };
@@ -338,7 +338,7 @@ function Tasks() {
         date: job.completionDate || job.creationDate,
         type: "LAUNCH",
         status: job.status === "running" ? "running" : "",
-        userName: job.owner ? usersByID[job.owner.id]?.name || job.owner.name : "",
+        userName: job.owner ? usersByID[Number(job.owner.id)]?.name || job.owner.name : "",
         launcher: job.launcher,
       })),
     [jobs, studyJobsProgress, studies],

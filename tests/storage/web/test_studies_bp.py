@@ -34,6 +34,8 @@ from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
 from antarest.core.utils.archives import ArchiveFormat
 from antarest.matrixstore.service import MatrixService
+from antarest.output.output_blueprint import create_output_routes
+from antarest.output.output_service import OutputService
 from antarest.study.main import build_study_service
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -44,9 +46,7 @@ from antarest.study.model import (
     StorageMode,
     StudyMetadataDTO,
 )
-from antarest.study.output.output_service import OutputService
 from antarest.study.service import StudyService
-from antarest.study.web.output_blueprint import create_output_routes
 from tests.helpers import with_admin_user
 from tests.storage.integration.conftest import UUID
 
@@ -62,6 +62,9 @@ CONFIG = Config(
     security=SecurityConfig(disabled=True),
     storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=Path())}),
 )
+
+STUDY1_ID = str(uuid.uuid4())
+STUDY2_ID = str(uuid.uuid4())
 
 
 def create_test_client(
@@ -93,9 +96,9 @@ def test_server() -> None:
     mock_service.get_raw_content.return_value = {}
 
     client = create_test_client(mock_service)
-    client.get("/v1/studies/study1/raw?path=settings/general/params")
+    client.get(f"/v1/studies/{STUDY1_ID}/raw?path=settings/general/params")
 
-    mock_service.get_raw_content.assert_called_once_with("study1", "settings/general/params", 3, True)
+    mock_service.get_raw_content.assert_called_once_with(STUDY1_ID, "settings/general/params", 3, True)
 
 
 def test_404() -> None:
@@ -103,10 +106,10 @@ def test_404() -> None:
     mock_storage_service.get_raw_content.side_effect = UrlNotMatchJsonDataError("Test")
 
     client = create_test_client(mock_storage_service, raise_server_exceptions=False)
-    result = client.get("/v1/studies/study1/raw?path=settings/general/params")
+    result = client.get(f"/v1/studies/{STUDY1_ID}/raw?path=settings/general/params")
     assert result.status_code == HTTPStatus.NOT_FOUND
 
-    result = client.get("/v1/studies/WRONG_STUDY/raw")
+    result = client.get(f"/v1/studies/{uuid.uuid4()}/raw")
     assert result.status_code == HTTPStatus.NOT_FOUND
 
 
@@ -115,35 +118,36 @@ def test_server_with_parameters() -> None:
     mock_storage_service.get_raw_content.return_value = {}
 
     client = create_test_client(mock_storage_service)
-    result = client.get("/v1/studies/study1/raw?depth=4")
+    result = client.get(f"/v1/studies/{STUDY1_ID}/raw?depth=4")
 
     assert result.status_code == HTTPStatus.OK
-    mock_storage_service.get_raw_content.assert_called_once_with("study1", "/", 4, True)
+    mock_storage_service.get_raw_content.assert_called_once_with(STUDY1_ID, "/", 4, True)
 
-    result = client.get("/v1/studies/study2/raw?depth=WRONG_TYPE")
+    result = client.get(f"/v1/studies/{STUDY2_ID}/raw?depth=WRONG_TYPE")
     assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
-    result = client.get("/v1/studies/study2/raw")
+    result = client.get(f"/v1/studies/{STUDY2_ID}/raw")
     assert result.status_code == HTTPStatus.OK
 
-    mock_storage_service.get_raw_content.assert_called_with("study2", "/", 3, True)
+    mock_storage_service.get_raw_content.assert_called_with(STUDY2_ID, "/", 3, True)
 
 
 def test_create_study(tmp_path: str, project_path: Path) -> None:
     path_studies = Path(tmp_path)
-    path_study = path_studies / "study1"
+    path_study = path_studies / STUDY1_ID
     path_study.mkdir()
     (path_study / "study.antares").touch()
 
+    new_study_id = str(uuid.uuid4())
     storage_service = Mock()
-    storage_service.create_study.return_value = "my-uuid"
+    storage_service.create_study.return_value = new_study_id
 
     client = create_test_client(storage_service)
 
     result_right = client.post("/v1/studies?name=study2")
 
     assert result_right.status_code == HTTPStatus.CREATED
-    assert result_right.json() == "my-uuid"
+    assert result_right.json() == new_study_id
     storage_service.create_study.assert_called_once_with(
         "study2", None, [], directory="", storage_mode=StorageMode.FILESYSTEM
     )
@@ -151,7 +155,7 @@ def test_create_study(tmp_path: str, project_path: Path) -> None:
 
     result_right = client.post("/v1/studies?name=study2&version=8.8")
     assert result_right.status_code == HTTPStatus.CREATED
-    assert result_right.json() == "my-uuid"
+    assert result_right.json() == new_study_id
     storage_service.create_study.assert_called_once_with(
         "study2", STUDY_VERSION_8_8, [], directory="", storage_mode=StorageMode.FILESYSTEM
     )
@@ -159,7 +163,7 @@ def test_create_study(tmp_path: str, project_path: Path) -> None:
 
     result_right = client.post("/v1/studies?name=study2&version=880")
     assert result_right.status_code == HTTPStatus.CREATED
-    assert result_right.json() == "my-uuid"
+    assert result_right.json() == new_study_id
     storage_service.create_study.assert_called_once_with(
         "study2", STUDY_VERSION_8_8, [], directory="", storage_mode=StorageMode.FILESYSTEM
     )
@@ -208,8 +212,7 @@ def test_copy_study(tmp_path: Path) -> None:
         dest_study_name="study-copied",
         destination_folder=PurePosixPath(),
         group_ids=["admin"],
-        with_outputs=None,
-        output_ids=[],
+        outputs_selection=[],
         use_task=True,
     )
     assert result.status_code == HTTPStatus.CREATED
@@ -358,10 +361,12 @@ def test_edit_study() -> None:
     mock_storage_service = Mock()
     mock_storage_service.edit_study.return_value = {}
 
-    client = create_test_client(mock_storage_service)
-    client.post("/v1/studies/my-uuid/raw?path=url/to/change", json={"Hello": "World"})
+    study_id = str(uuid.uuid4())
 
-    mock_storage_service.edit_study.assert_called_once_with("my-uuid", "url/to/change", {"Hello": "World"})
+    client = create_test_client(mock_storage_service)
+    client.post(f"/v1/studies/{study_id}/raw?path=url/to/change", json={"Hello": "World"})
+
+    mock_storage_service.edit_study.assert_called_once_with(study_id, "url/to/change", {"Hello": "World"})
 
 
 def test_study_permission_management(tmp_path: Path) -> None:

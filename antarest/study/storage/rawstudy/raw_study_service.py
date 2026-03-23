@@ -9,31 +9,38 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import logging
 import shutil
+import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
-from typing import BinaryIO, List, Optional, Sequence
+from typing import BinaryIO, Optional, Sequence
 from uuid import uuid4
-from zipfile import ZipFile
 
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.config import Config
-from antarest.core.exceptions import IncorrectArgumentsForCopy, StudyDeletionNotAllowed, StudyImportFailed
+from antarest.core.exceptions import StudyDeletionNotAllowed, StudyImportFailed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
-from antarest.core.utils.archives import ArchiveFormat, extract_archive_from_path, extract_archive_from_stream
-from antarest.core.utils.utils import current_time
+from antarest.core.utils.archives import (
+    ArchiveFormat,
+    archive_dir,
+    extract_archive_from_path,
+    extract_archive_from_stream,
+)
+from antarest.core.utils.utils import StopWatch, current_time
 from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper, extract_matrix_id
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
@@ -45,33 +52,6 @@ from antarest.study.storage.utils import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-def copy_output_folders(
-    src_output_path: Path, dest_output_path: Path, with_outputs: bool | None, selected_outputs: List[str]
-) -> None:
-    if with_outputs or (with_outputs is None and selected_outputs):
-        if selected_outputs:  # if some outputs are selected, we copy only them
-            for file_name in selected_outputs:
-                src_folder = src_output_path / file_name
-
-                if src_folder.exists():
-                    shutil.copytree(src_folder, dest_output_path / file_name)
-                else:
-                    # The src output could be archived
-                    zip_path = src_output_path / f"{file_name}.zip"
-                    seven_zip_path = src_output_path / f"{file_name}.7z"
-                    for archive_path in [zip_path, seven_zip_path]:
-                        if archive_path.exists():
-                            dest_output_path.mkdir(exist_ok=True)
-                            dest_path = dest_output_path / f"{file_name}{archive_path.suffix}"
-                            shutil.copy(archive_path, dest_path)
-                            return
-
-                    raise IncorrectArgumentsForCopy(f"Output folder {file_name} not found in {src_output_path}")
-
-        else:  # we copy all the outputs if none is selected
-            shutil.copytree(src_output_path, dest_output_path)
 
 
 class RawStudyService(AbstractStorageService):
@@ -206,11 +186,11 @@ class RawStudyService(AbstractStorageService):
         )
 
     @override
-    def get_synthesis(self, metadata: Study) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: Study) -> StudyDataSynthesis:
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(study_path, is_managed(metadata), metadata.id)
-        return FileStudyTreeConfigDTO.from_build_config(study.config)
+        return StudyDataSynthesis.from_study_config(study.config)
 
     @override
     def copy(
@@ -219,8 +199,6 @@ class RawStudyService(AbstractStorageService):
         dest_study_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
-        output_ids: List[str],
-        with_outputs: bool | None,
     ) -> RawStudy:
         """
         Create a new RAW study by copying a reference study.
@@ -230,8 +208,6 @@ class RawStudyService(AbstractStorageService):
             dest_study_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
             destination_folder: The path for the destination study. If not provided, the destination study will be created in the same directory as the source study.
-            output_ids: A list of output names that you want to include in the destination study.
-            with_outputs: Indicates whether to copy the outputs as well.
 
         Returns:
             The newly created study.
@@ -244,8 +220,6 @@ class RawStudyService(AbstractStorageService):
         dest_path = self.get_study_path(dest_study)
 
         shutil.copytree(src_path, dest_path, ignore=shutil.ignore_patterns("output"))
-
-        copy_output_folders(src_path / "output", dest_path / "output", with_outputs, output_ids)
 
         study = self.study_factory.create_from_fs(dest_path, is_managed(src_meta), study_id=dest_study.id)
 
@@ -334,8 +308,6 @@ class RawStudyService(AbstractStorageService):
         self,
         metadata: Study,
         dst_path: Path,
-        outputs: bool = True,
-        output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
     ) -> None:
         try:
@@ -348,8 +320,6 @@ class RawStudyService(AbstractStorageService):
             self.export_study_to_flat_directory(
                 Path(metadata.path),
                 dst_path,
-                outputs,
-                output_list_filter,
                 denormalize,
                 is_study_managed=is_managed(metadata),
             )
@@ -358,13 +328,21 @@ class RawStudyService(AbstractStorageService):
             if metadata.archived:
                 shutil.rmtree(metadata.path, ignore_errors=True)
 
-    def archive(self, study: RawStudy) -> Path:
+    def archive(self, study: RawStudy) -> None:
         archive_path = self.config.storage.archive_dir.joinpath(f"{study.id}{ArchiveFormat.SEVEN_ZIP}")
-        new_study_path = self.export_study(study, archive_path, archive_format=ArchiveFormat.SEVEN_ZIP)
+
+        path_study = Path(study.path)
+        with tempfile.TemporaryDirectory(dir=self.config.storage.tmp_dir) as tmpdir:
+            logger.info(f"Exporting study {study.id} to temporary path {tmpdir}")
+            tmp_study_path = Path(tmpdir) / "tmp_copy"
+            self.export_study_flat(study, tmp_study_path)
+            stopwatch = StopWatch()
+            archive_dir(tmp_study_path, archive_path, archive_format=ArchiveFormat.SEVEN_ZIP)
+            logger.info(f"Study {path_study} exported ({archive_path.suffix} format) in {stopwatch}s")
+
         shutil.rmtree(study.path)
         remove_from_cache(cache=self.cache, root_id=study.id)
         self.cache.invalidate(study.id)
-        return new_study_path
 
     # noinspection SpellCheckingInspection
     def unarchive(self, study: RawStudy) -> None:
@@ -488,46 +466,19 @@ class RawStudyService(AbstractStorageService):
         self,
         study_dir: Path,
         dest: Path,
-        outputs: bool = True,
-        output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
-        output_src_path: Optional[Path] = None,
         is_study_managed: bool = True,
     ) -> None:
         start_time = time.time()
-
-        output_src_path = output_src_path or study_dir / "output"
-        output_dest_path = dest / "output"
 
         def ignore_outputs(directory: str, _: Sequence[str]) -> Sequence[str]:
             return ["output"] if str(directory) == str(study_dir) else []
 
         shutil.copytree(src=study_dir, dst=dest, ignore=ignore_outputs)
 
-        if outputs and output_src_path.exists():
-            if output_list_filter is None:
-                # Retrieve all directories or ZIP files without duplicates
-                output_list_filter = list(
-                    {f.with_suffix("").name for f in output_src_path.iterdir() if f.is_dir() or f.suffix == ".zip"}
-                )
-            # Copy each folder or uncompress each ZIP file to the destination dir.
-            shutil.rmtree(output_dest_path, ignore_errors=True)
-            output_dest_path.mkdir()
-            for output in output_list_filter:
-                zip_path = output_src_path / f"{output}.zip"
-                if zip_path.exists():
-                    with ZipFile(zip_path) as zf:
-                        zf.extractall(output_dest_path / output)
-                else:
-                    shutil.copytree(
-                        src=output_src_path / output,
-                        dst=output_dest_path / output,
-                    )
-
         stop_time = time.time()
         duration = "{:.3f}".format(stop_time - start_time)
-        with_outputs = "with outputs" if outputs else "without outputs"
-        logger.info(f"Study '{study_dir}' exported ({with_outputs}, flat mode) in {duration}s")
+        logger.info(f"Study '{study_dir}' exported (flat mode) in {duration}s")
         if denormalize:
             study = self.study_factory.create_from_fs(dest, is_study_managed, "", use_cache=False)
             self.denormalize_study(study)

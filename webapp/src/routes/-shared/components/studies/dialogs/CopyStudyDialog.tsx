@@ -20,14 +20,21 @@ import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
+import { directoryQueries } from "@/queries/directories/queries";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { copyStudy } from "@/services/api/studies";
+import { getTask } from "@/services/api/tasks";
 import { getStudyOutputs } from "@/services/api/study";
-import type { StudyMetadata, StudyOutput } from "@/types/types";
+import type { StudyMetadata, OutputDetails } from "@/types/types";
 import { validateStudyName } from "@/utils/studiesUtils";
+import { toError } from "@/utils/fnUtils";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
 import SaveAsIcon from "@mui/icons-material/SaveAs";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import StudyPathFE from "../StudyPathFE";
+import StudyDestinationFE from "../StudyDestinationFE";
+import type { DirectoryDestination } from "../StudyDestinationFE/types";
+import { toDirectoryPath } from "../StudyDestinationFE/utils";
 
 interface Props {
   study: StudyMetadata;
@@ -37,14 +44,17 @@ interface Props {
 
 interface DefaultValues {
   studyName: string;
-  destinationFolder: string;
-  outputIds?: Array<StudyOutput["name"]>;
+  destination: DirectoryDestination;
+  outputIds?: Array<OutputDetails["name"]>;
 }
 
 function CopyStudyDialog({ study, open, onClose }: Props) {
   const { t } = useTranslation();
   const isVariant = study.type === "variantstudy";
   const Icon = isVariant ? SaveAsIcon : FileCopyOutlinedIcon;
+  const queryClient = useQueryClient();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
   const outputsRes = usePromise(async () => {
     const outputs = await getStudyOutputs(study.id);
@@ -53,22 +63,39 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
 
   const defaultValues: DefaultValues = {
     studyName: `${study.name} (${t("studies.copySuffix")})`,
-    destinationFolder: "",
+    destination: { directoryId: study.directoryId ?? null, newSubdirectoriesPath: "" },
   };
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({
-    values: { studyName, destinationFolder, outputIds = [] },
+  const handleSubmit = async ({
+    values: { studyName, destination, outputIds = [] },
   }: SubmitHandlerPlus<DefaultValues>) => {
-    return copyStudy({
+    // TODO: This should be moved to the API layer when Tan stack migration is done.
+    const directoryPath = toDirectoryPath(destination, directories);
+
+    const taskId = await copyStudy({
       studyId: study.id,
       studyName: studyName.trim(),
-      destinationFolder,
+      destinationFolder: directoryPath,
       outputIds,
     });
+
+    // Poll task completion in the background, then refresh
+    // the directory list so the dialog is not blocked while the task runs.
+    getTask({ id: taskId, waitForCompletion: true })
+      .then(() => {
+        if (destination.newSubdirectoriesPath) {
+          queryClient.invalidateQueries({ queryKey: directoryQueries.list().queryKey });
+        }
+      })
+      .catch((err) => {
+        enqueueErrorSnackbar(t("studies.error.copyStudy"), toError(err));
+      });
+
+    return taskId;
   };
 
   ////////////////////////////////////////////////////////////////
@@ -98,7 +125,7 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
             rules={{ validate: validateStudyName }}
             autoFocus
           />
-          <StudyPathFE name="destinationFolder" control={control} />
+          <StudyDestinationFE name="destination" control={control} />
           <UsePromiseCond
             response={outputsRes}
             ifPending={() => (

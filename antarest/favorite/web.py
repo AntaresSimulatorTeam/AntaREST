@@ -12,6 +12,7 @@
 
 from fastapi import APIRouter
 
+from antarest.core.api_types import UuidStr
 from antarest.core.config import Config
 from antarest.core.utils.web import APITag
 from antarest.favorite.model import FavoriteDirectoryDTO, FavoriteStudyDTO
@@ -31,13 +32,13 @@ def create_favorite_routes(
         return favorite_service.list_favorites()
 
     @bp.post("/favorites/studies/{uuid}", summary="Add a study in the list of favorite studies")
-    def add_favorite_study(uuid: str) -> FavoriteStudyDTO:
-        logger.info("Creating new favorite study for current user")
+    def add_favorite_study(uuid: UuidStr) -> FavoriteStudyDTO:
+        logger.info(f"Adding study {uuid} as a favorite.")
         return favorite_service.add_favorite(uuid)
 
     @bp.delete("/favorites/studies/{uuid}", summary="Delete a study from the ")
-    def delete_favorite_study(uuid: str) -> None:
-        logger.info("Deleting favorite study for current user")
+    def delete_favorite_study(uuid: UuidStr) -> None:
+        logger.info(f"Deleting study {uuid} from favorites.")
         favorite_service.delete_favorite(uuid)
 
     @bp.get("/favorites/directories", summary="Listing favorite directories for current user")
@@ -46,13 +47,13 @@ def create_favorite_routes(
         return favorite_directory_service.list_favorites()
 
     @bp.post("/favorites/directories/{uuid}", summary="Add a directory in the list of favorite directories")
-    def add_favorite_directory(uuid: str) -> FavoriteDirectoryDTO:
-        logger.info("Creating new favorite directory for current user")
+    def add_favorite_directory(uuid: UuidStr) -> FavoriteDirectoryDTO:
+        logger.info(f"Adding directory {uuid} as a favorite.")
         return favorite_directory_service.add_favorite(uuid)
 
     @bp.delete("/favorites/directories/{uuid}", summary="Delete a directory from the list of favorite directories")
-    def delete_favorite_directory(uuid: str) -> None:
-        logger.info("Deleting a favorite directory for current user")
+    def delete_favorite_directory(uuid: UuidStr) -> None:
+        logger.info(f"Deleting directory {uuid} from favorites.")
         favorite_directory_service.delete_favorite(uuid)
 
     return bp

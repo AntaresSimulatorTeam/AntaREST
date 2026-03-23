@@ -18,6 +18,7 @@ from antarest.core.exceptions import ChildNotFoundError
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_model import AreaUI
 from antarest.study.business.model.binding_constraint_model import BindingConstraintOperator
+from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.business.model.hydro_model import HydroProperties
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
@@ -69,7 +70,7 @@ class StudyConverter:
         self._convert_settings()
 
         # Scenario Builder
-        self._new_dao.save_scenario_builder(self._source_dao.get_rulesets())
+        self._new_dao.save_scenario_builder(self._source_dao.get_ruleset())
 
         # Districts
         for district in self._source_dao.get_districts():
@@ -337,3 +338,18 @@ class StudyConverter:
         if self._study_version >= STUDY_VERSION_8_6:
             mingen = self._matrix_service.create(self._source_dao.get_hydro_mingen(area_id))
             self._new_dao.save_hydro_mingen(area_id, mingen)
+
+        if self._study_version >= STUDY_VERSION_9_2:
+            compatibility_data = self._source_dao.get_compatibility_parameters()
+            if compatibility_data.hydro_pmax == HydroPmax.HOURLY:
+                max_hourly_gen = self._matrix_service.create(self._source_dao.get_hydro_max_hourly_gen_power(area_id))
+                self._new_dao.save_hydro_max_hourly_gen_power(area_id, max_hourly_gen)
+
+                max_hourly_pump = self._matrix_service.create(self._source_dao.get_hydro_max_hourly_pump_power(area_id))
+                self._new_dao.save_hydro_max_hourly_pump_power(area_id, max_hourly_pump)
+
+                max_daily_gen = self._matrix_service.create(self._source_dao.get_hydro_max_daily_gen_energy(area_id))
+                self._new_dao.save_hydro_max_daily_gen_energy(area_id, max_daily_gen)
+
+                max_daily_pump = self._matrix_service.create(self._source_dao.get_hydro_max_daily_pump_energy(area_id))
+                self._new_dao.save_hydro_max_daily_pump_energy(area_id, max_daily_pump)

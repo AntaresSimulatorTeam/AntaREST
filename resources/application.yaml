@@ -18,6 +18,7 @@ storage:
     studies:
       path: ./examples/studies/
 
+
 launcher:
   default: local
   launchers:

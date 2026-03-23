@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import re
 
 
 def to_pascal_case(value: str) -> str:
@@ -22,3 +23,14 @@ def to_camel_case(value: str) -> str:
 
 def to_kebab_case(string: str) -> str:
     return string.replace("_", "-")
+
+
+def sanitize_for_log(string: str, error_message: str = "string must not contain newline characters.") -> str:
+    """
+    Raises if the string contains newline characters, and should therefore not be logged, in particular.
+
+    See sonar issue python:5145
+    """
+    if re.match(r"[\r\n]", string):
+        raise ValueError(error_message)
+    return string

@@ -14,7 +14,6 @@
 Filesystem Blueprint
 """
 
-import asyncio
 import datetime
 import os
 import shutil
@@ -27,6 +26,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import Field
 from starlette.responses import PlainTextResponse, StreamingResponse
 
+from antarest.core.api_types import SanitizedStr
 from antarest.core.config import Config
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
@@ -97,7 +97,7 @@ class MountPointDTO(
     message: str = Field(default="", description="A message describing the status of the mount point")
 
     @classmethod
-    async def from_path(cls, name: str, path: Path) -> "MountPointDTO":
+    def from_path(cls, name: str, path: Path) -> "MountPointDTO":
         obj = cls(name=name, path=path)
         try:
             obj.total_bytes, obj.used_bytes, obj.free_bytes = shutil.disk_usage(obj.path)
@@ -152,7 +152,7 @@ class FileInfoDTO(
     message: str = Field(default="OK", description="A message describing the status of the file")
 
     @classmethod
-    async def from_path(cls, full_path: Path, *, details: bool = False) -> "FileInfoDTO":
+    def from_path(cls, full_path: Path, *, details: bool = False) -> "FileInfoDTO":
         try:
             file_stat = full_path.stat()
         except OSError as exc:
@@ -183,7 +183,7 @@ class FileInfoDTO(
         if stat.S_ISDIR(file_stat.st_mode):
             obj.file_type = "directory"
             if details:
-                file_count, disk_space = await _calc_details(full_path)
+                file_count, disk_space = _calc_details(full_path)
                 obj.file_count = file_count
                 obj.size_bytes = disk_space
         elif stat.S_ISREG(file_stat.st_mode):
@@ -204,7 +204,7 @@ class FileInfoDTO(
         return obj
 
 
-async def _calc_details(full_path: str | Path) -> Tuple[int, int]:
+def _calc_details(full_path: str | Path) -> Tuple[int, int]:
     """Calculate the number of files and the total size of a directory recursively."""
 
     full_path = Path(full_path)
@@ -214,7 +214,7 @@ async def _calc_details(full_path: str | Path) -> Tuple[int, int]:
 
     if stat.S_ISDIR(file_stat.st_mode):
         for entry in os.scandir(full_path):
-            sub_file_count, sub_total_size = await _calc_details(entry.path)
+            sub_file_count, sub_total_size = _calc_details(entry.path)
             file_count += sub_file_count
             total_size += sub_total_size
 
@@ -301,7 +301,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         "",
         summary="Get filesystems information",
     )
-    async def list_filesystems() -> Sequence[FilesystemDTO]:
+    def list_filesystems() -> Sequence[FilesystemDTO]:
         """
         Get the list of filesystems and their mount points.
 
@@ -317,7 +317,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         "/{fs}",
         summary="Get information of a filesystem",
     )
-    async def list_mount_points(fs: FilesystemName) -> Sequence[MountPointDTO]:
+    def list_mount_points(fs: FilesystemName) -> Sequence[MountPointDTO]:
         """
         Get the path and the disk usage of the mount points in a filesystem.
 
@@ -337,15 +337,13 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         """
 
         mount_dirs = _get_mount_dirs(fs)
-        tasks = [MountPointDTO.from_path(name, path) for name, path in mount_dirs.items()]
-        ws = await asyncio.gather(*tasks)
-        return ws
+        return [MountPointDTO.from_path(name, path) for name, path in mount_dirs.items()]
 
     @bp.get(
         "/{fs}/{mount}",
         summary="Get information of a mount point",
     )
-    async def get_mount_point(fs: FilesystemName, mount: MountPointName) -> MountPointDTO:
+    def get_mount_point(fs: FilesystemName, mount: MountPointName) -> MountPointDTO:
         """
         Get the path and the disk usage of a mount point.
 
@@ -366,16 +364,16 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         """
 
         mount_dir = _get_mount_dir(fs, mount)
-        return await MountPointDTO.from_path(mount, mount_dir)
+        return MountPointDTO.from_path(mount, mount_dir)
 
     @bp.get(
         "/{fs}/{mount}/ls",
         summary="List files in a mount point",
     )
-    async def list_files(
+    def list_files(
         fs: FilesystemName,
         mount: MountPointName,
-        path: str = "",
+        path: SanitizedStr = "",
         details: bool = False,
     ) -> Sequence[FileInfoDTO]:
         """
@@ -411,7 +409,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         mount_dir = _get_mount_dir(fs, mount)
 
         # The following code looks weird, but it's the only way to handle exceptions in generators.
-        tasks = []
+        file_infos = []
         iterator = mount_dir.glob(path) if path else mount_dir.iterdir()
         while True:
             try:
@@ -425,11 +423,9 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
                 # Unacceptable pattern: non-relative glob pattern
                 raise HTTPException(status_code=403, detail=f"Access denied to path: '{path}'. {exc}") from exc
             else:
-                file_info = FileInfoDTO.from_path(file_path, details=details)
-                tasks.append(file_info)
+                file_infos.append(FileInfoDTO.from_path(file_path, details=details))
 
-        file_info_list = await asyncio.gather(*tasks)
-        return file_info_list
+        return file_infos
 
     @bp.get(
         "/{fs}/{mount}/cat",
@@ -437,11 +433,11 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         response_class=PlainTextResponse,
         response_description="File content as text",
     )
-    async def view_file(
+    def view_file(
         fs: FilesystemName,
         mount: MountPointName,
-        path: str = "",
-        encoding: str = "utf-8",
+        path: SanitizedStr = "",
+        encoding: SanitizedStr = "utf-8",
     ) -> str:
         # noinspection SpellCheckingInspection
         """
@@ -496,10 +492,10 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
         response_class=StreamingResponse,
         response_description="File content as binary",
     )
-    async def download_file(
+    def download_file(
         fs: FilesystemName,
         mount: MountPointName,
-        path: str = "",
+        path: SanitizedStr = "",
     ) -> StreamingResponse:
         """
         Download a file from a mount point.

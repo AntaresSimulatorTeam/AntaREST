@@ -64,6 +64,10 @@ class SimpleSyncTaskService(ITaskService):
     def await_task(self, task_id: str, timeout_sec: Optional[int] = None) -> None:
         pass
 
+    @override
+    def delete_task_by_creation_date(self, task_retention_duration: int) -> int:
+        pass
+
 
 class FileDownloadRepositoryMock(FileDownloadRepository):
     def __init__(self) -> None:

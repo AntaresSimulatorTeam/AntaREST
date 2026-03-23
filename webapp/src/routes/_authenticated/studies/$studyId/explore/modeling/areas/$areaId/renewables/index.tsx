@@ -14,7 +14,7 @@
 
 import GroupedDataTable from "@/components/GroupedDataTable";
 import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
-import type { TRow } from "@/components/GroupedDataTable/types";
+import type { RowData } from "@/components/GroupedDataTable/types";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudySynthesis } from "@/redux/selectors";
@@ -54,9 +54,11 @@ function Renewables() {
   const { t } = useTranslation();
   const enrModelling = useAppSelector((state) => getStudySynthesis(state, study.id)?.enr_modelling);
 
-  const { data: clustersWithCapacity = [], isLoading } = usePromiseWithSnackbarError<
-    RenewableClusterWithCapacity[]
-  >(
+  const {
+    data: clustersWithCapacity = [],
+    isLoading,
+    status,
+  } = usePromiseWithSnackbarError<RenewableClusterWithCapacity[]>(
     async () => {
       const clusters = await getRenewableClusters(study.id, areaId);
       return clusters?.map(addClusterCapacity);
@@ -118,7 +120,7 @@ function Renewables() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreate = async (values: TRow) => {
+  const handleCreate = async (values: RowData) => {
     const cluster = await createRenewableCluster(study.id, areaId, values);
     return addClusterCapacity(cluster);
   };
@@ -144,6 +146,7 @@ function Renewables() {
 
   return (
     <GroupedDataTable
+      key={status}
       isLoading={isLoading}
       data={clustersWithCapacity}
       columns={columns}

@@ -1,6 +1,70 @@
 Antares Web Changelog
 =====================
 
+v2.30.0 (2026-03-23)
+--------------------
+
+### Features
+* **ui-studies**: add studies batch delete [`#2998`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2998)
+* **ui-storages,ui-bc**: move temporary id creation for optimistic update on mutation callback [`#3007`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3007)
+* **ui-output**: add districts list with areas [`#3016`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3016)
+* **matrix**: support `raw` operations on db studies [`#3027`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3027)
+* **matrix**: support `raw` modifications on db studies [`#3033`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3033) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **add disk usage log task**: adding the disk usage log task [`#3071`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3071)
+* **ui-studies**: add studies bulk move explorer [`#3073`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3073)
+* **ui-output**: allow multiple searches [`#3079`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3079)
+* **study**: handle directory copy [`#3087`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3087)
+* **ui-studies**: update study destination path allowed special chars [`#3091`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3091)
+* **ui-outputs**: trigger search on input change and refactor district retrieval [`#3092`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3092)
+* **ui-clusters**: move the cluster selection before tabs and remove name field [`#3095`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3095)
+* **ui-studies**: add showDescendants toggle for managed tree directory filter [`#3096`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3096)
+
+### Bug Fixes
+* **config**: sync enr_modelling on advanced params save [`#3022`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3022)
+* **swagger**: bug duplicated operation id [`#3068`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3068)
+* **raw**: `replace_matrix` command failed for xpansion resources [`#3069`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3069)
+* **init**: remove pre-start actions from startup script [`#3084`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3084)
+* **matrix**: fix matrix format [`#3088`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3088)
+* **api**: keep loose content-type behaviour [`#3105`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3105)
+* **output**: aggregation failed on columns mismatch [`#3106`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3106)
+* **variant**: move variants along with parent study [`#3094`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3094)
+* **study**: incoherent state during long archive or unarchive [`#3104`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3104)
+* **output**: restore settings data used by one client, in /outputs API [`#3107`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3107)
+
+### Performances
+* **craft**: get `/data` endpoint answers as fast for variants and raw studies [`#3066`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3066)
+
+### Refactorings
+* **hydro**: dao db hydro matrix [`#3009`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3009)
+* **dao**: support thematic trimming in DB [`#3024`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3024)
+* **fastapi**: align API endpoints with modern FastAPI conventions [`#3028`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3028)
+* **scenario-builder**: study supports only one ruleset [`#3034`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3034) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **scenario-builder**: implement database support [`#3020`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3020)
+* **comments**: implements database support [`#3077`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3077)
+* **output**: extract remaing outputs handling to output service [`#2923`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2923)
+* **xpansion**: db dao normalized version [`#3090`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3090)
+* **xpansion**: db dao resources [`#3103`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3103)
+
+
+### Miscellaneous
+* **deps**: upgrade fastapi from 0.124.2 to 0.130.0 [`#3019`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3019)
+* **sonar**: try to resolve taint issues [`#3023`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3023)
+* **sonar**: fix last logging of uncontrolled data [`#3031`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3031)
+* **deps**: bump pynacl from 1.6.0 to 1.6.2 [`#3035`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3035)
+* **deps**: bump the uv group across 1 directory with 7 updates [`#3041`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3041)
+* **deps**: add Renovate configuration [`#3042`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3042)
+* **renovate**: update configuration file [`#3051`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3051)
+* **stopwatch**: simplify stopwatch API [`#3048`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3048)
+* **deps**: update python dependencies (minor/patch) [`#3055`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3055)
+* **deps**: update github actions [`#3065`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3065)
+* **dao**: add matrix mapper tests for filesystem dao [`#3072`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3072)
+* **scenario-builder**: change foreign keys [`#3086`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3086)
+* **ui-studies**: cap explorer sections height to keep external tree visible [`#3097`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3097)
+* **deps**: update dependency PyJWT to ~=2.12.0 [`#3099`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3099)
+* **ui**: update to react 19 [`#3032`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3032)
+* **uv**: use astral uv to manage project environment [`#2796`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2796)
+* **ui**: update MUI to v7 and MUI X Tree View to v8 [`#3076`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3076)
+
 v2.29.0 (2026-02-24)
 --------------------
 

@@ -214,7 +214,7 @@ def compute_hash(df: pl.DataFrame) -> str:
     pandas_df = df.to_pandas()
     pandas_df.replace({None: np.nan}, inplace=True)
     if df.columns == [str(i) for i in range(len(df.columns))]:
-        pandas_df.columns = pd.RangeIndex(0, pandas_df.shape[1])  # type: ignore
+        pandas_df.columns = pd.RangeIndex(0, pandas_df.shape[1])
 
     # We're computing the hash with the dataframe content and its headers
     column_names_hashes = util.hash_pandas_object(pandas_df.columns, index=False)
@@ -402,5 +402,18 @@ class MatrixContentRepository:
         height, width = df.shape
         return Matrix(id=matrix_id, width=width, height=height, created_at=current_time(), version=version)
 
-    def get_all_matrices_on_the_filesystem(self) -> set[str]:
-        return {f.stem for f in self.bucket_dir.iterdir() if not f.name.endswith(LOCK_SUFFIX)}
+    def get_all_matrices_on_the_filesystem(self) -> tuple[set[str], set[Path]]:
+        known_suffixes = {f".{fmt}" for fmt in InternalMatrixFormat}
+        matrices = set()
+        invalid_files = set()
+
+        for file_path in self.bucket_dir.iterdir():
+            if file_path.name.endswith(LOCK_SUFFIX):
+                continue
+
+            if file_path.suffix in known_suffixes:
+                matrices.add(file_path.stem)
+            elif file_path.is_file():
+                invalid_files.add(file_path)
+
+        return matrices, invalid_files

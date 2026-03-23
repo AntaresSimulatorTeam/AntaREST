@@ -47,6 +47,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, current_time, suppress_exception
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
+from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import (
     RawStudy,
     Study,
@@ -54,10 +55,9 @@ from antarest.study.model import (
 )
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
-from antarest.study.storage.rawstudy.raw_study_service import RawStudyService, copy_output_folders
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import (
     assert_permission,
     is_managed,
@@ -629,6 +629,7 @@ class VariantStudyService(AbstractStorageService):
             name=name,
             parent_id=uuid,
             path=study_path,
+            directory_id=study.directory_id,
             public_mode=study.public_mode,
             created_at=now_utc,
             updated_at=now_utc,
@@ -775,8 +776,6 @@ class VariantStudyService(AbstractStorageService):
         dest_study_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
-        output_ids: List[str],
-        with_outputs: bool | None,
     ) -> RawStudy:
         """
         Create a new variant study by copying a reference study.
@@ -786,8 +785,6 @@ class VariantStudyService(AbstractStorageService):
             dest_study_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
             destination_folder: Path where the destination study will be stored. If not specified, the destination path will be the same as the source study.
-            output_ids: A list of output names that you want to include in the destination study.
-            with_outputs: Indicates whether to copy the outputs as well.
 
         Returns:
             The newly created study.
@@ -803,12 +800,6 @@ class VariantStudyService(AbstractStorageService):
         src_path = file_study.config.path
         dest_path = dest_study.path
         shutil.copytree(src_path, dest_path)
-
-        src_path = cast(Path, file_study.config.output_path)
-        if src_path.exists():
-            dest_output_path = Path(dest_study.path) / OUTPUT_RELATIVE_PATH
-            copy_output_folders(src_path, dest_output_path, with_outputs, output_ids)
-
         update_antares_info(dest_study, file_study.tree, update_author=True)
         return dest_study
 
@@ -903,8 +894,6 @@ class VariantStudyService(AbstractStorageService):
         self,
         metadata: Study,
         dst_path: Path,
-        outputs: bool = True,
-        output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
     ) -> None:
         if isinstance(metadata, VariantStudy):
@@ -913,15 +902,13 @@ class VariantStudyService(AbstractStorageService):
             raise TypeError(f"The type of the study must be {VariantStudy}, not {type(metadata)}")
 
         path_study = Path(metadata.path)
-
         snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH
-        output_src_path = path_study / "output"
         self.raw_study_service.export_study_to_flat_directory(
-            snapshot_path, dst_path, outputs, output_list_filter, denormalize, output_src_path, is_managed(metadata)
+            snapshot_path, dst_path, denormalize, is_managed(metadata)
         )
 
     @override
-    def get_synthesis(self, metadata: Study) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: Study) -> StudyDataSynthesis:
         """
         Return study synthesis
         Args:
@@ -935,7 +922,7 @@ class VariantStudyService(AbstractStorageService):
             raise TypeError(f"The type of the study must be {VariantStudy}, not {type(metadata)}")
         study_path = self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(study_path, is_managed(metadata), metadata.id)
-        return FileStudyTreeConfigDTO.from_build_config(study.config)
+        return StudyDataSynthesis.from_study_config(study.config)
 
     def clear_all_snapshots(self, retention_time: timedelta) -> str:
         """

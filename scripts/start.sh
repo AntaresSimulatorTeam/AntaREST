@@ -47,10 +47,8 @@ if [[ -v PROMETHEUS_MULTIPROC_DIR ]]; then
 fi
 
 if [ -z "$1" ] ; then
-  sh $CUR_DIR/pre-start.sh
   gunicorn --config $BASE_DIR/conf/gunicorn.py --worker-class=uvicorn.workers.UvicornWorker antarest.wsgi:app
 elif [ "$use_uvicorn" = true ]; then
-  sh $CUR_DIR/pre-start.sh
   pids=() # Initialize empty array to store background process IDs
   for ((i=0; i<workers; i++))
   do
@@ -93,7 +91,7 @@ else
       ;;
     *)
       # Default: run antarest module (watcher, auto_archiver, etc.)
-      python3 $BASE_DIR/antarest/main.py -c $ANTAREST_CONF --module "$1"
+      python $BASE_DIR/antarest/main.py -c $ANTAREST_CONF --module "$1"
       ;;
   esac
 fi

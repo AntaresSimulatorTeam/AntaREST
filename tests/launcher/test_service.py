@@ -42,6 +42,7 @@ from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import current_time
 from antarest.dbmodel import Base
+from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.adapters.local_launcher.local_launcher import SOLVER_VERSION_9_2
 from antarest.launcher.model import (
     JobLog,
@@ -64,8 +65,8 @@ from antarest.launcher.service import (
 )
 from antarest.login.model import Identity
 from antarest.login.utils import current_user_context, get_current_user
+from antarest.output.output_service import OutputService
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, OwnerInfo, Study, StudyMetadataDTO
-from antarest.study.output.output_service import OutputService
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
@@ -117,7 +118,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=storage_service_mock,
-            output_service=OutputService(storage_service_mock, Mock(), Mock(), Mock(), Mock(), Mock(), event_bus),
+            output_service=Mock(),
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
@@ -178,7 +179,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=study_service,
-            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
+            output_service=Mock(),
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
@@ -218,7 +219,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=study_service,
-            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
+            output_service=Mock(),
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
@@ -306,7 +307,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=study_service,
-            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
+            output_service=Mock(),
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
@@ -577,7 +578,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
-            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
+            output_service=Mock(),
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
@@ -611,7 +612,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
-            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
+            output_service=Mock(),
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
@@ -646,11 +647,11 @@ class TestLauncherService:
         assert job_result_mock.logs[0].log_type == str(JobLogType.BEFORE)
 
     def test_get_logs(self, tmp_path: Path) -> None:
-        study_service = Mock()
+        output_service = Mock()
         launcher_service = LauncherService(
             config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
-            study_service=study_service,
-            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
+            study_service=Mock(),
+            output_service=output_service,
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
@@ -684,7 +685,7 @@ class TestLauncherService:
         logs = launcher_service.get_log(job_id, LogType.STDERR)
         assert logs == "launcher logs"
 
-        study_service.get_logs.side_effect = ["some sim log", "error log"]
+        output_service.get_logs.side_effect = ["some sim log", "error log"]
 
         job_result_mock.output_id = "some id"
         logs = launcher_service.get_log(job_id, LogType.STDOUT)
@@ -693,15 +694,16 @@ class TestLauncherService:
         logs = launcher_service.get_log(job_id, LogType.STDERR)
         assert logs == "error log"
 
-        study_service.get_logs.assert_has_calls(
+        output_service.get_logs.assert_has_calls(
             [
-                call("study_id", "some id", job_id, False),
-                call("study_id", "some id", job_id, True),
+                call("study_id", "some id", LogType.STDOUT),
+                call("study_id", "some id", LogType.STDERR),
             ]
         )
 
     @with_admin_user
     def test_manage_output(self, tmp_path: Path) -> None:
+        # TODO: finish adaptation
         study_service = Mock()
         study_service.get_study.return_value = Mock(spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE)
         output_service = Mock(spec=OutputService)
@@ -758,9 +760,11 @@ class TestLauncherService:
             ),
         ]
         with pytest.raises(JobNotFound):
-            launcher_service._import_output(job_id, output_path, {"out.log": [additional_log]})
+            additional_logs = SimulationLogs(out=additional_log, err=None)
+            launcher_service._import_output(job_id, output_path, additional_logs)
 
-        launcher_service._import_output(job_id, output_path, {"out.log": [additional_log]})
+        additional_logs = SimulationLogs(out=additional_log, err=None)
+        launcher_service._import_output(job_id, output_path, additional_logs)
         assert not launcher_service._get_job_output_fallback_path(job_id).exists()
         launcher_service.output_service.import_output.assert_called()
 
@@ -768,37 +772,23 @@ class TestLauncherService:
         launcher_service.output_service.export_output.assert_called()
 
         launcher_service._import_output(
-            zipped_job_id,
-            zipped_output_path,
-            {
-                "out.log": [additional_log],
-                "antares-out": [additional_log],
-                "antares-err": [additional_log],
-            },
+            zipped_job_id, zipped_output_path, SimulationLogs(out=additional_log, err=additional_log)
         )
-        launcher_service.study_service.save_logs.has_calls(
-            [
-                call(study_id, zipped_job_id, "out.log", "some log"),
-                call(study_id, zipped_job_id, "out", "some log"),
-                call(study_id, zipped_job_id, "err", "some log"),
-            ]
+        launcher_service.output_service.import_output.assert_called()
+
+        launcher_service.output_service.import_output.side_effect = [StudyNotFoundError("")]
+        assert (
+            launcher_service._import_output(job_id, output_path, SimulationLogs(out=additional_log, err=None)) is None
         )
 
-        launcher_service.output_service.import_output.side_effect = [
-            StudyNotFoundError(""),
-            StudyNotFoundError(""),
-        ]
-
-        assert launcher_service._import_output(job_id, output_path, {"out.log": [additional_log]}) is None
-
+        launcher_service.output_service.import_output.side_effect = [StudyNotFoundError("")]
         (new_output_path / "info.antares-output").write_text(
             f"[general]\nmode=Economy\nname=foo\ntimestamp={time.time()}"
         )
-        output_name = launcher_service._import_output(job_id, output_path, {"out.log": [additional_log]})
+        output_name = launcher_service._import_output(job_id, output_path, SimulationLogs(out=additional_log, err=None))
         assert output_name is not None
         assert output_name.endswith("-hello")
         assert launcher_service._get_job_output_fallback_path(job_id).exists()
-        assert (launcher_service._get_job_output_fallback_path(job_id) / output_name / "out.log").exists()
 
         launcher_service.job_result_repository.get.reset_mock()
         launcher_service.job_result_repository.get.side_effect = [
@@ -829,7 +819,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Mock(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
-            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
+            output_service=Mock(),
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
@@ -986,7 +976,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=config,
             study_service=study_service,
-            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock(), Mock(), Mock()),
+            output_service=Mock(),
             login_service=Mock(),
             job_result_repository=job_repository,
             solver_presets_repository=Mock(),
@@ -1025,7 +1015,9 @@ class TestLauncherService:
         job_repository.get.return_value = job_result
 
         # fake import_output function that checks the current user
-        def fake_import_output(uuid: str, output: Path, output_name_suffix: None, auto_unzip: bool) -> None:
+        def fake_import_output(
+            uuid: str, output: Path, output_name_suffix: None, auto_unzip: bool, logs: SimulationLogs
+        ) -> None:
             assert get_current_user() == jwt_user
 
         output_service = Mock()
@@ -1047,7 +1039,7 @@ class TestLauncherService:
         )
 
         # Ensures the output_service.import_output method was called with the right user
-        launcher_service._import_output("job_id", tmp_path, {})
+        launcher_service._import_output("job_id", tmp_path, SimulationLogs.no_logs())
 
     @with_admin_user
     def test_run_study_with_solver_presets(self) -> None:
@@ -1090,7 +1082,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=storage_service_mock,
-            output_service=OutputService(storage_service_mock, Mock(), Mock(), Mock(), Mock(), Mock(), event_bus),
+            output_service=Mock(),
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=solver_presets_repository,

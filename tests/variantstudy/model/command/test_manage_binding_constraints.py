@@ -20,10 +20,10 @@ from antarest.study.business.model.binding_constraint_model import (
     ConstraintTerm,
     LinkTerm,
 )
+from antarest.study.business.model.scenario_builder_model import RulesetUpdate
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.dao.file.file_study_constraint_dao import update_matrices_names
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import parse_rulesets_update
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
     default_bc_weekly_daily as default_bc_weekly_daily_870,
@@ -198,7 +198,7 @@ def test_manage_binding_constraint(
         if study_version >= 870:
             # Add scenario builder data
             output = UpdateScenarioBuilder(
-                data=parse_rulesets_update({"Default Ruleset": {"bc,default,0": 1}}),
+                data=RulesetUpdate(binding_constraints={"default": {"0": 1}}),
                 command_context=command_context,
                 study_version=study_version,
             ).apply(study_data=empty_study)
@@ -294,7 +294,7 @@ def test_scenario_builder(empty_study_870: FileStudy, command_context: CommandCo
 
     # Create a rule in the scenario builder for the binding constraint group:
     output = UpdateScenarioBuilder(
-        data=parse_rulesets_update({"Default Ruleset": {f"bc,{bc_group.lower()},0": 1}}),  # group name in lowercase
+        data=RulesetUpdate(binding_constraints={bc_group.lower(): {"0": 1}}),  # group name in lowercase
         command_context=command_context,
         study_version=study_version,
     ).apply(study_data=empty_study)
