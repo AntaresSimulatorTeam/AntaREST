@@ -179,7 +179,7 @@ def build_output_storage_list(config: Config, file_output_storage: InStudyFileOu
     if not config.storage.output.enable:
         return [file_output_storage]
     tmp_dir = config.storage.tmp_dir / "outputs"
-    lfs = DirLargeFileStorage(config.storage.archive_dir)
+    lfs = DirLargeFileStorage(config.storage.output.archive_dir)
     v2_storage = V2OutputStorage(tmp_dir=tmp_dir, archive_storage=lfs, repository=OutputV2Repository())
 
     if config.storage.output.default:
