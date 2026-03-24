@@ -89,7 +89,7 @@ class AbstractLauncher(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_solver_versions(self) -> list[str]:
+    def get_solver_versions(self) -> list[SolverVersion]:
         raise NotImplementedError()
 
     def create_update_log(self, job_id: str) -> Callable[[str], None]:

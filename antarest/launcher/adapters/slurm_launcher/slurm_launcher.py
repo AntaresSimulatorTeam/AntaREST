@@ -495,7 +495,7 @@ class SlurmLauncher(AbstractLauncher):
 
                     append_log(launch_uuid, "Checking study version...")
                     available_versions = self.slurm_config.antares_versions_on_remote_server
-                    if f"{version:ddd}" not in available_versions:
+                    if version not in available_versions:
                         raise VersionNotSupportedError(
                             f"Study version '{version}' is not supported. Currently supported versions are"
                             f" {', '.join(available_versions)}"
@@ -634,7 +634,7 @@ class SlurmLauncher(AbstractLauncher):
             )
 
     @override
-    def get_solver_versions(self) -> list[str]:
+    def get_solver_versions(self) -> list[SolverVersion]:
         return sorted(self.slurm_config.antares_versions_on_remote_server)
 
     @override
