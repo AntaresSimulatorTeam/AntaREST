@@ -260,7 +260,7 @@ dev = [
     { name = "pytest-xdist", specifier = "~=3.8.0" },
     { name = "ruff", specifier = "~=0.15.2" },
     { name = "types-openpyxl", specifier = "~=3.1.5" },
-    { name = "types-paramiko", specifier = "~=3.5.0" },
+    { name = "types-paramiko", specifier = "~=3.4.0" },
     { name = "types-psycopg2", specifier = "~=2.9.9" },
     { name = "types-pyyaml", specifier = "~=5.4.1" },
     { name = "types-redis", specifier = "~=4.6.0" },
@@ -3091,14 +3091,14 @@ wheels = [
 
 [[package]]
 name = "types-paramiko"
-version = "3.5.0.20250801"
+version = "3.4.0.20240423"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cryptography" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d5/c4/4df427c835e9c795662241410732ab936c6f58be798ec25ce7015771c448/types_paramiko-3.5.0.20250801.tar.gz", hash = "sha256:e79ff84eaf44f2a5ad811743edef5d9c0cd6632a264a526f00405b87db1ec99b", size = 28838, upload-time = "2025-08-01T03:48:52.777Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3b/25/14c8657dd55790fcfd2aab132e6dd5aefdcde334ca14a6620461a9a406e9/types-paramiko-3.4.0.20240423.tar.gz", hash = "sha256:aaa98dda232c47886563d66743d3a8b66c432790c596bc3bdd3f17f91be2a8c1", size = 23096, upload-time = "2024-04-23T02:20:05.641Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bd/5b/0f0bb1e45f7547d081ae9d490a88c6f6031d0f2c97459236e0a2a8b27207/types_paramiko-3.5.0.20250801-py3-none-any.whl", hash = "sha256:3e02a0fcf2b7e7b213e0cd569f7223ff9af417052a4d149d84172ebaa6fd742e", size = 39705, upload-time = "2025-08-01T03:48:51.855Z" },
+    { url = "https://files.pythonhosted.org/packages/a0/c0/2d7ab4626a928de8f0dfa856c19391a87b2752e298629f8f6ad81c01c422/types_paramiko-3.4.0.20240423-py3-none-any.whl", hash = "sha256:c56e0d43399a1b909901b1e0375e0ff6ee62e16cd6e00695024abc2e9fe02035", size = 33971, upload-time = "2024-04-23T02:20:03.113Z" },
 ]
 
 [[package]]
