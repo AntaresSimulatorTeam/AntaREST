@@ -188,7 +188,7 @@ def create_launcher_api() -> APIRouter:
         launcher_msg = f"launcher '{launcher_id}'" if launcher_id else "default launcher"
         logger.info(f"Fetching the list of solver versions for {launcher_msg}")
         solver_versions = service.get_solver_versions(launcher_id)
-        return [str(v) for v in solver_versions]
+        return [f"{v:ddd}" for v in solver_versions]
 
     @bp.post(
         "/solver-presets",
