@@ -11,18 +11,11 @@
 # This file is part of the Antares project.
 
 import json
-from pathlib import Path
 
-from antares.study.version import SolverVersion
 from starlette.testclient import TestClient
 
 
-def _add_solver_9_3_to_config(client: TestClient) -> None:
-    client.app.state.app_state.config.launcher.configs[0].binaries[SolverVersion.parse("9.3")] = Path()
-
-
 def test_solver_presets(client: TestClient, user_access_token: str, admin_access_token: str) -> None:
-    _add_solver_9_3_to_config(client)
     # Test creating solver presets
     payload1 = {
         "name": "test-xpress-config",
