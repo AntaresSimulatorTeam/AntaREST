@@ -16,7 +16,7 @@ from contextvars import ContextVar
 from re import escape
 
 from antarest.core.jwt import JWTUser
-from antarest.core.requests import MustBeAuthenticatedError
+from antarest.core.requests import MustBeAuthenticatedError, UserHasNotPermissionError
 
 _current_user: ContextVar[JWTUser | None] = ContextVar("_current_user", default=None)
 
@@ -30,6 +30,13 @@ def require_current_user() -> JWTUser:
     if user := get_current_user():
         return user
     raise MustBeAuthenticatedError()
+
+
+def require_admin_user() -> JWTUser:
+    user = require_current_user()
+    if not (user.is_site_admin() or user.is_admin_token()):
+        raise UserHasNotPermissionError()
+    return user
 
 
 def get_user_id() -> str:

@@ -18,7 +18,6 @@ import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudyFilters } from "@/redux/selectors";
 import { getParentPaths } from "@/utils/pathUtils";
 import { SimpleTreeView } from "@mui/x-tree-view";
-import * as R from "ramda";
 import { useCallback, useMemo } from "react";
 import ExternalTreeNode from "./ExternalTreeNode";
 import { useFolderExplorer } from "./hooks/useFolderExplorer";
@@ -29,8 +28,8 @@ import type { ExternalTreeProps } from "./types";
 function ExternalTree({ studies }: ExternalTreeProps) {
   const dispatch = useAppDispatch();
   // Get current folder filter - allows to display studies in the current folder
-  const filters = useAppSelector((state) => getStudyFilters(state), R.T);
-  const path = filters.external.path;
+  const path = useAppSelector((state) => getStudyFilters(state).external.path);
+  const isActive = useAppSelector((state) => getStudyFilters(state).activeTree === "external");
 
   // Fetch workspaces (only in desktop mode)
   const { data: workspaces } = useWorkspaces();
@@ -89,7 +88,7 @@ function ExternalTree({ studies }: ExternalTreeProps) {
   return (
     <SimpleTreeView
       defaultExpandedItems={[...getParentPaths(path), path]}
-      defaultSelectedItems={path}
+      selectedItems={isActive ? path : ""}
       onItemExpansionToggle={handleItemExpansionToggle}
       onItemClick={handleItemClick}
     >

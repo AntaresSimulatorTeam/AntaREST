@@ -86,6 +86,7 @@ function StudyTree() {
         onToggleCollapse={() => handleToggleCollapse("managed")}
         onRootClick={handleManagedRootClick}
         onAddDirectory={handleAddDirectoryClick}
+        scrollKey="study-tree-managed"
       >
         <ManagedTree
           isCreatingDirectory={isCreatingDirectory}
@@ -102,6 +103,7 @@ function StudyTree() {
         icon={<StorageIcon />}
         onToggleCollapse={() => handleToggleCollapse("external")}
         onRootClick={handleExternalRootClick}
+        scrollKey="study-tree-external"
       >
         <ExternalTree studies={externalStudies} onRootClick={handleExternalRootClick} />
       </TreeSection>
