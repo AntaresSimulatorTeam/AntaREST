@@ -14,7 +14,8 @@
 
 export const directoryKeys = {
   all: ["directories"] as const,
-  lists: () => [...directoryKeys.all, "list"] as const,
+  list: () => [...directoryKeys.all, "list"] as const,
+  favorites: () => [...directoryKeys.all, "favoriteDirectories"] as const,
   create: () => [...directoryKeys.all, "createDirectory"] as const,
   update: () => [...directoryKeys.all, "updateDirectory"] as const,
   delete: () => [...directoryKeys.all, "deleteDirectory"] as const,

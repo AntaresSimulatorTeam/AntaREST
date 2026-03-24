@@ -14,18 +14,14 @@
 
 import { getBindingConstraints } from "@/services/api/studies/bindingConstraints";
 import type { StudyMetadata } from "@/types/types";
-import { queryOptions } from "@tanstack/react-query";
-import { isQueryListMutating, queryList } from "../utils";
+import { queryListOptions } from "../utils";
 import { bindingConstraintKeys } from "./keys";
 
 export const bindingConstraintQueries = {
   list: (studyId: StudyMetadata["id"]) => {
-    return queryOptions({
+    return queryListOptions({
       queryKey: bindingConstraintKeys.list(studyId),
-      queryFn: async () => queryList(await getBindingConstraints({ studyId })),
-      refetchOnWindowFocus: (query) => !query.state.data || !isQueryListMutating(query.state.data),
-      refetchOnReconnect: (query) => !query.state.data || !isQueryListMutating(query.state.data),
-      refetchOnMount: (query) => !query.state.data || !isQueryListMutating(query.state.data),
+      queryFn: () => getBindingConstraints({ studyId }),
     });
   },
 };

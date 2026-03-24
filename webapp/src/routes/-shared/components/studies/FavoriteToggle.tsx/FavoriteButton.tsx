@@ -12,26 +12,30 @@
  * This file is part of the Antares project.
  */
 
-import type { StudyMetadata } from "@/types/types";
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
-import { Checkbox, type CheckboxProps, Tooltip } from "@mui/material";
+import { IconButton, Tooltip, type IconButtonProps, type TooltipProps } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
-interface Props {
-  studyId: StudyMetadata["id"];
-  size?: CheckboxProps["size"];
+export interface FavoriteButtonProps {
+  isFavorite: boolean;
+  onClick: NonNullable<IconButtonProps["onClick"]>;
+  edge: IconButtonProps["edge"];
+  tooltipPlacement: TooltipProps["placement"];
+  loading?: boolean;
 }
 
-function FavoriteStudyToggle({ studyId, size }: Props) {
-  const isFavorite = false;
+function FavoriteButton({ isFavorite, tooltipPlacement, onClick, ...rest }: FavoriteButtonProps) {
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleChange = () => {
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onClick(event);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -39,17 +43,15 @@ function FavoriteStudyToggle({ studyId, size }: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Tooltip title={isFavorite ? t("studies.removeFavorite") : t("studies.addFavorite")}>
-      <Checkbox
-        size={size}
-        checked={isFavorite}
-        icon={<StarBorderIcon />}
-        checkedIcon={<StarIcon />}
-        onClick={(event) => event.stopPropagation()}
-        onChange={handleChange}
-      />
+    <Tooltip
+      title={isFavorite ? t("studies.removeFavorite") : t("studies.addFavorite")}
+      placement={tooltipPlacement}
+    >
+      <IconButton color="primary" size="small" onClick={handleClick} {...rest}>
+        {isFavorite ? <StarIcon /> : <StarBorderIcon />}
+      </IconButton>
     </Tooltip>
   );
 }
 
-export default FavoriteStudyToggle;
+export default FavoriteButton;

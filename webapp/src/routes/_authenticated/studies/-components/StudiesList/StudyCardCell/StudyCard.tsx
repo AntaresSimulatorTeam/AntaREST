@@ -48,7 +48,7 @@ import { useSnackbar } from "notistack";
 import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { areEqual } from "react-window";
-import FavoriteStudyToggle from "../../../../../-shared/components/studies/FavoriteStudyToggle";
+import FavoriteStudyToggle from "../../../../../-shared/components/studies/FavoriteToggle.tsx/FavoriteStudyToggle";
 import StudyActionsMenu from "../../../../../-shared/components/studies/StudyActionsMenu";
 
 const logError = debug("antares:studieslist:error");
