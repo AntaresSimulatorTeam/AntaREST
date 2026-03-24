@@ -388,7 +388,7 @@ class LocalConfig:
             data: Parse config from dict.
         Returns: object NbCoresConfig
         """
-        binaries = {SolverVersion.parse(k): Path(v) for k, v in data.get("binaries", {}).items()}
+        binaries = {SolverVersion.parse(str(k)): Path(v) for k, v in data.get("binaries", {}).items()}
         enable_nb_cores_detection = data.get("enable_nb_cores_detection", True)
         nb_cores = data.get("nb_cores", asdict(NbCoresConfig()))
         if enable_nb_cores_detection:
@@ -465,7 +465,7 @@ class SlurmConfig:
         max_time_limit = data.get("default_time_limit", TimeLimitConfig().max * 3600) // 3600
         time_limit = TimeLimitConfig(min=1, default=max_time_limit, max=max_time_limit)
         antares_versions_as_str = data.get("antares_versions_on_remote_server", [])
-        antares_versions_on_remote_server = [SolverVersion.parse(v) for v in antares_versions_as_str]
+        antares_versions_on_remote_server = [SolverVersion.parse(str(v)) for v in antares_versions_as_str]
         return cls(
             id=data["id"],
             name=data["name"],
