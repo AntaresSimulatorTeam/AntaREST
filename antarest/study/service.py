@@ -495,7 +495,7 @@ class RawStudyInterface(StudyInterface):
         ).read_only()
 
     @override
-    def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
+    def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
         study = self._study
         file_study: Optional[FileStudy] = None
 
@@ -545,6 +545,7 @@ class RawStudyInterface(StudyInterface):
             dao.update_antares_file(user_name, last_save)
             # Update DB metadata
             self._study.editor = user_name
+            self._study.updated_at = current_time()
             self._repository.save(self._study)
 
 
@@ -583,7 +584,7 @@ class VariantStudyInterface(StudyInterface):
         ).read_only()
 
     @override
-    def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
+    def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
         # get current user if not in session, otherwise get session user
         self._variant_service.append_commands(self._study.id, transform_command_to_dto(commands, force_aggregate=True))
 

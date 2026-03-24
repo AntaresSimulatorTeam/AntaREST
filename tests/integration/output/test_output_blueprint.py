@@ -29,6 +29,7 @@ def test_list_outputs(admin_client: TestClient, internal_study_id: str):
             "mode": "Economy",
             "name": "20201014-1422eco-hello",
             "nbYears": 1,
+            "storageType": "IN_STUDY_FILE_TREE",
             "settings": {
                 "general": {
                     "first-month-in-year": "january",
@@ -54,6 +55,7 @@ def test_list_outputs(admin_client: TestClient, internal_study_id: str):
             "mode": "Economy",
             "name": "20201014-1425eco-goodbye",
             "nbYears": 2,
+            "storageType": "IN_STUDY_FILE_TREE",
             "settings": {
                 "general": {
                     "first-month-in-year": "january",
@@ -79,6 +81,7 @@ def test_list_outputs(admin_client: TestClient, internal_study_id: str):
             "mode": "Economy",
             "name": "20201014-1427eco",
             "nbYears": 1,
+            "storageType": "IN_STUDY_FILE_TREE",
             "settings": {
                 "general": {
                     "first-month-in-year": "january",
@@ -104,6 +107,7 @@ def test_list_outputs(admin_client: TestClient, internal_study_id: str):
             "mode": "Adequacy",
             "name": "20201014-1430adq",
             "nbYears": 1,
+            "storageType": "IN_STUDY_FILE_TREE",
             "settings": {
                 "general": {
                     "first-month-in-year": "january",
@@ -129,6 +133,7 @@ def test_list_outputs(admin_client: TestClient, internal_study_id: str):
             "mode": "Adequacy",
             "name": "20201014-1430adq-2",
             "nbYears": 1,
+            "storageType": "IN_STUDY_FILE_TREE",
             "settings": {
                 "general": {
                     "first-month-in-year": "january",
@@ -154,6 +159,7 @@ def test_list_outputs(admin_client: TestClient, internal_study_id: str):
             "mode": "Economy",
             "name": "20241807-1540eco-extra-outputs",
             "nbYears": 1,
+            "storageType": "IN_STUDY_FILE_TREE",
             "settings": {
                 "general": {
                     "first-month-in-year": "january",

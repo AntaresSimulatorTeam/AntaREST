@@ -407,10 +407,8 @@ class VariantStudyService(AbstractStorageService):
         It will need a snapshot generation (NOT from scratch),
         and children need to be notified of their parent change.
         """
-        self.repository.save(
-            metadata=study,
-            update_modification_date=True,
-        )
+        study.updated_at = current_time()
+        self.repository.save(metadata=study)
         self.on_parent_change(study.id)
 
     def get_children(self, parent_id: str) -> List[VariantStudy]:
@@ -446,10 +444,8 @@ class VariantStudyService(AbstractStorageService):
         """
         if variant_study.snapshot:
             variant_study.snapshot.last_executed_command = None
-        self.repository.save(
-            metadata=variant_study,
-            update_modification_date=True,
-        )
+        variant_study.updated_at = current_time()
+        self.repository.save(metadata=variant_study)
 
     def clear_snapshot(self, variant_study: VariantStudy) -> None:
         logger.info(f"Clearing snapshot for study {variant_study.id}")
@@ -662,7 +658,7 @@ class VariantStudyService(AbstractStorageService):
         metadata: VariantStudy,
         denormalize: bool = False,
         from_scratch: bool = False,
-        listener: Optional[ICommandListener] = None,
+        listener: ICommandListener | None = None,
     ) -> str:
         study_id = metadata.id
         with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study_id}.lock")):

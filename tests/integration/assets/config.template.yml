@@ -20,6 +20,11 @@ storage:
   study:
     storage:
       database_mode_enabled: true
+  output:
+    enable: true
+    default: false
+    archive_dir: {{output_archive_dir}}
+
   workspaces:
     default:
       path: {{default_workspace_path}}

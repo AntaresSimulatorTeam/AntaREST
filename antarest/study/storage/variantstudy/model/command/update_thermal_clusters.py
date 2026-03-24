@@ -9,13 +9,14 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Optional, Self
+from typing import Any, Self
 
 from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.model.thermal_cluster_model import (
+    ThermalCluster,
     ThermalClusterUpdates,
     update_thermal_cluster,
     validate_thermal_cluster_against_version,
@@ -55,7 +56,9 @@ class UpdateThermalClusters(ICommand):
         return self
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[dict[str, list[ThermalCluster]]]:
         """
         We validate ALL objects before saving them.
         This way, if some data is invalid, we're not modifying the study partially only.
@@ -84,7 +87,7 @@ class UpdateThermalClusters(ICommand):
         for area_id, new_clusters in memory_mapping.items():
             study_data.save_thermals(area_id, new_clusters)
 
-        return command_succeeded("All thermal clusters updated")
+        return command_succeeded("All thermal clusters updated", result=memory_mapping)
 
     @override
     def to_dto(self) -> CommandDTO:

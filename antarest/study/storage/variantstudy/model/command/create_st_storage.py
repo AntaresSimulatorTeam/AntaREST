@@ -9,8 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-
 from typing import Any, Dict, Final, List, Optional, Self, TypeAlias, cast
 
 import numpy as np
@@ -20,7 +18,7 @@ from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
 from antarest.matrixstore.model import MatrixData
-from antarest.study.business.model.sts_model import STStorageCreation, validate_st_storage_against_version
+from antarest.study.business.model.sts_model import STStorage, STStorageCreation, validate_st_storage_against_version
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -190,7 +188,7 @@ class CreateSTStorage(ICommand):
         return self
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[STStorage]:
         storage = parse_st_storage(self.study_version, self.parameters.model_dump(mode="json"))
         if study_data.st_storage_exists(self.area_id, storage.id):
             return command_failed(f"Short-term storage '{storage.id}' already exists in the area '{self.area_id}'")
@@ -217,7 +215,9 @@ class CreateSTStorage(ICommand):
             matrix = matrices["cost_variation_withdrawal"]
             study_data.save_st_storage_cost_variation_withdrawal(self.area_id, storage.id, matrix)
 
-        return command_succeeded(f"Short-term storage '{storage.id}' successfully added to area '{self.area_id}'.")
+        return command_succeeded(
+            f"Short-term storage '{storage.id}' successfully added to area '{self.area_id}'.", result=storage
+        )
 
     @override
     def to_dto(self) -> CommandDTO:

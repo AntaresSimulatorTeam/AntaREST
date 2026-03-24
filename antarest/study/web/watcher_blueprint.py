@@ -15,13 +15,11 @@ from http import HTTPStatus
 from http.client import HTTPException
 from typing import List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from antarest.core.api_types import SanitizedStr
-from antarest.core.config import Config
 from antarest.core.utils.web import APITag
-from antarest.login.auth import Auth
-from antarest.study.storage.rawstudy.watcher import Watcher
+from antarest.dependencies import WatcherDep, auth_required
 
 logger = logging.getLogger(__name__)
 
@@ -31,27 +29,17 @@ class BadPathFormatError(HTTPException):
         super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
-def create_watcher_routes(
-    watcher: Watcher,
-    config: Config,
-) -> APIRouter:
+def create_watcher_routes() -> APIRouter:
     """
     Endpoint implementation for watcher management
-    Args:
-        watcher: watcher service facade to handle request
-        config: main server configuration
-
-    Returns:
-
     """
-    auth = Auth(config)
-    bp = APIRouter(prefix="/v1", tags=[APITag.study_raw_data], dependencies=[auth.required()])
+    bp = APIRouter(prefix="/v1", tags=[APITag.study_raw_data], dependencies=[Depends(auth_required)])
 
     @bp.post(
         "/watcher/_scan",
         summary="Launch scan in selected directory",
     )
-    def scan_dir(path: SanitizedStr, recursive: bool = True) -> str:
+    def scan_dir(watcher: WatcherDep, path: SanitizedStr, recursive: bool = True) -> str:
         if path:
             # The front actually sends <workspace>/<path/to/folder>
             try:

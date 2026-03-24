@@ -12,7 +12,7 @@
 import itertools
 import logging
 import uuid
-from typing import Callable, List, Optional, Union, cast
+from typing import Any, Callable, List, Optional, Union, cast
 
 from antarest.core.utils.utils import StopWatch
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -27,7 +27,9 @@ from antarest.study.storage.variantstudy.model.model import GenerationResultInfo
 
 logger = logging.getLogger(__name__)
 
-APPLY_CALLBACK = Callable[[ICommand, Union[FileStudyTreeConfig, FileStudy], Optional[ICommandListener]], CommandOutput]
+APPLY_CALLBACK = Callable[
+    [ICommand, Union[FileStudyTreeConfig, FileStudy], Optional[ICommandListener]], CommandOutput[Any]
+]
 
 
 class CmdNotifier:
@@ -45,7 +47,7 @@ def _generate(
     data: FileStudy,
     applier: APPLY_CALLBACK,
     metadata: VariantStudy,
-    listener: Optional[ICommandListener] = None,
+    listener: ICommandListener | None = None,
 ) -> GenerationResultInfoDTO:
     stopwatch = StopWatch()
     # Apply commands
@@ -99,7 +101,7 @@ def apply_commands_to_variant(
     commands: List[List[ICommand]],
     metadata: VariantStudy,
     study: FileStudy,
-    listener: Optional[ICommandListener] = None,
+    listener: ICommandListener | None = None,
 ) -> GenerationResultInfoDTO:
     # Build file study
     logger.info("Building study tree")

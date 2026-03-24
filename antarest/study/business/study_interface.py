@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Sequence
 
 from antares.study.version import StudyVersion
 from typing_extensions import override
@@ -21,6 +21,7 @@ from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.memory.in_memory_study_dao import InMemoryStudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.command.common import CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 
@@ -58,7 +59,7 @@ class StudyInterface(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
+    def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
         """
         Adds commands to that study.
         Note that implementations are not required to actually modify the underlying file study.
@@ -95,9 +96,9 @@ class InMemoryStudyInterface(StudyInterface):
         raise NotImplementedError("In memory studies cannot be converted to file study.")
 
     @override
-    def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
+    def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
         for command in commands:
-            result = command.apply(self._study_dao, listener)
+            result: CommandOutput[Any] = command.apply(self._study_dao, listener)
             if not result.status:
                 raise CommandApplicationError(result.message)
 
@@ -137,7 +138,7 @@ class FileStudyInterface(StudyInterface):
         return self.file_study
 
     @override
-    def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
+    def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
         for command in commands:
             context = command.command_context
             result = command.apply(

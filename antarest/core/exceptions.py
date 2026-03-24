@@ -422,6 +422,11 @@ class OutputSubFolderNotFound(HTTPException):
         return self.detail
 
 
+class InvalidOutputConversionRequest(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
 class BadZipBinary(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, message)

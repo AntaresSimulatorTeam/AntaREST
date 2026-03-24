@@ -40,6 +40,7 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.core.utils.utils import current_time
 from antarest.dbmodel import Base
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
@@ -65,7 +66,7 @@ from antarest.launcher.service import (
 )
 from antarest.login.model import Identity
 from antarest.login.utils import current_user_context, get_current_user
-from antarest.output.output_service import OutputService
+from antarest.output.service import OutputService
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, OwnerInfo, Study, StudyMetadataDTO
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
@@ -635,8 +636,7 @@ class TestLauncherService:
         engine = create_engine("sqlite:///:memory:", echo=False)
         Base.metadata.create_all(engine)
         # noinspection SpellCheckingInspection
-        DBSessionMiddleware(
-            None,
+        init_db_singleton(
             custom_engine=engine,
             session_args={"autocommit": False, "autoflush": False},
         )
