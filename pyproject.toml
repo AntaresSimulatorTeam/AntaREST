@@ -17,7 +17,7 @@ classifiers=[
         "Operating System :: OS Independent",
     ]
 dependencies = [
-    "Antares-Launcher==1.4.7",
+    "Antares-Launcher==1.4.6",
     "antares-study-version==1.0.20",
     "antares-timeseries-generation==0.1.9",
     "fastapi==0.135.1",
@@ -38,7 +38,7 @@ dependencies = [
     "numexpr==2.14.1",
     "openpyxl~=3.1.5",
     "pandas~=2.3.3",
-    "paramiko~=3.5.1",
+    "paramiko~=3.4.1",
     "plyer~=2.1.0",
     "polars~=1.39.0",
     "psycopg2-binary~=2.9.9",

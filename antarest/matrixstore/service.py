@@ -288,7 +288,9 @@ class MatrixService(ISimpleMatrixService):
             # Nothing to do
             return matrix_id, None
         created_at = current_time()
-        matrix = Matrix(id=matrix_id, width=data.shape[1], height=data.shape[0], created_at=created_at, version=2)
+        width = data.shape[1]
+        height = data.shape[0] if width > 0 else 0
+        matrix = Matrix(id=matrix_id, width=width, height=height, created_at=created_at, version=2)
         return matrix_id, matrix
 
     @override
