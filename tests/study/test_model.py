@@ -92,12 +92,12 @@ class TestStudy:
             tags = db_session.query(Tag).all()
             studies = db_session.query(Study).all()
             assert len(study_tag_pairs) == 3
-            assert set(e.tag_label for e in study_tag_pairs) == {"test-tag-1", "test-tag-2"}
-            assert set(e.study_id for e in study_tag_pairs) == {study_id_1, study_id_2}
+            assert {e.tag_label for e in study_tag_pairs} == {"test-tag-1", "test-tag-2"}
+            assert {e.study_id for e in study_tag_pairs} == {study_id_1, study_id_2}
             assert len(tags) == 2
-            assert set(tag.label for tag in tags) == {"test-tag-1", "test-tag-2"}
+            assert {tag.label for tag in tags} == {"test-tag-1", "test-tag-2"}
             assert len(studies) == 3
-            assert set(study.id for study in studies) == {study_id_1, study_id_2, study_id_3}
+            assert {study.id for study in studies} == {study_id_1, study_id_2, study_id_3}
 
             # verify that ondelete works for studies
             db_session.query(Study).filter(Study.id == study_id_2).delete()
@@ -106,12 +106,12 @@ class TestStudy:
             tags = db_session.query(Tag).all()
             studies = db_session.query(Study).all()
             assert len(study_tag_pairs) == 2
-            assert set(e.tag_label for e in study_tag_pairs) == {"test-tag-1", "test-tag-2"}
-            assert set(e.study_id for e in study_tag_pairs) == {study_id_1}
+            assert {e.tag_label for e in study_tag_pairs} == {"test-tag-1", "test-tag-2"}
+            assert {e.study_id for e in study_tag_pairs} == {study_id_1}
             assert len(tags) == 2
-            assert set(tag.label for tag in tags) == {"test-tag-1", "test-tag-2"}
+            assert {tag.label for tag in tags} == {"test-tag-1", "test-tag-2"}
             assert len(studies) == 2
-            assert set(study.id for study in studies) == {study_id_1, study_id_3}
+            assert {study.id for study in studies} == {study_id_1, study_id_3}
 
             # verify ondelete works for tags
             db_session.query(Tag).filter(Tag.label == "test-tag-2").delete()
@@ -120,16 +120,16 @@ class TestStudy:
             tags = db_session.query(Tag).all()
             studies = db_session.query(Study).all()
             assert len(study_tag_pairs) == 1
-            assert set(e.tag_label for e in study_tag_pairs) == {"test-tag-1"}
-            assert set(e.study_id for e in study_tag_pairs) == {study_id_1}
+            assert {e.tag_label for e in study_tag_pairs} == {"test-tag-1"}
+            assert {e.study_id for e in study_tag_pairs} == {study_id_1}
             assert len(tags) == 1
-            assert set(tag.label for tag in tags) == {"test-tag-1"}
+            assert {tag.label for tag in tags} == {"test-tag-1"}
             assert len(studies) == 2
-            assert set(study.id for study in studies) == {study_id_1, study_id_3}
+            assert {study.id for study in studies} == {study_id_1, study_id_3}
             studies = db_session.query(Study).filter(Study.id == study_id_1).options(joinedload(Study.tags)).all()
             assert len(studies) == 1
-            assert set(study.id for study in studies) == {study_id_1}
-            assert set(tag.label for tag in studies[0].tags) == {"test-tag-1"}
+            assert {study.id for study in studies} == {study_id_1}
+            assert {tag.label for tag in studies[0].tags} == {"test-tag-1"}
 
             # verify updating works
             study = db_session.get(Study, study_id_1)
@@ -138,8 +138,8 @@ class TestStudy:
             db_session.commit()
             study_tag_pairs = db_session.query(StudyTag).all()
             assert len(study_tag_pairs) == 2
-            assert set(e.tag_label for e in study_tag_pairs) == {"test-tag-2", "test-tag-3"}
-            assert set(e.study_id for e in study_tag_pairs) == {study_id_1}
+            assert {e.tag_label for e in study_tag_pairs} == {"test-tag-2", "test-tag-3"}
+            assert {e.study_id for e in study_tag_pairs} == {study_id_1}
 
     def test_storage_mode_defaults_to_filesystem(self, db_session: Session) -> None:
         """

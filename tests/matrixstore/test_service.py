@@ -533,7 +533,7 @@ def test_dataset_lifecycle() -> None:
         ),
     ]
     with current_user_context(botA):
-        res = service.list("dataset", True)
+        res = service.list_datasets("dataset", True)
     dataset_repo.query.assert_called_with("dataset", botA.impersonator)
     assert len(res) == 1
     assert res[0] == MatrixDataSetDTO(
@@ -550,10 +550,10 @@ def test_dataset_lifecycle() -> None:
         ],
     )
     with current_user_context(botA):
-        service.list("dataset", False)
+        service.list_datasets("dataset", False)
     dataset_repo.query.assert_called_with("dataset", None)
     with current_user_context(userB):
-        res = service.list("dataset", False)
+        res = service.list_datasets("dataset", False)
     assert len(res) == 2
 
     with pytest.raises(MatrixDataSetNotFound):

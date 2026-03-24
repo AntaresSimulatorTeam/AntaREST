@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Dict
 
 from typing_extensions import override
 
@@ -41,7 +40,7 @@ class UpdateAreasProperties(ICommand):
 
     # Command parameters
     # ==================
-    properties: Dict[str, AreaPropertiesUpdate]
+    properties: dict[str, AreaPropertiesUpdate]
 
     @override
     def _apply_dao(

@@ -13,7 +13,7 @@
 import importlib
 import itertools
 import pkgutil
-from typing import Any, Dict, Optional, Set
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -1077,7 +1077,7 @@ def command_factory() -> CommandFactory:
 
 
 class TestCommandFactory:
-    def _get_command_classes(self) -> Set[str]:
+    def _get_command_classes(self) -> set[str]:
         """
         Imports all modules from the `antarest.study.storage.variantstudy.model.command` package
         and creates a set of command class names derived from the `ICommand` abstract class.
@@ -1099,7 +1099,7 @@ class TestCommandFactory:
     def test_command_factory(
         self,
         command_dto: CommandDTO,
-        expected_args: Optional[Dict[str, Any]],
+        expected_args: dict[str, Any] | None,
         command_factory: CommandFactory,
     ) -> None:
         commands = command_factory.to_command(command_dto=command_dto)

@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Optional
+from typing import Any
 
 from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field
@@ -31,11 +31,11 @@ class RenewableClusterFileData(AntaresBaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     name: str
-    enabled: Optional[bool] = None
-    unit_count: Optional[int] = Field(default=None, alias="unitcount")
-    nominal_capacity: Optional[float] = Field(default=None, alias="nominalcapacity")
-    group: Optional[str] = None
-    ts_interpretation: Optional[TimeSeriesInterpretation] = Field(default=None, alias="ts-interpretation")
+    enabled: bool | None = None
+    unit_count: int | None = Field(default=None, alias="unitcount")
+    nominal_capacity: float | None = Field(default=None, alias="nominalcapacity")
+    group: str | None = None
+    ts_interpretation: TimeSeriesInterpretation | None = Field(default=None, alias="ts-interpretation")
 
     def to_model(self) -> RenewableCluster:
         return RenewableCluster.model_validate(self.model_dump(exclude_none=True))

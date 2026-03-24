@@ -10,7 +10,8 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Generator, Tuple
+from collections.abc import Generator
+from typing import Any
 
 import typing_extensions as te
 from typing_extensions import override
@@ -34,7 +35,7 @@ _ENR_MODELLING_KEY = "settings/generaldata/other preferences/renewable-generatio
 _Data: te.TypeAlias = str | int | float | bool | JSON | None
 
 
-def _iter_dict(data: _Data, root_key: str = "") -> Generator[Tuple[str, Any], None, None]:
+def _iter_dict(data: _Data, root_key: str = "") -> Generator[tuple[str, Any], None, None]:
     if isinstance(data, dict):
         for key, value in data.items():
             sub_key = f"{root_key}/{key}" if root_key else key

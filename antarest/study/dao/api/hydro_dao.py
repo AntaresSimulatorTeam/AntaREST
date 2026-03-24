@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Dict
 
 import polars as pl
 
@@ -26,7 +25,7 @@ from antarest.study.business.model.hydro_model import (
 
 class ReadOnlyHydroDao(ABC):
     @abstractmethod
-    def get_all_hydro_properties(self) -> Dict[str, HydroProperties]:
+    def get_all_hydro_properties(self) -> dict[str, HydroProperties]:
         raise NotImplementedError()
 
     @abstractmethod

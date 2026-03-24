@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 from operator import and_
-from typing import Optional
 
 from sqlalchemy import select
 
@@ -27,7 +26,7 @@ class ConfigDataRepository:
         db.session.commit()
         return configdata
 
-    def get(self, key: str, owner: Optional[int] = None) -> Optional[ConfigData]:
+    def get(self, key: str, owner: int | None = None) -> ConfigData | None:
         return db.session.execute(
             select(ConfigData).where(
                 and_(

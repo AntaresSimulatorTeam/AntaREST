@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import Dict, List
 
 from pydantic import ConfigDict
 
@@ -63,9 +62,9 @@ class StudyDataSynthesis(AntaresBaseModel):
 
     study_id: str
     version: StudyVersionInt
-    districts: Dict[str, District] = {}
-    areas: Dict[str, AreaConfig] = {}
-    bindings: List[BindingConstraint] = []
+    districts: dict[str, District] = {}
+    areas: dict[str, AreaConfig] = {}
+    bindings: list[BindingConstraint] = []
     enr_modelling: EnrModelling = EnrModelling.AGGREGATED
 
     @classmethod
@@ -95,10 +94,10 @@ class StudySynthesis(AntaresBaseModel):
 
     study_id: str
     version: StudyVersionInt
-    districts: Dict[str, District] = {}
-    areas: Dict[str, AreaConfig] = {}
-    outputs: Dict[str, OutputSynthesis] = {}
-    bindings: List[BindingConstraint] = []
+    districts: dict[str, District] = {}
+    areas: dict[str, AreaConfig] = {}
+    outputs: dict[str, OutputSynthesis] = {}
+    bindings: list[BindingConstraint] = []
     enr_modelling: EnrModelling = EnrModelling.AGGREGATED
 
     @classmethod

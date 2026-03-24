@@ -18,7 +18,7 @@ This module provides database-backed storage for areas when storage_mode=DATABAS
 
 import json
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Any
 
 import polars as pl
 from sqlalchemy import Row, Table, case, delete, insert, select, update
@@ -88,7 +88,7 @@ class DatabaseAreaDao(AreaDao):
         return [row.area_id for row in result]
 
     @override
-    def get_all_areas_info(self) -> List[AreaInfo]:
+    def get_all_areas_info(self) -> list[AreaInfo]:
         """
         Retrieve all physical areas of a study.
 
@@ -111,7 +111,7 @@ class DatabaseAreaDao(AreaDao):
         return areas_info
 
     @override
-    def get_all_areas_ui_info(self) -> Dict[str, AreaUIData]:
+    def get_all_areas_ui_info(self) -> dict[str, AreaUIData]:
         """
         Retrieve information about all areas' user interface (UI) from the study.
 
@@ -126,18 +126,18 @@ class DatabaseAreaDao(AreaDao):
         rows = session.execute(stmt)
 
         # Group UI rows by area_id
-        ui_by_area: Dict[str, List[Any]] = {}
+        ui_by_area: dict[str, list[Any]] = {}
         for row in rows:
             area_id = row.area_id
             ui_by_area.setdefault(area_id, []).append(row)
 
         # Build result
-        result: Dict[str, AreaUIData] = {}
+        result: dict[str, AreaUIData] = {}
         for area_id, ui_rows in ui_by_area.items():
-            ui_dict: Dict[str, int | str] = {}
-            layer_x: Dict[str, int] = {}
-            layer_y: Dict[str, int] = {}
-            layer_color: Dict[str, str] = {}
+            ui_dict: dict[str, int | str] = {}
+            layer_x: dict[str, int] = {}
+            layer_y: dict[str, int] = {}
+            layer_color: dict[str, str] = {}
 
             # Find default layer
             default_ui = next((row for row in ui_rows if row.layer_id == DEFAULT_LAYER_ID), None)
@@ -337,7 +337,7 @@ class DatabaseAreaDao(AreaDao):
         return list(invalid_areas)
 
     @override
-    def save_layer_areas(self, layer_id: str, area_ids: List[str]) -> None:
+    def save_layer_areas(self, layer_id: str, area_ids: list[str]) -> None:
         """
         Update the areas associated with a specific layer.
 

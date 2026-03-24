@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Dict, Final
+from typing import Any, Final
 
 from pydantic import ConfigDict, ValidationInfo, model_validator
 from typing_extensions import override
@@ -50,7 +50,7 @@ class UpdateDistrict(ICommand):
 
     @model_validator(mode="before")
     @classmethod
-    def _migrate_v1_to_v2(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+    def _migrate_v1_to_v2(cls, values: dict[str, Any], info: ValidationInfo) -> dict[str, Any]:
         if info.context:
             version = info.context.version
             if version == 1:

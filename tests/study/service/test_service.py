@@ -1215,7 +1215,8 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
     raw_study_service.delete = Mock()
     raw_study_service.find_archive_path.return_value = str(tmp_path / "archive.zip")
 
-    from typing import Any, Callable
+    from collections.abc import Callable
+    from typing import Any
 
     variant_study_service = Mock(spec=VariantStudyService)
     variant_study_service.delete = Mock()

@@ -15,7 +15,8 @@ Database implementation of StStorageDao.
 """
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, NoReturn, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, NoReturn
 
 import polars as pl
 from sqlalchemy import CursorResult, Row, Table, select

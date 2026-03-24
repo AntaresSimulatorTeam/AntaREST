@@ -13,9 +13,10 @@ import logging
 import shutil
 import zipfile
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import BinaryIO, Callable, Iterator, Optional, Sequence, cast
+from typing import BinaryIO, cast
 from uuid import uuid4
 
 import polars as pl
@@ -224,7 +225,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         self,
         study_id: str,
         output: BinaryIO | Path,
-        output_name_suffix: Optional[str] = None,
+        output_name_suffix: str | None = None,
         logs: SimulationLogs = SimulationLogs.no_logs(),
     ) -> str:
         """
@@ -491,7 +492,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
         transform_columns_headers: bool,
-        mc_years: Optional[Sequence[int]] = None,
+        mc_years: Sequence[int] | None = None,
     ) -> Iterator[pl.DataFrame]:
         study_outputs = self._outputs_provider.get_outputs(study_id)
         aggregator_manager = AggregatorManager(

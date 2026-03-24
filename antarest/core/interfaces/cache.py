@@ -12,7 +12,6 @@
 
 from abc import abstractmethod
 from enum import Enum
-from typing import List, Optional
 
 from antarest.core.model import JSON
 
@@ -61,7 +60,7 @@ class ICache:
         pass
 
     @abstractmethod
-    def get(self, id: str, refresh_timeout: Optional[int] = None) -> Optional[JSON]:
+    def get(self, id: str, refresh_timeout: int | None = None) -> JSON | None:
         pass
 
     @abstractmethod
@@ -69,7 +68,7 @@ class ICache:
         pass
 
     @abstractmethod
-    def invalidate_all(self, ids: List[str]) -> None:
+    def invalidate_all(self, ids: list[str]) -> None:
         pass
 
 

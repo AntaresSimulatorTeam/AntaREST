@@ -13,9 +13,9 @@
 """Tests for Celery app configuration."""
 
 import os
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
 from unittest import mock
 from unittest.mock import Mock
 

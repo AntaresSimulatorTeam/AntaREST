@@ -12,9 +12,10 @@
 
 import collections
 import logging
+from collections.abc import Sequence
 from http import HTTPStatus
 from pathlib import PurePosixPath
-from typing import Annotated, Dict, Optional, Sequence
+from typing import Annotated
 
 from antares.study.version import StudyVersion
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
@@ -78,11 +79,9 @@ def create_study_routes() -> APIRouter:
                 alias="name",
             ),
         ] = "",
-        managed: Annotated[
-            Optional[bool], Query(description="Filter studies based on their management status.")
-        ] = None,
-        archived: Annotated[Optional[bool], Query(description="Filter studies based on their archive status.")] = None,
-        variant: Annotated[Optional[bool], Query(description="Filter studies based on their variant status.")] = None,
+        managed: Annotated[bool | None, Query(description="Filter studies based on their management status.")] = None,
+        archived: Annotated[bool | None, Query(description="Filter studies based on their archive status.")] = None,
+        variant: Annotated[bool | None, Query(description="Filter studies based on their variant status.")] = None,
         versions: Annotated[
             SanitizedStr, Query(description="Comma-separated list of versions for filtering.", pattern=QUERY_REGEX)
         ] = "",
@@ -94,7 +93,7 @@ def create_study_routes() -> APIRouter:
         study_ids: Annotated[
             SanitizedStr, Query(description="Comma-separated list of study IDs for filtering.", alias="studyIds")
         ] = "",
-        exists: Annotated[Optional[bool], Query(description="Filter studies based on their existence on disk.")] = None,
+        exists: Annotated[bool | None, Query(description="Filter studies based on their existence on disk.")] = None,
         workspace: Annotated[SanitizedStr, Query(description="Filter studies based on their workspace.")] = "",
         folder: Annotated[SanitizedStr, Query(description="Filter studies based on their folder.")] = "",
         sort_by: Annotated[
@@ -108,7 +107,7 @@ def create_study_routes() -> APIRouter:
         page_size: Annotated[
             NonNegativeInt, Query(description="Number of studies per page (0 = no limit).", alias="pageSize")
         ] = 0,
-    ) -> Dict[str, StudyMetadataDTO]:
+    ) -> dict[str, StudyMetadataDTO]:
         """
         Get the list of studies matching the specified criteria.
 
@@ -172,9 +171,9 @@ def create_study_routes() -> APIRouter:
         name: Annotated[
             SanitizedStr, Query(description="Case-insensitive: filter studies based on their name.", alias="name")
         ] = "",
-        managed: Annotated[Optional[bool], Query(description="Management status filter.")] = None,
-        archived: Annotated[Optional[bool], Query(description="Archive status filter.")] = None,
-        variant: Annotated[Optional[bool], Query(description="Variant status filter.")] = None,
+        managed: Annotated[bool | None, Query(description="Management status filter.")] = None,
+        archived: Annotated[bool | None, Query(description="Archive status filter.")] = None,
+        variant: Annotated[bool | None, Query(description="Variant status filter.")] = None,
         versions: Annotated[
             SanitizedStr, Query(description="Comma-separated versions filter.", pattern=QUERY_REGEX)
         ] = "",
@@ -184,7 +183,7 @@ def create_study_routes() -> APIRouter:
         study_ids: Annotated[
             SanitizedStr, Query(description="Comma-separated study IDs filter.", alias="studyIds")
         ] = "",
-        exists: Annotated[Optional[bool], Query(description="Existence on disk filter.")] = None,
+        exists: Annotated[bool | None, Query(description="Existence on disk filter.")] = None,
         workspace: Annotated[SanitizedStr, Query(description="Workspace filter.")] = "",
         folder: Annotated[SanitizedStr, Query(description="Study folder filter.")] = "",
     ) -> int:
@@ -452,7 +451,7 @@ def create_study_routes() -> APIRouter:
     def export_study(
         study_service: StudyServiceDep,
         uuid: SanitizedStr,
-        no_output: Optional[bool] = False,
+        no_output: bool | None = False,
         compression: ArchiveFormat = ArchiveFormat.ZIP,
     ) -> FileDownloadTaskDTO:
         logger.info(f"Exporting study {uuid}")

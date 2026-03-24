@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
-from typing import List, Optional
 from unittest.mock import Mock
 
 import polars as pl
@@ -42,7 +41,7 @@ class MockMatrixNode(MatrixNode):
     def write_dataframe(self, df: pl.DataFrame) -> None:
         df.write_csv(self.config.path, separator="\t", include_header=False)
 
-    def check_errors(self, data: str, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
+    def check_errors(self, data: str, url: list[str] | None = None, raising: bool = False) -> list[str]:
         pass  # not used
 
 

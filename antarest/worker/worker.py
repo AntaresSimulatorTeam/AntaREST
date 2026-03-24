@@ -14,7 +14,7 @@ import logging
 import time
 from abc import abstractmethod
 from concurrent.futures import Future, ThreadPoolExecutor
-from typing import Any, Dict, List, Union
+from typing import Any
 
 from typing_extensions import override
 
@@ -37,7 +37,7 @@ class WorkerTaskResult(AntaresBaseModel):
 class WorkerTaskCommand(AntaresBaseModel):
     task_id: str
     task_type: str
-    task_args: Dict[str, Union[int, float, bool, str]]
+    task_args: dict[str, int | float | bool | str]
 
 
 class _WorkerTaskEndedCallback:
@@ -80,7 +80,7 @@ class AbstractWorker(IService):
         self,
         name: str,
         event_bus: IEventBus,
-        accept: List[str],
+        accept: list[str],
     ) -> None:
         """
         Initializes a worker.

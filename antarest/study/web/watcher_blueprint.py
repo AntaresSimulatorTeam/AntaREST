@@ -13,7 +13,6 @@
 import logging
 from http import HTTPStatus
 from http.client import HTTPException
-from typing import List
 
 from fastapi import APIRouter, Depends
 
@@ -43,7 +42,7 @@ def create_watcher_routes() -> APIRouter:
         if path:
             # The front actually sends <workspace>/<path/to/folder>
             try:
-                path_components: List[str] = path.strip("/").split("/")
+                path_components: list[str] = path.strip("/").split("/")
                 workspace = path_components[0]
                 relative_path = "/".join(path_components[1:])
             except Exception as e:

@@ -15,8 +15,9 @@ import glob
 import http
 import logging
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, List, Optional, TypeVar
+from typing import Any, TypeVar
 
 from fastapi import HTTPException
 from typing_extensions import override
@@ -43,7 +44,7 @@ class DTO:
     def __str__(self) -> str:
         return "{}({})".format(
             type(self).__name__,
-            ", ".join(["{}={}".format(k, str(self.__dict__[k])) for k in sorted(self.__dict__)]),
+            ", ".join([f"{k}={str(self.__dict__[k])}" for k in sorted(self.__dict__)]),
         )
 
     @override
@@ -83,7 +84,7 @@ def sanitize_string(string: str) -> str:
     return str(glob.escape(string))
 
 
-def get_default_config_path() -> Optional[Path]:
+def get_default_config_path() -> Path | None:
     config = Path("config.yaml")
     if config.exists():
         return config
@@ -169,7 +170,7 @@ T = TypeVar("T")
 
 def retry(func: Callable[[], T], attempts: int = 10, interval: float = 0.5) -> T:
     attempt = 0
-    caught_exception: Optional[Exception] = None
+    caught_exception: Exception | None = None
     while attempt < attempts:
         try:
             attempt += 1
@@ -186,18 +187,18 @@ def assert_this(b: Any) -> None:
         raise AssertionError
 
 
-def concat_files(files: List[Path], target: Path) -> None:
+def concat_files(files: list[Path], target: Path) -> None:
     with open(target, "w") as fh:
         for item in files:
-            with open(item, "r") as infile:
+            with open(item) as infile:
                 for line in infile:
                     fh.write(line)
 
 
-def concat_files_to_str(files: List[Path]) -> str:
+def concat_files_to_str(files: list[Path]) -> str:
     concat_str = ""
     for item in files:
-        with open(item, "r") as infile:
+        with open(item) as infile:
             for line in infile:
                 concat_str += line
     return concat_str
@@ -206,7 +207,7 @@ def concat_files_to_str(files: List[Path]) -> str:
 def suppress_exception(
     callback: Callable[[], T],
     logger_: Callable[[Exception], None],
-) -> Optional[T]:
+) -> T | None:
     try:
         return callback()
     except Exception as e:
@@ -215,7 +216,7 @@ def suppress_exception(
 
 
 def current_time() -> datetime.datetime:
-    return datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+    return datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
 
 
 def remove_first_match(elements: list[T], predicate: Callable[[T], bool]) -> None:

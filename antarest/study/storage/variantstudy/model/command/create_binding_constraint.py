@@ -12,7 +12,7 @@
 
 from abc import ABCMeta
 from enum import Enum
-from typing import Any, Dict, Final, List, Optional, Self, TypeAlias
+from typing import Any, Final, Self, TypeAlias
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -51,7 +51,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-MatrixType: TypeAlias = List[List[MatrixData]]
+MatrixType: TypeAlias = list[list[MatrixData]]
 
 EXPECTED_MATRIX_SHAPES = {
     BindingConstraintFrequency.HOURLY: (8784, 3),
@@ -132,7 +132,7 @@ class AbstractBindingConstraintCommand(ICommand, metaclass=ABCMeta):
         check_matrix_values(time_step, value, self.study_version)
         return validate_matrix(value, {"command_context": self.command_context})
 
-    def validate_matrix(self, v: Optional[MatrixType | str], time_step: BindingConstraintFrequency) -> Optional[str]:
+    def validate_matrix(self, v: MatrixType | str | None, time_step: BindingConstraintFrequency) -> str | None:
         if v is None:
             return None
         if isinstance(v, str):
@@ -240,7 +240,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
 
     @model_validator(mode="before")
     @classmethod
-    def _validate_model_before(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+    def _validate_model_before(cls, values: dict[str, Any], info: ValidationInfo) -> dict[str, Any]:
         if info.context:
             version = info.context.version
             if version == 1:

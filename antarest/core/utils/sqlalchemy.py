@@ -9,14 +9,14 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Type, TypeVar
+from typing import Any, TypeVar
 
 from sqlalchemy import inspect
 
 T = TypeVar("T")
 
 
-def clone_orm_object(cls: Type[T], obj: T) -> T:
+def clone_orm_object(cls: type[T], obj: T) -> T:
     mapper: Any = inspect(cls)
     data = {}
     for col in mapper.columns:

@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from typing import Iterator, Sequence
+from collections.abc import Iterator, Sequence
 
 import polars as pl
 from antares.study.version import StudyVersion

@@ -12,7 +12,6 @@
 
 import copy
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Type
 
 from antares.study.version import StudyVersion
 
@@ -106,7 +105,7 @@ from antarest.study.storage.variantstudy.model.command.update_xpansion_settings 
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
+COMMAND_MAPPING: dict[str, type[ICommand]] = {
     CommandName.CREATE_AREA.value: CreateArea,
     CommandName.UPDATE_AREAS_PROPERTIES.value: UpdateAreasProperties,
     CommandName.UPDATE_AREA_UI.value: UpdateAreaUI,
@@ -197,7 +196,7 @@ class CommandFactory:
         )
 
     def _to_single_command(
-        self, action: str, args: JSON, version: int, study_version: StudyVersion, command_id: Optional[str]
+        self, action: str, args: JSON, version: int, study_version: StudyVersion, command_id: str | None
     ) -> ICommand:
         """Convert a single CommandDTO to ICommand."""
         if action in COMMAND_MAPPING:
@@ -213,7 +212,7 @@ class CommandFactory:
             return command_class.model_validate(data, context=CommandValidationContext(version=version))
         raise NotImplementedError(action)
 
-    def to_command(self, command_dto: CommandDTO) -> List[ICommand]:
+    def to_command(self, command_dto: CommandDTO) -> list[ICommand]:
         """
         Convert a CommandDTO to a list of ICommand.
 

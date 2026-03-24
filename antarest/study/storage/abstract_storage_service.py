@@ -12,7 +12,6 @@
 
 import logging
 from abc import ABC
-from typing import Optional
 
 from typing_extensions import override
 
@@ -44,7 +43,7 @@ class AbstractStorageService(IStudyStorage, ABC):
     def get_study_information(
         self,
         study: Study,
-        folder_path: Optional[str] = None,
+        folder_path: str | None = None,
     ) -> StudyMetadataDTO:
         study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
 
@@ -117,7 +116,7 @@ class AbstractStorageService(IStudyStorage, ABC):
 
         if url == "" and depth == -1:
             cache_id = study_raw_cache_key(metadata.id)
-            from_cache: Optional[JSON] = None
+            from_cache: JSON | None = None
             if use_cache:
                 from_cache = self.cache.get(cache_id)
             if from_cache is not None:

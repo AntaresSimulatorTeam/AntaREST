@@ -15,7 +15,6 @@ import json
 from datetime import timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Dict, Union
 from unittest.mock import Mock
 
 from fastapi import FastAPI
@@ -67,7 +66,7 @@ class TokenType(str, Enum):
 
 def create_auth_token(
     app: FastAPI,
-    expires_delta: Union[int, timedelta] = timedelta(days=2),
+    expires_delta: int | timedelta = timedelta(days=2),
     type: TokenType = TokenType.ACCESS,
     user: JWTUser = JWTUser(
         id=0,
@@ -75,7 +74,7 @@ def create_auth_token(
         type="users",
         groups=[JWTGroup(id="group", name="group", role=RoleType.ADMIN)],
     ),
-) -> Dict[str, str]:
+) -> dict[str, str]:
     jwt_manager = AuthJWT()
 
     @AuthJWT.load_config

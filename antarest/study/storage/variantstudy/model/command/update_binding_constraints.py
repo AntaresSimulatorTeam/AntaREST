@@ -11,10 +11,11 @@
 # This file is part of the Antares project.
 
 import typing as t
+from typing import Final
 
 from pydantic import model_validator
 from pydantic_core.core_schema import ValidationInfo
-from typing_extensions import Final, override
+from typing_extensions import override
 
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,

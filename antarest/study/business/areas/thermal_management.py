@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 
 from antarest.core.exceptions import (
     DuplicateThermalCluster,
@@ -260,7 +260,7 @@ class ThermalManager:
 
         # Matrices
         lower_source_id = source_id.lower()
-        commands: List[CreateCluster | ReplaceMatrix] = [create_cluster_cmd]
+        commands: list[CreateCluster | ReplaceMatrix] = [create_cluster_cmd]
         command_context = self._command_context
 
         matrices: list[tuple[str, list[list[float]]]] = []

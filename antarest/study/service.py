@@ -20,10 +20,11 @@ import os
 import shutil
 import tempfile
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path, PurePosixPath
-from typing import Any, BinaryIO, Callable, Dict, Iterable, List, Literal, Optional, Sequence, Type, TypeAlias, cast
+from typing import Any, BinaryIO, Literal, TypeAlias, cast
 from uuid import uuid4
 
 import pandas as pd
@@ -224,7 +225,7 @@ def get_disk_usage(path: str | Path) -> int:
 
 
 def _get_path_inside_user_folder(
-    path: str, exception_class: Type[ResourceCreationNotAllowed | ResourceDeletionNotAllowed]
+    path: str, exception_class: type[ResourceCreationNotAllowed | ResourceDeletionNotAllowed]
 ) -> str:
     """
     Retrieves the path inside the `user` folder for a given user path
@@ -463,7 +464,7 @@ class RawStudyInterface(StudyInterface):
         self._user_service = user_service
         self._repository = repository
         self._study = study
-        self._cached_file_study: Optional[FileStudy] = None
+        self._cached_file_study: FileStudy | None = None
         self._version = StudyVersion.parse(self._study.version)
         self._matrix_service = self._raw_study_service._matrix_service
 
@@ -497,7 +498,7 @@ class RawStudyInterface(StudyInterface):
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
         study = self._study
-        file_study: Optional[FileStudy] = None
+        file_study: FileStudy | None = None
 
         command_context = self._variant_study_service.command_factory.command_context
         # Build DAO based on storage mode
@@ -685,7 +686,7 @@ class StudyService:
         )
         self.cache_service = cache_service
         self.config = config
-        self.on_deletion_callbacks: List[Callable[[str], None]] = []
+        self.on_deletion_callbacks: list[Callable[[str], None]] = []
         self._outputs_access: IOutputsAccess | None = None
         matrix_service = command_context.matrix_service
         StudyDatabaseMatrixUsageProvider(matrix_service)
@@ -790,9 +791,9 @@ class StudyService:
     def get_studies_information(
         self,
         study_filter: StudyFilter,
-        sort_by: Optional[StudySortBy] = None,
+        sort_by: StudySortBy | None = None,
         pagination: StudyPagination = StudyPagination(),
-    ) -> Dict[str, StudyMetadataDTO]:
+    ) -> dict[str, StudyMetadataDTO]:
         """
         Get information for matching studies of a search query.
         Args:
@@ -803,7 +804,7 @@ class StudyService:
         Returns: List of study information
         """
         logger.info("Retrieving matching studies")
-        studies: Dict[str, StudyMetadataDTO] = {}
+        studies: dict[str, StudyMetadataDTO] = {}
         matching_studies = self.repository.get_all(
             study_filter=study_filter,
             sort_by=sort_by,
@@ -843,9 +844,7 @@ class StudyService:
         )
         return total
 
-    def _try_get_studies_information(
-        self, study: Study, folder_path: Optional[str] = None
-    ) -> Optional[StudyMetadataDTO]:
+    def _try_get_studies_information(self, study: Study, folder_path: str | None = None) -> StudyMetadataDTO | None:
         try:
             return self.storage_service.get_storage(study).get_study_information(study, folder_path)
         except Exception as e:
@@ -978,8 +977,8 @@ class StudyService:
     def create_study(
         self,
         study_name: str,
-        version: Optional[StudyVersion],
-        group_ids: List[str],
+        version: StudyVersion | None,
+        group_ids: list[str],
         storage_mode: StorageMode = StorageMode.FILESYSTEM,
         directory: str = "",
     ) -> str:
@@ -1069,7 +1068,7 @@ class StudyService:
         outputs = self._get_outputs_access().get_outputs_details(study.id)
         return StudySynthesis.aggregate(input_synthesis, outputs)
 
-    def get_input_matrix_startdate(self, study_id: str, path: Optional[str]) -> MatrixIndex:
+    def get_input_matrix_startdate(self, study_id: str, path: str | None) -> MatrixIndex:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
         file_study = self.get_file_study(study)
@@ -1086,7 +1085,7 @@ class StudyService:
 
     def remove_duplicates(self) -> None:
         duplicates = self.repository.list_duplicates()
-        ids: List[str] = []
+        ids: list[str] = []
         # ids with same path
         duplicates_by_path = collections.defaultdict(list)
         for study_id, path in duplicates:
@@ -1097,7 +1096,7 @@ class StudyService:
             self.repository.delete(*ids)
 
     def sync_studies_on_disk(
-        self, folders: List[StudyFolder], directory: Optional[Path] = None, recursive: bool = True
+        self, folders: list[StudyFolder], directory: Path | None = None, recursive: bool = True
     ) -> None:
         """
         Used by watcher to send list of studies present on filesystem.
@@ -1250,7 +1249,7 @@ class StudyService:
         self,
         src_uuid: str,
         dest_study_name: str,
-        group_ids: List[str],
+        group_ids: list[str],
         use_task: bool,
         destination_folder: PurePosixPath,
         outputs_selection: OutputSelection,
@@ -1358,7 +1357,7 @@ class StudyService:
         for study_to_move in studies_to_move:
             self._apply_study_move(study_to_move, folder_dest, directory_id)
 
-    def _get_variant_descendants(self, study_id: str) -> List[VariantStudy]:
+    def _get_variant_descendants(self, study_id: str) -> list[VariantStudy]:
         return self.storage_service.variant_study_service.repository.get_all_descendants(study_id)
 
     def _apply_study_move(self, study: Study, folder_dest: str, directory_id: str | None) -> None:
@@ -1455,7 +1454,7 @@ class StudyService:
         self,
         uuid: str,
         dest: Path,
-        output_list: Optional[List[str]] = None,
+        output_list: list[str] | None = None,
     ) -> None:
         logger.info(f"Flat exporting study {uuid}")
         study = self.get_study(uuid)
@@ -1521,7 +1520,7 @@ class StudyService:
         """
         self.delete_studies([uuid], with_variants=children)
 
-    def delete_studies(self, study_ids: List[str], with_variants: bool) -> None:
+    def delete_studies(self, study_ids: list[str], with_variants: bool) -> None:
         """
         Delete multiple studies in batch.
 
@@ -1561,8 +1560,8 @@ class StudyService:
             assert_permission(study, StudyPermissionType.WRITE)
             studies_to_check.append(study)
 
-        studies_to_delete: Dict[str, Study] = {}
-        study_infos: Dict[str, Any] = {}
+        studies_to_delete: dict[str, Study] = {}
+        study_infos: dict[str, Any] = {}
 
         for study in studies_to_check:
             if study.id in studies_to_delete:
@@ -1599,7 +1598,7 @@ class StudyService:
     def import_study(
         self,
         stream: BinaryIO,
-        group_ids: List[str],
+        group_ids: list[str],
     ) -> str:
         """
         Import a compressed study.
@@ -1704,7 +1703,7 @@ class StudyService:
         command_data = UserResourceDataCreation.model_validate(args)
         return ReplaceUserResource(data=command_data, command_context=context, study_version=version)
 
-    def _edit_study_using_command(self, study: Study, url: str, data: SUB_JSON) -> List[ICommand]:
+    def _edit_study_using_command(self, study: Study, url: str, data: SUB_JSON) -> list[ICommand]:
         """
         Replace data on disk with new, using variant commands.
 
@@ -1743,14 +1742,14 @@ class StudyService:
         self.get_study_interface(study).add_commands(commands)
         return commands  # for testing purpose
 
-    def apply_commands(self, uuid: str, commands: List[CommandDTO]) -> Optional[List[str]]:
+    def apply_commands(self, uuid: str, commands: list[CommandDTO]) -> list[str] | None:
         study = self.get_study(uuid)
         if isinstance(study, VariantStudy):
             return self.storage_service.variant_study_service.append_commands(uuid, commands)
         else:
             assert_permission(study, StudyPermissionType.WRITE)
             self.assert_study_unarchived(study)
-            parsed_commands: List[ICommand] = []
+            parsed_commands: list[ICommand] = []
             for command in commands:
                 parsed_commands.extend(self.storage_service.variant_study_service.command_factory.to_command(command))
             self.get_study_interface(study).add_commands(parsed_commands)
@@ -1930,7 +1929,7 @@ class StudyService:
     def get_all_areas_info(
         self,
         uuid: str,
-    ) -> List[AreaInfo]:
+    ) -> list[AreaInfo]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
@@ -1939,7 +1938,7 @@ class StudyService:
     def get_all_areas_ui_info(
         self,
         uuid: str,
-    ) -> Dict[str, AreaUIData]:
+    ) -> dict[str, AreaUIData]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
@@ -1948,7 +1947,7 @@ class StudyService:
     def get_all_links(
         self,
         uuid: str,
-    ) -> List[Link]:
+    ) -> list[Link]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         return self.links_manager.get_all_links(self.get_study_interface(study))
@@ -2378,7 +2377,7 @@ class StudyService:
             self.repository.save(raw_study_db)
             remove_from_cache(cache=self.cache_service, root_id=uuid)
 
-    def _validate_and_prepare_permissions(self, group_ids: Sequence[str]) -> tuple[Any, List[Group]]:
+    def _validate_and_prepare_permissions(self, group_ids: Sequence[str]) -> tuple[Any, list[Group]]:
         """
         Validate that the current user has permissions for the specified groups.
 
@@ -2401,10 +2400,10 @@ class StudyService:
 
         owner = self.user_service.get_user(current_user.impersonator)
 
-        groups: List[Group] = []
+        groups: list[Group] = []
         for gid in group_ids:
             owned_groups = (g for g in current_user.groups if g.id == gid)
-            jwt_group: Optional[JWTGroup] = next(owned_groups, None)
+            jwt_group: JWTGroup | None = next(owned_groups, None)
             if jwt_group is None or jwt_group.role is None:
                 raise UserHasNotPermissionError(f"Permission denied for group ID: {gid}")
             groups.append(Group(id=jwt_group.id, name=jwt_group.name))
@@ -2456,7 +2455,7 @@ class StudyService:
 
     # noinspection PyUnusedLocal
     @staticmethod
-    def get_studies_versions() -> List[str]:
+    def get_studies_versions() -> list[str]:
         return sorted([str(v) for v in STUDY_REFERENCE_TEMPLATES])
 
     def create_xpansion_configuration(
@@ -2506,7 +2505,7 @@ class StudyService:
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.get_candidate(study_interface, candidate_name)
 
-    def get_candidates(self, uuid: str) -> List[XpansionCandidate]:
+    def get_candidates(self, uuid: str) -> list[XpansionCandidate]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
@@ -2538,7 +2537,7 @@ class StudyService:
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.update_xpansion_constraints_settings(study_interface, constraints_file_name)
 
-    def update_matrix(self, uuid: str, path: str, matrix_edit_instruction: List[MatrixEditInstruction]) -> None:
+    def update_matrix(self, uuid: str, path: str, matrix_edit_instruction: list[MatrixEditInstruction]) -> None:
         """
         Updates a matrix in a study based on the provided edit instructions.
 
@@ -2799,8 +2798,8 @@ class StudyService:
         self,
         study_id: str,
         command_data: UserResourceDataCreation | UserResourceDataRemoval,
-        command_class: Type[ReplaceUserResource | RemoveUserResource],
-        exception_class: Type[ResourceCreationNotAllowed | ResourceDeletionNotAllowed],
+        command_class: type[ReplaceUserResource | RemoveUserResource],
+        exception_class: type[ResourceCreationNotAllowed | ResourceDeletionNotAllowed],
     ) -> None:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.WRITE)

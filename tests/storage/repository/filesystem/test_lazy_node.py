@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
-from typing import List, Optional
 from unittest.mock import Mock
 
 from typing_extensions import override
@@ -29,7 +28,7 @@ class MockLazyNode(LazyNode[str, str, str]):
     @override
     def load(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = False,
@@ -37,10 +36,10 @@ class MockLazyNode(LazyNode[str, str, str]):
         return "Mock Matrix Content"
 
     @override
-    def dump(self, data: str, url: Optional[List[str]] = None) -> None:
+    def dump(self, data: str, url: list[str] | None = None) -> None:
         self.config.path.write_text(data)
 
-    def check_errors(self, data: str, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
+    def check_errors(self, data: str, url: list[str] | None = None, raising: bool = False) -> list[str]:
         pass  # not used
 
 

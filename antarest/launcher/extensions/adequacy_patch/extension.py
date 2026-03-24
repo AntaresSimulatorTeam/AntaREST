@@ -13,7 +13,7 @@
 import logging
 import shutil
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import yaml
 from typing_extensions import override
@@ -33,10 +33,10 @@ if TYPE_CHECKING:
     from antarest.study.service import StudyService
 
 
-def _prepare_study_for_adq_patch(study: FileStudy, adq_patch_config: JSON) -> Dict[str, bool]:
-    area_to_turn_on: List[str] = [transform_name_to_id(area_id) for area_id in adq_patch_config.get("areas", [])]
-    original_area_enabled: Dict[str, bool] = {}
-    original_link_enabled: Dict[str, bool] = {}
+def _prepare_study_for_adq_patch(study: FileStudy, adq_patch_config: JSON) -> dict[str, bool]:
+    area_to_turn_on: list[str] = [transform_name_to_id(area_id) for area_id in adq_patch_config.get("areas", [])]
+    original_area_enabled: dict[str, bool] = {}
+    original_link_enabled: dict[str, bool] = {}
     year_by_year_active = study.tree.get(["settings", "generaldata", "general", "year-by-year"])
     study.tree.save(True, ["settings", "generaldata", "general", "year-by-year"])
     for area_id, area in study.config.areas.items():

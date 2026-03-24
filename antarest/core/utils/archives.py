@@ -15,10 +15,11 @@ import os
 import shutil
 import tempfile
 import zipfile
+from collections.abc import Callable
 from enum import StrEnum
 from pathlib import Path
 from subprocess import CalledProcessError, run
-from typing import Any, BinaryIO, Callable, List, Optional, Tuple
+from typing import Any, BinaryIO
 
 import py7zr
 
@@ -45,7 +46,7 @@ def archive_dir(
     src_dir_path: Path,
     target_archive_path: Path,
     remove_source_dir: bool = False,
-    archive_format: Optional[ArchiveFormat] = None,
+    archive_format: ArchiveFormat | None = None,
 ) -> None:
     if archive_format is not None and target_archive_path.suffix != archive_format:
         raise ShouldNotHappenException(
@@ -130,7 +131,7 @@ def is_zip(path: Path) -> bool:
 def read_in_zip(
     zip_path: Path,
     inside_zip_path: Path,
-    read: Callable[[Optional[Path]], None],
+    read: Callable[[Path | None], None],
 ) -> None:
     tmp_dir = None
     try:
@@ -144,7 +145,7 @@ def read_in_zip(
             tmp_dir.cleanup()
 
 
-def extract_archive_from_stream(stream: BinaryIO, target_dir: Path, tmp_dir: Optional[Path] = None) -> None:
+def extract_archive_from_stream(stream: BinaryIO, target_dir: Path, tmp_dir: Path | None = None) -> None:
     """
     Extract an archive from a stream to a given destination.
 
@@ -182,7 +183,7 @@ def extract_archive_from_stream(stream: BinaryIO, target_dir: Path, tmp_dir: Opt
         raise BadArchiveContent
 
 
-def extract_file_to_tmp_dir(archive_path: Path, inside_archive_path: Path) -> Tuple[Path, Any]:
+def extract_file_to_tmp_dir(archive_path: Path, inside_archive_path: Path) -> tuple[Path, Any]:
     str_inside_archive_path = str(inside_archive_path).replace("\\", "/")
     tmp_dir = tempfile.TemporaryDirectory()
     try:
@@ -244,7 +245,7 @@ def read_file_from_archive(archive_path: Path, posix_path: str) -> str:
     return read_original_file_in_archive(archive_path, posix_path).decode("utf-8")
 
 
-def extract_lines_from_archive(root: Path, posix_path: str) -> List[str]:
+def extract_lines_from_archive(root: Path, posix_path: str) -> list[str]:
     """
     Extract text lines from various types of files.
 

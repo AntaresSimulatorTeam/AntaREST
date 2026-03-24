@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import DateTime, Enum, ForeignKey, String, select
 from sqlalchemy.orm import Mapped, mapped_column
@@ -46,12 +45,12 @@ class OutputVariablesViewsModel(Base):
     type: Mapped[OutputVariablesType] = mapped_column(Enum(OutputVariablesType), nullable=False)
     frequency: Mapped[MatrixFrequency] = mapped_column(Enum(MatrixFrequency), nullable=False)
     variable_name: Mapped[str] = mapped_column(String, nullable=False)
-    area_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    area_from_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    area_to_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    thermal_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    renewable_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    st_storage_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    area_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    area_from_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    area_to_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    thermal_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    renewable_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    st_storage_id: Mapped[str | None] = mapped_column(String, nullable=True)
     matrix_id: Mapped[str] = mapped_column(String, ForeignKey("matrix.id"), nullable=False)
     last_read: Mapped[datetime] = mapped_column(DateTime)
 

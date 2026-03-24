@@ -16,7 +16,7 @@ import os
 import time
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any
 from unittest.mock import Mock, call
 from uuid import uuid4
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -516,9 +516,9 @@ class TestLauncherService:
     )
     def test_service_get_solver_versions(
         self,
-        config: Dict[str, Union[str, List[Dict[str, Union[str, Dict[str, str]]]]]],
+        config: dict[str, str | list[dict[str, str | dict[str, str]]]],
         solver: str,
-        expected: List[str],
+        expected: list[str],
     ) -> None:
         launcher_configs = []
         for launcher in config["launchers"]:
@@ -951,8 +951,8 @@ class TestLauncherService:
     def test_get_load(
         self,
         tmp_path: Path,
-        running_jobs: List[JobResult],
-        expected_result: Dict[str, Any],
+        running_jobs: list[JobResult],
+        expected_result: dict[str, Any],
         default_launcher: str,
     ) -> None:
         study_service = Mock()

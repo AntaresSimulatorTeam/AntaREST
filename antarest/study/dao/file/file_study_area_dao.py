@@ -14,7 +14,7 @@ import logging
 import re
 import typing as t
 from abc import abstractmethod
-from typing import Any, Dict, List
+from typing import Any
 
 import polars as pl
 from typing_extensions import override
@@ -57,12 +57,12 @@ class FileStudyAreaDao(AreaDao):
         return list(study_data.config.areas)
 
     @override
-    def get_all_areas_info(self) -> List[AreaInfo]:
+    def get_all_areas_info(self) -> list[AreaInfo]:
         """
         Retrieve all physical areas of a study.
         """
         file_study = self.get_file_study()
-        cfg_areas: Dict[str, AreaConfig] = file_study.config.areas
+        cfg_areas: dict[str, AreaConfig] = file_study.config.areas
         return [
             AreaInfo(
                 id=area_id,
@@ -73,7 +73,7 @@ class FileStudyAreaDao(AreaDao):
         ]
 
     @override
-    def get_all_areas_ui_info(self) -> Dict[str, AreaUIData]:
+    def get_all_areas_ui_info(self) -> dict[str, AreaUIData]:
         """
         Retrieve information about all areas' user interface (UI) from the study.
 
@@ -485,7 +485,7 @@ class FileStudyAreaDao(AreaDao):
         study_data.tree.save(current_area, ["input", "areas", area_id, "ui"])
 
     @staticmethod
-    def _get_area_layers(area_uis: Dict[str, Any], area: str) -> List[str]:
+    def _get_area_layers(area_uis: dict[str, Any], area: str) -> list[str]:
         """Extract the list of layers from an area's UI configuration."""
         if area in area_uis and "ui" in area_uis[area] and "layers" in area_uis[area]["ui"]:
             layers_str = str(area_uis[area]["ui"]["layers"]).strip()
@@ -493,7 +493,7 @@ class FileStudyAreaDao(AreaDao):
         return []
 
     @override
-    def save_layer_areas(self, layer_id: str, area_ids: List[str]) -> None:
+    def save_layer_areas(self, layer_id: str, area_ids: list[str]) -> None:
         study_data = self.get_file_study()
 
         # Verify that the layer exists

@@ -10,8 +10,9 @@
 #
 # This file is part of the Antares project.
 
+from collections.abc import MutableMapping
 from pathlib import Path
-from typing import Any, Dict, List, MutableMapping, Optional
+from typing import Any
 
 from antares.study.version import StudyVersion
 from pydantic import Field, model_validator
@@ -62,8 +63,8 @@ class LinkConfig(AntaresBaseModel, extra="ignore"):
         Ignore extra fields, because we only need `filter-synthesis` and `filter-year-by-year`.
     """
 
-    filters_synthesis: List[str] = Field(default_factory=list)
-    filters_year: List[str] = Field(default_factory=list)
+    filters_synthesis: list[str] = Field(default_factory=list)
+    filters_year: list[str] = Field(default_factory=list)
 
     @model_validator(mode="before")
     def validation(cls, values: MutableMapping[str, Any]) -> MutableMapping[str, Any]:
@@ -81,13 +82,13 @@ class AreaConfig(AntaresBaseModel, extra="forbid"):
     """
 
     name: str
-    links: Dict[str, LinkConfig]
-    thermals: List[ThermalCluster]
-    renewables: List[RenewableCluster]
-    filters_synthesis: List[str]
-    filters_year: List[str]
+    links: dict[str, LinkConfig]
+    thermals: list[ThermalCluster]
+    renewables: list[RenewableCluster]
+    filters_synthesis: list[str]
+    filters_year: list[str]
     # since v8.6
-    st_storages: List[STStorage] = []
+    st_storages: list[STStorage] = []
     # Since v9.2, dictionary storage ID -> constraints
     st_storages_additional_constraints: dict[str, list[STStorageAdditionalConstraint]] = {}
 
@@ -104,7 +105,7 @@ class Simulation(AntaresBaseModel):
     synthesis: bool
     by_year: bool
     error: bool
-    playlist: Optional[List[int]]
+    playlist: list[int] | None
     archived: bool = False
     xpansion: str
 
@@ -124,15 +125,15 @@ class FileStudyTreeConfig(DTO):
         path: Path,
         study_id: str,
         version: StudyVersion,
-        output_path: Optional[Path] = None,
-        districts: Optional[Dict[str, District]] = None,
-        areas: Optional[Dict[str, AreaConfig]] = None,
-        outputs: Optional[Dict[str, Simulation]] = None,
-        bindings: Optional[List[BindingConstraint]] = None,
+        output_path: Path | None = None,
+        districts: dict[str, District] | None = None,
+        areas: dict[str, AreaConfig] | None = None,
+        outputs: dict[str, Simulation] | None = None,
+        bindings: list[BindingConstraint] | None = None,
         store_new_set: bool = False,
-        archive_input_series: Optional[List[str]] = None,
+        archive_input_series: list[str] | None = None,
         enr_modelling: str = str(EnrModelling.AGGREGATED),
-        archive_path: Optional[Path] = None,
+        archive_path: Path | None = None,
     ):
         self.study_path = study_path
         self.path = path
@@ -150,7 +151,7 @@ class FileStudyTreeConfig(DTO):
 
     def next_file(self, name: str, is_output: bool = False) -> "FileStudyTreeConfig":
         if is_output and name in self.outputs and self.outputs[name].archived:
-            archive_path: Optional[Path] = self.path / f"{name}.zip"
+            archive_path: Path | None = self.path / f"{name}.zip"
         else:
             archive_path = self.archive_path
 
@@ -186,30 +187,30 @@ class FileStudyTreeConfig(DTO):
             enr_modelling=self.enr_modelling,
         )
 
-    def area_names(self) -> List[str]:
+    def area_names(self) -> list[str]:
         return list(self.areas)
 
-    def get_thermal_ids(self, area: str) -> List[str]:
+    def get_thermal_ids(self, area: str) -> list[str]:
         """
         Returns a list of thermal cluster IDs for a given area.
         Note that IDs may not be in lower case (but series IDs are).
         """
         return [th.id for th in self.areas[area].thermals]
 
-    def get_renewable_ids(self, area: str) -> List[str]:
+    def get_renewable_ids(self, area: str) -> list[str]:
         """
         Returns a list of renewable cluster IDs for a given area.
         Note that IDs may not be in lower case (but series IDs are).
         """
         return [r.id for r in self.areas[area].renewables]
 
-    def get_st_storage_ids(self, area: str) -> List[str]:
+    def get_st_storage_ids(self, area: str) -> list[str]:
         return [s.id for s in self.areas[area].st_storages]
 
-    def get_links(self, area: str) -> List[str]:
+    def get_links(self, area: str) -> list[str]:
         return list(self.areas[area].links)
 
-    def get_binding_constraint_groups(self) -> List[str]:
+    def get_binding_constraint_groups(self) -> list[str]:
         """
         Returns the list of binding constraint groups, without duplicates and
         sorted alphabetically (case-insensitive).
@@ -219,7 +220,7 @@ class FileStudyTreeConfig(DTO):
         lower_groups = {bc.group: bc.group for bc in self.bindings}
         return [grp for _, grp in sorted(lower_groups.items())]  # type: ignore
 
-    def get_sts_constraint_ids(self, area: str, storage: str) -> List[str]:
+    def get_sts_constraint_ids(self, area: str, storage: str) -> list[str]:
         if self.version >= STUDY_VERSION_9_2:
             return [c.id for c in self.areas[area].st_storages_additional_constraints[storage]]
         else:
@@ -248,15 +249,15 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
     path: Path
     study_id: str
     version: StudyVersionInt
-    output_path: Optional[Path] = None
-    districts: Dict[str, District] = dict()
-    areas: Dict[str, AreaConfig] = dict()
-    outputs: Dict[str, Simulation] = dict()
-    bindings: List[BindingConstraint] = list()
+    output_path: Path | None = None
+    districts: dict[str, District] = dict()
+    areas: dict[str, AreaConfig] = dict()
+    outputs: dict[str, Simulation] = dict()
+    bindings: list[BindingConstraint] = list()
     store_new_set: bool = False
-    archive_input_series: List[str] = list()
+    archive_input_series: list[str] = list()
     enr_modelling: str = str(EnrModelling.AGGREGATED)
-    archive_path: Optional[Path] = None
+    archive_path: Path | None = None
 
     @staticmethod
     def from_build_config(
@@ -296,7 +297,7 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
         )
 
 
-def validate_config(version: StudyVersion, data: Dict[str, Any]) -> FileStudyTreeConfig:
+def validate_config(version: StudyVersion, data: dict[str, Any]) -> FileStudyTreeConfig:
     """
     Parses the provided data, assuming the provided study version.
 
