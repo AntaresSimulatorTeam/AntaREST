@@ -20,15 +20,15 @@ dependencies = [
     "Antares-Launcher==1.4.6",
     "antares-study-version==1.0.20",
     "antares-timeseries-generation==0.1.9",
-    "fastapi==0.133.0",
-    "uvicorn[standard]~=0.41.0",
+    "fastapi==0.135.1",
+    "uvicorn[standard]~=0.42.0",
     "pydantic~=2.12.5",
     "httpx~=0.28.1",
     "python-multipart~=0.0.20",
     "alembic~=1.18.4",
     "bcrypt~=5.0.0",
     "click~=8.3.0",
-    "filelock~=3.24.3",
+    "filelock~=3.25.2",
     "gunicorn~=23.0.0",
     "humanize~=4.15.0",
     "jsonref~=0.2",
@@ -40,7 +40,7 @@ dependencies = [
     "pandas~=2.3.3",
     "paramiko~=3.4.1",
     "plyer~=2.1.0",
-    "polars~=1.35.2",
+    "polars~=1.39.0",
     "psycopg2-binary~=2.9.9",
     "pyarrow~=21.0.0",
     "py7zr~=0.22.0",
@@ -51,7 +51,7 @@ dependencies = [
     "celery[redis]~=5.6.2",
     "redis~=5.3.1",
     "SQLAlchemy~=2.0.41",
-    "tables==3.10.2",
+    "tables==3.11.1",
     "typing_extensions~=4.15.0",
     "xlsxwriter~=3.2.0",
 ]
@@ -59,12 +59,12 @@ dependencies = [
 [dependency-groups]
 dev = [
     {include-group = "test"},
-    "celery-types~=0.24.0",
+    "celery-types~=0.26.0",
     "ruff~=0.15.2",
     "mypy~=1.19.1",
     "pre-commit~=4.5.1",
     "pyinstaller==6.19.0",
-    "pyinstaller-hooks-contrib==2026.0",
+    "pyinstaller-hooks-contrib==2026.3",
     # Extra requirements installed by `mypy --install-types`.
     # IMPORTANT: Make sure the versions of these typing libraries match the versions
     # of the corresponding implementation libraries used in production (in `pyproject.toml`).

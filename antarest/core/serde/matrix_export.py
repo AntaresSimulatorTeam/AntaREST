@@ -43,6 +43,9 @@ def simplify_dataframe(dataframe: pl.DataFrame, np_type: type[pl.Int32] | type[p
 
 
 def write_dataframe_in_tsv_format(df: pl.DataFrame, path: Path, headers: bool = False) -> None:
+    if df.width == 0:
+        path.write_text("")
+        return
     df = simplify_dataframe(df)
     df.write_csv(path, separator="\t", include_header=headers)
 
