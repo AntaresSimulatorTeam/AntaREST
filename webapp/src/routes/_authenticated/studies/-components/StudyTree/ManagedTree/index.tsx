@@ -35,6 +35,7 @@ function ManagedTree({ isCreatingDirectory, onDirectoryCreated }: ManagedTreePro
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const directoryId = useAppSelector((state) => getStudyFilters(state).managed.directoryId);
+  const isActive = useAppSelector((state) => getStudyFilters(state).activeTree === "managed");
 
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
@@ -165,7 +166,7 @@ function ManagedTree({ isCreatingDirectory, onDirectoryCreated }: ManagedTreePro
       <SimpleTreeView
         expandedItems={expandedItems}
         onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
-        selectedItems={directoryId}
+        selectedItems={isActive ? directoryId : null}
         onItemClick={handleItemClick}
       >
         <ManagedTreeNode
