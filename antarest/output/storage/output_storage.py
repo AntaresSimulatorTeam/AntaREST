@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import BinaryIO, Iterator, Optional, Sequence, Any
+from typing import Any, BinaryIO, Iterator, Optional, Sequence
 
 import polars as pl
 from pydantic import ConfigDict, Field, SerializerFunctionWrapHandler, model_serializer
