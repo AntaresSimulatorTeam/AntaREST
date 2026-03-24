@@ -14,10 +14,10 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import BinaryIO, Iterator, Optional, Sequence
+from typing import BinaryIO, Iterator, Optional, Sequence, Any
 
 import polars as pl
-from pydantic import ConfigDict, Field, model_serializer
+from pydantic import ConfigDict, Field, SerializerFunctionWrapHandler, model_serializer
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
@@ -117,8 +117,8 @@ class OutputDetails(AntaresBaseModel):
     settings: OutputSettings | None = Field(deprecated=True, default=None)
 
     @model_serializer(mode="wrap")
-    def _serialize(self, handler: object) -> dict[str, object]:
-        data: dict[str, object] = handler(self)  # type: ignore[operator]
+    def _serialize(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+        data: dict[str, object] = handler(self)
         if data.get("settings") is None:
             data.pop("settings", None)
         return data

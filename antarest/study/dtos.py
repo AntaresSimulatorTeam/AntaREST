@@ -16,7 +16,7 @@ from pydantic import ConfigDict
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
-from antarest.output.storage.output_storage import OutputDetails
+from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
@@ -41,6 +41,7 @@ class OutputSynthesis(AntaresBaseModel):
     by_year: bool
     nb_years: int
     archived: bool
+    storage_type: OutputStorageType
 
     @classmethod
     def from_output_details(cls, output: OutputDetails) -> "OutputSynthesis":
@@ -51,6 +52,7 @@ class OutputSynthesis(AntaresBaseModel):
             by_year=output.by_year,
             nb_years=output.nb_years,
             archived=output.archived,
+            storage_type=output.storage_type,
         )
 
 

@@ -568,7 +568,7 @@ def create_study_routes() -> APIRouter:
         "/studies/{study_id}/_repair",
         summary="Repair a study",
     )
-    def repair_study(study_id: UuidStr, repair_request: StudyRepairRequest) -> str:
+    def repair_study(study_service: StudyServiceDep, study_id: UuidStr, repair_request: StudyRepairRequest) -> str:
         require_admin_user()
         logger.info(f"Repairing study {study_id}")
         return study_service.repair_study(study_id, repair_request)
