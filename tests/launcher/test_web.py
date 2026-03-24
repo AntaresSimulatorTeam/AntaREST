@@ -15,6 +15,7 @@ from unittest.mock import Mock, call
 from uuid import uuid4
 
 import pytest
+from antares.study.version import SolverVersion
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
@@ -122,8 +123,9 @@ def test_jobs() -> None:
 
 def test_get_solver_versions() -> None:
     service = Mock()
-    output = ["1", "2", "3"]
-    service.get_solver_versions.return_value = output
+    output = ["880", "920", "930"]
+    solver_versions = [SolverVersion.parse(v) for v in output]
+    service.get_solver_versions.return_value = solver_versions
 
     app = create_app(service)
     client = TestClient(app)
@@ -151,14 +153,16 @@ def test_get_solver_versions__with_query_string(
     launcher: str,
     param_name: str,
 ) -> None:
+    output = ["880", "920", "930"]
+    solver_versions = [SolverVersion.parse(v) for v in output]
     service = Mock()
-    service.get_solver_versions.return_value = ["1", "2", "3"]
+    service.get_solver_versions.return_value = solver_versions
 
     app = create_app(service)
     client = TestClient(app)
     res = client.get(f"/v1/launcher/versions?{param_name}={launcher}")
     assert res.status_code == http.HTTPStatus.OK  # OK or UNPROCESSABLE_ENTITY
-    assert res.json() == ["1", "2", "3"]
+    assert res.json() == output
 
 
 def test_get_job_log() -> None:
