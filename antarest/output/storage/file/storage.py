@@ -50,6 +50,7 @@ from antarest.output.storage.output_storage import (
     IOutputStorage,
     OutputDetails,
     OutputMetadata,
+    OutputSettings,
     OutputStorageType,
 )
 from antarest.study.model import (
@@ -57,12 +58,14 @@ from antarest.study.model import (
     MatrixFrequency,
     MatrixIndex,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestSynthesis,
     DigestUI,
 )
+from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import (
     extract_output_name,
     fix_study_root,
@@ -282,6 +285,15 @@ class InStudyFileOutputStorage(IOutputStorage):
         if output_id not in outputs:
             raise OutputNotFound(output_id)
         output_data: Simulation = outputs[output_id]
+
+        study_data = study_outputs.get_file_study()
+        file_metadata = FileStudyHelpers.get_config(study_data, output_data.get_file())
+        settings = OutputSettings(
+            general=file_metadata["general"],
+            optimization=file_metadata["optimization"],
+            playlist=[year for year in (get_playlist(file_metadata) or {}).keys()],
+        )
+
         return OutputDetails(
             name=output_id,
             mode=output_data.mode,
@@ -290,6 +302,7 @@ class InStudyFileOutputStorage(IOutputStorage):
             nb_years=output_data.nbyears,
             archived=output_data.archived,
             storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
+            settings=settings,
         )
 
     @override

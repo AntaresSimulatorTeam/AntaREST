@@ -154,6 +154,7 @@ def add_exception_handlers(application: FastAPI) -> None:
         Returns:
             The JSON response containing error details.
         """
+        logger.error("Validation error", exc_info=exc)
         error_message = exc.errors()[0]["msg"]
         return JSONResponse(
             status_code=422,
@@ -182,6 +183,7 @@ def add_exception_handlers(application: FastAPI) -> None:
         Returns:
             The JSON response containing error details.
         """
+        logger.error("Validation error", exc_info=exc)
         return JSONResponse(
             content={
                 "description": f"{exc}",
