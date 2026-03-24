@@ -498,7 +498,7 @@ class SlurmLauncher(AbstractLauncher):
                     if version not in available_versions:
                         raise VersionNotSupportedError(
                             f"Study version '{version}' is not supported. Currently supported versions are"
-                            f" {', '.join(available_versions)}"
+                            f" {', '.join([str(v) for v in available_versions])}"
                         )
                     _override_solver_version(study_path, version)
 
