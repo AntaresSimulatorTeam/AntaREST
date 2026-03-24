@@ -261,8 +261,8 @@ def test_extra_parameters(launcher_config: SlurmConfig) -> None:
 @pytest.mark.parametrize(
     "version, launcher_called, job_status",
     [
-        (840, True, JobStatus.RUNNING),
-        (860, False, JobStatus.FAILED),
+        (SolverVersion.parse(840), True, JobStatus.RUNNING),
+        (SolverVersion.parse(860), False, JobStatus.FAILED),
         pytest.param(
             999, False, JobStatus.FAILED, marks=pytest.mark.xfail(raises=VersionNotSupportedError, strict=True)
         ),
@@ -270,7 +270,7 @@ def test_extra_parameters(launcher_config: SlurmConfig) -> None:
 )
 def test_run_study(
     launcher_config: SlurmConfig,
-    version: int,
+    version: SolverVersion,
     launcher_called: bool,
     job_status: JobStatus,
     admin_user: JWTUser,
@@ -308,7 +308,7 @@ def test_run_study(
 
     # When the launcher is called
     study_uuid = str(uuid.uuid4())
-    slurm_launcher._run_study(study_uuid, job_id, LauncherParametersDTO(), SolverVersion.parse(version), admin_user)
+    slurm_launcher._run_study(study_uuid, job_id, LauncherParametersDTO(), version, admin_user)
 
     # Check the results
     assert (
