@@ -37,7 +37,7 @@ import type { Job } from "@/services/api/launcher/jobs/types";
 import { downloadJobOutput, killStudy } from "@/services/api/study";
 import { getTask, getTasks } from "@/services/api/tasks";
 import { TaskStatus } from "@/services/api/tasks/constants";
-import type { TaskDTO } from "@/services/api/tasks/types";
+import type { Task, TaskTypeValue } from "@/services/api/tasks/types";
 import { convertUTCToLocalTime } from "@/services/utils/index";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 import type { WsEvent } from "@/services/webSocket/types";
@@ -75,7 +75,7 @@ function Tasks() {
   const theme = useTheme();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [downloads, setDownloads] = useState<FileDownload[]>([]);
-  const [tasks, setTasks] = useState<TaskDTO[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [openConfirmationDialog, setOpenConfirmationDialog] = useState<string | undefined>();
   const [messageModalOpen, setMessageModalOpen] = useState<string | undefined>();
@@ -110,8 +110,7 @@ function Tasks() {
       setTasks(
         allTasks.filter(
           (task) =>
-            !task.completion_date_utc ||
-            moment.utc(task.completion_date_utc).isAfter(dateThreshold),
+            !task.completionDateUtc || moment.utc(task.completionDateUtc).isAfter(dateThreshold),
         ),
       );
 
@@ -416,13 +415,13 @@ function Tasks() {
           >
             <Box width="165px" display="flex" justifyContent="flex-start" alignItems="center">
               <CalendarTodayIcon sx={{ fontSize: 16, marginRight: "0.5em" }} />
-              {convertUTCToLocalTime(task.creation_date_utc)}
+              {convertUTCToLocalTime(task.creationDateUtc)}
             </Box>
             <Box width="165px" display="flex" justifyContent="flex-start" alignItems="center">
-              {task.completion_date_utc && (
+              {task.completionDateUtc && (
                 <>
                   <EventAvailableIcon sx={{ fontSize: 16, marginRight: "0.5em" }} />
-                  {convertUTCToLocalTime(task.completion_date_utc)}
+                  {convertUTCToLocalTime(task.completionDateUtc)}
                 </>
               )}
             </Box>
@@ -430,7 +429,7 @@ function Tasks() {
         ),
         action: (
           <Box>
-            {!task.completion_date_utc && (
+            {!task.completionDateUtc && (
               <Tooltip title={t("global.loading") as string}>
                 <CircularProgress color="primary" style={{ width: "18px", height: "18px" }} />
               </Tooltip>
@@ -453,8 +452,8 @@ function Tasks() {
             )}
           </Box>
         ),
-        date: task.completion_date_utc || task.creation_date_utc,
-        type: task.type || "UNKNOWN",
+        date: task.completionDateUtc || task.creationDateUtc,
+        type: (task.type ?? "UNKNOWN") as TaskTypeValue | "UNKNOWN",
         status: task.status === TaskStatus.Running ? "running" : "",
         userName: (task.owner && usersByID[task.owner]?.name) || "",
       })),

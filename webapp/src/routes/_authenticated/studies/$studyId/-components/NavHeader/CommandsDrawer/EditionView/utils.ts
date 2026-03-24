@@ -13,7 +13,7 @@
  */
 
 import { TaskStatus } from "../../../../../../../../services/api/tasks/constants";
-import type { TaskDTO } from "../../../../../../../../services/api/tasks/types";
+import type { Task } from "../../../../../../../../services/api/tasks/types";
 import type { CommandDTO, CommandResultDTO } from "../../../../../../../../types/types";
 import { CommandEnum, type CommandItem, type JsonCommandItem } from "./commandTypes";
 
@@ -76,7 +76,7 @@ export const exportJson = (json: object, filename: string): void => {
   link.remove();
 };
 
-export const isTaskFinal = (task: TaskDTO): boolean =>
+export const isTaskFinal = (task: Task): boolean =>
   !(task.status === TaskStatus.Pending || task.status === TaskStatus.Running);
 
 export const updateCommandResults = (

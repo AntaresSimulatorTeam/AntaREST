@@ -16,7 +16,7 @@ import LinearProgressWithLabel from "@/components/LinearProgressWithLabel";
 import useUpdatedRef from "@/hooks/useUpdatedRef";
 import { getTask, getTasks } from "@/services/api/tasks";
 import { TaskStatus, TaskType } from "@/services/api/tasks/constants";
-import type { TaskDTO, TaskTypeValue } from "@/services/api/tasks/types";
+import type { Task, TaskTypeValue } from "@/services/api/tasks/types";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 import type { WsEvent } from "@/services/webSocket/types";
 import {
@@ -31,8 +31,8 @@ import { useTranslation } from "react-i18next";
 import useStudy from "../-hooks/useStudy";
 
 interface BlockingTask {
-  id: TaskDTO["id"];
-  type: TaskTypeValue;
+  id: Task["id"];
+  type: string;
   progress?: number;
   error?: string;
 }
@@ -44,7 +44,7 @@ const BLOCKING_TASK_TYPES = [
 
 const PROGRESS_COMPLETE = 100;
 
-function getChannel(id: TaskDTO["id"]) {
+function getChannel(id: Task["id"]) {
   return WsChannel.Task + id;
 }
 
@@ -72,7 +72,7 @@ function FreezeStudy() {
         setBlockingTasks(
           tasks.map((task) => ({
             id: task.id,
-            type: task.type,
+            type: task.type ?? "",
           })),
         );
 
@@ -148,7 +148,8 @@ function FreezeStudy() {
         const payload = {
           id: task.id,
           message: task.result?.message || "",
-          type: task.type,
+          // task.type is guarded above and always a known TaskTypeValue here
+          type: task.type as TaskTypeValue,
         };
         if (task.status === TaskStatus.Running) {
           if (typeof task.progress === "number") {
