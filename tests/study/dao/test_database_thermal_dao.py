@@ -24,6 +24,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     LawOption,
     LocalTSGenerationBehavior,
     ThermalCluster,
+    ThermalClusterCreation,
     ThermalClusterGroup,
     ThermalCostGeneration,
 )
@@ -36,6 +37,8 @@ from antarest.study.dao.database.models.thermal import (
     THERMAL_PREPRO_TABLE,
     THERMAL_SERIES_TABLE,
 )
+from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
 def test_save_thermal_creates_cluster(db_dao: DatabaseStudyDao) -> None:
@@ -301,3 +304,16 @@ def test_area_with_no_clusters_are_absent_from_clusters_dict(db_dao: DatabaseStu
     assert "italy" not in clusters
     assert "germany" in clusters
     assert "gas" in clusters["germany"]
+
+
+def test_save_thermal_and_upper_case_name(db_dao: DatabaseStudyDao, command_context: CommandContext) -> None:
+    dao = db_dao
+    dao.save_area("fr")
+    command = CreateCluster(
+        area_id="fr",
+        parameters=ThermalClusterCreation(name="MyThermal"),
+        command_context=command_context,
+        study_version=dao.get_version(),
+    )
+    output = command.apply(dao)
+    assert output.status  # The command should succeed even if the name is in upper case
