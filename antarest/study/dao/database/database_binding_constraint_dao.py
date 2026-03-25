@@ -24,8 +24,12 @@ from sqlalchemy.sql import outerjoin
 from typing_extensions import override
 
 from antarest.core.exceptions import BindingConstraintNotFound
+from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX
 from antarest.study.business.model.binding_constraint_model import (
+    OPERATOR_MATRICES_MAP,
     BindingConstraint,
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
     ClusterTerm,
     ConstraintTerm,
     LinkTerm,
@@ -41,7 +45,9 @@ from antarest.study.dao.database.models.binding_constraint import (
     BINDING_CONSTRAINT_TABLE,
     BINDING_CONSTRAINT_VALUES_MATRIX_TABLE,
 )
-from antarest.study.dao.database.sql_utils import upsert_multiple, upsert_one
+from antarest.study.dao.database.models.ruleset import SCENARIO_BINDING_CONSTRAINTS_TABLE
+from antarest.study.dao.database.sql_utils import upsert_multiple
+from antarest.study.model import STUDY_VERSION_8_7
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -164,11 +170,14 @@ class DatabaseBindingConstraintDao(ConstraintDao):
             raise BindingConstraintNotFound(f"Matrix for constraint {constraint_id} not found")
         return self.get_impl().get_matrix(row.matrix_id)
 
-    def _save_bc_matrix(self, constraint_id: str, table: Table, series_id: str) -> None:
-        upsert_one(
-            self._db_session,
-            table,
-            {"study_id": self._study_id, "constraint_id": constraint_id, "matrix_id": series_id},
+    def _save_bc_matrices(self, table: Table, entries: list[tuple[str, str]]) -> None:
+        rows = [{"study_id": self._study_id, "constraint_id": cid, "matrix_id": mid} for cid, mid in entries]
+        upsert_multiple(self._db_session, table, rows)
+        self._db_session.commit()
+
+    def _delete_bc_matrices(self, table: Table, constraint_ids: list[str]) -> None:
+        self._db_session.execute(
+            delete(table).where((table.c.study_id == self._study_id) & (table.c.constraint_id.in_(constraint_ids)))
         )
         self._db_session.commit()
 
@@ -191,8 +200,14 @@ class DatabaseBindingConstraintDao(ConstraintDao):
     @override
     def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
         db = self._db_session
+        impl = self.get_impl()
+        study_version = impl.get_version()
+        constants = impl._generator_matrix_constants
 
         constraint_ids = [bc.id for bc in constraints]
+
+        # Fetch existing constraints BEFORE upserting (needed for change detection)
+        existing = self._fetch_constraints()
 
         # ===== Constraint Table
         db.execute(
@@ -232,6 +247,114 @@ class DatabaseBindingConstraintDao(ConstraintDao):
             )
         )
         upsert_multiple(db, BINDING_CONSTRAINT_LINK_TERM_TABLE, link_terms)
+
+        # ===== Matrix updates
+        _TERM_TABLE: dict[str, Table] = {
+            "lt": BINDING_CONSTRAINT_LT_MATRIX_TABLE,
+            "gt": BINDING_CONSTRAINT_GT_MATRIX_TABLE,
+            "eq": BINDING_CONSTRAINT_EQ_MATRIX_TABLE,
+            "values": BINDING_CONSTRAINT_VALUES_MATRIX_TABLE,
+        }
+        to_delete: dict[str, list[str]] = {t: [] for t in _TERM_TABLE}
+        to_create: dict[str, list[tuple[str, str]]] = {t: [] for t in _TERM_TABLE}
+
+        # Fetch all existing matrix IDs upfront — needed for operator change (copy source)
+        existing_matrix_ids: dict[str, dict[str, str]] = {}
+        for term, table in _TERM_TABLE.items():
+            rows = db.execute(
+                select(table.c.constraint_id, table.c.matrix_id).where(
+                    (table.c.study_id == self._study_id) & (table.c.constraint_id.in_(constraint_ids))
+                )
+            ).fetchall()
+            for row in rows:
+                existing_matrix_ids.setdefault(row.constraint_id, {})[term] = row.matrix_id
+
+        def _default_matrix_id(time_step: BindingConstraintFrequency) -> str:
+            if study_version < STUDY_VERSION_8_7:
+                uri = {
+                    BindingConstraintFrequency.HOURLY: constants.get_binding_constraint_hourly_86,
+                    BindingConstraintFrequency.DAILY: constants.get_binding_constraint_daily_weekly_86,
+                    BindingConstraintFrequency.WEEKLY: constants.get_binding_constraint_daily_weekly_86,
+                }[time_step]()
+            else:
+                uri = {
+                    BindingConstraintFrequency.HOURLY: constants.get_binding_constraint_hourly_87,
+                    BindingConstraintFrequency.DAILY: constants.get_binding_constraint_daily_weekly_87,
+                    BindingConstraintFrequency.WEEKLY: constants.get_binding_constraint_daily_weekly_87,
+                }[time_step]()
+            return uri.removeprefix(MATRIX_PROTOCOL_PREFIX)
+
+        for bc in constraints:
+            old = existing.get(bc.id)
+            if old is None:
+                continue  # new constraint — caller handles initial matrix creation
+
+            time_step_changed = bc.time_step != old.time_step
+            operator_changed = study_version >= STUDY_VERSION_8_7 and bc.operator != old.operator
+
+            if time_step_changed:
+                # Reset all matrices to zero defaults for the new time step.
+                # If both time step and operator changed, the result is zeros anyway.
+                default_mid = _default_matrix_id(bc.time_step)
+                if study_version < STUDY_VERSION_8_7:
+                    to_delete["values"].append(bc.id)
+                    to_create["values"].append((bc.id, default_mid))
+                else:
+                    for term in OPERATOR_MATRICES_MAP[old.operator]:
+                        to_delete[term].append(bc.id)
+                    for term in OPERATOR_MATRICES_MAP[bc.operator]:
+                        to_create[term].append((bc.id, default_mid))
+
+            elif operator_changed:
+                # Copy/move matrix data between tables without resetting values.
+                old_terms = OPERATOR_MATRICES_MAP[old.operator]
+                new_terms = OPERATOR_MATRICES_MAP[bc.operator]
+                terms_to_add = [t for t in new_terms if t not in old_terms]
+                terms_to_del = [t for t in old_terms if t not in new_terms]
+
+                if terms_to_add:
+                    # For BOTH, lt is the canonical source (mirrors file DAO rename logic).
+                    # For single operators, there is only one term so it is unambiguous.
+                    source_term = "lt" if old.operator == BindingConstraintOperator.BOTH else old_terms[0]
+                    source_mid = existing_matrix_ids.get(bc.id, {}).get(source_term)
+                    if source_mid is None:
+                        source_mid = _default_matrix_id(old.time_step)
+                    for term in terms_to_add:
+                        to_create[term].append((bc.id, source_mid))
+
+                for term in terms_to_del:
+                    to_delete[term].append(bc.id)
+
+        # Apply deletes first, then creates, within the same transaction
+        for term, table in _TERM_TABLE.items():
+            if to_delete[term]:
+                db.execute(
+                    delete(table).where(
+                        (table.c.study_id == self._study_id) & (table.c.constraint_id.in_(to_delete[term]))
+                    )
+                )
+        for term, table in _TERM_TABLE.items():
+            if to_create[term]:
+                upsert_multiple(
+                    db,
+                    table,
+                    [
+                        {"study_id": self._study_id, "constraint_id": cid, "matrix_id": mid}
+                        for cid, mid in to_create[term]
+                    ],
+                )
+
+        # ===== Scenario builder group cleanup
+        new_groups = {bc.group for bc in constraints if bc.group}
+        old_groups = {bc.group for bc in existing.values() if bc.group}
+        removed_groups = old_groups - new_groups
+        if removed_groups:
+            db.execute(
+                delete(SCENARIO_BINDING_CONSTRAINTS_TABLE).where(
+                    (SCENARIO_BINDING_CONSTRAINTS_TABLE.c.study_id == self._study_id)
+                    & (SCENARIO_BINDING_CONSTRAINTS_TABLE.c.bc_group_id.in_(removed_groups))
+                )
+            )
 
         db.commit()
 
@@ -275,19 +398,31 @@ class DatabaseBindingConstraintDao(ConstraintDao):
 
     @override
     def save_constraint_values_matrix(self, constraint_id: str, series_id: str) -> None:
-        self._save_bc_matrix(constraint_id, BINDING_CONSTRAINT_VALUES_MATRIX_TABLE, series_id)
+        self._save_bc_matrices(BINDING_CONSTRAINT_VALUES_MATRIX_TABLE, [(constraint_id, series_id)])
 
     @override
     def save_constraint_less_term_matrix(self, constraint_id: str, series_id: str) -> None:
-        self._save_bc_matrix(constraint_id, BINDING_CONSTRAINT_LT_MATRIX_TABLE, series_id)
+        self._save_bc_matrices(BINDING_CONSTRAINT_LT_MATRIX_TABLE, [(constraint_id, series_id)])
 
     @override
     def save_constraint_greater_term_matrix(self, constraint_id: str, series_id: str) -> None:
-        self._save_bc_matrix(constraint_id, BINDING_CONSTRAINT_GT_MATRIX_TABLE, series_id)
+        self._save_bc_matrices(BINDING_CONSTRAINT_GT_MATRIX_TABLE, [(constraint_id, series_id)])
 
     @override
     def save_constraint_equal_term_matrix(self, constraint_id: str, series_id: str) -> None:
-        self._save_bc_matrix(constraint_id, BINDING_CONSTRAINT_EQ_MATRIX_TABLE, series_id)
+        self._save_bc_matrices(BINDING_CONSTRAINT_EQ_MATRIX_TABLE, [(constraint_id, series_id)])
+
+    def delete_constraint_values_matrix(self, constraint_id: str) -> None:
+        self._delete_bc_matrices(BINDING_CONSTRAINT_VALUES_MATRIX_TABLE, [constraint_id])
+
+    def delete_constraint_less_term_matrix(self, constraint_id: str) -> None:
+        self._delete_bc_matrices(BINDING_CONSTRAINT_LT_MATRIX_TABLE, [constraint_id])
+
+    def delete_constraint_greater_term_matrix(self, constraint_id: str) -> None:
+        self._delete_bc_matrices(BINDING_CONSTRAINT_GT_MATRIX_TABLE, [constraint_id])
+
+    def delete_constraint_equal_term_matrix(self, constraint_id: str) -> None:
+        self._delete_bc_matrices(BINDING_CONSTRAINT_EQ_MATRIX_TABLE, [constraint_id])
 
     @override
     def delete_constraints(self, constraints: list[BindingConstraint]) -> None:

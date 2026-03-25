@@ -34,7 +34,7 @@ from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
-from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3, StorageMode
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3, StorageMode
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -124,6 +124,13 @@ def build_shared_db_dao(study_version: StudyVersion, matrix_service: ISimpleMatr
     make_session = sessionmaker(bind=engine)
     with contextlib.closing(make_session()) as session:
         return build_db_dao(session, matrix_service, study_version)
+
+
+@pytest.fixture
+def db_dao_860_and_matrix_service(
+    db_session: Session, matrix_service: ISimpleMatrixService
+) -> tuple[DatabaseStudyDao, ISimpleMatrixService]:
+    return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_6), matrix_service
 
 
 @pytest.fixture

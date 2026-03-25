@@ -26,6 +26,7 @@ from antarest.study.business.model.binding_constraint_model import (
     LinkTerm,
 )
 from antarest.study.business.model.common import FilterOption
+from antarest.study.business.model.scenario_builder_model import Ruleset
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.binding_constraint import (
     BINDING_CONSTRAINT_CLUSTER_TERM_TABLE,
@@ -295,6 +296,267 @@ def test_matrices(db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, ISimple
     db_dao.save_constraint_less_term_matrix("bc_b", matrix_service.create(df_b))
     assert db_dao.get_constraint_less_term_matrix("bc_a").equals(df_a)
     assert db_dao.get_constraint_less_term_matrix("bc_b").equals(df_b)
+
+
+@pytest.mark.parametrize(
+    "existing_op,new_op,initial_terms,expected,gone_terms,seed",
+    [
+        # single → single: rename the one matrix to the new operator's table
+        (BindingConstraintOperator.LESS, BindingConstraintOperator.GREATER, ["lt"], [("gt", "lt")], ["lt"], 10.0),
+        (BindingConstraintOperator.LESS, BindingConstraintOperator.EQUAL, ["lt"], [("eq", "lt")], ["lt"], 20.0),
+        (BindingConstraintOperator.GREATER, BindingConstraintOperator.LESS, ["gt"], [("lt", "gt")], ["gt"], 30.0),
+        (BindingConstraintOperator.GREATER, BindingConstraintOperator.EQUAL, ["gt"], [("eq", "gt")], ["gt"], 40.0),
+        (BindingConstraintOperator.EQUAL, BindingConstraintOperator.LESS, ["eq"], [("lt", "eq")], ["eq"], 50.0),
+        (BindingConstraintOperator.EQUAL, BindingConstraintOperator.GREATER, ["eq"], [("gt", "eq")], ["eq"], 60.0),
+        # single → BOTH: keep existing matrix, copy it to the other BOTH slot
+        (
+            BindingConstraintOperator.LESS,
+            BindingConstraintOperator.BOTH,
+            ["lt"],
+            [("lt", "lt"), ("gt", "lt")],
+            [],
+            70.0,
+        ),
+        (
+            BindingConstraintOperator.GREATER,
+            BindingConstraintOperator.BOTH,
+            ["gt"],
+            [("gt", "gt"), ("lt", "gt")],
+            [],
+            80.0,
+        ),
+        (
+            BindingConstraintOperator.EQUAL,
+            BindingConstraintOperator.BOTH,
+            ["eq"],
+            [("lt", "eq"), ("gt", "eq")],
+            ["eq"],
+            90.0,
+        ),
+        # BOTH → single: keep the relevant matrix, delete the other
+        (BindingConstraintOperator.BOTH, BindingConstraintOperator.LESS, ["lt", "gt"], [("lt", "lt")], ["gt"], 100.0),
+        (
+            BindingConstraintOperator.BOTH,
+            BindingConstraintOperator.GREATER,
+            ["lt", "gt"],
+            [("gt", "gt")],
+            ["lt"],
+            110.0,
+        ),
+        (
+            BindingConstraintOperator.BOTH,
+            BindingConstraintOperator.EQUAL,
+            ["lt", "gt"],
+            [("eq", "lt")],
+            ["lt", "gt"],
+            120.0,
+        ),
+    ],
+)
+def test_operator_change_renames_matrix(
+    db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, ISimpleMatrixService],
+    existing_op: BindingConstraintOperator,
+    new_op: BindingConstraintOperator,
+    initial_terms: list[str],
+    expected: list[tuple[str, str]],
+    gone_terms: list[str],
+    seed: float,
+) -> None:
+    """Operator change moves matrix data to the correct typed table, mirroring update_matrices_names."""
+    db_dao, matrix_service = db_dao_930_and_matrix_service
+
+    term_df = {
+        "lt": pl.DataFrame({"v": [seed + 1.0]}),
+        "gt": pl.DataFrame({"v": [seed + 2.0]}),
+        "eq": pl.DataFrame({"v": [seed + 3.0]}),
+    }
+    save = {
+        "lt": db_dao.save_constraint_less_term_matrix,
+        "gt": db_dao.save_constraint_greater_term_matrix,
+        "eq": db_dao.save_constraint_equal_term_matrix,
+    }
+    get = {
+        "lt": db_dao.get_constraint_less_term_matrix,
+        "gt": db_dao.get_constraint_greater_term_matrix,
+        "eq": db_dao.get_constraint_equal_term_matrix,
+    }
+
+    # Setup: save constraint with initial operator and seed matrices
+    db_dao.save_constraints([_bc("bc1", operator=existing_op)])
+    for term in initial_terms:
+        save[term]("bc1", matrix_service.create(term_df[term]))
+
+    # Act: change the operator
+    db_dao.save_constraints([_bc("bc1", operator=new_op)])
+
+    # Assert: operator updated, data moved to correct tables, old tables empty
+    assert db_dao.get_constraint("bc1").operator == new_op
+    for target_term, source_term in expected:
+        assert get[target_term]("bc1").equals(term_df[source_term])
+    for term in gone_terms:
+        with pytest.raises(BindingConstraintNotFound):
+            get[term]("bc1")
+
+
+@pytest.mark.parametrize(
+    "old_ts,new_ts,expected_rows,operator",
+    [
+        (BindingConstraintFrequency.HOURLY, BindingConstraintFrequency.DAILY, 366, BindingConstraintOperator.LESS),
+        (BindingConstraintFrequency.HOURLY, BindingConstraintFrequency.WEEKLY, 366, BindingConstraintOperator.LESS),
+        (BindingConstraintFrequency.DAILY, BindingConstraintFrequency.HOURLY, 8784, BindingConstraintOperator.LESS),
+        (BindingConstraintFrequency.WEEKLY, BindingConstraintFrequency.HOURLY, 8784, BindingConstraintOperator.LESS),
+        (BindingConstraintFrequency.HOURLY, BindingConstraintFrequency.DAILY, 366, BindingConstraintOperator.GREATER),
+        (BindingConstraintFrequency.HOURLY, BindingConstraintFrequency.DAILY, 366, BindingConstraintOperator.EQUAL),
+        (BindingConstraintFrequency.HOURLY, BindingConstraintFrequency.DAILY, 366, BindingConstraintOperator.BOTH),
+    ],
+)
+def test_time_step_change_regenerates_matrix(
+    db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, ISimpleMatrixService],
+    old_ts: BindingConstraintFrequency,
+    new_ts: BindingConstraintFrequency,
+    expected_rows: int,
+    operator: BindingConstraintOperator,
+) -> None:
+    db_dao, matrix_service = db_dao_930_and_matrix_service
+    df_custom = pl.DataFrame({"v": [99.0, 99.0, 99.0]})
+
+    savers = {
+        BindingConstraintOperator.LESS: [db_dao.save_constraint_less_term_matrix],
+        BindingConstraintOperator.GREATER: [db_dao.save_constraint_greater_term_matrix],
+        BindingConstraintOperator.EQUAL: [db_dao.save_constraint_equal_term_matrix],
+        BindingConstraintOperator.BOTH: [
+            db_dao.save_constraint_less_term_matrix,
+            db_dao.save_constraint_greater_term_matrix,
+        ],
+    }
+    getters = {
+        BindingConstraintOperator.LESS: [db_dao.get_constraint_less_term_matrix],
+        BindingConstraintOperator.GREATER: [db_dao.get_constraint_greater_term_matrix],
+        BindingConstraintOperator.EQUAL: [db_dao.get_constraint_equal_term_matrix],
+        BindingConstraintOperator.BOTH: [
+            db_dao.get_constraint_less_term_matrix,
+            db_dao.get_constraint_greater_term_matrix,
+        ],
+    }
+
+    # Setup: save constraint with initial time step and non-zero matrices
+    db_dao.save_constraints([_bc("bc1", operator=operator, time_step=old_ts)])
+    for saver in savers[operator]:
+        saver("bc1", matrix_service.create(df_custom))
+
+    # Act: change the time step
+    db_dao.save_constraints([_bc("bc1", operator=operator, time_step=new_ts)])
+
+    # Assert: time step updated, matrices replaced with all-zero defaults of the new shape
+    assert db_dao.get_constraint("bc1").time_step == new_ts
+    for getter in getters[operator]:
+        result = getter("bc1")
+        assert result.shape == (expected_rows, 1)  # 8.7+ one column
+        assert result.to_series(0).sum() == 0.0
+
+
+@pytest.mark.parametrize(
+    "old_ts,new_ts,expected_rows",
+    [
+        (BindingConstraintFrequency.HOURLY, BindingConstraintFrequency.DAILY, 366),
+        (BindingConstraintFrequency.HOURLY, BindingConstraintFrequency.WEEKLY, 366),
+        (BindingConstraintFrequency.DAILY, BindingConstraintFrequency.HOURLY, 8784),
+        (BindingConstraintFrequency.WEEKLY, BindingConstraintFrequency.HOURLY, 8784),
+    ],
+)
+def test_time_step_change_regenerates_matrix_pre_v87(
+    db_dao_860_and_matrix_service: tuple[DatabaseStudyDao, ISimpleMatrixService],
+    old_ts: BindingConstraintFrequency,
+    new_ts: BindingConstraintFrequency,
+    expected_rows: int,
+) -> None:
+    db_dao, matrix_service = db_dao_860_and_matrix_service
+
+    # Setup: save constraint with initial time step and a non-zero values matrix
+    db_dao.save_constraints([_bc("bc1", time_step=old_ts)])
+    db_dao.save_constraint_values_matrix("bc1", matrix_service.create(pl.DataFrame({"v": [99.0, 99.0, 99.0]})))
+
+    # Act: change the time step
+    db_dao.save_constraints([_bc("bc1", time_step=new_ts)])
+
+    # Assert: time step updated, values matrix replaced with all-zero default of the new shape
+    assert db_dao.get_constraint("bc1").time_step == new_ts
+    result = db_dao.get_constraint_values_matrix("bc1")
+    assert result.shape == (expected_rows, 3)  # 8.6- three columns
+    assert result.to_series(0).sum() == 0.0
+
+
+def test_group_update_and_scenario_builder_cleanup(db_dao: DatabaseStudyDao) -> None:
+    """Group is stored, updated, and cleared correctly; when the last constraint referencing
+    a group is moved away, that group's rules are removed from the scenario builder."""
+    db_dao.save_constraints(
+        [
+            _bc("bc1", group="g1"),
+            _bc("bc2", group="g1"),
+            _bc("bc3", group="g2"),
+        ]
+    )
+    assert db_dao.get_constraint("bc1").group == "g1"
+    assert db_dao.get_constraint("bc2").group == "g1"
+    assert db_dao.get_constraint("bc3").group == "g2"
+
+    db_dao.save_scenario_builder(Ruleset(binding_constraints={"g1": {"0": 1, "1": 2}, "g2": {"0": 3}}))
+
+    # Move bc1 to g2 — g1 still has bc2, no scenario builder cleanup expected
+    db_dao.save_constraints(
+        [
+            _bc("bc1", group="g2"),
+            _bc("bc2", group="g1"),
+            _bc("bc3", group="g2"),
+        ]
+    )
+    assert db_dao.get_constraint("bc1").group == "g2"
+    assert db_dao.get_constraint("bc2").group == "g1"
+    assert db_dao.get_ruleset().binding_constraints == {"g1": {"0": 1, "1": 2}, "g2": {"0": 3}}
+
+    # Move bc2 to g2 — g1 is now empty, must be cleaned from scenario builder
+    db_dao.save_constraints(
+        [
+            _bc("bc1", group="g2"),
+            _bc("bc2", group="g2"),
+            _bc("bc3", group="g2"),
+        ]
+    )
+    assert db_dao.get_constraint("bc2").group == "g2"
+    assert db_dao.get_ruleset().binding_constraints == {"g2": {"0": 3}}
+
+    # Clear bc1's group — no scenario builder impact (g2 still has bc2 and bc3)
+    db_dao.save_constraints(
+        [
+            _bc("bc1", group=None),
+            _bc("bc2", group="g2"),
+            _bc("bc3", group="g2"),
+        ]
+    )
+    assert db_dao.get_constraint("bc1").group is None
+    assert db_dao.get_ruleset().binding_constraints == {"g2": {"0": 3}}
+
+    # Clear bc2's group — g2 still has bc3, no scenario builder cleanup expected
+    db_dao.save_constraints(
+        [
+            _bc("bc1", group=None),
+            _bc("bc2", group=None),
+            _bc("bc3", group="g2"),
+        ]
+    )
+    assert db_dao.get_constraint("bc2").group is None
+    assert db_dao.get_ruleset().binding_constraints == {"g2": {"0": 3}}
+
+    # Clear bc3's group — g2 is now empty, must be cleaned from scenario builder
+    db_dao.save_constraints(
+        [
+            _bc("bc1", group=None),
+            _bc("bc2", group=None),
+            _bc("bc3", group=None),
+        ]
+    )
+    assert db_dao.get_constraint("bc3").group is None
+    assert db_dao.get_ruleset().binding_constraints == {}
 
 
 def test_cascade_deletes(
