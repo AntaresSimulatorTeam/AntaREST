@@ -81,7 +81,10 @@ def storage(
     tmp_path: Path, study_repo: StudyMetadataRepository, output_repo: OutputV2Repository, lfs: ILargeFileStorage
 ) -> V2OutputStorage:
     storage_tmp_dir = tmp_path / "storage" / "tmp"
-    storage = V2OutputStorage(archive_storage=lfs, tmp_dir=storage_tmp_dir, repository=output_repo)
+    variables_dir = tmp_path / "variables"
+    storage = V2OutputStorage(
+        archive_storage=lfs, tmp_dir=storage_tmp_dir, repository=output_repo, variables_dir=variables_dir
+    )
     return storage
 
 

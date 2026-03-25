@@ -148,10 +148,17 @@ class V2OutputStorage(IOutputStorage):
     The tmp directory will be used on import or unarchival to store uncompressed files.
     """
 
-    def __init__(self, tmp_dir: Path, repository: OutputV2Repository, archive_storage: ILargeFileStorage) -> None:
+    def __init__(
+        self,
+        tmp_dir: Path,
+        repository: OutputV2Repository,
+        archive_storage: ILargeFileStorage,
+        variables_dir: Path,
+    ) -> None:
         self._archive_storage = archive_storage
         self._repository = repository
         self._tmp_dir = tmp_dir
+        self._variables_dir = variables_dir
 
     def _get_metadata(self, study_id: str, output_name: str) -> DbOutputMetadataV2 | None:
         return self._repository.get_output_metadata(study_id, output_name)
