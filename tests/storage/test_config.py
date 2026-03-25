@@ -10,11 +10,13 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
+import yaml
+from antares.study.version import SolverVersion
 
-from antarest.core.config import Config, InternalMatrixFormat, StorageConfig
+from antarest.core.config import Config, InternalMatrixFormat, LocalConfig, SlurmConfig, StorageConfig
 
 
 @pytest.fixture
@@ -168,3 +170,45 @@ def test_storage_config_from_dict_auto_archive() -> None:
 
     with pytest.raises(ValueError):
         StorageConfig.from_dict(data)
+
+
+def test_launcher_config_solver_versions(tmp_path: Path) -> None:
+    """
+    Test that the launcher configuration correctly parses solver versions written in different formats.
+    """
+    data = {
+        "launcher": {
+            "default": "local",
+            "launchers": [
+                {"id": "local", "name": "local", "type": "local", "binaries": {"880": "", "9.2": "", "10.0": ""}},
+                {
+                    "id": "slurm",
+                    "name": "slurm",
+                    "type": "slurm",
+                    "antares_versions_on_remote_server": ["8", "880", "9.2", "10.0"],
+                },
+            ],
+        }
+    }
+
+    config_path = tmp_path / "config.yaml"
+    with config_path.open(mode="w", encoding="utf-8") as fd:
+        yaml.dump(data, fd)
+    config = Config.from_yaml_file(config_path)
+
+    # Local launcher
+    local_launcher = cast(LocalConfig, config.launcher.configs[0])
+    assert sorted(local_launcher.binaries) == [
+        SolverVersion.parse("880"),
+        SolverVersion.parse("9.2"),
+        SolverVersion.parse("10.0"),
+    ]
+
+    # Slurm launcher
+    slurm_launcher = cast(SlurmConfig, config.launcher.configs[1])
+    assert sorted(slurm_launcher.antares_versions_on_remote_server) == [
+        SolverVersion.parse("8"),
+        SolverVersion.parse("880"),
+        SolverVersion.parse("9.2"),
+        SolverVersion.parse("10.0"),
+    ]
