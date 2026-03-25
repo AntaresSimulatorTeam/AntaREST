@@ -509,7 +509,7 @@ class OwnerInfo(AntaresBaseModel):
 class StudyMetadataDTO(AntaresBaseModel):
     id: str
     name: str
-    version: StudyVersionInt
+    version: StudyVersionStr
     author: str | None = None
     editor: str | None = None
     created: str
