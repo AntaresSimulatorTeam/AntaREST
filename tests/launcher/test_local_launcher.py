@@ -22,6 +22,7 @@ import pytest
 from antares.study.version import SolverVersion
 
 from antarest.core.config import LocalConfig
+from antarest.core.exceptions import UnsupportedStudyVersion
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.launcher.adapters.local_launcher.local_launcher import LocalLauncher
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, SolverPresets
@@ -260,10 +261,10 @@ def test_parse_solver_presets(launcher_config: LocalConfig):
 
 def test_select_best_binary() -> None:
     binaries = {
-        "700": Path("700"),
-        "800": Path("800"),
-        "900": Path("900"),
-        "1000": Path("1000"),
+        SolverVersion.parse("700"): Path("700"),
+        SolverVersion.parse("800"): Path("800"),
+        SolverVersion.parse("900"): Path("900"),
+        SolverVersion.parse("1000"): Path("1000"),
     }
     local_launcher = LocalLauncher(
         LocalConfig.from_dict({"id": "id", "name": "name", "type": "local", "binaries": binaries}),
@@ -272,7 +273,12 @@ def test_select_best_binary() -> None:
         cache=Mock(),
     )
 
-    assert local_launcher._select_best_binary("600") == binaries["700"]
-    assert local_launcher._select_best_binary("700") == binaries["700"]
-    assert local_launcher._select_best_binary("710") == binaries["800"]
-    assert local_launcher._select_best_binary("1100") == binaries["1000"]
+    # Nominal cases
+    assert local_launcher._select_best_binary(SolverVersion.parse("700")) == Path("700")
+    assert local_launcher._select_best_binary(SolverVersion.parse("800")) == Path("800")
+    assert local_launcher._select_best_binary(SolverVersion.parse("900")) == Path("900")
+    assert local_launcher._select_best_binary(SolverVersion.parse("1000")) == Path("1000")
+
+    # Missing solvers
+    with pytest.raises(UnsupportedStudyVersion, match="Solver version 6 not found in the application config"):
+        local_launcher._select_best_binary(SolverVersion.parse("600"))
