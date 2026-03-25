@@ -312,25 +312,25 @@ def test_matrices(db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, ISimple
         (
             BindingConstraintOperator.LESS,
             BindingConstraintOperator.BOTH,
-            ["lt"],
-            [("lt", "lt"), ("gt", "lt")],
-            [],
+            ["lt"],  # initially we have only lt
+            [("lt", "lt"), ("gt", "lt")],  # new lt is old lt *and* new gt is old lt
+            [],  # nothing removed
             70.0,
         ),
         (
             BindingConstraintOperator.GREATER,
             BindingConstraintOperator.BOTH,
-            ["gt"],
-            [("gt", "gt"), ("lt", "gt")],
-            [],
+            ["gt"],  # initially we have only gt
+            [("gt", "gt"), ("lt", "gt")],  # new gt is old gt *and* new lt is old gt
+            [],  # nothing removed
             80.0,
         ),
         (
             BindingConstraintOperator.EQUAL,
             BindingConstraintOperator.BOTH,
-            ["eq"],
-            [("lt", "eq"), ("gt", "eq")],
-            ["eq"],
+            ["eq"],  # initially we have only eq
+            [("lt", "eq"), ("gt", "eq")],  # new gt is old eq *and* new lt is old eq
+            ["eq"],  # eq is removed
             90.0,
         ),
         # BOTH → single: keep the relevant matrix, delete the other
@@ -338,17 +338,17 @@ def test_matrices(db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, ISimple
         (
             BindingConstraintOperator.BOTH,
             BindingConstraintOperator.GREATER,
-            ["lt", "gt"],
-            [("gt", "gt")],
-            ["lt"],
+            ["lt", "gt"],  # initially we have lt and gt
+            [("gt", "gt")],  # we only keep gt with same values
+            ["lt"],  # lt is gone
             110.0,
         ),
         (
             BindingConstraintOperator.BOTH,
             BindingConstraintOperator.EQUAL,
-            ["lt", "gt"],
-            [("eq", "lt")],
-            ["lt", "gt"],
+            ["lt", "gt"],  # initially we have lt and gt
+            [("eq", "lt")],  # new eq is equal to lt
+            ["lt", "gt"],  # lt and gt are gone
             120.0,
         ),
     ],
@@ -486,6 +486,66 @@ def test_time_step_change_regenerates_matrix_pre_v87(
     assert result.to_series(0).sum() == 0.0
 
 
+def test_time_step_and_operator_change_drops_old_matrices(
+    db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, ISimpleMatrixService],
+) -> None:
+    """When both time_step and operator change simultaneously, old operator's extra matrices must be deleted.
+
+    Regression target: the commented-out `for term in OPERATOR_MATRICES_MAP[old.operator]: to_delete[term]...`
+    in the time_step_changed branch. Without that delete, switching from BOTH (lt+gt) to LESS (lt only)
+    leaves the gt matrix in the DB even after the time step reset.
+    """
+    db_dao, matrix_service = db_dao_930_and_matrix_service
+    df_custom = pl.DataFrame({"v": [99.0]})
+
+    # Setup: BOTH operator (lt + gt matrices)
+    db_dao.save_constraints(
+        [_bc("bc1", operator=BindingConstraintOperator.BOTH, time_step=BindingConstraintFrequency.HOURLY)]
+    )
+    db_dao.save_constraint_less_term_matrix("bc1", matrix_service.create(df_custom))
+    db_dao.save_constraint_greater_term_matrix("bc1", matrix_service.create(df_custom))
+
+    # Act: change to LESS (only lt) + new time step — gt must be deleted, lt must be zeroed
+    db_dao.save_constraints(
+        [_bc("bc1", operator=BindingConstraintOperator.LESS, time_step=BindingConstraintFrequency.DAILY)]
+    )
+
+    result = db_dao.get_constraint_less_term_matrix("bc1")
+    assert result.shape == (366, 1)
+    assert result.to_series(0).sum() == 0.0
+
+    with pytest.raises(BindingConstraintNotFound):
+        db_dao.get_constraint_greater_term_matrix("bc1")
+
+
+def test_operator_change_without_source_matrix_uses_default(
+    db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, ISimpleMatrixService],
+) -> None:
+    """When changing operator but no source matrix exists, the new matrix must be a zero default.
+
+    Regression target: the commented-out `if source_mid is None: source_mid = _default_matrix_id(...)`
+    fallback. Without it, source_mid is None, upsert stores NULL, and get_matrix fails.
+    """
+    db_dao, matrix_service = db_dao_930_and_matrix_service
+
+    # Setup: LESS constraint — intentionally no lt matrix saved
+    db_dao.save_constraints(
+        [_bc("bc1", operator=BindingConstraintOperator.LESS, time_step=BindingConstraintFrequency.HOURLY)]
+    )
+
+    # Act: change to GREATER — no lt source matrix exists, must fall back to zero default
+    db_dao.save_constraints(
+        [_bc("bc1", operator=BindingConstraintOperator.GREATER, time_step=BindingConstraintFrequency.HOURLY)]
+    )
+
+    result = db_dao.get_constraint_greater_term_matrix("bc1")
+    assert result.shape == (8784, 1)
+    assert result.to_series(0).sum() == 0.0
+
+    with pytest.raises(BindingConstraintNotFound):
+        db_dao.get_constraint_less_term_matrix("bc1")
+
+
 def test_group_update_and_scenario_builder_cleanup(db_dao: DatabaseStudyDao) -> None:
     """Group is stored, updated, and cleared correctly; when the last constraint referencing
     a group is moved away, that group's rules are removed from the scenario builder."""
@@ -557,6 +617,71 @@ def test_group_update_and_scenario_builder_cleanup(db_dao: DatabaseStudyDao) -> 
     )
     assert db_dao.get_constraint("bc3").group is None
     assert db_dao.get_ruleset().binding_constraints == {}
+
+
+def test_scenario_builder_cleanup_on_constraint_removal(db_dao: DatabaseStudyDao) -> None:
+    """Dropping a constraint from the list (NOT IN delete) must trigger scenario builder cleanup
+    when it was the last constraint referencing its group."""
+    db_dao.save_constraints([_bc("bc1", group="g1"), _bc("bc2", group="g2"), _bc("bc3", group="g2")])
+    db_dao.save_scenario_builder(Ruleset(binding_constraints={"g1": {"0": 1}, "g2": {"0": 2}}))
+
+    # Drop bc1 entirely — g1 has no remaining constraints, must be cleaned from scenario builder
+    db_dao.save_constraints([_bc("bc2", group="g2"), _bc("bc3", group="g2")])
+    assert db_dao.get_ruleset().binding_constraints == {"g2": {"0": 2}}
+
+    # Drop bc2 entirely — g2 still has bc3, no cleanup expected
+    db_dao.save_constraints([_bc("bc3", group="g2")])
+    assert db_dao.get_ruleset().binding_constraints == {"g2": {"0": 2}}
+
+    # Drop bc3 entirely — g2 is now empty, must be cleaned
+    db_dao.save_constraints([])
+    assert db_dao.get_ruleset().binding_constraints == {}
+
+
+def test_mixed_matrix_changes_in_one_call(
+    db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, ISimpleMatrixService],
+) -> None:
+    """A single save_constraints call with multiple constraints undergoing different changes
+    must process each independently without cross-contamination."""
+    db_dao, matrix_service = db_dao_930_and_matrix_service
+    df_nonzero_1 = pl.DataFrame({"v": [11.0]})
+    df_nonzero_2 = pl.DataFrame({"v": [22.0]})
+    df_nonzero_3 = pl.DataFrame({"v": [33.0]})
+
+    # Setup: bc1 (LESS, HOURLY), bc2 (GREATER, HOURLY), bc3 (EQUAL, HOURLY) — all with non-zero matrices
+    db_dao.save_constraints(
+        [
+            _bc("bc1", operator=BindingConstraintOperator.LESS, time_step=BindingConstraintFrequency.HOURLY),
+            _bc("bc2", operator=BindingConstraintOperator.GREATER, time_step=BindingConstraintFrequency.HOURLY),
+            _bc("bc3", operator=BindingConstraintOperator.EQUAL, time_step=BindingConstraintFrequency.HOURLY),
+        ]
+    )
+    db_dao.save_constraint_less_term_matrix("bc1", matrix_service.create(df_nonzero_1))
+    db_dao.save_constraint_greater_term_matrix("bc2", matrix_service.create(df_nonzero_2))
+    db_dao.save_constraint_equal_term_matrix("bc3", matrix_service.create(df_nonzero_3))
+
+    # Act: bc1 changes time step, bc2 changes operator, bc3 unchanged — all in one call
+    db_dao.save_constraints(
+        [
+            _bc("bc1", operator=BindingConstraintOperator.LESS, time_step=BindingConstraintFrequency.DAILY),
+            _bc("bc2", operator=BindingConstraintOperator.LESS, time_step=BindingConstraintFrequency.HOURLY),
+            _bc("bc3", operator=BindingConstraintOperator.EQUAL, time_step=BindingConstraintFrequency.HOURLY),
+        ]
+    )
+
+    # bc1: time step reset → lt zeroed to 366 rows
+    lt1 = db_dao.get_constraint_less_term_matrix("bc1")
+    assert lt1.shape == (366, 1) and lt1.to_series(0).sum() == 0.0
+
+    # bc2: operator GREATER → LESS → gt deleted, lt holds the old gt data
+    lt2 = db_dao.get_constraint_less_term_matrix("bc2")
+    assert lt2.equals(df_nonzero_2)
+    with pytest.raises(BindingConstraintNotFound):
+        db_dao.get_constraint_greater_term_matrix("bc2")
+
+    # bc3: unchanged → eq still holds original non-zero data
+    eq3 = db_dao.get_constraint_equal_term_matrix("bc3")
+    assert eq3.equals(df_nonzero_3)
 
 
 def test_cascade_deletes(

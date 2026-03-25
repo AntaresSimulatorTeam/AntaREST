@@ -292,20 +292,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
             time_step_changed = bc.time_step != old.time_step
             operator_changed = study_version >= STUDY_VERSION_8_7 and bc.operator != old.operator
 
-            if time_step_changed:
-                # Reset all matrices to zero defaults for the new time step.
-                # If both time step and operator changed, the result is zeros anyway.
-                default_mid = _default_matrix_id(bc.time_step)
-                if study_version < STUDY_VERSION_8_7:
-                    to_delete["values"].append(bc.id)
-                    to_create["values"].append((bc.id, default_mid))
-                else:
-                    for term in OPERATOR_MATRICES_MAP[old.operator]:
-                        to_delete[term].append(bc.id)
-                    for term in OPERATOR_MATRICES_MAP[bc.operator]:
-                        to_create[term].append((bc.id, default_mid))
-
-            elif operator_changed:
+            if operator_changed:
                 # Copy/move matrix data between tables without resetting values.
                 old_terms = OPERATOR_MATRICES_MAP[old.operator]
                 new_terms = OPERATOR_MATRICES_MAP[bc.operator]
@@ -324,6 +311,19 @@ class DatabaseBindingConstraintDao(ConstraintDao):
 
                 for term in terms_to_del:
                     to_delete[term].append(bc.id)
+
+            if time_step_changed:
+                # Reset all matrices to zero defaults for the new time step.
+                # If both time step and operator changed, the result is zeros anyway.
+                default_mid = _default_matrix_id(bc.time_step)
+                if study_version < STUDY_VERSION_8_7:
+                    to_delete["values"].append(bc.id)
+                    to_create["values"].append((bc.id, default_mid))
+                else:
+                    for term in OPERATOR_MATRICES_MAP[old.operator]:
+                        to_delete[term].append(bc.id)
+                    for term in OPERATOR_MATRICES_MAP[bc.operator]:
+                        to_create[term].append((bc.id, default_mid))
 
         # Apply deletes first, then creates, within the same transaction
         for term, table in _TERM_TABLE.items():
