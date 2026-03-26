@@ -61,7 +61,7 @@ def test_save_thermal_creates_cluster(db_dao: DatabaseStudyDao) -> None:
         nh3=1.0,
     )
 
-    dao.save_thermal("paris", thermal)
+    dao.save_thermals({"paris": [thermal]})
 
     expected = ThermalCluster(
         id="gas_cluster",
@@ -107,15 +107,15 @@ def test_save_thermal_creates_cluster(db_dao: DatabaseStudyDao) -> None:
     assert result == expected
 
     with pytest.raises(AreaNotFound):
-        dao.save_thermal("nonexistent", thermal)
+        dao.save_thermals({"nonexistent": [thermal]})
 
 
 def test_save_thermal_overwrites_existing(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     dao.save_area("Paris")
 
-    dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas", nominal_capacity=100.0))
-    dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas", nominal_capacity=200.0))
+    dao.save_thermals({"paris": [ThermalCluster(name="Gas", nominal_capacity=100.0)]})
+    dao.save_thermals({"paris": [ThermalCluster(name="Gas", nominal_capacity=200.0)]})
 
     result = dao.get_thermal("paris", "gas")
     assert result.nominal_capacity == 200.0
@@ -126,11 +126,12 @@ def test_save_multiple_thermal_clusters(db_dao: DatabaseStudyDao) -> None:
     dao.save_area("Paris")
 
     dao.save_thermals(
-        "paris",
-        [
-            ThermalCluster(id="gas", name="Gas", nominal_capacity=200.0),
-            ThermalCluster(id="nuclear", name="Nuclear", nominal_capacity=500.0),
-        ],
+        {
+            "paris": [
+                ThermalCluster(name="Gas", nominal_capacity=200.0),
+                ThermalCluster(name="Nuclear", nominal_capacity=500.0),
+            ]
+        }
     )
 
     paris_clusters = dao.get_all_thermals_for_area("paris")
@@ -140,11 +141,12 @@ def test_save_multiple_thermal_clusters(db_dao: DatabaseStudyDao) -> None:
 
     # Updates nuclear and adds a new one, fuel
     dao.save_thermals(
-        "paris",
-        [
-            ThermalCluster(id="nuclear", name="Nuclear", nominal_capacity=1000.0),
-            ThermalCluster(id="fuel", name="Fuel", nominal_capacity=100.0),
-        ],
+        {
+            "paris": [
+                ThermalCluster(name="Nuclear", nominal_capacity=1000.0),
+                ThermalCluster(name="Fuel", nominal_capacity=100.0),
+            ]
+        }
     )
     paris_clusters = dao.get_all_thermals_for_area("paris")
     assert len(paris_clusters) == 3
@@ -154,18 +156,19 @@ def test_save_multiple_thermal_clusters(db_dao: DatabaseStudyDao) -> None:
     # Check are not found raises an error
     with pytest.raises(AreaNotFound):
         dao.save_thermals(
-            "nonexistent",
-            [
-                ThermalCluster(id="nuclear", name="Nuclear", nominal_capacity=1000.0),
-                ThermalCluster(id="fuel", name="Fuel", nominal_capacity=100.0),
-            ],
+            {
+                "nonexistent": [
+                    ThermalCluster(name="Nuclear", nominal_capacity=1000.0),
+                    ThermalCluster(name="Fuel", nominal_capacity=100.0),
+                ]
+            }
         )
 
 
 def test_get_one_thermal_cluster(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     dao.save_area("Paris")
-    dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas"))
+    dao.save_thermals({"paris": [ThermalCluster(name="Gas")]})
 
     cluster = dao.get_thermal("paris", "gas")
     assert cluster.id == "gas"
@@ -183,8 +186,7 @@ def test_get_all_thermals(db_dao: DatabaseStudyDao) -> None:
     dao.save_area("Paris")
     dao.save_area("London")
 
-    dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas"))
-    dao.save_thermal("london", ThermalCluster(id="coal", name="Coal"))
+    dao.save_thermals({"paris": [ThermalCluster(name="Gas")], "london": [ThermalCluster(name="Coal")]})
 
     all_thermals = dao.get_all_thermals()
     assert set(all_thermals.keys()) == {"paris", "london"}
@@ -199,7 +201,7 @@ def test_delete_thermal(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     dao.save_area("Paris")
     thermal = ThermalCluster(id="gas", name="Gas")
-    dao.save_thermal("paris", thermal)
+    dao.save_thermals({"paris": [thermal]})
 
     assert dao.thermal_exists("paris", "gas")
 
@@ -225,7 +227,7 @@ def test_thermal_exists_returns_false_for_unknown_area(db_dao: DatabaseStudyDao)
 def test_thermal_matrices_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     dao.save_area("Paris")
-    dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas"))
+    dao.save_thermals({"paris": [ThermalCluster(name="Gas")]})
 
     matrix_service = dao._matrix_service
     dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
@@ -257,7 +259,7 @@ def test_thermal_matrices_lifecycle(db_session: Session, db_dao: DatabaseStudyDa
 def test_get_thermal_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     dao.save_area("Paris")
-    dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas"))
+    dao.save_thermals({"paris": [ThermalCluster(name="Gas")]})
 
     getters = [
         dao.get_thermal_prepro,
