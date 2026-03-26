@@ -24,13 +24,14 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.core.exceptions import ThermalClusterNotFound
+from antarest.core.exceptions import AreaNotFound, ThermalClustersNotFound
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     initialize_thermal_cluster,
     validate_thermal_cluster_against_version,
 )
 from antarest.study.dao.api.thermal_dao import ThermalDao
+from antarest.study.dao.common import AreaId, SeriesId, ThermalId
 from antarest.study.dao.database.common import get_row_representation_as_dict, validate_area_exists
 from antarest.study.dao.database.models.thermal import (
     THERMAL_CLUSTER_TABLE,
@@ -40,7 +41,7 @@ from antarest.study.dao.database.models.thermal import (
     THERMAL_PREPRO_TABLE,
     THERMAL_SERIES_TABLE,
 )
-from antarest.study.dao.database.sql_utils import upsert_multiple, upsert_one
+from antarest.study.dao.database.sql_utils import upsert_multiple
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -99,34 +100,39 @@ class DatabaseThermalDao(ThermalDao):
             self._raise_the_right_exception(area_id, thermal_id)
         return self.get_impl().get_matrix(row.matrix_id)
 
-    def _save_thermal_matrix(self, area_id: str, thermal_id: str, table: Table, matrix_id: str) -> None:
+    def _save_thermal_matrix(self, series: dict[AreaId, dict[ThermalId, SeriesId]], table: Table) -> None:
         study_id = self._study_id
         session = self._db_session
 
         try:
-            values = {"study_id": study_id, "area_id": area_id, "thermal_id": thermal_id, "matrix_id": matrix_id}
-            upsert_one(session, table, values)
+            values = []
+            for area_id, value in series.items():
+                for thermal_id, matrix_id in value.items():
+                    data = {"study_id": study_id, "area_id": area_id, "thermal_id": thermal_id, "matrix_id": matrix_id}
+                    values.append(data)
+            upsert_multiple(session, table, values)
         except IntegrityError as e:
-            self._raise_the_right_exception(area_id, thermal_id, e)
+            data = {area_id: list(thermal_dict) for area_id, thermal_dict in series.items()}
+            self._raise_the_right_exception(data, e)
 
         session.commit()
 
-    def _raise_the_right_exception(self, area_id: str, thermal_id: str, exc: IntegrityError | None = None) -> NoReturn:
-        # Could be because area does not exist or the thermal does not exist
-        validate_area_exists(self._db_session, self._study_id, area_id)
-        raise ThermalClusterNotFound(area_id, thermal_id) from exc
+    def _raise_the_right_exception(
+        self, data: dict[AreaId, list[ThermalId]], exc: IntegrityError | None = None
+    ) -> NoReturn:
+        # Checks if some areas are missing
+        existing_ids = set(self.get_impl().get_all_area_ids())
+        if invalid_areas := set(data) - existing_ids:
+            raise AreaNotFound(*invalid_areas)
 
-    @override
-    def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
-        session = self._db_session
-
-        values = self._convert_thermal_cluster_to_row(area_id, thermal)
-        try:
-            upsert_one(session, THERMAL_CLUSTER_TABLE, values)
-        except IntegrityError as e:
-            self._raise_the_right_exception(area_id, thermal.id, e)
-
-        session.commit()
+        # Means the issue lies in the thermals
+        all_existing_thermals = self.get_all_thermals()
+        invalid_thermal_dict = {}
+        for area_id, value in all_existing_thermals.items():
+            existing_thermals = set(value)
+            if invalid_thermals := set(data[area_id]) - existing_thermals:
+                invalid_thermal_dict[area_id] = invalid_thermals
+        raise ThermalClustersNotFound(invalid_thermal_dict) from exc
 
     @override
     def save_thermals(self, area_id: str, thermals: Sequence[ThermalCluster]) -> None:
@@ -149,24 +155,24 @@ class DatabaseThermalDao(ThermalDao):
         session.commit()
 
     @override
-    def save_thermal_prepro(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._save_thermal_matrix(area_id, thermal_id, THERMAL_PREPRO_TABLE, series_id)
+    def save_thermal_prepro(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
+        self._save_thermal_matrix(series, THERMAL_PREPRO_TABLE)
 
     @override
-    def save_thermal_modulation(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._save_thermal_matrix(area_id, thermal_id, THERMAL_MODULATION_TABLE, series_id)
+    def save_thermal_modulation(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
+        self._save_thermal_matrix(series, THERMAL_MODULATION_TABLE)
 
     @override
-    def save_thermal_series(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._save_thermal_matrix(area_id, thermal_id, THERMAL_SERIES_TABLE, series_id)
+    def save_thermal_series(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
+        self._save_thermal_matrix(series, THERMAL_SERIES_TABLE)
 
     @override
-    def save_thermal_fuel_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._save_thermal_matrix(area_id, thermal_id, THERMAL_FUEL_COST_TABLE, series_id)
+    def save_thermal_fuel_cost(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
+        self._save_thermal_matrix(series, THERMAL_FUEL_COST_TABLE)
 
     @override
-    def save_thermal_co2_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._save_thermal_matrix(area_id, thermal_id, THERMAL_CO2_COST_TABLE, series_id)
+    def save_thermal_co2_cost(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
+        self._save_thermal_matrix(series, THERMAL_CO2_COST_TABLE)
 
     @override
     def delete_thermal(self, area_id: str, thermal_id: str) -> None:
