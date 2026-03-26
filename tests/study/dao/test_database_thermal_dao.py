@@ -233,11 +233,11 @@ def test_thermal_matrices_lifecycle(db_session: Session, db_dao: DatabaseStudyDa
     dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
     series_id = matrix_service.create(dataframe)
 
-    dao.save_thermal_prepro("paris", "gas", series_id)
-    dao.save_thermal_modulation("paris", "gas", series_id)
-    dao.save_thermal_series("paris", "gas", series_id)
-    dao.save_thermal_fuel_cost("paris", "gas", series_id)
-    dao.save_thermal_co2_cost("paris", "gas", series_id)
+    dao.save_thermal_prepro({"paris": {"gas": series_id}})
+    dao.save_thermal_modulation({"paris": {"gas": series_id}})
+    dao.save_thermal_series({"paris": {"gas": series_id}})
+    dao.save_thermal_fuel_cost({"paris": {"gas": series_id}})
+    dao.save_thermal_co2_cost({"paris": {"gas": series_id}})
 
     pl.testing.assert_frame_equal(dao.get_thermal_prepro("paris", "gas"), dataframe, check_dtypes=False)
     pl.testing.assert_frame_equal(dao.get_thermal_modulation("paris", "gas"), dataframe, check_dtypes=False)
@@ -289,9 +289,9 @@ def test_save_thermal_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> No
 
     for saver in savers:
         with pytest.raises(ThermalClusterNotFound):
-            saver("paris", "gas", "missing-matrix-id")
+            saver({"paris": {"gas": "missing-matrix-id"}})
         with pytest.raises(AreaNotFound):
-            saver("nonexistent", "gas", "missing-matrix-id")
+            saver({"nonexistent": {"gas": "missing-matrix-id"}})
 
 
 def test_area_with_no_clusters_are_absent_from_clusters_dict(db_dao: DatabaseStudyDao) -> None:
@@ -299,7 +299,7 @@ def test_area_with_no_clusters_are_absent_from_clusters_dict(db_dao: DatabaseStu
     dao.save_area("germany")
     dao.save_area("italy")
 
-    dao.save_thermal("germany", ThermalCluster(id="gas", name="Gas"))
+    dao.save_thermals({"germany": [ThermalCluster(name="Gas")]})
 
     clusters = dao.get_all_thermals()
 
