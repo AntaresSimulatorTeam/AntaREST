@@ -228,28 +228,21 @@ class StudyConverter:
         self._new_dao.save_thermals(data)
 
         # Matrices
-        for thermal_timeseries in self._source_dao.get_all_thermals_prepro():
-            print("ok")
-        """
-        self._new_dao.save_thermals(area_id, thermals)
-        for thermal in thermals:
-            thermal_id = thermal.id.lower()
-            prepro_id = self._matrix_service.create(self._source_dao.get_thermal_prepro(area_id, thermal_id))
-            self._new_dao.save_thermal_prepro(area_id, thermal_id, prepro_id)
+        prepro_mapping = self._source_dao.get_all_thermals_prepro()
+        self._new_dao.save_thermal_prepro(prepro_mapping)
 
-            modulation_id = self._matrix_service.create(self._source_dao.get_thermal_modulation(area_id, thermal_id))
-            self._new_dao.save_thermal_modulation(area_id, thermal_id, modulation_id)
+        modulation_mapping = self._source_dao.get_all_thermals_modulation()
+        self._new_dao.save_thermal_modulation(modulation_mapping)
 
-            series_id = self._matrix_service.create(self._source_dao.get_thermal_series(area_id, thermal_id))
-            self._new_dao.save_thermal_series(area_id, thermal_id, series_id)
+        series_mapping = self._source_dao.get_all_thermals_series()
+        self._new_dao.save_thermal_series(series_mapping)
 
-            if self._study_version >= STUDY_VERSION_8_7:
-                fuel_cost_id = self._matrix_service.create(self._source_dao.get_thermal_fuel_cost(area_id, thermal_id))
-                self._new_dao.save_thermal_fuel_cost(area_id, thermal_id, fuel_cost_id)
+        if self._study_version >= STUDY_VERSION_8_7:
+            fuel_cost_mapping = self._source_dao.get_all_thermals_fuel_cost()
+            self._new_dao.save_thermal_fuel_cost(fuel_cost_mapping)
 
-                co2_cost_id = self._matrix_service.create(self._source_dao.get_thermal_co2_cost(area_id, thermal_id))
-                self._new_dao.save_thermal_co2_cost(area_id, thermal_id, co2_cost_id)
-        """
+            co2_cost_mapping = self._source_dao.get_all_thermals_co2_cost()
+            self._new_dao.save_thermal_co2_cost(co2_cost_mapping)
 
     def _convert_renewable_clusters(self, area_id: str, renewables: Sequence[RenewableCluster]) -> None:
         self._new_dao.save_renewables(area_id, renewables)
