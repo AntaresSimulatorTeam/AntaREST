@@ -37,6 +37,11 @@ _CLUSTERS_PATH = "input/thermal/clusters/{area_id}/list"
 _ALL_CLUSTERS_PATH = "input/thermal/clusters"
 
 
+def _check_area_exists(study_data: FileStudyTreeConfig, area_id: str) -> None:
+    if area_id not in study_data.areas:
+        raise ValueError(f"The area '{area_id}' does not exist")
+
+
 class FileStudyThermalDao(ThermalDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
@@ -165,6 +170,9 @@ class FileStudyThermalDao(ThermalDao, ABC):
     def save_thermals(self, data: dict[AreaId, list[ThermalCluster]]) -> None:
         study_data = self.get_file_study()
         for area_id, thermals in data.items():
+            # Ensures the area exists
+            _check_area_exists(study_data.config, area_id)
+            # Save the new content
             ini_content = self._get_all_thermals_for_area(study_data, area_id)
             for thermal in thermals:
                 self._update_thermal_config(study_data.config, area_id, thermal)
@@ -240,8 +248,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
 
     @staticmethod
     def _update_thermal_config(study_data: FileStudyTreeConfig, area_id: str, thermal: ThermalCluster) -> None:
-        if area_id not in study_data.areas:
-            raise ValueError(f"The area '{area_id}' does not exist")
+        _check_area_exists(study_data, area_id)
 
         for k, existing_cluster in enumerate(study_data.areas[area_id].thermals):
             if existing_cluster.id == thermal.id:
