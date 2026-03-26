@@ -27,7 +27,7 @@ from antarest.launcher.model import LogType
 from antarest.lfs.dir_lfs import DirLargeFileStorage
 from antarest.lfs.lfs import ILargeFileStorage
 from antarest.output.filestudy.utils import MCAllAreasQueryFile
-from antarest.output.storage.v2.parquet_output import parquet_output_dir
+from antarest.output.storage.v2.converter import parquet_output_dir
 from antarest.output.storage.v2.repository import OutputV2Repository
 from antarest.output.storage.v2.storage import V2OutputStorage
 from antarest.study.model import MatrixFrequency, MatrixIndex, Study
