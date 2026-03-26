@@ -21,7 +21,7 @@ from antarest.study.dao.common import AreaId, SeriesId, ThermalId
 
 class ReadOnlyThermalDao(ABC):
     @abstractmethod
-    def get_all_thermals(self) -> dict[str, dict[str, ThermalCluster]]:
+    def get_all_thermals(self) -> dict[AreaId, dict[ThermalId, ThermalCluster]]:
         """
         Returns a mapping of area ID to cluster IDs to cluster.
 
@@ -88,5 +88,5 @@ class ThermalDao(ReadOnlyThermalDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def delete_thermal(self, area_id: str, thermal_id: str) -> None:
+    def delete_thermal(self, area_id: AreaId, thermal_id: ThermalId) -> None:
         raise NotImplementedError()
