@@ -271,9 +271,20 @@ class DatabaseThermalDao(ThermalDao):
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self._get_thermal_matrix(area_id, thermal_id, THERMAL_CO2_COST_TABLE)
 
+    def _get_all_thermal_matrix_ids(self, table: Table) -> dict[ThermalSeries, dict[AreaId, list[ThermalId]]]:
+        study_id = self._study_id
+        session = self._db_session
+        stmt = select(table).where(table.c.study_id == study_id)
+        rows = session.execute(stmt).fetchall()
+        result: dict[ThermalSeries, dict[AreaId, list[ThermalId]]] = {}
+        for row in rows:
+            result.setdefault(row.matrix_id, {}).setdefault(row.area_id, []).append(row.thermal_id)
+        return result
+
 
     @override
     def get_all_thermals_co2_cost(self) -> Iterator[ThermalSeries]:
+        study_id = self._study_id
         all_thermals = self.get_all_thermals()
         for area_id, value in all_thermals.items():
             for thermal_id in value:
