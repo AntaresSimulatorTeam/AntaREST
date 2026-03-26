@@ -24,7 +24,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.core.exceptions import AreaNotFound, ThermalClustersNotFound
+from antarest.core.exceptions import AreaNotFound, ThermalClusterNotFound, ThermalClustersNotFound
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     initialize_thermal_cluster,
@@ -97,7 +97,7 @@ class DatabaseThermalDao(ThermalDao):
     def _get_thermal_matrix(self, area_id: str, thermal_id: str, table: Table) -> pl.DataFrame:
         row = self._get_thermal_matrix_row(area_id, thermal_id, table)
         if not row:
-            self._raise_the_right_exception(area_id, thermal_id)
+            self._raise_the_right_exception({area_id: [thermal_id]})
         return self.get_impl().get_matrix(row.matrix_id)
 
     def _save_thermal_matrix(self, series: dict[AreaId, dict[ThermalId, SeriesId]], table: Table) -> None:
@@ -132,9 +132,11 @@ class DatabaseThermalDao(ThermalDao):
             existing_thermals = set(value)
             if invalid_thermals := set(data[area_id]) - existing_thermals:
                 invalid_thermal_dict[area_id] = invalid_thermals
-        if len(invalid_thermal_dict) == 1 and len(invalid_thermal_dict[next(iter(invalid_thermal_dict))]) == 1:
-            # Only one thermal is missing, keep the clearer exception
-            raise ThermalClustersNotFound(next(iter(invalid_thermal_dict))) from exc
+        if len(invalid_thermal_dict) == 1:
+            area_id = next(iter(invalid_thermal_dict))
+            if len(invalid_thermal_dict[area_id]) == 1:
+                # Only one thermal is missing, keep the clearer exception
+                raise ThermalClusterNotFound(area_id, next(iter(invalid_thermal_dict[area_id]))) from exc
         raise ThermalClustersNotFound(invalid_thermal_dict) from exc
 
     @override
