@@ -399,7 +399,9 @@ class OutputService:
         # Optimized path for studies stored on external devices, that will then be unarchived there.
         # TODO: as commented elsewhere, that workflow should be refactored to not span multiple files
         if output_id and isinstance(output, Path) and output.suffix == ArchiveFormat.ZIP and auto_unzip:
-            self.unarchive_output(uuid, output_id)
+            storage = self._find_output_storage(uuid, output_id)
+            if storage.is_output_archived(uuid, output_id):
+                self.unarchive_output(uuid, output_id)
 
         return output_id
 

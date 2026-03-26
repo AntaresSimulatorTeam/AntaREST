@@ -15,6 +15,7 @@ import zipfile
 from pathlib import Path
 from unittest.mock import Mock
 
+import polars as pl
 import pytest
 from sqlalchemy import Engine
 
@@ -25,6 +26,8 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.lfs.dir_lfs import DirLargeFileStorage
 from antarest.lfs.lfs import ILargeFileStorage
+from antarest.output.filestudy.utils import MCAllAreasQueryFile
+from antarest.output.storage.v2.parquet_output import parquet_output_dir
 from antarest.output.storage.v2.repository import OutputV2Repository
 from antarest.output.storage.v2.storage import V2OutputStorage
 from antarest.study.model import MatrixFrequency, MatrixIndex, Study
@@ -653,3 +656,212 @@ def test_copy_output(
         storage.write_output_to_dir("my-copy", f"{EXPECTED_DATE}eco", parent_dir)
         assert (parent_dir / f"{EXPECTED_DATE}eco").exists()
         assert (parent_dir / f"{EXPECTED_DATE}eco" / "about-the-study" / "parameters.ini").exists()
+
+
+def test_import_creates_parquet_files(
+    storage: V2OutputStorage,
+    study_id: str,
+    output_path: Path,
+    tmp_path: Path,
+):
+    with db():
+        output_name = storage.import_output(study_id, output_path)
+
+    variables_dir = tmp_path / "variables"
+    parquet_dir = parquet_output_dir(variables_dir, study_id, output_name)
+    assert parquet_dir.exists()
+
+    parquet_files = [f.name for f in parquet_dir.iterdir()]
+    assert "mc-all_areas_daily.parquet" in parquet_files
+    assert "mc-all_areas_monthly.parquet" in parquet_files
+    assert "mc-all_thermal_clusters_daily.parquet" in parquet_files
+    assert "mc-all_thermal_clusters_monthly.parquet" in parquet_files
+
+    assert not any(f.startswith("mc-ind") for f in parquet_files)
+    assert not any("links" in f for f in parquet_files)
+
+
+def test_parquet_areas_content(
+    storage: V2OutputStorage,
+    study_id: str,
+    output_path: Path,
+    tmp_path: Path,
+):
+    with db():
+        output_name = storage.import_output(study_id, output_path)
+
+    variables_dir = tmp_path / "variables"
+    parquet_dir = parquet_output_dir(variables_dir, study_id, output_name)
+    areas_daily = pl.read_parquet(parquet_dir / "mc-all_areas_daily.parquet")
+
+    assert set(areas_daily["area"]) == {"de", "es"}
+    assert "area" in areas_daily.columns
+    assert "timeId" in areas_daily.columns
+    assert "LOAD EXP" in areas_daily.columns
+    assert "BALANCE EXP" in areas_daily.columns
+
+
+def test_parquet_thermal_clusters_content(
+    storage: V2OutputStorage,
+    study_id: str,
+    output_path: Path,
+    tmp_path: Path,
+):
+    with db():
+        output_name = storage.import_output(study_id, output_path)
+
+    variables_dir = tmp_path / "variables"
+    parquet_dir = parquet_output_dir(variables_dir, study_id, output_name)
+    clusters_daily = pl.read_parquet(parquet_dir / "mc-all_thermal_clusters_daily.parquet")
+
+    assert "cluster" in clusters_daily.columns
+    assert "area" in clusters_daily.columns
+    assert "timeId" in clusters_daily.columns
+
+    cluster_names = set(clusters_daily["cluster"])
+    assert "01_solar" in cluster_names
+
+
+def test_delete_removes_parquet(
+    storage: V2OutputStorage,
+    study_id: str,
+    output_path: Path,
+    tmp_path: Path,
+):
+    with db():
+        output_name = storage.import_output(study_id, output_path)
+
+    variables_dir = tmp_path / "variables"
+    parquet_dir = parquet_output_dir(variables_dir, study_id, output_name)
+    assert parquet_dir.exists()
+
+    with db():
+        storage.delete_output(study_id, output_name)
+
+    assert not parquet_dir.exists()
+
+
+def test_copy_output_copies_parquet(
+    study_repo: StudyMetadataRepository,
+    storage: V2OutputStorage,
+    study_id: str,
+    output_path: Path,
+    tmp_path: Path,
+):
+    with db():
+        study_repo.save(Study(id="copy-target", name="name", version="9.2", path=""))
+        output_name = storage.import_output(study_id, output_path)
+        storage.copy_output(study_id, "copy-target", output_name)
+
+    variables_dir = tmp_path / "variables"
+    src_dir = parquet_output_dir(variables_dir, study_id, output_name)
+    dst_dir = parquet_output_dir(variables_dir, "copy-target", output_name)
+
+    assert src_dir.exists()
+    assert dst_dir.exists()
+    src_files = [f.name for f in src_dir.iterdir()]
+    dst_files = [f.name for f in dst_dir.iterdir()]
+    assert src_files == dst_files
+
+
+def test_aggregate_areas_values(
+    storage: V2OutputStorage,
+    study_id: str,
+    output_path: Path,
+):
+    with db():
+        output_name = storage.import_output(study_id, output_path)
+
+        dfs = list(
+            storage.aggregate_output_data(
+                study_id,
+                output_name,
+                query_file=MCAllAreasQueryFile.VALUES,
+                frequency=MatrixFrequency.DAILY,
+                ids_to_consider=[],
+                columns_names=[],
+                transform_columns_headers=True,
+            )
+        )
+        assert len(dfs) == 1
+        df = dfs[0]
+
+        assert "area" in df.columns
+        assert "timeId" in df.columns
+        assert "LOAD EXP" in df.columns
+        assert set(df["area"]) == {"de", "es"}
+
+
+def test_aggregate_with_area_filter(
+    storage: V2OutputStorage,
+    study_id: str,
+    output_path: Path,
+):
+    with db():
+        output_name = storage.import_output(study_id, output_path)
+
+        dfs = list(
+            storage.aggregate_output_data(
+                study_id,
+                output_name,
+                query_file=MCAllAreasQueryFile.VALUES,
+                frequency=MatrixFrequency.DAILY,
+                ids_to_consider=["de"],
+                columns_names=[],
+                transform_columns_headers=True,
+            )
+        )
+
+        assert set(dfs[0]["area"]) == {"de"}
+
+
+def test_aggregate_with_column_filter(
+    storage: V2OutputStorage,
+    study_id: str,
+    output_path: Path,
+):
+    with db():
+        output_name = storage.import_output(study_id, output_path)
+
+        dfs = list(
+            storage.aggregate_output_data(
+                study_id,
+                output_name,
+                query_file=MCAllAreasQueryFile.VALUES,
+                frequency=MatrixFrequency.DAILY,
+                ids_to_consider=[],
+                columns_names=["load"],
+                transform_columns_headers=True,
+            )
+        )
+        df = dfs[0]
+
+        variable_cols = [c for c in df.columns if c not in {"area", "timeId", "mcYear", "cluster"}]
+        assert all("LOAD" in c for c in variable_cols)
+
+
+def test_aggregate_thermal_clusters(
+    storage: V2OutputStorage,
+    study_id: str,
+    output_path: Path,
+):
+    with db():
+        output_name = storage.import_output(study_id, output_path)
+
+        dfs = list(
+            storage.aggregate_output_data(
+                study_id,
+                output_name,
+                query_file=MCAllAreasQueryFile.DETAILS,
+                frequency=MatrixFrequency.DAILY,
+                ids_to_consider=[],
+                columns_names=[],
+                transform_columns_headers=True,
+            )
+        )
+        df = dfs[0]
+
+        assert "area" in df.columns
+        assert "cluster" in df.columns
+        assert "timeId" in df.columns
+        assert "01_solar" in df["cluster"]

@@ -20,7 +20,12 @@ from typing import BinaryIO
 import polars as pl
 from typing_extensions import override
 
-from antarest.core.exceptions import OutputAlreadyExists, OutputNotFound, ShouldNotHappenException
+from antarest.core.exceptions import (
+    OutputAggregationError,
+    OutputAlreadyExists,
+    OutputNotFound,
+    ShouldNotHappenException,
+)
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.utils.archives import (
     ArchiveFormat,
@@ -45,6 +50,11 @@ from antarest.output.storage.output_storage import (
     OutputDetails,
     OutputMetadata,
     OutputStorageType,
+)
+from antarest.output.storage.v2.parquet_output import (
+    extract_output_to_parquet,
+    parquet_output_dir,
+    read_output_from_parquet,
 )
 from antarest.output.storage.v2.repository import (
     DbOutputMetadataV2,
@@ -202,7 +212,8 @@ class V2OutputStorage(IOutputStorage):
 
             simulation_range = _extract_simulation_range(dir_path)
 
-            # TODO here: extract variable data
+            variables_target = parquet_output_dir(self._variables_dir, study_id, output_name)
+            extract_output_to_parquet(dir_path, variables_target)
 
             self._repository.save_output_metadata(
                 DbOutputMetadataV2(
@@ -286,6 +297,11 @@ class V2OutputStorage(IOutputStorage):
             raise ShouldNotHappenException(f"Variables list not found for output {src_study_id}/{output_id}.")
         self._repository.save_output_variables_list(target_study_id, output_id, variables_list)
 
+        src_vars = parquet_output_dir(self._variables_dir, src_study_id, output_id)
+        dst_vars = parquet_output_dir(self._variables_dir, target_study_id, output_id)
+        if src_vars.exists():
+            shutil.copytree(src_vars, dst_vars)
+
     @override
     def delete_output(self, study_id: str, output_id: str) -> None:
         # TODO: we should have some sort of async behaviour so that
@@ -294,6 +310,7 @@ class V2OutputStorage(IOutputStorage):
         logger.info(f"Deleting output {study_id}/{output_id} from internal storage.")
         self._require_metadata(study_id, output_id)
         self._archive_storage.delete_file(_archive_id(study_id, output_id))
+        shutil.rmtree(parquet_output_dir(self._variables_dir, study_id, output_id), ignore_errors=True)
         self._repository.delete_output(study_id, output_id)
 
     @override
@@ -371,5 +388,13 @@ class V2OutputStorage(IOutputStorage):
         transform_columns_headers: bool,
         mc_years: Sequence[int] | None = None,
     ) -> Iterator[pl.DataFrame]:
-        # TODO: at import time, extract to parquet files
-        raise NotImplementedError()
+        if not transform_columns_headers:
+            raise NotImplementedError("transform_columns_headers=False is not yet supported for V2 storage")
+
+        target_dir = parquet_output_dir(self._variables_dir, study_id, output_id)
+        df = read_output_from_parquet(target_dir, query_file, frequency, ids_to_consider, columns_names, mc_years)
+
+        if df.is_empty():
+            raise OutputAggregationError(output_id, "No output data matching the criteria were found")
+
+        yield df
