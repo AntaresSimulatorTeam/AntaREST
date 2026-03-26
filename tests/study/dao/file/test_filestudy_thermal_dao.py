@@ -17,7 +17,7 @@ def test_area_with_no_clusters_are_absent_from_clusters_dict(filestudy_dao: File
     filestudy_dao.save_area("germany")
     filestudy_dao.save_area("italy")
 
-    filestudy_dao.save_thermal("germany", ThermalCluster(id="gas", name="Gas"))
+    filestudy_dao.save_thermals({"germany": [ThermalCluster(id="gas", name="Gas")]})
 
     clusters = filestudy_dao.get_all_thermals()
 
