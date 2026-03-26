@@ -20,6 +20,7 @@ from antarest.core.exceptions import ChildNotFoundError, ThermalClusterConfigNot
 from antarest.core.utils.utils import remove_first_match
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.thermal_dao import ThermalDao
+from antarest.study.dao.common import AreaId, SeriesId, ThermalId
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     parse_thermal_cluster,
@@ -114,48 +115,49 @@ class FileStudyThermalDao(ThermalDao, ABC):
         return self.get_impl().get_matrix(["input", "thermal", "series", area_id, thermal_id, "CO2Cost"])
 
     @override
-    def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
+    def save_thermals(self, data: dict[AreaId, Sequence[ThermalCluster]]) -> None:
         study_data = self.get_file_study()
-        self._update_thermal_config(study_data.config, area_id, thermal)
-
-        study_data.tree.save(
-            serialize_thermal_cluster(study_data.config.version, thermal),
-            ["input", "thermal", "clusters", area_id, "list", thermal.id],
-        )
-
-    @override
-    def save_thermals(self, area_id: str, thermals: Sequence[ThermalCluster]) -> None:
-        study_data = self.get_file_study()
-        ini_content = self._get_all_thermals_for_area(study_data, area_id)
-        for thermal in thermals:
-            self._update_thermal_config(study_data.config, area_id, thermal)
-            ini_content[thermal.id] = serialize_thermal_cluster(study_data.config.version, thermal)
-        study_data.tree.save(ini_content, ["input", "thermal", "clusters", area_id, "list"])
+        for area_id, thermals in data.items():
+            ini_content = self._get_all_thermals_for_area(study_data, area_id)
+            for thermal in thermals:
+                self._update_thermal_config(study_data.config, area_id, thermal)
+                ini_content[thermal.id] = serialize_thermal_cluster(study_data.config.version, thermal)
+            study_data.tree.save(ini_content, ["input", "thermal", "clusters", area_id, "list"])
 
     @override
-    def save_thermal_prepro(self, area_id: str, thermal_id: str, series_id: str) -> None:
+    def save_thermal_prepro(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
         study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "thermal", "prepro", area_id, thermal_id, "data"])
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                study_data.tree.save(series_id, ["input", "thermal", "prepro", area_id, thermal_id, "data"])
 
     @override
-    def save_thermal_modulation(self, area_id: str, thermal_id: str, series_id: str) -> None:
+    def save_thermal_modulation(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
         study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "thermal", "prepro", area_id, thermal_id, "modulation"])
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                study_data.tree.save(series_id, ["input", "thermal", "prepro", area_id, thermal_id, "modulation"])
 
     @override
-    def save_thermal_series(self, area_id: str, thermal_id: str, series_id: str) -> None:
+    def save_thermal_series(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
         study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "thermal", "series", area_id, thermal_id, "series"])
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                study_data.tree.save(series_id, ["input", "thermal", "series", area_id, thermal_id, "series"])
 
     @override
-    def save_thermal_fuel_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
+    def save_thermal_fuel_cost(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
         study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "thermal", "series", area_id, thermal_id, "fuelCost"])
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                study_data.tree.save(series_id, ["input", "thermal", "series", area_id, thermal_id, "fuelCost"])
 
     @override
-    def save_thermal_co2_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
+    def save_thermal_co2_cost(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
         study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "thermal", "series", area_id, thermal_id, "CO2Cost"])
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                study_data.tree.save(series_id, ["input", "thermal", "series", area_id, thermal_id, "CO2Cost"])
 
     @override
     def delete_thermal(self, area_id: str, thermal_id: str) -> None:

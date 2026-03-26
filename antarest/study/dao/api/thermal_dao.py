@@ -16,6 +16,7 @@ from collections.abc import Sequence
 import polars as pl
 
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.dao.common import AreaId, SeriesId, ThermalId
 
 
 class ReadOnlyThermalDao(ABC):
@@ -63,31 +64,27 @@ class ReadOnlyThermalDao(ABC):
 
 class ThermalDao(ReadOnlyThermalDao):
     @abstractmethod
-    def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
+    def save_thermals(self, data: dict[AreaId, Sequence[ThermalCluster]]) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_thermals(self, area_id: str, thermals: Sequence[ThermalCluster]) -> None:
+    def save_thermal_prepro(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_thermal_prepro(self, area_id: str, thermal_id: str, series_id: str) -> None:
+    def save_thermal_modulation(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_thermal_modulation(self, area_id: str, thermal_id: str, series_id: str) -> None:
+    def save_thermal_series(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_thermal_series(self, area_id: str, thermal_id: str, series_id: str) -> None:
+    def save_thermal_fuel_cost(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_thermal_fuel_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def save_thermal_co2_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
+    def save_thermal_co2_cost(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
         raise NotImplementedError()
 
     @abstractmethod
