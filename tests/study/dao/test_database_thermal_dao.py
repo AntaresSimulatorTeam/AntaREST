@@ -269,7 +269,7 @@ def test_get_thermal_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> Non
         dao.get_thermal_co2_cost,
     ]
     for getter in getters:
-        with pytest.raises(ThermalClusterNotFound):
+        with pytest.raises(ValueError, match="One of the thermal clusters table is not filled as it should"):
             getter("paris", "gas")
         with pytest.raises(AreaNotFound):
             getter("nonexistent", "gas")

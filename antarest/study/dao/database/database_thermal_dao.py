@@ -131,11 +131,17 @@ class DatabaseThermalDao(ThermalDao):
         for area_id, value in data.items():
             if invalid_thermals := set(data[area_id]) - set(all_existing_thermals.get(area_id, [])):
                 invalid_thermal_dict[area_id] = invalid_thermals
+
         if len(invalid_thermal_dict) == 1:
             area_id = next(iter(invalid_thermal_dict))
             if len(invalid_thermal_dict[area_id]) == 1:
                 # Only one thermal is missing, keep the clearer exception
                 raise ThermalClusterNotFound(area_id, next(iter(invalid_thermal_dict[area_id]))) from exc
+
+        elif not invalid_thermal_dict:
+            # All thermals exist. It means that the DB table does not contain the information.
+            raise ValueError("One of the thermal clusters table is not filled as it should") from exc
+
         raise ThermalClustersNotFound(invalid_thermal_dict) from exc
 
     @override
