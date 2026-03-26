@@ -132,6 +132,9 @@ class DatabaseThermalDao(ThermalDao):
             existing_thermals = set(value)
             if invalid_thermals := set(data[area_id]) - existing_thermals:
                 invalid_thermal_dict[area_id] = invalid_thermals
+        if len(invalid_thermal_dict) == 1 and len(invalid_thermal_dict[next(iter(invalid_thermal_dict))]) == 1:
+            # Only one thermal is missing, keep the clearer exception
+            raise ThermalClustersNotFound(next(iter(invalid_thermal_dict))) from exc
         raise ThermalClustersNotFound(invalid_thermal_dict) from exc
 
     @override
@@ -188,7 +191,7 @@ class DatabaseThermalDao(ThermalDao):
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
             # Means the DELETE had no effect so the thermal did not exist
-            self._raise_the_right_exception(area_id, thermal_id)
+            self._raise_the_right_exception({area_id: [thermal_id]})
 
         session.commit()
 
@@ -236,7 +239,7 @@ class DatabaseThermalDao(ThermalDao):
         stmt = self._select_thermal_cluster(area_id, thermal_id)
         row = session.execute(stmt).fetchone()
         if not row:
-            self._raise_the_right_exception(area_id, thermal_id)
+            self._raise_the_right_exception({area_id: [thermal_id]})
 
         return self._convert_db_row_to_thermal(row)
 
