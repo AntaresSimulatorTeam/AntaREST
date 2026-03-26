@@ -293,16 +293,16 @@ class DatabaseThermalDao(ThermalDao):
 
     @override
     def get_all_thermals_fuel_cost(self) -> Iterator[ThermalSeries]:
-        raise NotImplementedError("Not implemented yet")
+        return self._get_all_thermal_matrix(THERMAL_FUEL_COST_TABLE)
 
     @override
     def get_all_thermals_series(self) -> Iterator[ThermalSeries]:
-        raise NotImplementedError("Not implemented yet")
+        return self._get_all_thermal_matrix(THERMAL_SERIES_TABLE)
 
     @override
     def get_all_thermals_modulation(self) -> Iterator[ThermalSeries]:
-        raise NotImplementedError("Not implemented yet")
+        return self._get_all_thermal_matrix(THERMAL_MODULATION_TABLE)
 
     @override
     def get_all_thermals_prepro(self) -> Iterator[ThermalSeries]:
-        raise NotImplementedError("Not implemented yet")
+        return self._get_all_thermal_matrix(THERMAL_PREPRO_TABLE)
