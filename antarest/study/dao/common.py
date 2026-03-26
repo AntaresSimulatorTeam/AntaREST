@@ -9,8 +9,18 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from dataclasses import dataclass
 from typing import TypeAlias
+
+import polars as pl
 
 AreaId: TypeAlias = str
 ThermalId: TypeAlias = str
 SeriesId: TypeAlias = str
+
+
+@dataclass(frozen=True)
+class ThermalSeries:
+    area_id: AreaId
+    thermal_id: ThermalId
+    series: pl.DataFrame

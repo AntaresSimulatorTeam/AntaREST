@@ -65,7 +65,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettingsUpdate,
 )
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.dao.common import AreaId, SeriesId, ThermalId
+from antarest.study.dao.common import AreaId, SeriesId, ThermalId, ThermalSeries
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -332,6 +332,41 @@ class InMemoryStudyDao(StudyDao):
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         matrix_id = self._thermal_co2_cost[cluster_key(area_id, thermal_id)]
         return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_all_thermals_co2_cost(self) -> Iterator[ThermalSeries]:
+        for thermal_key, matrix_id in self._thermal_co2_cost.items():
+            area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
+            matrix = self._matrix_service.get(matrix_id)
+            yield ThermalSeries(area_id=area_id, thermal_id=thermal_id, series=matrix)
+
+    @override
+    def get_all_thermals_fuel_cost(self) -> Iterator[ThermalSeries]:
+        for thermal_key, matrix_id in self._thermal_fuel_cost.items():
+            area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
+            matrix = self._matrix_service.get(matrix_id)
+            yield ThermalSeries(area_id=area_id, thermal_id=thermal_id, series=matrix)
+
+    @override
+    def get_all_thermals_series(self) -> Iterator[ThermalSeries]:
+        for thermal_key, matrix_id in self._thermal_series.items():
+            area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
+            matrix = self._matrix_service.get(matrix_id)
+            yield ThermalSeries(area_id=area_id, thermal_id=thermal_id, series=matrix)
+
+    @override
+    def get_all_thermals_modulation(self) -> Iterator[ThermalSeries]:
+        for thermal_key, matrix_id in self._thermal_modulation.items():
+            area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
+            matrix = self._matrix_service.get(matrix_id)
+            yield ThermalSeries(area_id=area_id, thermal_id=thermal_id, series=matrix)
+
+    @override
+    def get_all_thermals_prepro(self) -> Iterator[ThermalSeries]:
+        for thermal_key, matrix_id in self._thermal_prepro.items():
+            area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
+            matrix = self._matrix_service.get(matrix_id)
+            yield ThermalSeries(area_id=area_id, thermal_id=thermal_id, series=matrix)
 
     @override
     def save_thermals(self, data: dict[AreaId, list[ThermalCluster]]) -> None:

@@ -16,7 +16,7 @@ Database implementation of ThermalDao.
 
 from abc import abstractmethod
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import TYPE_CHECKING, Any, NoReturn, Iterator
 
 import polars as pl
 from sqlalchemy import CursorResult, Row, Select, Table, delete, select
@@ -31,7 +31,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     validate_thermal_cluster_against_version,
 )
 from antarest.study.dao.api.thermal_dao import ThermalDao
-from antarest.study.dao.common import AreaId, SeriesId, ThermalId
+from antarest.study.dao.common import AreaId, SeriesId, ThermalId, ThermalSeries
 from antarest.study.dao.database.common import get_row_representation_as_dict, validate_area_exists
 from antarest.study.dao.database.models.thermal import (
     THERMAL_CLUSTER_TABLE,
@@ -270,3 +270,25 @@ class DatabaseThermalDao(ThermalDao):
     @override
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self._get_thermal_matrix(area_id, thermal_id, THERMAL_CO2_COST_TABLE)
+
+
+    @override
+    def get_all_thermals_co2_cost(self) -> Iterator[ThermalSeries]:
+        all_thermals = self.get_all_thermals()
+        for area_id, value in all_thermals.items():
+            for thermal_id in value:
+                matrix = self.get_thermal_co2_cost(area_id, thermal_id)
+                yield ThermalSeries(area_id=area_id, thermal_id=thermal_id, series=matrix)
+
+    @override
+    def get_all_thermals_fuel_cost(self) -> Iterator[ThermalSeries]:
+        raise NotImplementedError("Not implemented yet")
+    @override
+    def get_all_thermals_series(self) -> Iterator[ThermalSeries]:
+        raise NotImplementedError("Not implemented yet")
+    @override
+    def get_all_thermals_modulation(self) -> Iterator[ThermalSeries]:
+        raise NotImplementedError("Not implemented yet")
+    @override
+    def get_all_thermals_prepro(self) -> Iterator[ThermalSeries]:
+        raise NotImplementedError("Not implemented yet")

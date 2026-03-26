@@ -12,11 +12,12 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
+from typing import Iterator
 
 import polars as pl
 
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.dao.common import AreaId, SeriesId, ThermalId
+from antarest.study.dao.common import AreaId, SeriesId, ThermalId, ThermalSeries
 
 
 class ReadOnlyThermalDao(ABC):
@@ -59,6 +60,26 @@ class ReadOnlyThermalDao(ABC):
 
     @abstractmethod
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_thermals_co2_cost(self) -> Iterator[ThermalSeries]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_thermals_fuel_cost(self) -> Iterator[ThermalSeries]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_thermals_series(self) -> Iterator[ThermalSeries]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_thermals_modulation(self) -> Iterator[ThermalSeries]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_thermals_prepro(self) -> Iterator[ThermalSeries]:
         raise NotImplementedError()
 
 
