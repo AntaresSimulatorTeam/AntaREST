@@ -104,7 +104,7 @@ def test_init_slurm_launcher_parameters(tmp_path: Path) -> None:
         default_json_db_name="default_json_db_name",
         slurm_script_path="slurm_script_path",
         partition="fake_partition",
-        antares_versions_on_remote_server=["42"],
+        antares_versions_on_remote_server=[SolverVersion.parse(840), SolverVersion.parse("10.0")],
         username="username",
         hostname="hostname",
         port=42,
@@ -264,7 +264,10 @@ def test_extra_parameters(launcher_config: SlurmConfig) -> None:
         (SolverVersion.parse(840), True, JobStatus.RUNNING),
         (SolverVersion.parse(860), False, JobStatus.FAILED),
         pytest.param(
-            999, False, JobStatus.FAILED, marks=pytest.mark.xfail(raises=VersionNotSupportedError, strict=True)
+            SolverVersion.parse(999),
+            False,
+            JobStatus.FAILED,
+            marks=pytest.mark.xfail(raises=VersionNotSupportedError, strict=True),
         ),
     ],
 )
