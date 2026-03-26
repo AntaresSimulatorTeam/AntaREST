@@ -16,7 +16,7 @@ Database implementation of ThermalDao.
 
 from abc import abstractmethod
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, NoReturn, Iterator
+from typing import TYPE_CHECKING, Any, Iterator, NoReturn
 
 import polars as pl
 from sqlalchemy import CursorResult, Row, Select, Table, delete, select
@@ -271,35 +271,38 @@ class DatabaseThermalDao(ThermalDao):
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self._get_thermal_matrix(area_id, thermal_id, THERMAL_CO2_COST_TABLE)
 
-    def _get_all_thermal_matrix_ids(self, table: Table) -> dict[ThermalSeries, dict[AreaId, list[ThermalId]]]:
+    def _get_all_thermal_matrix_ids(self, table: Table) -> dict[SeriesId, dict[AreaId, list[ThermalId]]]:
         study_id = self._study_id
         session = self._db_session
         stmt = select(table).where(table.c.study_id == study_id)
         rows = session.execute(stmt).fetchall()
-        result: dict[ThermalSeries, dict[AreaId, list[ThermalId]]] = {}
+        result: dict[SeriesId, dict[AreaId, list[ThermalId]]] = {}
         for row in rows:
             result.setdefault(row.matrix_id, {}).setdefault(row.area_id, []).append(row.thermal_id)
         return result
 
-
     @override
     def get_all_thermals_co2_cost(self) -> Iterator[ThermalSeries]:
-        study_id = self._study_id
-        all_thermals = self.get_all_thermals()
-        for area_id, value in all_thermals.items():
-            for thermal_id in value:
-                matrix = self.get_thermal_co2_cost(area_id, thermal_id)
-                yield ThermalSeries(area_id=area_id, thermal_id=thermal_id, series=matrix)
+        matrx_ids_mapping = self._get_all_thermal_matrix_ids(THERMAL_CO2_COST_TABLE)
+        for matrix_content in self.get_impl()._matrix_service.yield_matrices(list(matrx_ids_mapping)):
+            matrix_id = matrix_content.id
+            dataframe = matrix_content.data
+            for area_id, thermal_ids in matrx_ids_mapping[matrix_id].items():
+                for thermal_id in thermal_ids:
+                    yield ThermalSeries(area_id=area_id, thermal_id=thermal_id, series=dataframe)
 
     @override
     def get_all_thermals_fuel_cost(self) -> Iterator[ThermalSeries]:
         raise NotImplementedError("Not implemented yet")
+
     @override
     def get_all_thermals_series(self) -> Iterator[ThermalSeries]:
         raise NotImplementedError("Not implemented yet")
+
     @override
     def get_all_thermals_modulation(self) -> Iterator[ThermalSeries]:
         raise NotImplementedError("Not implemented yet")
+
     @override
     def get_all_thermals_prepro(self) -> Iterator[ThermalSeries]:
         raise NotImplementedError("Not implemented yet")
