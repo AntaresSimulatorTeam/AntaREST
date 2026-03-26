@@ -16,6 +16,6 @@ export const studyKeys = {
   all: () => ["studies"] as const,
   deleteMany: () => [...studyKeys.all(), "deleteStudies"] as const,
   favorites: () => [...studyKeys.all(), "favoriteStudies"] as const,
-  createFavorite: () => [...studyKeys.favorites(), "createFavorite"] as const,
-  deleteFavorite: () => [...studyKeys.favorites(), "deleteFavorite"] as const,
+  createFavorite: () => [...studyKeys.favorites(), "createFavoriteStudy"] as const,
+  deleteFavorite: () => [...studyKeys.favorites(), "deleteFavoriteStudy"] as const,
 };

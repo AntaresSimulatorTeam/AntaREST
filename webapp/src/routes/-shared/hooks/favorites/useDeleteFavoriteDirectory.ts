@@ -13,29 +13,29 @@
  */
 
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import { studyMutations } from "@/queries/studies/mutations";
-import { studyQueries } from "@/queries/studies/queries";
+import { directoryMutations } from "@/queries/directories/mutations";
+import { directoryQueries } from "@/queries/directories/queries";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
-function useDeleteFavoriteStudy() {
+function useDeleteFavoriteDirectory() {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
-  const { queryKey: favoritesQueryKey } = studyQueries.favorites();
+  const { queryKey: favoritesQueryKey } = directoryQueries.favorites();
 
-  const mutate = useMutation({
-    ...studyMutations.deleteFavorite(),
+  const mutation = useMutation({
+    ...directoryMutations.deleteFavorite(),
     onMutate: async (variables) => {
       await queryClient.cancelQueries({ queryKey: favoritesQueryKey });
 
       const favorites = queryClient.getQueryData(favoritesQueryKey) || [];
-      const favToDelete = favorites.find((fav) => fav.studyId === variables.studyId);
+      const favToDelete = favorites.find((fav) => fav.directoryId === variables.directoryId);
 
       if (favToDelete) {
-        queryClient.setQueryData(favoritesQueryKey, (old = []) => {
-          return old.filter((fav) => fav.studyId !== favToDelete.studyId);
+        queryClient.setQueryData(favoritesQueryKey, (old) => {
+          return old?.filter((fav) => fav.directoryId !== favToDelete.directoryId);
         });
       }
 
@@ -46,8 +46,7 @@ function useDeleteFavoriteStudy() {
         return;
       }
 
-      // TODO  key
-      enqueueErrorSnackbar(t("study.favorite.delete.error"), error);
+      enqueueErrorSnackbar(t("directory.error.deleteFavorite"), error);
 
       queryClient.setQueryData(favoritesQueryKey, (old = []) => {
         return [...old, favToDelete];
@@ -55,7 +54,7 @@ function useDeleteFavoriteStudy() {
     },
   });
 
-  return mutate;
+  return mutation;
 }
 
-export default useDeleteFavoriteStudy;
+export default useDeleteFavoriteDirectory;

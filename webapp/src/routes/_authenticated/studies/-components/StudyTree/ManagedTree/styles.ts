@@ -47,10 +47,6 @@ export const treeItemStyles: SxProps<Theme> = (theme) => ({
         fontSize: "1.2rem",
       },
     },
-    "& > .MuiTreeItem-label": {
-      fontSize: 14,
-      fontWeight: 450,
-    },
   },
 });
 
@@ -90,37 +86,13 @@ export const textFieldStyles: SxProps<Theme> = {
   },
 };
 
-export const nodeLabelContainerStyles: SxProps<Theme> = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  width: "100%",
-  pr: 0.5,
-};
-
 export const nodeActionsContainerStyles: SxProps<Theme> = {
-  display: "flex",
-  gap: 0.25,
-  ml: 1,
+  display: "none",
+  ".MuiTreeItem-content:hover &": {
+    display: "inherit",
+  },
 };
 
 export const actionButtonStyles: SxProps<Theme> = {
   p: 0.25,
-  opacity: 0,
-  ".MuiTreeItem-content:hover &": {
-    opacity: 1,
-  },
-};
-
-export const renameIconStyles: SxProps<Theme> = {
-  fontSize: 16,
-};
-
-export const addSubDirectoryIconStyles: SxProps<Theme> = {
-  fontSize: 16,
-};
-
-export const deleteIconStyles: SxProps<Theme> = {
-  fontSize: 16,
-  color: "error.main",
 };

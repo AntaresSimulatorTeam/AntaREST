@@ -14,13 +14,13 @@
 
 import { directoryQueries } from "@/queries/directories/queries";
 import { studyQueries } from "@/queries/studies/queries";
-import useCreateFavoriteStudy from "@/routes/-shared/hooks/useCreateFavoriteStudy";
+import useCreateFavoriteStudy from "@/routes/-shared/hooks/favorites/useCreateFavoriteStudy";
 import type { FavoriteDirectory, FavoriteStudy } from "@/services/api/favorites/types";
 import { sortByName } from "@/services/utils";
 import storage from "@/services/utils/localStorage";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMount } from "react-use";
-import type { Favorite } from "./utils";
+import type { Favorite } from "./types";
 
 function normalizeAndSortFavorites(favorites: FavoriteStudy[] | FavoriteDirectory[]) {
   const normalized = favorites.map(

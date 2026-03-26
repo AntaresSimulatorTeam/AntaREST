@@ -13,7 +13,6 @@
  */
 
 import type { FavoriteDirectory, FavoriteStudy } from "@/services/api/favorites/types";
-import type { TooltipProps } from "@mui/material";
 
 export interface Favorite {
   id: string;
@@ -21,23 +20,3 @@ export interface Favorite {
   type: "study" | "directory";
   original: FavoriteStudy | FavoriteDirectory;
 }
-
-export const getTooltipProps = (
-  fav: Favorite,
-  offset: [number, number],
-): Omit<TooltipProps, "children"> => ({
-  title: fav.name,
-  placement: "right",
-  slotProps: {
-    popper: {
-      modifiers: [
-        {
-          name: "offset",
-          options: {
-            offset,
-          },
-        },
-      ],
-    },
-  },
-});

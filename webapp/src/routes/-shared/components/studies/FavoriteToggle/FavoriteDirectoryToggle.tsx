@@ -13,35 +13,56 @@
  */
 
 import { directoryQueries } from "@/queries/directories/queries";
+import useCreateFavoriteDirectory from "@/routes/-shared/hooks/favorites/useCreateFavoriteDirectory";
+import useDeleteFavoriteDirectory from "@/routes/-shared/hooks/favorites/useDeleteFavoriteDirectory";
 import type { Directory } from "@/services/api/directories/types";
 import type { FavoriteDirectory } from "@/services/api/favorites/types";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useIsMutating, useSuspenseQuery } from "@tanstack/react-query";
+import * as RA from "ramda-adjunct";
 import { useCallback } from "react";
 import FavoriteButton, { type FavoriteButtonProps } from "./FavoriteButton";
 
-interface Props {
+interface Props extends Omit<FavoriteButtonProps, "isFavorite" | "onClick"> {
   directoryId: Directory["id"];
-  edge?: FavoriteButtonProps["edge"];
-  tooltipPlacement?: FavoriteButtonProps["tooltipPlacement"];
 }
 
-function FavoriteDirectoryToggle({ directoryId, edge, tooltipPlacement }: Props) {
-  const isFavoriteDirectory = useCallback(
+function FavoriteDirectoryToggle({ directoryId, ...rest }: Props) {
+  const createFavorite = useCreateFavoriteDirectory();
+  const deleteFavorite = useDeleteFavoriteDirectory();
+
+  const selectIsFavorite = useCallback(
     (favorites: FavoriteDirectory[]) => favorites.some((fav) => fav.directoryId === directoryId),
     [directoryId],
   );
 
   const { data: isFavorite } = useSuspenseQuery({
     ...directoryQueries.favorites(),
-    select: isFavoriteDirectory,
+    select: selectIsFavorite,
   });
+
+  // Indicates whether a favorite mutation (create or delete) is currently in progress for this directory
+  const isMutating =
+    useIsMutating({
+      mutationKey: directoryQueries.favorites().queryKey,
+      predicate: ({ state: { variables } }) => {
+        return (
+          RA.isPlainObj(variables) &&
+          "directoryId" in variables &&
+          variables.directoryId === directoryId
+        );
+      },
+    }) !== 0;
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleClick = () => {
-    //
+    if (isFavorite) {
+      deleteFavorite.mutate({ directoryId });
+    } else {
+      createFavorite.mutate({ directoryId });
+    }
   };
 
   ////////////////////////////////////////////////////////////////
@@ -49,12 +70,7 @@ function FavoriteDirectoryToggle({ directoryId, edge, tooltipPlacement }: Props)
   ////////////////////////////////////////////////////////////////
 
   return (
-    <FavoriteButton
-      isFavorite={isFavorite}
-      onClick={handleClick}
-      edge={edge}
-      tooltipPlacement={tooltipPlacement}
-    />
+    <FavoriteButton isFavorite={isFavorite} onClick={handleClick} loading={isMutating} {...rest} />
   );
 }
 

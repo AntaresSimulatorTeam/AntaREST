@@ -33,9 +33,9 @@ function useCreateFavoriteStudy() {
   const mutation = useMutation({
     ...studyMutations.createFavorite(),
     onMutate: async (variables) => {
-      const { studyId } = variables;
       await queryClient.cancelQueries({ queryKey: favoritesQueryKey });
 
+      const { studyId } = variables;
       const favorites = queryClient.getQueryData(favoritesQueryKey) || [];
       const isAlreadyFavorite = favorites.some((fav) => fav.studyId === studyId);
 
@@ -58,11 +58,10 @@ function useCreateFavoriteStudy() {
         return;
       }
 
-      // TODO  key
-      enqueueErrorSnackbar(t("study.favorite.create.error"), error);
+      enqueueErrorSnackbar(t("study.error.createFavorite"), error);
 
-      queryClient.setQueryData(favoritesQueryKey, (old = []) => {
-        return old.filter((fav) => fav.studyId !== variables.studyId);
+      queryClient.setQueryData(favoritesQueryKey, (old) => {
+        return old?.filter((fav) => fav.studyId !== variables.studyId);
       });
     },
     onSuccess: (newFavorite, _, onMutateResult) => {
@@ -70,8 +69,8 @@ function useCreateFavoriteStudy() {
         return;
       }
 
-      queryClient.setQueryData(favoritesQueryKey, (old = []) => {
-        return old.map((fav) => (fav.studyId === newFavorite.studyId ? newFavorite : fav));
+      queryClient.setQueryData(favoritesQueryKey, (old) => {
+        return old?.map((fav) => (fav.studyId === newFavorite.studyId ? newFavorite : fav));
       });
     },
   });

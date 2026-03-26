@@ -13,21 +13,19 @@
  */
 
 import { studyQueries } from "@/queries/studies/queries";
-import useCreateFavoriteStudy from "@/routes/-shared/hooks/useCreateFavoriteStudy";
-import useDeleteFavoriteStudy from "@/routes/-shared/hooks/useDeleteFavoriteStudy";
+import useCreateFavoriteStudy from "@/routes/-shared/hooks/favorites/useCreateFavoriteStudy";
+import useDeleteFavoriteStudy from "@/routes/-shared/hooks/favorites/useDeleteFavoriteStudy";
 import type { FavoriteStudy } from "@/services/api/favorites/types";
 import type { StudyMetadata } from "@/types/types";
 import { useIsMutating, useSuspenseQuery } from "@tanstack/react-query";
 import * as RA from "ramda-adjunct";
 import { useCallback } from "react";
 import FavoriteButton, { type FavoriteButtonProps } from "./FavoriteButton";
-interface Props {
+interface Props extends Omit<FavoriteButtonProps, "isFavorite" | "onClick"> {
   studyId: StudyMetadata["id"];
-  edge?: FavoriteButtonProps["edge"];
-  tooltipPlacement?: FavoriteButtonProps["tooltipPlacement"];
 }
 
-function FavoriteStudyToggle({ studyId, edge, tooltipPlacement }: Props) {
+function FavoriteStudyToggle({ studyId, ...rest }: Props) {
   const createFavorite = useCreateFavoriteStudy();
   const deleteFavorite = useDeleteFavoriteStudy();
 
@@ -67,13 +65,7 @@ function FavoriteStudyToggle({ studyId, edge, tooltipPlacement }: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <FavoriteButton
-      isFavorite={isFavorite}
-      onClick={handleClick}
-      edge={edge}
-      tooltipPlacement={tooltipPlacement}
-      loading={isMutating}
-    />
+    <FavoriteButton isFavorite={isFavorite} onClick={handleClick} loading={isMutating} {...rest} />
   );
 }
 

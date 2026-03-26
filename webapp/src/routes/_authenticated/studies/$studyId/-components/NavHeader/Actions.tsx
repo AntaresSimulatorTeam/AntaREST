@@ -13,7 +13,7 @@
  */
 
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import FavoriteStudyToggle from "@/routes/-shared/components/studies/FavoriteToggle.tsx/FavoriteStudyToggle";
+import FavoriteStudyToggle from "@/routes/-shared/components/studies/FavoriteToggle/FavoriteStudyToggle";
 import StudyActionsMenu from "@/routes/-shared/components/studies/StudyActionsMenu";
 import { unarchiveStudy } from "@/services/api/study";
 import type { StudyMetadata } from "@/types/types";

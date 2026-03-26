@@ -18,9 +18,10 @@ import { directoryQueries } from "@/queries/directories/queries";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { isMenuOpen } from "@/redux/selectors";
-import FavoriteToggle from "@/routes/-shared/components/studies/FavoriteToggle.tsx";
+import FavoriteToggle from "@/routes/-shared/components/studies/FavoriteToggle";
+import FolderIcon from "@mui/icons-material/Folder";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
-import { List, ListItemText, Menu, Tooltip, Typography } from "@mui/material";
+import { List, ListItemIcon, ListItemText, Menu, Tooltip, Typography } from "@mui/material";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { linkOptions } from "@tanstack/react-router";
 import React, { useState } from "react";
@@ -28,8 +29,8 @@ import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { getDescendantIds } from "../../../studies/-components/StudyTree/ManagedTree/utils";
 import SidebarItem from "../SidebarItem";
+import { type Favorite } from "./types";
 import useFavorites from "./useFavorites";
-import { getTooltipProps, type Favorite } from "./utils";
 
 function FavoritesMenu() {
   const { t } = useTranslation();
@@ -47,7 +48,7 @@ function FavoritesMenu() {
     setAnchorEl(null);
   };
 
-  const getFavoriteItemLinkOptions = (fav: Favorite) => {
+  const getFavoriteLinkOptions = (fav: Favorite) => {
     // Study favorite
     if (fav.type === "study") {
       return {
@@ -75,8 +76,39 @@ function FavoritesMenu() {
 
         closeMenu();
       },
+      activeProps: {},
     };
   };
+
+  const getFavoriteIcon = (fav: Favorite) => {
+    if (fav.type === "directory") {
+      return (
+        <ListItemIcon sx={[isMainMenuOpen && { minWidth: 26 }]}>
+          <FolderIcon fontSize="extra-small" color="info" />
+        </ListItemIcon>
+      );
+    }
+
+    return null;
+  };
+
+  const getFavoriteContent = (fav: Favorite) => (
+    <>
+      {getFavoriteIcon(fav)}
+      <Tooltip
+        title={fav.name}
+        placement="right"
+        slotProps={{ popper: { modifiers: [{ name: "offset", options: { offset: [0, 30] } }] } }}
+      >
+        <ListItemText>
+          <Typography noWrap variant="body2">
+            {fav.name}
+          </Typography>
+        </ListItemText>
+      </Tooltip>
+      <FavoriteToggle favorite={fav.original} edge="end" tooltipPlacement="right" />
+    </>
+  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -104,24 +136,17 @@ function FavoritesMenu() {
         onClick={handleItemClick}
         disableAutoMainMenuOpen
       >
-        {/* List - when main menu is open */}
+        {/* List - when main menu is expanded */}
         <List disablePadding dense>
           {favorites.map((fav) => (
-            <RouterListItemButton key={fav.id} {...getFavoriteItemLinkOptions(fav)}>
-              <Tooltip {...getTooltipProps(fav, [0, 30])}>
-                <ListItemText>
-                  <Typography noWrap variant="body2">
-                    {fav.name}
-                  </Typography>
-                </ListItemText>
-              </Tooltip>
-              <FavoriteToggle favorite={fav.original} edge="end" tooltipPlacement="right" />
+            <RouterListItemButton key={fav.id} {...getFavoriteLinkOptions(fav)}>
+              {getFavoriteContent(fav)}
             </RouterListItemButton>
           ))}
         </List>
       </SidebarItem>
 
-      {/* Menu - when main menu is closed */}
+      {/* Menu - when main menu is collapsed */}
       {!isMainMenuOpen && (
         <Menu
           open={!!anchorEl}
@@ -134,15 +159,8 @@ function FavoritesMenu() {
           onClose={closeMenu}
         >
           {favorites.map((fav) => (
-            <RouterMenuItem key={fav.id} dense {...getFavoriteItemLinkOptions(fav)}>
-              <Tooltip {...getTooltipProps(fav, [0, 30])}>
-                <ListItemText>
-                  <Typography noWrap variant="body2" sx={{ mr: 1 }}>
-                    {fav.name}
-                  </Typography>
-                </ListItemText>
-              </Tooltip>
-              <FavoriteToggle favorite={fav.original} edge="end" tooltipPlacement="right" />
+            <RouterMenuItem key={fav.id} dense {...getFavoriteLinkOptions(fav)}>
+              {getFavoriteContent(fav)}
             </RouterMenuItem>
           ))}
         </Menu>
