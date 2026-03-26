@@ -337,36 +337,31 @@ class InMemoryStudyDao(StudyDao):
     def get_all_thermals_co2_cost(self) -> Iterator[ThermalTimeSeries]:
         for thermal_key, matrix_id in self._thermal_co2_cost.items():
             area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
-            matrix = self._matrix_service.get(matrix_id)
-            yield ThermalTimeSeries(area_id=area_id, thermal_id=thermal_id, series=matrix)
+            yield ThermalTimeSeries(area_id=area_id, thermal_id=thermal_id, series_id=matrix_id)
 
     @override
     def get_all_thermals_fuel_cost(self) -> Iterator[ThermalTimeSeries]:
         for thermal_key, matrix_id in self._thermal_fuel_cost.items():
             area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
-            matrix = self._matrix_service.get(matrix_id)
-            yield ThermalTimeSeries(area_id=area_id, thermal_id=thermal_id, series=matrix)
+            yield ThermalTimeSeries(area_id=area_id, thermal_id=thermal_id, series_id=matrix_id)
 
     @override
     def get_all_thermals_series(self) -> Iterator[ThermalTimeSeries]:
         for thermal_key, matrix_id in self._thermal_series.items():
             area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
-            matrix = self._matrix_service.get(matrix_id)
-            yield ThermalTimeSeries(area_id=area_id, thermal_id=thermal_id, series=matrix)
+            yield ThermalTimeSeries(area_id=area_id, thermal_id=thermal_id, series_id=matrix_id)
 
     @override
     def get_all_thermals_modulation(self) -> Iterator[ThermalTimeSeries]:
         for thermal_key, matrix_id in self._thermal_modulation.items():
             area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
-            matrix = self._matrix_service.get(matrix_id)
-            yield ThermalTimeSeries(area_id=area_id, thermal_id=thermal_id, series=matrix)
+            yield ThermalTimeSeries(area_id=area_id, thermal_id=thermal_id, series_id=matrix_id)
 
     @override
     def get_all_thermals_prepro(self) -> Iterator[ThermalTimeSeries]:
         for thermal_key, matrix_id in self._thermal_prepro.items():
             area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
-            matrix = self._matrix_service.get(matrix_id)
-            yield ThermalTimeSeries(area_id=area_id, thermal_id=thermal_id, series=matrix)
+            yield ThermalTimeSeries(area_id=area_id, thermal_id=thermal_id, series_id=matrix_id)
 
     @override
     def save_thermals(self, data: dict[AreaId, list[ThermalCluster]]) -> None:

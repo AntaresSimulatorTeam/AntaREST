@@ -276,16 +276,8 @@ class DatabaseThermalDao(ThermalDao):
         session = self._db_session
         stmt = select(table).where(table.c.study_id == study_id)
         rows = session.execute(stmt).fetchall()
-        matrix_ids_mapping: dict[SeriesId, dict[AreaId, list[ThermalId]]] = {}
         for row in rows:
-            matrix_ids_mapping.setdefault(row.matrix_id, {}).setdefault(row.area_id, []).append(row.thermal_id)
-
-        for matrix_content in self.get_impl()._matrix_service.yield_matrices(list(matrix_ids_mapping)):
-            matrix_id = matrix_content.id
-            dataframe = matrix_content.data
-            for area_id, thermal_ids in matrix_ids_mapping[matrix_id].items():
-                for thermal_id in thermal_ids:
-                    yield ThermalTimeSeries(area_id=area_id, thermal_id=thermal_id, series=dataframe)
+            yield ThermalTimeSeries(area_id=row.area_id, thermal_id=row.thermal_id, series_id=row.matrix_id)
 
     @override
     def get_all_thermals_co2_cost(self) -> Iterator[ThermalTimeSeries]:

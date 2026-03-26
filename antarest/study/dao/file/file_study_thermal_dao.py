@@ -11,7 +11,8 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Iterator
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Iterator, Callable
 
 import polars as pl
 from typing_extensions import override
@@ -34,6 +35,13 @@ if TYPE_CHECKING:
 _CLUSTER_PATH = "input/thermal/clusters/{area_id}/list/{cluster_id}"
 _CLUSTERS_PATH = "input/thermal/clusters/{area_id}/list"
 _ALL_CLUSTERS_PATH = "input/thermal/clusters"
+
+@dataclass(frozen=True)
+class InternalThermalTimeSeries:
+    area_id: str
+    thermal_id: str
+    series: pl.DataFrame
+
 
 
 class FileStudyThermalDao(ThermalDao, ABC):
@@ -114,13 +122,18 @@ class FileStudyThermalDao(ThermalDao, ABC):
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "thermal", "series", area_id, thermal_id, "CO2Cost"])
 
-    @override
-    def get_all_thermals_co2_cost(self) -> Iterator[ThermalTimeSeries]:
+    def _get_matrices(self, getter: Callable[[AreaId, ThermalId], pl.DataFrame]) -> Iterator[InternalThermalTimeSeries]:
         all_thermals = self.get_all_thermals()
         for area_id, value in all_thermals.items():
             for thermal_id in value:
-                matrix = self.get_thermal_co2_cost(area_id, thermal_id)
-                yield ThermalTimeSeries(area_id=area_id, thermal_id=thermal_id, series=matrix)
+                matrix = getter(area_id, thermal_id)
+                yield InternalThermalTimeSeries(area_id=area_id, thermal_id=thermal_id, series=matrix)
+
+    @override
+    def get_all_thermals_co2_cost(self) -> Iterator[ThermalTimeSeries]:
+        matrices = self._get_matrices(self.get_thermal_co2_cost)
+        for matrix_id in self.get_impl()._generator_matrix_constants.matrix_service.create_batch(matrices):
+            print('ok')
 
     @override
     def get_all_thermals_fuel_cost(self) -> Iterator[ThermalTimeSeries]:

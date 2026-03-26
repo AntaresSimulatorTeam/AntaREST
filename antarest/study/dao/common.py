@@ -23,4 +23,4 @@ SeriesId: TypeAlias = str
 class ThermalTimeSeries:
     area_id: AreaId
     thermal_id: ThermalId
-    series: pl.DataFrame
+    series_id: SeriesId

@@ -9,8 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import typing as t
-from typing import Self
+from typing import Self, Iterator, TYPE_CHECKING
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -42,7 +41,7 @@ from antarest.study.dao.file.file_study_xpansion_dao import FileStudyXpansionDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:
     from antarest.blobstore.service import IBlobService
     from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
