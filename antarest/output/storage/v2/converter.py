@@ -66,12 +66,6 @@ _SKIPPED_QUERY_FILES = {"id"}
 def _discover_file_type_frequencies(
     folders: list[Path], file_type_class: type[QueryFileType]
 ) -> list[tuple[QueryFileType, MatrixFrequency]]:
-    """
-    Discover all (query_file_type, frequency) pairs from files across all given folders.
-
-    Takes the union of all folders because different areas may have different file types
-    (e.g., only some areas have thermal cluster details files).
-    """
     seen: set[tuple[str, str]] = set()
     result: list[tuple[QueryFileType, MatrixFrequency]] = []
     for folder in folders:
@@ -97,7 +91,6 @@ def _discover_file_type_frequencies(
 
 
 def _object_type_name(query_file: QueryFileType, is_link: bool) -> str:
-    """Determine the parquet object type name from a QueryFileType."""
     if query_file.value in _OBJECT_TYPE_NAMES:
         return _OBJECT_TYPE_NAMES[query_file.value]
     if is_link:
@@ -112,9 +105,6 @@ def _aggregate_to_parquet(
     ids_to_consider: list[str],
     target_path: Path,
 ) -> None:
-    """
-    Run AggregatorManager to read CSV files and write the result as a single parquet file.
-    """
     manager = AggregatorManager(
         output_path=output_dir,
         query_file=query_file,
@@ -134,12 +124,10 @@ def _aggregate_to_parquet(
 
     combined = pl.concat(all_dfs)
 
-    # Sort for better row group filtering at read time
     id_cols = [c for c in ["area", "link", "mcYear"] if c in combined.columns]
     if id_cols:
         combined = combined.sort(id_cols)
 
-    # Write via pyarrow for full control over parquet options
     table = combined.to_arrow()
     sorting_columns = [
         pqc.SortingColumn(table.schema.get_field_index(col)) for col in id_cols if col in table.schema.names
@@ -161,7 +149,6 @@ def _extract_areas(
     mc_root: MCRoot,
     target_dir: Path,
 ) -> None:
-    """Extract areas and districts for a given mc_root."""
     areas_path = base_path / "areas"
     if not areas_path.exists():
         return
@@ -172,7 +159,6 @@ def _extract_areas(
 
     file_type_class: type[QueryFileType] = MCIndAreasQueryFile if mc_root == MCRoot.MC_IND else MCAllAreasQueryFile
 
-    # Discover file types from first non-empty area/district folder
     ref_folders = [areas_path / a for a in (area_ids + district_ids)]
     combos = _discover_file_type_frequencies(ref_folders, file_type_class)
 
@@ -183,7 +169,7 @@ def _extract_areas(
             file_name = _parquet_file_name(mc_root, obj_type, frequency)
             _aggregate_to_parquet(output_dir, query_file, frequency, area_ids, target_dir / file_name)
 
-        # Districts: only "values" files (districts don't have cluster-level details)
+        # Districts
         if district_ids and query_file.value == "values":
             file_name = _parquet_file_name(mc_root, "districts", frequency)
             _aggregate_to_parquet(output_dir, query_file, frequency, district_ids, target_dir / file_name)
@@ -195,7 +181,6 @@ def _extract_links(
     mc_root: MCRoot,
     target_dir: Path,
 ) -> None:
-    """Extract links for a given mc_root."""
     links_path = base_path / "links"
     if not links_path.exists():
         return
@@ -214,7 +199,6 @@ def _extract_links(
 
 
 def _find_mode_dir(output_dir: Path) -> Path | None:
-    """Find the simulation mode directory (economy or adequacy)."""
     for mode_name in ("economy", "adequacy"):
         mode_dir = output_dir / mode_name
         if mode_dir.exists():
@@ -227,13 +211,6 @@ def _extract_binding_constraints(
     mc_root: MCRoot,
     target_dir: Path,
 ) -> None:
-    """
-    Extract binding constraint files for a given mc_root.
-
-    Unlike areas/links, binding constraints are not per-object folders.
-    There's a single file per frequency: binding_constraints/binding-constraints-{freq}.txt
-    We parse them directly with parse_output_file instead of using AggregatorManager.
-    """
     bc_path = base_path / "binding_constraints"
     if not bc_path.exists():
         return
@@ -280,13 +257,6 @@ def _extract_binding_constraints(
 
 
 def extract_output_to_parquet(output_dir: Path, target_dir: Path) -> None:
-    """
-    Extract output CSV files to parquet format.
-
-    Walks the output directory, discovers all (mc_root, object_type, frequency)
-    combinations, and converts each to a parquet file using the existing
-    AggregatorManager for CSV parsing.
-    """
     target_dir.mkdir(parents=True, exist_ok=True)
 
     mode_dir = _find_mode_dir(output_dir)
@@ -315,10 +285,6 @@ def extract_output_to_parquet(output_dir: Path, target_dir: Path) -> None:
     logger.info(f"Extracted output variables to parquet in {target_dir}")
 
 
-# ---------------------------------------------------------------------------
-# Reading parquet files for aggregation
-# ---------------------------------------------------------------------------
-
 _ID_COLUMNS = {"area", "link", "mcYear", "timeId", "cluster"}
 """Columns that are not variable data but identification/index columns."""
 
@@ -335,11 +301,6 @@ def _filter_columns(
     mc_root: MCRoot,
     is_details: bool,
 ) -> list[str]:
-    """
-    Select columns matching the filter, replicating V1 AggregatorManager logic:
-    - mc-ind non-details: exact match (case-insensitive)
-    - mc-all or details: substring match (case-insensitive)
-    """
     lower_filters = [c.lower() for c in columns_names]
     selected = []
     for col in schema_names:
@@ -391,12 +352,7 @@ def read_output_from_parquet(
     columns_names: Sequence[str],
     mc_years: Sequence[int] | None,
 ) -> pl.DataFrame:
-    """
-    Read and filter output data from parquet files.
-
-    Handles the mapping from QueryFileType to the correct parquet file,
-    including the separation between areas and districts.
-    """
+    """Read and filter output data from parquet files"""
     mc_root = _mc_root_for_query_file(query_file)
     is_link = isinstance(query_file, (MCIndLinksQueryFile, MCAllLinksQueryFile))
     is_details = "details" in query_file.value

@@ -51,7 +51,7 @@ from antarest.output.storage.output_storage import (
     OutputMetadata,
     OutputStorageType,
 )
-from antarest.output.storage.v2.parquet_output import (
+from antarest.output.storage.v2.converter import (
     extract_output_to_parquet,
     parquet_output_dir,
     read_output_from_parquet,
