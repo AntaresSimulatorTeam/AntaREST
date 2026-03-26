@@ -21,7 +21,7 @@ from antarest.core.exceptions import ChildNotFoundError, ThermalClusterConfigNot
 from antarest.core.utils.utils import remove_first_match
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.thermal_dao import ThermalDao
-from antarest.study.dao.common import AreaId, SeriesId, ThermalId, ThermalTimeSeries
+from antarest.study.dao.common import AreaId, SeriesId, ThermalId
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     parse_thermal_cluster,
@@ -124,7 +124,9 @@ class FileStudyThermalDao(ThermalDao, ABC):
                 matrix = getter(area_id, thermal_id)
                 yield area_id, thermal_id, matrix
 
-    def _yield_timeseries(self, getter: Callable[[AreaId, ThermalId], pl.DataFrame]) -> Iterator[ThermalTimeSeries]:
+    def _get_timeseries(
+        self, getter: Callable[[AreaId, ThermalId], pl.DataFrame]
+    ) -> dict[AreaId, dict[ThermalId, SeriesId]]:
         full_iterator = self._get_matrices(getter)
         # Split the iterator into two: one for DataFrames, one for identifiers
         iterator1, iterator2 = tee(full_iterator)
@@ -133,29 +135,31 @@ class FileStudyThermalDao(ThermalDao, ABC):
         # Extract only (area_id, thermal_id) pairs for tracking
         object_ids = ((area_id, thermal_id) for area_id, thermal_id, _ in iterator2)
 
+        result: dict[AreaId, dict[ThermalId, SeriesId]] = {}
         for matrix_id in self.get_impl()._generator_matrix_constants.matrix_service.create_batch(matrices):
             area_id, thermal_id = next(object_ids)
-            yield ThermalTimeSeries(area_id, thermal_id, matrix_id)
+            result.setdefault(area_id, {})[thermal_id] = matrix_id
+        return result
 
     @override
-    def get_all_thermals_co2_cost(self) -> Iterator[ThermalTimeSeries]:
-        return self._yield_timeseries(self.get_thermal_co2_cost)
+    def get_all_thermals_co2_cost(self) -> dict[AreaId, dict[ThermalId, SeriesId]]:
+        return self._get_timeseries(self.get_thermal_co2_cost)
 
     @override
-    def get_all_thermals_fuel_cost(self) -> Iterator[ThermalTimeSeries]:
-        return self._yield_timeseries(self.get_thermal_fuel_cost)
+    def get_all_thermals_fuel_cost(self) -> dict[AreaId, dict[ThermalId, SeriesId]]:
+        return self._get_timeseries(self.get_thermal_fuel_cost)
 
     @override
-    def get_all_thermals_series(self) -> Iterator[ThermalTimeSeries]:
-        return self._yield_timeseries(self.get_thermal_series)
+    def get_all_thermals_series(self) -> dict[AreaId, dict[ThermalId, SeriesId]]:
+        return self._get_timeseries(self.get_thermal_series)
 
     @override
-    def get_all_thermals_modulation(self) -> Iterator[ThermalTimeSeries]:
-        return self._yield_timeseries(self.get_thermal_modulation)
+    def get_all_thermals_modulation(self) -> dict[AreaId, dict[ThermalId, SeriesId]]:
+        return self._get_timeseries(self.get_thermal_modulation)
 
     @override
-    def get_all_thermals_prepro(self) -> Iterator[ThermalTimeSeries]:
-        return self._yield_timeseries(self.get_thermal_prepro)
+    def get_all_thermals_prepro(self) -> dict[AreaId, dict[ThermalId, SeriesId]]:
+        return self._get_timeseries(self.get_thermal_prepro)
 
     @override
     def save_thermals(self, data: dict[AreaId, list[ThermalCluster]]) -> None:

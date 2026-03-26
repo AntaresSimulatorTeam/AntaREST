@@ -12,12 +12,11 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Iterator
 
 import polars as pl
 
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.dao.common import AreaId, SeriesId, ThermalId, ThermalTimeSeries
+from antarest.study.dao.common import AreaId, SeriesId, ThermalId
 
 
 class ReadOnlyThermalDao(ABC):
@@ -63,23 +62,23 @@ class ReadOnlyThermalDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_all_thermals_co2_cost(self) -> Iterator[ThermalTimeSeries]:
+    def get_all_thermals_co2_cost(self) -> dict[AreaId, dict[ThermalId, SeriesId]]:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_all_thermals_fuel_cost(self) -> Iterator[ThermalTimeSeries]:
+    def get_all_thermals_fuel_cost(self) -> dict[AreaId, dict[ThermalId, SeriesId]]:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_all_thermals_series(self) -> Iterator[ThermalTimeSeries]:
+    def get_all_thermals_series(self) -> dict[AreaId, dict[ThermalId, SeriesId]]:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_all_thermals_modulation(self) -> Iterator[ThermalTimeSeries]:
+    def get_all_thermals_modulation(self) -> dict[AreaId, dict[ThermalId, SeriesId]]:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_all_thermals_prepro(self) -> Iterator[ThermalTimeSeries]:
+    def get_all_thermals_prepro(self) -> dict[AreaId, dict[ThermalId, SeriesId]]:
         raise NotImplementedError()
 
 
