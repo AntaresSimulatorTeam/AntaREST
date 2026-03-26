@@ -334,7 +334,7 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def save_thermals(self, data: dict[AreaId, Sequence[ThermalCluster]]) -> None:
+    def save_thermals(self, data: dict[AreaId, list[ThermalCluster]]) -> None:
         for area_id, thermals in data.items():
             for thermal in thermals:
                 self._thermals[cluster_key(area_id, thermal.id)] = thermal

@@ -115,7 +115,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
         return self.get_impl().get_matrix(["input", "thermal", "series", area_id, thermal_id, "CO2Cost"])
 
     @override
-    def save_thermals(self, data: dict[AreaId, Sequence[ThermalCluster]]) -> None:
+    def save_thermals(self, data: dict[AreaId, list[ThermalCluster]]) -> None:
         study_data = self.get_file_study()
         for area_id, thermals in data.items():
             ini_content = self._get_all_thermals_for_area(study_data, area_id)

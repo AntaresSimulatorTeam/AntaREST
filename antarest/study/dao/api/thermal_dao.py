@@ -64,7 +64,7 @@ class ReadOnlyThermalDao(ABC):
 
 class ThermalDao(ReadOnlyThermalDao):
     @abstractmethod
-    def save_thermals(self, data: dict[AreaId, Sequence[ThermalCluster]]) -> None:
+    def save_thermals(self, data: dict[AreaId, list[ThermalCluster]]) -> None:
         raise NotImplementedError()
 
     @abstractmethod
