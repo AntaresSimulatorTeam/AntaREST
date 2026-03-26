@@ -82,7 +82,7 @@ class DatabaseThermalDao(ThermalDao):
 
     def _convert_thermal_cluster_to_row(self, area_id: str, cluster: ThermalCluster) -> dict[str, Any]:
         values = dict(study_id=self._study_id, area_id=area_id, **cluster.model_dump())
-        values["thermal_id"] = values.pop("id")
+        values["thermal_id"] = values.pop("id").lower()
         return values
 
     def _get_thermal_matrix_row(self, area_id: str, thermal_id: str, table: Table) -> Row[Any] | None:
