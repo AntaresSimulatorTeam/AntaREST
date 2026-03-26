@@ -128,9 +128,8 @@ class DatabaseThermalDao(ThermalDao):
         # Means the issue lies in the thermals
         all_existing_thermals = self.get_all_thermals()
         invalid_thermal_dict = {}
-        for area_id, value in all_existing_thermals.items():
-            existing_thermals = set(value)
-            if invalid_thermals := set(data[area_id]) - existing_thermals:
+        for area_id, value in data.items():
+            if invalid_thermals := set(data[area_id]) - set(all_existing_thermals.get(area_id, [])):
                 invalid_thermal_dict[area_id] = invalid_thermals
         if len(invalid_thermal_dict) == 1:
             area_id = next(iter(invalid_thermal_dict))
