@@ -94,7 +94,7 @@ def test_save_ruleset_with_binding_constraints(db_dao: DatabaseStudyDao) -> None
 def test_save_ruleset_with_thermal_scenarios(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     _setup_areas(dao, "fr")
-    dao.save_thermals({"fr": [ThermalCluster(name="Gas Cluster")]})
+    dao.save_thermals({"fr": [ThermalCluster(name="Gas_Cluster")]})
     ruleset = Ruleset(thermal={"fr": {"gas_cluster": {"0": 1, "1": 2}}})
     dao.save_scenario_builder(ruleset)
     result = dao.get_ruleset()
