@@ -31,7 +31,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     validate_thermal_cluster_against_version,
 )
 from antarest.study.dao.api.thermal_dao import ThermalDao
-from antarest.study.dao.common import AreaId, SeriesId, ThermalId, ThermalSeries
+from antarest.study.dao.common import AreaId, SeriesId, ThermalId, ThermalTimeSeries
 from antarest.study.dao.database.common import get_row_representation_as_dict, validate_area_exists
 from antarest.study.dao.database.models.thermal import (
     THERMAL_CLUSTER_TABLE,
@@ -271,7 +271,7 @@ class DatabaseThermalDao(ThermalDao):
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self._get_thermal_matrix(area_id, thermal_id, THERMAL_CO2_COST_TABLE)
 
-    def _get_all_thermal_matrix(self, table: Table) -> Iterator[ThermalSeries]:
+    def _get_all_thermal_matrix(self, table: Table) -> Iterator[ThermalTimeSeries]:
         study_id = self._study_id
         session = self._db_session
         stmt = select(table).where(table.c.study_id == study_id)
@@ -285,24 +285,24 @@ class DatabaseThermalDao(ThermalDao):
             dataframe = matrix_content.data
             for area_id, thermal_ids in matrix_ids_mapping[matrix_id].items():
                 for thermal_id in thermal_ids:
-                    yield ThermalSeries(area_id=area_id, thermal_id=thermal_id, series=dataframe)
+                    yield ThermalTimeSeries(area_id=area_id, thermal_id=thermal_id, series=dataframe)
 
     @override
-    def get_all_thermals_co2_cost(self) -> Iterator[ThermalSeries]:
+    def get_all_thermals_co2_cost(self) -> Iterator[ThermalTimeSeries]:
         return self._get_all_thermal_matrix(THERMAL_CO2_COST_TABLE)
 
     @override
-    def get_all_thermals_fuel_cost(self) -> Iterator[ThermalSeries]:
+    def get_all_thermals_fuel_cost(self) -> Iterator[ThermalTimeSeries]:
         return self._get_all_thermal_matrix(THERMAL_FUEL_COST_TABLE)
 
     @override
-    def get_all_thermals_series(self) -> Iterator[ThermalSeries]:
+    def get_all_thermals_series(self) -> Iterator[ThermalTimeSeries]:
         return self._get_all_thermal_matrix(THERMAL_SERIES_TABLE)
 
     @override
-    def get_all_thermals_modulation(self) -> Iterator[ThermalSeries]:
+    def get_all_thermals_modulation(self) -> Iterator[ThermalTimeSeries]:
         return self._get_all_thermal_matrix(THERMAL_MODULATION_TABLE)
 
     @override
-    def get_all_thermals_prepro(self) -> Iterator[ThermalSeries]:
+    def get_all_thermals_prepro(self) -> Iterator[ThermalTimeSeries]:
         return self._get_all_thermal_matrix(THERMAL_PREPRO_TABLE)

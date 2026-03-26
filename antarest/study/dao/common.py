@@ -20,7 +20,7 @@ SeriesId: TypeAlias = str
 
 
 @dataclass(frozen=True)
-class ThermalSeries:
+class ThermalTimeSeries:
     area_id: AreaId
     thermal_id: ThermalId
     series: pl.DataFrame

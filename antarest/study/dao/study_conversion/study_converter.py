@@ -178,6 +178,10 @@ class StudyConverter:
             area_name = area_names_and_thermals[area_id].name
             self._new_dao.save_area(area_name)
 
+        # Thermals
+        thermals = {area_info.id: area_info.thermals or [] for area_info in area_names_and_thermals.values()}
+        self._convert_thermal_clusters(thermals)
+
         for area_id in area_properties:
             # Properties
             self._new_dao.save_area_properties(area_id, area_properties[area_id])
@@ -210,10 +214,6 @@ class StudyConverter:
             misc_gen = self._matrix_service.create(self._source_dao.get_misc_gen(area_id))
             self._new_dao.save_misc_gen(area_id, misc_gen)
 
-            # Thermals
-            thermals = area_names_and_thermals[area_id].thermals or []
-            self._convert_thermal_clusters(area_id, thermals)
-
             # Renewables
             if self._study_version >= STUDY_VERSION_8_1:
                 renewables = list(renewable_clusters.get(area_id, {}).values())
@@ -224,7 +224,13 @@ class StudyConverter:
                 storages = list(st_storages.get(area_id, {}).values())
                 self._convert_short_term_storages(area_id, storages, st_storages_constraints.get(area_id, {}))
 
-    def _convert_thermal_clusters(self, area_id: str, thermals: list[ThermalCluster]) -> None:
+    def _convert_thermal_clusters(self, data: dict[str, list[ThermalCluster]]) -> None:
+        self._new_dao.save_thermals(data)
+
+        # Matrices
+        for thermal_timeseries in self._source_dao.get_all_thermals_prepro():
+            print("ok")
+        """
         self._new_dao.save_thermals(area_id, thermals)
         for thermal in thermals:
             thermal_id = thermal.id.lower()
@@ -243,6 +249,7 @@ class StudyConverter:
 
                 co2_cost_id = self._matrix_service.create(self._source_dao.get_thermal_co2_cost(area_id, thermal_id))
                 self._new_dao.save_thermal_co2_cost(area_id, thermal_id, co2_cost_id)
+        """
 
     def _convert_renewable_clusters(self, area_id: str, renewables: Sequence[RenewableCluster]) -> None:
         self._new_dao.save_renewables(area_id, renewables)

@@ -17,7 +17,7 @@ from typing import Iterator
 import polars as pl
 
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.dao.common import AreaId, SeriesId, ThermalId, ThermalSeries
+from antarest.study.dao.common import AreaId, SeriesId, ThermalId, ThermalTimeSeries
 
 
 class ReadOnlyThermalDao(ABC):
@@ -63,23 +63,23 @@ class ReadOnlyThermalDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_all_thermals_co2_cost(self) -> Iterator[ThermalSeries]:
+    def get_all_thermals_co2_cost(self) -> Iterator[ThermalTimeSeries]:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_all_thermals_fuel_cost(self) -> Iterator[ThermalSeries]:
+    def get_all_thermals_fuel_cost(self) -> Iterator[ThermalTimeSeries]:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_all_thermals_series(self) -> Iterator[ThermalSeries]:
+    def get_all_thermals_series(self) -> Iterator[ThermalTimeSeries]:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_all_thermals_modulation(self) -> Iterator[ThermalSeries]:
+    def get_all_thermals_modulation(self) -> Iterator[ThermalTimeSeries]:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_all_thermals_prepro(self) -> Iterator[ThermalSeries]:
+    def get_all_thermals_prepro(self) -> Iterator[ThermalTimeSeries]:
         raise NotImplementedError()
 
 
