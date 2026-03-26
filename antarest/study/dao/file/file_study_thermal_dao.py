@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Iterator, Callable
+from itertools import tee
+from typing import TYPE_CHECKING, Any, Callable, Iterator
 
 import polars as pl
 from typing_extensions import override
@@ -35,13 +35,6 @@ if TYPE_CHECKING:
 _CLUSTER_PATH = "input/thermal/clusters/{area_id}/list/{cluster_id}"
 _CLUSTERS_PATH = "input/thermal/clusters/{area_id}/list"
 _ALL_CLUSTERS_PATH = "input/thermal/clusters"
-
-@dataclass(frozen=True)
-class InternalThermalTimeSeries:
-    area_id: str
-    thermal_id: str
-    series: pl.DataFrame
-
 
 
 class FileStudyThermalDao(ThermalDao, ABC):
@@ -122,50 +115,47 @@ class FileStudyThermalDao(ThermalDao, ABC):
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "thermal", "series", area_id, thermal_id, "CO2Cost"])
 
-    def _get_matrices(self, getter: Callable[[AreaId, ThermalId], pl.DataFrame]) -> Iterator[InternalThermalTimeSeries]:
+    def _get_matrices(
+        self, getter: Callable[[AreaId, ThermalId], pl.DataFrame]
+    ) -> Iterator[tuple[AreaId, ThermalId, pl.DataFrame]]:
         all_thermals = self.get_all_thermals()
         for area_id, value in all_thermals.items():
             for thermal_id in value:
                 matrix = getter(area_id, thermal_id)
-                yield InternalThermalTimeSeries(area_id=area_id, thermal_id=thermal_id, series=matrix)
+                yield area_id, thermal_id, matrix
+
+    def _yield_timeseries(self, getter: Callable[[AreaId, ThermalId], pl.DataFrame]) -> Iterator[ThermalTimeSeries]:
+        full_iterator = self._get_matrices(getter)
+        # Split the iterator into two: one for DataFrames, one for identifiers
+        iterator1, iterator2 = tee(full_iterator)
+        # Extract only DataFrames for the `create_batch` function
+        matrices = (matrix for _, _, matrix in iterator1)
+        # Extract only (area_id, thermal_id) pairs for tracking
+        object_ids = ((area_id, thermal_id) for area_id, thermal_id, _ in iterator2)
+
+        for matrix_id in self.get_impl()._generator_matrix_constants.matrix_service.create_batch(matrices):
+            area_id, thermal_id = next(object_ids)
+            yield ThermalTimeSeries(area_id, thermal_id, matrix_id)
 
     @override
     def get_all_thermals_co2_cost(self) -> Iterator[ThermalTimeSeries]:
-        matrices = self._get_matrices(self.get_thermal_co2_cost)
-        for matrix_id in self.get_impl()._generator_matrix_constants.matrix_service.create_batch(matrices):
-            print('ok')
+        return self._yield_timeseries(self.get_thermal_co2_cost)
 
     @override
     def get_all_thermals_fuel_cost(self) -> Iterator[ThermalTimeSeries]:
-        all_thermals = self.get_all_thermals()
-        for area_id, value in all_thermals.items():
-            for thermal_id in value:
-                matrix = self.get_thermal_fuel_cost(area_id, thermal_id)
-                yield ThermalTimeSeries(area_id=area_id, thermal_id=thermal_id, series=matrix)
+        return self._yield_timeseries(self.get_thermal_fuel_cost)
 
     @override
     def get_all_thermals_series(self) -> Iterator[ThermalTimeSeries]:
-        all_thermals = self.get_all_thermals()
-        for area_id, value in all_thermals.items():
-            for thermal_id in value:
-                matrix = self.get_thermal_series(area_id, thermal_id)
-                yield ThermalTimeSeries(area_id=area_id, thermal_id=thermal_id, series=matrix)
+        return self._yield_timeseries(self.get_thermal_series)
 
     @override
     def get_all_thermals_modulation(self) -> Iterator[ThermalTimeSeries]:
-        all_thermals = self.get_all_thermals()
-        for area_id, value in all_thermals.items():
-            for thermal_id in value:
-                matrix = self.get_thermal_modulation(area_id, thermal_id)
-                yield ThermalTimeSeries(area_id=area_id, thermal_id=thermal_id, series=matrix)
+        return self._yield_timeseries(self.get_thermal_modulation)
 
     @override
     def get_all_thermals_prepro(self) -> Iterator[ThermalTimeSeries]:
-        all_thermals = self.get_all_thermals()
-        for area_id, value in all_thermals.items():
-            for thermal_id in value:
-                matrix = self.get_thermal_prepro(area_id, thermal_id)
-                yield ThermalTimeSeries(area_id=area_id, thermal_id=thermal_id, series=matrix)
+        return self._yield_timeseries(self.get_thermal_prepro)
 
     @override
     def save_thermals(self, data: dict[AreaId, list[ThermalCluster]]) -> None:

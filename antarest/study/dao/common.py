@@ -12,8 +12,6 @@
 from dataclasses import dataclass
 from typing import TypeAlias
 
-import polars as pl
-
 AreaId: TypeAlias = str
 ThermalId: TypeAlias = str
 SeriesId: TypeAlias = str
