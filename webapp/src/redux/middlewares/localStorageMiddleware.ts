@@ -12,16 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
 import storage, { StorageKey } from "@/services/utils/localStorage";
 import type { UserInfo } from "@/types/types";
+import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
 import type { AppState } from "../ducks";
 import { login, logout, refresh } from "../ducks/auth";
 import {
-  setFavoriteStudies,
   updateStudiesFromLocalStorage,
-  updateStudySortConfig,
   updateStudyFilters,
+  updateStudySortConfig,
 } from "../ducks/studies";
 import { getStudyFilters } from "../selectors";
 import { setMenuOpen } from "../ducks/ui";
@@ -46,7 +45,6 @@ localStorageMiddleware.startListening({
     if (action.type === login.fulfilled.toString()) {
       dispatch(
         updateStudiesFromLocalStorage({
-          favorites: storage.getItem(StorageKey.StudiesFavorites),
           sort: storage.getItem(StorageKey.StudiesSort),
         }),
       );
@@ -62,13 +60,6 @@ localStorageMiddleware.startListening({
 ////////////////////////////////////////////////////////////////
 // Studies
 ////////////////////////////////////////////////////////////////
-
-localStorageMiddleware.startListening({
-  actionCreator: setFavoriteStudies,
-  effect: (action) => {
-    storage.setItem(StorageKey.StudiesFavorites, action.payload);
-  },
-});
 
 localStorageMiddleware.startListening({
   actionCreator: updateStudySortConfig,

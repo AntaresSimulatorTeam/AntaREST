@@ -12,10 +12,20 @@
  * This file is part of the Antares project.
  */
 
-export const studyKeys = {
-  all: () => ["studies"] as const,
-  deleteMany: () => [...studyKeys.all(), "deleteStudies"] as const,
-  favorites: () => [...studyKeys.all(), "favoriteStudies"] as const,
-  createFavorite: () => [...studyKeys.favorites(), "createFavoriteStudy"] as const,
-  deleteFavorite: () => [...studyKeys.favorites(), "deleteFavoriteStudy"] as const,
-};
+export interface FavoriteStudy {
+  studyId: string;
+  studyName: string;
+}
+
+export interface FavoriteDirectory {
+  directoryId: string;
+  directoryName: string;
+}
+
+export interface FavoriteStudyParams {
+  studyId: string;
+}
+
+export interface FavoriteDirectoryParams {
+  directoryId: string;
+}

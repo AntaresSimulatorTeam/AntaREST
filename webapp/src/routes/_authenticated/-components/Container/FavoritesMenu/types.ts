@@ -12,10 +12,13 @@
  * This file is part of the Antares project.
  */
 
-export const studyKeys = {
-  all: () => ["studies"] as const,
-  deleteMany: () => [...studyKeys.all(), "deleteStudies"] as const,
-  favorites: () => [...studyKeys.all(), "favoriteStudies"] as const,
-  createFavorite: () => [...studyKeys.favorites(), "createFavoriteStudy"] as const,
-  deleteFavorite: () => [...studyKeys.favorites(), "deleteFavoriteStudy"] as const,
-};
+import type { FavoriteDirectory, FavoriteStudy } from "@/services/api/favorites/types";
+
+export type Favorite = {
+  id: string;
+  elementId: string;
+  name: string;
+} & (
+  | { type: "study"; original: FavoriteStudy }
+  | { type: "directory"; original: FavoriteDirectory }
+);

@@ -12,10 +12,15 @@
  * This file is part of the Antares project.
  */
 
-export const studyKeys = {
-  all: () => ["studies"] as const,
-  deleteMany: () => [...studyKeys.all(), "deleteStudies"] as const,
-  favorites: () => [...studyKeys.all(), "favoriteStudies"] as const,
-  createFavorite: () => [...studyKeys.favorites(), "createFavoriteStudy"] as const,
-  deleteFavorite: () => [...studyKeys.favorites(), "deleteFavoriteStudy"] as const,
-};
+import { QueryClient } from "@tanstack/react-query";
+
+/**
+ * Note: use `useQueryClient()` instead of importing this directly in React components.
+ */
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60 * 1000, // 1 minute
+    },
+  },
+});

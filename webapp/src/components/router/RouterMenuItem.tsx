@@ -12,10 +12,13 @@
  * This file is part of the Antares project.
  */
 
-export const studyKeys = {
-  all: () => ["studies"] as const,
-  deleteMany: () => [...studyKeys.all(), "deleteStudies"] as const,
-  favorites: () => [...studyKeys.all(), "favoriteStudies"] as const,
-  createFavorite: () => [...studyKeys.favorites(), "createFavoriteStudy"] as const,
-  deleteFavorite: () => [...studyKeys.favorites(), "deleteFavoriteStudy"] as const,
+import { MenuItem } from "@mui/material";
+import { createLink, type LinkComponent } from "@tanstack/react-router";
+
+const CustomMenuItem = createLink(MenuItem);
+
+export const RouterMenuItem: LinkComponent<typeof MenuItem> = (props) => {
+  return <CustomMenuItem activeProps={{ selected: true }} {...props} />;
 };
+
+export default RouterMenuItem;
