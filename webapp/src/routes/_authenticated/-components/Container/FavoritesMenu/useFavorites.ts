@@ -26,8 +26,20 @@ function normalizeAndSortFavorites(favorites: FavoriteStudy[] | FavoriteDirector
   const normalized = favorites.map(
     (fav): Favorite =>
       "studyId" in fav
-        ? { id: fav.studyId, name: fav.studyName, type: "study", original: fav }
-        : { id: fav.directoryId, name: fav.directoryName, type: "directory", original: fav },
+        ? {
+            id: `study-${fav.studyId}`,
+            elementId: fav.studyId,
+            name: fav.studyName,
+            type: "study",
+            original: fav,
+          }
+        : {
+            id: `directory-${fav.directoryId}`,
+            elementId: fav.directoryId,
+            name: fav.directoryName,
+            type: "directory",
+            original: fav,
+          },
   );
 
   return sortByName(normalized);

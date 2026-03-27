@@ -21,6 +21,7 @@ import { useIsMutating, useSuspenseQuery } from "@tanstack/react-query";
 import * as RA from "ramda-adjunct";
 import { useCallback } from "react";
 import FavoriteButton, { type FavoriteButtonProps } from "./FavoriteButton";
+
 interface Props extends Omit<FavoriteButtonProps, "isFavorite" | "onClick"> {
   studyId: StudyMetadata["id"];
 }

@@ -125,7 +125,6 @@ const initialState = studiesAdapter.getInitialState({
   prevStudyId: "",
   scrollPosition: 0,
   versionList: [] as string[],
-  favorites: [],
   filters: buildInitialFilters(),
   sort: DEFAULT_STUDY_SORT_CONFIG,
 }) as StudiesState;
@@ -285,7 +284,9 @@ export const fetchStudies = createAsyncThunk<StudyMetadata[], undefined, AppAsyn
 export default createReducer(initialState, (builder) => {
   builder
     .addCase(updateStudiesFromLocalStorage, (draftState, action) => {
-      Object.assign(draftState.sort, action.payload.sort);
+      if (action.payload.sort) {
+        Object.assign(draftState.sort, action.payload.sort);
+      }
     })
     .addCase(createStudy.fulfilled, studiesAdapter.addOne)
     .addCase(setStudy.fulfilled, studiesAdapter.setOne)

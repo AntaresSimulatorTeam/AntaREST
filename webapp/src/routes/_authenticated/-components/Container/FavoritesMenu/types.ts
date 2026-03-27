@@ -14,9 +14,11 @@
 
 import type { FavoriteDirectory, FavoriteStudy } from "@/services/api/favorites/types";
 
-export interface Favorite {
+export type Favorite = {
   id: string;
+  elementId: string;
   name: string;
-  type: "study" | "directory";
-  original: FavoriteStudy | FavoriteDirectory;
-}
+} & (
+  | { type: "study"; original: FavoriteStudy }
+  | { type: "directory"; original: FavoriteDirectory }
+);

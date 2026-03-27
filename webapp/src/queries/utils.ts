@@ -34,8 +34,6 @@ type QueryListItem<T extends QueryListItemBase = QueryListItemBase> = T & {
   _metadata?: QueryListItemMetadata;
 };
 
-type QueryList<T extends QueryListItemBase = QueryListItemBase> = Array<QueryListItem<T>>;
-
 const DEFAULT_LIST_ITEM_METADATA = {
   isOptimistic: false,
 } as const satisfies QueryListItemMetadata;
@@ -68,6 +66,16 @@ export function queryListOptions<
     "refetchOnWindowFocus" | "refetchOnReconnect" | "refetchOnMount"
   >,
 ) {
+  /**
+   * Block refetching if there are ongoing mutations that affect the list.
+   *
+   * Prevent refetching if the list is currently in an optimistic state, to avoid overwriting
+   * pending changes with server data.
+   *
+   * @returns `false` if the query is mutating, `true` otherwise.
+   * `true`: the query will refetch if the data is stale.
+   * `false`: the query will not refetch.
+   */
   const blockRefetchingIfMutating = () => {
     // By convention, mutations that affect a list should have a mutation key that starts
     // with the query key of the list
@@ -76,8 +84,6 @@ export function queryListOptions<
 
   return queryOptions({
     ...options,
-    // Prevent refetching if the list is currently in an optimistic state, to avoid overwriting
-    // pending changes with server data
     refetchOnWindowFocus: blockRefetchingIfMutating,
     refetchOnReconnect: blockRefetchingIfMutating,
     refetchOnMount: blockRefetchingIfMutating,

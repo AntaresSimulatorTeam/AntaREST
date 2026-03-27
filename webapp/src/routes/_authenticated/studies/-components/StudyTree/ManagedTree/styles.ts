@@ -87,9 +87,8 @@ export const textFieldStyles: SxProps<Theme> = {
 };
 
 export const nodeActionsContainerStyles: SxProps<Theme> = {
-  display: "none",
-  ".MuiTreeItem-content:hover &": {
-    display: "inherit",
+  ".MuiTreeItem-content:not(:hover) &": {
+    display: "none",
   },
 };
 

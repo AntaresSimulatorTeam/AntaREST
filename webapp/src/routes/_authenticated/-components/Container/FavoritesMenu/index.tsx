@@ -16,6 +16,7 @@ import RouterListItemButton from "@/components/router/RouterListItemButton";
 import RouterMenuItem from "@/components/router/RouterMenuItem";
 import { directoryQueries } from "@/queries/directories/queries";
 import { updateStudyFilters } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { isMenuOpen } from "@/redux/selectors";
 import FavoriteToggle from "@/routes/-shared/components/studies/FavoriteToggle";
@@ -26,7 +27,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { linkOptions } from "@tanstack/react-router";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch } from "react-redux";
 import { getDescendantIds } from "../../../studies/-components/StudyTree/ManagedTree/utils";
 import SidebarItem from "../SidebarItem";
 import { type Favorite } from "./types";
@@ -36,7 +36,7 @@ function FavoritesMenu() {
   const { t } = useTranslation();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const isMainMenuOpen = useAppSelector(isMenuOpen);
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const favorites = useFavorites();
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
@@ -54,7 +54,7 @@ function FavoritesMenu() {
       return {
         ...linkOptions({
           to: "/studies/$studyId",
-          params: { studyId: fav.id },
+          params: { studyId: fav.elementId },
         }),
         onClick: closeMenu,
       };
@@ -68,8 +68,8 @@ function FavoritesMenu() {
           updateStudyFilters({
             activeTree: "managed",
             managed: {
-              directoryId: fav.id,
-              directoryIds: getDescendantIds(fav.id, directories),
+              directoryId: fav.elementId,
+              directoryIds: getDescendantIds(fav.elementId, directories),
             },
           }),
         );
