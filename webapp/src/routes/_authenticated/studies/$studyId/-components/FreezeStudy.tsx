@@ -32,7 +32,7 @@ import useStudy from "../-hooks/useStudy";
 
 interface BlockingTask {
   id: Task["id"];
-  type: string;
+  type: TaskTypeValue;
   progress?: number;
   error?: string;
 }
@@ -70,10 +70,12 @@ function FreezeStudy() {
     }).then((tasks) => {
       if (active) {
         setBlockingTasks(
-          tasks.map((task) => ({
-            id: task.id,
-            type: task.type ?? "",
-          })),
+          tasks
+            .filter((task): task is typeof task & { type: TaskTypeValue } => !!task.type)
+            .map((task) => ({
+              id: task.id,
+              type: task.type,
+            })),
         );
 
         subscribeWsChannels(tasks.map(({ id }) => getChannel(id)));
