@@ -36,7 +36,6 @@ from antarest.study.business.model.binding_constraint_model import (
     LinkTerm,
     initialize_binding_constraint,
 )
-from antarest.study.business.model.common import join_with_comma
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao
 from antarest.study.dao.database.models.binding_constraint import (
     BINDING_CONSTRAINT_CLUSTER_TERM_TABLE,
@@ -396,30 +395,16 @@ class DatabaseBindingConstraintDao(ConstraintDao):
             )
 
     def _bc_to_row(self, study_id: str, bc: BindingConstraint) -> dict[str, Any]:
-        return {
-            "study_id": study_id,
-            "constraint_id": bc.id,
-            "name": bc.name,
-            "enabled": bc.enabled,
-            "time_step": bc.time_step,
-            "operator": bc.operator,
-            "comments": bc.comments,
-            "filter_year_by_year": join_with_comma(bc.filter_year_by_year)
-            if bc.filter_year_by_year is not None
-            else None,
-            "filter_synthesis": join_with_comma(bc.filter_synthesis) if bc.filter_synthesis is not None else None,
-            "group": bc.group,
-        }
+        data = bc.model_dump(exclude={"id", "terms"})
+        return {"study_id": study_id, "constraint_id": bc.id, **data}
 
     def _cluster_term_to_row(self, study_id: str, constraint_id: str, term: ConstraintTerm) -> dict[str, Any]:
         assert isinstance(term.data, ClusterTerm)
         return {
             "study_id": study_id,
             "constraint_id": constraint_id,
-            "weight": term.weight,
-            "offset": term.offset,
-            "area": term.data.area,
-            "cluster": term.data.cluster,
+            **term.model_dump(exclude={"data"}),
+            **term.data.model_dump(),
         }
 
     def _link_term_to_row(self, study_id: str, constraint_id: str, term: ConstraintTerm) -> dict[str, Any]:
@@ -427,10 +412,8 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         return {
             "study_id": study_id,
             "constraint_id": constraint_id,
-            "weight": term.weight,
-            "offset": term.offset,
-            "area1": term.data.area1,
-            "area2": term.data.area2,
+            **term.model_dump(exclude={"data"}),
+            **term.data.model_dump(),
         }
 
     @override
