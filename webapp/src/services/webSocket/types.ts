@@ -21,7 +21,7 @@ import type {
 import type { O } from "ts-toolbelt";
 import type { FileDownloadDTO } from "../api/downloads";
 import type { JobDTO } from "../api/launcher/jobs/types";
-import type { TaskDTO, TaskTypeValue } from "../api/tasks/types";
+import type { Task, TaskTypeValue } from "../api/tasks/types";
 import type { WsEventType } from "./constants";
 
 /**
@@ -65,7 +65,7 @@ export interface TaskEventPayload {
 }
 
 export interface TaskProgressEventPayload {
-  task_id: TaskDTO["id"];
+  task_id: Task["id"];
   progress: number;
 }
 
