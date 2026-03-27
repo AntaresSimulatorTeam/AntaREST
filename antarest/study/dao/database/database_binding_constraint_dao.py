@@ -33,6 +33,7 @@ from antarest.study.business.model.binding_constraint_model import (
     ClusterTerm,
     ConstraintTerm,
     LinkTerm,
+    initialize_binding_constraint,
 )
 from antarest.study.business.model.common import join_with_comma
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao
@@ -134,11 +135,12 @@ class DatabaseBindingConstraintDao(ConstraintDao):
                 )
             )
 
-        return {cid: self._row_to_bc(bc_rows[cid], terms[cid]) for cid in bc_rows}
+        version = self.get_impl().get_version()
+        return {cid: self._row_to_bc(bc_rows[cid], terms[cid], version) for cid in bc_rows}
 
     @staticmethod
-    def _row_to_bc(row: Any, terms: list[ConstraintTerm]) -> BindingConstraint:
-        return BindingConstraint(
+    def _row_to_bc(row: Any, terms: list[ConstraintTerm], version: Any) -> BindingConstraint:
+        bc = BindingConstraint(
             id=row.constraint_id,
             name=row.name,
             enabled=row.enabled,
@@ -150,6 +152,8 @@ class DatabaseBindingConstraintDao(ConstraintDao):
             group=row.group,
             terms=terms,
         )
+        initialize_binding_constraint(bc, version)
+        return bc
 
     @override
     def get_all_constraints(self) -> dict[str, BindingConstraint]:
@@ -210,12 +214,6 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         existing = self._fetch_constraints()
 
         # ===== Constraint Table
-        db.execute(
-            delete(BINDING_CONSTRAINT_TABLE).where(
-                (BINDING_CONSTRAINT_TABLE.c.study_id == self._study_id)
-                & (BINDING_CONSTRAINT_TABLE.c.constraint_id.not_in(constraint_ids))
-            )
-        )
         upsert_multiple(db, BINDING_CONSTRAINT_TABLE, [self._bc_to_row(self._study_id, bc) for bc in constraints])
 
         # ===== Cluster Term Table
@@ -292,7 +290,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
             time_step_changed = bc.time_step != old.time_step
             operator_changed = study_version >= STUDY_VERSION_8_7 and bc.operator != old.operator
 
-            if operator_changed:
+            if operator_changed and not time_step_changed:
                 # Copy/move matrix data between tables without resetting values.
                 old_terms = OPERATOR_MATRICES_MAP[old.operator]
                 new_terms = OPERATOR_MATRICES_MAP[bc.operator]
@@ -304,8 +302,10 @@ class DatabaseBindingConstraintDao(ConstraintDao):
                     # For single operators, there is only one term so it is unambiguous.
                     source_term = "lt" if old.operator == BindingConstraintOperator.BOTH else old_terms[0]
                     source_mid = existing_matrix_ids.get(bc.id, {}).get(source_term)
-                    if source_mid is None:
-                        source_mid = _default_matrix_id(old.time_step)
+                    # The command layer always initializes matrices on creation, so missing source = data corruption.
+                    assert source_mid is not None, (
+                        f"Missing source matrix '{source_term}' for constraint '{bc.id}' during operator change"
+                    )
                     for term in terms_to_add:
                         to_create[term].append((bc.id, source_mid))
 
@@ -428,10 +428,26 @@ class DatabaseBindingConstraintDao(ConstraintDao):
     def delete_constraints(self, constraints: list[BindingConstraint]) -> None:
         db = self._db_session
         constraint_ids = [bc.id for bc in constraints]
+
+        # Compute orphaned groups before deleting (need the full picture first)
+        existing = self._fetch_constraints()
+        deleted_groups = {bc.group for bc in constraints if bc.group}
+        remaining_groups = {bc.group for bc in existing.values() if bc.group and bc.id not in set(constraint_ids)}
+        orphaned_groups = deleted_groups - remaining_groups
+
         db.execute(
             delete(BINDING_CONSTRAINT_TABLE).where(
                 (BINDING_CONSTRAINT_TABLE.c.study_id == self._study_id)
                 & (BINDING_CONSTRAINT_TABLE.c.constraint_id.in_(constraint_ids))
             )
         )
+
+        if orphaned_groups:
+            db.execute(
+                delete(SCENARIO_BINDING_CONSTRAINTS_TABLE).where(
+                    (SCENARIO_BINDING_CONSTRAINTS_TABLE.c.study_id == self._study_id)
+                    & (SCENARIO_BINDING_CONSTRAINTS_TABLE.c.bc_group_id.in_(orphaned_groups))
+                )
+            )
+
         db.commit()

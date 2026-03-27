@@ -20,7 +20,7 @@ from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.model import STUDY_VERSION_9_3
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_9_3
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
@@ -54,3 +54,38 @@ def filestudy_dao(file_study: FileStudy, matrix_service, blob_service) -> FileSt
     constants = GeneratorMatrixConstants(matrix_service)
     constants.init_constant_matrices()
     return FileStudyTreeDao(file_study, constants, blob_service)
+
+
+@pytest.fixture
+def filestudy_dao_and_matrix_service(
+    filestudy_dao: FileStudyTreeDao, matrix_service: ISimpleMatrixService
+) -> tuple[FileStudyTreeDao, ISimpleMatrixService]:
+    return filestudy_dao, matrix_service
+
+
+@pytest.fixture
+def file_study_860(tmp_path: Path, matrix_service: ISimpleMatrixService) -> FileStudy:
+    study_id = "5c22caca-b100-47e7-bbea-8b1b97aa26d9-860"
+    study_path = tmp_path.joinpath(study_id)
+    app = CreateApp(study_dir=study_path, caption="filestudy860", version=STUDY_VERSION_8_6, author="Joe")
+    app()
+    config = build(study_path, study_id)
+    mapper_factory = MatrixUriMapperFactory(matrix_service=matrix_service)
+    matrix_mapper = mapper_factory.create(NormalizedMatrixUriMapper.NORMALIZED)
+    return FileStudy(config, FileStudyTree(matrix_mapper, config))
+
+
+@pytest.fixture
+def filestudy_dao_860(
+    file_study_860: FileStudy, matrix_service: ISimpleMatrixService, blob_service: IBlobService
+) -> FileStudyTreeDao:
+    constants = GeneratorMatrixConstants(matrix_service)
+    constants.init_constant_matrices()
+    return FileStudyTreeDao(file_study_860, constants, blob_service)
+
+
+@pytest.fixture
+def filestudy_dao_860_and_matrix_service(
+    filestudy_dao_860: FileStudyTreeDao, matrix_service: ISimpleMatrixService
+) -> tuple[FileStudyTreeDao, ISimpleMatrixService]:
+    return filestudy_dao_860, matrix_service

@@ -16,6 +16,7 @@ import polars as pl
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
+from antarest.core.exceptions import BindingConstraintNotFound
 from antarest.study.business.model.binding_constraint_model import (
     OPERATOR_MATRICES_MAP,
     OPERATOR_MATRIX_FILE_MAP,
@@ -81,7 +82,10 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
     @override
     def get_constraint(self, constraint_id: str) -> BindingConstraint:
-        return self.get_all_constraints()[constraint_id]
+        result = self.get_all_constraints()
+        if constraint_id not in result:
+            raise BindingConstraintNotFound(f"Constraint {constraint_id} not found")
+        return result[constraint_id]
 
     @override
     def get_constraint_values_matrix(self, constraint_id: str) -> pl.DataFrame:
@@ -181,6 +185,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         ini_content = _get_all_constraints_ini(study_data)
         study_version = study_data.config.version
 
+        ids_to_delete = {c.id for c in constraints}
         deleted_binding_constraints = []
         kept_binding_constraints = []
         old_groups = set()
@@ -188,7 +193,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
             constraint = parse_binding_constraint(study_data.config.version, ini_content[key])
             if constraint.group:
                 old_groups.add(constraint.group)
-            if constraint in constraints:
+            if constraint.id in ids_to_delete:
                 deleted_binding_constraints.append(constraint)
                 del ini_content[key]
             else:
@@ -215,8 +220,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
             _remove_groups_from_scenario_builder(study_data, removed_groups)
 
         # Deleting the constraint in the configuration must be done AFTER deleting the files and folders.
-        for constraint in constraints:
-            study_data.config.bindings.remove(constraint)
+        study_data.config.bindings = [bc for bc in study_data.config.bindings if bc.id not in ids_to_delete]
 
 
 def _save_matrix(study_data: FileStudy, constraint_id: str, term: str, series_id: str) -> None:
