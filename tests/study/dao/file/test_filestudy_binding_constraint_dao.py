@@ -522,8 +522,6 @@ def test_group_update_and_scenario_builder_cleanup(filestudy_dao: FileStudyTreeD
     filestudy_dao.save_constraints(
         [
             _bc("bc1", group=None),
-            _bc("bc2", group="g2"),
-            _bc("bc3", group="g2"),
         ]
     )
     assert filestudy_dao.get_constraint("bc1").group == "default"
@@ -532,9 +530,7 @@ def test_group_update_and_scenario_builder_cleanup(filestudy_dao: FileStudyTreeD
     # Clear bc2's group — g2 still has bc3, no scenario builder cleanup expected
     filestudy_dao.save_constraints(
         [
-            _bc("bc1", group=None),
             _bc("bc2", group=None),
-            _bc("bc3", group="g2"),
         ]
     )
     assert filestudy_dao.get_constraint("bc2").group == "default"
@@ -543,8 +539,6 @@ def test_group_update_and_scenario_builder_cleanup(filestudy_dao: FileStudyTreeD
     # Clear bc3's group — g2 is now empty, must be cleaned from scenario builder
     filestudy_dao.save_constraints(
         [
-            _bc("bc1", group=None),
-            _bc("bc2", group=None),
             _bc("bc3", group=None),
         ]
     )

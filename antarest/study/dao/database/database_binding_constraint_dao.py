@@ -330,9 +330,10 @@ class DatabaseBindingConstraintDao(ConstraintDao):
                     source_term = "lt" if old.operator == BindingConstraintOperator.BOTH else old_terms[0]
                     source_mid = existing_matrix_ids.get(bc.id, {}).get(source_term)
                     # The command layer always initializes matrices on creation, so missing source = data corruption.
-                    assert source_mid is not None, (
-                        f"Missing source matrix '{source_term}' for constraint '{bc.id}' during operator change"
-                    )
+                    if source_mid is None:
+                        raise ValueError(
+                            f"Missing source matrix '{source_term}' for constraint '{bc.id}' during operator change"
+                        )
                     for term in terms_to_add:
                         to_create[term].append((bc.id, source_mid))
 
@@ -383,9 +384,12 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         constraints: Sequence[BindingConstraint],
         existing: dict[str, BindingConstraint],
     ) -> None:
-        new_groups = {bc.group for bc in constraints if bc.group}
-        old_groups = {bc.group for bc in existing.values() if bc.group}
-        removed_groups = old_groups - new_groups
+        saved_ids = {bc.id for bc in constraints}
+        groups_before = {bc.group for bc in existing.values() if bc.group}
+        groups_after = {bc.group for bc in constraints if bc.group} | {
+            bc.group for bc in existing.values() if bc.group and bc.id not in saved_ids
+        }
+        removed_groups = groups_before - groups_after
         if removed_groups:
             self._db_session.execute(
                 delete(SCENARIO_BINDING_CONSTRAINTS_TABLE).where(
