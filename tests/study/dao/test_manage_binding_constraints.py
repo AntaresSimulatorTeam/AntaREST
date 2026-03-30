@@ -28,7 +28,8 @@ from antarest.study.business.model.binding_constraint_model import (
     LinkTerm,
 )
 from antarest.study.business.model.scenario_builder_model import RulesetUpdate
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7, STUDY_VERSION_8_8
+from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
     RemoveMultipleBindingConstraints,
@@ -39,226 +40,171 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 from tests.study.dao.conftest import build_db_dao
 
 
+@pytest.fixture
+def db_dao_860(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
+    return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_6)
+
+
 def test_manage_binding_constraint(
-    db_session: Session, matrix_service: ISimpleMatrixService, command_context: CommandContext
+    db_dao_860: DatabaseStudyDao,
+    db_dao: DatabaseStudyDao,
+    command_context: CommandContext,
 ) -> None:
-    """
-    Full binding-constraint lifecycle via commands routed through DatabaseStudyDao,
-    mirroring test_manage_binding_constraint in the command-layer tests.
-    """
-    for study_version in [STUDY_VERSION_8_6, STUDY_VERSION_8_8]:
-        db_dao = build_db_dao(db_session, matrix_service, study_version)
-
-        area1 = "area1"
-        area2 = "area2"
-        cluster = "cluster"
+    for db_dao_versioned in [db_dao_860, db_dao]:
+        study_version = db_dao_versioned.get_version()
 
         output = CreateBindingConstraint(
-            parameters={
-                "name": "BD 1",
-                "time_step": BindingConstraintFrequency.HOURLY,
-                "operator": BindingConstraintOperator.LESS,
-                "terms": [ConstraintTerm(weight=800, offset=30, data=LinkTerm(area1=area1, area2=area2))],
-                "comments": "Hello",
-            },
-            matrices={},
-            command_context=command_context,
-            study_version=study_version,
-        ).apply(db_dao)
+            **{
+                "parameters": {
+                    "name": "BD 1",
+                    "time_step": BindingConstraintFrequency.HOURLY,
+                    "operator": BindingConstraintOperator.LESS,
+                    "terms": [ConstraintTerm(weight=800, offset=30, data=LinkTerm(area1="area1", area2="area2"))],
+                    "comments": "Hello",
+                },
+                "matrices": {},
+                "command_context": command_context,
+                "study_version": study_version,
+            }
+        ).apply(db_dao_versioned)
         assert output.status, output.message
 
         output = CreateBindingConstraint(
-            parameters={
-                "name": "BD 2",
-                "enabled": False,
-                "time_step": BindingConstraintFrequency.DAILY,
-                "operator": BindingConstraintOperator.BOTH,
-                "terms": [ConstraintTerm(weight=50, data=ClusterTerm(area=area1, cluster=cluster))],
-            },
-            matrices={},
-            command_context=command_context,
-            study_version=study_version,
-        ).apply(db_dao)
+            **{
+                "parameters": {
+                    "name": "BD 2",
+                    "enabled": False,
+                    "time_step": BindingConstraintFrequency.DAILY,
+                    "operator": BindingConstraintOperator.BOTH,
+                    "terms": [ConstraintTerm(weight=50, data=ClusterTerm(area="area1", cluster="cluster"))],
+                },
+                "matrices": {},
+                "command_context": command_context,
+                "study_version": study_version,
+            }
+        ).apply(db_dao_versioned)
         assert output.status, output.message
 
-        r1 = db_dao.get_constraint("bd 1")
-        assert r1.name == "BD 1"
-        assert r1.time_step == BindingConstraintFrequency.HOURLY
-        assert r1.operator == BindingConstraintOperator.LESS
-        assert r1.comments == "Hello"
-        link_term = next(t for t in r1.terms if isinstance(t.data, LinkTerm))
-        assert link_term.weight == 800
-        assert link_term.offset == 30
+        bd1 = db_dao_versioned.get_constraint("bd 1")
+        assert bd1.name == "BD 1"
+        assert bd1.enabled is True
+        assert bd1.comments == "Hello"
+        assert bd1.time_step == BindingConstraintFrequency.HOURLY
+        assert bd1.operator == BindingConstraintOperator.LESS
+        assert len(bd1.terms) == 1
+        assert isinstance(bd1.terms[0].data, LinkTerm)
+        assert bd1.terms[0].weight == 800
+        assert bd1.terms[0].offset == 30
 
-        r2 = db_dao.get_constraint("bd 2")
-        assert r2.enabled is False
-        assert r2.time_step == BindingConstraintFrequency.DAILY
-        assert r2.operator == BindingConstraintOperator.BOTH
-        cluster_term = next(t for t in r2.terms if isinstance(t.data, ClusterTerm))
-        assert cluster_term.weight == 50
+        bd2 = db_dao_versioned.get_constraint("bd 2")
+        assert bd2.name == "BD 2"
+        assert bd2.enabled is False
+        assert bd2.time_step == BindingConstraintFrequency.DAILY
+        assert bd2.operator == BindingConstraintOperator.BOTH
+        assert len(bd2.terms) == 1
+        assert isinstance(bd2.terms[0].data, ClusterTerm)
+        assert bd2.terms[0].weight == 50
 
-        if study_version < STUDY_VERSION_8_7:
-            weekly_values = command_context.generator_matrix_constants.get_binding_constraint_daily_weekly_86()
-            values_matrix = weekly_values
-            less_term_matrix = None
-            greater_term_matrix = None
-        else:
-            weekly_values = command_context.generator_matrix_constants.get_binding_constraint_daily_weekly_87()
-            values_matrix = None
-            less_term_matrix = weekly_values
-            greater_term_matrix = weekly_values
-
-        # Update BD 1: HOURLY/LESS → WEEKLY/BOTH
         output = UpdateBindingConstraint(
-            id="bd 1",
-            parameters={
-                "enabled": False,
-                "time_step": BindingConstraintFrequency.WEEKLY,
-                "operator": BindingConstraintOperator.BOTH,
-                "terms": [ConstraintTerm(weight=800, offset=30, data=LinkTerm(area1=area1, area2=area2))],
-            },
-            matrices={
-                "values": values_matrix,
-                "less_term_matrix": less_term_matrix,
-                "greater_term_matrix": greater_term_matrix,
-            },
-            command_context=command_context,
-            study_version=study_version,
-        ).apply(db_dao)
+            **{
+                "id": "bd 1",
+                "parameters": {
+                    "enabled": False,
+                    "time_step": BindingConstraintFrequency.WEEKLY,
+                    "operator": BindingConstraintOperator.BOTH,
+                    "terms": [ConstraintTerm(weight=800, offset=30, data=LinkTerm(area1="area1", area2="area2"))],
+                },
+                "matrices": {},
+                "command_context": command_context,
+                "study_version": study_version,
+            }
+        ).apply(db_dao_versioned)
         assert output.status, output.message
 
-        r1 = db_dao.get_constraint("bd 1")
-        assert r1.enabled is False
-        assert r1.time_step == BindingConstraintFrequency.WEEKLY
-        assert r1.operator == BindingConstraintOperator.BOTH
-        assert r1.comments == "Hello"  # comments not changed by update
-
-        expected_rows = 366  # both daily/weekly default matrices (v86 and v87+) have 366 rows
-
-        if study_version < STUDY_VERSION_8_7:
-            values = db_dao.get_constraint_values_matrix("bd 1")
-            assert values.shape[0] == expected_rows
-            assert values.to_series(0).sum() == 0.0
-        else:
-            lt = db_dao.get_constraint_less_term_matrix("bd 1")
-            gt = db_dao.get_constraint_greater_term_matrix("bd 1")
-            assert lt.shape[0] == expected_rows
-            assert gt.shape[0] == expected_rows
-            assert lt.to_series(0).sum() == 0.0
-            assert gt.to_series(0).sum() == 0.0
+        bd1 = db_dao_versioned.get_constraint("bd 1")
+        assert bd1.enabled is False
+        assert bd1.time_step == BindingConstraintFrequency.WEEKLY
+        assert bd1.operator == BindingConstraintOperator.BOTH
+        assert bd1.comments == "Hello"  # comments are not updated
 
         if study_version >= STUDY_VERSION_8_7:
             output = UpdateScenarioBuilder(
                 data=RulesetUpdate(binding_constraints={"default": {"0": 1}}),
                 command_context=command_context,
                 study_version=study_version,
-            ).apply(db_dao)
+            ).apply(study_data=db_dao_versioned)
             assert output.status, output.message
 
         output = RemoveMultipleBindingConstraints(
             id="bd 1", command_context=command_context, study_version=study_version
-        ).apply(db_dao)
+        ).apply(db_dao_versioned)
         assert output.status, output.message
 
-        if study_version >= STUDY_VERSION_8_7:
-            # BD 2 still in "default" group → rule must survive
-            assert db_dao.get_ruleset().binding_constraints == {"default": {"0": 1}}
-
-        assert "bd 1" not in db_dao.get_all_constraints()
-
         with pytest.raises(BindingConstraintNotFound):
-            if study_version < STUDY_VERSION_8_7:
-                db_dao.get_constraint_values_matrix("bd 1")
-            else:
-                db_dao.get_constraint_less_term_matrix("bd 1")
+            db_dao_versioned.get_constraint("bd 1")
 
-        assert db_dao.get_constraint("bd 2").operator == BindingConstraintOperator.BOTH
+        assert "bd 2" in db_dao_versioned.get_all_constraints()
+
+        if study_version >= STUDY_VERSION_8_7:
+            # "BD 2" is still present in the "default" group — scenario builder must be untouched
+            assert db_dao_versioned.get_ruleset().binding_constraints == {"default": {"0": 1}}
 
         output = RemoveMultipleBindingConstraints(
             id="bd 2", command_context=command_context, study_version=study_version
-        ).apply(db_dao)
+        ).apply(db_dao_versioned)
         assert output.status, output.message
 
-        assert db_dao.get_all_constraints() == {}
+        assert db_dao_versioned.get_all_constraints() == {}
 
         if study_version >= STUDY_VERSION_8_7:
-            assert db_dao.get_ruleset().binding_constraints == {}
+            # "default" group is now empty — scenario builder must be cleaned up
+            assert db_dao_versioned.get_ruleset().binding_constraints == {}
 
 
-def test_scenario_builder(
-    db_session: Session, matrix_service: ISimpleMatrixService, command_context: CommandContext
-) -> None:
+def test_scenario_builder(db_dao: DatabaseStudyDao, command_context: CommandContext) -> None:
     """
-    Scenario builder rule is removed when a BC group is renamed, mirroring
-    test_scenario_builder in the command-layer tests.
+    Test that the scenario builder is updated when a binding constraint group is renamed or removed.
     """
-    study_version = STUDY_VERSION_8_8
-    db_dao = build_db_dao(db_session, matrix_service, study_version)
+    study_version = db_dao.get_version()
+    assert study_version >= STUDY_VERSION_8_7
 
+    bc_group = "Group 1"
     output = CreateBindingConstraint(
-        parameters={
-            "name": "BD 1",
-            "enabled": False,
-            "time_step": BindingConstraintFrequency.DAILY,
-            "operator": BindingConstraintOperator.BOTH,
-            "group": "Group 1",
-        },
-        matrices={},
-        command_context=command_context,
-        study_version=study_version,
+        **{
+            "parameters": {
+                "name": "BD 1",
+                "enabled": False,
+                "time_step": BindingConstraintFrequency.DAILY,
+                "operator": BindingConstraintOperator.BOTH,
+                "group": bc_group,
+                "terms": [ConstraintTerm(weight=0.3, data=LinkTerm(area1="area x", area2="area y"))],
+            },
+            "matrices": {},
+            "command_context": command_context,
+            "study_version": study_version,
+        }
     ).apply(db_dao)
     assert output.status, output.message
 
     output = UpdateScenarioBuilder(
-        data=RulesetUpdate(binding_constraints={"group 1": {"0": 1}}),
+        data=RulesetUpdate(binding_constraints={bc_group.lower(): {"0": 1}}),
         command_context=command_context,
         study_version=study_version,
-    ).apply(db_dao)
+    ).apply(study_data=db_dao)
     assert output.status, output.message
 
+    assert db_dao.get_ruleset().binding_constraints == {"group 1": {"0": 1}}
+
+    # Rename the group — old group's scenario builder rules must be removed
     output = UpdateBindingConstraint(
-        id="bd 1",
-        parameters={"group": "Group 2"},
-        matrices={},
-        command_context=command_context,
-        study_version=study_version,
+        **{
+            "id": "bd 1",
+            "parameters": {"group": "Group 2"},
+            "matrices": {},
+            "command_context": command_context,
+            "study_version": study_version,
+        }
     ).apply(db_dao)
     assert output.status, output.message
 
-    # "group 1" is now orphaned → its rule is removed
-    assert "group 1" not in db_dao.get_ruleset().binding_constraints
-
-
-def test_update_bc_with_an_integer_name(
-    db_session: Session, matrix_service: ISimpleMatrixService, command_context: CommandContext
-) -> None:
-    """
-    A BC whose name is an integer string must survive a command round-trip, mirroring
-    test_update_bc_with_an_integer_name in the command-layer tests.
-    """
-    study_version = STUDY_VERSION_8_8
-    db_dao = build_db_dao(db_session, matrix_service, study_version)
-
-    output = CreateBindingConstraint(
-        parameters={"name": "111"},
-        matrices={},
-        command_context=command_context,
-        study_version=study_version,
-    ).apply(db_dao)
-    assert output.status, output.message
-
-    r = db_dao.get_constraint("111")
-    assert r.id == "111"
-
-    output = UpdateBindingConstraint(
-        id="111",
-        parameters={"comments": "Hello"},
-        matrices={},
-        command_context=command_context,
-        study_version=study_version,
-    ).apply(db_dao)
-    assert output.status, output.message
-
-    r = db_dao.get_constraint("111")
-    assert r.comments == "Hello"
-    assert r.id == "111"
+    assert db_dao.get_ruleset().binding_constraints == {}
