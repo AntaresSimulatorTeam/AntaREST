@@ -27,6 +27,7 @@ from typing_extensions import override
 from antarest.core.exceptions import BindingConstraintNotFound
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX
 from antarest.study.business.model.binding_constraint_model import (
+    DEFAULT_GROUP,
     OPERATOR_MATRICES_MAP,
     BindingConstraint,
     BindingConstraintFrequency,
@@ -384,11 +385,17 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         constraints: Sequence[BindingConstraint],
         existing: dict[str, BindingConstraint],
     ) -> None:
+        version = self.get_impl().get_version()
         saved_ids = {bc.id for bc in constraints}
         groups_before = {bc.group for bc in existing.values() if bc.group}
         groups_after = {bc.group for bc in constraints if bc.group} | {
             bc.group for bc in existing.values() if bc.group and bc.id not in saved_ids
         }
+        # For v8.7+, group=None means "default" (NULL in DB reads back as "default" via
+        # initialize_binding_constraint). If any saved constraint has group=None, "default"
+        # is still in use and must not be removed from the scenario builder.
+        if version >= STUDY_VERSION_8_7 and any(bc.group is None for bc in constraints):
+            groups_after.add(DEFAULT_GROUP)
         removed_groups = groups_before - groups_after
         if removed_groups:
             self._db_session.execute(

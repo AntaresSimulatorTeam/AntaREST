@@ -569,6 +569,30 @@ def test_group_update_and_scenario_builder_cleanup(db_dao: DatabaseStudyDao) -> 
     assert db_dao.get_constraint("bc3").group == "default"
     assert db_dao.get_ruleset().binding_constraints == {}
 
+    # Clear bc3's group — g2 is now empty, must be cleaned from scenario builder
+    db_dao.save_constraints(
+        [
+            _bc("bc1", group=None),
+            _bc("bc2", group=None),
+            _bc("bc3", group=None),
+        ]
+    )
+    assert db_dao.get_constraint("bc3").group == "default"
+    assert db_dao.get_ruleset().binding_constraints == {}
+
+
+def test_resaving_null_group_constraint_does_not_wipe_default_scenario_builder_rules(
+    db_dao: DatabaseStudyDao,
+) -> None:
+    """Saving a constraint with group=None (which reads back as 'default') must not
+    delete scenario-builder rules for 'default'."""
+    db_dao.save_constraints([_bc("bc1", group=None)])
+    db_dao.save_scenario_builder(Ruleset(binding_constraints={"default": {"0": 1}}))
+
+    # Re-save the same constraint with group=None — no group has changed, nothing to clean up
+    db_dao.save_constraints([_bc("bc1", group=None)])
+    assert db_dao.get_ruleset().binding_constraints == {"default": {"0": 1}}
+
 
 def test_scenario_builder_cleanup_on_constraint_removal(db_dao: DatabaseStudyDao) -> None:
     """Deleting a constraint must trigger scenario builder cleanup
