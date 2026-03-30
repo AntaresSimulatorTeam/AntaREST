@@ -24,20 +24,20 @@ def test_favorite_directory(client: TestClient, admin_access_token: str) -> None
     dt_1_id = directory_test_1["id"]
     dt_2_id = directory_test_2["id"]
     # adding favorite directories and checking the API returns the good amount of favorites
-    dto_test_1 = {"directory_id": dt_1_id, "directory_name": "directory_test_1"}
-    dto_test_2 = {"directory_id": dt_2_id, "directory_name": "directory_test_2"}
+    dto_test_1 = {"directoryId": dt_1_id, "directoryName": "directory_test_1"}
+    dto_test_2 = {"directoryId": dt_2_id, "directoryName": "directory_test_2"}
 
     resp = client.post(f"/v1/favorites/directories/{dt_1_id}")
     assert resp.status_code == 200
     directory_dto_1 = resp.json()
-    assert directory_dto_1["directory_id"] == dt_1_id
-    assert directory_dto_1["directory_name"] == "directory_test_1"
+    assert directory_dto_1["directoryId"] == dt_1_id
+    assert directory_dto_1["directoryName"] == "directory_test_1"
 
     resp = client.post(f"/v1/favorites/directories/{dt_2_id}")
     assert resp.status_code == 200
     directory_dto_2 = resp.json()
-    assert directory_dto_2["directory_id"] == dt_2_id
-    assert directory_dto_2["directory_name"] == "directory_test_2"
+    assert directory_dto_2["directoryId"] == dt_2_id
+    assert directory_dto_2["directoryName"] == "directory_test_2"
 
     actual_favorite_directories_list = client.get("/v1/favorites/directories").json()
     expected_favorite_directories_list = [dto_test_1, dto_test_2]
@@ -69,15 +69,15 @@ def test_delete_directory(client: TestClient, admin_access_token: str) -> None:
     dt_2_id = directory_test_2["id"]
 
     # adding favorite directories and checking the API returns the good amount of favorites
-    dto_test_1 = {"directory_id": dt_1_id, "directory_name": "directory_test_1"}
-    dto_test_2 = {"directory_id": dt_2_id, "directory_name": "directory_test_2"}
+    dto_test_1 = {"directoryId": dt_1_id, "directoryName": "directory_test_1"}
+    dto_test_2 = {"directoryId": dt_2_id, "directoryName": "directory_test_2"}
 
     resp = client.post(f"/v1/favorites/directories/{dt_1_id}")
     assert resp.status_code == 200
-    assert resp.json()["directory_id"] == dt_1_id
+    assert resp.json()["directoryId"] == dt_1_id
     resp = client.post(f"/v1/favorites/directories/{dt_2_id}")
     assert resp.status_code == 200
-    assert resp.json()["directory_id"] == dt_2_id
+    assert resp.json()["directoryId"] == dt_2_id
 
     actual_favorite_directories = client.get("/v1/favorites/directories").json()
     assert actual_favorite_directories == [dto_test_1, dto_test_2]
@@ -124,7 +124,7 @@ def test_add_favorite_directory_already_existing(client: TestClient, admin_acces
     directory_test_1 = client.post("/v1/directories", json={"name": "directory_test_1"}).json()
     dt_1_id = directory_test_1["id"]
 
-    dto_test = {"directory_id": dt_1_id, "directory_name": "directory_test_1"}
+    dto_test = {"directoryId": dt_1_id, "directoryName": "directory_test_1"}
 
     resp = client.post(f"/v1/favorites/directories/{dt_1_id}")
     assert resp.status_code == 200
