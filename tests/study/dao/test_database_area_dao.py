@@ -242,7 +242,7 @@ def test_get_all_areas_ui_info_returns_all_layers(db_dao: DatabaseStudyDao) -> N
     paris_ui = all_ui["paris"]
     assert paris_ui.ui["x"] == 0
     assert paris_ui.ui["y"] == 0
-    assert paris_ui.ui["layers"] == "1 2"
+    assert paris_ui.ui["layers"] == "0 1 2"
     assert paris_ui.layer_x == {"0": 0, "1": 100, "2": 200}
     assert paris_ui.layer_y == {"0": 0, "1": 100, "2": 200}
     assert paris_ui.layer_color == {"0": "230, 108, 44", "1": "255, 0, 0", "2": "0, 255, 0"}
@@ -251,7 +251,7 @@ def test_get_all_areas_ui_info_returns_all_layers(db_dao: DatabaseStudyDao) -> N
     london_ui = all_ui["london"]
     assert london_ui.ui["x"] == 0
     assert london_ui.ui["y"] == 0
-    assert london_ui.ui["layers"] == "1"
+    assert london_ui.ui["layers"] == "0 1"
     assert london_ui.layer_x == {"0": 0, "1": 150}
     assert london_ui.layer_y == {"0": 0, "1": 150}
     assert london_ui.layer_color == {"0": "230, 108, 44", "1": "0, 0, 255"}

@@ -10,8 +10,8 @@
 #
 # This file is part of the Antares project.
 #
-# Mirrors tests/variantstudy/model/command/test_manage_binding_constraints.py but
-# rewires the commands to use DatabaseStudyDao instead of FileStudy.
+# Mirrors test_manage_binding_constraints.py but rewires the commands to use
+# DatabaseStudyDao instead of FileStudy.
 # Every command.apply() call receives a DatabaseStudyDao — the dispatch in
 # ICommand.apply() then calls _apply_dao() directly.
 
@@ -29,7 +29,7 @@ from antarest.study.business.model.binding_constraint_model import (
 )
 from antarest.study.business.model.scenario_builder_model import RulesetUpdate
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7, STUDY_VERSION_8_8
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
     RemoveMultipleBindingConstraints,
@@ -38,6 +38,11 @@ from antarest.study.storage.variantstudy.model.command.update_binding_constraint
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.study.dao.conftest import build_db_dao
+
+
+@pytest.fixture
+def db_dao(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
+    return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
 
 
 @pytest.fixture
@@ -96,6 +101,23 @@ def test_manage_binding_constraint(
         assert bd1.terms[0].weight == 800
         assert bd1.terms[0].offset == 30
 
+        if study_version >= STUDY_VERSION_8_7:
+            # LESS → only lt table populated
+            db_dao_versioned.get_constraint_less_term_matrix("bd 1")
+            with pytest.raises(BindingConstraintNotFound):
+                db_dao_versioned.get_constraint_greater_term_matrix("bd 1")
+            with pytest.raises(BindingConstraintNotFound):
+                db_dao_versioned.get_constraint_equal_term_matrix("bd 1")
+            # BOTH → lt and gt tables populated
+            db_dao_versioned.get_constraint_less_term_matrix("bd 2")
+            db_dao_versioned.get_constraint_greater_term_matrix("bd 2")
+            with pytest.raises(BindingConstraintNotFound):
+                db_dao_versioned.get_constraint_equal_term_matrix("bd 2")
+        else:
+            # Pre-8.7: single values table regardless of operator
+            db_dao_versioned.get_constraint_values_matrix("bd 1")
+            db_dao_versioned.get_constraint_values_matrix("bd 2")
+
         bd2 = db_dao_versioned.get_constraint("bd 2")
         assert bd2.name == "BD 2"
         assert bd2.enabled is False
@@ -126,6 +148,17 @@ def test_manage_binding_constraint(
         assert bd1.time_step == BindingConstraintFrequency.WEEKLY
         assert bd1.operator == BindingConstraintOperator.BOTH
         assert bd1.comments == "Hello"  # comments are not updated
+
+        if study_version >= STUDY_VERSION_8_7:
+            # Operator changed LESS→BOTH and time step changed HOURLY→WEEKLY:
+            # lt and gt tables must exist (reset to weekly zeros), eq must be gone
+            db_dao_versioned.get_constraint_less_term_matrix("bd 1")
+            db_dao_versioned.get_constraint_greater_term_matrix("bd 1")
+            with pytest.raises(BindingConstraintNotFound):
+                db_dao_versioned.get_constraint_equal_term_matrix("bd 1")
+        else:
+            # Pre-8.7: values table still the only one, reset to weekly default
+            db_dao_versioned.get_constraint_values_matrix("bd 1")
 
         if study_version >= STUDY_VERSION_8_7:
             output = UpdateScenarioBuilder(
