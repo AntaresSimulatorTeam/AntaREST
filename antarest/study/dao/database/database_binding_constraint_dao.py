@@ -186,13 +186,11 @@ class DatabaseBindingConstraintDao(ConstraintDao):
     def _save_bc_matrices(self, table: Table, entries: list[tuple[str, str]]) -> None:
         rows = [{"study_id": self._study_id, "constraint_id": cid, "matrix_id": mid} for cid, mid in entries]
         upsert_multiple(self._db_session, table, rows)
-        self._db_session.commit()
 
     def _delete_bc_matrices(self, table: Table, constraint_ids: list[str]) -> None:
         self._db_session.execute(
             delete(table).where((table.c.study_id == self._study_id) & (table.c.constraint_id.in_(constraint_ids)))
         )
-        self._db_session.commit()
 
     @override
     def get_constraint_values_matrix(self, constraint_id: str) -> pl.DataFrame:
@@ -382,19 +380,30 @@ class DatabaseBindingConstraintDao(ConstraintDao):
 
     def _cleanup_scenario_builder_groups(
         self,
-        constraints: Sequence[BindingConstraint],
+        saved: Sequence[BindingConstraint],
         existing: dict[str, BindingConstraint],
+        remaining: dict[str, BindingConstraint] | None = None,
     ) -> None:
+        """Remove scenario builder rules for groups that no longer have any constraint.
+
+        Args:
+            saved: constraints being saved/upserted in this call (empty for deletes).
+            existing: all constraints as they were before this call.
+            remaining: if provided, the constraints that will remain after this call.
+                       If None, computed from ``existing`` minus ``saved`` IDs plus ``saved``.
+        """
         version = self.get_impl().get_version()
-        saved_ids = {bc.id for bc in constraints}
+        if remaining is None:
+            saved_ids = {bc.id for bc in saved}
+            remaining = {cid: bc for cid, bc in existing.items() if cid not in saved_ids}
+            remaining.update({bc.id: bc for bc in saved})
+
         groups_before = {bc.group for bc in existing.values() if bc.group}
-        groups_after = {bc.group for bc in constraints if bc.group} | {
-            bc.group for bc in existing.values() if bc.group and bc.id not in saved_ids
-        }
+        groups_after = {bc.group for bc in remaining.values() if bc.group}
         # For v8.7+, group=None means "default" (NULL in DB reads back as "default" via
-        # initialize_binding_constraint). If any saved constraint has group=None, "default"
+        # initialize_binding_constraint). If any remaining constraint has group=None, "default"
         # is still in use and must not be removed from the scenario builder.
-        if version >= STUDY_VERSION_8_7 and any(bc.group is None for bc in constraints):
+        if version >= STUDY_VERSION_8_7 and any(bc.group is None for bc in remaining.values()):
             groups_after.add(DEFAULT_GROUP)
         removed_groups = groups_before - groups_after
         if removed_groups:
@@ -430,41 +439,48 @@ class DatabaseBindingConstraintDao(ConstraintDao):
     @override
     def save_constraint_values_matrix(self, constraint_id: str, series_id: str) -> None:
         self._save_bc_matrices(BINDING_CONSTRAINT_VALUES_MATRIX_TABLE, [(constraint_id, series_id)])
+        self._db_session.commit()
 
     @override
     def save_constraint_less_term_matrix(self, constraint_id: str, series_id: str) -> None:
         self._save_bc_matrices(BINDING_CONSTRAINT_LT_MATRIX_TABLE, [(constraint_id, series_id)])
+        self._db_session.commit()
 
     @override
     def save_constraint_greater_term_matrix(self, constraint_id: str, series_id: str) -> None:
         self._save_bc_matrices(BINDING_CONSTRAINT_GT_MATRIX_TABLE, [(constraint_id, series_id)])
+        self._db_session.commit()
 
     @override
     def save_constraint_equal_term_matrix(self, constraint_id: str, series_id: str) -> None:
         self._save_bc_matrices(BINDING_CONSTRAINT_EQ_MATRIX_TABLE, [(constraint_id, series_id)])
+        self._db_session.commit()
 
     def delete_constraint_values_matrix(self, constraint_id: str) -> None:
         self._delete_bc_matrices(BINDING_CONSTRAINT_VALUES_MATRIX_TABLE, [constraint_id])
+        self._db_session.commit()
 
     def delete_constraint_less_term_matrix(self, constraint_id: str) -> None:
         self._delete_bc_matrices(BINDING_CONSTRAINT_LT_MATRIX_TABLE, [constraint_id])
+        self._db_session.commit()
 
     def delete_constraint_greater_term_matrix(self, constraint_id: str) -> None:
         self._delete_bc_matrices(BINDING_CONSTRAINT_GT_MATRIX_TABLE, [constraint_id])
+        self._db_session.commit()
 
     def delete_constraint_equal_term_matrix(self, constraint_id: str) -> None:
         self._delete_bc_matrices(BINDING_CONSTRAINT_EQ_MATRIX_TABLE, [constraint_id])
+        self._db_session.commit()
 
     @override
     def delete_constraints(self, constraints: list[BindingConstraint]) -> None:
         db = self._db_session
-        constraint_ids = [bc.id for bc in constraints]
+        constraint_ids = {bc.id for bc in constraints}
 
         # Compute orphaned groups before deleting (need the full picture first)
         existing = self._fetch_constraints()
-        deleted_groups = {bc.group for bc in constraints if bc.group}
-        remaining_groups = {bc.group for bc in existing.values() if bc.group and bc.id not in set(constraint_ids)}
-        orphaned_groups = deleted_groups - remaining_groups
+        remaining = {cid: bc for cid, bc in existing.items() if cid not in constraint_ids}
+        self._cleanup_scenario_builder_groups([], existing, remaining)
 
         db.execute(
             delete(BINDING_CONSTRAINT_TABLE).where(
@@ -472,13 +488,5 @@ class DatabaseBindingConstraintDao(ConstraintDao):
                 & (BINDING_CONSTRAINT_TABLE.c.constraint_id.in_(constraint_ids))
             )
         )
-
-        if orphaned_groups:
-            db.execute(
-                delete(SCENARIO_BINDING_CONSTRAINTS_TABLE).where(
-                    (SCENARIO_BINDING_CONSTRAINTS_TABLE.c.study_id == self._study_id)
-                    & (SCENARIO_BINDING_CONSTRAINTS_TABLE.c.bc_group_id.in_(orphaned_groups))
-                )
-            )
 
         db.commit()
