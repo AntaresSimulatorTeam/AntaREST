@@ -34,7 +34,7 @@ jobs:
         working-directory: scripts
 
       - name: 🚀 Upload binary
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: AntaresWebWorker
           path: dist/AntaresWebWorker.exe
