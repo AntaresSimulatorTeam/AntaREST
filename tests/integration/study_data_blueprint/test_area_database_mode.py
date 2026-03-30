@@ -19,19 +19,11 @@ instead of filesystem storage for area data.
 NOTE: Currently, the DATABASE storage mode is a POC that only implements basic
 area operations via the DAO. The CREATE_AREA command also configures hydro management
 and other elements that are not yet implemented in the database DAO.
-Tests that require full command execution are marked as xfail until all required
-DAO methods are implemented.
 """
 
 from starlette.testclient import TestClient
 
 from tests.integration.prepare_proxy import PreparerProxy
-
-# Reason for xfail - CREATE_AREA command requires methods not yet implemented in DatabaseStudyDao
-DATABASE_MODE_INCOMPLETE = (
-    "DATABASE storage mode POC: CREATE_AREA command requires save_hydro_management and other methods "
-    "not yet implemented in DatabaseStudyDao"
-)
 
 
 class TestAreaDatabaseMode:
