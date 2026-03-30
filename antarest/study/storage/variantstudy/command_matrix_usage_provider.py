@@ -10,8 +10,8 @@
 #
 # This file is part of the Antares project.
 import logging
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, List
 
 from typing_extensions import override
 
@@ -43,9 +43,9 @@ class CommandMatrixUsageProvider(IMatrixUsageProvider):
     def get_matrix_usage(self) -> Iterable[MatrixReference]:
         logger.info("Getting all matrices used in variant studies")
         # First gets all matrices used in commands
-        command_blocks: List[CommandBlock] = self.variant_study_repo.get_all_command_blocks()
+        command_blocks: list[CommandBlock] = self.variant_study_repo.get_all_command_blocks()
 
-        def transform_to_command(command_dto: CommandDTO, study_ref: str) -> List[ICommand]:
+        def transform_to_command(command_dto: CommandDTO, study_ref: str) -> list[ICommand]:
             try:
                 return self.command_factory.to_command(command_dto)
             except Exception as e:

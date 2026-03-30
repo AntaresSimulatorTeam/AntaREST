@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Iterator
+from collections.abc import Iterator
 
 from sqlalchemy import Boolean, Column, ForeignKeyConstraint, Integer, String, Table, delete, select
 from sqlalchemy.orm import Mapped, Session, mapped_column

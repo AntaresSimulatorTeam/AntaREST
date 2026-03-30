@@ -16,10 +16,11 @@ import math
 import os
 import re
 import shutil
+from collections.abc import Sequence
 from datetime import datetime, timedelta
 from io import StringIO
 from pathlib import Path
-from typing import Any, List, Optional, Sequence, cast
+from typing import Any, cast
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -100,7 +101,7 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_autho
     study_tree.save(study_data_info, ["study"])
 
 
-def _format_timestamp(dt: Optional[datetime]) -> str:
+def _format_timestamp(dt: datetime | None) -> str:
     """Format datetime as timestamp string or '0' if None."""
     return str(dt.timestamp()) if dt is not None else "0"
 
@@ -160,7 +161,7 @@ def is_output_archived(path_output: Path) -> bool:
     return any((path_output.parent / (path_output.name + suffix)).exists() for suffix in suffixes)
 
 
-def extract_output_name(path_output: Path, new_suffix_name: Optional[str] = None) -> str:
+def extract_output_name(path_output: Path, new_suffix_name: str | None = None) -> str:
     """
     Constructs the full output name such as "20201014-1422eco-hello" from the info.antares-output file content.
 
@@ -250,7 +251,7 @@ def assert_permission_on_studies(
         raise UserHasNotPermissionError(msg)
 
 
-def assert_permission(study: Optional[Study | StudyMetadataDTO], permission_type: StudyPermissionType) -> None:
+def assert_permission(study: Study | StudyMetadataDTO | None, permission_type: StudyPermissionType) -> None:
     """
     Assert user has permission to edit or read study.
 
@@ -417,7 +418,7 @@ def get_matrix_index(
 
 def get_start_date(
     file_study: FileStudy,
-    output_id: Optional[str] = None,
+    output_id: str | None = None,
     level: MatrixFrequency = MatrixFrequency.HOURLY,
 ) -> MatrixIndex:
     """
@@ -491,7 +492,7 @@ def is_ts_gen_tmp_dir(path: Path) -> bool:
     return path.name.startswith(TS_GEN_PREFIX) and "".join(path.suffixes[-2:]) == TS_GEN_SUFFIX and path.is_dir()
 
 
-def should_ignore_folder_for_scan(path: Path, filter_in: List[str], filter_out: List[str]) -> bool:
+def should_ignore_folder_for_scan(path: Path, filter_in: list[str], filter_out: list[str]) -> bool:
     if is_aw_no_scan(path):
         logger.info(f"No scan directive file found. Will skip further scan of folder {path}")
         return True
@@ -511,7 +512,7 @@ def should_ignore_folder_for_scan(path: Path, filter_in: List[str], filter_out: 
     )
 
 
-def has_children(path: Path, filter_in: List[str], filter_out: List[str], show_hidden_file: bool = False) -> bool:
+def has_children(path: Path, filter_in: list[str], filter_out: list[str], show_hidden_file: bool = False) -> bool:
     for sub_path in path.iterdir():
         try:
             show = show_hidden_file or not sub_path.name.startswith(".")
@@ -525,11 +526,11 @@ def has_children(path: Path, filter_in: List[str], filter_out: List[str], show_h
 def rec_scan_for_studies(
     path: Path,
     workspace: str,
-    groups: List[Group],
-    filter_in: List[str],
-    filter_out: List[str],
-    max_depth: Optional[int] = None,
-) -> List[StudyFolder]:
+    groups: list[Group],
+    filter_in: list[str],
+    filter_out: list[str],
+    max_depth: int | None = None,
+) -> list[StudyFolder]:
     """
     Recursively scan a directory for studies.
 
@@ -558,7 +559,7 @@ def rec_scan_for_studies(
             logger.info(f"Scan was configured to not go any deeper, max_depth: {max_depth}")
             return []
 
-        folders: List[StudyFolder] = []
+        folders: list[StudyFolder] = []
         if path.is_dir():
             for child in path.iterdir():
                 child_max_depth = max_depth - 1 if max_depth is not None else None

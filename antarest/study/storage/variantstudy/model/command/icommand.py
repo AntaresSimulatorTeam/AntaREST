@@ -13,7 +13,7 @@
 import logging
 import uuid
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional
+from typing import Any
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.dao.api.study_dao import StudyDao
@@ -43,7 +43,7 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         command_context: The context of the command.
     """
 
-    command_id: Optional[uuid.UUID] = None
+    command_id: uuid.UUID | None = None
     command_name: CommandName
     command_context: CommandContext
     study_version: StudyVersionStr
@@ -113,7 +113,7 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         """
         return InnerMatrices()
 
-    def get_inner_blobs(self) -> List[str]:
+    def get_inner_blobs(self) -> list[str]:
         """
         Retrieves the list of blob IDs.
         """

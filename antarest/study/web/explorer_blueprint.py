@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import List
 
 from fastapi import APIRouter, Depends
 
@@ -33,7 +32,7 @@ def create_explorer_routes() -> APIRouter:
         "/explorer/{workspace}/_list_dir",
         summary="For a given directory, list sub directories.",
     )
-    def list_dir(explorer: ExplorerDep, workspace: SanitizedStr, path: SanitizedStr) -> List[FolderDTO]:
+    def list_dir(explorer: ExplorerDep, workspace: SanitizedStr, path: SanitizedStr) -> list[FolderDTO]:
         """
         Endpoint to list sub directories of a given directory
         Args:
@@ -50,7 +49,7 @@ def create_explorer_routes() -> APIRouter:
         "/explorer/_list_workspaces",
         summary="List all workspaces",
     )
-    def list_workspaces(explorer: ExplorerDep) -> List[WorkspaceDTO]:
+    def list_workspaces(explorer: ExplorerDep) -> list[WorkspaceDTO]:
         """
         Endpoint to list workspaces
         Args:

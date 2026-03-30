@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import typing as t
-from typing import Any, Dict, Final, List, Self
+from typing import Any, Final, Self
 
 from antares.study.version import StudyVersion
 from pydantic import Field, model_validator
@@ -43,7 +43,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-OptionalMatrixData: t.TypeAlias = List[List[MatrixData]] | str | None
+OptionalMatrixData: t.TypeAlias = list[list[MatrixData]] | str | None
 
 
 class CreateCluster(ICommand):
@@ -70,7 +70,7 @@ class CreateCluster(ICommand):
 
     @model_validator(mode="before")
     @classmethod
-    def _validate_model(cls, values: Dict[str, t.Any], info: ValidationInfo) -> Dict[str, Any]:
+    def _validate_model(cls, values: dict[str, t.Any], info: ValidationInfo) -> dict[str, Any]:
         # Validate parameters
         if isinstance(values["parameters"], dict):
             study_version = StudyVersion.parse(values["study_version"])
@@ -142,7 +142,7 @@ class CreateCluster(ICommand):
 
     @override
     def get_inner_matrices(self) -> InnerMatrices:
-        matrices: List[str] = []
+        matrices: list[str] = []
         if self.prepro:
             assert_this(isinstance(self.prepro, str))
             matrices.append(strip_matrix_protocol(self.prepro))

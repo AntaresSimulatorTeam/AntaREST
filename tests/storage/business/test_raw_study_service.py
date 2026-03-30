@@ -12,9 +12,7 @@
 
 import datetime
 import os
-import platform
 import re
-import time
 from pathlib import Path, PurePosixPath
 from unittest.mock import Mock
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -180,8 +178,8 @@ def test_create_file_study_dao(tmp_path: Path, project_path: Path) -> None:
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(config.get_workspace_path() / "study1"),
         version="720",
-        created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-        updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+        created_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
+        updated_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
         author="john.doe",
     )
     FileStudyDaoFactory(Mock(), study_service.study_factory).create_study_dao(metadata)
@@ -392,10 +390,6 @@ def test_copy_study(tmp_path: Path) -> None:
 
 def test_zipped_output(tmp_path: Path) -> None:
     # Setup
-    if not platform.platform().startswith("Windows"):
-        os.environ["TZ"] = "Europe/Paris"  # set new timezone
-        time.tzset()
-
     name = "my-study"
     study_path = tmp_path / name
     study_path.mkdir()

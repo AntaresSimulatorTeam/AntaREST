@@ -13,7 +13,7 @@
 import datetime
 import uuid
 from dataclasses import dataclass
-from typing import Any, List, Optional, TypeAlias
+from typing import Any, TypeAlias
 
 import polars as pl
 from pydantic import ConfigDict, field_serializer
@@ -80,9 +80,9 @@ class MatrixInfoDTO(AntaresBaseModel):
 class MatrixDataSetDTO(AntaresBaseModel):
     id: str
     name: str
-    matrices: List[MatrixInfoDTO]
+    matrices: list[MatrixInfoDTO]
     owner: UserInfo
-    groups: List[GroupDTO]
+    groups: list[GroupDTO]
     public: bool
     created_at: str
     updated_at: str
@@ -175,7 +175,7 @@ class MatrixReferencesDTO(AntaresBaseModel, extra="forbid", populate_by_name=Tru
     """
 
     refs: list[MatrixDescriptionDTO]
-    disk_usage: Optional[int] = None
+    disk_usage: int | None = None
 
 
 class MatrixMismatchDTO(AntaresBaseModel, extra="forbid", populate_by_name=True):
@@ -225,7 +225,7 @@ class MatrixDataSet(Base):
     updated_at: Mapped[datetime.datetime] = mapped_column(DateTime)
 
     owner: Mapped[Identity] = relationship(Identity)
-    groups: Mapped[List[Group]] = relationship(
+    groups: Mapped[list[Group]] = relationship(
         "Group",
         secondary=lambda: groups_dataset_relation,
     )
@@ -284,5 +284,5 @@ MatrixData: TypeAlias = float
 
 class MatrixDataSetUpdateDTO(AntaresBaseModel):
     name: str
-    groups: List[str]
+    groups: list[str]
     public: bool

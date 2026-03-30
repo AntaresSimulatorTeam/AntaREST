@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Awaitable, Callable, List
+from collections.abc import Awaitable, Callable
 from unittest.mock import Mock
 
 from antarest.core.interfaces.eventbus import Event, EventType
@@ -30,10 +30,10 @@ def test_service_factory() -> None:
 
 def test_lifecycle() -> None:
     event_bus = build_eventbus(autostart=True)
-    test_bucket: List[Event] = []
+    test_bucket: list[Event] = []
 
     def append_to_bucket(
-        bucket: List[Event],
+        bucket: list[Event],
     ) -> Callable[[Event], Awaitable[None]]:
         async def _append_to_bucket(event: Event) -> None:
             bucket.append(event)

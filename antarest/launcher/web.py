@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import Annotated, List, Optional
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
@@ -50,10 +50,10 @@ def create_launcher_api() -> APIRouter:
         service: LauncherServiceDep,
         config: ConfigDep,
         study_id: UuidStr,
-        launcher: Optional[SanitizedStr] = None,
+        launcher: SanitizedStr | None = None,
         launcher_parameters: LauncherParametersDTO = LauncherParametersDTO(),
-        solver_presets_id: Optional[SanitizedStr] = None,
-        version: Optional[SanitizedStr] = None,
+        solver_presets_id: SanitizedStr | None = None,
+        version: SanitizedStr | None = None,
     ) -> JobCreationDTO:
         logger.info(f"Launching study {study_id} with options {launcher_parameters}")
         selected_launcher = launcher if launcher is not None else config.launcher.default
@@ -74,10 +74,10 @@ def create_launcher_api() -> APIRouter:
     )
     def get_job(
         service: LauncherServiceDep,
-        study: Optional[SanitizedStr] = None,
+        study: SanitizedStr | None = None,
         filter_orphans: bool = True,
-        latest: Optional[int] = None,
-    ) -> List[JobResultDTO]:
+        latest: int | None = None,
+    ) -> list[JobResultDTO]:
         logger.info(f"Fetching execution jobs for study {study or '<all>'}")
         return [job.to_dto() for job in service.get_jobs(study, filter_orphans, latest)]
 
@@ -150,7 +150,7 @@ def create_launcher_api() -> APIRouter:
         "/load",
         summary="Get the SLURM cluster or local machine load",
     )
-    def get_load(service: LauncherServiceDep, launcher_id: Optional[SanitizedStr] = None) -> LauncherLoadDTO:
+    def get_load(service: LauncherServiceDep, launcher_id: SanitizedStr | None = None) -> LauncherLoadDTO:
         logger.info("Fetching launcher load")
         try:
             return service.get_load(launcher_id)
@@ -187,7 +187,8 @@ def create_launcher_api() -> APIRouter:
         launcher_id = launcher_id or solver
         launcher_msg = f"launcher '{launcher_id}'" if launcher_id else "default launcher"
         logger.info(f"Fetching the list of solver versions for {launcher_msg}")
-        return service.get_solver_versions(launcher_id)
+        solver_versions = service.get_solver_versions(launcher_id)
+        return [f"{v:ddd}" for v in solver_versions]  # For backward compatibility
 
     @bp.post(
         "/solver-presets",
@@ -211,7 +212,7 @@ def create_launcher_api() -> APIRouter:
         "/solver-presets",
         summary="Retrieve all solver presets",
     )
-    def get_solver_presets_list(service: LauncherServiceDep) -> List[SolverPresets]:
+    def get_solver_presets_list(service: LauncherServiceDep) -> list[SolverPresets]:
         logger.info("Retrieving solver presets")
         return service.get_solver_presets_list()
 

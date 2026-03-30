@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Final, List
+from typing import Any, Final
 
 from pydantic import model_validator
 from pydantic_core.core_schema import ValidationInfo
@@ -81,7 +81,7 @@ class ReplaceUserResource(ICommand):
         )
 
     @override
-    def get_inner_blobs(self) -> List[str]:
+    def get_inner_blobs(self) -> list[str]:
         if self.data.blob_id:
             return [self.data.blob_id]
         return []

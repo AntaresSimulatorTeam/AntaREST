@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import Dict, List
 
 from typing_extensions import override
 
@@ -29,7 +28,7 @@ class _OutputSimulationModeMcAllLinksBis(FolderNode):
         matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         area_from: str,
-        link_names: List[str],
+        link_names: list[str],
     ):
         super().__init__(matrix_mapper, config)
         self.area_from = area_from
@@ -58,7 +57,7 @@ class OutputSimulationLinks(FolderNode):
     def build(self) -> TREE:
         children: TREE = {}
         links = [d.stem for d in self.config.path.iterdir()]
-        areas: Dict[str, List[str]] = {}
+        areas: dict[str, list[str]] = {}
         for link in links:
             areas.setdefault(link.split(" - ")[0], []).append(link)
         for area_from, link_names in areas.items():

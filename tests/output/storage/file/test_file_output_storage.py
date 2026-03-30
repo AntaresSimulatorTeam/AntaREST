@@ -39,7 +39,14 @@ from antarest.output.storage.file.storage import (
     IFileOutputsProvider,
     InStudyFileOutputStorage,
 )
-from antarest.output.storage.output_storage import OutputDetails, OutputMetadata, OutputStorageType
+from antarest.output.storage.output_storage import (
+    OutputDetails,
+    OutputMetadata,
+    OutputSettings,
+    OutputSettingsGeneral,
+    OutputSettingsOptimization,
+    OutputStorageType,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -137,6 +144,23 @@ def test_file_output_storage(file_output_storage):
             nb_years=1,
             archived=False,
             storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
+            settings=OutputSettings(
+                general=OutputSettingsGeneral(
+                    mode="Economy",
+                    horizon="2030",
+                    nbyears=1,
+                    simulation_start=1,
+                    simulation_end=7,
+                    january_1st="Monday",
+                    first_month_in_year="january",
+                    first_weekday="Monday",
+                    leapyear=False,
+                    year_by_year=True,
+                    user_playlist=True,
+                ),
+                optimization=OutputSettingsOptimization(transmission_capacities=True),
+                playlist=[1],
+            ),
         ),
         OutputDetails(
             name="20201014-1425eco-goodbye",
@@ -146,6 +170,23 @@ def test_file_output_storage(file_output_storage):
             nb_years=2,
             archived=False,
             storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
+            settings=OutputSettings(
+                general=OutputSettingsGeneral(
+                    mode="Economy",
+                    horizon="2030",
+                    nbyears=2,
+                    simulation_start=1,
+                    simulation_end=14,
+                    january_1st="Monday",
+                    first_month_in_year="january",
+                    first_weekday="Monday",
+                    leapyear=False,
+                    year_by_year=True,
+                    user_playlist=True,
+                ),
+                optimization=OutputSettingsOptimization(transmission_capacities=True),
+                playlist=[1, 2],
+            ),
         ),
         OutputDetails(
             name="20201014-1427eco",
@@ -155,6 +196,23 @@ def test_file_output_storage(file_output_storage):
             nb_years=1,
             archived=False,
             storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
+            settings=OutputSettings(
+                general=OutputSettingsGeneral(
+                    mode="Economy",
+                    horizon="2030",
+                    nbyears=1,
+                    simulation_start=1,
+                    simulation_end=7,
+                    january_1st="Monday",
+                    first_month_in_year="january",
+                    first_weekday="Monday",
+                    leapyear=False,
+                    year_by_year=False,
+                    user_playlist=True,
+                ),
+                optimization=OutputSettingsOptimization(transmission_capacities=True),
+                playlist=[1],
+            ),
         ),
         OutputDetails(
             name="20201014-1430adq",
@@ -164,6 +222,23 @@ def test_file_output_storage(file_output_storage):
             nb_years=1,
             archived=False,
             storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
+            settings=OutputSettings(
+                general=OutputSettingsGeneral(
+                    mode="Adequacy",
+                    horizon="2030",
+                    nbyears=1,
+                    simulation_start=1,
+                    simulation_end=7,
+                    january_1st="Monday",
+                    first_month_in_year="january",
+                    first_weekday="Monday",
+                    leapyear=False,
+                    year_by_year=False,
+                    user_playlist=True,
+                ),
+                optimization=OutputSettingsOptimization(transmission_capacities=True),
+                playlist=[1],
+            ),
         ),
         OutputDetails(
             name="20201014-1430adq-2",
@@ -173,6 +248,23 @@ def test_file_output_storage(file_output_storage):
             nb_years=1,
             archived=True,
             storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
+            settings=OutputSettings(
+                general=OutputSettingsGeneral(
+                    mode="Adequacy",
+                    horizon="2030",
+                    nbyears=1,
+                    simulation_start=1,
+                    simulation_end=7,
+                    january_1st="Monday",
+                    first_month_in_year="january",
+                    first_weekday="Monday",
+                    leapyear=False,
+                    year_by_year=False,
+                    user_playlist=True,
+                ),
+                optimization=OutputSettingsOptimization(transmission_capacities=True),
+                playlist=[1],
+            ),
         ),
         OutputDetails(
             name="20241807-1540eco-extra-outputs",
@@ -182,6 +274,23 @@ def test_file_output_storage(file_output_storage):
             nb_years=1,
             archived=False,
             storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
+            settings=OutputSettings(
+                general=OutputSettingsGeneral(
+                    mode="Economy",
+                    horizon="",
+                    nbyears=1,
+                    simulation_start=1,
+                    simulation_end=365,
+                    january_1st="Monday",
+                    first_month_in_year="january",
+                    first_weekday="Monday",
+                    leapyear=False,
+                    year_by_year=True,
+                    user_playlist=False,
+                ),
+                optimization=OutputSettingsOptimization(transmission_capacities="local-values"),
+                playlist=[],
+            ),
         ),
     ]
 

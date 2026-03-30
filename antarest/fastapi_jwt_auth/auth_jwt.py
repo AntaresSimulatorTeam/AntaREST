@@ -1,8 +1,8 @@
 import hmac
 import re
 import uuid
+from collections.abc import Sequence
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Optional, Sequence, Union
 
 import jwt
 from fastapi import Request, Response, WebSocket
@@ -59,13 +59,13 @@ class AuthJWT(AuthConfig):
         if not header_type:
             # <HeaderName>: <JWT>
             if len(parts) != 1:
-                msg = "Bad {} header. Expected value '<JWT>'".format(header_name)
+                msg = f"Bad {header_name} header. Expected value '<JWT>'"
                 raise InvalidHeaderError(status_code=422, message=msg)
             self._token = parts[0]
         else:
             # <HeaderName>: <HeaderType> <JWT>
-            if not re.match(r"{}\s".format(header_type), auth) or len(parts) != 2:
-                msg = "Bad {} header. Expected value '{} <JWT>'".format(header_name, header_type)
+            if not re.match(rf"{header_type}\s", auth) or len(parts) != 2:
+                msg = f"Bad {header_name} header. Expected value '{header_type} <JWT>'"
                 raise InvalidHeaderError(status_code=422, message=msg)
             self._token = parts[1]
 
@@ -94,11 +94,11 @@ class AuthJWT(AuthConfig):
         symmetric_algorithms, asymmetric_algorithms = {"HS256", "HS384", "HS512"}, requires_cryptography
 
         if algorithm not in symmetric_algorithms and algorithm not in asymmetric_algorithms:
-            raise ValueError("Algorithm {} could not be found".format(algorithm))
+            raise ValueError(f"Algorithm {algorithm} could not be found")
 
         if algorithm in symmetric_algorithms:
             if not self._secret_key:
-                raise RuntimeError("authjwt_secret_key must be set when using symmetric algorithm {}".format(algorithm))
+                raise RuntimeError(f"authjwt_secret_key must be set when using symmetric algorithm {algorithm}")
 
             return self._secret_key
 
@@ -109,31 +109,27 @@ class AuthJWT(AuthConfig):
 
         if process == "encode":
             if not self._private_key:
-                raise RuntimeError(
-                    "authjwt_private_key must be set when using asymmetric algorithm {}".format(algorithm)
-                )
+                raise RuntimeError(f"authjwt_private_key must be set when using asymmetric algorithm {algorithm}")
 
             return self._private_key
 
         if process == "decode":
             if not self._public_key:
-                raise RuntimeError(
-                    "authjwt_public_key must be set when using asymmetric algorithm {}".format(algorithm)
-                )
+                raise RuntimeError(f"authjwt_public_key must be set when using asymmetric algorithm {algorithm}")
 
             return self._public_key
 
     def _create_token(
         self,
-        subject: Union[str, int],
+        subject: str | int,
         type_token: str,
-        exp_time: Optional[int],
-        fresh: Optional[bool] = False,
-        algorithm: Optional[str] = None,
-        headers: Optional[Dict] = None,
-        issuer: Optional[str] = None,
-        audience: Optional[Union[str, Sequence[str]]] = None,
-        user_claims: Optional[Dict] = {},
+        exp_time: int | None,
+        fresh: bool | None = False,
+        algorithm: str | None = None,
+        headers: dict | None = None,
+        issuer: str | None = None,
+        audience: str | Sequence[str] | None = None,
+        user_claims: dict | None = {},
     ) -> str:
         """
         Create token for access_token and refresh_token (utf-8)
@@ -200,7 +196,7 @@ class AuthJWT(AuthConfig):
         """
         return self._token_in_denylist_callback is not None
 
-    def _check_token_is_revoked(self, raw_token: Dict[str, Union[str, int, bool]]) -> None:
+    def _check_token_is_revoked(self, raw_token: dict[str, str | int | bool]) -> None:
         """
         Ensure that AUTHJWT_DENYLIST_ENABLED is true and callback regulated, and then
         call function denylist callback with passing decode JWT, if true
@@ -219,9 +215,7 @@ class AuthJWT(AuthConfig):
         if self._token_in_denylist_callback.__func__(raw_token):
             raise RevokedTokenError(status_code=401, message="Token has been revoked")
 
-    def _get_expired_time(
-        self, type_token: str, expires_time: Optional[Union[timedelta, int, bool]] = None
-    ) -> Union[None, int]:
+    def _get_expired_time(self, type_token: str, expires_time: timedelta | int | bool | None = None) -> None | int:
         """
         Dynamic token expired, if expires_time is False exp claim not created
 
@@ -254,13 +248,13 @@ class AuthJWT(AuthConfig):
 
     def create_access_token(
         self,
-        subject: Union[str, int],
-        fresh: Optional[bool] = False,
-        algorithm: Optional[str] = None,
-        headers: Optional[Dict] = None,
-        expires_time: Optional[Union[timedelta, int, bool]] = None,
-        audience: Optional[Union[str, Sequence[str]]] = None,
-        user_claims: Optional[Dict] = {},
+        subject: str | int,
+        fresh: bool | None = False,
+        algorithm: str | None = None,
+        headers: dict | None = None,
+        expires_time: timedelta | int | bool | None = None,
+        audience: str | Sequence[str] | None = None,
+        user_claims: dict | None = {},
     ) -> str:
         """
         Create a access token with 15 minutes for expired time (default),
@@ -282,12 +276,12 @@ class AuthJWT(AuthConfig):
 
     def create_refresh_token(
         self,
-        subject: Union[str, int],
-        algorithm: Optional[str] = None,
-        headers: Optional[Dict] = None,
-        expires_time: Optional[Union[timedelta, int, bool]] = None,
-        audience: Optional[Union[str, Sequence[str]]] = None,
-        user_claims: Optional[Dict] = {},
+        subject: str | int,
+        algorithm: str | None = None,
+        headers: dict | None = None,
+        expires_time: timedelta | int | bool | None = None,
+        audience: str | Sequence[str] | None = None,
+        user_claims: dict | None = {},
     ) -> str:
         """
         Create a refresh token with 30 days for expired time (default),
@@ -315,7 +309,7 @@ class AuthJWT(AuthConfig):
         return self._verified_token(encoded_token)["csrf"]
 
     def set_access_cookies(
-        self, encoded_access_token: str, response: Optional[Response] = None, max_age: Optional[int] = None
+        self, encoded_access_token: str, response: Response | None = None, max_age: int | None = None
     ) -> None:
         """
         Configures the response to set access token in a cookie.
@@ -363,7 +357,7 @@ class AuthJWT(AuthConfig):
             )
 
     def set_refresh_cookies(
-        self, encoded_refresh_token: str, response: Optional[Response] = None, max_age: Optional[int] = None
+        self, encoded_refresh_token: str, response: Response | None = None, max_age: int | None = None
     ) -> None:
         """
         Configures the response to set refresh token in a cookie.
@@ -410,7 +404,7 @@ class AuthJWT(AuthConfig):
                 samesite=self._cookie_samesite,
             )
 
-    def unset_jwt_cookies(self, response: Optional[Response] = None) -> None:
+    def unset_jwt_cookies(self, response: Response | None = None) -> None:
         """
         Unset (delete) all jwt stored in a cookie
 
@@ -419,7 +413,7 @@ class AuthJWT(AuthConfig):
         self.unset_access_cookies(response)
         self.unset_refresh_cookies(response)
 
-    def unset_access_cookies(self, response: Optional[Response] = None) -> None:
+    def unset_access_cookies(self, response: Response | None = None) -> None:
         """
         Remove access token and access CSRF double submit from the response cookies
 
@@ -442,7 +436,7 @@ class AuthJWT(AuthConfig):
                 self._access_csrf_cookie_key, path=self._access_csrf_cookie_path, domain=self._cookie_domain
             )
 
-    def unset_refresh_cookies(self, response: Optional[Response] = None) -> None:
+    def unset_refresh_cookies(self, response: Response | None = None) -> None:
         """
         Remove refresh token and refresh CSRF double submit from the response cookies
 
@@ -467,8 +461,8 @@ class AuthJWT(AuthConfig):
 
     def _verify_and_get_jwt_optional_in_cookies(
         self,
-        request: Union[Request, WebSocket],
-        csrf_token: Optional[str] = None,
+        request: Request | WebSocket,
+        csrf_token: str | None = None,
     ) -> "AuthJWT":
         """
         Optionally check if cookies have a valid access token. if an access token present in
@@ -506,9 +500,9 @@ class AuthJWT(AuthConfig):
     def _verify_and_get_jwt_in_cookies(
         self,
         type_token: str,
-        request: Union[Request, WebSocket],
-        csrf_token: Optional[str] = None,
-        fresh: Optional[bool] = False,
+        request: Request | WebSocket,
+        csrf_token: str | None = None,
+        fresh: bool | None = False,
     ) -> "AuthJWT":
         """
         Check if cookies have a valid access or refresh token. if an token present in
@@ -540,7 +534,7 @@ class AuthJWT(AuthConfig):
                 csrf_token = request.headers.get(self._refresh_csrf_header_name)
 
         if not cookie:
-            raise MissingTokenError(status_code=401, message="Missing cookie {}".format(cookie_key))
+            raise MissingTokenError(status_code=401, message=f"Missing cookie {cookie_key}")
 
         if self._cookie_csrf_protect and not csrf_token:
             if isinstance(request, WebSocket) or request.method in self._csrf_methods:
@@ -571,9 +565,7 @@ class AuthJWT(AuthConfig):
         if token and self.get_raw_jwt(token)["type"] != "access":
             raise AccessTokenRequired(status_code=422, message="Only access tokens are allowed")
 
-    def _verify_jwt_in_request(
-        self, token: str, type_token: str, token_from: str, fresh: Optional[bool] = False
-    ) -> None:
+    def _verify_jwt_in_request(self, token: str, type_token: str, token_from: str, fresh: bool | None = False) -> None:
         """
         Ensure that the requester has a valid token. this also check the freshness of the access token
 
@@ -589,18 +581,16 @@ class AuthJWT(AuthConfig):
 
         if not token:
             if token_from == "headers":
-                raise MissingTokenError(status_code=401, message="Missing {} Header".format(self._header_name))
+                raise MissingTokenError(status_code=401, message=f"Missing {self._header_name} Header")
             if token_from == "websocket":
-                raise MissingTokenError(
-                    status_code=1008, message="Missing {} token from Query or Path".format(type_token)
-                )
+                raise MissingTokenError(status_code=1008, message=f"Missing {type_token} token from Query or Path")
 
         # verify jwt
         issuer = self._decode_issuer if type_token == "access" else None
         self._verifying_token(token, issuer)
 
         if self.get_raw_jwt(token)["type"] != type_token:
-            msg = "Only {} tokens are allowed".format(type_token)
+            msg = f"Only {type_token} tokens are allowed"
             if type_token == "access":
                 raise AccessTokenRequired(status_code=422, message=msg)
             if type_token == "refresh":
@@ -609,7 +599,7 @@ class AuthJWT(AuthConfig):
         if fresh and not self.get_raw_jwt(token)["fresh"]:
             raise FreshTokenRequired(status_code=401, message="Fresh token required")
 
-    def _verifying_token(self, encoded_token: str, issuer: Optional[str] = None) -> None:
+    def _verifying_token(self, encoded_token: str, issuer: str | None = None) -> None:
         """
         Verified token and check if token is revoked
 
@@ -620,7 +610,7 @@ class AuthJWT(AuthConfig):
         if raw_token["type"] in self._denylist_token_checks:
             self._check_token_is_revoked(raw_token)
 
-    def _verified_token(self, encoded_token: str, issuer: Optional[str] = None) -> Dict[str, Union[str, int, bool]]:
+    def _verified_token(self, encoded_token: str, issuer: str | None = None) -> dict[str, str | int | bool]:
         """
         Verified token and catch all error from jwt package and return decode token
 
@@ -646,9 +636,9 @@ class AuthJWT(AuthConfig):
     def jwt_required(
         self,
         auth_from: str = "request",
-        token: Optional[str] = None,
-        websocket: Optional[WebSocket] = None,
-        csrf_token: Optional[str] = None,
+        token: str | None = None,
+        websocket: WebSocket | None = None,
+        csrf_token: str | None = None,
     ) -> None:
         """
         Only access token can access this function
@@ -681,9 +671,9 @@ class AuthJWT(AuthConfig):
     def jwt_optional(
         self,
         auth_from: str = "request",
-        token: Optional[str] = None,
-        websocket: Optional[WebSocket] = None,
-        csrf_token: Optional[str] = None,
+        token: str | None = None,
+        websocket: WebSocket | None = None,
+        csrf_token: str | None = None,
     ) -> None:
         """
         If an access token in present in the request you can get data from get_raw_jwt() or get_jwt_subject(),
@@ -718,9 +708,9 @@ class AuthJWT(AuthConfig):
     def jwt_refresh_token_required(
         self,
         auth_from: str = "request",
-        token: Optional[str] = None,
-        websocket: Optional[WebSocket] = None,
-        csrf_token: Optional[str] = None,
+        token: str | None = None,
+        websocket: WebSocket | None = None,
+        csrf_token: str | None = None,
     ) -> None:
         """
         This function will ensure that the requester has a valid refresh token
@@ -753,9 +743,9 @@ class AuthJWT(AuthConfig):
     def fresh_jwt_required(
         self,
         auth_from: str = "request",
-        token: Optional[str] = None,
-        websocket: Optional[WebSocket] = None,
-        csrf_token: Optional[str] = None,
+        token: str | None = None,
+        websocket: WebSocket | None = None,
+        csrf_token: str | None = None,
     ) -> None:
         """
         This function will ensure that the requester has a valid access token and fresh token
@@ -785,7 +775,7 @@ class AuthJWT(AuthConfig):
                 if self.jwt_in_cookies:
                     self._verify_and_get_jwt_in_cookies("access", self._request, fresh=True)
 
-    def get_raw_jwt(self, encoded_token: Optional[str] = None) -> Optional[Dict[str, Union[str, int, bool]]]:
+    def get_raw_jwt(self, encoded_token: str | None = None) -> dict[str, str | int | bool] | None:
         """
         this will return the python dictionary which has all of the claims of the JWT that is accessing the endpoint.
         If no JWT is currently present, return None instead
@@ -808,7 +798,7 @@ class AuthJWT(AuthConfig):
         """
         return self._verified_token(encoded_token)["jti"]
 
-    def get_jwt_subject(self) -> Optional[Union[str, int]]:
+    def get_jwt_subject(self) -> str | int | None:
         """
         this will return the subject of the JWT that is accessing this endpoint.
         If no JWT is present, `None` is returned instead.

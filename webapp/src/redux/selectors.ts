@@ -79,24 +79,6 @@ export const getStudyIds = studiesSelectors.selectIds;
 
 export const getStudy = studiesSelectors.selectById;
 
-export const getFavoriteStudyIds = (state: AppState): StudiesState["favorites"] => {
-  return getStudiesState(state).favorites;
-};
-
-export const getFavoriteStudies = createSelector(
-  getStudiesById,
-  getFavoriteStudyIds,
-  (studiesById, favoriteIds) => {
-    return favoriteIds
-      .map((favId) => studiesById[favId])
-      .filter((item): item is StudyMetadata => !!item);
-  },
-);
-
-export const isStudyFavorite = (state: AppState, id: StudyMetadata["id"]): boolean => {
-  return getFavoriteStudyIds(state).includes(id);
-};
-
 export const getStudyFilters = (state: AppState): StudyFilters => {
   return getStudiesState(state).filters;
 };

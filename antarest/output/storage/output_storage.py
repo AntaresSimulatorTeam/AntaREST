@@ -11,13 +11,14 @@
 # This file is part of the Antares project.
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import BinaryIO, Iterator, Optional, Sequence
+from typing import Any, BinaryIO
 
 import polars as pl
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field, SerializerFunctionWrapHandler, model_serializer
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
@@ -54,6 +55,46 @@ class OutputMetadata:
     archived: bool
 
 
+# The following settings class are used by a known client,
+# we keep it here for compatibility reasons, but that could be removed in the future
+class OutputSettingsGeneral(AntaresBaseModel):
+    model_config = ConfigDict(
+        frozen=True,
+        populate_by_name=True,
+    )
+
+    mode: str
+    horizon: str
+    nbyears: int
+    simulation_start: int = Field(alias="simulation.start")
+    simulation_end: int = Field(alias="simulation.end")
+    january_1st: str = Field(alias="january.1st")
+    first_month_in_year: str = Field(alias="first-month-in-year")
+    first_weekday: str = Field(alias="first.weekday")
+    leapyear: bool
+    year_by_year: bool = Field(alias="year-by-year")
+    user_playlist: bool = Field(alias="user-playlist")
+
+
+class OutputSettingsOptimization(AntaresBaseModel):
+    model_config = ConfigDict(
+        frozen=True,
+        populate_by_name=True,
+    )
+    transmission_capacities: str | bool = Field(alias="transmission-capacities")
+
+
+class OutputSettings(AntaresBaseModel):
+    model_config = ConfigDict(
+        frozen=True,
+        populate_by_name=True,
+    )
+
+    general: OutputSettingsGeneral
+    optimization: OutputSettingsOptimization
+    playlist: list[int] | None = None
+
+
 class OutputDetails(AntaresBaseModel):
     """
     More detailed metadata about a study output.
@@ -74,6 +115,15 @@ class OutputDetails(AntaresBaseModel):
     archived: bool
     storage_type: OutputStorageType
 
+    settings: OutputSettings | None = Field(deprecated=True, default=None)
+
+    @model_serializer(mode="wrap")
+    def _serialize(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+        data: dict[str, object] = handler(self)
+        if data.get("settings") is None:
+            data.pop("settings", None)
+        return data
+
 
 class IOutputStorage(ABC):
     """
@@ -93,7 +143,7 @@ class IOutputStorage(ABC):
         self,
         study_id: str,
         output: BinaryIO | Path,
-        output_name_suffix: Optional[str] = None,
+        output_name_suffix: str | None = None,
         logs: SimulationLogs = SimulationLogs.no_logs(),
     ) -> str:
         """
@@ -200,7 +250,7 @@ class IOutputStorage(ABC):
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
         transform_columns_headers: bool,
-        mc_years: Optional[Sequence[int]] = None,
+        mc_years: Sequence[int] | None = None,
     ) -> Iterator[pl.DataFrame]:
         """
         Aggregates output data based on several filtering conditions, as a stream of dataframes.

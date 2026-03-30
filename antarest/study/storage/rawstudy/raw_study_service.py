@@ -13,9 +13,10 @@ import logging
 import shutil
 import tempfile
 import time
+from collections.abc import Sequence
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
-from typing import BinaryIO, Optional, Sequence
+from typing import BinaryIO
 from uuid import uuid4
 
 from antares.study.version import StudyVersion
@@ -75,7 +76,7 @@ class RawStudyService(AbstractStorageService):
         return self._matrix_service
 
     def update_from_raw_meta(
-        self, metadata: RawStudy, fallback_on_default: Optional[bool] = False, study_path: Optional[Path] = None
+        self, metadata: RawStudy, fallback_on_default: bool | None = False, study_path: Path | None = None
     ) -> None:
         """
         Update metadata from study raw metadata
@@ -168,7 +169,7 @@ class RawStudyService(AbstractStorageService):
         self,
         metadata: Study,
         use_cache: bool = True,
-        output_dir: Optional[Path] = None,
+        output_dir: Path | None = None,
     ) -> FileStudy:
         """
         Fetch a study object and its config
@@ -437,7 +438,7 @@ class RawStudyService(AbstractStorageService):
         if not matrix_nodes:
             return
 
-        matrix_ids = self._matrix_service.create_batch((node.parse_content() for node in matrix_nodes))
+        matrix_ids = self._matrix_service.create_batch(node.parse_content() for node in matrix_nodes)
         for k, node in enumerate(matrix_nodes):
             node.matrix_mapper.save_matrix(node, matrix_ids[k])
 
@@ -477,10 +478,10 @@ class RawStudyService(AbstractStorageService):
         shutil.copytree(src=study_dir, dst=dest, ignore=ignore_outputs)
 
         stop_time = time.time()
-        duration = "{:.3f}".format(stop_time - start_time)
+        duration = f"{stop_time - start_time:.3f}"
         logger.info(f"Study '{study_dir}' exported (flat mode) in {duration}s")
         if denormalize:
             study = self.study_factory.create_from_fs(dest, is_study_managed, "", use_cache=False)
             self.denormalize_study(study)
-            duration = "{:.3f}".format(time.time() - stop_time)
+            duration = f"{time.time() - stop_time:.3f}"
             logger.info(f"Study '{study_dir}' denormalized in {duration}s")

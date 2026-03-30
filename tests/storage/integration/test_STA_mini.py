@@ -15,7 +15,7 @@ import shutil
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 from unittest.mock import Mock
 
 import numpy as np
@@ -77,7 +77,7 @@ def assert_url_content(client: TestClient, url: str, expected_output: dict[str, 
     assert_study(res.json(), expected_output)
 
 
-def assert_with_errors(storage_service: StudyService, url: str, expected_output: Union[str, dict[str, Any]]) -> None:
+def assert_with_errors(storage_service: StudyService, url: str, expected_output: str | dict[str, Any]) -> None:
     url = url[len("/v1/studies/") :]
     uuid, url = url.split("/raw?path=")
     # We use the `get_raw_content` method as it's the one called by the GET /raw endpoint.

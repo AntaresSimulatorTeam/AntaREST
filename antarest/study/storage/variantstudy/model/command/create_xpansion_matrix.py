@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import List
 
 from pydantic import Field, ValidationInfo, field_validator
 from typing_extensions import override
@@ -35,10 +34,10 @@ class AbstractCreateXpansionMatrix(ICommand):
     # ==================
 
     filename: str
-    matrix: List[List[MatrixData]] | str = Field(validate_default=True)
+    matrix: list[list[MatrixData]] | str = Field(validate_default=True)
 
     @field_validator("matrix", mode="before")
-    def matrix_validator(cls, matrix: List[List[MatrixData]] | str, values: ValidationInfo) -> str:
+    def matrix_validator(cls, matrix: list[list[MatrixData]] | str, values: ValidationInfo) -> str:
         return validate_matrix(matrix, values.data)
 
     @override

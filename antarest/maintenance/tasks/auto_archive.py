@@ -15,7 +15,7 @@
 import datetime
 import logging
 import time
-from typing import List, NamedTuple, Optional
+from typing import NamedTuple
 
 from pydantic import BaseModel
 
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 class ArchiveStudyResult(NamedTuple):
     archived_studies: int
-    error: Optional[str] = None
+    error: str | None = None
 
 
 class AutoArchiveTaskResult(BaseModel):
@@ -43,8 +43,8 @@ class AutoArchiveTaskResult(BaseModel):
     archived_studies: int
     duration_seconds: float
     dry_run: bool
-    errors: List[str] = []
-    reason: Optional[str] = None
+    errors: list[str] = []
+    reason: str | None = None
 
 
 class StudyToArchive(NamedTuple):

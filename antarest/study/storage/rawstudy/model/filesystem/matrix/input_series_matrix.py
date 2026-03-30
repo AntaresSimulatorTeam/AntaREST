@@ -12,8 +12,9 @@
 import io
 import logging
 import shutil
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Optional, TypeAlias
+from typing import TypeAlias
 
 import numpy as np
 import numpy.typing as npt
@@ -47,8 +48,8 @@ class InputSeriesMatrix(MatrixNode):
         matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         freq: MatrixFrequency = MatrixFrequency.HOURLY,
-        nb_columns: Optional[int] = None,
-        default_empty: Optional[MatrixSupplier] = None,  # optional only for the capacity matrix in Xpansion
+        nb_columns: int | None = None,
+        default_empty: MatrixSupplier | None = None,  # optional only for the capacity matrix in Xpansion
         should_exist: bool = True,
     ):
         super().__init__(matrix_mapper=matrix_mapper, config=config, freq=freq)

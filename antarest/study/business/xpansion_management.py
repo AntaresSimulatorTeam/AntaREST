@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import List
 
 import polars as pl
 from fastapi import UploadFile
@@ -104,7 +103,7 @@ class XpansionManager:
         logger.info(f"Getting candidate '{candidate_name}' of study '{study.id}'")
         return study.get_study_dao().get_xpansion_candidate(candidate_name)
 
-    def get_candidates(self, study: StudyInterface) -> List[XpansionCandidate]:
+    def get_candidates(self, study: StudyInterface) -> list[XpansionCandidate]:
         logger.info(f"Getting all candidates of study {study.id}")
         return study.get_study_dao().get_all_xpansion_candidates()
 

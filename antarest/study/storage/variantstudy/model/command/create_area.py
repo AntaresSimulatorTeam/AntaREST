@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, Final
+from typing import Any, Final
 
 from pydantic import model_validator
 from pydantic_core.core_schema import ValidationInfo
@@ -54,7 +54,7 @@ class CreateArea(ICommand):
 
     @model_validator(mode="before")
     @classmethod
-    def _validate_metadata(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+    def _validate_metadata(cls, values: dict[str, Any], info: ValidationInfo) -> dict[str, Any]:
         # Handle version 1 format: {"area_name": "x", "metadata": {...}}
         # The metadata field was never used and is dropped in version 2
         if "metadata" in values:

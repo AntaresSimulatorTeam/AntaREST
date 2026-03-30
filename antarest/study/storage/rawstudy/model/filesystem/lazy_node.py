@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Generic, List, Optional
+from typing import Generic
 
 from typing_extensions import override
 
@@ -26,7 +26,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
     @override
     def get(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
@@ -39,30 +39,30 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
     @override
     def get_node_and_remainder(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
     ) -> tuple[INode[G, S, V], list[str]]:
         self._assert_url_end(url)
         return self, []
 
     @override
-    def delete(self, url: Optional[List[str]] = None) -> None:
+    def delete(self, url: list[str] | None = None) -> None:
         self._assert_url_end(url)
         if self.config.path.exists():
             self.config.path.unlink()
 
     @override
-    def save(self, data: S, url: Optional[List[str]] = None) -> None:
+    def save(self, data: S, url: list[str] | None = None) -> None:
         self._assert_not_in_zipped_file()
         self._assert_url_end(url)
         self.dump(data, url)
 
-    def get_lazy_content(self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False) -> str:
+    def get_lazy_content(self, url: list[str] | None = None, depth: int = -1, expanded: bool = False) -> str:
         return f"file://{self.config.path.name}"
 
     @abstractmethod
     def load(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
@@ -82,7 +82,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         raise NotImplementedError()
 
     @abstractmethod
-    def dump(self, data: S, url: Optional[List[str]] = None) -> None:
+    def dump(self, data: S, url: list[str] | None = None) -> None:
         """
         Store data on tree.
 

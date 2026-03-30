@@ -11,8 +11,9 @@
 # This file is part of the Antares project.
 
 import logging
+from collections.abc import Callable
 from datetime import timedelta
-from typing import Any, Callable, Optional, Tuple, TypeAlias, Union
+from typing import Any, TypeAlias
 
 from antarest.core.jwt import JWTUser
 from antarest.core.serde import AntaresBaseModel
@@ -27,7 +28,7 @@ REFRESH_TOKEN_DURATION = timedelta(hours=30)
 IdentityValidator: TypeAlias = Callable[[AuthJWT], JWTUser]
 
 
-def get_user_from_token(token: str, jwt_manager: AuthJWT) -> Optional[JWTUser]:
+def get_user_from_token(token: str, jwt_manager: AuthJWT) -> JWTUser | None:
     try:
         token_data = jwt_manager._verified_token(token)
         return JWTUser.model_validate(from_json(token_data["sub"]))
@@ -38,9 +39,9 @@ def get_user_from_token(token: str, jwt_manager: AuthJWT) -> Optional[JWTUser]:
 
 class JwtSettings(AntaresBaseModel):
     authjwt_secret_key: str
-    authjwt_token_location: Tuple[str, ...]
-    authjwt_access_token_expires: Union[int, timedelta] = ACCESS_TOKEN_DURATION
-    authjwt_refresh_token_expires: Union[int, timedelta] = REFRESH_TOKEN_DURATION
+    authjwt_token_location: tuple[str, ...]
+    authjwt_access_token_expires: int | timedelta = ACCESS_TOKEN_DURATION
+    authjwt_refresh_token_expires: int | timedelta = REFRESH_TOKEN_DURATION
     authjwt_denylist_enabled: bool = True
     authjwt_denylist_token_checks: Any = {"access", "refresh"}
     authjwt_cookie_csrf_protect: bool = True

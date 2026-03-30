@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 import textwrap
 from pathlib import Path
-from typing import Type
 
 import pytest
 from antares.study.version import StudyVersion
@@ -89,7 +88,7 @@ def test_group_is_parsed_to_lower_case(
 def test_cluster_ini_list(
     study_dir: Path,
     ini_file: Path,
-    ini_node_cluster_class: Type[
+    ini_node_cluster_class: type[
         InputSTStorageAreaList | ClusteredRenewableClusterConfig | InputThermalClustersAreaList
     ],
 ) -> None:

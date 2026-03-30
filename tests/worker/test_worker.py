@@ -12,7 +12,6 @@
 
 import time
 from pathlib import Path
-from typing import List
 
 from typing_extensions import override
 
@@ -25,7 +24,7 @@ from tests.helpers import auto_retry_assert
 
 
 class DummyWorker(AbstractWorker):
-    def __init__(self, event_bus: IEventBus, accept: List[str], tmp_path: Path):
+    def __init__(self, event_bus: IEventBus, accept: list[str], tmp_path: Path):
         super().__init__("test", event_bus, accept)
         self.tmp_path = tmp_path
 

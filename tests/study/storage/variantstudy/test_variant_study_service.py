@@ -299,7 +299,7 @@ class TestVariantStudyService:
         # For each variant created
         for index in range(3):
             with current_user_context(DEFAULT_ADMIN_USER):
-                variant_study = variant_study_service.create_variant_study(raw_study.id, "Variant{}".format(str(index)))
+                variant_study = variant_study_service.create_variant_study(raw_study.id, f"Variant{str(index)}")
                 variant_list.append(variant_study)
                 # Generate a snapshot for each variant
                 variant_study_service.generate(variant_list[index].id, False, False)
@@ -338,17 +338,17 @@ class TestVariantStudyService:
             assert list(variant.iterdir())
 
         # Simulate access for two old snapshots
-        variant_list[0].last_access = datetime.datetime.now(datetime.timezone.utc).replace(
-            tzinfo=None
-        ) - datetime.timedelta(days=60)
-        variant_list[1].last_access = datetime.datetime.now(datetime.timezone.utc).replace(
-            tzinfo=None
-        ) - datetime.timedelta(hours=6)
+        variant_list[0].last_access = datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - datetime.timedelta(
+            days=60
+        )
+        variant_list[1].last_access = datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - datetime.timedelta(
+            hours=6
+        )
 
         # Simulate access for a recent one
-        variant_list[2].last_access = datetime.datetime.now(datetime.timezone.utc).replace(
-            tzinfo=None
-        ) - datetime.timedelta(hours=1)
+        variant_list[2].last_access = datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - datetime.timedelta(
+            hours=1
+        )
         db.session.commit()
 
         # Clear old snapshots

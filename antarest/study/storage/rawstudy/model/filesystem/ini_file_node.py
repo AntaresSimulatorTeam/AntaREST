@@ -19,7 +19,7 @@ import zipfile
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, cast
 
 import py7zr
 import pydantic_core
@@ -213,7 +213,7 @@ def _match_option(data: JSON, section: str, option: str) -> OptionMatch:
     )
 
 
-def _match_url(data: JSON, url: List[str], depth: int | None = None) -> IniMatch:
+def _match_url(data: JSON, url: list[str], depth: int | None = None) -> IniMatch:
     if len(url) == 2:
         return _match_option(data, section=url[0], option=url[1])
     elif len(url) == 1:
@@ -228,15 +228,15 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     def __init__(
         self,
         config: FileStudyTreeConfig,
-        reader: Optional[IReader] = None,
-        writer: Optional[IniWriter] = None,
+        reader: IReader | None = None,
+        writer: IniWriter | None = None,
     ):
         super().__init__(config)
         self.path = config.path
         self.reader = reader or IniReader()
         self.writer = writer or IniWriter()
 
-    def _get_filtering_kwargs(self, url: List[str]) -> Dict[str, str]:
+    def _get_filtering_kwargs(self, url: list[str]) -> dict[str, str]:
         """
         Extracts the filtering arguments from the URL components.
 
@@ -260,7 +260,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     @override
     def get(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
@@ -294,12 +294,12 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     @override
     def get_node_and_remainder(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
     ) -> tuple[INode[SUB_JSON, SUB_JSON, JSON], list[str]]:
         return self, url or []
 
     @override
-    def save(self, data: SUB_JSON, url: Optional[List[str]] = None) -> None:
+    def save(self, data: SUB_JSON, url: list[str] | None = None) -> None:
         self._assert_not_in_zipped_file()
         url = url or []
         with FileLock(
@@ -319,7 +319,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             self.writer.write(updated_data, self.path)
 
     @override
-    def delete(self, url: Optional[List[str]] = None) -> None:
+    def delete(self, url: list[str] | None = None) -> None:
         """
         Deletes the specified section or key from the INI file,
         or the entire INI file if no URL is provided.

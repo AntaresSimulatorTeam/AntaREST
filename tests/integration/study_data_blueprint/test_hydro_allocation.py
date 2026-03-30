@@ -273,11 +273,11 @@ class TestHydroAllocation:
 
         # replace double '[' by single '['
         for area in all_areas:
-            with open(allocation_dir_path.joinpath(f"{area}.ini"), "r") as f:
+            with open(allocation_dir_path.joinpath(f"{area}.ini")) as f:
                 file_content = f.read().replace("[[", "[").replace("]]", "]")
             with open(allocation_dir_path.joinpath(f"{area}.ini"), "w") as f:
                 f.write(file_content)
-            with open(allocation_dir_path.joinpath(f"{area}.ini"), "r") as f:
+            with open(allocation_dir_path.joinpath(f"{area}.ini")) as f:
                 assert f.read().find("[[") == -1
                 assert f.read().find("]]") == -1
 

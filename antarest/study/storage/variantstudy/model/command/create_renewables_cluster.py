@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Dict, Final, Self
+from typing import Any, Final, Self
 
 from antares.study.version import StudyVersion
 from pydantic import ValidationInfo, model_validator
@@ -57,7 +57,7 @@ class CreateRenewablesCluster(ICommand):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_model(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+    def validate_model(cls, values: dict[str, Any], info: ValidationInfo) -> dict[str, Any]:
         # Validate parameters
         if isinstance(values["parameters"], dict):
             parameters = values["parameters"]

@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import Optional
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
@@ -33,8 +32,8 @@ def build_launcher(
     task_service: ITaskService,
     cache: ICache,
     event_bus: IEventBus = DummyEventBusService(),
-    service_launcher: Optional[LauncherService] = None,
-) -> Optional[LauncherService]:
+    service_launcher: LauncherService | None = None,
+) -> LauncherService | None:
     if not service_launcher:
         job_repository = JobResultRepository()
         solver_presets_repository = SolverPresetsRepository()

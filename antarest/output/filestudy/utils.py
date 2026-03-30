@@ -9,10 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import Enum, StrEnum
 from pathlib import Path
-from typing import Iterator, TypeAlias
+from typing import TypeAlias
 
 import pandas as pd
 import polars as pl

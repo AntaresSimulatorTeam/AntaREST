@@ -13,8 +13,9 @@ import logging
 import shutil
 import tempfile
 import uuid
+from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import BinaryIO, Iterator, Optional, Sequence
+from typing import BinaryIO
 
 import polars as pl
 from typing_extensions import override
@@ -171,7 +172,7 @@ class V2OutputStorage(IOutputStorage):
         self,
         study_id: str,
         output: BinaryIO | Path,
-        output_name_suffix: Optional[str] = None,
+        output_name_suffix: str | None = None,
         logs: SimulationLogs = SimulationLogs.no_logs(),
     ) -> str:
         logger.info(f"Importing output for study {study_id} to internal storage.")
@@ -361,7 +362,7 @@ class V2OutputStorage(IOutputStorage):
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
         transform_columns_headers: bool,
-        mc_years: Optional[Sequence[int]] = None,
+        mc_years: Sequence[int] | None = None,
     ) -> Iterator[pl.DataFrame]:
         # TODO: at import time, extract to parquet files
         raise NotImplementedError()

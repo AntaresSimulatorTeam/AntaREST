@@ -13,7 +13,7 @@
 import http
 import logging
 from http import HTTPStatus
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -87,7 +87,7 @@ def create_tasks_api() -> APIRouter:
         "/tasks/{task_id}/progress",
         summary="Retrieve task progress from task id",
     )
-    def get_progress(service: TaskServiceDep, task_id: UuidStr) -> Optional[int]:
+    def get_progress(service: TaskServiceDep, task_id: UuidStr) -> int | None:
         logger.info(f"Fetching task progress of task {task_id}")
         return service.get_task_progress(task_id)
 

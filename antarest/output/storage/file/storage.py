@@ -13,9 +13,10 @@ import logging
 import shutil
 import zipfile
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import BinaryIO, Callable, Iterator, Optional, Sequence, cast
+from typing import BinaryIO, cast
 from uuid import uuid4
 
 import polars as pl
@@ -50,6 +51,7 @@ from antarest.output.storage.output_storage import (
     IOutputStorage,
     OutputDetails,
     OutputMetadata,
+    OutputSettings,
     OutputStorageType,
 )
 from antarest.study.model import (
@@ -57,12 +59,14 @@ from antarest.study.model import (
     MatrixFrequency,
     MatrixIndex,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestSynthesis,
     DigestUI,
 )
+from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import (
     extract_output_name,
     fix_study_root,
@@ -221,7 +225,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         self,
         study_id: str,
         output: BinaryIO | Path,
-        output_name_suffix: Optional[str] = None,
+        output_name_suffix: str | None = None,
         logs: SimulationLogs = SimulationLogs.no_logs(),
     ) -> str:
         """
@@ -282,6 +286,15 @@ class InStudyFileOutputStorage(IOutputStorage):
         if output_id not in outputs:
             raise OutputNotFound(output_id)
         output_data: Simulation = outputs[output_id]
+
+        study_data = study_outputs.get_file_study()
+        file_metadata = FileStudyHelpers.get_config(study_data, output_data.get_file())
+        settings = OutputSettings(
+            general=file_metadata["general"],
+            optimization=file_metadata["optimization"],
+            playlist=[year for year in (get_playlist(file_metadata) or {}).keys()],
+        )
+
         return OutputDetails(
             name=output_id,
             mode=output_data.mode,
@@ -290,6 +303,7 @@ class InStudyFileOutputStorage(IOutputStorage):
             nb_years=output_data.nbyears,
             archived=output_data.archived,
             storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
+            settings=settings,
         )
 
     @override
@@ -478,7 +492,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
         transform_columns_headers: bool,
-        mc_years: Optional[Sequence[int]] = None,
+        mc_years: Sequence[int] | None = None,
     ) -> Iterator[pl.DataFrame]:
         study_outputs = self._outputs_provider.get_outputs(study_id)
         aggregator_manager = AggregatorManager(

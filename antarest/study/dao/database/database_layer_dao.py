@@ -18,7 +18,8 @@ This module provides database-backed storage for layers when storage_mode=DATABA
 
 from abc import abstractmethod
 from collections import defaultdict
-from typing import TYPE_CHECKING, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from sqlalchemy import CursorResult, delete, select
 from sqlalchemy.orm import Session

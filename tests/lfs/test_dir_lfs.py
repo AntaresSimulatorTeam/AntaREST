@@ -22,7 +22,7 @@ def test_lfs(tmp_path: Path):
     assert not storage.file_exists("unknown")
 
     src_file_path = tmp_path / "input.txt"
-    src_file_path.write_bytes("My content".encode("utf-8"))
+    src_file_path.write_bytes(b"My content")
     storage.write_file("my-blob", src_file_path)
 
     assert storage.file_exists("my-blob")

@@ -12,7 +12,8 @@
 import itertools
 import logging
 import uuid
-from typing import Any, Callable, List, Optional, Union, cast
+from collections.abc import Callable
+from typing import Any, cast
 
 from antarest.core.utils.utils import StopWatch
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -27,9 +28,7 @@ from antarest.study.storage.variantstudy.model.model import GenerationResultInfo
 
 logger = logging.getLogger(__name__)
 
-APPLY_CALLBACK = Callable[
-    [ICommand, Union[FileStudyTreeConfig, FileStudy], Optional[ICommandListener]], CommandOutput[Any]
-]
+APPLY_CALLBACK = Callable[[ICommand, FileStudyTreeConfig | FileStudy, ICommandListener | None], CommandOutput[Any]]
 
 
 class CmdNotifier:
@@ -43,7 +42,7 @@ class CmdNotifier:
 
 
 def _generate(
-    commands: List[List[ICommand]],
+    commands: list[list[ICommand]],
     data: FileStudy,
     applier: APPLY_CALLBACK,
     metadata: VariantStudy,
@@ -56,7 +55,7 @@ def _generate(
     logger.info("Applying commands")
 
     # Flatten the list of commands
-    all_commands: List[ICommand] = list(itertools.chain.from_iterable(commands))
+    all_commands: list[ICommand] = list(itertools.chain.from_iterable(commands))
 
     # Prepare the stopwatch
     cmd_notifier = CmdNotifier(metadata.id, len(all_commands))
@@ -98,7 +97,7 @@ def _generate(
 
 
 def apply_commands_to_variant(
-    commands: List[List[ICommand]],
+    commands: list[list[ICommand]],
     metadata: VariantStudy,
     study: FileStudy,
     listener: ICommandListener | None = None,

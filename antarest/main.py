@@ -13,10 +13,11 @@
 import argparse
 import copy
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, AsyncGenerator, Optional
+from typing import Any
 
 import pydantic
 import uvicorn
@@ -154,6 +155,7 @@ def add_exception_handlers(application: FastAPI) -> None:
         Returns:
             The JSON response containing error details.
         """
+        logger.error("Validation error", exc_info=exc)
         error_message = exc.errors()[0]["msg"]
         return JSONResponse(
             status_code=422,
@@ -182,6 +184,7 @@ def add_exception_handlers(application: FastAPI) -> None:
         Returns:
             The JSON response containing error details.
         """
+        logger.error("Validation error", exc_info=exc)
         return JSONResponse(
             content={
                 "description": f"{exc}",
@@ -366,7 +369,7 @@ def inject_services(app: FastAPI, config: Config) -> Services:
 
 def fastapi_app(
     config_file: Path,
-    resource_path: Optional[Path] = None,
+    resource_path: Path | None = None,
     mount_front: bool = True,
     auto_upgrade_db: bool = False,
 ) -> FastAPI:

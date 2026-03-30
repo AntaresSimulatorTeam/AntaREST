@@ -14,8 +14,8 @@ import sys
 import typing as t
 import uuid
 import zipfile
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 import jinja2
 import pytest

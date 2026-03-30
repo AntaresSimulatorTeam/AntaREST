@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import Optional
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
@@ -25,7 +24,7 @@ def build_matrix_service(
     file_transfer_manager: FileTransferManager,
     task_service: ITaskService,
     user_service: LoginService,
-    service: Optional[MatrixService] = None,
+    service: MatrixService | None = None,
 ) -> MatrixService:
     """
     Matrix module linking dependency

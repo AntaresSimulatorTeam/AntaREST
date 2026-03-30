@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from enum import StrEnum
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -24,7 +24,7 @@ class ConfigData(Base):
     __tablename__ = "configdata"
     owner: Mapped[int] = mapped_column(Integer(), primary_key=True)
     key: Mapped[str] = mapped_column(String(), primary_key=True)
-    value: Mapped[Optional[str]] = mapped_column(String(), nullable=True)
+    value: Mapped[str | None] = mapped_column(String(), nullable=True)
 
     @override
     def __eq__(self, other: Any) -> bool:

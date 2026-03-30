@@ -11,9 +11,10 @@
 # This file is part of the Antares project.
 import collections
 import logging
+from collections.abc import Sequence
 from http import HTTPStatus
 from io import BytesIO
-from typing import Annotated, Any, Sequence, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
 import pandas as pd
 from fastapi import APIRouter, Depends, Query, UploadFile

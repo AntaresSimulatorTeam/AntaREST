@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Optional
+from typing import Any
 
 from antares.study.version import StudyVersion
 from pydantic import Field
@@ -26,25 +26,23 @@ from antarest.study.business.model.hydro_model import (
 
 
 class HydroManagementFileData(AntaresBaseModel, extra="forbid", populate_by_name=True):
-    inter_daily_breakdown: Optional[dict[LowerCaseStr, float]] = Field(default=None, alias="inter-daily-breakdown")
-    intra_daily_modulation: Optional[dict[LowerCaseStr, float]] = Field(default=None, alias="intra-daily-modulation")
-    inter_monthly_breakdown: Optional[dict[LowerCaseStr, float]] = Field(default=None, alias="inter-monthly-breakdown")
-    reservoir: Optional[dict[LowerCaseStr, bool]] = None
-    reservoir_capacity: Optional[dict[LowerCaseStr, float]] = Field(default=None, alias="reservoir capacity")
-    follow_load: Optional[dict[LowerCaseStr, bool]] = Field(default=None, alias="follow load")
-    use_water: Optional[dict[LowerCaseStr, bool]] = Field(default=None, alias="use water")
-    hard_bounds: Optional[dict[LowerCaseStr, bool]] = Field(default=None, alias="hard bounds")
-    initialize_reservoir_date: Optional[dict[LowerCaseStr, int]] = Field(
-        default=None, alias="initialize reservoir date"
-    )
-    use_heuristic: Optional[dict[LowerCaseStr, bool]] = Field(default=None, alias="use heuristic")
-    power_to_level: Optional[dict[LowerCaseStr, bool]] = Field(default=None, alias="power to level")
-    use_leeway: Optional[dict[LowerCaseStr, float]] = Field(default=None, alias="use leeway")
-    leeway_low: Optional[dict[LowerCaseStr, float]] = Field(default=None, alias="leeway low")
-    leeway_up: Optional[dict[LowerCaseStr, float]] = Field(default=None, alias="leeway up")
-    pumping_efficiency: Optional[dict[LowerCaseStr, float]] = Field(default=None, alias="pumping efficiency")
+    inter_daily_breakdown: dict[LowerCaseStr, float] | None = Field(default=None, alias="inter-daily-breakdown")
+    intra_daily_modulation: dict[LowerCaseStr, float] | None = Field(default=None, alias="intra-daily-modulation")
+    inter_monthly_breakdown: dict[LowerCaseStr, float] | None = Field(default=None, alias="inter-monthly-breakdown")
+    reservoir: dict[LowerCaseStr, bool] | None = None
+    reservoir_capacity: dict[LowerCaseStr, float] | None = Field(default=None, alias="reservoir capacity")
+    follow_load: dict[LowerCaseStr, bool] | None = Field(default=None, alias="follow load")
+    use_water: dict[LowerCaseStr, bool] | None = Field(default=None, alias="use water")
+    hard_bounds: dict[LowerCaseStr, bool] | None = Field(default=None, alias="hard bounds")
+    initialize_reservoir_date: dict[LowerCaseStr, int] | None = Field(default=None, alias="initialize reservoir date")
+    use_heuristic: dict[LowerCaseStr, bool] | None = Field(default=None, alias="use heuristic")
+    power_to_level: dict[LowerCaseStr, bool] | None = Field(default=None, alias="power to level")
+    use_leeway: dict[LowerCaseStr, float] | None = Field(default=None, alias="use leeway")
+    leeway_low: dict[LowerCaseStr, float] | None = Field(default=None, alias="leeway low")
+    leeway_up: dict[LowerCaseStr, float] | None = Field(default=None, alias="leeway up")
+    pumping_efficiency: dict[LowerCaseStr, float] | None = Field(default=None, alias="pumping efficiency")
     # v9.2 field
-    overflow_spilled_cost_difference: Optional[dict[LowerCaseStr, float]] = Field(
+    overflow_spilled_cost_difference: dict[LowerCaseStr, float] | None = Field(
         default=None, alias="overflow spilled cost difference"
     )
 
@@ -70,7 +68,7 @@ class HydroManagementFileData(AntaresBaseModel, extra="forbid", populate_by_name
 
 
 class InflowStructureFileData(AntaresBaseModel, extra="forbid", populate_by_name=True):
-    inter_monthly_correlation: Optional[float] = Field(
+    inter_monthly_correlation: float | None = Field(
         default=None,
         ge=0,
         le=1,

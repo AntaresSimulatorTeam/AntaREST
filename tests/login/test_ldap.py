@@ -61,7 +61,7 @@ class MockHTTPRequestHandler(BaseHTTPRequestHandler):
 
             else:
                 # Simulate an unknown user
-                res = "null".encode("utf-8")
+                res = b"null"
                 # response code is 401 (unauthorized) to simulate a wrong password
                 self.send_response(401)
 
@@ -71,7 +71,7 @@ class MockHTTPRequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(res)
 
         else:
-            res = "Not found: {self.path}".encode("utf-8")
+            res = b"Not found: {self.path}"
             self.send_response(404)
             self.send_header("Content-type", "text/plain; charset=utf-8")
             self.send_header("Content-Length", f"{len(res)}")

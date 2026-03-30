@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Dict, List
 
 from typing_extensions import override
 
@@ -30,19 +29,19 @@ from antarest.study.storage.rawstudy.model.filesystem.config.area import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
-def get_thermal_path() -> List[str]:
+def get_thermal_path() -> list[str]:
     return ["input", "thermal", "areas"]
 
 
-def get_area_path() -> List[str]:
+def get_area_path() -> list[str]:
     return ["input", "areas"]
 
 
-def get_optimization_path(area_id: str) -> List[str]:
+def get_optimization_path(area_id: str) -> list[str]:
     return ["input", "areas", area_id, "optimization"]
 
 
-def get_adequacy_patch_path(area_id: str) -> List[str]:
+def get_adequacy_patch_path(area_id: str) -> list[str]:
     return ["input", "areas", area_id, "adequacy_patch"]
 
 
@@ -107,7 +106,7 @@ class FileStudyAreaPropertiesDao(AreaPropertiesDao, ABC):
 
         # areas_cfg contains a dictionary where the keys are the area IDs,
         # and the values are objects that can be converted to `AreaFolder`.
-        area_map: Dict[str, AreaProperties] = {}
+        area_map: dict[str, AreaProperties] = {}
         for area_id, area_cfg in areas_cfg.items():
             area_folder = AreaFileData(**area_cfg)
             props_data = AreaPropertiesFileData(

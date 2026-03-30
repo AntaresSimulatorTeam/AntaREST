@@ -13,10 +13,11 @@
 import logging
 import re
 import shutil
+from collections.abc import Callable, Sequence
 from datetime import timedelta
 from functools import reduce
 from pathlib import Path, PurePosixPath
-from typing import Callable, Dict, List, Optional, Sequence, cast
+from typing import cast
 from uuid import uuid4
 
 import humanize
@@ -132,7 +133,7 @@ class VariantStudyService(AbstractStorageService):
         except ValueError:
             raise CommandNotFoundError(f"Command with id {command_id} not found") from None
 
-    def get_commands(self, study_id: str) -> List[CommandDTOAPI]:
+    def get_commands(self, study_id: str) -> list[CommandDTOAPI]:
         """
         Get commands list
         Args:
@@ -141,7 +142,7 @@ class VariantStudyService(AbstractStorageService):
         """
         study = self._get_variant_study(study_id)
 
-        id_to_name: Dict[int, str] = {}
+        id_to_name: dict[int, str] = {}
         command_list = []
 
         for command in study.commands:
@@ -151,15 +152,15 @@ class VariantStudyService(AbstractStorageService):
             command_list.append(command.to_dto().to_api(id_to_name.get(command.user_id)))
         return command_list
 
-    def convert_commands(self, study_id: str, api_commands: List[CommandDTOAPI]) -> List[CommandDTO]:
+    def convert_commands(self, study_id: str, api_commands: list[CommandDTOAPI]) -> list[CommandDTO]:
         study = self._get_study_by_id(study_id)
         return [
             CommandDTO.model_validate({"study_version": study.version, **command.model_dump(mode="json")})
             for command in api_commands
         ]
 
-    def _check_commands_validity(self, study_id: str, commands: List[CommandDTO]) -> List[ICommand]:
-        command_objects: List[ICommand] = []
+    def _check_commands_validity(self, study_id: str, commands: list[CommandDTO]) -> list[ICommand]:
+        command_objects: list[ICommand] = []
         for i, command in enumerate(commands):
             try:
                 command_objects.extend(self.command_factory.to_command(command))
@@ -192,7 +193,7 @@ class VariantStudyService(AbstractStorageService):
         command_ids = self.append_commands(study_id, [command])
         return command_ids[0]
 
-    def append_commands(self, study_id: str, commands: List[CommandDTO]) -> List[str]:
+    def append_commands(self, study_id: str, commands: list[CommandDTO]) -> list[str]:
         """
         Add command to list of commands (at the end)
         Args:
@@ -231,7 +232,7 @@ class VariantStudyService(AbstractStorageService):
         )
         return [c.id for c in new_commands]
 
-    def replace_commands(self, study_id: str, commands: List[CommandDTO]) -> str:
+    def replace_commands(self, study_id: str, commands: list[CommandDTO]) -> str:
         """
         Add command to list of commands (at the end)
         Args:
@@ -345,7 +346,7 @@ class VariantStudyService(AbstractStorageService):
                 lambda: reduce(
                     lambda m, c: m + c.get_inner_matrices().matrices,
                     self.command_factory.to_command(command.to_dto()),
-                    cast(List[str], []),
+                    cast(list[str], []),
                 ),
                 lambda e: logger.warning(f"Failed to parse command {command}", exc_info=e),
             )
@@ -411,7 +412,7 @@ class VariantStudyService(AbstractStorageService):
         self.repository.save(metadata=study)
         self.on_parent_change(study.id)
 
-    def get_children(self, parent_id: str) -> List[VariantStudy]:
+    def get_children(self, parent_id: str) -> list[VariantStudy]:
         """
         Get the direct children of the specified study (in chronological creation order).
         """
@@ -489,13 +490,13 @@ class VariantStudyService(AbstractStorageService):
         if include_parent and bottom_first:
             fun(study)
 
-    def get_variants_parents(self, study_id: str) -> List[StudyMetadataDTO]:
-        output_list: List[StudyMetadataDTO] = self._get_variants_parents(study_id)
+    def get_variants_parents(self, study_id: str) -> list[StudyMetadataDTO]:
+        output_list: list[StudyMetadataDTO] = self._get_variants_parents(study_id)
         if output_list:
             output_list = output_list[1:]
         return output_list
 
-    def get_direct_parent(self, id: str) -> Optional[StudyMetadataDTO]:
+    def get_direct_parent(self, id: str) -> StudyMetadataDTO | None:
         study = self._get_study_by_id(id)
         if study.parent_id is not None:
             parent = self._get_study_by_id(study.parent_id)
@@ -510,7 +511,7 @@ class VariantStudyService(AbstractStorageService):
             )
         return None
 
-    def _get_variants_parents(self, id: str) -> List[StudyMetadataDTO]:
+    def _get_variants_parents(self, id: str) -> list[StudyMetadataDTO]:
         study = self._get_study_by_id(id)
         metadata = (
             self.get_study_information(
@@ -521,7 +522,7 @@ class VariantStudyService(AbstractStorageService):
                 study,
             )
         )
-        output_list: List[StudyMetadataDTO] = [metadata]
+        output_list: list[StudyMetadataDTO] = [metadata]
         if study.parent_id is not None:
             output_list.extend(self._get_variants_parents(study.parent_id))
 
@@ -836,7 +837,7 @@ class VariantStudyService(AbstractStorageService):
         self,
         metadata: Study,
         use_cache: bool = True,
-        output_dir: Optional[Path] = None,
+        output_dir: Path | None = None,
     ) -> FileStudy:
         """
         Fetch a study raw tree object and its config

@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, Literal, Tuple, TypeAlias
+from typing import Annotated, Literal, TypeAlias
 
 from pydantic import BaseModel, Field
 
@@ -57,7 +57,7 @@ SubAreaItemId: TypeAlias = Annotated[
 ]
 
 
-def get_ids_for_aggregation(item_id: OutputItemId) -> Tuple[str, str | None]:
+def get_ids_for_aggregation(item_id: OutputItemId) -> tuple[str, str | None]:
     match item_id:
         case AreaOutputId():
             return item_id.area_id, None

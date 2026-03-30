@@ -10,7 +10,8 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Callable, Dict, Optional
+from collections.abc import Callable
+from typing import Any
 
 from typing_extensions import override
 
@@ -64,7 +65,7 @@ class AreaMatrixList(FolderNode):
         *,
         prefix: str = "",
         matrix_class: Callable[..., INode[Any, Any, Any]] = InputSeriesMatrix,
-        additional_matrix_params: Optional[Dict[str, Any]] = None,
+        additional_matrix_params: dict[str, Any] | None = None,
     ):
         super().__init__(matrix_mapper, config)
         self.prefix = prefix

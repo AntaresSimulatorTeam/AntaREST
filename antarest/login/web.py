@@ -12,7 +12,6 @@
 
 import logging
 from datetime import timedelta
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -51,7 +50,7 @@ class UserCredentials(AntaresBaseModel):
     password: SanitizedStr
 
 
-def _generate_tokens(user: JWTUser, jwt_manager: AuthJWT, expire: Optional[timedelta] = None) -> CredentialsDTO:
+def _generate_tokens(user: JWTUser, jwt_manager: AuthJWT, expire: timedelta | None = None) -> CredentialsDTO:
     access_token = jwt_manager.create_access_token(subject=user.model_dump_json(), expires_time=expire)
     refresh_token = jwt_manager.create_refresh_token(subject=user.model_dump_json())
     return CredentialsDTO(
@@ -185,7 +184,7 @@ def create_user_api() -> APIRouter:
         return tokens.access_token
 
     @bp.get("/bots/{id}")
-    def get_bot(service: LoginServiceDep, id: int, verbose: Optional[int] = None) -> BotIdentityDTO | BotDTO:
+    def get_bot(service: LoginServiceDep, id: int, verbose: int | None = None) -> BotIdentityDTO | BotDTO:
         logger.info(f"Fetching bot {id}")
         bot = service.get_bot_info(id) if verbose else service.get_bot(id).to_dto()
         if not bot:
@@ -196,7 +195,7 @@ def create_user_api() -> APIRouter:
         "/bots",
         summary="List all bots",
     )
-    def get_all_bots(service: LoginServiceDep, owner: Optional[int] = None) -> list[BotDTO]:
+    def get_all_bots(service: LoginServiceDep, owner: int | None = None) -> list[BotDTO]:
         logger.info(f"Fetching bot list for {owner or get_user_id()}")
         bots = service.get_all_bots_by_owner(owner) if owner else service.get_all_bots()
         return [b.to_dto() for b in bots]

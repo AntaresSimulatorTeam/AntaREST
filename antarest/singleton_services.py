@@ -12,7 +12,6 @@
 
 import time
 from pathlib import Path
-from typing import List
 
 from antarest.core.config import Config
 from antarest.core.interfaces.service import IService
@@ -32,7 +31,7 @@ from antarest.service_creator import (
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 
 
-def _init(config_file: Path, services_list: List[Module]) -> list[IService]:
+def _init(config_file: Path, services_list: list[Module]) -> list[IService]:
     res = get_local_path() / "resources"
     config = Config.from_yaml_file(res=res, file=config_file)
     engine = init_db_engine(config, False, config_file)
@@ -66,7 +65,7 @@ def _init(config_file: Path, services_list: List[Module]) -> list[IService]:
     return services
 
 
-def start_all_services(config_file: Path, services_list: List[Module]) -> None:
+def start_all_services(config_file: Path, services_list: list[Module]) -> None:
     """
     Start all services in a worker.
 
