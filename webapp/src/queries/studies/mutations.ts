@@ -12,8 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { mutationOptions } from "@tanstack/react-query";
+import { createFavoriteStudy, deleteFavoriteStudy } from "@/services/api/favorites";
 import { deleteStudies } from "@/services/api/study";
+import { mutationOptions } from "@tanstack/react-query";
 import { studyKeys } from "./keys";
 
 export const studyMutations = {
@@ -21,6 +22,18 @@ export const studyMutations = {
     return mutationOptions({
       mutationKey: studyKeys.deleteMany(),
       mutationFn: deleteStudies,
+    });
+  },
+  createFavorite: () => {
+    return mutationOptions({
+      mutationKey: studyKeys.createFavorite(),
+      mutationFn: createFavoriteStudy,
+    });
+  },
+  deleteFavorite: () => {
+    return mutationOptions({
+      mutationKey: studyKeys.deleteFavorite(),
+      mutationFn: deleteFavoriteStudy,
     });
   },
 };

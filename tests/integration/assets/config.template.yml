@@ -41,6 +41,7 @@ launcher:
       binaries:
         700: {{launcher_mock}}
         880: {{launcher_mock}}
+        9.3: {{launcher_mock}}
       enable_nb_cores_detection: True
 
 debug: false

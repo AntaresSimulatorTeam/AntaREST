@@ -14,13 +14,12 @@
 
 import StatusDot from "@/components/icons/StatusDot";
 import type { RouterListViewItem } from "@/components/page/list/RouterListView";
-import type { QueryList } from "@/queries/types";
 import { isQueryListItemOptimistic } from "@/queries/utils";
 import type { StorageConstraint } from "@/services/api/studies/areas/storages/types";
 import { sortByProp } from "@/services/utils";
 import { linkOptions } from "@tanstack/react-router";
 
-export function constraintsToList(constraints: QueryList<StorageConstraint>): RouterListViewItem[] {
+export function constraintsToList(constraints: StorageConstraint[]): RouterListViewItem[] {
   const list = constraints.map((constraint) => ({
     id: constraint.id,
     label: constraint.name,

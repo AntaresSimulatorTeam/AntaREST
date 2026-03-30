@@ -12,15 +12,23 @@
  * This file is part of the Antares project.
  */
 
-import { queryOptions } from "@tanstack/react-query";
 import { getDirectories } from "@/services/api/directories";
+import { getFavoriteDirectories } from "@/services/api/favorites";
+import { queryOptions } from "@tanstack/react-query";
+import { queryListOptions } from "../utils";
 import { directoryKeys } from "./keys";
 
 export const directoryQueries = {
   list: () => {
     return queryOptions({
-      queryKey: directoryKeys.lists(),
+      queryKey: directoryKeys.list(),
       queryFn: getDirectories,
+    });
+  },
+  favorites: () => {
+    return queryListOptions({
+      queryKey: directoryKeys.favorites(),
+      queryFn: getFavoriteDirectories,
     });
   },
 };
