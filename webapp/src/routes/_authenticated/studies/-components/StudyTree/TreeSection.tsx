@@ -13,6 +13,7 @@
  */
 
 import CustomScrollbar from "@/components/CustomScrollbar";
+import { useScrollRestorationOS } from "@/hooks/scroll/useScrollRestorationOS";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import HomeIcon from "@mui/icons-material/Home";
 import { Box, IconButton, Stack, Tooltip, Typography } from "@mui/material";
@@ -36,6 +37,8 @@ interface Props {
   onToggleCollapse: () => void;
   onAddDirectory?: () => void;
   onRootClick?: () => void;
+  /** sessionStorage key used to persist and restore scroll position across navigations. */
+  scrollKey?: string;
   children: React.ReactNode;
 }
 
@@ -46,10 +49,12 @@ function TreeSection({
   onToggleCollapse,
   onAddDirectory,
   onRootClick,
+  scrollKey,
   children,
 }: Props) {
   const { container, iconColor, titleColor } = variantStyles[variant];
   const { t } = useTranslation();
+  const scrollEvents = useScrollRestorationOS(scrollKey);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -103,7 +108,9 @@ function TreeSection({
       {/* Content row — collapses via 0fr grid row in parent */}
       <Box sx={[container, contentSxOverride]}>
         <Box sx={innerContentSx}>
-          <CustomScrollbar style={scrollbarStyle}>{children}</CustomScrollbar>
+          <CustomScrollbar style={scrollbarStyle} events={scrollEvents}>
+            {children}
+          </CustomScrollbar>
         </Box>
       </Box>
     </>

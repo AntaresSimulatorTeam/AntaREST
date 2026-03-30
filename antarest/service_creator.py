@@ -14,10 +14,9 @@ import logging
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import redis
-from fastapi import FastAPI
 from sqlalchemy import create_engine
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.pool import NullPool
@@ -43,16 +42,20 @@ from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteSt
 from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
 from antarest.launcher.main import build_launcher
 from antarest.launcher.service import LauncherService
+from antarest.lfs.dir_lfs import DirLargeFileStorage
 from antarest.login.main import build_login
 from antarest.login.service import LoginService
 from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
-from antarest.output.output_service import OutputService
-from antarest.output.storage.file_output_storage import InStudyFileOutputStorage
+from antarest.output.service import OutputService
+from antarest.output.storage.file.repository import FileOutputRepository
+from antarest.output.storage.file.storage import InStudyFileOutputStorage
 from antarest.output.storage.output_storage import IOutputStorage
-from antarest.output.variable_view_gc import VariableViewGarbageCollector
+from antarest.output.storage.v2.repository import OutputV2Repository
+from antarest.output.storage.v2.storage import V2OutputStorage
+from antarest.output.variable_view.gc import VariableViewGarbageCollector
 from antarest.study.adapters import adapt_output_service_to_study_service
 from antarest.study.dao.database.database_blob_usage_provider import DatabaseBlobUsageProvider
 from antarest.study.directory_service import DirectoryService
@@ -99,7 +102,7 @@ def init_db_engine(
         if not config_file:
             raise ValueError("config_file must be provided when auto_upgrade_db is True")
         upgrade_db(config_file)
-    connect_args: Dict[str, Any] = {}
+    connect_args: dict[str, Any] = {}
     if config.db.db_url.startswith("sqlite"):
         connect_args["check_same_thread"] = False
     else:
@@ -138,7 +141,7 @@ def new_redis_instance(config: RedisConfig) -> redis.Redis:  # type: ignore
     return redis_client
 
 
-def create_event_bus(config: Config) -> Tuple[IEventBus, Optional[redis.Redis]]:  # type: ignore
+def create_event_bus(config: Config) -> tuple[IEventBus, redis.Redis | None]:  # type: ignore
     redis_client = new_redis_instance(config.redis) if config.redis is not None else None
     return (
         build_eventbus(True, redis_client),
@@ -172,6 +175,19 @@ def build_favorite_service() -> tuple[FavoriteStudyService, FavoriteDirectorySer
     return favorite_study_service, favorite_directory_service
 
 
+def build_output_storage_list(config: Config, file_output_storage: InStudyFileOutputStorage) -> list[IOutputStorage]:
+    if not config.storage.output.enable:
+        return [file_output_storage]
+    tmp_dir = config.storage.tmp_dir / "outputs"
+    lfs = DirLargeFileStorage(config.storage.output.archive_dir)
+    v2_storage = V2OutputStorage(tmp_dir=tmp_dir, archive_storage=lfs, repository=OutputV2Repository())
+
+    if config.storage.output.default:
+        return [v2_storage, file_output_storage]
+    else:
+        return [file_output_storage, v2_storage]
+
+
 def build_output_service(
     study_service: StudyService,
     cache: ICache,
@@ -186,8 +202,10 @@ def build_output_service(
         outputs_provider=study_service_as_file_outputs_provider(study_service),
         cache=cache,
         remote_executor=remote_executor,
+        repository=FileOutputRepository(),
     )
-    storages: list[IOutputStorage] = [file_output_storage]
+
+    storages = build_output_storage_list(config, file_output_storage)
 
     output_service = OutputService(
         studies_repository=study_service_as_studies_repository(study_service),
@@ -284,7 +302,7 @@ def create_variable_view_gc(config: Config) -> VariableViewGarbageCollector:
 
 def create_watcher(
     config: Config,
-    study_service: Optional[StudyService] = None,
+    study_service: StudyService | None = None,
 ) -> Watcher:
     if study_service:
         watcher = Watcher(
@@ -311,7 +329,7 @@ def create_archive_worker(
     config: Config,
     workspace: str,
     local_root: Path = Path("/"),
-    event_bus: Optional[IEventBus] = None,
+    event_bus: IEventBus | None = None,
 ) -> AbstractWorker:
     if not event_bus:
         event_bus, _ = create_event_bus(config)
@@ -334,28 +352,11 @@ class Services:
     task_service: ITaskService
     file_transfer_manager: FileTransferManager
     output_service: OutputService
-    launcher: Optional[LauncherService] = None
-    matrix_gc: Optional[MatrixGarbageCollector] = None
-    auto_archiver: Optional[AutoArchiveService] = None
-    blob_gc: Optional[BlobGarbageCollector] = None
-    variable_view_gc: Optional[VariableViewGarbageCollector] = None
-
-
-def store_services_on_app(app: FastAPI, services: Services, config: Config) -> None:
-    app.state.config = config
-    app.state.study_service = services.study
-    app.state.directory_service = services.directory
-    app.state.explorer = services.explorer
-    app.state.watcher = services.watcher
-    app.state.login_service = services.user
-    app.state.launcher_service = services.launcher
-    app.state.matrix_service = services.matrix
-    app.state.file_transfer_manager = services.file_transfer_manager
-    app.state.output_service = services.output_service
-    app.state.favorite_study_service = services.favorite_study
-    app.state.favorite_directory_service = services.favorite_directory
-    app.state.task_service = services.task_service
-    app.state.maintenance_service = services.maintenance
+    launcher: LauncherService | None = None
+    matrix_gc: MatrixGarbageCollector | None = None
+    auto_archiver: AutoArchiveService | None = None
+    blob_gc: BlobGarbageCollector | None = None
+    variable_view_gc: VariableViewGarbageCollector | None = None
 
 
 def create_services(config: Config, create_all: bool = False) -> Services:

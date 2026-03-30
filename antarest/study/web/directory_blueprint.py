@@ -12,7 +12,6 @@
 
 import logging
 from http import HTTPStatus
-from typing import List
 
 from fastapi import APIRouter, Depends
 
@@ -33,7 +32,7 @@ def create_directory_routes() -> APIRouter:
     )
     def list_directories(
         directory_service: DirectoryServiceDep,
-    ) -> List[DirectoryMetadata]:
+    ) -> list[DirectoryMetadata]:
         logger.info("Listing directories for current user")
         return directory_service.list_directories()
 

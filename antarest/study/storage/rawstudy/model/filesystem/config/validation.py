@@ -14,7 +14,7 @@
 Contains various utilities for pydantic models validation.
 """
 
-from typing import Annotated, Any, Dict, List, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
 from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, Field
@@ -46,7 +46,7 @@ ItemName: TypeAlias = Annotated[str, BeforeValidator(_validate_item_name)]
 AreaId: TypeAlias = Annotated[str, Field(description="Area ID", pattern=r"^[a-z0-9_(),& -]+$")]
 
 
-def extract_filtering(v: Any) -> List[str]:
+def extract_filtering(v: Any) -> list[str]:
     """
     Extract filtering values from a comma-separated list of values.
     """
@@ -56,7 +56,7 @@ def extract_filtering(v: Any) -> List[str]:
     elif isinstance(v, str):
         values = {x.strip() for x in v.lower().split(",")} if v else set()
     elif isinstance(v, (list, tuple)):
-        values = set(x.strip().lower() for x in v)
+        values = {x.strip().lower() for x in v}
     else:
         raise TypeError(f"Invalid type for filtering: {type(v)!r}")
 
@@ -77,7 +77,7 @@ def validate_filtering(v: Any) -> str:
 STUDY_VERSION_KEY: str = "study_version"
 
 
-def study_version_context(study_version: StudyVersion) -> Dict[str, Any]:
+def study_version_context(study_version: StudyVersion) -> dict[str, Any]:
     """
     Creates a context for pydantic validation, containing this study version.
     """

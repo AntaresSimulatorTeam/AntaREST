@@ -11,8 +11,9 @@
 # This file is part of the Antares project.
 import logging
 from pathlib import Path
+from typing import Iterable
 
-from typing_extensions import Iterable, override
+from typing_extensions import override
 
 from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider

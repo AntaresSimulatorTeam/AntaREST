@@ -23,7 +23,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_lock
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, GarbageCollectorTaskResult, LockId
-from antarest.output.output_model import OutputVariablesViewsModel
+from antarest.output.variable_view.db import OutputVariablesViewsModel
 
 logger = logging.getLogger(__name__)
 

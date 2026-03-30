@@ -11,7 +11,8 @@
 # This file is part of the Antares project.
 import io
 import logging
-from typing import Annotated, Sequence
+from collections.abc import Sequence
+from typing import Annotated
 
 import polars as pl
 from fastapi import APIRouter, Depends, File, UploadFile

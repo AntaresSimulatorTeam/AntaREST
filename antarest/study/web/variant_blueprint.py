@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import datetime
 import logging
-from typing import Annotated, List, Optional, Union
+from typing import Annotated
 
 import humanize
 from fastapi import APIRouter, Body, Depends
@@ -72,13 +72,13 @@ def create_study_variant_routes() -> APIRouter:
         responses={
             200: {
                 "description": "The list of children study variant",
-                "model": List[StudyMetadataDTO],
+                "model": list[StudyMetadataDTO],
             }
         },
     )
     def get_parents(
-        study_service: StudyServiceDep, uuid: UuidStr, direct: Optional[bool] = False
-    ) -> Union[List[StudyMetadataDTO], Optional[StudyMetadataDTO]]:
+        study_service: StudyServiceDep, uuid: UuidStr, direct: bool | None = False
+    ) -> list[StudyMetadataDTO] | StudyMetadataDTO | None:
         logger.info(f"Fetching variant parents of study {uuid}")
         variant_study_service = study_service.storage_service.variant_study_service
         return (
@@ -93,11 +93,11 @@ def create_study_variant_routes() -> APIRouter:
         responses={
             200: {
                 "description": "The detail of a command content",
-                "model": List[CommandDTOAPI],
+                "model": list[CommandDTOAPI],
             }
         },
     )
-    def list_commands(study_service: StudyServiceDep, uuid: UuidStr) -> List[CommandDTOAPI]:
+    def list_commands(study_service: StudyServiceDep, uuid: UuidStr) -> list[CommandDTOAPI]:
         """
         Get the list of commands of a variant.
 
@@ -132,8 +132,8 @@ def create_study_variant_routes() -> APIRouter:
     def append_commands(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        commands: Annotated[List[CommandDTOAPI], Body()],
-    ) -> Optional[List[str]]:
+        commands: Annotated[list[CommandDTOAPI], Body()],
+    ) -> list[str] | None:
         """
         Append a list of commands to a variant study.
 
@@ -161,7 +161,7 @@ def create_study_variant_routes() -> APIRouter:
     def replace_commands(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        commands: Annotated[List[CommandDTOAPI], Body()],
+        commands: Annotated[list[CommandDTOAPI], Body()],
     ) -> str:
         logger.info(f"Replacing all commands of variant study {uuid}")
         variant_study_service = study_service.storage_service.variant_study_service

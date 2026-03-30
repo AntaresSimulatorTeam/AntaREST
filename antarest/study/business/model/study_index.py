@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Iterable, Mapping
+from collections.abc import Iterable, Mapping
 
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 

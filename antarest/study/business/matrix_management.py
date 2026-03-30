@@ -13,7 +13,6 @@
 import itertools
 import logging
 import operator
-from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -51,7 +50,7 @@ class MatrixIndexError(MatrixUpdateError):
     def __init__(
         self,
         operation: Operation,
-        coordinates: Tuple[int, int],
+        coordinates: tuple[int, int],
         exc: Exception,
     ) -> None:
         reason = f"invalid coordinates {coordinates}: {exc}"
@@ -60,7 +59,7 @@ class MatrixIndexError(MatrixUpdateError):
 
 def update_matrix_content_with_slices(
     matrix_data: pl.DataFrame,
-    slices: List[MatrixSlice],
+    slices: list[MatrixSlice],
     operation: Operation,
 ) -> pl.DataFrame:
     pandas_df = matrix_data.to_pandas()
@@ -84,7 +83,7 @@ def update_matrix_content_with_slices(
 
 def update_matrix_content_with_coordinates(
     df: pl.DataFrame,
-    coordinates: List[Tuple[int, int]],
+    coordinates: list[tuple[int, int]],
     operation: Operation,
 ) -> pl.DataFrame:
     columns = df.columns
@@ -101,7 +100,7 @@ def update_matrix_content_with_coordinates(
     return df
 
 
-def group_by_slices(cells: List[Tuple[int, int]]) -> List[Tuple[Tuple[int, int], Tuple[int, int]]]:
+def group_by_slices(cells: list[tuple[int, int]]) -> list[tuple[tuple[int, int], tuple[int, int]]]:
     """
     Groups the given cells into rectangular slices based on their coordinates.
 
@@ -160,8 +159,8 @@ def group_by_slices(cells: List[Tuple[int, int]]) -> List[Tuple[Tuple[int, int],
 
 
 def merge_edit_instructions(
-    edit_instructions: List[MatrixEditInstruction],
-) -> List[MatrixEditInstruction]:
+    edit_instructions: list[MatrixEditInstruction],
+) -> list[MatrixEditInstruction]:
     """
     Merges edit instructions for the same operation and value into
     slice-based edit instructions to reduce computation time when a large
@@ -245,7 +244,7 @@ class MatrixManager:
         self,
         study: StudyInterface,
         path: str,
-        edit_instructions: List[MatrixEditInstruction],
+        edit_instructions: list[MatrixEditInstruction],
     ) -> None:
         logger.info(f"Starting matrix update for {study.id}...")
         file_study = study.get_files()

@@ -14,8 +14,9 @@ import logging
 import logging.config
 import re
 import uuid
+from collections.abc import Iterator
 from contextvars import ContextVar, Token
-from typing import Any, Dict, Iterator, Optional, Type
+from typing import Any
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
@@ -26,9 +27,9 @@ from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
 from antarest.login.utils import current_user_context, get_current_user
 
-_request: ContextVar[Optional[Request]] = ContextVar("_request", default=None)
-_request_id: ContextVar[Optional[str]] = ContextVar("_request_id", default=None)
-_task_id: ContextVar[Optional[str]] = ContextVar("_task_id", default=None)
+_request: ContextVar[Request | None] = ContextVar("_request", default=None)
+_request_id: ContextVar[str | None] = ContextVar("_request_id", default=None)
+_task_id: ContextVar[str | None] = ContextVar("_task_id", default=None)
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +74,7 @@ def configure_logger(config: Config, handler_cls: str = "logging.FileHandler") -
         config: A `Config` object that contains the logging configuration parameters.
         handler_cls: A string representing the class of the logging handler.
     """
-    logging_config: Dict[str, Any] = {
+    logging_config: dict[str, Any] = {
         "version": 1,
         "disable_existing_loggers": False,
         "formatters": {
@@ -208,11 +209,11 @@ class RequestContext:
         self,
         request: Request,
     ) -> None:
-        self.request_token: Optional[Token[Optional[Any]]] = None
-        self.request_id_token: Optional[Token[Optional[Any]]] = None
+        self.request_token: Token[Any | None] | None = None
+        self.request_id_token: Token[Any | None] | None = None
         self.request = request
 
-    def __enter__(self) -> Type["RequestContext"]:
+    def __enter__(self) -> type["RequestContext"]:
         self.request_token = _request.set(self.request)
         self.request_id_token = _request_id.set(str(uuid.uuid4()))
         return type(self)
@@ -225,7 +226,7 @@ class RequestContext:
 
 
 @contextlib.contextmanager
-def task_context(task_id: str, user: Optional[JWTUser]) -> Iterator[None]:
+def task_context(task_id: str, user: JWTUser | None) -> Iterator[None]:
     """
     Sets current user and task_id to specified values.
     """

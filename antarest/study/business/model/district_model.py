@@ -9,8 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from collections.abc import MutableMapping
 from enum import Enum
-from typing import Any, List, MutableMapping, Optional
+from typing import Any
 
 from pydantic import ConfigDict, field_validator
 from pydantic.alias_generators import to_camel
@@ -42,23 +43,23 @@ class DistrictUpdate(AntaresBaseModel):
     )
 
     @field_validator("areas", mode="before")
-    def validate_areas(cls, areas: Any) -> Optional[List[str]]:
+    def validate_areas(cls, areas: Any) -> list[str] | None:
         if areas is None:
             return areas
         return list(set(areas))
 
     #: Indicates whether this district is used in the output (usually all
     #: districts are visible, but the user can decide to hide some of them).
-    output: Optional[bool] = None
+    output: bool | None = None
     #: User-defined comments.
-    comments: Optional[str] = None
+    comments: str | None = None
     #: List of areas that will be grouped in the district.
     #: This field take two meaning depending on the content of apply_filter.
     #: When apply filter is "add_all" this command means "we want all areas except those in this list". This list will be stored in District.subtract_areas
     #: Otherwise, this command means "we want no areas except those in this list". This list will be stored in District.add_areas
-    areas: Optional[List[str]] = None
+    areas: list[str] | None = None
     #: Base filter for the district.
-    apply_filter: Optional[DistrictApplyFilter] = None
+    apply_filter: DistrictApplyFilter | None = None
 
 
 def _district_creation_json_schema_extra(schema: MutableMapping[str, Any]) -> None:
@@ -80,7 +81,7 @@ class DistrictCreation(AntaresBaseModel):
     )
 
     @field_validator("areas", mode="before")
-    def validate_areas(cls, areas: Any) -> Optional[List[str]]:
+    def validate_areas(cls, areas: Any) -> list[str] | None:
         if areas is None:
             return areas
         return list(set(areas))
@@ -89,16 +90,16 @@ class DistrictCreation(AntaresBaseModel):
     name: str
     #: Indicates whether this district is used in the output (usually all
     #: districts are visible, but the user can decide to hide some of them).
-    output: Optional[bool] = None
+    output: bool | None = None
     #: User-defined comments.
-    comments: Optional[str] = None
+    comments: str | None = None
     #: List of areas that will be grouped in the district.
     #: This field take two meaning depending on the content of apply_filter.
     #: When apply filter is "add_all" this command means "we want all areas except those in this list". This list will be stored in District.subtract_areas
     #: Otherwise, this command means "we want no areas except those in this list". This list will be stored in District.add_areas
-    areas: Optional[List[str]] = None
+    areas: list[str] | None = None
     #: Base filter for the district.
-    apply_filter: Optional[DistrictApplyFilter] = None
+    apply_filter: DistrictApplyFilter | None = None
 
 
 def _district_dto_json_schema_extra(schema: MutableMapping[str, Any]) -> None:
@@ -127,7 +128,7 @@ class DistrictDTO(AntaresBaseModel):
     #: User-defined comments.
     comments: str
     #: List of areas that will be grouped in the district.
-    areas: List[str]
+    areas: list[str]
     #: Name of the district (this name is also used as a unique identifier).
     name: str
 
@@ -160,15 +161,15 @@ class District(AntaresBaseModel):
     #: User-defined comments.
     comments: str = ""
     #: List of areas that will be grouped in the district.
-    add_areas: List[str] = []
+    add_areas: list[str] = []
     #: List of areas that will be grouped in the district.
-    subtract_areas: List[str] = []
+    subtract_areas: list[str] = []
     #: Name of the district (this name is also used as a unique identifier).
     name: str
     #: Base filter for the district.
     apply_filter: DistrictApplyFilter = DistrictApplyFilter.remove_all
 
-    def to_dto(self, all_areas: List[str]) -> DistrictDTO:
+    def to_dto(self, all_areas: list[str]) -> DistrictDTO:
         if self.apply_filter == DistrictApplyFilter.add_all:
             areas = list(set(all_areas).difference(set(self.subtract_areas)))
         else:

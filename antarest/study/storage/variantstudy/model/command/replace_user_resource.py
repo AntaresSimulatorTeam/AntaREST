@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Final, List, Optional
+from typing import Any, Final
 
 from pydantic import model_validator
 from pydantic_core.core_schema import ValidationInfo
@@ -65,9 +65,11 @@ class ReplaceUserResource(ICommand):
         return values
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         study_data.save_user_resource(self.data)
-        return command_succeeded(message=f"{self.data.resource_type} {self.data.path} has been successfully created.")
+        return command_succeeded(
+            message=f"{self.data.resource_type} {self.data.path} has been successfully created.", result=None
+        )
 
     @override
     def to_dto(self) -> CommandDTO:
@@ -79,7 +81,7 @@ class ReplaceUserResource(ICommand):
         )
 
     @override
-    def get_inner_blobs(self) -> List[str]:
+    def get_inner_blobs(self) -> list[str]:
         if self.data.blob_id:
             return [self.data.blob_id]
         return []

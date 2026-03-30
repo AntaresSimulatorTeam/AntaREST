@@ -15,7 +15,7 @@ Database implementation of XpansionDao.
 """
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import polars as pl
 from sqlalchemy import CursorResult, Table, asc, delete, insert, or_, select, update
@@ -214,7 +214,7 @@ class DatabaseXpansionDao(XpansionDao):
         return self._row_to_candidate(row)
 
     @override
-    def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
+    def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: str | None = None) -> None:
         """
         Upsert a candidate.
 

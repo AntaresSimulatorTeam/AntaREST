@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import List
 
 from antarest.core.exceptions import LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.study.business.model.layer_model import Layer, LayerCreation, LayerUpdate
@@ -24,7 +23,7 @@ class LayerManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_layers(self, study: StudyInterface) -> List[Layer]:
+    def get_layers(self, study: StudyInterface) -> list[Layer]:
         return list(study.get_study_dao().get_layers())
 
     def create_layer(self, study: StudyInterface, layer_name: str) -> str:

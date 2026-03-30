@@ -16,8 +16,9 @@ This module dedicated to variant snapshot generation.
 
 import logging
 import shutil
+from collections.abc import Sequence
 from pathlib import Path
-from typing import List, NamedTuple, Optional, Sequence, Tuple
+from typing import NamedTuple
 
 from antarest.core.exceptions import VariantGenerationError
 from antarest.core.interfaces.cache import (
@@ -71,7 +72,7 @@ class SnapshotGenerator:
         denormalize: bool = True,
         from_scratch: bool = False,
         notifier: ITaskNotifier = NoopNotifier(),
-        listener: Optional[ICommandListener] = None,
+        listener: ICommandListener | None = None,
     ) -> GenerationResultInfoDTO:
         # ATTENTION: since we are making changes to disk, a file lock is needed.
         # The locking is currently done in the `VariantStudyService.generate_task` function
@@ -148,7 +149,7 @@ class SnapshotGenerator:
 
         return results
 
-    def _retrieve_descendants(self, variant_study_id: str) -> Tuple[Study, Sequence[VariantStudy]]:
+    def _retrieve_descendants(self, variant_study_id: str) -> tuple[Study, Sequence[VariantStudy]]:
         # Get all ancestors of the current study from bottom to top
         # The first IDs are variant IDs, the last is the root study ID.
         ancestor_ids = self.repository.get_ancestor_or_self_ids(variant_study_id)
@@ -180,7 +181,7 @@ class SnapshotGenerator:
         file_study: FileStudy,
         variant_study: VariantStudy,
         cmd_blocks: Sequence[CommandBlock],
-        listener: Optional[ICommandListener] = None,
+        listener: ICommandListener | None = None,
     ) -> GenerationResultInfoDTO:
         commands = [self.command_factory.to_command(cb.to_dto()) for cb in cmd_blocks]
         results = apply_commands_to_variant(commands, study=file_study, metadata=variant_study, listener=listener)
@@ -246,7 +247,7 @@ def search_ref_study(
     ref_study: Study
 
     # The commands to apply on the reference study to generate the current variant
-    cmd_blocks: List[CommandBlock]
+    cmd_blocks: list[CommandBlock]
 
     if from_scratch:
         # In the case of a from scratch generation, the root study will be used as the reference study.

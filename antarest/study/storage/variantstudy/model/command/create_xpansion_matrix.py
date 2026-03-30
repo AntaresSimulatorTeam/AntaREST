@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional
 
 from pydantic import Field, ValidationInfo, field_validator
 from typing_extensions import override
@@ -35,10 +34,10 @@ class AbstractCreateXpansionMatrix(ICommand):
     # ==================
 
     filename: str
-    matrix: List[List[MatrixData]] | str = Field(validate_default=True)
+    matrix: list[list[MatrixData]] | str = Field(validate_default=True)
 
     @field_validator("matrix", mode="before")
-    def matrix_validator(cls, matrix: List[List[MatrixData]] | str, values: ValidationInfo) -> str:
+    def matrix_validator(cls, matrix: list[list[MatrixData]] | str, values: ValidationInfo) -> str:
         return validate_matrix(matrix, values.data)
 
     @override
@@ -63,10 +62,10 @@ class CreateXpansionWeight(AbstractCreateXpansionMatrix):
     command_name: CommandName = CommandName.CREATE_XPANSION_WEIGHT
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         assert isinstance(self.matrix, str)
         study_data.save_xpansion_weight(self.filename, self.matrix)
-        return command_succeeded(message=f"Xpansion weight {self.filename} created successfully")
+        return command_succeeded(message=f"Xpansion weight {self.filename} created successfully", result=None)
 
 
 class CreateXpansionCapacity(AbstractCreateXpansionMatrix):
@@ -77,7 +76,7 @@ class CreateXpansionCapacity(AbstractCreateXpansionMatrix):
     command_name: CommandName = CommandName.CREATE_XPANSION_CAPACITY
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         assert isinstance(self.matrix, str)
         study_data.save_xpansion_capacity(self.filename, self.matrix)
-        return command_succeeded(message=f"Xpansion capacity {self.filename} created successfully")
+        return command_succeeded(message=f"Xpansion capacity {self.filename} created successfully", result=None)

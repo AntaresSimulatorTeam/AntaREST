@@ -10,14 +10,16 @@
 #
 # This file is part of the Antares project.
 
+from __future__ import annotations
+
 import contextlib
 import io
 import logging
 import tempfile
 import zipfile
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from pathlib import Path
-from typing import Callable, Iterable, Iterator, List, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -135,7 +137,7 @@ class ISimpleMatrixService(ABC):
     def register_usage_provider(self, usage_provider: "IMatrixUsageProvider") -> None:
         raise NotImplementedError()
 
-    def get_matrix_id(self, matrix: List[List[float]] | str) -> str:
+    def get_matrix_id(self, matrix: list[list[float]] | str) -> str:
         """
         Get the matrix ID from a matrix or a matrix link.
 
@@ -168,7 +170,7 @@ class ISimpleMatrixService(ABC):
 class SimpleMatrixService(ISimpleMatrixService):
     def __init__(self, matrix_content_repository: MatrixContentRepository):
         self.matrix_content_repository = matrix_content_repository
-        self.usage_providers: List[IMatrixUsageProvider] = []
+        self.usage_providers: list[IMatrixUsageProvider] = []
         self._predefined_matrices: dict[str, Callable[[], pl.DataFrame]] = {}
 
     @override
@@ -270,7 +272,7 @@ class MatrixService(ISimpleMatrixService):
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
         self.config = config
-        self.usage_providers: List[IMatrixUsageProvider] = []
+        self.usage_providers: list[IMatrixUsageProvider] = []
         self._create_dataset_usage_provider()
         self._predefined_matrices: dict[str, Callable[[], pl.DataFrame]] = {}
 
@@ -288,7 +290,9 @@ class MatrixService(ISimpleMatrixService):
             # Nothing to do
             return matrix_id, None
         created_at = current_time()
-        matrix = Matrix(id=matrix_id, width=data.shape[1], height=data.shape[0], created_at=created_at, version=2)
+        width = data.shape[1]
+        height = data.shape[0] if width > 0 else 0
+        matrix = Matrix(id=matrix_id, width=width, height=height, created_at=created_at, version=2)
         return matrix_id, matrix
 
     @override
@@ -333,7 +337,7 @@ class MatrixService(ISimpleMatrixService):
         self.repo.save_batch(matrices)
         return matrices_ids
 
-    def create_by_importation(self, file: UploadFile, is_json: bool = False) -> List[MatrixInfoDTO]:
+    def create_by_importation(self, file: UploadFile, is_json: bool = False) -> list[MatrixInfoDTO]:
         """
         Imports a matrix from a TSV or JSON file or a collection of matrices from a ZIP file.
 
@@ -357,7 +361,7 @@ class MatrixService(ISimpleMatrixService):
             if file.content_type == "application/zip":
                 with contextlib.closing(f):
                     buffer = io.BytesIO(f.read())
-                matrix_info: List[MatrixInfoDTO] = []
+                matrix_info: list[MatrixInfoDTO] = []
                 if file.filename.endswith("zip"):
                     with zipfile.ZipFile(buffer) as zf:
                         for info in zf.infolist():
@@ -399,7 +403,7 @@ class MatrixService(ISimpleMatrixService):
         matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
         return self.create(create_polars_dataframe(matrix))
 
-    def get_dataset(self, id: str) -> Optional[MatrixDataSet]:
+    def get_dataset(self, id: str) -> MatrixDataSet | None:
         dataset = self.repo_dataset.get(id)
         if dataset is None:
             raise MatrixDataSetNotFound()
@@ -407,7 +411,7 @@ class MatrixService(ISimpleMatrixService):
         MatrixService.check_access_permission(dataset)
         return dataset
 
-    def create_dataset(self, dataset_info: MatrixDataSetUpdateDTO, matrices: List[MatrixInfoDTO]) -> MatrixDataSet:
+    def create_dataset(self, dataset_info: MatrixDataSetUpdateDTO, matrices: list[MatrixInfoDTO]) -> MatrixDataSet:
         user = require_current_user()
 
         groups = [self.user_service.get_group(group_id) for group_id in dataset_info.groups]
@@ -442,7 +446,7 @@ class MatrixService(ISimpleMatrixService):
         )
         return self.repo_dataset.save(updated_dataset)
 
-    def list(self, dataset_name: Optional[str], filter_own: bool) -> List[MatrixDataSetDTO]:
+    def list_datasets(self, dataset_name: str | None, filter_own: bool) -> list[MatrixDataSetDTO]:
         """
         List matrix user metadata
 
@@ -494,7 +498,7 @@ class MatrixService(ISimpleMatrixService):
         return self.matrix_content_repository.get(matrix_id, matrix.version)
 
     @override
-    def get_matrices(self) -> List[MatrixMetadataDTO]:
+    def get_matrices(self) -> list[MatrixMetadataDTO]:
         """
         Get a list of matrix objects from the database
         Returns:#

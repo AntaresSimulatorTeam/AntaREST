@@ -14,8 +14,8 @@ import sys
 import typing as t
 import uuid
 import zipfile
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 import jinja2
 import pytest
@@ -164,9 +164,10 @@ def study_service(services: Services) -> StudyService:
 
 
 @pytest.fixture(name="client")
-def client_fixture(app: FastAPI) -> TestClient:
+def client_fixture(app: FastAPI) -> Iterable[TestClient]:
     """Get the webservice client used for unit testing"""
-    return TestClient(app, raise_server_exceptions=False)
+    with TestClient(app, raise_server_exceptions=False) as client:
+        yield client
 
 
 @pytest.fixture(name="admin_access_token")

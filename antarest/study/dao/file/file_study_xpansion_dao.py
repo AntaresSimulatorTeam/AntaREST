@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import polars as pl
 from typing_extensions import override
@@ -89,7 +89,7 @@ class FileStudyXpansionDao(XpansionDao, ABC):
             raise XpansionCandidateDeletionError(file_study.config.study_id, candidate_name)
 
     @override
-    def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
+    def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: str | None = None) -> None:
         candidates = self._get_all_xpansion_candidates()
         existing_ids = {value["name"]: key for key, value in candidates.items()}
 

@@ -12,8 +12,7 @@
 
 import contextlib
 import shlex
-import socket
-from typing import Any, List, Tuple
+from typing import Any
 
 import paramiko
 
@@ -40,19 +39,14 @@ class SlurmError(Exception):
     pass
 
 
-def execute_command(ssh_config: SSHConfigDTO, args: List[str]) -> Any:
+def execute_command(ssh_config: SSHConfigDTO, args: list[str]) -> Any:
     command = " ".join(args)
     try:
         with ssh_client(ssh_config) as client:  # type: paramiko.SSHClient
             _, stdout, stderr = client.exec_command(command, timeout=10)
             output = stdout.read().decode("utf-8").strip()
             error = stderr.read().decode("utf-8").strip()
-    except (
-        paramiko.AuthenticationException,
-        paramiko.SSHException,
-        socket.timeout,
-        socket.error,
-    ) as e:
+    except (paramiko.AuthenticationException, paramiko.SSHException, TimeoutError, OSError) as e:
         raise SlurmError(f"Can't retrieve SLURM information: {e}") from e
     if error:
         raise SlurmError(f"Can't retrieve SLURM information: {error}")
@@ -86,7 +80,7 @@ def parse_cpu_load(sinfo_output: str) -> float:
     return 100 * min(1.0, ratio)
 
 
-def calculates_slurm_load(ssh_config: SSHConfigDTO, partition: str) -> Tuple[float, float, int]:
+def calculates_slurm_load(ssh_config: SSHConfigDTO, partition: str) -> tuple[float, float, int]:
     """
     Returns the used/oad of the SLURM cluster or local machine in percentage and the number of queued jobs.
 

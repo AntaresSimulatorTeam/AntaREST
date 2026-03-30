@@ -15,7 +15,7 @@
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { storageMutations } from "@/queries/storages/mutations";
 import { storageQueries } from "@/queries/storages/queries";
-import type { QueryListItem } from "@/queries/types";
+import { createOptimisticListItem } from "@/queries/utils";
 import type { StorageConstraint } from "@/services/api/studies/areas/storages/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "@tanstack/react-router";
@@ -54,13 +54,12 @@ function useCreateStorageConstraint() {
       queryClient.setQueryData(queryListKey, (old = []) => {
         return [
           ...old,
-          {
+          createOptimisticListItem<StorageConstraint>({
             ...DEFAULT_CONSTRAINT_VALUES,
             ...values,
             id: tempConstraintId,
             name: values.name,
-            _metadata: { isOptimistic: true },
-          } satisfies QueryListItem<StorageConstraint>,
+          }),
         ];
       });
 

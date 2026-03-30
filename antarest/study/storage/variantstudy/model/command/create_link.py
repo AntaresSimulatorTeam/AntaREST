@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Dict, Final, List, Optional, Union
+from typing import Any, Final
 
 from pydantic import ValidationInfo, field_validator, model_validator
 from typing_extensions import override
@@ -18,7 +18,7 @@ from antarest.core.exceptions import LinkValidationError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
-from antarest.study.business.model.link_model import LinkCreation, LinkUpdate, create_link
+from antarest.study.business.model.link_model import Link, LinkCreation, LinkUpdate, create_link
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_2, StudyVersionStr
 from antarest.study.storage.rawstudy.model.filesystem.config.link import parse_link
@@ -43,9 +43,9 @@ class AbstractLinkCommand(AntaresBaseModel, extra="forbid"):
 
     area1: str
     area2: str
-    series: Optional[Union[List[List[MatrixData]], str]] = None
-    direct: Optional[Union[List[List[MatrixData]], str]] = None
-    indirect: Optional[Union[List[List[MatrixData]], str]] = None
+    series: list[list[MatrixData]] | str | None = None
+    direct: list[list[MatrixData]] | str | None = None
+    indirect: list[list[MatrixData]] | str | None = None
     study_version: StudyVersionStr
 
     # version 2: replace type dict[str, Any] by class LinkUpdate for `parameters`
@@ -53,8 +53,8 @@ class AbstractLinkCommand(AntaresBaseModel, extra="forbid"):
 
     @field_validator("series", "direct", "indirect", mode="before")
     def validate_series(
-        cls, v: Optional[Union[List[List[MatrixData]], str]], values: Union[Dict[str, Any], ValidationInfo]
-    ) -> Optional[Union[List[List[MatrixData]], str]]:
+        cls, v: list[list[MatrixData]] | str | None, values: dict[str, Any] | ValidationInfo
+    ) -> list[list[MatrixData]] | str | None:
         new_values = values if isinstance(values, dict) else values.data
         return validate_matrix(v, new_values) if v is not None else v
 
@@ -112,7 +112,7 @@ class CreateLink(AbstractLinkCommand, ICommand):
 
     @model_validator(mode="before")
     @classmethod
-    def _validate_parameters(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+    def _validate_parameters(cls, values: dict[str, Any], info: ValidationInfo) -> dict[str, Any]:
         if "parameters" not in values or not values["parameters"]:
             values["parameters"] = LinkCreation()
 
@@ -127,7 +127,7 @@ class CreateLink(AbstractLinkCommand, ICommand):
         return values
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[Link]:
         if study_data.link_exists(self.area1, self.area2):
             return command_failed(f"Link between '{self.area1}' and '{self.area2}' already exists")
 
@@ -146,7 +146,7 @@ class CreateLink(AbstractLinkCommand, ICommand):
             study_data.save_link_direct_capacities(area_from, area_to, str(direct))
             study_data.save_link_indirect_capacities(area_from, area_to, str(indirect))
 
-        return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' created")
+        return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' created", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

@@ -10,7 +10,8 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Generator, Optional, Tuple
+from collections.abc import Generator
+from typing import Any
 
 import typing_extensions as te
 from typing_extensions import override
@@ -34,7 +35,7 @@ _ENR_MODELLING_KEY = "settings/generaldata/other preferences/renewable-generatio
 _Data: te.TypeAlias = str | int | float | bool | JSON | None
 
 
-def _iter_dict(data: _Data, root_key: str = "") -> Generator[Tuple[str, Any], None, None]:
+def _iter_dict(data: _Data, root_key: str = "") -> Generator[tuple[str, Any], None, None]:
     if isinstance(data, dict):
         for key, value in data.items():
             sub_key = f"{root_key}/{key}" if root_key else key
@@ -68,7 +69,7 @@ class UpdateConfig(ICommand):
                     break
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: ICommandListener | None = None) -> CommandOutput[None]:
         url = self.target.split("/")
         tree_node = study_data.tree.get_node(url)
         if not isinstance(tree_node, IniFileNode):
@@ -77,7 +78,7 @@ class UpdateConfig(ICommand):
         study_data.tree.save(self.data, url)
 
         self.update_in_config(study_data.config)
-        return command_succeeded(message="ok", should_invalidate_cache=True)
+        return command_succeeded(message="ok", should_invalidate_cache=True, result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

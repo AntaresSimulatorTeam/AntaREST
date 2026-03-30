@@ -51,7 +51,7 @@ from antarest.login.auth import JwtSettings
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import MatrixService
-from antarest.output.output_service import OutputService
+from antarest.output.service import OutputService
 from antarest.service_creator import Services
 from antarest.study.directory_service import DirectoryService
 from antarest.study.service import StudyService

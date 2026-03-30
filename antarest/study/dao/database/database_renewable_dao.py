@@ -15,7 +15,8 @@ Database implementation of ThermalDao.
 """
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, NoReturn, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, NoReturn
 
 import polars as pl
 from sqlalchemy import CursorResult, Select, delete, select
@@ -67,7 +68,7 @@ class DatabaseRenewableDao(RenewableDao):
 
     def _convert_renewable_cluster_to_row(self, area_id: str, cluster: RenewableCluster) -> dict[str, Any]:
         values = dict(study_id=self._study_id, area_id=area_id, **cluster.model_dump())
-        values["renewable_id"] = values.pop("id")
+        values["renewable_id"] = values.pop("id").lower()
         return values
 
     def _raise_the_right_renewable_exception(

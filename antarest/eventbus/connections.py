@@ -14,7 +14,6 @@ from __future__ import annotations
 import dataclasses
 import logging
 from enum import StrEnum
-from typing import List, Optional
 
 from starlette.websockets import WebSocket
 
@@ -30,13 +29,13 @@ logger = logging.getLogger(__name__)
 
 class ConnectionManager:
     def __init__(self) -> None:
-        self.active_connections: List[WebsocketConnection] = []
+        self.active_connections: list[WebsocketConnection] = []
 
     async def connect(self, websocket: WebSocket, user: JWTUser) -> None:
         await websocket.accept()
-        self.active_connections.append((WebsocketConnection(websocket, user)))
+        self.active_connections.append(WebsocketConnection(websocket, user))
 
-    def _get_connection(self, websocket: WebSocket) -> Optional[WebsocketConnection]:
+    def _get_connection(self, websocket: WebSocket) -> WebsocketConnection | None:
         for connection in self.active_connections:
             if connection.websocket == websocket:
                 return connection
@@ -44,7 +43,7 @@ class ConnectionManager:
         return None
 
     def disconnect(self, websocket: WebSocket) -> None:
-        connection_to_remove: Optional[WebsocketConnection] = self._get_connection(websocket)
+        connection_to_remove: WebsocketConnection | None = self._get_connection(websocket)
         if connection_to_remove is not None:
             self.active_connections.remove(connection_to_remove)
 
@@ -96,4 +95,4 @@ class WebsocketMessage(AntaresBaseModel):
 class WebsocketConnection:
     websocket: WebSocket
     user: JWTUser
-    channel_subscriptions: List[str] = dataclasses.field(default_factory=list)
+    channel_subscriptions: list[str] = dataclasses.field(default_factory=list)

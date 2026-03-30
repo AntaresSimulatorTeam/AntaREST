@@ -13,7 +13,6 @@
  */
 
 import { bindingConstraintQueries } from "@/queries/bindingConstraints/queries";
-import type { QueryList } from "@/queries/types";
 import type { BindingConstraint } from "@/services/api/studies/bindingConstraints/type";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
@@ -27,7 +26,7 @@ function useBindingConstraint() {
   const { t } = useTranslation();
 
   const getConstraint = useCallback(
-    (constraints: QueryList<BindingConstraint>) => {
+    (constraints: BindingConstraint[]) => {
       return constraints.find(({ id }) => id === bindingConstraintId);
     },
     [bindingConstraintId],

@@ -13,7 +13,6 @@
  */
 
 import { storageQueries } from "@/queries/storages/queries";
-import type { QueryList } from "@/queries/types";
 import type { StorageConstraint } from "@/services/api/studies/areas/storages/types";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
@@ -27,7 +26,7 @@ function useStorageConstraint() {
   const { t } = useTranslation();
 
   const getConstraint = useCallback(
-    (constraints: QueryList<StorageConstraint>) => {
+    (constraints: StorageConstraint[]) => {
       return constraints.find(({ id }) => id === constraintId);
     },
     [constraintId],

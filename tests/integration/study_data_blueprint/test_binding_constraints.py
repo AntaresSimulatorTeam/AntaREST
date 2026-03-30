@@ -885,7 +885,7 @@ class TestBindingConstraints:
         assert constraint_terms == expected
 
         # Write terms with area/cluster in upper case to ensure the endpoint returns them in lower case
-        with open(ini_path, "r") as f:
+        with open(ini_path) as f:
             lines = f.readlines()
             new_lines = lines
             for k, line in enumerate(lines):

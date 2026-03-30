@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional, Sequence
+from collections.abc import Sequence
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
@@ -28,7 +28,7 @@ class VariantStudyRepository(StudyMetadataRepository):
     Variant study repository
     """
 
-    def __init__(self, cache_service: ICache, session: Optional[Session] = None):
+    def __init__(self, cache_service: ICache, session: Session | None = None):
         """
         Initialize the variant study repository.
 
@@ -54,7 +54,7 @@ class VariantStudyRepository(StudyMetadataRepository):
         # Get the user-defined session
         return self._session
 
-    def get_children(self, parent_id: str) -> List[VariantStudy]:
+    def get_children(self, parent_id: str) -> list[VariantStudy]:
         """
         Get the direct children of a variant study in chronological order.
 
@@ -91,7 +91,7 @@ class VariantStudyRepository(StudyMetadataRepository):
         result = self.session.execute(select(recursive_q.c.id))
         return [r[0] for r in result]
 
-    def get_all_descendants(self, parent_id: str) -> List[VariantStudy]:
+    def get_all_descendants(self, parent_id: str) -> list[VariantStudy]:
         """
         Get all variant descendants of a study recursively.
 
@@ -110,7 +110,7 @@ class VariantStudyRepository(StudyMetadataRepository):
         stmt = select(VariantStudy).where(VariantStudy.id.in_(select(full_cte.c.id)))
         return list(self.session.execute(stmt).scalars().all())
 
-    def get_all_command_blocks(self) -> List[CommandBlock]:
+    def get_all_command_blocks(self) -> list[CommandBlock]:
         """
         Get all command blocks.
 

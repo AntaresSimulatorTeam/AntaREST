@@ -18,9 +18,10 @@ import tempfile
 from dataclasses import asdict, dataclass, field
 from enum import StrEnum
 from pathlib import Path
-from typing import ClassVar, Dict, List, Optional
+from typing import ClassVar
 
 import yaml
+from antares.study.version import SolverVersion
 
 from antarest.core.model import JSON
 from antarest.core.roles import RoleType
@@ -46,10 +47,10 @@ class ExternalAuthConfig:
     Sub config object dedicated to external auth service
     """
 
-    url: Optional[str] = None
+    url: str | None = None
     default_group_role: RoleType = RoleType.READER
     add_ext_groups: bool = False
-    group_mapping: Dict[str, str] = field(default_factory=dict)
+    group_mapping: dict[str, str] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: JSON) -> "ExternalAuthConfig":
@@ -96,9 +97,9 @@ class WorkspaceConfig:
     Sub config object dedicated to workspace
     """
 
-    filter_in: List[str] = field(default_factory=lambda: [".*"])
-    filter_out: List[str] = field(default_factory=lambda: [])
-    groups: List[str] = field(default_factory=lambda: [])
+    filter_in: list[str] = field(default_factory=lambda: [".*"])
+    filter_out: list[str] = field(default_factory=lambda: [])
+    groups: list[str] = field(default_factory=lambda: [])
     path: Path = Path()
 
     @classmethod
@@ -119,9 +120,9 @@ class DbConfig:
     """
 
     db_url: str = ""
-    db_admin_url: Optional[str] = None
+    db_admin_url: str | None = None
     db_connect_timeout: int = 10
-    pool_recycle: Optional[int] = None
+    pool_recycle: int | None = None
     pool_pre_ping: bool = False
     pool_use_null: bool = False
     pool_max_overflow: int = 10
@@ -141,6 +142,26 @@ class DbConfig:
             pool_max_overflow=data.get("pool_max_overflow", defaults.pool_max_overflow),
             pool_size=data.get("pool_size", defaults.pool_size),
             pool_use_lifo=data.get("pool_use_lifo", defaults.pool_use_lifo),
+        )
+
+
+@dataclass(frozen=True)
+class OutputStorageConfig:
+    """
+    Configuration for "new style" internal output storage
+    """
+
+    enable: bool = False
+    default: bool = False
+    archive_dir: Path = Path("./output-archives")
+
+    @classmethod
+    def from_dict(cls, data: JSON) -> "OutputStorageConfig":
+        defaults = cls()
+        return OutputStorageConfig(
+            enable=data.get("enable", defaults.enable),
+            default=data.get("default", defaults.default),
+            archive_dir=Path(data.get("archive_dir", str(defaults.archive_dir))),
         )
 
 
@@ -169,7 +190,7 @@ class StorageConfig:
     matrixstore: Path = Path("./matrixstore")
     archive_dir: Path = Path("./archives")
     tmp_dir: Path = Path(tempfile.gettempdir())
-    workspaces: Dict[str, WorkspaceConfig] = field(default_factory=dict)
+    workspaces: dict[str, WorkspaceConfig] = field(default_factory=dict)
     allow_deletion: bool = False
     watcher_lock: bool = True
     watcher_lock_delay: int = 10
@@ -195,6 +216,7 @@ class StorageConfig:
     tasks_gc_sleeping_time: int = 86400
     tasks_gc_dry_run: bool = False
     study_storage: StudyStorageConfig = StudyStorageConfig()
+    output: OutputStorageConfig = OutputStorageConfig()
 
     @classmethod
     def from_dict(cls, data: JSON, desktop_mode: bool = False) -> "StorageConfig":
@@ -246,10 +268,11 @@ class StorageConfig:
             watcher_scan_dry_run=data.get("watcher_scan_dry_run", defaults.watcher_scan_dry_run),
             tasks_gc_retention_days=data.get("tasks_gc_retention_days", defaults.tasks_gc_retention_days),
             study_storage=StudyStorageConfig.from_dict(data.get("study", {}).get("storage", {})),
+            output=OutputStorageConfig.from_dict(data["output"]) if "output" in data else defaults.output,
         )
 
     @classmethod
-    def validate_workspaces(cls, workspaces: Dict[str, WorkspaceConfig], desktop_mode: bool) -> None:
+    def validate_workspaces(cls, workspaces: dict[str, WorkspaceConfig], desktop_mode: bool) -> None:
         """
         Validate that no two workspaces have overlapping paths.
         """
@@ -269,7 +292,7 @@ class StorageConfig:
                     )
 
     @classmethod
-    def system_workspaces(cls) -> Dict[str, WorkspaceConfig]:
+    def system_workspaces(cls) -> dict[str, WorkspaceConfig]:
         if platform.system().lower() == "linux":
             return {"local": WorkspaceConfig(path=Path("/"))}
         elif platform.system().lower() == "windows":
@@ -290,7 +313,7 @@ class NbCoresConfig:
     default: int = 22
     max: int = 24
 
-    def to_json(self) -> Dict[str, int]:
+    def to_json(self) -> dict[str, int]:
         """
         Retrieves the number of cores parameters, returning a dictionary containing the values "min"
         (minimum allowed value), "defaultValue" (default value), and "max" (maximum allowed value)
@@ -324,7 +347,7 @@ class TimeLimitConfig:
     default: int = 48
     max: int = 48
 
-    def to_json(self) -> Dict[str, int]:
+    def to_json(self) -> dict[str, int]:
         """
         Retrieves the time limit parameters, returning a dictionary containing the values "min"
         (minimum allowed value), "defaultValue" (default value), and "max" (maximum allowed value)
@@ -350,11 +373,11 @@ class LocalConfig:
     id: str
     name: str
     type: ClassVar[LauncherType] = LauncherType.LOCAL
-    binaries: Dict[str, Path] = field(default_factory=dict)
+    binaries: dict[SolverVersion, Path] = field(default_factory=dict)
     enable_nb_cores_detection: bool = True
     nb_cores: NbCoresConfig = NbCoresConfig()
     time_limit: TimeLimitConfig = TimeLimitConfig()
-    xpress_dir: Optional[str] = None
+    xpress_dir: str | None = None
     local_workspace: Path = Path("./local_workspace")
 
     @classmethod
@@ -365,7 +388,7 @@ class LocalConfig:
             data: Parse config from dict.
         Returns: object NbCoresConfig
         """
-        binaries = {str(k): Path(v) for k, v in data.get("binaries", {}).items()}
+        binaries = {SolverVersion.parse(str(k)): Path(v) for k, v in data.get("binaries", {}).items()}
         enable_nb_cores_detection = data.get("enable_nb_cores_detection", True)
         nb_cores = data.get("nb_cores", asdict(NbCoresConfig()))
         if enable_nb_cores_detection:
@@ -383,7 +406,7 @@ class LocalConfig:
         )
 
     @classmethod
-    def _autodetect_nb_cores(cls) -> Dict[str, int]:
+    def _autodetect_nb_cores(cls) -> dict[str, int]:
         """
         Automatically detects the number of cores available on the user's machine
         Returns: Instance of NbCoresConfig
@@ -417,7 +440,7 @@ class SlurmConfig:
     slurm_script_path: str = ""
     partition: str = ""
     max_cores: int = 64
-    antares_versions_on_remote_server: List[str] = field(default_factory=list)
+    antares_versions_on_remote_server: list[SolverVersion] = field(default_factory=list)
     enable_nb_cores_detection: bool = False
 
     @classmethod
@@ -441,6 +464,8 @@ class SlurmConfig:
         # In the configuration file, the default time limit is in seconds, so we convert it to hours
         max_time_limit = data.get("default_time_limit", TimeLimitConfig().max * 3600) // 3600
         time_limit = TimeLimitConfig(min=1, default=max_time_limit, max=max_time_limit)
+        antares_versions_as_str = data.get("antares_versions_on_remote_server", [])
+        antares_versions_on_remote_server = [SolverVersion.parse(str(v)) for v in antares_versions_as_str]
         return cls(
             id=data["id"],
             name=data["name"],
@@ -456,17 +481,14 @@ class SlurmConfig:
             default_json_db_name=data.get("default_json_db_name", ""),
             slurm_script_path=data.get("slurm_script_path", ""),
             partition=data.get("partition", ""),
-            antares_versions_on_remote_server=data.get(
-                "antares_versions_on_remote_server",
-                [],
-            ),
+            antares_versions_on_remote_server=antares_versions_on_remote_server,
             max_cores=data.get("max_cores", 64),
             enable_nb_cores_detection=enable_nb_cores_detection,
             nb_cores=NbCoresConfig(**nb_cores),
         )
 
     @classmethod
-    def _autodetect_nb_cores(cls) -> Dict[str, int]:
+    def _autodetect_nb_cores(cls) -> dict[str, int]:
         raise NotImplementedError("NB Cores auto-detection is not implemented for SLURM server")
 
 
@@ -488,12 +510,12 @@ class LauncherConfig:
     """
 
     default: str = "local"
-    configs: Optional[List[LocalConfig | SlurmConfig]] = None
+    configs: list[LocalConfig | SlurmConfig] | None = None
     batch_size: int = 9999
 
     @classmethod
     def from_dict(cls, data: JSON) -> "LauncherConfig":
-        launchers: List[LocalConfig | SlurmConfig] = []
+        launchers: list[LocalConfig | SlurmConfig] = []
         defaults = cls()
         default = data.get("default", cls.default)
         batch_size = data.get("batch_size", defaults.batch_size)
@@ -515,7 +537,7 @@ class LauncherConfig:
             batch_size=batch_size,
         )
 
-    def get_slurm_configs(self) -> List[SlurmConfig]:
+    def get_slurm_configs(self) -> list[SlurmConfig]:
         return [cfg for cfg in self.configs or [] if isinstance(cfg, SlurmConfig)]
 
 
@@ -525,7 +547,7 @@ class LoggingConfig:
     Sub config object dedicated to logging
     """
 
-    logfile: Optional[Path] = None
+    logfile: Path | None = None
     json: bool = False
     level: str = "INFO"
 
@@ -547,7 +569,7 @@ class RedisConfig:
 
     host: str = "localhost"
     port: int = 6379
-    password: Optional[str] = None
+    password: str | None = None
 
     @classmethod
     def from_dict(cls, data: JSON) -> "RedisConfig":
@@ -590,7 +612,7 @@ class CacheConfig:
 @dataclass(frozen=True)
 class RemoteWorkerConfig:
     name: str
-    queues: List[str] = field(default_factory=list)
+    queues: list[str] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data: JSON) -> "RemoteWorkerConfig":
@@ -608,7 +630,7 @@ class TaskConfig:
     """
 
     max_workers: int = 5
-    remote_workers: List[RemoteWorkerConfig] = field(default_factory=list)
+    remote_workers: list[RemoteWorkerConfig] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data: JSON) -> "TaskConfig":
@@ -631,7 +653,7 @@ class ServerConfig:
     """
 
     worker_threadpool_size: int = 5
-    services: List[str] = field(default_factory=list)
+    services: list[str] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data: JSON) -> "ServerConfig":
@@ -699,7 +721,7 @@ class CeleryConfig:
         return f"redis://{password_part}{redis_config.host}:{redis_config.port}/{db}"
 
     @classmethod
-    def from_dict(cls, data: JSON, redis_config: Optional[RedisConfig] = None) -> "CeleryConfig":
+    def from_dict(cls, data: JSON, redis_config: RedisConfig | None = None) -> "CeleryConfig":
         defaults = cls()
 
         if redis_config:
@@ -728,7 +750,7 @@ class Config:
     logging: LoggingConfig = LoggingConfig()
     debug: bool = True
     resources_path: Path = Path()
-    redis: Optional[RedisConfig] = None
+    redis: RedisConfig | None = None
     eventbus: EventBusConfig = EventBusConfig()
     cache: CacheConfig = CacheConfig()
     tasks: TaskConfig = TaskConfig()
@@ -769,7 +791,7 @@ class Config:
         )
 
     @classmethod
-    def from_yaml_file(cls, file: Path, res: Optional[Path] = None) -> "Config":
+    def from_yaml_file(cls, file: Path, res: Path | None = None) -> "Config":
         """
         Parse config from yaml file.
 

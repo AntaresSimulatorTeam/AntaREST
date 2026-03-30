@@ -13,7 +13,7 @@
 import logging
 import uuid
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Any
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.dao.api.study_dao import StudyDao
@@ -43,12 +43,12 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         command_context: The context of the command.
     """
 
-    command_id: Optional[uuid.UUID] = None
+    command_id: uuid.UUID | None = None
     command_name: CommandName
     command_context: CommandContext
     study_version: StudyVersionStr
 
-    def _apply_dao(self, study_dao: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_dao: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[Any]:
         """
         Applies configuration changes to the study data.
 
@@ -57,7 +57,7 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         """
         return self._apply(study_dao.get_file_study(), listener)
 
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: ICommandListener | None = None) -> CommandOutput[Any]:
         """
         Applies the study data to update storage configurations and saves the changes.
 
@@ -69,7 +69,7 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         """
         raise NotImplementedError()
 
-    def apply(self, study_data: StudyDao | FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def apply(self, study_data: StudyDao | FileStudy, listener: ICommandListener | None = None) -> CommandOutput[Any]:
         """
         Applies the study data to update storage configurations and saves the changes.
 
@@ -113,7 +113,7 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         """
         return InnerMatrices()
 
-    def get_inner_blobs(self) -> List[str]:
+    def get_inner_blobs(self) -> list[str]:
         """
         Retrieves the list of blob IDs.
         """

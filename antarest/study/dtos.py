@@ -10,11 +10,14 @@
 #
 # This file is part of the Antares project.
 
-from typing import Dict, List
+
+from pydantic import ConfigDict
 
 from antarest.core.serde import AntaresBaseModel
-from antarest.output.storage.output_storage import OutputDetails
+from antarest.core.utils.string import to_camel_case
+from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
 from antarest.study.model import StudyVersionInt
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -24,6 +27,34 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 
 
+class OutputSynthesis(AntaresBaseModel):
+    """
+    Synthetic data about outputs of a study.
+    """
+
+    model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
+
+    name: str
+    mode: Mode
+    synthesis: bool
+    by_year: bool
+    nb_years: int
+    archived: bool
+    storage_type: OutputStorageType
+
+    @classmethod
+    def from_output_details(cls, output: OutputDetails) -> "OutputSynthesis":
+        return cls(
+            name=output.name,
+            mode=output.mode,
+            synthesis=output.synthesis,
+            by_year=output.by_year,
+            nb_years=output.nb_years,
+            archived=output.archived,
+            storage_type=output.storage_type,
+        )
+
+
 class StudyDataSynthesis(AntaresBaseModel):
     """
     Synthetic data about the **input** data of a study.
@@ -31,9 +62,9 @@ class StudyDataSynthesis(AntaresBaseModel):
 
     study_id: str
     version: StudyVersionInt
-    districts: Dict[str, District] = {}
-    areas: Dict[str, AreaConfig] = {}
-    bindings: List[BindingConstraint] = []
+    districts: dict[str, District] = {}
+    areas: dict[str, AreaConfig] = {}
+    bindings: list[BindingConstraint] = []
     enr_modelling: EnrModelling = EnrModelling.AGGREGATED
 
     @classmethod
@@ -63,10 +94,10 @@ class StudySynthesis(AntaresBaseModel):
 
     study_id: str
     version: StudyVersionInt
-    districts: Dict[str, District] = {}
-    areas: Dict[str, AreaConfig] = {}
-    outputs: Dict[str, OutputDetails] = {}
-    bindings: List[BindingConstraint] = []
+    districts: dict[str, District] = {}
+    areas: dict[str, AreaConfig] = {}
+    outputs: dict[str, OutputSynthesis] = {}
+    bindings: list[BindingConstraint] = []
     enr_modelling: EnrModelling = EnrModelling.AGGREGATED
 
     @classmethod
@@ -78,5 +109,5 @@ class StudySynthesis(AntaresBaseModel):
             districts=synthesis.districts,
             bindings=synthesis.bindings,
             enr_modelling=synthesis.enr_modelling,
-            outputs=outputs,
+            outputs={k: OutputSynthesis.from_output_details(v) for k, v in outputs.items()},
         )

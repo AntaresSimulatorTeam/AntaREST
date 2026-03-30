@@ -13,8 +13,9 @@
 import logging
 import textwrap
 import typing as t
+from collections.abc import Iterable, Mapping
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any
 from zipfile import ZipFile
 
 import pytest

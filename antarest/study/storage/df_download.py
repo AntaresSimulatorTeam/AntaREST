@@ -12,8 +12,9 @@
 import http
 import shutil
 import tempfile
+from collections.abc import Callable, Iterator
 from pathlib import Path
-from typing import Callable, Iterator, TypeAlias
+from typing import TypeAlias
 
 import pandas as pd
 import polars as pl

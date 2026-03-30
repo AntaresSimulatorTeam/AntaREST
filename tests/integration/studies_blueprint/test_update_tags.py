@@ -44,7 +44,7 @@ class TestupdateStudyMetadata:
         assert res.status_code == 200, res.json()
         actual = res.json()
         assert set(actual["tags"]) != set(study_tags)  # not the same case
-        assert set(tag.upper() for tag in actual["tags"]) == {"TAG1", "TAG3"}
+        assert {tag.upper() for tag in actual["tags"]} == {"TAG1", "TAG3"}
 
         # String normalization: whitespaces are stripped and
         # consecutive whitespaces are replaced by a single one.
@@ -96,7 +96,7 @@ class TestupdateStudyMetadata:
         assert res.status_code == 200, res.json()
         actual = res.json()
         assert set(actual["tags"]) == set(updated_study_tags)  # not the same case
-        assert set(tag.upper() for tag in actual["tags"]) == set()
+        assert {tag.upper() for tag in actual["tags"]} == set()
 
     def test_update_study_name(
         self,

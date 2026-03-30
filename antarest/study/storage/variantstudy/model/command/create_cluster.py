@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import typing as t
-from typing import Any, Dict, Final, List, Optional, Self
+from typing import Any, Final, Self
 
 from antares.study.version import StudyVersion
 from pydantic import Field, model_validator
@@ -20,6 +20,7 @@ from typing_extensions import override
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.model.thermal_cluster_model import (
+    ThermalCluster,
     ThermalClusterCreation,
     create_thermal_cluster,
     validate_thermal_cluster_against_version,
@@ -42,7 +43,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-OptionalMatrixData: t.TypeAlias = List[List[MatrixData]] | str | None
+OptionalMatrixData: t.TypeAlias = list[list[MatrixData]] | str | None
 
 
 class CreateCluster(ICommand):
@@ -69,7 +70,7 @@ class CreateCluster(ICommand):
 
     @model_validator(mode="before")
     @classmethod
-    def _validate_model(cls, values: Dict[str, t.Any], info: ValidationInfo) -> Dict[str, Any]:
+    def _validate_model(cls, values: dict[str, t.Any], info: ValidationInfo) -> dict[str, Any]:
         # Validate parameters
         if isinstance(values["parameters"], dict):
             study_version = StudyVersion.parse(values["study_version"])
@@ -102,7 +103,9 @@ class CreateCluster(ICommand):
         return self
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[ThermalCluster]:
         thermal = create_thermal_cluster(self.parameters, self.study_version)
         lower_thermal_id = thermal.id.lower()
         if study_data.thermal_exists(self.area_id, lower_thermal_id):
@@ -121,7 +124,7 @@ class CreateCluster(ICommand):
             study_data.save_thermal_fuel_cost(self.area_id, lower_thermal_id, null_matrix)
             study_data.save_thermal_co2_cost(self.area_id, lower_thermal_id, null_matrix)
 
-        return command_succeeded(f"Thermal cluster '{thermal.id}' added to area '{self.area_id}'.")
+        return command_succeeded(f"Thermal cluster '{thermal.id}' added to area '{self.area_id}'.", result=thermal)
 
     @override
     def to_dto(self) -> CommandDTO:
@@ -139,7 +142,7 @@ class CreateCluster(ICommand):
 
     @override
     def get_inner_matrices(self) -> InnerMatrices:
-        matrices: List[str] = []
+        matrices: list[str] = []
         if self.prepro:
             assert_this(isinstance(self.prepro, str))
             matrices.append(strip_matrix_protocol(self.prepro))
