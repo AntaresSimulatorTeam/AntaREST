@@ -636,11 +636,13 @@ class StudyDiskSpaceRepository:
             return db.session
         return self._session
 
-    def get_study(self, study_id: str) -> Optional[Study]:
-        return self.session.get(Study, study_id)
-
     def get(self, study_id: str) -> Optional[StudyDiskSpaceAnalysis]:
         return self.session.get(StudyDiskSpaceAnalysis, study_id)
+
+    def get_all(self) -> Sequence[StudyDiskSpaceAnalysis]:
+        stmt = select(StudyDiskSpaceAnalysis).options(joinedload(StudyDiskSpaceAnalysis.study))
+        result = self.session.execute(stmt)
+        return list(result.unique().scalars().all())
 
     def save(self, disk_analysis: StudyDiskSpaceAnalysis) -> StudyDiskSpaceAnalysis:
 
@@ -655,9 +657,8 @@ class StudyDiskSpaceRepository:
 
         stmt = (
             update(StudyDiskSpaceAnalysis)
-            .options(joinedload(StudyDiskSpaceAnalysis.study))
             .where(StudyDiskSpaceAnalysis.study_id == study_id)
-            .values(disk_space=disk_space, analysis_date=datetime.now())
+            .values(disk_space=disk_space, last_analysis_date=datetime.now())
         )
 
         session.execute(stmt)

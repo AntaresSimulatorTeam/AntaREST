@@ -29,7 +29,7 @@ class TestTasksGCIntegration:
     @with_admin_user
     def test_clean_tasks_gc(self, task_service: ITaskService, task_job_repository: TaskJobRepository):
         task_1 = TaskJob(
-            id="1", status=TaskStatus.RUNNING.value, name="task_1", creation_date=datetime(2025, 1, 1, 10, 0, 0)
+            id="1", status=TaskStatus.RUNNING.value, name="task_1", creation_date=datetime(2026, 1, 1, 10, 0, 0)
         )
         task_2 = TaskJob(
             id="2", status=TaskStatus.RUNNING.value, name="task_2", creation_date=datetime(2026, 1, 7, 14, 30, 0)

@@ -31,36 +31,44 @@ class DiskSpaceAnalyzerTaskResult(BaseModel):
     duration_seconds: float = 0
     updated_studies: int = 0
     reason: Optional[str] = None
-
-
-def disk_space_analysis_per_study(
-    repository: StudyDiskSpaceRepository, study_service: StudyService, study_id: str
-) -> None:
-    study_disk_analysis = repository.get(study_id)
-
-    if not study_disk_analysis:
-        study_disk_analysis = StudyDiskSpaceAnalysis(
-            study_id=study_id, disk_space=study_service.get_disk_usage(study_id), last_analysis_date=datetime.now()
-        )
-        repository.save(study_disk_analysis)
-    else:
-        usage = study_service.get_disk_usage(study_id)
-        repository.update(study_id, usage)
+    error: Optional[str] = None
 
 
 def disk_space_analysis(service: StudyService, disk_repo: StudyDiskSpaceRepository) -> DiskSpaceAnalyzerTaskResult:
     start_time = time.time()
-    # we're giving admin access to the disk space analyzer due to the search_studies method
-    studies = service.repository.get_all(StudyFilter(access_permissions=AccessPermissions(is_admin=True)))
+
     updated_studies = 0
 
     try:
         with db():
+            # we're giving admin access to the disk space analyzer due to the search_studies method
+            studies = service.repository.get_all(StudyFilter(access_permissions=AccessPermissions(is_admin=True)))
+            disk_analysis = disk_repo.get_all()
             with create_lock(db.session, lock_id=LockId.STUDY_DISK_SPACE):
                 for study in studies:
-                    if disk_repo.get(study.id) is None:
-                        disk_space_analysis_per_study(disk_repo, service, study.id)
-                        updated_studies += 1
+                    updated_at = study.updated_at
+                    try:
+                        filtered_analysis = (
+                            [da for da in disk_analysis if da.study_id == study.id][0] if disk_analysis else None
+                        )
+                        if not filtered_analysis:
+                            logger.info(f"Creating a disk space analysis for study {study.id}")
+                            study_disk_analysis = StudyDiskSpaceAnalysis(
+                                study_id=study.id,
+                                disk_space=service.get_disk_usage(study.id),
+                                last_analysis_date=datetime.now(),
+                            )
+                            disk_repo.save(study_disk_analysis)
+                            updated_studies += 1
+
+                        elif updated_at is not None and filtered_analysis.last_analysis_date < updated_at:
+                            logger.info(f"Updating disk space analysis for study {study.id}")
+                            usage = service.get_disk_usage(study.id)
+                            disk_repo.update(study.id, usage)
+                            updated_studies += 1
+
+                    except Exception as e:
+                        logger.error(f"Failed to analyze disk space for study {study.id}: {e}")
 
     except LockNotAcquired:
         logger.info("Could not acquire lock, another disk space analysis is probably running")
@@ -69,6 +77,14 @@ def disk_space_analysis(service: StudyService, disk_repo: StudyDiskSpaceReposito
             duration_seconds=time.time() - start_time,
             updated_studies=0,
             reason="lock_not_acquired",
+        )
+    except Exception as e:
+        logger.error("Disk space analysis failed", exc_info=e)
+        return DiskSpaceAnalyzerTaskResult(
+            status=BackGroundTaskStatus.ERROR,
+            duration_seconds=time.time() - start_time,
+            updated_studies=0,
+            error=str(e),
         )
 
     logger.info(f"Finished disk space analysis in {time.time() - start_time}s (updated {updated_studies} studies)")
