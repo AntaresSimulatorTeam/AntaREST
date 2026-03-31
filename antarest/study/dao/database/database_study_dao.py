@@ -17,7 +17,8 @@ This DAO provides database-backed storage for studies when storage_mode=DATABASE
 Uses multiple inheritance to combine specialized DAOs (like FileStudyTreeDao).
 """
 
-from typing import Self, Sequence
+from collections.abc import Sequence
+from typing import Self
 
 import polars as pl
 from antares.study.version import StudyVersion

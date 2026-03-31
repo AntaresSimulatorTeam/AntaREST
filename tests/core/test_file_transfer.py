@@ -81,7 +81,7 @@ def test_lifecycle(tmp_path: Path) -> None:
         # expiration
         downloads = ftm.list_downloads()
         assert len(downloads) == 1
-        filedownload.expiration_date = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(seconds=5)
+        filedownload.expiration_date = datetime.datetime.now(datetime.UTC) - datetime.timedelta(seconds=5)
         ftm.repository.save(filedownload)
         downloads = ftm.list_downloads()
         assert len(downloads) == 0

@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import Optional
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
@@ -28,7 +27,7 @@ from antarest.login.service import LoginService
 
 def build_login(
     config: Config,
-    service: Optional[LoginService] = None,
+    service: LoginService | None = None,
     event_bus: IEventBus = DummyEventBusService(),
 ) -> LoginService:
     """

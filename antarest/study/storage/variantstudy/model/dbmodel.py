@@ -13,7 +13,6 @@
 import datetime
 import uuid
 from pathlib import Path
-from typing import Optional
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -46,7 +45,7 @@ class VariantStudySnapshot(Base):
         primary_key=True,
     )
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime)
-    last_executed_command: Mapped[Optional[str]] = mapped_column(String(), nullable=True)
+    last_executed_command: Mapped[str | None] = mapped_column(String(), nullable=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "variant_study_snapshot",
@@ -91,10 +90,10 @@ class CommandBlock(Base):
     version: Mapped[int] = mapped_column(Integer)
     args: Mapped[str] = mapped_column(String())
     study_version: Mapped[str] = mapped_column(String(36))
-    user_id: Mapped[Optional[int]] = mapped_column(
+    user_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("identities.id", ondelete="SET NULL"), nullable=True
     )
-    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
 
     def to_dto(self) -> CommandDTO:
         # Database may lack a version number, defaulting to 1 if so.
@@ -148,7 +147,7 @@ class VariantStudy(Study):
         ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    generation_task: Mapped[Optional[str]] = mapped_column(String(), nullable=True)
+    generation_task: Mapped[str | None] = mapped_column(String(), nullable=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "variantstudy",

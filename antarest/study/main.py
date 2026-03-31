@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import Optional, Tuple
 
 from antarest.blobstore.service import IBlobService
 from antarest.core.config import Config
@@ -41,13 +40,13 @@ def build_study_service(
     cache: ICache,
     file_transfer_manager: FileTransferManager,
     task_service: ITaskService,
-    metadata_repository: Optional[StudyMetadataRepository] = None,
-    variant_repository: Optional[VariantStudyRepository] = None,
-    job_result_repository: Optional[JobResultRepository] = None,
-    study_service: Optional[StudyService] = None,
-    generator_matrix_constants: Optional[GeneratorMatrixConstants] = None,
+    metadata_repository: StudyMetadataRepository | None = None,
+    variant_repository: VariantStudyRepository | None = None,
+    job_result_repository: JobResultRepository | None = None,
+    study_service: StudyService | None = None,
+    generator_matrix_constants: GeneratorMatrixConstants | None = None,
     event_bus: IEventBus = DummyEventBusService(),
-) -> Tuple[StudyService, DirectoryService]:
+) -> tuple[StudyService, DirectoryService]:
     """
     Storage module linking dependencies.
 

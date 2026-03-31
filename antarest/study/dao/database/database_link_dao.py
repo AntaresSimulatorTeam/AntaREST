@@ -10,7 +10,8 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
 
 import polars as pl
 from sqlalchemy import Row, Table, delete, select
@@ -93,7 +94,7 @@ class DatabaseLinkDao(LinkDao):
     def get_links(self) -> Sequence[Link]:
         study_id = self.get_study_id()
         session = self.get_session()
-        stmt = select(LINK_TABLE).where((LINK_TABLE.c.study_id == study_id))
+        stmt = select(LINK_TABLE).where(LINK_TABLE.c.study_id == study_id)
         rows = session.execute(stmt).fetchall()
         return [_convert_db_rows_to_model(row) for row in rows]
 

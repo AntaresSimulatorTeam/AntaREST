@@ -11,7 +11,8 @@
 # This file is part of the Antares project.
 
 import collections
-from typing import Any, Mapping, Optional, Sequence, TypeAlias, cast
+from collections.abc import Mapping, Sequence
+from typing import Any, TypeAlias, cast
 
 import numpy as np
 import pandas as pd
@@ -73,7 +74,7 @@ class TableModeType(EnumIgnoreCase):
 
     @classmethod
     @override
-    def _missing_(cls, value: object) -> Optional["EnumIgnoreCase"]:
+    def _missing_(cls, value: object) -> "EnumIgnoreCase | None":
         if isinstance(value, str):
             # handle aliases of old table types
             value = value.upper()

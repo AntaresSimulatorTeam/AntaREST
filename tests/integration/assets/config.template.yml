@@ -20,6 +20,11 @@ storage:
   study:
     storage:
       database_mode_enabled: true
+  output:
+    enable: true
+    default: false
+    archive_dir: {{output_archive_dir}}
+
   workspaces:
     default:
       path: {{default_workspace_path}}
@@ -35,6 +40,7 @@ launcher:
       binaries:
         700: {{launcher_mock}}
         880: {{launcher_mock}}
+        9.3: {{launcher_mock}}
       enable_nb_cores_detection: True
 
 debug: false

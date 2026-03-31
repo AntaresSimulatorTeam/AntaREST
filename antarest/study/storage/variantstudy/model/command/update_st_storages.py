@@ -9,13 +9,14 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Optional, Self
+from typing import Any, Self
 
 from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.sts_model import (
+    STStorage,
     STStorageUpdates,
     update_st_storage,
     validate_st_storage_against_version,
@@ -55,7 +56,9 @@ class UpdateSTStorages(ICommand):
         return self
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[dict[str, list[STStorage]]]:
         """
         We validate ALL objects before saving them.
         This way, if some data is invalid, we're not modifying the study partially only.
@@ -86,7 +89,7 @@ class UpdateSTStorages(ICommand):
         for area_id, new_storages in memory_mapping.items():
             study_data.save_st_storages(area_id, new_storages)
 
-        return command_succeeded("The short-term storages were successfully updated.")
+        return command_succeeded("The short-term storages were successfully updated.", result=memory_mapping)
 
     @override
     def to_dto(self) -> CommandDTO:

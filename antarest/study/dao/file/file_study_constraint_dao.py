@@ -10,7 +10,8 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Iterator, Sequence
+from collections.abc import Iterator, Sequence
+from typing import TYPE_CHECKING, Any
 
 import polars as pl
 from antares.study.version import StudyVersion

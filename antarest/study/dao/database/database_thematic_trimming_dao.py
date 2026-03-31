@@ -43,7 +43,7 @@ class DatabaseThematicTrimmingDao(ThematicTrimmingDao):
     def get_thematic_trimming(self) -> ThematicTrimming:
         study_id = self._study_id
 
-        stmt = select(THEMATIC_TRIMMING_TABLE).where((THEMATIC_TRIMMING_TABLE.c.study_id == study_id))
+        stmt = select(THEMATIC_TRIMMING_TABLE).where(THEMATIC_TRIMMING_TABLE.c.study_id == study_id)
 
         row = self._db_session.execute(stmt).fetchone()
         if not row:

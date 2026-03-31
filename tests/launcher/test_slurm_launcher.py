@@ -104,7 +104,7 @@ def test_init_slurm_launcher_parameters(tmp_path: Path) -> None:
         default_json_db_name="default_json_db_name",
         slurm_script_path="slurm_script_path",
         partition="fake_partition",
-        antares_versions_on_remote_server=["42"],
+        antares_versions_on_remote_server=[SolverVersion.parse(840), SolverVersion.parse("10.0")],
         username="username",
         hostname="hostname",
         port=42,
@@ -261,16 +261,19 @@ def test_extra_parameters(launcher_config: SlurmConfig) -> None:
 @pytest.mark.parametrize(
     "version, launcher_called, job_status",
     [
-        (840, True, JobStatus.RUNNING),
-        (860, False, JobStatus.FAILED),
+        (SolverVersion.parse(840), True, JobStatus.RUNNING),
+        (SolverVersion.parse(860), False, JobStatus.FAILED),
         pytest.param(
-            999, False, JobStatus.FAILED, marks=pytest.mark.xfail(raises=VersionNotSupportedError, strict=True)
+            SolverVersion.parse(999),
+            False,
+            JobStatus.FAILED,
+            marks=pytest.mark.xfail(raises=VersionNotSupportedError, strict=True),
         ),
     ],
 )
 def test_run_study(
     launcher_config: SlurmConfig,
-    version: int,
+    version: SolverVersion,
     launcher_called: bool,
     job_status: JobStatus,
     admin_user: JWTUser,
@@ -286,7 +289,7 @@ def test_run_study(
     slurm_launcher._delete_workspace_file = Mock()
 
     job_id = str(uuid.uuid4())
-    studies_in = launcher_config.local_workspace / "studies_in"
+    studies_in = slurm_launcher.local_workspace / "STUDIES_IN"
     study_dir = studies_in / job_id
     study_dir.mkdir(parents=True)
     study_antares_path = study_dir.joinpath("study.antares")
@@ -308,13 +311,11 @@ def test_run_study(
 
     # When the launcher is called
     study_uuid = str(uuid.uuid4())
-    slurm_launcher._run_study(study_uuid, job_id, LauncherParametersDTO(), SolverVersion.parse(version), admin_user)
+    slurm_launcher._run_study(study_uuid, job_id, LauncherParametersDTO(), version, admin_user)
 
     # Check the results
-    assert (
-        version not in launcher_config.antares_versions_on_remote_server
-        or f"solver_version = {version}" in study_antares_path.read_text(encoding="utf-8")
-    )
+    assert version in launcher_config.antares_versions_on_remote_server
+    assert f"solver_version = {version:ddd}" in study_antares_path.read_text(encoding="utf-8")
 
     slurm_launcher.callbacks.export_study.assert_called_once()
     slurm_launcher.callbacks.update_status.assert_called_once_with(ANY, job_status, ANY, None)

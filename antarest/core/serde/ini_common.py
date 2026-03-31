@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import dataclasses
-from typing import Optional, TypeAlias
+from typing import TypeAlias
 
 PrimitiveType: TypeAlias = str | int | float | bool
 
@@ -23,7 +23,7 @@ class OptionMatcher:
     a None section means any section.
     """
 
-    section: Optional[str]
+    section: str | None
     key: str
 
 

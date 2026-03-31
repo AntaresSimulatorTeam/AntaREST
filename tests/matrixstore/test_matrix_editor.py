@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from pydantic import ValidationError
@@ -80,7 +80,7 @@ class TestMatrixSlice:
             ),
         ],
     )
-    def test_init(self, kwargs: Dict[str, Any], expected: Dict[str, Any]) -> None:
+    def test_init(self, kwargs: dict[str, Any], expected: dict[str, Any]) -> None:
         obj = MatrixSlice(**kwargs)
         assert obj.model_dump(by_alias=False) == expected
 
@@ -107,7 +107,7 @@ class TestOperation:
             ),
         ],
     )
-    def test_init(self, kwargs: Dict[str, Any], expected: Dict[str, Any]) -> None:
+    def test_init(self, kwargs: dict[str, Any], expected: dict[str, Any]) -> None:
         obj = Operation(**kwargs)
         assert obj.model_dump(by_alias=False) == expected
 
@@ -202,6 +202,6 @@ class TestMatrixEditInstruction:
             ),
         ],
     )
-    def test_init(self, kwargs: Dict[str, Any], expected: Dict[str, Any]) -> None:
+    def test_init(self, kwargs: dict[str, Any], expected: dict[str, Any]) -> None:
         obj = MatrixEditInstruction(**kwargs)
         assert obj.model_dump(by_alias=False) == expected

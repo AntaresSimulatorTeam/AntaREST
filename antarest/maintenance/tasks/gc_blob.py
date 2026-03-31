@@ -14,7 +14,6 @@
 
 import logging
 import time
-from typing import Set
 
 from antarest.blobstore.service import BlobService
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -24,7 +23,7 @@ from antarest.maintenance.tasks.common import BackGroundTaskStatus, GarbageColle
 logger = logging.getLogger(__name__)
 
 
-def _delete_blobs(blob_service: BlobService, blob_ids: Set[str], dry_run: bool) -> int:
+def _delete_blobs(blob_service: BlobService, blob_ids: set[str], dry_run: bool) -> int:
     """Delete blobs and return the number of failures."""
     failures = 0
     for blob_id in blob_ids:

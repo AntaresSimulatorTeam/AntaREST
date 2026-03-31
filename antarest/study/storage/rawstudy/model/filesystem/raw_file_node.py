@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import List, Optional
 
 from typing_extensions import override
 
@@ -30,13 +29,13 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
         LazyNode.__init__(self, config=config)
 
     @override
-    def get_lazy_content(self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False) -> str:
+    def get_lazy_content(self, url: list[str] | None = None, depth: int = -1, expanded: bool = False) -> str:
         return f"file://{self.config.path.name}"
 
     @override
     def load(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
@@ -52,6 +51,6 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
         return bytes
 
     @override
-    def dump(self, data: bytes, url: Optional[List[str]] = None) -> None:
+    def dump(self, data: bytes, url: list[str] | None = None) -> None:
         self.config.path.parent.mkdir(exist_ok=True, parents=True)
         self.config.path.write_bytes(data)

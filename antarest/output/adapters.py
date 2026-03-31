@@ -19,8 +19,8 @@ from typing_extensions import override
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME
 from antarest.core.model import StudyPermissionType
-from antarest.output.output_service import IStudyMetadataProvider, StudyMetadata
-from antarest.output.storage.file_output_storage import FileStudyOutputs, IFileOutputsProvider
+from antarest.output.service import IStudyMetadataProvider, StudyMetadata
+from antarest.output.storage.file.storage import FileStudyOutputs, IFileOutputsProvider
 from antarest.study.service import StudyService
 from antarest.study.storage.utils import assert_permission
 
@@ -57,7 +57,7 @@ def study_service_as_studies_repository(study_service: StudyService) -> IStudyMe
         @override
         def assert_permission(self, study_id: str, permission: StudyPermissionType) -> None:
             study = study_service.get_study(study_id)
-            assert_permission(study, StudyPermissionType.READ)
+            assert_permission(study, permission)
             study_service.assert_study_unarchived(study)
 
     return StudyServiceAdapter()

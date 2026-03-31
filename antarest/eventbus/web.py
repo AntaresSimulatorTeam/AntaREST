@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import logging
 from http import HTTPStatus
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
 from starlette.websockets import WebSocket, WebSocketDisconnect
@@ -37,7 +37,7 @@ def register_websocket_routes(api_root: APIRouter) -> None:
         config: ConfigDep,
         ws_manager: ConnectionManagerDep,
     ) -> None:
-        user: Optional[JWTUser] = None
+        user: JWTUser | None = None
         if not config.security.disabled:
             try:
                 if not token:

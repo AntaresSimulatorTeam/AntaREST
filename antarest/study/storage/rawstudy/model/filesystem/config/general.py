@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Dict
+from typing import Any
 
 from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field
@@ -81,7 +81,7 @@ class GeneralFileData(AntaresBaseModel):
         return cls.model_validate(data)
 
 
-def parse_general_config(data: Dict[str, Any], version: StudyVersion) -> GeneralConfig:
+def parse_general_config(data: dict[str, Any], version: StudyVersion) -> GeneralConfig:
     config_data = data["general"]
     config_data.update(data["output"])
     config = GeneralFileData.model_validate(config_data).to_model()
@@ -90,11 +90,11 @@ def parse_general_config(data: Dict[str, Any], version: StudyVersion) -> General
     return config
 
 
-def serialize_simulation_config(config: GeneralConfig, study_version: StudyVersion) -> Dict[str, Any]:
+def serialize_simulation_config(config: GeneralConfig, study_version: StudyVersion) -> dict[str, Any]:
     file_data = GeneralFileData.from_model(config, study_version)
     return file_data.model_dump(by_alias=True, exclude_none=True, exclude={"simulation_synthesis", "mc_scenario"})
 
 
-def serialize_output_config(config: GeneralConfig, study_version: StudyVersion) -> Dict[str, Any]:
+def serialize_output_config(config: GeneralConfig, study_version: StudyVersion) -> dict[str, Any]:
     file_data = GeneralFileData.from_model(config, study_version)
     return file_data.model_dump(by_alias=True, exclude_none=True, include={"simulation_synthesis", "mc_scenario"})

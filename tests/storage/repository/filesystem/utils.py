@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
-from typing import List, Optional
 from zipfile import ZipFile
 
 from typing_extensions import override
@@ -33,14 +32,14 @@ class CheckSubNode(INode[int, int, int]):
     @override
     def get_node_and_remainder(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
     ) -> tuple[INode[int, int, int], list[str]]:
         return self, []
 
     @override
     def get(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
         depth: int = -1,
         expanded: bool = True,
         formatted: bool = True,
@@ -48,14 +47,14 @@ class CheckSubNode(INode[int, int, int]):
         return self.value
 
     @override
-    def save(self, data: int, url: Optional[List[str]] = None) -> None:
+    def save(self, data: int, url: list[str] | None = None) -> None:
         self.value = data
 
     @override
-    def delete(self, url: Optional[List[str]] = None) -> None:
+    def delete(self, url: list[str] | None = None) -> None:
         pass
 
-    def check_errors(self, data: int, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
+    def check_errors(self, data: int, url: list[str] | None = None, raising: bool = False) -> list[str]:
         return []
 
 

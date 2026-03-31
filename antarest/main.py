@@ -13,10 +13,11 @@
 import argparse
 import copy
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, AsyncGenerator, Optional
+from typing import Any
 
 import pydantic
 import uvicorn
@@ -52,7 +53,7 @@ from antarest.launcher.web import create_launcher_api
 from antarest.login.model import init_admin_user
 from antarest.login.web import create_login_api, create_user_api
 from antarest.matrixstore.web import create_matrix_api
-from antarest.output.output_blueprint import create_output_routes
+from antarest.output.routes import create_output_routes
 from antarest.service_creator import (
     SESSION_ARGS,
     Module,
@@ -154,6 +155,7 @@ def add_exception_handlers(application: FastAPI) -> None:
         Returns:
             The JSON response containing error details.
         """
+        logger.error("Validation error", exc_info=exc)
         error_message = exc.errors()[0]["msg"]
         return JSONResponse(
             status_code=422,
@@ -182,6 +184,7 @@ def add_exception_handlers(application: FastAPI) -> None:
         Returns:
             The JSON response containing error details.
         """
+        logger.error("Validation error", exc_info=exc)
         return JSONResponse(
             content={
                 "description": f"{exc}",
@@ -280,7 +283,7 @@ def base_fastapi_app(api_prefix: str, root_path: str) -> FastAPI:
     async def set_threadpool_size(app: FastAPI) -> AsyncGenerator[None, None]:
         from anyio import to_thread
 
-        config = app.state.config
+        config = app.state.app_state.config
         to_thread.current_default_thread_limiter().total_tokens = config.server.worker_threadpool_size
 
         yield
@@ -366,7 +369,7 @@ def inject_services(app: FastAPI, config: Config) -> Services:
 
 def fastapi_app(
     config_file: Path,
-    resource_path: Optional[Path] = None,
+    resource_path: Path | None = None,
     mount_front: bool = True,
     auto_upgrade_db: bool = False,
 ) -> FastAPI:

@@ -10,8 +10,9 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
+from collections.abc import Iterator
 from pathlib import PurePosixPath
-from typing import TYPE_CHECKING, Any, Iterator, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from typing_extensions import override
 

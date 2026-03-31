@@ -19,7 +19,7 @@ from antarest.main import fastapi_app
 def get_env_var(env_var_name: str) -> str:
     env_var = os.getenv(env_var_name)
     if env_var is None:
-        raise EnvironmentError(f"API need the env var: {env_var_name}.")
+        raise OSError(f"API need the env var: {env_var_name}.")
     return env_var
 
 

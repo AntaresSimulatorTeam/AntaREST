@@ -10,7 +10,8 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from antares.study.version import StudyVersion
 
@@ -22,7 +23,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-def validate_matrix(matrix: List[List[MatrixData]] | str, values: Dict[str, Any]) -> str:
+def validate_matrix(matrix: list[list[MatrixData]] | str, values: dict[str, Any]) -> str:
     """
     Validates the matrix, stores the matrix array in the matrices repository,
     and returns a reference to the stored array.
@@ -57,7 +58,7 @@ def validate_matrix(matrix: List[List[MatrixData]] | str, values: Dict[str, Any]
         raise TypeError(f"The data '{matrix}' is neither a matrix nor a link to a matrix")
 
 
-def strip_matrix_protocol(matrix_uri: List[List[float]] | str | None) -> str:
+def strip_matrix_protocol(matrix_uri: list[list[float]] | str | None) -> str:
     assert isinstance(matrix_uri, str)
     if matrix_uri.startswith(MATRIX_PROTOCOL_PREFIX):
         return matrix_uri[len(MATRIX_PROTOCOL_PREFIX) :]
@@ -85,9 +86,9 @@ class AliasDecoder:
 
 def transform_command_to_dto(
     commands: Sequence[ICommand],
-    ref_command_dtos: Optional[Sequence[CommandDTO]] = None,
+    ref_command_dtos: Sequence[CommandDTO] | None = None,
     force_aggregate: bool = False,
-) -> List[CommandDTO]:
+) -> list[CommandDTO]:
     """
     Converts the list of input commands to DTOs.
 
@@ -100,7 +101,7 @@ def transform_command_to_dto(
     """
     if len(commands) <= 1:
         return [command.to_dto() for command in commands]
-    commands_dto: List[CommandDTO] = []
+    commands_dto: list[CommandDTO] = []
     ref_commands_dto = ref_command_dtos if ref_command_dtos is not None else [command.to_dto() for command in commands]
     prev_command = commands[0]
     cur_dto_index = 0

@@ -10,15 +10,15 @@
 #
 # This file is part of the Antares project.
 
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
 
 import pandas as pd
 import polars as pl
 import pyarrow as pa
 from pyarrow.parquet import ParquetFile, ParquetWriter
 
-from antarest.output.utils import MCYEAR_COL, TIME_ID_COL
+from antarest.output.filestudy.utils import MCYEAR_COL, TIME_ID_COL
 
 
 def _parquet_writer(output_file: Path, schema: pa.Schema) -> ParquetWriter:

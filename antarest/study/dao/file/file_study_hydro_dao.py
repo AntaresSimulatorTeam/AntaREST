@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING
 
 import numpy as np
 import polars as pl
@@ -63,7 +63,7 @@ class FileStudyHydroDao(HydroDao):
         pass
 
     @override
-    def get_all_hydro_properties(self) -> Dict[str, HydroProperties]:
+    def get_all_hydro_properties(self) -> dict[str, HydroProperties]:
         """
         Return all hydro properties for all areas within a study.
         """

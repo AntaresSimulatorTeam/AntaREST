@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Dict, List
 
 import polars as pl
 
@@ -29,7 +28,7 @@ class ReadOnlyAreaDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_all_areas_info(self) -> List[AreaInfo]:
+    def get_all_areas_info(self) -> list[AreaInfo]:
         """
         Retrieve all physical areas of a study.
 
@@ -39,7 +38,7 @@ class ReadOnlyAreaDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_all_areas_ui_info(self) -> Dict[str, AreaUIData]:
+    def get_all_areas_ui_info(self) -> dict[str, AreaUIData]:
         """
         Retrieve information about all areas' user interface (UI) from the study.
 
@@ -146,7 +145,7 @@ class AreaDao(ReadOnlyAreaDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_layer_areas(self, layer_id: str, area_ids: List[str]) -> None:
+    def save_layer_areas(self, layer_id: str, area_ids: list[str]) -> None:
         """
         Update the areas associated with a specific layer.
 

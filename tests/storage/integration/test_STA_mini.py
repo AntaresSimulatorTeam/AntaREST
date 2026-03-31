@@ -15,7 +15,7 @@ import shutil
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 from unittest.mock import Mock
 
 import numpy as np
@@ -33,8 +33,9 @@ from antarest.dependencies import AppState
 from antarest.main import add_exception_handlers
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.output.output_blueprint import create_output_routes
-from antarest.output.output_model import OutputVariables, OutputVariablesInformation
+from antarest.output.model import OutputVariablesInformation
+from antarest.output.routes import create_output_routes
+from antarest.output.storage.file.repository import DbOutputVariables
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.common.prepro import default_k
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
@@ -75,7 +76,7 @@ def assert_url_content(client: TestClient, url: str, expected_output: dict[str, 
     assert_study(res.json(), expected_output)
 
 
-def assert_with_errors(storage_service: StudyService, url: str, expected_output: Union[str, dict[str, Any]]) -> None:
+def assert_with_errors(storage_service: StudyService, url: str, expected_output: str | dict[str, Any]) -> None:
     url = url[len("/v1/studies/") :]
     uuid, url = url.split("/raw?path=")
     # We use the `get_raw_content` method as it's the one called by the GET /raw endpoint.
@@ -513,7 +514,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service: StudyService, c
 def _clean_db() -> None:
     """Cleans the OutputVariables table for other tests"""
     with db():
-        db.session.query(OutputVariables).delete()
+        db.session.query(DbOutputVariables).delete()
         db.session.commit()
 
 

@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from collections.abc import Callable
-from typing import List, TypedDict
+from typing import TypedDict
 
 import numpy as np
 import numpy.typing as npt
@@ -40,7 +40,7 @@ class MatrixInfo(TypedDict, total=False):
 
 INITIAL_VERSION = StudyVersion.parse(0)
 # noinspection SpellCheckingInspection
-MATRICES_INFO: List[MatrixInfo] = [
+MATRICES_INFO: list[MatrixInfo] = [
     {
         "name": "maxpower",
         "freq": MatrixFrequency.DAILY,

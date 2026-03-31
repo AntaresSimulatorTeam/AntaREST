@@ -12,8 +12,9 @@
 
 import enum
 import logging
+from collections.abc import Mapping, Sequence
 from http import HTTPStatus
-from typing import Annotated, Dict, List, Literal, Mapping, Optional, Sequence
+from typing import Annotated, Literal
 
 import typing_extensions as te
 from fastapi import APIRouter, Body, Depends, Query
@@ -183,9 +184,9 @@ def create_study_data_routes() -> APIRouter:
     def get_areas(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        type: Annotated[Optional[AreaType], Query(deprecated=True)] = None,
+        type: Annotated[AreaType | None, Query(deprecated=True)] = None,
         ui: Annotated[bool, Query()] = False,
-    ) -> List[AreaResponse] | Dict[str, AreaUIData]:
+    ) -> list[AreaResponse] | dict[str, AreaUIData]:
         logger.info(f"Fetching area list (type={type}, ui={ui}) for study {uuid}")
         if ui:
             return study_service.get_all_areas_ui_info(uuid)
@@ -197,7 +198,7 @@ def create_study_data_routes() -> APIRouter:
     def get_links(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-    ) -> List[Link]:
+    ) -> list[Link]:
         logger.info(f"Fetching link list for study {uuid}")
         areas_list = study_service.get_all_links(uuid)
         return areas_list
@@ -286,7 +287,7 @@ def create_study_data_routes() -> APIRouter:
     def get_layers(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-    ) -> List[Layer]:
+    ) -> list[Layer]:
         logger.info(f"Fetching layer list for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         return study_service.layer_manager.get_layers(study_service.get_study_interface(study))
@@ -313,7 +314,7 @@ def create_study_data_routes() -> APIRouter:
         uuid: UuidStr,
         layer_id: SanitizedStr,
         name: SanitizedStr = "",
-        areas: Optional[List[SanitizedStr]] = None,
+        areas: list[SanitizedStr] | None = None,
     ) -> None:
         logger.info(f"Updating layer {layer_id} for study {uuid} with name {name}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
@@ -344,7 +345,7 @@ def create_study_data_routes() -> APIRouter:
     def get_districts(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-    ) -> List[DistrictDTO]:
+    ) -> list[DistrictDTO]:
         logger.info(f"Fetching districts list for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -463,7 +464,7 @@ def create_study_data_routes() -> APIRouter:
         study_service: StudyServiceDep,
         uuid: UuidStr,
         path: SanitizedStr,
-        matrix_edit_instructions: Annotated[List[MatrixEditInstruction], Body()],
+        matrix_edit_instructions: Annotated[list[MatrixEditInstruction], Body()],
     ) -> None:
         # NOTE: This Markdown documentation is reflected in the Swagger API
         """
@@ -559,7 +560,7 @@ def create_study_data_routes() -> APIRouter:
         study_service: StudyServiceDep,
         uuid: UuidStr,
         scenario_type: ScenarioType,
-    ) -> Dict[str, AnyScenarios]:
+    ) -> dict[str, AnyScenarios]:
         """
         Retrieve the scenario matrix corresponding to a specified scenario type.
 
@@ -650,8 +651,8 @@ def create_study_data_routes() -> APIRouter:
         study_service: StudyServiceDep,
         uuid: UuidStr,
         scenario_type: ScenarioType,
-        data: Dict[ScenarioType, AnyScenarios],
-    ) -> Dict[ScenarioType, AnyScenarios]:
+        data: dict[ScenarioType, AnyScenarios],
+    ) -> dict[ScenarioType, AnyScenarios]:
         """
         Update the scenario matrix corresponding to a specified scenario type.
 
@@ -885,7 +886,7 @@ def create_study_data_routes() -> APIRouter:
     def get_binding_constraint_list(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        enabled: Optional[bool] = Query(None, description="Filter results based on enabled status"),
+        enabled: bool | None = Query(None, description="Filter results based on enabled status"),
         operator: BindingConstraintOperator = Query(None, description="Filter results based on operator"),
         comments: SanitizedStr = Query("", description="Filter results based on comments (word match)"),
         group: SanitizedStr = Query("", description="filter binding constraints based on group name (exact match)"),
@@ -1122,7 +1123,7 @@ def create_study_data_routes() -> APIRouter:
     def delete_multiple_binding_constraints(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        binding_constraints_ids: List[SanitizedStr],
+        binding_constraints_ids: list[SanitizedStr],
     ) -> None:
         logger.info(f"Deleting the binding constraints {binding_constraints_ids!r} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)

@@ -18,7 +18,6 @@ import tempfile
 import time
 import uuid
 from pathlib import Path
-from typing import List, Optional
 
 from fastapi import HTTPException
 from starlette.background import BackgroundTasks
@@ -61,7 +60,7 @@ class FileTransferManager:
     def request_download(
         self,
         filename: str,
-        name: Optional[str] = None,
+        name: str | None = None,
         use_notification: bool = True,
         expiration_time_in_minutes: int = 0,
     ) -> FileDownload:
@@ -153,13 +152,13 @@ class FileTransferManager:
         background_tasks.add_task(FileTransferManager._cleanup_file, tmppath)
         return tmppath
 
-    def list_downloads(self) -> List[FileDownloadDTO]:
+    def list_downloads(self) -> list[FileDownloadDTO]:
         user = require_current_user()
         downloads = self.repository.get_all() if user.is_site_admin() else self.repository.get_all(user.impersonator)
         self._clean_up_expired_downloads(downloads)
         return [d.to_dto() for d in downloads]
 
-    def _clean_up_expired_downloads(self, file_downloads: List[FileDownload]) -> None:
+    def _clean_up_expired_downloads(self, file_downloads: list[FileDownload]) -> None:
         now = current_time()
         to_remove = []
         for file_download in file_downloads:

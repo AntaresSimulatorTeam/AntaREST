@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, Any, Optional, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
 from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict
@@ -115,36 +115,36 @@ class AdvancedParameters(AntaresBaseModel):
     seed_hydro_costs: int = 9005489
     seed_initial_reservoir_levels: int = 10005489
     # Field removed in v9.2
-    initial_reservoir_levels: Optional[InitialReservoirLevel] = None
+    initial_reservoir_levels: InitialReservoirLevel | None = None
     # Field introduced in v9.3
-    accurate_shave_peaks_include_short_term_storage: Optional[bool] = None
+    accurate_shave_peaks_include_short_term_storage: bool | None = None
 
 
 class AdvancedParametersUpdate(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
-    accuracy_on_correlation: Optional[AccuracyOnCorrelation] = None
-    power_fluctuations: Optional[PowerFluctuation] = None
-    shedding_policy: Optional[SheddingPolicy] = None
-    hydro_pricing_mode: Optional[HydroPricingMode] = None
-    hydro_heuristic_policy: Optional[HydroHeuristicPolicy] = None
-    unit_commitment_mode: Optional[UnitCommitmentMode] = None
-    number_of_cores_mode: Optional[SimulationCore] = None
-    day_ahead_reserve_management: Optional[ReserveManagement] = None
-    renewable_generation_modelling: Optional[RenewableGenerationModeling] = None
-    seed_tsgen_wind: Optional[int] = None
-    seed_tsgen_load: Optional[int] = None
-    seed_tsgen_hydro: Optional[int] = None
-    seed_tsgen_thermal: Optional[int] = None
-    seed_tsgen_solar: Optional[int] = None
-    seed_tsnumbers: Optional[int] = None
-    seed_unsupplied_energy_costs: Optional[int] = None
-    seed_spilled_energy_costs: Optional[int] = None
-    seed_thermal_costs: Optional[int] = None
-    seed_hydro_costs: Optional[int] = None
-    seed_initial_reservoir_levels: Optional[int] = None
-    initial_reservoir_levels: Optional[InitialReservoirLevel] = None
-    accurate_shave_peaks_include_short_term_storage: Optional[bool] = None
+    accuracy_on_correlation: AccuracyOnCorrelation | None = None
+    power_fluctuations: PowerFluctuation | None = None
+    shedding_policy: SheddingPolicy | None = None
+    hydro_pricing_mode: HydroPricingMode | None = None
+    hydro_heuristic_policy: HydroHeuristicPolicy | None = None
+    unit_commitment_mode: UnitCommitmentMode | None = None
+    number_of_cores_mode: SimulationCore | None = None
+    day_ahead_reserve_management: ReserveManagement | None = None
+    renewable_generation_modelling: RenewableGenerationModeling | None = None
+    seed_tsgen_wind: int | None = None
+    seed_tsgen_load: int | None = None
+    seed_tsgen_hydro: int | None = None
+    seed_tsgen_thermal: int | None = None
+    seed_tsgen_solar: int | None = None
+    seed_tsnumbers: int | None = None
+    seed_unsupplied_energy_costs: int | None = None
+    seed_spilled_energy_costs: int | None = None
+    seed_thermal_costs: int | None = None
+    seed_hydro_costs: int | None = None
+    seed_initial_reservoir_levels: int | None = None
+    initial_reservoir_levels: InitialReservoirLevel | None = None
+    accurate_shave_peaks_include_short_term_storage: bool | None = None
 
 
 def update_advanced_parameters(

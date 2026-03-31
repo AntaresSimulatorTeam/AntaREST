@@ -28,7 +28,8 @@ on those default values in other parts of the code: parsers, tests ...
 
 """
 
-from typing import Annotated, Any, MutableMapping, Optional, TypeAlias, cast
+from collections.abc import MutableMapping
+from typing import Annotated, Any, TypeAlias, cast
 
 from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field, PlainValidator, model_validator
@@ -102,7 +103,7 @@ class ThermalClusterGroup(EnumIgnoreCase):
 
     @classmethod
     @override
-    def _missing_(cls, value: object) -> Optional["ThermalClusterGroup"]:
+    def _missing_(cls, value: object) -> "ThermalClusterGroup | None":
         """
         Retrieves the default group or the matched group when an unknown value is encountered.
         """
@@ -114,7 +115,7 @@ class ThermalClusterGroup(EnumIgnoreCase):
             # If a group is not found, return the default group ('OTHER1' by default).
             # Note that 'OTHER' is an alias for 'OTHER1'.
             return cls.OTHER1
-        return cast(Optional["ThermalClusterGroup"], super()._missing_(value))
+        return cast("ThermalClusterGroup | None", super()._missing_(value))
 
 
 class ThermalCostGeneration(EnumIgnoreCase):
@@ -140,7 +141,7 @@ Efficiency: TypeAlias = Annotated[float, Field(gt=0, le=100)]
 Cost: TypeAlias = Annotated[float, Field(ge=0)]
 Volatility: TypeAlias = Annotated[float, Field(ge=0, le=1)]
 HoursInWeek: TypeAlias = Annotated[int, PlainValidator(_validate_week_hours)]
-Group: TypeAlias = Optional[LowerCaseStr]
+Group: TypeAlias = LowerCaseStr | None
 
 
 class ThermalCluster(AntaresBaseModel):
@@ -182,23 +183,23 @@ class ThermalCluster(AntaresBaseModel):
     co2: Emission = 0
 
     # Added in 8.6
-    nh3: Optional[Emission] = None
-    so2: Optional[Emission] = None
-    nox: Optional[Emission] = None
-    pm2_5: Optional[Emission] = None
-    pm5: Optional[Emission] = None
-    pm10: Optional[Emission] = None
-    nmvoc: Optional[Emission] = None
-    op1: Optional[Emission] = None
-    op2: Optional[Emission] = None
-    op3: Optional[Emission] = None
-    op4: Optional[Emission] = None
-    op5: Optional[Emission] = None
+    nh3: Emission | None = None
+    so2: Emission | None = None
+    nox: Emission | None = None
+    pm2_5: Emission | None = None
+    pm5: Emission | None = None
+    pm10: Emission | None = None
+    nmvoc: Emission | None = None
+    op1: Emission | None = None
+    op2: Emission | None = None
+    op3: Emission | None = None
+    op4: Emission | None = None
+    op5: Emission | None = None
 
     # Added in 8.7
-    cost_generation: Optional[ThermalCostGeneration] = None
-    efficiency: Optional[Efficiency] = None
-    variable_o_m_cost: Optional[Cost] = None
+    cost_generation: ThermalCostGeneration | None = None
+    efficiency: Efficiency | None = None
+    variable_o_m_cost: Cost | None = None
 
 
 def _creation_json_schema_extra(schema: MutableMapping[str, Any]) -> None:
@@ -226,41 +227,41 @@ class ThermalClusterCreation(AntaresBaseModel):
     )
 
     name: ItemName
-    unit_count: Optional[UnitCount] = None
-    nominal_capacity: Optional[NominalCapacity] = None
-    enabled: Optional[bool] = None
+    unit_count: UnitCount | None = None
+    nominal_capacity: NominalCapacity | None = None
+    enabled: bool | None = None
     group: Group = None
-    gen_ts: Optional[LocalTSGenerationBehavior] = None
-    min_stable_power: Optional[float] = None
-    min_up_time: Optional[HoursInWeek] = None
-    min_down_time: Optional[HoursInWeek] = None
-    must_run: Optional[bool] = None
-    spinning: Optional[Spinning] = None
-    volatility_forced: Optional[Volatility] = None
-    volatility_planned: Optional[Volatility] = None
-    law_forced: Optional[LawOption] = None
-    law_planned: Optional[LawOption] = None
-    marginal_cost: Optional[Cost] = None
-    spread_cost: Optional[Cost] = None
-    fixed_cost: Optional[Cost] = None
-    startup_cost: Optional[Cost] = None
-    market_bid_cost: Optional[Cost] = None
-    co2: Optional[Emission] = None
-    nh3: Optional[Emission] = None
-    so2: Optional[Emission] = None
-    nox: Optional[Emission] = None
-    pm2_5: Optional[Emission] = None
-    pm5: Optional[Emission] = None
-    pm10: Optional[Emission] = None
-    nmvoc: Optional[Emission] = None
-    op1: Optional[Emission] = None
-    op2: Optional[Emission] = None
-    op3: Optional[Emission] = None
-    op4: Optional[Emission] = None
-    op5: Optional[Emission] = None
-    cost_generation: Optional[ThermalCostGeneration] = None
-    efficiency: Optional[Efficiency] = None
-    variable_o_m_cost: Optional[Cost] = None
+    gen_ts: LocalTSGenerationBehavior | None = None
+    min_stable_power: float | None = None
+    min_up_time: HoursInWeek | None = None
+    min_down_time: HoursInWeek | None = None
+    must_run: bool | None = None
+    spinning: Spinning | None = None
+    volatility_forced: Volatility | None = None
+    volatility_planned: Volatility | None = None
+    law_forced: LawOption | None = None
+    law_planned: LawOption | None = None
+    marginal_cost: Cost | None = None
+    spread_cost: Cost | None = None
+    fixed_cost: Cost | None = None
+    startup_cost: Cost | None = None
+    market_bid_cost: Cost | None = None
+    co2: Emission | None = None
+    nh3: Emission | None = None
+    so2: Emission | None = None
+    nox: Emission | None = None
+    pm2_5: Emission | None = None
+    pm5: Emission | None = None
+    pm10: Emission | None = None
+    nmvoc: Emission | None = None
+    op1: Emission | None = None
+    op2: Emission | None = None
+    op3: Emission | None = None
+    op4: Emission | None = None
+    op5: Emission | None = None
+    cost_generation: ThermalCostGeneration | None = None
+    efficiency: Efficiency | None = None
+    variable_o_m_cost: Cost | None = None
 
     @classmethod
     def from_cluster(cls, cluster: ThermalCluster) -> "ThermalClusterCreation":
@@ -304,41 +305,41 @@ class ThermalClusterUpdate(AntaresBaseModel):
             del data["name"]
         return data
 
-    unit_count: Optional[UnitCount] = None
-    nominal_capacity: Optional[NominalCapacity] = None
-    enabled: Optional[bool] = None
+    unit_count: UnitCount | None = None
+    nominal_capacity: NominalCapacity | None = None
+    enabled: bool | None = None
     group: Group = None
-    gen_ts: Optional[LocalTSGenerationBehavior] = None
-    min_stable_power: Optional[float] = None
-    min_up_time: Optional[HoursInWeek] = None
-    min_down_time: Optional[HoursInWeek] = None
-    must_run: Optional[bool] = None
-    spinning: Optional[Spinning] = None
-    volatility_forced: Optional[Volatility] = None
-    volatility_planned: Optional[Volatility] = None
-    law_forced: Optional[LawOption] = None
-    law_planned: Optional[LawOption] = None
-    marginal_cost: Optional[Cost] = None
-    spread_cost: Optional[Cost] = None
-    fixed_cost: Optional[Cost] = None
-    startup_cost: Optional[Cost] = None
-    market_bid_cost: Optional[Cost] = None
-    co2: Optional[Emission] = None
-    nh3: Optional[Emission] = None
-    so2: Optional[Emission] = None
-    nox: Optional[Emission] = None
-    pm2_5: Optional[Emission] = None
-    pm5: Optional[Emission] = None
-    pm10: Optional[Emission] = None
-    nmvoc: Optional[Emission] = None
-    op1: Optional[Emission] = None
-    op2: Optional[Emission] = None
-    op3: Optional[Emission] = None
-    op4: Optional[Emission] = None
-    op5: Optional[Emission] = None
-    cost_generation: Optional[ThermalCostGeneration] = None
-    efficiency: Optional[Efficiency] = None
-    variable_o_m_cost: Optional[Cost] = None
+    gen_ts: LocalTSGenerationBehavior | None = None
+    min_stable_power: float | None = None
+    min_up_time: HoursInWeek | None = None
+    min_down_time: HoursInWeek | None = None
+    must_run: bool | None = None
+    spinning: Spinning | None = None
+    volatility_forced: Volatility | None = None
+    volatility_planned: Volatility | None = None
+    law_forced: LawOption | None = None
+    law_planned: LawOption | None = None
+    marginal_cost: Cost | None = None
+    spread_cost: Cost | None = None
+    fixed_cost: Cost | None = None
+    startup_cost: Cost | None = None
+    market_bid_cost: Cost | None = None
+    co2: Emission | None = None
+    nh3: Emission | None = None
+    so2: Emission | None = None
+    nox: Emission | None = None
+    pm2_5: Emission | None = None
+    pm5: Emission | None = None
+    pm10: Emission | None = None
+    nmvoc: Emission | None = None
+    op1: Emission | None = None
+    op2: Emission | None = None
+    op3: Emission | None = None
+    op4: Emission | None = None
+    op5: Emission | None = None
+    cost_generation: ThermalCostGeneration | None = None
+    efficiency: Efficiency | None = None
+    variable_o_m_cost: Cost | None = None
 
 
 ThermalClusterUpdates = dict[LowerCaseId, dict[LowerCaseId, ThermalClusterUpdate]]

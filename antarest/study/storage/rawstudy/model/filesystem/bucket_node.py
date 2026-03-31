@@ -10,7 +10,8 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Callable, List, Optional
+from collections.abc import Callable
+from typing import Any
 
 from typing_extensions import override
 
@@ -44,24 +45,24 @@ class BucketNode(FolderNode):
         self,
         matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
-        registered_files: Optional[List[RegisteredFile]] = None,
+        registered_files: list[RegisteredFile] | None = None,
         use_matrix_mapper: bool = False,
     ):
         super().__init__(matrix_mapper, config)
-        self.registered_files: List[RegisteredFile] = registered_files or []
+        self.registered_files: list[RegisteredFile] = registered_files or []
         self.use_matrix_mapper = use_matrix_mapper
 
-    def _get_registered_file_by_key(self, key: str) -> Optional[RegisteredFile]:
+    def _get_registered_file_by_key(self, key: str) -> RegisteredFile | None:
         return next((rf for rf in self.registered_files if rf.key == key), None)
 
-    def _get_registered_file_by_filename(self, filename: str) -> Optional[RegisteredFile]:
+    def _get_registered_file_by_filename(self, filename: str) -> RegisteredFile | None:
         return next((rf for rf in self.registered_files if rf.filename == filename), None)
 
     @override
     def save(
         self,
         data: SUB_JSON,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
     ) -> None:
         self._assert_not_in_zipped_file()
         if not self.config.path.exists():

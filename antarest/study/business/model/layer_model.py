@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import List
 
 from pydantic import ConfigDict
 
@@ -22,7 +21,7 @@ class Layer(AntaresBaseModel):
 
     id: str
     name: str
-    areas: List[str] = []
+    areas: list[str] = []
 
 
 class LayerCreation(AntaresBaseModel):
@@ -37,7 +36,7 @@ class LayerUpdate(AntaresBaseModel):
 
     id: str
     name: str | None = None
-    areas: List[str] | None = None
+    areas: list[str] | None = None
 
 
 def create_layer(current_layers: list[Layer], layer: LayerCreation) -> Layer:
@@ -55,7 +54,7 @@ def create_layer(current_layers: list[Layer], layer: LayerCreation) -> Layer:
     return Layer(id=new_id, name=layer.name)
 
 
-def update_layer_name(layers: List[Layer], data: LayerUpdate) -> Layer:
+def update_layer_name(layers: list[Layer], data: LayerUpdate) -> Layer:
     """
     Updates a layer according to the provided update data.
     """

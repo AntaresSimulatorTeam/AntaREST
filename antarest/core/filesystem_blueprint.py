@@ -18,8 +18,9 @@ import datetime
 import os
 import shutil
 import stat
+from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
-from typing import Iterator, Mapping, Sequence, Tuple, TypeAlias
+from typing import TypeAlias
 
 import typing_extensions as te
 from fastapi import APIRouter, Depends, HTTPException
@@ -204,7 +205,7 @@ class FileInfoDTO(
         return obj
 
 
-def _calc_details(full_path: str | Path) -> Tuple[int, int]:
+def _calc_details(full_path: str | Path) -> tuple[int, int]:
     """Calculate the number of files and the total size of a directory recursively."""
 
     full_path = Path(full_path)

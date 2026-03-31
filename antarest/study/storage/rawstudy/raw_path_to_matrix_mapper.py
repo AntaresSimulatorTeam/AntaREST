@@ -10,9 +10,9 @@
 #
 # This file is part of the Antares project.
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 import polars as pl
 
