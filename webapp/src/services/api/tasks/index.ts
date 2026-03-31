@@ -17,11 +17,11 @@ import { taskSchema, tasksSchema } from "./schemas";
 import type { GetTaskParams, GetTasksParams } from "./types";
 
 /**
- * GET /v1/tasks - List tasks matching the given filters.
+ * GET /v1/tasks - Lists tasks matching the given filters.
  *
  * @param params - The filters to apply when listing tasks.
  * @returns The list of tasks matching the given filters.
- * @throws {ZodError} If the response doesn't match the expected schema.
+ * @throws If the response doesn't match the expected schema.
  */
 export async function getTasks(params: GetTasksParams) {
   const res = await client.get("/v1/tasks", {
@@ -43,11 +43,11 @@ export async function getTasks(params: GetTasksParams) {
 }
 
 /**
- * GET /v1/tasks/{id} - Retrieve a single task by ID.
+ * GET /v1/tasks/{id} - Gets a single task by ID.
  *
  * @param params - The parameters to use when retrieving the task.
  * @returns The task matching the given ID.
- * @throws {ZodError} If the response doesn't match the expected schema.
+ * @throws If the response doesn't match the expected schema.
  */
 export async function getTask(params: GetTaskParams) {
   const { id, waitForCompletion, withLogs, timeout } = params;

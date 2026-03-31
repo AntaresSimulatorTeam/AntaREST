@@ -13,6 +13,7 @@
  */
 
 import { z } from "zod";
+import { nullishToOptional } from "../../../utils/zodUtils";
 import { TaskStatus, TaskType } from "./constants";
 
 ////////////////////////////////////////////////////////////////
@@ -22,7 +23,7 @@ import { TaskStatus, TaskType } from "./constants";
 export const taskResultSchema = z.object({
   success: z.boolean(),
   message: z.string(),
-  returnValue: z.string().optional(),
+  returnValue: nullishToOptional(z.string()),
 });
 
 export const taskLogSchema = z.object({
@@ -36,12 +37,12 @@ export const taskSchema = z.object({
   status: z.enum(TaskStatus),
   type: z.enum(TaskType).optional(),
   owner: z.number().optional(),
-  refId: z.string().optional(),
+  refId: nullishToOptional(z.string()),
   creationDateUtc: z.string(),
   completionDateUtc: z.string().optional(),
-  progress: z.number().optional(),
+  progress: nullishToOptional(z.number()),
   result: taskResultSchema.optional(),
-  logs: z.array(taskLogSchema).optional(),
+  logs: nullishToOptional(z.array(taskLogSchema)),
 });
 
 export const tasksSchema = z.array(taskSchema);
