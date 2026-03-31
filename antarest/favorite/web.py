@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 def create_favorite_routes() -> APIRouter:
     bp = APIRouter(prefix="/v1", tags=[APITag.favorite], dependencies=[Depends(auth_required)])
 
-    @bp.get("/favorites/studies/", summary="Listing favorites for current user")
+    @bp.get("/favorites/studies", summary="Listing favorites for current user")
     def list_favorite_studies(
         favorite_service: FavoriteStudyServiceDep,
     ) -> list[FavoriteStudyDTO]:

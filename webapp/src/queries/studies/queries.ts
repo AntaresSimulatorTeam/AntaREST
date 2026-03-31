@@ -12,17 +12,15 @@
  * This file is part of the Antares project.
  */
 
-export interface QueryListItemBase {
-  id: string;
-  name: string;
-}
+import { getFavoriteStudies } from "@/services/api/favorites";
+import { queryListOptions } from "../utils";
+import { studyKeys } from "./keys";
 
-export interface QueryListItemMetadata {
-  isOptimistic?: boolean;
-}
-
-export type QueryListItem<T extends QueryListItemBase = QueryListItemBase> = T & {
-  _metadata?: QueryListItemMetadata;
+export const studyQueries = {
+  favorites: () => {
+    return queryListOptions({
+      queryKey: studyKeys.favorites(),
+      queryFn: getFavoriteStudies,
+    });
+  },
 };
-
-export type QueryList<T extends QueryListItemBase> = Array<QueryListItem<T>>;

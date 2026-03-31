@@ -16,6 +16,7 @@ from enum import Enum, StrEnum
 from typing import TYPE_CHECKING, Annotated, Any, TypeAlias
 
 from pydantic import BeforeValidator, PlainSerializer, WithJsonSchema
+from pydantic.alias_generators import to_camel
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Sequence, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
@@ -92,7 +93,7 @@ TaskStatusStr: TypeAlias = Annotated[
 ]
 
 
-class TaskResult(AntaresBaseModel, extra="forbid"):
+class TaskResult(AntaresBaseModel, extra="forbid", alias_generator=to_camel, populate_by_name=True):
     success: bool
     message: str
     # Can be used to store json serialized result
@@ -117,7 +118,7 @@ class TaskEventPayload(AntaresBaseModel, extra="forbid"):
     study_id: str | None = None
 
 
-class TaskDTO(AntaresBaseModel, extra="forbid"):
+class TaskDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel, populate_by_name=True):
     id: str
     name: str
     owner: int | None = None
@@ -126,7 +127,7 @@ class TaskDTO(AntaresBaseModel, extra="forbid"):
     completion_date_utc: str | None = None
     result: TaskResult | None = None
     logs: list[TaskLogDTO] | None = None
-    type: str | None = None
+    type: TaskType | None = None
     ref_id: str | None = None
     progress: int | None = None
 

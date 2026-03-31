@@ -12,13 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Typography } from "@mui/material";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
 import { TREE_ROOT_NAME } from "@/components/utils/constants";
 import reactHookFormSupport from "@/hoc/reactHookFormSupport";
 import { directoryQueries } from "@/queries/directories/queries";
+import { Box, Typography } from "@mui/material";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 
+import type { Directory } from "@/services/api/directories/types";
 import { validatePath, validateString } from "@/utils/validation/string";
 import { combineValidators } from "@/utils/validation/utils";
 import DirectoryBreadcrumbs from "./DirectoryBreadcrumbs";
@@ -43,6 +44,10 @@ interface Props {
   inputRef?: React.Ref<HTMLInputElement>;
 }
 
+function selectDirectories(directories: Directory[]) {
+  return { directories, directoriesById: mapDirectoriesById(directories) };
+}
+
 function StudyDestinationFE({
   value,
   onChange,
@@ -57,7 +62,7 @@ function StudyDestinationFE({
     data: { directories, directoriesById },
   } = useSuspenseQuery({
     ...directoryQueries.list(),
-    select: (directories) => ({ directories, directoriesById: mapDirectoriesById(directories) }),
+    select: selectDirectories,
   });
 
   const [selection, setSelection] = useState<DirectoryDestination>(() => {

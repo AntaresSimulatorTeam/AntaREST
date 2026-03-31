@@ -12,60 +12,34 @@
  * This file is part of the Antares project.
  */
 
-import type { O } from "ts-toolbelt";
-import type { IdentityDTO, StudyMetadata } from "@/types/types";
+import type { z } from "zod";
 import type { TaskStatus, TaskType } from "./constants";
+import type {
+  getTaskParamsSchema,
+  getTasksParamsSchema,
+  taskLogSchema,
+  taskResultSchema,
+  taskSchema,
+} from "./schemas";
 
-export type TaskStatusValue = O.UnionOf<typeof TaskStatus>;
+////////////////////////////////////////////////////////////////
+// Union Types
+////////////////////////////////////////////////////////////////
 
-export type TaskTypeValue = O.UnionOf<typeof TaskType>;
+export type TaskStatusValue = (typeof TaskStatus)[keyof typeof TaskStatus];
+export type TaskTypeValue = (typeof TaskType)[keyof typeof TaskType];
 
-interface BaseTaskDTO<
-  TStatus extends TaskStatusValue = TaskStatusValue,
-  TType extends TaskTypeValue = TaskTypeValue,
-> extends IdentityDTO {
-  status: TStatus;
-  type?: TType;
-  owner?: number;
-  ref_id?: string;
-  creation_date_utc: string;
-  completion_date_utc?: string;
-  progress?: number;
-  result?: {
-    success: boolean;
-    message: string;
-    return_value?: string;
-  };
-  logs?: Array<{
-    id: string;
-    message: string;
-  }>;
-}
+////////////////////////////////////////////////////////////////
+// Response Types
+////////////////////////////////////////////////////////////////
 
-export type TaskDTO<
-  TStatus extends TaskStatusValue = TaskStatusValue,
-  TType extends TaskTypeValue | undefined = undefined,
-> = TType extends TaskTypeValue
-  ? O.Required<BaseTaskDTO<TStatus, TType>, "type">
-  : BaseTaskDTO<TStatus>;
+export type TaskResult = z.infer<typeof taskResultSchema>;
+export type TaskLog = z.infer<typeof taskLogSchema>;
+export type Task = z.infer<typeof taskSchema>;
 
-export interface GetTasksParams<
-  TStatus extends TaskStatusValue,
-  TType extends TaskTypeValue | undefined,
-> {
-  status?: TStatus[];
-  type?: TType[];
-  name?: string;
-  studyId?: StudyMetadata["id"];
-  fromCreationDateUtc?: number;
-  toCreationDateUtc?: number;
-  fromCompletionDateUtc?: number;
-  toCompletionDateUtc?: number;
-}
+////////////////////////////////////////////////////////////////
+// Request params
+////////////////////////////////////////////////////////////////
 
-export interface GetTaskParams {
-  id: TaskDTO["id"];
-  waitForCompletion?: boolean;
-  withLogs?: boolean;
-  timeout?: number;
-}
+export type GetTasksParams = z.infer<typeof getTasksParamsSchema>;
+export type GetTaskParams = z.infer<typeof getTaskParamsSchema>;
