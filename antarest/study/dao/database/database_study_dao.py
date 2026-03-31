@@ -25,7 +25,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
 from antarest.study.dao.database.database_area_properties_dao import DatabaseAreaPropertiesDao
@@ -152,4 +152,4 @@ class DatabaseStudyDao(
         )
 
     def get_matrix(self, matrix_id: str) -> pl.DataFrame:
-        return self._matrix_service.get(matrix_id.removeprefix(MATRIX_PROTOCOL_PREFIX))
+        return self._matrix_service.get(matrix_id)

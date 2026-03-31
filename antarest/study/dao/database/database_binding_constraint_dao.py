@@ -184,7 +184,10 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         return self.get_impl().get_matrix(row.matrix_id)
 
     def _save_bc_matrices(self, table: Table, entries: list[tuple[str, str]]) -> None:
-        rows = [{"study_id": self._study_id, "constraint_id": cid, "matrix_id": mid} for cid, mid in entries]
+        rows = [
+            {"study_id": self._study_id, "constraint_id": cid, "matrix_id": mid.removeprefix(MATRIX_PROTOCOL_PREFIX)}
+            for cid, mid in entries
+        ]
         upsert_multiple(self._db_session, table, rows)
 
     def _delete_bc_matrices(self, table: Table, constraint_ids: list[str]) -> None:
