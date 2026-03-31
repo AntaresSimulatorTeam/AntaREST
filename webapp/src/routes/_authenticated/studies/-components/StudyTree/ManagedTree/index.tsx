@@ -41,12 +41,23 @@ function ManagedTree({ isCreatingDirectory, onDirectoryCreated }: ManagedTreePro
 
   const directoryTree = useMemo(() => buildDirectoryTree(directories), [directories]);
 
-  const initialExpandedItems = useMemo(
-    () => (directoryId ? getDirectoryPath(directoryTree, directoryId) : []),
-    [directoryTree, directoryId],
+  const [syncedDirectoryId, setSyncedDirectoryId] = useState(directoryId);
+  const [expandedItems, setExpandedItems] = useState<string[]>(() =>
+    directoryId ? getDirectoryPath(directoryTree, directoryId) : [],
   );
 
-  const [expandedItems, setExpandedItems] = useState<string[]>(() => initialExpandedItems);
+  // When `directoryId` changes externally (e.g. from a study card's folder link),
+  // ensure all ancestors of the newly selected directory are expanded.
+  // Derived-state pattern: runs synchronously during render, avoids an extra paint.
+  if (syncedDirectoryId !== directoryId) {
+    const required = directoryId ? getDirectoryPath(directoryTree, directoryId) : [];
+    const expandedSet = new Set(expandedItems);
+    const missing = required.filter((id) => !expandedSet.has(id));
+    setSyncedDirectoryId(directoryId);
+    if (missing.length > 0) {
+      setExpandedItems([...expandedItems, ...missing]);
+    }
+  }
 
   const deleteDialog = useDeleteDirectoryDialog(directoryTree);
 

@@ -12,22 +12,27 @@
  * This file is part of the Antares project.
  */
 
-import { Box } from "@mui/material";
-import { useCallback, useState } from "react";
-import AutoSizer from "react-virtualized-auto-sizer";
-import { FixedSizeGrid, type GridOnScrollProps } from "react-window";
-import useDebounce from "@/hooks/useDebounce";
+import { directoryQueries } from "@/queries/directories/queries";
 import { setStudyScrollPosition } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudiesScrollPosition } from "@/redux/selectors";
 import type { StudyMetadata } from "@/types/types";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { Box } from "@mui/material";
+import { useCallback, useState } from "react";
+import AutoSizer from "react-virtualized-auto-sizer";
+import { FixedSizeGrid, type GridOnScrollProps } from "react-window";
+import useDebounce from "@/hooks/useDebounce";
 import StudyLaunchDialog from "../../../../-shared/components/studies/dialogs/StudyLaunchDialog";
 import Header from "./Header";
-import StudyCardCell, { type StudyCardCellProps } from "./StudyCardCell";
+import StudyCardCell from "./StudyCardCell";
+import type { StudyCellData } from "./StudyCardCell/types";
+import type { ViewMode } from "./types";
 
-const CARD_TARGET_WIDTH = 500;
-const CARD_HEIGHT = 250;
+const CARD_TARGET_WIDTH = 380;
+const CARD_HEIGHT = 130;
+const LIST_ROW_HEIGHT = 76;
 
 export interface StudiesListProps {
   studyIds: Array<StudyMetadata["id"]>;
@@ -37,7 +42,9 @@ function StudiesList({ studyIds }: StudiesListProps) {
   const scrollPosition = useAppSelector(getStudiesScrollPosition);
   const [studiesToLaunch, setStudiesToLaunch] = useState<Array<StudyMetadata["id"]>>([]);
   const [selectedStudyIds, setSelectedStudyIds] = useState<Array<StudyMetadata["id"]>>([]);
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const dispatch = useAppDispatch();
+  const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
   ////////////////////////////////////////////////////////////////
   // Actions
@@ -76,19 +83,21 @@ function StudiesList({ studyIds }: StudiesListProps) {
         selectedStudyIds={selectedStudyIds}
         setSelectedStudyIds={setSelectedStudyIds}
         setStudiesToLaunch={setStudiesToLaunch}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
       />
       <Box sx={{ flex: 1, pl: 1, pb: 1, overflowX: "hidden" }}>
         <AutoSizer>
           {({ height, width }) => {
             const paddedWidth = width - 10;
-            const columnWidth =
-              paddedWidth / Math.max(Math.floor(paddedWidth / CARD_TARGET_WIDTH), 1);
-            const columnCount = Math.floor(paddedWidth / columnWidth);
-            const rowHeight = CARD_HEIGHT;
+            const columnCount =
+              viewMode === "list" ? 1 : Math.max(Math.floor(paddedWidth / CARD_TARGET_WIDTH), 1);
+            const columnWidth = viewMode === "list" ? paddedWidth : paddedWidth / columnCount;
+            const rowHeight = viewMode === "list" ? LIST_ROW_HEIGHT : CARD_HEIGHT;
 
             return (
               <FixedSizeGrid
-                key={studyIds.join()}
+                key={`${viewMode}-${studyIds.join()}`}
                 columnCount={columnCount}
                 columnWidth={columnWidth}
                 height={height}
@@ -106,7 +115,9 @@ function StudiesList({ studyIds }: StudiesListProps) {
                     rowHeight,
                     selectedStudyIds,
                     toggleStudySelection,
-                  } satisfies StudyCardCellProps["data"]
+                    viewMode,
+                    directories,
+                  } satisfies StudyCellData
                 }
               >
                 {StudyCardCell}
