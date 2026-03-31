@@ -637,7 +637,7 @@ class IOutputsAccess(ABC):
         query_file: "QueryFileType",
         frequency: MatrixFrequency,
         item_id: str,
-        mc_year: Optional[int] = None,
+        mc_year: int | None = None,
     ) -> pl.DataFrame:
         raise NotImplementedError()
 

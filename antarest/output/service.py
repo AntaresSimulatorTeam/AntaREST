@@ -693,7 +693,7 @@ class OutputService:
         query_file: QueryFileType,
         frequency: MatrixFrequency,
         item_id: str,
-        mc_year: Optional[int] = None,
+        mc_year: int | None = None,
     ) -> pl.DataFrame:
         self._studies_repository.assert_permission(uuid, StudyPermissionType.READ)
         mc_years = [mc_year] if mc_year is not None else None
