@@ -123,9 +123,10 @@ class FileStudyThermalDao(ThermalDao, ABC):
     def _get_matrices(
         self, getter: Callable[[AreaId, ThermalId], pl.DataFrame]
     ) -> Iterator[tuple[AreaId, ThermalId, pl.DataFrame]]:
-        all_thermals = self.get_all_thermals()
-        for area_id, value in all_thermals.items():
-            for thermal_id in value:
+        areas = self.get_file_study().config.areas
+        for area_id, value in areas.items():
+            for thermal in value.thermals:
+                thermal_id = thermal.id.lower()
                 matrix = getter(area_id, thermal_id)
                 yield area_id, thermal_id, matrix
 
