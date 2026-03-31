@@ -345,11 +345,11 @@ class FileStudyHydroDao(HydroDao):
         if compatibility_data.hydro_pmax == hydro_pmax:
             return
 
-        matrix_service = self.get_impl()._generator_matrix_constants.matrix_service
+        matrix_service = self.get_impl().matrix_service
         file_study = self.get_file_study()
         areas = file_study.config.areas.keys()
 
-        hourly_matrix_id = self.get_impl()._generator_matrix_constants.get_null_matrix()
+        hourly_matrix_id = self.get_impl().generator_matrix_constants.get_null_matrix()
         daily_matrix_id = MATRIX_PROTOCOL_PREFIX + matrix_service.create(create_polars_dataframe(np.full((365, 1), 24)))
 
         if hydro_pmax == HydroPmax.HOURLY:

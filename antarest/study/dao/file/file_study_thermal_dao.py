@@ -142,7 +142,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
         object_ids = ((area_id, thermal_id) for area_id, thermal_id, _ in iterator2)
 
         result: dict[AreaId, dict[ThermalId, SeriesId]] = {}
-        for matrix_id in self.get_impl()._generator_matrix_constants.matrix_service.create_batch(matrices):
+        for matrix_id in self.get_impl().matrix_service.create_batch(matrices):
             area_id, thermal_id = next(object_ids)
             result.setdefault(area_id, {})[thermal_id] = matrix_id
         return result

@@ -43,6 +43,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 
 if TYPE_CHECKING:
     from antarest.blobstore.service import IBlobService
+    from antarest.matrixstore.service import ISimpleMatrixService
     from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
@@ -83,6 +84,19 @@ class FileStudyTreeDao(
         self._file_study = study
         self._generator_matrix_constants = generator_matrix_constants
         self._blob_service = blob_service
+        self._matrix_service = generator_matrix_constants.matrix_service
+
+    @property
+    def matrix_service(self) -> "ISimpleMatrixService":
+        return self._matrix_service
+
+    @property
+    def blob_service(self) -> "IBlobService":
+        return self._blob_service
+
+    @property
+    def generator_matrix_constants(self) -> "GeneratorMatrixConstants":
+        return self._generator_matrix_constants
 
     @override
     def get_file_study(self) -> FileStudy:
