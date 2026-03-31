@@ -388,13 +388,13 @@ class V2OutputStorage(IOutputStorage):
         transform_columns_headers: bool,
         mc_years: Sequence[int] | None = None,
     ) -> Iterator[pl.DataFrame]:
-        if not transform_columns_headers:
-            raise NotImplementedError("transform_columns_headers=False is not yet supported for V2 storage")
-
         target_dir = parquet_output_dir(self._variables_dir, study_id, output_id)
         df = read_output_from_parquet(target_dir, query_file, frequency, ids_to_consider, columns_names, mc_years)
 
         if df.is_empty():
             raise OutputAggregationError(output_id, "No output data matching the criteria were found")
+
+        if not transform_columns_headers:
+            df = df.drop("timeId", strict=False)
 
         yield df
