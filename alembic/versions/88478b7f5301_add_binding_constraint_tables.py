@@ -16,18 +16,8 @@ down_revision = "f9ecc0607cc5"
 branch_labels = None
 depends_on = None
 
-bc_frequency = sa.Enum("hourly", "daily", "weekly", name="bc_frequency")
-bc_operator = sa.Enum("less", "greater", "both", "equal", name="bc_operator")
-
-# Versions with create_type=False: used inside op.create_table() after the types
-# have already been created explicitly, to avoid a double-create error on PostgreSQL.
-bc_frequency_ref = sa.Enum("hourly", "daily", "weekly", name="bc_frequency", create_type=False)
-bc_operator_ref = sa.Enum("less", "greater", "both", "equal", name="bc_operator", create_type=False)
-
 
 def upgrade() -> None:
-    bc_frequency.create(op.get_bind(), checkfirst=True)
-    bc_operator.create(op.get_bind(), checkfirst=True)
 
     op.create_table(
         "binding_constraint",
@@ -35,8 +25,8 @@ def upgrade() -> None:
         sa.Column("constraint_id", sa.String(length=255), nullable=False),
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("enabled", sa.Boolean(), nullable=False),
-        sa.Column("time_step", bc_frequency_ref, nullable=False),
-        sa.Column("operator", bc_operator_ref, nullable=False),
+        sa.Column("time_step", sa.Enum("hourly", "daily", "weekly", name="bc_frequency"), nullable=False),
+        sa.Column("operator", sa.Enum("less", "greater", "both", "equal", name="bc_operator"), nullable=False),
         sa.Column("comments", sa.String(), nullable=False),
         sa.Column("filter_year_by_year", sa.String(), nullable=True),
         sa.Column("filter_synthesis", sa.String(), nullable=True),
@@ -122,5 +112,5 @@ def downgrade() -> None:
     op.drop_table("binding_constraint_link_term")
     op.drop_table("binding_constraint")
 
-    bc_operator.drop(op.get_bind(), checkfirst=True)
-    bc_frequency.drop(op.get_bind(), checkfirst=True)
+    sa.Enum(name="bc_operator").drop(op.get_bind(), checkfirst=True)
+    sa.Enum(name="bc_frequency").drop(op.get_bind(), checkfirst=True)
