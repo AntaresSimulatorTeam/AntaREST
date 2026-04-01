@@ -35,6 +35,7 @@ from antarest.output.filestudy.utils import (
     MCRoot,
     MultipleOutputHeaders,
     QueryFileType,
+    get_output_object_type,
     get_start_column,
     normalize_df_column_names,
     parse_output_file,
@@ -42,12 +43,6 @@ from antarest.output.filestudy.utils import (
 from antarest.study.model import MatrixFrequency
 
 logger = logging.getLogger(__name__)
-
-_OBJECT_TYPE_NAMES: dict[str, str] = {
-    "details": "thermal_clusters",
-    "details-res": "renewable_clusters",
-    "details-STstorage": "short_term_storages",
-}
 
 
 def parquet_output_dir(variables_dir: Path, study_id: str, output_name: str) -> Path:
@@ -87,14 +82,6 @@ def _discover_file_type_frequencies(
             except ValueError:
                 continue
     return result
-
-
-def _object_type_name(query_file: QueryFileType, is_link: bool) -> str:
-    if query_file.value in _OBJECT_TYPE_NAMES:
-        return _OBJECT_TYPE_NAMES[query_file.value]
-    if is_link:
-        return "links"
-    return "areas"
 
 
 def _aggregate_to_parquet(
@@ -162,8 +149,7 @@ def _extract_areas(
     combos = _discover_file_type_frequencies(ref_folders, file_type_class)
 
     for query_file, frequency in combos:
-        obj_type = _object_type_name(query_file, is_link=False)
-
+        obj_type = get_output_object_type(query_file, is_link=False)
         if area_ids:
             file_name = _parquet_file_name(mc_root, obj_type, frequency)
             _aggregate_to_parquet(output_dir, query_file, frequency, area_ids, target_dir / file_name)
@@ -355,7 +341,7 @@ def read_output_from_parquet(
     mc_root = _mc_root_for_query_file(query_file)
     is_link = isinstance(query_file, (MCIndLinksQueryFile, MCAllLinksQueryFile))
     is_details = "details" in query_file.value
-    obj_type = _object_type_name(query_file, is_link)
+    obj_type = get_output_object_type(query_file, is_link)
     id_col = "link" if is_link else "area"
 
     # Split areas vs districts
