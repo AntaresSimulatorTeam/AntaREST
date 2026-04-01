@@ -1496,7 +1496,7 @@ class StudyService:
         if study.archived:
             os.unlink(self.storage_service.raw_study_service.find_archive_path(study))
 
-        elif isinstance(study, RawStudy) and study.storage_mode == StorageMode.FILESYSTEM:
+        elif study.storage_mode == StorageMode.FILESYSTEM:
             self.storage_service.get_storage(study).delete(study)
 
     def _notify_study_deleted(self, study: Study, study_info: Any) -> None:
