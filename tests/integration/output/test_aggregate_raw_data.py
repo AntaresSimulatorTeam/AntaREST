@@ -25,6 +25,15 @@ from antarest.core.utils.utils import current_time
 from tests.integration.assets import ASSETS_DIR as INTEGRATION_ASSETS_DIR
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
 
+_ID_COLUMNS = ["area", "link", "mcYear", "timeId", "cluster"]
+
+
+def _sort_by_id(df: pd.DataFrame) -> pd.DataFrame:
+    """Sort a DataFrame by its ID columns for order-independent comparison."""
+    cols = [c for c in _ID_COLUMNS if c in df.columns]
+    return df.sort_values(by=cols).reset_index(drop=True) if cols else df
+
+
 # define the requests parameters for the `economy/mc-ind` outputs aggregation
 AREAS_REQUESTS__IND = [
     (
@@ -408,13 +417,16 @@ class TestRawDataAggregationMCInd:
     Check the aggregation of Raw Data from studies outputs
     """
 
-    def test_area_aggregation(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    def test_area_aggregation(
+        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: str
+    ) -> None:
         """
         Test the aggregation of areas data
         """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         for params, expected_result_filename in AREAS_REQUESTS__IND:
+            params = {**params}
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
@@ -436,15 +448,18 @@ class TestRawDataAggregationMCInd:
             # cast types of expected_df to match df
             for col in expected_df.columns:
                 expected_df[col] = expected_df[col].astype(df[col].dtype)
-            pd.testing.assert_frame_equal(df, expected_df)
+            pd.testing.assert_frame_equal(_sort_by_id(df), _sort_by_id(expected_df))
 
-    def test_links_aggregation(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    def test_links_aggregation(
+        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: str
+    ) -> None:
         """
         Test the aggregation of links data
         """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         for params, expected_result_filename in LINKS_REQUESTS__IND:
+            params = {**params}
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
@@ -468,15 +483,18 @@ class TestRawDataAggregationMCInd:
             # cast types of expected_df to match df
             for col in expected_df.columns:
                 expected_df[col] = expected_df[col].astype(df[col].dtype)
-            pd.testing.assert_frame_equal(df, expected_df)
+            pd.testing.assert_frame_equal(_sort_by_id(df), _sort_by_id(expected_df))
 
-    def test_different_formats(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    def test_different_formats(
+        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: str
+    ) -> None:
         """
         Tests that all formats work and produce the same result
         """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         for params, expected_result_filename in SAME_REQUEST_DIFFERENT_FORMATS__IND:
+            params = {**params}
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
@@ -507,7 +525,7 @@ class TestRawDataAggregationMCInd:
             for col in expected_df.columns:
                 expected_df[col] = expected_df[col].astype(df[col].dtype)
             print(f"Testing format {export_format}")
-            pd.testing.assert_frame_equal(df, expected_df)
+            pd.testing.assert_frame_equal(_sort_by_id(df), _sort_by_id(expected_df))
 
     def test_aggregation_errors(
         self, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
@@ -545,6 +563,7 @@ class TestRawDataAggregationMCInd:
 
         # Asserts that wrongly typed requests send an HTTP 422 Exception
         for params in WRONGLY_TYPED_REQUESTS__IND:
+            params = {**params}
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 422
@@ -594,16 +613,21 @@ class TestRawDataAggregationMCInd:
 
 class TestRawDataAggregationMCAll:
     """
-    Check the aggregation of Raw Data from studies outputs in `economy/mc-all`
+    Check the aggregation of Raw Data from studies outputs in `economy/mc-all`.
+    Happy-path tests are parametrized via the `storage_type` fixture
+    to verify identical results with both file and parquet (V2) storage.
     """
 
-    def test_area_aggregation(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    def test_area_aggregation(
+        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: str
+    ) -> None:
         """
         Test the aggregation of areas data
         """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         for params, expected_result_filename in AREAS_REQUESTS__ALL:
+            params = {**params}
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
@@ -627,15 +651,18 @@ class TestRawDataAggregationMCAll:
             # cast types of expected_df to match df
             for col in expected_df.columns:
                 expected_df[col] = expected_df[col].astype(df[col].dtype)
-            pd.testing.assert_frame_equal(df, expected_df)
+            pd.testing.assert_frame_equal(_sort_by_id(df), _sort_by_id(expected_df))
 
-    def test_links_aggregation(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    def test_links_aggregation(
+        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: str
+    ) -> None:
         """
         Test the aggregation of links data
         """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         for params, expected_result_filename in LINKS_REQUESTS__ALL:
+            params = {**params}
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
@@ -659,15 +686,18 @@ class TestRawDataAggregationMCAll:
             # cast types of expected_df to match df
             for col in expected_df.columns:
                 expected_df[col] = expected_df[col].astype(df[col].dtype)
-            pd.testing.assert_frame_equal(df, expected_df)
+            pd.testing.assert_frame_equal(_sort_by_id(df), _sort_by_id(expected_df))
 
-    def test_different_formats(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    def test_different_formats(
+        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: str
+    ) -> None:
         """
         Tests that all formats work and produce the same result
         """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         for params, expected_result_filename in SAME_REQUEST_DIFFERENT_FORMATS__ALL:
+            params = {**params}
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
@@ -696,7 +726,7 @@ class TestRawDataAggregationMCAll:
                 df.to_csv(resource_file, sep="\t", index=False)
             expected_df = pd.read_csv(resource_file, sep="\t", header=0)
             expected_df = expected_df.replace({np.nan: None})
-            pd.testing.assert_frame_equal(df, expected_df, check_dtype=False)
+            pd.testing.assert_frame_equal(_sort_by_id(df), _sort_by_id(expected_df), check_dtype=False)
 
     def test_with_variant(self, client: TestClient, user_access_token: str, tmp_path: Path) -> None:
         """
@@ -751,7 +781,7 @@ class TestRawDataAggregationMCAll:
             df = pd.read_csv(content, sep=",")
             for col in expected_df.columns:
                 expected_df[col] = expected_df[col].astype(df[col].dtype)
-            pd.testing.assert_frame_equal(df, expected_df)
+            pd.testing.assert_frame_equal(_sort_by_id(df), _sort_by_id(expected_df))
 
     def test_aggregation_errors(
         self, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
@@ -789,6 +819,7 @@ class TestRawDataAggregationMCAll:
 
         # Asserts that wrongly typed requests send an HTTP 422 Exception
         for params in WRONGLY_TYPED_REQUESTS__ALL:
+            params = {**params}
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 422
@@ -876,7 +907,7 @@ class TestRawDataAggregationColumnsFormatting:
         actual_df = pd.read_csv(content, sep=",")
         expected_df_path = ASSETS_DIR / "aggregate_areas_raw_data" / "expected_result_sts.csv"
         expected_df = pd.read_csv(expected_df_path, sep=",")
-        pd.testing.assert_frame_equal(actual_df, expected_df, check_dtype=False)
+        pd.testing.assert_frame_equal(_sort_by_id(actual_df), _sort_by_id(expected_df), check_dtype=False)
 
 
 class TestDataAggregationCreationOperations:
