@@ -421,7 +421,11 @@ class TestRawDataAggregationMCInd:
     """
 
     def test_area_aggregation(
-        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: tuple[str, dict[str, str]]
+        self,
+        client: TestClient,
+        user_access_token: str,
+        internal_study_id: str,
+        storage_type: tuple[str, dict[str, str]],
     ) -> None:
         """
         Test the aggregation of areas data
@@ -456,7 +460,11 @@ class TestRawDataAggregationMCInd:
             pd.testing.assert_frame_equal(_sort_by_id(df), _sort_by_id(expected_df))
 
     def test_links_aggregation(
-        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: tuple[str, dict[str, str]]
+        self,
+        client: TestClient,
+        user_access_token: str,
+        internal_study_id: str,
+        storage_type: tuple[str, dict[str, str]],
     ) -> None:
         """
         Test the aggregation of links data
@@ -493,7 +501,11 @@ class TestRawDataAggregationMCInd:
             pd.testing.assert_frame_equal(_sort_by_id(df), _sort_by_id(expected_df))
 
     def test_different_formats(
-        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: tuple[str, dict[str, str]]
+        self,
+        client: TestClient,
+        user_access_token: str,
+        internal_study_id: str,
+        storage_type: tuple[str, dict[str, str]],
     ) -> None:
         """
         Tests that all formats work and produce the same result
@@ -626,7 +638,11 @@ class TestRawDataAggregationMCAll:
     """
 
     def test_area_aggregation(
-        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: tuple[str, dict[str, str]]
+        self,
+        client: TestClient,
+        user_access_token: str,
+        internal_study_id: str,
+        storage_type: tuple[str, dict[str, str]],
     ) -> None:
         """
         Test the aggregation of areas data
@@ -665,7 +681,11 @@ class TestRawDataAggregationMCAll:
             pd.testing.assert_frame_equal(_sort_by_id(df), _sort_by_id(expected_df))
 
     def test_links_aggregation(
-        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: tuple[str, dict[str, str]]
+        self,
+        client: TestClient,
+        user_access_token: str,
+        internal_study_id: str,
+        storage_type: tuple[str, dict[str, str]],
     ) -> None:
         """
         Test the aggregation of links data
@@ -704,7 +724,11 @@ class TestRawDataAggregationMCAll:
             pd.testing.assert_frame_equal(_sort_by_id(df), _sort_by_id(expected_df))
 
     def test_different_formats(
-        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: tuple[str, dict[str, str]]
+        self,
+        client: TestClient,
+        user_access_token: str,
+        internal_study_id: str,
+        storage_type: tuple[str, dict[str, str]],
     ) -> None:
         """
         Tests that all formats work and produce the same result
