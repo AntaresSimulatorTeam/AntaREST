@@ -28,6 +28,8 @@ import pyarrow.parquet as pq
 
 from antarest.output.filestudy.aggregator_management import AggregatorManager
 from antarest.output.filestudy.utils import (
+    MCYEAR_COL,
+    TIME_ID_COL,
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
@@ -38,7 +40,7 @@ from antarest.output.filestudy.utils import (
     get_output_object_type,
     get_start_column,
     normalize_df_column_names,
-    parse_output_file, TIME_ID_COL, MCYEAR_COL,
+    parse_output_file,
 )
 from antarest.output.utils import find_mode_dir
 from antarest.study.model import MatrixFrequency
