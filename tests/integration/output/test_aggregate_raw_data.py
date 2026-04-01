@@ -629,6 +629,9 @@ class TestRawDataAggregationMCAll:
         for params, expected_result_filename in AREAS_REQUESTS__ALL:
             params = {**params}
             output_id = params.pop("output_id")
+            # "id" query files are not converted to parquet (skipped in converter)
+            if storage_type == "v2" and params.get("query_file") == "id":
+                continue
             res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             download_id = res.json()
@@ -664,6 +667,9 @@ class TestRawDataAggregationMCAll:
         for params, expected_result_filename in LINKS_REQUESTS__ALL:
             params = {**params}
             output_id = params.pop("output_id")
+            # "id" query files are not converted to parquet (skipped in converter)
+            if storage_type == "v2" and params.get("query_file") == "id":
+                continue
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             download_id = res.json()
