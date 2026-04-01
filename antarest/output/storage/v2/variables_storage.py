@@ -40,6 +40,7 @@ from antarest.output.filestudy.utils import (
     normalize_df_column_names,
     parse_output_file,
 )
+from antarest.output.utils import find_mode_dir
 from antarest.study.model import MatrixFrequency
 
 logger = logging.getLogger(__name__)
@@ -183,14 +184,6 @@ def _extract_links(
         _aggregate_to_parquet(output_dir, query_file, frequency, link_ids, target_dir / file_name)
 
 
-def _find_mode_dir(output_dir: Path) -> Path | None:
-    for mode_name in ("economy", "adequacy"):
-        mode_dir = output_dir / mode_name
-        if mode_dir.exists():
-            return mode_dir
-    return None
-
-
 def _extract_binding_constraints(
     base_path: Path,
     mc_root: MCRoot,
@@ -244,7 +237,7 @@ def _extract_binding_constraints(
 def extract_output_to_parquet(output_dir: Path, target_dir: Path) -> None:
     target_dir.mkdir(parents=True, exist_ok=True)
 
-    mode_dir = _find_mode_dir(output_dir)
+    mode_dir = find_mode_dir(output_dir)
     if mode_dir is None:
         logger.warning(f"No economy or adequacy directory found in {output_dir}")
         return
