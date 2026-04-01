@@ -425,3 +425,6 @@ def test_db_study_deletion(client: TestClient, user_access_token: str) -> None:
     # We should be able to delete the study
     res = client.delete(f"/v1/studies/{study_id}")
     assert res.status_code == 200
+    # Ensures the study no longer exists
+    res = client.get(f"/v1/studies/{study_id}")
+    assert res.status_code == 404
