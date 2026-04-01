@@ -27,6 +27,9 @@ from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
 
 _ID_COLUMNS = ["area", "link", "mcYear", "timeId", "cluster"]
 
+# Query file types not supported by V2 parquet storage (skipped during conversion)
+_V2_UNSUPPORTED_QUERY_FILES = {"id"}
+
 
 def _sort_by_id(df: pd.DataFrame) -> pd.DataFrame:
     """Sort a DataFrame by its ID columns for order-independent comparison."""
@@ -418,16 +421,18 @@ class TestRawDataAggregationMCInd:
     """
 
     def test_area_aggregation(
-        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: str
+        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: tuple[str, dict[str, str]]
     ) -> None:
         """
         Test the aggregation of areas data
         """
+        mode, name_map = storage_type
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         for params, expected_result_filename in AREAS_REQUESTS__IND:
             params = {**params}
             output_id = params.pop("output_id")
+            output_id = name_map.get(output_id, output_id)
             res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             download_id = res.json()
@@ -451,16 +456,18 @@ class TestRawDataAggregationMCInd:
             pd.testing.assert_frame_equal(_sort_by_id(df), _sort_by_id(expected_df))
 
     def test_links_aggregation(
-        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: str
+        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: tuple[str, dict[str, str]]
     ) -> None:
         """
         Test the aggregation of links data
         """
+        mode, name_map = storage_type
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         for params, expected_result_filename in LINKS_REQUESTS__IND:
             params = {**params}
             output_id = params.pop("output_id")
+            output_id = name_map.get(output_id, output_id)
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             download_id = res.json()
@@ -486,16 +493,18 @@ class TestRawDataAggregationMCInd:
             pd.testing.assert_frame_equal(_sort_by_id(df), _sort_by_id(expected_df))
 
     def test_different_formats(
-        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: str
+        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: tuple[str, dict[str, str]]
     ) -> None:
         """
         Tests that all formats work and produce the same result
         """
+        mode, name_map = storage_type
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         for params, expected_result_filename in SAME_REQUEST_DIFFERENT_FORMATS__IND:
             params = {**params}
             output_id = params.pop("output_id")
+            output_id = name_map.get(output_id, output_id)
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             download_id = res.json()
@@ -613,24 +622,23 @@ class TestRawDataAggregationMCInd:
 
 class TestRawDataAggregationMCAll:
     """
-    Check the aggregation of Raw Data from studies outputs in `economy/mc-all`.
-    Happy-path tests are parametrized via the `storage_type` fixture
-    to verify identical results with both file and parquet (V2) storage.
+    Check the aggregation of Raw Data from studies outputs in `economy/mc-all`
     """
 
     def test_area_aggregation(
-        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: str
+        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: tuple[str, dict[str, str]]
     ) -> None:
         """
         Test the aggregation of areas data
         """
+        mode, name_map = storage_type
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         for params, expected_result_filename in AREAS_REQUESTS__ALL:
             params = {**params}
             output_id = params.pop("output_id")
-            # "id" query files are not converted to parquet (skipped in converter)
-            if storage_type == "v2" and params.get("query_file") == "id":
+            output_id = name_map.get(output_id, output_id)
+            if mode == "v2" and params.get("query_file") in _V2_UNSUPPORTED_QUERY_FILES:
                 continue
             res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
@@ -657,18 +665,19 @@ class TestRawDataAggregationMCAll:
             pd.testing.assert_frame_equal(_sort_by_id(df), _sort_by_id(expected_df))
 
     def test_links_aggregation(
-        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: str
+        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: tuple[str, dict[str, str]]
     ) -> None:
         """
         Test the aggregation of links data
         """
+        mode, name_map = storage_type
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         for params, expected_result_filename in LINKS_REQUESTS__ALL:
             params = {**params}
             output_id = params.pop("output_id")
-            # "id" query files are not converted to parquet (skipped in converter)
-            if storage_type == "v2" and params.get("query_file") == "id":
+            output_id = name_map.get(output_id, output_id)
+            if mode == "v2" and params.get("query_file") in _V2_UNSUPPORTED_QUERY_FILES:
                 continue
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
@@ -695,16 +704,18 @@ class TestRawDataAggregationMCAll:
             pd.testing.assert_frame_equal(_sort_by_id(df), _sort_by_id(expected_df))
 
     def test_different_formats(
-        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: str
+        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_type: tuple[str, dict[str, str]]
     ) -> None:
         """
         Tests that all formats work and produce the same result
         """
+        mode, name_map = storage_type
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         for params, expected_result_filename in SAME_REQUEST_DIFFERENT_FORMATS__ALL:
             params = {**params}
             output_id = params.pop("output_id")
+            output_id = name_map.get(output_id, output_id)
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             download_id = res.json()
