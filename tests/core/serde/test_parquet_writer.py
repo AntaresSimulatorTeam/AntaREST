@@ -54,23 +54,18 @@ def test_different_columns(tmp_path: Path) -> None:
     )
     pd.testing.assert_frame_equal(next(dfs), expected_first_df, check_dtype=False)
 
-    expected_second_df = pd.DataFrame(data=[(5, 6, 7, np.nan), (8, 9, 10, np.nan)], columns=["A", "B", "C", "D"])
+    expected_second_df = pd.DataFrame(
+        data=[(5, 6, 7, np.nan), (8, 9, 10, np.nan), (11, 12, np.nan, np.nan), (13, 14, np.nan, np.nan)],
+        columns=["A", "B", "C", "D"],
+    )
     pd.testing.assert_frame_equal(next(dfs), expected_second_df, check_dtype=False)
 
-    expected_third_df = pd.DataFrame(
-        data=[(11, 12, np.nan, np.nan), (13, 14, np.nan, np.nan)], columns=["A", "B", "C", "D"]
-    )
-    pd.testing.assert_frame_equal(next(dfs), expected_third_df, check_dtype=False)
-
     # values of A and B are correctly "inverted"
-    expected_fourth_df = pd.DataFrame(data=[(16, 15, np.nan, 17), (19, 18, np.nan, 20)], columns=["A", "B", "C", "D"])
-    pd.testing.assert_frame_equal(next(dfs), expected_fourth_df, check_dtype=False)
-
-    # values of C and D are correctly
-    expected_fifth_df = pd.DataFrame(
-        data=[(np.nan, np.nan, 21, 22), (np.nan, np.nan, 23, 24)], columns=["A", "B", "C", "D"]
+    expected_fourth_df = pd.DataFrame(
+        data=[(16, 15, np.nan, 17), (19, 18, np.nan, 20), (np.nan, np.nan, 21, 22), (np.nan, np.nan, 23, 24)],
+        columns=["A", "B", "C", "D"],
     )
-    pd.testing.assert_frame_equal(next(dfs), expected_fifth_df, check_dtype=False)
+    pd.testing.assert_frame_equal(next(dfs), expected_fourth_df, check_dtype=False)
 
 
 def test_same_columns(tmp_path: Path) -> None:
@@ -84,8 +79,7 @@ def test_same_columns(tmp_path: Path) -> None:
 
     dfs = yield_dataframes_from_parquet(files, all_cols)
 
-    pd.testing.assert_frame_equal(next(dfs), df1.to_pandas(), check_dtype=False)
-    pd.testing.assert_frame_equal(next(dfs), df2.to_pandas(), check_dtype=False)
+    pd.testing.assert_frame_equal(next(dfs), pl.concat([df1, df2]).to_pandas(), check_dtype=False)
 
 
 def test_no_dataframes_given(tmp_path: Path) -> None:
