@@ -25,7 +25,6 @@ from typing import cast
 
 import polars as pl
 import pyarrow.parquet as pq
-import pyarrow.parquet.core as pqc
 
 from antarest.output.filestudy.aggregator_management import AggregatorManager
 from antarest.output.filestudy.utils import (
@@ -130,7 +129,7 @@ def _aggregate_to_parquet(
 
     table = combined.to_arrow()
     sorting_columns = [
-        pqc.SortingColumn(table.schema.get_field_index(col)) for col in id_cols if col in table.schema.names
+        pq.SortingColumn(table.schema.get_field_index(col)) for col in id_cols if col in table.schema.names
     ]
     pq.write_table(
         table,
@@ -243,7 +242,7 @@ def _extract_binding_constraints(
         file_name = _parquet_file_name(mc_root, "binding_constraints", frequency)
         table = df.to_arrow()
         sorting_columns = (
-            [pqc.SortingColumn(table.schema.get_field_index("timeId"))] if "timeId" in table.schema.names else []
+            [pq.SortingColumn(table.schema.get_field_index("timeId"))] if "timeId" in table.schema.names else []
         )
         pq.write_table(
             table,
