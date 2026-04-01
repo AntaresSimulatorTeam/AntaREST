@@ -51,14 +51,14 @@ from antarest.output.storage.output_storage import (
     OutputMetadata,
     OutputStorageType,
 )
-from antarest.output.storage.v2.converter import (
-    extract_output_to_parquet,
-    parquet_output_dir,
-    read_output_from_parquet,
-)
 from antarest.output.storage.v2.repository import (
     DbOutputMetadataV2,
     OutputV2Repository,
+)
+from antarest.output.storage.v2.variables_storage import (
+    extract_output_to_parquet,
+    parquet_output_dir,
+    read_output_from_parquet,
 )
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency, MatrixIndex
