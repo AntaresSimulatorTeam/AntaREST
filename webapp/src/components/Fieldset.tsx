@@ -52,15 +52,14 @@ function Fieldset({
   const { t } = useTranslation();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   const canCollapse = collapsible && !!legend;
+  const isLegendString = typeof legend === "string";
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleToggleCollapse = () => {
-    if (canCollapse) {
-      setIsCollapsed((prev) => !prev);
-    }
+    setIsCollapsed((prev) => !prev);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -93,15 +92,18 @@ function Fieldset({
           <Stack
             component="legend"
             gap={0.5}
-            sx={[canCollapse && { cursor: "pointer" }]}
-            onClick={handleToggleCollapse}
+            {...(canCollapse &&
+              isLegendString && { onClick: handleToggleCollapse, sx: { cursor: "pointer" } })}
           >
             {canCollapse && (
               <Tooltip
                 title={isCollapsed ? t("button.expand") : t("button.collapse")}
                 placement="top"
               >
-                <IconButton size="small">
+                <IconButton
+                  size="small"
+                  onClick={!isLegendString ? handleToggleCollapse : undefined}
+                >
                   <ExpandMoreIcon
                     sx={{
                       transform: isCollapsed ? "rotate(0deg)" : "rotate(180deg)",
