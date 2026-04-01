@@ -1009,6 +1009,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
         public_mode=PublicMode.NONE,
         workspace=DEFAULT_WORKSPACE_NAME,
         last_access=current_time(),
+        storage_mode=StorageMode.FILESYSTEM,
     )
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
     study_mock.to_enhanced_json_summary.return_value = {
@@ -1043,6 +1044,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
         groups=[],
         public_mode=PublicMode.NONE,
         last_access=current_time(),
+        storage_mode=StorageMode.FILESYSTEM,
     )
     study_mock.generation_task = None
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
