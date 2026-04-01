@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 """
-Conversion of Antares output CSV files to parquet format.
+Conversion of Antares output TSV files to parquet format.
 
 Output structure: one parquet file per (mc_root, object_type, frequency) tuple.
 Naming convention: {mc_root}_{object_type}_{frequency}.parquet
