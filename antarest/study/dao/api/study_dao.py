@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from abc import abstractmethod
 from collections.abc import Iterator, Sequence
+from dataclasses import dataclass
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -80,6 +81,14 @@ from antarest.study.dao.api.timeseries_config_dao import ReadOnlyTimeSeriesConfi
 from antarest.study.dao.api.user_resources_dao import ReadOnlyUserResourcesDao, UserResourcesDao
 from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+
+
+@dataclass(frozen=True)
+class StudyMetadata:
+    editor: str | None = None
+    last_save: float | None = None
+    name: str | None = None
+    author: str | None = None
 
 
 class ReadOnlyStudyDao(
@@ -162,16 +171,15 @@ class StudyDao(
         raise NotImplementedError()
 
     @abstractmethod
-    def update_antares_file(self, editor: str, last_save: float) -> None:
+    def update_antares_file(self, metadata: StudyMetadata) -> None:
         """
-        Update the study.antares file with editor and last save timestamp.
+        Update the study.antares file
 
         For file-based storage, this updates the actual file.
         For database storage, this is a no-op (metadata is stored in DB).
 
         Args:
-            editor: The name of the user who made the last edit.
-            last_save: Unix timestamp of the last save.
+            metadata: The StudyMetadata object to use
         """
         raise NotImplementedError()
 

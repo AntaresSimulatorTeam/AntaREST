@@ -28,7 +28,7 @@ from typing_extensions import override
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
-from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.api.study_dao import StudyDao, StudyMetadata
 from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
 from antarest.study.dao.database.database_area_properties_dao import DatabaseAreaPropertiesDao
 from antarest.study.dao.database.database_district_dao import DatabaseDistrictDao
@@ -133,7 +133,7 @@ class DatabaseStudyDao(
         self._db_session.commit()
 
     @override
-    def update_antares_file(self, editor: str, last_save: float) -> None:
+    def update_antares_file(self, metadata: StudyMetadata) -> None:
         pass
 
     @override

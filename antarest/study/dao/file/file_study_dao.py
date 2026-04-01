@@ -17,7 +17,7 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.exceptions import NotAMatrixError
-from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.api.study_dao import StudyDao, StudyMetadata
 from antarest.study.dao.file.file_study_adequacy_patch_parameters_dao import FileStudyAdequacyPatchParametersDao
 from antarest.study.dao.file.file_study_advanced_parameters import FileStudyAdvancedParametersDao
 from antarest.study.dao.file.file_study_area_dao import FileStudyAreaDao
@@ -108,10 +108,16 @@ class FileStudyTreeDao(
         self._file_study.tree.save({"settings": {"comments": comments.encode("utf-8")}})
 
     @override
-    def update_antares_file(self, editor: str, last_save: float) -> None:
+    def update_antares_file(self, metadata: StudyMetadata) -> None:
         study_antares = self._file_study.tree.get(["study", "antares"])
-        study_antares["editor"] = editor
-        study_antares["lastsave"] = last_save
+        if metadata.editor:
+            study_antares["editor"] = metadata.editor
+        if metadata.last_save:
+            study_antares["lastsave"] = metadata.last_save
+        if metadata.name:
+            study_antares["caption"] = metadata.name
+        if metadata.author:
+            study_antares["author"] = metadata.author
         self._file_study.tree.save(study_antares, ["study", "antares"])
 
     def get_matrix(self, url: list[str]) -> pl.DataFrame:

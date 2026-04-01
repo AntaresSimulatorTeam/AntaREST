@@ -90,6 +90,7 @@ from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
 from antarest.study.business.model.area_model import AreaCreation, AreaInfo, AreaUIData, AreaUIUpdate
 from antarest.study.business.model.binding_constraint_model import LinkTerm
+from antarest.study.business.model.config.general_model import GeneralConfigUpdate
 from antarest.study.business.model.hydro_allocation_model import HydroAllocationMatrix
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelationMatrix
 from antarest.study.business.model.link_model import Link, LinkUpdate
@@ -112,7 +113,7 @@ from antarest.study.business.timeseries_config_management import TimeSeriesConfi
 from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
-from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
+from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao, StudyMetadata
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -185,6 +186,7 @@ from antarest.study.storage.variantstudy.model.command.replace_user_resource imp
     ReplaceUserResource,
 )
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command.update_general_config import UpdateGeneralConfig
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -486,33 +488,14 @@ class RawStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        command_context = self._variant_study_service.command_factory.command_context
-        if self._study.storage_mode == StorageMode.DATABASE:
-            return DatabaseStudyDao(
-                self._study.id, db.session, self._matrix_service, command_context.generator_matrix_constants
-            ).read_only()
-        return FileStudyTreeDao(
-            self.get_files(), command_context.generator_matrix_constants, command_context.blob_service
-        ).read_only()
+        return self._get_dao().read_only()
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
         study = self._study
-        file_study: FileStudy | None = None
 
-        command_context = self._variant_study_service.command_factory.command_context
         # Build DAO based on storage mode
-        if study.storage_mode == StorageMode.DATABASE:
-            dao: StudyDao = DatabaseStudyDao(
-                study.id, db.session, self._matrix_service, command_context.generator_matrix_constants
-            )
-        else:
-            file_study = self.get_files()
-            dao = FileStudyTreeDao(
-                file_study,
-                command_context.generator_matrix_constants,
-                command_context.blob_service,
-            )
+        dao = self._get_dao()
 
         # Apply all commands
         should_invalidate_cache = False
@@ -527,8 +510,7 @@ class RawStudyInterface(StudyInterface):
         if should_invalidate_cache:
             remove_from_cache(self._raw_study_service.cache, study.id)
         elif study.storage_mode == StorageMode.FILESYSTEM:
-            assert file_study is not None
-            data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
+            data = FileStudyTreeConfigDTO.from_build_config(dao.get_file_study().config).model_dump()
             update_cache(self._raw_study_service.cache, study.id, data)
 
         # Update editor metadata
@@ -537,13 +519,24 @@ class RawStudyInterface(StudyInterface):
         # Notify changes to child variants
         self._variant_study_service.on_parent_change(study.id)
 
+    def _get_dao(self) -> StudyDao:
+        command_context = self._variant_study_service.command_factory.command_context
+        matrix_constants = command_context.generator_matrix_constants
+        if self._study.storage_mode == StorageMode.DATABASE:
+            return DatabaseStudyDao(self._study.id, db.session, self._matrix_service, matrix_constants)
+        return FileStudyTreeDao(self.get_files(), matrix_constants, command_context.blob_service)
+
+    @override
+    def set_study_metadata(self, metadata: StudyMetadata) -> None:
+        self._get_dao().update_antares_file(metadata)
+
     def _update_editor_and_lastsave(self, dao: StudyDao) -> None:
         user = self._user_service.get_identity(get_user_impersonator())
         if user:
             user_name = user.name or ""
             last_save = current_time().timestamp()
             # Update file (no-op for database storage mode)
-            dao.update_antares_file(user_name, last_save)
+            dao.update_antares_file(StudyMetadata(editor=user_name, last_save=last_save))
             # Update DB metadata
             self._study.editor = user_name
             self._study.updated_at = current_time()
@@ -588,6 +581,11 @@ class VariantStudyInterface(StudyInterface):
     def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
         # get current user if not in session, otherwise get session user
         self._variant_service.append_commands(self._study.id, transform_command_to_dto(commands, force_aggregate=True))
+
+    @override
+    def set_study_metadata(self, metadata: StudyMetadata) -> None:
+        """We won't perform any operations on variants as the change is already reflected in the database"""
+        pass
 
 
 class IOutputsAccess(ABC):
@@ -888,27 +886,21 @@ class StudyService:
         )
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
+        self.assert_study_unarchived(study)
 
-        if metadata_patch.author or metadata_patch.horizon:
-            self.assert_study_unarchived(study)
+        study_interface = self.get_study_interface(study)
 
         if metadata_patch.horizon:
-            study_settings_url = "settings/generaldata/general"
-            study_settings = self.storage_service.get_storage(study).get(study, study_settings_url)
-            study_settings["horizon"] = metadata_patch.horizon
-            self._edit_study_using_command(study=study, url=study_settings_url, data=study_settings)
+            command = UpdateGeneralConfig(
+                parameters=GeneralConfigUpdate(horizon=metadata_patch.horizon),
+                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                study_version=study_interface.version,
+            )
+            study_interface.add_commands([command])
 
         if metadata_patch.author or metadata_patch.name:
-            study_antares_url = "study/antares"
-            study_antares = self.storage_service.get_storage(study).get(study, study_antares_url)
-
-            if metadata_patch.author:
-                study_antares["author"] = metadata_patch.author
-
-            if metadata_patch.name:
-                study_antares["caption"] = metadata_patch.name
-
-            self._edit_study_using_command(study=study, url=study_antares_url, data=study_antares)
+            study_metadata = StudyMetadata(author=metadata_patch.author, name=metadata_patch.name)
+            study_interface.set_study_metadata(study_metadata)
 
         if metadata_patch.name:
             study.name = metadata_patch.name
