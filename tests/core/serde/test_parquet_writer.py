@@ -15,8 +15,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import polars as pl
+from pyarrow.parquet import ParquetFile
 
 from antarest.core.serde.parquet_writer import (
+    BatchParquetWriter,
     write_dataframes_in_parquet_format_by_column_sets,
     yield_dataframes_from_parquet,
 )
@@ -93,3 +95,35 @@ def test_no_dataframes_given(tmp_path: Path) -> None:
     all_df_names, all_cols = write_dataframes_in_parquet_format_by_column_sets(tmp_path, dataframes)
     assert all_df_names == []
     assert all_cols == []
+
+
+def test_batch_parquet_writer_writes_one_batch(tmp_path: Path) -> None:
+    parquet_file = tmp_path / "file.parquet"
+    tables = [
+        pl.DataFrame(data=[(1, 2), (3, 4)], schema=["A", "B"], orient="row").to_arrow(),
+        pl.DataFrame(data=[(5, 6), (7, 8)], schema=["A", "B"], orient="row").to_arrow(),
+    ]
+    with BatchParquetWriter(parquet_file, schema=tables[0].schema, row_group_size=5) as writer:
+        for t in tables:
+            writer.add_table(t)
+
+    with ParquetFile(parquet_file) as pf:
+        assert pf.num_row_groups == 1
+        assert pf.metadata.num_rows == 4
+
+
+def test_batch_parquet_writer_writes_multiple_batches_when_size_exceeds_threshold(tmp_path: Path) -> None:
+    parquet_file = tmp_path / "file.parquet"
+    tables = [
+        pl.DataFrame(data=[(1, 2), (3, 4)], schema=["A", "B"], orient="row").to_arrow(),
+        pl.DataFrame(data=[(5, 6), (7, 8)], schema=["A", "B"], orient="row").to_arrow(),
+        pl.DataFrame(data=[(5, 6), (7, 8)], schema=["A", "B"], orient="row").to_arrow(),
+        pl.DataFrame(data=[(5, 6), (7, 8)], schema=["A", "B"], orient="row").to_arrow(),
+    ]
+    with BatchParquetWriter(parquet_file, schema=tables[0].schema, row_group_size=5) as writer:
+        for t in tables:
+            writer.add_table(t)
+
+    with ParquetFile(parquet_file) as pf:
+        assert pf.num_row_groups == 2
+        assert pf.metadata.num_rows == 8
