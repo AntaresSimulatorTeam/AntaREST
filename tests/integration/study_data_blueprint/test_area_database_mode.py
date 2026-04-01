@@ -418,15 +418,22 @@ class TestDatabaseModeVsFilesystemMode:
         assert res.json() == expected
 
 
-def test_db_study_name_edition_and_deletion(client: TestClient, user_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {user_access_token}"}
-    preparer = PreparerProxy(client, user_access_token)
+def test_db_study_properties_edition_and_deletion(
+    client: TestClient, user_access_token: str, admin_access_token: str
+) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    preparer = PreparerProxy(client, admin_access_token)
     study_id = preparer.create_study("MyStudy", version=870, storage_mode="database")
     # We should be able to rename the study
     res = client.put(f"/v1/studies/{study_id}", json={"name": "MyRenamedStudy"})
     assert res.status_code == 200
     res = client.get(f"/v1/studies/{study_id}")
     assert res.json()["name"] == "MyRenamedStudy"
+    # Change the study owner
+    res = client.put(f"v1/studies/{study_id}/owner/2")  # The new owner should be George
+    assert res.status_code == 200
+    res = client.get(f"/v1/studies/{study_id}")
+    assert res.json()["owner"] == {"id": 2, "name": "George"}
     # We should be able to delete the study
     res = client.delete(f"/v1/studies/{study_id}")
     assert res.status_code == 200

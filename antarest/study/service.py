@@ -68,7 +68,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.launcher.repository import JobResultRepository
 from antarest.login.model import Group
-from antarest.login.service import LoginService
+from antarest.login.service import LoginService, UserNotFoundError
 from antarest.login.utils import get_current_user, get_user_id, get_user_impersonator
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
@@ -879,11 +879,7 @@ class StudyService:
             uuid: study uuid
             metadata_patch: metadata patch
         """
-        logger.info(
-            "updating study %s metadata for user %s",
-            uuid,
-            get_user_id(),
-        )
+        logger.info("updating study %s metadata for user %s", uuid, get_user_id())
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
@@ -1810,7 +1806,13 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
         self.assert_study_unarchived(study)
+
         new_owner = self.user_service.get_user(owner_id)
+        if not new_owner:
+            logger.error("user %d not found by user %s", id, get_user_id())
+            raise UserNotFoundError()
+        assert new_owner is not None
+
         study.owner = new_owner
         self.repository.save(study)
         self.event_bus.push(
@@ -1821,15 +1823,9 @@ class StudyService:
             )
         )
 
-        owner_name = None if new_owner is None else new_owner.name
-        self._edit_study_using_command(study=study, url="study/antares/author", data=owner_name)
+        self.get_study_interface(study).set_study_metadata(StudyMetadata(author=new_owner.name or ""))
 
-        logger.info(
-            "user %s change study %s owner to %d",
-            get_user_id(),
-            study_id,
-            owner_id,
-        )
+        logger.info("user %s change study %s owner to %d", get_user_id(), study_id, owner_id)
 
     def add_group(self, study_id: str, group_id: str) -> None:
         """
