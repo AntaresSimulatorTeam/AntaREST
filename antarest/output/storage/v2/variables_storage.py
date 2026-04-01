@@ -38,7 +38,7 @@ from antarest.output.filestudy.utils import (
     get_output_object_type,
     get_start_column,
     normalize_df_column_names,
-    parse_output_file,
+    parse_output_file, TIME_ID_COL, MCYEAR_COL,
 )
 from antarest.output.utils import find_mode_dir
 from antarest.study.model import MatrixFrequency
@@ -111,7 +111,7 @@ def _aggregate_to_parquet(
 
     combined = pl.concat(all_dfs)
 
-    id_cols = [c for c in ["area", "link", "mcYear"] if c in combined.columns]
+    id_cols = [c for c in ["area", "link", MCYEAR_COL] if c in combined.columns]
     if id_cols:
         combined = combined.sort(id_cols)
 
@@ -141,12 +141,18 @@ def _extract_areas(
         return
 
     all_ids = [d.name for d in areas_path.iterdir() if d.is_dir()]
-    area_ids = [a for a in all_ids if not a.startswith("@")]
-    district_ids = [a for a in all_ids if a.startswith("@")]
+    area_ids = []
+    district_ids = []
+
+    for item in all_ids:
+        if item.startswith("@"):
+            district_ids.append(item)
+        else:
+            area_ids.append(item)
 
     file_type_class: type[QueryFileType] = MCIndAreasQueryFile if mc_root == MCRoot.MC_IND else MCAllAreasQueryFile
 
-    ref_folders = [areas_path / a for a in (area_ids + district_ids)]
+    ref_folders = [areas_path / a for a in all_ids]
     combos = _discover_file_type_frequencies(ref_folders, file_type_class)
 
     for query_file, frequency in combos:
@@ -213,7 +219,7 @@ def _extract_binding_constraints(
         headers = cast(MultipleOutputHeaders, output_data.headers)
         col_names = normalize_df_column_names(mc_root, headers)
         df.columns = col_names
-        df = df.with_row_index("timeId", offset=1)
+        df = df.with_row_index(TIME_ID_COL, offset=1)
 
         if df.is_empty():
             continue
@@ -221,7 +227,7 @@ def _extract_binding_constraints(
         file_name = _parquet_file_name(mc_root, "binding_constraints", frequency)
         table = df.to_arrow()
         sorting_columns = (
-            [pq.SortingColumn(table.schema.get_field_index("timeId"))] if "timeId" in table.schema.names else []
+            [pq.SortingColumn(table.schema.get_field_index(TIME_ID_COL))] if TIME_ID_COL in table.schema.names else []
         )
         pq.write_table(
             table,
@@ -263,7 +269,7 @@ def extract_output_to_parquet(output_dir: Path, target_dir: Path) -> None:
     logger.info(f"Extracted output variables to parquet in {target_dir}")
 
 
-_ID_COLUMNS = {"area", "link", "mcYear", "timeId", "cluster"}
+_ID_COLUMNS = {"area", "link", MCYEAR_COL, TIME_ID_COL, "cluster"}
 """Columns that are not variable data but identification/index columns."""
 
 
@@ -312,7 +318,7 @@ def _read_filtered(
         lazy = lazy.filter(pl.col(id_col).is_in(list(ids)))
 
     if mc_years and mc_root == MCRoot.MC_IND:
-        lazy = lazy.filter(pl.col("mcYear").is_in(list(mc_years)))
+        lazy = lazy.filter(pl.col(MCYEAR_COL).is_in(list(mc_years)))
 
     if columns_names:
         schema_names = lazy.collect_schema().names()
