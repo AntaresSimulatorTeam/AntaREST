@@ -904,7 +904,7 @@ class StudyService:
             study.author = metadata_patch.author
         if metadata_patch.horizon:
             study.horizon = metadata_patch.horizon
-        if metadata_patch.tags:
+        if metadata_patch.tags is not None:
             self.repository.update_tags(study, metadata_patch.tags)  # This method also saves the modified study in DB
         else:
             # Otherwise we need to save the study in DB as it wasn't saved by the previous method
