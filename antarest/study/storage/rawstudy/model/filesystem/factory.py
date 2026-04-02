@@ -133,7 +133,3 @@ class StudyFactory:
                 FileStudyTreeConfigDTO.from_build_config(config).model_dump(),
             )
         return result
-
-    def create_from_config(self, config: FileStudyTreeConfig, mapper_type: NormalizedMatrixUriMapper) -> FileStudyTree:
-        matrix_mapper = self._matrix_mapper_factory.create(mapper_type)
-        return FileStudyTree(matrix_mapper, config)
