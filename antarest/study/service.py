@@ -584,8 +584,12 @@ class VariantStudyInterface(StudyInterface):
 
     @override
     def set_study_metadata(self, metadata: StudyMetadata) -> None:
-        """We won't perform any operations on variants as the change is already reflected in the database"""
-        pass
+        """
+        We update the last modification date in DB.
+        This way, the variant snapshot will be re-generated inside future operations.
+        """
+        self._study.updated_at = current_time()
+        self._variant_service.repository.save(self._study)
 
 
 class IOutputsAccess(ABC):
