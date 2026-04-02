@@ -39,6 +39,7 @@ from antarest.study.dao.file.file_study_thermal_dao import FileStudyThermalDao
 from antarest.study.dao.file.file_study_timseries_config_dao import FileStudyTimeSeriesConfigDao
 from antarest.study.dao.file.file_study_user_resources_dao import FileStudyUserResourceDao
 from antarest.study.dao.file.file_study_xpansion_dao import FileStudyXpansionDao
+from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
@@ -84,6 +85,14 @@ class FileStudyTreeDao(
         self._file_study = study
         self._generator_matrix_constants = generator_matrix_constants
         self._blob_service = blob_service
+
+    @override
+    def get_study_id(self) -> str:
+        return self._file_study.config.study_id
+
+    @override
+    def get_synthesis(self) -> StudyDataSynthesis:
+        return StudyDataSynthesis.from_study_config(self._file_study.config)
 
     @override
     def get_file_study(self) -> FileStudy:

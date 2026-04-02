@@ -24,7 +24,7 @@ from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.utils import remove_first_match
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
-from antarest.study.business.model.area_properties_model import AreaProperties
+from antarest.study.business.model.area_properties_model import AreaProperties, sort_filter_options
 from antarest.study.business.model.binding_constraint_model import BindingConstraint, ClusterTerm, LinkTerm
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
@@ -65,7 +65,9 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettingsUpdate,
 )
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, LinkConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -107,7 +109,8 @@ class InMemoryStudyDao(StudyDao):
     TODO, warning: no version handling, no check on areas, no checks on matrices ...
     """
 
-    def __init__(self, version: StudyVersion, matrix_service: ISimpleMatrixService) -> None:
+    def __init__(self, version: StudyVersion, matrix_service: ISimpleMatrixService, study_id: str = "") -> None:
+        self._study_id = study_id
         self._version = version
         self._matrix_service = matrix_service
         # Links
@@ -214,6 +217,58 @@ class InMemoryStudyDao(StudyDao):
         self._solar: dict[str, str] = {}
         # Wind
         self._wind: dict[str, str] = {}
+
+    @override
+    def get_study_id(self) -> str:
+        return self._study_id
+
+    @override
+    def get_synthesis(self) -> StudyDataSynthesis:
+        areas_info = self.get_all_areas_info()
+        area_names = {a.id: a.name for a in areas_info}
+        area_ids = list(area_names.keys())
+
+        links_by_area: dict[str, dict[str, LinkConfig]] = {aid: {} for aid in area_ids}
+        for link in self.get_links():
+            link_config = LinkConfig(
+                filters_synthesis=list(link.filter_synthesis),
+                filters_year=list(link.filter_year_by_year),
+            )
+            links_by_area.setdefault(link.area1, {})[link.area2] = link_config
+
+        thermals = self.get_all_thermals()
+        renewables = self.get_all_renewables()
+        st_storages = self.get_all_st_storages()
+        additional_constraints = self.get_all_st_storage_additional_constraints()
+        area_properties = self.get_all_area_properties()
+
+        areas: dict[str, AreaConfig] = {}
+        for area_id in area_ids:
+            props = area_properties.get(area_id, AreaProperties())
+            areas[area_id] = AreaConfig(
+                name=area_names[area_id],
+                links=links_by_area.get(area_id, {}),
+                thermals=list(thermals.get(area_id, {}).values()),
+                renewables=list(renewables.get(area_id, {}).values()),
+                filters_synthesis=sort_filter_options(props.filter_synthesis),
+                filters_year=sort_filter_options(props.filter_by_year),
+                st_storages=list(st_storages.get(area_id, {}).values()),
+                st_storages_additional_constraints=additional_constraints.get(area_id, {}),
+            )
+
+        districts = {d.id: d for d in self.get_districts()}
+        bindings = list(self.get_all_constraints().values())
+        advanced = self.get_advanced_parameters()
+        enr_modelling = EnrModelling(advanced.renewable_generation_modelling.value)
+
+        return StudyDataSynthesis.model_construct(
+            study_id=self._study_id,
+            version=self._version,
+            areas=areas,
+            districts=districts,
+            bindings=bindings,
+            enr_modelling=enr_modelling,
+        )
 
     @override
     def get_file_study(self) -> FileStudy:
