@@ -22,7 +22,6 @@ from antarest.study.business.model.binding_constraint_model import (
     OPERATOR_MATRICES_MAP,
     OPERATOR_MATRIX_FILE_MAP,
     BindingConstraint,
-    BindingConstraintFrequency,
     BindingConstraintOperator,
 )
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao
@@ -33,18 +32,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
-    default_bc_hourly as default_bc_hourly_87,
-)
-from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
-    default_bc_weekly_daily as default_bc_weekly_daily_87,
-)
-from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
-    default_bc_hourly as default_bc_hourly_86,
-)
-from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
-    default_bc_weekly_daily as default_bc_weekly_daily_86,
-)
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -139,7 +126,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
                 if constraint.time_step != existing_constraint.time_step:
                     # The user changed the time step, we need to update the matrix accordingly
                     for [target, new_matrix] in generate_replacement_matrices(
-                        bc_id, study_version, constraint.time_step, constraint.operator
+                        bc_id, study_version, constraint.operator
                     ):
                         # prepare matrix as a dict to save it in the tree
                         matrix_url = target.split("/")
@@ -256,7 +243,6 @@ def _remove_groups_from_scenario_builder(study_data: FileStudy, removed_groups: 
 def generate_replacement_matrices(
     bc_id: str,
     study_version: StudyVersion,
-    new_time_step: BindingConstraintFrequency,
     current_operator: BindingConstraintOperator,
 ) -> Iterator[tuple[str, list[list[float]]]]:
     """
@@ -264,23 +250,13 @@ def generate_replacement_matrices(
     """
     if study_version < STUDY_VERSION_8_7:
         target = f"input/bindingconstraints/{bc_id}"
-        matrix = {
-            BindingConstraintFrequency.HOURLY: default_bc_hourly_86,
-            BindingConstraintFrequency.DAILY: default_bc_weekly_daily_86,
-            BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_86,
-        }[new_time_step]().tolist()
-        yield target, matrix
+        yield target, []
     else:
-        matrix = {
-            BindingConstraintFrequency.HOURLY: default_bc_hourly_87,
-            BindingConstraintFrequency.DAILY: default_bc_weekly_daily_87,
-            BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_87,
-        }[new_time_step]().tolist()
         matrices_to_replace = OPERATOR_MATRIX_FILE_MAP[current_operator]
         for matrix_name in matrices_to_replace:
             matrix_id = matrix_name.format(bc_id=bc_id)
             target = f"input/bindingconstraints/{matrix_id}"
-            yield target, matrix
+            yield target, []
 
 
 def update_matrices_names(

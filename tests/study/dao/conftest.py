@@ -102,9 +102,7 @@ def db_dao_930_and_matrix_service(
 def fs_dao_930_and_matrix_service(
     db_session: Session, command_context: CommandContext, tmp_path: Path, core_cache: ICache
 ) -> tuple[FileStudyTreeDao, ISimpleMatrixService]:
-    matrix_service = command_context.matrix_service
-    study_factory = StudyFactory(matrix_mapper_factory=MatrixUriMapperFactory(matrix_service), cache=core_cache)
-    return build_filesystem_dao(db_session, STUDY_VERSION_9_3, command_context, study_factory, tmp_path), matrix_service
+    return _build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
 
 
 @pytest.fixture
@@ -136,6 +134,74 @@ def db_dao_860_and_matrix_service(
 @pytest.fixture
 def db_dao_920(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
     return build_db_dao(db_session, matrix_service, STUDY_VERSION_9_2)
+
+
+def _build_fs_dao(
+    db_session: Session,
+    version: StudyVersion,
+    command_context: "CommandContext",
+    core_cache: "ICache",
+    tmp_path: Path,
+) -> tuple[FileStudyTreeDao, ISimpleMatrixService]:
+    matrix_service = command_context.matrix_service
+    study_factory = StudyFactory(matrix_mapper_factory=MatrixUriMapperFactory(matrix_service), cache=core_cache)
+    return build_filesystem_dao(db_session, version, command_context, study_factory, tmp_path), matrix_service
+
+
+@pytest.fixture
+def fs_dao_860_and_matrix_service(
+    db_session: Session, command_context: "CommandContext", tmp_path: Path, core_cache: "ICache"
+) -> tuple[FileStudyTreeDao, ISimpleMatrixService]:
+    return _build_fs_dao(db_session, STUDY_VERSION_8_6, command_context, core_cache, tmp_path)
+
+
+@pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
+def bc_dao(
+    request,
+    db_session: Session,
+    matrix_service: ISimpleMatrixService,
+    command_context: "CommandContext",
+    tmp_path: Path,
+    core_cache: "ICache",
+) -> StudyDao:
+    """A binding-constraint DAO parameterized over both backends (v8.8+)."""
+    if request.param == "db":
+        return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
+    else:
+        dao, _ = _build_fs_dao(db_session, STUDY_VERSION_8_8, command_context, core_cache, tmp_path)
+        return dao
+
+
+@pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
+def bc_dao_and_matrix_service(
+    request,
+    db_session: Session,
+    matrix_service: ISimpleMatrixService,
+    command_context: "CommandContext",
+    tmp_path: Path,
+    core_cache: "ICache",
+) -> tuple[StudyDao, ISimpleMatrixService]:
+    """A (DAO, matrix_service) pair parameterized over both backends (v9.3)."""
+    if request.param == "db":
+        return build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3), matrix_service
+    else:
+        return _build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
+
+
+@pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
+def bc_dao_860_and_matrix_service(
+    request,
+    db_session: Session,
+    matrix_service: ISimpleMatrixService,
+    command_context: "CommandContext",
+    tmp_path: Path,
+    core_cache: "ICache",
+) -> tuple[StudyDao, ISimpleMatrixService]:
+    """A (DAO, matrix_service) pair parameterized over both backends (v8.6)."""
+    if request.param == "db":
+        return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_6), matrix_service
+    else:
+        return _build_fs_dao(db_session, STUDY_VERSION_8_6, command_context, core_cache, tmp_path)
 
 
 @dataclass

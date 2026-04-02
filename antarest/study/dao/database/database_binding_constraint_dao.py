@@ -19,13 +19,12 @@ from typing import TYPE_CHECKING, Any, Sequence
 
 import polars as pl
 from antares.study.version import StudyVersion
-from sqlalchemy import Table, delete, select
+from sqlalchemy import Row, Table, delete, func, select
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import outerjoin
 from typing_extensions import override
 
 from antarest.core.exceptions import BindingConstraintNotFound
-from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX
 from antarest.study.business.model.binding_constraint_model import (
     DEFAULT_GROUP,
     OPERATOR_MATRICES_MAP,
@@ -38,14 +37,21 @@ from antarest.study.business.model.binding_constraint_model import (
     initialize_binding_constraint,
 )
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao
+from antarest.study.dao.database.common import get_row_representation_as_dict
 from antarest.study.dao.database.models.binding_constraint import (
-    BINDING_CONSTRAINT_CLUSTER_TERM_TABLE,
+    BINDING_CONSTRAINT_CLUSTER_TERM_TABLE as CT,
+)
+from antarest.study.dao.database.models.binding_constraint import (
     BINDING_CONSTRAINT_EQ_MATRIX_TABLE,
     BINDING_CONSTRAINT_GT_MATRIX_TABLE,
-    BINDING_CONSTRAINT_LINK_TERM_TABLE,
     BINDING_CONSTRAINT_LT_MATRIX_TABLE,
-    BINDING_CONSTRAINT_TABLE,
     BINDING_CONSTRAINT_VALUES_MATRIX_TABLE,
+)
+from antarest.study.dao.database.models.binding_constraint import (
+    BINDING_CONSTRAINT_LINK_TERM_TABLE as LT,
+)
+from antarest.study.dao.database.models.binding_constraint import (
+    BINDING_CONSTRAINT_TABLE as BC,
 )
 from antarest.study.dao.database.models.ruleset import SCENARIO_BINDING_CONSTRAINTS_TABLE
 from antarest.study.dao.database.sql_utils import upsert_multiple
@@ -58,6 +64,26 @@ _TERM_MATRIX_TABLES: dict[str, Table] = {
     "eq": BINDING_CONSTRAINT_EQ_MATRIX_TABLE,
     "values": BINDING_CONSTRAINT_VALUES_MATRIX_TABLE,
 }
+
+
+def _get_zero_matrix_id(
+    time_step: BindingConstraintFrequency, study_version: StudyVersion, generator: GeneratorMatrixConstants
+) -> str:
+    """Return the matrix-store ID for the correctly-sized zero matrix matching the given time step."""
+    is_hourly = time_step == BindingConstraintFrequency.HOURLY
+    if study_version < STUDY_VERSION_8_7:
+        return (
+            generator.get_binding_constraint_hourly_86()
+            if is_hourly
+            else generator.get_binding_constraint_daily_weekly_86()
+        )
+    else:
+        return (
+            generator.get_binding_constraint_hourly_87()
+            if is_hourly
+            else generator.get_binding_constraint_daily_weekly_87()
+        )
+
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -82,9 +108,6 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         Two round trips, but joining both term tables at once would produce a Cartesian product,
         that would make us fetch more data and process more data also we'll need to handle de-duplication which would make the code less readable."""
         db = self._db_session
-        BC = BINDING_CONSTRAINT_TABLE
-        LT = BINDING_CONSTRAINT_LINK_TERM_TABLE
-        CT = BINDING_CONSTRAINT_CLUSTER_TERM_TABLE
 
         # Query 1: BC left join link terms
         link_join = outerjoin(
@@ -148,19 +171,13 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         return {cid: self._row_to_bc(bc_rows[cid], terms[cid], version) for cid in bc_rows}
 
     @staticmethod
-    def _row_to_bc(row: Any, terms: list[ConstraintTerm], version: Any) -> BindingConstraint:
-        bc = BindingConstraint(
-            id=row.constraint_id,
-            name=row.name,
-            enabled=row.enabled,
-            time_step=row.time_step,
-            operator=row.operator,
-            comments=row.comments,
-            filter_year_by_year=row.filter_year_by_year,
-            filter_synthesis=row.filter_synthesis,
-            group=row.group,
-            terms=terms,
-        )
+    def _row_to_bc(row: Row[Any], terms: list[ConstraintTerm], version: StudyVersion) -> BindingConstraint:
+        d = get_row_representation_as_dict(row)
+        d["id"] = d.pop("constraint_id")
+        # Remove join columns that don't belong to BindingConstraint
+        for key in ("study_id", "area1", "area2", "lt_weight", "lt_offset"):
+            d.pop(key, None)
+        bc = BindingConstraint(**d, terms=terms)
         initialize_binding_constraint(bc, version)
         return bc
 
@@ -184,10 +201,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         return self.get_impl().get_matrix(row.matrix_id)
 
     def _save_bc_matrices(self, table: Table, entries: list[tuple[str, str]]) -> None:
-        rows = [
-            {"study_id": self._study_id, "constraint_id": cid, "matrix_id": mid.removeprefix(MATRIX_PROTOCOL_PREFIX)}
-            for cid, mid in entries
-        ]
+        rows = [{"study_id": self._study_id, "constraint_id": cid, "matrix_id": mid} for cid, mid in entries]
         upsert_multiple(self._db_session, table, rows)
 
     def _delete_bc_matrices(self, table: Table, constraint_ids: list[str]) -> None:
@@ -213,31 +227,24 @@ class DatabaseBindingConstraintDao(ConstraintDao):
 
     @override
     def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
-        impl = self.get_impl()
-        study_version = impl.get_version()
-        constants = impl._generator_matrix_constants
-
-        constraint_ids = [bc.id for bc in constraints]
-        # Fetch existing constraints BEFORE upserting (needed for change detection)
-        existing = self._fetch_constraints()
-
+        to_delete, to_create = self._compute_matrix_changes(constraints)
         self._save_constraint_rows(constraints)
-        self._save_cluster_terms(constraints, constraint_ids)
-        self._save_link_terms(constraints, constraint_ids)
-        to_delete, to_create = self._compute_matrix_changes(constraints, existing, study_version, constants)
+        self._save_cluster_terms(constraints)
+        self._save_link_terms(constraints)
         self._apply_matrix_changes(to_delete, to_create)
-        self._cleanup_scenario_builder_groups(constraints, existing)
+        self._cleanup_scenario_builder_groups()
 
         self._db_session.commit()
 
     def _save_constraint_rows(self, constraints: Sequence[BindingConstraint]) -> None:
         upsert_multiple(
             self._db_session,
-            BINDING_CONSTRAINT_TABLE,
+            BC,
             [self._bc_to_row(self._study_id, bc) for bc in constraints],
         )
 
-    def _save_cluster_terms(self, constraints: Sequence[BindingConstraint], constraint_ids: list[str]) -> None:
+    def _save_cluster_terms(self, constraints: Sequence[BindingConstraint]) -> None:
+        constraint_ids = [bc.id for bc in constraints]
         cluster_terms = [
             self._cluster_term_to_row(self._study_id, bc.id, term)
             for bc in constraints
@@ -245,14 +252,12 @@ class DatabaseBindingConstraintDao(ConstraintDao):
             if isinstance(term.data, ClusterTerm)
         ]
         self._db_session.execute(
-            delete(BINDING_CONSTRAINT_CLUSTER_TERM_TABLE).where(
-                (BINDING_CONSTRAINT_CLUSTER_TERM_TABLE.c.study_id == self._study_id)
-                & (BINDING_CONSTRAINT_CLUSTER_TERM_TABLE.c.constraint_id.in_(constraint_ids))
-            )
+            delete(CT).where((CT.c.study_id == self._study_id) & (CT.c.constraint_id.in_(constraint_ids)))
         )
-        upsert_multiple(self._db_session, BINDING_CONSTRAINT_CLUSTER_TERM_TABLE, cluster_terms)
+        upsert_multiple(self._db_session, CT, cluster_terms)
 
-    def _save_link_terms(self, constraints: Sequence[BindingConstraint], constraint_ids: list[str]) -> None:
+    def _save_link_terms(self, constraints: Sequence[BindingConstraint]) -> None:
+        constraint_ids = [bc.id for bc in constraints]
         link_terms = [
             self._link_term_to_row(self._study_id, bc.id, term)
             for bc in constraints
@@ -260,12 +265,9 @@ class DatabaseBindingConstraintDao(ConstraintDao):
             if isinstance(term.data, LinkTerm)
         ]
         self._db_session.execute(
-            delete(BINDING_CONSTRAINT_LINK_TERM_TABLE).where(
-                (BINDING_CONSTRAINT_LINK_TERM_TABLE.c.study_id == self._study_id)
-                & (BINDING_CONSTRAINT_LINK_TERM_TABLE.c.constraint_id.in_(constraint_ids))
-            )
+            delete(LT).where((LT.c.study_id == self._study_id) & (LT.c.constraint_id.in_(constraint_ids)))
         )
-        upsert_multiple(self._db_session, BINDING_CONSTRAINT_LINK_TERM_TABLE, link_terms)
+        upsert_multiple(self._db_session, LT, link_terms)
 
     def _fetch_existing_matrix_ids(self, constraint_ids: list[str]) -> dict[str, dict[str, str]]:
         """Fetch all existing matrix IDs upfront — needed for operator change (copy source)."""
@@ -280,33 +282,15 @@ class DatabaseBindingConstraintDao(ConstraintDao):
                 existing_matrix_ids.setdefault(row.constraint_id, {})[term] = row.matrix_id
         return existing_matrix_ids
 
-    @staticmethod
-    def _default_matrix_id(
-        time_step: BindingConstraintFrequency, study_version: StudyVersion, constants: GeneratorMatrixConstants
-    ) -> str:
-        if study_version < STUDY_VERSION_8_7:
-            uri = {
-                BindingConstraintFrequency.HOURLY: constants.get_binding_constraint_hourly_86,
-                BindingConstraintFrequency.DAILY: constants.get_binding_constraint_daily_weekly_86,
-                BindingConstraintFrequency.WEEKLY: constants.get_binding_constraint_daily_weekly_86,
-            }[time_step]()
-        else:
-            uri = {
-                BindingConstraintFrequency.HOURLY: constants.get_binding_constraint_hourly_87,
-                BindingConstraintFrequency.DAILY: constants.get_binding_constraint_daily_weekly_87,
-                BindingConstraintFrequency.WEEKLY: constants.get_binding_constraint_daily_weekly_87,
-            }[time_step]()
-        return uri.removeprefix(MATRIX_PROTOCOL_PREFIX)
-
     def _compute_matrix_changes(
         self,
         constraints: Sequence[BindingConstraint],
-        existing: dict[str, BindingConstraint],
-        study_version: StudyVersion,
-        constants: GeneratorMatrixConstants,
     ) -> tuple[dict[str, list[str]], dict[str, list[tuple[str, str]]]]:
-        constraint_ids = [bc.id for bc in constraints]
-        existing_matrix_ids = self._fetch_existing_matrix_ids(constraint_ids)
+        impl = self.get_impl()
+        study_version = impl.get_version()
+        existing = self._fetch_constraints()
+        existing_matrix_ids = self._fetch_existing_matrix_ids(list(existing.keys()))
+        generator = impl._generator_matrix_constants
 
         to_delete: dict[str, list[str]] = {t: [] for t in _TERM_MATRIX_TABLES}
         to_create: dict[str, list[tuple[str, str]]] = {t: [] for t in _TERM_MATRIX_TABLES}
@@ -343,16 +327,16 @@ class DatabaseBindingConstraintDao(ConstraintDao):
                     to_delete[term].append(bc.id)
 
             if time_step_changed:
-                # Reset all matrices to zero defaults for the new time step.
-                default_mid = self._default_matrix_id(bc.time_step, study_version, constants)
+                # Reset matrices to the correctly-sized zero matrix for the new time step.
+                zero_mid = _get_zero_matrix_id(bc.time_step, study_version, generator)
                 if study_version < STUDY_VERSION_8_7:
                     to_delete["values"].append(bc.id)
-                    to_create["values"].append((bc.id, default_mid))
+                    to_create["values"].append((bc.id, zero_mid))
                 else:
                     for term in OPERATOR_MATRICES_MAP[old.operator]:
                         to_delete[term].append(bc.id)
                     for term in OPERATOR_MATRICES_MAP[bc.operator]:
-                        to_create[term].append((bc.id, default_mid))
+                        to_create[term].append((bc.id, zero_mid))
 
         return to_delete, to_create
 
@@ -381,41 +365,22 @@ class DatabaseBindingConstraintDao(ConstraintDao):
                     ],
                 )
 
-    def _cleanup_scenario_builder_groups(
-        self,
-        saved: Sequence[BindingConstraint],
-        existing: dict[str, BindingConstraint],
-        remaining: dict[str, BindingConstraint] | None = None,
-    ) -> None:
-        """Remove scenario builder rules for groups that no longer have any constraint.
+    def _cleanup_scenario_builder_groups(self) -> None:
+        """Delete scenario-builder entries for groups no longer referenced by any constraint.
 
-        Args:
-            saved: constraints being saved/upserted in this call (empty for deletes).
-            existing: all constraints as they were before this call.
-            remaining: if provided, the constraints that will remain after this call.
-                       If None, computed from ``existing`` minus ``saved`` IDs plus ``saved``.
+        Must be called after the binding_constraints table already reflects the final state
+        (i.e. after upserts in save_constraints, or after deletes in delete_constraints).
         """
-        version = self.get_impl().get_version()
-        if remaining is None:
-            saved_ids = {bc.id for bc in saved}
-            remaining = {cid: bc for cid, bc in existing.items() if cid not in saved_ids}
-            remaining.update({bc.id: bc for bc in saved})
-
-        groups_before = {bc.group for bc in existing.values() if bc.group}
-        groups_after = {bc.group for bc in remaining.values() if bc.group}
-        # For v8.7+, group=None means "default" (NULL in DB reads back as "default" via
-        # initialize_binding_constraint). If any remaining constraint has group=None, "default"
-        # is still in use and must not be removed from the scenario builder.
-        if version >= STUDY_VERSION_8_7 and any(bc.group is None for bc in remaining.values()):
-            groups_after.add(DEFAULT_GROUP)
-        removed_groups = groups_before - groups_after
-        if removed_groups:
-            self._db_session.execute(
-                delete(SCENARIO_BINDING_CONSTRAINTS_TABLE).where(
-                    (SCENARIO_BINDING_CONSTRAINTS_TABLE.c.study_id == self._study_id)
-                    & (SCENARIO_BINDING_CONSTRAINTS_TABLE.c.bc_group_id.in_(removed_groups))
-                )
+        # COALESCE handles the v8.7+ case where group IS NULL in DB means "default".
+        active_groups = (
+            select(func.coalesce(BC.c.group, DEFAULT_GROUP)).where(BC.c.study_id == self._study_id).distinct()
+        )
+        self._db_session.execute(
+            delete(SCENARIO_BINDING_CONSTRAINTS_TABLE).where(
+                (SCENARIO_BINDING_CONSTRAINTS_TABLE.c.study_id == self._study_id)
+                & SCENARIO_BINDING_CONSTRAINTS_TABLE.c.bc_group_id.not_in(active_groups)
             )
+        )
 
     def _bc_to_row(self, study_id: str, bc: BindingConstraint) -> dict[str, Any]:
         data = bc.model_dump(exclude={"id", "terms"})
@@ -480,16 +445,9 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         db = self._db_session
         constraint_ids = {bc.id for bc in constraints}
 
-        # Compute orphaned groups before deleting (need the full picture first)
-        existing = self._fetch_constraints()
-        remaining = {cid: bc for cid, bc in existing.items() if cid not in constraint_ids}
-        self._cleanup_scenario_builder_groups([], existing, remaining)
-
-        db.execute(
-            delete(BINDING_CONSTRAINT_TABLE).where(
-                (BINDING_CONSTRAINT_TABLE.c.study_id == self._study_id)
-                & (BINDING_CONSTRAINT_TABLE.c.constraint_id.in_(constraint_ids))
-            )
-        )
+        # Delete BC rows first so the table reflects the final state,
+        # then prune orphaned groups via a single subquery.
+        db.execute(delete(BC).where((BC.c.study_id == self._study_id) & (BC.c.constraint_id.in_(constraint_ids))))
+        self._cleanup_scenario_builder_groups()
 
         db.commit()
