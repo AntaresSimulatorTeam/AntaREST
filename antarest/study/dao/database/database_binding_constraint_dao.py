@@ -96,7 +96,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
 
     @abstractmethod
     def get_impl(self) -> "DatabaseStudyDao":
-        raise NotImplementedError()
+        pass
 
     def _fetch_constraints(self, constraint_id: str | None = None) -> dict[str, BindingConstraint]:
         """
@@ -174,10 +174,8 @@ class DatabaseBindingConstraintDao(ConstraintDao):
     def _row_to_bc(row: Row[Any], terms: list[ConstraintTerm], version: StudyVersion) -> BindingConstraint:
         d = get_row_representation_as_dict(row)
         d["id"] = d.pop("constraint_id")
-        # Remove join columns that don't belong to BindingConstraint
-        for key in ("study_id", "area1", "area2", "lt_weight", "lt_offset"):
-            d.pop(key, None)
-        bc = BindingConstraint(**d, terms=terms)
+        d["terms"] = terms
+        bc = BindingConstraint.model_validate(d, extra="allow")
         initialize_binding_constraint(bc, version)
         return bc
 
@@ -371,7 +369,9 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         Must be called after the binding_constraints table already reflects the final state
         (i.e. after upserts in save_constraints, or after deletes in delete_constraints).
         """
-        # COALESCE handles the v8.7+ case where group IS NULL in DB means "default".
+        if self.get_impl().get_version() < STUDY_VERSION_8_7:
+            return
+        # COALESCE handles case when group IS NULL in DB means "default".
         active_groups = (
             select(func.coalesce(BC.c.group, DEFAULT_GROUP)).where(BC.c.study_id == self._study_id).distinct()
         )
@@ -422,22 +422,6 @@ class DatabaseBindingConstraintDao(ConstraintDao):
     @override
     def save_constraint_equal_term_matrix(self, constraint_id: str, series_id: str) -> None:
         self._save_bc_matrices(BINDING_CONSTRAINT_EQ_MATRIX_TABLE, [(constraint_id, series_id)])
-        self._db_session.commit()
-
-    def delete_constraint_values_matrix(self, constraint_id: str) -> None:
-        self._delete_bc_matrices(BINDING_CONSTRAINT_VALUES_MATRIX_TABLE, [constraint_id])
-        self._db_session.commit()
-
-    def delete_constraint_less_term_matrix(self, constraint_id: str) -> None:
-        self._delete_bc_matrices(BINDING_CONSTRAINT_LT_MATRIX_TABLE, [constraint_id])
-        self._db_session.commit()
-
-    def delete_constraint_greater_term_matrix(self, constraint_id: str) -> None:
-        self._delete_bc_matrices(BINDING_CONSTRAINT_GT_MATRIX_TABLE, [constraint_id])
-        self._db_session.commit()
-
-    def delete_constraint_equal_term_matrix(self, constraint_id: str) -> None:
-        self._delete_bc_matrices(BINDING_CONSTRAINT_EQ_MATRIX_TABLE, [constraint_id])
         self._db_session.commit()
 
     @override

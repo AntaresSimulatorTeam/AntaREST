@@ -287,6 +287,37 @@ def test_matrices(bc_dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixServic
     assert dao.get_constraint_less_term_matrix("bc_b").equals(df_b)
 
 
+def test_metadata_change_preserves_matrices(
+    bc_dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
+) -> None:
+    """Changing only name, comments, or enabled must leave matrices untouched."""
+    dao, matrix_service = bc_dao_and_matrix_service
+    df_lt = pl.DataFrame({"v": [42.0]})
+
+    dao.save_constraints(
+        [_bc("bc1", operator=BindingConstraintOperator.LESS, time_step=BindingConstraintFrequency.HOURLY)]
+    )
+    dao.save_constraint_less_term_matrix("bc1", matrix_service.create(df_lt))
+
+    # Change comments and enabled — operator and time_step stay the same
+    dao.save_constraints(
+        [
+            _bc(
+                "bc1",
+                comments="updated comment",
+                enabled=False,
+                operator=BindingConstraintOperator.LESS,
+                time_step=BindingConstraintFrequency.HOURLY,
+            )
+        ]
+    )
+
+    r = dao.get_constraint("bc1")
+    assert r.comments == "updated comment"
+    assert r.enabled is False
+    assert dao.get_constraint_less_term_matrix("bc1").equals(df_lt)
+
+
 @pytest.mark.parametrize(
     "existing_op,new_op,initial_terms,expected,gone_terms,seed",
     [
@@ -502,6 +533,39 @@ def test_time_step_and_operator_change_drops_old_matrices(
 
     with pytest.raises(error_cls):
         dao.get_constraint_greater_term_matrix("bc1")
+
+
+def test_time_step_and_operator_change_single_to_both(
+    bc_dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
+) -> None:
+    """When both time_step and operator change from single→BOTH, both lt and gt must be zeroed
+    to the new time step's row count. Regression: time_step_changed takes precedence over
+    operator_changed in _compute_matrix_changes — this test ensures the BOTH expansion is
+    handled correctly when combined with a time step reset."""
+    dao, matrix_service = bc_dao_and_matrix_service
+    df_custom = pl.DataFrame({"v": [99.0]})
+
+    # Setup: LESS + HOURLY (only lt matrix)
+    dao.save_constraints(
+        [_bc("bc1", operator=BindingConstraintOperator.LESS, time_step=BindingConstraintFrequency.HOURLY)]
+    )
+    dao.save_constraint_less_term_matrix("bc1", matrix_service.create(df_custom))
+
+    # Act: change to BOTH + DAILY — both lt and gt must be zeroed to 366 rows
+    dao.save_constraints(
+        [_bc("bc1", operator=BindingConstraintOperator.BOTH, time_step=BindingConstraintFrequency.DAILY)]
+    )
+
+    assert dao.get_constraint("bc1").operator == BindingConstraintOperator.BOTH
+    assert dao.get_constraint("bc1").time_step == BindingConstraintFrequency.DAILY
+
+    lt = dao.get_constraint_less_term_matrix("bc1")
+    assert lt.shape == (366, 1)
+    assert lt.to_series(0).sum() == 0.0
+
+    gt = dao.get_constraint_greater_term_matrix("bc1")
+    assert gt.shape == (366, 1)
+    assert gt.to_series(0).sum() == 0.0
 
 
 def test_group_update_and_scenario_builder_cleanup(bc_dao: StudyDao) -> None:
