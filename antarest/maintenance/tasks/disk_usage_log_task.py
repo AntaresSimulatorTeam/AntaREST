@@ -57,8 +57,7 @@ def setup_disk_usage_log_task(sender: Celery, storage: "StorageConfig") -> None:
                 storage.disk_usage_log_sleeping_time, disk_usage_log_task.s(), name=TaskName.DISK_USAGE
             )
             logger.info(
-                f"Disk usage logging registered with sleeping_time (fallback): "
-                f"{storage.disk_usage_log_sleeping_time}s"
+                f"Disk usage logging registered with sleeping_time (fallback): {storage.disk_usage_log_sleeping_time}s"
             )
     else:
         sender.add_periodic_task(
