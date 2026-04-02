@@ -49,8 +49,8 @@ class TestDiskSpaceAnalyzerIntegration:
                 past_analysis_date_1 = study_disk_repo.get(study_1).last_analysis_date
                 past_analysis_date_2 = study_disk_repo.get(study_2).last_analysis_date
 
-                assert study_disk_repo.get(study_1).disk_space > 0
-                assert study_disk_repo.get(study_2).disk_space > 0
+                assert study_disk_repo.get(study_1).disk_space_bytes > 0
+                assert study_disk_repo.get(study_2).disk_space_bytes > 0
 
             result = disk_space_analysis(service=study_service, disk_repo=study_disk_repo)
 

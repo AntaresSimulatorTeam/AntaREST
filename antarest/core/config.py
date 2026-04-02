@@ -215,6 +215,10 @@ class StorageConfig:
     tasks_gc_retention_days: int = 30
     tasks_gc_sleeping_time: int = 86400
     tasks_gc_dry_run: bool = False
+    disk_usage_log_sleeping_time: int = 300
+    disk_usage_log_cron: str = "0 20-23,0-7 * * * "
+    disk_space_analyzer_sleeping_time: int = 300
+    disk_space_analyzer_cron: str = "0 20-23,0-7 * * * "
     study_storage: StudyStorageConfig = StudyStorageConfig()
     output: OutputStorageConfig = OutputStorageConfig()
 

@@ -457,7 +457,7 @@ class StudyDiskSpaceAnalysis(Base):
         nullable=False,
         primary_key=True,
     )
-    disk_space: Mapped[int] = mapped_column(Integer, nullable=False)
+    disk_space_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
     last_analysis_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     study: Mapped["Study"] = relationship("Study", uselist=False)
 

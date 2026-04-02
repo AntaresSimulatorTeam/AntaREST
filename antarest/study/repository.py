@@ -12,7 +12,7 @@
 
 import enum
 from datetime import datetime
-from typing import List, Optional, Sequence, Tuple, cast
+from typing import Optional, Sequence, cast
 
 from pydantic import NonNegativeInt
 from sqlalchemy import TEXT, and_, delete, exists, func, literal, not_, or_, select, sql, update
@@ -24,7 +24,6 @@ from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import current_time
 from antarest.login.model import Group
 from antarest.login.utils import get_current_user
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, Directory, RawStudy, Study, StudyDiskSpaceAnalysis, Tag

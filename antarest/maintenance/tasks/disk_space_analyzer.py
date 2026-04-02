@@ -48,14 +48,14 @@ def disk_space_analysis(service: StudyService, disk_repo: StudyDiskSpaceReposito
                 for study in studies:
                     updated_at = study.updated_at
                     try:
-                        filtered_analysis = (
-                            [da for da in disk_analysis if da.study_id == study.id][0] if disk_analysis else None
-                        )
+                        list_analysis = [da for da in disk_analysis if da.study_id == study.id]
+                        filtered_analysis = list_analysis[0] if list_analysis else None
+
                         if not filtered_analysis:
                             logger.info(f"Creating a disk space analysis for study {study.id}")
                             study_disk_analysis = StudyDiskSpaceAnalysis(
                                 study_id=study.id,
-                                disk_space=service.get_disk_usage(study.id),
+                                disk_space_bytes=service.get_disk_usage(study.id),
                                 last_analysis_date=datetime.now(),
                             )
                             disk_repo.save(study_disk_analysis)
@@ -68,7 +68,7 @@ def disk_space_analysis(service: StudyService, disk_repo: StudyDiskSpaceReposito
                             updated_studies += 1
 
                     except Exception as e:
-                        logger.error(f"Failed to analyze disk space for study {study.id}: {e}")
+                        logger.error(f"Failed to analyze disk space for study {study.id}: {e}", exc_info=e)
 
     except LockNotAcquired:
         logger.info("Could not acquire lock, another disk space analysis is probably running")
