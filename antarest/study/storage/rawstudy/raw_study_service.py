@@ -19,7 +19,6 @@ from pathlib import Path, PurePosixPath
 from typing import BinaryIO
 from uuid import uuid4
 
-from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.config import Config
@@ -33,15 +32,12 @@ from antarest.core.utils.archives import (
     extract_archive_from_stream,
 )
 from antarest.core.utils.utils import StopWatch, current_time
-from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper, extract_matrix_id
+from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StorageMode, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
@@ -394,31 +390,6 @@ class RawStudyService(AbstractStorageService):
         if metadata.archived:
             return self.find_archive_path(metadata)
         return Path(metadata.path)
-
-    def check_and_update_study_version_in_database(self, study: RawStudy) -> None:
-        try:
-            study_path = self.get_study_path(study)
-            if study_path:
-                config = FileStudyTreeConfig(
-                    study_path=study_path,
-                    path=study_path,
-                    study_id="",
-                    version=StudyVersion.parse(0),
-                )
-                raw_study = self.study_factory.create_from_config(config, NormalizedMatrixUriMapper.NORMALIZED)
-                file_metadata = raw_study.get(url=["study", "antares"])
-                study_version = str(file_metadata.get("version", study.version))
-                if study_version != study.version:
-                    logger.warning(
-                        f"Study version in file ({study_version}) is different from the one stored in db ({study.version}), returning file version"
-                    )
-                    study.version = study_version
-        except Exception as e:
-            logger.error(
-                "Failed to check and/or update study version in database for study %s",
-                study.id,
-                exc_info=e,
-            )
 
     @staticmethod
     def checks_antares_web_compatibility(study: Study) -> None:
