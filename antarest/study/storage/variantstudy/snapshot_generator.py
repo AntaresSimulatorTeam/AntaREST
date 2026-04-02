@@ -28,15 +28,19 @@ from antarest.core.interfaces.cache import (
 from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
 from antarest.core.utils.utils import current_time
-from antarest.study.model import RawStudy, Study
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
+from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
+from antarest.study.model import RawStudy, StorageMode, Study, StudyMetadata
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import (
     assert_permission_on_studies,
+    format_timestamp,
     is_managed,
     remove_from_cache,
-    update_antares_info,
 )
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -108,18 +112,19 @@ class SnapshotGenerator:
                 self._export_ref_study(snapshot_dir, ref_study)
 
             # The snapshot is generated, we also need to de-normalize the matrices.
-            file_study = self.study_factory.create_from_fs(
-                snapshot_dir,
-                True,
-                study_id=variant_study_id,
-                output_path=snapshot_dir / OUTPUT_RELATIVE_PATH,
-                use_cache=True,
-            )
+            cmd_context = self.command_factory.command_context
+            factory: StudyFactoryDao
+            if variant_study.storage_mode == StorageMode.FILESYSTEM:
+                factory = FileStudyDaoFactory(cmd_context, self.study_factory)
+            else:
+                factory = DatabaseStudyDaoFactory(cmd_context.matrix_service, cmd_context.generator_matrix_constants)
+            study_dao = factory.create_study_dao(variant_study)
+
             logger.info(f"Applying commands to the reference study '{ref_study.id}'...")
-            results = self._apply_commands(file_study, variant_study, cmd_blocks, listener)
+            results = self._apply_commands(study_dao, variant_study, cmd_blocks, listener)
             if denormalize:
                 logger.info(f"Denormalizing variant study {variant_study_id}")
-                self.raw_study_service.denormalize_study(file_study)
+                self.raw_study_service.denormalize_study(variant_study)
 
             # Finally, we can update the database.
             logger.info(f"Saving new snapshot for study {variant_study_id}")
@@ -133,8 +138,9 @@ class SnapshotGenerator:
             if results.should_invalidate_cache:
                 # We need to remove the cache
                 remove_from_cache(self.cache, variant_study_id)
-            else:
-                data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
+            elif variant_study.storage_mode == StorageMode.FILESYSTEM:
+                # todo: We do not handle cache for DB mode. Same for the `add_commands` by the way.
+                data = FileStudyTreeConfigDTO.from_build_config(study_dao.get_file_study().config).model_dump()
                 update_cache(self.cache, variant_study_id, data)
 
         except Exception:
@@ -180,13 +186,13 @@ class SnapshotGenerator:
 
     def _apply_commands(
         self,
-        file_study: FileStudy,
+        study_dao: StudyDao,
         variant_study: VariantStudy,
         cmd_blocks: Sequence[CommandBlock],
         listener: ICommandListener | None = None,
     ) -> GenerationResultInfoDTO:
         commands = [self.command_factory.to_command(cb.to_dto()) for cb in cmd_blocks]
-        results = apply_commands_to_variant(commands, study=file_study, metadata=variant_study, listener=listener)
+        results = apply_commands_to_variant(commands, study=study_dao, metadata=variant_study, listener=listener)
         if not results.success:
             message = f"Failed to generate variant study {variant_study.id}"
             if results.details:
@@ -200,7 +206,16 @@ class SnapshotGenerator:
                 else:  # pragma: no cover
                     raise NotImplementedError(f"Unexpected detail type: {type(detail)}")
             raise VariantGenerationError(message)
-        update_antares_info(variant_study, file_study.tree, update_author=True)
+
+        metadata = StudyMetadata(
+            name=variant_study.name,
+            author=variant_study.author,
+            editor=variant_study.editor,
+            created_at=format_timestamp(variant_study.created_at),
+            last_save=format_timestamp(variant_study.updated_at),
+        )
+
+        study_dao.update_antares_file(metadata)
         return results
 
 

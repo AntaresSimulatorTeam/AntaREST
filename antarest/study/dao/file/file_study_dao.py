@@ -111,14 +111,16 @@ class FileStudyTreeDao(
     @override
     def update_antares_file(self, metadata: StudyMetadata) -> None:
         study_antares = self._file_study.tree.get(["study", "antares"])
-        if metadata.editor:
-            study_antares["editor"] = metadata.editor
-        if metadata.last_save:
-            study_antares["lastsave"] = metadata.last_save
         if metadata.name:
             study_antares["caption"] = metadata.name
         if metadata.author:
             study_antares["author"] = metadata.author
+        if metadata.editor:
+            study_antares["editor"] = metadata.editor
+        if metadata.last_save:
+            study_antares["lastsave"] = metadata.last_save
+        if metadata.created_at:
+            study_antares["created"] = metadata.created_at
         self._file_study.tree.save(study_antares, ["study", "antares"])
 
     def get_matrix(self, url: list[str]) -> pl.DataFrame:

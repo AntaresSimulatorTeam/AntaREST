@@ -737,7 +737,8 @@ class DirectoryUpdate(AntaresBaseModel):
 
 @dataclasses.dataclass(frozen=True)
 class StudyMetadata:
-    editor: str | None = None
-    last_save: float | None = None
     name: str | None = None
     author: str | None = None
+    editor: str | None = None
+    last_save: float | None = None
+    created_at: float | None = None

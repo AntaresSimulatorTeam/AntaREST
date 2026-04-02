@@ -89,9 +89,8 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_autho
 
     # Update basic fields
     antares_info["caption"] = metadata.name
-    antares_info["created"] = _format_timestamp(metadata.created_at)
-    antares_info["lastsave"] = _format_timestamp(metadata.updated_at)
-    antares_info["version"] = _format_version(metadata.version)
+    antares_info["created"] = format_timestamp(metadata.created_at)
+    antares_info["lastsave"] = format_timestamp(metadata.updated_at)
     antares_info["editor"] = editor
 
     # Update author-related fields if additional_data exists
@@ -101,9 +100,9 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_autho
     study_tree.save(study_data_info, ["study"])
 
 
-def _format_timestamp(dt: datetime | None) -> str:
-    """Format datetime as timestamp string or '0' if None."""
-    return str(dt.timestamp()) if dt is not None else "0"
+def format_timestamp(dt: datetime | None) -> float:
+    """Format datetime as a timestamp float or 0 if None."""
+    return dt.timestamp() if dt is not None else 0
 
 
 def _format_version(version_str: str) -> str:

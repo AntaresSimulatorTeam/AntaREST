@@ -36,7 +36,7 @@ from antarest.core.utils.utils import StopWatch, current_time
 from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper, extract_matrix_id
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dtos import StudyDataSynthesis
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StorageMode, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -427,14 +427,17 @@ class RawStudyService(AbstractStorageService):
         """
         pass
 
-    def normalize_study(self, study: Study | FileStudy) -> None:
+    def normalize_study(self, study: Study) -> None:
         """
         Method used to normalize a study.
         It will put every matrix in the study in the matrix-store.
         """
-        if isinstance(study, Study):
-            study = self.get_raw(study)
-        matrix_nodes = study.tree.get_matrix_nodes_to_normalize()
+        if study.storage_mode == StorageMode.DATABASE:
+            # Nothing to do
+            return
+
+        file_study = self.get_raw(study)
+        matrix_nodes = file_study.tree.get_matrix_nodes_to_normalize()
         if not matrix_nodes:
             return
 
@@ -447,8 +450,13 @@ class RawStudyService(AbstractStorageService):
         Method used to denormalize a study.
         It will replace every `.link` file in the study with its content stored in the matrix-store.
         """
-        if isinstance(study, Study):
-            study = self.get_raw(study)
+        if not isinstance(study, FileStudy):
+            if study.storage_mode == StorageMode.DATABASE:
+                # Nothing to do
+                return
+            else:
+                study = self.get_raw(study)
+
         matrix_nodes = study.tree.get_matrix_nodes_to_denormalize()
         if not matrix_nodes:
             return
