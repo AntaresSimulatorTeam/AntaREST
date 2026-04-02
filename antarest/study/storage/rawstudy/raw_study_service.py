@@ -314,12 +314,9 @@ class RawStudyService(AbstractStorageService):
                 else:
                     raise TypeError(f"unarchive requires a RawStudy, got {type(metadata)}")
 
-            self.export_study_to_flat_directory(
-                Path(metadata.path),
-                dst_path,
-                denormalize,
-                is_study_managed=is_managed(metadata),
-            )
+            self.export_study_to_flat_directory(Path(metadata.path), dst_path)
+            if denormalize:
+                self.denormalize_study(metadata)
 
         finally:
             if metadata.archived:
@@ -416,19 +413,17 @@ class RawStudyService(AbstractStorageService):
         for k, node in enumerate(matrix_nodes):
             node.matrix_mapper.save_matrix(node, matrix_ids[k])
 
-    def denormalize_study(self, study: Study | FileStudy) -> None:
+    def denormalize_study(self, study: Study) -> None:
         """
         Method used to denormalize a study.
         It will replace every `.link` file in the study with its content stored in the matrix-store.
         """
-        if not isinstance(study, FileStudy):
-            if study.storage_mode == StorageMode.DATABASE:
-                # Nothing to do
-                return
-            else:
-                study = self.get_raw(study)
+        if study.storage_mode == StorageMode.DATABASE:
+            # Nothing to do
+            return
 
-        matrix_nodes = study.tree.get_matrix_nodes_to_denormalize()
+        file_study = self.get_raw(study)
+        matrix_nodes = file_study.tree.get_matrix_nodes_to_denormalize()
         if not matrix_nodes:
             return
 
@@ -442,13 +437,7 @@ class RawStudyService(AbstractStorageService):
             for node in matrices_mapping[matrix_content.id]:
                 node.write_dataframe(matrix_content.data)
 
-    def export_study_to_flat_directory(
-        self,
-        study_dir: Path,
-        dest: Path,
-        denormalize: bool = True,
-        is_study_managed: bool = True,
-    ) -> None:
+    def export_study_to_flat_directory(self, study_dir: Path, dest: Path) -> None:
         start_time = time.time()
 
         def ignore_outputs(directory: str, _: Sequence[str]) -> Sequence[str]:
@@ -459,8 +448,3 @@ class RawStudyService(AbstractStorageService):
         stop_time = time.time()
         duration = f"{stop_time - start_time:.3f}"
         logger.info(f"Study '{study_dir}' exported (flat mode) in {duration}s")
-        if denormalize:
-            study = self.study_factory.create_from_fs(dest, is_study_managed, "", use_cache=False)
-            self.denormalize_study(study)
-            duration = f"{time.time() - stop_time:.3f}"
-            logger.info(f"Study '{study_dir}' denormalized in {duration}s")

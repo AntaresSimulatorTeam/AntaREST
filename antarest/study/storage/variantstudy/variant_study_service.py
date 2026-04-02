@@ -900,9 +900,9 @@ class VariantStudyService(AbstractStorageService):
 
         path_study = Path(metadata.path)
         snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH
-        self.raw_study_service.export_study_to_flat_directory(
-            snapshot_path, dst_path, denormalize, is_managed(metadata)
-        )
+        self.raw_study_service.export_study_to_flat_directory(snapshot_path, dst_path)
+        if denormalize:
+            self.raw_study_service.denormalize_study(metadata)
 
     @override
     def get_synthesis(self, metadata: Study) -> StudyDataSynthesis:
