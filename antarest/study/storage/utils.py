@@ -54,7 +54,6 @@ from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_REFERENCE_TEMPLATES,
-    STUDY_VERSION_9_0,
     MatrixFrequency,
     MatrixIndex,
     Study,
@@ -77,7 +76,7 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_autho
     Update antares study information in the study.antares file.
 
     Args:
-        metadata: Study metadata containing name, version, dates, etc.
+        metadata: Study metadata containing name, dates, etc.
         study_tree: File study tree to update
         update_author: Whether to update the author field
     """
@@ -103,12 +102,6 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_autho
 def format_timestamp(dt: datetime | None) -> float:
     """Format datetime as a timestamp float or 0 if None."""
     return dt.timestamp() if dt is not None else 0
-
-
-def _format_version(version_str: str) -> str:
-    """Format version string according to version rules."""
-    version = StudyVersion.parse(version_str)
-    return f"{version:2d}" if version >= STUDY_VERSION_9_0 else f"{version:ddd}"
 
 
 def fix_study_root(study_path: Path) -> None:
