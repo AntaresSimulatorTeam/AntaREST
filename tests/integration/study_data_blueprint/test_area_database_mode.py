@@ -23,10 +23,17 @@ Tests that require full command execution are marked as xfail until all required
 DAO methods are implemented.
 """
 
+import zipfile
+from pathlib import Path
+
 import pytest
 from starlette.testclient import TestClient
 
+from antarest.core.serde.ini_reader import read_ini
+from antarest.core.tasks.model import TaskStatus
 from tests.integration.prepare_proxy import PreparerProxy
+from tests.integration.utils import wait_task_completion
+from tests.test_helpers.download import download_to_file
 
 # Reason for xfail - CREATE_AREA command requires methods not yet implemented in DatabaseStudyDao
 DATABASE_MODE_INCOMPLETE = (
@@ -440,3 +447,49 @@ def test_db_study_properties_edition_and_deletion(
     # Ensures the study no longer exists
     res = client.get(f"/v1/studies/{study_id}")
     assert res.status_code == 404
+
+
+def _export_variant(client: TestClient, tmp_path: Path, variant_id: str) -> dict:
+    res = client.get(f"/v1/studies/{variant_id}/export")
+    download_id = res.json()["file"]["id"]
+
+    zip_path = tmp_path / "variant.zip"
+    variant_path = tmp_path / "variant"
+    download_to_file(client, download_id, zip_path)
+    with zipfile.ZipFile(zip_path) as zip_file:
+        zip_file.extractall(variant_path)
+
+    return read_ini(variant_path / "study.antares")
+
+
+def test_variant_name_edition(client: TestClient, user_access_token: str, tmp_path: Path) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    preparer = PreparerProxy(client, user_access_token)
+    study_id = preparer.create_study("MyStudy", version=870)
+    variant_id = preparer.create_variant(study_id, name="Variant1")
+
+    # Renaming the variant before the snapshot is generated should work well.
+    # We should also see the new name inside the study.antares when exporting the variant
+    res = client.put(f"/v1/studies/{variant_id}", json={"name": "MyRenamedStudy"})
+    assert res.status_code == 200
+    res = client.get(f"/v1/studies/{variant_id}")
+    assert res.json()["name"] == "MyRenamedStudy"
+
+    ini_content = _export_variant(client, tmp_path, variant_id)
+    assert ini_content["antares"]["caption"] == "MyRenamedStudy"
+
+    # Generate the snapshot and then rename the study.
+    # We should see the same result
+    res = client.put(f"/v1/studies/{variant_id}/generate", params={"from_scratch": True})
+    res.raise_for_status()
+    task_id = res.json()
+    task = wait_task_completion(client, user_access_token, task_id, base_timeout=20)
+    assert task.status == TaskStatus.COMPLETED
+
+    res = client.put(f"/v1/studies/{variant_id}", json={"name": "New_name_v2"})
+    assert res.status_code == 200
+    res = client.get(f"/v1/studies/{variant_id}")
+    assert res.json()["name"] == "New_name_v2"
+
+    ini_content = _export_variant(client, tmp_path, variant_id)
+    assert ini_content["antares"]["caption"] == "New_name_v2"

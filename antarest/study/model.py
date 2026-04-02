@@ -537,12 +537,14 @@ class StudyMetadataPatchDTO(AntaresBaseModel):
     name: str | None = None
     author: str | None = None
     horizon: str | None = None
-    tags: list[str] = []
+    tags: list[str] | None = None
 
     @field_validator("tags", mode="before")
-    def _normalize_tags(cls, v: list[str]) -> list[str]:
+    def _normalize_tags(cls, v: list[str] | None) -> list[str]:
         """Remove leading and trailing whitespaces, and replace consecutive whitespaces by a single one."""
-        tags = []
+        tags: list[str] = []
+        if not v:
+            return tags
         for tag in v:
             tag = " ".join(tag.split())
             if not tag:
