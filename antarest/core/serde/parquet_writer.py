@@ -35,7 +35,7 @@ class BatchParquetWriter:
 
     It's very important to use not too small row groups, in order to:
      - have efficient IO
-     - avoid excessive memory usage for metadata (as shown by experienced)
+     - avoid excessive memory usage for metadata (as shown by experience)
 
     """
 
