@@ -401,3 +401,15 @@ class TestDatabaseModeVsFilesystemMode:
             },
         }
         assert res.json() == expected
+
+
+def test_db_study_deletion(client: TestClient, user_access_token: str) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    preparer = PreparerProxy(client, user_access_token)
+    study_id = preparer.create_study("MyStudy", version=870, storage_mode="database")
+    # We should be able to delete the study
+    res = client.delete(f"/v1/studies/{study_id}")
+    assert res.status_code == 200
+    # Ensures the study no longer exists
+    res = client.get(f"/v1/studies/{study_id}")
+    assert res.status_code == 404

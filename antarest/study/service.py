@@ -1493,10 +1493,11 @@ class StudyService:
 
     def _delete_study_from_filesystem(self, study: Study) -> None:
         """Delete study files from disk (handles both archived and unarchived studies)."""
-        if self.assert_study_unarchived(study=study, raise_exception=False):
-            self.storage_service.get_storage(study).delete(study)
-        elif isinstance(study, RawStudy):
+        if study.archived:
             os.unlink(self.storage_service.raw_study_service.find_archive_path(study))
+
+        elif study.storage_mode == StorageMode.FILESYSTEM:
+            self.storage_service.get_storage(study).delete(study)
 
     def _notify_study_deleted(self, study: Study, study_info: Any) -> None:
         """Push deletion event, log the action, and run deletion callbacks."""
