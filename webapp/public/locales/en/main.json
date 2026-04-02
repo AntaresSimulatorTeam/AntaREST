@@ -826,6 +826,8 @@
   "studies.filters.archive": "Archive",
   "studies.moveOnlyManagedStudies_one": "Only {{count}} of {{total}} selected studies is managed and will be moved",
   "studies.moveOnlyManagedStudies_other": "Only {{count}} of {{total}} selected studies are managed and will be moved",
+  "studies.deleteOnlyManagedStudies_one": "Only {{count}} of {{total}} selected studies is managed and will be deleted",
+  "studies.deleteOnlyManagedStudies_other": "Only {{count}} of {{total}} selected studies are managed and will be deleted",
   "studies.deselectAll": "Deselect all studies\n",
   "studies.scanFolder": "Scan folder",
   "studies.recursiveScan": "Recursive scan",

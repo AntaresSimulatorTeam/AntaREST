@@ -827,6 +827,8 @@
   "studies.filters.archive": "Archivage",
   "studies.moveOnlyManagedStudies_one": "Seulement {{count}} étude sur {{total}} est managée et sera déplacée",
   "studies.moveOnlyManagedStudies_other": "Seulement {{count}} études sur {{total}} sont managées et seront déplacées",
+  "studies.deleteOnlyManagedStudies_one": "Seulement {{count}} étude sur {{total}} est managée et sera supprimée",
+  "studies.deleteOnlyManagedStudies_other": "Seulement {{count}} études sur {{total}} sont managées et seront supprimées",
   "studies.deselectAll": "Désélectionner toutes les études",
   "studies.scanFolder": "Scanner le dossier",
   "studies.recursiveScan": "Scan récursif",
