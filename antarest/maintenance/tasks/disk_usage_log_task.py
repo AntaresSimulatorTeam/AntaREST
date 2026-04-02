@@ -48,12 +48,18 @@ def setup_disk_usage_log_task(sender: Celery, storage: "StorageConfig") -> None:
     """
     if storage.disk_usage_log_cron:
         try:
-            pass
-        except CronParseError as e:
-            logger.error(e)
             schedule = parse_cron_string(storage.disk_usage_log_cron)
             sender.add_periodic_task(schedule, disk_usage_log_task.s(), name=TaskName.DISK_USAGE)
-            logger.info(f"Disk usage logging registered with sleeping_time: {storage.disk_usage_log_sleeping_time}s")
+            logger.info(f"Disk usage logging registered with cron: {storage.disk_usage_log_cron}")
+        except CronParseError as e:
+            logger.error(e)
+            sender.add_periodic_task(
+                storage.disk_usage_log_sleeping_time, disk_usage_log_task.s(), name=TaskName.DISK_USAGE
+            )
+            logger.info(
+                f"Disk usage logging registered with sleeping_time (fallback): "
+                f"{storage.disk_usage_log_sleeping_time}s"
+            )
     else:
         sender.add_periodic_task(
             storage.disk_usage_log_sleeping_time, disk_usage_log_task.s(), name=TaskName.DISK_USAGE
