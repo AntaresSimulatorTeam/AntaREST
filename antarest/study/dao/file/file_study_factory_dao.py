@@ -38,8 +38,9 @@ class FileStudyDaoFactory(StudyFactoryDao):
         if isinstance(study, VariantStudy):
             study_path = study_path / "snapshot"
 
+        # If the study already exists, we won't override it but instead use the existing one to build the DAO object.
+        # This case happens in particular with variant studies snapshots.
         if not study_path.exists():
-            # Will not override existing study, but instead use the existing one to build the DAO object
             create_new_empty_study(version=StudyVersion.parse(study.version), path_study=study_path)
 
         file_study = self._study_factory.create_from_fs(study_path, is_managed(study), study.id)
