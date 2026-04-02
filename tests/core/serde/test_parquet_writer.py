@@ -15,8 +15,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import polars as pl
+import pytest
+from pyarrow.parquet import ParquetFile
 
 from antarest.core.serde.parquet_writer import (
+    BatchParquetWriter,
     write_dataframes_in_parquet_format_by_column_sets,
     yield_dataframes_from_parquet,
 )
@@ -52,23 +55,18 @@ def test_different_columns(tmp_path: Path) -> None:
     )
     pd.testing.assert_frame_equal(next(dfs), expected_first_df, check_dtype=False)
 
-    expected_second_df = pd.DataFrame(data=[(5, 6, 7, np.nan), (8, 9, 10, np.nan)], columns=["A", "B", "C", "D"])
+    expected_second_df = pd.DataFrame(
+        data=[(5, 6, 7, np.nan), (8, 9, 10, np.nan), (11, 12, np.nan, np.nan), (13, 14, np.nan, np.nan)],
+        columns=["A", "B", "C", "D"],
+    )
     pd.testing.assert_frame_equal(next(dfs), expected_second_df, check_dtype=False)
 
-    expected_third_df = pd.DataFrame(
-        data=[(11, 12, np.nan, np.nan), (13, 14, np.nan, np.nan)], columns=["A", "B", "C", "D"]
-    )
-    pd.testing.assert_frame_equal(next(dfs), expected_third_df, check_dtype=False)
-
     # values of A and B are correctly "inverted"
-    expected_fourth_df = pd.DataFrame(data=[(16, 15, np.nan, 17), (19, 18, np.nan, 20)], columns=["A", "B", "C", "D"])
-    pd.testing.assert_frame_equal(next(dfs), expected_fourth_df, check_dtype=False)
-
-    # values of C and D are correctly
-    expected_fifth_df = pd.DataFrame(
-        data=[(np.nan, np.nan, 21, 22), (np.nan, np.nan, 23, 24)], columns=["A", "B", "C", "D"]
+    expected_fourth_df = pd.DataFrame(
+        data=[(16, 15, np.nan, 17), (19, 18, np.nan, 20), (np.nan, np.nan, 21, 22), (np.nan, np.nan, 23, 24)],
+        columns=["A", "B", "C", "D"],
     )
-    pd.testing.assert_frame_equal(next(dfs), expected_fifth_df, check_dtype=False)
+    pd.testing.assert_frame_equal(next(dfs), expected_fourth_df, check_dtype=False)
 
 
 def test_same_columns(tmp_path: Path) -> None:
@@ -82,8 +80,7 @@ def test_same_columns(tmp_path: Path) -> None:
 
     dfs = yield_dataframes_from_parquet(files, all_cols)
 
-    pd.testing.assert_frame_equal(next(dfs), df1.to_pandas(), check_dtype=False)
-    pd.testing.assert_frame_equal(next(dfs), df2.to_pandas(), check_dtype=False)
+    pd.testing.assert_frame_equal(next(dfs), pl.concat([df1, df2]).to_pandas(), check_dtype=False)
 
 
 def test_no_dataframes_given(tmp_path: Path) -> None:
@@ -93,3 +90,45 @@ def test_no_dataframes_given(tmp_path: Path) -> None:
     all_df_names, all_cols = write_dataframes_in_parquet_format_by_column_sets(tmp_path, dataframes)
     assert all_df_names == []
     assert all_cols == []
+
+
+def test_batch_parquet_writer_writes_one_batch(tmp_path: Path) -> None:
+    parquet_file = tmp_path / "file.parquet"
+    tables = [
+        pl.DataFrame(data=[(1, 2), (3, 4)], schema=["A", "B"], orient="row").to_arrow(),
+        pl.DataFrame(data=[(5, 6), (7, 8)], schema=["A", "B"], orient="row").to_arrow(),
+    ]
+    with BatchParquetWriter(parquet_file, schema=tables[0].schema, row_group_size=5) as writer:
+        for t in tables:
+            writer.add_table(t)
+
+    with ParquetFile(parquet_file) as pf:
+        assert pf.num_row_groups == 1
+        assert pf.metadata.num_rows == 4
+
+
+def test_batch_parquet_writer_writes_multiple_batches_when_size_exceeds_threshold(tmp_path: Path) -> None:
+    parquet_file = tmp_path / "file.parquet"
+    tables = [
+        pl.DataFrame(data=[(1, 2), (3, 4)], schema=["A", "B"], orient="row").to_arrow(),
+        pl.DataFrame(data=[(5, 6), (7, 8)], schema=["A", "B"], orient="row").to_arrow(),
+        pl.DataFrame(data=[(5, 6), (7, 8)], schema=["A", "B"], orient="row").to_arrow(),
+        pl.DataFrame(data=[(5, 6), (7, 8)], schema=["A", "B"], orient="row").to_arrow(),
+    ]
+    with BatchParquetWriter(parquet_file, schema=tables[0].schema, row_group_size=5) as writer:
+        for t in tables:
+            writer.add_table(t)
+
+    with ParquetFile(parquet_file) as pf:
+        assert pf.num_row_groups == 2
+        assert pf.metadata.num_rows == 8
+
+
+def test_batch_parquet_writer_cannot_add_table_to_closed_writer(tmp_path: Path) -> None:
+    parquet_file = tmp_path / "file.parquet"
+    table = pl.DataFrame(data=[(1, 2), (3, 4)], schema=["A", "B"], orient="row").to_arrow()
+    with BatchParquetWriter(parquet_file, schema=table.schema, row_group_size=5) as writer:
+        writer.add_table(table)
+
+    with pytest.raises(ValueError):
+        writer.add_table(table)
