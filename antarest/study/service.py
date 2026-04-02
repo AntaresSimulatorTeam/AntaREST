@@ -113,7 +113,7 @@ from antarest.study.business.timeseries_config_management import TimeSeriesConfi
 from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
-from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao, StudyMetadata
+from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -134,6 +134,7 @@ from antarest.study.model import (
     Study,
     StudyContentStatus,
     StudyFolder,
+    StudyMetadata,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
     StudyRepairAction,

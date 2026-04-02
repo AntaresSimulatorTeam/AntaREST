@@ -64,7 +64,8 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettings,
     XpansionSettingsUpdate,
 )
-from antarest.study.dao.api.study_dao import StudyDao, StudyMetadata
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.model import StudyMetadata
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 

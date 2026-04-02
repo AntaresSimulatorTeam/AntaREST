@@ -28,7 +28,7 @@ from typing_extensions import override
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
-from antarest.study.dao.api.study_dao import StudyDao, StudyMetadata
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
 from antarest.study.dao.database.database_area_properties_dao import DatabaseAreaPropertiesDao
 from antarest.study.dao.database.database_district_dao import DatabaseDistrictDao
@@ -45,7 +45,7 @@ from antarest.study.dao.database.database_user_resources import DatabaseUserReso
 from antarest.study.dao.database.database_xpansion_dao import DatabaseXpansionDao
 from antarest.study.dao.database.models.comments import COMMENTS_TABLE
 from antarest.study.dao.database.sql_utils import upsert_one
-from antarest.study.model import Study
+from antarest.study.model import Study, StudyMetadata
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 

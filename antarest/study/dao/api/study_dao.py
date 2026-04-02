@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 from abc import abstractmethod
 from collections.abc import Iterator, Sequence
-from dataclasses import dataclass
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -80,15 +79,8 @@ from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
 from antarest.study.dao.api.timeseries_config_dao import ReadOnlyTimeSeriesConfigDao, TimeSeriesConfigDao
 from antarest.study.dao.api.user_resources_dao import ReadOnlyUserResourcesDao, UserResourcesDao
 from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
+from antarest.study.model import StudyMetadata
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-
-
-@dataclass(frozen=True)
-class StudyMetadata:
-    editor: str | None = None
-    last_save: float | None = None
-    name: str | None = None
-    author: str | None = None
 
 
 class ReadOnlyStudyDao(

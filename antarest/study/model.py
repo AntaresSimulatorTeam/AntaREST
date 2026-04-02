@@ -733,3 +733,11 @@ class DirectoryUpdate(AntaresBaseModel):
     def validate_name(cls, v: str | None) -> str | None:
         """Validate directory name."""
         return _validate_directory_name(v) if v is not None else v
+
+
+@dataclasses.dataclass(frozen=True)
+class StudyMetadata:
+    editor: str | None = None
+    last_save: float | None = None
+    name: str | None = None
+    author: str | None = None
