@@ -19,13 +19,19 @@ Example: mc-all_areas_hourly.parquet, mc-ind_thermal_clusters_daily.parquet
 """
 
 import logging
-from collections.abc import Sequence
+import shutil
+import tempfile
+from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import cast
 
 import polars as pl
-import pyarrow.parquet as pq
 
+from antarest.core.serde.parquet_writer import (
+    write_dataframes_in_parquet_format_by_column_sets,
+    write_dataframes_stream_parquet,
+    yield_dataframes_from_parquet,
+)
 from antarest.output.filestudy.aggregator_management import AggregatorManager
 from antarest.output.filestudy.utils import (
     MCYEAR_COL,
@@ -87,6 +93,14 @@ def _discover_file_type_frequencies(
     return result
 
 
+def _merge_intermediate_parquets(file_paths: list[Path], new_index: list[str], target_path: Path) -> None:
+    if len(file_paths) == 1:
+        shutil.move(file_paths[0], target_path)
+        return
+    dataframes = yield_dataframes_from_parquet(file_paths, new_index)
+    write_dataframes_stream_parquet(target_path, dataframes)
+
+
 def _aggregate_to_parquet(
     output_dir: Path,
     query_file: QueryFileType,
@@ -103,33 +117,19 @@ def _aggregate_to_parquet(
         transform_columns_headers=True,
     )
     try:
-        all_dfs = list(manager.aggregate_output_data())
+        dataframes = manager.aggregate_output_data()
     except Exception as e:
         logger.debug(f"Skipping {query_file.value}-{frequency.value}: {e}")
         return
 
-    if not all_dfs:
-        return
-
-    combined = pl.concat(all_dfs)
-
-    id_cols = [c for c in ["area", "link", MCYEAR_COL] if c in combined.columns]
-    if id_cols:
-        combined = combined.sort(id_cols)
-
-    table = combined.to_arrow()
-    sorting_columns = [
-        pq.SortingColumn(table.schema.get_field_index(col)) for col in id_cols if col in table.schema.names
-    ]
-    pq.write_table(
-        table,
-        target_path,
-        compression="zstd",
-        row_group_size=60 * 1024,
-        data_page_version="2.0",
-        sorting_columns=sorting_columns,
-    )
-    logger.debug(f"Wrote {len(combined)} rows to {target_path.name}")
+    intermediate_dir = Path(tempfile.mkdtemp())
+    try:
+        file_paths, new_index = write_dataframes_in_parquet_format_by_column_sets(intermediate_dir, dataframes)
+        if not file_paths:
+            return
+        _merge_intermediate_parquets(file_paths, new_index, target_path)
+    finally:
+        shutil.rmtree(intermediate_dir, ignore_errors=True)
 
 
 def _extract_areas(
@@ -192,54 +192,97 @@ def _extract_links(
         _aggregate_to_parquet(output_dir, query_file, frequency, link_ids, target_dir / file_name)
 
 
+def _parse_bc_file(file: Path, mc_root: MCRoot, mc_year: int | None = None) -> pl.DataFrame | None:
+    freq_str = file.stem.split("-")[-1]
+    try:
+        frequency = MatrixFrequency(freq_str)
+    except ValueError:
+        return None
+
+    start_col = get_start_column(frequency)
+    try:
+        output_data = parse_output_file(file, start_col)
+    except Exception as e:
+        logger.debug(f"Skipping binding constraint {file.name}: {e}")
+        return None
+
+    df = output_data.data
+    headers = cast(MultipleOutputHeaders, output_data.headers)
+    col_names = normalize_df_column_names(mc_root, headers)
+    df.columns = col_names
+    df = df.with_row_index(TIME_ID_COL, offset=1)
+
+    if mc_year is not None:
+        df = df.with_columns(pl.lit(mc_year).alias(MCYEAR_COL))
+
+    return df if not df.is_empty() else None
+
+
+def _discover_bc_frequencies(bc_path: Path) -> set[str]:
+    freqs: set[str] = set()
+    for file in bc_path.iterdir():
+        if file.name.endswith(".txt"):
+            freqs.add(file.stem.split("-")[-1])
+    return freqs
+
+
+def _generate_bc_dataframes(
+    bc_paths: list[tuple[Path, int | None]],
+    freq_str: str,
+    mc_root: MCRoot,
+) -> Iterator[pl.DataFrame]:
+    for bc_path, mc_year in bc_paths:
+        for file in bc_path.iterdir():
+            if not file.name.endswith(".txt"):
+                continue
+            if file.stem.split("-")[-1] != freq_str:
+                continue
+            df = _parse_bc_file(file, mc_root, mc_year)
+            if df is not None:
+                yield df
+
+
 def _extract_binding_constraints(
-    base_path: Path,
+    mc_root_path: Path,
     mc_root: MCRoot,
     target_dir: Path,
 ) -> None:
-    bc_path = base_path / "binding_constraints"
-    if not bc_path.exists():
+    bc_paths: list[tuple[Path, int | None]] = []
+    if mc_root == MCRoot.MC_IND:
+        for year_dir in sorted(mc_root_path.iterdir()):
+            if not year_dir.is_dir():
+                continue
+            bc_path = year_dir / "binding_constraints"
+            if bc_path.exists():
+                bc_paths.append((bc_path, int(year_dir.name)))
+    else:
+        bc_path = mc_root_path / "binding_constraints"
+        if bc_path.exists():
+            bc_paths.append((bc_path, None))
+
+    if not bc_paths:
         return
 
-    for file in bc_path.iterdir():
-        if not file.name.endswith(".txt"):
-            continue
-        freq_str = file.stem.split("-")[-1]
+    # Discover all available frequencies
+    all_freqs: set[str] = set()
+    for bc_path, _ in bc_paths:
+        all_freqs |= _discover_bc_frequencies(bc_path)
+
+    for freq_str in all_freqs:
         try:
             frequency = MatrixFrequency(freq_str)
         except ValueError:
             continue
 
-        start_col = get_start_column(frequency)
-        try:
-            output_data = parse_output_file(file, start_col)
-        except Exception as e:
-            logger.debug(f"Skipping binding constraint {file.name}: {e}")
-            continue
-
-        df = output_data.data
-        headers = cast(MultipleOutputHeaders, output_data.headers)
-        col_names = normalize_df_column_names(mc_root, headers)
-        df.columns = col_names
-        df = df.with_row_index(TIME_ID_COL, offset=1)
-
-        if df.is_empty():
-            continue
-
         file_name = _parquet_file_name(mc_root, "binding_constraints", frequency)
-        table = df.to_arrow()
-        sorting_columns = (
-            [pq.SortingColumn(table.schema.get_field_index(TIME_ID_COL))] if TIME_ID_COL in table.schema.names else []
-        )
-        pq.write_table(
-            table,
-            target_dir / file_name,
-            compression="zstd",
-            row_group_size=60 * 1024,
-            data_page_version="2.0",
-            sorting_columns=sorting_columns,
-        )
-        logger.debug(f"Wrote {len(df)} rows to {file_name}")
+        intermediate_dir = Path(tempfile.mkdtemp())
+        try:
+            dataframes = _generate_bc_dataframes(bc_paths, freq_str, mc_root)
+            file_paths, new_index = write_dataframes_in_parquet_format_by_column_sets(intermediate_dir, dataframes)
+            if file_paths:
+                _merge_intermediate_parquets(file_paths, new_index, target_dir / file_name)
+        finally:
+            shutil.rmtree(intermediate_dir, ignore_errors=True)
 
 
 def extract_output_to_parquet(output_dir: Path, target_dir: Path) -> None:
@@ -266,7 +309,7 @@ def extract_output_to_parquet(output_dir: Path, target_dir: Path) -> None:
 
         _extract_areas(output_dir, base_path, mc_root, target_dir)
         _extract_links(output_dir, base_path, mc_root, target_dir)
-        _extract_binding_constraints(base_path, mc_root, target_dir)
+        _extract_binding_constraints(mc_root_path, mc_root, target_dir)
 
     logger.info(f"Extracted output variables to parquet in {target_dir}")
 
@@ -309,10 +352,9 @@ def _read_filtered(
     mc_years: Sequence[int] | None,
     columns_names: Sequence[str],
     is_details: bool,
-) -> pl.DataFrame | None:
-    """Read a parquet file with optional filtering on IDs, MC years, and columns."""
+) -> Iterator[pl.DataFrame]:
     if not parquet_path.exists():
-        return None
+        return
 
     lazy = pl.scan_parquet(parquet_path)
 
@@ -327,7 +369,7 @@ def _read_filtered(
         selected = _filter_columns(schema_names, columns_names, mc_root, is_details)
         lazy = lazy.select(selected)
 
-    return lazy.collect()
+    yield from lazy.collect_batches()
 
 
 def read_output_from_parquet(
@@ -337,8 +379,7 @@ def read_output_from_parquet(
     ids_to_consider: Sequence[str],
     columns_names: Sequence[str],
     mc_years: Sequence[int] | None,
-) -> pl.DataFrame:
-    """Read and filter output data from parquet files"""
+) -> Iterator[pl.DataFrame]:
     mc_root = _mc_root_for_query_file(query_file)
     is_link = isinstance(query_file, (MCIndLinksQueryFile, MCAllLinksQueryFile))
     is_details = "details" in query_file.value
@@ -353,23 +394,12 @@ def read_output_from_parquet(
         district_ids = []
         area_ids = list(ids_to_consider)
 
-    dfs: list[pl.DataFrame] = []
-
     # Read main file (areas, links, or details)
     if area_ids or not ids_to_consider:
         parquet_path = target_dir / _parquet_file_name(mc_root, obj_type, frequency)
-        df = _read_filtered(parquet_path, id_col, area_ids, mc_root, mc_years, columns_names, is_details)
-        if df is not None and not df.is_empty():
-            dfs.append(df)
+        yield from _read_filtered(parquet_path, id_col, area_ids, mc_root, mc_years, columns_names, is_details)
 
     # Read districts file if needed
     if district_ids:
         parquet_path = target_dir / _parquet_file_name(mc_root, "districts", frequency)
-        df = _read_filtered(parquet_path, id_col, district_ids, mc_root, mc_years, columns_names, is_details)
-        if df is not None and not df.is_empty():
-            dfs.append(df)
-
-    if not dfs:
-        return pl.DataFrame()
-
-    return pl.concat(dfs)
+        yield from _read_filtered(parquet_path, id_col, district_ids, mc_root, mc_years, columns_names, is_details)

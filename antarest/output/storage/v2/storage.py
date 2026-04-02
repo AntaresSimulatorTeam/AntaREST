@@ -330,17 +330,30 @@ class V2OutputStorage(IOutputStorage):
 
     @override
     def archive_study_output(self, study_id: str, output_id: str) -> None:
-        # For now, only a logical operation
         logger.info(f"Archiving output {study_id}/{output_id} in internal storage.")
         metadata = self._require_metadata(study_id, output_id)
         metadata.archived = True
         self._repository.save_output_metadata(metadata)
 
+        # Delete the parquet directory to free disk space
+        variables_target = parquet_output_dir(self._variables_dir, study_id, output_id)
+        shutil.rmtree(variables_target, ignore_errors=True)
+
     @override
     def unarchive_study_output(self, study_id: str, output_id: str) -> None:
-        # For now, only a logical operation
         logger.info(f"Unarchiving output {study_id}/{output_id} in internal storage.")
         metadata = self._require_metadata(study_id, output_id)
+
+        # Rebuild parquet files from the archive BEFORE updating metadata,
+        # so that if reconstruction fails, the output stays marked as archived.
+        with tempfile.TemporaryDirectory(dir=self._tmp_dir) as tmp_dir:
+            tmp_archive_path = Path(tmp_dir) / "output.zip"
+            self._archive_storage.read_file(_archive_id(study_id, output_id), tmp_archive_path)
+            dir_path = Path(tmp_dir) / "output"
+            extract_archive_from_path(tmp_archive_path, dir_path)
+            variables_target = parquet_output_dir(self._variables_dir, study_id, output_id)
+            extract_output_to_parquet(dir_path, variables_target)
+
         metadata.archived = False
         self._repository.save_output_metadata(metadata)
 
@@ -389,12 +402,16 @@ class V2OutputStorage(IOutputStorage):
         mc_years: Sequence[int] | None = None,
     ) -> Iterator[pl.DataFrame]:
         target_dir = parquet_output_dir(self._variables_dir, study_id, output_id)
-        df = read_output_from_parquet(target_dir, query_file, frequency, ids_to_consider, columns_names, mc_years)
+        has_data = False
+        for batch in read_output_from_parquet(
+            target_dir, query_file, frequency, ids_to_consider, columns_names, mc_years
+        ):
+            if batch.is_empty():
+                continue
+            has_data = True
+            if not transform_columns_headers:
+                batch = batch.drop("timeId", strict=False)
+            yield batch
 
-        if df.is_empty():
+        if not has_data:
             raise OutputAggregationError(output_id, "No output data matching the criteria were found")
-
-        if not transform_columns_headers:
-            df = df.drop("timeId", strict=False)
-
-        yield df

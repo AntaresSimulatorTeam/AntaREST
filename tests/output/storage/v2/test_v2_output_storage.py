@@ -783,8 +783,8 @@ def test_aggregate_areas_values(
                 transform_columns_headers=True,
             )
         )
-        assert len(dfs) == 1
-        df = dfs[0]
+        assert len(dfs) >= 1
+        df = pl.concat(dfs)
 
         assert "area" in df.columns
         assert "timeId" in df.columns
@@ -812,7 +812,8 @@ def test_aggregate_with_area_filter(
             )
         )
 
-        assert set(dfs[0]["area"]) == {"de"}
+        df = pl.concat(dfs)
+        assert set(df["area"]) == {"de"}
 
 
 def test_aggregate_with_column_filter(
@@ -834,7 +835,7 @@ def test_aggregate_with_column_filter(
                 transform_columns_headers=True,
             )
         )
-        df = dfs[0]
+        df = pl.concat(dfs)
 
         variable_cols = [c for c in df.columns if c not in {"area", "timeId", "mcYear", "cluster"}]
         assert all("LOAD" in c for c in variable_cols)
@@ -859,7 +860,7 @@ def test_aggregate_thermal_clusters(
                 transform_columns_headers=True,
             )
         )
-        df = dfs[0]
+        df = pl.concat(dfs)
 
         assert "area" in df.columns
         assert "cluster" in df.columns
