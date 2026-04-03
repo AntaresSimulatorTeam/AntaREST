@@ -23,6 +23,8 @@ from antarest.core.utils.lock import create_lock
 from antarest.login.utils import current_user_context
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, LockId
 from antarest.maintenance.tasks.disk_space_analyzer import disk_space_analysis
+from antarest.study.business.model.area_model import AreaCreation
+from antarest.study.business.model.link_model import Link
 from antarest.study.repository import StudyDiskSpaceRepository
 from antarest.study.service import StudyService
 
@@ -68,16 +70,15 @@ class TestDiskSpaceAnalyzerIntegration:
             assert recent_analysis_date_1 == past_analysis_date_1
             assert recent_analysis_date_2 == past_analysis_date_2
 
-            # with db(): TODO : check and fix the updated_at problem (the updated_at is not updated when the study is updated)
-            #     study_service.create_link(
-            #         study_1, LinkCreation(name="link_1", input="input_1", output="output_1", type=Link.Type.SERIES)
-            #
-            #     area_1 = study_service.create_area(study_1, AreaCreation(name="fr"))
-            #     area_2 = study_service.create_area(study_1, AreaCreation(name="be"))
-            #
-            # result = disk_space_analysis(service=study_service, disk_repo=study_disk_repo)
-            #
-            # assert result.updated_studies == 1
+            with db():
+                area_1 = study_service.create_area(study_1, AreaCreation(name="fr"))
+                area_2 = study_service.create_area(study_1, AreaCreation(name="be"))
+
+                study_service.create_link(study_1, Link(area1=area_1.id, area2=area_2.id))
+
+            result = disk_space_analysis(service=study_service, disk_repo=study_disk_repo)
+
+            assert result.updated_studies == 1
 
     def test_returns_skipped_when_lock_held(
         self, study_service: StudyService, study_disk_repo: StudyDiskSpaceRepository
