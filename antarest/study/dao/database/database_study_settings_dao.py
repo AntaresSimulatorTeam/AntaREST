@@ -155,7 +155,7 @@ class DatabaseStudySettingsDao(
         row = self.get_session().execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
-        return CompatibilityParameters(hydro_pmax=row.hydro_pmax, reserves_enabled=row.reserves_enabled or False)
+        return CompatibilityParameters(hydro_pmax=row.hydro_pmax, reserves_enabled=row.reserves_enabled)
 
     @override
     def save_compatibility_parameters(self, parameters: CompatibilityParameters) -> None:
