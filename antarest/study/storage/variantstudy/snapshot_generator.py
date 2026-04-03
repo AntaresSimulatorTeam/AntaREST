@@ -32,7 +32,12 @@ from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.utils import assert_permission_on_studies, is_managed, remove_from_cache
+from antarest.study.storage.utils import (
+    assert_permission_on_studies,
+    is_managed,
+    remove_from_cache,
+    update_antares_info,
+)
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
@@ -123,9 +128,6 @@ class SnapshotGenerator:
                 created_at=current_time(),
                 last_executed_command=variant_study.commands[-1].id if variant_study.commands else None,
             )
-
-            logger.info(f"Reading additional data from files for study {variant_study_id}")
-            self._update_study_data(file_study, variant_study)
             self.repository.save(variant_study)
 
             if results.should_invalidate_cache:
@@ -198,18 +200,8 @@ class SnapshotGenerator:
                 else:  # pragma: no cover
                     raise NotImplementedError(f"Unexpected detail type: {type(detail)}")
             raise VariantGenerationError(message)
+        update_antares_info(variant_study, file_study.tree, update_author=True)
         return results
-
-    def _update_study_data(self, file_study: FileStudy, metadata: Study) -> None:
-        horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
-        author = file_study.tree.get(url=["study", "antares", "author"])
-        editor = file_study.tree.get(url=["study", "antares", "editor"])
-        assert isinstance(author, str)
-        assert isinstance(editor, str)
-        assert isinstance(horizon, (str, int))
-        metadata.horizon = horizon
-        metadata.author = author
-        metadata.editor = editor
 
 
 class RefStudySearchResult(NamedTuple):
