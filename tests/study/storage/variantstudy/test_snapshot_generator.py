@@ -830,13 +830,7 @@ class TestSnapshotGenerator:
         """
         Test the initialization of the `SnapshotGenerator` class.
         """
-        generator = SnapshotGenerator(
-            cache=variant_study_service.cache,
-            raw_study_service=variant_study_service.raw_study_service,
-            command_factory=variant_study_service.command_factory,
-            study_factory=variant_study_service.study_factory,
-            repository=variant_study_service.repository,
-        )
+        generator = SnapshotGenerator(variant_study_service)
         assert generator.cache == variant_study_service.cache
         assert generator.raw_study_service == variant_study_service.raw_study_service
         assert generator.command_factory == variant_study_service.command_factory
@@ -869,13 +863,7 @@ class TestSnapshotGenerator:
         - the notifications are correctly registered.
         - the simulation outputs are not copied.
         """
-        generator = SnapshotGenerator(
-            cache=variant_study_service.cache,
-            raw_study_service=variant_study_service.raw_study_service,
-            command_factory=variant_study_service.command_factory,
-            study_factory=variant_study_service.study_factory,
-            repository=variant_study_service.repository,
-        )
+        generator = SnapshotGenerator(variant_study_service)
 
         notifier = RegisterNotification()
 
@@ -1049,13 +1037,7 @@ class TestSnapshotGenerator:
         Test the generation of a variant study with matrices de-normalization.
         We expect that all matrices are correctly denormalized (no link).
         """
-        generator = SnapshotGenerator(
-            cache=variant_study_service.cache,
-            raw_study_service=variant_study_service.raw_study_service,
-            command_factory=variant_study_service.command_factory,
-            study_factory=variant_study_service.study_factory,
-            repository=variant_study_service.repository,
-        )
+        generator = SnapshotGenerator(variant_study_service)
 
         results = generator.generate_snapshot(
             variant_study_id,
@@ -1130,13 +1112,7 @@ class TestSnapshotGenerator:
             ],
         )
 
-        generator = SnapshotGenerator(
-            cache=variant_study_service.cache,
-            raw_study_service=variant_study_service.raw_study_service,
-            command_factory=variant_study_service.command_factory,
-            study_factory=variant_study_service.study_factory,
-            repository=variant_study_service.repository,
-        )
+        generator = SnapshotGenerator(variant_study_service)
 
         err_msg = (
             f"Failed to generate variant study {variant_study.id}: "
@@ -1169,13 +1145,7 @@ class TestSnapshotGenerator:
         Test the generation of a variant study with a notification that fails.
         Since the notification is not critical, we expect to have no exception.
         """
-        generator = SnapshotGenerator(
-            cache=variant_study_service.cache,
-            raw_study_service=variant_study_service.raw_study_service,
-            command_factory=variant_study_service.command_factory,
-            study_factory=variant_study_service.study_factory,
-            repository=variant_study_service.repository,
-        )
+        generator = SnapshotGenerator(variant_study_service)
 
         notifier = FailingNotifier()
 
@@ -1232,13 +1202,7 @@ class TestSnapshotGenerator:
         """
         Test the generation of a variant study of a variant study.
         """
-        generator = SnapshotGenerator(
-            cache=variant_study_service.cache,
-            raw_study_service=variant_study_service.raw_study_service,
-            command_factory=variant_study_service.command_factory,
-            study_factory=variant_study_service.study_factory,
-            repository=variant_study_service.repository,
-        )
+        generator = SnapshotGenerator(variant_study_service)
 
         # Generate the variant once.
         generator.generate_snapshot(
@@ -1285,13 +1249,7 @@ class TestSnapshotGenerator:
     def test_generate_invalidate_cache(self, variant_study_service: VariantStudyService, variant_study_id: str) -> None:
         cache = LocalCache()
         variant_study_service.cache = cache
-        generator = SnapshotGenerator(
-            cache=cache,
-            raw_study_service=variant_study_service.raw_study_service,
-            command_factory=variant_study_service.command_factory,
-            study_factory=variant_study_service.study_factory,
-            repository=variant_study_service.repository,
-        )
+        generator = SnapshotGenerator(variant_study_service)
 
         # Fill the cache for the test.
         study = db.session.get(VariantStudy, variant_study_id)  #  `variant_study` isn't bound to the session yet.
