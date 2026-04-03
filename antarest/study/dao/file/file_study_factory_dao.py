@@ -36,7 +36,7 @@ class FileStudyDaoFactory(StudyFactoryDao):
     def create_study_dao(self, study: Study) -> FileStudyTreeDao:
         study_path = Path(study.path)
         if isinstance(study, VariantStudy):
-            study_path = study_path / "snapshot"
+            study_path = study.snapshot_dir
 
         # If the study already exists, we won't override it but instead use the existing one to build the DAO object.
         # This case happens in particular with variant studies snapshots.
