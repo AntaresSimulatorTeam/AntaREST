@@ -12,14 +12,13 @@
 
 """Integration tests for the disk space analyzer."""
 
-import datetime
-
 import pytest
 from antares.study.version import StudyVersion
 
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import create_lock
+from antarest.core.utils.utils import current_time
 from antarest.login.utils import current_user_context
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, LockId
 from antarest.maintenance.tasks.disk_space_analyzer import disk_space_analysis
@@ -61,8 +60,8 @@ class TestDiskSpaceAnalyzerIntegration:
             with db():
                 recent_analysis_date_1 = study_disk_repo.get(study_1).last_analysis_date
                 recent_analysis_date_2 = study_disk_repo.get(study_2).last_analysis_date
-                delta_1 = datetime.datetime.now() - recent_analysis_date_1
-                delta_2 = datetime.datetime.now() - recent_analysis_date_2
+                delta_1 = current_time() - recent_analysis_date_1
+                delta_2 = current_time() - recent_analysis_date_2
 
             assert delta_1.seconds / 60 < 1
             assert delta_2.seconds / 60 < 1

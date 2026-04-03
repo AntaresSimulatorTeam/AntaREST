@@ -11,13 +11,13 @@
 # This file is part of the Antares project.
 import logging
 import time
-from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_lock
+from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, LockId
 from antarest.study.model import StudyDiskSpaceAnalysis
 from antarest.study.repository import AccessPermissions, StudyDiskSpaceRepository, StudyFilter
@@ -50,7 +50,6 @@ def disk_space_analysis(service: StudyService, disk_repo: StudyDiskSpaceReposito
 
                 for study in studies:
                     updated_at = study.updated_at
-                    usage = service.get_disk_usage(study.id)
                     try:
                         filtered_analysis = dict_analysis[study.id] if study.id in dict_analysis else None
 
@@ -59,16 +58,15 @@ def disk_space_analysis(service: StudyService, disk_repo: StudyDiskSpaceReposito
                             study_disk_analysis = StudyDiskSpaceAnalysis(
                                 study_id=study.id,
                                 disk_space_bytes=service.get_disk_usage(study.id),
-                                last_analysis_date=datetime.now(),
+                                last_analysis_date=current_time(),
                             )
                             disk_repo.save(study_disk_analysis)
                             updated_studies += 1
 
-                        elif updated_at is not None and (
-                            filtered_analysis.last_analysis_date < updated_at
-                            or filtered_analysis.disk_space_bytes != usage
-                        ):
+                        elif updated_at is not None and (filtered_analysis.last_analysis_date < updated_at):
                             logger.info(f"Updating disk space analysis for study {study.id}")
+
+                            usage = service.get_disk_usage(study.id)
                             disk_repo.update(study.id, usage)
                             updated_studies += 1
 

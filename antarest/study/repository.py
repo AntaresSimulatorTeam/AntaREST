@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import enum
-from datetime import datetime
 from typing import Optional, Sequence, cast
 
 from pydantic import NonNegativeInt
@@ -24,6 +23,7 @@ from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 from antarest.login.model import Group
 from antarest.login.utils import get_current_user
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, Directory, RawStudy, Study, StudyDiskSpaceAnalysis, Tag
@@ -653,7 +653,7 @@ class StudyDiskSpaceRepository:
         stmt = (
             update(StudyDiskSpaceAnalysis)
             .where(StudyDiskSpaceAnalysis.study_id == study_id)
-            .values(disk_space_bytes=disk_space, last_analysis_date=datetime.now())
+            .values(disk_space_bytes=disk_space, last_analysis_date=current_time())
         )
 
         session.execute(stmt)
