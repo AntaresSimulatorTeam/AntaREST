@@ -74,14 +74,18 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
         """
         Return a list of itself if the node is not in the matrix-store. Else, return an empty list.
         """
-        return [] if self.matrix_mapper.has_link(self) else [self]
+        return [] if self.is_normalized else [self]
 
     @override
     def get_matrix_nodes_to_denormalize(self) -> list[Self]:
         """
         Return a list of itself if the node is in the matrix-store. Else, return an empty list.
         """
-        return [self] if self.matrix_mapper.has_link(self) else []
+        return [self] if self.is_normalized else []
+
+    @property
+    def is_normalized(self) -> bool:
+        return self.matrix_mapper.has_link(self)
 
     @override
     def load(
