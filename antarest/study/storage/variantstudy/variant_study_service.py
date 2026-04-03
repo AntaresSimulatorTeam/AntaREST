@@ -51,6 +51,7 @@ from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import (
     RawStudy,
+    StorageMode,
     Study,
     StudyMetadataDTO,
 )
@@ -682,13 +683,7 @@ class VariantStudyService(AbstractStorageService):
             study_id = metadata.id
 
             def callback(notifier: ITaskNotifier) -> TaskResult:
-                generator = SnapshotGenerator(
-                    cache=self.cache,
-                    raw_study_service=self.raw_study_service,
-                    command_factory=self.command_factory,
-                    study_factory=self.study_factory,
-                    repository=self.repository,
-                )
+                generator = SnapshotGenerator(self)
                 generate_result = generator.generate_snapshot(
                     study_id,
                     denormalize=denormalize,
@@ -902,7 +897,7 @@ class VariantStudyService(AbstractStorageService):
         snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH
         self.raw_study_service.export_study_to_flat_directory(snapshot_path, dst_path)
         if denormalize:
-            self.raw_study_service.denormalize_study(metadata)
+            self.denormalize_study(metadata)
 
     @override
     def get_synthesis(self, metadata: Study) -> StudyDataSynthesis:
@@ -949,6 +944,24 @@ class VariantStudyService(AbstractStorageService):
             progress=None,
             custom_event_messages=None,
         )
+
+    @override
+    def denormalize_study(self, study: Study) -> None:
+        if study.storage_mode == StorageMode.DATABASE:
+            # Nothing to do
+            return
+
+        file_study = self.get_raw(study)
+        self.raw_study_service.denormalize_file_study(file_study)
+
+    @override
+    def normalize_study(self, study: Study) -> None:
+        if study.storage_mode == StorageMode.DATABASE:
+            # Nothing to do
+            return
+
+        file_study = self.get_raw(study)
+        self.raw_study_service.normalize_file_study(file_study)
 
 
 class SnapshotCleanerTask:

@@ -395,6 +395,7 @@ class RawStudyService(AbstractStorageService):
         """
         pass
 
+    @override
     def normalize_study(self, study: Study) -> None:
         """
         Method used to normalize a study.
@@ -405,6 +406,18 @@ class RawStudyService(AbstractStorageService):
             return
 
         file_study = self.get_raw(study)
+        self.normalize_file_study(file_study)
+
+    @override
+    def denormalize_study(self, study: Study) -> None:
+        if study.storage_mode == StorageMode.DATABASE:
+            # Nothing to do
+            return
+
+        file_study = self.get_raw(study)
+        self.denormalize_file_study(file_study)
+
+    def normalize_file_study(self, file_study: FileStudy) -> None:
         matrix_nodes = file_study.tree.get_matrix_nodes_to_normalize()
         if not matrix_nodes:
             return
@@ -413,16 +426,7 @@ class RawStudyService(AbstractStorageService):
         for k, node in enumerate(matrix_nodes):
             node.matrix_mapper.save_matrix(node, matrix_ids[k])
 
-    def denormalize_study(self, study: Study) -> None:
-        """
-        Method used to denormalize a study.
-        It will replace every `.link` file in the study with its content stored in the matrix-store.
-        """
-        if study.storage_mode == StorageMode.DATABASE:
-            # Nothing to do
-            return
-
-        file_study = self.get_raw(study)
+    def denormalize_file_study(self, file_study: FileStudy) -> None:
         matrix_nodes = file_study.tree.get_matrix_nodes_to_denormalize()
         if not matrix_nodes:
             return

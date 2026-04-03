@@ -421,7 +421,7 @@ class StudyUpgraderTask:
                 )
             finally:
                 if is_study_denormalized:
-                    self.storage_service.raw_study_service.normalize_study(study_to_upgrade)
+                    self.storage_service.get_storage(study_to_upgrade).normalize_study(study_to_upgrade)
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         """
@@ -1286,7 +1286,7 @@ class StudyService:
             study.directory_id = self.directory_service.get_directory_by_path(destination_folder.as_posix())
 
             self._save_study(study)
-            self.storage_service.raw_study_service.normalize_study(study)
+            self.storage_service.get_storage(study).normalize_study(study)
 
             match outputs_selection:
                 case "all":
@@ -1628,7 +1628,7 @@ class StudyService:
         study.updated_at = current_time()
 
         self._save_study(study)
-        self.storage_service.raw_study_service.normalize_study(study)
+        self.storage_service.get_storage(study).normalize_study(study)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -2830,7 +2830,7 @@ class StudyService:
             raise UnsupportedOperationOnThisStudyType(study_id, "normalize", "raw")
         self.assert_study_unarchived(study)
 
-        self.storage_service.raw_study_service.normalize_study(study)
+        self.storage_service.get_storage(study).normalize_study(study)
 
     def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
         """
