@@ -83,8 +83,6 @@ from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGener
 
 logger = logging.getLogger(__name__)
 
-SNAPSHOT_RELATIVE_PATH = "snapshot"
-
 
 def _cast_study_to_variant(study: Study) -> VariantStudy:
     if not isinstance(study, VariantStudy):
@@ -886,7 +884,8 @@ class VariantStudyService(AbstractStorageService):
         Returns: study path
 
         """
-        return Path(metadata.path) / SNAPSHOT_RELATIVE_PATH
+        variant = _cast_study_to_variant(metadata)
+        return variant.snapshot_dir
 
     @override
     def export_study_flat(
