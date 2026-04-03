@@ -199,26 +199,18 @@ class FileStudyThermalDao(ThermalDao, ABC):
         # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
         remove_first_match(study_data.config.areas[area_id].thermals, lambda c: c.id.lower() == cluster_id)
 
-    def _get_thermal_matrices(self, path: str, thermals: dict[AreaId, ThermalId] | None = None) -> SeriesMapping:
-        if thermals is None:
-            thermals = {}
+    def _get_thermal_matrices(self, path: str) -> SeriesMapping:
         study_data = self.get_file_study()
         matrix_nodes = {}
 
-        if not thermals:
-            # Means we want to get matrices for all thermals
-            thermals = {}
-            areas = study_data.config.areas
-            for area_id, value in areas.items():
-                for thermal in value.thermals:
-                    thermal_id = thermal.id.lower()
-                    thermals[area_id] = thermal_id
-
-        for area_id, thermal_id in thermals.items():
-            url = path.format(area_id=area_id, thermal_id=thermal_id).split("/")
-            node = study_data.tree.get_node(url)
-            assert isinstance(node, MatrixNode)
-            matrix_nodes[node] = (area_id, thermal_id)
+        areas = study_data.config.areas
+        for area_id, value in areas.items():
+            for thermal in value.thermals:
+                thermal_id = thermal.id.lower()
+                url = path.format(area_id=area_id, thermal_id=thermal_id).split("/")
+                node = study_data.tree.get_node(url)
+                assert isinstance(node, MatrixNode)
+                matrix_nodes[node] = (area_id, thermal_id)
 
         result: SeriesMapping = {}
 
