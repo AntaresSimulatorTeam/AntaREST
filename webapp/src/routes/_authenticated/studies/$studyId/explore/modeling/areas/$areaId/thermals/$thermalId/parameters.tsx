@@ -219,7 +219,7 @@ function Parameters() {
                 control={control}
               />
             </Fieldset>
-            <Fieldset legend={t("study.modeling.clusters.thermal.otherEmissionRates")}>
+            <Fieldset legend={t("study.modeling.clusters.thermal.otherEmissionRates")} collapsible>
               {THERMAL_POLLUTANTS.map(
                 (name) =>
                   (name === "co2" || semver.gte(study.version, "8.6.0")) && (

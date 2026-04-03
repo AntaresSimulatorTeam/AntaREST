@@ -39,6 +39,7 @@ from antarest.study.dao.file.file_study_thermal_dao import FileStudyThermalDao
 from antarest.study.dao.file.file_study_timseries_config_dao import FileStudyTimeSeriesConfigDao
 from antarest.study.dao.file.file_study_user_resources_dao import FileStudyUserResourceDao
 from antarest.study.dao.file.file_study_xpansion_dao import FileStudyXpansionDao
+from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
@@ -109,10 +110,16 @@ class FileStudyTreeDao(
         self._file_study.tree.save({"settings": {"comments": comments.encode("utf-8")}})
 
     @override
-    def update_antares_file(self, editor: str, last_save: float) -> None:
+    def update_antares_file(self, metadata: StudyMetadataUpdate) -> None:
         study_antares = self._file_study.tree.get(["study", "antares"])
-        study_antares["editor"] = editor
-        study_antares["lastsave"] = last_save
+        if metadata.editor:
+            study_antares["editor"] = metadata.editor
+        if metadata.last_save:
+            study_antares["lastsave"] = metadata.last_save
+        if metadata.name:
+            study_antares["caption"] = metadata.name
+        if metadata.author:
+            study_antares["author"] = metadata.author
         self._file_study.tree.save(study_antares, ["study", "antares"])
 
     def get_matrix(self, url: list[str]) -> pl.DataFrame:
