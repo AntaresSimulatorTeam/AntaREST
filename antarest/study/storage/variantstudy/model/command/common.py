@@ -104,6 +104,7 @@ class CommandName(Enum):
     REPLACE_HYDRO_ALLOCATION = "replace_hydro_allocation"
     REPLACE_HYDRO_CORRELATION = "replace_hydro_correlation"
     CONVERT_HYDRO_PMAX = "convert_hydro_pmax"
+    UPDATE_COMPATIBILITY_PARAMETERS = "update_compatibility_parameters"
 
 
 @dataclass(frozen=True)

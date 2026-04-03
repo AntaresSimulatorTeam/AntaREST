@@ -415,6 +415,28 @@ def test_study_settings(client: TestClient, admin_access_token: str) -> None:
     assert res_ts_config_json == {"thermal": {"number": 2}}
 
 
+def test_compatibility_settings(client: TestClient, admin_access_token: str) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    created = client.post("/v1/studies", params={"name": "foo", "version": 930})
+    study_id = created.json()
+
+    res = client.get(f"/v1/studies/{study_id}/config/compatibility/form")
+    assert res.status_code == 200
+    assert res.json() == {"hydroPmax": "daily", "reservesEnabled": False}
+
+    client.put(
+        f"/v1/studies/{study_id}/config/compatibility/form",
+        json={
+            "hydroPmax": "hourly",
+            "reservesEnabled": True,
+        },
+    )
+    res = client.get(f"/v1/studies/{study_id}/config/compatibility/form")
+    assert res.status_code == 200
+    assert res.json() == {"hydroPmax": "hourly", "reservesEnabled": True}
+
+
 @pytest.mark.parametrize("study_type", ["raw", "variant"])
 def test_updated_changes_after_command(
     study_type: str,

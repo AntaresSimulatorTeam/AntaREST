@@ -155,11 +155,13 @@ class DatabaseStudySettingsDao(
         row = self.get_session().execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
-        return CompatibilityParameters(hydro_pmax=row.hydro_pmax)
+        return CompatibilityParameters(hydro_pmax=row.hydro_pmax, reserves_enabled=row.reserves_enabled or False)
 
     @override
     def save_compatibility_parameters(self, parameters: CompatibilityParameters) -> None:
-        values = dict(study_id=self.get_study_id(), hydro_pmax=parameters.hydro_pmax)
+        values = dict(
+            study_id=self.get_study_id(), hydro_pmax=parameters.hydro_pmax, reserves_enabled=parameters.reserves_enabled
+        )
         session = self.get_session()
         upsert_one(session, COMPATIBILITY_PARAMETERS_TABLE, values)
         session.commit()

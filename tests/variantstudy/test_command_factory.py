@@ -1055,6 +1055,15 @@ COMMANDS = [
         None,
         id="convert_hydro_pmax_daily",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_COMPATIBILITY_PARAMETERS.value,
+            args={"parameters": {"hydro_pmax": HydroPmax.DAILY, "reserves_enabled": True}},
+            study_version=STUDY_VERSION_9_2,
+        ),
+        None,
+        id="update_compatibility_parameters",
+    ),
 ]
 
 
