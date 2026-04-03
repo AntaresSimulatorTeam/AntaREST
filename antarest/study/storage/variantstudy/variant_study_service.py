@@ -86,6 +86,12 @@ logger = logging.getLogger(__name__)
 SNAPSHOT_RELATIVE_PATH = "snapshot"
 
 
+def _cast_study_to_variant(study: Study) -> VariantStudy:
+    if not isinstance(study, VariantStudy):
+        raise TypeError(f"The type of the study must be {VariantStudy}, not {type(study)}")
+    return study
+
+
 class VariantStudyService(AbstractStorageService):
     def __init__(
         self,
@@ -789,10 +795,8 @@ class VariantStudyService(AbstractStorageService):
 
         dest_study = self.raw_study_service.build_raw_study(dest_study_name, groups, src_study, destination_folder)
 
-        if isinstance(src_study, VariantStudy):
-            file_study = self.get_raw(metadata=src_study)
-        else:
-            raise TypeError(f"The type of the study must be {VariantStudy}, not {type(src_study)}")
+        variant = _cast_study_to_variant(src_study)
+        file_study = self.get_raw(metadata=variant)
 
         src_path = file_study.config.path
         dest_path = dest_study.path
@@ -847,17 +851,15 @@ class VariantStudyService(AbstractStorageService):
             output_dir: optional output dir override
         Returns: the config and study tree object
         """
-        if isinstance(metadata, VariantStudy):
-            self._safe_generation(metadata)
-        else:
-            raise TypeError(f"The type of the study must be {VariantStudy}, not {type(metadata)}")
+        variant = _cast_study_to_variant(metadata)
+        self._safe_generation(variant)
 
-        study_path = self.get_study_path(metadata)
+        study_path = self.get_study_path(variant)
         return self.study_factory.create_from_fs(
             study_path,
-            is_managed(metadata),
-            metadata.id,
-            output_dir or Path(metadata.path) / "output",
+            is_managed(variant),
+            variant.id,
+            output_dir or Path(variant.path) / "output",
             use_cache=use_cache,
         )
 
@@ -893,14 +895,11 @@ class VariantStudyService(AbstractStorageService):
         dst_path: Path,
         denormalize: bool = True,
     ) -> None:
-        if isinstance(metadata, VariantStudy):
-            self._safe_generation(metadata)
-        else:
-            raise TypeError(f"The type of the study must be {VariantStudy}, not {type(metadata)}")
+        variant = _cast_study_to_variant(metadata)
 
-        path_study = Path(metadata.path)
-        snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH
-        self.raw_study_service.export_study_to_flat_directory(snapshot_path, dst_path)
+        self._safe_generation(variant)
+
+        self.raw_study_service.export_study_to_flat_directory(variant.snapshot_dir, dst_path)
         if denormalize:
             self.raw_study_service.denormalize_exported_study(dst_path)
 
@@ -913,12 +912,10 @@ class VariantStudyService(AbstractStorageService):
         Returns: FileStudyTreeConfigDTO
 
         """
-        if isinstance(metadata, VariantStudy):
-            self._safe_generation(metadata)
-        else:
-            raise TypeError(f"The type of the study must be {VariantStudy}, not {type(metadata)}")
-        study_path = self.get_study_path(metadata)
-        study = self.study_factory.create_from_fs(study_path, is_managed(metadata), metadata.id)
+        variant = _cast_study_to_variant(metadata)
+        self._safe_generation(variant)
+        study_path = self.get_study_path(variant)
+        study = self.study_factory.create_from_fs(study_path, True, variant.id)
         return StudyDataSynthesis.from_study_config(study.config)
 
     def clear_all_snapshots(self, retention_time: timedelta) -> str:
