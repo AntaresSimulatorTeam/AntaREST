@@ -248,9 +248,11 @@ def generate_replacement_matrices(
     current_operator: BindingConstraintOperator,
 ) -> Iterator[tuple[str, list[list[float]]]]:
     """
-    Yield one (or two when operator is "BOTH") matrices initialized with default values.
+    Yield one (or two when operator is "BOTH") empty matrices.
     """
     if study_version < STUDY_VERSION_8_7:
+        # Yield an empty matrix. The simulator accepts it and uses the correctly-sized
+        # zero matrix for the constraint's time step internally.
         target = f"input/bindingconstraints/{bc_id}"
         yield target, []
     else:

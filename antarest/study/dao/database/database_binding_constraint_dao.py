@@ -325,7 +325,8 @@ class DatabaseBindingConstraintDao(ConstraintDao):
                     to_delete[term].append(bc.id)
 
             if time_step_changed:
-                # Reset matrices to the correctly-sized zero matrix for the new time step.
+                # Reset matrices to an empty matrix. The simulator accepts an empty matrix and
+                # will use the correctly-sized zero matrix for the new time step internally.
                 zero_mid = _get_zero_matrix_id(bc.time_step, study_version, generator)
                 if study_version < STUDY_VERSION_8_7:
                     to_delete["values"].append(bc.id)
@@ -371,7 +372,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         """
         if self.get_impl().get_version() < STUDY_VERSION_8_7:
             return
-        # COALESCE handles case when group IS NULL in DB means "default".
+        # COALESCE handles the case where group IS NULL in DB, which maps to "default".
         active_groups = (
             select(func.coalesce(BC.c.group, DEFAULT_GROUP)).where(BC.c.study_id == self._study_id).distinct()
         )
