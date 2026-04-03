@@ -16,6 +16,7 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.exceptions import NotAMatrixError
+from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_adequacy_patch_parameters_dao import FileStudyAdequacyPatchParametersDao
 from antarest.study.dao.file.file_study_advanced_parameters import FileStudyAdvancedParametersDao
@@ -182,6 +183,7 @@ class FileStudyTreeDao(
 
         # First, we separate_matrices in 2 groups, the normalized and the denormalized ones.
         for matrix_node, matrix_id in nodes_and_matrix_ids:
+            matrix_id = extract_matrix_id(matrix_id)
             if matrix_node.is_normalized:
                 normalized_matrices_mapping.setdefault(matrix_id, []).append(matrix_node)
             else:

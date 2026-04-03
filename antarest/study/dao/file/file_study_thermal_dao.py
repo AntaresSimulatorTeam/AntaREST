@@ -11,8 +11,7 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from itertools import tee
-from typing import TYPE_CHECKING, Any, Callable, Iterator
+from typing import TYPE_CHECKING, Any
 
 import polars as pl
 from typing_extensions import override
@@ -28,6 +27,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     serialize_thermal_cluster,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -120,52 +120,45 @@ class FileStudyThermalDao(ThermalDao, ABC):
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "thermal", "series", area_id, thermal_id, "CO2Cost"])
 
-    def _get_matrices(
-        self, getter: Callable[[AreaId, ThermalId], pl.DataFrame]
-    ) -> Iterator[tuple[AreaId, ThermalId, pl.DataFrame]]:
-        areas = self.get_file_study().config.areas
-        for area_id, value in areas.items():
-            for thermal in value.thermals:
-                thermal_id = thermal.id.lower()
-                matrix = getter(area_id, thermal_id)
-                yield area_id, thermal_id, matrix
-
-    def _get_timeseries(
-        self, getter: Callable[[AreaId, ThermalId], pl.DataFrame]
-    ) -> dict[AreaId, dict[ThermalId, SeriesId]]:
-        full_iterator = self._get_matrices(getter)
-        # Split the iterator into two: one for DataFrames, one for identifiers
-        iterator1, iterator2 = tee(full_iterator)
-        # Extract only DataFrames for the `create_batch` function
-        matrices = (matrix for _, _, matrix in iterator1)
-        # Extract only (area_id, thermal_id) pairs for tracking
-        object_ids = ((area_id, thermal_id) for area_id, thermal_id, _ in iterator2)
-
-        result: dict[AreaId, dict[ThermalId, SeriesId]] = {}
-        for matrix_id in self.get_impl().matrix_service.create_batch(matrices):
-            area_id, thermal_id = next(object_ids)
-            result.setdefault(area_id, {})[thermal_id] = matrix_id
-        return result
-
     @override
     def get_all_thermals_co2_cost(self) -> dict[AreaId, dict[ThermalId, SeriesId]]:
-        return self._get_timeseries(self.get_thermal_co2_cost)
+        return self._get_all_thermal_matrices("input/thermal/series/{area_id}/{thermal_id}/CO2Cost")
 
     @override
     def get_all_thermals_fuel_cost(self) -> dict[AreaId, dict[ThermalId, SeriesId]]:
-        return self._get_timeseries(self.get_thermal_fuel_cost)
+        return self._get_all_thermal_matrices("input/thermal/series/{area_id}/{thermal_id}/fuelCost")
 
     @override
     def get_all_thermals_series(self) -> dict[AreaId, dict[ThermalId, SeriesId]]:
-        return self._get_timeseries(self.get_thermal_series)
+        return self._get_all_thermal_matrices("input/thermal/series/{area_id}/{thermal_id}/series")
 
     @override
     def get_all_thermals_modulation(self) -> dict[AreaId, dict[ThermalId, SeriesId]]:
-        return self._get_timeseries(self.get_thermal_modulation)
+        return self._get_all_thermal_matrices("input/thermal/prepro/{area_id}/{thermal_id}/modulation")
 
     @override
     def get_all_thermals_prepro(self) -> dict[AreaId, dict[ThermalId, SeriesId]]:
-        return self._get_timeseries(self.get_thermal_prepro)
+        return self._get_all_thermal_matrices("input/thermal/prepro/{area_id}/{thermal_id}/data")
+
+    @override
+    def save_thermal_prepro(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
+        self._save_thermal_matrices(series, "input/thermal/prepro/{area_id}/{thermal_id}/data")
+
+    @override
+    def save_thermal_modulation(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
+        self._save_thermal_matrices(series, "input/thermal/prepro/{area_id}/{thermal_id}/modulation")
+
+    @override
+    def save_thermal_series(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
+        self._save_thermal_matrices(series, "input/thermal/series/{area_id}/{thermal_id}/series")
+
+    @override
+    def save_thermal_fuel_cost(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
+        self._save_thermal_matrices(series, "input/thermal/series/{area_id}/{thermal_id}/fuelCost")
+
+    @override
+    def save_thermal_co2_cost(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
+        self._save_thermal_matrices(series, "input/thermal/series/{area_id}/{thermal_id}/CO2Cost")
 
     @override
     def save_thermals(self, data: dict[AreaId, list[ThermalCluster]]) -> None:
@@ -179,41 +172,6 @@ class FileStudyThermalDao(ThermalDao, ABC):
                 self._update_thermal_config(study_data.config, area_id, thermal)
                 ini_content[thermal.id] = serialize_thermal_cluster(study_data.config.version, thermal)
             study_data.tree.save(ini_content, ["input", "thermal", "clusters", area_id, "list"])
-
-    @override
-    def save_thermal_prepro(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
-        study_data = self.get_file_study()
-        for area_id, value in series.items():
-            for thermal_id, series_id in value.items():
-                study_data.tree.save(series_id, ["input", "thermal", "prepro", area_id, thermal_id, "data"])
-
-    @override
-    def save_thermal_modulation(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
-        study_data = self.get_file_study()
-        for area_id, value in series.items():
-            for thermal_id, series_id in value.items():
-                study_data.tree.save(series_id, ["input", "thermal", "prepro", area_id, thermal_id, "modulation"])
-
-    @override
-    def save_thermal_series(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
-        study_data = self.get_file_study()
-        for area_id, value in series.items():
-            for thermal_id, series_id in value.items():
-                study_data.tree.save(series_id, ["input", "thermal", "series", area_id, thermal_id, "series"])
-
-    @override
-    def save_thermal_fuel_cost(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
-        study_data = self.get_file_study()
-        for area_id, value in series.items():
-            for thermal_id, series_id in value.items():
-                study_data.tree.save(series_id, ["input", "thermal", "series", area_id, thermal_id, "fuelCost"])
-
-    @override
-    def save_thermal_co2_cost(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
-        study_data = self.get_file_study()
-        for area_id, value in series.items():
-            for thermal_id, series_id in value.items():
-                study_data.tree.save(series_id, ["input", "thermal", "series", area_id, thermal_id, "CO2Cost"])
 
     @override
     def delete_thermal(self, area_id: str, thermal_id: str) -> None:
@@ -237,6 +195,39 @@ class FileStudyThermalDao(ThermalDao, ABC):
         self._remove_cluster_from_scenario_builder(study_data, area_id, cluster_id)
         # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
         remove_first_match(study_data.config.areas[area_id].thermals, lambda c: c.id.lower() == cluster_id)
+
+    def _get_all_thermal_matrices(self, path: str) -> dict[AreaId, dict[ThermalId, SeriesId]]:
+        study_data = self.get_file_study()
+        matrix_nodes = {}
+        areas = study_data.config.areas
+        for area_id, value in areas.items():
+            for thermal in value.thermals:
+                thermal_id = thermal.id.lower()
+                url = path.format(area_id=area_id, thermal_id=thermal_id).split("/")
+                node = study_data.tree.get_node(url)
+                assert isinstance(node, MatrixNode)
+                matrix_nodes[node] = (area_id, thermal_id)
+
+        result: dict[AreaId, dict[ThermalId, SeriesId]] = {}
+
+        matrices_mapping = self.get_impl().get_matrices_ids(list(matrix_nodes))
+
+        for node, matrix_id in matrices_mapping.items():
+            area_id, thermal_id = matrix_nodes[node]
+            result.setdefault(area_id, {})[thermal_id] = matrix_id
+
+        return result
+
+    def _save_thermal_matrices(self, series: dict[AreaId, dict[ThermalId, SeriesId]], path: str) -> None:
+        node_and_matrix_ids = []
+        study_data = self.get_file_study()
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                url = path.format(area_id=area_id, thermal_id=thermal_id).split("/")
+                node = study_data.tree.get_node(url)
+                assert isinstance(node, MatrixNode)
+                node_and_matrix_ids.append((node, series_id))
+        self.get_impl().save_matrices(node_and_matrix_ids)
 
     @staticmethod
     def _get_all_thermals_for_area(file_study: FileStudy, area_id: str) -> dict[str, Any]:
