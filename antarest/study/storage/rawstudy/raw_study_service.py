@@ -316,7 +316,7 @@ class RawStudyService(AbstractStorageService):
 
             self.export_study_to_flat_directory(Path(metadata.path), dst_path)
             if denormalize:
-                self.denormalize_exported_study(metadata, dst_path)
+                self.denormalize_exported_study(dst_path)
 
         finally:
             if metadata.archived:
@@ -453,9 +453,6 @@ class RawStudyService(AbstractStorageService):
         duration = f"{stop_time - start_time:.3f}"
         logger.info(f"Study '{study_dir}' exported (flat mode) in {duration}s")
 
-    def denormalize_exported_study(self, src_study: Study, dst_dir: Path) -> None:
-        if src_study.storage_mode == StorageMode.DATABASE:
-            return
-
-        study = self.study_factory.create_from_fs(dst_dir, is_managed(src_study), "", use_cache=False)
+    def denormalize_exported_study(self, dst_dir: Path) -> None:
+        study = self.study_factory.create_from_fs(dst_dir, False, "", use_cache=False)
         self.denormalize_file_study(study)
