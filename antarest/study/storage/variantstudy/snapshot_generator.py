@@ -32,7 +32,7 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
-from antarest.study.model import RawStudy, StorageMode, Study, StudyMetadata
+from antarest.study.model import RawStudy, StorageMode, Study, StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -201,7 +201,7 @@ class SnapshotGenerator:
                     raise NotImplementedError(f"Unexpected detail type: {type(detail)}")
             raise VariantGenerationError(message)
 
-        metadata = StudyMetadata(
+        metadata = StudyMetadataUpdate(
             name=variant_study.name,
             author=variant_study.author,
             editor=variant_study.editor,
