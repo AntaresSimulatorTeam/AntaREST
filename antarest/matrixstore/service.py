@@ -130,6 +130,10 @@ class ISimpleMatrixService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def all_exist(self, matrix_ids: Sequence[str]) -> bool:
+        raise NotImplementedError()
+
+    @abstractmethod
     def delete(self, matrix_id: str) -> None:
         raise NotImplementedError()
 
@@ -204,7 +208,14 @@ class SimpleMatrixService(ISimpleMatrixService):
 
     @override
     def exists(self, matrix_id: str) -> bool:
-        return matrix_id in self._predefined_matrices or self.matrix_content_repository.exists(matrix_id)
+        return self.all_exist([matrix_id])
+
+    @override
+    def all_exist(self, matrix_ids: Sequence[str]) -> bool:
+        for matrix_id in matrix_ids:
+            if matrix_id not in self._predefined_matrices and not self.matrix_content_repository.exists(matrix_id):
+                return False
+        return True
 
     @override
     def delete(self, matrix_id: str) -> None:
@@ -525,18 +536,27 @@ class MatrixService(ISimpleMatrixService):
 
     @override
     def exists(self, matrix_id: str) -> bool:
+        return self.all_exist([matrix_id])
+
+    @override
+    def all_exist(self, matrix_ids: Sequence[str]) -> bool:
         """
-        Check if a matrix object exists in both the matrix content repository and the database.
+        Check if all given matrix objects exist in both the matrix content repository and the database.
 
         Parameters:
-            matrix_id: The SHA256 hash of the matrix object to check for existence.
+            matrix_ids: List of the SHA256 hash of the matrix objects to check for existence.
 
         Returns:
-            bool: `True` if the matrix object exists in both repositories, `False` otherwise.
+            bool: `True` if all matrix objects exist in both repositories, `False` otherwise.
         """
-        return matrix_id in self._predefined_matrices or (
-            self.matrix_content_repository.exists(matrix_id) and self.repo.exists(matrix_id)
-        )
+        remaining_ids = set()
+        for matrix_id in matrix_ids:
+            if matrix_id not in self._predefined_matrices:
+                remaining_ids.add(matrix_id)
+                if not self.matrix_content_repository.exists(matrix_id):
+                    return False
+
+        return len(self.repo.get_batch(list(remaining_ids))) == len(remaining_ids)
 
     @override
     def delete(self, matrix_id: str) -> None:

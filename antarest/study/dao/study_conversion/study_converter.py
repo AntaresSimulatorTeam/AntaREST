@@ -14,7 +14,7 @@ from collections.abc import Sequence
 import polars as pl
 from antares.study.version import StudyVersion
 
-from antarest.core.exceptions import ChildNotFoundError
+from antarest.core.exceptions import ChildNotFoundError, XpansionConfigurationDoesNotExist
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_model import AreaUI
 from antarest.study.business.model.binding_constraint_model import BindingConstraintOperator
@@ -95,7 +95,7 @@ class StudyConverter:
     def _convert_xpansion(self) -> None:
         try:
             settings = self._source_dao.get_xpansion_settings()
-        except ChildNotFoundError:
+        except (ChildNotFoundError, XpansionConfigurationDoesNotExist):
             # The source study does not contain an Xpansion configuration. We should return immediately
             return
 
