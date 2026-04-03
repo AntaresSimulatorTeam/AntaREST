@@ -653,7 +653,7 @@ class StudyDiskSpaceRepository:
         stmt = (
             update(StudyDiskSpaceAnalysis)
             .where(StudyDiskSpaceAnalysis.study_id == study_id)
-            .values(disk_space=disk_space, last_analysis_date=datetime.now())
+            .values(disk_space_bytes=disk_space, last_analysis_date=datetime.now())
         )
 
         session.execute(stmt)

@@ -52,7 +52,7 @@ def setup_disk_space_analyzer_task(sender: Celery, storage: "StorageConfig") -> 
         try:
             schedule = parse_cron_string(storage.disk_space_analyzer_cron)
             sender.add_periodic_task(schedule, disk_space_analyzer_task.s(), name=TaskName.DISK_SPACE_ANALYZER)
-            logger.info(f"Disk usage logging registered with cron: {storage.disk_usage_log_cron}")
+            logger.info(f"Disk space analyzer registered with cron: {storage.disk_usage_log_cron}")
         except CronParseError as e:
             logger.error(e)
             sender.add_periodic_task(
