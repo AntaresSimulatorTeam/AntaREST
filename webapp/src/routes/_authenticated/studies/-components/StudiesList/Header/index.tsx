@@ -199,7 +199,7 @@ function Header({
             managedCount={selectedManagedStudies.length}
             onLaunch={handleLaunchStudies}
             onMove={selectedManagedStudies.length > 0 ? handleMoveStudies : undefined}
-            onDelete={handleDeleteStudies}
+            onDelete={selectedManagedStudies.length > 0 ? handleDeleteStudies : undefined}
             onDeselectAll={handleDeselectAll}
           />
 
@@ -228,7 +228,7 @@ function Header({
       />
 
       <DeleteStudiesDialog
-        studyIds={selectedStudyIds}
+        studyIds={selectedManagedStudies.map((s) => s.id)}
         open={confirmDeleteStudies}
         onClose={handleCloseDeleteDialog}
       />
