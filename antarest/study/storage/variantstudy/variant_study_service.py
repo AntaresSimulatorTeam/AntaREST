@@ -84,7 +84,6 @@ from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGener
 logger = logging.getLogger(__name__)
 
 SNAPSHOT_RELATIVE_PATH = "snapshot"
-OUTPUT_RELATIVE_PATH = "output"
 
 
 class VariantStudyService(AbstractStorageService):
