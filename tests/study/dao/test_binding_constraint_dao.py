@@ -68,12 +68,12 @@ def _missing_matrix_error(dao: StudyDao) -> type[Exception]:
 # ──────────────────────────────────────────────────────────────────────
 
 
-def test_constraint_crud(bc_dao: StudyDao) -> None:
+def test_constraint_crud(dao: StudyDao) -> None:
     """Full CRUD lifecycle: empty → save → get → update → delete."""
     # Initially empty
-    assert bc_dao.get_all_constraints() == {}
+    assert dao.get_all_constraints() == {}
     with pytest.raises(BindingConstraintNotFound):
-        bc_dao.get_constraint("ghost")
+        dao.get_constraint("ghost")
 
     # Save two constraints and read them back
     c1 = _bc(
@@ -91,11 +91,11 @@ def test_constraint_crud(bc_dao: StudyDao) -> None:
         operator=BindingConstraintOperator.BOTH,
         comments="x",
     )
-    bc_dao.save_constraints([c1, c2])
+    dao.save_constraints([c1, c2])
 
-    result = bc_dao.get_all_constraints()
+    result = dao.get_all_constraints()
     assert set(result.keys()) == {"c1", "c2"}
-    r1 = bc_dao.get_constraint("c1")
+    r1 = dao.get_constraint("c1")
     assert r1.name == "C1" and r1.time_step == BindingConstraintFrequency.DAILY and r1.comments == "my comment"
     r2 = result["c2"]
     assert r2.enabled is False and r2.operator == BindingConstraintOperator.BOTH
@@ -109,52 +109,50 @@ def test_constraint_crud(bc_dao: StudyDao) -> None:
         operator=BindingConstraintOperator.BOTH,
         comments="new comment",
     )
-    bc_dao.save_constraints([c2_updated])
-    r2 = bc_dao.get_constraint("c2")
+    dao.save_constraints([c2_updated])
+    r2 = dao.get_constraint("c2")
     assert r2.time_step == BindingConstraintFrequency.HOURLY
     assert r2.operator == BindingConstraintOperator.BOTH
     assert r2.comments == "new comment"
 
     # save_constraints is a partial upsert: omitting c1 does NOT remove it
-    assert set(bc_dao.get_all_constraints().keys()) == {"c1", "c2"}
+    assert set(dao.get_all_constraints().keys()) == {"c1", "c2"}
 
     # empty list is noop
-    bc_dao.save_constraints([])
-    assert set(bc_dao.get_all_constraints().keys()) == {"c1", "c2"}
+    dao.save_constraints([])
+    assert set(dao.get_all_constraints().keys()) == {"c1", "c2"}
 
     # Explicit delete
-    bc_dao.delete_constraints([c1])
-    assert "c1" not in bc_dao.get_all_constraints()
-    assert "c2" in bc_dao.get_all_constraints()
+    dao.delete_constraints([c1])
+    assert "c1" not in dao.get_all_constraints()
+    assert "c2" in dao.get_all_constraints()
 
     # Deleting a nonexistent constraint is a noop
-    bc_dao.delete_constraints([_bc("ghost")])
+    dao.delete_constraints([_bc("ghost")])
 
 
-def test_constraint_terms(bc_dao: StudyDao) -> None:
+def test_constraint_terms(dao: StudyDao) -> None:
     """Terms lifecycle: save link/cluster/mixed, no terms, term replacement, cartesian-product regression."""
     # Link term
-    bc_dao.save_constraints(
-        [_bc("lc", terms=[ConstraintTerm(weight=3.5, data=LinkTerm(area1="area_a", area2="area_b"))])]
-    )
-    r = bc_dao.get_constraint("lc")
+    dao.save_constraints([_bc("lc", terms=[ConstraintTerm(weight=3.5, data=LinkTerm(area1="area_a", area2="area_b"))])])
+    r = dao.get_constraint("lc")
     assert len(r.terms) == 1
     t = r.terms[0]
     assert isinstance(t.data, LinkTerm) and t.weight == 3.5 and t.offset is None
     assert {t.data.area1, t.data.area2} == {"area_a", "area_b"}
 
     # Cluster term
-    bc_dao.save_constraints(
+    dao.save_constraints(
         [_bc("cc", terms=[ConstraintTerm(weight=4.0, offset=2, data=ClusterTerm(area="area_a", cluster="cl1"))])]
     )
-    r = bc_dao.get_constraint("cc")
+    r = dao.get_constraint("cc")
     assert len(r.terms) == 1
     t = r.terms[0]
     assert isinstance(t.data, ClusterTerm) and t.data.area == "area_a" and t.data.cluster == "cl1"
     assert t.weight == 4.0 and t.offset == 2
 
     # Mixed terms
-    bc_dao.save_constraints(
+    dao.save_constraints(
         [
             _bc(
                 "mixed",
@@ -165,16 +163,16 @@ def test_constraint_terms(bc_dao: StudyDao) -> None:
             )
         ]
     )
-    r = bc_dao.get_constraint("mixed")
+    r = dao.get_constraint("mixed")
     assert len(r.terms) == 2
     assert {type(t.data) for t in r.terms} == {LinkTerm, ClusterTerm}
 
     # No terms
-    bc_dao.save_constraints([_bc("empty", terms=[])])
-    assert bc_dao.get_constraint("empty").terms == []
+    dao.save_constraints([_bc("empty", terms=[])])
+    assert dao.get_constraint("empty").terms == []
 
     # Cartesian product regression: 2 link + 1 cluster must yield exactly 3 terms
-    bc_dao.save_constraints(
+    dao.save_constraints(
         [
             _bc(
                 "bc_cart",
@@ -186,7 +184,7 @@ def test_constraint_terms(bc_dao: StudyDao) -> None:
             )
         ]
     )
-    r = bc_dao.get_constraint("bc_cart")
+    r = dao.get_constraint("bc_cart")
     assert len(r.terms) == 3
     assert len([t for t in r.terms if isinstance(t.data, LinkTerm)]) == 2
     assert len([t for t in r.terms if isinstance(t.data, ClusterTerm)]) == 1
@@ -201,8 +199,8 @@ def test_constraint_terms(bc_dao: StudyDao) -> None:
         ],
     )
     bc2 = _bc("bc2", terms=[ConstraintTerm(weight=5.0, data=ClusterTerm(area="p", cluster="q"))])
-    bc_dao.save_constraints([bc1_v1, bc2])
-    assert len(bc_dao.get_constraint("bc1").terms) == 3
+    dao.save_constraints([bc1_v1, bc2])
+    assert len(dao.get_constraint("bc1").terms) == 3
 
     bc1_v2 = _bc(
         "bc1",
@@ -211,20 +209,20 @@ def test_constraint_terms(bc_dao: StudyDao) -> None:
             ConstraintTerm(weight=99.0, offset=1, data=ClusterTerm(area="x", cluster="y")),  # C' updated weight
         ],
     )
-    bc_dao.save_constraints([bc1_v2, bc2])
+    dao.save_constraints([bc1_v2, bc2])
 
-    r = bc_dao.get_constraint("bc1")
+    r = dao.get_constraint("bc1")
     assert len(r.terms) == 2
     cluster_terms = [t for t in r.terms if isinstance(t.data, ClusterTerm)]
     assert cluster_terms[0].weight == 99.0
 
     # bc2 must be untouched throughout
-    assert bc_dao.get_constraint("bc2").terms[0].weight == 5.0
+    assert dao.get_constraint("bc2").terms[0].weight == 5.0
 
 
-def test_version_specific_fields(bc_dao: StudyDao) -> None:
+def test_version_specific_fields(dao: StudyDao) -> None:
     """filter_year_by_year, filter_synthesis and group round-trip correctly; nullables stay None."""
-    bc_dao.save_constraints(
+    dao.save_constraints(
         [
             _bc(
                 "bc1",
@@ -234,23 +232,23 @@ def test_version_specific_fields(bc_dao: StudyDao) -> None:
             )
         ]
     )
-    r = bc_dao.get_constraint("bc1")
+    r = dao.get_constraint("bc1")
     assert FilterOption.HOURLY in r.filter_year_by_year
     assert FilterOption.DAILY in r.filter_year_by_year
     assert r.filter_synthesis == [FilterOption.WEEKLY]
     assert r.group == "my_group"
 
     # Unset filter fields
-    bc_dao.save_constraints([_bc("bc2", filter_year_by_year=None, filter_synthesis=None, group=None)])
-    r2 = bc_dao.get_constraint("bc2")
+    dao.save_constraints([_bc("bc2", filter_year_by_year=None, filter_synthesis=None, group=None)])
+    r2 = dao.get_constraint("bc2")
     assert r2.filter_year_by_year == []
     assert r2.filter_synthesis == []
     assert r2.group == "default"
 
 
-def test_matrices(bc_dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService]) -> None:
+def test_matrices(dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService]) -> None:
     """All four matrix types round-trip; upsert overwrites; each constraint has its own matrices."""
-    dao, matrix_service = bc_dao_and_matrix_service
+    dao, matrix_service = dao_and_matrix_service
 
     df_lt = pl.DataFrame({"lt": [0.5, 1.5]})
     df_gt = pl.DataFrame({"gt": [2.0, 3.0]})
@@ -288,10 +286,10 @@ def test_matrices(bc_dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixServic
 
 
 def test_metadata_change_preserves_matrices(
-    bc_dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
+    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
 ) -> None:
     """Changing only name, comments, or enabled must leave matrices untouched."""
-    dao, matrix_service = bc_dao_and_matrix_service
+    dao, matrix_service = dao_and_matrix_service
     df_lt = pl.DataFrame({"v": [42.0]})
 
     dao.save_constraints(
@@ -374,7 +372,7 @@ def test_metadata_change_preserves_matrices(
     ],
 )
 def test_operator_change_renames_matrix(
-    bc_dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
+    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
     existing_op: BindingConstraintOperator,
     new_op: BindingConstraintOperator,
     initial_terms: list[str],
@@ -383,7 +381,7 @@ def test_operator_change_renames_matrix(
     seed: float,
 ) -> None:
     """Operator change moves matrix data to the correct typed table, mirroring update_matrices_names."""
-    dao, matrix_service = bc_dao_and_matrix_service
+    dao, matrix_service = dao_and_matrix_service
     error_cls = _missing_matrix_error(dao)
 
     term_df = {
@@ -432,13 +430,13 @@ def test_operator_change_renames_matrix(
     ],
 )
 def test_time_step_change_regenerates_matrix(
-    bc_dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
+    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
     old_ts: BindingConstraintFrequency,
     new_ts: BindingConstraintFrequency,
     operator: BindingConstraintOperator,
     expected_rows: int,
 ) -> None:
-    dao, matrix_service = bc_dao_and_matrix_service
+    dao, matrix_service = dao_and_matrix_service
     df_custom = pl.DataFrame({"v": [99.0, 99.0, 99.0]})
 
     savers = {
@@ -486,12 +484,12 @@ def test_time_step_change_regenerates_matrix(
     ],
 )
 def test_time_step_change_regenerates_matrix_pre_v87(
-    bc_dao_860_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
+    dao_860_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
     old_ts: BindingConstraintFrequency,
     new_ts: BindingConstraintFrequency,
     expected_rows: int,
 ) -> None:
-    dao, matrix_service = bc_dao_860_and_matrix_service
+    dao, matrix_service = dao_860_and_matrix_service
 
     # Setup: save constraint with initial time step and a non-zero values matrix
     dao.save_constraints([_bc("bc1", time_step=old_ts)])
@@ -508,10 +506,10 @@ def test_time_step_change_regenerates_matrix_pre_v87(
 
 
 def test_time_step_and_operator_change_drops_old_matrices(
-    bc_dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
+    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
 ) -> None:
     """When both time_step and operator change simultaneously, old operator's extra matrices must be deleted."""
-    dao, matrix_service = bc_dao_and_matrix_service
+    dao, matrix_service = dao_and_matrix_service
     error_cls = _missing_matrix_error(dao)
     df_custom = pl.DataFrame({"v": [99.0]})
 
@@ -536,13 +534,13 @@ def test_time_step_and_operator_change_drops_old_matrices(
 
 
 def test_time_step_and_operator_change_single_to_both(
-    bc_dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
+    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
 ) -> None:
     """When both time_step and operator change from single→BOTH, both lt and gt must be zeroed
     to the new time step's row count. Regression: time_step_changed takes precedence over
     operator_changed in _compute_matrix_changes — this test ensures the BOTH expansion is
     handled correctly when combined with a time step reset."""
-    dao, matrix_service = bc_dao_and_matrix_service
+    dao, matrix_service = dao_and_matrix_service
     df_custom = pl.DataFrame({"v": [99.0]})
 
     # Setup: LESS + HOURLY (only lt matrix)
@@ -568,116 +566,116 @@ def test_time_step_and_operator_change_single_to_both(
     assert gt.to_series(0).sum() == 0.0
 
 
-def test_group_update_and_scenario_builder_cleanup(bc_dao: StudyDao) -> None:
+def test_group_update_and_scenario_builder_cleanup(dao: StudyDao) -> None:
     """Group is stored, updated, and cleared correctly; when the last constraint referencing
     a group is moved away, that group's rules are removed from the scenario builder."""
-    bc_dao.save_constraints(
+    dao.save_constraints(
         [
             _bc("bc1", group="g1"),
             _bc("bc2", group="g1"),
             _bc("bc3", group="g2"),
         ]
     )
-    assert bc_dao.get_constraint("bc1").group == "g1"
-    assert bc_dao.get_constraint("bc2").group == "g1"
-    assert bc_dao.get_constraint("bc3").group == "g2"
+    assert dao.get_constraint("bc1").group == "g1"
+    assert dao.get_constraint("bc2").group == "g1"
+    assert dao.get_constraint("bc3").group == "g2"
 
-    bc_dao.save_scenario_builder(Ruleset(binding_constraints={"g1": {"0": 1, "1": 2}, "g2": {"0": 3}}))
+    dao.save_scenario_builder(Ruleset(binding_constraints={"g1": {"0": 1, "1": 2}, "g2": {"0": 3}}))
 
     # Move bc1 to g2 — g1 still has bc2, no scenario builder cleanup expected
-    bc_dao.save_constraints(
+    dao.save_constraints(
         [
             _bc("bc1", group="g2"),
             _bc("bc2", group="g1"),
             _bc("bc3", group="g2"),
         ]
     )
-    assert bc_dao.get_constraint("bc1").group == "g2"
-    assert bc_dao.get_constraint("bc2").group == "g1"
-    assert bc_dao.get_ruleset().binding_constraints == {"g1": {"0": 1, "1": 2}, "g2": {"0": 3}}
+    assert dao.get_constraint("bc1").group == "g2"
+    assert dao.get_constraint("bc2").group == "g1"
+    assert dao.get_ruleset().binding_constraints == {"g1": {"0": 1, "1": 2}, "g2": {"0": 3}}
 
     # Move bc2 to g2 — g1 is now empty, must be cleaned from scenario builder
-    bc_dao.save_constraints(
+    dao.save_constraints(
         [
             _bc("bc1", group="g2"),
             _bc("bc2", group="g2"),
             _bc("bc3", group="g2"),
         ]
     )
-    assert bc_dao.get_constraint("bc2").group == "g2"
-    assert bc_dao.get_ruleset().binding_constraints == {"g2": {"0": 3}}
+    assert dao.get_constraint("bc2").group == "g2"
+    assert dao.get_ruleset().binding_constraints == {"g2": {"0": 3}}
 
     # Clear bc1's group — no scenario builder impact (g2 still has bc2 and bc3)
-    bc_dao.save_constraints(
+    dao.save_constraints(
         [
             _bc("bc1", group=None),
         ]
     )
-    assert bc_dao.get_constraint("bc1").group == "default"
-    assert bc_dao.get_ruleset().binding_constraints == {"g2": {"0": 3}}
+    assert dao.get_constraint("bc1").group == "default"
+    assert dao.get_ruleset().binding_constraints == {"g2": {"0": 3}}
 
     # Clear bc2's group — g2 still has bc3, no scenario builder cleanup expected
-    bc_dao.save_constraints(
+    dao.save_constraints(
         [
             _bc("bc2", group=None),
         ]
     )
-    assert bc_dao.get_constraint("bc2").group == "default"
-    assert bc_dao.get_ruleset().binding_constraints == {"g2": {"0": 3}}
+    assert dao.get_constraint("bc2").group == "default"
+    assert dao.get_ruleset().binding_constraints == {"g2": {"0": 3}}
 
     # Clear bc3's group — g2 is now empty, must be cleaned from scenario builder
-    bc_dao.save_constraints(
+    dao.save_constraints(
         [
             _bc("bc3", group=None),
         ]
     )
-    assert bc_dao.get_constraint("bc3").group == "default"
-    assert bc_dao.get_ruleset().binding_constraints == {}
+    assert dao.get_constraint("bc3").group == "default"
+    assert dao.get_ruleset().binding_constraints == {}
 
 
-def test_scenario_builder_cleanup_on_constraint_removal(bc_dao: StudyDao) -> None:
+def test_scenario_builder_cleanup_on_constraint_removal(dao: StudyDao) -> None:
     """Deleting a constraint must trigger scenario builder cleanup
     when it was the last constraint referencing its group."""
-    bc_dao.save_constraints([_bc("bc1", group="g1"), _bc("bc2", group="g2"), _bc("bc3", group="g2")])
-    bc_dao.save_scenario_builder(Ruleset(binding_constraints={"g1": {"0": 1}, "g2": {"0": 2}}))
+    dao.save_constraints([_bc("bc1", group="g1"), _bc("bc2", group="g2"), _bc("bc3", group="g2")])
+    dao.save_scenario_builder(Ruleset(binding_constraints={"g1": {"0": 1}, "g2": {"0": 2}}))
 
     # Delete bc1 — g1 has no remaining constraints, must be cleaned from scenario builder
-    bc_dao.delete_constraints([_bc("bc1", group="g1")])
-    assert bc_dao.get_ruleset().binding_constraints == {"g2": {"0": 2}}
+    dao.delete_constraints([_bc("bc1", group="g1")])
+    assert dao.get_ruleset().binding_constraints == {"g2": {"0": 2}}
 
     # Delete bc2 — g2 still has bc3, no cleanup expected
-    bc_dao.delete_constraints([_bc("bc2", group="g2")])
-    assert bc_dao.get_ruleset().binding_constraints == {"g2": {"0": 2}}
+    dao.delete_constraints([_bc("bc2", group="g2")])
+    assert dao.get_ruleset().binding_constraints == {"g2": {"0": 2}}
 
     # Delete bc3 — g2 is now empty, must be cleaned
-    bc_dao.delete_constraints([_bc("bc3", group="g2")])
-    assert bc_dao.get_ruleset().binding_constraints == {}
+    dao.delete_constraints([_bc("bc3", group="g2")])
+    assert dao.get_ruleset().binding_constraints == {}
 
     # regression test
     # Re-saving all constraints with group=None does not break scenario builder.
-    bc_dao.save_constraints(
+    dao.save_constraints(
         [
             _bc("bc1", group=None),
             _bc("bc2", group=None),
             _bc("bc3", group=None),
         ]
     )
-    assert bc_dao.get_constraint("bc3").group == "default"
-    assert bc_dao.get_ruleset().binding_constraints == {}
+    assert dao.get_constraint("bc3").group == "default"
+    assert dao.get_ruleset().binding_constraints == {}
 
     # default group is removed when constraints are renamed to a non default group
-    bc_dao.save_scenario_builder(Ruleset(binding_constraints={"default": {"0": 1}}))
-    assert bc_dao.get_ruleset().binding_constraints == {"default": {"0": 1}}
-    bc_dao.save_constraints([_bc("bc1", group="g1"), _bc("bc2", group="g1"), _bc("bc3", group="g1")])
-    assert bc_dao.get_ruleset().binding_constraints == {}
+    dao.save_scenario_builder(Ruleset(binding_constraints={"default": {"0": 1}}))
+    assert dao.get_ruleset().binding_constraints == {"default": {"0": 1}}
+    dao.save_constraints([_bc("bc1", group="g1"), _bc("bc2", group="g1"), _bc("bc3", group="g1")])
+    assert dao.get_ruleset().binding_constraints == {}
 
 
 def test_mixed_matrix_changes_in_one_call(
-    bc_dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
+    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
 ) -> None:
     """A single save_constraints call with multiple constraints undergoing different changes
     must process each independently without cross-contamination."""
-    dao, matrix_service = bc_dao_and_matrix_service
+    dao, matrix_service = dao_and_matrix_service
     error_cls = _missing_matrix_error(dao)
 
     df_nonzero_1 = pl.DataFrame({"v": [11.0]})

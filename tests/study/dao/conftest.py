@@ -25,6 +25,10 @@ from antarest.dbmodel import Base
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.binding_constraint_model import (
+    BindingConstraint,
+    BindingConstraintOperator,
+)
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
@@ -105,11 +109,6 @@ def fs_dao_930_and_matrix_service(
     return _build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
 
 
-@pytest.fixture
-def fs_dao_930(fs_dao_930_and_matrix_service) -> FileStudyTreeDao:
-    return fs_dao_930_and_matrix_service[0]
-
-
 @pytest.fixture(scope="session")
 def db_dao_930_shared() -> DatabaseStudyDao:
     return build_shared_db_dao(STUDY_VERSION_9_3, InMemorySimpleMatrixService())
@@ -122,13 +121,6 @@ def build_shared_db_dao(study_version: StudyVersion, matrix_service: ISimpleMatr
     make_session = sessionmaker(bind=engine)
     with contextlib.closing(make_session()) as session:
         return build_db_dao(session, matrix_service, study_version)
-
-
-@pytest.fixture
-def db_dao_860_and_matrix_service(
-    db_session: Session, matrix_service: ISimpleMatrixService
-) -> tuple[DatabaseStudyDao, ISimpleMatrixService]:
-    return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_6), matrix_service
 
 
 @pytest.fixture
@@ -148,15 +140,8 @@ def _build_fs_dao(
     return build_filesystem_dao(db_session, version, command_context, study_factory, tmp_path), matrix_service
 
 
-@pytest.fixture
-def fs_dao_860_and_matrix_service(
-    db_session: Session, command_context: "CommandContext", tmp_path: Path, core_cache: "ICache"
-) -> tuple[FileStudyTreeDao, ISimpleMatrixService]:
-    return _build_fs_dao(db_session, STUDY_VERSION_8_6, command_context, core_cache, tmp_path)
-
-
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
-def bc_dao(
+def dao(
     request,
     db_session: Session,
     matrix_service: ISimpleMatrixService,
@@ -173,7 +158,7 @@ def bc_dao(
 
 
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
-def bc_dao_and_matrix_service(
+def dao_and_matrix_service(
     request,
     db_session: Session,
     matrix_service: ISimpleMatrixService,
@@ -189,7 +174,7 @@ def bc_dao_and_matrix_service(
 
 
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
-def bc_dao_860_and_matrix_service(
+def dao_860_and_matrix_service(
     request,
     db_session: Session,
     matrix_service: ISimpleMatrixService,
@@ -212,6 +197,8 @@ class RealCaseStudy:
     renewable_id: str
     sts_id: str
     sts_constraint_id: str
+    bc_both_id: str
+    bc_eq_id: str
     dataframes: list[pl.DataFrame]
 
 
@@ -225,7 +212,7 @@ def get_matrix_service_from_dao(dao: StudyDao) -> ISimpleMatrixService:
 def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -> RealCaseStudy:
     # Create matrices in the matrix-store with different contents to diversify tests.
     base_data = [[1, 2.5], [3, 4.7]]
-    dataframes = [pl.DataFrame(data=[[a + i, b + i] for a, b in base_data], orient="row") for i in range(40)]
+    dataframes = [pl.DataFrame(data=[[a + i, b + i] for a, b in base_data], orient="row") for i in range(43)]
     (
         load_df,
         solar_df,
@@ -267,6 +254,9 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
         hydro_max_daily_pump_energy_df,
         xpansion_capacity_df,
         xpansion_weight_df,
+        bc_lt_df,
+        bc_gt_df,
+        bc_eq_df,
     ) = dataframes
 
     load_id = matrix_service.create(load_df)
@@ -384,6 +374,22 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
     dao.save_xpansion_capacity("link_capa.txt", xpansion_capacity_id)
     dao.save_xpansion_weight("mc_weights.csv", xpansion_weight_id)
 
+    # Create binding constraint matrices — covers LT, GT, and EQ tables
+    bc_lt_id = matrix_service.create(bc_lt_df)
+    bc_gt_id = matrix_service.create(bc_gt_df)
+    bc_eq_id = matrix_service.create(bc_eq_df)
+    bc_both_id = "bc_both"
+    bc_equal_id = "bc_equal"
+    dao.save_constraints(
+        [
+            BindingConstraint(id=bc_both_id, name=bc_both_id, operator=BindingConstraintOperator.BOTH),
+            BindingConstraint(id=bc_equal_id, name=bc_equal_id, operator=BindingConstraintOperator.EQUAL),
+        ]
+    )
+    dao.save_constraint_less_term_matrix(bc_both_id, bc_lt_id)
+    dao.save_constraint_greater_term_matrix(bc_both_id, bc_gt_id)
+    dao.save_constraint_equal_term_matrix(bc_equal_id, bc_eq_id)
+
     return RealCaseStudy(
         area1=area_id,
         area2=area2,
@@ -391,5 +397,7 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
         renewable_id=renewable_id,
         sts_id=st_storage_id,
         sts_constraint_id=constraint_id,
+        bc_both_id=bc_both_id,
+        bc_eq_id=bc_equal_id,
         dataframes=dataframes,
     )
