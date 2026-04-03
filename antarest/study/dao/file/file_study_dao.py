@@ -184,7 +184,7 @@ class FileStudyTreeDao(
         # First, we separate_matrices in 2 groups, the normalized and the denormalized ones.
         for matrix_node, matrix_id in nodes_and_matrix_ids:
             matrix_id = extract_matrix_id(matrix_id)
-            if matrix_node.is_normalized:
+            if matrix_node.should_normalize_matrix():
                 normalized_matrices_mapping.setdefault(matrix_id, []).append(matrix_node)
             else:
                 denormalized_matrices_mapping.setdefault(matrix_id, []).append(matrix_node)

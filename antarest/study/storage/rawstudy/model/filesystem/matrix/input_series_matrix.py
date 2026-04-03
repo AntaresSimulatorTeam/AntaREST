@@ -97,7 +97,7 @@ class InputSeriesMatrix(MatrixNode):
     @override
     def write_dataframe(self, df: pl.DataFrame) -> None:
         if not self.config.path.parent.exists():
-            # Can happen when creating a new object like a ThermalCluster
+            # Can happen when creating a new object and the file structure is not yet fully created
             self.config.path.parent.mkdir(parents=True)
 
         # If the DataFrame content corresponds to the `default_empty` attribute, we should just create an empty file.
