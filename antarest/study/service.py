@@ -913,10 +913,7 @@ class StudyService:
         self.repository.save(study)
 
         if metadata_patch.tags is not None:
-            self.repository.update_tags(study, metadata_patch.tags)  # This method also saves the modified study in DB
-        else:
-            # Otherwise we need to save the study in DB as it wasn't saved by the previous method
-            self.repository.save(study)
+            self.repository.update_tags(study, metadata_patch.tags)
 
         self.event_bus.push(
             Event(
