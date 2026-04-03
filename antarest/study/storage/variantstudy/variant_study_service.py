@@ -682,7 +682,13 @@ class VariantStudyService(AbstractStorageService):
             study_id = metadata.id
 
             def callback(notifier: ITaskNotifier) -> TaskResult:
-                generator = SnapshotGenerator(self)
+                generator = SnapshotGenerator(
+                    cache=self.cache,
+                    raw_study_service=self.raw_study_service,
+                    command_factory=self.command_factory,
+                    study_factory=self.study_factory,
+                    repository=self.repository,
+                )
                 generate_result = generator.generate_snapshot(
                     study_id,
                     denormalize=denormalize,
@@ -943,15 +949,6 @@ class VariantStudyService(AbstractStorageService):
             progress=None,
             custom_event_messages=None,
         )
-
-    @override
-    def denormalize_study(self, study: Study) -> None:
-        if study.storage_mode == StorageMode.DATABASE:
-            # Nothing to do
-            return
-
-        file_study = self.get_raw(study)
-        self.raw_study_service.denormalize_file_study(file_study)
 
     @override
     def normalize_study(self, study: Study) -> None:

@@ -408,7 +408,6 @@ class RawStudyService(AbstractStorageService):
         file_study = self.get_raw(study)
         self.normalize_file_study(file_study)
 
-    @override
     def denormalize_study(self, study: Study) -> None:
         if study.storage_mode == StorageMode.DATABASE:
             # Nothing to do

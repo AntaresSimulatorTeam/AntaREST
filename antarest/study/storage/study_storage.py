@@ -166,12 +166,6 @@ class IStudyStorage(ABC):
         """
 
     @abstractmethod
-    def denormalize_study(self, study: Study) -> None:
-        """
-        Replace every `.link` file in the study with its content stored in the matrix-store.
-        """
-
-    @abstractmethod
     def normalize_study(self, study: Study) -> None:
         """
         Put every matrix in the study in the matrix-store.

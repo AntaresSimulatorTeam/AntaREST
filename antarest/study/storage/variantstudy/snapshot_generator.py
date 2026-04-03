@@ -18,10 +18,11 @@ import logging
 import shutil
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, NamedTuple
+from typing import NamedTuple
 
 from antarest.core.exceptions import VariantGenerationError
 from antarest.core.interfaces.cache import (
+    ICache,
     update_cache,
 )
 from antarest.core.model import StudyPermissionType
@@ -33,19 +34,19 @@ from antarest.study.dao.database.database_study_factory_dao import DatabaseStudy
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import RawStudy, StorageMode, Study, StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
+from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import (
     assert_permission_on_studies,
     format_timestamp,
     remove_from_cache,
 )
+from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
 from antarest.study.storage.variantstudy.model.model import GenerationResultInfoDTO
+from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_command_generator import apply_commands_to_variant
-
-if TYPE_CHECKING:
-    from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-
 
 logger = logging.getLogger(__name__)
 
@@ -55,13 +56,19 @@ class SnapshotGenerator:
     Helper class used to generate snapshots for variant studies.
     """
 
-    def __init__(self, variant_study_service: "VariantStudyService"):
-        self.variant_study_service = variant_study_service
-        self.cache = variant_study_service.cache
-        self.raw_study_service = variant_study_service.raw_study_service
-        self.command_factory = variant_study_service.command_factory
-        self.study_factory = variant_study_service.study_factory
-        self.repository = variant_study_service.repository
+    def __init__(
+        self,
+        cache: ICache,
+        raw_study_service: RawStudyService,
+        command_factory: CommandFactory,
+        study_factory: StudyFactory,
+        repository: VariantStudyRepository,
+    ):
+        self.cache = cache
+        self.raw_study_service = raw_study_service
+        self.command_factory = command_factory
+        self.study_factory = study_factory
+        self.repository = repository
 
     def generate_snapshot(
         self,
@@ -111,9 +118,20 @@ class SnapshotGenerator:
 
             logger.info(f"Applying commands to the reference study '{ref_study.id}'...")
             results = self._apply_commands(study_dao, variant_study, cmd_blocks, listener)
+
+            # Denormalize the variant study if asked
             if denormalize:
                 logger.info(f"Denormalizing variant study {variant_study_id}")
-                self.variant_study_service.denormalize_study(variant_study)
+                # The operation only makes sense for FILEYSTEM mode
+                if variant_study.storage_mode == StorageMode.FILESYSTEM:
+                    file_study = self.study_factory.create_from_fs(
+                        snapshot_dir,
+                        True,
+                        study_id=variant_study_id,
+                        output_path=Path(variant_study.path) / "output",
+                        use_cache=True,
+                    )
+                    self.raw_study_service.denormalize_file_study(file_study)
 
             # Finally, we can update the database.
             logger.info(f"Saving new snapshot for study {variant_study_id}")
