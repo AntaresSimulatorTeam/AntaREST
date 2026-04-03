@@ -134,9 +134,9 @@ from antarest.study.model import (
     Study,
     StudyContentStatus,
     StudyFolder,
-    StudyMetadata,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
+    StudyMetadataUpdate,
     StudyRepairAction,
     StudyRepairIssue,
     StudyRepairReport,
@@ -528,7 +528,7 @@ class RawStudyInterface(StudyInterface):
         return FileStudyTreeDao(self.get_files(), matrix_constants, command_context.blob_service)
 
     @override
-    def set_study_metadata(self, metadata: StudyMetadata) -> None:
+    def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
         self._get_dao().update_antares_file(metadata)
 
     def _update_editor_and_lastsave(self, dao: StudyDao) -> None:
@@ -537,7 +537,7 @@ class RawStudyInterface(StudyInterface):
             user_name = user.name or ""
             last_save = current_time().timestamp()
             # Update file (no-op for database storage mode)
-            dao.update_antares_file(StudyMetadata(editor=user_name, last_save=last_save))
+            dao.update_antares_file(StudyMetadataUpdate(editor=user_name, last_save=last_save))
             # Update DB metadata
             self._study.editor = user_name
             self._study.updated_at = current_time()
@@ -584,7 +584,7 @@ class VariantStudyInterface(StudyInterface):
         self._variant_service.append_commands(self._study.id, transform_command_to_dto(commands, force_aggregate=True))
 
     @override
-    def set_study_metadata(self, metadata: StudyMetadata) -> None:
+    def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
         """
         We update the last modification date in DB.
         This way, the variant snapshot will be re-generated inside future operations.
@@ -900,8 +900,8 @@ class StudyService:
             study_interface.add_commands([command])
 
         if metadata_patch.author or metadata_patch.name:
-            study_metadata = StudyMetadata(author=metadata_patch.author, name=metadata_patch.name)
-            study_interface.set_study_metadata(study_metadata)
+            study_metadata = StudyMetadataUpdate(author=metadata_patch.author, name=metadata_patch.name)
+            study_interface.update_study_metadata(study_metadata)
 
         if metadata_patch.name:
             study.name = metadata_patch.name
@@ -909,11 +909,11 @@ class StudyService:
             study.author = metadata_patch.author
         if metadata_patch.horizon:
             study.horizon = metadata_patch.horizon
+
+        self.repository.save(study)
+
         if metadata_patch.tags is not None:
-            self.repository.update_tags(study, metadata_patch.tags)  # This method also saves the modified study in DB
-        else:
-            # Otherwise we need to save the study in DB as it wasn't saved by the previous method
-            self.repository.save(study)
+            self.repository.update_tags(study, metadata_patch.tags)
 
         self.event_bus.push(
             Event(
@@ -1819,7 +1819,6 @@ class StudyService:
         if not new_owner:
             logger.error("user %d not found by user %s", id, get_user_id())
             raise UserNotFoundError()
-        assert new_owner is not None
 
         study.owner = new_owner
         self.repository.save(study)
@@ -1831,7 +1830,7 @@ class StudyService:
             )
         )
 
-        self.get_study_interface(study).set_study_metadata(StudyMetadata(author=new_owner.name or ""))
+        self.get_study_interface(study).update_study_metadata(StudyMetadataUpdate(author=new_owner.name or ""))
 
         logger.info("user %s change study %s owner to %d", get_user_id(), study_id, owner_id)
 

@@ -79,7 +79,7 @@ from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
 from antarest.study.dao.api.timeseries_config_dao import ReadOnlyTimeSeriesConfigDao, TimeSeriesConfigDao
 from antarest.study.dao.api.user_resources_dao import ReadOnlyUserResourcesDao, UserResourcesDao
 from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
-from antarest.study.model import StudyMetadata
+from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -163,7 +163,7 @@ class StudyDao(
         raise NotImplementedError()
 
     @abstractmethod
-    def update_antares_file(self, metadata: StudyMetadata) -> None:
+    def update_antares_file(self, metadata: StudyMetadataUpdate) -> None:
         """
         Update the study.antares file
 

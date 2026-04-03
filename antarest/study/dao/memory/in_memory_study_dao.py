@@ -65,7 +65,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettingsUpdate,
 )
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.model import StudyMetadata
+from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -232,7 +232,7 @@ class InMemoryStudyDao(StudyDao):
         self._comments = comments
 
     @override
-    def update_antares_file(self, metadata: StudyMetadata) -> None:
+    def update_antares_file(self, metadata: StudyMetadataUpdate) -> None:
         pass
 
     @override

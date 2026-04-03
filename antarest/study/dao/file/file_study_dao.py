@@ -39,7 +39,7 @@ from antarest.study.dao.file.file_study_thermal_dao import FileStudyThermalDao
 from antarest.study.dao.file.file_study_timseries_config_dao import FileStudyTimeSeriesConfigDao
 from antarest.study.dao.file.file_study_user_resources_dao import FileStudyUserResourceDao
 from antarest.study.dao.file.file_study_xpansion_dao import FileStudyXpansionDao
-from antarest.study.model import StudyMetadata
+from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
@@ -109,7 +109,7 @@ class FileStudyTreeDao(
         self._file_study.tree.save({"settings": {"comments": comments.encode("utf-8")}})
 
     @override
-    def update_antares_file(self, metadata: StudyMetadata) -> None:
+    def update_antares_file(self, metadata: StudyMetadataUpdate) -> None:
         study_antares = self._file_study.tree.get(["study", "antares"])
         if metadata.editor:
             study_antares["editor"] = metadata.editor
