@@ -13,20 +13,58 @@
  */
 
 import { mergeSxProp } from "@/utils/muiUtils";
-import { Box, Divider, type BoxProps, type SxProps, type Theme } from "@mui/material";
-import * as RA from "ramda-adjunct";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import {
+  Box,
+  Collapse,
+  Divider,
+  IconButton,
+  Stack,
+  Tooltip,
+  type BoxProps,
+  type SxProps,
+  type Theme,
+} from "@mui/material";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface FieldsetProps {
-  legend?: string | React.ReactNode;
+  legend?: React.ReactNode;
   children: React.ReactNode;
   contentProps?: BoxProps;
   fullFieldWidth?: boolean;
   fieldWidth?: number;
+  collapsible?: boolean;
+  defaultCollapsed?: boolean;
   sx?: SxProps<Theme>;
 }
 
-function Fieldset(props: FieldsetProps) {
-  const { legend, children, sx, contentProps, fullFieldWidth = false, fieldWidth = 200 } = props;
+function Fieldset({
+  legend,
+  children,
+  sx,
+  contentProps,
+  fullFieldWidth = false,
+  fieldWidth = 200,
+  collapsible = false,
+  defaultCollapsed = false,
+}: FieldsetProps) {
+  const { t } = useTranslation();
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+  const canCollapse = collapsible && !!legend;
+  const isLegendString = typeof legend === "string";
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleToggleCollapse = () => {
+    setIsCollapsed((prev) => !prev);
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <Box
@@ -51,40 +89,70 @@ function Fieldset(props: FieldsetProps) {
     >
       {legend && (
         <>
-          {RA.isString(legend) ? <Box component="legend">{legend}</Box> : legend}
+          <Stack
+            component="legend"
+            gap={0.5}
+            {...(canCollapse &&
+              isLegendString && { onClick: handleToggleCollapse, sx: { cursor: "pointer" } })}
+          >
+            {canCollapse && (
+              <Tooltip
+                title={isCollapsed ? t("button.expand") : t("button.collapse")}
+                placement="top"
+              >
+                <IconButton
+                  size="small"
+                  onClick={!isLegendString ? handleToggleCollapse : undefined}
+                >
+                  <ExpandMoreIcon
+                    sx={{
+                      transform: isCollapsed ? "rotate(0deg)" : "rotate(180deg)",
+                      transition: (theme) =>
+                        theme.transitions.create("transform", {
+                          duration: theme.transitions.duration.shortest,
+                        }),
+                    }}
+                  />
+                </IconButton>
+              </Tooltip>
+            )}
+            <Box>{legend}</Box>
+          </Stack>
           <Divider sx={{ mt: 1 }} />
         </>
       )}
-      <Box
-        {...contentProps}
-        sx={mergeSxProp(
-          {
-            pt: legend ? 3 : 1,
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 2,
-            // Ignore RadioGroupFE and its children, and FieldSkeleton
-            ".MuiFormControl-root:not(:has(> .MuiRadioGroup-root)):not(.MuiRadioGroup-root *), .FieldSkeleton":
-              {
-                // If the field hasn't `fullWidth` prop activated
-                "&:not(.MuiFormControl-fullWidth)": {
-                  width: fullFieldWidth ? 1 : fieldWidth,
+      <Collapse in={canCollapse ? !isCollapsed : true} timeout="auto">
+        <Box
+          {...contentProps}
+          sx={mergeSxProp(
+            {
+              pt: legend ? 3 : 1,
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 2,
+              // Ignore RadioGroupFE and its children, and FieldSkeleton
+              ".MuiFormControl-root:not(:has(> .MuiRadioGroup-root)):not(.MuiRadioGroup-root *), .FieldSkeleton":
+                {
+                  // If the field hasn't `fullWidth` prop activated
+                  "&:not(.MuiFormControl-fullWidth)": {
+                    width: fullFieldWidth ? 1 : fieldWidth,
+                  },
+                  m: 0,
+                  // SwitchFE
+                  ".MuiFormControlLabel-root": {
+                    pl: 1.5,
+                  },
                 },
-                m: 0,
-                // SwitchFE
-                ".MuiFormControlLabel-root": {
-                  pl: 1.5,
-                },
+              ".MuiAutocomplete-root": {
+                width: fullFieldWidth ? 1 : fieldWidth,
               },
-            ".MuiAutocomplete-root": {
-              width: fullFieldWidth ? 1 : fieldWidth,
             },
-          },
-          contentProps?.sx,
-        )}
-      >
-        {children}
-      </Box>
+            contentProps?.sx,
+          )}
+        >
+          {children}
+        </Box>
+      </Collapse>
     </Box>
   );
 }

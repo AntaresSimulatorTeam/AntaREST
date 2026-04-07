@@ -21,6 +21,7 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.memory.in_memory_study_dao import InMemoryStudyDao
+from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -71,6 +72,10 @@ class StudyInterface(ABC):
     def get_study_dao(self) -> ReadOnlyStudyDao:
         raise NotImplementedError()
 
+    @abstractmethod
+    def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
+        raise NotImplementedError()
+
 
 class InMemoryStudyInterface(StudyInterface):
     """
@@ -106,6 +111,10 @@ class InMemoryStudyInterface(StudyInterface):
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
         return self._study_dao.read_only()
+
+    @override
+    def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
+        self._study_dao.update_antares_file(metadata)
 
 
 class FileStudyInterface(StudyInterface):
@@ -151,4 +160,11 @@ class FileStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        return FileStudyTreeDao(self.file_study, self._generator_matrix_constants, self._blob_service).read_only()
+        return self._get_dao().read_only()
+
+    def _get_dao(self) -> FileStudyTreeDao:
+        return FileStudyTreeDao(self.file_study, self._generator_matrix_constants, self._blob_service)
+
+    @override
+    def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
+        self._get_dao().update_antares_file(metadata)

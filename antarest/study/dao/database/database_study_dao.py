@@ -47,7 +47,7 @@ from antarest.study.dao.database.database_xpansion_dao import DatabaseXpansionDa
 from antarest.study.dao.database.models.comments import COMMENTS_TABLE
 from antarest.study.dao.database.sql_utils import upsert_one
 from antarest.study.dtos import StudyDataSynthesis
-from antarest.study.model import Study
+from antarest.study.model import Study, StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, LinkConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -192,7 +192,7 @@ class DatabaseStudyDao(
         self._db_session.commit()
 
     @override
-    def update_antares_file(self, editor: str, last_save: float) -> None:
+    def update_antares_file(self, metadata: StudyMetadataUpdate) -> None:
         pass
 
     @override

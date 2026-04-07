@@ -59,7 +59,7 @@ from antarest.study.model import (
     MatrixFrequency,
     MatrixIndex,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
+from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist, parse_outputs
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
@@ -311,8 +311,8 @@ class InStudyFileOutputStorage(IOutputStorage):
         """
         Get the list of output for a study.
         """
-        study_outputs = self._outputs_provider.get_outputs(study_id)
-        simulations = study_outputs.get_file_study().config.outputs
+        outputs_path = self._outputs_provider.get_outputs(study_id).outputs_path
+        simulations = parse_outputs(outputs_path)
         return [
             OutputMetadata(id=output_id, in_study=True, archived=output.archived)
             for output_id, output in simulations.items()
