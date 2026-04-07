@@ -11,11 +11,10 @@
 # This file is part of the Antares project.
 
 import enum
-from collections.abc import Sequence
-from typing import cast
+from typing import Optional, Sequence, cast
 
 from pydantic import NonNegativeInt
-from sqlalchemy import TEXT, and_, delete, exists, func, literal, not_, or_, select, sql
+from sqlalchemy import TEXT, and_, delete, exists, func, literal, not_, or_, select, sql, update
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Query, Session, joinedload, with_polymorphic
 
@@ -24,20 +23,21 @@ from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 from antarest.login.model import Group
 from antarest.login.utils import get_current_user
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, Directory, RawStudy, Study, Tag
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, Directory, RawStudy, Study, StudyDiskSpaceAnalysis, Tag
 
 
 def escape_like(string: str, escape_char: str = "\\") -> str:
     """
     Escape the string parameter used in SQL LIKE expressions.
 
-    Examples::
+    Examples:
 
         from sqlalchemy_utils import escape_like
 
-        query = session.query(User).filter(User.name.ilike(escape_like("John")))
+        query = session.query(User).filter(User.name.like(escape_like("John")))
 
     Args:
         string: a string to escape
@@ -619,3 +619,42 @@ class DirectoryRepository:
 
         result = self.session.execute(stmt)
         return {row[0]: row[1] for row in result}
+
+
+class StudyDiskSpaceRepository:
+    def __init__(self, session: Optional[Session] = None):
+        self._session = session
+
+    @property
+    def session(self) -> Session:
+        if self._session is None:
+            return db.session
+        return self._session
+
+    def get(self, study_id: str) -> Optional[StudyDiskSpaceAnalysis]:
+        return self.session.get(StudyDiskSpaceAnalysis, study_id)
+
+    def get_all(self) -> Sequence[StudyDiskSpaceAnalysis]:
+        stmt = select(StudyDiskSpaceAnalysis).options(joinedload(StudyDiskSpaceAnalysis.study))
+        result = self.session.execute(stmt)
+        return list(result.unique().scalars().all())
+
+    def save(self, disk_analysis: StudyDiskSpaceAnalysis) -> StudyDiskSpaceAnalysis:
+
+        session = self.session
+        session.add(disk_analysis)
+        session.commit()
+
+        return disk_analysis
+
+    def update(self, study_id: str, disk_space: int) -> None:
+        session = self.session
+
+        stmt = (
+            update(StudyDiskSpaceAnalysis)
+            .where(StudyDiskSpaceAnalysis.study_id == study_id)
+            .values(disk_space_bytes=disk_space, last_analysis_date=current_time())
+        )
+
+        session.execute(stmt)
+        session.commit()
