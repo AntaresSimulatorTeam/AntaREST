@@ -308,12 +308,12 @@ export function calculateMatrixAggregates({
 
       if (types.includes(Aggregate.Avg)) {
         aggregates.avg ??= [];
-        aggregates.avg.push(Number((sum / row.length).toFixed()));
+        aggregates.avg.push(sum / row.length);
       }
 
       if (types.includes(Aggregate.Total)) {
         aggregates.total ??= [];
-        aggregates.total.push(Number(sum.toFixed()));
+        aggregates.total.push(sum);
       }
     }
   }
