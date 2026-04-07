@@ -58,6 +58,7 @@ class TestDiskSpaceAnalyzerIntegration:
             assert result.updated_studies == 0
 
             with db():
+                past_disk_space = study_disk_repo.get(study_1).disk_space_bytes
                 recent_analysis_date_1 = study_disk_repo.get(study_1).last_analysis_date
                 recent_analysis_date_2 = study_disk_repo.get(study_2).last_analysis_date
                 delta_1 = current_time() - recent_analysis_date_1
@@ -76,6 +77,13 @@ class TestDiskSpaceAnalyzerIntegration:
                 study_service.create_link(study_1, Link(area1=area_1.id, area2=area_2.id))
 
             result = disk_space_analysis(service=study_service, disk_repo=study_disk_repo)
+
+            with db():
+                current_disk_space = study_disk_repo.get(study_1).disk_space_bytes
+                last_analysis_date = study_disk_repo.get(study_1).last_analysis_date
+
+            assert past_disk_space < current_disk_space
+            assert recent_analysis_date_1 < last_analysis_date
 
             assert result.updated_studies == 1
 

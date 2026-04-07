@@ -51,7 +51,7 @@ def disk_space_analysis(service: StudyService, disk_repo: StudyDiskSpaceReposito
                 for study in studies:
                     updated_at = study.updated_at
                     try:
-                        filtered_analysis = dict_analysis[study.id] if study.id in dict_analysis else None
+                        filtered_analysis = dict_analysis.get(study.id, None)
 
                         if not filtered_analysis:
                             logger.info(f"Creating a disk space analysis for study {study.id}")
