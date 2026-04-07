@@ -15,6 +15,8 @@ Database implementation of ConstraintDao.
 """
 
 from abc import abstractmethod
+from dataclasses import dataclass, field
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Sequence
 
 import polars as pl
@@ -29,7 +31,6 @@ from antarest.study.business.model.binding_constraint_model import (
     DEFAULT_GROUP,
     OPERATOR_MATRICES_MAP,
     BindingConstraint,
-    BindingConstraintFrequency,
     BindingConstraintOperator,
     ClusterTerm,
     ConstraintTerm,
@@ -56,33 +57,54 @@ from antarest.study.dao.database.models.binding_constraint import (
 from antarest.study.dao.database.models.ruleset import SCENARIO_BINDING_CONSTRAINTS_TABLE
 from antarest.study.dao.database.sql_utils import upsert_multiple
 from antarest.study.model import STUDY_VERSION_8_7
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
-_TERM_MATRIX_TABLES: dict[str, Table] = {
-    "lt": BINDING_CONSTRAINT_LT_MATRIX_TABLE,
-    "gt": BINDING_CONSTRAINT_GT_MATRIX_TABLE,
-    "eq": BINDING_CONSTRAINT_EQ_MATRIX_TABLE,
-    "values": BINDING_CONSTRAINT_VALUES_MATRIX_TABLE,
+
+class _MatrixType(str, Enum):
+    """The four matrix types that can be attached to a binding constraint."""
+
+    LT = "lt"
+    GT = "gt"
+    EQ = "eq"
+    VALUES = "values"
+
+
+_MATRIX_TYPE_TABLES: dict["_MatrixType", Table] = {
+    _MatrixType.LT: BINDING_CONSTRAINT_LT_MATRIX_TABLE,
+    _MatrixType.GT: BINDING_CONSTRAINT_GT_MATRIX_TABLE,
+    _MatrixType.EQ: BINDING_CONSTRAINT_EQ_MATRIX_TABLE,
+    _MatrixType.VALUES: BINDING_CONSTRAINT_VALUES_MATRIX_TABLE,
 }
 
 
-def _get_zero_matrix_id(
-    time_step: BindingConstraintFrequency, study_version: StudyVersion, generator: GeneratorMatrixConstants
-) -> str:
-    """Return the matrix-store ID for the correctly-sized zero matrix matching the given time step."""
-    is_hourly = time_step == BindingConstraintFrequency.HOURLY
-    if study_version < STUDY_VERSION_8_7:
-        return (
-            generator.get_binding_constraint_hourly_86()
-            if is_hourly
-            else generator.get_binding_constraint_daily_weekly_86()
-        )
-    else:
-        return (
-            generator.get_binding_constraint_hourly_87()
-            if is_hourly
-            else generator.get_binding_constraint_daily_weekly_87()
-        )
+@dataclass
+class _MatrixDeletion:
+    """Identifies a matrix row to remove: delete the <type> row for <constraint_id>."""
+
+    constraint_id: str
+    suffix: _MatrixType
+
+
+@dataclass
+class _MatrixInsertion:
+    """Identifies a matrix row to create or overwrite: write <matrix_id> into the <type> table for <constraint_id>."""
+
+    constraint_id: str
+    suffix: _MatrixType
+    matrix_id: str
+
+
+@dataclass
+class _MatrixChanges:
+    """Accumulates matrix-table changes for a batch of constraint updates."""
+
+    deletions: list[_MatrixDeletion] = field(default_factory=list)
+    insertions: list[_MatrixInsertion] = field(default_factory=list)
+
+    def add_deletion(self, constraint_id: str, suffix: _MatrixType) -> None:
+        self.deletions.append(_MatrixDeletion(constraint_id, suffix))
+
+    def add_insertion(self, constraint_id: str, suffix: _MatrixType, matrix_id: str) -> None:
+        self.insertions.append(_MatrixInsertion(constraint_id, suffix, matrix_id))
 
 
 if TYPE_CHECKING:
@@ -202,11 +224,6 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         rows = [{"study_id": self._study_id, "constraint_id": cid, "matrix_id": mid} for cid, mid in entries]
         upsert_multiple(self._db_session, table, rows)
 
-    def _delete_bc_matrices(self, table: Table, constraint_ids: list[str]) -> None:
-        self._db_session.execute(
-            delete(table).where((table.c.study_id == self._study_id) & (table.c.constraint_id.in_(constraint_ids)))
-        )
-
     @override
     def get_constraint_values_matrix(self, constraint_id: str) -> pl.DataFrame:
         return self._get_bc_matrix(constraint_id, BINDING_CONSTRAINT_VALUES_MATRIX_TABLE)
@@ -225,11 +242,11 @@ class DatabaseBindingConstraintDao(ConstraintDao):
 
     @override
     def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
-        to_delete, to_create = self._compute_matrix_changes(constraints)
+        changes = self._compute_matrix_changes(constraints)
         self._save_constraint_rows(constraints)
         self._save_cluster_terms(constraints)
         self._save_link_terms(constraints)
-        self._apply_matrix_changes(to_delete, to_create)
+        self._apply_matrix_changes(changes)
         self._cleanup_scenario_builder_groups()
 
         self._db_session.commit()
@@ -249,6 +266,8 @@ class DatabaseBindingConstraintDao(ConstraintDao):
             for term in bc.terms
             if isinstance(term.data, ClusterTerm)
         ]
+        if not cluster_terms:
+            return
         self._db_session.execute(
             delete(CT).where((CT.c.study_id == self._study_id) & (CT.c.constraint_id.in_(constraint_ids)))
         )
@@ -262,107 +281,136 @@ class DatabaseBindingConstraintDao(ConstraintDao):
             for term in bc.terms
             if isinstance(term.data, LinkTerm)
         ]
+        if not link_terms:
+            return
         self._db_session.execute(
             delete(LT).where((LT.c.study_id == self._study_id) & (LT.c.constraint_id.in_(constraint_ids)))
         )
         upsert_multiple(self._db_session, LT, link_terms)
 
     def _fetch_existing_matrix_ids(self, constraint_ids: list[str]) -> dict[str, dict[str, str]]:
-        """Fetch all existing matrix IDs upfront — needed for operator change (copy source)."""
+        """Fetch all existing matrix IDs upfront needed for operator change (copy source)."""
         existing_matrix_ids: dict[str, dict[str, str]] = {}
-        for term, table in _TERM_MATRIX_TABLES.items():
+        for suffix, table in _MATRIX_TYPE_TABLES.items():
             rows = self._db_session.execute(
                 select(table.c.constraint_id, table.c.matrix_id).where(
                     (table.c.study_id == self._study_id) & (table.c.constraint_id.in_(constraint_ids))
                 )
             ).fetchall()
             for row in rows:
-                existing_matrix_ids.setdefault(row.constraint_id, {})[term] = row.matrix_id
+                existing_matrix_ids.setdefault(row.constraint_id, {})[suffix.value] = row.matrix_id
         return existing_matrix_ids
 
     def _compute_matrix_changes(
         self,
         constraints: Sequence[BindingConstraint],
-    ) -> tuple[dict[str, list[str]], dict[str, list[tuple[str, str]]]]:
+    ) -> _MatrixChanges:
+        """Compute the matrix-table changes needed when constraints are updated.
+
+        Skips new constraints.
+
+        When a constraint operator is updated: each operator owns a specific set of
+        matrix types (lt, gt, eq). We copy the existing matrix ID into any newly
+        required matrix table and delete any type that is no longer needed,
+        so user data is preserved rather than reset.
+
+        When a time-step is updated: the matrix row count is tied to the frequency
+        (hourly=8784 rows, daily/weekly=366 rows), so existing data would be the
+        wrong shape. All affected matrix rows are replaced with the null matrix and
+        the simulator fills in correctly-sized zeros at runtime.
+
+        Examples::
+
+            # Operator LESS → BOTH: lt data copied to new gt row, nothing deleted
+            # Operator BOTH → LESS: gt row deleted, lt row keeps its data
+            # Operator BOTH → EQUAL: lt data copied to new eq row, lt and gt deleted
+            # Time-step HOURLY → DAILY: all matrix rows replaced with null matrix
+            # Time-step + operator change: time-step reset takes precedence
+        """
         impl = self.get_impl()
         study_version = impl.get_version()
         existing = self._fetch_constraints()
         existing_matrix_ids = self._fetch_existing_matrix_ids(list(existing.keys()))
         generator = impl._generator_matrix_constants
 
-        to_delete: dict[str, list[str]] = {t: [] for t in _TERM_MATRIX_TABLES}
-        to_create: dict[str, list[tuple[str, str]]] = {t: [] for t in _TERM_MATRIX_TABLES}
+        changes = _MatrixChanges()
 
         for bc in constraints:
             old = existing.get(bc.id)
             if old is None:
-                continue  # new constraint — caller handles initial matrix creation
+                continue  # new constraint caller handles initial matrix creation
 
             time_step_changed = bc.time_step != old.time_step
             operator_changed = study_version >= STUDY_VERSION_8_7 and bc.operator != old.operator
 
             if operator_changed and not time_step_changed:
-                # Copy/move matrix data between tables without resetting values.
-                old_terms = OPERATOR_MATRICES_MAP[old.operator]
-                new_terms = OPERATOR_MATRICES_MAP[bc.operator]
-                terms_to_add = [t for t in new_terms if t not in old_terms]
-                terms_to_del = [t for t in old_terms if t not in new_terms]
+                # Copy the existing matrix ID into newly required types; delete removed types.
+                old_matrix_types = [_MatrixType(t) for t in OPERATOR_MATRICES_MAP[old.operator]]
+                new_matrix_types = [_MatrixType(t) for t in OPERATOR_MATRICES_MAP[bc.operator]]
+                matrix_type_to_add = [s for s in new_matrix_types if s not in old_matrix_types]
+                matrix_type_to_delete = [s for s in old_matrix_types if s not in new_matrix_types]
 
-                if terms_to_add:
+                if matrix_type_to_add:
                     # For BOTH, lt is the canonical source (mirrors file DAO rename logic).
-                    # For single operators, there is only one term so it is unambiguous.
-                    source_term = "lt" if old.operator == BindingConstraintOperator.BOTH else old_terms[0]
-                    source_mid = existing_matrix_ids.get(bc.id, {}).get(source_term)
+                    # For single operators, there is only one matrix type so it is unambiguous.
+                    source_type = (
+                        _MatrixType.LT if old.operator == BindingConstraintOperator.BOTH else old_matrix_types[0]
+                    )
+                    source_mid = existing_matrix_ids.get(bc.id, {}).get(source_type.value)
                     # The command layer always initializes matrices on creation, so missing source = data corruption.
                     if source_mid is None:
                         raise ValueError(
-                            f"Missing source matrix '{source_term}' for constraint '{bc.id}' during operator change"
+                            f"Missing source matrix '{source_type.value}' for constraint '{bc.id}' during operator change"
                         )
-                    for term in terms_to_add:
-                        to_create[term].append((bc.id, source_mid))
+                    for matrix_type in matrix_type_to_add:
+                        changes.add_insertion(bc.id, matrix_type, source_mid)
 
-                for term in terms_to_del:
-                    to_delete[term].append(bc.id)
+                for matrix_type in matrix_type_to_delete:
+                    changes.add_deletion(bc.id, matrix_type)
 
             if time_step_changed:
-                # Reset matrices to an empty matrix. The simulator accepts an empty matrix and
-                # will use the correctly-sized zero matrix for the new time step internally.
-                zero_mid = _get_zero_matrix_id(bc.time_step, study_version, generator)
+                # Replace all matrices with the null matrix; the simulator uses correctly-sized zeros at runtime.
+                null_mid = generator.get_null_matrix()
                 if study_version < STUDY_VERSION_8_7:
-                    to_delete["values"].append(bc.id)
-                    to_create["values"].append((bc.id, zero_mid))
+                    changes.add_deletion(bc.id, _MatrixType.VALUES)
+                    changes.add_insertion(bc.id, _MatrixType.VALUES, null_mid)
                 else:
-                    for term in OPERATOR_MATRICES_MAP[old.operator]:
-                        to_delete[term].append(bc.id)
-                    for term in OPERATOR_MATRICES_MAP[bc.operator]:
-                        to_create[term].append((bc.id, zero_mid))
+                    for matrix_type in [_MatrixType(t) for t in OPERATOR_MATRICES_MAP[old.operator]]:
+                        changes.add_deletion(bc.id, matrix_type)
+                    for matrix_type in [_MatrixType(t) for t in OPERATOR_MATRICES_MAP[bc.operator]]:
+                        changes.add_insertion(bc.id, matrix_type, null_mid)
 
-        return to_delete, to_create
+        return changes
 
-    def _apply_matrix_changes(
-        self,
-        to_delete: dict[str, list[str]],
-        to_create: dict[str, list[tuple[str, str]]],
-    ) -> None:
-        # Apply deletes first, then creates, within the same transaction
+    def _apply_matrix_changes(self, changes: _MatrixChanges) -> None:
+        # Apply deletes first, then inserts, within the same transaction.
         db = self._db_session
-        for term, table in _TERM_MATRIX_TABLES.items():
-            if to_delete[term]:
-                db.execute(
-                    delete(table).where(
-                        (table.c.study_id == self._study_id) & (table.c.constraint_id.in_(to_delete[term]))
-                    )
-                )
-        for term, table in _TERM_MATRIX_TABLES.items():
-            if to_create[term]:
-                upsert_multiple(
-                    db,
-                    table,
-                    [
-                        {"study_id": self._study_id, "constraint_id": cid, "matrix_id": mid}
-                        for cid, mid in to_create[term]
-                    ],
-                )
+
+        # Group deletions by type so we can issue one DELETE … IN (…) per table.
+        deletions_by_type: dict[_MatrixType, list[str]] = {}
+        for d in changes.deletions:
+            deletions_by_type.setdefault(d.suffix, []).append(d.constraint_id)
+
+        for matrice_type, constraint_ids in deletions_by_type.items():
+            table = _MATRIX_TYPE_TABLES[matrice_type]
+            db.execute(
+                delete(table).where((table.c.study_id == self._study_id) & (table.c.constraint_id.in_(constraint_ids)))
+            )
+
+        # Group insertions by type so we can issue one upsert batch per table.
+        insertions_by_type: dict[_MatrixType, list[_MatrixInsertion]] = {}
+        for ins in changes.insertions:
+            insertions_by_type.setdefault(ins.suffix, []).append(ins)
+
+        for matrice_type, insertions in insertions_by_type.items():
+            upsert_multiple(
+                db,
+                _MATRIX_TYPE_TABLES[matrice_type],
+                [
+                    {"study_id": self._study_id, "constraint_id": ins.constraint_id, "matrix_id": ins.matrix_id}
+                    for ins in insertions
+                ],
+            )
 
     def _cleanup_scenario_builder_groups(self) -> None:
         """Delete scenario-builder entries for groups no longer referenced by any constraint.

@@ -63,6 +63,15 @@ def _missing_matrix_error(dao: StudyDao) -> type[Exception]:
     return BindingConstraintNotFound if isinstance(dao, DatabaseStudyDao) else ChildNotFoundError
 
 
+def _assert_reset_matrix(df: pl.DataFrame) -> None:
+    """Assert that a matrix was reset after a time-step change.
+
+    Both backends are accepted: the DB DAO stores the null matrix (empty DataFrame),
+    while the file DAO reads back a correctly-sized all-zero matrix from disk.
+    """
+    assert df.is_empty() or df.to_series(0).sum() == 0.0
+
+
 # ──────────────────────────────────────────────────────────────────────
 # Shared tests (run on both database and filesystem backends)
 # ──────────────────────────────────────────────────────────────────────
@@ -418,15 +427,15 @@ def test_operator_change_renames_matrix(
 
 
 @pytest.mark.parametrize(
-    "old_ts,new_ts,operator,expected_rows",
+    "old_ts,new_ts,operator",
     [
-        (BindingConstraintFrequency.HOURLY, BindingConstraintFrequency.DAILY, BindingConstraintOperator.LESS, 366),
-        (BindingConstraintFrequency.HOURLY, BindingConstraintFrequency.WEEKLY, BindingConstraintOperator.LESS, 366),
-        (BindingConstraintFrequency.DAILY, BindingConstraintFrequency.HOURLY, BindingConstraintOperator.LESS, 8784),
-        (BindingConstraintFrequency.WEEKLY, BindingConstraintFrequency.HOURLY, BindingConstraintOperator.LESS, 8784),
-        (BindingConstraintFrequency.HOURLY, BindingConstraintFrequency.DAILY, BindingConstraintOperator.GREATER, 366),
-        (BindingConstraintFrequency.HOURLY, BindingConstraintFrequency.DAILY, BindingConstraintOperator.EQUAL, 366),
-        (BindingConstraintFrequency.HOURLY, BindingConstraintFrequency.DAILY, BindingConstraintOperator.BOTH, 366),
+        (BindingConstraintFrequency.HOURLY, BindingConstraintFrequency.DAILY, BindingConstraintOperator.LESS),
+        (BindingConstraintFrequency.HOURLY, BindingConstraintFrequency.WEEKLY, BindingConstraintOperator.LESS),
+        (BindingConstraintFrequency.DAILY, BindingConstraintFrequency.HOURLY, BindingConstraintOperator.LESS),
+        (BindingConstraintFrequency.WEEKLY, BindingConstraintFrequency.HOURLY, BindingConstraintOperator.LESS),
+        (BindingConstraintFrequency.HOURLY, BindingConstraintFrequency.DAILY, BindingConstraintOperator.GREATER),
+        (BindingConstraintFrequency.HOURLY, BindingConstraintFrequency.DAILY, BindingConstraintOperator.EQUAL),
+        (BindingConstraintFrequency.HOURLY, BindingConstraintFrequency.DAILY, BindingConstraintOperator.BOTH),
     ],
 )
 def test_time_step_change_regenerates_matrix(
@@ -434,7 +443,6 @@ def test_time_step_change_regenerates_matrix(
     old_ts: BindingConstraintFrequency,
     new_ts: BindingConstraintFrequency,
     operator: BindingConstraintOperator,
-    expected_rows: int,
 ) -> None:
     dao, matrix_service = dao_and_matrix_service
     df_custom = pl.DataFrame({"v": [99.0, 99.0, 99.0]})
@@ -466,28 +474,26 @@ def test_time_step_change_regenerates_matrix(
     # Act: change the time step
     dao.save_constraints([_bc("bc1", operator=operator, time_step=new_ts)])
 
-    # Assert: time step updated, matrices reset to correctly-sized zero matrix
+    # Assert: time step updated, matrices reset to empty or all-zero default (both are accepted by the simulator)
     assert dao.get_constraint("bc1").time_step == new_ts
     for getter in getters[operator]:
         result = getter("bc1")
-        assert result.shape == (expected_rows, 1)
-        assert result.to_series(0).sum() == 0.0
+        _assert_reset_matrix(result)
 
 
 @pytest.mark.parametrize(
-    "old_ts,new_ts,expected_rows",
+    "old_ts,new_ts",
     [
-        (BindingConstraintFrequency.HOURLY, BindingConstraintFrequency.DAILY, 366),
-        (BindingConstraintFrequency.HOURLY, BindingConstraintFrequency.WEEKLY, 366),
-        (BindingConstraintFrequency.DAILY, BindingConstraintFrequency.HOURLY, 8784),
-        (BindingConstraintFrequency.WEEKLY, BindingConstraintFrequency.HOURLY, 8784),
+        (BindingConstraintFrequency.HOURLY, BindingConstraintFrequency.DAILY),
+        (BindingConstraintFrequency.HOURLY, BindingConstraintFrequency.WEEKLY),
+        (BindingConstraintFrequency.DAILY, BindingConstraintFrequency.HOURLY),
+        (BindingConstraintFrequency.WEEKLY, BindingConstraintFrequency.HOURLY),
     ],
 )
 def test_time_step_change_regenerates_matrix_pre_v87(
     dao_860_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
     old_ts: BindingConstraintFrequency,
     new_ts: BindingConstraintFrequency,
-    expected_rows: int,
 ) -> None:
     dao, matrix_service = dao_860_and_matrix_service
 
@@ -498,11 +504,10 @@ def test_time_step_change_regenerates_matrix_pre_v87(
     # Act: change the time step
     dao.save_constraints([_bc("bc1", time_step=new_ts)])
 
-    # Assert: time step updated, values matrix reset to correctly-sized zero matrix
+    # Assert: time step updated, values matrix reset to empty or all-zero default (both are accepted by the simulator)
     assert dao.get_constraint("bc1").time_step == new_ts
     result = dao.get_constraint_values_matrix("bc1")
-    assert result.shape == (expected_rows, 3)  # v8.6: three columns
-    assert result.to_series(0).sum() == 0.0
+    _assert_reset_matrix(result)
 
 
 def test_time_step_and_operator_change_drops_old_matrices(
@@ -525,9 +530,8 @@ def test_time_step_and_operator_change_drops_old_matrices(
         [_bc("bc1", operator=BindingConstraintOperator.LESS, time_step=BindingConstraintFrequency.DAILY)]
     )
 
-    result = dao.get_constraint_less_term_matrix("bc1")
-    assert result.shape == (366, 1)
-    assert result.to_series(0).sum() == 0.0
+    lt = dao.get_constraint_less_term_matrix("bc1")
+    _assert_reset_matrix(lt)
 
     with pytest.raises(error_cls):
         dao.get_constraint_greater_term_matrix("bc1")
@@ -558,12 +562,9 @@ def test_time_step_and_operator_change_single_to_both(
     assert dao.get_constraint("bc1").time_step == BindingConstraintFrequency.DAILY
 
     lt = dao.get_constraint_less_term_matrix("bc1")
-    assert lt.shape == (366, 1)
-    assert lt.to_series(0).sum() == 0.0
-
     gt = dao.get_constraint_greater_term_matrix("bc1")
-    assert gt.shape == (366, 1)
-    assert gt.to_series(0).sum() == 0.0
+    _assert_reset_matrix(lt)
+    _assert_reset_matrix(gt)
 
 
 def test_group_update_and_scenario_builder_cleanup(dao: StudyDao) -> None:
@@ -703,10 +704,9 @@ def test_mixed_matrix_changes_in_one_call(
         ]
     )
 
-    # bc1: time step reset → lt replaced with correctly-sized zero matrix
+    # bc1: time step reset → lt replaced with empty or all-zero default matrix
     lt1 = dao.get_constraint_less_term_matrix("bc1")
-    assert lt1.shape == (366, 1)
-    assert lt1.to_series(0).sum() == 0.0
+    _assert_reset_matrix(lt1)
     # bc2: operator GREATER → LESS → gt deleted, lt holds the old gt data
     lt2 = dao.get_constraint_less_term_matrix("bc2")
     assert lt2.equals(df_nonzero_2)

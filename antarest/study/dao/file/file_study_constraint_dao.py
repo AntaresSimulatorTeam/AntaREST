@@ -22,7 +22,6 @@ from antarest.study.business.model.binding_constraint_model import (
     OPERATOR_MATRICES_MAP,
     OPERATOR_MATRIX_FILE_MAP,
     BindingConstraint,
-    BindingConstraintFrequency,
     BindingConstraintOperator,
 )
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao
@@ -127,7 +126,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
                 if constraint.time_step != existing_constraint.time_step:
                     # The user changed the time step, we need to update the matrix accordingly
                     for [target, new_matrix] in generate_replacement_matrices(
-                        bc_id, study_version, constraint.time_step, constraint.operator
+                        bc_id, study_version, constraint.operator
                     ):
                         # prepare matrix as a dict to save it in the tree
                         matrix_url = target.split("/")
@@ -244,7 +243,6 @@ def _remove_groups_from_scenario_builder(study_data: FileStudy, removed_groups: 
 def generate_replacement_matrices(
     bc_id: str,
     study_version: StudyVersion,
-    time_step: BindingConstraintFrequency,
     current_operator: BindingConstraintOperator,
 ) -> Iterator[tuple[str, list[list[float]]]]:
     """

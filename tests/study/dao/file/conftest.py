@@ -38,12 +38,10 @@ def blob_service() -> IBlobService:
     return InMemoryBlobService()
 
 
-def build_file_study(
-    tmp_path: Path, matrix_service: ISimpleMatrixService, version: StudyVersion, suffix: str = ""
-) -> FileStudy:
-    study_id = f"5c22caca-b100-47e7-bbea-8b1b97aa26d9{suffix}"
+def build_file_study(tmp_path: Path, matrix_service: ISimpleMatrixService, version: StudyVersion) -> FileStudy:
+    study_id = "5c22caca-b100-47e7-bbea-8b1b97aa26d9"
     study_path = tmp_path.joinpath(study_id)
-    app = CreateApp(study_dir=study_path, caption=f"filestudy{suffix}", version=version, author="Joe")
+    app = CreateApp(study_dir=study_path, caption="filestudy", version=version, author="Joe")
     app()
     config = build(study_path, study_id)
     mapper_factory = MatrixUriMapperFactory(matrix_service=matrix_service)
