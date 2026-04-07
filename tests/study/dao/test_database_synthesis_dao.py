@@ -10,10 +10,6 @@
 #
 # This file is part of the Antares project.
 
-"""
-Unit tests for get_synthesis on the DAO layer (database backend).
-"""
-
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.config.advanced_parameters_model import (
     AdvancedParameters,
@@ -30,7 +26,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrMod
 
 class TestDatabaseSynthesisDao:
     def test_get_synthesis_empty_study(self, db_dao: DatabaseStudyDao) -> None:
-        """Synthesis of a study with no areas/links/etc. should return empty collections."""
         synthesis = db_dao.get_synthesis()
 
         assert synthesis.study_id == db_dao.get_study_id()
@@ -41,18 +36,13 @@ class TestDatabaseSynthesisDao:
         assert synthesis.enr_modelling == EnrModelling.CLUSTERS
 
     def test_get_synthesis_with_areas_and_clusters(self, db_dao: DatabaseStudyDao) -> None:
-        """Synthesis should include areas with their thermals, renewables, and st_storages."""
         dao = db_dao
 
-        # Setup areas
         dao.save_area("France")
         dao.save_area("Germany")
 
-        # Setup thermal cluster
         dao.save_thermal("france", ThermalCluster(id="coal_plant", name="Coal Plant"))
-        # Setup renewable cluster
         dao.save_renewable("france", RenewableCluster(id="wind_farm", name="Wind Farm"))
-        # Setup ST storage
         dao.save_st_storage("germany", STStorage(id="battery", name="Battery"))
 
         synthesis = dao.get_synthesis()
@@ -73,7 +63,6 @@ class TestDatabaseSynthesisDao:
         assert germany.st_storages[0].id == "battery"
 
     def test_get_synthesis_with_links(self, db_dao: DatabaseStudyDao) -> None:
-        """Synthesis should include links organized by source area."""
         dao = db_dao
 
         dao.save_area("France")
@@ -84,14 +73,11 @@ class TestDatabaseSynthesisDao:
 
         synthesis = dao.get_synthesis()
 
-        # Links are stored under the alphabetically-first area
         france_links = synthesis.areas["france"].links
         assert "germany" in france_links
-        # germany should have no outgoing links
         assert synthesis.areas["germany"].links == {}
 
     def test_get_synthesis_with_districts(self, db_dao: DatabaseStudyDao) -> None:
-        """Synthesis should include districts keyed by ID."""
         dao = db_dao
 
         dao.save_area("France")
@@ -106,7 +92,6 @@ class TestDatabaseSynthesisDao:
         assert synthesis.districts["south"].name == "South"
 
     def test_get_synthesis_with_area_filters(self, db_dao: DatabaseStudyDao) -> None:
-        """Synthesis should reflect area filter properties."""
         dao = db_dao
 
         dao.save_area("France")
@@ -118,7 +103,6 @@ class TestDatabaseSynthesisDao:
         assert france.filters_synthesis == ["hourly", "daily"]
 
     def test_get_synthesis_enr_modelling(self, db_dao: DatabaseStudyDao) -> None:
-        """Synthesis should reflect the renewable generation modelling setting."""
         dao = db_dao
 
         dao.save_advanced_parameters(
@@ -129,12 +113,10 @@ class TestDatabaseSynthesisDao:
         assert synthesis.enr_modelling == EnrModelling.AGGREGATED
 
     def test_get_synthesis_bindings_empty_for_db(self, db_dao: DatabaseStudyDao) -> None:
-        """Constraints are not yet implemented for DB mode, so bindings should be empty."""
         synthesis = db_dao.get_synthesis()
         assert synthesis.bindings == []
 
     def test_get_synthesis_via_read_only_adapter(self, db_dao: DatabaseStudyDao) -> None:
-        """get_synthesis should be available through the read-only adapter."""
         dao = db_dao
         dao.save_area("Spain")
 
