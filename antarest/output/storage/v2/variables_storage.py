@@ -27,6 +27,7 @@ from typing import cast
 
 import polars as pl
 
+from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
 from antarest.core.serde.parquet_writer import (
     write_dataframes_in_parquet_format_by_column_sets,
     write_dataframes_stream_parquet,
@@ -118,18 +119,15 @@ def _aggregate_to_parquet(
     )
     try:
         dataframes = manager.aggregate_output_data()
-    except Exception as e:
-        logger.debug(f"Skipping {query_file.value}-{frequency.value}: {e}")
+    except (OutputNotFound, OutputSubFolderNotFound, OutputAggregationError, MCRootNotHandled) as e:
+        logger.warning(f"Skipping {query_file.value}-{frequency.value}: {e}")
         return
 
-    intermediate_dir = Path(tempfile.mkdtemp())
-    try:
-        file_paths, new_index = write_dataframes_in_parquet_format_by_column_sets(intermediate_dir, dataframes)
+    with tempfile.TemporaryDirectory() as intermediate_dir:
+        file_paths, new_index = write_dataframes_in_parquet_format_by_column_sets(Path(intermediate_dir), dataframes)
         if not file_paths:
             return
         _merge_intermediate_parquets(file_paths, new_index, target_path)
-    finally:
-        shutil.rmtree(intermediate_dir, ignore_errors=True)
 
 
 def _extract_areas(

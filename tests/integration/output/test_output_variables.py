@@ -174,6 +174,8 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
     res = client.get(f"{url}/data", params=query_params)
     if res.status_code == 404:
         assert res.json() == {"status": "IN_PROGRESS", "task_id": task_id}
+    else:
+        assert res.status_code == 200
     # Wait for materializing to end
     task = wait_task_completion(client, user_access_token, task_id)
     assert task.status == TaskStatus.COMPLETED

@@ -10,6 +10,8 @@
 #
 # This file is part of the Antares project.
 
+from datetime import datetime
+
 import pytest
 from starlette.testclient import TestClient
 
@@ -20,10 +22,18 @@ _OUTPUT_IDS = [
 ]
 
 
-def _get_output_names(client: TestClient, study_id: str) -> set[str]:
-    res = client.get(f"/v1/studies/{study_id}/outputs")
-    assert res.status_code == 200
-    return {o["name"] for o in res.json()}
+def _expected_name(timestamp: int, mode: str, name: str = "") -> str:
+    date = datetime.fromtimestamp(timestamp).strftime("%Y%m%d-%H%M")
+    suffix = f"-{name}" if name else ""
+    return f"{date}{mode}{suffix}"
+
+
+# Timestamps and metadata from the info.antares-output files in STA-mini.zip
+_OUTPUT_NAME_MAP = {
+    "20201014-1425eco-goodbye": _expected_name(1602678304, "eco", "goodbye"),
+    "20201014-1427eco": _expected_name(1602678424, "eco"),
+    "20241807-1540eco-extra-outputs": _expected_name(1718712901, "eco"),
+}
 
 
 @pytest.fixture(params=["file", "v2"])
@@ -38,23 +48,11 @@ def storage_type(request, client: TestClient, user_access_token: str, internal_s
 
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
-    # Convert one at a time to track name changes reliably
-    output_name_map: dict[str, str] = {}
     for output_id in _OUTPUT_IDS:
-        names_before = _get_output_names(client, internal_study_id)
         res = client.post(
             f"/v1/studies/{internal_study_id}/output/{output_id}/_convert",
             params={"storage_type": "V2"},
         )
         assert res.status_code == 200, f"Failed to convert {output_id}: {res.text}"
-        names_after = _get_output_names(client, internal_study_id)
 
-        new_names = names_after - names_before
-        if new_names:
-            # Name changed during conversion
-            output_name_map[output_id] = new_names.pop()
-        else:
-            # Name stayed the same
-            output_name_map[output_id] = output_id
-
-    return "v2", output_name_map
+    return "v2", _OUTPUT_NAME_MAP
