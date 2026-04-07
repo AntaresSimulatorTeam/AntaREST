@@ -32,7 +32,7 @@ class TestTasksGCIntegration:
             id="1", status=TaskStatus.RUNNING.value, name="task_1", creation_date=datetime(2026, 1, 1, 10, 0, 0)
         )
         task_2 = TaskJob(
-            id="2", status=TaskStatus.RUNNING.value, name="task_2", creation_date=datetime(2026, 1, 7, 14, 30, 0)
+            id="2", status=TaskStatus.RUNNING.value, name="task_2", creation_date=datetime(2026, 1, 15, 14, 30, 0)
         )
         task_3 = TaskJob(
             id="3", status=TaskStatus.RUNNING.value, name="task_3", creation_date=datetime(2026, 2, 1, 8, 45, 0)
@@ -64,7 +64,7 @@ class TestTasksGCIntegration:
 
             task_list = task_service.list_tasks(TaskListFilter())
             assert len(task_list) == 1
-            assert expected_task in task_list
+            assert task_list == [expected_task]
 
     def test_returns_skipped_when_lock_held(self, task_service: ITaskService):
         with db():
