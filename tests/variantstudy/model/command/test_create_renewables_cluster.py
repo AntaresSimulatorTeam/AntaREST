@@ -128,7 +128,7 @@ class TestCreateRenewablesCluster:
             parameters=parameters,
             command_context=command_context,
             study_version=study_version,
-        ).apply(empty_study)
+        ).apply(dao)
         assert output.status is False
         assert f"The area '{fake_area}' does not exist" in output.message
 

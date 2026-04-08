@@ -31,6 +31,7 @@ from typing_extensions import override
 from antarest.core.model import SUB_JSON
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.utils import current_user_context
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import RawStudy, Study
@@ -254,11 +255,13 @@ def create_variant_study(
     )
 
 
-def file_study_interface(file_study: FileStudy) -> FileStudyInterface:
+def file_study_interface(
+    file_study: FileStudy, matrix_service: ISimpleMatrixService | None = None
+) -> FileStudyInterface:
     """
     Utils function to avoid declaring Mocks everywhere inside the tests
     """
-    return FileStudyInterface(file_study, False, Mock(), Mock(), Mock())
+    return FileStudyInterface(file_study, False, Mock(), Mock(), matrix_service or Mock())
 
 
 def build_dao_from_file_study(
