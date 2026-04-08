@@ -1,8 +1,8 @@
-"""add_binding_constraint_tables
+"""add_binding_constraints_table
 
-Revision ID: 88478b7f5301
-Revises: f9ecc0607cc5
-Create Date: 2026-03-30 17:43:13.519302
+Revision ID: da32c69cfb49
+Revises: 81typ5zz6v1y
+Create Date: 2026-04-08 10:17:14.465486
 
 """
 
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "88478b7f5301"
-down_revision = "f9ecc0607cc5"
+revision = "da32c69cfb49"
+down_revision = "81typ5zz6v1y"
 branch_labels = None
 depends_on = None
 
