@@ -75,6 +75,7 @@ STUDY_VERSION_9_0 = StudyVersion.parse("9.0")
 STUDY_VERSION_9_1 = StudyVersion.parse("9.1")
 STUDY_VERSION_9_2 = StudyVersion.parse("9.2")
 STUDY_VERSION_9_3 = NEW_DEFAULT_STUDY_VERSION
+STUDY_VERSION_10_0 = StudyVersion.parse("10.0")
 
 StudyVersionStr: TypeAlias = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(str)]
 StudyVersionInt: TypeAlias = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(int)]

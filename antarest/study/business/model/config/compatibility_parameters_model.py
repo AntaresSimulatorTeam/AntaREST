@@ -18,7 +18,7 @@ from pydantic.alias_generators import to_camel
 
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.model import STUDY_VERSION_9_2
+from antarest.study.model import STUDY_VERSION_9_2, STUDY_VERSION_10_0
 
 
 class HydroPmax(StrEnum):
@@ -54,4 +54,5 @@ def validate_compatibility_parameters_against_version(
 ) -> None:
     if version < STUDY_VERSION_9_2 and parameters.hydro_pmax is not None:
         raise InvalidFieldForVersionError("Field hydro_pmax is not a valid field for study version before 9.2")
-    # TODO reserves only after 10.0 ?
+    if version < STUDY_VERSION_10_0 and parameters.reserves_enabled is not None:
+        raise InvalidFieldForVersionError("Field reserves_enabled is not a valid field for study version before 10.0")
