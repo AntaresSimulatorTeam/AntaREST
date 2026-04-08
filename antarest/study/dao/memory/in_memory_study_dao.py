@@ -65,6 +65,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettingsUpdate,
 )
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.common import AreaId, ThermalSeriesMapping
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -389,33 +390,80 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
-        self._thermals[cluster_key(area_id, thermal.id)] = thermal
+    def get_all_thermals_co2_cost(self) -> ThermalSeriesMapping:
+        result: ThermalSeriesMapping = {}
+        for thermal_key, matrix_id in self._thermal_co2_cost.items():
+            area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
+            result.setdefault(area_id, {})[thermal_id] = matrix_id
+        return result
 
     @override
-    def save_thermals(self, area_id: str, thermals: Sequence[ThermalCluster]) -> None:
-        for thermal in thermals:
-            self.save_thermal(area_id, thermal)
+    def get_all_thermals_fuel_cost(self) -> ThermalSeriesMapping:
+        result: ThermalSeriesMapping = {}
+        for thermal_key, matrix_id in self._thermal_fuel_cost.items():
+            area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
+            result.setdefault(area_id, {})[thermal_id] = matrix_id
+        return result
 
     @override
-    def save_thermal_prepro(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._thermal_prepro[cluster_key(area_id, thermal_id)] = series_id
+    def get_all_thermals_series(self) -> ThermalSeriesMapping:
+        result: ThermalSeriesMapping = {}
+        for thermal_key, matrix_id in self._thermal_series.items():
+            area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
+            result.setdefault(area_id, {})[thermal_id] = matrix_id
+        return result
 
     @override
-    def save_thermal_modulation(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._thermal_modulation[cluster_key(area_id, thermal_id)] = series_id
+    def get_all_thermals_modulation(self) -> ThermalSeriesMapping:
+        result: ThermalSeriesMapping = {}
+        for thermal_key, matrix_id in self._thermal_modulation.items():
+            area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
+            result.setdefault(area_id, {})[thermal_id] = matrix_id
+        return result
 
     @override
-    def save_thermal_series(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._thermal_series[cluster_key(area_id, thermal_id)] = series_id
+    def get_all_thermals_prepro(self) -> ThermalSeriesMapping:
+        result: ThermalSeriesMapping = {}
+        for thermal_key, matrix_id in self._thermal_prepro.items():
+            area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
+            result.setdefault(area_id, {})[thermal_id] = matrix_id
+        return result
 
     @override
-    def save_thermal_fuel_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._thermal_fuel_cost[cluster_key(area_id, thermal_id)] = series_id
+    def save_thermals(self, data: dict[AreaId, list[ThermalCluster]]) -> None:
+        for area_id, thermals in data.items():
+            for thermal in thermals:
+                self._thermals[cluster_key(area_id, thermal.id)] = thermal
 
     @override
-    def save_thermal_co2_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._thermal_co2_cost[cluster_key(area_id, thermal_id)] = series_id
+    def save_thermal_prepro(self, series: ThermalSeriesMapping) -> None:
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                self._thermal_prepro[cluster_key(area_id, thermal_id)] = series_id
+
+    @override
+    def save_thermal_modulation(self, series: ThermalSeriesMapping) -> None:
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                self._thermal_modulation[cluster_key(area_id, thermal_id)] = series_id
+
+    @override
+    def save_thermal_series(self, series: ThermalSeriesMapping) -> None:
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                self._thermal_series[cluster_key(area_id, thermal_id)] = series_id
+
+    @override
+    def save_thermal_fuel_cost(self, series: ThermalSeriesMapping) -> None:
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                self._thermal_fuel_cost[cluster_key(area_id, thermal_id)] = series_id
+
+    @override
+    def save_thermal_co2_cost(self, series: ThermalSeriesMapping) -> None:
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                self._thermal_co2_cost[cluster_key(area_id, thermal_id)] = series_id
 
     @override
     def delete_thermal(self, area_id: str, thermal_id: str) -> None:

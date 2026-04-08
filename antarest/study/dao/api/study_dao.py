@@ -79,6 +79,7 @@ from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
 from antarest.study.dao.api.timeseries_config_dao import ReadOnlyTimeSeriesConfigDao, TimeSeriesConfigDao
 from antarest.study.dao.api.user_resources_dao import ReadOnlyUserResourcesDao, UserResourcesDao
 from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
+from antarest.study.dao.common import ThermalSeriesMapping
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -268,6 +269,26 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self._adaptee.get_thermal_co2_cost(area_id, thermal_id)
+
+    @override
+    def get_all_thermals_co2_cost(self) -> ThermalSeriesMapping:
+        return self._adaptee.get_all_thermals_co2_cost()
+
+    @override
+    def get_all_thermals_fuel_cost(self) -> ThermalSeriesMapping:
+        return self._adaptee.get_all_thermals_fuel_cost()
+
+    @override
+    def get_all_thermals_series(self) -> ThermalSeriesMapping:
+        return self._adaptee.get_all_thermals_series()
+
+    @override
+    def get_all_thermals_modulation(self) -> ThermalSeriesMapping:
+        return self._adaptee.get_all_thermals_modulation()
+
+    @override
+    def get_all_thermals_prepro(self) -> ThermalSeriesMapping:
+        return self._adaptee.get_all_thermals_prepro()
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
