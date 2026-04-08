@@ -31,7 +31,7 @@ from antarest.study.storage.variantstudy.model.command.create_link import Create
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import dirhash
+from tests.helpers import build_dao_from_file_study, dirhash
 from tests.variantstudy.model.command.helpers import reset_line_separator
 
 
@@ -95,20 +95,19 @@ class TestRemoveLink:
     @pytest.mark.parametrize("version", [810, 820])
     def test_apply(self, tmpdir: Path, command_context: CommandContext, version: int) -> None:
         empty_study = self.make_study(tmpdir, version)
+        dao = build_dao_from_file_study(empty_study, command_context)
         study_version = empty_study.config.version
 
         # Create some areas
         areas = {transform_name_to_id(area, lower=True): area for area in ["Area_X", "Area_Y", "Area_Z"]}
         for area in areas.values():
-            output = CreateArea(area_name=area, command_context=command_context, study_version=study_version).apply(
-                empty_study
-            )
+            output = CreateArea(area_name=area, command_context=command_context, study_version=study_version).apply(dao)
             assert output.status, output.message
 
         # Create a link between Area_X and Area_Y
         output = CreateLink(
             area1="area_x", area2="area_y", command_context=command_context, study_version=study_version
-        ).apply(empty_study)
+        ).apply(dao)
         assert output.status, output.message
 
         # Create a ruleset in the Scenario Builder configuration for this link
@@ -116,7 +115,7 @@ class TestRemoveLink:
             data=RulesetUpdate(ntc={"area_x / area_y": {"0": 1}}),
             command_context=command_context,
             study_version=study_version,
-        ).apply(study_data=empty_study)
+        ).apply(study_dao=dao)
         assert output.status, output.message
 
         ########################################################################################
@@ -128,7 +127,7 @@ class TestRemoveLink:
         # Create a link between Area_X and Area_Z
         output = CreateLink(
             area1="area_x", area2="area_z", command_context=command_context, study_version=study_version
-        ).apply(empty_study)
+        ).apply(dao)
         assert output.status, output.message
 
         # Create a ruleset in the Scenario Builder configuration for this link
@@ -136,12 +135,12 @@ class TestRemoveLink:
             data=RulesetUpdate(ntc={"area_x / area_z": {"0": 1}}),
             command_context=command_context,
             study_version=study_version,
-        ).apply(study_data=empty_study)
+        ).apply(study_dao=dao)
         assert output.status, output.message
 
         output = RemoveLink(
             area1="area_x", area2="area_z", command_context=command_context, study_version=study_version
-        ).apply(empty_study)
+        ).apply(dao)
         assert output.status, output.message
 
         assert dirhash(empty_study.config.study_path, "md5") == hash_before_removal

@@ -110,8 +110,10 @@ def apply_commands_to_variant(
         lambda command, data, _listener: command.apply(
             FileStudyTreeDao(
                 cast(FileStudy, data),
+                True,
                 command.command_context.generator_matrix_constants,
                 command.command_context.blob_service,
+                command.command_context.matrix_service,
             ),
             _listener,
         ),

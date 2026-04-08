@@ -126,12 +126,16 @@ class FileStudyInterface(StudyInterface):
     def __init__(
         self,
         file_study: FileStudy,
+        is_study_managed: bool,
         generator_matrix_constants: "GeneratorMatrixConstants",
         blob_service: "IBlobService",
+        matrix_service: ISimpleMatrixService,
     ):
         self.file_study = file_study
         self._generator_matrix_constants = generator_matrix_constants
         self._blob_service = blob_service
+        self._matrix_service = matrix_service
+        self._is_study_managed = is_study_managed
 
     @override
     @property
@@ -149,12 +153,9 @@ class FileStudyInterface(StudyInterface):
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
+        dao = self._get_dao()
         for command in commands:
-            context = command.command_context
-            result = command.apply(
-                FileStudyTreeDao(self.file_study, context.generator_matrix_constants, context.blob_service),
-                listener,
-            )
+            result = command.apply(dao, listener)
             if not result.status:
                 raise CommandApplicationError(result.message)
 
@@ -163,7 +164,13 @@ class FileStudyInterface(StudyInterface):
         return self._get_dao().read_only()
 
     def _get_dao(self) -> FileStudyTreeDao:
-        return FileStudyTreeDao(self.file_study, self._generator_matrix_constants, self._blob_service)
+        return FileStudyTreeDao(
+            self.file_study,
+            self._is_study_managed,
+            self._generator_matrix_constants,
+            self._blob_service,
+            self._matrix_service,
+        )
 
     @override
     def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:

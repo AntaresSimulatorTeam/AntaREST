@@ -26,6 +26,7 @@ from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 GEN = np.random.default_rng(1000)
 
@@ -89,15 +90,14 @@ class TestCreateCluster:
 
     def test_apply(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_870
+        dao = build_dao_from_file_study(empty_study, command_context, True)
         study_path = empty_study.config.study_path
         area_name = "DE"
         area_id = transform_name_to_id(area_name, lower=True)
         cluster_name = "Cluster-1"
         cluster_id = transform_name_to_id(cluster_name, lower=True)
 
-        CreateArea(area_name=area_name, command_context=command_context, study_version=STUDY_VERSION_8_8).apply(
-            empty_study
-        )
+        CreateArea(area_name=area_name, command_context=command_context, study_version=STUDY_VERSION_8_8).apply(dao)
 
         parameters = ThermalClusterCreation.model_validate(
             {
@@ -121,7 +121,7 @@ class TestCreateCluster:
             study_version=STUDY_VERSION_8_8,
         )
 
-        output = command.apply(empty_study)
+        output = command.apply(dao)
         assert output.status is True
         assert re.match(
             r"Thermal cluster 'cluster-1' added to area 'de'",
@@ -148,7 +148,7 @@ class TestCreateCluster:
             modulation=modulation,
             command_context=command_context,
             study_version=STUDY_VERSION_8_8,
-        ).apply(empty_study)
+        ).apply(dao)
         assert output.status is False
         assert re.match(
             r"Thermal cluster 'Cluster-1' already exists in the area 'de'",
@@ -164,7 +164,7 @@ class TestCreateCluster:
             modulation=modulation,
             command_context=command_context,
             study_version=STUDY_VERSION_8_8,
-        ).apply(empty_study)
+        ).apply(dao)
         assert output.status is False
         assert f"The area '{fake_area_id}' does not exist" in output.message
 

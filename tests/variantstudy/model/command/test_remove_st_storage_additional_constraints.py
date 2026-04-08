@@ -23,20 +23,22 @@ from antarest.study.storage.variantstudy.model.command.remove_multiple_storage_c
     RemoveMultipleSTStorageConstraints,
 )
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestRemoveSTStorageAdditionalConstraint:
     def test_nominal_case(self, command_context: CommandContext, empty_study_920: FileStudy) -> None:
         ####### Set Up ########
         study = empty_study_920
+        dao = build_dao_from_file_study(study, command_context)
         version = study.config.version
         for area in ["fr", "de"]:
             cmd = CreateArea(area_name=area, command_context=command_context, study_version=study.config.version)
-            cmd.apply(study)
+            cmd.apply(dao)
             cmd = CreateSTStorage(
                 area_id=area, parameters={"name": f"sts_{area}"}, command_context=command_context, study_version=version
             )
-            cmd.apply(study_data=study)
+            cmd.apply(dao)
 
         # Create several constraints
         cmd = CreateSTStorageAdditionalConstraints(
@@ -50,7 +52,7 @@ class TestRemoveSTStorageAdditionalConstraint:
             ],
             study_version=version,
         )
-        output = cmd.apply(study)
+        output = cmd.apply(dao)
         assert output.status
 
         # Removes several constraints
@@ -61,7 +63,7 @@ class TestRemoveSTStorageAdditionalConstraint:
             ids=["constraint", "constraint_2"],
             study_version=version,
         )
-        output = cmd.apply(study)
+        output = cmd.apply(dao)
         assert output.status
 
         # Checks the ini content
@@ -86,6 +88,7 @@ class TestRemoveSTStorageAdditionalConstraint:
 
     def test_error_cases(self, command_context: CommandContext, empty_study_920: FileStudy) -> None:
         study = empty_study_920
+        dao = build_dao_from_file_study(study, command_context)
         version = study.config.version
 
         # Removes a constraint in a fake area
@@ -96,14 +99,14 @@ class TestRemoveSTStorageAdditionalConstraint:
             ids=["constraint"],
             study_version=version,
         )
-        output = cmd.apply(study)
+        output = cmd.apply(dao)
         assert not output.status
         assert output.message == "Short-term storage constraint 'constraint' not found."
 
         # Create the area `fr`
-        CreateArea(area_name="fr", command_context=command_context, study_version=study.config.version).apply(study)
+        CreateArea(area_name="fr", command_context=command_context, study_version=study.config.version).apply(dao)
 
         # Removes a fake constraint
-        output = cmd.apply(study)
+        output = cmd.apply(dao)
         assert not output.status
         assert output.message == "Short-term storage constraint 'constraint' not found."

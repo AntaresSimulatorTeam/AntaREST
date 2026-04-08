@@ -57,7 +57,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import create_raw_study, with_admin_user, with_db_context
+from tests.helpers import build_dao_from_file_study, create_raw_study, with_admin_user, with_db_context
 
 
 @pytest.fixture
@@ -232,9 +232,10 @@ def test_command_matrix_usage_provider_with_snapshot(
 
     # Create a RawStudy with 1 area and 1 thermal
     study = empty_study_930
+    dao = build_dao_from_file_study(study, command_context)
     version = study.config.version
     create_area_cmd = CreateArea(area_name="fr", command_context=command_context, study_version=version)
-    output = create_area_cmd.apply(study)
+    output = create_area_cmd.apply(dao)
     assert output.status
     assert create_area_cmd.get_inner_matrices() == InnerMatrices(generates_matrices_at_run_time=False)
     cmd = CreateCluster(
@@ -243,7 +244,7 @@ def test_command_matrix_usage_provider_with_snapshot(
         command_context=command_context,
         study_version=version,
     )
-    output = cmd.apply(study)
+    output = cmd.apply(dao)
     assert output.status
 
     # Add the study in DB
