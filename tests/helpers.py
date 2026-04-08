@@ -261,7 +261,7 @@ def file_study_interface(
     """
     Utils function to avoid declaring Mocks everywhere inside the tests
     """
-    return FileStudyInterface(file_study, False, Mock(), Mock(), matrix_service or Mock())
+    return FileStudyInterface(file_study, False, Mock(), Mock(), matrix_service or Mock(), Mock())
 
 
 def build_dao_from_file_study(

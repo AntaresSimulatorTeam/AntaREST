@@ -106,13 +106,6 @@ EXPECTED_DENORMALIZED = {
 
 class TestVariantStudyService:
     @pytest.mark.parametrize(
-        "denormalize",
-        [
-            pytest.param(True, id="denormalize_yes"),
-            pytest.param(False, id="denormalize_no"),
-        ],
-    )
-    @pytest.mark.parametrize(
         "from_scratch",
         [
             pytest.param(True, id="from_scratch__yes"),
@@ -129,8 +122,7 @@ class TestVariantStudyService:
         simple_blob_service: IBlobService,
         generator_matrix_constants: GeneratorMatrixConstants,
         study_service: StudyService,
-        # pytest parameters
-        denormalize: bool,
+        # pytest parameter
         from_scratch: bool,
     ) -> None:
         ## Prepare database objects
@@ -168,7 +160,7 @@ class TestVariantStudyService:
 
         ## Prepare the RAW Study
         context = variant_study_service.command_factory.command_context
-        FileStudyDaoFactory(context, raw_study_service.study_factory).create_study_dao(raw_study)
+        FileStudyDaoFactory(context, raw_study_service.study_factory, Mock()).create_study_dao(raw_study)
         study_version = StudyVersion.parse(raw_study.version)
 
         with current_user_context(jwt_user):
@@ -210,7 +202,6 @@ class TestVariantStudyService:
             ## Run the "generate" task
             actual_uui = variant_study_service.generate_task(
                 variant_study,
-                denormalize=denormalize,
                 from_scratch=from_scratch,
             )
         assert re.fullmatch(
@@ -225,10 +216,7 @@ class TestVariantStudyService:
         snapshot_dir = internal_studies_dir.joinpath(variant_study.snapshot.id, "snapshot")
         res_study_files = {study_file.relative_to(snapshot_dir).as_posix() for study_file in snapshot_dir.rglob("*.*")}
 
-        if denormalize:
-            expected = {f.replace(".link", "") for f in EXPECTED_DENORMALIZED}
-        else:
-            expected = EXPECTED_DENORMALIZED
+        expected = {f.replace(".link", "") for f in EXPECTED_DENORMALIZED}
         assert res_study_files == expected
 
     @with_db_context
@@ -291,7 +279,7 @@ class TestVariantStudyService:
 
         # Set up the Raw Study
         context = variant_study_service.command_factory.command_context
-        FileStudyDaoFactory(context, raw_study_service.study_factory).create_study_dao(raw_study)
+        FileStudyDaoFactory(context, raw_study_service.study_factory, Mock()).create_study_dao(raw_study)
 
         # Variant studies
         variant_list = []

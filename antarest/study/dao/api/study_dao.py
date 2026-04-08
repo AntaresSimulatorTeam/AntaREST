@@ -176,6 +176,10 @@ class StudyDao(
         """
         raise NotImplementedError()
 
+    @abstractmethod
+    def update_cache(self) -> None:
+        raise NotImplementedError()
+
 
 class ReadOnlyAdapter(ReadOnlyStudyDao):
     """

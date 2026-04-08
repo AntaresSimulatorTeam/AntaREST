@@ -440,7 +440,7 @@ def test_ts_generation_task(
     db.session.commit()
 
     # Set up the Raw Study
-    FileStudyDaoFactory(command_factory.command_context, study_factory).create_study_dao(raw_study)
+    FileStudyDaoFactory(command_factory.command_context, study_factory, Mock()).create_study_dao(raw_study)
     # Create an area
     areas_path = raw_study_path / "input" / "areas"
     areas_path.mkdir(parents=True, exist_ok=True)

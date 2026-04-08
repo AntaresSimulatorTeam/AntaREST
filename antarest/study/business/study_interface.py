@@ -29,6 +29,7 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 
 if TYPE_CHECKING:
     from antarest.blobstore.service import IBlobService
+    from antarest.core.interfaces.cache import ICache
     from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
@@ -130,12 +131,14 @@ class FileStudyInterface(StudyInterface):
         generator_matrix_constants: "GeneratorMatrixConstants",
         blob_service: "IBlobService",
         matrix_service: ISimpleMatrixService,
+        cache: "ICache",
     ):
         self.file_study = file_study
         self._generator_matrix_constants = generator_matrix_constants
         self._blob_service = blob_service
         self._matrix_service = matrix_service
         self._is_study_managed = is_study_managed
+        self._cache = cache
 
     @override
     @property
@@ -170,6 +173,7 @@ class FileStudyInterface(StudyInterface):
             self._generator_matrix_constants,
             self._blob_service,
             self._matrix_service,
+            self._cache,
         )
 
     @override

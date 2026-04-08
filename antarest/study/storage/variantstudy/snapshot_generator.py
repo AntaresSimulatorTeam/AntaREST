@@ -23,17 +23,13 @@ from typing import NamedTuple
 from antarest.core.exceptions import VariantGenerationError
 from antarest.core.interfaces.cache import (
     ICache,
-    update_cache,
 )
 from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
 from antarest.core.utils.utils import current_time
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
-from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
-from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
-from antarest.study.model import RawStudy, StorageMode, Study, StudyMetadataUpdate
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
+from antarest.study.model import RawStudy, Study, StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import (
@@ -63,18 +59,19 @@ class SnapshotGenerator:
         command_factory: CommandFactory,
         study_factory: StudyFactory,
         repository: VariantStudyRepository,
+        dao_factory: StudyFactoryDao,
     ):
         self.cache = cache
         self.raw_study_service = raw_study_service
         self.command_factory = command_factory
         self.study_factory = study_factory
         self.repository = repository
+        self._dao_factory = dao_factory
 
     def generate_snapshot(
         self,
         variant_study_id: str,
         *,
-        denormalize: bool = True,
         from_scratch: bool = False,
         notifier: ITaskNotifier = NoopNotifier(),
         listener: ICommandListener | None = None,
@@ -108,30 +105,10 @@ class SnapshotGenerator:
                 self._export_ref_study(snapshot_dir, ref_study)
 
             # The snapshot is generated, we also need to de-normalize the matrices.
-            cmd_context = self.command_factory.command_context
-            factory: StudyFactoryDao
-            if variant_study.storage_mode == StorageMode.FILESYSTEM:
-                factory = FileStudyDaoFactory(cmd_context, self.study_factory)
-            else:
-                factory = DatabaseStudyDaoFactory(cmd_context.matrix_service, cmd_context.generator_matrix_constants)
-            study_dao = factory.create_study_dao(variant_study)
+            study_dao = self._dao_factory.create_study_dao(variant_study)
 
             logger.info(f"Applying commands to the reference study '{ref_study.id}'...")
             results = self._apply_commands(study_dao, variant_study, cmd_blocks, listener)
-
-            # Denormalize the variant study if asked
-            if denormalize:
-                logger.info(f"Denormalizing variant study {variant_study_id}")
-                # The operation only makes sense for FILEYSTEM mode
-                if variant_study.storage_mode == StorageMode.FILESYSTEM:
-                    file_study = self.study_factory.create_from_fs(
-                        snapshot_dir,
-                        True,
-                        study_id=variant_study_id,
-                        output_path=Path(variant_study.path) / "output",
-                        use_cache=True,
-                    )
-                    self.raw_study_service.denormalize_file_study(file_study)
 
             # Finally, we can update the database.
             logger.info(f"Saving new snapshot for study {variant_study_id}")
@@ -145,10 +122,8 @@ class SnapshotGenerator:
             if results.should_invalidate_cache:
                 # We need to remove the cache
                 remove_from_cache(self.cache, variant_study_id)
-            elif variant_study.storage_mode == StorageMode.FILESYSTEM:
-                # todo: We do not handle cache for DB mode. Same for the `add_commands` by the way.
-                data = FileStudyTreeConfigDTO.from_build_config(study_dao.get_file_study().config).model_dump()
-                update_cache(self.cache, variant_study_id, data)
+            else:
+                study_dao.update_cache()
 
         except Exception:
             remove_from_cache(self.cache, variant_study_id)

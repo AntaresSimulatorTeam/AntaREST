@@ -13,6 +13,7 @@ import datetime
 import typing as t
 import uuid
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 from antares.study.version import StudyVersion
@@ -82,7 +83,7 @@ class TestVariantStudyService:
             public_mode=PublicMode.EDIT if public_mode else PublicMode.NONE,
         )
         context = variant_study_service.command_factory.command_context
-        FileStudyDaoFactory(context, raw_study_service.study_factory).create_study_dao(root_study)
+        FileStudyDaoFactory(context, raw_study_service.study_factory, Mock()).create_study_dao(root_study)
         with db():
             # Save the root study in database
             variant_study_service.repository.save(root_study)

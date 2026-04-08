@@ -237,6 +237,10 @@ class InMemoryStudyDao(StudyDao):
         pass
 
     @override
+    def update_cache(self) -> None:
+        pass
+
+    @override
     def get_version(self) -> StudyVersion:
         return self._version
 

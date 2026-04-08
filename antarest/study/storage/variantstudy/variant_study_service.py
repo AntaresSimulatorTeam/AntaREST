@@ -48,6 +48,9 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, current_time, suppress_exception
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
+from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
+from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import (
     RawStudy,
@@ -661,7 +664,6 @@ class VariantStudyService(AbstractStorageService):
     def generate_task(
         self,
         metadata: VariantStudy,
-        denormalize: bool = False,
         from_scratch: bool = False,
         listener: ICommandListener | None = None,
     ) -> str:
@@ -686,16 +688,25 @@ class VariantStudyService(AbstractStorageService):
             study_id = metadata.id
 
             def callback(notifier: ITaskNotifier) -> TaskResult:
+                # Build the Dao factory first
+                ctx = self.command_factory.command_context
+                factory: StudyFactoryDao
+                if metadata.storage_mode == StorageMode.FILESYSTEM:
+                    factory = FileStudyDaoFactory(ctx, self.study_factory, self.cache)
+                else:
+                    factory = DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants)
+
+                # Then create the generator
                 generator = SnapshotGenerator(
                     cache=self.cache,
                     raw_study_service=self.raw_study_service,
                     command_factory=self.command_factory,
                     study_factory=self.study_factory,
                     repository=self.repository,
+                    dao_factory=factory,
                 )
                 generate_result = generator.generate_snapshot(
                     study_id,
-                    denormalize=denormalize,
                     from_scratch=from_scratch,
                     notifier=notifier,
                     listener=listener,
@@ -719,7 +730,7 @@ class VariantStudyService(AbstractStorageService):
             self.repository.save(metadata)
             return str(metadata.generation_task)
 
-    def generate(self, variant_study_id: str, denormalize: bool, from_scratch: bool) -> str:
+    def generate(self, variant_study_id: str, from_scratch: bool) -> str:
         # Get variant study
         variant_study = self._get_variant_study(variant_study_id)
 
@@ -727,7 +738,7 @@ class VariantStudyService(AbstractStorageService):
         if variant_study.parent_id is None:
             raise NoParentStudyError(variant_study_id)
 
-        return self.generate_task(variant_study, denormalize, from_scratch=from_scratch)
+        return self.generate_task(variant_study, from_scratch=from_scratch)
 
     def get_study_task(self, study_id: str) -> TaskDTO:
         """

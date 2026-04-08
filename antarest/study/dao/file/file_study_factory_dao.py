@@ -14,6 +14,7 @@ from pathlib import Path
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
+from antarest.core.interfaces.cache import ICache
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import Study
@@ -28,9 +29,10 @@ class FileStudyDaoFactory(StudyFactoryDao):
     Used to initialize a study in the filesystem
     """
 
-    def __init__(self, command_context: CommandContext, study_factory: StudyFactory) -> None:
+    def __init__(self, command_context: CommandContext, study_factory: StudyFactory, cache: ICache) -> None:
         self._command_context = command_context
         self._study_factory = study_factory
+        self._cache = cache
 
     @override
     def create_study_dao(self, study: Study) -> FileStudyTreeDao:
@@ -54,4 +56,5 @@ class FileStudyDaoFactory(StudyFactoryDao):
             context.generator_matrix_constants,
             context.blob_service,
             context.matrix_service,
+            self._cache,
         )

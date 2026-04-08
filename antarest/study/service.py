@@ -344,7 +344,7 @@ class ThermalClusterTimeSeriesGeneratorTask:
                 # Therefore, we have to launch a variant generation task inside the timeseries generation one.
                 variant_service = self.storage_service.variant_study_service
                 task_service = variant_service.task_service
-                generation_task_id = variant_service.generate_task(study, True, False, listener)
+                generation_task_id = variant_service.generate_task(study, False, listener)
                 task_service.await_task(generation_task_id)
                 result = task_service.status_task(generation_task_id)
                 assert result.result is not None
@@ -526,7 +526,12 @@ class RawStudyInterface(StudyInterface):
         if self._study.storage_mode == StorageMode.DATABASE:
             return DatabaseStudyDao(self._study.id, db.session, self._matrix_service, matrix_constants)
         return FileStudyTreeDao(
-            self.get_files(), is_managed(self._study), matrix_constants, context.blob_service, self._matrix_service
+            self.get_files(),
+            is_managed(self._study),
+            matrix_constants,
+            context.blob_service,
+            self._matrix_service,
+            self._raw_study_service.cache,
         )
 
     @override
@@ -577,7 +582,12 @@ class VariantStudyInterface(StudyInterface):
     def get_study_dao(self) -> ReadOnlyStudyDao:
         context = self._variant_service.command_factory.command_context
         return FileStudyTreeDao(
-            self.get_files(), True, context.generator_matrix_constants, context.blob_service, context.matrix_service
+            self.get_files(),
+            True,
+            context.generator_matrix_constants,
+            context.blob_service,
+            context.matrix_service,
+            self._variant_service.cache,
         ).read_only()
 
     @override
@@ -697,7 +707,9 @@ class StudyService:
         StudyDatabaseMatrixUsageProvider(matrix_service)
         self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
             StorageMode.DATABASE: DatabaseStudyDaoFactory(matrix_service, command_context.generator_matrix_constants),
-            StorageMode.FILESYSTEM: FileStudyDaoFactory(command_context, raw_study_service.study_factory),
+            StorageMode.FILESYSTEM: FileStudyDaoFactory(
+                command_context, raw_study_service.study_factory, cache_service
+            ),
         }
 
     def register_output_access(self, output_access: IOutputsAccess) -> None:
@@ -3011,6 +3023,7 @@ class StudyService:
             context.generator_matrix_constants,
             context.blob_service,
             context.matrix_service,
+            self.cache_service,
         )
         # Write the given study input in the filesystem
         converter = StudyConverter(source_dao, file_study_dao, study_version, context.matrix_service)

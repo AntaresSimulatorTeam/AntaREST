@@ -786,7 +786,7 @@ class TestSnapshotGenerator:
 
         # Create the study in database
         context = variant_study_service.command_factory.command_context
-        FileStudyDaoFactory(context, raw_study_service.study_factory).create_study_dao(root_study)
+        FileStudyDaoFactory(context, raw_study_service.study_factory, Mock()).create_study_dao(root_study)
 
         # Create some outputs with a "simulation.log" file
         for output_name in ["20230802-1425eco", "20230802-1628eco"]:
@@ -878,12 +878,7 @@ class TestSnapshotGenerator:
         notifier = RegisterNotification()
 
         with DBStatementRecorder(db.session.bind) as db_recorder:
-            results = generator.generate_snapshot(
-                variant_study_id,
-                denormalize=False,
-                from_scratch=False,
-                notifier=notifier,
-            )
+            results = generator.generate_snapshot(variant_study_id, from_scratch=False, notifier=notifier)
 
         # Check: the number of database queries is kept as low as possible.
         # We expect 5 queries:
@@ -1130,11 +1125,7 @@ class TestSnapshotGenerator:
             f"Area 'North' already exists and could not be created"
         )
         with pytest.raises(VariantGenerationError, match=re.escape(err_msg)):
-            generator.generate_snapshot(
-                variant_study.id,
-                denormalize=False,
-                from_scratch=False,
-            )
+            generator.generate_snapshot(variant_study.id, from_scratch=False)
 
         # Check: the snapshot directory is removed.
         snapshot_dir = variant_study.snapshot_dir
@@ -1160,12 +1151,7 @@ class TestSnapshotGenerator:
         notifier = FailingNotifier()
 
         with caplog.at_level(logging.WARNING):
-            results = generator.generate_snapshot(
-                variant_study_id,
-                denormalize=False,
-                from_scratch=False,
-                notifier=notifier,
-            )
+            results = generator.generate_snapshot(variant_study_id, from_scratch=False, notifier=notifier)
 
         # Check the results
         assert results.model_dump() == {
@@ -1215,11 +1201,7 @@ class TestSnapshotGenerator:
         generator = _build_generator(variant_study_service)
 
         # Generate the variant once.
-        generator.generate_snapshot(
-            variant_study_id,
-            denormalize=False,
-            from_scratch=False,
-        )
+        generator.generate_snapshot(variant_study_id, from_scratch=False)
 
         # Create a new variant of the variant study
         new_variant = variant_study_service.create_variant_study(variant_study_id, "my-variant")
@@ -1234,11 +1216,7 @@ class TestSnapshotGenerator:
         )
 
         # Generate the variant again.
-        results = generator.generate_snapshot(
-            new_variant.id,
-            denormalize=False,
-            from_scratch=False,
-        )
+        results = generator.generate_snapshot(new_variant.id, from_scratch=False)
 
         # Check the results
         assert results.model_dump() == {
@@ -1274,7 +1252,7 @@ class TestSnapshotGenerator:
         starting_cache = cache.get(cache_key)
         assert starting_cache is not None
         # Generates the snapshot
-        results = generator.generate_snapshot(variant_study_id, denormalize=False)
+        results = generator.generate_snapshot(variant_study_id)
         # Ensures we shouldn't have to invalidate the cache as all commands updated the config correctly
         assert not results.should_invalidate_cache
         generated_cache = cache.get(cache_key)
@@ -1297,7 +1275,7 @@ class TestSnapshotGenerator:
         )
 
         # Generates the snapshot
-        results = generator.generate_snapshot(variant_study_id, denormalize=False)
+        results = generator.generate_snapshot(variant_study_id)
         # Ensures we shouldn't have to invalidate the cache as the `create cluster` command updated the config correctly
         assert not results.should_invalidate_cache
         # Ensures the cache was modified accordingly
@@ -1321,7 +1299,7 @@ class TestSnapshotGenerator:
             ],
         )
 
-        results = generator.generate_snapshot(variant_study_id, denormalize=False)
+        results = generator.generate_snapshot(variant_study_id)
         # Ensures we have to invalidate the cache as the `update_config` command couldn't (it's too generic)
         assert results.should_invalidate_cache
         assert cache.get(cache_key) is None
