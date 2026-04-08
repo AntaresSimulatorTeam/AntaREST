@@ -298,7 +298,8 @@ def test_delete_storages_from_sc_builder(manager: STStorageManager, study_interf
 
     # Remove the area `fr`. 2 lines should disappear as they concern objects inside area `fr`.
     cmd = RemoveArea(command_context=manager._command_context, id="fr", study_version=file_study.config.version)
-    output = cmd.apply(file_study)
+    dao = build_dao_from_file_study(file_study, manager._command_context)
+    output = cmd.apply(dao)
     assert output.status
     sc_builder = file_study.tree.get(["settings", "scenariobuilder", "Default Ruleset"])
     assert sc_builder == {}
