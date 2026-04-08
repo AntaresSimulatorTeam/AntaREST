@@ -55,7 +55,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import ICache, study_raw_cache_key, update_cache
+from antarest.core.interfaces.cache import ICache, study_raw_cache_key
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import JWTGroup
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
@@ -151,7 +151,6 @@ from antarest.study.repository import (
     StudySortBy,
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
@@ -510,9 +509,8 @@ class RawStudyInterface(StudyInterface):
         # Handle cache invalidation
         if should_invalidate_cache:
             remove_from_cache(self._raw_study_service.cache, study.id)
-        elif study.storage_mode == StorageMode.FILESYSTEM:
-            data = FileStudyTreeConfigDTO.from_build_config(dao.get_file_study().config).model_dump()
-            update_cache(self._raw_study_service.cache, study.id, data)
+        else:
+            dao.update_cache()
 
         # Update editor metadata
         self._update_editor_and_lastsave(dao)

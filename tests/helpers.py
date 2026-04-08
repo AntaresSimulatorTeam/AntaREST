@@ -273,4 +273,5 @@ def build_dao_from_file_study(
         command_context.generator_matrix_constants,
         command_context.blob_service,
         command_context.matrix_service,
+        Mock(),
     )

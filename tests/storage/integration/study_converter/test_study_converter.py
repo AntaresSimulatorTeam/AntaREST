@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 
 import numpy as np
 import polars as pl
@@ -73,7 +73,7 @@ def test_nominal_case(storage_service, tmp_path: Path, command_context: CommandC
     file_study = factory.create_from_fs(new_path, with_matrix_normalization=False, study_id="", use_cache=False)
     context = command_context
     file_study_dao = FileStudyTreeDao(
-        file_study, False, context.generator_matrix_constants, context.blob_service, context.matrix_service
+        file_study, False, context.generator_matrix_constants, context.blob_service, context.matrix_service, Mock()
     )
 
     # Version
