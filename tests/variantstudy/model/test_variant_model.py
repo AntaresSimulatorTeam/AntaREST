@@ -25,7 +25,9 @@ from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Role, User
 from antarest.login.utils import current_user_context
+from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
+from antarest.study.model import StorageMode
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
@@ -164,7 +166,16 @@ class TestVariantStudyService:
             study_factory=variant_study_service.study_factory,
             repository=variant_study_service.repository,
         )
-        results = generator.generate_snapshot(saved_id, denormalize=False)
+        # Build the dao factory
+        ctx = variant_study_service.command_factory.command_context
+
+        if variant_study.storage_mode == StorageMode.FILESYSTEM:
+            factory = FileStudyDaoFactory(ctx, variant_study_service.study_factory, variant_study_service.cache)
+        else:
+            factory = DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants)
+        # Generate the snapshot
+        results = generator.generate_snapshot(saved_id, dao_factory=factory)
+        # Check the results
         assert results.model_dump() == {
             "success": True,
             "should_invalidate_cache": False,
