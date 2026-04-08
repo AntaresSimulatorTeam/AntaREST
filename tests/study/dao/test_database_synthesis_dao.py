@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from antarest.study.business.model.area_properties_model import AreaProperties
+from antarest.study.business.model.area_properties_model import FILTER_OPTIONS, AreaProperties
 from antarest.study.business.model.config.advanced_parameters_model import (
     AdvancedParameters,
     RenewableGenerationModeling,
@@ -18,25 +18,31 @@ from antarest.study.business.model.config.advanced_parameters_model import (
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.sts_model import STStorage
-from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.sts_model import STStorage, initialize_st_storage
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling
+from antarest.study.dtos import StudyDataSynthesis
+from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, LinkConfig
+
+ALL_FILTERS = list(FILTER_OPTIONS)
 
 
 class TestDatabaseSynthesisDao:
     def test_get_synthesis_empty_study(self, db_dao: DatabaseStudyDao) -> None:
         synthesis = db_dao.get_synthesis()
 
-        assert synthesis.study_id == db_dao.get_study_id()
-        assert synthesis.version == db_dao.get_version()
-        assert synthesis.areas == {}
-        assert synthesis.districts == {}
-        assert synthesis.bindings == []
-        assert synthesis.enr_modelling == EnrModelling.CLUSTERS
+        assert synthesis == StudyDataSynthesis.model_construct(
+            study_id=db_dao.get_study_id(),
+            version=db_dao.get_version(),
+            areas={},
+            districts={},
+            bindings=[],
+            enr_modelling=EnrModelling.CLUSTERS,
+        )
 
     def test_get_synthesis_with_areas_and_clusters(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
+        version = dao.get_version()
 
         dao.save_area("France")
         dao.save_area("Germany")
@@ -47,20 +53,30 @@ class TestDatabaseSynthesisDao:
 
         synthesis = dao.get_synthesis()
 
-        assert "france" in synthesis.areas
-        assert "germany" in synthesis.areas
+        expected_thermal = ThermalCluster(id="coal_plant", name="Coal Plant")
+        initialize_thermal_cluster(expected_thermal, version)
+        expected_storage = STStorage(id="battery", name="Battery")
+        initialize_st_storage(expected_storage, version)
 
-        france = synthesis.areas["france"]
-        assert france.name == "France"
-        assert len(france.thermals) == 1
-        assert france.thermals[0].id == "coal_plant"
-        assert len(france.renewables) == 1
-        assert france.renewables[0].id == "wind_farm"
-
-        germany = synthesis.areas["germany"]
-        assert germany.name == "Germany"
-        assert len(germany.st_storages) == 1
-        assert germany.st_storages[0].id == "battery"
+        assert synthesis.areas == {
+            "france": AreaConfig(
+                name="France",
+                links={},
+                thermals=[expected_thermal],
+                renewables=[RenewableCluster(id="wind_farm", name="Wind Farm")],
+                filters_synthesis=ALL_FILTERS,
+                filters_year=ALL_FILTERS,
+            ),
+            "germany": AreaConfig(
+                name="Germany",
+                links={},
+                thermals=[],
+                renewables=[],
+                filters_synthesis=ALL_FILTERS,
+                filters_year=ALL_FILTERS,
+                st_storages=[expected_storage],
+            ),
+        }
 
     def test_get_synthesis_with_links(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
@@ -73,9 +89,24 @@ class TestDatabaseSynthesisDao:
 
         synthesis = dao.get_synthesis()
 
-        france_links = synthesis.areas["france"].links
-        assert "germany" in france_links
-        assert synthesis.areas["germany"].links == {}
+        assert synthesis.areas == {
+            "france": AreaConfig(
+                name="France",
+                links={"germany": LinkConfig(filters_synthesis=ALL_FILTERS, filters_year=ALL_FILTERS)},
+                thermals=[],
+                renewables=[],
+                filters_synthesis=ALL_FILTERS,
+                filters_year=ALL_FILTERS,
+            ),
+            "germany": AreaConfig(
+                name="Germany",
+                links={},
+                thermals=[],
+                renewables=[],
+                filters_synthesis=ALL_FILTERS,
+                filters_year=ALL_FILTERS,
+            ),
+        }
 
     def test_get_synthesis_with_districts(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
@@ -86,10 +117,10 @@ class TestDatabaseSynthesisDao:
 
         synthesis = dao.get_synthesis()
 
-        assert "north" in synthesis.districts
-        assert "south" in synthesis.districts
-        assert synthesis.districts["north"].name == "North"
-        assert synthesis.districts["south"].name == "South"
+        assert synthesis.districts == {
+            "north": District(id="north", name="North", add_areas=["france"]),
+            "south": District(id="south", name="South"),
+        }
 
     def test_get_synthesis_with_area_filters(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
@@ -99,8 +130,16 @@ class TestDatabaseSynthesisDao:
 
         synthesis = dao.get_synthesis()
 
-        france = synthesis.areas["france"]
-        assert france.filters_synthesis == ["hourly", "daily"]
+        assert synthesis.areas == {
+            "france": AreaConfig(
+                name="France",
+                links={},
+                thermals=[],
+                renewables=[],
+                filters_synthesis=["hourly", "daily"],
+                filters_year=ALL_FILTERS,
+            ),
+        }
 
     def test_get_synthesis_enr_modelling(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
@@ -123,5 +162,13 @@ class TestDatabaseSynthesisDao:
         read_only = dao.read_only()
         synthesis = read_only.get_synthesis()
 
-        assert "spain" in synthesis.areas
-        assert synthesis.areas["spain"].name == "Spain"
+        assert synthesis.areas == {
+            "spain": AreaConfig(
+                name="Spain",
+                links={},
+                thermals=[],
+                renewables=[],
+                filters_synthesis=ALL_FILTERS,
+                filters_year=ALL_FILTERS,
+            ),
+        }
