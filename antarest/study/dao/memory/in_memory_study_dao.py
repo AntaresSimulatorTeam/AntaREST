@@ -235,7 +235,7 @@ class InMemoryStudyDao(StudyDao):
                 filters_synthesis=list(link.filter_synthesis),
                 filters_year=list(link.filter_year_by_year),
             )
-            links_by_area.setdefault(link.area1, {})[link.area2] = link_config
+            links_by_area[link.area1][link.area2] = link_config
 
         thermals = self.get_all_thermals()
         renewables = self.get_all_renewables()
