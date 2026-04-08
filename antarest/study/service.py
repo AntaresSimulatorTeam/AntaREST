@@ -1062,7 +1062,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.READ)
         study.last_access = current_time()
         self.repository.save(study)
-        input_synthesis = self.storage_service.get_storage(study).get_synthesis(study)
+        input_synthesis = self.get_study_interface(study).get_study_dao().get_synthesis()
         outputs = self._get_outputs_access().get_outputs_details(study.id)
         return StudySynthesis.aggregate(input_synthesis, outputs)
 
