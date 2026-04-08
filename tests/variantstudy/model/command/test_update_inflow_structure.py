@@ -13,18 +13,20 @@ import pytest
 from pydantic import ValidationError
 
 from antarest.study.business.model.hydro_model import InflowStructureUpdate
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_hydro_dao import get_inflow_path
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.update_inflow_structure import UpdateInflowStructure
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestUpdateInflowStructure:
     @staticmethod
-    def _set_up(study: FileStudy, command_context: CommandContext) -> None:
-        CreateArea(area_name="FR", command_context=command_context, study_version=study.config.version).apply(study)
-        CreateArea(area_name="be", command_context=command_context, study_version=study.config.version).apply(study)
+    def _set_up(study: StudyDao, command_context: CommandContext) -> None:
+        CreateArea(area_name="FR", command_context=command_context, study_version=study.get_version()).apply(study)
+        CreateArea(area_name="be", command_context=command_context, study_version=study.get_version()).apply(study)
 
     def test_lifecycle(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         """
@@ -32,7 +34,8 @@ class TestUpdateInflowStructure:
         check status and message
         """
         study_version = empty_study_880.config.version
-        self._set_up(empty_study_880, command_context)
+        dao = build_dao_from_file_study(empty_study_880, command_context)
+        self._set_up(dao, command_context)
 
         # check the initial hydro file
         inflow_file = empty_study_880.tree.get(get_inflow_path("fr"))
@@ -58,7 +61,7 @@ class TestUpdateInflowStructure:
             properties=inflow_structure_update,
         )
 
-        result = command.apply(empty_study_880)
+        result = command.apply(dao)
         assert result.status
         assert result.message == "Inflow properties in 'fr' updated."
 

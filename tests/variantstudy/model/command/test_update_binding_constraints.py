@@ -14,7 +14,6 @@ from typing import Any
 from unittest.mock import Mock
 
 import pytest
-from helpers import build_dao_from_file_study
 
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
@@ -40,6 +39,7 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
 )
 from antarest.study.storage.variantstudy.model.command.update_binding_constraints import UpdateBindingConstraints
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 @pytest.fixture

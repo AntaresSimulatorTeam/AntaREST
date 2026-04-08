@@ -14,7 +14,6 @@ import configparser
 
 import pytest
 from antares.study.version import StudyVersion
-from helpers import build_dao_from_file_study
 
 from antarest.core.serde.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -24,6 +23,7 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestCreateArea:

@@ -14,7 +14,6 @@ import configparser
 import re
 
 import pytest
-from helpers import build_dao_from_file_study
 from pydantic import ValidationError
 
 from antarest.study.business.model.renewable_cluster_model import (
@@ -30,6 +29,7 @@ from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestCreateRenewablesCluster:

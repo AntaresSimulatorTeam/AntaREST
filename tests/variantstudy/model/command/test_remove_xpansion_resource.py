@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 import pytest
-from helpers import build_dao_from_file_study
 
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -18,6 +17,7 @@ from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import RemoveXpansionResource
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestRemoveXpansionResource:

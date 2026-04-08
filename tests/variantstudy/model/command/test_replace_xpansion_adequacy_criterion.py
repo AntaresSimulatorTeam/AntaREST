@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 import pytest
-from helpers import build_dao_from_file_study
 
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
@@ -24,6 +23,7 @@ from antarest.study.storage.variantstudy.model.command.replace_xpansion_adequacy
     ReplaceXpansionAdequacyCriterion,
 )
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestReplaceXpansionAdequacyCriterion:

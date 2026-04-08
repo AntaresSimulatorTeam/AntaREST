@@ -10,14 +10,13 @@
 #
 # This file is part of the Antares project.
 
-from helpers import build_dao_from_file_study
-
 from antarest.core.serde.ini_reader import IniReader
 from antarest.study.business.model.layer_model import LayerCreation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
 from antarest.study.storage.variantstudy.model.command.remove_layer import RemoveLayer
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestRemoveLayer:
