@@ -34,7 +34,7 @@ def _set_up(study: FileStudy, command_context: CommandContext) -> FileStudyTreeD
 
         area_id = transform_name_to_id(area_name)
         study.tree.save(allocation_cfg[area_id], ["input", "hydro", "allocation", area_id])
-        return dao
+    return dao
 
 
 def test_nominal_case(empty_study_930: FileStudy, command_context: CommandContext) -> None:
