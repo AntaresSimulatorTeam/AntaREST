@@ -218,6 +218,8 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         ).fetchone()
         if row is None:
             raise BindingConstraintNotFound(f"Matrix for constraint {constraint_id} not found")
+        # TODO: convert null matrix to a properly-sized zero matrix based on the constraint's time step,
+        #  so the DB DAO returns the same shape as the file DAO after a time-step change.
         return self.get_impl().get_matrix(row.matrix_id)
 
     def _save_bc_matrices(self, table: Table, entries: list[tuple[str, str]]) -> None:
@@ -344,7 +346,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
             operator_changed = study_version >= STUDY_VERSION_8_7 and bc.operator != old.operator
 
             if operator_changed and not time_step_changed:
-                # Copy the existing matrix ID into newly required types; delete removed types.
+                # Copy the existing matrix ID into newly required types, delete removed types.
                 old_matrix_types = [_MatrixType(t) for t in OPERATOR_MATRICES_MAP[old.operator]]
                 new_matrix_types = [_MatrixType(t) for t in OPERATOR_MATRICES_MAP[bc.operator]]
                 matrix_type_to_add = [s for s in new_matrix_types if s not in old_matrix_types]
@@ -369,7 +371,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
                     changes.add_deletion(bc.id, matrix_type)
 
             if time_step_changed:
-                # Replace all matrices with the null matrix; the simulator uses correctly-sized zeros at runtime.
+                # Replace all matrices with the null matrix. The simulator uses correctly-sized zeros at runtime.
                 null_mid = generator.get_null_matrix()
                 if study_version < STUDY_VERSION_8_7:
                     changes.add_deletion(bc.id, _MatrixType.VALUES)

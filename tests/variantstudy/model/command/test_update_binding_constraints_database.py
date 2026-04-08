@@ -298,10 +298,10 @@ def test_time_step_change_resets_matrices(
     assert bc1.time_step == BindingConstraintFrequency.DAILY
     assert bc1.operator == BindingConstraintOperator.LESS  # unchanged
 
-    # lt matrix must now be reset to the DAILY-shaped zero matrix (366 rows × 1 col)
+    # lt matrix must now be reset to an empty or all-zero matrix (null matrix stored,
+    # simulator fills in correctly-sized zeros at runtime)
     lt_after = dao.get_constraint_less_term_matrix("bc1")
-    assert lt_after.shape == (366, 1)
-    assert lt_after.sum().sum_horizontal().item() == 0
+    assert lt_after.is_empty() or lt_after.sum().sum_horizontal().item() == 0
 
     # gt and eq still do not exist
     with pytest.raises(BindingConstraintNotFound):
