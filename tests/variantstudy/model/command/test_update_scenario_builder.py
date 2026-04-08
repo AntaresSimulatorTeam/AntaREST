@@ -17,10 +17,12 @@ from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder im
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 def test_update_scenario_builder(empty_study_880: FileStudy, command_context: CommandContext) -> None:
     study = empty_study_880
+    dao = build_dao_from_file_study(study, command_context)
     version = study.config.version
 
     initial_ruleset = parse_ruleset_from_any(study.tree.get(["settings", "scenariobuilder"]), version)
@@ -42,7 +44,7 @@ def test_update_scenario_builder(empty_study_880: FileStudy, command_context: Co
     ruleset_update = RulesetUpdate(load={"fr": {"1": 2, "2": 1}})
 
     command = UpdateScenarioBuilder(data=ruleset_update, command_context=command_context, study_version=version)
-    output = command.apply(study)
+    output = command.apply(dao)
     assert output.status
 
     final_ruleset = parse_ruleset_from_any(study.tree.get(["settings", "scenariobuilder"]), version)
@@ -65,7 +67,7 @@ def test_update_scenario_builder(empty_study_880: FileStudy, command_context: Co
     # Check rand values are removed from file
     ruleset_update = RulesetUpdate(load={"fr": {"2": ""}})
     command = UpdateScenarioBuilder(data=ruleset_update, command_context=command_context, study_version=version)
-    output = command.apply(study)
+    output = command.apply(dao)
     assert output.status
 
     final_ruleset = parse_ruleset_from_any(study.tree.get(["settings", "scenariobuilder"]), version)
