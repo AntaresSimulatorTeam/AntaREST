@@ -84,8 +84,7 @@ class UpdateThermalClusters(ICommand):
 
             memory_mapping[area_id] = new_clusters
 
-        for area_id, new_clusters in memory_mapping.items():
-            study_data.save_thermals(area_id, new_clusters)
+        study_data.save_thermals(memory_mapping)
 
         return command_succeeded("All thermal clusters updated", result=memory_mapping)
 

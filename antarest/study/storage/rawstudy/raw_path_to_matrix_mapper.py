@@ -40,6 +40,21 @@ class RawPathToMatrixMapper:
     """
 
     def __init__(self, dao: StudyDao) -> None:
+        def _save_thermal_prepro(area_id: str, thermal_id: str, series_id: str) -> None:
+            dao.save_thermal_prepro({area_id: {thermal_id: series_id}})
+
+        def _save_thermal_modulation(area_id: str, thermal_id: str, series_id: str) -> None:
+            dao.save_thermal_modulation({area_id: {thermal_id: series_id}})
+
+        def _save_thermal_series(area_id: str, thermal_id: str, series_id: str) -> None:
+            dao.save_thermal_series({area_id: {thermal_id: series_id}})
+
+        def _save_thermal_fuel_cost(area_id: str, thermal_id: str, series_id: str) -> None:
+            dao.save_thermal_fuel_cost({area_id: {thermal_id: series_id}})
+
+        def _save_thermal_co2_cost(area_id: str, thermal_id: str, series_id: str) -> None:
+            dao.save_thermal_co2_cost({area_id: {thermal_id: series_id}})
+
         self._path_matchers = [
             RegexMatcher(
                 pattern=re.compile(r"user/expansion/capa/(?P<filename>[^/]+)"),
@@ -89,27 +104,27 @@ class RawPathToMatrixMapper:
             RegexMatcher(
                 pattern=re.compile(r"input/thermal/prepro/(?P<area_id>[^/]+)/(?P<thermal_id>[^/]+)/data"),
                 getter=dao.get_thermal_prepro,
-                setter=dao.save_thermal_prepro,
+                setter=_save_thermal_prepro,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/thermal/prepro/(?P<area_id>[^/]+)/(?P<thermal_id>[^/]+)/modulation"),
                 getter=dao.get_thermal_modulation,
-                setter=dao.save_thermal_modulation,
+                setter=_save_thermal_modulation,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/thermal/series/(?P<area_id>[^/]+)/(?P<thermal_id>[^/]+)/series"),
                 getter=dao.get_thermal_series,
-                setter=dao.save_thermal_series,
+                setter=_save_thermal_series,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/thermal/series/(?P<area_id>[^/]+)/(?P<thermal_id>[^/]+)/fuelCost"),
                 getter=dao.get_thermal_fuel_cost,
-                setter=dao.save_thermal_fuel_cost,
+                setter=_save_thermal_fuel_cost,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/thermal/series/(?P<area_id>[^/]+)/(?P<thermal_id>[^/]+)/CO2Cost"),
                 getter=dao.get_thermal_co2_cost,
-                setter=dao.save_thermal_co2_cost,
+                setter=_save_thermal_co2_cost,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/renewables/series/(?P<area_id>[^/]+)/(?P<renewable_id>[^/]+)/series"),

@@ -163,6 +163,11 @@ class MatrixUriMapperManaged(BaseMatrixUriMapper):
     @override
     def save_matrix(self, node: MatrixNode, matrix_uri: str) -> None:
         link_path = self.get_link_path(node)
+
+        if not link_path.parent.exists():
+            # Can happen when creating a new object and the file structure is not yet fully created
+            link_path.parent.mkdir(parents=True)
+
         link_path.write_text(matrix_uri)
         if node.config.path.exists():
             node.config.path.unlink()

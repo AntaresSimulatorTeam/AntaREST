@@ -22,6 +22,7 @@ from antarest.study.storage.variantstudy.model.command.create_xpansion_matrix im
     CreateXpansionWeight,
 )
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestCreateXpansionResource:
@@ -33,6 +34,7 @@ class TestCreateXpansionResource:
 
     def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_870
+        dao = build_dao_from_file_study(empty_study, command_context)
         self.set_up(empty_study)
 
         # Constraints
@@ -44,7 +46,7 @@ class TestCreateXpansionResource:
                 command_context=command_context,
                 study_version=STUDY_VERSION_8_7,
             )
-            output = cmd.apply(study_data=empty_study)
+            output = cmd.apply(study_dao=dao)
             assert output.status, output.message
             resource_path = empty_study.config.study_path / "user" / "expansion" / "constraints" / file_name
             assert resource_path.exists()
@@ -59,7 +61,7 @@ class TestCreateXpansionResource:
                 command_context=command_context,
                 study_version=STUDY_VERSION_8_7,
             )
-            output = cmd.apply(study_data=empty_study)
+            output = cmd.apply(study_dao=dao)
             assert output.status, output.message
             resource_path = empty_study.config.study_path / "user" / "expansion" / "weights" / f"{file_name}.link"
             assert resource_path.exists()
@@ -79,7 +81,7 @@ class TestCreateXpansionResource:
                 command_context=command_context,
                 study_version=STUDY_VERSION_8_7,
             )
-            output = cmd.apply(study_data=empty_study)
+            output = cmd.apply(study_dao=dao)
             assert output.status, output.message
             resource_path = empty_study.config.study_path / "user" / "expansion" / "capa" / f"{file_name}.link"
             assert resource_path.exists()
