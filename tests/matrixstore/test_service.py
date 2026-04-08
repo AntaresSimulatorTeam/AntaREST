@@ -533,7 +533,7 @@ def test_dataset_lifecycle() -> None:
         ),
     ]
     with current_user_context(botA):
-        res = service.list("dataset", True)
+        res = service.list_datasets("dataset", True)
     dataset_repo.query.assert_called_with("dataset", botA.impersonator)
     assert len(res) == 1
     assert res[0] == MatrixDataSetDTO(
@@ -550,10 +550,10 @@ def test_dataset_lifecycle() -> None:
         ],
     )
     with current_user_context(botA):
-        service.list("dataset", False)
+        service.list_datasets("dataset", False)
     dataset_repo.query.assert_called_with("dataset", None)
     with current_user_context(userB):
-        res = service.list("dataset", False)
+        res = service.list_datasets("dataset", False)
     assert len(res) == 2
 
     with pytest.raises(MatrixDataSetNotFound):
@@ -703,6 +703,20 @@ def test_synchronize_matrix_store(matrix_service: MatrixService, dry_run: bool) 
         assert db_content == []
     else:
         assert len(db_content) == 1
+
+
+@with_db_context
+@pytest.mark.parametrize("dry_run", [True, False])
+def test_synchronize_matrix_store_removes_invalid_files(matrix_service: MatrixService, dry_run: bool) -> None:
+    invalid_file = matrix_service.matrix_content_repository.bucket_dir / "invalid_matrix"
+    invalid_file.touch()
+    invalid_file_with_unknown_suffix = matrix_service.matrix_content_repository.bucket_dir / "invalid_matrix.tmp"
+    invalid_file_with_unknown_suffix.touch()
+
+    assert matrix_service.synchronize_matrix_store(dry_run) == {}
+
+    assert invalid_file.exists() is dry_run
+    assert invalid_file_with_unknown_suffix.exists() is dry_run
 
 
 @with_db_context

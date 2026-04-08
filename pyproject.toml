@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "AntaREST"
-version = "2.29.0"
+version = "2.30.0"
 authors = [{name="RTE, Antares Web Team", email="andrea.sgattoni@rte-france.com" }]
 description="Antares Server"
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -20,19 +20,19 @@ dependencies = [
     "Antares-Launcher==1.4.6",
     "antares-study-version==1.0.20",
     "antares-timeseries-generation==0.1.9",
-    "fastapi==0.133.0",
-    "uvicorn[standard]~=0.41.0",
+    "fastapi==0.135.1",
+    "uvicorn[standard]~=0.42.0",
     "pydantic~=2.12.5",
     "httpx~=0.28.1",
     "python-multipart~=0.0.20",
     "alembic~=1.18.4",
     "bcrypt~=5.0.0",
     "click~=8.3.0",
-    "filelock~=3.24.3",
+    "filelock~=3.25.2",
     "gunicorn~=23.0.0",
     "humanize~=4.15.0",
     "jsonref~=0.2",
-    "PyJWT~=2.11.0",
+    "PyJWT~=2.12.0",
     "MarkupSafe~=2.1.5",
     "numpy~=2.4.2",
     "numexpr==2.14.1",
@@ -59,12 +59,12 @@ dependencies = [
 [dependency-groups]
 dev = [
     {include-group = "test"},
-    "celery-types~=0.24.0",
+    "celery-types~=0.26.0",
     "ruff~=0.15.2",
     "mypy~=1.19.1",
     "pre-commit~=4.5.1",
     "pyinstaller==6.19.0",
-    "pyinstaller-hooks-contrib==2026.0",
+    "pyinstaller-hooks-contrib==2026.3",
     # Extra requirements installed by `mypy --install-types`.
     # IMPORTANT: Make sure the versions of these typing libraries match the versions
     # of the corresponding implementation libraries used in production (in `pyproject.toml`).
@@ -88,9 +88,7 @@ test = [
 ]
 
 [project.optional-dependencies]
-desktop = [
-    "PyQt5~=5.15.6; sys_platform != 'win32'",
-]
+desktop = ["PyQt6~=6.10.2"]
 windows = [
     "win10toast; platform_system == 'Windows'",
 ]
@@ -136,6 +134,8 @@ no_implicit_reexport = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+log_cli = false  # you may set it to true for debugging purpose
+log_cli_level = "info"
 
 [tool.coverage.run]
 omit = ["antarest/tools/admin.py", "antarest/fastapi_jwt_auth/*.py"]

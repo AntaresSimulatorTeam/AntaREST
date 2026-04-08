@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Callable, Dict, Iterator, List, Sequence
+from collections.abc import Callable, Iterator, Sequence
 
 import polars as pl
 from typing_extensions import override
@@ -27,8 +27,8 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
     """
 
     def __init__(self) -> None:
-        self._content: Dict[str, pl.DataFrame] = {}
-        self.usage_providers: List[IMatrixUsageProvider] = []
+        self._content: dict[str, pl.DataFrame] = {}
+        self.usage_providers: list[IMatrixUsageProvider] = []
         self._predefined_matrices: dict[str, Callable[[], pl.DataFrame]] = {}
 
     @override
@@ -55,7 +55,14 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
 
     @override
     def exists(self, matrix_id: str) -> bool:
-        return matrix_id in self._predefined_matrices or matrix_id in self._content
+        return self.all_exist([matrix_id])
+
+    @override
+    def all_exist(self, matrix_ids: Sequence[str]) -> bool:
+        for matrix_id in matrix_ids:
+            if matrix_id not in self._predefined_matrices and matrix_id not in self._content:
+                return False
+        return True
 
     @override
     def delete(self, matrix_id: str) -> None:

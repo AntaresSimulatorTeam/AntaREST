@@ -11,19 +11,14 @@
 # This file is part of the Antares project.
 
 import logging
-import tempfile
 from abc import ABC
-from pathlib import Path
-from typing import Optional
 
 from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache, study_raw_cache_key
 from antarest.core.model import JSON, PublicMode
-from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import StopWatch
 from antarest.login.model import GroupDTO, Identity
 from antarest.login.utils import get_user_impersonator
 from antarest.study.model import (
@@ -48,7 +43,7 @@ class AbstractStorageService(IStudyStorage, ABC):
     def get_study_information(
         self,
         study: Study,
-        folder_path: Optional[str] = None,
+        folder_path: str | None = None,
     ) -> StudyMetadataDTO:
         study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
 
@@ -121,7 +116,7 @@ class AbstractStorageService(IStudyStorage, ABC):
 
         if url == "" and depth == -1:
             cache_id = study_raw_cache_key(metadata.id)
-            from_cache: Optional[JSON] = None
+            from_cache: JSON | None = None
             if use_cache:
                 from_cache = self.cache.get(cache_id)
             if from_cache is not None:
@@ -176,29 +171,3 @@ class AbstractStorageService(IStudyStorage, ABC):
 
     def _get_current_user_name(self) -> str:
         return self._get_user_name_from_id(get_user_impersonator())
-
-    @override
-    def export_study(
-        self, metadata: Study, target: Path, outputs: bool = True, archive_format: ArchiveFormat = ArchiveFormat.ZIP
-    ) -> Path:
-        """
-        Export and compress the study inside a 7zip file.
-
-        Args:
-            metadata: Study metadata object.
-            target: Path of the file to export to.
-            outputs: Flag to indicate whether to include the output folder inside the exportation.
-            archive_format:
-
-        Returns:
-            The 7zip file containing the study files compressed inside.
-        """
-        path_study = Path(metadata.path)
-        with tempfile.TemporaryDirectory(dir=self.config.storage.tmp_dir) as tmpdir:
-            logger.info(f"Exporting study {metadata.id} to temporary path {tmpdir}")
-            tmp_study_path = Path(tmpdir) / "tmp_copy"
-            self.export_study_flat(metadata, tmp_study_path, outputs)
-            stopwatch = StopWatch()
-            archive_dir(tmp_study_path, target, archive_format=archive_format)
-            logger.info(f"Study {path_study} exported ({target.suffix} format) in {stopwatch}s")
-        return target

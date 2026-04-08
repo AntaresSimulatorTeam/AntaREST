@@ -18,7 +18,6 @@ This task deletes unused matrices from the matrix store based on retention time.
 
 import logging
 import time
-from typing import Set
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_lock
@@ -29,7 +28,7 @@ from antarest.matrixstore.service import MatrixService
 logger = logging.getLogger(__name__)
 
 
-def _delete_matrices(matrix_service: MatrixService, matrices: Set[str], dry_run: bool) -> int:
+def _delete_matrices(matrix_service: MatrixService, matrices: set[str], dry_run: bool) -> int:
     """Delete matrices and return the number of failures."""
     failures = 0
     for matrix_id in matrices:

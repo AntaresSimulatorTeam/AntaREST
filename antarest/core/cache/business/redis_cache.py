@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import List, Optional
 
 from redis.client import Redis
 from typing_extensions import override
@@ -47,7 +46,7 @@ class RedisCache(ICache):
         self.redis.expire(redis_key, duration)
 
     @override
-    def get(self, id: str, refresh_timeout: Optional[int] = None) -> Optional[JSON]:
+    def get(self, id: str, refresh_timeout: int | None = None) -> JSON | None:
         redis_key = f"cache:{id}"
         result = self.redis.get(redis_key)
         logger.info(f"Trying to retrieve cache key {id}")
@@ -69,6 +68,6 @@ class RedisCache(ICache):
         self.redis.delete(f"cache:{id}")
 
     @override
-    def invalidate_all(self, ids: List[str]) -> None:
+    def invalidate_all(self, ids: list[str]) -> None:
         logger.info(f"Removing cache keys {ids}")
         self.redis.delete(*[f"cache:{id}" for id in ids])

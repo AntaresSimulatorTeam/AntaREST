@@ -19,17 +19,19 @@ import subprocess
 import sys
 import threading
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
 from antares.study.version import SolverVersion
 from typing_extensions import override
 
 from antarest.core.config import LocalConfig
+from antarest.core.exceptions import UnsupportedStudyVersion
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.jwt import JWTUser
-from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks
+from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType
 from antarest.login.utils import current_user_context, require_current_user
@@ -68,30 +70,20 @@ class LocalLauncher(AbstractLauncher):
         self.log_directory = logs_path
         self.log_tail_manager = LogTailManager(self.local_workspace)
         self.submitted_jobs: dict[str, LauncherParametersDTO] = {}
-        self.job_id_to_study_id: Dict[str, Tuple[str, Path, subprocess.Popen]] = {}  # type: ignore
-        self.logs: Dict[str, str] = {}
+        self.job_id_to_study_id: dict[str, tuple[str, Path, subprocess.Popen]] = {}  # type: ignore
+        self.logs: dict[str, str] = {}
 
-    def _select_best_binary(self, version: str) -> Path:
+    def _select_best_binary(self, version: SolverVersion) -> Path:
         if version in self.local_config.binaries:
-            antares_solver_path = self.local_config.binaries[version]
-        else:
-            # sourcery skip: extract-method, max-min-default
-            # fixme: `version` must remain a string, consider using a `Version` class
-            version_int = int(version)
-            keys = list(map(int, self.local_config.binaries.keys()))
-            keys_sup = [k for k in keys if k > version_int]
-            best_existing_version = min(keys_sup) if keys_sup else max(keys)
-            antares_solver_path = self.local_config.binaries[str(best_existing_version)]
-            logger.warning(
-                f"Version {version} is not available. Version {best_existing_version} has been selected instead"
-            )
-        return antares_solver_path
+            return self.local_config.binaries[version]
+
+        raise UnsupportedStudyVersion(f"Solver version {version} not found in the application config")
 
     @override
     def run_study(
         self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
     ) -> None:
-        antares_solver_path = self._select_best_binary(f"{version:ddd}")
+        antares_solver_path = self._select_best_binary(version)
         self.submitted_jobs[job_id] = launcher_parameters
 
         job = threading.Thread(
@@ -146,11 +138,11 @@ class LocalLauncher(AbstractLauncher):
                 ):
                     subprocess.run(["Rscript", "post-processing.R"], cwd=export_path)
 
-                output_id: Optional[str] = None
+                output_id: str | None = None
                 if process.returncode == 0:
                     # The job succeed we need to import the output
                     try:
-                        launcher_logs = self._import_launcher_logs(job_id)
+                        launcher_logs = self._get_launcher_logs(job_id)
                         output_id = self.callbacks.import_output(job_id, export_path / "output", launcher_logs)
                     except Exception as e:
                         logger.error(
@@ -177,16 +169,13 @@ class LocalLauncher(AbstractLauncher):
                 logger.info(f"Removing launch {job_id} export path at {export_path}")
                 shutil.rmtree(export_path, ignore_errors=True)
 
-    def _import_launcher_logs(self, job_id: str) -> Dict[str, List[Path]]:
+    def _get_launcher_logs(self, job_id: str) -> SimulationLogs:
         logs_path = self.log_directory / job_id
-        return {
-            "antares-out.log": [logs_path / f"{job_id}-out.log"],
-            "antares-err.log": [logs_path / f"{job_id}-err.log"],
-        }
+        return SimulationLogs(logs_path / f"{job_id}-out.log", logs_path / f"{job_id}-err.log")
 
     def _parse_launcher_options(
         self, launcher_parameters: LauncherParametersDTO, solver_version: SolverVersion
-    ) -> Tuple[List[str], Dict[str, Any]]:
+    ) -> tuple[list[str], dict[str, Any]]:
         simulator_args = ["--force-parallel", f"{launcher_parameters.nb_cpu}"] if launcher_parameters.nb_cpu else []
         environment_variables = os.environ.copy()
         if not launcher_parameters.other_options:
@@ -270,7 +259,7 @@ class LocalLauncher(AbstractLauncher):
         return append_to_log
 
     @override
-    def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
+    def get_log(self, job_id: str, log_type: LogType) -> str | None:
         if job_id in self.job_id_to_study_id and job_id in self.logs and log_type == LogType.STDOUT:
             return self.logs[job_id]
         job_path = self.log_directory / job_id / f"{job_id}-{log_type.to_suffix()}"
@@ -283,15 +272,10 @@ class LocalLauncher(AbstractLauncher):
         if job_id in self.job_id_to_study_id:
             return self.job_id_to_study_id[job_id][2].send_signal(signal.SIGTERM)
         else:
-            self.callbacks.update_status(
-                job_id,
-                JobStatus.FAILED,
-                None,
-                None,
-            )
+            self.callbacks.update_status(job_id, JobStatus.FAILED, None, None)
 
     @override
-    def get_solver_versions(self) -> List[str]:
+    def get_solver_versions(self) -> list[SolverVersion]:
         return sorted(self.local_config.binaries)
 
     @override

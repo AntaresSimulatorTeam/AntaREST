@@ -10,7 +10,8 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, List, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import polars as pl
 from typing_extensions import override
@@ -40,7 +41,7 @@ class FileStudyLinkDao(LinkDao, ABC):
     @override
     def get_links(self) -> Sequence[Link]:
         file_study = self.get_file_study()
-        result: List[Link] = []
+        result: list[Link] = []
 
         for area_from, area in file_study.config.areas.items():
             area_links = file_study.tree.get(["input", "links", area_from, "properties"])

@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { withOpacity } from "@/utils/muiUtils";
 import FolderIcon from "@mui/icons-material/Folder";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import type { SxProps, Theme } from "@mui/material";
@@ -21,40 +22,33 @@ export const treeNodeIcons = {
   folderOpen: FolderOpenIcon,
 };
 
-export const treeItemStyles: SxProps<Theme> = {
+export const treeItemStyles: SxProps<Theme> = (theme) => ({
   "& > .MuiTreeItem-content": {
-    borderRadius: 1,
-    px: 1,
     py: 0.25,
     "&:hover": {
-      backgroundColor: (theme) => `${theme.palette.info.main}10`,
+      backgroundColor: withOpacity(theme.vars.palette.info.main, 0.05),
     },
     "&.Mui-selected": {
-      backgroundColor: (theme) => `${theme.palette.info.main}20`,
+      backgroundColor: withOpacity(theme.vars.palette.info.main, 0.15),
       "&:hover": {
-        backgroundColor: (theme) => `${theme.palette.info.main}30`,
+        backgroundColor: withOpacity(theme.vars.palette.info.main, 0.2),
       },
     },
     "&.Mui-selected.Mui-focused": {
-      backgroundColor: (theme) => `${theme.palette.info.main}25`,
+      backgroundColor: withOpacity(theme.vars.palette.info.main, 0.15),
     },
-
     "& .MuiTreeItem-iconContainer": {
       mr: 0.5,
       "&:hover": {
         backgroundColor: "transparent",
       },
       "& svg": {
-        color: (theme) => theme.palette.info.main,
+        color: theme.vars.palette.info.main,
         fontSize: "1.2rem",
       },
     },
   },
-  "& > .MuiTreeItem-content > .MuiTreeItem-label": {
-    fontSize: 14,
-    fontWeight: 450,
-  },
-};
+});
 
 export const editableRowStyles: SxProps<Theme> = {
   display: "flex",
@@ -63,7 +57,7 @@ export const editableRowStyles: SxProps<Theme> = {
   borderRadius: 1,
   px: 1,
   py: 0.25,
-  backgroundColor: (theme) => `${theme.palette.info.main}08`,
+  backgroundColor: (theme) => withOpacity(theme.vars.palette.info.main, 0.03),
 };
 
 export const textFieldStyles: SxProps<Theme> = {
@@ -92,37 +86,12 @@ export const textFieldStyles: SxProps<Theme> = {
   },
 };
 
-export const nodeLabelContainerStyles: SxProps<Theme> = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  width: "100%",
-  pr: 0.5,
-};
-
 export const nodeActionsContainerStyles: SxProps<Theme> = {
-  display: "flex",
-  gap: 0.25,
-  ml: 1,
+  ".MuiTreeItem-content:not(:hover) &": {
+    display: "none",
+  },
 };
 
 export const actionButtonStyles: SxProps<Theme> = {
   p: 0.25,
-  opacity: 0,
-  ".MuiTreeItem-content:hover &": {
-    opacity: 1,
-  },
-};
-
-export const renameIconStyles: SxProps<Theme> = {
-  fontSize: 16,
-};
-
-export const addSubDirectoryIconStyles: SxProps<Theme> = {
-  fontSize: 16,
-};
-
-export const deleteIconStyles: SxProps<Theme> = {
-  fontSize: 16,
-  color: "error.main",
 };

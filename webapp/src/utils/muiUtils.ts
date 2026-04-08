@@ -24,6 +24,18 @@ export function truncateTextSx(maxWidth?: number) {
 }
 
 /**
+ * Applies the specified opacity to a given color.
+ *
+ * @param color - The base color (any valid CSS color).
+ * Supports variables (e.g., `var(--my-color)`).
+ * @param opacity - The opacity level (0 to 1).
+ * @returns A CSS color string with the applied opacity.
+ */
+export function withOpacity(color: string, opacity: number) {
+  return `color-mix(in srgb, ${color} ${opacity * 100}%, transparent)`;
+}
+
+/**
  * Merges two `sx` props.
  *
  * This is useful when a custom component needs to accept an `sx` prop

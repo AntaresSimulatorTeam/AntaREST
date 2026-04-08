@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Iterable
+from collections.abc import Iterable
 
 from sqlalchemy import select
 from typing_extensions import override
@@ -60,6 +60,7 @@ from antarest.study.dao.database.models.thermal import (
     THERMAL_PREPRO_TABLE,
     THERMAL_SERIES_TABLE,
 )
+from antarest.study.dao.database.models.xpansion import XPANSION_CAPACITY_TABLE, XPANSION_WEIGHT_TABLE
 
 MATRIX_TABLES = [
     LOAD_TABLE,
@@ -100,6 +101,8 @@ MATRIX_TABLES = [
     HYDRO_MAX_HOURLY_PUMP_POWER_TABLE,
     HYDRO_MAX_DAILY_GEN_ENERGY_TABLE,
     HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE,
+    XPANSION_CAPACITY_TABLE,
+    XPANSION_WEIGHT_TABLE,
 ]
 
 

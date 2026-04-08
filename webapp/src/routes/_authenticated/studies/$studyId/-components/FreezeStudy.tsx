@@ -16,7 +16,7 @@ import LinearProgressWithLabel from "@/components/LinearProgressWithLabel";
 import useUpdatedRef from "@/hooks/useUpdatedRef";
 import { getTask, getTasks } from "@/services/api/tasks";
 import { TaskStatus, TaskType } from "@/services/api/tasks/constants";
-import type { TaskDTO, TaskTypeValue } from "@/services/api/tasks/types";
+import type { Task, TaskTypeValue } from "@/services/api/tasks/types";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 import type { WsEvent } from "@/services/webSocket/types";
 import {
@@ -25,22 +25,13 @@ import {
   subscribeWsChannels,
   unsubscribeWsChannels,
 } from "@/services/webSocket/ws";
-import {
-  Backdrop,
-  Button,
-  List,
-  ListItem,
-  ListItemText,
-  Paper,
-  Typography,
-  useTheme,
-} from "@mui/material";
+import { Backdrop, Button, List, ListItem, ListItemText, Paper, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useStudy from "../-hooks/useStudy";
 
 interface BlockingTask {
-  id: TaskDTO["id"];
+  id: Task["id"];
   type: TaskTypeValue;
   progress?: number;
   error?: string;
@@ -53,7 +44,7 @@ const BLOCKING_TASK_TYPES = [
 
 const PROGRESS_COMPLETE = 100;
 
-function getChannel(id: TaskDTO["id"]) {
+function getChannel(id: Task["id"]) {
   return WsChannel.Task + id;
 }
 
@@ -67,7 +58,6 @@ function FreezeStudy() {
   const { t } = useTranslation();
   const hasLoadingTask = !!blockingTasks.find(isLoadingTask);
   const blockingTasksRef = useUpdatedRef(blockingTasks);
-  const theme = useTheme();
 
   // Fetch blocking tasks and subscribe to their WebSocket channels
   useEffect(() => {
@@ -80,10 +70,12 @@ function FreezeStudy() {
     }).then((tasks) => {
       if (active) {
         setBlockingTasks(
-          tasks.map((task) => ({
-            id: task.id,
-            type: task.type,
-          })),
+          tasks
+            .filter((task): task is typeof task & { type: TaskTypeValue } => !!task.type)
+            .map((task) => ({
+              id: task.id,
+              type: task.type,
+            })),
         );
 
         subscribeWsChannels(tasks.map(({ id }) => getChannel(id)));
@@ -158,7 +150,8 @@ function FreezeStudy() {
         const payload = {
           id: task.id,
           message: task.result?.message || "",
-          type: task.type,
+          // task.type is guarded above and always a known TaskTypeValue here
+          type: task.type as TaskTypeValue,
         };
         if (task.status === TaskStatus.Running) {
           if (typeof task.progress === "number") {
@@ -196,7 +189,7 @@ function FreezeStudy() {
   return (
     <Backdrop
       open={blockingTasks.length > 0}
-      sx={{ position: "absolute", zIndex: theme.zIndex.tooltip + 1 }}
+      sx={{ position: "absolute", zIndex: (theme) => theme.zIndex.tooltip + 1 }}
     >
       <Paper
         sx={{

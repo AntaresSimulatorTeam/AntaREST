@@ -11,14 +11,13 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
-from typing import List, Optional, Sequence
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
-from antarest.core.utils.archives import ArchiveFormat
+from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import Study, StudyMetadataDTO
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 
@@ -69,8 +68,6 @@ class IStudyStorage(ABC):
         dest_study_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
-        output_ids: List[str],
-        with_outputs: bool | None,
     ) -> Study:
         """
         Create a new study by copying a reference study.
@@ -80,15 +77,13 @@ class IStudyStorage(ABC):
             dest_study_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
             destination_folder: The path where the destination study should be created. If not provided, the default path will be used.
-            output_ids: A list of output names that you want to include in the destination study.
-            with_outputs: Indicates whether to copy the outputs as well.
 
         Returns:
             The newly created study.
         """
 
     @abstractmethod
-    def get_study_information(self, metadata: Study, folder_path: Optional[str] = None) -> StudyMetadataDTO:
+    def get_study_information(self, metadata: Study, folder_path: str | None = None) -> StudyMetadataDTO:
         """Get study information.
 
         Args:
@@ -101,7 +96,7 @@ class IStudyStorage(ABC):
         self,
         metadata: Study,
         use_cache: bool = True,
-        output_dir: Optional[Path] = None,
+        output_dir: Path | None = None,
     ) -> FileStudy:
         """
         Fetch a study raw tree object and its config
@@ -149,29 +144,10 @@ class IStudyStorage(ABC):
             raise StudyNotFoundError(f"Study with the uuid {metadata.id} does not exist.")
 
     @abstractmethod
-    def export_study(
-        self, metadata: Study, target: Path, outputs: bool = True, archive_format: ArchiveFormat = ArchiveFormat.ZIP
-    ) -> Path:
-        """
-        Export and compress a study to a ZIP file.
-
-        Args:
-            metadata: The study metadata.
-            target: The path of the ZIP file to export to.
-            outputs: Whether to include the output folder inside the exportation.
-            archive_format:
-
-        Returns:
-            Path: The path to the created ZIP file containing the study files.
-        """
-
-    @abstractmethod
     def export_study_flat(
         self,
         metadata: Study,
         dst_path: Path,
-        outputs: bool = True,
-        output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
     ) -> None:
         """
@@ -180,17 +156,11 @@ class IStudyStorage(ABC):
         Args:
             metadata: study.
             dst_path: destination path.
-            outputs: list of outputs to keep.
-            output_list_filter: list of outputs to keep (None indicate all outputs).
             denormalize: denormalize the study (replace matrix links by real matrices).
         """
 
     @abstractmethod
-    def get_synthesis(self, metadata: Study) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: Study) -> StudyDataSynthesis:
         """
         Return study synthesis
-        Args:
-            metadata: study
-        Returns: FileStudyTreeConfigDTO
-
         """

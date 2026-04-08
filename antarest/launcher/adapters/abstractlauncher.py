@@ -11,8 +11,10 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Dict, List, NamedTuple, Optional, Protocol
+from typing import NamedTuple, Protocol
 
 from antares.study.version import SolverVersion
 
@@ -23,14 +25,32 @@ from antarest.launcher.adapters.log_parser import LaunchProgressDTO
 from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType
 
 
+@dataclass(frozen=True)
+class SimulationLogs:
+    """
+    Paths to the logs of a simulation.
+
+    Attributes:
+        out: Path to the standard output log file.
+        err: Path to the standard error log file.
+    """
+
+    out: Path | None
+    err: Path | None
+
+    @classmethod
+    def no_logs(cls) -> "SimulationLogs":
+        return cls(None, None)
+
+
 class ImportCallBack(Protocol):
-    def __call__(self, job_id: str, output_path: Path, additional_logs: Dict[str, List[Path]]) -> Optional[str]:
+    def __call__(self, job_id: str, output_path: Path, additional_logs: SimulationLogs) -> str | None:
         pass
 
 
 class LauncherCallbacks(NamedTuple):
     # args: job_id, job status, message, output_id
-    update_status: Callable[[str, JobStatus, Optional[str], Optional[str]], None]
+    update_status: Callable[[str, JobStatus, str | None, str | None], None]
     # args: job_id, study_id, study_export_path, launcher_params
     export_study: Callable[[str, str, Path, LauncherParametersDTO], None]
     append_before_log: Callable[[str, str], None]
@@ -57,7 +77,7 @@ class AbstractLauncher(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
+    def get_log(self, job_id: str, log_type: LogType) -> str | None:
         raise NotImplementedError()
 
     @abstractmethod
@@ -69,7 +89,7 @@ class AbstractLauncher(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_solver_versions(self) -> List[str]:
+    def get_solver_versions(self) -> list[SolverVersion]:
         raise NotImplementedError()
 
     def create_update_log(self, job_id: str) -> Callable[[str], None]:

@@ -120,7 +120,9 @@ function VariableMatrix({
             <EmptyView
               title={t("study.outputs.scanRequired")}
               icon={GridOffIcon}
-              actions={<ProcessButton onClick={onMaterializeVariable} loading={isMaterializing} />}
+              primaryActions={
+                <ProcessButton onClick={onMaterializeVariable} loading={isMaterializing} />
+              }
             />
           );
         }

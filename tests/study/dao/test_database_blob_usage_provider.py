@@ -17,7 +17,8 @@ from antarest.study.dao.database.database_blob_usage_provider import DatabaseBlo
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
-def test_blob_usage_provider_returns_blob_ids(dao: DatabaseStudyDao) -> None:
+def test_blob_usage_provider_returns_blob_ids(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_user_resource(
         UserResourceDataCreation(path=PurePosixPath("file1.txt"), resource_type=ResourceType.FILE, blob_id="blob_aaa")
     )
@@ -34,7 +35,8 @@ def test_blob_usage_provider_returns_blob_ids(dao: DatabaseStudyDao) -> None:
     assert all(isinstance(b, BlobReference) for b in used_blobs)
 
 
-def test_blob_usage_provider_ignores_folders(dao: DatabaseStudyDao) -> None:
+def test_blob_usage_provider_ignores_folders(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_user_resource(
         UserResourceDataCreation(path=PurePosixPath("file.txt"), resource_type=ResourceType.FILE, blob_id="blob_aaa")
     )
@@ -47,7 +49,7 @@ def test_blob_usage_provider_ignores_folders(dao: DatabaseStudyDao) -> None:
     assert used_blobs[0].blob_id == "blob_aaa"
 
 
-def test_blob_usage_provider_empty(dao: DatabaseStudyDao) -> None:
+def test_blob_usage_provider_empty() -> None:
     provider = DatabaseBlobUsageProvider()
     used_blobs = list(provider.get_blob_usage())
 

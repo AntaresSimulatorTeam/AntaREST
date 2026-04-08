@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import logging
 
+from pydantic.alias_generators import to_camel
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -21,7 +22,7 @@ from antarest.study.model import Directory, Study
 logger = logging.getLogger(__name__)
 
 
-class FavoriteStudyDTO(AntaresBaseModel, extra="forbid"):
+class FavoriteStudyDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel, populate_by_name=True):
     study_id: str
     study_name: str
 
@@ -55,7 +56,7 @@ class FavoriteStudy(Base):
         return FavoriteStudyDTO(study_id=self.study_id, study_name=self.study.name)
 
 
-class FavoriteDirectoryDTO(AntaresBaseModel, extra="forbid"):
+class FavoriteDirectoryDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel, populate_by_name=True):
     directory_id: str
     directory_name: str
 

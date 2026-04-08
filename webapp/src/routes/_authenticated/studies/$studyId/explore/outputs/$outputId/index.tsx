@@ -14,8 +14,6 @@
 
 import BackButton from "@/components/buttons/BackButton";
 import ListView, { type ListViewItem } from "@/components/page/list/ListView";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
-import { getStudyDistricts } from "@/services/api/study";
 import { sortByName } from "@/services/utils";
 import AutoAwesomeMotionIcon from "@mui/icons-material/AutoAwesomeMotion";
 import { Stack, Tab, Tabs } from "@mui/material";
@@ -23,7 +21,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getAreas, getLinks } from "../../../../../../../redux/selectors";
+import { getAreas, getDistricts, getLinks } from "../../../../../../../redux/selectors";
 import OutputMatrixViewer from "./-components/OutputMatrixViewer";
 import SynthesisViewer from "./-components/SynthesisViewer";
 import useStudyOutput from "./-hooks/useStudyOutput";
@@ -41,12 +39,8 @@ function Output() {
   const [listType, setListType] = useState<ListType>("areas");
 
   const areas = useAppSelector((state) => getAreas(state, studyId));
+  const districts = useAppSelector((state) => getDistricts(state, studyId));
   const links = useAppSelector((state) => getLinks(state, studyId));
-
-  const { data: districts = [] } = usePromiseWithSnackbarError(() => getStudyDistricts(studyId), {
-    deps: [studyId],
-    errorMessage: t("study.outputs.error.loadDistricts"),
-  });
 
   const { data: output } = useStudyOutput({ studyId, outputId });
 
@@ -100,6 +94,7 @@ function Output() {
       splitMinSize={[293, 150]}
       list={list}
       disableSearch={listType === "synthesis"}
+      multipleSearch
       actions={
         <Stack sx={{ overflow: "auto" }}>
           <BackButton linkOptions={{ to: ".." }} />

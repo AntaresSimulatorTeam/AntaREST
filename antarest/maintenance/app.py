@@ -51,6 +51,8 @@ class TaskName(StrEnum):
     AUTO_ARCHIVER = "auto_archiver"
     VARIABLE_VIEW_CLEANER = "variable_view_cleaner"
     TASKS_CLEANER = "tasks_cleaner"
+    DISK_SPACE_ANALYZER = "disk_space_analyzer"
+    DISK_USAGE = "disk_usage"
 
 
 def _mask_url_credentials(url: str) -> str:
@@ -102,6 +104,8 @@ def _setup_logging(**_: Any) -> None:
 def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
     """Register periodic maintenance tasks (called by Beat on startup)."""
     from antarest.maintenance.tasks.auto_archive_task import setup_auto_archive_task
+    from antarest.maintenance.tasks.disk_space_analyzer_task import setup_disk_space_analyzer_task
+    from antarest.maintenance.tasks.disk_usage_log_task import setup_disk_usage_log_task
     from antarest.maintenance.tasks.gc_blob_task import clean_blobs_task
     from antarest.maintenance.tasks.gc_matrix_task import clean_matrices_task
     from antarest.maintenance.tasks.gc_tasks_task import gc_tasks_task
@@ -118,6 +122,8 @@ def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
         storage.variable_view_gc_sleeping_time, clean_variable_views_task.s(), name=TaskName.VARIABLE_VIEW_CLEANER
     )
     sender.add_periodic_task(storage.tasks_gc_sleeping_time, gc_tasks_task.s(), name=TaskName.TASKS_CLEANER)
+    setup_disk_usage_log_task(sender, storage)
+    setup_disk_space_analyzer_task(sender, storage)
 
     logger.info(
         f"Periodic tasks registered: matrix_gc={storage.matrix_gc_sleeping_time}s, "

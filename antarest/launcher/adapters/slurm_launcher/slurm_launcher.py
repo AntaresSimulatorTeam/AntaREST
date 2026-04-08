@@ -19,8 +19,9 @@ import tempfile
 import threading
 import time
 import traceback
+from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Awaitable, Callable, Dict, List, Optional, cast
+from typing import cast
 
 from antares.study.version import SolverVersion
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
@@ -39,7 +40,7 @@ from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
 from antarest.core.utils.archives import unzip
 from antarest.core.utils.utils import assert_this
-from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks
+from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType, XpansionParametersDTO
 from antarest.launcher.ssh_client import calculates_slurm_load
@@ -76,7 +77,7 @@ class LauncherArgs(argparse.Namespace):
 
         # known arguments
         self.other_options: str = ""
-        self.xpansion_mode: Optional[str] = None
+        self.xpansion_mode: str | None = None
         self.time_limit: int = 0
         self.n_cpu: int = 0
         self.post_processing: bool = False
@@ -138,6 +139,30 @@ class LauncherArgs(argparse.Namespace):
             self.post_processing = True
 
 
+def _get_log_path_from_log_dir(log_dir: Path, log_type: LogType = LogType.STDOUT) -> Path | None:
+    pattern = {
+        LogType.STDOUT: "antares-out-*",
+        LogType.STDERR: "antares-err-*",
+    }[log_type]
+    return next(iter(log_dir.glob(pattern)), None)
+
+
+def _get_log_path(study: StudyDTO, log_type: LogType = LogType.STDOUT) -> Path | None:
+    log_dir = Path(study.job_log_dir)
+    return _get_log_path_from_log_dir(log_dir, log_type)
+
+
+def _find_log_dir(base_log_dir: Path, job_id: str) -> Path | None:
+    pattern = f"{job_id}*"
+    return next(iter(base_log_dir.glob(pattern)), None)
+
+
+def _get_logs(job_log_dir: Path) -> SimulationLogs:
+    out_log_path = next(iter(job_log_dir.glob("antares-out-*")), None)
+    err_log_path = next(iter(job_log_dir.glob("antares-err-*")), None)
+    return SimulationLogs(out_log_path, err_log_path)
+
+
 class SlurmLauncher(AbstractLauncher):
     def __init__(
         self,
@@ -153,8 +178,8 @@ class SlurmLauncher(AbstractLauncher):
         self.check_state: bool = True
         self.event_bus = event_bus
         self.event_bus.add_listener(self._create_event_listener(), [EventType.STUDY_JOB_CANCEL_REQUEST])
-        self.thread: Optional[threading.Thread] = None
-        self.job_list: List[str] = []
+        self.thread: threading.Thread | None = None
+        self.job_list: list[str] = []
         self._check_config()
         self.antares_launcher_lock = threading.Lock()
 
@@ -238,14 +263,14 @@ class SlurmLauncher(AbstractLauncher):
         self.thread = None
         logger.info("slurm_launcher loop stopped")
 
-    def _init_launcher_arguments(self, local_workspace: Optional[Path] = None) -> argparse.Namespace:
+    def _init_launcher_arguments(self, local_workspace: Path | None = None) -> argparse.Namespace:
         main_options_parameters = ParserParameters(
             default_wait_time=self.slurm_config.default_wait_time,
             default_time_limit=self.slurm_config.time_limit.default * 3600,
             default_n_cpu=self.slurm_config.nb_cores.default,
-            studies_in_dir=str((Path(local_workspace or self.slurm_config.local_workspace) / STUDIES_INPUT_DIR_NAME)),
-            log_dir=str((Path(self.slurm_config.local_workspace) / LOG_DIR_NAME)),
-            finished_dir=str((Path(local_workspace or self.slurm_config.local_workspace) / STUDIES_OUTPUT_DIR_NAME)),
+            studies_in_dir=str(Path(local_workspace or self.slurm_config.local_workspace) / STUDIES_INPUT_DIR_NAME),
+            log_dir=str(Path(self.slurm_config.local_workspace) / LOG_DIR_NAME),
+            finished_dir=str(Path(local_workspace or self.slurm_config.local_workspace) / STUDIES_OUTPUT_DIR_NAME),
             ssh_config_file_is_required=False,
             ssh_configfile_path_alternate1=None,
             ssh_configfile_path_alternate2=None,
@@ -267,7 +292,7 @@ class SlurmLauncher(AbstractLauncher):
 
         return arguments
 
-    def _init_launcher_parameters(self, local_workspace: Optional[Path] = None) -> MainParameters:
+    def _init_launcher_parameters(self, local_workspace: Path | None = None) -> MainParameters:
         return MainParameters(
             json_dir=local_workspace or self.slurm_config.local_workspace,
             default_json_db_name=self.slurm_config.default_json_db_name,
@@ -296,37 +321,23 @@ class SlurmLauncher(AbstractLauncher):
     def _import_study_output(
         self,
         job_id: str,
-        xpansion_mode: Optional[str] = None,
-        log_dir: Optional[str] = None,
-    ) -> Optional[str]:
+        xpansion_mode: str | None,
+        log_dir: str | None,
+    ) -> str | None:
         if xpansion_mode:
             self._import_xpansion_result(job_id, xpansion_mode)
 
-        launcher_logs: Dict[str, List[Path]] = {}
-        if log_dir is not None:
-            launcher_logs = {
-                log_name: log_path
-                for log_name, log_path in {
-                    "antares-out.log": [
-                        p
-                        for p in [SlurmLauncher._get_log_path_from_log_dir(Path(log_dir), LogType.STDOUT)]
-                        if p is not None
-                    ],
-                    "antares-err.log": [
-                        p
-                        for p in [SlurmLauncher._get_log_path_from_log_dir(Path(log_dir), LogType.STDERR)]
-                        if p is not None
-                    ],
-                }.items()
-                if log_path
-            }
+        if log_dir:
+            launcher_logs = _get_logs(Path(log_dir))
+        else:
+            launcher_logs = SimulationLogs.no_logs()
 
         # The following callback is actually calling:
         # `antarest.launcher.service.LauncherService._import_output`
         return self.callbacks.import_output(
-            job_id,
-            self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "output",
-            launcher_logs,
+            job_id=job_id,
+            output_path=self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "output",
+            additional_logs=launcher_logs,
         )
 
     def _import_xpansion_result(self, job_id: str, xpansion_mode: str) -> None:
@@ -361,7 +372,7 @@ class SlurmLauncher(AbstractLauncher):
 
             study_list = self.data_repo_tinydb.get_list_of_studies()
             for study in study_list:
-                log_path = SlurmLauncher._get_log_path(study)
+                log_path = _get_log_path(study)
                 if study.with_error:
                     self.log_tail_manager.stop_tracking(log_path)
                     self._handle_failure(study)
@@ -451,34 +462,6 @@ class SlurmLauncher(AbstractLauncher):
         else:
             self.callbacks.update_status(study.name, JobStatus.SUCCESS, None, output_id)
 
-    @staticmethod
-    def _get_log_path(study: StudyDTO, log_type: LogType = LogType.STDOUT) -> Optional[Path]:
-        log_dir = Path(study.job_log_dir)
-        return SlurmLauncher._get_log_path_from_log_dir(log_dir, log_type)
-
-    @staticmethod
-    def _find_log_dir(base_log_dir: Path, job_id: str) -> Optional[Path]:
-        pattern = f"{job_id}*"
-        return next(iter(base_log_dir.glob(pattern)), None)
-
-    @staticmethod
-    def _get_log_path_from_log_dir(log_dir: Path, log_type: LogType = LogType.STDOUT) -> Optional[Path]:
-        pattern = {
-            LogType.STDOUT: "antares-out-*",
-            LogType.STDERR: "antares-err-*",
-        }[log_type]
-        return next(iter(log_dir.glob(pattern)), None)
-
-    def _clean_local_workspace(self) -> None:
-        logger.info("Cleaning up slurm workspace")
-        local_workspace = self.local_workspace
-        for filename in os.listdir(local_workspace):
-            file_path = os.path.join(local_workspace, filename)
-            if os.path.isfile(file_path) or os.path.islink(file_path):
-                os.unlink(file_path)
-            elif os.path.isdir(file_path):
-                shutil.rmtree(file_path)
-
     def _clean_up_study(self, launch_id: str) -> None:
         logger.info(f"Cleaning up study with launch_id {launch_id}")
         self.data_repo_tinydb.remove_study(launch_id)
@@ -512,10 +495,10 @@ class SlurmLauncher(AbstractLauncher):
 
                     append_log(launch_uuid, "Checking study version...")
                     available_versions = self.slurm_config.antares_versions_on_remote_server
-                    if f"{version:ddd}" not in available_versions:
+                    if version not in available_versions:
                         raise VersionNotSupportedError(
                             f"Study version '{version}' is not supported. Currently supported versions are"
-                            f" {', '.join(available_versions)}"
+                            f" {', '.join([str(v) for v in available_versions])}"
                         )
                     _override_solver_version(study_path, version)
 
@@ -608,15 +591,15 @@ class SlurmLauncher(AbstractLauncher):
         thread.start()
 
     @override
-    def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
-        log_path: Optional[Path] = None
+    def get_log(self, job_id: str, log_type: LogType) -> str | None:
+        log_path: Path | None = None
         for study in self.data_repo_tinydb.get_list_of_studies():
             if study.name == job_id:
-                log_path = SlurmLauncher._get_log_path(study, log_type)
+                log_path = _get_log_path(study, log_type)
                 if log_path:
                     return log_path.read_text()
-        if log_dir := SlurmLauncher._find_log_dir(Path(self.launcher_args.log_dir) / "JOB_LOGS", job_id):
-            log_path = SlurmLauncher._get_log_path_from_log_dir(log_dir, log_type)
+        if log_dir := _find_log_dir(Path(self.launcher_args.log_dir) / "JOB_LOGS", job_id):
+            log_path = _get_log_path_from_log_dir(log_dir, log_type)
         return log_path.read_text() if log_path else None
 
     def _create_event_listener(self) -> Callable[[Event], Awaitable[None]]:
@@ -651,7 +634,7 @@ class SlurmLauncher(AbstractLauncher):
             )
 
     @override
-    def get_solver_versions(self) -> List[str]:
+    def get_solver_versions(self) -> list[SolverVersion]:
         return sorted(self.slurm_config.antares_versions_on_remote_server)
 
     @override

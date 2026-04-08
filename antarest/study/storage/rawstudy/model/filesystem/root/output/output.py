@@ -12,7 +12,6 @@
 
 from typing_extensions import override
 
-from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
@@ -30,9 +29,6 @@ class Output(FolderNode):
             )
             for i, s in self.config.outputs.items()
         }
-
-        if (self.config.path / "logs").exists():
-            children["logs"] = BucketNode(self.matrix_mapper, self.config.next_file("logs"))
         return children
 
     @override

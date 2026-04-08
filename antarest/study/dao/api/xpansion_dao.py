@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 import polars as pl
 
@@ -68,7 +67,17 @@ class ReadOnlyXpansionDao(ABC):
 
 class XpansionDao(ReadOnlyXpansionDao):
     @abstractmethod
-    def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
+    def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: str | None = None) -> None:
+        """
+        Upsert a candidate.
+
+        Args:
+            candidate: The candidate to create or update.
+            old_id: Current candidate name, only provided when renaming a candidate.
+
+        Raises:
+            CandidateNotFoundError: If ``old_id`` is provided but does not exist.
+        """
         raise NotImplementedError()
 
     @abstractmethod

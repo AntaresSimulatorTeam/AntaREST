@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import re
-from typing import Dict, List, MutableMapping, Type
+from collections.abc import MutableMapping
 
 import typing_extensions as te
 from typing_extensions import override
@@ -21,7 +21,7 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFi
 
 _TSNumber: te.TypeAlias = int
 _HydroLevel: te.TypeAlias = float
-_Rules = MutableMapping[str, Type[_TSNumber] | Type[_HydroLevel]]
+_Rules = MutableMapping[str, type[_TSNumber] | type[_HydroLevel]]
 
 
 class ScenarioBuilder(IniFileNode):
@@ -62,7 +62,7 @@ class ScenarioBuilder(IniFileNode):
         )
 
     @override
-    def _get_filtering_kwargs(self, url: List[str]) -> Dict[str, str]:
+    def _get_filtering_kwargs(self, url: list[str]) -> dict[str, str]:
         # If the URL contains 2 elements, we can filter the options based on the type.
         if len(url) == 2:
             section, symbol = url

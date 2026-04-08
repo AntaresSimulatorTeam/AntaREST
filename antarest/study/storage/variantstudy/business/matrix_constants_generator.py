@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import Dict
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -78,7 +77,7 @@ ST_STORAGE_INFLOWS = EMPTY_SCENARIO_MATRIX
 # noinspection SpellCheckingInspection
 class GeneratorMatrixConstants:
     def __init__(self, matrix_service: ISimpleMatrixService) -> None:
-        self.hashes: Dict[str, str] = {}
+        self.hashes: dict[str, str] = {}
         self.matrix_service: ISimpleMatrixService = matrix_service
         ConstantsMatrixUsageProvider(self, self.matrix_service)
 

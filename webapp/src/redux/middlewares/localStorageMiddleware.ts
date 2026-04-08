@@ -12,17 +12,17 @@
  * This file is part of the Antares project.
  */
 
-import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
 import storage, { StorageKey } from "@/services/utils/localStorage";
 import type { UserInfo } from "@/types/types";
+import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
 import type { AppState } from "../ducks";
 import { login, logout, refresh } from "../ducks/auth";
 import {
-  setFavoriteStudies,
   updateStudiesFromLocalStorage,
-  updateStudySortConfig,
   updateStudyFilters,
+  updateStudySortConfig,
 } from "../ducks/studies";
+import { getStudyFilters } from "../selectors";
 import { setMenuOpen } from "../ducks/ui";
 
 const localStorageMiddleware = createListenerMiddleware<AppState>();
@@ -45,7 +45,6 @@ localStorageMiddleware.startListening({
     if (action.type === login.fulfilled.toString()) {
       dispatch(
         updateStudiesFromLocalStorage({
-          favorites: storage.getItem(StorageKey.StudiesFavorites),
           sort: storage.getItem(StorageKey.StudiesSort),
         }),
       );
@@ -63,13 +62,6 @@ localStorageMiddleware.startListening({
 ////////////////////////////////////////////////////////////////
 
 localStorageMiddleware.startListening({
-  actionCreator: setFavoriteStudies,
-  effect: (action) => {
-    storage.setItem(StorageKey.StudiesFavorites, action.payload);
-  },
-});
-
-localStorageMiddleware.startListening({
   actionCreator: updateStudySortConfig,
   effect: (action) => {
     storage.setItem(StorageKey.StudiesSort, (prev) => ({
@@ -79,14 +71,13 @@ localStorageMiddleware.startListening({
   },
 });
 
-// When a user opens a folder, it should remain open after a page refresh.
+// Persist navigation state so the selected directory remains open after a page refresh.
+// Search and filter-panel fields are intentionally excluded.
 localStorageMiddleware.startListening({
   actionCreator: updateStudyFilters,
-  effect: (action) => {
-    storage.setItem(StorageKey.StudiesFilters, (prev) => ({
-      ...prev,
-      ...action.payload,
-    }));
+  effect: (_, listenerApi) => {
+    const { activeTree, managed, external } = getStudyFilters(listenerApi.getState());
+    storage.setItem(StorageKey.StudiesFilters, { activeTree, managed, external });
   },
 });
 

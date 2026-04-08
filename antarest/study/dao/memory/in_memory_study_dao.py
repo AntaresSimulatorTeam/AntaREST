@@ -10,9 +10,9 @@
 #
 # This file is part of the Antares project.
 
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import PurePosixPath
-from typing import Dict, Iterator, List, Optional, Sequence
 
 import numpy as np
 import polars as pl
@@ -65,6 +65,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettingsUpdate,
 )
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -111,19 +112,19 @@ class InMemoryStudyDao(StudyDao):
         self._version = version
         self._matrix_service = matrix_service
         # Links
-        self._links: Dict[LinkKey, Link] = {}
-        self._link_capacities: Dict[LinkKey, str] = {}
-        self._link_direct_capacities: Dict[LinkKey, str] = {}
-        self._link_indirect_capacities: Dict[LinkKey, str] = {}
+        self._links: dict[LinkKey, Link] = {}
+        self._link_capacities: dict[LinkKey, str] = {}
+        self._link_direct_capacities: dict[LinkKey, str] = {}
+        self._link_indirect_capacities: dict[LinkKey, str] = {}
         # Thermals
-        self._thermals: Dict[ClusterKey, ThermalCluster] = {}
-        self._thermal_prepro: Dict[ClusterKey, str] = {}
-        self._thermal_modulation: Dict[ClusterKey, str] = {}
-        self._thermal_series: Dict[ClusterKey, str] = {}
-        self._thermal_fuel_cost: Dict[ClusterKey, str] = {}
-        self._thermal_co2_cost: Dict[ClusterKey, str] = {}
+        self._thermals: dict[ClusterKey, ThermalCluster] = {}
+        self._thermal_prepro: dict[ClusterKey, str] = {}
+        self._thermal_modulation: dict[ClusterKey, str] = {}
+        self._thermal_series: dict[ClusterKey, str] = {}
+        self._thermal_fuel_cost: dict[ClusterKey, str] = {}
+        self._thermal_co2_cost: dict[ClusterKey, str] = {}
         # Hydro
-        self._hydro_properties: Dict[str, HydroProperties] = {}
+        self._hydro_properties: dict[str, HydroProperties] = {}
         self._hydro_allocation: dict[str, HydroAllocation] = {}
         self._hydro_correlation: dict[str, HydroCorrelation] = {}
         self._hydro_maxpower: dict[str, str] = {}
@@ -140,26 +141,26 @@ class InMemoryStudyDao(StudyDao):
         self._hydro_max_daily_gen_energy: dict[str, str] = {}
         self._hydro_max_daily_pump_energy: dict[str, str] = {}
         # Renewables
-        self._renewables: Dict[ClusterKey, RenewableCluster] = {}
-        self._renewable_series: Dict[ClusterKey, str] = {}
+        self._renewables: dict[ClusterKey, RenewableCluster] = {}
+        self._renewable_series: dict[ClusterKey, str] = {}
         # Short-term storages
-        self._st_storages: Dict[ClusterKey, STStorage] = {}
-        self._storage_pmax_injection: Dict[ClusterKey, str] = {}
-        self._storage_pmax_withdrawal: Dict[ClusterKey, str] = {}
-        self._storage_lower_rule_curve: Dict[ClusterKey, str] = {}
-        self._storage_upper_rule_curve: Dict[ClusterKey, str] = {}
-        self._storage_inflows: Dict[ClusterKey, str] = {}
-        self._storage_cost_injection: Dict[ClusterKey, str] = {}
-        self._storage_cost_withdrawal: Dict[ClusterKey, str] = {}
-        self._storage_cost_level: Dict[ClusterKey, str] = {}
-        self._storage_cost_variation_injection: Dict[ClusterKey, str] = {}
-        self._storage_cost_variation_withdrawal: Dict[ClusterKey, str] = {}
+        self._st_storages: dict[ClusterKey, STStorage] = {}
+        self._storage_pmax_injection: dict[ClusterKey, str] = {}
+        self._storage_pmax_withdrawal: dict[ClusterKey, str] = {}
+        self._storage_lower_rule_curve: dict[ClusterKey, str] = {}
+        self._storage_upper_rule_curve: dict[ClusterKey, str] = {}
+        self._storage_inflows: dict[ClusterKey, str] = {}
+        self._storage_cost_injection: dict[ClusterKey, str] = {}
+        self._storage_cost_withdrawal: dict[ClusterKey, str] = {}
+        self._storage_cost_level: dict[ClusterKey, str] = {}
+        self._storage_cost_variation_injection: dict[ClusterKey, str] = {}
+        self._storage_cost_variation_withdrawal: dict[ClusterKey, str] = {}
         # Short-term storages additional constraints
         self._st_storages_constraints: STStorageAdditionalConstraintsMap = {}
-        self._st_storages_constraints_matrix: Dict[AdditionalConstraintKey, str] = {}
-        self._st_storages_constraints_terms: Dict[str, dict[str, str]] = {}
+        self._st_storages_constraints_matrix: dict[AdditionalConstraintKey, str] = {}
+        self._st_storages_constraints_terms: dict[str, dict[str, str]] = {}
         # Binding constraints
-        self._constraints: Dict[str, BindingConstraint] = {}
+        self._constraints: dict[str, BindingConstraint] = {}
         self._constraints_values_matrix: dict[str, str] = {}
         self._constraints_less_term_matrix: dict[str, str] = {}
         self._constraints_greater_term_matrix: dict[str, str] = {}
@@ -195,7 +196,7 @@ class InMemoryStudyDao(StudyDao):
         # Playlist config
         self._playlist_config = Playlist()
         # User resources
-        self._user_resources: dict[PurePosixPath, Optional[str]] = {}
+        self._user_resources: dict[PurePosixPath, str | None] = {}
         # Area Properties
         self._area_properties: dict[str, AreaProperties] = {}
         # Area UI
@@ -231,7 +232,7 @@ class InMemoryStudyDao(StudyDao):
         self._comments = comments
 
     @override
-    def update_antares_file(self, editor: str, last_save: float) -> None:
+    def update_antares_file(self, metadata: StudyMetadataUpdate) -> None:
         pass
 
     @override
@@ -366,7 +367,7 @@ class InMemoryStudyDao(StudyDao):
         del self._thermals[cluster_key(area_id, thermal_id)]
 
     @override
-    def get_all_hydro_properties(self) -> Dict[str, HydroProperties]:
+    def get_all_hydro_properties(self) -> dict[str, HydroProperties]:
         return self._hydro_properties
 
     @override
@@ -788,7 +789,7 @@ class InMemoryStudyDao(StudyDao):
         return self._xpansion_candidates[candidate_id]
 
     @override
-    def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
+    def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: str | None = None) -> None:
         if old_id:
             del self._xpansion_candidates[old_id]
         self._xpansion_candidates[candidate.name] = candidate
@@ -985,12 +986,12 @@ class InMemoryStudyDao(StudyDao):
         self.ruleset = ruleset
 
     @override
-    def get_all_areas_info(self) -> List[AreaInfo]:
+    def get_all_areas_info(self) -> list[AreaInfo]:
         return [AreaInfo(id=area_id, name=area_id, thermals=[]) for area_id in self._area_names]
 
     @override
-    def get_all_areas_ui_info(self) -> Dict[str, AreaUIData]:
-        result: Dict[str, AreaUIData] = {}
+    def get_all_areas_ui_info(self) -> dict[str, AreaUIData]:
+        result: dict[str, AreaUIData] = {}
         for area_id, area_ui in self._area_ui.items():
             r, g, b = area_ui.color_rgb
             result[area_id] = AreaUIData(
@@ -1057,7 +1058,7 @@ class InMemoryStudyDao(StudyDao):
         self._area_ui[area_id] = area_ui
 
     @override
-    def save_layer_areas(self, layer_id: str, area_ids: List[str]) -> None:
+    def save_layer_areas(self, layer_id: str, area_ids: list[str]) -> None:
         # Verify that all areas exist
         for area_id in area_ids:
             if area_id not in self._area_names:

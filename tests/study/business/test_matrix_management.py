@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Tuple
 
 import numpy as np
 import polars as pl
@@ -155,9 +154,9 @@ class TestMatrixIndexError:
     ],
 )
 def test_update_matrix_content_with_slices(
-    slices: List[MatrixSlice],
+    slices: list[MatrixSlice],
     operation: Operation,
-    expected_result: List[List[MatrixData]],
+    expected_result: list[list[MatrixData]],
 ) -> None:
     matrix_data = pl.DataFrame(np.full((5, 5), -1))
 
@@ -267,9 +266,9 @@ def test_update_matrix_content_with_slices__out_of_bounds() -> None:
     ],
 )
 def test_update_matrix_content_with_coordinates(
-    coords: List[Tuple[int, int]],
+    coords: list[tuple[int, int]],
     operation: Operation,
-    expected_result: List[List[MatrixData]],
+    expected_result: list[list[MatrixData]],
 ) -> None:
     matrix_data = pl.DataFrame(np.full((5, 5), -1))
 
@@ -343,8 +342,8 @@ class TestGroupBySlices:
     )
     def test_group_by_slices(
         self,
-        cells: List[Tuple[int, int]],
-        expected: List[Tuple[Tuple[int, int], Tuple[int, int]]],
+        cells: list[tuple[int, int]],
+        expected: list[tuple[tuple[int, int], tuple[int, int]]],
     ) -> None:
         actual = group_by_slices(cells)
         assert actual == expected

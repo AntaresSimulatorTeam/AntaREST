@@ -22,11 +22,11 @@ import type {
   AllClustersAndLinks,
   AreaWithId,
   Cluster,
-  FileStudyTreeConfigDTO,
   GroupDetailsDTO,
   LinkElement,
   StudyMetadata,
   StudySortConfig,
+  StudySynthesis,
   UserDetailsDTO,
 } from "../types/types";
 import { filterStudies } from "../utils/studiesUtils";
@@ -78,24 +78,6 @@ export const getStudiesById = studiesSelectors.selectEntities;
 export const getStudyIds = studiesSelectors.selectIds;
 
 export const getStudy = studiesSelectors.selectById;
-
-export const getFavoriteStudyIds = (state: AppState): StudiesState["favorites"] => {
-  return getStudiesState(state).favorites;
-};
-
-export const getFavoriteStudies = createSelector(
-  getStudiesById,
-  getFavoriteStudyIds,
-  (studiesById, favoriteIds) => {
-    return favoriteIds
-      .map((favId) => studiesById[favId])
-      .filter((item): item is StudyMetadata => !!item);
-  },
-);
-
-export const isStudyFavorite = (state: AppState, id: StudyMetadata["id"]): boolean => {
-  return getFavoriteStudyIds(state).includes(id);
-};
 
 export const getStudyFilters = (state: AppState): StudyFilters => {
   return getStudiesState(state).filters;
@@ -216,7 +198,7 @@ export const getStudySynthesesState = (state: AppState): StudySynthesesState =>
   state.studySyntheses;
 
 const studySynthesesSelectors = createEntityAdapter({
-  selectId: (studyData: FileStudyTreeConfigDTO) => studyData.study_id,
+  selectId: (studyData: StudySynthesis) => studyData.study_id,
 }).getSelectors(getStudySynthesesState);
 
 export const getStudySynthesisById = studySynthesesSelectors.selectEntities;
@@ -243,6 +225,14 @@ export const getAreas = createSelector(getStudySynthesis, (synthesis) => {
     return sortByName(areas);
   }
 
+  return [];
+});
+
+export const getDistricts = createSelector(getStudySynthesis, (synthesis) => {
+  if (synthesis) {
+    const districts = Object.values(synthesis.districts);
+    return sortByName(districts);
+  }
   return [];
 });
 

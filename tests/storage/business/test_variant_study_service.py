@@ -80,7 +80,7 @@ def test_get(tmp_path: str, project_path: Path) -> None:
     study_service.exists.return_value = False
 
     def task_status() -> None:
-        for t in [
+        yield from [
             TaskDTO(
                 id="1",
                 name="generation task",
@@ -99,8 +99,7 @@ def test_get(tmp_path: str, project_path: Path) -> None:
                 completion_date_utc=None,
                 result=TaskResult(success=False, message="error message"),
             ),
-        ]:
-            yield t
+        ]
 
     study_service.task_service.status_task.side_effect = task_status()
     with pytest.raises(VariantGenerationError, match="Error while generating variant study2.py error message"):

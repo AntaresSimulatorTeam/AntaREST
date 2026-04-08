@@ -12,7 +12,8 @@
 
 import collections
 import logging
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 from antarest.core.exceptions import (
     BindingConstraintNotFound,
@@ -79,11 +80,11 @@ class ConstraintFilters(AntaresBaseModel, extra="forbid"):
     """
 
     bc_id: str = ""
-    enabled: Optional[bool] = None
-    operator: Optional[BindingConstraintOperator] = None
+    enabled: bool | None = None
+    operator: BindingConstraintOperator | None = None
     comments: str = ""
     group: str = ""
-    time_step: Optional[BindingConstraintFrequency] = None
+    time_step: BindingConstraintFrequency | None = None
     area_name: str = ""
     cluster_name: str = ""
     link_id: str = ""
@@ -164,7 +165,7 @@ class ConstraintFilters(AntaresBaseModel, extra="forbid"):
 
 def _get_references_by_widths(
     study: StudyInterface, bcs: Sequence[BindingConstraint]
-) -> Mapping[int, Sequence[Tuple[str, str]]]:
+) -> Mapping[int, Sequence[tuple[str, str]]]:
     """
     Iterates over each BC and its associated matrices.
     For each matrix, it checks its width according to the expected matrix shapes.
@@ -175,7 +176,7 @@ def _get_references_by_widths(
         but the width should be consistent within a group of binding constraints.
     """
 
-    references_by_width: Dict[int, List[Tuple[str, str]]] = {}
+    references_by_width: dict[int, list[tuple[str, str]]] = {}
     _total = len(bcs)
     study_dao = study.get_study_dao()
     for _index, bc in enumerate(bcs):
@@ -217,7 +218,7 @@ def _validate_binding_constraints(study: StudyInterface, bcs: Sequence[BindingCo
 
     if len(references_by_widths) > 1:
         most_common = collections.Counter(references_by_widths.keys()).most_common()
-        invalid_constraints: Dict[str, str] = {}
+        invalid_constraints: dict[str, str] = {}
 
         for width, _ in most_common[1:]:
             references = references_by_widths[width]
@@ -545,7 +546,7 @@ class BindingConstraintManager:
 
         return constraints
 
-    def remove_multiple_binding_constraints(self, study: StudyInterface, binding_constraints_ids: List[str]) -> None:
+    def remove_multiple_binding_constraints(self, study: StudyInterface, binding_constraints_ids: list[str]) -> None:
         """
         Removes multiple binding constraints from a study.
 

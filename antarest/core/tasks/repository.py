@@ -12,7 +12,6 @@
 
 import datetime
 from http import HTTPStatus
-from typing import List, Optional
 
 from fastapi import HTTPException
 from sqlalchemy import and_, select
@@ -45,7 +44,7 @@ class TaskJobRepository:
         session.commit()
         return task
 
-    def get(self, id: str) -> Optional[TaskJob]:
+    def get(self, id: str) -> TaskJob | None:
         session = self.session
         task: TaskJob | None = session.get(TaskJob, id)
         if task is not None:
@@ -58,7 +57,7 @@ class TaskJobRepository:
             raise HTTPException(HTTPStatus.NOT_FOUND, f"Task {id} not found")
         return task
 
-    def list(self, filter: TaskListFilter, user: Optional[int] = None) -> List[TaskJob]:
+    def list(self, filter: TaskListFilter, user: int | None = None) -> list[TaskJob]:
         stmt = select(TaskJob)
         if user:
             stmt = stmt.where(TaskJob.owner_id == user)
@@ -88,7 +87,7 @@ class TaskJobRepository:
             stmt = stmt.where(TaskJob.type.in_(_types))
 
         result = self.session.execute(stmt)
-        tasks: List[TaskJob] = list(result.scalars().all())
+        tasks: list[TaskJob] = list(result.scalars().all())
         return tasks
 
     def delete(self, tid: str) -> None:

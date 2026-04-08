@@ -11,10 +11,10 @@
 # This file is part of the Antares project.
 
 import enum
-from typing import List, Optional, Sequence, Tuple, cast
+from typing import Optional, Sequence, cast
 
 from pydantic import NonNegativeInt
-from sqlalchemy import TEXT, and_, delete, exists, func, literal, not_, or_, select, sql
+from sqlalchemy import TEXT, and_, delete, exists, func, literal, not_, or_, select, sql, update
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Query, Session, joinedload, with_polymorphic
 
@@ -26,18 +26,18 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Group
 from antarest.login.utils import get_current_user
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, Directory, RawStudy, Study, Tag
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, Directory, RawStudy, Study, StudyDiskSpaceAnalysis, Tag
 
 
 def escape_like(string: str, escape_char: str = "\\") -> str:
     """
     Escape the string parameter used in SQL LIKE expressions.
 
-    Examples::
+    Examples:
 
         from sqlalchemy_utils import escape_like
 
-        query = session.query(User).filter(User.name.ilike(escape_like("John")))
+        query = session.query(User).filter(User.name.like(escape_like("John")))
 
     Args:
         string: a string to escape
@@ -56,7 +56,7 @@ class AccessPermissions(AntaresBaseModel, frozen=True, extra="forbid"):
     """
 
     is_admin: bool = False
-    user_id: Optional[int] = None
+    user_id: int | None = None
     user_groups: Sequence[str] = ()
 
     @classmethod
@@ -68,7 +68,7 @@ class AccessPermissions(AntaresBaseModel, frozen=True, extra="forbid"):
         return cls.for_user(get_current_user())
 
     @classmethod
-    def for_user(cls, user: Optional[JWTUser]) -> "AccessPermissions":
+    def for_user(cls, user: JWTUser | None) -> "AccessPermissions":
         """
         This function makes it easier to pass on user ids and groups into the repository filtering function by
         extracting the associated `AccessPermissions` object.
@@ -110,15 +110,15 @@ class StudyFilter(AntaresBaseModel, frozen=True, extra="forbid"):
     """
 
     name: str = ""
-    managed: Optional[bool] = None
-    archived: Optional[bool] = None
-    variant: Optional[bool] = None
+    managed: bool | None = None
+    archived: bool | None = None
+    variant: bool | None = None
     versions: Sequence[str] = ()
     users: Sequence[int] = ()
     groups: Sequence[str] = ()
     tags: Sequence[str] = ()
     study_ids: Sequence[str] = ()
-    exists: Optional[bool] = None
+    exists: bool | None = None
     workspace: str = ""
     folder: str = ""
     directory_id: str = ""
@@ -152,7 +152,7 @@ class StudyMetadataRepository:
     Database connector to manage Study entity
     """
 
-    def __init__(self, cache_service: ICache, session: Optional[Session] = None):
+    def __init__(self, cache_service: ICache, session: Session | None = None):
         """
         Initialize the repository.
 
@@ -180,11 +180,7 @@ class StudyMetadataRepository:
     def save(
         self,
         metadata: Study,
-        update_modification_date: bool = False,
     ) -> Study:
-        if update_modification_date:
-            metadata.updated_at = current_time()
-
         session = self.session
         metadata.groups = [session.merge(g) for g in metadata.groups]
         if metadata.owner:
@@ -198,7 +194,7 @@ class StudyMetadataRepository:
     def refresh(self, metadata: Study) -> None:
         self.session.refresh(metadata)
 
-    def get(self, study_id: str) -> Optional[Study]:
+    def get(self, study_id: str) -> Study | None:
         """Get the study by ID or return `None` if not found in database."""
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
@@ -226,7 +222,7 @@ class StudyMetadataRepository:
     def get_all(
         self,
         study_filter: StudyFilter = StudyFilter(),
-        sort_by: Optional[StudySortBy] = None,
+        sort_by: StudySortBy | None = None,
         pagination: StudyPagination = StudyPagination(),
     ) -> Sequence[Study]:
         """
@@ -377,7 +373,7 @@ class StudyMetadataRepository:
 
         return q
 
-    def get_all_raw(self, exists: Optional[bool] = None) -> Sequence[RawStudy]:
+    def get_all_raw(self, exists: bool | None = None) -> Sequence[RawStudy]:
         stmt = select(RawStudy)
         if exists is not None:
             if exists:
@@ -423,7 +419,7 @@ class StudyMetadataRepository:
         session.execute(delete_stmt)
         session.commit()
 
-    def list_duplicates(self) -> List[Tuple[str, str]]:
+    def list_duplicates(self) -> list[tuple[str, str]]:
         """
         Get list of duplicates as tuples (id, path).
         """
@@ -431,7 +427,7 @@ class StudyMetadataRepository:
         subquery = select(Study.path).group_by(Study.path).having(func.count() > 1)
         stmt = select(Study.id, Study.path).where(Study.path.in_(subquery))
         result = session.execute(stmt)
-        return cast(List[Tuple[str, str]], result.all())
+        return cast(list[tuple[str, str]], result.all())
 
     def has_children(self, uuid: str) -> bool:
         """
@@ -450,7 +446,7 @@ class StudyMetadataRepository:
 
 
 class DirectoryRepository:
-    def __init__(self, session: Optional[Session] = None):
+    def __init__(self, session: Session | None = None):
         self._session = session
 
     @property
@@ -465,7 +461,7 @@ class DirectoryRepository:
         session.commit()
         return directory
 
-    def get_by_id(self, directory_id: str) -> Optional[Directory]:
+    def get_by_id(self, directory_id: str) -> Directory | None:
         return (
             self.session.execute(
                 select(Directory).options(joinedload(Directory.parent)).where(Directory.id == directory_id)
@@ -474,7 +470,7 @@ class DirectoryRepository:
             .scalar_one_or_none()
         )
 
-    def get_by_name(self, directory_name: str, parent_id: Optional[str]) -> Optional[Directory]:
+    def get_by_name(self, directory_name: str, parent_id: str | None) -> Directory | None:
         stmt = select(Directory).where(Directory.name == directory_name, Directory.parent_id == parent_id)
         return self.session.scalar(stmt)
 
@@ -514,7 +510,7 @@ class DirectoryRepository:
 
         return False
 
-    def exists(self, name: str, parent_id: Optional[str]) -> bool:
+    def exists(self, name: str, parent_id: str | None) -> bool:
         stmt = select(exists(select(Directory).where(Directory.name == name, Directory.parent_id == parent_id)))
         return bool(self.session.scalar(stmt))
 
@@ -581,7 +577,7 @@ class DirectoryRepository:
         stmt = select(func.count(Study.id)).where(Study.directory_id.in_(all_directory_ids))
         return int(self.session.scalar(stmt))
 
-    def get_directory_paths_bulk(self, directory_ids: List[str]) -> dict[str, str]:
+    def get_directory_paths_bulk(self, directory_ids: list[str]) -> dict[str, str]:
         """
         Get directory paths for multiple directories in bulk using a recursive CTE.
 
@@ -623,3 +619,42 @@ class DirectoryRepository:
 
         result = self.session.execute(stmt)
         return {row[0]: row[1] for row in result}
+
+
+class StudyDiskSpaceRepository:
+    def __init__(self, session: Optional[Session] = None):
+        self._session = session
+
+    @property
+    def session(self) -> Session:
+        if self._session is None:
+            return db.session
+        return self._session
+
+    def get(self, study_id: str) -> Optional[StudyDiskSpaceAnalysis]:
+        return self.session.get(StudyDiskSpaceAnalysis, study_id)
+
+    def get_all(self) -> Sequence[StudyDiskSpaceAnalysis]:
+        stmt = select(StudyDiskSpaceAnalysis).options(joinedload(StudyDiskSpaceAnalysis.study))
+        result = self.session.execute(stmt)
+        return list(result.unique().scalars().all())
+
+    def save(self, disk_analysis: StudyDiskSpaceAnalysis) -> StudyDiskSpaceAnalysis:
+
+        session = self.session
+        session.add(disk_analysis)
+        session.commit()
+
+        return disk_analysis
+
+    def update(self, study_id: str, disk_space: int) -> None:
+        session = self.session
+
+        stmt = (
+            update(StudyDiskSpaceAnalysis)
+            .where(StudyDiskSpaceAnalysis.study_id == study_id)
+            .values(disk_space_bytes=disk_space, last_analysis_date=current_time())
+        )
+
+        session.execute(stmt)
+        session.commit()

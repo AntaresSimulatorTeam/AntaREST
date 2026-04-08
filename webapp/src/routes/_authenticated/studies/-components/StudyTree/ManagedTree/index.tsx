@@ -12,18 +12,17 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Typography } from "@mui/material";
-import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import * as R from "ramda";
-import { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+import useUpdatedRef from "@/hooks/useUpdatedRef";
 import { directoryQueries } from "@/queries/directories/queries";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudyFilters } from "@/redux/selectors";
-import useUpdatedRef from "@/hooks/useUpdatedRef";
+import { Box, Typography } from "@mui/material";
+import { SimpleTreeView } from "@mui/x-tree-view";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import DeleteDirectoryDialog from "./DeleteDirectoryDialog";
 import EditableTreeItem from "./EditableTreeItem";
 import { useDeleteDirectoryDialog } from "./hooks/useDeleteDirectoryDialog";
@@ -35,7 +34,8 @@ import { buildDirectoryTree, getDescendantIds, getDirectoryPath } from "./utils"
 function ManagedTree({ isCreatingDirectory, onDirectoryCreated }: ManagedTreeProps) {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const directoryId = useAppSelector((state) => getStudyFilters(state).managed.directoryId, R.T);
+  const directoryId = useAppSelector((state) => getStudyFilters(state).managed.directoryId);
+  const isActive = useAppSelector((state) => getStudyFilters(state).activeTree === "managed");
 
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
@@ -75,11 +75,14 @@ function ManagedTree({ isCreatingDirectory, onDirectoryCreated }: ManagedTreePro
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleNodeClick = (itemId: string) => {
+  const handleItemClick = (_event: React.MouseEvent, itemId: string) => {
     dispatch(
       updateStudyFilters({
         activeTree: "managed",
-        managed: { directoryId: itemId, directoryIds: getDescendantIds(itemId, directories) },
+        managed: {
+          directoryId: itemId,
+          directoryIds: getDescendantIds(itemId, directories),
+        },
       }),
     );
   };
@@ -163,11 +166,11 @@ function ManagedTree({ isCreatingDirectory, onDirectoryCreated }: ManagedTreePro
       <SimpleTreeView
         expandedItems={expandedItems}
         onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
-        defaultSelectedItems={directoryId || ""}
+        selectedItems={isActive ? directoryId : null}
+        onItemClick={handleItemClick}
       >
         <ManagedTreeNode
           node={directoryTree}
-          onNodeClick={handleNodeClick}
           selectedPath={directoryId || ""}
           onAddSubDirectory={handleAddSubDirectory}
           onSaveSubDirectory={handleSaveDirectory}

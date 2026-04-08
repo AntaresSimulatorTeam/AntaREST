@@ -13,10 +13,11 @@
 import logging
 import re
 import shutil
+from collections.abc import Callable, Sequence
 from datetime import timedelta
 from functools import reduce
 from pathlib import Path, PurePosixPath
-from typing import Callable, Dict, List, Optional, Sequence, cast
+from typing import cast
 from uuid import uuid4
 
 import humanize
@@ -47,6 +48,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, current_time, suppress_exception
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
+from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import (
     RawStudy,
     Study,
@@ -54,10 +56,9 @@ from antarest.study.model import (
 )
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
-from antarest.study.storage.rawstudy.raw_study_service import RawStudyService, copy_output_folders
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import (
     assert_permission,
     is_managed,
@@ -132,7 +133,7 @@ class VariantStudyService(AbstractStorageService):
         except ValueError:
             raise CommandNotFoundError(f"Command with id {command_id} not found") from None
 
-    def get_commands(self, study_id: str) -> List[CommandDTOAPI]:
+    def get_commands(self, study_id: str) -> list[CommandDTOAPI]:
         """
         Get commands list
         Args:
@@ -141,7 +142,7 @@ class VariantStudyService(AbstractStorageService):
         """
         study = self._get_variant_study(study_id)
 
-        id_to_name: Dict[int, str] = {}
+        id_to_name: dict[int, str] = {}
         command_list = []
 
         for command in study.commands:
@@ -151,15 +152,15 @@ class VariantStudyService(AbstractStorageService):
             command_list.append(command.to_dto().to_api(id_to_name.get(command.user_id)))
         return command_list
 
-    def convert_commands(self, study_id: str, api_commands: List[CommandDTOAPI]) -> List[CommandDTO]:
+    def convert_commands(self, study_id: str, api_commands: list[CommandDTOAPI]) -> list[CommandDTO]:
         study = self._get_study_by_id(study_id)
         return [
             CommandDTO.model_validate({"study_version": study.version, **command.model_dump(mode="json")})
             for command in api_commands
         ]
 
-    def _check_commands_validity(self, study_id: str, commands: List[CommandDTO]) -> List[ICommand]:
-        command_objects: List[ICommand] = []
+    def _check_commands_validity(self, study_id: str, commands: list[CommandDTO]) -> list[ICommand]:
+        command_objects: list[ICommand] = []
         for i, command in enumerate(commands):
             try:
                 command_objects.extend(self.command_factory.to_command(command))
@@ -192,7 +193,7 @@ class VariantStudyService(AbstractStorageService):
         command_ids = self.append_commands(study_id, [command])
         return command_ids[0]
 
-    def append_commands(self, study_id: str, commands: List[CommandDTO]) -> List[str]:
+    def append_commands(self, study_id: str, commands: list[CommandDTO]) -> list[str]:
         """
         Add command to list of commands (at the end)
         Args:
@@ -231,7 +232,7 @@ class VariantStudyService(AbstractStorageService):
         )
         return [c.id for c in new_commands]
 
-    def replace_commands(self, study_id: str, commands: List[CommandDTO]) -> str:
+    def replace_commands(self, study_id: str, commands: list[CommandDTO]) -> str:
         """
         Add command to list of commands (at the end)
         Args:
@@ -345,7 +346,7 @@ class VariantStudyService(AbstractStorageService):
                 lambda: reduce(
                     lambda m, c: m + c.get_inner_matrices().matrices,
                     self.command_factory.to_command(command.to_dto()),
-                    cast(List[str], []),
+                    cast(list[str], []),
                 ),
                 lambda e: logger.warning(f"Failed to parse command {command}", exc_info=e),
             )
@@ -407,13 +408,11 @@ class VariantStudyService(AbstractStorageService):
         It will need a snapshot generation (NOT from scratch),
         and children need to be notified of their parent change.
         """
-        self.repository.save(
-            metadata=study,
-            update_modification_date=True,
-        )
+        study.updated_at = current_time()
+        self.repository.save(metadata=study)
         self.on_parent_change(study.id)
 
-    def get_children(self, parent_id: str) -> List[VariantStudy]:
+    def get_children(self, parent_id: str) -> list[VariantStudy]:
         """
         Get the direct children of the specified study (in chronological creation order).
         """
@@ -446,10 +445,8 @@ class VariantStudyService(AbstractStorageService):
         """
         if variant_study.snapshot:
             variant_study.snapshot.last_executed_command = None
-        self.repository.save(
-            metadata=variant_study,
-            update_modification_date=True,
-        )
+        variant_study.updated_at = current_time()
+        self.repository.save(metadata=variant_study)
 
     def clear_snapshot(self, variant_study: VariantStudy) -> None:
         logger.info(f"Clearing snapshot for study {variant_study.id}")
@@ -493,13 +490,13 @@ class VariantStudyService(AbstractStorageService):
         if include_parent and bottom_first:
             fun(study)
 
-    def get_variants_parents(self, study_id: str) -> List[StudyMetadataDTO]:
-        output_list: List[StudyMetadataDTO] = self._get_variants_parents(study_id)
+    def get_variants_parents(self, study_id: str) -> list[StudyMetadataDTO]:
+        output_list: list[StudyMetadataDTO] = self._get_variants_parents(study_id)
         if output_list:
             output_list = output_list[1:]
         return output_list
 
-    def get_direct_parent(self, id: str) -> Optional[StudyMetadataDTO]:
+    def get_direct_parent(self, id: str) -> StudyMetadataDTO | None:
         study = self._get_study_by_id(id)
         if study.parent_id is not None:
             parent = self._get_study_by_id(study.parent_id)
@@ -514,7 +511,7 @@ class VariantStudyService(AbstractStorageService):
             )
         return None
 
-    def _get_variants_parents(self, id: str) -> List[StudyMetadataDTO]:
+    def _get_variants_parents(self, id: str) -> list[StudyMetadataDTO]:
         study = self._get_study_by_id(id)
         metadata = (
             self.get_study_information(
@@ -525,7 +522,7 @@ class VariantStudyService(AbstractStorageService):
                 study,
             )
         )
-        output_list: List[StudyMetadataDTO] = [metadata]
+        output_list: list[StudyMetadataDTO] = [metadata]
         if study.parent_id is not None:
             output_list.extend(self._get_variants_parents(study.parent_id))
 
@@ -629,6 +626,7 @@ class VariantStudyService(AbstractStorageService):
             name=name,
             parent_id=uuid,
             path=study_path,
+            directory_id=study.directory_id,
             public_mode=study.public_mode,
             created_at=now_utc,
             updated_at=now_utc,
@@ -661,7 +659,7 @@ class VariantStudyService(AbstractStorageService):
         metadata: VariantStudy,
         denormalize: bool = False,
         from_scratch: bool = False,
-        listener: Optional[ICommandListener] = None,
+        listener: ICommandListener | None = None,
     ) -> str:
         study_id = metadata.id
         with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study_id}.lock")):
@@ -775,8 +773,6 @@ class VariantStudyService(AbstractStorageService):
         dest_study_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
-        output_ids: List[str],
-        with_outputs: bool | None,
     ) -> RawStudy:
         """
         Create a new variant study by copying a reference study.
@@ -786,8 +782,6 @@ class VariantStudyService(AbstractStorageService):
             dest_study_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
             destination_folder: Path where the destination study will be stored. If not specified, the destination path will be the same as the source study.
-            output_ids: A list of output names that you want to include in the destination study.
-            with_outputs: Indicates whether to copy the outputs as well.
 
         Returns:
             The newly created study.
@@ -803,12 +797,6 @@ class VariantStudyService(AbstractStorageService):
         src_path = file_study.config.path
         dest_path = dest_study.path
         shutil.copytree(src_path, dest_path)
-
-        src_path = cast(Path, file_study.config.output_path)
-        if src_path.exists():
-            dest_output_path = Path(dest_study.path) / OUTPUT_RELATIVE_PATH
-            copy_output_folders(src_path, dest_output_path, with_outputs, output_ids)
-
         update_antares_info(dest_study, file_study.tree, update_author=True)
         return dest_study
 
@@ -849,7 +837,7 @@ class VariantStudyService(AbstractStorageService):
         self,
         metadata: Study,
         use_cache: bool = True,
-        output_dir: Optional[Path] = None,
+        output_dir: Path | None = None,
     ) -> FileStudy:
         """
         Fetch a study raw tree object and its config
@@ -903,8 +891,6 @@ class VariantStudyService(AbstractStorageService):
         self,
         metadata: Study,
         dst_path: Path,
-        outputs: bool = True,
-        output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
     ) -> None:
         if isinstance(metadata, VariantStudy):
@@ -913,15 +899,13 @@ class VariantStudyService(AbstractStorageService):
             raise TypeError(f"The type of the study must be {VariantStudy}, not {type(metadata)}")
 
         path_study = Path(metadata.path)
-
         snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH
-        output_src_path = path_study / "output"
         self.raw_study_service.export_study_to_flat_directory(
-            snapshot_path, dst_path, outputs, output_list_filter, denormalize, output_src_path, is_managed(metadata)
+            snapshot_path, dst_path, denormalize, is_managed(metadata)
         )
 
     @override
-    def get_synthesis(self, metadata: Study) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: Study) -> StudyDataSynthesis:
         """
         Return study synthesis
         Args:
@@ -935,7 +919,7 @@ class VariantStudyService(AbstractStorageService):
             raise TypeError(f"The type of the study must be {VariantStudy}, not {type(metadata)}")
         study_path = self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(study_path, is_managed(metadata), metadata.id)
-        return FileStudyTreeConfigDTO.from_build_config(study.config)
+        return StudyDataSynthesis.from_study_config(study.config)
 
     def clear_all_snapshots(self, retention_time: timedelta) -> str:
         """

@@ -15,7 +15,8 @@ Database implementation of ThermalDao.
 """
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, NoReturn, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, NoReturn
 
 import polars as pl
 from sqlalchemy import CursorResult, Select, delete, select
@@ -67,7 +68,7 @@ class DatabaseRenewableDao(RenewableDao):
 
     def _convert_renewable_cluster_to_row(self, area_id: str, cluster: RenewableCluster) -> dict[str, Any]:
         values = dict(study_id=self._study_id, area_id=area_id, **cluster.model_dump())
-        values["renewable_id"] = values.pop("id")
+        values["renewable_id"] = values.pop("id").lower()
         return values
 
     def _raise_the_right_renewable_exception(
@@ -142,7 +143,6 @@ class DatabaseRenewableDao(RenewableDao):
             # Means the DELETE had no effect so the renewable did not exist
             self._raise_the_right_renewable_exception(area_id, renewable_id)
 
-        # TODO: depending on scenariobuilder implementation, we may need to delete some stuff from scenario builder here
         session.commit()
 
     @override

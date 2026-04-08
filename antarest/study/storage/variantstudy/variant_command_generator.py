@@ -12,13 +12,13 @@
 import itertools
 import logging
 import uuid
-from typing import Callable, List, Optional, Union, cast
+from collections.abc import Callable
+from typing import Any, cast
 
 from antarest.core.utils.utils import StopWatch
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.utils import update_antares_info
 from antarest.study.storage.variantstudy.model.command.common import CommandOutput, command_failed
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -27,7 +27,7 @@ from antarest.study.storage.variantstudy.model.model import GenerationResultInfo
 
 logger = logging.getLogger(__name__)
 
-APPLY_CALLBACK = Callable[[ICommand, Union[FileStudyTreeConfig, FileStudy], Optional[ICommandListener]], CommandOutput]
+APPLY_CALLBACK = Callable[[ICommand, FileStudyTreeConfig | FileStudy, ICommandListener | None], CommandOutput[Any]]
 
 
 class CmdNotifier:
@@ -41,11 +41,11 @@ class CmdNotifier:
 
 
 def _generate(
-    commands: List[List[ICommand]],
+    commands: list[list[ICommand]],
     data: FileStudy,
     applier: APPLY_CALLBACK,
     metadata: VariantStudy,
-    listener: Optional[ICommandListener] = None,
+    listener: ICommandListener | None = None,
 ) -> GenerationResultInfoDTO:
     stopwatch = StopWatch()
     # Apply commands
@@ -54,7 +54,7 @@ def _generate(
     logger.info("Applying commands")
 
     # Flatten the list of commands
-    all_commands: List[ICommand] = list(itertools.chain.from_iterable(commands))
+    all_commands: list[ICommand] = list(itertools.chain.from_iterable(commands))
 
     # Prepare the stopwatch
     cmd_notifier = CmdNotifier(metadata.id, len(all_commands))
@@ -96,14 +96,13 @@ def _generate(
 
 
 def apply_commands_to_variant(
-    commands: List[List[ICommand]],
+    commands: list[list[ICommand]],
     metadata: VariantStudy,
     study: FileStudy,
-    listener: Optional[ICommandListener] = None,
+    listener: ICommandListener | None = None,
 ) -> GenerationResultInfoDTO:
     # Build file study
     logger.info("Building study tree")
-    update_antares_info(metadata, study.tree, update_author=True)
 
     return _generate(
         commands,

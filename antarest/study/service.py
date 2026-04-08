@@ -12,14 +12,19 @@
 import base64
 import collections
 import contextlib
+import enum
 import http
 import io
 import logging
 import os
 import shutil
+import tempfile
+from abc import ABC, abstractmethod
+from collections.abc import Callable, Iterable, Sequence
+from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path, PurePosixPath
-from typing import Any, BinaryIO, Callable, Dict, Iterable, List, Optional, Sequence, Type, cast
+from typing import Any, BinaryIO, Literal, TypeAlias, cast
 from uuid import uuid4
 
 import pandas as pd
@@ -27,6 +32,7 @@ import polars as pl
 from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from markupsafe import escape
+from sqlalchemy import inspect as sa_inspect
 from typing_extensions import override
 
 from antarest.core.config import Config
@@ -34,7 +40,6 @@ from antarest.core.exceptions import (
     BadEditInstructionException,
     ChildNotFoundError,
     CommandApplicationError,
-    IncorrectArgumentsForCopy,
     IncorrectPathError,
     MatrixImportFailed,
     NotAManagedStudyException,
@@ -58,14 +63,15 @@ from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
-from antarest.core.utils.archives import ArchiveFormat, is_archive_format
+from antarest.core.utils.archives import ArchiveFormat, archive_dir, is_archive_format
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.launcher.repository import JobResultRepository
 from antarest.login.model import Group
-from antarest.login.service import LoginService
+from antarest.login.service import LoginService, UserNotFoundError
 from antarest.login.utils import get_current_user, get_user_id, get_user_impersonator
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
+from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
 from antarest.study.business.allocation_management import AllocationManager
@@ -84,6 +90,7 @@ from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
 from antarest.study.business.model.area_model import AreaCreation, AreaInfo, AreaUIData, AreaUIUpdate
 from antarest.study.business.model.binding_constraint_model import LinkTerm
+from antarest.study.business.model.config.general_model import GeneralConfigUpdate
 from antarest.study.business.model.hydro_allocation_model import HydroAllocationMatrix
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelationMatrix
 from antarest.study.business.model.link_model import Link, LinkUpdate
@@ -115,6 +122,7 @@ from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.directory_service import DirectoryService
+from antarest.study.dtos import StudySynthesis
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -128,6 +136,13 @@ from antarest.study.model import (
     StudyFolder,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
+    StudyMetadataUpdate,
+    StudyRepairAction,
+    StudyRepairIssue,
+    StudyRepairReport,
+    StudyRepairRequest,
+    StudyRepairSeverity,
+    StudyRepairType,
 )
 from antarest.study.repository import (
     StudyFilter,
@@ -151,6 +166,7 @@ from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
 from antarest.study.storage.utils import (
     assert_permission,
+    assert_permission_on_studies,
     create_new_empty_study,
     get_start_date,
     is_managed,
@@ -171,6 +187,7 @@ from antarest.study.storage.variantstudy.model.command.replace_user_resource imp
     ReplaceUserResource,
 )
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command.update_general_config import UpdateGeneralConfig
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -188,6 +205,9 @@ def _get_matrix_from_path(study_interface: StudyInterface, matrix_path: Path) ->
     """We give a ReadOnlyStudyDao instead of a StudyDao, but it does not matter as we only use the getter methods."""
     mapper = RawPathToMatrixMapper(study_interface.get_study_dao())  # type: ignore
     return mapper.get_matrix_from_path(matrix_path)
+
+
+OutputSelection: TypeAlias = Literal["all"] | list[str]
 
 
 def get_disk_usage(path: str | Path) -> int:
@@ -208,7 +228,7 @@ def get_disk_usage(path: str | Path) -> int:
 
 
 def _get_path_inside_user_folder(
-    path: str, exception_class: Type[ResourceCreationNotAllowed | ResourceDeletionNotAllowed]
+    path: str, exception_class: type[ResourceCreationNotAllowed | ResourceDeletionNotAllowed]
 ) -> str:
     """
     Retrieves the path inside the `user` folder for a given user path
@@ -227,6 +247,50 @@ def assert_raw(study: Study) -> RawStudy:
     if not isinstance(study, RawStudy):
         raise TypeError("Study must be a RawStudy")
     return study
+
+
+def clone_raw_study(study: RawStudy) -> RawStudy:
+    """
+    Build a transient copy of a raw study that can safely be used outside a DB session.
+    """
+    attrs = {a.key: getattr(study, a.key) for a in sa_inspect(study).mapper.column_attrs}
+    return RawStudy(**attrs)
+
+
+class ArchiveConsistencyState(enum.StrEnum):
+    CONSISTENT_ARCHIVED = "consistent_archived"
+    CONSISTENT_UNARCHIVED = "consistent_unarchived"
+    DB_UNARCHIVED_ONLY_ARCHIVE = "db_unarchived_only_archive"
+    DB_ARCHIVED_ONLY_STUDY = "db_archived_only_study"
+    AMBIGUOUS = "ambiguous"
+    MISSING_DATA = "missing_data"
+
+
+@dataclass(frozen=True)
+class ArchiveConsistencyRepairSpec:
+    action_code: str
+    action_description: str
+    target_archived: bool
+    issue_message: str
+
+
+def get_archive_consistency_state(
+    *,
+    archived_in_db: bool,
+    archive_exists: bool,
+    study_exists: bool,
+) -> ArchiveConsistencyState:
+    if archived_in_db and archive_exists and not study_exists:
+        return ArchiveConsistencyState.CONSISTENT_ARCHIVED
+    if not archived_in_db and not archive_exists and study_exists:
+        return ArchiveConsistencyState.CONSISTENT_UNARCHIVED
+    if not archived_in_db and archive_exists and not study_exists:
+        return ArchiveConsistencyState.DB_UNARCHIVED_ONLY_ARCHIVE
+    if archived_in_db and not archive_exists and study_exists:
+        return ArchiveConsistencyState.DB_ARCHIVED_ONLY_STUDY
+    if archive_exists and study_exists:
+        return ArchiveConsistencyState.AMBIGUOUS
+    return ArchiveConsistencyState.MISSING_DATA
 
 
 class TaskProgressRecorder(ICommandListener):
@@ -403,7 +467,7 @@ class RawStudyInterface(StudyInterface):
         self._user_service = user_service
         self._repository = repository
         self._study = study
-        self._cached_file_study: Optional[FileStudy] = None
+        self._cached_file_study: FileStudy | None = None
         self._version = StudyVersion.parse(self._study.version)
         self._matrix_service = self._raw_study_service._matrix_service
 
@@ -425,33 +489,14 @@ class RawStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        command_context = self._variant_study_service.command_factory.command_context
-        if self._study.storage_mode == StorageMode.DATABASE:
-            return DatabaseStudyDao(
-                self._study.id, db.session, self._matrix_service, command_context.generator_matrix_constants
-            ).read_only()
-        return FileStudyTreeDao(
-            self.get_files(), command_context.generator_matrix_constants, command_context.blob_service
-        ).read_only()
+        return self._get_dao().read_only()
 
     @override
-    def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
+    def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
         study = self._study
-        file_study: Optional[FileStudy] = None
 
-        command_context = self._variant_study_service.command_factory.command_context
         # Build DAO based on storage mode
-        if study.storage_mode == StorageMode.DATABASE:
-            dao: StudyDao = DatabaseStudyDao(
-                study.id, db.session, self._matrix_service, command_context.generator_matrix_constants
-            )
-        else:
-            file_study = self.get_files()
-            dao = FileStudyTreeDao(
-                file_study,
-                command_context.generator_matrix_constants,
-                command_context.blob_service,
-            )
+        dao = self._get_dao()
 
         # Apply all commands
         should_invalidate_cache = False
@@ -466,8 +511,7 @@ class RawStudyInterface(StudyInterface):
         if should_invalidate_cache:
             remove_from_cache(self._raw_study_service.cache, study.id)
         elif study.storage_mode == StorageMode.FILESYSTEM:
-            assert file_study is not None
-            data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
+            data = FileStudyTreeConfigDTO.from_build_config(dao.get_file_study().config).model_dump()
             update_cache(self._raw_study_service.cache, study.id, data)
 
         # Update editor metadata
@@ -476,15 +520,27 @@ class RawStudyInterface(StudyInterface):
         # Notify changes to child variants
         self._variant_study_service.on_parent_change(study.id)
 
+    def _get_dao(self) -> StudyDao:
+        command_context = self._variant_study_service.command_factory.command_context
+        matrix_constants = command_context.generator_matrix_constants
+        if self._study.storage_mode == StorageMode.DATABASE:
+            return DatabaseStudyDao(self._study.id, db.session, self._matrix_service, matrix_constants)
+        return FileStudyTreeDao(self.get_files(), matrix_constants, command_context.blob_service)
+
+    @override
+    def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
+        self._get_dao().update_antares_file(metadata)
+
     def _update_editor_and_lastsave(self, dao: StudyDao) -> None:
         user = self._user_service.get_identity(get_user_impersonator())
         if user:
             user_name = user.name or ""
             last_save = current_time().timestamp()
             # Update file (no-op for database storage mode)
-            dao.update_antares_file(user_name, last_save)
+            dao.update_antares_file(StudyMetadataUpdate(editor=user_name, last_save=last_save))
             # Update DB metadata
             self._study.editor = user_name
+            self._study.updated_at = current_time()
             self._repository.save(self._study)
 
 
@@ -523,9 +579,54 @@ class VariantStudyInterface(StudyInterface):
         ).read_only()
 
     @override
-    def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
+    def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
         # get current user if not in session, otherwise get session user
         self._variant_service.append_commands(self._study.id, transform_command_to_dto(commands, force_aggregate=True))
+
+    @override
+    def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
+        """
+        We update the last modification date in DB.
+        This way, the variant snapshot will be re-generated inside future operations.
+        """
+        self._study.updated_at = current_time()
+        self._variant_service.repository.save(self._study)
+
+
+class IOutputsAccess(ABC):
+    """
+    Access to outputs data.
+
+    The abstraction is quite leaky: the behaviour for outputs stored in-study is kept
+    unchanched for backward compat, and stays mainly implemented in raw study service.
+
+    Lightweight interface to the output service, with only a few methods that are legitimate to
+    use by studies being an aggregate of study input data and output data.
+    """
+
+    @abstractmethod
+    def list_outputs(self, study_id: str) -> list[OutputMetadata]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_outputs_details(self, study_id: str) -> dict[str, OutputDetails]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def delete_output(self, study_id: str, output_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def archive_output(self, study_id: str, output_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def write_output_to_dir(self, study_id: str, output_id: str, parent_dir: Path) -> None:
+        raise NotImplementedError()
 
 
 class StudyService:
@@ -588,13 +689,26 @@ class StudyService:
         )
         self.cache_service = cache_service
         self.config = config
-        self.on_deletion_callbacks: List[Callable[[str], None]] = []
+        self.on_deletion_callbacks: list[Callable[[str], None]] = []
+        self._outputs_access: IOutputsAccess | None = None
         matrix_service = command_context.matrix_service
         StudyDatabaseMatrixUsageProvider(matrix_service)
         self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
             StorageMode.DATABASE: DatabaseStudyDaoFactory(matrix_service, command_context.generator_matrix_constants),
             StorageMode.FILESYSTEM: FileStudyDaoFactory(command_context, raw_study_service.study_factory),
         }
+
+    def register_output_access(self, output_access: IOutputsAccess) -> None:
+        """
+        Study and output features have some dependencies on each other, therefore we need to
+        register one of them after construction.
+        """
+        self._outputs_access = output_access
+
+    def _get_outputs_access(self) -> IOutputsAccess:
+        if not self._outputs_access:
+            raise RuntimeError("Access to outputs from study service is not registered")
+        return self._outputs_access
 
     def add_on_deletion_callback(self, callback: Callable[[str], None]) -> None:
         self.on_deletion_callbacks.append(callback)
@@ -639,66 +753,6 @@ class StudyService:
 
         return output
 
-    def get_logs(self, study_id: str, output_id: str, job_id: str, err_log: bool) -> Optional[str]:
-        study = self.get_study(study_id)
-        assert_permission(study, StudyPermissionType.READ)
-        file_study = self.get_file_study(study)
-        log_locations = {
-            False: [
-                ["output", "logs", f"{job_id}-out.log"],
-                ["output", "logs", f"{output_id}-out.log"],
-                ["output", output_id, "antares-out"],
-                ["output", output_id, "simulation"],
-            ],
-            True: [
-                ["output", "logs", f"{job_id}-err.log"],
-                ["output", "logs", f"{output_id}-err.log"],
-                ["output", output_id, "antares-err"],
-            ],
-        }
-        empty_log = False
-        for log_location in log_locations[err_log]:
-            try:
-                # Assume UTF-8 but ignore errors, it's difficult to be sure of log encoding
-                # especially because of windows error messages
-                log = cast(
-                    bytes,
-                    file_study.tree.get(log_location, depth=1, formatted=True),
-                ).decode(encoding="utf-8", errors="replace")
-                # when missing file, RawFileNode return empty bytes
-                if log:
-                    return log
-                else:
-                    empty_log = True
-            except ChildNotFoundError:
-                pass
-            except KeyError:
-                pass
-        if empty_log:
-            return ""
-        raise ChildNotFoundError(f"Logs for {output_id} of study {study_id} were not found")
-
-    def save_logs(
-        self,
-        study_id: str,
-        job_id: str,
-        log_suffix: str,
-        log_data: str,
-    ) -> None:
-        logger.info(f"Saving logs for job {job_id} of study {study_id}")
-        stopwatch = StopWatch()
-        study = self.get_study(study_id)
-        file_study = self.get_file_study(study)
-        file_study.tree.save(
-            bytes(log_data, encoding="utf-8"),
-            [
-                "output",
-                "logs",
-                f"{job_id}-{log_suffix}",
-            ],
-        )
-        logger.info(f"Saved logs for job {job_id} in {stopwatch}s")
-
     def get_comments(self, study_id: str) -> str:
         """
         Get the comments of a study.
@@ -740,9 +794,9 @@ class StudyService:
     def get_studies_information(
         self,
         study_filter: StudyFilter,
-        sort_by: Optional[StudySortBy] = None,
+        sort_by: StudySortBy | None = None,
         pagination: StudyPagination = StudyPagination(),
-    ) -> Dict[str, StudyMetadataDTO]:
+    ) -> dict[str, StudyMetadataDTO]:
         """
         Get information for matching studies of a search query.
         Args:
@@ -753,7 +807,7 @@ class StudyService:
         Returns: List of study information
         """
         logger.info("Retrieving matching studies")
-        studies: Dict[str, StudyMetadataDTO] = {}
+        studies: dict[str, StudyMetadataDTO] = {}
         matching_studies = self.repository.get_all(
             study_filter=study_filter,
             sort_by=sort_by,
@@ -793,9 +847,7 @@ class StudyService:
         )
         return total
 
-    def _try_get_studies_information(
-        self, study: Study, folder_path: Optional[str] = None
-    ) -> Optional[StudyMetadataDTO]:
+    def _try_get_studies_information(self, study: Study, folder_path: str | None = None) -> StudyMetadataDTO | None:
         try:
             return self.storage_service.get_storage(study).get_study_information(study, folder_path)
         except Exception as e:
@@ -832,34 +884,24 @@ class StudyService:
             uuid: study uuid
             metadata_patch: metadata patch
         """
-        logger.info(
-            "updating study %s metadata for user %s",
-            uuid,
-            get_user_id(),
-        )
+        logger.info("updating study %s metadata for user %s", uuid, get_user_id())
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
+        self.assert_study_unarchived(study)
 
-        if metadata_patch.author or metadata_patch.horizon:
-            self.assert_study_unarchived(study)
+        study_interface = self.get_study_interface(study)
 
         if metadata_patch.horizon:
-            study_settings_url = "settings/generaldata/general"
-            study_settings = self.storage_service.get_storage(study).get(study, study_settings_url)
-            study_settings["horizon"] = metadata_patch.horizon
-            self._edit_study_using_command(study=study, url=study_settings_url, data=study_settings)
+            command = UpdateGeneralConfig(
+                parameters=GeneralConfigUpdate(horizon=metadata_patch.horizon),
+                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                study_version=study_interface.version,
+            )
+            study_interface.add_commands([command])
 
         if metadata_patch.author or metadata_patch.name:
-            study_antares_url = "study/antares"
-            study_antares = self.storage_service.get_storage(study).get(study, study_antares_url)
-
-            if metadata_patch.author:
-                study_antares["author"] = metadata_patch.author
-
-            if metadata_patch.name:
-                study_antares["caption"] = metadata_patch.name
-
-            self._edit_study_using_command(study=study, url=study_antares_url, data=study_antares)
+            study_metadata = StudyMetadataUpdate(author=metadata_patch.author, name=metadata_patch.name)
+            study_interface.update_study_metadata(study_metadata)
 
         if metadata_patch.name:
             study.name = metadata_patch.name
@@ -867,6 +909,9 @@ class StudyService:
             study.author = metadata_patch.author
         if metadata_patch.horizon:
             study.horizon = metadata_patch.horizon
+
+        self.repository.save(study)
+
         if metadata_patch.tags is not None:
             self.repository.update_tags(study, metadata_patch.tags)
 
@@ -928,8 +973,8 @@ class StudyService:
     def create_study(
         self,
         study_name: str,
-        version: Optional[StudyVersion],
-        group_ids: List[str],
+        version: StudyVersion | None,
+        group_ids: list[str],
         storage_mode: StorageMode = StorageMode.FILESYSTEM,
         directory: str = "",
     ) -> str:
@@ -1002,7 +1047,7 @@ class StudyService:
                 return curr_user.to_dto().name
         return "Unknown"
 
-    def get_study_synthesis(self, study_id: str) -> FileStudyTreeConfigDTO:
+    def get_study_synthesis(self, study_id: str) -> StudySynthesis:
         """
         Get the synthesis of a study.
 
@@ -1015,10 +1060,11 @@ class StudyService:
         assert_permission(study, StudyPermissionType.READ)
         study.last_access = current_time()
         self.repository.save(study)
-        study_storage_service = self.storage_service.get_storage(study)
-        return study_storage_service.get_synthesis(study)
+        input_synthesis = self.storage_service.get_storage(study).get_synthesis(study)
+        outputs = self._get_outputs_access().get_outputs_details(study.id)
+        return StudySynthesis.aggregate(input_synthesis, outputs)
 
-    def get_input_matrix_startdate(self, study_id: str, path: Optional[str]) -> MatrixIndex:
+    def get_input_matrix_startdate(self, study_id: str, path: str | None) -> MatrixIndex:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
         file_study = self.get_file_study(study)
@@ -1035,7 +1081,7 @@ class StudyService:
 
     def remove_duplicates(self) -> None:
         duplicates = self.repository.list_duplicates()
-        ids: List[str] = []
+        ids: list[str] = []
         # ids with same path
         duplicates_by_path = collections.defaultdict(list)
         for study_id, path in duplicates:
@@ -1046,7 +1092,7 @@ class StudyService:
             self.repository.delete(*ids)
 
     def sync_studies_on_disk(
-        self, folders: List[StudyFolder], directory: Optional[Path] = None, recursive: bool = True
+        self, folders: list[StudyFolder], directory: Path | None = None, recursive: bool = True
     ) -> None:
         """
         Used by watcher to send list of studies present on filesystem.
@@ -1199,24 +1245,15 @@ class StudyService:
         self,
         src_uuid: str,
         dest_study_name: str,
-        group_ids: List[str],
+        group_ids: list[str],
         use_task: bool,
         destination_folder: PurePosixPath,
-        output_ids: List[str],
-        with_outputs: bool | None,
+        outputs_selection: OutputSelection,
     ) -> str:
         """
         Create a new study by copying a reference study.
 
         This method is responsible for duplicating a study, optionally including its outputs.
-
-        Output copy behavior:
-            - If `with_outputs` is True and `output_ids` are specified: only the specified outputs are copied.
-            - If `with_outputs` is True and `output_ids` is empty: all outputs are copied.
-            - If `with_outputs` is False and `output_ids` are specified: an error is raised (incoherent configuration).
-            - If `with_outputs` is False: no outputs are copied
-            - If `with_outputs` is None and `output_ids` are specified: outputs will be copied; behaves like `with_outputs=True`.
-            - If `with_outputs` is None and `output_ids` is empty: no outputs are copied.
 
         Args:
             src_uuid: The source study that you want to copy.
@@ -1224,14 +1261,10 @@ class StudyService:
             group_ids: A list of groups to assign to the destination study.
             use_task: indicate if the task job service should be used
             destination_folder: The path where the destination study should be created. If not provided, the default path will be used.
-            output_ids: A list of output names that you want to include in the destination study.
-            with_outputs: Indicates whether to copy the outputs as well.
-
+            outputs_selection: selection of outputs to copy
         Returns:
             The newly created study.
         """
-        if output_ids and with_outputs is False:
-            raise IncorrectArgumentsForCopy("output_ids can only be used with with_outputs=True")
 
         src_study = self.get_study(src_uuid)
         assert_permission(src_study, StudyPermissionType.READ)
@@ -1246,22 +1279,28 @@ class StudyService:
                 dest_study_name,
                 group_ids,
                 destination_folder,
-                output_ids,
-                with_outputs,
             )
 
             study.owner = owner
             study.groups = groups
+            study.directory_id = self.directory_service.get_directory_by_path(destination_folder.as_posix())
 
             self._save_study(study)
             self.storage_service.raw_study_service.normalize_study(study)
 
+            match outputs_selection:
+                case "all":
+                    output_names = [o.id for o in self._get_outputs_access().list_outputs(origin_study.id)]
+                case selected_outputs:
+                    output_names = selected_outputs
+
+            for output_name in output_names:
+                self._get_outputs_access().copy_output(origin_study.id, study.id, output_name)
+
             # Copying all jobs associated with the study
-            jobs = self.job_result_repository.find_by_study_and_output_ids(origin_study.id, output_ids)
-
-            new_jobs = [job.copy_jobs_for_study(study.id) for job in jobs]
-
-            if new_jobs:
+            if output_names:
+                jobs = self.job_result_repository.find_by_study_and_output_ids(origin_study.id, output_names)
+                new_jobs = [job.copy_jobs_for_study(study.id) for job in jobs]
                 self.job_result_repository.save_all(new_jobs)
 
             self.event_bus.push(
@@ -1301,19 +1340,26 @@ class StudyService:
 
     def move_study(self, study_id: str, folder_dest: str) -> None:
         study = self.get_study(study_id)
-        assert_permission(study, StudyPermissionType.WRITE)
         if not is_managed(study):
             raise NotAManagedStudyException(study_id)
+        if isinstance(study, VariantStudy):
+            raise UnsupportedOperationOnThisStudyType(study_id, "move", "raw")
 
-        if folder_dest:
-            new_folder = folder_dest.rstrip("/") + f"/{study.id}"
-            directory_id = self.directory_service.get_directory_by_path(folder_dest)
-            study.directory_id = directory_id
-        else:
-            new_folder = None
-            study.directory_id = None
+        studies_to_move = [study, *self._get_variant_descendants(study.id)]
+        assert_permission_on_studies(studies_to_move, StudyPermissionType.WRITE)
 
-        study.folder = new_folder
+        directory_id = self.directory_service.get_directory_by_path(folder_dest) if folder_dest else None
+
+        for study_to_move in studies_to_move:
+            self._apply_study_move(study_to_move, folder_dest, directory_id)
+
+    def _get_variant_descendants(self, study_id: str) -> list[VariantStudy]:
+        return self.storage_service.variant_study_service.repository.get_all_descendants(study_id)
+
+    def _apply_study_move(self, study: Study, folder_dest: str, directory_id: str | None) -> None:
+        study.folder = folder_dest.rstrip("/") + f"/{study.id}" if folder_dest else None
+        study.directory_id = directory_id
+
         self.repository.save(study)
         self.event_bus.push(
             Event(
@@ -1353,9 +1399,7 @@ class StudyService:
         def export_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 target_study = self.get_study(uuid)
-                self.storage_service.get_storage(target_study).export_study(
-                    target_study, export_path, outputs, archive_format
-                )
+                self._do_export_study(target_study, export_path, outputs, archive_format)
                 self.file_transfer_manager.set_ready(export_id)
                 return TaskResult(success=True, message=f"Study {uuid} successfully exported")
             except Exception as e:
@@ -1373,19 +1417,49 @@ class StudyService:
 
         return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
 
+    def _do_export_study(self, metadata: Study, target: Path, outputs: bool, archive_format: ArchiveFormat) -> Path:
+        """
+        Export and compress the study to an archive file.
+
+        Args:
+            metadata: Study metadata object.
+            target: Path of the file to export to.
+            outputs: Flag to indicate whether to include the output folder inside the exportation.
+            archive_format:
+
+        Returns:
+            Path to the archive file containing the study files compressed inside.
+        """
+        path_study = Path(metadata.path)
+        with tempfile.TemporaryDirectory(dir=self.config.storage.tmp_dir) as tmpdir:
+            logger.info(f"Exporting study {metadata.id} to temporary path {tmpdir}")
+            tmp_study_path = Path(tmpdir) / "tmp_copy"
+            self.storage_service.get_storage(metadata).export_study_flat(metadata, tmp_study_path)
+            if outputs:
+                outputs_access = self._get_outputs_access()
+                for output_metadata in outputs_access.list_outputs(metadata.id):
+                    self._get_outputs_access().write_output_to_dir(
+                        metadata.id, output_metadata.id, tmp_study_path / "output"
+                    )
+            stopwatch = StopWatch()
+            archive_dir(tmp_study_path, target, archive_format=archive_format)
+            logger.info(f"Study {path_study} exported ({target.suffix} format) in {stopwatch}s")
+        return target
+
     def export_study_flat(
         self,
         uuid: str,
         dest: Path,
-        output_list: Optional[List[str]] = None,
+        output_list: list[str] | None = None,
     ) -> None:
         logger.info(f"Flat exporting study {uuid}")
         study = self.get_study(uuid)
         self.assert_study_unarchived(study)
 
-        return self.storage_service.get_storage(study).export_study_flat(
-            study, dest, len(output_list or []) > 0, output_list
-        )
+        self.storage_service.get_storage(study).export_study_flat(study, dest)
+        if output_list:
+            for output_id in output_list:
+                self._get_outputs_access().write_output_to_dir(study.id, output_id, dest / "output")
 
     @staticmethod
     def _prefetch_study_info(study: Study) -> Any:
@@ -1415,10 +1489,11 @@ class StudyService:
 
     def _delete_study_from_filesystem(self, study: Study) -> None:
         """Delete study files from disk (handles both archived and unarchived studies)."""
-        if self.assert_study_unarchived(study=study, raise_exception=False):
-            self.storage_service.get_storage(study).delete(study)
-        elif isinstance(study, RawStudy):
+        if study.archived:
             os.unlink(self.storage_service.raw_study_service.find_archive_path(study))
+
+        elif study.storage_mode == StorageMode.FILESYSTEM:
+            self.storage_service.get_storage(study).delete(study)
 
     def _notify_study_deleted(self, study: Study, study_info: Any) -> None:
         """Push deletion event, log the action, and run deletion callbacks."""
@@ -1442,7 +1517,7 @@ class StudyService:
         """
         self.delete_studies([uuid], with_variants=children)
 
-    def delete_studies(self, study_ids: List[str], with_variants: bool) -> None:
+    def delete_studies(self, study_ids: list[str], with_variants: bool) -> None:
         """
         Delete multiple studies in batch.
 
@@ -1482,13 +1557,12 @@ class StudyService:
             assert_permission(study, StudyPermissionType.WRITE)
             studies_to_check.append(study)
 
-        studies_to_delete: Dict[str, Study] = {}
-        study_infos: Dict[str, Any] = {}
+        studies_to_delete: dict[str, Study] = {}
+        study_infos: dict[str, Any] = {}
 
         for study in studies_to_check:
             if study.id in studies_to_delete:
                 continue
-
             self._validate_children_deletion(study, with_variants, variant_service)
 
             if variant_service.has_children(study):
@@ -1509,6 +1583,9 @@ class StudyService:
                 studies_to_delete[study.id] = study
 
         self._await_generation_tasks(studies_to_delete.values())
+        for study in studies_to_delete.values():
+            for output in self._get_outputs_access().list_outputs(study.id):
+                self._get_outputs_access().delete_output(study.id, output.id)
         self.repository.delete(*studies_to_delete.keys())
 
         for study in studies_to_delete.values():
@@ -1518,7 +1595,7 @@ class StudyService:
     def import_study(
         self,
         stream: BinaryIO,
-        group_ids: List[str],
+        group_ids: list[str],
     ) -> str:
         """
         Import a compressed study.
@@ -1623,7 +1700,7 @@ class StudyService:
         command_data = UserResourceDataCreation.model_validate(args)
         return ReplaceUserResource(data=command_data, command_context=context, study_version=version)
 
-    def _edit_study_using_command(self, study: Study, url: str, data: SUB_JSON) -> List[ICommand]:
+    def _edit_study_using_command(self, study: Study, url: str, data: SUB_JSON) -> list[ICommand]:
         """
         Replace data on disk with new, using variant commands.
 
@@ -1662,14 +1739,14 @@ class StudyService:
         self.get_study_interface(study).add_commands(commands)
         return commands  # for testing purpose
 
-    def apply_commands(self, uuid: str, commands: List[CommandDTO]) -> Optional[List[str]]:
+    def apply_commands(self, uuid: str, commands: list[CommandDTO]) -> list[str] | None:
         study = self.get_study(uuid)
         if isinstance(study, VariantStudy):
             return self.storage_service.variant_study_service.append_commands(uuid, commands)
         else:
             assert_permission(study, StudyPermissionType.WRITE)
             self.assert_study_unarchived(study)
-            parsed_commands: List[ICommand] = []
+            parsed_commands: list[ICommand] = []
             for command in commands:
                 parsed_commands.extend(self.storage_service.variant_study_service.command_factory.to_command(command))
             self.get_study_interface(study).add_commands(parsed_commands)
@@ -1737,7 +1814,12 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
         self.assert_study_unarchived(study)
+
         new_owner = self.user_service.get_user(owner_id)
+        if not new_owner:
+            logger.error("user %d not found by user %s", id, get_user_id())
+            raise UserNotFoundError()
+
         study.owner = new_owner
         self.repository.save(study)
         self.event_bus.push(
@@ -1748,15 +1830,9 @@ class StudyService:
             )
         )
 
-        owner_name = None if new_owner is None else new_owner.name
-        self._edit_study_using_command(study=study, url="study/antares/author", data=owner_name)
+        self.get_study_interface(study).update_study_metadata(StudyMetadataUpdate(author=new_owner.name or ""))
 
-        logger.info(
-            "user %s change study %s owner to %d",
-            get_user_id(),
-            study_id,
-            owner_id,
-        )
+        logger.info("user %s change study %s owner to %d", get_user_id(), study_id, owner_id)
 
     def add_group(self, study_id: str, group_id: str) -> None:
         """
@@ -1849,7 +1925,7 @@ class StudyService:
     def get_all_areas_info(
         self,
         uuid: str,
-    ) -> List[AreaInfo]:
+    ) -> list[AreaInfo]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
@@ -1858,7 +1934,7 @@ class StudyService:
     def get_all_areas_ui_info(
         self,
         uuid: str,
-    ) -> Dict[str, AreaUIData]:
+    ) -> dict[str, AreaUIData]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
@@ -1867,7 +1943,7 @@ class StudyService:
     def get_all_links(
         self,
         uuid: str,
-    ) -> List[Link]:
+    ) -> list[Link]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         return self.links_manager.get_all_links(self.get_study_interface(study))
@@ -2037,18 +2113,28 @@ class StudyService:
             raise TaskAlreadyRunning()
 
         def archive_task(notifier: ITaskNotifier) -> TaskResult:
-            study_to_archive = self.get_study(uuid)
-            study_to_archive = assert_raw(study_to_archive)
+            with db():
+                study_to_archive = clone_raw_study(assert_raw(self.get_study(uuid)))
+
+            for output in self._get_outputs_access().list_outputs(study_to_archive.id):
+                if not output.in_study and not output.archived:
+                    self._get_outputs_access().archive_output(study_to_archive.id, output.id)
+
             self.storage_service.raw_study_service.archive(study_to_archive)
-            study_to_archive.archived = True
-            self.repository.save(study_to_archive)
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_EDITED,
-                    payload=study_to_archive.to_json_summary(),
-                    permissions=PermissionInfo.from_study(study_to_archive),
+
+            with db():
+                study_db = self.repository.get(uuid)
+                if study_db is None:
+                    raise StudyNotFoundError(uuid)
+                study_db.archived = True
+                self.repository.save(study_db)
+                self.event_bus.push(
+                    Event(
+                        type=EventType.STUDY_EDITED,
+                        payload=study_db.to_json_summary(),
+                        permissions=PermissionInfo.from_study(study_db),
+                    )
                 )
-            )
             return TaskResult(success=True, message="ok")
 
         return self.task_service.add_task(
@@ -2080,21 +2166,29 @@ class StudyService:
             raise UnsupportedOperationOnThisStudyType(study.id, "unarchive", "raw")
 
         def unarchive_task(notifier: ITaskNotifier) -> TaskResult:
-            study_to_archive = self.get_study(uuid)
-            study_to_archive = assert_raw(study_to_archive)
-            self.storage_service.raw_study_service.unarchive(study_to_archive)
-            study_to_archive.archived = False
+            with db():
+                study_to_unarchive = clone_raw_study(assert_raw(self.get_study(uuid)))
 
-            os.unlink(self.storage_service.raw_study_service.find_archive_path(study_to_archive))
-            self.repository.save(study_to_archive)
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_EDITED,
-                    payload=study_to_archive.to_json_summary(),
-                    permissions=PermissionInfo.from_study(study_to_archive),
+            archive_path = self.storage_service.raw_study_service.find_archive_path(study_to_unarchive)
+
+            self.storage_service.raw_study_service.unarchive(study_to_unarchive)
+
+            with db():
+                study_db = self.repository.get(uuid)
+                if study_db is None:
+                    raise StudyNotFoundError(uuid)
+                study_db.archived = False
+                self.repository.save(study_db)
+                self.event_bus.push(
+                    Event(
+                        type=EventType.STUDY_EDITED,
+                        payload=study_db.to_json_summary(),
+                        permissions=PermissionInfo.from_study(study_db),
+                    )
                 )
-            )
-            remove_from_cache(cache=self.cache_service, root_id=uuid)
+                remove_from_cache(cache=self.cache_service, root_id=uuid)
+
+            os.unlink(archive_path)
             return TaskResult(success=True, message="ok")
 
         return self.task_service.add_task(
@@ -2106,7 +2200,180 @@ class StudyService:
             custom_event_messages=None,
         )
 
-    def _validate_and_prepare_permissions(self, group_ids: Sequence[str]) -> tuple[Any, List[Group]]:
+    def repair_study(self, uuid: str, repair_request: StudyRepairRequest) -> str:
+        study = self.get_study(uuid)
+        if StudyRepairType.ARCHIVE_CONSISTENCY in repair_request.repairs and not isinstance(study, RawStudy):
+            raise UnsupportedOperationOnThisStudyType(study.id, "repair", "raw")
+
+        def repair_task(notifier: ITaskNotifier) -> TaskResult:
+            report = self._run_study_repairs(uuid, repair_request, notifier)
+            message = (
+                f"Study repair completed with {len(report.issues)} issue(s) "
+                f"and {len(report.applied_actions)} action(s) applied"
+            )
+            return TaskResult(success=True, message=message, return_value=report.model_dump_json())
+
+        return self.task_service.add_task(
+            repair_task,
+            f"Repair study {study.name} ({uuid})",
+            task_type=TaskType.REPAIR_STUDY,
+            ref_id=uuid,
+            progress=None,
+            custom_event_messages=None,
+        )
+
+    def _run_study_repairs(
+        self,
+        uuid: str,
+        repair_request: StudyRepairRequest,
+        notifier: ITaskNotifier,
+    ) -> StudyRepairReport:
+        report = StudyRepairReport(study_id=uuid, dry_run=repair_request.dry_run)
+
+        if StudyRepairType.ARCHIVE_CONSISTENCY in repair_request.repairs:
+            self._repair_archive_consistency(uuid, repair_request.dry_run, report, notifier)
+
+        return report
+
+    def _repair_archive_consistency(
+        self,
+        uuid: str,
+        dry_run: bool,
+        report: StudyRepairReport,
+        notifier: ITaskNotifier,
+    ) -> None:
+        logger.info("Checking archive consistency for study '%s'", uuid)
+        notifier.notify_message(f"Checking archive consistency for study '{uuid}'")
+
+        with db():
+            study = clone_raw_study(assert_raw(self.get_study(uuid)))
+
+        archive_exists = False
+        with contextlib.suppress(FileNotFoundError):
+            archive_exists = self.storage_service.raw_study_service.find_archive_path(study).is_file()
+
+        study_exists = Path(study.path).joinpath("study.antares").is_file()
+        state = get_archive_consistency_state(
+            archived_in_db=study.archived,
+            archive_exists=archive_exists,
+            study_exists=study_exists,
+        )
+        logger.info(
+            "Archive consistency state for study '%s': %s (archive_exists=%s, study_exists=%s, archived_in_db=%s)",
+            uuid,
+            state,
+            archive_exists,
+            study_exists,
+            study.archived,
+        )
+
+        if state in {
+            ArchiveConsistencyState.CONSISTENT_ARCHIVED,
+            ArchiveConsistencyState.CONSISTENT_UNARCHIVED,
+        }:
+            return
+
+        repair_specs = {
+            ArchiveConsistencyState.DB_UNARCHIVED_ONLY_ARCHIVE: ArchiveConsistencyRepairSpec(
+                action_code="set_archived_true",
+                action_description="Mark the study as archived in database",
+                target_archived=True,
+                issue_message="Database says the study is unarchived but only the archive exists on disk",
+            ),
+            ArchiveConsistencyState.DB_ARCHIVED_ONLY_STUDY: ArchiveConsistencyRepairSpec(
+                action_code="set_archived_false",
+                action_description="Mark the study as unarchived in database",
+                target_archived=False,
+                issue_message="Database says the study is archived but only the study directory exists on disk",
+            ),
+        }
+        repair_spec = repair_specs.get(state)
+        if repair_spec is not None:
+            self._apply_archive_consistency_repair(
+                uuid=uuid,
+                dry_run=dry_run,
+                report=report,
+                notifier=notifier,
+                repair_spec=repair_spec,
+            )
+            return
+
+        if state == ArchiveConsistencyState.AMBIGUOUS:
+            report.issues.append(
+                StudyRepairIssue(
+                    code="archive_consistency_ambiguous",
+                    severity=StudyRepairSeverity.ERROR,
+                    message="Both the archive and the study directory exist on disk",
+                )
+            )
+            report.warnings.append("Ambiguous state: no automatic repair was applied")
+            return
+
+        report.issues.append(
+            StudyRepairIssue(
+                code="archive_consistency_missing_data",
+                severity=StudyRepairSeverity.ERROR,
+                message="Neither the archive nor the study directory exist on disk",
+            )
+        )
+        report.warnings.append("Irrecoverable automatically: no automatic repair was applied")
+
+    def _apply_archive_consistency_repair(
+        self,
+        uuid: str,
+        dry_run: bool,
+        report: StudyRepairReport,
+        notifier: ITaskNotifier,
+        repair_spec: ArchiveConsistencyRepairSpec,
+    ) -> None:
+        proposed_action = StudyRepairAction(
+            code=repair_spec.action_code,
+            description=repair_spec.action_description,
+            details={"archived": repair_spec.target_archived},
+        )
+        report.issues.append(
+            StudyRepairIssue(
+                code="archive_consistency_db_fs_mismatch",
+                severity=StudyRepairSeverity.ERROR,
+                message=repair_spec.issue_message,
+            )
+        )
+        report.proposed_actions.append(proposed_action)
+        if dry_run:
+            logger.info(
+                "Dry-run: would apply action '%s' on study '%s' (archived=%s)",
+                repair_spec.action_code,
+                uuid,
+                repair_spec.target_archived,
+            )
+        else:
+            logger.info(
+                "Applying action '%s' on study '%s' (archived=%s)",
+                repair_spec.action_code,
+                uuid,
+                repair_spec.target_archived,
+            )
+            self._set_study_archived_state(uuid, archived=repair_spec.target_archived)
+            report.applied_actions.append(
+                StudyRepairAction(
+                    code=repair_spec.action_code,
+                    description=repair_spec.action_description,
+                    details={"archived": repair_spec.target_archived},
+                )
+            )
+            notifier.notify_message(f"Marked study '{uuid}' as archived={repair_spec.target_archived} in database")
+
+    def _set_study_archived_state(self, uuid: str, archived: bool) -> None:
+        with db():
+            study_db = self.repository.get(uuid)
+            if study_db is None:
+                raise StudyNotFoundError(uuid)
+            raw_study_db = assert_raw(study_db)
+            raw_study_db.archived = archived
+            self.repository.save(raw_study_db)
+            remove_from_cache(cache=self.cache_service, root_id=uuid)
+
+    def _validate_and_prepare_permissions(self, group_ids: Sequence[str]) -> tuple[Any, list[Group]]:
         """
         Validate that the current user has permissions for the specified groups.
 
@@ -2129,10 +2396,10 @@ class StudyService:
 
         owner = self.user_service.get_user(current_user.impersonator)
 
-        groups: List[Group] = []
+        groups: list[Group] = []
         for gid in group_ids:
             owned_groups = (g for g in current_user.groups if g.id == gid)
-            jwt_group: Optional[JWTGroup] = next(owned_groups, None)
+            jwt_group: JWTGroup | None = next(owned_groups, None)
             if jwt_group is None or jwt_group.role is None:
                 raise UserHasNotPermissionError(f"Permission denied for group ID: {gid}")
             groups.append(Group(id=jwt_group.id, name=jwt_group.name))
@@ -2184,7 +2451,7 @@ class StudyService:
 
     # noinspection PyUnusedLocal
     @staticmethod
-    def get_studies_versions() -> List[str]:
+    def get_studies_versions() -> list[str]:
         return sorted([str(v) for v in STUDY_REFERENCE_TEMPLATES])
 
     def create_xpansion_configuration(
@@ -2234,7 +2501,7 @@ class StudyService:
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.get_candidate(study_interface, candidate_name)
 
-    def get_candidates(self, uuid: str) -> List[XpansionCandidate]:
+    def get_candidates(self, uuid: str) -> list[XpansionCandidate]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
@@ -2266,7 +2533,7 @@ class StudyService:
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.update_xpansion_constraints_settings(study_interface, constraints_file_name)
 
-    def update_matrix(self, uuid: str, path: str, matrix_edit_instruction: List[MatrixEditInstruction]) -> None:
+    def update_matrix(self, uuid: str, path: str, matrix_edit_instruction: list[MatrixEditInstruction]) -> None:
         """
         Updates a matrix in a study based on the provided edit instructions.
 
@@ -2527,8 +2794,8 @@ class StudyService:
         self,
         study_id: str,
         command_data: UserResourceDataCreation | UserResourceDataRemoval,
-        command_class: Type[ReplaceUserResource | RemoveUserResource],
-        exception_class: Type[ResourceCreationNotAllowed | ResourceDeletionNotAllowed],
+        command_class: type[ReplaceUserResource | RemoveUserResource],
+        exception_class: type[ResourceCreationNotAllowed | ResourceDeletionNotAllowed],
     ) -> None:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.WRITE)

@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, List
+from typing import Any
 
 import pytest
 from antares.study.version import StudyVersion
@@ -176,7 +176,7 @@ def test_thermal_cluster_creation_default_values() -> None:
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], {"variable_o_m_cost": 10}),
     ],
 )
-def test_thermal_cluster_creation_invalid_fields(versions: List[StudyVersion], fields: dict[str, Any]) -> None:
+def test_thermal_cluster_creation_invalid_fields(versions: list[StudyVersion], fields: dict[str, Any]) -> None:
     for version in versions:
         with pytest.raises(InvalidFieldForVersionError, match="is not a valid field for study version"):
             create_thermal_cluster(ThermalClusterCreation(name="Cluster @", **fields), version=version)
@@ -291,7 +291,7 @@ def test_thermal_cluster_creation_all_values() -> None:
     ],
 )
 def test_thermal_cluster_version_validation(
-    invalid_versions: List[StudyVersion], valid_versions: List[StudyVersion], fields: dict[str, Any]
+    invalid_versions: list[StudyVersion], valid_versions: list[StudyVersion], fields: dict[str, Any]
 ) -> None:
     """
     Check that the presence of the fields raise an error for "invalid_versions", but not for "valid_versions"

@@ -15,7 +15,6 @@ import os
 import shutil
 from http import HTTPStatus
 from pathlib import Path
-from typing import Dict, List, Optional, cast
 from uuid import UUID, uuid4
 
 from antares.study.version import SolverVersion
@@ -33,8 +32,8 @@ from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, is_zip, read_in_zip
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import StopWatch, concat_files, concat_files_to_str, current_time
-from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks
+from antarest.core.utils.utils import StopWatch, current_time
+from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.extensions.adequacy_patch.extension import AdequacyPatchExtension
 from antarest.launcher.extensions.interface import ILauncherExtension
@@ -60,7 +59,7 @@ from antarest.launcher.model import (
 from antarest.launcher.repository import JobResultRepository, SolverPresetsRepository
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context, get_current_user, require_current_user
-from antarest.study.output.output_service import OutputService
+from antarest.output.service import OutputService
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from antarest.study.storage.utils import assert_permission, extract_output_name, find_single_output_path
@@ -70,7 +69,7 @@ logger = logging.getLogger(__name__)
 
 class JobNotFound(HTTPException):
     def __init__(self) -> None:
-        super(JobNotFound, self).__init__(HTTPStatus.NOT_FOUND)
+        super().__init__(HTTPStatus.NOT_FOUND)
 
 
 class IncompatibleSolverPresets(HTTPException):
@@ -91,9 +90,7 @@ class SolverPresetsNotFound(HTTPException):
 
 class LauncherServiceNotAvailableException(HTTPException):
     def __init__(self, engine: str):
-        super(LauncherServiceNotAvailableException, self).__init__(
-            HTTPStatus.BAD_REQUEST, f"The engine {engine} is not available"
-        )
+        super().__init__(HTTPStatus.BAD_REQUEST, f"The engine {engine} is not available")
 
 
 LAUNCHER_PARAM_NAME_SUFFIX = "output_suffix"
@@ -138,13 +135,13 @@ class LauncherService:
         )
         self.extensions = self._init_extensions()
 
-    def _init_extensions(self) -> Dict[str, ILauncherExtension]:
+    def _init_extensions(self) -> dict[str, ILauncherExtension]:
         adequacy_patch_ext = AdequacyPatchExtension(self.study_service, self.config)
         return {adequacy_patch_ext.get_name(): adequacy_patch_ext}
 
     def get_launchers(self) -> LauncherListDTO:
         configs = self.config.launcher.configs or []
-        launchers: List[LauncherInfoDTO] = []
+        launchers: list[LauncherInfoDTO] = []
         for launcher_config in configs:
             launchers.append(
                 LauncherInfoDTO(
@@ -188,8 +185,8 @@ class LauncherService:
         self,
         job_uuid: str,
         status: JobStatus,
-        msg: Optional[str],
-        output_id: Optional[str],
+        msg: str | None,
+        output_id: str | None,
     ) -> None:
         with db():
             logger.info(f"Setting study with job id {job_uuid} status to {status}")
@@ -244,8 +241,8 @@ class LauncherService:
         study_uuid: str,
         launcher: str,
         launcher_parameters: LauncherParametersDTO,
-        solver_presets_id: Optional[str] = None,
-        version: Optional[str] = None,
+        solver_presets_id: str | None = None,
+        version: str | None = None,
     ) -> str:
         job_uuid = self._generate_new_id()
         logger.info(f"New study launch (study={study_uuid}, job_id={job_uuid})")
@@ -331,7 +328,7 @@ class LauncherService:
 
         return job_status
 
-    def _filter_from_user_permission(self, job_results: List[JobResult]) -> List[JobResult]:
+    def _filter_from_user_permission(self, job_results: list[JobResult]) -> list[JobResult]:
         user = get_current_user()
         if not user:
             return []
@@ -392,10 +389,10 @@ class LauncherService:
 
     def get_jobs(
         self,
-        study_uid: Optional[str],
+        study_uid: str | None,
         filter_orphans: bool = True,
-        latest: Optional[int] = None,
-    ) -> List[JobResult]:
+        latest: int | None = None,
+    ) -> list[JobResult]:
         if study_uid is not None:
             job_results = self.job_result_repository.find_by_study(study_uid)
         else:
@@ -404,35 +401,31 @@ class LauncherService:
         return self._filter_from_user_permission(job_results=job_results)
 
     @staticmethod
-    def sort_log(log: JobLog, logs: Dict[JobLogType, List[str]]) -> Dict[JobLogType, List[str]]:
+    def sort_log(log: JobLog, logs: dict[JobLogType, list[str]]) -> dict[JobLogType, list[str]]:
         logs[JobLogType.AFTER if log.log_type == str(JobLogType.AFTER) else JobLogType.BEFORE].append(log.message)
         return logs
 
-    def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
+    def get_log(self, job_id: str, log_type: LogType) -> str:
         job_result = self.job_result_repository.get(str(job_id))
-        if job_result:
-            if job_result.output_id:
-                launcher_logs = (
-                    self.study_service.get_logs(
-                        job_result.study_id, job_result.output_id, job_id, log_type == LogType.STDERR
-                    )
-                    or ""
-                )
-            else:
-                if job_result.launcher is None:
-                    raise ValueError(f"Job {job_id} has no launcher")
-                self._assert_launcher_is_initialized(job_result.launcher)
-                launcher_logs = str(self.launchers[job_result.launcher].get_log(job_id, log_type) or "")
-            if log_type == LogType.STDOUT:
-                app_logs: Dict[JobLogType, List[str]] = functools.reduce(
-                    lambda logs, log: LauncherService.sort_log(log, logs),
-                    job_result.logs or [],
-                    {JobLogType.BEFORE: [], JobLogType.AFTER: []},
-                )
-                return "\n".join(app_logs[JobLogType.BEFORE] + [launcher_logs] + app_logs[JobLogType.AFTER])
-            return launcher_logs
+        if not job_result:
+            raise JobNotFound()
 
-        raise JobNotFound()
+        launcher_logs: str
+        if job_result.output_id:
+            launcher_logs = self.output_service.get_logs(job_result.study_id, job_result.output_id, log_type)
+        else:
+            if job_result.launcher is None:
+                raise ValueError(f"Job {job_id} has no launcher")
+            self._assert_launcher_is_initialized(job_result.launcher)
+            launcher_logs = self.launchers[job_result.launcher].get_log(job_id, log_type) or ""
+        if log_type == LogType.STDOUT:
+            app_logs: dict[JobLogType, list[str]] = functools.reduce(
+                lambda logs, log: LauncherService.sort_log(log, logs),
+                job_result.logs or [],
+                {JobLogType.BEFORE: [], JobLogType.AFTER: []},
+            )
+            return "\n".join(app_logs[JobLogType.BEFORE] + [launcher_logs] + app_logs[JobLogType.AFTER])
+        return launcher_logs
 
     def _export_study(
         self,
@@ -465,11 +458,11 @@ class LauncherService:
         self,
         job_id: str,
         output_path: Path,
-        output_suffix_name: Optional[str] = None,
-    ) -> Optional[str]:
+        output_suffix_name: str | None = None,
+    ) -> str | None:
         # Temporary import the output in a tmp space if the study can not be found
         logger.info(f"Trying to import output in fallback tmp space for job {job_id}")
-        output_name: Optional[str] = None
+        output_name: str | None = None
         job_output_path = self._get_job_output_fallback_path(job_id)
 
         try:
@@ -487,7 +480,7 @@ class LauncherService:
             shutil.rmtree(job_output_path, ignore_errors=True)
         return output_name
 
-    def _save_solver_stats_file(self, job_result: JobResult, measurement_file: Optional[Path]) -> None:
+    def _save_solver_stats_file(self, job_result: JobResult, measurement_file: Path | None) -> None:
         if measurement_file and measurement_file.exists():
             job_result.solver_stats = measurement_file.read_text(encoding="utf-8")
             self.job_result_repository.save(job_result)
@@ -509,87 +502,70 @@ class LauncherService:
         self,
         job_id: str,
         output_path: Path,
-        additional_logs: Dict[str, List[Path]],
-    ) -> Optional[str]:
+        additional_logs: SimulationLogs,
+    ) -> str | None:
+        """
+        In the current state (2026-03-04), we actually always get a parent directory of the output here.
+        We never get a zip. Zip support was partially added in the past when planning to get an output
+        zip directly from antares-launcher, but it was never completed.
+
+        TODO: we should clarify this whole workflow, including the "optimized path" for studies stored
+              on external devices, see comment below.
+        """
         logger.info(f"Importing output for job {job_id}")
-        study_id: Optional[str] = None
         with db():
             job_result = self.job_result_repository.get(job_id)
             if not job_result:
                 raise JobNotFound()
-
             study_id = job_result.study_id
             job_owner_id = job_result.owner_id
             job_launch_params = LauncherParametersDTO.from_launcher_params(job_result.launcher_params)
 
-            # this now can be a zip file instead of a directory !
             output_true_path = find_single_output_path(output_path)
-            output_is_zipped = is_zip(output_true_path)
-            output_suffix = cast(
-                Optional[str],
-                getattr(
-                    job_launch_params,
-                    LAUNCHER_PARAM_NAME_SUFFIX,
-                    None,
-                ),
-            )
 
             self._save_solver_stats(job_result, output_true_path)
-            if additional_logs and not output_is_zipped:
-                for log_name, log_paths in additional_logs.items():
-                    concat_files(
-                        log_paths,
-                        output_true_path / log_name,
-                    )
 
-        if study_id:
-            zip_path: Optional[Path] = None
+        zip_path: Path | None = None
+        # Optimized path for studies stored on external devices, that will then be unarchived there.
+        # TODO: that whole optimization path should be refactored to:
+        #       - be more explicit
+        #       - not affect internal studies
+        if job_launch_params.archive_output:
             stopwatch = StopWatch()
-            if not output_is_zipped and job_launch_params.archive_output:
-                logger.info("Re zipping output for transfer")
-                zip_path = output_true_path.parent / f"{output_true_path.name}.zip"
-                archive_dir(output_true_path, target_archive_path=zip_path, archive_format=ArchiveFormat.ZIP)
-                logger.info(f"Zipped output for job {job_id} in {stopwatch}s")
+            logger.info("Re zipping output for transfer")
+            zip_path = output_true_path.parent / f"{output_true_path.name}.zip"
+            archive_dir(output_true_path, target_archive_path=zip_path, archive_format=ArchiveFormat.ZIP)
+            logger.info(f"Zipped output for job {job_id} in {stopwatch}s")
+            final_output_path = zip_path
+        else:
+            final_output_path = output_true_path
 
-            final_output_path = zip_path or output_true_path
-            with db():
-                try:
-                    if additional_logs and output_is_zipped:
-                        for log_name, log_paths in additional_logs.items():
-                            log_type = LogType.from_filename(log_name)
-                            log_suffix = log_name
-                            if log_type:
-                                log_suffix = log_type.to_suffix()
-                            self.study_service.save_logs(
-                                study_id,
-                                job_id,
-                                log_suffix,
-                                concat_files_to_str(log_paths),
-                            )
+        with db():
+            try:
+                if job_owner_id:
+                    # We restore the user context as the following processes need it
+                    current_user = self.login_service.get_jwt(job_owner_id)
+                else:
+                    current_user = get_current_user()
 
-                    if job_owner_id:
-                        # We restore the user context as the following processes need it
-                        current_user = self.login_service.get_jwt(job_owner_id)
-                    else:
-                        current_user = get_current_user()
-
-                    with current_user_context(current_user):
-                        return self.output_service.import_output(
-                            study_id,
-                            final_output_path,
-                            output_suffix,
-                            job_launch_params.auto_unzip,
-                        )
-                except StudyNotFoundError:
-                    return self._import_fallback_output(
-                        job_id,
+                with current_user_context(current_user):
+                    return self.output_service.import_output(
+                        study_id,
                         final_output_path,
-                        output_suffix,
+                        output_name_suffix=job_launch_params.output_suffix,
+                        auto_unzip=job_launch_params.auto_unzip,
+                        logs=additional_logs,
                     )
-                finally:
-                    if zip_path:
-                        os.unlink(zip_path)
-        raise JobNotFound()
+            except StudyNotFoundError:
+                return self._import_fallback_output(
+                    job_id,
+                    final_output_path,
+                    job_launch_params.output_suffix,
+                )
+            finally:
+                # Delete the temporary zip file, which now has been imported
+                if zip_path:
+                    os.unlink(zip_path)
 
     def _download_fallback_output(self, job_id: str) -> FileDownloadTaskDTO:
         output_path = self._get_job_output_fallback_path(job_id)
@@ -633,7 +609,7 @@ class LauncherService:
             return self.output_service.export_output(job_result.study_id, job_result.output_id)
         raise JobNotFound()
 
-    def get_load(self, launcher_id: Optional[str]) -> LauncherLoadDTO:
+    def get_load(self, launcher_id: str | None) -> LauncherLoadDTO:
         """
         Get the load of the specified launcher.
         """
@@ -646,7 +622,7 @@ class LauncherService:
 
         return launcher.get_load()
 
-    def get_solver_versions(self, launcher_id: Optional[str]) -> List[str]:
+    def get_solver_versions(self, launcher_id: str | None) -> list[SolverVersion]:
         """
         Fetch the list of solver versions from the configuration.
 
@@ -684,7 +660,7 @@ class LauncherService:
         if launcher is None:
             raise ValueError(f"Job {job_id} has no launcher")
         launch_progress_json = self.launchers[launcher].cache.get(id=f"Launch_Progress_{job_id}") or {"progress": 0.0}
-        return cast(float, launch_progress_json.get("progress", 0.0))
+        return float(launch_progress_json.get("progress", 0.0))
 
     def create_solver_presets(self, solver_presets_creation: SolverPresetsCreation) -> SolverPresets:
         """
@@ -707,7 +683,7 @@ class LauncherService:
             raise SolverPresetsNotFound(f"Solver presets configuration with id '{solver_presets_id}' not found.")
         return solver_presets_db.to_model()
 
-    def get_solver_presets_list(self) -> List[SolverPresets]:
+    def get_solver_presets_list(self) -> list[SolverPresets]:
         """
         Retrieve all solver presets.
         """

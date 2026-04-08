@@ -12,6 +12,7 @@
 import contextlib
 import uuid
 from dataclasses import dataclass
+from pathlib import Path
 
 import polars as pl
 import pytest
@@ -19,21 +20,28 @@ from antares.study.version import StudyVersion
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from antarest.core.interfaces.cache import ICache
 from antarest.dbmodel import Base
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3, StorageMode
+from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import create_study
 
 
-def build_dao(db_session: Session, matrix_service: ISimpleMatrixService, version: StudyVersion) -> DatabaseStudyDao:
+def build_db_dao(db_session: Session, matrix_service: ISimpleMatrixService, version: StudyVersion) -> DatabaseStudyDao:
     """
     Create a test study in database mode and create a DatabaseStudyDao instance for testing.
     """
@@ -50,37 +58,81 @@ def build_dao(db_session: Session, matrix_service: ISimpleMatrixService, version
     return dao
 
 
-@pytest.fixture
-def dao(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
-    return build_dao(db_session, matrix_service, STUDY_VERSION_8_8)
+def build_filesystem_dao(
+    db_session: Session,
+    version: StudyVersion,
+    command_context: CommandContext,
+    study_factory: StudyFactory,
+    study_path: Path,
+) -> FileStudyTreeDao:
+    """
+    Create a test study in filesystem mode and create a FileStudyTreeDao instance for testing.
+    """
+    # Create the study
+    study_id = str(uuid.uuid4())
+    study = create_study(id=study_id, name="Test Study", version=str(version), path=str(study_path / "my_study"))
+    study.storage_mode = StorageMode.FILESYSTEM
+    with db_session:
+        db_session.add(study)
+        db_session.commit()
+        factory = FileStudyDaoFactory(command_context, study_factory)
+        dao = factory.create_study_dao(study)
+
+    return dao
 
 
 @pytest.fixture
-def dao_930(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
-    return build_dao(db_session, matrix_service, STUDY_VERSION_9_3)
+def db_dao(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
+    return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
+
+
+@pytest.fixture
+def db_dao_930(db_dao_930_and_matrix_service) -> DatabaseStudyDao:
+    return db_dao_930_and_matrix_service[0]
+
+
+@pytest.fixture
+def db_dao_930_and_matrix_service(
+    db_session: Session, matrix_service: ISimpleMatrixService
+) -> tuple[DatabaseStudyDao, ISimpleMatrixService]:
+    return build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3), matrix_service
+
+
+@pytest.fixture
+def fs_dao_930_and_matrix_service(
+    db_session: Session, command_context: CommandContext, tmp_path: Path, core_cache: ICache
+) -> tuple[FileStudyTreeDao, ISimpleMatrixService]:
+    matrix_service = command_context.matrix_service
+    study_factory = StudyFactory(matrix_mapper_factory=MatrixUriMapperFactory(matrix_service), cache=core_cache)
+    return build_filesystem_dao(db_session, STUDY_VERSION_9_3, command_context, study_factory, tmp_path), matrix_service
+
+
+@pytest.fixture
+def fs_dao_930(fs_dao_930_and_matrix_service) -> FileStudyTreeDao:
+    return fs_dao_930_and_matrix_service[0]
 
 
 @pytest.fixture(scope="session")
-def dao_930_shared() -> DatabaseStudyDao:
-    return build_shared_dao(STUDY_VERSION_9_3, InMemorySimpleMatrixService())
+def db_dao_930_shared() -> DatabaseStudyDao:
+    return build_shared_db_dao(STUDY_VERSION_9_3, InMemorySimpleMatrixService())
 
 
-def build_shared_dao(study_version: StudyVersion, matrix_service: ISimpleMatrixService):
+def build_shared_db_dao(study_version: StudyVersion, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
     """To be used inside tests that do not alter the DAO, but just use it"""
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
     make_session = sessionmaker(bind=engine)
     with contextlib.closing(make_session()) as session:
-        return build_dao(session, matrix_service, study_version)
+        return build_db_dao(session, matrix_service, study_version)
 
 
 @pytest.fixture
-def dao_920(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
-    return build_dao(db_session, matrix_service, STUDY_VERSION_9_2)
+def db_dao_920(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
+    return build_db_dao(db_session, matrix_service, STUDY_VERSION_9_2)
 
 
 @dataclass
-class RealCaseDBStudy:
+class RealCaseStudy:
     area1: str
     area2: str
     thermal_id: str
@@ -90,11 +142,17 @@ class RealCaseDBStudy:
     dataframes: list[pl.DataFrame]
 
 
-def build_real_case_db_study(dao: DatabaseStudyDao) -> RealCaseDBStudy:
-    matrix_service = dao._matrix_service
+def get_matrix_service_from_dao(dao: StudyDao) -> ISimpleMatrixService:
+    if isinstance(dao, DatabaseStudyDao):
+        return dao._matrix_service
+    else:
+        return dao._generator_matrix_constants.matrix_service
+
+
+def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -> RealCaseStudy:
     # Create matrices in the matrix-store with different contents to diversify tests.
     base_data = [[1, 2.5], [3, 4.7]]
-    dataframes = [pl.DataFrame(data=[[a + i, b + i] for a, b in base_data], orient="row") for i in range(38)]
+    dataframes = [pl.DataFrame(data=[[a + i, b + i] for a, b in base_data], orient="row") for i in range(40)]
     (
         load_df,
         solar_df,
@@ -134,6 +192,8 @@ def build_real_case_db_study(dao: DatabaseStudyDao) -> RealCaseDBStudy:
         hydro_max_hourly_pump_power_df,
         hydro_max_daily_gen_energy_df,
         hydro_max_daily_pump_energy_df,
+        xpansion_capacity_df,
+        xpansion_weight_df,
     ) = dataframes
 
     load_id = matrix_service.create(load_df)
@@ -174,6 +234,8 @@ def build_real_case_db_study(dao: DatabaseStudyDao) -> RealCaseDBStudy:
     hydro_max_hourly_pump_power_id = matrix_service.create(hydro_max_hourly_pump_power_df)
     hydro_max_daily_gen_energy_id = matrix_service.create(hydro_max_daily_gen_energy_df)
     hydro_max_daily_pump_energy_id = matrix_service.create(hydro_max_daily_pump_energy_df)
+    xpansion_capacity_id = matrix_service.create(xpansion_capacity_df)
+    xpansion_weight_id = matrix_service.create(xpansion_weight_df)
 
     # Create `load`, `solar`, `wind`, `reserves` and `misc-gen` matrices in DB
     area_id = "paris"
@@ -244,7 +306,12 @@ def build_real_case_db_study(dao: DatabaseStudyDao) -> RealCaseDBStudy:
     dao.save_hydro_max_daily_gen_energy(area_id, hydro_max_daily_gen_energy_id)
     dao.save_hydro_max_daily_pump_energy(area_id, hydro_max_daily_pump_energy_id)
 
-    return RealCaseDBStudy(
+    # Create xpansion capacity and weight matrices
+    dao.create_xpansion_configuration()
+    dao.save_xpansion_capacity("link_capa.txt", xpansion_capacity_id)
+    dao.save_xpansion_weight("mc_weights.csv", xpansion_weight_id)
+
+    return RealCaseStudy(
         area1=area_id,
         area2=area2,
         thermal_id=thermal_id,

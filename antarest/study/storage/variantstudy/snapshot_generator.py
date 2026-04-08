@@ -16,8 +16,9 @@ This module dedicated to variant snapshot generation.
 
 import logging
 import shutil
+from collections.abc import Sequence
 from pathlib import Path
-from typing import List, NamedTuple, Optional, Sequence, Tuple
+from typing import NamedTuple
 
 from antarest.core.exceptions import VariantGenerationError
 from antarest.core.interfaces.cache import (
@@ -31,7 +32,12 @@ from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.utils import assert_permission_on_studies, is_managed, remove_from_cache
+from antarest.study.storage.utils import (
+    assert_permission_on_studies,
+    is_managed,
+    remove_from_cache,
+    update_antares_info,
+)
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
@@ -71,7 +77,7 @@ class SnapshotGenerator:
         denormalize: bool = True,
         from_scratch: bool = False,
         notifier: ITaskNotifier = NoopNotifier(),
-        listener: Optional[ICommandListener] = None,
+        listener: ICommandListener | None = None,
     ) -> GenerationResultInfoDTO:
         # ATTENTION: since we are making changes to disk, a file lock is needed.
         # The locking is currently done in the `VariantStudyService.generate_task` function
@@ -122,9 +128,6 @@ class SnapshotGenerator:
                 created_at=current_time(),
                 last_executed_command=variant_study.commands[-1].id if variant_study.commands else None,
             )
-
-            logger.info(f"Reading additional data from files for study {variant_study_id}")
-            self._update_study_data(file_study, variant_study)
             self.repository.save(variant_study)
 
             if results.should_invalidate_cache:
@@ -148,7 +151,7 @@ class SnapshotGenerator:
 
         return results
 
-    def _retrieve_descendants(self, variant_study_id: str) -> Tuple[Study, Sequence[VariantStudy]]:
+    def _retrieve_descendants(self, variant_study_id: str) -> tuple[Study, Sequence[VariantStudy]]:
         # Get all ancestors of the current study from bottom to top
         # The first IDs are variant IDs, the last is the root study ID.
         ancestor_ids = self.repository.get_ancestor_or_self_ids(variant_study_id)
@@ -163,7 +166,6 @@ class SnapshotGenerator:
             self.raw_study_service.export_study_to_flat_directory(
                 ref_study.snapshot_dir,
                 snapshot_dir,
-                outputs=False,
                 denormalize=False,
                 is_study_managed=is_managed(ref_study),
             )
@@ -172,7 +174,6 @@ class SnapshotGenerator:
                 ref_study,
                 snapshot_dir,
                 denormalize=False,  # de-normalization is done at the end
-                outputs=False,  # do NOT export outputs
             )
         else:  # pragma: no cover
             raise TypeError(repr(type(ref_study)))
@@ -182,7 +183,7 @@ class SnapshotGenerator:
         file_study: FileStudy,
         variant_study: VariantStudy,
         cmd_blocks: Sequence[CommandBlock],
-        listener: Optional[ICommandListener] = None,
+        listener: ICommandListener | None = None,
     ) -> GenerationResultInfoDTO:
         commands = [self.command_factory.to_command(cb.to_dto()) for cb in cmd_blocks]
         results = apply_commands_to_variant(commands, study=file_study, metadata=variant_study, listener=listener)
@@ -199,18 +200,8 @@ class SnapshotGenerator:
                 else:  # pragma: no cover
                     raise NotImplementedError(f"Unexpected detail type: {type(detail)}")
             raise VariantGenerationError(message)
+        update_antares_info(variant_study, file_study.tree, update_author=True)
         return results
-
-    def _update_study_data(self, file_study: FileStudy, metadata: Study) -> None:
-        horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
-        author = file_study.tree.get(url=["study", "antares", "author"])
-        editor = file_study.tree.get(url=["study", "antares", "editor"])
-        assert isinstance(author, str)
-        assert isinstance(editor, str)
-        assert isinstance(horizon, (str, int))
-        metadata.horizon = horizon
-        metadata.author = author
-        metadata.editor = editor
 
 
 class RefStudySearchResult(NamedTuple):
@@ -248,7 +239,7 @@ def search_ref_study(
     ref_study: Study
 
     # The commands to apply on the reference study to generate the current variant
-    cmd_blocks: List[CommandBlock]
+    cmd_blocks: list[CommandBlock]
 
     if from_scratch:
         # In the case of a from scratch generation, the root study will be used as the reference study.

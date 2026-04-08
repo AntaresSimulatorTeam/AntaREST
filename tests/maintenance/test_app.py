@@ -13,9 +13,9 @@
 """Tests for Celery app configuration."""
 
 import os
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
 from unittest import mock
 from unittest.mock import Mock
 
@@ -104,6 +104,10 @@ class TestSetupPeriodicTasks:
         config.storage.auto_archive_cron = None
         config.storage.watcher_scan_sleeping_time = 120
         config.storage.tasks_gc_sleeping_time = 3600
+        config.storage.disk_usage_log_sleeping_time = 300
+        config.storage.disk_usage_log_cron = None
+        config.storage.disk_space_analyzer_sleeping_time = 300
+        config.storage.disk_space_analyzer_cron = None
 
         with mock.patch("antarest.maintenance.app.get_config", return_value=config):
             _setup_periodic_tasks(sender=sender)
@@ -123,4 +127,6 @@ class TestSetupPeriodicTasks:
             "watcher_scan",
             "variable_view_cleaner",
             "tasks_cleaner",
+            "disk_usage",
+            "disk_space_analyzer",
         ]

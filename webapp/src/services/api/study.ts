@@ -12,22 +12,23 @@
  * This file is part of the Antares project.
  */
 
-import type { AxiosRequestConfig } from "axios";
-import * as RA from "ramda-adjunct";
 import type { FolderDTO, WorkspaceDTO } from "@/queries/explorer/schemas";
 import { compactSemanticVersion } from "@/utils/versionUtils";
+import type { AxiosRequestConfig } from "axios";
+import * as RA from "ramda-adjunct";
 import type { StudyMapDistrict } from "../../redux/ducks/studyMaps";
 import type {
   AreasConfig,
-  FileStudyTreeConfigDTO,
+  DistrictApplyFilter,
   MatrixAggregationResult,
+  OutputDetails,
   StudyLayer,
   StudyMetadata,
   StudyMetadataDTO,
   StudyMetadataPatchDTO,
-  StudyOutput,
   StudyOutputDownloadDTO,
   StudyPublicMode,
+  StudySynthesis,
 } from "../../types/types";
 import { convertStudyDtoToMetadata } from "../utils";
 import client from "./client";
@@ -91,7 +92,7 @@ export const getStudyMetadata = async (sid: string): Promise<StudyMetadata> => {
   return convertStudyDtoToMetadata(sid, res.data);
 };
 
-export const getStudyOutputs = async (sid: string): Promise<StudyOutput[]> => {
+export const getStudyOutputs = async (sid: string): Promise<OutputDetails[]> => {
   const res = await client.get(`/v1/studies/${sid}/outputs`);
   return res.data;
 };
@@ -107,12 +108,12 @@ export const getStudyOutputs = async (sid: string): Promise<StudyOutput[]> => {
 export const getStudyOutputById = async (
   studyId: string,
   outputId: string,
-): Promise<StudyOutput | undefined> => {
+): Promise<OutputDetails | undefined> => {
   const outputs = await getStudyOutputs(studyId);
   return outputs.find((output) => output.name === outputId);
 };
 
-export const getStudySynthesis = async (sid: string): Promise<FileStudyTreeConfigDTO> => {
+export const getStudySynthesis = async (sid: string): Promise<StudySynthesis> => {
   const res = await client.get(`/v1/studies/${sid}/synthesis`);
   return res.data;
 };
@@ -409,7 +410,7 @@ export async function updateStudyDistrict(
   output: StudyMapDistrict["output"],
   comments: StudyMapDistrict["comments"],
   areas?: StudyMapDistrict["areas"],
-  applyFilter?: string,
+  applyFilter?: DistrictApplyFilter,
 ): Promise<void> {
   await client.put(`v1/studies/${studyId}/districts/${districtId}`, {
     output,

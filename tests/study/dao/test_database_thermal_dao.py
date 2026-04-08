@@ -24,6 +24,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     LawOption,
     LocalTSGenerationBehavior,
     ThermalCluster,
+    ThermalClusterCreation,
     ThermalClusterGroup,
     ThermalCostGeneration,
 )
@@ -36,9 +37,12 @@ from antarest.study.dao.database.models.thermal import (
     THERMAL_PREPRO_TABLE,
     THERMAL_SERIES_TABLE,
 )
+from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-def test_save_thermal_creates_cluster(dao: DatabaseStudyDao) -> None:
+def test_save_thermal_creates_cluster(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("Paris")
 
     thermal = ThermalCluster(
@@ -106,7 +110,8 @@ def test_save_thermal_creates_cluster(dao: DatabaseStudyDao) -> None:
         dao.save_thermal("nonexistent", thermal)
 
 
-def test_save_thermal_overwrites_existing(dao: DatabaseStudyDao) -> None:
+def test_save_thermal_overwrites_existing(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("Paris")
 
     dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas", nominal_capacity=100.0))
@@ -116,7 +121,8 @@ def test_save_thermal_overwrites_existing(dao: DatabaseStudyDao) -> None:
     assert result.nominal_capacity == 200.0
 
 
-def test_save_multiple_thermal_clusters(dao: DatabaseStudyDao) -> None:
+def test_save_multiple_thermal_clusters(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("Paris")
 
     dao.save_thermals(
@@ -156,7 +162,8 @@ def test_save_multiple_thermal_clusters(dao: DatabaseStudyDao) -> None:
         )
 
 
-def test_get_one_thermal_cluster(dao: DatabaseStudyDao) -> None:
+def test_get_one_thermal_cluster(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("Paris")
     dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas"))
 
@@ -171,7 +178,8 @@ def test_get_one_thermal_cluster(dao: DatabaseStudyDao) -> None:
         dao.get_thermal("nonexistent", "gas")
 
 
-def test_get_all_thermals(dao: DatabaseStudyDao) -> None:
+def test_get_all_thermals(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("Paris")
     dao.save_area("London")
 
@@ -187,7 +195,8 @@ def test_get_all_thermals(dao: DatabaseStudyDao) -> None:
         dao.get_all_thermals_for_area("nonexistent")
 
 
-def test_delete_thermal(dao: DatabaseStudyDao) -> None:
+def test_delete_thermal(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("Paris")
     thermal = ThermalCluster(id="gas", name="Gas")
     dao.save_thermal("paris", thermal)
@@ -209,11 +218,12 @@ def test_delete_thermal(dao: DatabaseStudyDao) -> None:
         dao.delete_thermal("paris", "gas")
 
 
-def test_thermal_exists_returns_false_for_unknown_area(dao: DatabaseStudyDao) -> None:
-    assert not dao.thermal_exists("nonexistent", "gas")
+def test_thermal_exists_returns_false_for_unknown_area(db_dao: DatabaseStudyDao) -> None:
+    assert not db_dao.thermal_exists("nonexistent", "gas")
 
 
-def test_thermal_matrices_lifecycle(db_session: Session, dao: DatabaseStudyDao) -> None:
+def test_thermal_matrices_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("Paris")
     dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas"))
 
@@ -244,7 +254,8 @@ def test_thermal_matrices_lifecycle(db_session: Session, dao: DatabaseStudyDao) 
         assert db_session.execute(select(THERMAL_CO2_COST_TABLE)).fetchall() == []
 
 
-def test_get_thermal_matrix_raises_when_missing(dao: DatabaseStudyDao) -> None:
+def test_get_thermal_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("Paris")
     dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas"))
 
@@ -262,7 +273,8 @@ def test_get_thermal_matrix_raises_when_missing(dao: DatabaseStudyDao) -> None:
             getter("nonexistent", "gas")
 
 
-def test_save_thermal_matrix_raises_when_missing(dao: DatabaseStudyDao) -> None:
+def test_save_thermal_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("Paris")
 
     savers = [
@@ -280,7 +292,8 @@ def test_save_thermal_matrix_raises_when_missing(dao: DatabaseStudyDao) -> None:
             saver("nonexistent", "gas", "missing-matrix-id")
 
 
-def test_area_with_no_clusters_are_absent_from_clusters_dict(dao: DatabaseStudyDao) -> None:
+def test_area_with_no_clusters_are_absent_from_clusters_dict(db_dao: DatabaseStudyDao) -> None:
+    dao = db_dao
     dao.save_area("germany")
     dao.save_area("italy")
 
@@ -291,3 +304,16 @@ def test_area_with_no_clusters_are_absent_from_clusters_dict(dao: DatabaseStudyD
     assert "italy" not in clusters
     assert "germany" in clusters
     assert "gas" in clusters["germany"]
+
+
+def test_save_thermal_and_upper_case_name(db_dao: DatabaseStudyDao, command_context: CommandContext) -> None:
+    dao = db_dao
+    dao.save_area("fr")
+    command = CreateCluster(
+        area_id="fr",
+        parameters=ThermalClusterCreation(name="MyThermal"),
+        command_context=command_context,
+        study_version=dao.get_version(),
+    )
+    output = command.apply(dao)
+    assert output.status  # The command should succeed even if the name is in upper case

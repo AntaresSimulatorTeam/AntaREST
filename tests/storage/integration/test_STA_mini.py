@@ -15,7 +15,7 @@ import shutil
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 from unittest.mock import Mock
 
 import numpy as np
@@ -26,20 +26,24 @@ from fastapi import FastAPI
 from sqlalchemy import Engine
 from starlette.testclient import TestClient
 
-from antarest.core.application import create_app_ctxt
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.core.utils.polars import create_polars_dataframe
+from antarest.dependencies import AppState
+from antarest.main import add_exception_handlers
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.main import add_study_routes
-from antarest.study.output.output_model import OutputVariables, OutputVariablesInformation
+from antarest.output.model import OutputVariablesInformation
+from antarest.output.routes import create_output_routes
+from antarest.output.storage.file.repository import DbOutputVariables
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.common.prepro import default_k
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.prepro.area.area import default_energy
 from antarest.study.storage.variantstudy.business.matrix_constants.common import fixed_4_columns
-from antarest.study.web.output_blueprint import create_output_routes
+from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
+from antarest.study.web.studies_blueprint import create_study_routes
 from tests.helpers import assert_study, with_admin_user, with_db_context
 from tests.storage.integration.conftest import UUID
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
@@ -51,20 +55,20 @@ from tests.storage.integration.data.set_values_monthly import set_values_monthly
 
 @pytest.fixture
 def client(services, db_engine: Engine) -> TestClient:
-    app = FastAPI(title=__name__)
-    app.add_middleware(
-        DBSessionMiddleware,
-        custom_engine=db_engine,
-        session_args={"autocommit": False, "autoflush": False},
-    )
-    build_ctxt = create_app_ctxt(app)
     study_service, output_service, config = services
-    add_study_routes(build_ctxt, study_service, Mock(), config)
-    build_ctxt.api_root.include_router(
-        create_output_routes(output_service, study_service.file_transfer_manager, config)
-    )
-
-    return TestClient(build_ctxt.build())
+    services = Mock()
+    services.study = study_service
+    services.output_service = output_service
+    services.file_transfer_manager = study_service.file_transfer_manager
+    app = FastAPI(title=__name__)
+    init_db_singleton(custom_engine=db_engine, session_args={"autocommit": False, "autoflush": False})
+    app.add_middleware(DBSessionMiddleware)
+    add_exception_handlers(app)
+    app.state.app_state = AppState(config=config, services=services, ws_manager=Mock())
+    app.include_router(create_study_routes())
+    app.include_router(create_raw_study_routes())
+    app.include_router(create_output_routes())
+    return TestClient(app)
 
 
 def assert_url_content(client: TestClient, url: str, expected_output: dict[str, Any] | str) -> None:
@@ -72,7 +76,7 @@ def assert_url_content(client: TestClient, url: str, expected_output: dict[str, 
     assert_study(res.json(), expected_output)
 
 
-def assert_with_errors(storage_service: StudyService, url: str, expected_output: Union[str, dict[str, Any]]) -> None:
+def assert_with_errors(storage_service: StudyService, url: str, expected_output: str | dict[str, Any]) -> None:
     url = url[len("/v1/studies/") :]
     uuid, url = url.split("/raw?path=")
     # We use the `get_raw_content` method as it's the one called by the GET /raw endpoint.
@@ -364,6 +368,14 @@ def test_sta_mini_input_for_R_scripts(client: TestClient, url: str, expected_out
             f"/v1/studies/{UUID}/raw?path=output/20201014-1422eco-hello/info/general/version",
             700,
         ),
+        (
+            f"/v1/studies/{UUID}/raw?path=output/20241807-1540eco-extra-outputs/ts-numbers/st-storage/area/sts_2/c1",
+            [1],
+        ),
+        (
+            f"/v1/studies/{UUID}/raw?path=output/20241807-1540eco-extra-outputs/ts-numbers/st-storage/area/sts_2/inflows",
+            [1],
+        ),
     ],
 )
 def test_sta_mini_output(storage_service: StudyService, url: str, expected_output: Any) -> None:
@@ -492,8 +504,15 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service: StudyService, c
     sta_mini_output_zip_path = Path(sta_mini_output_zip_filepath)
 
     study_output_data = io.BytesIO(sta_mini_output_zip_path.read_bytes())
+
     result = client.post(
-        f"/v1/studies/{UUID}/output",
+        "/v1/studies",
+        params={"name": "test"},
+    )
+    assert result.status_code == 201
+
+    result = client.post(
+        f"/v1/studies/{result.json()}/output",
         files={"output": study_output_data},
     )
 
@@ -503,7 +522,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service: StudyService, c
 def _clean_db() -> None:
     """Cleans the OutputVariables table for other tests"""
     with db():
-        db.session.query(OutputVariables).delete()
+        db.session.query(DbOutputVariables).delete()
         db.session.commit()
 
 

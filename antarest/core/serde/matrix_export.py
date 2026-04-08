@@ -9,8 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from collections.abc import Iterator
 from pathlib import Path
-from typing import IO, Iterator, Protocol
+from typing import IO, Protocol
 
 import pandas as pd
 import polars as pl
@@ -43,6 +44,9 @@ def simplify_dataframe(dataframe: pl.DataFrame, np_type: type[pl.Int32] | type[p
 
 
 def write_dataframe_in_tsv_format(df: pl.DataFrame, path: Path, headers: bool = False) -> None:
+    if df.width == 0:
+        path.write_text("")
+        return
     df = simplify_dataframe(df)
     df.write_csv(path, separator="\t", include_header=headers)
 

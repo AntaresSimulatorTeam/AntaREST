@@ -9,7 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Iterable, List, Literal, Set, TypeAlias, cast
+from collections.abc import Iterable
+from typing import Literal, TypeAlias, cast
 
 from antares.study.version import StudyVersion
 from pydantic import Field
@@ -36,14 +37,14 @@ class AdequacyPatchMode(EnumIgnoreCase):
     VIRTUAL = "virtual"
 
 
-def sort_filter_options(options: Iterable[FrequencyFilter]) -> List[FrequencyFilter]:
+def sort_filter_options(options: Iterable[FrequencyFilter]) -> list[FrequencyFilter]:
     return sorted(
         options,
         key=lambda x: FILTER_OPTIONS.index(x),
     )
 
 
-def parse_filters(value: str) -> Set[FrequencyFilter]:
+def parse_filters(value: str) -> set[FrequencyFilter]:
     if not value:
         return set()
     return {_validate_filter(item.strip()) for item in value.split(",")}
@@ -55,7 +56,7 @@ def _validate_filter(value: str) -> FrequencyFilter:
     return cast(FrequencyFilter, value)
 
 
-def serialize_filters(encoded_value: Set[FrequencyFilter]) -> str:
+def serialize_filters(encoded_value: set[FrequencyFilter]) -> str:
     if isinstance(encoded_value, str):
         return encoded_value
     return ", ".join(sort_filter_options(encoded_value))
@@ -69,8 +70,8 @@ class AreaProperties(AntaresBaseModel, extra="forbid", populate_by_name=True, al
     other_dispatch_power: bool = True
     spread_unsupplied_energy_cost: float = 0.0
     spread_spilled_energy_cost: float = 0.0
-    filter_synthesis: Set[FrequencyFilter] = Field(default_factory=lambda: set(FILTER_OPTIONS))
-    filter_by_year: Set[FrequencyFilter] = Field(default_factory=lambda: set(FILTER_OPTIONS))
+    filter_synthesis: set[FrequencyFilter] = Field(default_factory=lambda: set(FILTER_OPTIONS))
+    filter_by_year: set[FrequencyFilter] = Field(default_factory=lambda: set(FILTER_OPTIONS))
 
     # version 830
     adequacy_patch_mode: AdequacyPatchMode | None = None
@@ -89,8 +90,8 @@ class AreaPropertiesUpdate(AntaresBaseModel, extra="forbid", populate_by_name=Tr
     other_dispatch_power: bool | None = None
     spread_unsupplied_energy_cost: float | None = None
     spread_spilled_energy_cost: float | None = None
-    filter_synthesis: Set[FrequencyFilter] | None = None
-    filter_by_year: Set[FrequencyFilter] | None = None
+    filter_synthesis: set[FrequencyFilter] | None = None
+    filter_by_year: set[FrequencyFilter] | None = None
     adequacy_patch_mode: AdequacyPatchMode | None = None
 
 

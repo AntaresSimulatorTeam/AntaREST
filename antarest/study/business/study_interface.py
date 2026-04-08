@@ -10,7 +10,8 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Optional, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
 
 from antares.study.version import StudyVersion
 from typing_extensions import override
@@ -20,7 +21,9 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.memory.in_memory_study_dao import InMemoryStudyDao
+from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.command.common import CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 
@@ -58,7 +61,7 @@ class StudyInterface(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
+    def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
         """
         Adds commands to that study.
         Note that implementations are not required to actually modify the underlying file study.
@@ -67,6 +70,10 @@ class StudyInterface(ABC):
 
     @abstractmethod
     def get_study_dao(self) -> ReadOnlyStudyDao:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
         raise NotImplementedError()
 
 
@@ -95,15 +102,19 @@ class InMemoryStudyInterface(StudyInterface):
         raise NotImplementedError("In memory studies cannot be converted to file study.")
 
     @override
-    def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
+    def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
         for command in commands:
-            result = command.apply(self._study_dao, listener)
+            result: CommandOutput[Any] = command.apply(self._study_dao, listener)
             if not result.status:
                 raise CommandApplicationError(result.message)
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
         return self._study_dao.read_only()
+
+    @override
+    def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
+        self._study_dao.update_antares_file(metadata)
 
 
 class FileStudyInterface(StudyInterface):
@@ -137,7 +148,7 @@ class FileStudyInterface(StudyInterface):
         return self.file_study
 
     @override
-    def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
+    def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
         for command in commands:
             context = command.command_context
             result = command.apply(
@@ -149,4 +160,11 @@ class FileStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        return FileStudyTreeDao(self.file_study, self._generator_matrix_constants, self._blob_service).read_only()
+        return self._get_dao().read_only()
+
+    def _get_dao(self) -> FileStudyTreeDao:
+        return FileStudyTreeDao(self.file_study, self._generator_matrix_constants, self._blob_service)
+
+    @override
+    def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
+        self._get_dao().update_antares_file(metadata)

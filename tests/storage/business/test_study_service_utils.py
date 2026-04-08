@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import datetime
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -164,7 +164,7 @@ from antarest.study.storage.utils import DAY_NAMES, get_start_date
         ),
     ],
 )
-def test_create_matrix_index_output(config: Dict[str, Any], level: MatrixFrequency, expected: MatrixIndex) -> None:
+def test_create_matrix_index_output(config: dict[str, Any], level: MatrixFrequency, expected: MatrixIndex) -> None:
     config_mock = Mock()
     config_mock.archived = False
     output_id = "some output"
@@ -317,7 +317,7 @@ def test_create_matrix_index_output(config: Dict[str, Any], level: MatrixFrequen
         ),
     ],
 )
-def test_create_matrix_index_input(config: Dict[str, Any], level: MatrixFrequency, expected: MatrixIndex) -> None:
+def test_create_matrix_index_input(config: dict[str, Any], level: MatrixFrequency, expected: MatrixIndex) -> None:
     file_study = Mock()
     file_study.tree.get.return_value = {"general": config}
     # Asserts the content are the same

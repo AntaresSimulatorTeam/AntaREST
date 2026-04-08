@@ -33,10 +33,10 @@ import {
 import {
   StudyOutputDownloadLevelDTO,
   StudyOutputDownloadType,
-  type FileStudyTreeConfigDTO,
+  type StudySynthesis,
   type GenericInfo,
   type StudyMetadata,
-  type StudyOutput,
+  type OutputDetails,
   type StudyOutputDownloadDTO,
 } from "../../../../../../types/types";
 import ExportFilter from "./ExportFilter";
@@ -74,7 +74,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
   const [optionSelection, setOptionSelection] = useState<string>("exportWith");
   const [outputList, setOutputList] = useState<GenericInfo[]>();
   const [currentOutput, setCurrentOutput] = useState<string>();
-  const [studySynthesis, setStudySynthesis] = useState<FileStudyTreeConfigDTO>();
+  const [studySynthesis, setStudySynthesis] = useState<StudySynthesis>();
   const [filter, setFilter] = useState<StudyOutputDownloadDTO>({
     type: StudyOutputDownloadType.AREAS,
     level: StudyOutputDownloadLevelDTO.WEEKLY,
@@ -136,7 +136,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
       try {
         const res = await getStudyOutputs(study.id);
         const tmpSynth = await getStudySynthesis(study.id);
-        setOutputList(res.map((o: StudyOutput) => ({ id: o.name, name: o.name })));
+        setOutputList(res.map((o: OutputDetails) => ({ id: o.name, name: o.name })));
         setCurrentOutput(res.length > 0 ? res[0].name : undefined);
         setStudySynthesis(tmpSynth);
       } catch (e) {

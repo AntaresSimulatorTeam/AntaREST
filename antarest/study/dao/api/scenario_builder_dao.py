@@ -33,7 +33,10 @@ class ReadOnlyScenarioBuilderDao(ABC):
     @abstractmethod
     def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
         """
-        Get a scenario, from the ruleset, by its type (name).
+        Get a scenario, from the ruleset, by its type.
+
+        Args:
+            scenario_type: The scenario type to retrieve.
         """
         raise NotImplementedError()
 

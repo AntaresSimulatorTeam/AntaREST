@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Optional
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, joinedload
@@ -21,7 +20,7 @@ from antarest.study.model import Directory, Study
 
 
 class FavoriteStudyRepository:
-    def __init__(self, session: Optional[Session] = None) -> None:
+    def __init__(self, session: Session | None = None) -> None:
         self._session = session
 
     @property
@@ -57,7 +56,7 @@ class FavoriteStudyRepository:
         result = self.session.execute(stmt)
         return list(result.unique().scalars().all())
 
-    def get(self, study_id: str) -> Optional[Study]:
+    def get(self, study_id: str) -> Study | None:
         stmt = select(Study).where(Study.id == study_id)
         result = self.session.execute(stmt)
 
@@ -80,7 +79,7 @@ class FavoriteStudyRepository:
 
 
 class FavoriteDirectoryRepository:
-    def __init__(self, session: Optional[Session] = None) -> None:
+    def __init__(self, session: Session | None = None) -> None:
         self._session = session
 
     @property
@@ -105,7 +104,7 @@ class FavoriteDirectoryRepository:
         result = self.session.execute(stmt)
         return list(result.unique().scalars().all())
 
-    def get(self, directory_uuid: str) -> Optional[Directory]:
+    def get(self, directory_uuid: str) -> Directory | None:
         stmt = select(Directory).where(Directory.id == directory_uuid)
         result = self.session.execute(stmt)
 

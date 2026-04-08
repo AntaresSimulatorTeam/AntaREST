@@ -21,7 +21,7 @@ import * as api from "@/services/api/maintenance";
 import { isUserAdmin } from "@/services/utils";
 import ErrorIcon from "@mui/icons-material/Error";
 import LogoutIcon from "@mui/icons-material/Logout";
-import { Box, Button, Typography, useTheme } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useMount } from "react-use";
 import MessageInfoDialog from "./MessageInfoDialog";
@@ -35,7 +35,6 @@ function MaintenanceMode({ children }: Props) {
   const user = useAppSelector(getAuthUser);
   const maintenanceMode = useAppSelector(getMaintenanceMode);
   const dispatch = useAppDispatch();
-  const theme = useTheme();
 
   useMount(async () => {
     const tmpMaintenance = await api.getMaintenanceMode();
@@ -59,11 +58,11 @@ function MaintenanceMode({ children }: Props) {
       <>
         <Button
           variant="contained"
-          sx={{
+          sx={(theme) => ({
             position: "absolute",
             top: theme.spacing(2),
             right: theme.spacing(2),
-          }}
+          })}
           onClick={handleLogoutClick}
           color="secondary"
           startIcon={<LogoutIcon />}
