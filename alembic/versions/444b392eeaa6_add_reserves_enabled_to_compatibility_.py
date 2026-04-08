@@ -1,7 +1,7 @@
 """add_reserves_enabled_to_compatibility_parameters
 
 Revision ID: 444b392eeaa6
-Revises: f9ecc0607cc5
+Revises: 81typ5zz6v1y
 Create Date: 2026-04-03 13:45:09.584335
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '444b392eeaa6'
-down_revision = 'f9ecc0607cc5'
+down_revision = '81typ5zz6v1y'
 branch_labels = None
 depends_on = None
 
