@@ -102,11 +102,6 @@ class MatrixUriMapper(ABC):
         """Deletes the .link file if it exists"""
         pass
 
-    @abstractmethod
-    def should_normalize_matrix(self) -> bool:
-        """Determines whether any matrix should be normalized when written or not"""
-        pass
-
 
 class BaseMatrixUriMapper(MatrixUriMapper):
     """
@@ -177,10 +172,6 @@ class MatrixUriMapperManaged(BaseMatrixUriMapper):
         if node.config.path.exists():
             node.config.path.unlink()
 
-    @override
-    def should_normalize_matrix(self) -> bool:
-        return True
-
 
 class MatrixUriMapperUnmanaged(BaseMatrixUriMapper):
     """
@@ -193,10 +184,6 @@ class MatrixUriMapperUnmanaged(BaseMatrixUriMapper):
     def save_matrix(self, node: MatrixNode, matrix_uri: str) -> None:
         matrix = self.get_matrix(matrix_uri)
         node.dump(matrix)
-
-    @override
-    def should_normalize_matrix(self) -> bool:
-        return False
 
 
 class MatrixUriMapperFactory:

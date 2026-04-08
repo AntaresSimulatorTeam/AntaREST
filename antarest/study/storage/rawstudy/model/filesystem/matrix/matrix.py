@@ -87,9 +87,6 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
     def is_normalized(self) -> bool:
         return self.matrix_mapper.has_link(self)
 
-    def should_normalize_matrix(self) -> bool:
-        return self.matrix_mapper.should_normalize_matrix()
-
     @override
     def load(
         self, url: list[str] | None = None, depth: int = -1, expanded: bool = False, formatted: bool = True
