@@ -225,15 +225,15 @@ class FileStudyThermalDao(ThermalDao, ABC):
         return result
 
     def _save_thermal_matrices(self, series: ThermalSeriesMapping, path: str) -> None:
-        node_and_matrix_ids = []
+        matrices_mapping: dict[str, list[MatrixNode]] = {}
         study_data = self.get_file_study()
         for area_id, value in series.items():
             for thermal_id, series_id in value.items():
                 url = path.format(area_id=area_id, thermal_id=thermal_id).split("/")
                 node = study_data.tree.get_node(url)
                 assert isinstance(node, MatrixNode)
-                node_and_matrix_ids.append((node, series_id))
-        self.get_impl().save_matrices(node_and_matrix_ids)
+                matrices_mapping.setdefault(series_id, []).append(node)
+        self.get_impl().save_matrices(matrices_mapping)
 
     @staticmethod
     def _get_all_thermals_for_area(file_study: FileStudy, area_id: str) -> dict[str, Any]:

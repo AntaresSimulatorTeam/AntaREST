@@ -16,7 +16,6 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.exceptions import NotAMatrixError
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_adequacy_patch_parameters_dao import FileStudyAdequacyPatchParametersDao
 from antarest.study.dao.file.file_study_advanced_parameters import FileStudyAdvancedParametersDao
@@ -176,40 +175,28 @@ class FileStudyTreeDao(
 
         return result
 
-    def save_matrices(self, nodes_and_matrix_ids: list[tuple[MatrixNode, str]]) -> None:
+    def save_matrices(self, matrices_mapping: dict[str, list[MatrixNode]]) -> None:
         """
         Saves multiple matrices in their corresponding nodes efficiently.
-        It performs at most 2 DB queries for the whole list
+        It performs 1 DB query for the whole list
         """
-        denormalized_matrices_mapping: dict[str, list[MatrixNode]] = {}
-        normalized_matrices_mapping: dict[str, list[MatrixNode]] = {}
+        if not self._is_study_managed:
+            # The `yield_matrices` allows us to perform only 1 DB query for all our matrix ids.
+            for matrix_content in self._matrix_service.yield_matrices(list(matrices_mapping)):
+                dataframe = matrix_content.data
+                for node in matrices_mapping[matrix_content.id]:
+                    node.write_dataframe(dataframe)
 
-        # First, we separate_matrices in 2 groups, the normalized and the denormalized ones.
-        for matrix_node, matrix_id in nodes_and_matrix_ids:
-            matrix_id = extract_matrix_id(matrix_id)
-            if matrix_node.should_normalize_matrix():
-                normalized_matrices_mapping.setdefault(matrix_id, []).append(matrix_node)
-            else:
-                denormalized_matrices_mapping.setdefault(matrix_id, []).append(matrix_node)
+            return
 
-        matrix_service = self._generator_matrix_constants.matrix_service
-
-        ########## Normalized matrices ##########
         # First, we check if all the matrices are already in the database in 1 single DB query.
-        if not matrix_service.all_exist(list(normalized_matrices_mapping)):
+        if not self._matrix_service.all_exist(list(matrices_mapping)):
             # Perform other DB queries to raise the proper exception if needed.
-            for matrix_id in normalized_matrices_mapping:
-                if not matrix_service.exists(matrix_id):
+            for matrix_id in matrices_mapping:
+                if not self._matrix_service.exists(matrix_id):
                     raise ValueError(f"Matrix {matrix_id} does not exist")
 
         # We simply save the matrix in the matrix mapper of each node.
-        for matrix_id, matrix_nodes in normalized_matrices_mapping.items():
+        for matrix_id, matrix_nodes in matrices_mapping.items():
             for matrix_node in matrix_nodes:
                 matrix_node.matrix_mapper.save_matrix(matrix_node, matrix_id)
-
-        ########## Denormalized matrices ##########
-        # The `yield_matrices` allows us to perform only 1 DB query for all our matrix ids.
-        for matrix_content in matrix_service.yield_matrices(list(denormalized_matrices_mapping)):
-            dataframe = matrix_content.data
-            for node in denormalized_matrices_mapping[matrix_content.id]:
-                node.write_dataframe(dataframe)
