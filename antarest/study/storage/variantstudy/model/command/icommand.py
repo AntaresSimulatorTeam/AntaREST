@@ -68,19 +68,19 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         """
         raise NotImplementedError()
 
-    def apply(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[Any]:
+    def apply(self, study_dao: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[Any]:
         """
         Applies the study data to update storage configurations and saves the changes.
 
         Args:
-            study_data: The study data to be applied.
+            study_dao: The study dao to be applied.
             listener: Can be used by the command to notify anyone giving one.
 
         Returns:
             The output of the command execution.
         """
         try:
-            return self._apply_dao(study_data, listener)
+            return self._apply_dao(study_dao, listener)
         except Exception as e:
             logger.warning(
                 f"Failed to execute variant command {self.command_name}",
