@@ -31,7 +31,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     validate_thermal_cluster_against_version,
 )
 from antarest.study.dao.api.thermal_dao import ThermalDao
-from antarest.study.dao.common import AreaId, SeriesId, ThermalId
+from antarest.study.dao.common import AreaId, ThermalId, ThermalSeriesMapping
 from antarest.study.dao.database.common import get_row_representation_as_dict, validate_area_exists
 from antarest.study.dao.database.models.thermal import (
     THERMAL_CLUSTER_TABLE,
@@ -100,7 +100,7 @@ class DatabaseThermalDao(ThermalDao):
             self._raise_the_right_exception({area_id: [thermal_id]})
         return self.get_impl().get_matrix(row.matrix_id)
 
-    def _save_thermal_matrix(self, series: dict[AreaId, dict[ThermalId, SeriesId]], table: Table) -> None:
+    def _save_thermal_matrix(self, series: ThermalSeriesMapping, table: Table) -> None:
         study_id = self._study_id
         session = self._db_session
 
@@ -164,23 +164,23 @@ class DatabaseThermalDao(ThermalDao):
         session.commit()
 
     @override
-    def save_thermal_prepro(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
+    def save_thermal_prepro(self, series: ThermalSeriesMapping) -> None:
         self._save_thermal_matrix(series, THERMAL_PREPRO_TABLE)
 
     @override
-    def save_thermal_modulation(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
+    def save_thermal_modulation(self, series: ThermalSeriesMapping) -> None:
         self._save_thermal_matrix(series, THERMAL_MODULATION_TABLE)
 
     @override
-    def save_thermal_series(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
+    def save_thermal_series(self, series: ThermalSeriesMapping) -> None:
         self._save_thermal_matrix(series, THERMAL_SERIES_TABLE)
 
     @override
-    def save_thermal_fuel_cost(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
+    def save_thermal_fuel_cost(self, series: ThermalSeriesMapping) -> None:
         self._save_thermal_matrix(series, THERMAL_FUEL_COST_TABLE)
 
     @override
-    def save_thermal_co2_cost(self, series: dict[AreaId, dict[ThermalId, SeriesId]]) -> None:
+    def save_thermal_co2_cost(self, series: ThermalSeriesMapping) -> None:
         self._save_thermal_matrix(series, THERMAL_CO2_COST_TABLE)
 
     @override
@@ -276,32 +276,32 @@ class DatabaseThermalDao(ThermalDao):
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self._get_thermal_matrix(area_id, thermal_id, THERMAL_CO2_COST_TABLE)
 
-    def _get_all_thermal_matrix(self, table: Table) -> dict[AreaId, dict[ThermalId, SeriesId]]:
+    def _get_all_thermal_matrix(self, table: Table) -> ThermalSeriesMapping:
         study_id = self._study_id
         session = self._db_session
         stmt = select(table).where(table.c.study_id == study_id)
         rows = session.execute(stmt).fetchall()
-        result: dict[AreaId, dict[ThermalId, SeriesId]] = {}
+        result: ThermalSeriesMapping = {}
         for row in rows:
             result.setdefault(row.area_id, {})[row.thermal_id] = row.matrix_id
         return result
 
     @override
-    def get_all_thermals_co2_cost(self) -> dict[AreaId, dict[ThermalId, SeriesId]]:
+    def get_all_thermals_co2_cost(self) -> ThermalSeriesMapping:
         return self._get_all_thermal_matrix(THERMAL_CO2_COST_TABLE)
 
     @override
-    def get_all_thermals_fuel_cost(self) -> dict[AreaId, dict[ThermalId, SeriesId]]:
+    def get_all_thermals_fuel_cost(self) -> ThermalSeriesMapping:
         return self._get_all_thermal_matrix(THERMAL_FUEL_COST_TABLE)
 
     @override
-    def get_all_thermals_series(self) -> dict[AreaId, dict[ThermalId, SeriesId]]:
+    def get_all_thermals_series(self) -> ThermalSeriesMapping:
         return self._get_all_thermal_matrix(THERMAL_SERIES_TABLE)
 
     @override
-    def get_all_thermals_modulation(self) -> dict[AreaId, dict[ThermalId, SeriesId]]:
+    def get_all_thermals_modulation(self) -> ThermalSeriesMapping:
         return self._get_all_thermal_matrix(THERMAL_MODULATION_TABLE)
 
     @override
-    def get_all_thermals_prepro(self) -> dict[AreaId, dict[ThermalId, SeriesId]]:
+    def get_all_thermals_prepro(self) -> ThermalSeriesMapping:
         return self._get_all_thermal_matrix(THERMAL_PREPRO_TABLE)

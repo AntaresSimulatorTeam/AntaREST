@@ -11,16 +11,21 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, Any
 
 import polars as pl
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError, ThermalClusterConfigNotFound, ThermalClusterNotFound
+from antarest.core.exceptions import (
+    AreaNotFound,
+    ChildNotFoundError,
+    ThermalClusterConfigNotFound,
+    ThermalClusterNotFound,
+)
 from antarest.core.utils.utils import remove_first_match
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.thermal_dao import ThermalDao
-from antarest.study.dao.common import AreaId, SeriesId, ThermalId
+from antarest.study.dao.common import AreaId, ThermalSeriesMapping
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     parse_thermal_cluster,
@@ -37,12 +42,9 @@ _CLUSTERS_PATH = "input/thermal/clusters/{area_id}/list"
 _ALL_CLUSTERS_PATH = "input/thermal/clusters"
 
 
-SeriesMapping: TypeAlias = dict[AreaId, dict[ThermalId, SeriesId]]
-
-
 def _check_area_exists(study_data: FileStudyTreeConfig, area_id: str) -> None:
     if area_id not in study_data.areas:
-        raise ValueError(f"The area '{area_id}' does not exist")
+        raise AreaNotFound(f"The area '{area_id}' does not exist")
 
 
 class FileStudyThermalDao(ThermalDao, ABC):
@@ -124,43 +126,43 @@ class FileStudyThermalDao(ThermalDao, ABC):
         return self.get_impl().get_matrix(["input", "thermal", "series", area_id, thermal_id, "CO2Cost"])
 
     @override
-    def get_all_thermals_co2_cost(self) -> SeriesMapping:
+    def get_all_thermals_co2_cost(self) -> ThermalSeriesMapping:
         return self._get_thermal_matrices("input/thermal/series/{area_id}/{thermal_id}/CO2Cost")
 
     @override
-    def get_all_thermals_fuel_cost(self) -> SeriesMapping:
+    def get_all_thermals_fuel_cost(self) -> ThermalSeriesMapping:
         return self._get_thermal_matrices("input/thermal/series/{area_id}/{thermal_id}/fuelCost")
 
     @override
-    def get_all_thermals_series(self) -> SeriesMapping:
+    def get_all_thermals_series(self) -> ThermalSeriesMapping:
         return self._get_thermal_matrices("input/thermal/series/{area_id}/{thermal_id}/series")
 
     @override
-    def get_all_thermals_modulation(self) -> SeriesMapping:
+    def get_all_thermals_modulation(self) -> ThermalSeriesMapping:
         return self._get_thermal_matrices("input/thermal/prepro/{area_id}/{thermal_id}/modulation")
 
     @override
-    def get_all_thermals_prepro(self) -> SeriesMapping:
+    def get_all_thermals_prepro(self) -> ThermalSeriesMapping:
         return self._get_thermal_matrices("input/thermal/prepro/{area_id}/{thermal_id}/data")
 
     @override
-    def save_thermal_prepro(self, series: SeriesMapping) -> None:
+    def save_thermal_prepro(self, series: ThermalSeriesMapping) -> None:
         self._save_thermal_matrices(series, "input/thermal/prepro/{area_id}/{thermal_id}/data")
 
     @override
-    def save_thermal_modulation(self, series: SeriesMapping) -> None:
+    def save_thermal_modulation(self, series: ThermalSeriesMapping) -> None:
         self._save_thermal_matrices(series, "input/thermal/prepro/{area_id}/{thermal_id}/modulation")
 
     @override
-    def save_thermal_series(self, series: SeriesMapping) -> None:
+    def save_thermal_series(self, series: ThermalSeriesMapping) -> None:
         self._save_thermal_matrices(series, "input/thermal/series/{area_id}/{thermal_id}/series")
 
     @override
-    def save_thermal_fuel_cost(self, series: SeriesMapping) -> None:
+    def save_thermal_fuel_cost(self, series: ThermalSeriesMapping) -> None:
         self._save_thermal_matrices(series, "input/thermal/series/{area_id}/{thermal_id}/fuelCost")
 
     @override
-    def save_thermal_co2_cost(self, series: SeriesMapping) -> None:
+    def save_thermal_co2_cost(self, series: ThermalSeriesMapping) -> None:
         self._save_thermal_matrices(series, "input/thermal/series/{area_id}/{thermal_id}/CO2Cost")
 
     @override
@@ -199,7 +201,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
         # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
         remove_first_match(study_data.config.areas[area_id].thermals, lambda c: c.id.lower() == cluster_id)
 
-    def _get_thermal_matrices(self, path: str) -> SeriesMapping:
+    def _get_thermal_matrices(self, path: str) -> ThermalSeriesMapping:
         study_data = self.get_file_study()
         matrix_nodes = {}
 
@@ -212,7 +214,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
                 assert isinstance(node, MatrixNode)
                 matrix_nodes[node] = (area_id, thermal_id)
 
-        result: SeriesMapping = {}
+        result: ThermalSeriesMapping = {}
 
         matrices_mapping = self.get_impl().get_matrices_ids(list(matrix_nodes))
 
@@ -222,7 +224,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
 
         return result
 
-    def _save_thermal_matrices(self, series: SeriesMapping, path: str) -> None:
+    def _save_thermal_matrices(self, series: ThermalSeriesMapping, path: str) -> None:
         node_and_matrix_ids = []
         study_data = self.get_file_study()
         for area_id, value in series.items():

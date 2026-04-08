@@ -14,3 +14,5 @@ from typing import TypeAlias
 AreaId: TypeAlias = str
 ThermalId: TypeAlias = str
 SeriesId: TypeAlias = str
+
+ThermalSeriesMapping: TypeAlias = dict[AreaId, dict[ThermalId, SeriesId]]
