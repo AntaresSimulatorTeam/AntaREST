@@ -59,19 +59,18 @@ class SnapshotGenerator:
         command_factory: CommandFactory,
         study_factory: StudyFactory,
         repository: VariantStudyRepository,
-        dao_factory: StudyFactoryDao,
     ):
         self.cache = cache
         self.raw_study_service = raw_study_service
         self.command_factory = command_factory
         self.study_factory = study_factory
         self.repository = repository
-        self._dao_factory = dao_factory
 
     def generate_snapshot(
         self,
         variant_study_id: str,
         *,
+        dao_factory: StudyFactoryDao,
         from_scratch: bool = False,
         notifier: ITaskNotifier = NoopNotifier(),
         listener: ICommandListener | None = None,
@@ -105,7 +104,7 @@ class SnapshotGenerator:
                 self._export_ref_study(snapshot_dir, ref_study)
 
             # The snapshot is generated, we also need to de-normalize the matrices.
-            study_dao = self._dao_factory.create_study_dao(variant_study)
+            study_dao = dao_factory.create_study_dao(variant_study)
 
             logger.info(f"Applying commands to the reference study '{ref_study.id}'...")
             results = self._apply_commands(study_dao, variant_study, cmd_blocks, listener)

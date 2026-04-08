@@ -688,6 +688,14 @@ class VariantStudyService(AbstractStorageService):
             study_id = metadata.id
 
             def callback(notifier: ITaskNotifier) -> TaskResult:
+                generator = SnapshotGenerator(
+                    cache=self.cache,
+                    raw_study_service=self.raw_study_service,
+                    command_factory=self.command_factory,
+                    study_factory=self.study_factory,
+                    repository=self.repository,
+                )
+
                 # Build the Dao factory first
                 ctx = self.command_factory.command_context
                 factory: StudyFactoryDao
@@ -695,18 +703,10 @@ class VariantStudyService(AbstractStorageService):
                     factory = FileStudyDaoFactory(ctx, self.study_factory, self.cache)
                 else:
                     factory = DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants)
-
-                # Then create the generator
-                generator = SnapshotGenerator(
-                    cache=self.cache,
-                    raw_study_service=self.raw_study_service,
-                    command_factory=self.command_factory,
-                    study_factory=self.study_factory,
-                    repository=self.repository,
-                    dao_factory=factory,
-                )
+                # Then launch the generation
                 generate_result = generator.generate_snapshot(
                     study_id,
+                    dao_factory=factory,
                     from_scratch=from_scratch,
                     notifier=notifier,
                     listener=listener,
