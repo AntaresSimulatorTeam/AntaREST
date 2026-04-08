@@ -60,6 +60,7 @@ from antarest.study.adapters import adapt_output_service_to_study_service
 from antarest.study.dao.database.database_blob_usage_provider import DatabaseBlobUsageProvider
 from antarest.study.directory_service import DirectoryService
 from antarest.study.main import build_study_service
+from antarest.study.repository import StudyDiskSpaceRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
@@ -163,6 +164,7 @@ class CoreServices:
     blob_service: BlobService
     favorite_study_service: FavoriteStudyService
     favorite_directory_service: FavoriteDirectoryService
+    study_disk_space_repository: StudyDiskSpaceRepository
 
 
 def build_favorite_service() -> tuple[FavoriteStudyService, FavoriteDirectoryService]:
@@ -180,7 +182,12 @@ def build_output_storage_list(config: Config, file_output_storage: InStudyFileOu
         return [file_output_storage]
     tmp_dir = config.storage.tmp_dir / "outputs"
     lfs = DirLargeFileStorage(config.storage.output.archive_dir)
-    v2_storage = V2OutputStorage(tmp_dir=tmp_dir, archive_storage=lfs, repository=OutputV2Repository())
+    v2_storage = V2OutputStorage(
+        tmp_dir=tmp_dir,
+        archive_storage=lfs,
+        repository=OutputV2Repository(),
+        variables_dir=config.storage.output.variables_dir,
+    )
 
     if config.storage.output.default:
         return [v2_storage, file_output_storage]
@@ -259,6 +266,8 @@ def create_core_services(config: Config) -> CoreServices:
 
     favorite_study_service, favorite_directory_service = build_favorite_service()
 
+    study_disk_space_repository = StudyDiskSpaceRepository()
+
     return CoreServices(
         cache=cache,
         event_bus=event_bus,
@@ -272,6 +281,7 @@ def create_core_services(config: Config) -> CoreServices:
         blob_service=blob_service,
         favorite_study_service=favorite_study_service,
         favorite_directory_service=favorite_directory_service,
+        study_disk_space_repository=study_disk_space_repository,
     )
 
 

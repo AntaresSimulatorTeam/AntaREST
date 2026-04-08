@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import zipfile
 from pathlib import Path
 
@@ -99,7 +98,7 @@ def manager(matrix_service: ISimpleMatrixService, blob_service: InMemoryBlobServ
 @pytest.fixture
 def study_interface(matrix_service: ISimpleMatrixService, study_path: Path) -> StudyInterface:
     file_study = create_file_study(matrix_service, study_id="my-study", path=study_path)
-    return file_study_interface(file_study)
+    return file_study_interface(file_study, matrix_service)
 
 
 class TestThermalManager:
@@ -297,11 +296,7 @@ class TestThermalManager:
         ]
         assert actual == expected
 
-    def test_create_cluster__study_legacy(
-        self,
-        manager: ThermalManager,
-        study_interface: StudyInterface,
-    ) -> None:
+    def test_create_cluster__study_legacy(self, manager: ThermalManager, study_interface: StudyInterface) -> None:
         """
         Given a legacy study,
         When we create a new thermal cluster,

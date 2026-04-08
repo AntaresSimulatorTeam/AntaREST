@@ -42,6 +42,7 @@ from sqlalchemy import (
     String,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
+from sqlalchemy.sql.sqltypes import BigInteger
 from typing_extensions import override
 
 from antarest.core.model import PublicMode
@@ -442,6 +443,24 @@ class RawStudy(Study):
             "folder": self.folder,
             "workspace": self.workspace,
         }
+
+
+class StudyDiskSpaceAnalysis(Base):
+    """
+    Study disk space analysis entity implementation
+    """
+
+    __tablename__ = "study_disk_space_analysis"
+
+    study_id: Mapped[str] = mapped_column(
+        String(255),
+        ForeignKey("study.id", name="fk_study_disk_space_id", ondelete="CASCADE"),
+        nullable=False,
+        primary_key=True,
+    )
+    disk_space_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    last_analysis_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    study: Mapped["Study"] = relationship("Study", uselist=False)
 
 
 @dataclasses.dataclass

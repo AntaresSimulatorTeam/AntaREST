@@ -31,7 +31,7 @@ from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_c
 )
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import dirhash
+from tests.helpers import build_dao_from_file_study, dirhash
 from tests.variantstudy.model.command.helpers import reset_line_separator
 
 
@@ -40,6 +40,7 @@ class TestRemoveCluster:
         self, empty_study_720: FileStudy, empty_study_870: FileStudy, command_context: CommandContext
     ) -> None:
         for empty_study in [empty_study_720, empty_study_870]:
+            dao = build_dao_from_file_study(empty_study, command_context)
             area_name = "Area_name"
             area_id = transform_name_to_id(area_name)
             cluster_name = "Cluster Name"
@@ -49,7 +50,7 @@ class TestRemoveCluster:
 
             output = CreateArea(
                 area_name=area_name, command_context=command_context, study_version=study_version
-            ).apply(empty_study)
+            ).apply(dao)
             assert output.status, output.message
 
             ################################################################################################
@@ -58,7 +59,7 @@ class TestRemoveCluster:
             reset_line_separator(empty_study.config.study_path.joinpath("settings/scenariobuilder.dat"))
             hash_before_removal = dirhash(empty_study.config.study_path, "md5")
 
-            output = CreateCluster(
+            cmd = CreateCluster(
                 area_id=area_id,
                 parameters=ThermalClusterCreation(
                     name=cluster_name,
@@ -72,7 +73,8 @@ class TestRemoveCluster:
                 prepro=[[0]],
                 modulation=[[0]],
                 study_version=study_version,
-            ).apply(empty_study)
+            )
+            output = cmd.apply(dao)
             assert output.status, output.message
 
             # Binding constraint 2nd member: array of shape (8784, 3)
@@ -100,7 +102,7 @@ class TestRemoveCluster:
                     "study_version": study_version,
                 }
             )
-            output = bind1_cmd.apply(study_data=empty_study)
+            output = bind1_cmd.apply(study_dao=dao)
             assert output.status, output.message
 
             # Add scenario builder data
@@ -108,14 +110,14 @@ class TestRemoveCluster:
                 data=RulesetUpdate(thermal={area_id: {cluster_name.lower(): {"0": 1}}}),
                 command_context=command_context,
                 study_version=study_version,
-            ).apply(study_data=empty_study)
+            ).apply(study_dao=dao)
             assert output.status, output.message
 
             # Ensures the command fails cause the cluster is referenced in a constraint term
             remove_cluster_cmd = RemoveCluster(
                 area_id=area_id, cluster_id=cluster_id, command_context=command_context, study_version=study_version
             )
-            output = remove_cluster_cmd.apply(empty_study)
+            output = remove_cluster_cmd.apply(dao)
             assert not output.status
             assert (
                 "Cluster 'cluster name' is not allowed to be deleted, because it is referenced in the following binding constraints"
@@ -126,11 +128,11 @@ class TestRemoveCluster:
             # First remove the constraint
             output = RemoveMultipleBindingConstraints(
                 id="bd 1", command_context=command_context, study_version=study_version
-            ).apply(study_data=empty_study)
+            ).apply(study_dao=dao)
             assert output.status, output.message
 
             # Then remove the cluster
-            output = remove_cluster_cmd.apply(empty_study)
+            output = remove_cluster_cmd.apply(dao)
             assert output.status, output.message
             assert dirhash(empty_study.config.study_path, "md5") == hash_before_removal
 
@@ -139,7 +141,7 @@ class TestRemoveCluster:
                 cluster_id=cluster_id,
                 command_context=command_context,
                 study_version=study_version,
-            ).apply(empty_study)
+            ).apply(dao)
             assert not output.status
 
             output = RemoveCluster(
@@ -147,5 +149,5 @@ class TestRemoveCluster:
                 cluster_id="non_existent_cluster",
                 command_context=command_context,
                 study_version=study_version,
-            ).apply(empty_study)
+            ).apply(dao)
             assert not output.status

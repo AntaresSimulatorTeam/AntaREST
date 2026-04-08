@@ -37,14 +37,21 @@ class FileStudyDaoFactory(StudyFactoryDao):
         study_path = Path(study.path)
         if isinstance(study, VariantStudy):
             study_path = study.snapshot_dir
+        is_study_managed = is_managed(study)
 
         # If the study already exists, we won't override it but instead use the existing one to build the DAO object.
         # This case happens in particular with variant studies snapshots.
         if not study_path.exists():
             create_new_empty_study(version=StudyVersion.parse(study.version), path_study=study_path)
 
-        file_study = self._study_factory.create_from_fs(study_path, is_managed(study), study.id)
+        file_study = self._study_factory.create_from_fs(study_path, is_study_managed, study.id)
         update_antares_info(study, file_study.tree, update_author=True)
 
         context = self._command_context
-        return FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service)
+        return FileStudyTreeDao(
+            file_study,
+            is_study_managed,
+            context.generator_matrix_constants,
+            context.blob_service,
+            context.matrix_service,
+        )

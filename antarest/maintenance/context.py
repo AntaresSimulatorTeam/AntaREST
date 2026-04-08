@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.service_creator import SESSION_ARGS, create_core_services, init_db_engine
+from antarest.study.repository import StudyDiskSpaceRepository
 
 if TYPE_CHECKING:
     from antarest.blobstore.service import BlobService
@@ -71,3 +72,7 @@ class MaintenanceContext:
     @property
     def task_service(self) -> "ITaskService":
         return self.core_services.task_service
+
+    @property
+    def study_disk_space_repository(self) -> "StudyDiskSpaceRepository":
+        return self.core_services.study_disk_space_repository

@@ -17,6 +17,7 @@ from antarest.study.business.model.user_model import ResourceType, UserResourceD
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.replace_user_resource import ReplaceUserResource
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 def _set_up(command_context: CommandContext) -> list[str]:
@@ -29,6 +30,7 @@ def _set_up(command_context: CommandContext) -> list[str]:
 
 def test_nominal_case(empty_study_930: FileStudy, command_context: CommandContext):
     study = empty_study_930
+    dao = build_dao_from_file_study(study, command_context)
     blob_ids = _set_up(command_context)
 
     cmd = ReplaceUserResource(
@@ -40,7 +42,7 @@ def test_nominal_case(empty_study_930: FileStudy, command_context: CommandContex
         command_context=command_context,
         study_version=study.config.version,
     )
-    output = cmd.apply(study)
+    output = cmd.apply(dao)
     assert output.status
 
     # Checks the right file was written in the study.
@@ -55,7 +57,7 @@ def test_nominal_case(empty_study_930: FileStudy, command_context: CommandContex
         command_context=command_context,
         study_version=study.config.version,
     )
-    output = cmd.apply(study)
+    output = cmd.apply(dao)
     assert output.status
 
     # Checks the folder was created in the study.
@@ -65,6 +67,7 @@ def test_nominal_case(empty_study_930: FileStudy, command_context: CommandContex
 
 def test_error_case(empty_study_930: FileStudy, command_context: CommandContext):
     study = empty_study_930
+    dao = build_dao_from_file_study(study, command_context)
     _set_up(command_context)
 
     # Unexisting blob_id
@@ -78,7 +81,7 @@ def test_error_case(empty_study_930: FileStudy, command_context: CommandContext)
         command_context=command_context,
         study_version=study.config.version,
     )
-    output = cmd.apply(study)
+    output = cmd.apply(dao)
     assert not output.status
     assert "'fake_id'" in output.message
 

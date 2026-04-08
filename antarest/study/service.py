@@ -521,11 +521,13 @@ class RawStudyInterface(StudyInterface):
         self._variant_study_service.on_parent_change(study.id)
 
     def _get_dao(self) -> StudyDao:
-        command_context = self._variant_study_service.command_factory.command_context
-        matrix_constants = command_context.generator_matrix_constants
+        context = self._variant_study_service.command_factory.command_context
+        matrix_constants = context.generator_matrix_constants
         if self._study.storage_mode == StorageMode.DATABASE:
             return DatabaseStudyDao(self._study.id, db.session, self._matrix_service, matrix_constants)
-        return FileStudyTreeDao(self.get_files(), matrix_constants, command_context.blob_service)
+        return FileStudyTreeDao(
+            self.get_files(), is_managed(self._study), matrix_constants, context.blob_service, self._matrix_service
+        )
 
     @override
     def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
@@ -573,9 +575,9 @@ class VariantStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        command_context = self._variant_service.command_factory.command_context
+        context = self._variant_service.command_factory.command_context
         return FileStudyTreeDao(
-            self.get_files(), command_context.generator_matrix_constants, command_context.blob_service
+            self.get_files(), True, context.generator_matrix_constants, context.blob_service, context.matrix_service
         ).read_only()
 
     @override
@@ -3003,7 +3005,13 @@ class StudyService:
             path, with_matrix_normalization=normalize_matrices, study_id="", use_cache=False
         )
         context = self.storage_service.variant_study_service.command_factory.command_context
-        file_study_dao = FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service)
+        file_study_dao = FileStudyTreeDao(
+            file_study,
+            normalize_matrices,
+            context.generator_matrix_constants,
+            context.blob_service,
+            context.matrix_service,
+        )
         # Write the given study input in the filesystem
         converter = StudyConverter(source_dao, file_study_dao, study_version, context.matrix_service)
         converter.convert_study_inputs()

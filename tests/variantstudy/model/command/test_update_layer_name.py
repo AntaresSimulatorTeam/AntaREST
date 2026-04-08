@@ -16,18 +16,20 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
 from antarest.study.storage.variantstudy.model.command.update_layer import UpdateLayer
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestUpdateLayerName:
     def test_update_layer_name_success(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_880
+        dao = build_dao_from_file_study(empty_study, command_context)
 
         create_command = CreateLayer(
             parameters=LayerCreation(name="Original Layer Name"),
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = create_command.apply(study_data=empty_study)
+        output = create_command.apply(study_dao=dao)
         assert output.status
 
         link = IniReader()
@@ -39,7 +41,7 @@ class TestUpdateLayerName:
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = update_command.apply(study_data=empty_study)
+        output = update_command.apply(study_dao=dao)
         assert output.status
         assert "Updated Layer Name" in output.message
 
@@ -48,13 +50,14 @@ class TestUpdateLayerName:
 
     def test_update_multiple_layers_names(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_880
+        dao = build_dao_from_file_study(empty_study, command_context)
 
         create_command1 = CreateLayer(
             parameters=LayerCreation(name="Layer One"),
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = create_command1.apply(study_data=empty_study)
+        output = create_command1.apply(study_dao=dao)
         assert output.status
 
         create_command2 = CreateLayer(
@@ -62,7 +65,7 @@ class TestUpdateLayerName:
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = create_command2.apply(study_data=empty_study)
+        output = create_command2.apply(study_dao=dao)
         assert output.status
 
         link = IniReader()
@@ -74,7 +77,7 @@ class TestUpdateLayerName:
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = update_command1.apply(study_data=empty_study)
+        output = update_command1.apply(study_dao=dao)
         assert output.status
 
         update_command2 = UpdateLayer(
@@ -82,7 +85,7 @@ class TestUpdateLayerName:
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = update_command2.apply(study_data=empty_study)
+        output = update_command2.apply(study_dao=dao)
         assert output.status
 
         layers = link.read(empty_study.config.study_path / "layers/layers.ini")["layers"]
@@ -90,25 +93,27 @@ class TestUpdateLayerName:
 
     def test_update_layer_not_found(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_880
+        dao = build_dao_from_file_study(empty_study, command_context)
 
         update_command = UpdateLayer(
             parameters=LayerUpdate(id="999", name="Non-existent Layer"),
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = update_command.apply(study_data=empty_study)
+        output = update_command.apply(study_dao=dao)
 
         assert not output.status
 
     def test_update_layer_zero_name(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_880
+        dao = build_dao_from_file_study(empty_study, command_context)
 
         update_command = UpdateLayer(
             parameters=LayerUpdate(id="0", name="All Areas Updated"),
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = update_command.apply(study_data=empty_study)
+        output = update_command.apply(study_dao=dao)
         assert output.status
 
         link = IniReader()
