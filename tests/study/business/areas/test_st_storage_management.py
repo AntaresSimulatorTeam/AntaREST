@@ -28,7 +28,7 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import file_study_interface
+from tests.helpers import build_dao_from_file_study, file_study_interface
 
 EXPECTED_STORAGES = {
     "de": [
@@ -93,10 +93,11 @@ def manager(matrix_service: ISimpleMatrixService, command_context: CommandContex
 
 def _set_up_study(study: StudyInterface, command_context: CommandContext) -> None:
     study_data = study.get_files()
+    dao = build_dao_from_file_study(study_data, command_context)
     # Create 2 areas
-    output = CreateArea(command_context=command_context, area_name="fr", study_version=study.version).apply(study_data)
+    output = CreateArea(command_context=command_context, area_name="fr", study_version=study.version).apply(dao)
     assert output.status
-    output = CreateArea(command_context=command_context, area_name="DE", study_version=study.version).apply(study_data)
+    output = CreateArea(command_context=command_context, area_name="DE", study_version=study.version).apply(dao)
     assert output.status
     # Create 2 storages in fr area and 1 in DE area
     cmd = CreateSTStorage(
@@ -113,7 +114,7 @@ def _set_up_study(study: StudyInterface, command_context: CommandContext) -> Non
         ),
         study_version=study.version,
     )
-    output = cmd.apply(study_data)
+    output = cmd.apply(dao)
     assert output.status
 
     cmd = CreateSTStorage(
@@ -126,7 +127,7 @@ def _set_up_study(study: StudyInterface, command_context: CommandContext) -> Non
         ),
         study_version=study.version,
     )
-    output = cmd.apply(study_data)
+    output = cmd.apply(dao)
     assert output.status
 
     cmd = CreateSTStorage(
@@ -141,7 +142,7 @@ def _set_up_study(study: StudyInterface, command_context: CommandContext) -> Non
         ),
         study_version=study.version,
     )
-    output = cmd.apply(study_data)
+    output = cmd.apply(dao)
     assert output.status
 
 

@@ -32,8 +32,10 @@ from antarest.core.model import SUB_JSON
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.utils import current_user_context
 from antarest.study.business.study_interface import FileStudyInterface
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from tests.conftest_instances import create_admin_user
 
@@ -257,3 +259,15 @@ def file_study_interface(file_study: FileStudy) -> FileStudyInterface:
     Utils function to avoid declaring Mocks everywhere inside the tests
     """
     return FileStudyInterface(file_study, False, Mock(), Mock(), Mock())
+
+
+def build_dao_from_file_study(
+    file_study: FileStudy, command_context: CommandContext, managed: bool = False
+) -> FileStudyTreeDao:
+    return FileStudyTreeDao(
+        file_study,
+        managed,
+        command_context.generator_matrix_constants,
+        command_context.blob_service,
+        command_context.matrix_service,
+    )

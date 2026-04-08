@@ -14,6 +14,7 @@ import configparser
 
 import pytest
 from antares.study.version import StudyVersion
+from helpers import build_dao_from_file_study
 
 from antarest.core.serde.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -37,6 +38,7 @@ class TestCreateArea:
         enr_modelling: EnrModelling,
     ) -> None:
         empty_study = empty_study_720
+        dao = build_dao_from_file_study(empty_study, command_context)
         empty_study.config.enr_modelling = enr_modelling.value
         study_version = StudyVersion.parse(version)
         empty_study.config.version = study_version
@@ -49,12 +51,12 @@ class TestCreateArea:
         # are dynamically created when the new area is added to the study.
         output = UpdateConfig(
             target="input/thermal/areas", data={}, command_context=command_context, study_version=study_version
-        ).apply(study_data=empty_study)
+        ).apply(study_dao=dao)
         assert output.status, output.message
 
         # When the CreateArea command is applied
         output = CreateArea(area_name=area_name, command_context=command_context, study_version=study_version).apply(
-            study_data=empty_study
+            study_dao=dao
         )
         assert output.status, output.message
 
@@ -166,7 +168,7 @@ class TestCreateArea:
         create_area_command: ICommand = CreateArea(
             area_name=area_name, command_context=command_context, study_version=study_version
         )
-        output = create_area_command.apply(study_data=empty_study)
+        output = create_area_command.apply(study_dao=dao)
         assert not output.status
 
     @pytest.mark.parametrize(
@@ -183,6 +185,7 @@ class TestCreateArea:
         hydro_pmax: str,
     ) -> None:
         study = empty_study_920
+        dao = build_dao_from_file_study(study, command_context)
         study_version = study.config.version
         study_path = study.config.study_path
 
@@ -197,7 +200,7 @@ class TestCreateArea:
         area_name = "Area"
         area_id = transform_name_to_id(area_name)
         output = CreateArea(area_name=area_name, command_context=command_context, study_version=study_version).apply(
-            study_data=study
+            study_dao=dao
         )
         assert output.status, output.message
 

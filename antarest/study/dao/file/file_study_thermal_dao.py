@@ -23,6 +23,7 @@ from antarest.core.exceptions import (
     ThermalClusterNotFound,
 )
 from antarest.core.utils.utils import remove_first_match
+from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.thermal_dao import ThermalDao
 from antarest.study.dao.common import AreaId, ThermalId, ThermalSeriesMapping
@@ -254,7 +255,8 @@ class FileStudyThermalDao(ThermalDao, ABC):
                 url = url_getter(area_id, thermal_id)
                 node = study_data.tree.get_node(url)
                 assert isinstance(node, MatrixNode)
-                matrices_mapping.setdefault(series_id, []).append(node)
+                matrix_id = extract_matrix_id(series_id)
+                matrices_mapping.setdefault(matrix_id, []).append(node)
         self.get_impl().save_matrices(matrices_mapping)
 
     @staticmethod

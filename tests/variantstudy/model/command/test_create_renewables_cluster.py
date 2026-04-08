@@ -14,6 +14,7 @@ import configparser
 import re
 
 import pytest
+from helpers import build_dao_from_file_study
 from pydantic import ValidationError
 
 from antarest.study.business.model.renewable_cluster_model import (
@@ -65,6 +66,7 @@ class TestCreateRenewablesCluster:
     def test_apply(self, empty_study_810: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_810
         empty_study.config.enr_modelling = str(EnrModelling.CLUSTERS)
+        dao = build_dao_from_file_study(empty_study, command_context)
         study_version = STUDY_VERSION_8_1
         empty_study.config.version = study_version
         study_path = empty_study.config.study_path
@@ -72,7 +74,7 @@ class TestCreateRenewablesCluster:
         area_id = transform_name_to_id(area_name, lower=True)
         cluster_name = "Cluster-1"
 
-        CreateArea(area_name=area_name, command_context=command_context, study_version=study_version).apply(empty_study)
+        CreateArea(area_name=area_name, command_context=command_context, study_version=study_version).apply(dao)
 
         parameters = RenewableClusterCreation(
             name=cluster_name, ts_interpretation=TimeSeriesInterpretation.POWER_GENERATION
@@ -85,7 +87,7 @@ class TestCreateRenewablesCluster:
             study_version=study_version,
         )
 
-        output = command.apply(empty_study)
+        output = command.apply(dao)
         assert output.status is True
         assert re.match(
             r"Renewable cluster 'cluster-1' added to area 'de'",
@@ -103,7 +105,7 @@ class TestCreateRenewablesCluster:
             parameters=parameters,
             command_context=command_context,
             study_version=study_version,
-        ).apply(empty_study)
+        ).apply(dao)
         assert not output.status
 
         output = CreateRenewablesCluster(
@@ -111,7 +113,7 @@ class TestCreateRenewablesCluster:
             parameters=parameters,
             command_context=command_context,
             study_version=study_version,
-        ).apply(empty_study)
+        ).apply(dao)
         assert output.status is False
 
         assert re.match(
