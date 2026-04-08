@@ -51,7 +51,6 @@ from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
-from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import (
     RawStudy,
     StorageMode,
@@ -912,21 +911,6 @@ class VariantStudyService(AbstractStorageService):
         self.raw_study_service.export_study_to_flat_directory(variant.snapshot_dir, dst_path)
         if denormalize:
             self.raw_study_service.denormalize_exported_study(dst_path)
-
-    @override
-    def get_synthesis(self, metadata: Study) -> StudyDataSynthesis:
-        """
-        Return study synthesis
-        Args:
-            metadata: study
-        Returns: FileStudyTreeConfigDTO
-
-        """
-        variant = _cast_study_to_variant(metadata)
-        self._safe_generation(variant)
-        study_path = self.get_study_path(variant)
-        study = self.study_factory.create_from_fs(study_path, True, variant.id)
-        return StudyDataSynthesis.from_study_config(study.config)
 
     def clear_all_snapshots(self, retention_time: timedelta) -> str:
         """

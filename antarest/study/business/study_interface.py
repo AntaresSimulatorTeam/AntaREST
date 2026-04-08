@@ -86,7 +86,7 @@ class InMemoryStudyInterface(StudyInterface):
 
     def __init__(self, id: str, version: StudyVersion, matrix_service: ISimpleMatrixService):
         self._id = id
-        self._study_dao = InMemoryStudyDao(version, matrix_service)
+        self._study_dao = InMemoryStudyDao(version, matrix_service, study_id=id)
 
     @override
     @property

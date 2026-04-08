@@ -34,7 +34,6 @@ from antarest.core.utils.archives import (
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StorageMode, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
@@ -181,13 +180,6 @@ class RawStudyService(AbstractStorageService):
         return self.study_factory.create_from_fs(
             study_path, is_managed(metadata), metadata.id, output_dir, use_cache=use_cache
         )
-
-    @override
-    def get_synthesis(self, metadata: Study) -> StudyDataSynthesis:
-        self._check_study_exists(metadata)
-        study_path = self.get_study_path(metadata)
-        study = self.study_factory.create_from_fs(study_path, is_managed(metadata), metadata.id)
-        return StudyDataSynthesis.from_study_config(study.config)
 
     @override
     def copy(

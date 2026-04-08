@@ -16,7 +16,6 @@ from pathlib import Path, PurePosixPath
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
-from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import Study, StudyMetadataDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
@@ -157,12 +156,6 @@ class IStudyStorage(ABC):
             metadata: study.
             dst_path: destination path.
             denormalize: denormalize the study (replace matrix links by real matrices).
-        """
-
-    @abstractmethod
-    def get_synthesis(self, metadata: Study) -> StudyDataSynthesis:
-        """
-        Return study synthesis
         """
 
     @abstractmethod
