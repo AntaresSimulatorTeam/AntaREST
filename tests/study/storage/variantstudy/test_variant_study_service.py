@@ -216,8 +216,7 @@ class TestVariantStudyService:
         snapshot_dir = internal_studies_dir.joinpath(variant_study.snapshot.id, "snapshot")
         res_study_files = {study_file.relative_to(snapshot_dir).as_posix() for study_file in snapshot_dir.rglob("*.*")}
 
-        expected = {f.replace(".link", "") for f in EXPECTED_DENORMALIZED}
-        assert res_study_files == expected
+        assert res_study_files == EXPECTED_DENORMALIZED
 
     @with_db_context
     def test_clear_all_snapshots(
@@ -290,7 +289,7 @@ class TestVariantStudyService:
                 variant_study = variant_study_service.create_variant_study(raw_study.id, f"Variant{str(index)}")
                 variant_list.append(variant_study)
                 # Generate a snapshot for each variant
-                variant_study_service.generate(variant_list[index].id, False, False)
+                variant_study_service.generate(variant_list[index].id, False)
 
                 # Modify the `created_at` and `updated_at` attributes in DB.
                 with db():
