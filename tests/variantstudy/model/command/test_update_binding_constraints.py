@@ -217,11 +217,7 @@ def test_generate_replacement_matrices() -> None:
     # 8,6,0 HOURLY GREATER
     study_version = STUDY_VERSION_8_6
 
-    matrices = list(
-        generate_replacement_matrices(
-            bc_id, study_version, BindingConstraintFrequency.HOURLY, BindingConstraintOperator.GREATER
-        )
-    )
+    matrices = list(generate_replacement_matrices(bc_id, study_version, BindingConstraintOperator.GREATER))
     assert len(matrices) == 1
     assert matrices[0][0] == f"input/bindingconstraints/{bc_id}"
     # File DAO returns a null matrix placeholder (empty content). The simulator default
@@ -232,11 +228,7 @@ def test_generate_replacement_matrices() -> None:
     bc_id = "bc_1"
     study_version = STUDY_VERSION_8_7
 
-    matrices = list(
-        generate_replacement_matrices(
-            bc_id, study_version, BindingConstraintFrequency.DAILY, BindingConstraintOperator.BOTH
-        )
-    )
+    matrices = list(generate_replacement_matrices(bc_id, study_version, BindingConstraintOperator.BOTH))
     assert len(matrices) == 2
     assert matrices[0][0] == f"input/bindingconstraints/{bc_id}_lt"
     assert matrices[0][1] == []
@@ -245,11 +237,7 @@ def test_generate_replacement_matrices() -> None:
 
     # 8,7,0 WEEKLY LESS
 
-    matrices = list(
-        generate_replacement_matrices(
-            bc_id, study_version, BindingConstraintFrequency.WEEKLY, BindingConstraintOperator.LESS
-        )
-    )
+    matrices = list(generate_replacement_matrices(bc_id, study_version, BindingConstraintOperator.LESS))
     assert len(matrices) == 1
     target = f"input/bindingconstraints/{bc_id}_lt"
     assert matrices[0][0] == target
