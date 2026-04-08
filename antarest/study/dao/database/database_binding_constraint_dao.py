@@ -79,7 +79,7 @@ class _MatrixDeletion:
     """Identifies a matrix row to remove: delete the <type> row for <constraint_id>."""
 
     constraint_id: str
-    suffix: _MatrixType
+    matrix_type: _MatrixType
 
 
 @dataclass
@@ -87,7 +87,7 @@ class _MatrixInsertion:
     """Identifies a matrix row to create or overwrite: write <matrix_id> into the <type> table for <constraint_id>."""
 
     constraint_id: str
-    suffix: _MatrixType
+    matrix_type: _MatrixType
     matrix_id: str
 
 
@@ -98,11 +98,11 @@ class _MatrixChanges:
     deletions: list[_MatrixDeletion] = field(default_factory=list)
     insertions: list[_MatrixInsertion] = field(default_factory=list)
 
-    def add_deletion(self, constraint_id: str, suffix: _MatrixType) -> None:
-        self.deletions.append(_MatrixDeletion(constraint_id, suffix))
+    def add_deletion(self, constraint_id: str, matrix_type: _MatrixType) -> None:
+        self.deletions.append(_MatrixDeletion(constraint_id, matrix_type))
 
-    def add_insertion(self, constraint_id: str, suffix: _MatrixType, matrix_id: str) -> None:
-        self.insertions.append(_MatrixInsertion(constraint_id, suffix, matrix_id))
+    def add_insertion(self, constraint_id: str, matrix_type: _MatrixType, matrix_id: str) -> None:
+        self.insertions.append(_MatrixInsertion(constraint_id, matrix_type, matrix_id))
 
 
 if TYPE_CHECKING:
@@ -118,12 +118,14 @@ class DatabaseBindingConstraintDao(ConstraintDao):
     def get_impl(self) -> "DatabaseStudyDao":
         pass
 
-    def _fetch_constraints(self, constraint_id: str | None = None) -> dict[str, BindingConstraint]:
+    def _fetch_constraints(
+        self, constraint_id: str | None = None, constraint_ids: list[str] | None = None
+    ) -> dict[str, BindingConstraint]:
         """
         Two steps in this function
         Step 1 : BC LEFT JOIN link_terms builds the result dict: one entry per constraint, pre-populated with
         its BC fields and link terms.
-        Step 2 : BC LEFT JOIN cluster_terms fetches cluster_terms and appends them.
+        Step 2 : SELECT cluster_terms fetches cluster_terms and appends them.
 
         Two round trips, but joining both term tables at once would produce a Cartesian product,
         that would make us fetch more data and process more data also we'll need to handle de-duplication which would make the code less readable."""
@@ -156,6 +158,8 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         )
         if constraint_id is not None:
             q1 = q1.where(BC.c.constraint_id == constraint_id)
+        elif constraint_ids is not None:
+            q1 = q1.where(BC.c.constraint_id.in_(constraint_ids))
 
         bc_rows: dict[str, Any] = {}
         terms: dict[str, list[ConstraintTerm]] = {}
@@ -179,6 +183,8 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         ct_filter = CT.c.study_id == self._study_id
         if constraint_id is not None:
             ct_filter = ct_filter & (CT.c.constraint_id == constraint_id)
+        elif constraint_ids is not None:
+            ct_filter = ct_filter & (CT.c.constraint_id.in_(constraint_ids))
 
         for row in db.execute(select(CT).where(ct_filter)).fetchall():
             terms[row.constraint_id].append(
@@ -194,6 +200,8 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         d = get_row_representation_as_dict(row)
         d["id"] = d.pop("constraint_id")
         d["terms"] = terms
+        # extra="allow" is required because the join query returns columns that are
+        # not fields of BindingConstraint (such as `area1` or `lt_weight`).
         return BindingConstraint.model_validate(d, extra="allow")
 
     @override
@@ -286,14 +294,14 @@ class DatabaseBindingConstraintDao(ConstraintDao):
     def _fetch_existing_matrix_ids(self, constraint_ids: list[str]) -> dict[str, dict[str, str]]:
         """Fetch all existing matrix IDs upfront needed for operator change (copy source)."""
         existing_matrix_ids: dict[str, dict[str, str]] = {}
-        for suffix, table in _MATRIX_TYPE_TABLES.items():
+        for matrix_type, table in _MATRIX_TYPE_TABLES.items():
             rows = self._db_session.execute(
                 select(table.c.constraint_id, table.c.matrix_id).where(
                     (table.c.study_id == self._study_id) & (table.c.constraint_id.in_(constraint_ids))
                 )
             ).fetchall()
             for row in rows:
-                existing_matrix_ids.setdefault(row.constraint_id, {})[suffix.value] = row.matrix_id
+                existing_matrix_ids.setdefault(row.constraint_id, {})[matrix_type.value] = row.matrix_id
         return existing_matrix_ids
 
     def _compute_matrix_changes(
@@ -324,8 +332,10 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         """
         impl = self.get_impl()
         study_version = impl.get_version()
-        existing = self._fetch_constraints()
-        existing_matrix_ids = self._fetch_existing_matrix_ids(list(existing.keys()))
+        constraint_ids = [bc.id for bc in constraints]
+        # Fetch only the constraints being updated, not the entire study.
+        existing = self._fetch_constraints(constraint_ids=constraint_ids)
+        existing_matrix_ids = self._fetch_existing_matrix_ids(constraint_ids)
         generator = impl._generator_matrix_constants
 
         changes = _MatrixChanges()
@@ -384,10 +394,10 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         # Group deletions by type so we can issue one DELETE … IN (…) per table.
         deletions_by_type: dict[_MatrixType, list[str]] = {}
         for d in changes.deletions:
-            deletions_by_type.setdefault(d.suffix, []).append(d.constraint_id)
+            deletions_by_type.setdefault(d.matrix_type, []).append(d.constraint_id)
 
-        for matrice_type, constraint_ids in deletions_by_type.items():
-            table = _MATRIX_TYPE_TABLES[matrice_type]
+        for matrix_type, constraint_ids in deletions_by_type.items():
+            table = _MATRIX_TYPE_TABLES[matrix_type]
             db.execute(
                 delete(table).where((table.c.study_id == self._study_id) & (table.c.constraint_id.in_(constraint_ids)))
             )
@@ -395,12 +405,12 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         # Group insertions by type so we can issue one upsert batch per table.
         insertions_by_type: dict[_MatrixType, list[_MatrixInsertion]] = {}
         for ins in changes.insertions:
-            insertions_by_type.setdefault(ins.suffix, []).append(ins)
+            insertions_by_type.setdefault(ins.matrix_type, []).append(ins)
 
-        for matrice_type, insertions in insertions_by_type.items():
+        for matrix_type, insertions in insertions_by_type.items():
             upsert_multiple(
                 db,
-                _MATRIX_TYPE_TABLES[matrice_type],
+                _MATRIX_TYPE_TABLES[matrix_type],
                 [
                     {"study_id": self._study_id, "constraint_id": ins.constraint_id, "matrix_id": ins.matrix_id}
                     for ins in insertions
