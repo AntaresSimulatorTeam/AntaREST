@@ -33,6 +33,7 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
 )
 from antarest.study.storage.variantstudy.model.command.update_binding_constraints import UpdateBindingConstraints
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 @pytest.fixture
@@ -137,8 +138,11 @@ def file_study_tree_config() -> Any:
     return file_study_tree_config
 
 
-def test_apply(update_binding_constraints_command: UpdateBindingConstraints, study_data: FileStudy) -> None:
-    output = update_binding_constraints_command.apply(study_data)
+def test_apply(
+    update_binding_constraints_command: UpdateBindingConstraints, study_data: FileStudy, command_context: CommandContext
+) -> None:
+    dao = build_dao_from_file_study(study_data, command_context)
+    output = update_binding_constraints_command.apply(dao)
     assert output.status is True
     study_data.tree.save.assert_called_with(
         {
@@ -190,7 +194,8 @@ def test_update_time_step_via_table_mode(empty_study_880: FileStudy, command_con
     }
     cmd = CreateBindingConstraint.model_validate(args, context=CommandValidationContext(version=1))
 
-    output = cmd.apply(empty_study_880)
+    dao = build_dao_from_file_study(empty_study_880, command_context)
+    output = cmd.apply(dao)
     assert output.status
     # Checks the time_step and the operator
     data = empty_study_880.tree.get(["input", "bindingconstraints", "bindingconstraints"])
@@ -203,7 +208,7 @@ def test_update_time_step_via_table_mode(empty_study_880: FileStudy, command_con
         bc_props_by_id=new_props,
         command_context=command_context,
     )
-    output = cmd.apply(empty_study_880)
+    output = cmd.apply(dao)
     assert output.status
     # Checks the time_step
     data = empty_study_880.tree.get(["input", "bindingconstraints", "bindingconstraints"])

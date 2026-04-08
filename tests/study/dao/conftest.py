@@ -319,12 +319,12 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
 
     # Create thermal cluster matrices
     thermal_id = "gas_cluster"
-    dao.save_thermal(area_id, ThermalCluster(id=thermal_id, name="Gas Cluster"))
-    dao.save_thermal_prepro(area_id, thermal_id, thermal_prepro_id)
-    dao.save_thermal_modulation(area_id, thermal_id, thermal_modulation_id)
-    dao.save_thermal_series(area_id, thermal_id, thermal_series_id)
-    dao.save_thermal_fuel_cost(area_id, thermal_id, thermal_fuel_cost_id)
-    dao.save_thermal_co2_cost(area_id, thermal_id, thermal_co2_cost_id)
+    dao.save_thermals({area_id: [ThermalCluster(id=thermal_id, name="Gas Cluster")]})
+    dao.save_thermal_prepro({area_id: {thermal_id: thermal_prepro_id}})
+    dao.save_thermal_modulation({area_id: {thermal_id: thermal_modulation_id}})
+    dao.save_thermal_series({area_id: {thermal_id: thermal_series_id}})
+    dao.save_thermal_fuel_cost({area_id: {thermal_id: thermal_fuel_cost_id}})
+    dao.save_thermal_co2_cost({area_id: {thermal_id: thermal_co2_cost_id}})
 
     # Create renewable cluster matrices
     renewable_id = "battery"

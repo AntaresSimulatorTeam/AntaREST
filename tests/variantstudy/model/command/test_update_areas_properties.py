@@ -23,14 +23,14 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.update_areas_properties import UpdateAreasProperties
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 def test_update_areas_properties(empty_study_870: FileStudy, command_context: CommandContext) -> None:
     empty_study = empty_study_870
+    dao = build_dao_from_file_study(empty_study, command_context)
     area_id = "area_test"
-    CreateArea(area_name=area_id, command_context=command_context, study_version=empty_study.config.version).apply(
-        empty_study
-    )
+    CreateArea(area_name=area_id, command_context=command_context, study_version=empty_study.config.version).apply(dao)
 
     expected_thermal_props = {"spilledenergycost": {"area_test": 0.0}, "unserverdenergycost": {"area_test": 0.0}}
     expected_optimization_props = {
@@ -69,7 +69,7 @@ def test_update_areas_properties(empty_study_870: FileStudy, command_context: Co
 
     UpdateAreasProperties(
         properties={area_id: update_area}, command_context=command_context, study_version=empty_study.config.version
-    ).apply(empty_study)
+    ).apply(dao)
 
     new_thermal_props = {"spilledenergycost": {"area_test": 3.0}, "unserverdenergycost": {"area_test": 2.0}}
     new_optimization_props = {

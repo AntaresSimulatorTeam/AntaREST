@@ -12,15 +12,17 @@
 import pytest
 
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import RemoveXpansionResource
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestRemoveXpansionResource:
     @staticmethod
-    def set_up(empty_study: FileStudy) -> None:
+    def set_up(empty_study: FileStudy, command_context: CommandContext) -> FileStudyTreeDao:
         empty_study.tree.save(
             {
                 "user": {
@@ -45,10 +47,11 @@ class TestRemoveXpansionResource:
 
         (xpansion_path / "constraints" / "constraints1.ini").touch()
         (xpansion_path / "constraints" / "constraints2.txt").touch()
+        return build_dao_from_file_study(empty_study, command_context)
 
     def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_870
-        self.set_up(empty_study)
+        dao = self.set_up(empty_study, command_context)
 
         # Constraints
         for file_name in ["constraints1.ini", "constraints2.txt"]:
@@ -58,7 +61,7 @@ class TestRemoveXpansionResource:
                 command_context=command_context,
                 study_version=STUDY_VERSION_8_7,
             )
-            output = cmd.apply(study_data=empty_study)
+            output = cmd.apply(study_dao=dao)
             assert output.status, output.message
             resource_path = empty_study.config.study_path / "user" / "expansion" / "constraints" / file_name
             assert not resource_path.exists()
@@ -71,7 +74,7 @@ class TestRemoveXpansionResource:
                 command_context=command_context,
                 study_version=STUDY_VERSION_8_7,
             )
-            output = cmd.apply(study_data=empty_study)
+            output = cmd.apply(study_dao=dao)
             assert output.status, output.message
             resource_path = empty_study.config.study_path / "user" / "expansion" / "weights" / file_name
             assert not resource_path.exists()
@@ -84,14 +87,14 @@ class TestRemoveXpansionResource:
                 command_context=command_context,
                 study_version=STUDY_VERSION_8_7,
             )
-            output = cmd.apply(study_data=empty_study)
+            output = cmd.apply(study_dao=dao)
             assert output.status, output.message
             resource_path = empty_study.config.study_path / "user" / "expansion" / "capa" / file_name
             assert not resource_path.exists()
 
     def test_error_case_for_constraint(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_870
-        self.set_up(empty_study)
+        dao = self.set_up(empty_study, command_context)
         file_name = "constraints1"
 
         settings_file = empty_study.config.path / "user" / "expansion" / "settings.ini"
@@ -104,7 +107,7 @@ class TestRemoveXpansionResource:
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )
-        output = cmd.apply(study_data=empty_study)
+        output = cmd.apply(study_dao=dao)
         assert output.status is False
         assert (
             f"The constraints file '{file_name}' is still used in the xpansion settings and cannot be deleted"
@@ -113,7 +116,7 @@ class TestRemoveXpansionResource:
 
     def test_error_case_for_weight(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_870
-        self.set_up(empty_study)
+        dao = self.set_up(empty_study, command_context)
         file_name = "weights1"
 
         settings_file = empty_study.config.path / "user" / "expansion" / "settings.ini"
@@ -126,7 +129,7 @@ class TestRemoveXpansionResource:
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )
-        output = cmd.apply(study_data=empty_study)
+        output = cmd.apply(study_dao=dao)
         assert output.status is False
         assert (
             f"The weights file '{file_name}' is still used in the xpansion settings and cannot be deleted"
@@ -148,7 +151,7 @@ class TestRemoveXpansionResource:
         self, empty_study_870: FileStudy, command_context: CommandContext, profile: str
     ) -> None:
         empty_study = empty_study_870
-        self.set_up(empty_study)
+        dao = self.set_up(empty_study, command_context)
         file_name = "capa1"
 
         settings_file = empty_study.config.path / "user" / "expansion" / "candidates.ini"
@@ -161,7 +164,7 @@ class TestRemoveXpansionResource:
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )
-        output = cmd.apply(study_data=empty_study)
+        output = cmd.apply(study_dao=dao)
         assert output.status is False
         assert (
             f"The capacities file '{file_name}' is still used in the xpansion settings and cannot be deleted"

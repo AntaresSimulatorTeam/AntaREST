@@ -22,11 +22,13 @@ from antarest.study.storage.variantstudy.model.command.create_xpansion_matrix im
 )
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestReplaceMatrix:
     def test_apply(self, empty_study_810: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_810
+        dao = build_dao_from_file_study(empty_study, command_context)
         study_path = empty_study.config.study_path
         study_version = empty_study.config.version
         area1 = "Area1"
@@ -34,7 +36,7 @@ class TestReplaceMatrix:
 
         CreateArea.model_validate(
             {"area_name": area1, "command_context": command_context, "study_version": study_version}
-        ).apply(empty_study)
+        ).apply(dao)
 
         target_element = f"input/hydro/common/capacity/maxpower_{area1_id}"
         replace_matrix = ReplaceMatrix.model_validate(
@@ -45,7 +47,7 @@ class TestReplaceMatrix:
                 "study_version": study_version,
             }
         )
-        output = replace_matrix.apply(empty_study)
+        output = replace_matrix.apply(dao)
         assert output.status
 
         # check the matrices links
@@ -62,16 +64,17 @@ class TestReplaceMatrix:
                 "study_version": study_version,
             }
         )
-        output = replace_matrix.apply(empty_study)
+        output = replace_matrix.apply(dao)
         assert not output.status
 
     def test_save_xpansion_resource(self, empty_study_810: FileStudy, command_context: CommandContext) -> None:
         study = empty_study_810
+        dao = build_dao_from_file_study(study, command_context)
         study_version = study.config.version
 
         # Create the Xpansion Configuration
         command = CreateXpansionConfiguration(command_context=command_context, study_version=study_version)
-        result = command.apply(study)
+        result = command.apply(dao)
         assert result.status
 
         # Add an xpansion weight
@@ -81,7 +84,7 @@ class TestReplaceMatrix:
             filename="my_file.txt",
             matrix=[[4.1], [3]],
         )
-        result = command.apply(study)
+        result = command.apply(dao)
         assert result.status
 
         # Replace the matrix, it should succeed
@@ -91,7 +94,7 @@ class TestReplaceMatrix:
             target="user/expansion/weights/my_file.txt",
             matrix=[[9.1], [4]],
         )
-        result = command.apply(study)
+        result = command.apply(dao)
         assert result.status
 
         # Ensures the data was replaced correctly
@@ -107,7 +110,7 @@ class TestReplaceMatrix:
             filename="my_capa.txt",
             matrix=[[4.1], [3]],
         )
-        result = command.apply(study)
+        result = command.apply(dao)
         assert result.status
 
         # Replace the matrix, it should succeed
@@ -117,7 +120,7 @@ class TestReplaceMatrix:
             target="user/expansion/capa/my_capa.txt",
             matrix=[[9.1], [4]],
         )
-        result = command.apply(study)
+        result = command.apply(dao)
         assert result.status
 
         # Ensures the data was replaced correctly

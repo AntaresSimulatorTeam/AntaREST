@@ -102,8 +102,7 @@ def test_get_all_areas_info_returns_areas(db_dao: DatabaseStudyDao) -> None:
     dao.save_area("Paris")
     dao.save_area("London")
     dao.save_area("Berlin")
-    dao.save_thermal("paris", ThermalCluster(id="gas", name="Gas"))
-    dao.save_thermal("berlin", ThermalCluster(id="coal", name="Coal"))
+    dao.save_thermals({"paris": [ThermalCluster(name="Gas")], "berlin": [ThermalCluster(name="Coal")]})
 
     areas = dao.get_all_areas_info()
     assert len(areas) == 3
