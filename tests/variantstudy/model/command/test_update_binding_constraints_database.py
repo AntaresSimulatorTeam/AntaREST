@@ -19,10 +19,8 @@ instead of mock tree-save calls or filesystem reads.
 """
 
 import pytest
-from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import BindingConstraintNotFound
-from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
     BindingConstraintFrequency,
@@ -35,7 +33,6 @@ from antarest.study.storage.variantstudy.command_factory import CommandValidatio
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.update_binding_constraints import UpdateBindingConstraints
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.study.dao.conftest import build_db_dao
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -60,15 +57,13 @@ def _bc(name: str, **kwargs: object) -> BindingConstraint:
 # ---------------------------------------------------------------------------
 
 
-def test_apply_database(
-    db_session: Session, matrix_service: ISimpleMatrixService, command_context: CommandContext
-) -> None:
+def test_apply_database(db_dao_87: DatabaseStudyDao, command_context: CommandContext) -> None:
     """
     Pre-seed bc_1 (GREATER/DAILY/old_group1) and bc_2 (LESS/HOURLY/old_group2),
     then run UpdateBindingConstraints with new group, operator and time_step,
     and assert the persisted state via dao.get_constraint().
     """
-    dao: DatabaseStudyDao = build_db_dao(db_session, matrix_service, STUDY_VERSION_8_7)
+    dao = db_dao_87
 
     # Seed initial constraints (bc_0 acts as an unrelated constraint that must stay untouched)
     dao.save_constraints(
@@ -115,27 +110,21 @@ def test_apply_database(
         command_context=command_context,
     )
 
-    output = cmd.apply(dao)
-    assert output.status is True
+    assert cmd.apply(dao).status is True
 
-    # bc_1: group must be updated to new_group1, other fields unchanged
     bc1 = dao.get_constraint("bc_1")
     assert bc1.group == "new_group1"
     assert bc1.operator == BindingConstraintOperator.GREATER
     assert bc1.time_step == BindingConstraintFrequency.DAILY
 
-    # bc_2: group must be updated to new_group2, other fields unchanged
     bc2 = dao.get_constraint("bc_2")
     assert bc2.group == "new_group2"
     assert bc2.operator == BindingConstraintOperator.LESS
     assert bc2.time_step == BindingConstraintFrequency.HOURLY
 
     # bc_0 and bc_3 must be completely untouched
-    bc0 = dao.get_constraint("bc_0")
-    assert bc0.group == "old_group1"
-
-    bc3 = dao.get_constraint("bc_3")
-    assert bc3.group == "old_group2"
+    assert dao.get_constraint("bc_0").group == "old_group1"
+    assert dao.get_constraint("bc_3").group == "old_group2"
 
 
 # ---------------------------------------------------------------------------
@@ -143,9 +132,7 @@ def test_apply_database(
 # ---------------------------------------------------------------------------
 
 
-def test_update_time_step_via_table_mode_database(
-    db_session: Session, matrix_service: ISimpleMatrixService, command_context: CommandContext
-) -> None:
+def test_update_time_step_via_table_mode_database(db_dao_88: DatabaseStudyDao, command_context: CommandContext) -> None:
     """
     Mirror of test_update_time_step_via_table_mode:
     - Create bc1 with HOURLY / LESS via CreateBindingConstraint.
@@ -153,40 +140,31 @@ def test_update_time_step_via_table_mode_database(
     - Update time_step to DAILY via UpdateBindingConstraints.
     - Assert persisted time_step is DAILY; operator must still be LESS.
     """
-    study_version = STUDY_VERSION_8_8
-    dao: DatabaseStudyDao = build_db_dao(db_session, matrix_service, study_version)
+    dao = db_dao_88
 
-    # Create the constraint through the command so that the full command pipeline is exercised
     create_cmd = CreateBindingConstraint.model_validate(
         {
             "name": "bc1",
             "time_step": BindingConstraintFrequency.HOURLY,
             "operator": BindingConstraintOperator.LESS,
             "command_context": command_context,
-            "study_version": study_version,
+            "study_version": STUDY_VERSION_8_8,
         },
         context=CommandValidationContext(version=1),
     )
+    assert create_cmd.apply(dao).status is True
 
-    output = create_cmd.apply(dao)
-    assert output.status is True
-
-    # Verify initial state
     bc1 = dao.get_constraint("bc1")
     assert bc1.time_step == BindingConstraintFrequency.HOURLY
     assert bc1.operator == BindingConstraintOperator.LESS
 
-    # Update only the time_step (operator must be preserved)
     update_cmd = UpdateBindingConstraints(
-        study_version=study_version,
+        study_version=STUDY_VERSION_8_8,
         bc_props_by_id={"bc1": BindingConstraintUpdate(time_step=BindingConstraintFrequency.DAILY)},
         command_context=command_context,
     )
+    assert update_cmd.apply(dao).status is True
 
-    output = update_cmd.apply(dao)
-    assert output.status is True
-
-    # Assert the persisted state
     bc1_updated = dao.get_constraint("bc1")
     assert bc1_updated.time_step == BindingConstraintFrequency.DAILY
     assert bc1_updated.operator == BindingConstraintOperator.LESS  # unchanged
@@ -197,23 +175,14 @@ def test_update_time_step_via_table_mode_database(
 # ---------------------------------------------------------------------------
 
 
-def test_apply_unknown_bc_database(
-    db_session: Session, matrix_service: ISimpleMatrixService, command_context: CommandContext
-) -> None:
-    """
-    UpdateBindingConstraints must return a failed output when the requested bc_id
-    is not present in the DAO (no pre-existing row).
-    """
-    dao: DatabaseStudyDao = build_db_dao(db_session, matrix_service, STUDY_VERSION_8_7)
-
+def test_apply_unknown_bc_database(db_dao_87: DatabaseStudyDao, command_context: CommandContext) -> None:
+    """UpdateBindingConstraints must return a failed output when the requested bc_id is not present."""
     cmd = UpdateBindingConstraints(
         study_version=STUDY_VERSION_8_7,
         bc_props_by_id={"does_not_exist": BindingConstraintUpdate(group="g")},
         command_context=command_context,
     )
-
-    output = cmd.apply(dao)
-    assert output.status is False
+    assert cmd.apply(db_dao_87).status is False
 
 
 # ---------------------------------------------------------------------------
@@ -247,91 +216,68 @@ def test_to_dto(command_context: CommandContext) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_time_step_change_resets_matrices(
-    db_session: Session, matrix_service: ISimpleMatrixService, command_context: CommandContext
-) -> None:
+def test_time_step_change_resets_matrices(db_dao_93: DatabaseStudyDao, command_context: CommandContext) -> None:
     """
-    Changing time_step (HOURLY → DAILY) must reset the lt matrix to the zero matrix
-    for the new time step (366 rows × 1 col, all zeros).
-
-    Equivalent to: generate_replacement_matrices(bc_id, v8.7, DAILY, LESS) → 1 path reset.
-    The DB implementation stores the actual zero-matrix ID in the lt table row
-    instead of writing empty file content.
+    Changing time_step (HOURLY → DAILY) must reset the lt matrix to an empty or all-zero matrix.
+    The null matrix is stored; the simulator fills in correctly-sized zeros at runtime.
     """
-    study_version = STUDY_VERSION_9_3
-    dao: DatabaseStudyDao = build_db_dao(db_session, matrix_service, study_version)
+    dao = db_dao_93
 
-    # --- Create bc1: LESS / HOURLY ---
     create_cmd = CreateBindingConstraint.model_validate(
         {
             "name": "bc1",
             "time_step": BindingConstraintFrequency.HOURLY,
             "operator": BindingConstraintOperator.LESS,
             "command_context": command_context,
-            "study_version": study_version,
+            "study_version": STUDY_VERSION_9_3,
         },
         context=CommandValidationContext(version=1),
     )
     assert create_cmd.apply(dao).status is True
 
-    # Initial lt matrix must exist and be HOURLY-shaped (8784 rows × 1 col)
     lt_initial = dao.get_constraint_less_term_matrix("bc1")
     assert lt_initial.shape == (8784, 1)
-    assert lt_initial.sum().sum_horizontal().item() == 0  # all-zero default
+    assert lt_initial.sum().sum_horizontal().item() == 0
 
-    # gt and eq were never created for a LESS constraint
     with pytest.raises(BindingConstraintNotFound):
         dao.get_constraint_greater_term_matrix("bc1")
     with pytest.raises(BindingConstraintNotFound):
         dao.get_constraint_equal_term_matrix("bc1")
 
-    # --- Update time_step: HOURLY → DAILY ---
     update_cmd = UpdateBindingConstraints(
-        study_version=study_version,
+        study_version=STUDY_VERSION_9_3,
         bc_props_by_id={"bc1": BindingConstraintUpdate(time_step=BindingConstraintFrequency.DAILY)},
         command_context=command_context,
     )
     assert update_cmd.apply(dao).status is True
 
-    # Persisted metadata
     bc1 = dao.get_constraint("bc1")
     assert bc1.time_step == BindingConstraintFrequency.DAILY
     assert bc1.operator == BindingConstraintOperator.LESS  # unchanged
 
-    # lt matrix must now be reset to an empty or all-zero matrix (null matrix stored,
-    # simulator fills in correctly-sized zeros at runtime)
     lt_after = dao.get_constraint_less_term_matrix("bc1")
     assert lt_after.is_empty() or lt_after.sum().sum_horizontal().item() == 0
 
-    # gt and eq still do not exist
     with pytest.raises(BindingConstraintNotFound):
         dao.get_constraint_greater_term_matrix("bc1")
     with pytest.raises(BindingConstraintNotFound):
         dao.get_constraint_equal_term_matrix("bc1")
 
 
-def test_operator_change_moves_matrices(
-    db_session: Session, matrix_service: ISimpleMatrixService, command_context: CommandContext
-) -> None:
+def test_operator_change_moves_matrices(db_dao_93: DatabaseStudyDao, command_context: CommandContext) -> None:
     """
-    Changing operator (LESS → GREATER) must:
-      - copy the existing lt matrix ID to the gt table
-      - delete the lt table row
-
-    Equivalent to: generate_replacement_matrices(bc_id, v8.7, HOURLY, GREATER) → 1 path,
-    but in the DB backend the old data is preserved (aliased) rather than reset.
+    Changing operator (LESS → GREATER) must copy the lt matrix ID to gt and delete lt.
+    The old data is preserved (aliased) rather than reset.
     """
-    study_version = STUDY_VERSION_9_3
-    dao: DatabaseStudyDao = build_db_dao(db_session, matrix_service, study_version)
+    dao = db_dao_93
 
-    # --- Create bc2: LESS / HOURLY ---
     create_cmd = CreateBindingConstraint.model_validate(
         {
             "name": "bc2",
             "time_step": BindingConstraintFrequency.HOURLY,
             "operator": BindingConstraintOperator.LESS,
             "command_context": command_context,
-            "study_version": study_version,
+            "study_version": STUDY_VERSION_9_3,
         },
         context=CommandValidationContext(version=1),
     )
@@ -340,54 +286,40 @@ def test_operator_change_moves_matrices(
     lt_initial = dao.get_constraint_less_term_matrix("bc2")
     assert lt_initial.shape == (8784, 1)
 
-    # --- Update operator: LESS → GREATER ---
     update_cmd = UpdateBindingConstraints(
-        study_version=study_version,
+        study_version=STUDY_VERSION_9_3,
         bc_props_by_id={"bc2": BindingConstraintUpdate(operator=BindingConstraintOperator.GREATER)},
         command_context=command_context,
     )
     assert update_cmd.apply(dao).status is True
 
-    # Persisted metadata
     bc2 = dao.get_constraint("bc2")
     assert bc2.operator == BindingConstraintOperator.GREATER
     assert bc2.time_step == BindingConstraintFrequency.HOURLY  # unchanged
 
-    # gt must now carry the original lt data (aliased matrix ID, same shape)
     gt_after = dao.get_constraint_greater_term_matrix("bc2")
     assert gt_after.shape == (8784, 1)
     assert gt_after.equals(lt_initial)
 
-    # lt row must have been removed
     with pytest.raises(BindingConstraintNotFound):
         dao.get_constraint_less_term_matrix("bc2")
-
-    # eq was never touched
     with pytest.raises(BindingConstraintNotFound):
         dao.get_constraint_equal_term_matrix("bc2")
 
 
-def test_operator_change_both_to_less(
-    db_session: Session, matrix_service: ISimpleMatrixService, command_context: CommandContext
-) -> None:
+def test_operator_change_both_to_less(db_dao_93: DatabaseStudyDao, command_context: CommandContext) -> None:
     """
-    Changing operator from BOTH → LESS must:
-      - keep the lt row (lt is in both BOTH and LESS)
-      - delete the gt row
-
-    This mirrors the BOTH/DAILY case in test_generate_replacement_matrices.
+    Changing operator from BOTH → LESS must keep lt and delete gt.
     """
-    study_version = STUDY_VERSION_9_3
-    dao: DatabaseStudyDao = build_db_dao(db_session, matrix_service, study_version)
+    dao = db_dao_93
 
-    # Create bc3: BOTH / DAILY
     create_cmd = CreateBindingConstraint.model_validate(
         {
             "name": "bc3",
             "time_step": BindingConstraintFrequency.DAILY,
             "operator": BindingConstraintOperator.BOTH,
             "command_context": command_context,
-            "study_version": study_version,
+            "study_version": STUDY_VERSION_9_3,
         },
         context=CommandValidationContext(version=1),
     )
@@ -398,21 +330,15 @@ def test_operator_change_both_to_less(
     assert lt_initial.shape == (366, 1)
     assert gt_initial.shape == (366, 1)
 
-    # Update operator: BOTH → LESS
     update_cmd = UpdateBindingConstraints(
-        study_version=study_version,
+        study_version=STUDY_VERSION_9_3,
         bc_props_by_id={"bc3": BindingConstraintUpdate(operator=BindingConstraintOperator.LESS)},
         command_context=command_context,
     )
     assert update_cmd.apply(dao).status is True
 
-    bc3 = dao.get_constraint("bc3")
-    assert bc3.operator == BindingConstraintOperator.LESS
+    assert dao.get_constraint("bc3").operator == BindingConstraintOperator.LESS
+    assert dao.get_constraint_less_term_matrix("bc3").equals(lt_initial)
 
-    # lt must still be present and unchanged
-    lt_after = dao.get_constraint_less_term_matrix("bc3")
-    assert lt_after.equals(lt_initial)
-
-    # gt must have been removed
     with pytest.raises(BindingConstraintNotFound):
         dao.get_constraint_greater_term_matrix("bc3")

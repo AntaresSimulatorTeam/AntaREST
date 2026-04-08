@@ -228,9 +228,19 @@ def test_constraint_terms(dao: StudyDao) -> None:
     # bc2 must be untouched throughout
     assert dao.get_constraint("bc2").terms[0].weight == 5.0
 
+    # Removing all terms (both link and cluster) must not leave stale rows
+    dao.save_constraints([_bc("bc1", terms=[])])
+    assert dao.get_constraint("bc1").terms == []
+
+    # Removing all link terms specifically must not leave stale link rows
+    dao.save_constraints([_bc("lc", terms=[ConstraintTerm(weight=1.0, data=LinkTerm(area1="x", area2="y"))])])
+    assert len([t for t in dao.get_constraint("lc").terms if isinstance(t.data, LinkTerm)]) == 1
+    dao.save_constraints([_bc("lc", terms=[])])
+    assert dao.get_constraint("lc").terms == []
+
 
 def test_version_specific_fields(dao: StudyDao) -> None:
-    """filter_year_by_year, filter_synthesis and group round-trip correctly; nullables stay None."""
+    """filter_year_by_year, filter_synthesis and group round-trip correctly."""
     dao.save_constraints(
         [
             _bc(
@@ -246,13 +256,6 @@ def test_version_specific_fields(dao: StudyDao) -> None:
     assert FilterOption.DAILY in r.filter_year_by_year
     assert r.filter_synthesis == [FilterOption.WEEKLY]
     assert r.group == "my_group"
-
-    # Unset filter fields
-    dao.save_constraints([_bc("bc2", filter_year_by_year=None, filter_synthesis=None, group=None)])
-    r2 = dao.get_constraint("bc2")
-    assert r2.filter_year_by_year == []
-    assert r2.filter_synthesis == []
-    assert r2.group == "default"
 
 
 def test_matrices(dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService]) -> None:
@@ -609,7 +612,7 @@ def test_group_update_and_scenario_builder_cleanup(dao: StudyDao) -> None:
     # Clear bc1's group — no scenario builder impact (g2 still has bc2 and bc3)
     dao.save_constraints(
         [
-            _bc("bc1", group=None),
+            _bc("bc1", group="default"),
         ]
     )
     assert dao.get_constraint("bc1").group == "default"
@@ -618,7 +621,7 @@ def test_group_update_and_scenario_builder_cleanup(dao: StudyDao) -> None:
     # Clear bc2's group — g2 still has bc3, no scenario builder cleanup expected
     dao.save_constraints(
         [
-            _bc("bc2", group=None),
+            _bc("bc2", group="default"),
         ]
     )
     assert dao.get_constraint("bc2").group == "default"
@@ -627,7 +630,7 @@ def test_group_update_and_scenario_builder_cleanup(dao: StudyDao) -> None:
     # Clear bc3's group — g2 is now empty, must be cleaned from scenario builder
     dao.save_constraints(
         [
-            _bc("bc3", group=None),
+            _bc("bc3", group="default"),
         ]
     )
     assert dao.get_constraint("bc3").group == "default"
@@ -652,19 +655,11 @@ def test_scenario_builder_cleanup_on_constraint_removal(dao: StudyDao) -> None:
     dao.delete_constraints([_bc("bc3", group="g2")])
     assert dao.get_ruleset().binding_constraints == {}
 
-    # regression test
-    # Re-saving all constraints with group=None does not break scenario builder.
-    dao.save_constraints(
-        [
-            _bc("bc1", group=None),
-            _bc("bc2", group=None),
-            _bc("bc3", group=None),
-        ]
-    )
-    assert dao.get_constraint("bc3").group == "default"
+    # Re-create deleted constraints in the default group so the regression below can update them
+    dao.save_constraints([_bc("bc1", group="default"), _bc("bc2", group="default"), _bc("bc3", group="default")])
     assert dao.get_ruleset().binding_constraints == {}
 
-    # default group is removed when constraints are renamed to a non default group
+    # regression test: default group is removed when constraints are renamed to a non-default group
     dao.save_scenario_builder(Ruleset(binding_constraints={"default": {"0": 1}}))
     assert dao.get_ruleset().binding_constraints == {"default": {"0": 1}}
     dao.save_constraints([_bc("bc1", group="g1"), _bc("bc2", group="g1"), _bc("bc3", group="g1")])

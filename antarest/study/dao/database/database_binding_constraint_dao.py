@@ -20,7 +20,6 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Sequence
 
 import polars as pl
-from antares.study.version import StudyVersion
 from sqlalchemy import Row, Table, delete, func, select
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import outerjoin
@@ -35,7 +34,6 @@ from antarest.study.business.model.binding_constraint_model import (
     ClusterTerm,
     ConstraintTerm,
     LinkTerm,
-    initialize_binding_constraint,
 )
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao
 from antarest.study.dao.database.common import get_row_representation_as_dict
@@ -189,17 +187,14 @@ class DatabaseBindingConstraintDao(ConstraintDao):
                 )
             )
 
-        version = self.get_impl().get_version()
-        return {cid: self._row_to_bc(bc_rows[cid], terms[cid], version) for cid in bc_rows}
+        return {cid: self._row_to_bc(bc_rows[cid], terms[cid]) for cid in bc_rows}
 
     @staticmethod
-    def _row_to_bc(row: Row[Any], terms: list[ConstraintTerm], version: StudyVersion) -> BindingConstraint:
+    def _row_to_bc(row: Row[Any], terms: list[ConstraintTerm]) -> BindingConstraint:
         d = get_row_representation_as_dict(row)
         d["id"] = d.pop("constraint_id")
         d["terms"] = terms
-        bc = BindingConstraint.model_validate(d, extra="allow")
-        initialize_binding_constraint(bc, version)
-        return bc
+        return BindingConstraint.model_validate(d, extra="allow")
 
     @override
     def get_all_constraints(self) -> dict[str, BindingConstraint]:
@@ -268,12 +263,11 @@ class DatabaseBindingConstraintDao(ConstraintDao):
             for term in bc.terms
             if isinstance(term.data, ClusterTerm)
         ]
-        if not cluster_terms:
-            return
         self._db_session.execute(
             delete(CT).where((CT.c.study_id == self._study_id) & (CT.c.constraint_id.in_(constraint_ids)))
         )
-        upsert_multiple(self._db_session, CT, cluster_terms)
+        if cluster_terms:
+            upsert_multiple(self._db_session, CT, cluster_terms)
 
     def _save_link_terms(self, constraints: Sequence[BindingConstraint]) -> None:
         constraint_ids = [bc.id for bc in constraints]
@@ -283,12 +277,11 @@ class DatabaseBindingConstraintDao(ConstraintDao):
             for term in bc.terms
             if isinstance(term.data, LinkTerm)
         ]
-        if not link_terms:
-            return
         self._db_session.execute(
             delete(LT).where((LT.c.study_id == self._study_id) & (LT.c.constraint_id.in_(constraint_ids)))
         )
-        upsert_multiple(self._db_session, LT, link_terms)
+        if link_terms:
+            upsert_multiple(self._db_session, LT, link_terms)
 
     def _fetch_existing_matrix_ids(self, constraint_ids: list[str]) -> dict[str, dict[str, str]]:
         """Fetch all existing matrix IDs upfront needed for operator change (copy source)."""
