@@ -58,7 +58,14 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
 
     @override
     def exists(self, matrix_id: str) -> bool:
-        return matrix_id in self._predefined_matrices or matrix_id in self._content
+        return self.all_exist([matrix_id])
+
+    @override
+    def all_exist(self, matrix_ids: Sequence[str]) -> bool:
+        for matrix_id in matrix_ids:
+            if matrix_id not in self._predefined_matrices and matrix_id not in self._content:
+                return False
+        return True
 
     @override
     def delete(self, matrix_id: str) -> None:
