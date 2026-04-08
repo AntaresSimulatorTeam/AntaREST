@@ -15,13 +15,13 @@ import polars as pl
 
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
-from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 def test_file_study_dao(tmp_path: Path, empty_study_930: FileStudy, command_context: CommandContext) -> None:
-    dao = FileStudyTreeDao(empty_study_930, command_context.generator_matrix_constants, command_context.blob_service)
+    dao = build_dao_from_file_study(empty_study_930, command_context)
     # Create 2 areas, 1 link, an Xpansion configuration and several user resources
     dao.create_xpansion_configuration()
     dao.save_area("FR")
