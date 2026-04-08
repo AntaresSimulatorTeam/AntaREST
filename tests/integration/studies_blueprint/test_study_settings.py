@@ -418,6 +418,7 @@ def test_study_settings(client: TestClient, admin_access_token: str) -> None:
 def test_compatibility_settings(client: TestClient, admin_access_token: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
+    # Test hydro_pmax on a 9.3 study
     created = client.post("/v1/studies", params={"name": "foo", "version": 930})
     study_id = created.json()
 
@@ -425,16 +426,21 @@ def test_compatibility_settings(client: TestClient, admin_access_token: str) -> 
     assert res.status_code == 200
     assert res.json() == {"hydroPmax": "daily", "reservesEnabled": False}
 
-    client.put(
+    res = client.put(
         f"/v1/studies/{study_id}/config/compatibility/form",
-        json={
-            "hydroPmax": "hourly",
-            "reservesEnabled": True,
-        },
+        json={"hydroPmax": "hourly"},
     )
+    assert res.status_code == 200
     res = client.get(f"/v1/studies/{study_id}/config/compatibility/form")
     assert res.status_code == 200
-    assert res.json() == {"hydroPmax": "hourly", "reservesEnabled": True}
+    assert res.json() == {"hydroPmax": "hourly", "reservesEnabled": False}
+
+    # reserves_enabled should be rejected on a study < 10.0
+    res = client.put(
+        f"/v1/studies/{study_id}/config/compatibility/form",
+        json={"reservesEnabled": True},
+    )
+    assert res.status_code == 422
 
 
 @pytest.mark.parametrize("study_type", ["raw", "variant"])

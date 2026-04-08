@@ -80,9 +80,6 @@ from antarest.study.storage.variantstudy.model.command.update_area_ui import Upd
 from antarest.study.storage.variantstudy.model.command.update_areas_properties import UpdateAreasProperties
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.update_binding_constraints import UpdateBindingConstraints
-from antarest.study.storage.variantstudy.model.command.update_compatibility_parameters import (
-    UpdateCompatibilityParameters,
-)
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
 from antarest.study.storage.variantstudy.model.command.update_general_config import UpdateGeneralConfig
@@ -96,6 +93,7 @@ from antarest.study.storage.variantstudy.model.command.update_optimization_prefe
 from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
 from antarest.study.storage.variantstudy.model.command.update_renewables_clusters import UpdateRenewablesClusters
+from antarest.study.storage.variantstudy.model.command.update_reserves_enabled import UpdateReservesEnabled
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command.update_st_storage_additional_constraints import (
     UpdateSTStorageAdditionalConstraints,
@@ -173,7 +171,7 @@ COMMAND_MAPPING: dict[str, type[ICommand]] = {
     CommandName.CONVERT_HYDRO_PMAX.value: ConvertHydroPmax,
     CommandName.CREATE_USER_RESOURCE.value: ReplaceUserResource,
     CommandName.REPLACE_USER_RESOURCE.value: ReplaceUserResource,
-    CommandName.UPDATE_COMPATIBILITY_PARAMETERS.value: UpdateCompatibilityParameters,
+    CommandName.UPDATE_RESERVES_ENABLED.value: UpdateReservesEnabled,
 }
 
 

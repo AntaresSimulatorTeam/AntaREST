@@ -12,11 +12,12 @@
 from antarest.study.business.model.config.compatibility_parameters_model import (
     CompatibilityParameters,
     CompatibilityParametersUpdate,
+    validate_compatibility_parameters_against_version,
 )
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.variantstudy.model.command.update_compatibility_parameters import (
-    UpdateCompatibilityParameters,
-)
+from antarest.study.storage.variantstudy.model.command.convert_hydro_pmax import ConvertHydroPmax
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.update_reserves_enabled import UpdateReservesEnabled
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -36,14 +37,26 @@ class CompatibilityParamsManager:
         """
         Update Compatibility parameters values from the webapp form
         """
+        validate_compatibility_parameters_against_version(study.version, parameters)
 
-        commands = [
-            UpdateCompatibilityParameters(
-                parameters=parameters,
-                command_context=self._command_context,
-                study_version=study.version,
+        commands: list[ICommand] = []
+        if parameters.hydro_pmax is not None:
+            commands.append(
+                ConvertHydroPmax(
+                    hydro_pmax=parameters.hydro_pmax,
+                    command_context=self._command_context,
+                    study_version=study.version,
+                )
             )
-        ]
+        if parameters.reserves_enabled is not None:
+            commands.append(
+                UpdateReservesEnabled(
+                    reserves_enabled=parameters.reserves_enabled,
+                    command_context=self._command_context,
+                    study_version=study.version,
+                )
+            )
 
-        study.add_commands(commands)
+        if commands:
+            study.add_commands(commands)
         return self.get_compatibility_parameters(study)
