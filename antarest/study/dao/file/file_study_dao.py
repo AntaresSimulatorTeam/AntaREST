@@ -81,13 +81,16 @@ class FileStudyTreeDao(
     def __init__(
         self,
         study: FileStudy,
+        is_study_managed: bool,
         generator_matrix_constants: "GeneratorMatrixConstants",
         blob_service: "IBlobService",
+        matrix_service: "ISimpleMatrixService",
     ) -> None:
         self._file_study = study
         self._generator_matrix_constants = generator_matrix_constants
         self._blob_service = blob_service
-        self._matrix_service = generator_matrix_constants.matrix_service
+        self._matrix_service = matrix_service
+        self._is_study_managed = is_study_managed
 
     @property
     def matrix_service(self) -> "ISimpleMatrixService":

@@ -34,10 +34,17 @@ class FileStudyDaoFactory(StudyFactoryDao):
     @override
     def create_study_dao(self, study: Study) -> FileStudyTreeDao:
         path_study = Path(study.path)
+        is_study_managed = is_managed(study)
 
         create_new_empty_study(version=StudyVersion.parse(study.version), path_study=path_study)
-        file_study = self._study_factory.create_from_fs(path_study, is_managed(study), study.id)
+        file_study = self._study_factory.create_from_fs(path_study, is_study_managed, study.id)
         update_antares_info(study, file_study.tree, update_author=True)
 
         context = self._command_context
-        return FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service)
+        return FileStudyTreeDao(
+            file_study,
+            is_study_managed,
+            context.generator_matrix_constants,
+            context.blob_service,
+            context.matrix_service,
+        )

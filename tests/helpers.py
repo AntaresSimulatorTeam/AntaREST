@@ -256,4 +256,4 @@ def file_study_interface(file_study: FileStudy) -> FileStudyInterface:
     """
     Utils function to avoid declaring Mocks everywhere inside the tests
     """
-    return FileStudyInterface(file_study, Mock(), Mock())
+    return FileStudyInterface(file_study, False, Mock(), Mock(), Mock())

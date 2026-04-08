@@ -17,7 +17,6 @@ from typing import Any
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import StudyVersionStr
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -69,7 +68,7 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         """
         raise NotImplementedError()
 
-    def apply(self, study_data: StudyDao | FileStudy, listener: ICommandListener | None = None) -> CommandOutput[Any]:
+    def apply(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[Any]:
         """
         Applies the study data to update storage configurations and saves the changes.
 
@@ -80,9 +79,6 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         Returns:
             The output of the command execution.
         """
-        if isinstance(study_data, FileStudy):
-            context = self.command_context
-            study_data = FileStudyTreeDao(study_data, context.generator_matrix_constants, context.blob_service)
         try:
             return self._apply_dao(study_data, listener)
         except Exception as e:
