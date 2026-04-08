@@ -154,6 +154,7 @@ class OutputStorageConfig:
     enable: bool = False
     default: bool = False
     archive_dir: Path = Path("./output-archives")
+    variables_dir: Path = Path("./output-variables")
 
     @classmethod
     def from_dict(cls, data: JSON) -> "OutputStorageConfig":
@@ -162,6 +163,7 @@ class OutputStorageConfig:
             enable=data.get("enable", defaults.enable),
             default=data.get("default", defaults.default),
             archive_dir=Path(data.get("archive_dir", str(defaults.archive_dir))),
+            variables_dir=Path(data.get("variables_dir", str(defaults.variables_dir))),
         )
 
 

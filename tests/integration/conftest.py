@@ -55,6 +55,7 @@ def _render_config(config_path: Path, db_url: str, tmp_path: Path) -> None:
     default_workspace = tmp_path / "internal_workspace"
     ext_workspace_path = tmp_path / "ext_workspace"
     output_archive_dir = tmp_path / "output_archives"
+    output_variables_dir = tmp_path / "output_variables"
 
     for d in (matrix_dir, blob_dir, archive_dir, tmp_dir, default_workspace, ext_workspace_path):
         d.mkdir(exist_ok=True)
@@ -76,6 +77,7 @@ def _render_config(config_path: Path, db_url: str, tmp_path: Path) -> None:
                 tmp_dir=str(tmp_dir),
                 launcher_mock=ASSETS_DIR / launcher_name,
                 output_archive_dir=str(output_archive_dir),
+                output_variables_dir=str(output_variables_dir),
             )
         )
 
