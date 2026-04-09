@@ -21,9 +21,9 @@ import {
   MenuItem,
   Select,
   type SelectChangeEvent,
-  TextField,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import NumberFE from "@/components/fieldEditors/NumberFE";
 import { Operation } from "../../shared/constants";
 import { useOperationControls } from "./hooks/useOperationControls";
 import { DESIGN_TOKENS, FORM_STYLES } from "./styles";
@@ -39,8 +39,7 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
   };
 
   const handleValueChangeEvent = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = Number.parseFloat(e.target.value) || 0;
-    handleValueChange(newValue);
+    handleValueChange(e.target.value);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -83,9 +82,8 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
 
           {filter.operation.type !== Operation.Abs && (
             <Box sx={{ flex: 1 }}>
-              <TextField
+              <NumberFE
                 label={t("matrix.filter.value")}
-                type="number"
                 value={value}
                 onChange={handleValueChangeEvent}
                 size="small"
