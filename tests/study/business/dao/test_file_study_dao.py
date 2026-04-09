@@ -21,7 +21,7 @@ from tests.helpers import build_dao_from_file_study
 
 
 def test_file_study_dao(tmp_path: Path, empty_study_930: FileStudy, command_context: CommandContext) -> None:
-    dao = build_dao_from_file_study(empty_study_930, command_context)
+    dao = build_dao_from_file_study(empty_study_930, command_context, True)
     # Create 2 areas, 1 link, an Xpansion configuration and several user resources
     dao.create_xpansion_configuration()
     dao.save_area("FR")
