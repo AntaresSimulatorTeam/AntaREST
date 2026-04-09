@@ -20,6 +20,7 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
     ClusterTerm,
+    ConstraintID,
     ConstraintTerm,
     LinkTerm,
 )
@@ -40,7 +41,7 @@ class TestConstraintFilter:
         assert not bc_filter.cluster_id
 
     @pytest.mark.parametrize("bc_id, expected", [("bc1", True), ("BC1", False), ("bc2", False), ("", True)])
-    def test_filter_by__bc_id(self, bc_id: str, expected: bool) -> None:
+    def test_filter_by__bc_id(self, bc_id: ConstraintID, expected: bool) -> None:
         """
         The filter should match if the `bc_id` is equal to the constraint's `bc_id` or if the filter is empty.
         Comparisons should be case-sensitive.

@@ -14,7 +14,7 @@
 Object model used to read and update binding constraint configuration.
 """
 
-from typing import Any, TypeAlias
+from typing import Any, NewType, TypeAlias
 
 from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field, model_validator
@@ -247,6 +247,8 @@ class ConstraintTerm(AntaresBaseModel):
 # Binding constraint objects
 # ==================================================
 
+ConstraintID = NewType("ConstraintID", str)
+
 
 class BindingConstraint(AntaresBaseModel):
     """
@@ -262,7 +264,7 @@ class BindingConstraint(AntaresBaseModel):
             data["id"] = transform_name_to_id(data["name"])
         return data
 
-    id: str
+    id: ConstraintID
     name: str
     enabled: bool = True
     time_step: BindingConstraintFrequency = DEFAULT_TIMESTEP
@@ -366,7 +368,7 @@ class BindingConstraintCreationWithMatrices(BindingConstraintCreation, BindingCo
         )
 
 
-BindingConstraintUpdates = dict[LowerCaseId, BindingConstraintUpdate]
+BindingConstraintUpdates = dict[ConstraintID, BindingConstraintUpdate]
 
 
 def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:

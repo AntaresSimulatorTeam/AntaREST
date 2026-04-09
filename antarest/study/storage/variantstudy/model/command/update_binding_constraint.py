@@ -23,6 +23,7 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintMatrices,
     BindingConstraintOperator,
     BindingConstraintUpdate,
+    ConstraintID,
     update_binding_constraint,
     validate_binding_constraint_against_version,
 )
@@ -128,7 +129,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     def _apply_dao(
         self, study_data: StudyDao, listener: ICommandListener | None = None
     ) -> CommandOutput[BindingConstraint]:
-        current_constraint = study_data.get_constraint(self.id)
+        current_constraint = study_data.get_constraint(ConstraintID(self.id))
         constraint = update_binding_constraint(current_constraint, self.parameters)
 
         self._validate_and_fill_matrices(constraint.time_step)

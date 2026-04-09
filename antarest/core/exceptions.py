@@ -17,6 +17,8 @@ from http import HTTPStatus
 from fastapi.exceptions import HTTPException
 from typing_extensions import override
 
+from antarest.study.business.model.binding_constraint_model import ConstraintID
+
 DEFAULT_LAYER_NAME = "All"
 
 
@@ -497,7 +499,7 @@ class ConstraintTermNotFound(HTTPException):
     Exception raised when a constraint term is not found.
     """
 
-    def __init__(self, binding_constraint_id: str, *ids: str) -> None:
+    def __init__(self, binding_constraint_id: ConstraintID, *ids: str) -> None:
         count = len(ids)
         id_enum = ", ".join(f"'{term}'" for term in ids)
         message = {
@@ -518,7 +520,7 @@ class DuplicateConstraintTerm(HTTPException):
     Exception raised when an attempt is made to create a constraint term which already exists.
     """
 
-    def __init__(self, binding_constraint_id: str, *ids: str) -> None:
+    def __init__(self, binding_constraint_id: ConstraintID, *ids: str) -> None:
         count = len(ids)
         id_enum = ", ".join(f"'{term}'" for term in ids)
         message = {
@@ -543,7 +545,7 @@ class InvalidConstraintTerm(HTTPException):
         self,
         term_id: str,
         reason: str,
-        binding_constraint_id: str | None = None,
+        binding_constraint_id: ConstraintID | None = None,
     ) -> None:
         message = f"Invalid constraint term {term_id}"
         if binding_constraint_id:

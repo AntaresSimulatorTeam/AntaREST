@@ -17,7 +17,7 @@ Database implementation of ConstraintDao.
 from abc import abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any, NewType, Sequence
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -32,6 +32,7 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
     BindingConstraintOperator,
     ClusterTerm,
+    ConstraintID,
     ConstraintTerm,
     LinkTerm,
 )
@@ -66,8 +67,11 @@ class _MatrixType(str, Enum):
     VALUES = "values"
 
 
+_MatrixID = NewType("_MatrixID", str)
+"""Opaque identifier for a matrix row stored in the matrix store."""
+
 # Maps constraint_id → (matrix_type → matrix_id)
-_MatrixIdsByConstraint = dict[str, dict["_MatrixType", str]]
+_MatrixIdsByConstraint = dict[ConstraintID, dict["_MatrixType", _MatrixID]]
 
 _MATRIX_TYPE_TABLES: dict["_MatrixType", Table] = {
     _MatrixType.LT: BINDING_CONSTRAINT_LT_MATRIX_TABLE,
@@ -81,7 +85,7 @@ _MATRIX_TYPE_TABLES: dict["_MatrixType", Table] = {
 class _MatrixDeletion:
     """Identifies a matrix row to remove: delete the <type> row for <constraint_id>."""
 
-    constraint_id: str
+    constraint_id: ConstraintID
     matrix_type: _MatrixType
 
 
@@ -89,9 +93,9 @@ class _MatrixDeletion:
 class _MatrixInsertion:
     """Identifies a matrix row to create or overwrite: write <matrix_id> into the <type> table for <constraint_id>."""
 
-    constraint_id: str
+    constraint_id: ConstraintID
     matrix_type: _MatrixType
-    matrix_id: str
+    matrix_id: _MatrixID
 
 
 @dataclass
@@ -101,10 +105,10 @@ class _MatrixChanges:
     deletions: list[_MatrixDeletion] = field(default_factory=list)
     insertions: list[_MatrixInsertion] = field(default_factory=list)
 
-    def add_deletion(self, constraint_id: str, matrix_type: _MatrixType) -> None:
+    def add_deletion(self, constraint_id: ConstraintID, matrix_type: _MatrixType) -> None:
         self.deletions.append(_MatrixDeletion(constraint_id, matrix_type))
 
-    def add_insertion(self, constraint_id: str, matrix_type: _MatrixType, matrix_id: str) -> None:
+    def add_insertion(self, constraint_id: ConstraintID, matrix_type: _MatrixType, matrix_id: _MatrixID) -> None:
         self.insertions.append(_MatrixInsertion(constraint_id, matrix_type, matrix_id))
 
 
@@ -121,7 +125,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
     def get_impl(self) -> "DatabaseStudyDao":
         pass
 
-    def _fetch_constraints(self, constraint_ids: list[str]) -> dict[str, BindingConstraint]:
+    def _fetch_constraints(self, constraint_ids: list[ConstraintID]) -> dict[ConstraintID, BindingConstraint]:
         """
         Two steps in this function
         Step 1 : BC LEFT JOIN link_terms builds the result dict: one entry per constraint, pre-populated with
@@ -160,8 +164,8 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         if constraint_ids:
             q1 = q1.where(BC.c.constraint_id.in_(constraint_ids))
 
-        bc_rows: dict[str, Any] = {}
-        terms: dict[str, list[ConstraintTerm]] = {}
+        bc_rows: dict[ConstraintID, Any] = {}
+        terms: dict[ConstraintID, list[ConstraintTerm]] = {}
 
         for row in db.execute(q1).fetchall():
             cid = row.constraint_id
@@ -190,7 +194,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
                 )
             )
 
-        return {cid: self._row_to_bc(bc_rows[cid], terms[cid]) for cid in bc_rows}
+        return {ConstraintID(cid): self._row_to_bc(bc_rows[cid], terms[cid]) for cid in bc_rows}
 
     @staticmethod
     def _row_to_bc(row: Row[Any], terms: list[ConstraintTerm]) -> BindingConstraint:
@@ -202,17 +206,17 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         return BindingConstraint.model_validate(d, extra="allow")
 
     @override
-    def get_all_constraints(self) -> dict[str, BindingConstraint]:
+    def get_all_constraints(self) -> dict[ConstraintID, BindingConstraint]:
         return self._fetch_constraints([])
 
     @override
-    def get_constraint(self, constraint_id: str) -> BindingConstraint:
+    def get_constraint(self, constraint_id: ConstraintID) -> BindingConstraint:
         result = self._fetch_constraints([constraint_id])
         if not result:
             raise BindingConstraintNotFound(f"Constraint {constraint_id} not found")
         return result[constraint_id]
 
-    def _get_bc_matrix(self, constraint_id: str, table: Table) -> pl.DataFrame:
+    def _get_bc_matrix(self, constraint_id: ConstraintID, table: Table) -> pl.DataFrame:
         row = self._db_session.execute(
             select(table).where((table.c.study_id == self._study_id) & (table.c.constraint_id == constraint_id))
         ).fetchone()
@@ -227,19 +231,19 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         upsert_multiple(self._db_session, table, rows)
 
     @override
-    def get_constraint_values_matrix(self, constraint_id: str) -> pl.DataFrame:
+    def get_constraint_values_matrix(self, constraint_id: ConstraintID) -> pl.DataFrame:
         return self._get_bc_matrix(constraint_id, BINDING_CONSTRAINT_VALUES_MATRIX_TABLE)
 
     @override
-    def get_constraint_less_term_matrix(self, constraint_id: str) -> pl.DataFrame:
+    def get_constraint_less_term_matrix(self, constraint_id: ConstraintID) -> pl.DataFrame:
         return self._get_bc_matrix(constraint_id, BINDING_CONSTRAINT_LT_MATRIX_TABLE)
 
     @override
-    def get_constraint_greater_term_matrix(self, constraint_id: str) -> pl.DataFrame:
+    def get_constraint_greater_term_matrix(self, constraint_id: ConstraintID) -> pl.DataFrame:
         return self._get_bc_matrix(constraint_id, BINDING_CONSTRAINT_GT_MATRIX_TABLE)
 
     @override
-    def get_constraint_equal_term_matrix(self, constraint_id: str) -> pl.DataFrame:
+    def get_constraint_equal_term_matrix(self, constraint_id: ConstraintID) -> pl.DataFrame:
         return self._get_bc_matrix(constraint_id, BINDING_CONSTRAINT_EQ_MATRIX_TABLE)
 
     @override
@@ -288,7 +292,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         if link_terms:
             upsert_multiple(self._db_session, LT, link_terms)
 
-    def _fetch_existing_matrix_ids(self, constraint_ids: list[str]) -> _MatrixIdsByConstraint:
+    def _fetch_existing_matrix_ids(self, constraint_ids: list[ConstraintID]) -> _MatrixIdsByConstraint:
         """Fetch all existing matrix IDs upfront needed for operator change (copy source)."""
         existing_matrix_ids: _MatrixIdsByConstraint = {}
         for matrix_type, table in _MATRIX_TYPE_TABLES.items():
@@ -298,7 +302,9 @@ class DatabaseBindingConstraintDao(ConstraintDao):
                 )
             ).fetchall()
             for row in rows:
-                existing_matrix_ids.setdefault(row.constraint_id, {})[matrix_type] = row.matrix_id
+                existing_matrix_ids.setdefault(ConstraintID(row.constraint_id), {})[matrix_type] = _MatrixID(
+                    row.matrix_id
+                )
         return existing_matrix_ids
 
     def _handle_time_step_change(
@@ -307,7 +313,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         bc: BindingConstraint,
         old: BindingConstraint,
         study_version: StudyVersion,
-        null_mid: str,
+        null_mid: _MatrixID,
     ) -> None:
         """Replace all existing matrix rows with the null matrix.
 
@@ -327,8 +333,8 @@ class DatabaseBindingConstraintDao(ConstraintDao):
 
     @staticmethod
     def _get_source_matrix_id(
-        existing_matrix_ids: _MatrixIdsByConstraint, operator: BindingConstraintOperator, constraint_id: str
-    ) -> str:
+        existing_matrix_ids: _MatrixIdsByConstraint, operator: BindingConstraintOperator, constraint_id: ConstraintID
+    ) -> _MatrixID:
         """Return the canonical source matrix ID for the given operator.
 
         A missing entry means the DB is corrupted: the command layer always initialises
@@ -469,7 +475,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
             operator_changed = study_version >= STUDY_VERSION_8_7 and bc.operator != old.operator
 
             if time_step_changed:
-                self._handle_time_step_change(changes, bc, old, study_version, generator.get_null_matrix())
+                self._handle_time_step_change(changes, bc, old, study_version, _MatrixID(generator.get_null_matrix()))
             elif operator_changed:
                 self._handle_operator_change(changes, bc, old, existing_matrix_ids)
 
@@ -525,7 +531,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         data = bc.model_dump(exclude={"id", "terms"})
         return {"study_id": study_id, "constraint_id": bc.id, **data}
 
-    def _cluster_term_to_row(self, study_id: str, constraint_id: str, term: ConstraintTerm) -> dict[str, Any]:
+    def _cluster_term_to_row(self, study_id: str, constraint_id: ConstraintID, term: ConstraintTerm) -> dict[str, Any]:
         assert isinstance(term.data, ClusterTerm)
         return {
             "study_id": study_id,
@@ -534,7 +540,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
             **term.data.model_dump(),
         }
 
-    def _link_term_to_row(self, study_id: str, constraint_id: str, term: ConstraintTerm) -> dict[str, Any]:
+    def _link_term_to_row(self, study_id: str, constraint_id: ConstraintID, term: ConstraintTerm) -> dict[str, Any]:
         assert isinstance(term.data, LinkTerm)
         return {
             "study_id": study_id,
@@ -544,22 +550,22 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         }
 
     @override
-    def save_constraint_values_matrix(self, constraint_id: str, series_id: str) -> None:
+    def save_constraint_values_matrix(self, constraint_id: ConstraintID, series_id: str) -> None:
         self._save_bc_matrices(BINDING_CONSTRAINT_VALUES_MATRIX_TABLE, [(constraint_id, series_id)])
         self._db_session.commit()
 
     @override
-    def save_constraint_less_term_matrix(self, constraint_id: str, series_id: str) -> None:
+    def save_constraint_less_term_matrix(self, constraint_id: ConstraintID, series_id: str) -> None:
         self._save_bc_matrices(BINDING_CONSTRAINT_LT_MATRIX_TABLE, [(constraint_id, series_id)])
         self._db_session.commit()
 
     @override
-    def save_constraint_greater_term_matrix(self, constraint_id: str, series_id: str) -> None:
+    def save_constraint_greater_term_matrix(self, constraint_id: ConstraintID, series_id: str) -> None:
         self._save_bc_matrices(BINDING_CONSTRAINT_GT_MATRIX_TABLE, [(constraint_id, series_id)])
         self._db_session.commit()
 
     @override
-    def save_constraint_equal_term_matrix(self, constraint_id: str, series_id: str) -> None:
+    def save_constraint_equal_term_matrix(self, constraint_id: ConstraintID, series_id: str) -> None:
         self._save_bc_matrices(BINDING_CONSTRAINT_EQ_MATRIX_TABLE, [(constraint_id, series_id)])
         self._db_session.commit()
 
