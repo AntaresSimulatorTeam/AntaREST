@@ -58,6 +58,21 @@ class RawPathToMatrixMapper:
         def _save_renewable_series(area_id: str, renewable_id: str, series_id: str) -> None:
             dao.save_renewable_series({area_id: {renewable_id: series_id}})
 
+        def _save_load(area_id: str, series_id: str) -> None:
+            dao.save_load({area_id: series_id})
+
+        def _save_solar(area_id: str, series_id: str) -> None:
+            dao.save_solar({area_id: series_id})
+
+        def _save_wind(area_id: str, series_id: str) -> None:
+            dao.save_wind({area_id: series_id})
+
+        def _save_reserves(area_id: str, series_id: str) -> None:
+            dao.save_reserves({area_id: series_id})
+
+        def _save_misc_gen(area_id: str, series_id: str) -> None:
+            dao.save_misc_gen({area_id: series_id})
+
         self._path_matchers = [
             RegexMatcher(
                 pattern=re.compile(r"user/expansion/capa/(?P<filename>[^/]+)"),
@@ -72,27 +87,27 @@ class RawPathToMatrixMapper:
             RegexMatcher(
                 pattern=re.compile(r"input/load/series/load_(?P<area_id>[^/]+)"),
                 getter=dao.get_load,
-                setter=dao.save_load,
+                setter=_save_load,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/wind/series/wind_(?P<area_id>[^/]+)"),
                 getter=dao.get_wind,
-                setter=dao.save_wind,
+                setter=_save_wind,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/solar/series/solar_(?P<area_id>[^/]+)"),
                 getter=dao.get_solar,
-                setter=dao.save_solar,
+                setter=_save_solar,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/misc-gen/miscgen-(?P<area_id>[^/]+)"),
                 getter=dao.get_misc_gen,
-                setter=dao.save_misc_gen,
+                setter=_save_misc_gen,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/reserves/(?P<area_id>[^/]+)"),
                 getter=dao.get_reserves,
-                setter=dao.save_reserves,
+                setter=_save_reserves,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/links/(?P<area_from>[^/]+)/capacities/(?P<area_to>[^/]+)_direct"),
