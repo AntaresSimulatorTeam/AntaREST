@@ -65,7 +65,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettingsUpdate,
 )
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.dao.common import AreaId, ThermalSeriesMapping
+from antarest.study.dao.common import AreaId, RenewableSeriesMapping, ThermalSeriesMapping
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -612,17 +612,28 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
+    def get_all_renewables_series(self) -> RenewableSeriesMapping:
+        result: RenewableSeriesMapping = {}
+        for renewable_key, matrix_id in self._renewable_series.items():
+            area_id, renewable_id = renewable_key.area_id, renewable_key.cluster_id
+            result.setdefault(area_id, {})[renewable_id] = matrix_id
+        return result
+
+    @override
     def save_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
         self._renewables[cluster_key(area_id, renewable.id)] = renewable
 
     @override
-    def save_renewables(self, area_id: str, renewables: Sequence[RenewableCluster]) -> None:
-        for renewable in renewables:
-            self.save_renewable(area_id, renewable)
+    def save_renewables(self, data: dict[AreaId, list[RenewableCluster]]) -> None:
+        for area_id, renewables in data.items():
+            for renewable in renewables:
+                self._renewables[cluster_key(area_id, renewable.id)] = renewable
 
     @override
-    def save_renewable_series(self, area_id: str, renewable_id: str, series_id: str) -> None:
-        self._renewable_series[cluster_key(area_id, renewable_id)] = series_id
+    def save_renewable_series(self, series: RenewableSeriesMapping) -> None:
+        for area_id, value in series.items():
+            for renewable_id, series_id in value.items():
+                self._renewable_series[cluster_key(area_id, renewable_id)] = series_id
 
     @override
     def delete_renewable(self, area_id: str, renewable: RenewableCluster) -> None:

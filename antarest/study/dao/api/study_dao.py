@@ -79,7 +79,7 @@ from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
 from antarest.study.dao.api.timeseries_config_dao import ReadOnlyTimeSeriesConfigDao, TimeSeriesConfigDao
 from antarest.study.dao.api.user_resources_dao import ReadOnlyUserResourcesDao, UserResourcesDao
 from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
-from antarest.study.dao.common import ThermalSeriesMapping
+from antarest.study.dao.common import RenewableSeriesMapping, ThermalSeriesMapping
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -313,6 +313,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_renewable_series(self, area_id: str, renewable_id: str) -> pl.DataFrame:
         return self._adaptee.get_renewable_series(area_id, renewable_id)
+
+    @override
+    def get_all_renewables_series(self) -> RenewableSeriesMapping:
+        return self._adaptee.get_all_renewables_series()
 
     @override
     def get_all_constraints(self) -> dict[str, BindingConstraint]:

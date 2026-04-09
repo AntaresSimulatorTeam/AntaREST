@@ -17,7 +17,6 @@ import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import (
-    AreaNotFound,
     ChildNotFoundError,
     ThermalClusterConfigNotFound,
     ThermalClusterNotFound,
@@ -27,6 +26,7 @@ from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.thermal_dao import ThermalDao
 from antarest.study.dao.common import AreaId, ThermalId, ThermalSeriesMapping
+from antarest.study.dao.file.common import check_area_exists
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     parse_thermal_cluster,
@@ -41,11 +41,6 @@ if TYPE_CHECKING:
 _CLUSTER_PATH = "input/thermal/clusters/{area_id}/list/{cluster_id}"
 _CLUSTERS_PATH = "input/thermal/clusters/{area_id}/list"
 _ALL_CLUSTERS_PATH = "input/thermal/clusters"
-
-
-def _check_area_exists(study_data: FileStudyTreeConfig, area_id: str) -> None:
-    if area_id not in study_data.areas:
-        raise AreaNotFound(f"The area '{area_id}' does not exist")
 
 
 def _get_co2_cost_matrix_path(area_id: AreaId, thermal_id: ThermalId) -> list[str]:
@@ -191,7 +186,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
         study_data = self.get_file_study()
         for area_id, thermals in data.items():
             # Ensures the area exists
-            _check_area_exists(study_data.config, area_id)
+            check_area_exists(study_data.config, area_id)
             # Save the new content
             ini_content = self._get_all_thermals_for_area(study_data, area_id)
             for thermal in thermals:
@@ -270,7 +265,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
 
     @staticmethod
     def _update_thermal_config(study_data: FileStudyTreeConfig, area_id: str, thermal: ThermalCluster) -> None:
-        _check_area_exists(study_data, area_id)
+        check_area_exists(study_data, area_id)
 
         for k, existing_cluster in enumerate(study_data.areas[area_id].thermals):
             if existing_cluster.id == thermal.id:
