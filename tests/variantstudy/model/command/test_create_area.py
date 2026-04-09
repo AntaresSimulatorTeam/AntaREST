@@ -38,7 +38,7 @@ class TestCreateArea:
         enr_modelling: EnrModelling,
     ) -> None:
         empty_study = empty_study_720
-        dao = build_dao_from_file_study(empty_study, command_context)
+        dao = build_dao_from_file_study(empty_study, command_context, True)
         empty_study.config.enr_modelling = enr_modelling.value
         study_version = StudyVersion.parse(version)
         empty_study.config.version = study_version
