@@ -59,8 +59,6 @@ from antarest.study.model import STUDY_VERSION_8_7
 
 
 class _MatrixType(str, Enum):
-    """The four matrix types that can be attached to a binding constraint."""
-
     LT = "lt"
     GT = "gt"
     EQ = "eq"
@@ -68,7 +66,6 @@ class _MatrixType(str, Enum):
 
 
 _MatrixID = NewType("_MatrixID", str)
-"""Opaque identifier for a matrix row stored in the matrix store."""
 
 # Maps constraint_id → (matrix_type → matrix_id)
 _MatrixIdsByConstraint = dict[ConstraintId, dict["_MatrixType", _MatrixID]]
@@ -475,12 +472,13 @@ class DatabaseBindingConstraintDao(ConstraintDao):
 
             if bc.time_step != old.time_step:
                 time_step_changed.append((old, bc))
-            if study_version >= STUDY_VERSION_8_7 and bc.operator != old.operator:
+            elif study_version >= STUDY_VERSION_8_7 and bc.operator != old.operator:
                 operator_changed.append((old, bc))
 
         # avoid doing unnecessary work if no operator changed
         if operator_changed:
             existing_matrix_ids = self._fetch_existing_matrix_ids(constraint_ids)
+
         for old, bc in time_step_changed:
             self._handle_time_step_change(changes, bc, old, study_version, null_matrix_id)
         for old, bc in operator_changed:
