@@ -20,7 +20,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.core.exceptions import LinkNotFound, LinksNotFound
+from antarest.core.exceptions import AreaNotFound, LinkNotFound, LinksNotFound
 from antarest.study.business.model.link_model import Link
 from antarest.study.dao.api.link_dao import LinkDao
 from antarest.study.dao.common import LinkSeriesMapping
@@ -64,11 +64,17 @@ class DatabaseLinkDao(LinkDao):
 
     def _raise_the_right_link_exception(self, links: Sequence[Link], exc: IntegrityError | None = None) -> None:
         # Happens if some link's areas did not exist -> ForeignKey constraint fails
+
+        # First check the areas
         new_areas = []
         for link in links:
             new_areas.append(link.area1)
             new_areas.append(link.area2)
 
+        if invalid_areas := self.get_impl().get_invalid_area_ids(new_areas):
+            raise AreaNotFound(*invalid_areas)
+
+        # Then check the links
         existing_links_ids = {f"{link.area1}%{link.area2}" for link in self.get_links()}
         new_links_ids = {f"{link.area1}%{link.area2}" for link in links}
 
@@ -78,7 +84,7 @@ class DatabaseLinkDao(LinkDao):
                 raise LinkNotFound(*invalid_ids)
             raise LinksNotFound(*invalid_ids)
 
-        # All areas exist. It means that the DB table does not contain the information.
+        # All links exist. It means that the DB table does not contain the information.
         raise ValueError("One of the link table is not filled as it should") from exc
 
     @override
