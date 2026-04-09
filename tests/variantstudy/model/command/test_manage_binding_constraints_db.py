@@ -16,10 +16,8 @@
 # ICommand.apply() then calls _apply_dao() directly.
 
 import pytest
-from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import BindingConstraintNotFound
-from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
@@ -29,7 +27,7 @@ from antarest.study.business.model.binding_constraint_model import (
 )
 from antarest.study.business.model.scenario_builder_model import RulesetUpdate
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7, STUDY_VERSION_8_8
+from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
     RemoveMultipleBindingConstraints,
@@ -37,25 +35,14 @@ from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_c
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.study.dao.conftest import build_db_dao
-
-
-@pytest.fixture
-def db_dao(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
-    return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
-
-
-@pytest.fixture
-def db_dao_860(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
-    return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_6)
 
 
 def test_manage_binding_constraint(
-    db_dao_860: DatabaseStudyDao,
-    db_dao: DatabaseStudyDao,
+    db_dao_86: DatabaseStudyDao,
+    db_dao_88: DatabaseStudyDao,
     command_context: CommandContext,
 ) -> None:
-    for db_dao_versioned in [db_dao_860, db_dao]:
+    for db_dao_versioned in [db_dao_86, db_dao_88]:
         study_version = db_dao_versioned.get_version()
 
         output = CreateBindingConstraint(
@@ -194,11 +181,11 @@ def test_manage_binding_constraint(
             assert db_dao_versioned.get_ruleset().binding_constraints == {}
 
 
-def test_scenario_builder(db_dao: DatabaseStudyDao, command_context: CommandContext) -> None:
+def test_scenario_builder(db_dao_88: DatabaseStudyDao, command_context: CommandContext) -> None:
     """
     Test that the scenario builder is updated when a binding constraint group is renamed or removed.
     """
-    study_version = db_dao.get_version()
+    study_version = db_dao_88.get_version()
     assert study_version >= STUDY_VERSION_8_7
 
     bc_group = "Group 1"
@@ -216,17 +203,17 @@ def test_scenario_builder(db_dao: DatabaseStudyDao, command_context: CommandCont
             "command_context": command_context,
             "study_version": study_version,
         }
-    ).apply(db_dao)
+    ).apply(db_dao_88)
     assert output.status, output.message
 
     output = UpdateScenarioBuilder(
         data=RulesetUpdate(binding_constraints={bc_group.lower(): {"0": 1}}),
         command_context=command_context,
         study_version=study_version,
-    ).apply(study_dao=db_dao)
+    ).apply(study_dao=db_dao_88)
     assert output.status, output.message
 
-    assert db_dao.get_ruleset().binding_constraints == {"group 1": {"0": 1}}
+    assert db_dao_88.get_ruleset().binding_constraints == {"group 1": {"0": 1}}
 
     # Rename the group — old group's scenario builder rules must be removed
     output = UpdateBindingConstraint(
@@ -237,7 +224,7 @@ def test_scenario_builder(db_dao: DatabaseStudyDao, command_context: CommandCont
             "command_context": command_context,
             "study_version": study_version,
         }
-    ).apply(db_dao)
+    ).apply(db_dao_88)
     assert output.status, output.message
 
-    assert db_dao.get_ruleset().binding_constraints == {}
+    assert db_dao_88.get_ruleset().binding_constraints == {}
