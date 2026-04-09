@@ -98,7 +98,7 @@ class TestXpansionConfiguration:
         db_dao.create_xpansion_configuration()
         db_dao.save_area("Paris")
         db_dao.save_area("Lyon")
-        db_dao.save_link(Link(area1="paris", area2="lyon"))
+        db_dao.save_links([Link(area1="paris", area2="lyon")])
         db_dao.save_xpansion_candidate(_make_candidate("cand1", "lyon", "paris"))
 
         # --- delete ---
@@ -150,7 +150,7 @@ class TestXpansionSettings:
         db_dao.create_xpansion_configuration()
         db_dao.save_area("x")
         db_dao.save_area("y")
-        db_dao.save_link(Link(area1="x", area2="y"))
+        db_dao.save_links([Link(area1="x", area2="y")])
         # Projection candidates must exist before being referenced
         db_dao.save_xpansion_candidate(_make_candidate("cand_a", "x", "y"))
         db_dao.save_xpansion_candidate(_make_candidate("cand_b", "x", "y"))
@@ -230,8 +230,7 @@ class TestXpansionCandidates:
         db_dao.save_area("Paris")
         db_dao.save_area("Lyon")
         db_dao.save_area("Bordeaux")
-        db_dao.save_link(Link(area1="paris", area2="lyon"))
-        db_dao.save_link(Link(area1="bordeaux", area2="paris"))
+        db_dao.save_links([Link(area1="paris", area2="lyon"), Link(area1="bordeaux", area2="paris")])
 
         # --- coherence: missing area / link raises, valid passes ---
         with pytest.raises(AreaNotFound):
@@ -322,7 +321,7 @@ class TestXpansionCandidates:
         db_dao.create_xpansion_configuration()
         db_dao.save_area("Paris")
         db_dao.save_area("Lyon")
-        db_dao.save_link(Link(area1="paris", area2="lyon"))
+        db_dao.save_links([Link(area1="paris", area2="lyon")])
 
         candidate = XpansionCandidate(
             name="cand",
@@ -398,7 +397,7 @@ class TestCascadeDelete:
         db_dao.create_xpansion_configuration()
         db_dao.save_area("Paris")
         db_dao.save_area("Lyon")
-        db_dao.save_link(Link(area1="paris", area2="lyon"))
+        db_dao.save_links([Link(area1="paris", area2="lyon")])
         db_dao.save_xpansion_candidate(_make_candidate("cand", "lyon", "paris"))
         db_dao.save_xpansion_settings(
             XpansionSettings(sensitivity_config=XpansionSensitivitySettings(projection=["cand"]))
@@ -442,7 +441,7 @@ class TestCascadeDelete:
         db_dao.create_xpansion_configuration()
         db_dao.save_area("Paris")
         db_dao.save_area("Lyon")
-        db_dao.save_link(Link(area1="paris", area2="lyon"))
+        db_dao.save_links([Link(area1="paris", area2="lyon")])
         db_dao.save_xpansion_candidate(_make_candidate("cand1", "lyon", "paris"))
         db_dao.save_xpansion_candidate(_make_candidate("cand2", "lyon", "paris"))
 
@@ -645,7 +644,7 @@ class TestXpansionResources:
         db_dao.create_xpansion_configuration()
         db_dao.save_area("Paris")
         db_dao.save_area("Lyon")
-        db_dao.save_link(Link(area1="paris", area2="lyon"))
+        db_dao.save_links([Link(area1="paris", area2="lyon")])
 
         candidate = XpansionCandidate(
             name="cand",
