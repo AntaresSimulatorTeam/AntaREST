@@ -80,6 +80,7 @@ from antarest.study.dao.api.timeseries_config_dao import ReadOnlyTimeSeriesConfi
 from antarest.study.dao.api.user_resources_dao import ReadOnlyUserResourcesDao, UserResourcesDao
 from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
 from antarest.study.dao.common import ThermalSeriesMapping
+from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -108,11 +109,19 @@ class ReadOnlyStudyDao(
     ReadOnlyAreaDao,
 ):
     @abstractmethod
+    def get_study_id(self) -> str:
+        raise NotImplementedError()
+
+    @abstractmethod
     def get_version(self) -> StudyVersion:
         raise NotImplementedError()
 
     @abstractmethod
     def get_comments(self) -> str:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_synthesis(self) -> StudyDataSynthesis:
         raise NotImplementedError()
 
 
@@ -186,12 +195,20 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         self._adaptee = adaptee
 
     @override
+    def get_study_id(self) -> str:
+        return self._adaptee.get_study_id()
+
+    @override
     def get_version(self) -> StudyVersion:
         return self._adaptee.get_version()
 
     @override
     def get_comments(self) -> str:
         return self._adaptee.get_comments()
+
+    @override
+    def get_synthesis(self) -> StudyDataSynthesis:
+        return self._adaptee.get_synthesis()
 
     @override
     def get_links(self) -> Sequence[Link]:
