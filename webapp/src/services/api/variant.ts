@@ -22,7 +22,7 @@ import type {
 import { convertStudyDtoToMetadata, convertVariantTreeDTO } from "../utils";
 import client from "./client";
 import type { FileDownloadTask } from "./downloads";
-import type { TaskDTO } from "./tasks/types";
+import { taskSchema } from "./tasks/schemas";
 
 export const getVariantTree = async (id: string): Promise<VariantTree> => {
   const res = await client.get(`/v1/studies/${id}/variants`);
@@ -114,15 +114,10 @@ export const applyCommands = async (studyId: string, denormalize = false): Promi
   return res.data;
 };
 
-export const getStudyTask = async (studyId: string): Promise<TaskDTO> => {
+export async function getStudyTask(studyId: string) {
   const res = await client.get(`/v1/studies/${studyId}/task`);
-  return res.data;
-};
-
-export const getTask = async (id: string, withLogs = false): Promise<TaskDTO> => {
-  const res = await client.get(`/v1/tasks/${id}?with_logs=${withLogs}`);
-  return res.data;
-};
+  return taskSchema.parse(res.data);
+}
 
 export const getStudySynthesis = async (studyId: string): Promise<StudySynthesis> => {
   const res = await client.get(`/v1/studies/${studyId}/synthesis`);

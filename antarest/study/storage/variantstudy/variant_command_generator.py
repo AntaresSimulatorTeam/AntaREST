@@ -19,7 +19,6 @@ from antarest.core.utils.utils import StopWatch
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.utils import update_antares_info
 from antarest.study.storage.variantstudy.model.command.common import CommandOutput, command_failed
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -104,7 +103,6 @@ def apply_commands_to_variant(
 ) -> GenerationResultInfoDTO:
     # Build file study
     logger.info("Building study tree")
-    update_antares_info(metadata, study.tree, update_author=True)
 
     return _generate(
         commands,
@@ -112,8 +110,10 @@ def apply_commands_to_variant(
         lambda command, data, _listener: command.apply(
             FileStudyTreeDao(
                 cast(FileStudy, data),
+                True,
                 command.command_context.generator_matrix_constants,
                 command.command_context.blob_service,
+                command.command_context.matrix_service,
             ),
             _listener,
         ),

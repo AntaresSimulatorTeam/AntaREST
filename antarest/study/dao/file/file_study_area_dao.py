@@ -214,7 +214,7 @@ class FileStudyAreaDao(AreaDao):
         study_data.tree.save(new_area_data)
 
     def _build_area_data_structure(self, area_id: str, config: FileStudyTreeConfig) -> JSON:
-        generator_matrix_constants = self.get_impl()._generator_matrix_constants
+        generator_matrix_constants = self.get_impl().generator_matrix_constants
         null_matrix = generator_matrix_constants.get_null_matrix()
         prepro_data = {
             area_id: {

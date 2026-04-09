@@ -22,11 +22,14 @@ from sqlalchemy.orm import Session
 from antarest.core.exceptions import AreaNotFound, RenewableClusterNotFound
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableCluster,
+    RenewableClusterCreation,
     RenewableClusterGroup,
     TimeSeriesInterpretation,
 )
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.renewable import RENEWABLE_CLUSTER_TABLE, RENEWABLE_SERIES_TABLE
+from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
 def test_save_renewable_creates_cluster(db_dao: DatabaseStudyDao) -> None:
@@ -217,3 +220,16 @@ def test_area_with_no_clusters_are_absent_from_clusters_dict(db_dao: DatabaseStu
     assert "italy" not in clusters
     assert "germany" in clusters
     assert "battery" in clusters["germany"]
+
+
+def test_save_renewable_with_upper_case_name(db_dao: DatabaseStudyDao, command_context: CommandContext) -> None:
+    dao = db_dao
+    dao.save_area("fr")
+    command = CreateRenewablesCluster(
+        area_id="fr",
+        parameters=RenewableClusterCreation(name="MyRenewableCluster"),
+        command_context=command_context,
+        study_version=dao.get_version(),
+    )
+    output = command.apply(dao)
+    assert output.status  # The command should succeed even if the name is in upper case

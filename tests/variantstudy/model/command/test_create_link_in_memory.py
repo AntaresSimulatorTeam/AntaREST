@@ -53,7 +53,7 @@ class TestCreateLink:
             study_version=study_dao.get_version(),
         )
         output = create_link_command.apply(
-            study_data=study_dao,
+            study_dao=study_dao,
         )
 
         assert output.status

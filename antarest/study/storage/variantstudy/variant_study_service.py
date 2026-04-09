@@ -48,7 +48,6 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, current_time, suppress_exception
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
-from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import (
     RawStudy,
     Study,
@@ -903,23 +902,6 @@ class VariantStudyService(AbstractStorageService):
         self.raw_study_service.export_study_to_flat_directory(
             snapshot_path, dst_path, denormalize, is_managed(metadata)
         )
-
-    @override
-    def get_synthesis(self, metadata: Study) -> StudyDataSynthesis:
-        """
-        Return study synthesis
-        Args:
-            metadata: study
-        Returns: FileStudyTreeConfigDTO
-
-        """
-        if isinstance(metadata, VariantStudy):
-            self._safe_generation(metadata)
-        else:
-            raise TypeError(f"The type of the study must be {VariantStudy}, not {type(metadata)}")
-        study_path = self.get_study_path(metadata)
-        study = self.study_factory.create_from_fs(study_path, is_managed(metadata), metadata.id)
-        return StudyDataSynthesis.from_study_config(study.config)
 
     def clear_all_snapshots(self, retention_time: timedelta) -> str:
         """

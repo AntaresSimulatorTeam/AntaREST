@@ -15,7 +15,7 @@
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { bindingConstraintMutations } from "@/queries/bindingConstraints/mutations";
 import { bindingConstraintQueries } from "@/queries/bindingConstraints/queries";
-import type { QueryListItem } from "@/queries/types";
+import { createOptimisticListItem } from "@/queries/utils";
 import type { BindingConstraint } from "@/services/api/studies/bindingConstraints/type";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "@tanstack/react-router";
@@ -57,13 +57,12 @@ function useDuplicateBindingConstraint() {
       queryClient.setQueryData(queryListKey, (old = []) => {
         return [
           ...old,
-          {
+          createOptimisticListItem<BindingConstraint>({
             ...DEFAULT_CONSTRAINT_VALUES,
             ...constraintToDuplicate,
             id: tempConstraintId,
             name: newConstraintName,
-            _metadata: { isOptimistic: true },
-          } satisfies QueryListItem<BindingConstraint>,
+          }),
         ];
       });
 

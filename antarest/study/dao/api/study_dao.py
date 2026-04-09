@@ -79,6 +79,9 @@ from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
 from antarest.study.dao.api.timeseries_config_dao import ReadOnlyTimeSeriesConfigDao, TimeSeriesConfigDao
 from antarest.study.dao.api.user_resources_dao import ReadOnlyUserResourcesDao, UserResourcesDao
 from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
+from antarest.study.dao.common import ThermalSeriesMapping
+from antarest.study.dtos import StudyDataSynthesis
+from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -106,11 +109,19 @@ class ReadOnlyStudyDao(
     ReadOnlyAreaDao,
 ):
     @abstractmethod
+    def get_study_id(self) -> str:
+        raise NotImplementedError()
+
+    @abstractmethod
     def get_version(self) -> StudyVersion:
         raise NotImplementedError()
 
     @abstractmethod
     def get_comments(self) -> str:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_synthesis(self) -> StudyDataSynthesis:
         raise NotImplementedError()
 
 
@@ -162,16 +173,15 @@ class StudyDao(
         raise NotImplementedError()
 
     @abstractmethod
-    def update_antares_file(self, editor: str, last_save: float) -> None:
+    def update_antares_file(self, metadata: StudyMetadataUpdate) -> None:
         """
-        Update the study.antares file with editor and last save timestamp.
+        Update the study.antares file
 
         For file-based storage, this updates the actual file.
         For database storage, this is a no-op (metadata is stored in DB).
 
         Args:
-            editor: The name of the user who made the last edit.
-            last_save: Unix timestamp of the last save.
+            metadata: The StudyMetadata object to use
         """
         raise NotImplementedError()
 
@@ -185,12 +195,20 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         self._adaptee = adaptee
 
     @override
+    def get_study_id(self) -> str:
+        return self._adaptee.get_study_id()
+
+    @override
     def get_version(self) -> StudyVersion:
         return self._adaptee.get_version()
 
     @override
     def get_comments(self) -> str:
         return self._adaptee.get_comments()
+
+    @override
+    def get_synthesis(self) -> StudyDataSynthesis:
+        return self._adaptee.get_synthesis()
 
     @override
     def get_links(self) -> Sequence[Link]:
@@ -251,6 +269,26 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         return self._adaptee.get_thermal_co2_cost(area_id, thermal_id)
+
+    @override
+    def get_all_thermals_co2_cost(self) -> ThermalSeriesMapping:
+        return self._adaptee.get_all_thermals_co2_cost()
+
+    @override
+    def get_all_thermals_fuel_cost(self) -> ThermalSeriesMapping:
+        return self._adaptee.get_all_thermals_fuel_cost()
+
+    @override
+    def get_all_thermals_series(self) -> ThermalSeriesMapping:
+        return self._adaptee.get_all_thermals_series()
+
+    @override
+    def get_all_thermals_modulation(self) -> ThermalSeriesMapping:
+        return self._adaptee.get_all_thermals_modulation()
+
+    @override
+    def get_all_thermals_prepro(self) -> ThermalSeriesMapping:
+        return self._adaptee.get_all_thermals_prepro()
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:

@@ -28,8 +28,8 @@ def test_favorite_study(client: TestClient, admin_access_token: str) -> None:
     assert resp.status_code == 200
     resp = client.post(f"/v1/favorites/studies/{study_test_2}")
     assert resp.status_code == 200
-    fav_study_dto_1 = {"study_id": study_test_1, "study_name": "study_1"}
-    fav_study_dto_2 = {"study_id": study_test_2, "study_name": "study_2"}
+    fav_study_dto_1 = {"studyId": study_test_1, "studyName": "study_1"}
+    fav_study_dto_2 = {"studyId": study_test_2, "studyName": "study_2"}
     expected_favorite_list = [fav_study_dto_1, fav_study_dto_2]
 
     favorite_list = client.get("/v1/favorites/studies").json()
@@ -59,8 +59,8 @@ def test_directly_delete_study(client: TestClient, admin_access_token: str) -> N
     assert resp.status_code == 200
     resp = client.post(f"/v1/favorites/studies/{study_test_2}")
     assert resp.status_code == 200
-    fav_study_dto_1 = {"study_id": study_test_1, "study_name": "study_1"}
-    fav_study_dto_2 = {"study_id": study_test_2, "study_name": "study_2"}
+    fav_study_dto_1 = {"studyId": study_test_1, "studyName": "study_1"}
+    fav_study_dto_2 = {"studyId": study_test_2, "studyName": "study_2"}
 
     actual_favorite_studies = client.get("/v1/favorites/studies").json()
     assert actual_favorite_studies == [fav_study_dto_1, fav_study_dto_2]
@@ -100,7 +100,7 @@ def test_add_favorite_study_already_existing(client: TestClient, admin_access_to
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     study_test_1 = client.post("/v1/studies?name=study_test").json()
-    dto_test = {"study_id": study_test_1, "study_name": "study_test"}
+    dto_test = {"studyId": study_test_1, "studyName": "study_test"}
 
     resp = client.post(f"/v1/favorites/studies/{study_test_1}")
     assert resp.status_code == 200

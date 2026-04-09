@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import ClassVar
 
 import yaml
+from antares.study.version import SolverVersion
 
 from antarest.core.model import JSON
 from antarest.core.roles import RoleType
@@ -153,6 +154,7 @@ class OutputStorageConfig:
     enable: bool = False
     default: bool = False
     archive_dir: Path = Path("./output-archives")
+    variables_dir: Path = Path("./output-variables")
 
     @classmethod
     def from_dict(cls, data: JSON) -> "OutputStorageConfig":
@@ -161,6 +163,7 @@ class OutputStorageConfig:
             enable=data.get("enable", defaults.enable),
             default=data.get("default", defaults.default),
             archive_dir=Path(data.get("archive_dir", str(defaults.archive_dir))),
+            variables_dir=Path(data.get("variables_dir", str(defaults.variables_dir))),
         )
 
 
@@ -214,6 +217,10 @@ class StorageConfig:
     tasks_gc_retention_days: int = 30
     tasks_gc_sleeping_time: int = 86400
     tasks_gc_dry_run: bool = False
+    disk_usage_log_sleeping_time: int = 300
+    disk_usage_log_cron: str = "0 * * * *"
+    disk_space_analyzer_sleeping_time: int = 300
+    disk_space_analyzer_cron: str = "0 1 * * *"
     study_storage: StudyStorageConfig = StudyStorageConfig()
     output: OutputStorageConfig = OutputStorageConfig()
 
@@ -372,7 +379,7 @@ class LocalConfig:
     id: str
     name: str
     type: ClassVar[LauncherType] = LauncherType.LOCAL
-    binaries: dict[str, Path] = field(default_factory=dict)
+    binaries: dict[SolverVersion, Path] = field(default_factory=dict)
     enable_nb_cores_detection: bool = True
     nb_cores: NbCoresConfig = NbCoresConfig()
     time_limit: TimeLimitConfig = TimeLimitConfig()
@@ -387,7 +394,7 @@ class LocalConfig:
             data: Parse config from dict.
         Returns: object NbCoresConfig
         """
-        binaries = {str(k): Path(v) for k, v in data.get("binaries", {}).items()}
+        binaries = {SolverVersion.parse(str(k)): Path(v) for k, v in data.get("binaries", {}).items()}
         enable_nb_cores_detection = data.get("enable_nb_cores_detection", True)
         nb_cores = data.get("nb_cores", asdict(NbCoresConfig()))
         if enable_nb_cores_detection:
@@ -439,7 +446,7 @@ class SlurmConfig:
     slurm_script_path: str = ""
     partition: str = ""
     max_cores: int = 64
-    antares_versions_on_remote_server: list[str] = field(default_factory=list)
+    antares_versions_on_remote_server: list[SolverVersion] = field(default_factory=list)
     enable_nb_cores_detection: bool = False
 
     @classmethod
@@ -463,6 +470,8 @@ class SlurmConfig:
         # In the configuration file, the default time limit is in seconds, so we convert it to hours
         max_time_limit = data.get("default_time_limit", TimeLimitConfig().max * 3600) // 3600
         time_limit = TimeLimitConfig(min=1, default=max_time_limit, max=max_time_limit)
+        antares_versions_as_str = data.get("antares_versions_on_remote_server", [])
+        antares_versions_on_remote_server = [SolverVersion.parse(str(v)) for v in antares_versions_as_str]
         return cls(
             id=data["id"],
             name=data["name"],
@@ -478,10 +487,7 @@ class SlurmConfig:
             default_json_db_name=data.get("default_json_db_name", ""),
             slurm_script_path=data.get("slurm_script_path", ""),
             partition=data.get("partition", ""),
-            antares_versions_on_remote_server=data.get(
-                "antares_versions_on_remote_server",
-                [],
-            ),
+            antares_versions_on_remote_server=antares_versions_on_remote_server,
             max_cores=data.get("max_cores", 64),
             enable_nb_cores_detection=enable_nb_cores_detection,
             nb_cores=NbCoresConfig(**nb_cores),

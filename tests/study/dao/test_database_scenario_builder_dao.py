@@ -94,7 +94,7 @@ def test_save_ruleset_with_binding_constraints(db_dao: DatabaseStudyDao) -> None
 def test_save_ruleset_with_thermal_scenarios(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     _setup_areas(dao, "fr")
-    dao.save_thermal("fr", ThermalCluster(id="gas_cluster", name="Gas Cluster"))
+    dao.save_thermals({"fr": [ThermalCluster(name="Gas_Cluster")]})
     ruleset = Ruleset(thermal={"fr": {"gas_cluster": {"0": 1, "1": 2}}})
     dao.save_scenario_builder(ruleset)
     result = dao.get_ruleset()
@@ -171,8 +171,7 @@ def test_get_scenario_by_type_binding_constraints(db_dao: DatabaseStudyDao) -> N
 def test_get_scenario_by_type_thermal(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     _setup_areas(dao, "fr")
-    dao.save_thermal("fr", ThermalCluster(id="gas", name="Gas"))
-    dao.save_thermal("fr", ThermalCluster(id="nuc", name="Nuc"))
+    dao.save_thermals({"fr": [ThermalCluster(name="Gas"), ThermalCluster(name="Nuc")]})
     dao.save_scenario_builder(Ruleset(thermal={"fr": {"gas": {"0": 1}, "nuc": {"0": 2}}}))
 
     result = dao.get_scenario_by_type(ScenarioType.THERMAL)
@@ -220,7 +219,7 @@ def test_scenario_builder_thermal_deleted(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     _setup_areas(dao, "fr")
 
-    dao.save_thermal("fr", ThermalCluster(id="gas", name="Gas"))
+    dao.save_thermals({"fr": [ThermalCluster(name="Gas")]})
     dao.save_scenario_builder(Ruleset(thermal={"fr": {"gas": {"0": 1}}}))
 
     result = dao.get_scenario_by_type(ScenarioType.THERMAL)
@@ -333,7 +332,7 @@ def test_scenario_builder_area_deleted_cascades(db_dao: DatabaseStudyDao) -> Non
     dao = db_dao
     _setup_areas(dao, "fr")
 
-    dao.save_thermal("fr", ThermalCluster(id="gas", name="Gas"))
+    dao.save_thermals({"fr": [ThermalCluster(name="Gas")]})
     dao.save_renewable("fr", RenewableCluster(id="wind", name="Wind"))
     dao.save_scenario_builder(
         Ruleset(

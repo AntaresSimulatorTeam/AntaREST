@@ -27,6 +27,7 @@ from antares.study.version import SolverVersion
 from typing_extensions import override
 
 from antarest.core.config import LocalConfig
+from antarest.core.exceptions import UnsupportedStudyVersion
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.jwt import JWTUser
@@ -72,27 +73,17 @@ class LocalLauncher(AbstractLauncher):
         self.job_id_to_study_id: dict[str, tuple[str, Path, subprocess.Popen]] = {}  # type: ignore
         self.logs: dict[str, str] = {}
 
-    def _select_best_binary(self, version: str) -> Path:
+    def _select_best_binary(self, version: SolverVersion) -> Path:
         if version in self.local_config.binaries:
-            antares_solver_path = self.local_config.binaries[version]
-        else:
-            # sourcery skip: extract-method, max-min-default
-            # fixme: `version` must remain a string, consider using a `Version` class
-            version_int = int(version)
-            keys = list(map(int, self.local_config.binaries.keys()))
-            keys_sup = [k for k in keys if k > version_int]
-            best_existing_version = min(keys_sup) if keys_sup else max(keys)
-            antares_solver_path = self.local_config.binaries[str(best_existing_version)]
-            logger.warning(
-                f"Version {version} is not available. Version {best_existing_version} has been selected instead"
-            )
-        return antares_solver_path
+            return self.local_config.binaries[version]
+
+        raise UnsupportedStudyVersion(f"Solver version {version} not found in the application config")
 
     @override
     def run_study(
         self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
     ) -> None:
-        antares_solver_path = self._select_best_binary(f"{version:ddd}")
+        antares_solver_path = self._select_best_binary(version)
         self.submitted_jobs[job_id] = launcher_parameters
 
         job = threading.Thread(
@@ -281,15 +272,10 @@ class LocalLauncher(AbstractLauncher):
         if job_id in self.job_id_to_study_id:
             return self.job_id_to_study_id[job_id][2].send_signal(signal.SIGTERM)
         else:
-            self.callbacks.update_status(
-                job_id,
-                JobStatus.FAILED,
-                None,
-                None,
-            )
+            self.callbacks.update_status(job_id, JobStatus.FAILED, None, None)
 
     @override
-    def get_solver_versions(self) -> list[str]:
+    def get_solver_versions(self) -> list[SolverVersion]:
         return sorted(self.local_config.binaries)
 
     @override

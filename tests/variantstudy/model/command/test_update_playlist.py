@@ -15,11 +15,13 @@ from antarest.study.business.model.config.playlist_model import PlaylistUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestUpdatePlaylist:
     def test_nominal_case(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         study = empty_study_880
+        dao = build_dao_from_file_study(study, command_context)
 
         study.tree.save(5, ["settings", "generaldata", "general", "nbyears"])
 
@@ -33,7 +35,7 @@ class TestUpdatePlaylist:
         command = UpdatePlaylist(
             playlist=properties, command_context=command_context, study_version=study.config.version
         )
-        output = command.apply(study_data=study)
+        output = command.apply(study_dao=dao)
         assert output.status
 
         playlist_config = study.tree.get(["settings", "generaldata", "playlist"])
@@ -46,6 +48,7 @@ class TestUpdatePlaylist:
 
     def test_error_cases(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         study = empty_study_880
+        dao = build_dao_from_file_study(study, command_context)
 
         # Try to give a negative value for the year
         args = {"years": {-1: {"status": False, "weight": 3.2}}}
@@ -59,5 +62,5 @@ class TestUpdatePlaylist:
         command = UpdatePlaylist(
             playlist=properties, command_context=command_context, study_version=study.config.version
         )
-        output = command.apply(study_data=study)
+        output = command.apply(study_dao=dao)
         assert not output.status

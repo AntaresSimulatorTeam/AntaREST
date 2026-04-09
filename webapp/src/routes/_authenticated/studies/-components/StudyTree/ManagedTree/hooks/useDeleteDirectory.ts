@@ -12,13 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { directoryKeys } from "@/queries/directories/keys";
 import { directoryQueries } from "@/queries/directories/queries";
 import { deleteDirectory } from "@/services/api/directories";
 import type { Directory } from "@/services/api/directories/types";
 import { toError } from "@/utils/fnUtils";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 interface UseDeleteDirectoryOptions {
   onSuccess?: () => void;
@@ -95,7 +96,7 @@ export function useDeleteDirectory(options?: UseDeleteDirectoryOptions) {
       enqueueErrorSnackbar(t("studies.deleteDirectory.error"), toError(error));
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: directoryQueries.list().queryKey });
+      queryClient.invalidateQueries({ queryKey: directoryKeys.all });
 
       options?.onSuccess?.();
     },

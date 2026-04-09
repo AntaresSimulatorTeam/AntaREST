@@ -9,8 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import typing as t
-from typing import Self
+from typing import TYPE_CHECKING, Self
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -39,11 +38,15 @@ from antarest.study.dao.file.file_study_thermal_dao import FileStudyThermalDao
 from antarest.study.dao.file.file_study_timseries_config_dao import FileStudyTimeSeriesConfigDao
 from antarest.study.dao.file.file_study_user_resources_dao import FileStudyUserResourceDao
 from antarest.study.dao.file.file_study_xpansion_dao import FileStudyXpansionDao
+from antarest.study.dtos import StudyDataSynthesis
+from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:
     from antarest.blobstore.service import IBlobService
+    from antarest.matrixstore.service import ISimpleMatrixService
     from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
@@ -78,12 +81,36 @@ class FileStudyTreeDao(
     def __init__(
         self,
         study: FileStudy,
+        is_study_managed: bool,
         generator_matrix_constants: "GeneratorMatrixConstants",
         blob_service: "IBlobService",
+        matrix_service: "ISimpleMatrixService",
     ) -> None:
         self._file_study = study
         self._generator_matrix_constants = generator_matrix_constants
         self._blob_service = blob_service
+        self._matrix_service = matrix_service
+        self._is_study_managed = is_study_managed
+
+    @property
+    def matrix_service(self) -> "ISimpleMatrixService":
+        return self._matrix_service
+
+    @property
+    def blob_service(self) -> "IBlobService":
+        return self._blob_service
+
+    @property
+    def generator_matrix_constants(self) -> "GeneratorMatrixConstants":
+        return self._generator_matrix_constants
+
+    @override
+    def get_study_id(self) -> str:
+        return self._file_study.config.study_id
+
+    @override
+    def get_synthesis(self) -> StudyDataSynthesis:
+        return StudyDataSynthesis.from_study_config(self._file_study.config)
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -108,10 +135,16 @@ class FileStudyTreeDao(
         self._file_study.tree.save({"settings": {"comments": comments.encode("utf-8")}})
 
     @override
-    def update_antares_file(self, editor: str, last_save: float) -> None:
+    def update_antares_file(self, metadata: StudyMetadataUpdate) -> None:
         study_antares = self._file_study.tree.get(["study", "antares"])
-        study_antares["editor"] = editor
-        study_antares["lastsave"] = last_save
+        if metadata.editor:
+            study_antares["editor"] = metadata.editor
+        if metadata.last_save:
+            study_antares["lastsave"] = metadata.last_save
+        if metadata.name:
+            study_antares["caption"] = metadata.name
+        if metadata.author:
+            study_antares["author"] = metadata.author
         self._file_study.tree.save(study_antares, ["study", "antares"])
 
     def get_matrix(self, url: list[str]) -> pl.DataFrame:
@@ -123,3 +156,56 @@ class FileStudyTreeDao(
         if isinstance(node, InputSeriesMatrix):
             return node.parse_as_dataframe()
         raise NotAMatrixError(url)
+
+    def get_matrices_ids(self, nodes: list[MatrixNode]) -> dict[MatrixNode, str]:
+        """
+        Get multiple matrices ids efficiently.
+        It performs at most 1 DB query for the whole list
+        """
+        result = {}
+
+        denormalized_nodes = []
+
+        for matrix_node in nodes:
+            if matrix_node.is_normalized:
+                # For the normalized nodes, we simply get the matrix id from the matrix mapper.
+                matrix_id = matrix_node.matrix_mapper.get_link_content(matrix_node)
+                assert isinstance(matrix_id, str)
+                result[matrix_node] = matrix_id
+            else:
+                denormalized_nodes.append(matrix_node)
+
+        ########## Denormalized nodes ##########
+        # The `create_batch` allows us to perform only 1 DB insert for all our matrix ids.
+        matrix_service = self._generator_matrix_constants.matrix_service
+        matrix_ids = matrix_service.create_batch(node.parse_content() for node in denormalized_nodes)
+        for k, node in enumerate(denormalized_nodes):
+            result[node] = matrix_ids[k]
+
+        return result
+
+    def save_matrices(self, matrices_mapping: dict[str, list[MatrixNode]]) -> None:
+        """
+        Saves multiple matrices in their corresponding nodes efficiently.
+        It performs 1 DB query for the whole list
+        """
+        if not self._is_study_managed:
+            # The `yield_matrices` allows us to perform only 1 DB query for all our matrix ids.
+            for matrix_content in self._matrix_service.yield_matrices(list(matrices_mapping)):
+                dataframe = matrix_content.data
+                for node in matrices_mapping[matrix_content.id]:
+                    node.write_dataframe(dataframe)
+
+            return
+
+        # First, we check if all the matrices are already in the database in 1 single DB query.
+        if not self._matrix_service.all_exist(list(matrices_mapping)):
+            # Perform other DB queries to raise the proper exception if needed.
+            for matrix_id in matrices_mapping:
+                if not self._matrix_service.exists(matrix_id):
+                    raise ValueError(f"Matrix {matrix_id} does not exist")
+
+        # We simply save the matrix in the matrix mapper of each node.
+        for matrix_id, matrix_nodes in matrices_mapping.items():
+            for matrix_node in matrix_nodes:
+                matrix_node.matrix_mapper.save_matrix(matrix_node, matrix_id)

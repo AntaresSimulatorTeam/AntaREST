@@ -622,7 +622,7 @@ class LauncherService:
 
         return launcher.get_load()
 
-    def get_solver_versions(self, launcher_id: str | None) -> list[str]:
+    def get_solver_versions(self, launcher_id: str | None) -> list[SolverVersion]:
         """
         Fetch the list of solver versions from the configuration.
 

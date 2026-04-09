@@ -10,48 +10,51 @@
 #
 # This file is part of the Antares project.
 from antarest.core.serde.ini_reader import IniReader
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_renewables_clusters import UpdateRenewablesClusters
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import dirhash
+from tests.helpers import build_dao_from_file_study, dirhash
 
 
 class TestUpdateRenewableCluster:
-    def _set_up(self, study: FileStudy, command_context: CommandContext) -> None:
-        CreateArea(area_name="FR", command_context=command_context, study_version=study.config.version).apply(study)
-        CreateArea(area_name="de", command_context=command_context, study_version=study.config.version).apply(study)
+    def _set_up(self, study: FileStudy, command_context: CommandContext) -> FileStudyTreeDao:
+        dao = build_dao_from_file_study(study, command_context)
+        CreateArea(area_name="FR", command_context=command_context, study_version=study.config.version).apply(dao)
+        CreateArea(area_name="de", command_context=command_context, study_version=study.config.version).apply(dao)
         # Modify the general data to put the sutdy in mode clusters
         UpdateConfig(
             target="settings/generaldata/other preferences/renewable-generation-modelling",
             data="clusters",
             command_context=command_context,
             study_version=study.config.version,
-        ).apply(study)
+        ).apply(dao)
         CreateRenewablesCluster(
             area_id="fr",
             parameters={"name": "CLUSTER_1"},
             command_context=command_context,
             study_version=study.config.version,
-        ).apply(study)
+        ).apply(dao)
         CreateRenewablesCluster(
             area_id="fr",
             parameters={"name": "cluster_2"},
             command_context=command_context,
             study_version=study.config.version,
-        ).apply(study)
+        ).apply(dao)
         CreateRenewablesCluster(
             area_id="de",
             parameters={"name": "Cluster_3"},
             command_context=command_context,
             study_version=study.config.version,
-        ).apply(study)
+        ).apply(dao)
+        return dao
 
     def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         study = empty_study_870
-        self._set_up(study, command_context)
+        dao = self._set_up(study, command_context)
         study_version = study.config.version
         study_path = study.config.study_path
 
@@ -98,7 +101,7 @@ class TestUpdateRenewableCluster:
             command_context=command_context,
             study_version=study_version,
         )
-        output = cmd.apply(study)
+        output = cmd.apply(dao)
         assert output.status is True
         assert output.message == "The renewable clusters were successfully updated."
 
@@ -112,7 +115,7 @@ class TestUpdateRenewableCluster:
 
     def test_error_cases(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         study = empty_study_880
-        self._set_up(study, command_context)
+        dao = self._set_up(study, command_context)
         study_version = study.config.version
 
         # Fake area
@@ -121,7 +124,7 @@ class TestUpdateRenewableCluster:
             command_context=command_context,
             study_version=study_version,
         )
-        output = cmd.apply(study)
+        output = cmd.apply(dao)
         assert output.status is False
         assert output.message == "The area 'fake_area' is not found."
 
@@ -134,7 +137,7 @@ class TestUpdateRenewableCluster:
             command_context=command_context,
             study_version=study_version,
         )
-        output = cmd.apply(study)
+        output = cmd.apply(dao)
         assert output.status is False
         assert output.message == "The renewable cluster 'fake_cluster' in the area 'fr' is not found."
         hash_after_update = dirhash(study.config.study_path / "input" / "renewables", "md5")

@@ -21,11 +21,13 @@ from antarest.study.storage.variantstudy.model.command.update_adequacy_patch_par
     UpdateAdequacyPatchParameters,
 )
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestAdequacyPatchParameters:
     def test_nominal_case(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         study = empty_study_880
+        dao = build_dao_from_file_study(study, command_context)
         general_data_content = study.tree.get(["settings", "generaldata"])
 
         args = {"price_taking_order": "Load", "enable_adequacy_patch": True}
@@ -34,7 +36,7 @@ class TestAdequacyPatchParameters:
         command = UpdateAdequacyPatchParameters(
             parameters=parameters, command_context=command_context, study_version=study.config.version
         )
-        output = command.apply(study_data=study)
+        output = command.apply(dao)
         assert output.status
 
         general_data_content["adequacy patch"]["price-taking-order"] = "Load"
