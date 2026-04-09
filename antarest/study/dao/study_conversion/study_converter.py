@@ -186,6 +186,13 @@ class StudyConverter:
             renewables = {area_id: list(value.values()) for area_id, value in renewable_clusters.items()}
             self._convert_renewable_clusters(renewables)
 
+        # Various area matrices
+        self._new_dao.save_load(self._source_dao.get_all_load())
+        self._new_dao.save_solar(self._source_dao.get_all_solar())
+        self._new_dao.save_wind(self._source_dao.get_all_wind())
+        self._new_dao.save_reserves(self._source_dao.get_all_reserves())
+        self._new_dao.save_misc_gen(self._source_dao.get_all_misc_gen())
+
         for area_id in area_properties:
             # Properties
             self._new_dao.save_area_properties(area_id, area_properties[area_id])
@@ -201,22 +208,6 @@ class StudyConverter:
 
             # Hydro
             self._convert_hydro(area_id, hydro_properties[area_id])
-
-            # Various matrices
-            load = self._matrix_service.create(self._source_dao.get_load(area_id))
-            self._new_dao.save_load(area_id, load)
-
-            solar = self._matrix_service.create(self._source_dao.get_solar(area_id))
-            self._new_dao.save_solar(area_id, solar)
-
-            wind = self._matrix_service.create(self._source_dao.get_wind(area_id))
-            self._new_dao.save_wind(area_id, wind)
-
-            reserves = self._matrix_service.create(self._source_dao.get_reserves(area_id))
-            self._new_dao.save_reserves(area_id, reserves)
-
-            misc_gen = self._matrix_service.create(self._source_dao.get_misc_gen(area_id))
-            self._new_dao.save_misc_gen(area_id, misc_gen)
 
             # Short-term storages
             if self._study_version >= STUDY_VERSION_8_6:

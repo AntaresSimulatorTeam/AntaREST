@@ -18,3 +18,4 @@ SeriesId: TypeAlias = str
 
 ThermalSeriesMapping: TypeAlias = dict[AreaId, dict[ThermalId, SeriesId]]
 RenewableSeriesMapping: TypeAlias = dict[AreaId, dict[RenewableId, SeriesId]]
+AreaSeriesMapping: TypeAlias = dict[AreaId, SeriesId]

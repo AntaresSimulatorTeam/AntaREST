@@ -65,7 +65,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettingsUpdate,
 )
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.dao.common import AreaId, RenewableSeriesMapping, ThermalSeriesMapping
+from antarest.study.dao.common import AreaId, AreaSeriesMapping, RenewableSeriesMapping, ThermalSeriesMapping
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -1020,7 +1020,6 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def get_invalid_area_ids(self, areas: list[str]) -> list[str]:
-        # TODO make this actually work once we implement area DAO
         return list(set(areas) - set(self._area_names))
 
     @override
@@ -1287,21 +1286,46 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def save_load(self, area_id: str, series_id: str) -> None:
-        self._load[area_id] = series_id
+    def get_all_load(self) -> AreaSeriesMapping:
+        return self._load
 
     @override
-    def save_misc_gen(self, area_id: str, series_id: str) -> None:
-        self._misc_gen[area_id] = series_id
+    def get_all_misc_gen(self) -> AreaSeriesMapping:
+        return self._misc_gen
 
     @override
-    def save_reserves(self, area_id: str, series_id: str) -> None:
-        self._reserves[area_id] = series_id
+    def get_all_reserves(self) -> AreaSeriesMapping:
+        return self._reserves
 
     @override
-    def save_solar(self, area_id: str, series_id: str) -> None:
-        self._solar[area_id] = series_id
+    def get_all_solar(self) -> AreaSeriesMapping:
+        return self._solar
 
     @override
-    def save_wind(self, area_id: str, series_id: str) -> None:
-        self._wind[area_id] = series_id
+    def get_all_wind(self) -> AreaSeriesMapping:
+        return self._wind
+
+    @override
+    def save_load(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._load[area_id] = series_id
+
+    @override
+    def save_misc_gen(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._misc_gen[area_id] = series_id
+
+    @override
+    def save_reserves(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._reserves[area_id] = series_id
+
+    @override
+    def save_solar(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._solar[area_id] = series_id
+
+    @override
+    def save_wind(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._wind[area_id] = series_id
