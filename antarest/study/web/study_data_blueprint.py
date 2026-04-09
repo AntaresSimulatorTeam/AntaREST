@@ -94,6 +94,10 @@ from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
     RenewableClusterUpdate,
 )
+from antarest.study.business.model.reserves_global_parameters_model import (
+    ReservesGlobalParameters,
+    ReservesGlobalParametersUpdate,
+)
 from antarest.study.business.model.scenario_builder_model import AnyScenarios, ScenarioType
 from antarest.study.business.model.sts_model import (
     STStorage,
@@ -1516,6 +1520,52 @@ def create_study_data_routes() -> APIRouter:
             study_interface,
             {area_id: form_fields},
         )
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/reserves/global-parameters",
+        summary="Get reserves global parameters for a given area",
+    )
+    def get_reserves_global_parameters(
+        study_service: StudyServiceDep,
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+    ) -> ReservesGlobalParameters:
+        logger.info("Getting reserves global parameters for study %s and area %s", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserves_global_parameters_manager.get_reserves_global_parameters(study_interface, area_id)
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/reserves/global-parameters",
+        summary="Update reserves global parameters for a given area",
+    )
+    def set_reserves_global_parameters(
+        study_service: StudyServiceDep,
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        form_fields: ReservesGlobalParametersUpdate,
+    ) -> ReservesGlobalParameters:
+        logger.info("Setting reserves global parameters for study %s and area %s", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserves_global_parameters_manager.update_reserves_global_parameters(
+            study_interface, area_id, form_fields
+        )
+
+    @bp.delete(
+        path="/studies/{uuid}/areas/{area_id}/reserves/global-parameters",
+        summary="Reset reserves global parameters to defaults for a given area",
+        status_code=204,
+    )
+    def delete_reserves_global_parameters(
+        study_service: StudyServiceDep,
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+    ) -> None:
+        logger.info("Deleting reserves global parameters for study %s and area %s", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        study_service.reserves_global_parameters_manager.delete_reserves_global_parameters(study_interface, area_id)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",

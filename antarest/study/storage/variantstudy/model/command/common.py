@@ -105,6 +105,7 @@ class CommandName(Enum):
     REPLACE_HYDRO_CORRELATION = "replace_hydro_correlation"
     CONVERT_HYDRO_PMAX = "convert_hydro_pmax"
     UPDATE_RESERVES_ENABLED = "update_reserves_enabled"
+    UPDATE_RESERVES_GLOBAL_PARAMETERS = "update_reserves_global_parameters"
 
 
 @dataclass(frozen=True)

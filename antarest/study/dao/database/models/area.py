@@ -84,3 +84,15 @@ SOLAR_TABLE = _create_matrix_table("solar")
 WIND_TABLE = _create_matrix_table("wind")
 RESERVES_TABLE = _create_matrix_table("reserves")
 MISC_GEN_TABLE = _create_matrix_table("misc_gen")
+
+RESERVES_GLOBAL_PARAMETERS_TABLE = Table(
+    "reserves_global_parameters",
+    metadata,
+    Column("study_id", String(36), nullable=False, primary_key=True),
+    Column("area_id", String(255), nullable=False, primary_key=True),
+    Column("reference_activation_duration_up", Integer, nullable=False),
+    Column("energy_activation_ratio_up", Float, nullable=False),
+    Column("reference_activation_duration_down", Integer, nullable=False),
+    Column("energy_activation_ratio_down", Float, nullable=False),
+    ForeignKeyConstraint(["study_id", "area_id"], ["area.study_id", "area.area_id"], ondelete="CASCADE"),
+)

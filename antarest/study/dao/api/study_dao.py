@@ -33,6 +33,7 @@ from antarest.study.business.model.hydro_model import HydroManagement, HydroProp
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.business.model.scenario_builder_model import AnyScenarios, Ruleset, ScenarioType
 from antarest.study.business.model.sts_model import (
     STStorage,
@@ -72,6 +73,10 @@ from antarest.study.dao.api.optimization_preferences_dao import (
 )
 from antarest.study.dao.api.playlist_config_dao import PlaylistConfigDao, ReadOnlyPlaylistConfigDao
 from antarest.study.dao.api.renewable_dao import ReadOnlyRenewableDao, RenewableDao
+from antarest.study.dao.api.reserves_global_parameters_dao import (
+    ReadOnlyReservesGlobalParametersDao,
+    ReservesGlobalParametersDao,
+)
 from antarest.study.dao.api.scenario_builder_dao import ReadOnlyScenarioBuilderDao, ScenarioBuilderDao
 from antarest.study.dao.api.st_storage_dao import ReadOnlySTStorageDao, STStorageDao
 from antarest.study.dao.api.thematic_trimming_dao import ReadOnlyThematicTrimmingDao, ThematicTrimmingDao
@@ -107,6 +112,7 @@ class ReadOnlyStudyDao(
     ReadOnlyAreaPropertiesDao,
     ReadOnlyScenarioBuilderDao,
     ReadOnlyAreaDao,
+    ReadOnlyReservesGlobalParametersDao,
 ):
     @abstractmethod
     def get_study_id(self) -> str:
@@ -148,6 +154,7 @@ class StudyDao(
     ScenarioBuilderDao,
     AreaPropertiesDao,
     AreaDao,
+    ReservesGlobalParametersDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -641,3 +648,11 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_hydro_max_daily_pump_energy(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_max_daily_pump_energy(area_id)
+
+    @override
+    def get_reserves_global_parameters(self, area_id: str) -> ReservesGlobalParameters:
+        return self._adaptee.get_reserves_global_parameters(area_id)
+
+    @override
+    def get_all_reserves_global_parameters(self) -> dict[str, ReservesGlobalParameters]:
+        return self._adaptee.get_all_reserves_global_parameters()
