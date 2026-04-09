@@ -165,7 +165,7 @@ def test_manage_binding_constraint(
                 data=RulesetUpdate(binding_constraints={"default": {"0": 1}}),
                 command_context=command_context,
                 study_version=study_version,
-            ).apply(study_data=db_dao_versioned)
+            ).apply(study_dao=db_dao_versioned)
             assert output.status, output.message
 
         output = RemoveMultipleBindingConstraints(
@@ -223,7 +223,7 @@ def test_scenario_builder(db_dao: DatabaseStudyDao, command_context: CommandCont
         data=RulesetUpdate(binding_constraints={bc_group.lower(): {"0": 1}}),
         command_context=command_context,
         study_version=study_version,
-    ).apply(study_data=db_dao)
+    ).apply(study_dao=db_dao)
     assert output.status, output.message
 
     assert db_dao.get_ruleset().binding_constraints == {"group 1": {"0": 1}}
