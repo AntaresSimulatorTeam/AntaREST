@@ -330,7 +330,7 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
     # Create renewable cluster matrices
     renewable_id = "battery"
     dao.save_renewable(area_id, RenewableCluster(id=renewable_id, name="Battery Fr"))
-    dao.save_renewable_series(area_id, renewable_id, renewable_series_id)
+    dao.save_renewable_series({area_id: {renewable_id: renewable_series_id}})
 
     # Create ST Storage matrices
     st_storage_id = "battery_storage"

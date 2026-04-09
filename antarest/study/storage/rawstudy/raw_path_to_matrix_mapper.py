@@ -55,6 +55,9 @@ class RawPathToMatrixMapper:
         def _save_thermal_co2_cost(area_id: str, thermal_id: str, series_id: str) -> None:
             dao.save_thermal_co2_cost({area_id: {thermal_id: series_id}})
 
+        def _save_renewable_series(area_id: str, renewable_id: str, series_id: str) -> None:
+            dao.save_renewable_series({area_id: {renewable_id: series_id}})
+
         self._path_matchers = [
             RegexMatcher(
                 pattern=re.compile(r"user/expansion/capa/(?P<filename>[^/]+)"),
@@ -129,7 +132,7 @@ class RawPathToMatrixMapper:
             RegexMatcher(
                 pattern=re.compile(r"input/renewables/series/(?P<area_id>[^/]+)/(?P<renewable_id>[^/]+)/series"),
                 getter=dao.get_renewable_series,
-                setter=dao.save_renewable_series,
+                setter=_save_renewable_series,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/pmax_injection"),

@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from collections.abc import Sequence
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -182,6 +181,11 @@ class StudyConverter:
         thermals = {area_info.id: area_info.thermals or [] for area_info in area_names_and_thermals.values()}
         self._convert_thermal_clusters(thermals)
 
+        # Renewables
+        if self._study_version >= STUDY_VERSION_8_1 and renewable_clusters:
+            renewables = {area_id: list(value.values()) for area_id, value in renewable_clusters.items()}
+            self._convert_renewable_clusters(renewables)
+
         for area_id in area_properties:
             # Properties
             self._new_dao.save_area_properties(area_id, area_properties[area_id])
@@ -214,11 +218,6 @@ class StudyConverter:
             misc_gen = self._matrix_service.create(self._source_dao.get_misc_gen(area_id))
             self._new_dao.save_misc_gen(area_id, misc_gen)
 
-            # Renewables
-            if self._study_version >= STUDY_VERSION_8_1:
-                renewables = list(renewable_clusters.get(area_id, {}).values())
-                self._convert_renewable_clusters(area_id, renewables)
-
             # Short-term storages
             if self._study_version >= STUDY_VERSION_8_6:
                 storages = list(st_storages.get(area_id, {}).values())
@@ -244,12 +243,12 @@ class StudyConverter:
             co2_cost_mapping = self._source_dao.get_all_thermals_co2_cost()
             self._new_dao.save_thermal_co2_cost(co2_cost_mapping)
 
-    def _convert_renewable_clusters(self, area_id: str, renewables: Sequence[RenewableCluster]) -> None:
-        self._new_dao.save_renewables(area_id, renewables)
-        for renewable in renewables:
-            renewable_id = renewable.id.lower()
-            series_id = self._matrix_service.create(self._source_dao.get_renewable_series(area_id, renewable_id))
-            self._new_dao.save_renewable_series(area_id, renewable_id, series_id)
+    def _convert_renewable_clusters(self, data: dict[str, list[RenewableCluster]]) -> None:
+        self._new_dao.save_renewables(data)
+
+        # Matrices
+        series_mapping = self._source_dao.get_all_renewables_series()
+        self._new_dao.save_renewable_series(series_mapping)
 
     def _convert_short_term_storages(
         self, area_id: str, storages: list[STStorage], constraints: dict[str, list[STStorageAdditionalConstraint]]

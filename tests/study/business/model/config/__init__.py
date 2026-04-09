@@ -9,12 +9,3 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import TypeAlias
-
-AreaId: TypeAlias = str
-ThermalId: TypeAlias = str
-RenewableId: TypeAlias = str
-SeriesId: TypeAlias = str
-
-ThermalSeriesMapping: TypeAlias = dict[AreaId, dict[ThermalId, SeriesId]]
-RenewableSeriesMapping: TypeAlias = dict[AreaId, dict[RenewableId, SeriesId]]
