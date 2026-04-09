@@ -52,7 +52,7 @@ class TestCreateLink:
 
     def test_apply(self, empty_study_810: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_810
-        dao = build_dao_from_file_study(empty_study, command_context)
+        dao = build_dao_from_file_study(empty_study, command_context, True)
         study_version = empty_study.config.version
         study_path = empty_study.config.study_path
         area1 = "Area1"

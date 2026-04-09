@@ -95,7 +95,7 @@ class TestRemoveLink:
     @pytest.mark.parametrize("version", [810, 820])
     def test_apply(self, tmpdir: Path, command_context: CommandContext, version: int) -> None:
         empty_study = self.make_study(tmpdir, version)
-        dao = build_dao_from_file_study(empty_study, command_context)
+        dao = build_dao_from_file_study(empty_study, command_context, True)
         study_version = empty_study.config.version
 
         # Create some areas
