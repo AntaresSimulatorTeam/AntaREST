@@ -250,10 +250,10 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
     # Also create a link with `series`, `direct_capacity` and `indirect_capacity` matrices.
     area2 = "london"
     dao.save_area(area2)
-    dao.save_link(Link(area1=area_id, area2=area2))
-    dao.save_link_series(area_id, area2, link_series_id)
-    dao.save_link_direct_capacities(area_id, area2, link_direct_id)
-    dao.save_link_indirect_capacities(area_id, area2, link_indirect_id)
+    dao.save_links([Link(area1=area_id, area2=area2)])
+    dao.save_link_series({(area_id, area2): link_series_id})
+    dao.save_link_direct_capacities({(area_id, area2): link_direct_id})
+    dao.save_link_indirect_capacities({(area_id, area2): link_indirect_id})
 
     # Create thermal cluster matrices
     thermal_id = "gas_cluster"
