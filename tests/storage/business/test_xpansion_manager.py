@@ -210,7 +210,8 @@ def test_add_candidate(
     xpansion_manager: XpansionManager,
     empty_study_810: FileStudy,
 ) -> None:
-    study = file_study_interface(empty_study_810)
+    matrix_service = xpansion_manager._command_context.matrix_service
+    study = file_study_interface(empty_study_810, matrix_service)
     xpansion_manager.create_xpansion_configuration(study)
 
     actual = study.get_files().tree.get(["user", "expansion", "candidates"])
@@ -261,7 +262,8 @@ def test_add_candidate(
 def test_add_candidate_with_weird_names(
     link_manager: LinkManager, area_manager: AreaManager, xpansion_manager: XpansionManager, empty_study_810: FileStudy
 ) -> None:
-    study = file_study_interface(empty_study_810)
+    matrix_service = xpansion_manager._command_context.matrix_service
+    study = file_study_interface(empty_study_810, matrix_service)
     xpansion_manager.create_xpansion_configuration(study)
     make_areas(area_manager, study)
     make_link(link_manager, study)
@@ -289,7 +291,8 @@ def test_get_candidate(
     xpansion_manager: XpansionManager,
     empty_study_810: FileStudy,
 ) -> None:
-    study = file_study_interface(empty_study_810)
+    matrix_service = xpansion_manager._command_context.matrix_service
+    study = file_study_interface(empty_study_810, matrix_service)
     xpansion_manager.create_xpansion_configuration(study)
     make_areas(area_manager, study)
     make_link(link_manager, study)
@@ -323,7 +326,8 @@ def test_get_candidates(
     xpansion_manager: XpansionManager,
     empty_study_810: FileStudy,
 ) -> None:
-    study = file_study_interface(empty_study_810)
+    matrix_service = xpansion_manager._command_context.matrix_service
+    study = file_study_interface(empty_study_810, matrix_service)
     xpansion_manager.create_xpansion_configuration(study)
     make_areas(area_manager, study)
     make_link(link_manager, study)
@@ -356,7 +360,8 @@ def test_update_candidates(
     xpansion_manager: XpansionManager,
     empty_study_810: FileStudy,
 ) -> None:
-    study = file_study_interface(empty_study_810)
+    matrix_service = xpansion_manager._command_context.matrix_service
+    study = file_study_interface(empty_study_810, matrix_service)
     xpansion_manager.create_xpansion_configuration(study)
     make_areas(area_manager, study)
     make_link(link_manager, study)
@@ -390,7 +395,8 @@ def test_delete_candidate(
     xpansion_manager: XpansionManager,
     empty_study_810: FileStudy,
 ) -> None:
-    study = file_study_interface(empty_study_810)
+    matrix_service = xpansion_manager._command_context.matrix_service
+    study = file_study_interface(empty_study_810, matrix_service)
     xpansion_manager.create_xpansion_configuration(study)
     make_areas(area_manager, study)
     make_link(link_manager, study)

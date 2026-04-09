@@ -64,4 +64,4 @@ def study(tmp_path: Path, matrix_service: ISimpleMatrixService) -> StudyInterfac
     mapper_factory = MatrixUriMapperFactory(matrix_service=matrix_service)
     matrix_mapper = mapper_factory.create(NormalizedMatrixUriMapper.NORMALIZED)
     empty_study_810 = FileStudy(config, FileStudyTree(matrix_mapper, config))
-    return file_study_interface(empty_study_810)
+    return file_study_interface(empty_study_810, matrix_service)
