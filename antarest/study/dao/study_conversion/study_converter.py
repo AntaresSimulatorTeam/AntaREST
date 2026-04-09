@@ -143,20 +143,13 @@ class StudyConverter:
 
     def _convert_links(self) -> None:
         links = self._source_dao.get_links()
-        for link in links:
-            self._new_dao.save_link(link)
-            # Link matrices
-            area_from, area_to = link.area1, link.area2
-            series_id = self._matrix_service.create(self._source_dao.get_link_series(area_from, area_to))
-            self._new_dao.save_link_series(area_from, area_to, series_id)
-            if self._study_version >= STUDY_VERSION_8_2:
-                direct_capacity = self._source_dao.get_link_direct_capacities(area_from, area_to)
-                direct_capacity_id = self._matrix_service.create(direct_capacity)
-                self._new_dao.save_link_direct_capacities(area_from, area_to, direct_capacity_id)
+        self._new_dao.save_links(links)
 
-                indirect_capacity = self._source_dao.get_link_indirect_capacities(area_from, area_to)
-                indirect_capacity_id = self._matrix_service.create(indirect_capacity)
-                self._new_dao.save_link_indirect_capacities(area_from, area_to, indirect_capacity_id)
+        # Link matrices
+        self._new_dao.save_link_series(self._source_dao.get_all_links_series())
+        if self._study_version >= STUDY_VERSION_8_2:
+            self._new_dao.save_link_direct_capacities(self._source_dao.get_all_links_direct_capacities())
+            self._new_dao.save_link_indirect_capacities(self._source_dao.get_all_links_indirect_capacities())
 
     def _convert_areas(self) -> None:
         area_properties = self._source_dao.get_all_area_properties()
