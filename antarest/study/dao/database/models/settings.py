@@ -117,6 +117,7 @@ COMPATIBILITY_PARAMETERS_TABLE = Table(
     metadata,
     get_study_id_col(),
     Column("hydro_pmax", Enum(HydroPmax), nullable=True),
+    Column("reserves_enabled", Boolean(), nullable=True),
     ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_compatibility_parameters_study_id", ondelete="CASCADE"),
 )
 

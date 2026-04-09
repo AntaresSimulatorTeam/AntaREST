@@ -182,7 +182,7 @@ def test_create_file_study_dao(tmp_path: Path, project_path: Path) -> None:
         updated_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
         author="john.doe",
     )
-    FileStudyDaoFactory(Mock(), study_service.study_factory).create_study_dao(metadata)
+    FileStudyDaoFactory(Mock(), study_service.study_factory, Mock()).create_study_dao(metadata)
 
     assert metadata.path == str(tmp_path / "study1")
     path_study = tmp_path / metadata.id
@@ -214,7 +214,7 @@ def test_create_study_versions(tmp_path: str, project_path: Path) -> None:
             updated_at=datetime.datetime.now(),
             author="john.doe",
         )
-        FileStudyDaoFactory(Mock(), study_service.study_factory).create_study_dao(metadata)
+        FileStudyDaoFactory(Mock(), study_service.study_factory, Mock()).create_study_dao(metadata)
         return metadata
 
     md700 = create_study("700")
