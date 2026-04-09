@@ -229,6 +229,10 @@ def test_command_matrix_usage_provider_with_snapshot(
         config=Mock(),
         user_service=Mock(),
     )
+    # Initialize default matrices in the matrix_service
+    constants = GeneratorMatrixConstants(matrix_service=matrix_service)
+    constants.init_constant_matrices()
+
     variant_study_service.command_factory.command_context.matrix_service = matrix_service
 
     # Create a RawStudy with 1 area and 1 thermal
