@@ -13,6 +13,7 @@ import contextlib
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
+from unittest.mock import Mock
 
 import polars as pl
 import pytest
@@ -75,7 +76,7 @@ def build_filesystem_dao(
     with db_session:
         db_session.add(study)
         db_session.commit()
-        factory = FileStudyDaoFactory(command_context, study_factory)
+        factory = FileStudyDaoFactory(command_context, study_factory, Mock())
         dao = factory.create_study_dao(study)
 
     return dao
