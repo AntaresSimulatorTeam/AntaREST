@@ -20,6 +20,7 @@ from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 
+from antarest.core.api_types import SanitizedStr
 from antarest.core.exceptions import InvalidConstraintTerm, InvalidFieldForVersionError
 from antarest.core.model import LowerCaseId, LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
@@ -247,7 +248,7 @@ class ConstraintTerm(AntaresBaseModel):
 # Binding constraint objects
 # ==================================================
 
-ConstraintID = NewType("ConstraintID", str)
+ConstraintID = NewType("ConstraintID", SanitizedStr)
 
 
 class BindingConstraint(AntaresBaseModel):

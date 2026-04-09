@@ -248,6 +248,8 @@ class DatabaseBindingConstraintDao(ConstraintDao):
 
     @override
     def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
+        if not constraints:
+            return  # avoid making unnecessary database calls
         changes = self._compute_matrix_changes(constraints)
         self._save_constraint_rows(constraints)
         self._save_cluster_terms(constraints)
@@ -462,8 +464,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         # Fetch only the constraints being updated, not the entire study.
         existing = self._fetch_constraints(constraint_ids=constraint_ids)
         existing_matrix_ids = self._fetch_existing_matrix_ids(constraint_ids)
-        generator = impl._generator_matrix_constants
-
+        null_matrix_id = _MatrixID(impl._generator_matrix_constants.get_null_matrix())
         changes = _MatrixChanges()
 
         for bc in constraints:
@@ -475,7 +476,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
             operator_changed = study_version >= STUDY_VERSION_8_7 and bc.operator != old.operator
 
             if time_step_changed:
-                self._handle_time_step_change(changes, bc, old, study_version, _MatrixID(generator.get_null_matrix()))
+                self._handle_time_step_change(changes, bc, old, study_version, null_matrix_id)
             elif operator_changed:
                 self._handle_operator_change(changes, bc, old, existing_matrix_ids)
 
