@@ -20,14 +20,14 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Sequence
 
 import polars as pl
-from sqlalchemy import Row, Table, delete, func, select
+from antares.study.version import StudyVersion
+from sqlalchemy import Row, Table, delete, select
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import outerjoin
 from typing_extensions import override
 
 from antarest.core.exceptions import BindingConstraintNotFound
 from antarest.study.business.model.binding_constraint_model import (
-    DEFAULT_GROUP,
     OPERATOR_MATRICES_MAP,
     BindingConstraint,
     BindingConstraintOperator,
@@ -65,6 +65,9 @@ class _MatrixType(str, Enum):
     EQ = "eq"
     VALUES = "values"
 
+
+# Maps constraint_id → (matrix_type → matrix_id)
+_MatrixIdsByConstraint = dict[str, dict["_MatrixType", str]]
 
 _MATRIX_TYPE_TABLES: dict["_MatrixType", Table] = {
     _MatrixType.LT: BINDING_CONSTRAINT_LT_MATRIX_TABLE,
@@ -118,9 +121,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
     def get_impl(self) -> "DatabaseStudyDao":
         pass
 
-    def _fetch_constraints(
-        self, constraint_id: str | None = None, constraint_ids: list[str] | None = None
-    ) -> dict[str, BindingConstraint]:
+    def _fetch_constraints(self, constraint_ids: list[str]) -> dict[str, BindingConstraint]:
         """
         Two steps in this function
         Step 1 : BC LEFT JOIN link_terms builds the result dict: one entry per constraint, pre-populated with
@@ -156,9 +157,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
             .select_from(link_join)
             .where(BC.c.study_id == self._study_id)
         )
-        if constraint_id is not None:
-            q1 = q1.where(BC.c.constraint_id == constraint_id)
-        elif constraint_ids is not None:
+        if constraint_ids:
             q1 = q1.where(BC.c.constraint_id.in_(constraint_ids))
 
         bc_rows: dict[str, Any] = {}
@@ -181,9 +180,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
 
         # Query 2: cluster terms only (BC already fetched above)
         ct_filter = CT.c.study_id == self._study_id
-        if constraint_id is not None:
-            ct_filter = ct_filter & (CT.c.constraint_id == constraint_id)
-        elif constraint_ids is not None:
+        if constraint_ids:
             ct_filter = ct_filter & (CT.c.constraint_id.in_(constraint_ids))
 
         for row in db.execute(select(CT).where(ct_filter)).fetchall():
@@ -206,11 +203,11 @@ class DatabaseBindingConstraintDao(ConstraintDao):
 
     @override
     def get_all_constraints(self) -> dict[str, BindingConstraint]:
-        return self._fetch_constraints()
+        return self._fetch_constraints([])
 
     @override
     def get_constraint(self, constraint_id: str) -> BindingConstraint:
-        result = self._fetch_constraints(constraint_id)
+        result = self._fetch_constraints([constraint_id])
         if not result:
             raise BindingConstraintNotFound(f"Constraint {constraint_id} not found")
         return result[constraint_id]
@@ -291,9 +288,9 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         if link_terms:
             upsert_multiple(self._db_session, LT, link_terms)
 
-    def _fetch_existing_matrix_ids(self, constraint_ids: list[str]) -> dict[str, dict[str, str]]:
+    def _fetch_existing_matrix_ids(self, constraint_ids: list[str]) -> _MatrixIdsByConstraint:
         """Fetch all existing matrix IDs upfront needed for operator change (copy source)."""
-        existing_matrix_ids: dict[str, dict[str, str]] = {}
+        existing_matrix_ids: _MatrixIdsByConstraint = {}
         for matrix_type, table in _MATRIX_TYPE_TABLES.items():
             rows = self._db_session.execute(
                 select(table.c.constraint_id, table.c.matrix_id).where(
@@ -301,8 +298,131 @@ class DatabaseBindingConstraintDao(ConstraintDao):
                 )
             ).fetchall()
             for row in rows:
-                existing_matrix_ids.setdefault(row.constraint_id, {})[matrix_type.value] = row.matrix_id
+                existing_matrix_ids.setdefault(row.constraint_id, {})[matrix_type] = row.matrix_id
         return existing_matrix_ids
+
+    def _handle_time_step_change(
+        self,
+        changes: _MatrixChanges,
+        bc: BindingConstraint,
+        old: BindingConstraint,
+        study_version: StudyVersion,
+        null_mid: str,
+    ) -> None:
+        """Replace all existing matrix rows with the null matrix.
+
+        The matrix row count is tied to the time-step frequency
+        (hourly=8784 rows, daily/weekly=366 rows), so existing data would be
+        the wrong shape after a time-step change. The simulator fills in
+        correctly-sized zeros at runtime from the null matrix.
+        """
+        if study_version < STUDY_VERSION_8_7:
+            changes.add_deletion(bc.id, _MatrixType.VALUES)
+            changes.add_insertion(bc.id, _MatrixType.VALUES, null_mid)
+        else:
+            for matrix_type in [_MatrixType(t) for t in OPERATOR_MATRICES_MAP[old.operator]]:
+                changes.add_deletion(bc.id, matrix_type)
+            for matrix_type in [_MatrixType(t) for t in OPERATOR_MATRICES_MAP[bc.operator]]:
+                changes.add_insertion(bc.id, matrix_type, null_mid)
+
+    @staticmethod
+    def _get_source_matrix_id(
+        existing_matrix_ids: _MatrixIdsByConstraint, operator: BindingConstraintOperator, constraint_id: str
+    ) -> str:
+        """Return the canonical source matrix ID for the given operator.
+
+        A missing entry means the DB is corrupted: the command layer always initialises
+        all required matrices at creation time.
+        """
+        match operator:
+            case BindingConstraintOperator.GREATER:
+                source_type = _MatrixType.GT
+            case BindingConstraintOperator.EQUAL:
+                source_type = _MatrixType.EQ
+            case _:  # LESS or BOTH → lt
+                source_type = _MatrixType.LT
+        mid = existing_matrix_ids.get(constraint_id, {}).get(source_type)
+        if mid is None:
+            raise ValueError(
+                f"Data corruption: matrix '{source_type.value}' is missing for constraint '{constraint_id}'. "
+                "All matrices should have been initialised at creation time."
+            )
+        return mid
+
+    @staticmethod
+    def _handle_operator_change(
+        changes: _MatrixChanges,
+        bc: BindingConstraint,
+        old: BindingConstraint,
+        existing_matrix_ids: _MatrixIdsByConstraint,
+    ) -> None:
+        """Reroute existing matrix IDs to match the new operator's matrix types.
+
+        Each operator owns a specific set of matrix types (lt, gt, eq).
+        Existing matrix IDs are copied into newly required tables and removed
+        from tables that are no longer needed, so user data is preserved rather
+        than reset.
+
+        The canonical source matrix is the first (and only) matrix of the old operator.
+        For BOTH, lt is canonical (used when collapsing to a single-operator type).
+        A missing entry means the DB is corrupted: the command layer always initialises
+        all required matrices at creation time.
+        """
+        source_mid = DatabaseBindingConstraintDao._get_source_matrix_id(existing_matrix_ids, old.operator, bc.id)
+
+        def deletion(t: _MatrixType) -> None:
+            changes.add_deletion(bc.id, t)
+
+        def insertion(t: _MatrixType) -> None:
+            changes.add_insertion(bc.id, t, source_mid)
+
+        lt_matrice = _MatrixType.LT
+        gt_matrice = _MatrixType.GT
+        eq_matrice = _MatrixType.EQ
+
+        OP = BindingConstraintOperator
+        match (old.operator, bc.operator):
+            # LESS
+            case (OP.LESS, OP.GREATER):
+                deletion(lt_matrice)
+                insertion(gt_matrice)
+            case (OP.LESS, OP.EQUAL):
+                deletion(lt_matrice)
+                insertion(eq_matrice)
+            case (OP.LESS, OP.BOTH):
+                insertion(gt_matrice)
+
+            # GREATER
+            case (OP.GREATER, OP.LESS):
+                deletion(gt_matrice)
+                insertion(lt_matrice)
+            case (OP.GREATER, OP.EQUAL):
+                deletion(gt_matrice)
+                insertion(eq_matrice)
+            case (OP.GREATER, OP.BOTH):
+                insertion(lt_matrice)
+
+            # EQUAL
+            case (OP.EQUAL, OP.LESS):
+                deletion(eq_matrice)
+                insertion(lt_matrice)
+            case (OP.EQUAL, OP.GREATER):
+                deletion(eq_matrice)
+                insertion(gt_matrice)
+            case (OP.EQUAL, OP.BOTH):
+                deletion(eq_matrice)
+                insertion(lt_matrice)
+                insertion(gt_matrice)
+
+            # BOTH
+            case (OP.BOTH, OP.LESS):
+                deletion(gt_matrice)
+            case (OP.BOTH, OP.GREATER):
+                deletion(lt_matrice)
+            case (OP.BOTH, OP.EQUAL):
+                deletion(lt_matrice)
+                deletion(gt_matrice)
+                insertion(eq_matrice)
 
     def _compute_matrix_changes(
         self,
@@ -343,47 +463,15 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         for bc in constraints:
             old = existing.get(bc.id)
             if old is None:
-                continue  # new constraint caller handles initial matrix creation
+                continue  # new constraint, caller handles initial matrix creation
 
             time_step_changed = bc.time_step != old.time_step
             operator_changed = study_version >= STUDY_VERSION_8_7 and bc.operator != old.operator
 
-            if operator_changed and not time_step_changed:
-                # Copy the existing matrix ID into newly required types, delete removed types.
-                old_matrix_types = [_MatrixType(t) for t in OPERATOR_MATRICES_MAP[old.operator]]
-                new_matrix_types = [_MatrixType(t) for t in OPERATOR_MATRICES_MAP[bc.operator]]
-                matrix_type_to_add = [s for s in new_matrix_types if s not in old_matrix_types]
-                matrix_type_to_delete = [s for s in old_matrix_types if s not in new_matrix_types]
-
-                if matrix_type_to_add:
-                    # For BOTH, lt is the canonical source (mirrors file DAO rename logic).
-                    # For single operators, there is only one matrix type so it is unambiguous.
-                    source_type = (
-                        _MatrixType.LT if old.operator == BindingConstraintOperator.BOTH else old_matrix_types[0]
-                    )
-                    source_mid = existing_matrix_ids.get(bc.id, {}).get(source_type.value)
-                    # The command layer always initializes matrices on creation, so missing source = data corruption.
-                    if source_mid is None:
-                        raise ValueError(
-                            f"Missing source matrix '{source_type.value}' for constraint '{bc.id}' during operator change"
-                        )
-                    for matrix_type in matrix_type_to_add:
-                        changes.add_insertion(bc.id, matrix_type, source_mid)
-
-                for matrix_type in matrix_type_to_delete:
-                    changes.add_deletion(bc.id, matrix_type)
-
             if time_step_changed:
-                # Replace all matrices with the null matrix. The simulator uses correctly-sized zeros at runtime.
-                null_mid = generator.get_null_matrix()
-                if study_version < STUDY_VERSION_8_7:
-                    changes.add_deletion(bc.id, _MatrixType.VALUES)
-                    changes.add_insertion(bc.id, _MatrixType.VALUES, null_mid)
-                else:
-                    for matrix_type in [_MatrixType(t) for t in OPERATOR_MATRICES_MAP[old.operator]]:
-                        changes.add_deletion(bc.id, matrix_type)
-                    for matrix_type in [_MatrixType(t) for t in OPERATOR_MATRICES_MAP[bc.operator]]:
-                        changes.add_insertion(bc.id, matrix_type, null_mid)
+                self._handle_time_step_change(changes, bc, old, study_version, generator.get_null_matrix())
+            elif operator_changed:
+                self._handle_operator_change(changes, bc, old, existing_matrix_ids)
 
         return changes
 
@@ -425,10 +513,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         """
         if self.get_impl().get_version() < STUDY_VERSION_8_7:
             return
-        # COALESCE handles the case where group IS NULL in DB, which maps to "default".
-        active_groups = (
-            select(func.coalesce(BC.c.group, DEFAULT_GROUP)).where(BC.c.study_id == self._study_id).distinct()
-        )
+        active_groups = select(BC.c.group).where(BC.c.study_id == self._study_id).distinct()
         self._db_session.execute(
             delete(SCENARIO_BINDING_CONSTRAINTS_TABLE).where(
                 (SCENARIO_BINDING_CONSTRAINTS_TABLE.c.study_id == self._study_id)
