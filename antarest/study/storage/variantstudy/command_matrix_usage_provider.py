@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 import logging
 from collections.abc import Iterable
-from pathlib import Path
 
 from typing_extensions import override
 
@@ -21,7 +20,7 @@ from antarest.matrixstore.model import MatrixReference
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock
+from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 
@@ -76,7 +75,8 @@ class CommandMatrixUsageProvider(IMatrixUsageProvider):
         )
         for study in self.variant_study_repo.get_all(study_filter):
             study_id = study.id
-            snapshot_path = Path(study.path) / "snapshot"
+            assert isinstance(study, VariantStudy)
+            snapshot_path = study.snapshot_dir
             if snapshot_path.exists():
                 for f in snapshot_path.rglob("*.link"):
                     matrix_id = extract_matrix_id(f.read_text())

@@ -133,7 +133,8 @@ def test_raw_studies_matrix_usage_provider(
     )
 
     with db():
-        FileStudyDaoFactory(command_context, raw_study_service.study_factory).create_study_dao(metadata_raw_study)
+        factory = FileStudyDaoFactory(command_context, raw_study_service.study_factory, Mock())
+        factory.create_study_dao(metadata_raw_study)
         study_path = Path(metadata_raw_study.path)
         input_path = study_path / "input"
         expansion_path = study_path / "user" / "expansion"

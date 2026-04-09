@@ -196,6 +196,10 @@ class DatabaseStudyDao(
         pass
 
     @override
+    def update_cache(self) -> None:
+        pass
+
+    @override
     def get_file_study(self) -> FileStudy:
         """
         Get the FileStudy instance.

@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 from antares.study.version.create_app import CreateApp
@@ -53,4 +54,4 @@ def file_study(tmp_path: Path, matrix_service: ISimpleMatrixService) -> FileStud
 def filestudy_dao(file_study: FileStudy, matrix_service, blob_service) -> FileStudyTreeDao:
     constants = GeneratorMatrixConstants(matrix_service)
     constants.init_constant_matrices()
-    return FileStudyTreeDao(file_study, False, constants, blob_service, matrix_service)
+    return FileStudyTreeDao(file_study, False, constants, blob_service, matrix_service, Mock())

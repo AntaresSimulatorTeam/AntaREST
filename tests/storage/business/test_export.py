@@ -108,7 +108,7 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
 
     # Normalize the study
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        raw_study_service.normalize_study(study)
+        raw_study_service.normalize_file_study(study)
         assert len(db_recorder.sql_statements) == 0  # no DB request as there is nothing to do
 
     assert normalized_path.read_text() == content
@@ -116,7 +116,7 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
 
     # Denormalize the study
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        raw_study_service.denormalize_study(study)
+        raw_study_service.denormalize_file_study(study)
         assert len(db_recorder.sql_statements) == 1  # 1 DB request for all matrices
 
     assert not normalized_path.exists()
@@ -125,7 +125,7 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
 
     # Denormalize again
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        raw_study_service.denormalize_study(study)
+        raw_study_service.denormalize_file_study(study)
         assert len(db_recorder.sql_statements) == 0  # no DB request as there is nothing to do
 
     assert not normalized_path.exists()
@@ -134,7 +134,7 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
 
     # Normalize the study to come back to the initial point
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        raw_study_service.normalize_study(study)
+        raw_study_service.normalize_file_study(study)
         assert len(db_recorder.sql_statements) == 1  # 1 DB request for all matrices
 
     assert normalized_path.exists()
