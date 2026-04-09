@@ -24,7 +24,10 @@ from antarest.study.business.model.config.advanced_parameters_model import (
     AdvancedParameters,
     initialize_advanced_parameters_against_version,
 )
-from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
+from antarest.study.business.model.config.compatibility_parameters_model import (
+    CompatibilityParameters,
+    initialize_compatibility_parameters_against_version,
+)
 from antarest.study.business.model.config.general_model import GeneralConfig, initialize_general_config_against_version
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
@@ -68,7 +71,9 @@ def _create_default_settings(dao: DatabaseStudyDao, study: Study) -> None:
         dao.save_adequacy_patch_parameters(adequacy_patch_parameters)
 
     if study_version >= STUDY_VERSION_9_2:
-        dao.save_compatibility_parameters(CompatibilityParameters())
+        compatibility_parameters = CompatibilityParameters()
+        initialize_compatibility_parameters_against_version(compatibility_parameters, study_version)
+        dao.save_compatibility_parameters(compatibility_parameters)
 
 
 class DatabaseStudyDaoFactory(StudyFactoryDao):
