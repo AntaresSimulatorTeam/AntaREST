@@ -13,6 +13,7 @@
 import datetime
 import zipfile
 from pathlib import Path
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
@@ -87,7 +88,7 @@ def test_export_study_flat(
 
     command_context = command_factory.command_context
 
-    FileStudyDaoFactory(command_context, raw_study_service.study_factory).create_study_dao(raw_study)
+    FileStudyDaoFactory(command_context, raw_study_service.study_factory, Mock()).create_study_dao(raw_study)
 
     create_area_fr = CreateArea(command_context=command_context, area_name="fr", study_version=raw_study.version)
 

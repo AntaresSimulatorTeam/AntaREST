@@ -81,7 +81,7 @@ def test_optional_matrices(
     assert matrix.to_numpy().tolist() == expected_cost_level_content
 
     # Ensures the normalization succeeds even if the files are missing
-    raw_study_service.normalize_study(study)
+    raw_study_service.normalize_file_study(study)
 
     # Removes a file that's not optional for the Simulator
     url = ["input", "thermal", "series", "fr", "thermal_cluster", "series"]
@@ -101,4 +101,4 @@ def test_optional_matrices(
         ChildNotFoundError,
         match="404: File 'input/thermal/series/fr/thermal_cluster/series.txt' not found in the study ''",
     ):
-        raw_study_service.normalize_study(study)
+        raw_study_service.normalize_file_study(study)

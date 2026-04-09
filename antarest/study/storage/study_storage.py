@@ -157,3 +157,9 @@ class IStudyStorage(ABC):
             dst_path: destination path.
             denormalize: denormalize the study (replace matrix links by real matrices).
         """
+
+    @abstractmethod
+    def normalize_study(self, study: Study) -> None:
+        """
+        Put every matrix in the study in the matrix-store.
+        """

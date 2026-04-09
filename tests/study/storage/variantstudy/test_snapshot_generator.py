@@ -19,7 +19,6 @@ import uuid
 from pathlib import Path
 from unittest.mock import Mock
 
-import numpy as np
 import pytest
 from antares.study.version import StudyVersion
 from typing_extensions import override
@@ -34,7 +33,10 @@ from antarest.core.tasks.service import ITaskNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Role, User
 from antarest.login.utils import current_user_context
+from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
+from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
+from antarest.study.model import StorageMode
 from antarest.study.service import VariantStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -86,6 +88,26 @@ def _create_variant(
         )
 
     return variant
+
+
+def _build_generator(variant_study_service: VariantStudyService) -> SnapshotGenerator:
+    return SnapshotGenerator(
+        cache=variant_study_service.cache,
+        raw_study_service=variant_study_service.raw_study_service,
+        command_factory=variant_study_service.command_factory,
+        study_factory=variant_study_service.study_factory,
+        repository=variant_study_service.repository,
+    )
+
+
+def _get_dao_factory(variant_id: str, variant_study_service: VariantStudyService) -> StudyFactoryDao:
+    variant_study = variant_study_service.repository.get(variant_id)
+    ctx = variant_study_service.command_factory.command_context
+
+    if variant_study.storage_mode == StorageMode.FILESYSTEM:
+        return FileStudyDaoFactory(ctx, variant_study_service.study_factory, variant_study_service.cache)
+
+    return DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants)
 
 
 class TestSearchRefStudy:
@@ -776,7 +798,7 @@ class TestSnapshotGenerator:
 
         # Create the study in database
         context = variant_study_service.command_factory.command_context
-        FileStudyDaoFactory(context, raw_study_service.study_factory).create_study_dao(root_study)
+        FileStudyDaoFactory(context, raw_study_service.study_factory, Mock()).create_study_dao(root_study)
 
         # Create some outputs with a "simulation.log" file
         for output_name in ["20230802-1425eco", "20230802-1628eco"]:
@@ -830,13 +852,7 @@ class TestSnapshotGenerator:
         """
         Test the initialization of the `SnapshotGenerator` class.
         """
-        generator = SnapshotGenerator(
-            cache=variant_study_service.cache,
-            raw_study_service=variant_study_service.raw_study_service,
-            command_factory=variant_study_service.command_factory,
-            study_factory=variant_study_service.study_factory,
-            repository=variant_study_service.repository,
-        )
+        generator = _build_generator(variant_study_service)
         assert generator.cache == variant_study_service.cache
         assert generator.raw_study_service == variant_study_service.raw_study_service
         assert generator.command_factory == variant_study_service.command_factory
@@ -869,32 +885,23 @@ class TestSnapshotGenerator:
         - the notifications are correctly registered.
         - the simulation outputs are not copied.
         """
-        generator = SnapshotGenerator(
-            cache=variant_study_service.cache,
-            raw_study_service=variant_study_service.raw_study_service,
-            command_factory=variant_study_service.command_factory,
-            study_factory=variant_study_service.study_factory,
-            repository=variant_study_service.repository,
-        )
+        generator = _build_generator(variant_study_service)
 
         notifier = RegisterNotification()
 
+        factory = _get_dao_factory(variant_study_id, variant_study_service)
         with DBStatementRecorder(db.session.bind) as db_recorder:
             results = generator.generate_snapshot(
-                variant_study_id,
-                denormalize=False,
-                from_scratch=False,
-                notifier=notifier,
+                variant_study_id, dao_factory=factory, from_scratch=False, notifier=notifier
             )
 
         # Check: the number of database queries is kept as low as possible.
-        # We expect 5 queries:
+        # We expect 4 queries:
         # - 1 query to fetch the ancestors of a variant study,
         # - 1 query to fetch the root study (with owner and groups for permission check),
         # - 1 query to fetch the list of variants with snapshot, commands, etc.,
-        # - 1 query to fetch raw study information,
         # - 1 query to insert the variant study snapshot.
-        assert len(db_recorder.sql_statements) == 5, str(db_recorder)
+        assert len(db_recorder.sql_statements) == 4, str(db_recorder)
 
         # Check: the variant generation must succeed.
         assert results.model_dump() == {
@@ -1042,74 +1049,6 @@ class TestSnapshotGenerator:
 
     @with_admin_user
     @with_db_context
-    def test_generate__with_denormalize_true(
-        self, variant_study_id: str, variant_study_service: VariantStudyService
-    ) -> None:
-        """
-        Test the generation of a variant study with matrices de-normalization.
-        We expect that all matrices are correctly denormalized (no link).
-        """
-        generator = SnapshotGenerator(
-            cache=variant_study_service.cache,
-            raw_study_service=variant_study_service.raw_study_service,
-            command_factory=variant_study_service.command_factory,
-            study_factory=variant_study_service.study_factory,
-            repository=variant_study_service.repository,
-        )
-
-        results = generator.generate_snapshot(
-            variant_study_id,
-            denormalize=True,
-            from_scratch=False,
-        )
-
-        # Check the results
-        assert results.model_dump() == {
-            "success": True,
-            "should_invalidate_cache": False,
-            "details": [
-                {
-                    "id": AnyUUID(),
-                    "name": "create_area",
-                    "status": True,
-                    "msg": "Area 'North' created",
-                },
-                {
-                    "id": AnyUUID(),
-                    "name": "create_area",
-                    "status": True,
-                    "msg": "Area 'South' created",
-                },
-                {
-                    "id": AnyUUID(),
-                    "name": "create_link",
-                    "status": True,
-                    "msg": "Link between 'north' and 'south' created",
-                },
-                {
-                    "id": AnyUUID(),
-                    "name": "create_cluster",
-                    "status": True,
-                    "msg": "Thermal cluster 'gas_cluster' added to area 'south'.",
-                },
-            ],
-        }
-
-        # Check: the matrices are denormalized (we should have TSV files).
-        # The matrices should be empty as they are default ones for the Simulator.
-        variant_study = variant_study_service.repository.get(variant_study_id)
-        assert isinstance(variant_study, VariantStudy)
-        snapshot_dir = variant_study.snapshot_dir
-        assert (snapshot_dir / "input/links/north/south_parameters.txt").exists()
-        array = np.loadtxt(snapshot_dir / "input/links/north/south_parameters.txt", delimiter="\t")
-        assert array.size == 0
-
-        assert (snapshot_dir / "input/thermal/series/south/gas_cluster/series.txt").exists()
-        array = np.loadtxt(snapshot_dir / "input/thermal/series/south/gas_cluster/series.txt", delimiter="\t")
-        assert array.size == 0
-
-    @with_admin_user
-    @with_db_context
     def test_generate__with_invalid_command(
         self, variant_study_id: str, variant_study_service: VariantStudyService
     ) -> None:
@@ -1130,25 +1069,16 @@ class TestSnapshotGenerator:
             ],
         )
 
-        generator = SnapshotGenerator(
-            cache=variant_study_service.cache,
-            raw_study_service=variant_study_service.raw_study_service,
-            command_factory=variant_study_service.command_factory,
-            study_factory=variant_study_service.study_factory,
-            repository=variant_study_service.repository,
-        )
+        generator = _build_generator(variant_study_service)
 
         err_msg = (
             f"Failed to generate variant study {variant_study.id}: "
             f"Unexpected exception occurred when trying to apply command CommandName.CREATE_AREA: "
             f"Area 'North' already exists and could not be created"
         )
+        factory = _get_dao_factory(variant_study.id, variant_study_service)
         with pytest.raises(VariantGenerationError, match=re.escape(err_msg)):
-            generator.generate_snapshot(
-                variant_study.id,
-                denormalize=False,
-                from_scratch=False,
-            )
+            generator.generate_snapshot(variant_study.id, from_scratch=False, dao_factory=factory)
 
         # Check: the snapshot directory is removed.
         snapshot_dir = variant_study.snapshot_dir
@@ -1169,22 +1099,14 @@ class TestSnapshotGenerator:
         Test the generation of a variant study with a notification that fails.
         Since the notification is not critical, we expect to have no exception.
         """
-        generator = SnapshotGenerator(
-            cache=variant_study_service.cache,
-            raw_study_service=variant_study_service.raw_study_service,
-            command_factory=variant_study_service.command_factory,
-            study_factory=variant_study_service.study_factory,
-            repository=variant_study_service.repository,
-        )
+        generator = _build_generator(variant_study_service)
 
         notifier = FailingNotifier()
 
+        factory = _get_dao_factory(variant_study_id, variant_study_service)
         with caplog.at_level(logging.WARNING):
             results = generator.generate_snapshot(
-                variant_study_id,
-                denormalize=False,
-                from_scratch=False,
-                notifier=notifier,
+                variant_study_id, from_scratch=False, notifier=notifier, dao_factory=factory
             )
 
         # Check the results
@@ -1232,20 +1154,10 @@ class TestSnapshotGenerator:
         """
         Test the generation of a variant study of a variant study.
         """
-        generator = SnapshotGenerator(
-            cache=variant_study_service.cache,
-            raw_study_service=variant_study_service.raw_study_service,
-            command_factory=variant_study_service.command_factory,
-            study_factory=variant_study_service.study_factory,
-            repository=variant_study_service.repository,
-        )
-
+        generator = _build_generator(variant_study_service)
+        factory = _get_dao_factory(variant_study_id, variant_study_service)
         # Generate the variant once.
-        generator.generate_snapshot(
-            variant_study_id,
-            denormalize=False,
-            from_scratch=False,
-        )
+        generator.generate_snapshot(variant_study_id, from_scratch=False, dao_factory=factory)
 
         # Create a new variant of the variant study
         new_variant = variant_study_service.create_variant_study(variant_study_id, "my-variant")
@@ -1260,11 +1172,7 @@ class TestSnapshotGenerator:
         )
 
         # Generate the variant again.
-        results = generator.generate_snapshot(
-            new_variant.id,
-            denormalize=False,
-            from_scratch=False,
-        )
+        results = generator.generate_snapshot(new_variant.id, from_scratch=False, dao_factory=factory)
 
         # Check the results
         assert results.model_dump() == {
@@ -1285,13 +1193,7 @@ class TestSnapshotGenerator:
     def test_generate_invalidate_cache(self, variant_study_service: VariantStudyService, variant_study_id: str) -> None:
         cache = LocalCache()
         variant_study_service.cache = cache
-        generator = SnapshotGenerator(
-            cache=cache,
-            raw_study_service=variant_study_service.raw_study_service,
-            command_factory=variant_study_service.command_factory,
-            study_factory=variant_study_service.study_factory,
-            repository=variant_study_service.repository,
-        )
+        generator = _build_generator(variant_study_service)
 
         # Fill the cache for the test.
         study = db.session.get(VariantStudy, variant_study_id)  #  `variant_study` isn't bound to the session yet.
@@ -1306,7 +1208,8 @@ class TestSnapshotGenerator:
         starting_cache = cache.get(cache_key)
         assert starting_cache is not None
         # Generates the snapshot
-        results = generator.generate_snapshot(variant_study_id, denormalize=False)
+        factory = _get_dao_factory(variant_study_id, variant_study_service)
+        results = generator.generate_snapshot(variant_study_id, dao_factory=factory)
         # Ensures we shouldn't have to invalidate the cache as all commands updated the config correctly
         assert not results.should_invalidate_cache
         generated_cache = cache.get(cache_key)
@@ -1329,7 +1232,7 @@ class TestSnapshotGenerator:
         )
 
         # Generates the snapshot
-        results = generator.generate_snapshot(variant_study_id, denormalize=False)
+        results = generator.generate_snapshot(variant_study_id, dao_factory=factory)
         # Ensures we shouldn't have to invalidate the cache as the `create cluster` command updated the config correctly
         assert not results.should_invalidate_cache
         # Ensures the cache was modified accordingly
@@ -1353,7 +1256,7 @@ class TestSnapshotGenerator:
             ],
         )
 
-        results = generator.generate_snapshot(variant_study_id, denormalize=False)
+        results = generator.generate_snapshot(variant_study_id, dao_factory=factory)
         # Ensures we have to invalidate the cache as the `update_config` command couldn't (it's too generic)
         assert results.should_invalidate_cache
         assert cache.get(cache_key) is None

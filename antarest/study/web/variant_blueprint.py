@@ -251,12 +251,11 @@ def create_study_variant_routes() -> APIRouter:
     def generate_variant(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        denormalize: bool = False,
         from_scratch: bool = False,
     ) -> str:
         logger.info(f"Generating snapshot for variant study {uuid}")
         variant_study_service = study_service.storage_service.variant_study_service
-        return variant_study_service.generate(uuid, denormalize, from_scratch)
+        return variant_study_service.generate(uuid, from_scratch)
 
     @bp.get(
         "/studies/{uuid}/task",
