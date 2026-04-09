@@ -30,7 +30,7 @@ class CompatibilityParameters(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
     hydro_pmax: HydroPmax = HydroPmax.DAILY
-    reserves_enabled: bool = False
+    reserves_enabled: bool | None = None
 
 
 class CompatibilityParametersUpdate(AntaresBaseModel):
@@ -47,6 +47,13 @@ def update_compatibility_parameters(
     new_properties = new_parameters.model_dump(mode="json", exclude_none=True)
     current_properties.update(new_properties)
     return CompatibilityParameters.model_validate(current_properties)
+
+
+def initialize_compatibility_parameters_against_version(
+    parameters: CompatibilityParameters, version: StudyVersion
+) -> None:
+    if version >= STUDY_VERSION_10_0 and parameters.reserves_enabled is None:
+        parameters.reserves_enabled = False
 
 
 def validate_compatibility_parameters_against_version(

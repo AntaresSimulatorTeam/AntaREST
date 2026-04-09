@@ -34,7 +34,7 @@ class FileStudyCompatibilityParametersDao(CompatibilityParametersDao, ABC):
             data = file_study.tree.get(["settings", "generaldata", "compatibility"])
         except KeyError:
             data = {}
-        return parse_compatibility_parameters({"compatibility": data})
+        return parse_compatibility_parameters({"compatibility": data}, file_study.config.version)
 
     @override
     def save_compatibility_parameters(self, parameters: CompatibilityParameters) -> None:

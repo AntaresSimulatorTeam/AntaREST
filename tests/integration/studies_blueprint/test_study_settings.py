@@ -424,7 +424,7 @@ def test_compatibility_settings(client: TestClient, admin_access_token: str) -> 
 
     res = client.get(f"/v1/studies/{study_id}/config/compatibility/form")
     assert res.status_code == 200
-    assert res.json() == {"hydroPmax": "daily", "reservesEnabled": False}
+    assert res.json() == {"hydroPmax": "daily"}
 
     res = client.put(
         f"/v1/studies/{study_id}/config/compatibility/form",
@@ -433,7 +433,7 @@ def test_compatibility_settings(client: TestClient, admin_access_token: str) -> 
     assert res.status_code == 200
     res = client.get(f"/v1/studies/{study_id}/config/compatibility/form")
     assert res.status_code == 200
-    assert res.json() == {"hydroPmax": "hourly", "reservesEnabled": False}
+    assert res.json() == {"hydroPmax": "hourly"}
 
     # reserves_enabled should be rejected on a study < 10.0
     res = client.put(
