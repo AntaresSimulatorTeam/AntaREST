@@ -20,7 +20,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.core.exceptions import AreaNotFound, LinkNotFound
+from antarest.core.exceptions import LinkNotFound, LinksNotFound
 from antarest.study.business.model.link_model import Link
 from antarest.study.dao.api.link_dao import LinkDao
 from antarest.study.dao.common import LinkSeriesMapping
@@ -69,9 +69,14 @@ class DatabaseLinkDao(LinkDao):
             new_areas.append(link.area1)
             new_areas.append(link.area2)
 
-        invalid_ids = self.get_impl().get_invalid_area_ids(new_areas)
+        existing_links_ids = {f"{link.area1}%{link.area2}" for link in self.get_links()}
+        new_links_ids = {f"{link.area1}%{link.area2}" for link in links}
+
+        invalid_ids = new_links_ids - existing_links_ids
         if invalid_ids:
-            raise AreaNotFound(*invalid_ids)
+            if len(invalid_ids) == 1:
+                raise LinkNotFound(*invalid_ids)
+            raise LinksNotFound(*invalid_ids)
 
         # All areas exist. It means that the DB table does not contain the information.
         raise ValueError("One of the link table is not filled as it should") from exc
