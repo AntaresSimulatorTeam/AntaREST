@@ -181,7 +181,8 @@ class FileStudyLinkDao(LinkDao, ABC):
             study_data.tree.delete(["input", "links", link.area1, link.area2])
         else:
             study_data.tree.delete(_get_series_after_v82_matrix_path(link.area1, link.area2))
-            study_data.tree.delete(["input", "links", link.area1, "capacities"])
+            study_data.tree.delete(_get_direct_capacity_matrix_path(link.area1, link.area2))
+            study_data.tree.delete(_get_indirect_capacity_matrix_path(link.area1, link.area2))
 
         study_data.tree.delete(["input", "links", link.area1, "properties", link.area2])
 

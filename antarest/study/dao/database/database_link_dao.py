@@ -81,7 +81,7 @@ class DatabaseLinkDao(LinkDao):
         invalid_ids = new_links_ids - existing_links_ids
         if invalid_ids:
             if len(invalid_ids) == 1:
-                raise LinkNotFound(*invalid_ids)
+                raise LinkNotFound(f"Link not found: {next(iter(invalid_ids))}")
             raise LinksNotFound(*invalid_ids)
 
         # All links exist. It means that the DB table does not contain the information.
