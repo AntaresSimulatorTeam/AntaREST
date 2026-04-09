@@ -306,9 +306,7 @@ class RawStudyService(AbstractStorageService):
                 else:
                     raise TypeError(f"unarchive requires a RawStudy, got {type(metadata)}")
 
-            self.export_study_to_flat_directory(Path(metadata.path), dst_path)
-            if denormalize:
-                self.denormalize_exported_study(dst_path)
+            self.export_study_to_flat_directory(Path(metadata.path), dst_path, denormalize=denormalize)
 
         finally:
             if metadata.archived:
@@ -432,7 +430,7 @@ class RawStudyService(AbstractStorageService):
             for node in matrices_mapping[matrix_content.id]:
                 node.write_dataframe(matrix_content.data)
 
-    def export_study_to_flat_directory(self, study_dir: Path, dest: Path) -> None:
+    def export_study_to_flat_directory(self, study_dir: Path, dest: Path, denormalize: bool = True) -> None:
         start_time = time.time()
 
         def ignore_outputs(directory: str, _: Sequence[str]) -> Sequence[str]:
@@ -444,6 +442,6 @@ class RawStudyService(AbstractStorageService):
         duration = f"{stop_time - start_time:.3f}"
         logger.info(f"Study '{study_dir}' exported (flat mode) in {duration}s")
 
-    def denormalize_exported_study(self, dst_dir: Path) -> None:
-        study = self.study_factory.create_from_fs(dst_dir, False, "", use_cache=False)
-        self.denormalize_file_study(study)
+        if denormalize:
+            study = self.study_factory.create_from_fs(dest, False, "", use_cache=False)
+            self.denormalize_file_study(study)

@@ -908,9 +908,7 @@ class VariantStudyService(AbstractStorageService):
 
         self._safe_generation(variant)
 
-        self.raw_study_service.export_study_to_flat_directory(variant.snapshot_dir, dst_path)
-        if denormalize:
-            self.raw_study_service.denormalize_exported_study(dst_path)
+        self.raw_study_service.export_study_to_flat_directory(variant.snapshot_dir, dst_path, denormalize=denormalize)
 
     def clear_all_snapshots(self, retention_time: timedelta) -> str:
         """
