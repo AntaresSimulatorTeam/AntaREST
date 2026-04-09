@@ -55,7 +55,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import ICache, study_raw_cache_key, update_cache
+from antarest.core.interfaces.cache import ICache, study_raw_cache_key
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import JWTGroup
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
@@ -151,7 +151,6 @@ from antarest.study.repository import (
     StudySortBy,
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
@@ -344,7 +343,7 @@ class ThermalClusterTimeSeriesGeneratorTask:
                 # Therefore, we have to launch a variant generation task inside the timeseries generation one.
                 variant_service = self.storage_service.variant_study_service
                 task_service = variant_service.task_service
-                generation_task_id = variant_service.generate_task(study, True, False, listener)
+                generation_task_id = variant_service.generate_task(study, False, listener)
                 task_service.await_task(generation_task_id)
                 result = task_service.status_task(generation_task_id)
                 assert result.result is not None
@@ -421,7 +420,7 @@ class StudyUpgraderTask:
                 )
             finally:
                 if is_study_denormalized:
-                    self.storage_service.raw_study_service.normalize_study(study_to_upgrade)
+                    self.storage_service.get_storage(study_to_upgrade).normalize_study(study_to_upgrade)
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         """
@@ -510,9 +509,8 @@ class RawStudyInterface(StudyInterface):
         # Handle cache invalidation
         if should_invalidate_cache:
             remove_from_cache(self._raw_study_service.cache, study.id)
-        elif study.storage_mode == StorageMode.FILESYSTEM:
-            data = FileStudyTreeConfigDTO.from_build_config(dao.get_file_study().config).model_dump()
-            update_cache(self._raw_study_service.cache, study.id, data)
+        else:
+            dao.update_cache()
 
         # Update editor metadata
         self._update_editor_and_lastsave(dao)
@@ -526,7 +524,12 @@ class RawStudyInterface(StudyInterface):
         if self._study.storage_mode == StorageMode.DATABASE:
             return DatabaseStudyDao(self._study.id, db.session, self._matrix_service, matrix_constants)
         return FileStudyTreeDao(
-            self.get_files(), is_managed(self._study), matrix_constants, context.blob_service, self._matrix_service
+            self.get_files(),
+            is_managed(self._study),
+            matrix_constants,
+            context.blob_service,
+            self._matrix_service,
+            self._raw_study_service.cache,
         )
 
     @override
@@ -577,7 +580,12 @@ class VariantStudyInterface(StudyInterface):
     def get_study_dao(self) -> ReadOnlyStudyDao:
         context = self._variant_service.command_factory.command_context
         return FileStudyTreeDao(
-            self.get_files(), True, context.generator_matrix_constants, context.blob_service, context.matrix_service
+            self.get_files(),
+            True,
+            context.generator_matrix_constants,
+            context.blob_service,
+            context.matrix_service,
+            self._variant_service.cache,
         ).read_only()
 
     @override
@@ -697,7 +705,9 @@ class StudyService:
         StudyDatabaseMatrixUsageProvider(matrix_service)
         self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
             StorageMode.DATABASE: DatabaseStudyDaoFactory(matrix_service, command_context.generator_matrix_constants),
-            StorageMode.FILESYSTEM: FileStudyDaoFactory(command_context, raw_study_service.study_factory),
+            StorageMode.FILESYSTEM: FileStudyDaoFactory(
+                command_context, raw_study_service.study_factory, cache_service
+            ),
         }
 
     def register_output_access(self, output_access: IOutputsAccess) -> None:
@@ -1288,7 +1298,7 @@ class StudyService:
             study.directory_id = self.directory_service.get_directory_by_path(destination_folder.as_posix())
 
             self._save_study(study)
-            self.storage_service.raw_study_service.normalize_study(study)
+            self.storage_service.get_storage(study).normalize_study(study)
 
             match outputs_selection:
                 case "all":
@@ -1630,7 +1640,7 @@ class StudyService:
         study.updated_at = current_time()
 
         self._save_study(study)
-        self.storage_service.raw_study_service.normalize_study(study)
+        self.storage_service.get_storage(study).normalize_study(study)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -2832,7 +2842,7 @@ class StudyService:
             raise UnsupportedOperationOnThisStudyType(study_id, "normalize", "raw")
         self.assert_study_unarchived(study)
 
-        self.storage_service.raw_study_service.normalize_study(study)
+        self.storage_service.get_storage(study).normalize_study(study)
 
     def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
         """
@@ -3011,6 +3021,7 @@ class StudyService:
             context.generator_matrix_constants,
             context.blob_service,
             context.matrix_service,
+            self.cache_service,
         )
         # Write the given study input in the filesystem
         converter = StudyConverter(source_dao, file_study_dao, study_version, context.matrix_service)

@@ -107,10 +107,8 @@ export const exportCommandsMatrices = async (studyId: string): Promise<FileDownl
   return res.data;
 };
 
-export const applyCommands = async (studyId: string, denormalize = false): Promise<string> => {
-  const res = await client.put(
-    `/v1/studies/${studyId}/generate?denormalize=${denormalize}&from_scratch=true`,
-  );
+export const applyCommands = async (studyId: string): Promise<string> => {
+  const res = await client.put(`/v1/studies/${studyId}/generate?from_scratch=true`);
   return res.data;
 };
 
