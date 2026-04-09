@@ -23,7 +23,7 @@ from antarest.study.business.model.binding_constraint_model import (
     OPERATOR_MATRIX_FILE_MAP,
     BindingConstraint,
     BindingConstraintOperator,
-    ConstraintID,
+    ConstraintId,
 )
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao
 from antarest.study.model import STUDY_VERSION_8_7
@@ -57,12 +57,12 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         pass
 
     @override
-    def get_all_constraints(self) -> dict[ConstraintID, BindingConstraint]:
+    def get_all_constraints(self) -> dict[ConstraintId, BindingConstraint]:
         file_study = self.get_file_study()
         version = file_study.config.version
         config = _get_all_constraints_ini(file_study)
 
-        constraints_by_id: dict[ConstraintID, BindingConstraint] = {}
+        constraints_by_id: dict[ConstraintId, BindingConstraint] = {}
 
         for constraint_ini in config.values():
             constraint = parse_binding_constraint(version, constraint_ini)
@@ -70,26 +70,26 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         return constraints_by_id
 
     @override
-    def get_constraint(self, constraint_id: ConstraintID) -> BindingConstraint:
+    def get_constraint(self, constraint_id: ConstraintId) -> BindingConstraint:
         result = self.get_all_constraints()
         if constraint_id not in result:
             raise BindingConstraintNotFound(f"Constraint {constraint_id} not found")
         return result[constraint_id]
 
     @override
-    def get_constraint_values_matrix(self, constraint_id: ConstraintID) -> pl.DataFrame:
+    def get_constraint_values_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "bindingconstraints", constraint_id])
 
     @override
-    def get_constraint_less_term_matrix(self, constraint_id: ConstraintID) -> pl.DataFrame:
+    def get_constraint_less_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "bindingconstraints", f"{constraint_id}_lt"])
 
     @override
-    def get_constraint_greater_term_matrix(self, constraint_id: ConstraintID) -> pl.DataFrame:
+    def get_constraint_greater_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "bindingconstraints", f"{constraint_id}_gt"])
 
     @override
-    def get_constraint_equal_term_matrix(self, constraint_id: ConstraintID) -> pl.DataFrame:
+    def get_constraint_equal_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         return self.get_impl().get_matrix(["input", "bindingconstraints", f"{constraint_id}_eq"])
 
     @override
@@ -100,7 +100,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         ini_content = _get_all_constraints_ini(study_data)
 
         bc_id_to_key_in_ini: dict[str, str] = {}
-        bc_id_to_bc_object: dict[ConstraintID, BindingConstraint] = {}
+        bc_id_to_bc_object: dict[ConstraintId, BindingConstraint] = {}
         old_groups: dict[str, list[str]] = {}
         for key, bc in ini_content.items():
             constraint = parse_binding_constraint(study_data.config.version, bc)
@@ -153,19 +153,19 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
             _remove_groups_from_scenario_builder(study_data, removed_groups)
 
     @override
-    def save_constraint_values_matrix(self, constraint_id: ConstraintID, series_id: str) -> None:
+    def save_constraint_values_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
         _save_matrix(self.get_file_study(), constraint_id, "", series_id)
 
     @override
-    def save_constraint_less_term_matrix(self, constraint_id: ConstraintID, series_id: str) -> None:
+    def save_constraint_less_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
         _save_matrix(self.get_file_study(), constraint_id, "_lt", series_id)
 
     @override
-    def save_constraint_greater_term_matrix(self, constraint_id: ConstraintID, series_id: str) -> None:
+    def save_constraint_greater_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
         _save_matrix(self.get_file_study(), constraint_id, "_gt", series_id)
 
     @override
-    def save_constraint_equal_term_matrix(self, constraint_id: ConstraintID, series_id: str) -> None:
+    def save_constraint_equal_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
         _save_matrix(self.get_file_study(), constraint_id, "_eq", series_id)
 
     @override
@@ -212,7 +212,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         study_data.config.bindings = [bc for bc in study_data.config.bindings if bc.id not in ids_to_delete]
 
 
-def _save_matrix(study_data: FileStudy, constraint_id: ConstraintID, term: str, series_id: str) -> None:
+def _save_matrix(study_data: FileStudy, constraint_id: ConstraintId, term: str, series_id: str) -> None:
     study_data.tree.save(series_id, ["input", "bindingconstraints", f"{constraint_id}{term}"])
 
 
@@ -242,7 +242,7 @@ def _remove_groups_from_scenario_builder(study_data: FileStudy, removed_groups: 
 
 
 def generate_replacement_matrices(
-    bc_id: ConstraintID,
+    bc_id: ConstraintId,
     study_version: StudyVersion,
     current_operator: BindingConstraintOperator,
 ) -> Iterator[tuple[str, list[list[float]]]]:
@@ -264,7 +264,7 @@ def generate_replacement_matrices(
 
 def update_matrices_names(
     file_study: FileStudy,
-    bc_id: ConstraintID,
+    bc_id: ConstraintId,
     existing_operator: BindingConstraintOperator,
     new_operator: BindingConstraintOperator,
 ) -> None:

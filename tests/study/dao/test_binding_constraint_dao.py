@@ -26,7 +26,7 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
     ClusterTerm,
-    ConstraintID,
+    ConstraintId,
     ConstraintTerm,
     LinkTerm,
 )
@@ -47,7 +47,7 @@ from antarest.study.model import STUDY_VERSION_8_8, Study
 from tests.study.dao.conftest import build_db_dao
 
 
-def _bc(constraint_id: ConstraintID, **kwargs) -> BindingConstraint:
+def _bc(constraint_id: ConstraintId, **kwargs) -> BindingConstraint:
     return BindingConstraint(
         id=constraint_id,
         name=kwargs.pop("name", constraint_id),

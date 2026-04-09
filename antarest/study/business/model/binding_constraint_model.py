@@ -232,7 +232,7 @@ class ConstraintTerm(AntaresBaseModel):
         return self.data.generate_id()
 
     def update_from(self, updated_term: ConstraintTermUpdate) -> "ConstraintTerm":
-        if updated_term.weight:
+        if updated_term.weight is not None:
             self.weight = updated_term.weight
 
         if updated_term.data:
@@ -248,7 +248,7 @@ class ConstraintTerm(AntaresBaseModel):
 # Binding constraint objects
 # ==================================================
 
-ConstraintID = NewType("ConstraintID", SanitizedStr)
+ConstraintId = NewType("ConstraintId", SanitizedStr)
 
 
 class BindingConstraint(AntaresBaseModel):
@@ -265,7 +265,7 @@ class BindingConstraint(AntaresBaseModel):
             data["id"] = transform_name_to_id(data["name"])
         return data
 
-    id: ConstraintID
+    id: ConstraintId
     name: str
     enabled: bool = True
     time_step: BindingConstraintFrequency = DEFAULT_TIMESTEP
@@ -369,7 +369,7 @@ class BindingConstraintCreationWithMatrices(BindingConstraintCreation, BindingCo
         )
 
 
-BindingConstraintUpdates = dict[ConstraintID, BindingConstraintUpdate]
+BindingConstraintUpdates = dict[ConstraintId, BindingConstraintUpdate]
 
 
 def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:

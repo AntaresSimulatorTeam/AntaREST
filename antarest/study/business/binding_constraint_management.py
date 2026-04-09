@@ -38,7 +38,7 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintUpdate,
     BindingConstraintUpdates,
     ClusterTerm,
-    ConstraintID,
+    ConstraintId,
     ConstraintTerm,
     ConstraintTermUpdate,
     LinkTerm,
@@ -80,7 +80,7 @@ class ConstraintFilters(AntaresBaseModel, extra="forbid"):
         cluster_id: cluster ID ('area.cluster') in at least one term.
     """
 
-    bc_id: ConstraintID = ConstraintID("")
+    bc_id: ConstraintId = ConstraintId("")
     enabled: bool | None = None
     operator: BindingConstraintOperator | None = None
     comments: str = ""
@@ -246,7 +246,7 @@ class BindingConstraintManager:
     ) -> None:
         self._command_context = command_context
 
-    def get_binding_constraint(self, study: StudyInterface, bc_id: ConstraintID) -> BindingConstraint:
+    def get_binding_constraint(self, study: StudyInterface, bc_id: ConstraintId) -> BindingConstraint:
         """
         Retrieves a binding constraint by its ID within a given study.
 
@@ -389,7 +389,7 @@ class BindingConstraintManager:
         data: BindingConstraintCreation,
         matrices: BindingConstraintMatrices,
     ) -> BindingConstraint:
-        bc_id = ConstraintID(transform_name_to_id(data.name))
+        bc_id = ConstraintId(transform_name_to_id(data.name))
 
         if not bc_id:
             raise InvalidConstraintName(f"Invalid binding constraint name: {data.name}.")
@@ -413,7 +413,7 @@ class BindingConstraintManager:
         return new_constraint
 
     def duplicate_binding_constraint(
-        self, study: StudyInterface, source_id: ConstraintID, new_constraint_name: ConstraintID
+        self, study: StudyInterface, source_id: ConstraintId, new_constraint_name: ConstraintId
     ) -> BindingConstraint:
         """
         Creates a duplicate constraint with a new name.
@@ -481,7 +481,7 @@ class BindingConstraintManager:
     def update_binding_constraint(
         self,
         study: StudyInterface,
-        binding_constraint_id: ConstraintID,
+        binding_constraint_id: ConstraintId,
         data: BindingConstraintUpdate,
         matrices: BindingConstraintMatrices,
     ) -> BindingConstraint:
@@ -509,7 +509,7 @@ class BindingConstraintManager:
         self,
         study: StudyInterface,
         bcs_by_ids: BindingConstraintUpdates,
-    ) -> Mapping[ConstraintID, BindingConstraint]:
+    ) -> Mapping[ConstraintId, BindingConstraint]:
         """
         Updates multiple binding constraints within a study.
 
@@ -525,7 +525,7 @@ class BindingConstraintManager:
         """
         study_dao = study.get_study_dao()
         all_constraints = study_dao.get_all_constraints()
-        constraints: dict[ConstraintID, BindingConstraint] = {}
+        constraints: dict[ConstraintId, BindingConstraint] = {}
 
         for bc_id, bc_update in bcs_by_ids.items():
             # check binding constraint id sent by user exist for this study
@@ -548,7 +548,7 @@ class BindingConstraintManager:
         return constraints
 
     def remove_multiple_binding_constraints(
-        self, study: StudyInterface, binding_constraints_ids: list[ConstraintID]
+        self, study: StudyInterface, binding_constraints_ids: list[ConstraintId]
     ) -> None:
         """
         Removes multiple binding constraints from a study.
@@ -586,7 +586,7 @@ class BindingConstraintManager:
         study.add_commands([command])
 
     def add_constraint_terms(
-        self, study: StudyInterface, binding_constraint_id: ConstraintID, constraint_terms: Sequence[ConstraintTerm]
+        self, study: StudyInterface, binding_constraint_id: ConstraintId, constraint_terms: Sequence[ConstraintTerm]
     ) -> None:
         """
         Adds new constraint terms to an existing binding constraint.
@@ -611,7 +611,7 @@ class BindingConstraintManager:
     def update_constraint_terms(
         self,
         study: StudyInterface,
-        binding_constraint_id: ConstraintID,
+        binding_constraint_id: ConstraintId,
         constraint_terms: Sequence[ConstraintTermUpdate],
     ) -> None:
         """
@@ -642,7 +642,7 @@ class BindingConstraintManager:
     def remove_constraint_term(
         self,
         study: StudyInterface,
-        binding_constraint_id: ConstraintID,
+        binding_constraint_id: ConstraintId,
         term_id: str,
     ) -> None:
         """

@@ -28,7 +28,7 @@ from antarest.study.business.model.area_properties_model import AreaProperties, 
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
     ClusterTerm,
-    ConstraintID,
+    ConstraintId,
     LinkTerm,
 )
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
@@ -169,11 +169,11 @@ class InMemoryStudyDao(StudyDao):
         self._st_storages_constraints_matrix: dict[AdditionalConstraintKey, str] = {}
         self._st_storages_constraints_terms: dict[str, dict[str, str]] = {}
         # Binding constraints
-        self._constraints: dict[ConstraintID, BindingConstraint] = {}
-        self._constraints_values_matrix: dict[ConstraintID, str] = {}
-        self._constraints_less_term_matrix: dict[ConstraintID, str] = {}
-        self._constraints_greater_term_matrix: dict[ConstraintID, str] = {}
-        self._constraints_equal_term_matrix: dict[ConstraintID, str] = {}
+        self._constraints: dict[ConstraintId, BindingConstraint] = {}
+        self._constraints_values_matrix: dict[ConstraintId, str] = {}
+        self._constraints_less_term_matrix: dict[ConstraintId, str] = {}
+        self._constraints_greater_term_matrix: dict[ConstraintId, str] = {}
+        self._constraints_equal_term_matrix: dict[ConstraintId, str] = {}
         # General config
         self._general_config: GeneralConfig = GeneralConfig()
         # Optimization preferences config
@@ -645,30 +645,30 @@ class InMemoryStudyDao(StudyDao):
         del self._renewables[cluster_key(area_id, renewable.id)]
 
     @override
-    def get_all_constraints(self) -> dict[ConstraintID, BindingConstraint]:
+    def get_all_constraints(self) -> dict[ConstraintId, BindingConstraint]:
         return self._constraints
 
     @override
-    def get_constraint(self, constraint_id: ConstraintID) -> BindingConstraint:
+    def get_constraint(self, constraint_id: ConstraintId) -> BindingConstraint:
         return self._constraints[constraint_id]
 
     @override
-    def get_constraint_values_matrix(self, constraint_id: ConstraintID) -> pl.DataFrame:
+    def get_constraint_values_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         matrix_id = self._constraints_values_matrix[constraint_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_constraint_less_term_matrix(self, constraint_id: ConstraintID) -> pl.DataFrame:
+    def get_constraint_less_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         matrix_id = self._constraints_less_term_matrix[constraint_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_constraint_greater_term_matrix(self, constraint_id: ConstraintID) -> pl.DataFrame:
+    def get_constraint_greater_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         matrix_id = self._constraints_greater_term_matrix[constraint_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_constraint_equal_term_matrix(self, constraint_id: ConstraintID) -> pl.DataFrame:
+    def get_constraint_equal_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         matrix_id = self._constraints_equal_term_matrix[constraint_id]
         return self._matrix_service.get(matrix_id)
 
@@ -678,19 +678,19 @@ class InMemoryStudyDao(StudyDao):
             self._constraints[constraint.id] = constraint
 
     @override
-    def save_constraint_values_matrix(self, constraint_id: ConstraintID, series_id: str) -> None:
+    def save_constraint_values_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
         self._constraints_values_matrix[constraint_id] = series_id
 
     @override
-    def save_constraint_less_term_matrix(self, constraint_id: ConstraintID, series_id: str) -> None:
+    def save_constraint_less_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
         self._constraints_less_term_matrix[constraint_id] = series_id
 
     @override
-    def save_constraint_greater_term_matrix(self, constraint_id: ConstraintID, series_id: str) -> None:
+    def save_constraint_greater_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
         self._constraints_greater_term_matrix[constraint_id] = series_id
 
     @override
-    def save_constraint_equal_term_matrix(self, constraint_id: ConstraintID, series_id: str) -> None:
+    def save_constraint_equal_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
         self._constraints_equal_term_matrix[constraint_id] = series_id
 
     @override

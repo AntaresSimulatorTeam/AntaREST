@@ -18,7 +18,7 @@ from typing_extensions import override
 
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
-from antarest.study.business.model.binding_constraint_model import BindingConstraint, ConstraintID
+from antarest.study.business.model.binding_constraint_model import BindingConstraint, ConstraintId
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
@@ -319,27 +319,27 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_all_renewables_series()
 
     @override
-    def get_all_constraints(self) -> dict[ConstraintID, BindingConstraint]:
+    def get_all_constraints(self) -> dict[ConstraintId, BindingConstraint]:
         return self._adaptee.get_all_constraints()
 
     @override
-    def get_constraint(self, constraint_id: ConstraintID) -> BindingConstraint:
+    def get_constraint(self, constraint_id: ConstraintId) -> BindingConstraint:
         return self._adaptee.get_constraint(constraint_id)
 
     @override
-    def get_constraint_values_matrix(self, constraint_id: ConstraintID) -> pl.DataFrame:
+    def get_constraint_values_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         return self._adaptee.get_constraint_values_matrix(constraint_id)
 
     @override
-    def get_constraint_less_term_matrix(self, constraint_id: ConstraintID) -> pl.DataFrame:
+    def get_constraint_less_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         return self._adaptee.get_constraint_less_term_matrix(constraint_id)
 
     @override
-    def get_constraint_greater_term_matrix(self, constraint_id: ConstraintID) -> pl.DataFrame:
+    def get_constraint_greater_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         return self._adaptee.get_constraint_greater_term_matrix(constraint_id)
 
     @override
-    def get_constraint_equal_term_matrix(self, constraint_id: ConstraintID) -> pl.DataFrame:
+    def get_constraint_equal_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         return self._adaptee.get_constraint_equal_term_matrix(constraint_id)
 
     @override

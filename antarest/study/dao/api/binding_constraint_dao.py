@@ -15,32 +15,32 @@ from collections.abc import Sequence
 
 import polars as pl
 
-from antarest.study.business.model.binding_constraint_model import BindingConstraint, ConstraintID
+from antarest.study.business.model.binding_constraint_model import BindingConstraint, ConstraintId
 
 
 class ReadOnlyConstraintDao(ABC):
     @abstractmethod
-    def get_all_constraints(self) -> dict[ConstraintID, BindingConstraint]:
+    def get_all_constraints(self) -> dict[ConstraintId, BindingConstraint]:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_constraint(self, constraint_id: ConstraintID) -> BindingConstraint:
+    def get_constraint(self, constraint_id: ConstraintId) -> BindingConstraint:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_constraint_values_matrix(self, constraint_id: ConstraintID) -> pl.DataFrame:
+    def get_constraint_values_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_constraint_less_term_matrix(self, constraint_id: ConstraintID) -> pl.DataFrame:
+    def get_constraint_less_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_constraint_greater_term_matrix(self, constraint_id: ConstraintID) -> pl.DataFrame:
+    def get_constraint_greater_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_constraint_equal_term_matrix(self, constraint_id: ConstraintID) -> pl.DataFrame:
+    def get_constraint_equal_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         raise NotImplementedError()
 
 
@@ -50,19 +50,19 @@ class ConstraintDao(ReadOnlyConstraintDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_constraint_values_matrix(self, constraint_id: ConstraintID, series_id: str) -> None:
+    def save_constraint_values_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_constraint_less_term_matrix(self, constraint_id: ConstraintID, series_id: str) -> None:
+    def save_constraint_less_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_constraint_greater_term_matrix(self, constraint_id: ConstraintID, series_id: str) -> None:
+    def save_constraint_greater_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_constraint_equal_term_matrix(self, constraint_id: ConstraintID, series_id: str) -> None:
+    def save_constraint_equal_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
