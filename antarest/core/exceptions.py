@@ -809,3 +809,9 @@ class ThermalClustersNotFound(HTTPException):
     def __init__(self, invalid_thermal_ids: dict[str, set[str]]) -> None:
         msg = f"Thermal clusters not found: {invalid_thermal_ids}"
         super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class RenewableClustersNotFound(HTTPException):
+    def __init__(self, invalid_renewable_ids: dict[str, set[str]]) -> None:
+        msg = f"Renewable clusters not found: {invalid_renewable_ids}"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
