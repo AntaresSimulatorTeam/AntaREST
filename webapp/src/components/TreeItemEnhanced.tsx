@@ -26,17 +26,17 @@ export interface TreeItemEnhancedProps extends TreeItemProps {
 ////////////////////////////////////////////////////////////////
 
 function withTooltip(label: TreeItemEnhancedProps["label"], disableTooltip: boolean) {
+  if (typeof label !== "string") {
+    return label;
+  }
+
   const labelEl = (
     <Typography variant="body2" noWrap>
       {label}
     </Typography>
   );
 
-  if (disableTooltip || typeof label !== "string") {
-    return labelEl;
-  }
-
-  return <Tooltip title={label}>{labelEl}</Tooltip>;
+  return disableTooltip ? labelEl : <Tooltip title={label}>{labelEl}</Tooltip>;
 }
 
 function withLoading(label: TreeItemEnhancedProps["label"], loading: boolean) {
