@@ -73,6 +73,7 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.common import (
     AreaId,
     AreaSeriesMapping,
+    BindingConstraintSeriesMapping,
     LinkSeriesMapping,
     RenewableSeriesMapping,
     ThermalSeriesMapping,
@@ -769,20 +770,24 @@ class InMemoryStudyDao(StudyDao):
             self._constraints[constraint.id] = constraint
 
     @override
-    def save_constraint_values_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
-        self._constraints_values_matrix[constraint_id] = series_id
+    def save_constraint_values_matrix(self, series: BindingConstraintSeriesMapping) -> None:
+        for constraint_id, series_id in series.items():
+            self._constraints_values_matrix[constraint_id] = series_id
 
     @override
-    def save_constraint_less_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
-        self._constraints_less_term_matrix[constraint_id] = series_id
+    def save_constraint_less_term_matrix(self, series: BindingConstraintSeriesMapping) -> None:
+        for constraint_id, series_id in series.items():
+            self._constraints_less_term_matrix[constraint_id] = series_id
 
     @override
-    def save_constraint_greater_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
-        self._constraints_greater_term_matrix[constraint_id] = series_id
+    def save_constraint_greater_term_matrix(self, series: BindingConstraintSeriesMapping) -> None:
+        for constraint_id, series_id in series.items():
+            self._constraints_greater_term_matrix[constraint_id] = series_id
 
     @override
-    def save_constraint_equal_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
-        self._constraints_equal_term_matrix[constraint_id] = series_id
+    def save_constraint_equal_term_matrix(self, series: BindingConstraintSeriesMapping) -> None:
+        for constraint_id, series_id in series.items():
+            self._constraints_equal_term_matrix[constraint_id] = series_id
 
     @override
     def delete_constraints(self, constraints: list[BindingConstraint]) -> None:

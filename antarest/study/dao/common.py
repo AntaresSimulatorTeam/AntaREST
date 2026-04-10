@@ -9,7 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import TypeAlias
+from typing import NewType, TypeAlias
+
+from antarest.study.business.model.scenario_builder_model import ConstraintId
 
 # TODO: It would be better to :
 #  - Use `NewType` instead of `TypeAlias`
@@ -24,3 +26,4 @@ ThermalSeriesMapping: TypeAlias = dict[AreaId, dict[ThermalId, SeriesId]]
 RenewableSeriesMapping: TypeAlias = dict[AreaId, dict[RenewableId, SeriesId]]
 AreaSeriesMapping: TypeAlias = dict[AreaId, SeriesId]
 LinkSeriesMapping: TypeAlias = dict[tuple[AreaId, AreaId], SeriesId]
+BindingConstraintSeriesMapping = NewType("BindingConstraintSeriesMapping", dict[ConstraintId, SeriesId])

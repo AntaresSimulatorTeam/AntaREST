@@ -16,6 +16,7 @@ from collections.abc import Sequence
 import polars as pl
 
 from antarest.study.business.model.binding_constraint_model import BindingConstraint, ConstraintId
+from antarest.study.dao.common import BindingConstraintSeriesMapping
 
 
 class ReadOnlyConstraintDao(ABC):
@@ -50,19 +51,19 @@ class ConstraintDao(ReadOnlyConstraintDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_constraint_values_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
+    def save_constraint_values_matrix(self, series: BindingConstraintSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_constraint_less_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
+    def save_constraint_less_term_matrix(self, series: BindingConstraintSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_constraint_greater_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
+    def save_constraint_greater_term_matrix(self, series: BindingConstraintSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_constraint_equal_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
+    def save_constraint_equal_term_matrix(self, series: BindingConstraintSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod

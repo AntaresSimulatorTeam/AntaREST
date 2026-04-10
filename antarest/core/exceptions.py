@@ -458,6 +458,12 @@ class BindingConstraintNotFound(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
+class BindingConstraintsNotFound(HTTPException):
+    def __init__(self, *bc_ids: str) -> None:
+        ids = ", ".join(f"'{bc}'" for bc in bc_ids)
+        super().__init__(HTTPStatus.NOT_FOUND, f"Binding constraints are not found: {ids}")
+
+
 class DuplicateConstraintName(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, message)

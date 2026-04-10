@@ -22,11 +22,12 @@ from typing import TYPE_CHECKING, Any, NewType, Sequence
 import polars as pl
 from antares.study.version import StudyVersion
 from sqlalchemy import Row, Table, delete, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import outerjoin
 from typing_extensions import override
 
-from antarest.core.exceptions import BindingConstraintNotFound
+from antarest.core.exceptions import BindingConstraintNotFound, BindingConstraintsNotFound
 from antarest.study.business.model.binding_constraint_model import (
     OPERATOR_MATRICES_MAP,
     BindingConstraint,
@@ -37,6 +38,7 @@ from antarest.study.business.model.binding_constraint_model import (
     LinkTerm,
 )
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao
+from antarest.study.dao.common import BindingConstraintSeriesMapping
 from antarest.study.dao.database.common import get_row_representation_as_dict
 from antarest.study.dao.database.models.binding_constraint import (
     BINDING_CONSTRAINT_CLUSTER_TERM_TABLE as CT,
@@ -223,9 +225,26 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         #  so the DB DAO returns the same shape as the file DAO after a time-step change.
         return self.get_impl().get_matrix(row.matrix_id)
 
-    def _save_bc_matrices(self, table: Table, entries: list[tuple[str, str]]) -> None:
-        rows = [{"study_id": self._study_id, "constraint_id": cid, "matrix_id": mid} for cid, mid in entries]
-        upsert_multiple(self._db_session, table, rows)
+    def _raise_the_right_binding_constraint_exception(
+        self, bc_ids: set[ConstraintId], exc: IntegrityError | None = None
+    ) -> None:
+        # Checks if some binding constraints do not exist
+        all_constraints = set(self.get_all_constraints())
+        if invalid_bcs := bc_ids - all_constraints:
+            if len(invalid_bcs) == 1:
+                raise BindingConstraintNotFound(next(iter(invalid_bcs))) from exc
+            raise BindingConstraintsNotFound(*invalid_bcs) from exc
+
+        # All constraints exist. It means that the DB table does not contain the information.
+        raise ValueError("One of the binding constraints table is not filled as it should") from exc
+
+    def _save_bc_matrices(self, table: Table, series: BindingConstraintSeriesMapping) -> None:
+        rows = [{"study_id": self._study_id, "constraint_id": cid, "matrix_id": mid} for cid, mid in series.items()]
+
+        try:
+            upsert_multiple(self._db_session, table, rows)
+        except IntegrityError as e:
+            self._raise_the_right_binding_constraint_exception(set(series), e)
 
     @override
     def get_constraint_values_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
@@ -555,23 +574,23 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         }
 
     @override
-    def save_constraint_values_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
-        self._save_bc_matrices(BINDING_CONSTRAINT_VALUES_MATRIX_TABLE, [(constraint_id, series_id)])
+    def save_constraint_values_matrix(self, series: BindingConstraintSeriesMapping) -> None:
+        self._save_bc_matrices(BINDING_CONSTRAINT_VALUES_MATRIX_TABLE, series)
         self._db_session.commit()
 
     @override
-    def save_constraint_less_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
-        self._save_bc_matrices(BINDING_CONSTRAINT_LT_MATRIX_TABLE, [(constraint_id, series_id)])
+    def save_constraint_less_term_matrix(self, series: BindingConstraintSeriesMapping) -> None:
+        self._save_bc_matrices(BINDING_CONSTRAINT_LT_MATRIX_TABLE, series)
         self._db_session.commit()
 
     @override
-    def save_constraint_greater_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
-        self._save_bc_matrices(BINDING_CONSTRAINT_GT_MATRIX_TABLE, [(constraint_id, series_id)])
+    def save_constraint_greater_term_matrix(self, series: BindingConstraintSeriesMapping) -> None:
+        self._save_bc_matrices(BINDING_CONSTRAINT_GT_MATRIX_TABLE, series)
         self._db_session.commit()
 
     @override
-    def save_constraint_equal_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
-        self._save_bc_matrices(BINDING_CONSTRAINT_EQ_MATRIX_TABLE, [(constraint_id, series_id)])
+    def save_constraint_equal_term_matrix(self, series: BindingConstraintSeriesMapping) -> None:
+        self._save_bc_matrices(BINDING_CONSTRAINT_EQ_MATRIX_TABLE, series)
         self._db_session.commit()
 
     @override
