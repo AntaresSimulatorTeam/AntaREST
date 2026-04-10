@@ -168,7 +168,7 @@ class HydroDao(ReadOnlyHydroDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_allocation(self, allocation: dict[AreaId, HydroAllocation]) -> None:
+    def save_hydro_allocation(self, allocation_dict: dict[AreaId, HydroAllocation]) -> None:
         raise NotImplementedError()
 
     @abstractmethod

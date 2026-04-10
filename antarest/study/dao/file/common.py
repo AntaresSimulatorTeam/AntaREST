@@ -49,7 +49,13 @@ def get_all_area_matrices(
 
     return result
 
-def save_area_matrices(file_study_dao: "FileStudyTreeDao", study_data: FileStudy, series: AreaSeriesMapping, url_getter: Callable[[AreaId], list[str]]) -> None:
+
+def save_area_matrices(
+    file_study_dao: "FileStudyTreeDao",
+    study_data: FileStudy,
+    series: AreaSeriesMapping,
+    url_getter: Callable[[AreaId], list[str]],
+) -> None:
     matrices_mapping: dict[str, list[MatrixNode]] = {}
     for area_id, series_id in series.items():
         url = url_getter(area_id)
@@ -58,4 +64,3 @@ def save_area_matrices(file_study_dao: "FileStudyTreeDao", study_data: FileStudy
         matrix_id = extract_matrix_id(series_id)
         matrices_mapping.setdefault(matrix_id, []).append(node)
     file_study_dao.save_matrices(matrices_mapping)
-
