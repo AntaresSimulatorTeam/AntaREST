@@ -36,24 +36,6 @@ from antarest.study.storage.variantstudy.model.command.update_binding_constraint
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 # ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def _bc(name: str, **kwargs: object) -> BindingConstraint:
-    """Minimal BindingConstraint factory for use in tests."""
-    defaults: dict = {
-        "name": name,
-        "group": "default",
-        "operator": BindingConstraintOperator.EQUAL,
-        "time_step": BindingConstraintFrequency.HOURLY,
-        "terms": [],
-    }
-    defaults.update(kwargs)
-    return BindingConstraint(**defaults)
-
-
-# ---------------------------------------------------------------------------
 # test_apply — DB equivalent of the mock-based test_apply
 # ---------------------------------------------------------------------------
 
@@ -73,26 +55,26 @@ def test_apply_database(db_dao_87: DatabaseStudyDao, command_context: CommandCon
     # Seed initial constraints (bc_0 acts as an unrelated constraint that must stay untouched)
     dao.save_constraints(
         [
-            _bc(
-                bc_0,
+            BindingConstraint(
+                name=bc_0,
                 group="old_group1",
                 operator=BindingConstraintOperator.GREATER,
                 time_step=BindingConstraintFrequency.DAILY,
             ),
-            _bc(
-                bc_1,
+            BindingConstraint(
+                name=bc_1,
                 group="old_group1",
                 operator=BindingConstraintOperator.GREATER,
                 time_step=BindingConstraintFrequency.DAILY,
             ),
-            _bc(
-                bc_2,
+            BindingConstraint(
+                name=bc_2,
                 group="old_group2",
                 operator=BindingConstraintOperator.LESS,
                 time_step=BindingConstraintFrequency.HOURLY,
             ),
-            _bc(
-                bc_3,
+            BindingConstraint(
+                name=bc_3,
                 group="old_group2",
                 operator=BindingConstraintOperator.LESS,
                 time_step=BindingConstraintFrequency.HOURLY,
