@@ -605,36 +605,44 @@ class InMemoryStudyDao(StudyDao):
         return self._hydro_max_daily_pump_energy
 
     @override
-    def save_hydro_management(self, hydro_management: HydroManagement, area_id: str) -> None:
-        self._hydro_properties[area_id].management_options = hydro_management
+    def save_hydro_management(self, hydro_management: dict[AreaId, HydroManagement]) -> None:
+        for area_id, management_options in hydro_management.items():
+            self._hydro_properties[area_id].management_options = management_options
 
     @override
-    def save_inflow_structure(self, inflow_structure: InflowStructure, area_id: str) -> None:
-        self._hydro_properties[area_id].inflow_structure = inflow_structure
+    def save_inflow_structure(self, inflow_structure: dict[AreaId, InflowStructure]) -> None:
+        for area_id, inflow in inflow_structure.items():
+            self._hydro_properties[area_id].inflow_structure = inflow
 
     @override
-    def save_hydro_allocation(self, area_id: str, allocation: HydroAllocation) -> None:
-        self._hydro_allocation[area_id] = allocation
+    def save_hydro_allocation(self, allocation_dict: dict[AreaId, HydroAllocation]) -> None:
+        for area_id, allocation in allocation_dict.items():
+            self._hydro_allocation[area_id] = allocation
 
     @override
-    def save_hydro_correlation(self, area_id: str, correlation: HydroCorrelation) -> None:
-        self._hydro_correlation[area_id] = correlation
+    def save_hydro_correlation(self, correlation_dict: dict[AreaId, HydroCorrelation]) -> None:
+        for area_id, correlation in correlation_dict.items():
+            self._hydro_correlation[area_id] = correlation
 
     @override
-    def save_hydro_max_hourly_gen_power(self, area_id: str, series_id: str) -> None:
-        self._hydro_max_hourly_gen_power[area_id] = series_id
+    def save_hydro_max_hourly_gen_power(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_max_hourly_gen_power[area_id] = series_id
 
     @override
-    def save_hydro_max_hourly_pump_power(self, area_id: str, series_id: str) -> None:
-        self._hydro_max_hourly_pump_power[area_id] = series_id
+    def save_hydro_max_hourly_pump_power(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_max_hourly_pump_power[area_id] = series_id
 
     @override
-    def save_hydro_max_daily_gen_energy(self, area_id: str, series_id: str) -> None:
-        self._hydro_max_daily_gen_energy[area_id] = series_id
+    def save_hydro_max_daily_gen_energy(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_max_daily_gen_energy[area_id] = series_id
 
     @override
-    def save_hydro_max_daily_pump_energy(self, area_id: str, series_id: str) -> None:
-        self._hydro_max_daily_pump_energy[area_id] = series_id
+    def save_hydro_max_daily_pump_energy(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_max_daily_pump_energy[area_id] = series_id
 
     @override
     def convert_hydro_pmax(
@@ -655,10 +663,10 @@ class InMemoryStudyDao(StudyDao):
         if hydro_pmax == HydroPmax.HOURLY:
             # When converting to hourly, create and save the matrices
             for area_id in areas:
-                self.save_hydro_max_hourly_gen_power(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly))
-                self.save_hydro_max_hourly_pump_power(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly))
-                self.save_hydro_max_daily_gen_energy(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily))
-                self.save_hydro_max_daily_pump_energy(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily))
+                self.save_hydro_max_hourly_gen_power({area_id: MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly)})
+                self.save_hydro_max_hourly_pump_power({area_id: MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly)})
+                self.save_hydro_max_daily_gen_energy({area_id: MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily)})
+                self.save_hydro_max_daily_pump_energy({area_id: MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily)})
         else:
             # When converting away from hourly, remove the matrices from in-memory storage
             for area_id in areas:
@@ -1312,40 +1320,49 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def save_hydro_maxpower(self, area_id: str, series_id: str) -> None:
-        self._hydro_maxpower[area_id] = series_id
+    def save_hydro_maxpower(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_maxpower[area_id] = series_id
 
     @override
-    def save_hydro_reservoir(self, area_id: str, series_id: str) -> None:
-        self._hydro_reservoir[area_id] = series_id
+    def save_hydro_reservoir(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_reservoir[area_id] = series_id
 
     @override
-    def save_hydro_energy(self, area_id: str, series_id: str) -> None:
-        self._hydro_energy[area_id] = series_id
+    def save_hydro_energy(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_energy[area_id] = series_id
 
     @override
-    def save_hydro_run_of_river(self, area_id: str, series_id: str) -> None:
-        self._hydro_run_of_river[area_id] = series_id
+    def save_hydro_run_of_river(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_run_of_river[area_id] = series_id
 
     @override
-    def save_hydro_modulation(self, area_id: str, series_id: str) -> None:
-        self._hydro_modulation[area_id] = series_id
+    def save_hydro_modulation(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_modulation[area_id] = series_id
 
     @override
-    def save_hydro_credit_modulations(self, area_id: str, series_id: str) -> None:
-        self._hydro_credit_modulations[area_id] = series_id
+    def save_hydro_credit_modulations(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_credit_modulations[area_id] = series_id
 
     @override
-    def save_hydro_inflow_pattern(self, area_id: str, series_id: str) -> None:
-        self._hydro_inflow_pattern[area_id] = series_id
+    def save_hydro_inflow_pattern(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_inflow_pattern[area_id] = series_id
 
     @override
-    def save_hydro_water_values(self, area_id: str, series_id: str) -> None:
-        self._hydro_water_values[area_id] = series_id
+    def save_hydro_water_values(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_water_values[area_id] = series_id
 
     @override
-    def save_hydro_mingen(self, area_id: str, series_id: str) -> None:
-        self._hydro_mingen[area_id] = series_id
+    def save_hydro_mingen(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_mingen[area_id] = series_id
 
     @override
     def get_load(self, area_id: str) -> pl.DataFrame:
