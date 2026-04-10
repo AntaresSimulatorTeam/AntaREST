@@ -372,7 +372,7 @@ class DatabaseHydroDao(HydroDao):
                 all_area_ids.add(area_id)
                 for alloc in allocation.allocation:
                     all_area_ids.add(alloc.area_id)
-            self._raise_the_right_area_exception(set(all_area_ids), e)
+            self._raise_the_right_area_exception(all_area_ids, e)
 
     @override
     def get_hydro_correlation(self, area_id: str) -> HydroCorrelation:
@@ -427,60 +427,62 @@ class DatabaseHydroDao(HydroDao):
         return HydroCorrelationMatrix(index=area_ids, columns=area_ids, data=array)
 
     @override
-    def save_hydro_correlation(self, area_id: str, correlation: HydroCorrelation) -> None:
+    def save_hydro_correlation(self, correlation_dict: dict[AreaId, HydroCorrelation]) -> None:
         """
-        Save hydro correlation for a specific area.
+        Save hydro correlation for the specified areas.
 
-        This will replace any existing correlation for the area.
-
-        Args:
-            area_id: The area identifier.
-            correlation: The HydroCorrelation to save.
-
-        Raises:
-            AreaNotFound: If the area or any correlated area does not exist.
-            ValueError: If self-correlation is provided and is not 100%.
+        This will replace any existing correlation for the given areas.
         """
         study_id = self.get_study_id()
         session = self.get_session()
 
         # Validate self-correlation if provided
-        for corr_area in correlation.correlation:
-            if corr_area.area_id == area_id and not math.isclose(corr_area.coefficient, 100.0):
-                raise ValueError(f"Self-correlation for area '{area_id}' must be 100%, got {corr_area.coefficient}%")
+        for area_id, correlation in correlation_dict.items():
+            for corr_area in correlation.correlation:
+                if corr_area.area_id == area_id and not math.isclose(corr_area.coefficient, 100.0):
+                    msg = f"Self-correlation for area '{area_id}' must be 100%, got {corr_area.coefficient}%"
+                    raise ValueError(msg)
 
-        # Delete existing correlations involving this area
+        # Delete existing correlations involving the given areas
+        area_ids = set(correlation_dict)
         stmt_delete = delete(HYDRO_CORRELATION_TABLE).where(
             (HYDRO_CORRELATION_TABLE.c.study_id == study_id)
-            & ((HYDRO_CORRELATION_TABLE.c.area_from == area_id) | (HYDRO_CORRELATION_TABLE.c.area_to == area_id))
+            & ((HYDRO_CORRELATION_TABLE.c.area_from.in_(area_ids)) | (HYDRO_CORRELATION_TABLE.c.area_to.in_(area_ids)))
         )
         session.execute(stmt_delete)
 
         # Insert new correlations in canonical upper-triangle order (area_from < area_to)
         insert_values = []
-        for corr_area in correlation.correlation:
-            if corr_area.area_id == area_id or corr_area.coefficient == 0:
-                continue
-            coefficient = corr_area.coefficient / 100
-            a, b = sorted([area_id, corr_area.area_id])
-            insert_values.append(
-                {
-                    "study_id": study_id,
-                    "area_from": a,
-                    "area_to": b,
-                    "coefficient": coefficient,
-                }
-            )
+        for area_id, correlation in correlation_dict.items():
+            for corr_area in correlation.correlation:
+                if corr_area.area_id == area_id or corr_area.coefficient == 0:
+                    continue
+                coefficient = corr_area.coefficient / 100
+                a, b = sorted([area_id, corr_area.area_id])
+                insert_values.append(
+                    {
+                        "study_id": study_id,
+                        "area_from": a,
+                        "area_to": b,
+                        "coefficient": coefficient,
+                    }
+                )
 
         try:
             if insert_values:
                 session.execute(insert(HYDRO_CORRELATION_TABLE), insert_values)
             session.commit()
         except IntegrityError as e:
+            # IntegrityError occurred can only mean that an area_id is invalid
             session.rollback()
-            all_area_ids = [area_id] + [corr_area.area_id for corr_area in correlation.correlation]
-            invalid = self.get_impl().get_invalid_area_ids(all_area_ids)
-            raise AreaNotFound(*invalid) from e
+            # Build the `all_area_ids` set to raise the proper exception
+            all_area_ids = set()
+            for area_id, correlation in correlation_dict.items():
+                all_area_ids.add(area_id)
+                for alloc in correlation.correlation:
+                    all_area_ids.add(alloc.area_id)
+
+            self._raise_the_right_area_exception(all_area_ids, e)
 
     # ==================== Matrix Methods ====================
 
