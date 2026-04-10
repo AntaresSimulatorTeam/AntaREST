@@ -29,6 +29,11 @@ class InputReserves(FolderNode):
                 a: InputReservesAreaFolder(
                     self.matrix_mapper,
                     self.config.next_file(a),
+                    matrix_node=InputSeriesMatrix(
+                        self.matrix_mapper,
+                        self.config.next_file(f"{a}.txt"),
+                        default_empty=default_4_fixed_hourly,
+                    ),
                 )
                 for a in self.config.area_names()
             }
