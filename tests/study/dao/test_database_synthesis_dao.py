@@ -85,7 +85,7 @@ class TestDatabaseSynthesisDao:
         dao.save_area("Germany")
 
         link = Link(area1="france", area2="germany")
-        dao.save_link(link)
+        dao.save_links([link])
 
         synthesis = dao.get_synthesis()
 
