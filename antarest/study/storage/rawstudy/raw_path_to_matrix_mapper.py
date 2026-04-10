@@ -82,6 +82,45 @@ class RawPathToMatrixMapper:
         def _save_link_indirect_capacities(area_from: str, area_to: str, series_id: str) -> None:
             dao.save_link_indirect_capacities({(area_from, area_to): series_id})
 
+        def _save_hydro_max_power(area_id: str, series_id: str) -> None:
+            dao.save_hydro_maxpower({area_id: series_id})
+
+        def _save_hydro_reservoir(area_id: str, series_id: str) -> None:
+            dao.save_hydro_reservoir({area_id: series_id})
+
+        def _save_hydro_energy(area_id: str, series_id: str) -> None:
+            dao.save_hydro_energy({area_id: series_id})
+
+        def _save_hydro_run_of_river(area_id: str, series_id: str) -> None:
+            dao.save_hydro_run_of_river({area_id: series_id})
+
+        def _save_hydro_modulation(area_id: str, series_id: str) -> None:
+            dao.save_hydro_modulation({area_id: series_id})
+
+        def _save_hydro_credit_modulations(area_id: str, series_id: str) -> None:
+            dao.save_hydro_credit_modulations({area_id: series_id})
+
+        def _save_hydro_inflow_pattern(area_id: str, series_id: str) -> None:
+            dao.save_hydro_inflow_pattern({area_id: series_id})
+
+        def _save_hydro_water_values(area_id: str, series_id: str) -> None:
+            dao.save_hydro_water_values({area_id: series_id})
+
+        def _save_hydro_mingen(area_id: str, series_id: str) -> None:
+            dao.save_hydro_mingen({area_id: series_id})
+
+        def _save_hydro_max_hourly_gen_power(area_id: str, series_id: str) -> None:
+            dao.save_hydro_max_hourly_gen_power({area_id: series_id})
+
+        def _save_hydro_max_hourly_pump_power(area_id: str, series_id: str) -> None:
+            dao.save_hydro_max_hourly_pump_power({area_id: series_id})
+
+        def _save_hydro_max_daily_gen_energy(area_id: str, series_id: str) -> None:
+            dao.save_hydro_max_daily_gen_energy({area_id: series_id})
+
+        def _save_hydro_max_daily_pump_energy(area_id: str, series_id: str) -> None:
+            dao.save_hydro_max_daily_pump_energy({area_id: series_id})
+
         self._path_matchers = [
             RegexMatcher(
                 pattern=re.compile(r"user/expansion/capa/(?P<filename>[^/]+)"),
@@ -219,67 +258,67 @@ class RawPathToMatrixMapper:
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/common/capacity/maxpower_(?P<area_id>[^/]+)"),
                 getter=dao.get_hydro_maxpower,
-                setter=dao.save_hydro_maxpower,
+                setter=_save_hydro_max_power,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/common/capacity/reservoir_(?P<area_id>[^/]+)"),
                 getter=dao.get_hydro_reservoir,
-                setter=dao.save_hydro_reservoir,
+                setter=_save_hydro_reservoir,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/prepro/(?P<area_id>[^/]+)/energy"),
                 getter=dao.get_hydro_energy,
-                setter=dao.save_hydro_energy,
+                setter=_save_hydro_energy,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/series/(?P<area_id>[^/]+)/ror"),
                 getter=dao.get_hydro_run_of_river,
-                setter=dao.save_hydro_run_of_river,
+                setter=_save_hydro_run_of_river,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/series/(?P<area_id>[^/]+)/mod"),
                 getter=dao.get_hydro_modulation,
-                setter=dao.save_hydro_modulation,
+                setter=_save_hydro_modulation,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/series/(?P<area_id>[^/]+)/mingen"),
                 getter=dao.get_hydro_mingen,
-                setter=dao.save_hydro_mingen,
+                setter=_save_hydro_mingen,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/series/(?P<area_id>[^/]+)/maxHourlyGenPower"),
                 getter=dao.get_hydro_max_hourly_gen_power,
-                setter=dao.save_hydro_max_hourly_gen_power,
+                setter=_save_hydro_max_hourly_gen_power,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/series/(?P<area_id>[^/]+)/maxHourlyPumpPower"),
                 getter=dao.get_hydro_max_hourly_pump_power,
-                setter=dao.save_hydro_max_hourly_pump_power,
+                setter=_save_hydro_max_hourly_pump_power,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/common/capacity/creditmodulations_(?P<area_id>[^/]+)"),
                 getter=dao.get_hydro_credit_modulations,
-                setter=dao.save_hydro_credit_modulations,
+                setter=_save_hydro_credit_modulations,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/common/capacity/inflowPattern_(?P<area_id>[^/]+)"),
                 getter=dao.get_hydro_inflow_pattern,
-                setter=dao.save_hydro_inflow_pattern,
+                setter=_save_hydro_inflow_pattern,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/common/capacity/waterValues_(?P<area_id>[^/]+)"),
                 getter=dao.get_hydro_water_values,
-                setter=dao.save_hydro_water_values,
+                setter=_save_hydro_water_values,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/common/capacity/maxDailyGenEnergy_(?P<area_id>[^/]+)"),
                 getter=dao.get_hydro_max_daily_gen_energy,
-                setter=dao.save_hydro_max_daily_gen_energy,
+                setter=_save_hydro_max_daily_gen_energy,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/common/capacity/maxDailyPumpEnergy_(?P<area_id>[^/]+)"),
                 getter=dao.get_hydro_max_daily_pump_energy,
-                setter=dao.save_hydro_max_daily_pump_energy,
+                setter=_save_hydro_max_daily_pump_energy,
             ),
             RegexMatcher(
                 pattern=re.compile(
