@@ -677,3 +677,55 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_hydro_max_daily_pump_energy(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_max_daily_pump_energy(area_id)
+
+    @override
+    def get_all_hydro_maxpower(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_maxpower()
+
+    @override
+    def get_all_hydro_reservoir(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_reservoir()
+
+    @override
+    def get_all_hydro_energy(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_energy()
+
+    @override
+    def get_all_hydro_run_of_river(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_run_of_river()
+
+    @override
+    def get_all_hydro_modulation(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_modulation()
+
+    @override
+    def get_all_hydro_credit_modulations(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_credit_modulations()
+
+    @override
+    def get_all_hydro_inflow_pattern(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_inflow_pattern()
+
+    @override
+    def get_all_hydro_water_values(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_water_values()
+
+    @override
+    def get_all_hydro_mingen(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_mingen()
+
+    @override
+    def get_all_hydro_max_hourly_gen_power(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_max_hourly_gen_power()
+
+    @override
+    def get_all_hydro_max_hourly_pump_power(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_max_hourly_pump_power()
+
+    @override
+    def get_all_hydro_max_daily_gen_energy(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_max_daily_gen_energy()
+
+    @override
+    def get_all_hydro_max_daily_pump_energy(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_max_daily_pump_energy()

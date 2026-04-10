@@ -21,6 +21,8 @@ from antarest.study.business.model.hydro_correlation_model import (
     HydroCorrelation,
     HydroCorrelationMatrix,
 )
+from antarest.study.dao.common import AreaId, AreaSeriesMapping
+from antarest.study.dao.file.common import get_all_area_matrices
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 if TYPE_CHECKING:
@@ -51,6 +53,58 @@ def get_inflow_path(area_id: str) -> list[str]:
 
 def get_allocation_path(area_id: str) -> list[str]:
     return ["input", "hydro", "allocation", area_id]
+
+
+def _get_max_daily_gen_energy_path(area_id: AreaId) -> list[str]:
+    return ["input", "hydro", "common", "capacity", f"maxDailyGenEnergy_{area_id}"]
+
+
+def _get_max_daily_pump_energy_path(area_id: AreaId) -> list[str]:
+    return ["input", "hydro", "common", "capacity", f"maxDailyPumpEnergy_{area_id}"]
+
+
+def _get_max_hourly_gen_power_path(area_id: AreaId) -> list[str]:
+    return ["input", "hydro", "series", area_id, "maxHourlyGenPower"]
+
+
+def _get_max_hourly_pump_power_path(area_id: AreaId) -> list[str]:
+    return ["input", "hydro", "series", area_id, "maxHourlyPumpPower"]
+
+
+def _get_max_power_path(area_id: AreaId) -> list[str]:
+    return ["input", "hydro", "common", "capacity", f"maxpower_{area_id}"]
+
+
+def _get_reservoir_path(area_id: AreaId) -> list[str]:
+    return ["input", "hydro", "common", "capacity", f"reservoir_{area_id}"]
+
+
+def _get_energy_path(area_id: AreaId) -> list[str]:
+    return ["input", "hydro", "prepro", area_id, "energy"]
+
+
+def _get_run_of_river_path(area_id: AreaId) -> list[str]:
+    return ["input", "hydro", "series", area_id, "ror"]
+
+
+def _get_modulation_path(area_id: AreaId) -> list[str]:
+    return ["input", "hydro", "series", area_id, "mod"]
+
+
+def _get_credit_modulations_path(area_id: AreaId) -> list[str]:
+    return ["input", "hydro", "common", "capacity", f"creditmodulations_{area_id}"]
+
+
+def _get_inflow_pattern_path(area_id: AreaId) -> list[str]:
+    return ["input", "hydro", "common", "capacity", f"inflowPattern_{area_id}"]
+
+
+def _get_water_values_path(area_id: AreaId) -> list[str]:
+    return ["input", "hydro", "common", "capacity", f"waterValues_{area_id}"]
+
+
+def _get_min_gen_path(area_id: AreaId) -> list[str]:
+    return ["input", "hydro", "series", area_id, "mingen"]
 
 
 class FileStudyHydroDao(HydroDao):
@@ -314,6 +368,71 @@ class FileStudyHydroDao(HydroDao):
     def get_hydro_max_daily_pump_energy(self, area_id: str) -> pl.DataFrame:
         url = ["input", "hydro", "common", "capacity", f"maxDailyPumpEnergy_{area_id}"]
         return self.get_impl().get_matrix(url)
+
+    @override
+    def get_all_hydro_maxpower(self) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_max_power_path)
+
+    @override
+    def get_all_hydro_reservoir(self) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_reservoir_path)
+
+    @override
+    def get_all_hydro_energy(self) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_energy_path)
+
+    @override
+    def get_all_hydro_run_of_river(self) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_run_of_river_path)
+
+    @override
+    def get_all_hydro_modulation(self) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_modulation_path)
+
+    @override
+    def get_all_hydro_credit_modulations(self) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_credit_modulations_path)
+
+    @override
+    def get_all_hydro_inflow_pattern(self) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_inflow_pattern_path)
+
+    @override
+    def get_all_hydro_water_values(self) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_water_values_path)
+
+    @override
+    def get_all_hydro_mingen(self) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_min_gen_path)
+
+    @override
+    def get_all_hydro_max_hourly_gen_power(self) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_max_hourly_gen_power_path)
+
+    @override
+    def get_all_hydro_max_hourly_pump_power(self) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_max_hourly_pump_power_path)
+
+    @override
+    def get_all_hydro_max_daily_gen_energy(self) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_max_daily_gen_energy_path)
+
+    @override
+    def get_all_hydro_max_daily_pump_energy(self) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_max_daily_pump_energy_path)
 
     @override
     def save_hydro_max_hourly_gen_power(self, area_id: str, series_id: str) -> None:

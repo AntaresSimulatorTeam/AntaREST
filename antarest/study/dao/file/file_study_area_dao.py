@@ -25,6 +25,7 @@ from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIDat
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
 from antarest.study.dao.api.area_dao import AreaDao
 from antarest.study.dao.common import AreaId, AreaSeriesMapping
+from antarest.study.dao.file.common import get_all_area_matrices
 from antarest.study.model import (
     STUDY_VERSION_6_5,
     STUDY_VERSION_8_1,
@@ -206,46 +207,30 @@ class FileStudyAreaDao(AreaDao):
     def get_wind(self, area_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(_get_wind_matrix_path(area_id))
 
-    def _get_all_matrices(self, url_getter: Callable[[AreaId], list[str]]) -> AreaSeriesMapping:
-        study_data = self.get_file_study()
-        matrix_nodes = {}
-
-        areas = study_data.config.areas
-        for area_id in areas:
-            url = url_getter(area_id)
-            node = study_data.tree.get_node(url)
-            assert isinstance(node, MatrixNode)
-            matrix_nodes[node] = area_id
-
-        result: AreaSeriesMapping = {}
-
-        matrices_mapping = self.get_impl().get_matrices_ids(list(matrix_nodes))
-
-        for node, matrix_id in matrices_mapping.items():
-            area_id = matrix_nodes[node]
-            result[area_id] = matrix_id
-
-        return result
-
     @override
     def get_all_load(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(_get_load_matrix_path)
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_load_matrix_path)
 
     @override
     def get_all_misc_gen(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(_get_misc_gen_matrix_path)
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_misc_gen_matrix_path)
 
     @override
     def get_all_reserves(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(_get_reserves_matrix_path)
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_reserves_matrix_path)
 
     @override
     def get_all_solar(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(_get_solar_matrix_path)
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_solar_matrix_path)
 
     @override
     def get_all_wind(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(_get_wind_matrix_path)
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_wind_matrix_path)
 
     @override
     def save_area(self, area_name: str) -> None:

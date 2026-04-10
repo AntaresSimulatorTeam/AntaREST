@@ -553,6 +553,58 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
+    def get_all_hydro_maxpower(self) -> AreaSeriesMapping:
+        return self._hydro_maxpower
+
+    @override
+    def get_all_hydro_reservoir(self) -> AreaSeriesMapping:
+        return self._hydro_reservoir
+
+    @override
+    def get_all_hydro_energy(self) -> AreaSeriesMapping:
+        return self._hydro_energy
+
+    @override
+    def get_all_hydro_run_of_river(self) -> AreaSeriesMapping:
+        return self._hydro_run_of_river
+
+    @override
+    def get_all_hydro_modulation(self) -> AreaSeriesMapping:
+        return self._hydro_modulation
+
+    @override
+    def get_all_hydro_credit_modulations(self) -> AreaSeriesMapping:
+        return self._hydro_credit_modulations
+
+    @override
+    def get_all_hydro_inflow_pattern(self) -> AreaSeriesMapping:
+        return self._hydro_inflow_pattern
+
+    @override
+    def get_all_hydro_water_values(self) -> AreaSeriesMapping:
+        return self._hydro_water_values
+
+    @override
+    def get_all_hydro_mingen(self) -> AreaSeriesMapping:
+        return self._hydro_mingen
+
+    @override
+    def get_all_hydro_max_hourly_gen_power(self) -> AreaSeriesMapping:
+        return self._hydro_max_hourly_gen_power
+
+    @override
+    def get_all_hydro_max_hourly_pump_power(self) -> AreaSeriesMapping:
+        return self._hydro_max_hourly_pump_power
+
+    @override
+    def get_all_hydro_max_daily_gen_energy(self) -> AreaSeriesMapping:
+        return self._hydro_max_daily_gen_energy
+
+    @override
+    def get_all_hydro_max_daily_pump_energy(self) -> AreaSeriesMapping:
+        return self._hydro_max_daily_pump_energy
+
+    @override
     def save_hydro_management(self, hydro_management: HydroManagement, area_id: str) -> None:
         self._hydro_properties[area_id].management_options = hydro_management
 
