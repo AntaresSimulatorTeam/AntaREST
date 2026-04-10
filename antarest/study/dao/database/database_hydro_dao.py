@@ -40,7 +40,8 @@ from antarest.study.business.model.hydro_correlation_model import (
 )
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.dao.api.hydro_dao import HydroDao
-from antarest.study.dao.database.common import get_row_representation_as_dict, validate_area_exists
+from antarest.study.dao.common import AreaSeriesMapping
+from antarest.study.dao.database.common import get_row_representation_as_dict, save_area_matrix, validate_area_exists
 from antarest.study.dao.database.models.area import AREA_TABLE
 from antarest.study.dao.database.models.hydro import (
     HYDRO_ALLOCATION_TABLE,
@@ -546,56 +547,56 @@ class DatabaseHydroDao(HydroDao):
         return self._get_hydro_matrix(area_id, HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE)
 
     @override
-    def save_hydro_maxpower(self, area_id: str, series_id: str) -> None:
-        self._save_hydro_matrix(area_id, HYDRO_MAXPOWER_TABLE, series_id)
+    def save_hydro_maxpower(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, HYDRO_MAXPOWER_TABLE)
 
     @override
-    def save_hydro_reservoir(self, area_id: str, series_id: str) -> None:
-        self._save_hydro_matrix(area_id, HYDRO_RESERVOIR_TABLE, series_id)
+    def save_hydro_reservoir(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, HYDRO_RESERVOIR_TABLE)
 
     @override
-    def save_hydro_energy(self, area_id: str, series_id: str) -> None:
-        self._save_hydro_matrix(area_id, HYDRO_ENERGY_TABLE, series_id)
+    def save_hydro_energy(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, HYDRO_ENERGY_TABLE)
 
     @override
-    def save_hydro_run_of_river(self, area_id: str, series_id: str) -> None:
-        self._save_hydro_matrix(area_id, HYDRO_RUN_OF_RIVER_TABLE, series_id)
+    def save_hydro_run_of_river(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, HYDRO_RUN_OF_RIVER_TABLE)
 
     @override
-    def save_hydro_modulation(self, area_id: str, series_id: str) -> None:
-        self._save_hydro_matrix(area_id, HYDRO_MODULATION_TABLE, series_id)
+    def save_hydro_modulation(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, HYDRO_MODULATION_TABLE)
 
     @override
-    def save_hydro_credit_modulations(self, area_id: str, series_id: str) -> None:
-        self._save_hydro_matrix(area_id, HYDRO_CREDIT_MODULATIONS_TABLE, series_id)
+    def save_hydro_credit_modulations(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, HYDRO_CREDIT_MODULATIONS_TABLE)
 
     @override
-    def save_hydro_inflow_pattern(self, area_id: str, series_id: str) -> None:
-        self._save_hydro_matrix(area_id, HYDRO_INFLOW_PATTERN_TABLE, series_id)
+    def save_hydro_inflow_pattern(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, HYDRO_INFLOW_PATTERN_TABLE)
 
     @override
-    def save_hydro_water_values(self, area_id: str, series_id: str) -> None:
-        self._save_hydro_matrix(area_id, HYDRO_WATER_VALUES_TABLE, series_id)
+    def save_hydro_water_values(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, HYDRO_WATER_VALUES_TABLE)
 
     @override
-    def save_hydro_mingen(self, area_id: str, series_id: str) -> None:
-        self._save_hydro_matrix(area_id, HYDRO_MINGEN_TABLE, series_id)
+    def save_hydro_mingen(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, HYDRO_MINGEN_TABLE)
 
     @override
-    def save_hydro_max_hourly_gen_power(self, area_id: str, series_id: str) -> None:
-        self._save_hydro_matrix(area_id, HYDRO_MAX_HOURLY_GEN_POWER_TABLE, series_id)
+    def save_hydro_max_hourly_gen_power(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, HYDRO_MAX_HOURLY_GEN_POWER_TABLE)
 
     @override
-    def save_hydro_max_hourly_pump_power(self, area_id: str, series_id: str) -> None:
-        self._save_hydro_matrix(area_id, HYDRO_MAX_HOURLY_PUMP_POWER_TABLE, series_id)
+    def save_hydro_max_hourly_pump_power(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, HYDRO_MAX_HOURLY_PUMP_POWER_TABLE)
 
     @override
-    def save_hydro_max_daily_gen_energy(self, area_id: str, series_id: str) -> None:
-        self._save_hydro_matrix(area_id, HYDRO_MAX_DAILY_GEN_ENERGY_TABLE, series_id)
+    def save_hydro_max_daily_gen_energy(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, HYDRO_MAX_DAILY_GEN_ENERGY_TABLE)
 
     @override
-    def save_hydro_max_daily_pump_energy(self, area_id: str, series_id: str) -> None:
-        self._save_hydro_matrix(area_id, HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE, series_id)
+    def save_hydro_max_daily_pump_energy(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE)
 
     @override
     def convert_hydro_pmax(self, hydro_pmax: HydroPmax) -> None:
