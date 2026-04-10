@@ -331,48 +331,48 @@ class DatabaseHydroDao(HydroDao):
         return {area_id: HydroAllocation(allocation=areas) for area_id, areas in allocations_by_source.items()}
 
     @override
-    def save_hydro_allocation(self, area_id: str, allocation: HydroAllocation) -> None:
+    def save_hydro_allocation(self, allocation_dict: dict[AreaId, HydroAllocation]) -> None:
         """
-        Save hydro allocation for a specific area.
+        Save hydro allocation for specific areas.
 
-        This will replace any existing allocation for the area.
-
-        Args:
-            area_id: The source area identifier.
-            allocation: The HydroAllocation to save.
-
-        Raises:
-            AreaNotFound: If the source area or any target area does not exist.
+        This will replace any existing allocation for the given areas.
         """
         study_id = self.get_study_id()
         session = self.get_session()
 
-        # Delete existing allocations for this source area
+        # Delete existing allocations for the source areas
         stmt_delete = delete(HYDRO_ALLOCATION_TABLE).where(
-            (HYDRO_ALLOCATION_TABLE.c.study_id == study_id) & (HYDRO_ALLOCATION_TABLE.c.source_area_id == area_id)
+            (HYDRO_ALLOCATION_TABLE.c.study_id == study_id)
+            & (HYDRO_ALLOCATION_TABLE.c.source_area_id.in_(set(allocation_dict)))
         )
         session.execute(stmt_delete)
 
         # Insert new allocations
-        insert_values = [
-            {
-                "study_id": study_id,
-                "source_area_id": area_id,
-                "target_area_id": alloc_area.area_id,
-                "coefficient": alloc_area.coefficient,
-            }
-            for alloc_area in allocation.allocation
-        ]
+        insert_values = []
+        for area_id, allocation in allocation_dict.items():
+            for alloc_area in allocation.allocation:
+                insert_values.append(
+                    {
+                        "study_id": study_id,
+                        "source_area_id": area_id,
+                        "target_area_id": alloc_area.area_id,
+                        "coefficient": alloc_area.coefficient,
+                    }
+                )
 
         try:
             session.execute(insert(HYDRO_ALLOCATION_TABLE), insert_values)
             session.commit()
         except IntegrityError as e:
-            session.rollback()
-            all_area_ids = [area_id] + [a.area_id for a in allocation.allocation]
-            invalid = self.get_impl().get_invalid_area_ids(all_area_ids)
             # IntegrityError occurred can only mean that an area_id is invalid
-            raise AreaNotFound(*invalid) from e
+            session.rollback()
+            # Build the `all_area_ids` set to raise the proper exception
+            all_area_ids = set()
+            for area_id, allocation in allocation_dict.items():
+                all_area_ids.add(area_id)
+                for alloc in allocation.allocation:
+                    all_area_ids.add(alloc.area_id)
+            self._raise_the_right_area_exception(set(all_area_ids), e)
 
     @override
     def get_hydro_correlation(self, area_id: str) -> HydroCorrelation:
