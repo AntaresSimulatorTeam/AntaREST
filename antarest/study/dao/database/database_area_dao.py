@@ -150,7 +150,7 @@ class DatabaseAreaDao(AreaDao):
                     "color_r": default_ui.color_r,
                     "color_g": default_ui.color_g,
                     "color_b": default_ui.color_b,
-                    "layers": " ".join(sorted([row.layer_id for row in ui_rows if row.layer_id != DEFAULT_LAYER_ID])),
+                    "layers": " ".join(sorted([row.layer_id for row in ui_rows], key=int)),
                 }
 
             # Build layer-specific data
@@ -288,14 +288,14 @@ class DatabaseAreaDao(AreaDao):
         session.commit()
 
     @override
-    def save_area_ui(self, area_id: str, layer: str, area_ui_data: AreaUI) -> None:
+    def save_area_ui(self, area_id: str, layer: str, area_ui: AreaUI) -> None:
         """
         Save an area's UI properties (position and color) for a specific layer.
 
         Args:
             area_id: The area identifier.
             layer: The layer identifier (typically "0", "1", etc.).
-            area_ui_data: The UI properties to save (x, y, color_rgb).
+            area_ui: The UI properties to save (x, y, color_rgb).
 
         Raises:
             AreaNotFound: If the area does not exist.
@@ -305,13 +305,13 @@ class DatabaseAreaDao(AreaDao):
         session = self.get_session()
 
         # Set values
-        r, g, b = area_ui_data.color_rgb
+        r, g, b = area_ui.color_rgb
         values = {
             "study_id": study_id,
             "area_id": area_id,
             "layer_id": layer,
-            "x": area_ui_data.x,
-            "y": area_ui_data.y,
+            "x": area_ui.x,
+            "y": area_ui.y,
             "color_r": r,
             "color_g": g,
             "color_b": b,
