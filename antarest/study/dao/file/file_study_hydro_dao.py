@@ -200,18 +200,21 @@ class FileStudyHydroDao(HydroDao):
         return HydroCorrelationMatrix(index=area_ids, columns=area_ids, data=array)
 
     @override
-    def save_hydro_correlation(self, area_id: str, correlation: HydroCorrelation) -> None:
+    def save_hydro_correlation(self, correlation_dict: dict[AreaId, HydroCorrelation]) -> None:
         file_study = self.get_file_study()
         all_areas = file_study.config.areas
         area_ids = sorted(all_areas)
         # Checks area existence
-        if area_id not in all_areas:
-            raise AreaNotFound(area_id)
-        for corr in correlation.correlation:
-            if corr.area_id not in all_areas:
-                raise AreaNotFound(corr.area_id)
+        for area_id, correlation in correlation_dict.items():
+            if area_id not in all_areas:
+                raise AreaNotFound(area_id)
+            for corr in correlation.correlation:
+                if corr.area_id not in all_areas:
+                    raise AreaNotFound(corr.area_id)
+        # Perform the save
         current_correlation_matrix = self.get_hydro_correlation_matrix()
-        current_correlation_matrix.set_correlation(area_id, correlation)
+        for area_id, correlation in correlation_dict.items():
+            current_correlation_matrix.set_correlation(area_id, correlation)
         # Save data inside the file
         correlation_cfg: dict[str, float] = {}
         count = len(area_ids)
