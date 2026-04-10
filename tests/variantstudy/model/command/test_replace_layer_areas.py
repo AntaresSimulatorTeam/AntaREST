@@ -16,12 +16,14 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
 from antarest.study.storage.variantstudy.model.command.replace_layer_areas import ReplaceLayerAreas
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestReplaceLayerAreas:
     def test_replace_layer_areas_add_success(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         """Test adding areas to a layer."""
         empty_study = empty_study_880
+        dao = build_dao_from_file_study(empty_study, command_context)
 
         # Create two areas
         create_area1 = CreateArea(
@@ -29,7 +31,7 @@ class TestReplaceLayerAreas:
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = create_area1.apply(study_data=empty_study)
+        output = create_area1.apply(study_dao=dao)
         assert output.status
 
         create_area2 = CreateArea(
@@ -37,7 +39,7 @@ class TestReplaceLayerAreas:
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = create_area2.apply(study_data=empty_study)
+        output = create_area2.apply(study_dao=dao)
         assert output.status
 
         # Create a new layer
@@ -46,7 +48,7 @@ class TestReplaceLayerAreas:
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = create_layer.apply(study_data=empty_study)
+        output = create_layer.apply(study_dao=dao)
         assert output.status
 
         # Add areas to the layer
@@ -56,7 +58,7 @@ class TestReplaceLayerAreas:
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = update_command.apply(study_data=empty_study)
+        output = update_command.apply(study_dao=dao)
         assert output.status
         assert "Layer '1' areas replaced" in output.message
 
@@ -76,6 +78,7 @@ class TestReplaceLayerAreas:
     ) -> None:
         """Test removing areas from a layer."""
         empty_study = empty_study_880
+        dao = build_dao_from_file_study(empty_study, command_context)
 
         # Create three areas
         for i in range(1, 4):
@@ -84,7 +87,7 @@ class TestReplaceLayerAreas:
                 command_context=command_context,
                 study_version=empty_study.config.version,
             )
-            output = create_area.apply(study_data=empty_study)
+            output = create_area.apply(study_dao=dao)
             assert output.status
 
         # Create a layer
@@ -93,7 +96,7 @@ class TestReplaceLayerAreas:
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = create_layer.apply(study_data=empty_study)
+        output = create_layer.apply(study_dao=dao)
         assert output.status
 
         # Add all three areas to the layer
@@ -103,7 +106,7 @@ class TestReplaceLayerAreas:
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = update_command1.apply(study_data=empty_study)
+        output = update_command1.apply(study_dao=dao)
         assert output.status
 
         # Remove one area from the layer
@@ -113,7 +116,7 @@ class TestReplaceLayerAreas:
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = update_command2.apply(study_data=empty_study)
+        output = update_command2.apply(study_dao=dao)
         assert output.status
 
         # Verify area1 and area3 are still in the layer
@@ -134,6 +137,7 @@ class TestReplaceLayerAreas:
     ) -> None:
         """Test replacing areas in a non-existent layer returns an error."""
         empty_study = empty_study_880
+        dao = build_dao_from_file_study(empty_study, command_context)
 
         # Create an area
         create_area = CreateArea(
@@ -141,7 +145,7 @@ class TestReplaceLayerAreas:
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = create_area.apply(study_data=empty_study)
+        output = create_area.apply(study_dao=dao)
         assert output.status
 
         # Try to replace a non-existent layer
@@ -152,13 +156,14 @@ class TestReplaceLayerAreas:
             study_version=empty_study.config.version,
         )
 
-        output = update_command.apply(study_data=empty_study)
+        output = update_command.apply(study_dao=dao)
         assert not output.status
         assert "Layer is not found" in output.message
 
     def test_replace_layer_areas_empty_list(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         """Test replacing layer with an empty list of areas (removes all areas)."""
         empty_study = empty_study_880
+        dao = build_dao_from_file_study(empty_study, command_context)
 
         # Create an area
         create_area = CreateArea(
@@ -166,7 +171,7 @@ class TestReplaceLayerAreas:
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = create_area.apply(study_data=empty_study)
+        output = create_area.apply(study_dao=dao)
         assert output.status
 
         # Create a layer
@@ -175,7 +180,7 @@ class TestReplaceLayerAreas:
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = create_layer.apply(study_data=empty_study)
+        output = create_layer.apply(study_dao=dao)
         assert output.status
 
         # Add area to the layer
@@ -185,7 +190,7 @@ class TestReplaceLayerAreas:
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = update_command1.apply(study_data=empty_study)
+        output = update_command1.apply(study_dao=dao)
         assert output.status
 
         # Remove all areas from the layer
@@ -195,7 +200,7 @@ class TestReplaceLayerAreas:
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = update_command2.apply(study_data=empty_study)
+        output = update_command2.apply(study_dao=dao)
         assert output.status
 
         # Verify area is NOT in the layer

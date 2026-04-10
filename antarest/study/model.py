@@ -42,6 +42,7 @@ from sqlalchemy import (
     String,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
+from sqlalchemy.sql.sqltypes import BigInteger
 from typing_extensions import override
 
 from antarest.core.model import PublicMode
@@ -75,6 +76,7 @@ STUDY_VERSION_9_0 = StudyVersion.parse("9.0")
 STUDY_VERSION_9_1 = StudyVersion.parse("9.1")
 STUDY_VERSION_9_2 = StudyVersion.parse("9.2")
 STUDY_VERSION_9_3 = NEW_DEFAULT_STUDY_VERSION
+STUDY_VERSION_10_0 = StudyVersion.parse("10.0")
 
 StudyVersionStr: TypeAlias = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(str)]
 StudyVersionInt: TypeAlias = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(int)]
@@ -444,6 +446,24 @@ class RawStudy(Study):
         }
 
 
+class StudyDiskSpaceAnalysis(Base):
+    """
+    Study disk space analysis entity implementation
+    """
+
+    __tablename__ = "study_disk_space_analysis"
+
+    study_id: Mapped[str] = mapped_column(
+        String(255),
+        ForeignKey("study.id", name="fk_study_disk_space_id", ondelete="CASCADE"),
+        nullable=False,
+        primary_key=True,
+    )
+    disk_space_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    last_analysis_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    study: Mapped["Study"] = relationship("Study", uselist=False)
+
+
 @dataclasses.dataclass
 class StudyFolder:
     """
@@ -537,12 +557,14 @@ class StudyMetadataPatchDTO(AntaresBaseModel):
     name: str | None = None
     author: str | None = None
     horizon: str | None = None
-    tags: list[str] = []
+    tags: list[str] | None = None
 
     @field_validator("tags", mode="before")
-    def _normalize_tags(cls, v: list[str]) -> list[str]:
+    def _normalize_tags(cls, v: list[str] | None) -> list[str]:
         """Remove leading and trailing whitespaces, and replace consecutive whitespaces by a single one."""
-        tags = []
+        tags: list[str] = []
+        if not v:
+            return tags
         for tag in v:
             tag = " ".join(tag.split())
             if not tag:
@@ -731,3 +753,12 @@ class DirectoryUpdate(AntaresBaseModel):
     def validate_name(cls, v: str | None) -> str | None:
         """Validate directory name."""
         return _validate_directory_name(v) if v is not None else v
+
+
+@dataclasses.dataclass(frozen=True)
+class StudyMetadataUpdate:
+    name: str | None = None
+    author: str | None = None
+    editor: str | None = None
+    last_save: float | None = None
+    created_at: float | None = None

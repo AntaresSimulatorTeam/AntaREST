@@ -23,7 +23,7 @@ from antarest.study.business.model.hydro_correlation_model import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import file_study_interface
+from tests.helpers import build_dao_from_file_study, file_study_interface
 
 
 def _set_up(command_context: CommandContext, study: FileStudy) -> None:
@@ -35,10 +35,9 @@ def _set_up(command_context: CommandContext, study: FileStudy) -> None:
         "e%w": 0.1,
     }
 
+    dao = build_dao_from_file_study(study, command_context)
     for area_name in ["N?", "s", "e", "w"]:
-        CreateArea(area_name=area_name, command_context=command_context, study_version=study.config.version).apply(
-            study
-        )
+        CreateArea(area_name=area_name, command_context=command_context, study_version=study.config.version).apply(dao)
 
     study.tree.save(correlation_cfg, ["input", "hydro", "prepro", "correlation", "annual"])
 

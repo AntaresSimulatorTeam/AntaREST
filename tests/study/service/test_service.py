@@ -44,6 +44,7 @@ from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.roles import RoleType
+from antarest.core.serde.ini_reader import read_ini
 from antarest.core.tasks.model import TaskDTO, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -674,52 +675,32 @@ def test_save_metadata() -> None:
     repository.save.assert_called_once_with(study)
 
 
-# noinspection PyArgumentList
-def test_change_owner() -> None:
-    study_id = str(uuid.uuid4())
+def test_change_owner(study_service: StudyService, empty_study_880: FileStudy) -> None:
+    # First, Alice creates a study
+    study_id = empty_study_880.config.study_id
+    study_path = empty_study_880.config.study_path
     alice = User(id=2)
+    alice_jwt = JWTUser(id=2, impersonator=2, type="users")
+    study = create_raw_study(id=study_id, owner=alice, path=str(study_path))
+
+    # Make the study_service returns the study
+    study_service.repository.get.return_value = study
+
+    # The user service returns a new user Bob
     bob = User(id=3, name="Bob")
-    jwt_user = JWTUser(id=2, impersonator=2, type="users")
+    study_service.user_service.get_user.return_value = bob
 
-    file_study = Mock(spec=FileStudy, get_node=Mock(return_value=Mock(spec=IniFileNode)))
+    with current_user_context(alice_jwt):
+        study_service.change_owner(study_id, 3)
 
-    repository = Mock(spec=StudyMetadataRepository)
-    user_service = Mock()
-    study_service = Mock(spec=RawStudyService)
-    study_service.get_raw.return_value = file_study
-    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    variant_study_service = Mock(
-        spec=VariantStudyService,
-        command_factory=Mock(
-            spec=GeneratorMatrixConstants,
-            command_context=Mock(spec=CommandContext),
-        ),
-    )
-    service = build_study_service(
-        study_service,
-        Mock(spec=DirectoryService),
-        repository,
-        config,
-        user_service=user_service,
-        variant_study_service=variant_study_service,
-    )
+    # Check the file was updated and the `get_user` method was called with the right user
+    study_service.user_service.get_user.assert_called_once_with(3)
+    assert read_ini(study_path / "study.antares")["antares"]["author"] == "Bob"
 
-    study = create_raw_study(id=study_id, owner=alice)
-    repository.get.return_value = study
-    user_service.get_user.return_value = bob
-    service._edit_study_using_command = Mock()
-
-    with current_user_context(jwt_user):
-        service.change_owner(study_id, 2)
-
-    service._edit_study_using_command.assert_called_once_with(study=study, url="study/antares/author", data="Bob")
-    user_service.get_user.assert_called_once_with(2)
-    repository.save.assert_called_with(create_raw_study(id=study_id, owner=bob, last_access=ANY))
-    repository.save.assert_called_with(create_raw_study(id=study_id, owner=bob))
-
+    # As the user service does not know user 1, (the mock only returned Bob), it should fail
     with pytest.raises(UserHasNotPermissionError):
-        with current_user_context(jwt_user):
-            service.change_owner(study_id, 1)
+        with current_user_context(alice_jwt):
+            study_service.change_owner(study_id, 1)
 
 
 # noinspection PyArgumentList
@@ -1013,6 +994,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
         public_mode=PublicMode.NONE,
         workspace=DEFAULT_WORKSPACE_NAME,
         last_access=current_time(),
+        storage_mode=StorageMode.FILESYSTEM,
     )
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
     study_mock.to_enhanced_json_summary.return_value = {
@@ -1047,6 +1029,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
         groups=[],
         public_mode=PublicMode.NONE,
         last_access=current_time(),
+        storage_mode=StorageMode.FILESYSTEM,
     )
     study_mock.generation_task = None
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}

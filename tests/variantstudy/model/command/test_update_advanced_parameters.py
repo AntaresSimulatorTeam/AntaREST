@@ -18,11 +18,13 @@ from antarest.study.model import STUDY_VERSION_8_7, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.update_advanced_parameters import UpdateAdvancedParameters
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestUpdateAdvancedParameters:
     def test_nominal_case(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         study = empty_study_880
+        dao = build_dao_from_file_study(study, command_context)
         general_data_content = study.tree.get(["settings", "generaldata"])
 
         args = {"power_fluctuations": "minimize ramping", "seed_tsgen_thermal": 33}
@@ -31,7 +33,7 @@ class TestUpdateAdvancedParameters:
         command = UpdateAdvancedParameters(
             parameters=parameters, command_context=command_context, study_version=study.config.version
         )
-        output = command.apply(study_data=study)
+        output = command.apply(dao)
         assert output.status
 
         general_data_content["seeds - Mersenne Twister"]["seed-tsgen-thermal"] = 33
@@ -41,13 +43,14 @@ class TestUpdateAdvancedParameters:
 
     def test_enr_modelling_synced_in_memory(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         study = empty_study_880
+        dao = build_dao_from_file_study(study, command_context)
         assert study.config.enr_modelling == "aggregated"
 
         parameters = AdvancedParametersUpdate(renewable_generation_modelling="clusters")
         command = UpdateAdvancedParameters(
             parameters=parameters, command_context=command_context, study_version=study.config.version
         )
-        command.apply(study_data=study)
+        command.apply(dao)
 
         assert study.config.enr_modelling == "clusters"
 

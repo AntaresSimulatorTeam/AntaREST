@@ -9,12 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from collections.abc import Sequence
 
 import polars as pl
 from antares.study.version import StudyVersion
 
-from antarest.core.exceptions import ChildNotFoundError
+from antarest.core.exceptions import ChildNotFoundError, XpansionConfigurationDoesNotExist
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_model import AreaUI
 from antarest.study.business.model.binding_constraint_model import BindingConstraintOperator
@@ -95,7 +94,7 @@ class StudyConverter:
     def _convert_xpansion(self) -> None:
         try:
             settings = self._source_dao.get_xpansion_settings()
-        except ChildNotFoundError:
+        except (ChildNotFoundError, XpansionConfigurationDoesNotExist):
             # The source study does not contain an Xpansion configuration. We should return immediately
             return
 
@@ -144,20 +143,13 @@ class StudyConverter:
 
     def _convert_links(self) -> None:
         links = self._source_dao.get_links()
-        for link in links:
-            self._new_dao.save_link(link)
-            # Link matrices
-            area_from, area_to = link.area1, link.area2
-            series_id = self._matrix_service.create(self._source_dao.get_link_series(area_from, area_to))
-            self._new_dao.save_link_series(area_from, area_to, series_id)
-            if self._study_version >= STUDY_VERSION_8_2:
-                direct_capacity = self._source_dao.get_link_direct_capacities(area_from, area_to)
-                direct_capacity_id = self._matrix_service.create(direct_capacity)
-                self._new_dao.save_link_direct_capacities(area_from, area_to, direct_capacity_id)
+        self._new_dao.save_links(links)
 
-                indirect_capacity = self._source_dao.get_link_indirect_capacities(area_from, area_to)
-                indirect_capacity_id = self._matrix_service.create(indirect_capacity)
-                self._new_dao.save_link_indirect_capacities(area_from, area_to, indirect_capacity_id)
+        # Link matrices
+        self._new_dao.save_link_series(self._source_dao.get_all_links_series())
+        if self._study_version >= STUDY_VERSION_8_2:
+            self._new_dao.save_link_direct_capacities(self._source_dao.get_all_links_direct_capacities())
+            self._new_dao.save_link_indirect_capacities(self._source_dao.get_all_links_indirect_capacities())
 
     def _convert_areas(self) -> None:
         area_properties = self._source_dao.get_all_area_properties()
@@ -178,6 +170,22 @@ class StudyConverter:
             area_name = area_names_and_thermals[area_id].name
             self._new_dao.save_area(area_name)
 
+        # Thermals
+        thermals = {area_info.id: area_info.thermals or [] for area_info in area_names_and_thermals.values()}
+        self._convert_thermal_clusters(thermals)
+
+        # Renewables
+        if self._study_version >= STUDY_VERSION_8_1 and renewable_clusters:
+            renewables = {area_id: list(value.values()) for area_id, value in renewable_clusters.items()}
+            self._convert_renewable_clusters(renewables)
+
+        # Various area matrices
+        self._new_dao.save_load(self._source_dao.get_all_load())
+        self._new_dao.save_solar(self._source_dao.get_all_solar())
+        self._new_dao.save_wind(self._source_dao.get_all_wind())
+        self._new_dao.save_reserves(self._source_dao.get_all_reserves())
+        self._new_dao.save_misc_gen(self._source_dao.get_all_misc_gen())
+
         for area_id in area_properties:
             # Properties
             self._new_dao.save_area_properties(area_id, area_properties[area_id])
@@ -194,62 +202,37 @@ class StudyConverter:
             # Hydro
             self._convert_hydro(area_id, hydro_properties[area_id])
 
-            # Various matrices
-            load = self._matrix_service.create(self._source_dao.get_load(area_id))
-            self._new_dao.save_load(area_id, load)
-
-            solar = self._matrix_service.create(self._source_dao.get_solar(area_id))
-            self._new_dao.save_solar(area_id, solar)
-
-            wind = self._matrix_service.create(self._source_dao.get_wind(area_id))
-            self._new_dao.save_wind(area_id, wind)
-
-            reserves = self._matrix_service.create(self._source_dao.get_reserves(area_id))
-            self._new_dao.save_reserves(area_id, reserves)
-
-            misc_gen = self._matrix_service.create(self._source_dao.get_misc_gen(area_id))
-            self._new_dao.save_misc_gen(area_id, misc_gen)
-
-            # Thermals
-            thermals = area_names_and_thermals[area_id].thermals or []
-            self._convert_thermal_clusters(area_id, thermals)
-
-            # Renewables
-            if self._study_version >= STUDY_VERSION_8_1:
-                renewables = list(renewable_clusters.get(area_id, {}).values())
-                self._convert_renewable_clusters(area_id, renewables)
-
             # Short-term storages
             if self._study_version >= STUDY_VERSION_8_6:
                 storages = list(st_storages.get(area_id, {}).values())
                 self._convert_short_term_storages(area_id, storages, st_storages_constraints.get(area_id, {}))
 
-    def _convert_thermal_clusters(self, area_id: str, thermals: list[ThermalCluster]) -> None:
-        self._new_dao.save_thermals(area_id, thermals)
-        for thermal in thermals:
-            thermal_id = thermal.id.lower()
-            prepro_id = self._matrix_service.create(self._source_dao.get_thermal_prepro(area_id, thermal_id))
-            self._new_dao.save_thermal_prepro(area_id, thermal_id, prepro_id)
+    def _convert_thermal_clusters(self, data: dict[str, list[ThermalCluster]]) -> None:
+        self._new_dao.save_thermals(data)
 
-            modulation_id = self._matrix_service.create(self._source_dao.get_thermal_modulation(area_id, thermal_id))
-            self._new_dao.save_thermal_modulation(area_id, thermal_id, modulation_id)
+        # Matrices
+        prepro_mapping = self._source_dao.get_all_thermals_prepro()
+        self._new_dao.save_thermal_prepro(prepro_mapping)
 
-            series_id = self._matrix_service.create(self._source_dao.get_thermal_series(area_id, thermal_id))
-            self._new_dao.save_thermal_series(area_id, thermal_id, series_id)
+        modulation_mapping = self._source_dao.get_all_thermals_modulation()
+        self._new_dao.save_thermal_modulation(modulation_mapping)
 
-            if self._study_version >= STUDY_VERSION_8_7:
-                fuel_cost_id = self._matrix_service.create(self._source_dao.get_thermal_fuel_cost(area_id, thermal_id))
-                self._new_dao.save_thermal_fuel_cost(area_id, thermal_id, fuel_cost_id)
+        series_mapping = self._source_dao.get_all_thermals_series()
+        self._new_dao.save_thermal_series(series_mapping)
 
-                co2_cost_id = self._matrix_service.create(self._source_dao.get_thermal_co2_cost(area_id, thermal_id))
-                self._new_dao.save_thermal_co2_cost(area_id, thermal_id, co2_cost_id)
+        if self._study_version >= STUDY_VERSION_8_7:
+            fuel_cost_mapping = self._source_dao.get_all_thermals_fuel_cost()
+            self._new_dao.save_thermal_fuel_cost(fuel_cost_mapping)
 
-    def _convert_renewable_clusters(self, area_id: str, renewables: Sequence[RenewableCluster]) -> None:
-        self._new_dao.save_renewables(area_id, renewables)
-        for renewable in renewables:
-            renewable_id = renewable.id.lower()
-            series_id = self._matrix_service.create(self._source_dao.get_renewable_series(area_id, renewable_id))
-            self._new_dao.save_renewable_series(area_id, renewable_id, series_id)
+            co2_cost_mapping = self._source_dao.get_all_thermals_co2_cost()
+            self._new_dao.save_thermal_co2_cost(co2_cost_mapping)
+
+    def _convert_renewable_clusters(self, data: dict[str, list[RenewableCluster]]) -> None:
+        self._new_dao.save_renewables(data)
+
+        # Matrices
+        series_mapping = self._source_dao.get_all_renewables_series()
+        self._new_dao.save_renewable_series(series_mapping)
 
     def _convert_short_term_storages(
         self, area_id: str, storages: list[STStorage], constraints: dict[str, list[STStorageAdditionalConstraint]]

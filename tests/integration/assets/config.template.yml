@@ -24,6 +24,7 @@ storage:
     enable: true
     default: false
     archive_dir: {{output_archive_dir}}
+    variables_dir: {{output_variables_dir}}
 
   workspaces:
     default:

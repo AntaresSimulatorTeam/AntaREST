@@ -20,7 +20,10 @@ from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.serde.json import from_json, to_json_string
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
-from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
+from antarest.study.business.model.config.compatibility_parameters_model import (
+    CompatibilityParameters,
+    initialize_compatibility_parameters_against_version,
+)
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
@@ -155,11 +158,16 @@ class DatabaseStudySettingsDao(
         row = self.get_session().execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
-        return CompatibilityParameters(hydro_pmax=row.hydro_pmax)
+        parameters = CompatibilityParameters(hydro_pmax=row.hydro_pmax, reserves_enabled=row.reserves_enabled)
+        version = self.get_impl().get_version()
+        initialize_compatibility_parameters_against_version(parameters, version)
+        return parameters
 
     @override
     def save_compatibility_parameters(self, parameters: CompatibilityParameters) -> None:
-        values = dict(study_id=self.get_study_id(), hydro_pmax=parameters.hydro_pmax)
+        values = dict(
+            study_id=self.get_study_id(), hydro_pmax=parameters.hydro_pmax, reserves_enabled=parameters.reserves_enabled
+        )
         session = self.get_session()
         upsert_one(session, COMPATIBILITY_PARAMETERS_TABLE, values)
         session.commit()

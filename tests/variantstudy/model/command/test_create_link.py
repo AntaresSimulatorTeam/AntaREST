@@ -23,20 +23,22 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestCreateLink:
     def test_validation(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         area1 = "Area1"
         area2 = "Area2"
+        dao = build_dao_from_file_study(empty_study_880, command_context)
 
         CreateArea.model_validate(
             {"area_name": area1, "command_context": command_context, "study_version": STUDY_VERSION_8_8}
-        ).apply(empty_study_880)
+        ).apply(dao)
 
         CreateArea.model_validate(
             {"area_name": area2, "command_context": command_context, "study_version": STUDY_VERSION_8_8}
-        ).apply(empty_study_880)
+        ).apply(dao)
 
         with pytest.raises(ValidationError):
             CreateLink(
@@ -50,6 +52,7 @@ class TestCreateLink:
 
     def test_apply(self, empty_study_810: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_810
+        dao = build_dao_from_file_study(empty_study, command_context, True)
         study_version = empty_study.config.version
         study_path = empty_study.config.study_path
         area1 = "Area1"
@@ -63,15 +66,15 @@ class TestCreateLink:
 
         CreateArea.model_validate(
             {"area_name": area1, "command_context": command_context, "study_version": study_version}
-        ).apply(empty_study)
+        ).apply(dao)
 
         CreateArea.model_validate(
             {"area_name": area2, "command_context": command_context, "study_version": study_version}
-        ).apply(empty_study)
+        ).apply(dao)
 
         CreateArea.model_validate(
             {"area_name": area3, "command_context": command_context, "study_version": study_version}
-        ).apply(empty_study)
+        ).apply(dao)
 
         create_link_command: ICommand = CreateLink(
             area1=area1_id,
@@ -81,9 +84,7 @@ class TestCreateLink:
             series=[[0]],
             study_version=study_version,
         )
-        output = create_link_command.apply(
-            study_data=empty_study,
-        )
+        output = create_link_command.apply(dao)
 
         assert output.status
 
@@ -112,9 +113,7 @@ class TestCreateLink:
             series=[[0]],
             study_version=empty_study.config.version,
         )
-        output = create_link_command.apply(
-            study_data=empty_study,
-        )
+        output = create_link_command.apply(dao)
         assert output.status
 
         assert (study_path / "input" / "links" / area2_id / f"{area3_id}_parameters.txt.link").exists()
@@ -133,7 +132,7 @@ class TestCreateLink:
                 "series": [[0]],
                 "study_version": study_version,
             }
-        ).apply(study_data=empty_study)
+        ).apply(dao)
 
         assert not output.status
 
@@ -164,9 +163,7 @@ class TestCreateLink:
             },
             context=legacy_command_version,
         )
-        output = create_link_command.apply(
-            study_data=empty_study,
-        )
+        output = create_link_command.apply(dao)
 
         assert output.status
         with pytest.raises(LinkValidationError):
@@ -198,9 +195,7 @@ class TestCreateLink:
         assert int(link_data[area3_id]["colorb"]) == parameters["colorb"]
         assert link_data[area3_id]["display-comments"] == parameters["display-comments"]
 
-        output = create_link_command.apply(
-            study_data=empty_study,
-        )
+        output = create_link_command.apply(dao)
         assert not output.status
 
         output = CreateLink(
@@ -210,5 +205,5 @@ class TestCreateLink:
             command_context=command_context,
             series=[[0]],
             study_version=study_version,
-        ).apply(empty_study)
+        ).apply(dao)
         assert not output.status

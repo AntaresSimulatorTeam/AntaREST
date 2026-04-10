@@ -14,6 +14,7 @@ from abc import ABC, abstractmethod
 import polars as pl
 
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
+from antarest.study.dao.common import AreaSeriesMapping
 
 
 class ReadOnlyAreaDao(ABC):
@@ -94,6 +95,26 @@ class ReadOnlyAreaDao(ABC):
     def get_wind(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_all_load(self) -> AreaSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_misc_gen(self) -> AreaSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_reserves(self) -> AreaSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_solar(self) -> AreaSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_wind(self) -> AreaSeriesMapping:
+        raise NotImplementedError()
+
 
 class AreaDao(ReadOnlyAreaDao):
     """
@@ -160,21 +181,21 @@ class AreaDao(ReadOnlyAreaDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_load(self, area_id: str, series_id: str) -> None:
+    def save_load(self, series: AreaSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_misc_gen(self, area_id: str, series_id: str) -> None:
+    def save_misc_gen(self, series: AreaSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_reserves(self, area_id: str, series_id: str) -> None:
+    def save_reserves(self, series: AreaSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_solar(self, area_id: str, series_id: str) -> None:
+    def save_solar(self, series: AreaSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_wind(self, area_id: str, series_id: str) -> None:
+    def save_wind(self, series: AreaSeriesMapping) -> None:
         raise NotImplementedError()

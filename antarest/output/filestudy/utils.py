@@ -159,6 +159,21 @@ SingleOutputHeaders: TypeAlias = list[str]
 MultipleOutputHeaders: TypeAlias = list[list[str]]
 
 
+def get_output_object_type(file_type: QueryFileType, is_link: bool) -> str:
+    if is_link:
+        return "links"
+
+    match file_type:
+        case MCIndAreasQueryFile.DETAILS:
+            return "thermal_clusters"
+        case MCIndAreasQueryFile.DETAILS_RES:
+            return "renewable_clusters"
+        case MCIndAreasQueryFile.DETAILS_ST_STORAGE:
+            return "short_term_storages"
+        case _:
+            return "areas"
+
+
 @dataclass
 class OutputDataFrame:
     """

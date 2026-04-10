@@ -254,6 +254,12 @@ class LinkNotFound(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
+class LinksNotFound(HTTPException):
+    def __init__(self, *link_ids: str) -> None:
+        ids = ", ".join(f"'{link}'" for link in link_ids)
+        super().__init__(HTTPStatus.NOT_FOUND, f"Links are not found: {ids}")
+
+
 class VariantStudyParentNotValid(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
@@ -802,4 +808,16 @@ class NotAMatrixError(ValueError):
 class OutputVariablesViewError(HTTPException):
     def __init__(self, output_id: str, message: str) -> None:
         msg = f"Could not retrieve variables view for output '{output_id}' : {message}."
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class ThermalClustersNotFound(HTTPException):
+    def __init__(self, invalid_thermal_ids: dict[str, set[str]]) -> None:
+        msg = f"Thermal clusters not found: {invalid_thermal_ids}"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class RenewableClustersNotFound(HTTPException):
+    def __init__(self, invalid_renewable_ids: dict[str, set[str]]) -> None:
+        msg = f"Renewable clusters not found: {invalid_renewable_ids}"
         super().__init__(HTTPStatus.NOT_FOUND, msg)

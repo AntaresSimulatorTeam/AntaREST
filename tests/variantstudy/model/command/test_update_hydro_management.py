@@ -14,25 +14,28 @@ from pydantic import ValidationError
 
 from antarest.core.serde.ini_reader import read_ini
 from antarest.study.business.model.hydro_model import HydroManagementUpdate
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestUpdateHydroManagement:
-    def _set_up(self, study: FileStudy, command_context: CommandContext) -> None:
-        CreateArea(area_name="FR", command_context=command_context, study_version=study.config.version).apply(study)
-        CreateArea(area_name="be", command_context=command_context, study_version=study.config.version).apply(study)
+    def _set_up(self, study: FileStudy, command_context: CommandContext) -> FileStudyTreeDao:
+        dao = build_dao_from_file_study(study, command_context)
+        CreateArea(area_name="FR", command_context=command_context, study_version=study.config.version).apply(dao)
+        CreateArea(area_name="be", command_context=command_context, study_version=study.config.version).apply(dao)
+        return dao
 
     def test_lifecycle(
         self, empty_study_880: FileStudy, empty_study_920: FileStudy, command_context: CommandContext
     ) -> None:
         for study in [empty_study_880, empty_study_920]:
             study_version = study.config.version
-            self._set_up(study, command_context)
-            # study_version = empty_study.config.version
+            dao = self._set_up(study, command_context)
             study_path = study.config.study_path
 
             # Check existing file
@@ -61,7 +64,7 @@ class TestUpdateHydroManagement:
             cmd = UpdateHydroManagement(
                 area_id="fr", properties=new_properties, command_context=command_context, study_version=study_version
             )
-            output = cmd.apply(study)
+            output = cmd.apply(dao)
             assert output.status is True
             assert output.message == "Hydro properties in 'fr' updated."
 
@@ -109,7 +112,7 @@ class TestUpdateHydroManagement:
                     command_context=command_context,
                     study_version=study_version,
                 )
-                output = cmd.apply(study)
+                output = cmd.apply(dao)
                 assert output.status is True
                 assert output.message == "Hydro properties in 'fr' updated."
                 # Checks updated properties

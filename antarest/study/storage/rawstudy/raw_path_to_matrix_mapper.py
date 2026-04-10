@@ -40,6 +40,48 @@ class RawPathToMatrixMapper:
     """
 
     def __init__(self, dao: StudyDao) -> None:
+        def _save_thermal_prepro(area_id: str, thermal_id: str, series_id: str) -> None:
+            dao.save_thermal_prepro({area_id: {thermal_id: series_id}})
+
+        def _save_thermal_modulation(area_id: str, thermal_id: str, series_id: str) -> None:
+            dao.save_thermal_modulation({area_id: {thermal_id: series_id}})
+
+        def _save_thermal_series(area_id: str, thermal_id: str, series_id: str) -> None:
+            dao.save_thermal_series({area_id: {thermal_id: series_id}})
+
+        def _save_thermal_fuel_cost(area_id: str, thermal_id: str, series_id: str) -> None:
+            dao.save_thermal_fuel_cost({area_id: {thermal_id: series_id}})
+
+        def _save_thermal_co2_cost(area_id: str, thermal_id: str, series_id: str) -> None:
+            dao.save_thermal_co2_cost({area_id: {thermal_id: series_id}})
+
+        def _save_renewable_series(area_id: str, renewable_id: str, series_id: str) -> None:
+            dao.save_renewable_series({area_id: {renewable_id: series_id}})
+
+        def _save_load(area_id: str, series_id: str) -> None:
+            dao.save_load({area_id: series_id})
+
+        def _save_solar(area_id: str, series_id: str) -> None:
+            dao.save_solar({area_id: series_id})
+
+        def _save_wind(area_id: str, series_id: str) -> None:
+            dao.save_wind({area_id: series_id})
+
+        def _save_reserves(area_id: str, series_id: str) -> None:
+            dao.save_reserves({area_id: series_id})
+
+        def _save_misc_gen(area_id: str, series_id: str) -> None:
+            dao.save_misc_gen({area_id: series_id})
+
+        def _save_link_series(area_from: str, area_to: str, series_id: str) -> None:
+            dao.save_link_series({(area_from, area_to): series_id})
+
+        def _save_link_direct_capacities(area_from: str, area_to: str, series_id: str) -> None:
+            dao.save_link_direct_capacities({(area_from, area_to): series_id})
+
+        def _save_link_indirect_capacities(area_from: str, area_to: str, series_id: str) -> None:
+            dao.save_link_indirect_capacities({(area_from, area_to): series_id})
+
         self._path_matchers = [
             RegexMatcher(
                 pattern=re.compile(r"user/expansion/capa/(?P<filename>[^/]+)"),
@@ -54,67 +96,67 @@ class RawPathToMatrixMapper:
             RegexMatcher(
                 pattern=re.compile(r"input/load/series/load_(?P<area_id>[^/]+)"),
                 getter=dao.get_load,
-                setter=dao.save_load,
+                setter=_save_load,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/wind/series/wind_(?P<area_id>[^/]+)"),
                 getter=dao.get_wind,
-                setter=dao.save_wind,
+                setter=_save_wind,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/solar/series/solar_(?P<area_id>[^/]+)"),
                 getter=dao.get_solar,
-                setter=dao.save_solar,
+                setter=_save_solar,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/misc-gen/miscgen-(?P<area_id>[^/]+)"),
                 getter=dao.get_misc_gen,
-                setter=dao.save_misc_gen,
+                setter=_save_misc_gen,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/reserves/(?P<area_id>[^/]+)"),
                 getter=dao.get_reserves,
-                setter=dao.save_reserves,
+                setter=_save_reserves,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/links/(?P<area_from>[^/]+)/capacities/(?P<area_to>[^/]+)_direct"),
                 getter=dao.get_link_direct_capacities,
-                setter=dao.save_link_direct_capacities,
+                setter=_save_link_direct_capacities,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/links/(?P<area_from>[^/]+)/capacities/(?P<area_to>[^/]+)_indirect"),
                 getter=dao.get_link_indirect_capacities,
-                setter=dao.save_link_indirect_capacities,
+                setter=_save_link_indirect_capacities,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/thermal/prepro/(?P<area_id>[^/]+)/(?P<thermal_id>[^/]+)/data"),
                 getter=dao.get_thermal_prepro,
-                setter=dao.save_thermal_prepro,
+                setter=_save_thermal_prepro,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/thermal/prepro/(?P<area_id>[^/]+)/(?P<thermal_id>[^/]+)/modulation"),
                 getter=dao.get_thermal_modulation,
-                setter=dao.save_thermal_modulation,
+                setter=_save_thermal_modulation,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/thermal/series/(?P<area_id>[^/]+)/(?P<thermal_id>[^/]+)/series"),
                 getter=dao.get_thermal_series,
-                setter=dao.save_thermal_series,
+                setter=_save_thermal_series,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/thermal/series/(?P<area_id>[^/]+)/(?P<thermal_id>[^/]+)/fuelCost"),
                 getter=dao.get_thermal_fuel_cost,
-                setter=dao.save_thermal_fuel_cost,
+                setter=_save_thermal_fuel_cost,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/thermal/series/(?P<area_id>[^/]+)/(?P<thermal_id>[^/]+)/CO2Cost"),
                 getter=dao.get_thermal_co2_cost,
-                setter=dao.save_thermal_co2_cost,
+                setter=_save_thermal_co2_cost,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/renewables/series/(?P<area_id>[^/]+)/(?P<renewable_id>[^/]+)/series"),
                 getter=dao.get_renewable_series,
-                setter=dao.save_renewable_series,
+                setter=_save_renewable_series,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/pmax_injection"),
@@ -254,7 +296,7 @@ class RawPathToMatrixMapper:
                 RegexMatcher(
                     pattern=re.compile(r"input/links/(?P<area_from>[^/]+)/(?P<area_to>[^/]+)"),
                     getter=dao.get_link_series,
-                    setter=dao.save_link_series,
+                    setter=_save_link_series,
                 )
             )
         else:
@@ -262,7 +304,7 @@ class RawPathToMatrixMapper:
                 RegexMatcher(
                     pattern=re.compile(r"input/links/(?P<area_from>[^/]+)/(?P<area_to>[^/]+)_parameters"),
                     getter=dao.get_link_series,
-                    setter=dao.save_link_series,
+                    setter=_save_link_series,
                 )
             )
         if study_version < STUDY_VERSION_8_7:

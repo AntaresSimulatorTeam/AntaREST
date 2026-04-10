@@ -13,6 +13,7 @@ import contextlib
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
+from unittest.mock import Mock
 
 import polars as pl
 import pytest
@@ -75,7 +76,7 @@ def build_filesystem_dao(
     with db_session:
         db_session.add(study)
         db_session.commit()
-        factory = FileStudyDaoFactory(command_context, study_factory)
+        factory = FileStudyDaoFactory(command_context, study_factory, Mock())
         dao = factory.create_study_dao(study)
 
     return dao
@@ -240,33 +241,33 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
     # Create `load`, `solar`, `wind`, `reserves` and `misc-gen` matrices in DB
     area_id = "paris"
     dao.save_area(area_id)
-    dao.save_load(area_id, load_id)
-    dao.save_solar(area_id, solar_id)
-    dao.save_wind(area_id, wind_id)
-    dao.save_reserves(area_id, reserves_id)
-    dao.save_misc_gen(area_id, misc_gen_id)
+    dao.save_load({area_id: load_id})
+    dao.save_solar({area_id: solar_id})
+    dao.save_wind({area_id: wind_id})
+    dao.save_reserves({area_id: reserves_id})
+    dao.save_misc_gen({area_id: misc_gen_id})
 
     # Also create a link with `series`, `direct_capacity` and `indirect_capacity` matrices.
     area2 = "london"
     dao.save_area(area2)
-    dao.save_link(Link(area1=area_id, area2=area2))
-    dao.save_link_series(area_id, area2, link_series_id)
-    dao.save_link_direct_capacities(area_id, area2, link_direct_id)
-    dao.save_link_indirect_capacities(area_id, area2, link_indirect_id)
+    dao.save_links([Link(area1=area_id, area2=area2)])
+    dao.save_link_series({(area_id, area2): link_series_id})
+    dao.save_link_direct_capacities({(area_id, area2): link_direct_id})
+    dao.save_link_indirect_capacities({(area_id, area2): link_indirect_id})
 
     # Create thermal cluster matrices
     thermal_id = "gas_cluster"
-    dao.save_thermal(area_id, ThermalCluster(id=thermal_id, name="Gas Cluster"))
-    dao.save_thermal_prepro(area_id, thermal_id, thermal_prepro_id)
-    dao.save_thermal_modulation(area_id, thermal_id, thermal_modulation_id)
-    dao.save_thermal_series(area_id, thermal_id, thermal_series_id)
-    dao.save_thermal_fuel_cost(area_id, thermal_id, thermal_fuel_cost_id)
-    dao.save_thermal_co2_cost(area_id, thermal_id, thermal_co2_cost_id)
+    dao.save_thermals({area_id: [ThermalCluster(id=thermal_id, name="Gas Cluster")]})
+    dao.save_thermal_prepro({area_id: {thermal_id: thermal_prepro_id}})
+    dao.save_thermal_modulation({area_id: {thermal_id: thermal_modulation_id}})
+    dao.save_thermal_series({area_id: {thermal_id: thermal_series_id}})
+    dao.save_thermal_fuel_cost({area_id: {thermal_id: thermal_fuel_cost_id}})
+    dao.save_thermal_co2_cost({area_id: {thermal_id: thermal_co2_cost_id}})
 
     # Create renewable cluster matrices
     renewable_id = "battery"
     dao.save_renewable(area_id, RenewableCluster(id=renewable_id, name="Battery Fr"))
-    dao.save_renewable_series(area_id, renewable_id, renewable_series_id)
+    dao.save_renewable_series({area_id: {renewable_id: renewable_series_id}})
 
     # Create ST Storage matrices
     st_storage_id = "battery_storage"

@@ -24,7 +24,7 @@ from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.utils import remove_first_match
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
-from antarest.study.business.model.area_properties_model import AreaProperties
+from antarest.study.business.model.area_properties_model import AreaProperties, sort_filter_options
 from antarest.study.business.model.binding_constraint_model import BindingConstraint, ClusterTerm, LinkTerm
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
@@ -65,7 +65,17 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettingsUpdate,
 )
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.common import (
+    AreaId,
+    AreaSeriesMapping,
+    LinkSeriesMapping,
+    RenewableSeriesMapping,
+    ThermalSeriesMapping,
+)
+from antarest.study.dtos import StudyDataSynthesis
+from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, LinkConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -107,7 +117,8 @@ class InMemoryStudyDao(StudyDao):
     TODO, warning: no version handling, no check on areas, no checks on matrices ...
     """
 
-    def __init__(self, version: StudyVersion, matrix_service: ISimpleMatrixService) -> None:
+    def __init__(self, version: StudyVersion, matrix_service: ISimpleMatrixService, study_id: str = "") -> None:
+        self._study_id = study_id
         self._version = version
         self._matrix_service = matrix_service
         # Links
@@ -216,6 +227,58 @@ class InMemoryStudyDao(StudyDao):
         self._wind: dict[str, str] = {}
 
     @override
+    def get_study_id(self) -> str:
+        return self._study_id
+
+    @override
+    def get_synthesis(self) -> StudyDataSynthesis:
+        areas_info = self.get_all_areas_info()
+        area_names = {a.id: a.name for a in areas_info}
+        area_ids = list(area_names.keys())
+
+        links_by_area: dict[str, dict[str, LinkConfig]] = {aid: {} for aid in area_ids}
+        for link in self.get_links():
+            link_config = LinkConfig(
+                filters_synthesis=list(link.filter_synthesis),
+                filters_year=list(link.filter_year_by_year),
+            )
+            links_by_area[link.area1][link.area2] = link_config
+
+        thermals = self.get_all_thermals()
+        renewables = self.get_all_renewables()
+        st_storages = self.get_all_st_storages()
+        additional_constraints = self.get_all_st_storage_additional_constraints()
+        area_properties = self.get_all_area_properties()
+
+        areas: dict[str, AreaConfig] = {}
+        for area_id in area_ids:
+            props = area_properties.get(area_id, AreaProperties())
+            areas[area_id] = AreaConfig(
+                name=area_names[area_id],
+                links=links_by_area.get(area_id, {}),
+                thermals=list(thermals.get(area_id, {}).values()),
+                renewables=list(renewables.get(area_id, {}).values()),
+                filters_synthesis=sort_filter_options(props.filter_synthesis),
+                filters_year=sort_filter_options(props.filter_by_year),
+                st_storages=list(st_storages.get(area_id, {}).values()),
+                st_storages_additional_constraints=additional_constraints.get(area_id, {}),
+            )
+
+        districts = {d.id: d for d in self.get_districts()}
+        bindings = list(self.get_all_constraints().values())
+        advanced = self.get_advanced_parameters()
+        enr_modelling = EnrModelling(advanced.renewable_generation_modelling.value)
+
+        return StudyDataSynthesis.model_construct(
+            study_id=self._study_id,
+            version=self._version,
+            areas=areas,
+            districts=districts,
+            bindings=bindings,
+            enr_modelling=enr_modelling,
+        )
+
+    @override
     def get_file_study(self) -> FileStudy:
         """
         To ease transition, to be removed when all goes through other methods
@@ -231,7 +294,11 @@ class InMemoryStudyDao(StudyDao):
         self._comments = comments
 
     @override
-    def update_antares_file(self, editor: str, last_save: float) -> None:
+    def update_antares_file(self, metadata: StudyMetadataUpdate) -> None:
+        pass
+
+    @override
+    def update_cache(self) -> None:
         pass
 
     @override
@@ -269,20 +336,45 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def save_link(self, link: Link) -> None:
-        self._links[link_key(link.area1, link.area2)] = link
+    def get_all_links_series(self) -> LinkSeriesMapping:
+        result: LinkSeriesMapping = {}
+        for link_key, series_id in self._link_capacities.items():
+            result[link_key.area1_id, link_key.area2_id] = series_id
+        return result
 
     @override
-    def save_link_series(self, area_from: str, area_to: str, series_id: str) -> None:
-        self._link_capacities[link_key(area_from, area_to)] = series_id
+    def get_all_links_indirect_capacities(self) -> LinkSeriesMapping:
+        result: LinkSeriesMapping = {}
+        for link_key, series_id in self._link_indirect_capacities.items():
+            result[link_key.area1_id, link_key.area2_id] = series_id
+        return result
 
     @override
-    def save_link_direct_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        self._link_direct_capacities[link_key(area_from, area_to)] = series_id
+    def get_all_links_direct_capacities(self) -> LinkSeriesMapping:
+        result: LinkSeriesMapping = {}
+        for link_key, series_id in self._link_direct_capacities.items():
+            result[link_key.area1_id, link_key.area2_id] = series_id
+        return result
 
     @override
-    def save_link_indirect_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        self._link_indirect_capacities[link_key(area_from, area_to)] = series_id
+    def save_links(self, links: Sequence[Link]) -> None:
+        for link in links:
+            self._links[link_key(link.area1, link.area2)] = link
+
+    @override
+    def save_link_series(self, series: LinkSeriesMapping) -> None:
+        for (area_from, area_to), series_id in series.items():
+            self._link_capacities[link_key(area_from, area_to)] = series_id
+
+    @override
+    def save_link_direct_capacities(self, series: LinkSeriesMapping) -> None:
+        for (area_from, area_to), series_id in series.items():
+            self._link_direct_capacities[link_key(area_from, area_to)] = series_id
+
+    @override
+    def save_link_indirect_capacities(self, series: LinkSeriesMapping) -> None:
+        for (area_from, area_to), series_id in series.items():
+            self._link_indirect_capacities[link_key(area_from, area_to)] = series_id
 
     @override
     def delete_link(self, link: Link) -> None:
@@ -333,33 +425,80 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
-        self._thermals[cluster_key(area_id, thermal.id)] = thermal
+    def get_all_thermals_co2_cost(self) -> ThermalSeriesMapping:
+        result: ThermalSeriesMapping = {}
+        for thermal_key, matrix_id in self._thermal_co2_cost.items():
+            area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
+            result.setdefault(area_id, {})[thermal_id] = matrix_id
+        return result
 
     @override
-    def save_thermals(self, area_id: str, thermals: Sequence[ThermalCluster]) -> None:
-        for thermal in thermals:
-            self.save_thermal(area_id, thermal)
+    def get_all_thermals_fuel_cost(self) -> ThermalSeriesMapping:
+        result: ThermalSeriesMapping = {}
+        for thermal_key, matrix_id in self._thermal_fuel_cost.items():
+            area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
+            result.setdefault(area_id, {})[thermal_id] = matrix_id
+        return result
 
     @override
-    def save_thermal_prepro(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._thermal_prepro[cluster_key(area_id, thermal_id)] = series_id
+    def get_all_thermals_series(self) -> ThermalSeriesMapping:
+        result: ThermalSeriesMapping = {}
+        for thermal_key, matrix_id in self._thermal_series.items():
+            area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
+            result.setdefault(area_id, {})[thermal_id] = matrix_id
+        return result
 
     @override
-    def save_thermal_modulation(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._thermal_modulation[cluster_key(area_id, thermal_id)] = series_id
+    def get_all_thermals_modulation(self) -> ThermalSeriesMapping:
+        result: ThermalSeriesMapping = {}
+        for thermal_key, matrix_id in self._thermal_modulation.items():
+            area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
+            result.setdefault(area_id, {})[thermal_id] = matrix_id
+        return result
 
     @override
-    def save_thermal_series(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._thermal_series[cluster_key(area_id, thermal_id)] = series_id
+    def get_all_thermals_prepro(self) -> ThermalSeriesMapping:
+        result: ThermalSeriesMapping = {}
+        for thermal_key, matrix_id in self._thermal_prepro.items():
+            area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
+            result.setdefault(area_id, {})[thermal_id] = matrix_id
+        return result
 
     @override
-    def save_thermal_fuel_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._thermal_fuel_cost[cluster_key(area_id, thermal_id)] = series_id
+    def save_thermals(self, data: dict[AreaId, list[ThermalCluster]]) -> None:
+        for area_id, thermals in data.items():
+            for thermal in thermals:
+                self._thermals[cluster_key(area_id, thermal.id)] = thermal
 
     @override
-    def save_thermal_co2_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._thermal_co2_cost[cluster_key(area_id, thermal_id)] = series_id
+    def save_thermal_prepro(self, series: ThermalSeriesMapping) -> None:
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                self._thermal_prepro[cluster_key(area_id, thermal_id)] = series_id
+
+    @override
+    def save_thermal_modulation(self, series: ThermalSeriesMapping) -> None:
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                self._thermal_modulation[cluster_key(area_id, thermal_id)] = series_id
+
+    @override
+    def save_thermal_series(self, series: ThermalSeriesMapping) -> None:
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                self._thermal_series[cluster_key(area_id, thermal_id)] = series_id
+
+    @override
+    def save_thermal_fuel_cost(self, series: ThermalSeriesMapping) -> None:
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                self._thermal_fuel_cost[cluster_key(area_id, thermal_id)] = series_id
+
+    @override
+    def save_thermal_co2_cost(self, series: ThermalSeriesMapping) -> None:
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                self._thermal_co2_cost[cluster_key(area_id, thermal_id)] = series_id
 
     @override
     def delete_thermal(self, area_id: str, thermal_id: str) -> None:
@@ -504,17 +643,28 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
+    def get_all_renewables_series(self) -> RenewableSeriesMapping:
+        result: RenewableSeriesMapping = {}
+        for renewable_key, matrix_id in self._renewable_series.items():
+            area_id, renewable_id = renewable_key.area_id, renewable_key.cluster_id
+            result.setdefault(area_id, {})[renewable_id] = matrix_id
+        return result
+
+    @override
     def save_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
         self._renewables[cluster_key(area_id, renewable.id)] = renewable
 
     @override
-    def save_renewables(self, area_id: str, renewables: Sequence[RenewableCluster]) -> None:
-        for renewable in renewables:
-            self.save_renewable(area_id, renewable)
+    def save_renewables(self, data: dict[AreaId, list[RenewableCluster]]) -> None:
+        for area_id, renewables in data.items():
+            for renewable in renewables:
+                self._renewables[cluster_key(area_id, renewable.id)] = renewable
 
     @override
-    def save_renewable_series(self, area_id: str, renewable_id: str, series_id: str) -> None:
-        self._renewable_series[cluster_key(area_id, renewable_id)] = series_id
+    def save_renewable_series(self, series: RenewableSeriesMapping) -> None:
+        for area_id, value in series.items():
+            for renewable_id, series_id in value.items():
+                self._renewable_series[cluster_key(area_id, renewable_id)] = series_id
 
     @override
     def delete_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
@@ -905,7 +1055,6 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def get_invalid_area_ids(self, areas: list[str]) -> list[str]:
-        # TODO make this actually work once we implement area DAO
         return list(set(areas) - set(self._area_names))
 
     @override
@@ -1172,21 +1321,46 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def save_load(self, area_id: str, series_id: str) -> None:
-        self._load[area_id] = series_id
+    def get_all_load(self) -> AreaSeriesMapping:
+        return self._load
 
     @override
-    def save_misc_gen(self, area_id: str, series_id: str) -> None:
-        self._misc_gen[area_id] = series_id
+    def get_all_misc_gen(self) -> AreaSeriesMapping:
+        return self._misc_gen
 
     @override
-    def save_reserves(self, area_id: str, series_id: str) -> None:
-        self._reserves[area_id] = series_id
+    def get_all_reserves(self) -> AreaSeriesMapping:
+        return self._reserves
 
     @override
-    def save_solar(self, area_id: str, series_id: str) -> None:
-        self._solar[area_id] = series_id
+    def get_all_solar(self) -> AreaSeriesMapping:
+        return self._solar
 
     @override
-    def save_wind(self, area_id: str, series_id: str) -> None:
-        self._wind[area_id] = series_id
+    def get_all_wind(self) -> AreaSeriesMapping:
+        return self._wind
+
+    @override
+    def save_load(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._load[area_id] = series_id
+
+    @override
+    def save_misc_gen(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._misc_gen[area_id] = series_id
+
+    @override
+    def save_reserves(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._reserves[area_id] = series_id
+
+    @override
+    def save_solar(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._solar[area_id] = series_id
+
+    @override
+    def save_wind(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._wind[area_id] = series_id

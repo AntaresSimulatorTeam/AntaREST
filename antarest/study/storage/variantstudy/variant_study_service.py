@@ -48,9 +48,12 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, current_time, suppress_exception
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
-from antarest.study.dtos import StudyDataSynthesis
+from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
+from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import (
     RawStudy,
+    StorageMode,
     Study,
     StudyMetadataDTO,
 )
@@ -82,8 +85,11 @@ from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGener
 
 logger = logging.getLogger(__name__)
 
-SNAPSHOT_RELATIVE_PATH = "snapshot"
-OUTPUT_RELATIVE_PATH = "output"
+
+def _cast_study_to_variant(study: Study) -> VariantStudy:
+    if not isinstance(study, VariantStudy):
+        raise TypeError(f"The type of the study must be {VariantStudy}, not {type(study)}")
+    return study
 
 
 class VariantStudyService(AbstractStorageService):
@@ -657,7 +663,6 @@ class VariantStudyService(AbstractStorageService):
     def generate_task(
         self,
         metadata: VariantStudy,
-        denormalize: bool = False,
         from_scratch: bool = False,
         listener: ICommandListener | None = None,
     ) -> str:
@@ -689,9 +694,18 @@ class VariantStudyService(AbstractStorageService):
                     study_factory=self.study_factory,
                     repository=self.repository,
                 )
+
+                # Build the Dao factory first
+                ctx = self.command_factory.command_context
+                factory: StudyFactoryDao
+                if metadata.storage_mode == StorageMode.FILESYSTEM:
+                    factory = FileStudyDaoFactory(ctx, self.study_factory, self.cache)
+                else:
+                    factory = DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants)
+                # Then launch the generation
                 generate_result = generator.generate_snapshot(
                     study_id,
-                    denormalize=denormalize,
+                    dao_factory=factory,
                     from_scratch=from_scratch,
                     notifier=notifier,
                     listener=listener,
@@ -715,7 +729,7 @@ class VariantStudyService(AbstractStorageService):
             self.repository.save(metadata)
             return str(metadata.generation_task)
 
-    def generate(self, variant_study_id: str, denormalize: bool, from_scratch: bool) -> str:
+    def generate(self, variant_study_id: str, from_scratch: bool) -> str:
         # Get variant study
         variant_study = self._get_variant_study(variant_study_id)
 
@@ -723,7 +737,7 @@ class VariantStudyService(AbstractStorageService):
         if variant_study.parent_id is None:
             raise NoParentStudyError(variant_study_id)
 
-        return self.generate_task(variant_study, denormalize, from_scratch=from_scratch)
+        return self.generate_task(variant_study, from_scratch=from_scratch)
 
     def get_study_task(self, study_id: str) -> TaskDTO:
         """
@@ -789,10 +803,8 @@ class VariantStudyService(AbstractStorageService):
 
         dest_study = self.raw_study_service.build_raw_study(dest_study_name, groups, src_study, destination_folder)
 
-        if isinstance(src_study, VariantStudy):
-            file_study = self.get_raw(metadata=src_study)
-        else:
-            raise TypeError(f"The type of the study must be {VariantStudy}, not {type(src_study)}")
+        variant = _cast_study_to_variant(src_study)
+        file_study = self.get_raw(metadata=variant)
 
         src_path = file_study.config.path
         dest_path = dest_study.path
@@ -847,17 +859,15 @@ class VariantStudyService(AbstractStorageService):
             output_dir: optional output dir override
         Returns: the config and study tree object
         """
-        if isinstance(metadata, VariantStudy):
-            self._safe_generation(metadata)
-        else:
-            raise TypeError(f"The type of the study must be {VariantStudy}, not {type(metadata)}")
+        variant = _cast_study_to_variant(metadata)
+        self._safe_generation(variant)
 
-        study_path = self.get_study_path(metadata)
+        study_path = self.get_study_path(variant)
         return self.study_factory.create_from_fs(
             study_path,
-            is_managed(metadata),
-            metadata.id,
-            output_dir or Path(metadata.path) / "output",
+            is_managed(variant),
+            variant.id,
+            output_dir or Path(variant.path) / "output",
             use_cache=use_cache,
         )
 
@@ -884,7 +894,8 @@ class VariantStudyService(AbstractStorageService):
         Returns: study path
 
         """
-        return Path(metadata.path) / SNAPSHOT_RELATIVE_PATH
+        variant = _cast_study_to_variant(metadata)
+        return variant.snapshot_dir
 
     @override
     def export_study_flat(
@@ -893,33 +904,11 @@ class VariantStudyService(AbstractStorageService):
         dst_path: Path,
         denormalize: bool = True,
     ) -> None:
-        if isinstance(metadata, VariantStudy):
-            self._safe_generation(metadata)
-        else:
-            raise TypeError(f"The type of the study must be {VariantStudy}, not {type(metadata)}")
+        variant = _cast_study_to_variant(metadata)
 
-        path_study = Path(metadata.path)
-        snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH
-        self.raw_study_service.export_study_to_flat_directory(
-            snapshot_path, dst_path, denormalize, is_managed(metadata)
-        )
+        self._safe_generation(variant)
 
-    @override
-    def get_synthesis(self, metadata: Study) -> StudyDataSynthesis:
-        """
-        Return study synthesis
-        Args:
-            metadata: study
-        Returns: FileStudyTreeConfigDTO
-
-        """
-        if isinstance(metadata, VariantStudy):
-            self._safe_generation(metadata)
-        else:
-            raise TypeError(f"The type of the study must be {VariantStudy}, not {type(metadata)}")
-        study_path = self.get_study_path(metadata)
-        study = self.study_factory.create_from_fs(study_path, is_managed(metadata), metadata.id)
-        return StudyDataSynthesis.from_study_config(study.config)
+        self.raw_study_service.export_study_to_flat_directory(variant.snapshot_dir, dst_path, denormalize=denormalize)
 
     def clear_all_snapshots(self, retention_time: timedelta) -> str:
         """
@@ -949,6 +938,15 @@ class VariantStudyService(AbstractStorageService):
             progress=None,
             custom_event_messages=None,
         )
+
+    @override
+    def normalize_study(self, study: Study) -> None:
+        if study.storage_mode == StorageMode.DATABASE:
+            # Nothing to do
+            return
+
+        file_study = self.get_raw(study)
+        self.raw_study_service.normalize_file_study(file_study)
 
 
 class SnapshotCleanerTask:

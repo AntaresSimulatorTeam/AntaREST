@@ -90,7 +90,7 @@ class CreateRenewablesCluster(ICommand):
 
         # Matrices
         null_matrix = self.command_context.generator_matrix_constants.get_null_matrix()
-        study_data.save_renewable_series(self.area_id, lower_renewable_id, null_matrix)
+        study_data.save_renewable_series({self.area_id: {lower_renewable_id: null_matrix}})
 
         return command_succeeded(
             f"Renewable cluster '{renewable_id}' added to area '{self.area_id}'.", result=renewable

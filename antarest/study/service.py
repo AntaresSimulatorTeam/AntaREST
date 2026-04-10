@@ -55,7 +55,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import ICache, study_raw_cache_key, update_cache
+from antarest.core.interfaces.cache import ICache, study_raw_cache_key
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import JWTGroup
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
@@ -68,7 +68,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.launcher.repository import JobResultRepository
 from antarest.login.model import Group
-from antarest.login.service import LoginService
+from antarest.login.service import LoginService, UserNotFoundError
 from antarest.login.utils import get_current_user, get_user_id, get_user_impersonator
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.output.filestudy.utils import (
@@ -94,6 +94,7 @@ from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
 from antarest.study.business.model.area_model import AreaCreation, AreaInfo, AreaUIData, AreaUIUpdate
 from antarest.study.business.model.binding_constraint_model import LinkTerm
+from antarest.study.business.model.config.general_model import GeneralConfigUpdate
 from antarest.study.business.model.hydro_allocation_model import HydroAllocationMatrix
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelationMatrix
 from antarest.study.business.model.link_model import Link, LinkUpdate
@@ -139,6 +140,7 @@ from antarest.study.model import (
     StudyFolder,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
+    StudyMetadataUpdate,
     StudyRepairAction,
     StudyRepairIssue,
     StudyRepairReport,
@@ -153,7 +155,6 @@ from antarest.study.repository import (
     StudySortBy,
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
@@ -189,6 +190,7 @@ from antarest.study.storage.variantstudy.model.command.replace_user_resource imp
     ReplaceUserResource,
 )
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command.update_general_config import UpdateGeneralConfig
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -345,7 +347,7 @@ class ThermalClusterTimeSeriesGeneratorTask:
                 # Therefore, we have to launch a variant generation task inside the timeseries generation one.
                 variant_service = self.storage_service.variant_study_service
                 task_service = variant_service.task_service
-                generation_task_id = variant_service.generate_task(study, True, False, listener)
+                generation_task_id = variant_service.generate_task(study, False, listener)
                 task_service.await_task(generation_task_id)
                 result = task_service.status_task(generation_task_id)
                 assert result.result is not None
@@ -422,7 +424,7 @@ class StudyUpgraderTask:
                 )
             finally:
                 if is_study_denormalized:
-                    self.storage_service.raw_study_service.normalize_study(study_to_upgrade)
+                    self.storage_service.get_storage(study_to_upgrade).normalize_study(study_to_upgrade)
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         """
@@ -490,33 +492,14 @@ class RawStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        command_context = self._variant_study_service.command_factory.command_context
-        if self._study.storage_mode == StorageMode.DATABASE:
-            return DatabaseStudyDao(
-                self._study.id, db.session, self._matrix_service, command_context.generator_matrix_constants
-            ).read_only()
-        return FileStudyTreeDao(
-            self.get_files(), command_context.generator_matrix_constants, command_context.blob_service
-        ).read_only()
+        return self._get_dao().read_only()
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
         study = self._study
-        file_study: FileStudy | None = None
 
-        command_context = self._variant_study_service.command_factory.command_context
         # Build DAO based on storage mode
-        if study.storage_mode == StorageMode.DATABASE:
-            dao: StudyDao = DatabaseStudyDao(
-                study.id, db.session, self._matrix_service, command_context.generator_matrix_constants
-            )
-        else:
-            file_study = self.get_files()
-            dao = FileStudyTreeDao(
-                file_study,
-                command_context.generator_matrix_constants,
-                command_context.blob_service,
-            )
+        dao = self._get_dao()
 
         # Apply all commands
         should_invalidate_cache = False
@@ -530,10 +513,8 @@ class RawStudyInterface(StudyInterface):
         # Handle cache invalidation
         if should_invalidate_cache:
             remove_from_cache(self._raw_study_service.cache, study.id)
-        elif study.storage_mode == StorageMode.FILESYSTEM:
-            assert file_study is not None
-            data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
-            update_cache(self._raw_study_service.cache, study.id, data)
+        else:
+            dao.update_cache()
 
         # Update editor metadata
         self._update_editor_and_lastsave(dao)
@@ -541,13 +522,31 @@ class RawStudyInterface(StudyInterface):
         # Notify changes to child variants
         self._variant_study_service.on_parent_change(study.id)
 
+    def _get_dao(self) -> StudyDao:
+        context = self._variant_study_service.command_factory.command_context
+        matrix_constants = context.generator_matrix_constants
+        if self._study.storage_mode == StorageMode.DATABASE:
+            return DatabaseStudyDao(self._study.id, db.session, self._matrix_service, matrix_constants)
+        return FileStudyTreeDao(
+            self.get_files(),
+            is_managed(self._study),
+            matrix_constants,
+            context.blob_service,
+            self._matrix_service,
+            self._raw_study_service.cache,
+        )
+
+    @override
+    def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
+        self._get_dao().update_antares_file(metadata)
+
     def _update_editor_and_lastsave(self, dao: StudyDao) -> None:
         user = self._user_service.get_identity(get_user_impersonator())
         if user:
             user_name = user.name or ""
             last_save = current_time().timestamp()
             # Update file (no-op for database storage mode)
-            dao.update_antares_file(user_name, last_save)
+            dao.update_antares_file(StudyMetadataUpdate(editor=user_name, last_save=last_save))
             # Update DB metadata
             self._study.editor = user_name
             self._study.updated_at = current_time()
@@ -583,15 +582,29 @@ class VariantStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        command_context = self._variant_service.command_factory.command_context
+        context = self._variant_service.command_factory.command_context
         return FileStudyTreeDao(
-            self.get_files(), command_context.generator_matrix_constants, command_context.blob_service
+            self.get_files(),
+            True,
+            context.generator_matrix_constants,
+            context.blob_service,
+            context.matrix_service,
+            self._variant_service.cache,
         ).read_only()
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
         # get current user if not in session, otherwise get session user
         self._variant_service.append_commands(self._study.id, transform_command_to_dto(commands, force_aggregate=True))
+
+    @override
+    def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
+        """
+        We update the last modification date in DB.
+        This way, the variant snapshot will be re-generated inside future operations.
+        """
+        self._study.updated_at = current_time()
+        self._variant_service.repository.save(self._study)
 
 
 class IOutputsAccess(ABC):
@@ -708,7 +721,9 @@ class StudyService:
         StudyDatabaseMatrixUsageProvider(matrix_service)
         self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
             StorageMode.DATABASE: DatabaseStudyDaoFactory(matrix_service, command_context.generator_matrix_constants),
-            StorageMode.FILESYSTEM: FileStudyDaoFactory(command_context, raw_study_service.study_factory),
+            StorageMode.FILESYSTEM: FileStudyDaoFactory(
+                command_context, raw_study_service.study_factory, cache_service
+            ),
         }
 
     def register_output_access(self, output_access: IOutputsAccess) -> None:
@@ -897,34 +912,24 @@ class StudyService:
             uuid: study uuid
             metadata_patch: metadata patch
         """
-        logger.info(
-            "updating study %s metadata for user %s",
-            uuid,
-            get_user_id(),
-        )
+        logger.info("updating study %s metadata for user %s", uuid, get_user_id())
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
+        self.assert_study_unarchived(study)
 
-        if metadata_patch.author or metadata_patch.horizon:
-            self.assert_study_unarchived(study)
+        study_interface = self.get_study_interface(study)
 
         if metadata_patch.horizon:
-            study_settings_url = "settings/generaldata/general"
-            study_settings = self.storage_service.get_storage(study).get(study, study_settings_url)
-            study_settings["horizon"] = metadata_patch.horizon
-            self._edit_study_using_command(study=study, url=study_settings_url, data=study_settings)
+            command = UpdateGeneralConfig(
+                parameters=GeneralConfigUpdate(horizon=metadata_patch.horizon),
+                command_context=self.storage_service.variant_study_service.command_factory.command_context,
+                study_version=study_interface.version,
+            )
+            study_interface.add_commands([command])
 
         if metadata_patch.author or metadata_patch.name:
-            study_antares_url = "study/antares"
-            study_antares = self.storage_service.get_storage(study).get(study, study_antares_url)
-
-            if metadata_patch.author:
-                study_antares["author"] = metadata_patch.author
-
-            if metadata_patch.name:
-                study_antares["caption"] = metadata_patch.name
-
-            self._edit_study_using_command(study=study, url=study_antares_url, data=study_antares)
+            study_metadata = StudyMetadataUpdate(author=metadata_patch.author, name=metadata_patch.name)
+            study_interface.update_study_metadata(study_metadata)
 
         if metadata_patch.name:
             study.name = metadata_patch.name
@@ -932,6 +937,9 @@ class StudyService:
             study.author = metadata_patch.author
         if metadata_patch.horizon:
             study.horizon = metadata_patch.horizon
+
+        self.repository.save(study)
+
         if metadata_patch.tags is not None:
             self.repository.update_tags(study, metadata_patch.tags)
 
@@ -1080,7 +1088,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.READ)
         study.last_access = current_time()
         self.repository.save(study)
-        input_synthesis = self.storage_service.get_storage(study).get_synthesis(study)
+        input_synthesis = self.get_study_interface(study).get_study_dao().get_synthesis()
         outputs = self._get_outputs_access().get_outputs_details(study.id)
         return StudySynthesis.aggregate(input_synthesis, outputs)
 
@@ -1306,7 +1314,7 @@ class StudyService:
             study.directory_id = self.directory_service.get_directory_by_path(destination_folder.as_posix())
 
             self._save_study(study)
-            self.storage_service.raw_study_service.normalize_study(study)
+            self.storage_service.get_storage(study).normalize_study(study)
 
             match outputs_selection:
                 case "all":
@@ -1509,10 +1517,11 @@ class StudyService:
 
     def _delete_study_from_filesystem(self, study: Study) -> None:
         """Delete study files from disk (handles both archived and unarchived studies)."""
-        if self.assert_study_unarchived(study=study, raise_exception=False):
-            self.storage_service.get_storage(study).delete(study)
-        elif isinstance(study, RawStudy):
+        if study.archived:
             os.unlink(self.storage_service.raw_study_service.find_archive_path(study))
+
+        elif study.storage_mode == StorageMode.FILESYSTEM:
+            self.storage_service.get_storage(study).delete(study)
 
     def _notify_study_deleted(self, study: Study, study_info: Any) -> None:
         """Push deletion event, log the action, and run deletion callbacks."""
@@ -1647,7 +1656,7 @@ class StudyService:
         study.updated_at = current_time()
 
         self._save_study(study)
-        self.storage_service.raw_study_service.normalize_study(study)
+        self.storage_service.get_storage(study).normalize_study(study)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -1833,7 +1842,12 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
         self.assert_study_unarchived(study)
+
         new_owner = self.user_service.get_user(owner_id)
+        if not new_owner:
+            logger.error("user %d not found by user %s", id, get_user_id())
+            raise UserNotFoundError()
+
         study.owner = new_owner
         self.repository.save(study)
         self.event_bus.push(
@@ -1844,15 +1858,9 @@ class StudyService:
             )
         )
 
-        owner_name = None if new_owner is None else new_owner.name
-        self._edit_study_using_command(study=study, url="study/antares/author", data=owner_name)
+        self.get_study_interface(study).update_study_metadata(StudyMetadataUpdate(author=new_owner.name or ""))
 
-        logger.info(
-            "user %s change study %s owner to %d",
-            get_user_id(),
-            study_id,
-            owner_id,
-        )
+        logger.info("user %s change study %s owner to %d", get_user_id(), study_id, owner_id)
 
     def add_group(self, study_id: str, group_id: str) -> None:
         """
@@ -2850,7 +2858,7 @@ class StudyService:
             raise UnsupportedOperationOnThisStudyType(study_id, "normalize", "raw")
         self.assert_study_unarchived(study)
 
-        self.storage_service.raw_study_service.normalize_study(study)
+        self.storage_service.get_storage(study).normalize_study(study)
 
     # def _read_raw_output_matrix(
     #     self,
@@ -3050,7 +3058,14 @@ class StudyService:
             path, with_matrix_normalization=normalize_matrices, study_id="", use_cache=False
         )
         context = self.storage_service.variant_study_service.command_factory.command_context
-        file_study_dao = FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service)
+        file_study_dao = FileStudyTreeDao(
+            file_study,
+            normalize_matrices,
+            context.generator_matrix_constants,
+            context.blob_service,
+            context.matrix_service,
+            self.cache_service,
+        )
         # Write the given study input in the filesystem
         converter = StudyConverter(source_dao, file_study_dao, study_version, context.matrix_service)
         converter.convert_study_inputs()
