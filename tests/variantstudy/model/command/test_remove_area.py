@@ -84,7 +84,7 @@ class TestRemoveArea:
         create_area_command: ICommand = CreateArea(
             area_name=area_name, command_context=command_context, study_version=empty_study.config.version
         )
-        dao = build_dao_from_file_study(empty_study, command_context)
+        dao = build_dao_from_file_study(empty_study, command_context, True)
         output = create_area_command.apply(study_dao=dao)
         assert output.status, output.message
         return empty_study, dao, area_id

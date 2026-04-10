@@ -31,7 +31,12 @@ from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo,
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_dao import AreaDao
 from antarest.study.dao.common import AreaSeriesMapping
-from antarest.study.dao.database.common import serialize_frequency_filters, validate_area_exists
+from antarest.study.dao.database.common import (
+    get_all_area_matrices,
+    save_area_matrix,
+    serialize_frequency_filters,
+    validate_area_exists,
+)
 from antarest.study.dao.database.models.area import (
     AREA_TABLE,
     AREA_UI_TABLE,
@@ -42,7 +47,7 @@ from antarest.study.dao.database.models.area import (
     WIND_TABLE,
 )
 from antarest.study.dao.database.models.district import DISTRICT_TABLE
-from antarest.study.dao.database.sql_utils import upsert_multiple, upsert_one
+from antarest.study.dao.database.sql_utils import upsert_one
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 if TYPE_CHECKING:
@@ -459,27 +464,6 @@ class DatabaseAreaDao(AreaDao):
 
         return session.execute(stmt).fetchone()
 
-    def _save_matrix(self, series: AreaSeriesMapping, table: Table) -> None:
-        study_id = self._study_id
-        session = self._db_session
-
-        try:
-            values = []
-            for area_id, series_id in series.items():
-                data = {"study_id": study_id, "area_id": area_id, "matrix_id": series_id}
-                values.append(data)
-            upsert_multiple(session, table, values)
-
-        except IntegrityError as e:
-            invalid_ids = set(series) - set(self.get_all_area_ids())
-            if invalid_ids:
-                raise AreaNotFound(*invalid_ids)
-            else:
-                # All areas exist. It means that the DB table does not contain the information.
-                raise ValueError("One of the area matrices table is not filled as it should") from e
-
-        session.commit()
-
     @override
     def get_load(self, area_id: str) -> pl.DataFrame:
         return self._get_matrix(area_id, LOAD_TABLE)
@@ -500,49 +484,42 @@ class DatabaseAreaDao(AreaDao):
     def get_wind(self, area_id: str) -> pl.DataFrame:
         return self._get_matrix(area_id, WIND_TABLE)
 
-    def _get_all_matrices(self, table: Table) -> AreaSeriesMapping:
-        study_id = self.get_study_id()
-        session = self.get_session()
-        stmt = select(table).where((table.c.study_id == study_id))
-        rows = session.execute(stmt).fetchall()
-        return {row.area_id: row.matrix_id for row in rows}
-
     @override
     def get_all_load(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(LOAD_TABLE)
+        return get_all_area_matrices(self._study_id, self._db_session, LOAD_TABLE)
 
     @override
     def get_all_misc_gen(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(MISC_GEN_TABLE)
+        return get_all_area_matrices(self._study_id, self._db_session, MISC_GEN_TABLE)
 
     @override
     def get_all_reserves(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(RESERVES_TABLE)
+        return get_all_area_matrices(self._study_id, self._db_session, RESERVES_TABLE)
 
     @override
     def get_all_solar(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(SOLAR_TABLE)
+        return get_all_area_matrices(self._study_id, self._db_session, SOLAR_TABLE)
 
     @override
     def get_all_wind(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(WIND_TABLE)
+        return get_all_area_matrices(self._study_id, self._db_session, WIND_TABLE)
 
     @override
     def save_load(self, series: AreaSeriesMapping) -> None:
-        self._save_matrix(series, LOAD_TABLE)
+        save_area_matrix(self.get_impl(), series, LOAD_TABLE)
 
     @override
     def save_misc_gen(self, series: AreaSeriesMapping) -> None:
-        self._save_matrix(series, MISC_GEN_TABLE)
+        save_area_matrix(self.get_impl(), series, MISC_GEN_TABLE)
 
     @override
     def save_reserves(self, series: AreaSeriesMapping) -> None:
-        self._save_matrix(series, RESERVES_TABLE)
+        save_area_matrix(self.get_impl(), series, RESERVES_TABLE)
 
     @override
     def save_solar(self, series: AreaSeriesMapping) -> None:
-        self._save_matrix(series, SOLAR_TABLE)
+        save_area_matrix(self.get_impl(), series, SOLAR_TABLE)
 
     @override
     def save_wind(self, series: AreaSeriesMapping) -> None:
-        self._save_matrix(series, WIND_TABLE)
+        save_area_matrix(self.get_impl(), series, WIND_TABLE)

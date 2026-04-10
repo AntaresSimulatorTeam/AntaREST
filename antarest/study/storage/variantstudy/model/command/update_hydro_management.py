@@ -58,7 +58,7 @@ class UpdateHydroManagement(ICommand):
         current_hydro_management = study_data.get_hydro_management(area_id=self.area_id)
         updated_hydro_management = update_hydro_management(current_hydro_management, self.properties)
 
-        study_data.save_hydro_management(updated_hydro_management, self.area_id)
+        study_data.save_hydro_management({self.area_id: updated_hydro_management})
 
         return command_succeeded(f"Hydro properties in '{self.area_id}' updated.", result=updated_hydro_management)
 
