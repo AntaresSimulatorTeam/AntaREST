@@ -12,8 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { mergeSxProp } from "@/utils/muiUtils";
-import { Box, CircularProgress, type SxProps, type Theme, Tooltip } from "@mui/material";
+import { Box, CircularProgress, Tooltip, Typography } from "@mui/material";
 import { TreeItem, type TreeItemProps } from "@mui/x-tree-view";
 import { Children } from "react";
 
@@ -26,38 +25,18 @@ export interface TreeItemEnhancedProps extends TreeItemProps {
 // Utils
 ////////////////////////////////////////////////////////////////
 
-function getStyles(canExpand: boolean): SxProps<Theme> {
-  return {
-    "& > .MuiTreeItem-content": {
-      // Expand/collapse icon
-      "& > .MuiTreeItem-iconContainer": {
-        alignItems: "center",
-        borderTopLeftRadius: "inherit",
-        borderBottomLeftRadius: "inherit",
-        "&:hover": {
-          background: canExpand ? "inherit" : "none",
-        },
-      },
-      "& > .MuiTreeItem-label": {
-        py: 0.5,
-        whiteSpace: "nowrap",
-        textOverflow: "ellipsis",
-        overflow: "hidden",
-      },
-    },
-  };
-}
-
 function withTooltip(label: TreeItemEnhancedProps["label"], disableTooltip: boolean) {
+  const labelEl = (
+    <Typography variant="body2" noWrap>
+      {label}
+    </Typography>
+  );
+
   if (disableTooltip || typeof label !== "string") {
-    return label;
+    return labelEl;
   }
 
-  return (
-    <Tooltip title={label}>
-      <span>{label}</span>
-    </Tooltip>
-  );
+  return <Tooltip title={label}>{labelEl}</Tooltip>;
 }
 
 function withLoading(label: TreeItemEnhancedProps["label"], loading: boolean) {
@@ -82,22 +61,27 @@ function withLoading(label: TreeItemEnhancedProps["label"], loading: boolean) {
 
 function TreeItemEnhanced({
   onClick,
-  sx,
   label,
   loading = false,
   disableTooltip = false,
+  disabled,
   ...rest
 }: TreeItemEnhancedProps) {
   const canExpand = Children.toArray(rest.children).length > 0;
   const enhancedLabel = withLoading(withTooltip(label, disableTooltip), loading);
-  const styles = getStyles(canExpand);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleClick: NonNullable<TreeItemEnhancedProps["onClick"]> = (event) => {
-    // The item is not selected if the click is on the expand/collapse icon
+    event.stopPropagation();
+
+    if (!onClick || disabled) {
+      return;
+    }
+
+    // Ignore click on the expand/collapse icon.
     if (
       canExpand &&
       event.target instanceof Element &&
@@ -106,16 +90,14 @@ function TreeItemEnhanced({
       return;
     }
 
-    onClick?.(event);
+    onClick(event);
   };
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return (
-    <TreeItem {...rest} onClick={handleClick} label={enhancedLabel} sx={mergeSxProp(styles, sx)} />
-  );
+  return <TreeItem {...rest} disabled={disabled} onClick={handleClick} label={enhancedLabel} />;
 }
 
 export default TreeItemEnhanced;
