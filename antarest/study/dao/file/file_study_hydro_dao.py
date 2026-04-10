@@ -237,15 +237,12 @@ class FileStudyHydroDao(HydroDao):
         study_version = file_study.config.version
         initial_hydro_data = file_study.tree.get(HYDRO_PATH)
 
-        new_data_list = []
+        final_hydro_data = {**initial_hydro_data}  # Start with a copy of the initial data
+
         for area_id, management in hydro_management.items():
             new_hydro_data = serialize_hydro_management(management, area_id, study_version)
-            new_data_list.append(new_hydro_data)
-
-        final_hydro_data = {}
-        for new_hydro_data in new_data_list:
-            for key, value in new_hydro_data.items():
-                final_hydro_data[key] = {**initial_hydro_data.get(key, {}), **value}
+            for key, data in new_hydro_data.items():
+                final_hydro_data.setdefault(key, {}).update(data)
 
         file_study.tree.save(final_hydro_data, HYDRO_PATH)
 
