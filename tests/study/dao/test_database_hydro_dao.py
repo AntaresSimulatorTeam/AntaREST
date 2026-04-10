@@ -227,18 +227,19 @@ class TestHydroAllocation:
 
         # Create initial allocation
         dao.save_hydro_allocation(
-            "paris", HydroAllocation(allocation=[HydroAllocationArea(area_id="paris", coefficient=1.0)])
+            {"paris": HydroAllocation(allocation=[HydroAllocationArea(area_id="paris", coefficient=1.0)])}
         )
 
         # Replace with new allocation
         dao.save_hydro_allocation(
-            "paris",
-            HydroAllocation(
-                allocation=[
-                    HydroAllocationArea(area_id="paris", coefficient=0.6),
-                    HydroAllocationArea(area_id="london", coefficient=0.4),
-                ]
-            ),
+            {
+                "paris": HydroAllocation(
+                    allocation=[
+                        HydroAllocationArea(area_id="paris", coefficient=0.6),
+                        HydroAllocationArea(area_id="london", coefficient=0.4),
+                    ]
+                )
+            },
         )
 
         result = dao.get_hydro_allocation("paris")
@@ -255,7 +256,7 @@ class TestHydroAllocation:
 
         allocation = HydroAllocation(allocation=[HydroAllocationArea(area_id="paris", coefficient=1.0)])
         with pytest.raises(AreaNotFound, match="nonexistent"):
-            dao.save_hydro_allocation("nonexistent", allocation)
+            dao.save_hydro_allocation({"nonexistent": allocation})
 
     def test_save_hydro_allocation_raises_error_for_nonexistent_target_area(self, db_dao: DatabaseStudyDao) -> None:
         """Test that save_hydro_allocation raises AreaNotFound with the invalid target area ID."""
@@ -264,7 +265,7 @@ class TestHydroAllocation:
 
         allocation = HydroAllocation(allocation=[HydroAllocationArea(area_id="nonexistent", coefficient=1.0)])
         with pytest.raises(AreaNotFound, match="nonexistent"):
-            dao.save_hydro_allocation("paris", allocation)
+            dao.save_hydro_allocation({"paris": allocation})
 
     def test_get_hydro_allocation_matrix(self, db_dao: DatabaseStudyDao) -> None:
         """Test that get_hydro_allocation_matrix returns all allocations."""
@@ -273,16 +274,17 @@ class TestHydroAllocation:
         dao.save_area("London")
 
         dao.save_hydro_allocation(
-            "paris",
-            HydroAllocation(
-                allocation=[
-                    HydroAllocationArea(area_id="paris", coefficient=0.7),
-                    HydroAllocationArea(area_id="london", coefficient=0.3),
-                ]
-            ),
+            {
+                "paris": HydroAllocation(
+                    allocation=[
+                        HydroAllocationArea(area_id="paris", coefficient=0.7),
+                        HydroAllocationArea(area_id="london", coefficient=0.3),
+                    ]
+                )
+            }
         )
         dao.save_hydro_allocation(
-            "london", HydroAllocation(allocation=[HydroAllocationArea(area_id="london", coefficient=1.0)])
+            {"london": HydroAllocation(allocation=[HydroAllocationArea(area_id="london", coefficient=1.0)])}
         )
 
         result = dao.get_hydro_allocation_matrix()
@@ -295,12 +297,13 @@ class TestHydroAllocation:
         assert result["london"].allocation[0].coefficient == 1.0
 
         dao.save_hydro_allocation(
-            "paris",
-            HydroAllocation(
-                allocation=[
-                    HydroAllocationArea(area_id="paris", coefficient=0.2),
-                ]
-            ),
+            {
+                "paris": HydroAllocation(
+                    allocation=[
+                        HydroAllocationArea(area_id="paris", coefficient=0.2),
+                    ]
+                )
+            }
         )
         result = dao.get_hydro_allocation_matrix()
         assert len(result["paris"].allocation) == 1
@@ -344,13 +347,14 @@ class TestHydroCorrelation:
 
         # Save from Paris perspective
         dao.save_hydro_correlation(
-            "paris",
-            HydroCorrelation(
-                correlation=[
-                    HydroCorrelationArea(area_id="paris", coefficient=100.0),
-                    HydroCorrelationArea(area_id="london", coefficient=75.0),
-                ]
-            ),
+            {
+                "paris": HydroCorrelation(
+                    correlation=[
+                        HydroCorrelationArea(area_id="paris", coefficient=100.0),
+                        HydroCorrelationArea(area_id="london", coefficient=75.0),
+                    ]
+                )
+            }
         )
 
         # Get from London perspective should show same correlation
@@ -373,7 +377,7 @@ class TestHydroCorrelation:
             ]
         )
         with pytest.raises(AreaNotFound, match="nonexistent"):
-            dao.save_hydro_correlation("paris", correlation)
+            dao.save_hydro_correlation({"paris": correlation})
 
         # Nonexistent source area
         correlation = HydroCorrelation(
@@ -382,7 +386,7 @@ class TestHydroCorrelation:
             ]
         )
         with pytest.raises(AreaNotFound, match="nonexistent"):
-            dao.save_hydro_correlation("nonexistent", correlation)
+            dao.save_hydro_correlation({"nonexistent": correlation})
 
     def test_get_hydro_correlation_matrix(self, db_dao: DatabaseStudyDao) -> None:
         """Test that get_hydro_correlation_matrix returns the full matrix."""
@@ -392,13 +396,14 @@ class TestHydroCorrelation:
 
         # Save correlation
         dao.save_hydro_correlation(
-            "paris",
-            HydroCorrelation(
-                correlation=[
-                    HydroCorrelationArea(area_id="paris", coefficient=100.0),
-                    HydroCorrelationArea(area_id="london", coefficient=60.0),
-                ]
-            ),
+            {
+                "paris": HydroCorrelation(
+                    correlation=[
+                        HydroCorrelationArea(area_id="paris", coefficient=100.0),
+                        HydroCorrelationArea(area_id="london", coefficient=60.0),
+                    ]
+                )
+            }
         )
         result = dao.get_hydro_correlation_matrix()
 
@@ -463,13 +468,14 @@ class TestCascadeDelete:
         dao.save_area("Paris")
         dao.save_area("London")
         dao.save_hydro_allocation(
-            "paris",
-            HydroAllocation(
-                allocation=[
-                    HydroAllocationArea(area_id="paris", coefficient=0.6),
-                    HydroAllocationArea(area_id="london", coefficient=0.4),
-                ]
-            ),
+            {
+                "paris": HydroAllocation(
+                    allocation=[
+                        HydroAllocationArea(area_id="paris", coefficient=0.6),
+                        HydroAllocationArea(area_id="london", coefficient=0.4),
+                    ]
+                )
+            }
         )
 
         # Delete target area allocation row referencing it should be cascade-deleted
@@ -492,13 +498,14 @@ class TestCascadeDelete:
 
         dao.save_area("London")
         dao.save_hydro_allocation(
-            "paris",
-            HydroAllocation(
-                allocation=[
-                    HydroAllocationArea(area_id="paris", coefficient=0.6),
-                    HydroAllocationArea(area_id="london", coefficient=0.4),
-                ]
-            ),
+            {
+                "paris": HydroAllocation(
+                    allocation=[
+                        HydroAllocationArea(area_id="paris", coefficient=0.6),
+                        HydroAllocationArea(area_id="london", coefficient=0.4),
+                    ]
+                )
+            }
         )
 
         # Delete source area remaining allocation rows should be cascade-deleted
@@ -519,13 +526,14 @@ class TestCascadeDelete:
         dao.save_area("London")
         dao.save_area("Algiers")
         dao.save_hydro_correlation(
-            "paris",
-            HydroCorrelation(
-                correlation=[
-                    HydroCorrelationArea(area_id="london", coefficient=50.0),
-                    HydroCorrelationArea(area_id="algiers", coefficient=60.0),
-                ]
-            ),
+            {
+                "paris": HydroCorrelation(
+                    correlation=[
+                        HydroCorrelationArea(area_id="london", coefficient=50.0),
+                        HydroCorrelationArea(area_id="algiers", coefficient=60.0),
+                    ]
+                )
+            }
         )
 
         # Upper triangle stores: (algiers, paris, 0.6) and (london, paris, 0.5)
