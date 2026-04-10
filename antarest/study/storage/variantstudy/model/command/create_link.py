@@ -132,19 +132,22 @@ class CreateLink(AbstractLinkCommand, ICommand):
             return command_failed(f"Link between '{self.area1}' and '{self.area2}' already exists")
 
         link = create_link(self.parameters, self.area1, self.area2)
-        study_data.save_link(link)
+        study_data.save_links([link])
 
         series = self.series or (
             self.command_context.generator_matrix_constants.get_link(version=study_data.get_version())
         )
+        assert isinstance(series, str)
         direct = self.direct or (self.command_context.generator_matrix_constants.get_link_direct())
+        assert isinstance(direct, str)
         indirect = self.indirect or (self.command_context.generator_matrix_constants.get_link_indirect())
+        assert isinstance(indirect, str)
 
         area_from, area_to = sorted((self.area1, self.area2))
-        study_data.save_link_series(area_from, area_to, str(series))
+        study_data.save_link_series({(area_from, area_to): series})
         if self.study_version >= STUDY_VERSION_8_2:
-            study_data.save_link_direct_capacities(area_from, area_to, str(direct))
-            study_data.save_link_indirect_capacities(area_from, area_to, str(indirect))
+            study_data.save_link_direct_capacities({(area_from, area_to): direct})
+            study_data.save_link_indirect_capacities({(area_from, area_to): indirect})
 
         return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' created", result=None)
 

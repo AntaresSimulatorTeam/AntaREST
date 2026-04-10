@@ -73,6 +73,15 @@ class RawPathToMatrixMapper:
         def _save_misc_gen(area_id: str, series_id: str) -> None:
             dao.save_misc_gen({area_id: series_id})
 
+        def _save_link_series(area_from: str, area_to: str, series_id: str) -> None:
+            dao.save_link_series({(area_from, area_to): series_id})
+
+        def _save_link_direct_capacities(area_from: str, area_to: str, series_id: str) -> None:
+            dao.save_link_direct_capacities({(area_from, area_to): series_id})
+
+        def _save_link_indirect_capacities(area_from: str, area_to: str, series_id: str) -> None:
+            dao.save_link_indirect_capacities({(area_from, area_to): series_id})
+
         self._path_matchers = [
             RegexMatcher(
                 pattern=re.compile(r"user/expansion/capa/(?P<filename>[^/]+)"),
@@ -112,12 +121,12 @@ class RawPathToMatrixMapper:
             RegexMatcher(
                 pattern=re.compile(r"input/links/(?P<area_from>[^/]+)/capacities/(?P<area_to>[^/]+)_direct"),
                 getter=dao.get_link_direct_capacities,
-                setter=dao.save_link_direct_capacities,
+                setter=_save_link_direct_capacities,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/links/(?P<area_from>[^/]+)/capacities/(?P<area_to>[^/]+)_indirect"),
                 getter=dao.get_link_indirect_capacities,
-                setter=dao.save_link_indirect_capacities,
+                setter=_save_link_indirect_capacities,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/thermal/prepro/(?P<area_id>[^/]+)/(?P<thermal_id>[^/]+)/data"),
@@ -287,7 +296,7 @@ class RawPathToMatrixMapper:
                 RegexMatcher(
                     pattern=re.compile(r"input/links/(?P<area_from>[^/]+)/(?P<area_to>[^/]+)"),
                     getter=dao.get_link_series,
-                    setter=dao.save_link_series,
+                    setter=_save_link_series,
                 )
             )
         else:
@@ -295,7 +304,7 @@ class RawPathToMatrixMapper:
                 RegexMatcher(
                     pattern=re.compile(r"input/links/(?P<area_from>[^/]+)/(?P<area_to>[^/]+)_parameters"),
                     getter=dao.get_link_series,
-                    setter=dao.save_link_series,
+                    setter=_save_link_series,
                 )
             )
         if study_version < STUDY_VERSION_8_7:

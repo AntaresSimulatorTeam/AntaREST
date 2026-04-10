@@ -26,7 +26,7 @@ def _create_default_link(db_dao: DatabaseStudyDao) -> None:
     dao.save_area("Paris")
     dao.save_area("London")
     link = Link(area1="paris", area2="london")
-    dao.save_link(link)
+    dao.save_links([link])
 
 
 def test_create_link_with_default_properties(db_session: Session, db_dao: DatabaseStudyDao) -> None:
@@ -35,7 +35,7 @@ def test_create_link_with_default_properties(db_session: Session, db_dao: Databa
     dao.save_area("Paris")
     dao.save_area("London")
     link = Link(area1="paris", area2="london")
-    dao.save_link(link)
+    dao.save_links([link])
 
     # Check default Link was created
     stmt = select(LINK_TABLE)
@@ -92,7 +92,7 @@ def test_get_all_links(db_dao: DatabaseStudyDao, db_session: Session) -> None:
     dao = db_dao
     _create_default_link(dao)
     dao.save_area("Berlin")
-    dao.save_link(Link(area1="paris", area2="berlin"))
+    dao.save_links([Link(area1="paris", area2="berlin")])
 
     # Ensures we do not perform N+1 requests
     with DBStatementRecorder(db_session.bind) as db_recorder:
@@ -127,7 +127,7 @@ def test_save_link(db_dao: DatabaseStudyDao) -> None:
     new_link = Link(
         area1="paris", area2="london", hurdles_cost=True, comments="My link", filter_synthesis=[FilterOption.DAILY]
     )
-    dao.save_link(new_link)
+    dao.save_links([new_link])
 
     # Asserts the properties were well modified
     link = dao.get_link("london", "paris")
@@ -135,14 +135,14 @@ def test_save_link(db_dao: DatabaseStudyDao) -> None:
 
     # Create a link with wrong area and ensure we raise a clear exception
     with pytest.raises(AreaNotFound):
-        dao.save_link(Link(area1="paris", area2="fake_area"))
+        dao.save_links([Link(area1="paris", area2="fake_area")])
 
 
 def test_delete_area(db_dao: DatabaseStudyDao, db_session: Session) -> None:
     dao = db_dao
     _create_default_link(dao)
     dao.save_area("Toulouse")
-    dao.save_link(Link(area1="paris", area2="toulouse"))
+    dao.save_links([Link(area1="paris", area2="toulouse")])
 
     # Removing the area `Paris` should remove the 2 links as they both reference it.
     # For one link, it's `area2` and for the other `area1`

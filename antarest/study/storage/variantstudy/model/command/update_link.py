@@ -66,16 +66,19 @@ class UpdateLink(AbstractLinkCommand, ICommand):
         current_link = study_data.get_link(self.area1, self.area2)
         new_link = update_link(current_link, self.parameters)
 
-        study_data.save_link(new_link)
+        study_data.save_links([new_link])
 
         if self.series:
-            study_data.save_link_series(self.area1, self.area2, str(self.series))
+            assert isinstance(self.series, str)
+            study_data.save_link_series({(self.area1, self.area2): self.series})
 
         if self.direct:
-            study_data.save_link_direct_capacities(self.area1, self.area2, str(self.direct))
+            assert isinstance(self.direct, str)
+            study_data.save_link_direct_capacities({(self.area1, self.area2): self.direct})
 
         if self.indirect:
-            study_data.save_link_indirect_capacities(self.area1, self.area2, str(self.indirect))
+            assert isinstance(self.indirect, str)
+            study_data.save_link_indirect_capacities({(self.area1, self.area2): self.indirect})
 
         return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' updated", result=new_link)
 

@@ -254,6 +254,12 @@ class LinkNotFound(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
+class LinksNotFound(HTTPException):
+    def __init__(self, *link_ids: str) -> None:
+        ids = ", ".join(f"'{link}'" for link in link_ids)
+        super().__init__(HTTPStatus.NOT_FOUND, f"Links are not found: {ids}")
+
+
 class VariantStudyParentNotValid(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)

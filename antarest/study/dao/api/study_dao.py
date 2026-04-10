@@ -79,7 +79,7 @@ from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
 from antarest.study.dao.api.timeseries_config_dao import ReadOnlyTimeSeriesConfigDao, TimeSeriesConfigDao
 from antarest.study.dao.api.user_resources_dao import ReadOnlyUserResourcesDao, UserResourcesDao
 from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
-from antarest.study.dao.common import AreaSeriesMapping, RenewableSeriesMapping, ThermalSeriesMapping
+from antarest.study.dao.common import AreaSeriesMapping, LinkSeriesMapping, RenewableSeriesMapping, ThermalSeriesMapping
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -237,6 +237,18 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_link_series(self, area_from: str, area_to: str) -> pl.DataFrame:
         return self._adaptee.get_link_series(area_from, area_to)
+
+    @override
+    def get_all_links_series(self) -> LinkSeriesMapping:
+        return self._adaptee.get_all_links_series()
+
+    @override
+    def get_all_links_indirect_capacities(self) -> LinkSeriesMapping:
+        return self._adaptee.get_all_links_indirect_capacities()
+
+    @override
+    def get_all_links_direct_capacities(self) -> LinkSeriesMapping:
+        return self._adaptee.get_all_links_direct_capacities()
 
     @override
     def get_all_thermals(self) -> dict[str, dict[str, ThermalCluster]]:

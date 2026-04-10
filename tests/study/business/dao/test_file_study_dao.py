@@ -21,12 +21,12 @@ from tests.helpers import build_dao_from_file_study
 
 
 def test_file_study_dao(tmp_path: Path, empty_study_930: FileStudy, command_context: CommandContext) -> None:
-    dao = build_dao_from_file_study(empty_study_930, command_context)
+    dao = build_dao_from_file_study(empty_study_930, command_context, True)
     # Create 2 areas, 1 link, an Xpansion configuration and several user resources
     dao.create_xpansion_configuration()
     dao.save_area("FR")
     dao.save_area("de")
-    dao.save_link(Link(area1="fr", area2="de"))
+    dao.save_links([Link(area1="fr", area2="de")])
     blob_id1 = command_context.blob_service.save(b"Usain Bolt")
     path1 = PurePosixPath("file1.txt")
     dao.save_user_resource(UserResourceDataCreation(path=path1, resource_type=ResourceType.FILE, blob_id=blob_id1))
@@ -43,9 +43,9 @@ def test_file_study_dao(tmp_path: Path, empty_study_930: FileStudy, command_cont
     series_id_2 = command_context.matrix_service.create(matrix2)
     series_id_3 = command_context.matrix_service.create(matrix3)
 
-    dao.save_link_series("de", "fr", series_id_1)
-    dao.save_link_direct_capacities("fr", "de", series_id_2)
-    dao.save_link_indirect_capacities("de", "fr", series_id_3)
+    dao.save_link_series({("de", "fr"): series_id_1})
+    dao.save_link_direct_capacities({("fr", "de"): series_id_2})
+    dao.save_link_indirect_capacities({("de", "fr"): series_id_3})
 
     assert dao.get_link_series("de", "fr").equals(matrix1)
     assert dao.get_link_direct_capacities("de", "fr").equals(matrix2)

@@ -70,7 +70,13 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettingsUpdate,
 )
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.dao.common import AreaId, AreaSeriesMapping, RenewableSeriesMapping, ThermalSeriesMapping
+from antarest.study.dao.common import (
+    AreaId,
+    AreaSeriesMapping,
+    LinkSeriesMapping,
+    RenewableSeriesMapping,
+    ThermalSeriesMapping,
+)
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -335,20 +341,45 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def save_link(self, link: Link) -> None:
-        self._links[link_key(link.area1, link.area2)] = link
+    def get_all_links_series(self) -> LinkSeriesMapping:
+        result: LinkSeriesMapping = {}
+        for link_key, series_id in self._link_capacities.items():
+            result[link_key.area1_id, link_key.area2_id] = series_id
+        return result
 
     @override
-    def save_link_series(self, area_from: str, area_to: str, series_id: str) -> None:
-        self._link_capacities[link_key(area_from, area_to)] = series_id
+    def get_all_links_indirect_capacities(self) -> LinkSeriesMapping:
+        result: LinkSeriesMapping = {}
+        for link_key, series_id in self._link_indirect_capacities.items():
+            result[link_key.area1_id, link_key.area2_id] = series_id
+        return result
 
     @override
-    def save_link_direct_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        self._link_direct_capacities[link_key(area_from, area_to)] = series_id
+    def get_all_links_direct_capacities(self) -> LinkSeriesMapping:
+        result: LinkSeriesMapping = {}
+        for link_key, series_id in self._link_direct_capacities.items():
+            result[link_key.area1_id, link_key.area2_id] = series_id
+        return result
 
     @override
-    def save_link_indirect_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        self._link_indirect_capacities[link_key(area_from, area_to)] = series_id
+    def save_links(self, links: Sequence[Link]) -> None:
+        for link in links:
+            self._links[link_key(link.area1, link.area2)] = link
+
+    @override
+    def save_link_series(self, series: LinkSeriesMapping) -> None:
+        for (area_from, area_to), series_id in series.items():
+            self._link_capacities[link_key(area_from, area_to)] = series_id
+
+    @override
+    def save_link_direct_capacities(self, series: LinkSeriesMapping) -> None:
+        for (area_from, area_to), series_id in series.items():
+            self._link_direct_capacities[link_key(area_from, area_to)] = series_id
+
+    @override
+    def save_link_indirect_capacities(self, series: LinkSeriesMapping) -> None:
+        for (area_from, area_to), series_id in series.items():
+            self._link_indirect_capacities[link_key(area_from, area_to)] = series_id
 
     @override
     def delete_link(self, link: Link) -> None:

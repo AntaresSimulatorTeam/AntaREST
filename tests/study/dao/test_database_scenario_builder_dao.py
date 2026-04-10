@@ -74,7 +74,7 @@ def test_save_ruleset_with_all_area_types(db_dao: DatabaseStudyDao) -> None:
 def test_save_ruleset_with_link_scenarios(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     _setup_areas(dao, "fr", "de")
-    dao.save_link(Link(area1="de", area2="fr"))
+    dao.save_links([Link(area1="de", area2="fr")])
     ruleset = Ruleset(ntc={"de / fr": {"0": 1, "1": 2}})
     dao.save_scenario_builder(ruleset)
     result = dao.get_ruleset()
@@ -251,7 +251,7 @@ def test_scenario_builder_link_deleted(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     _setup_areas(dao, "de", "fr")
 
-    dao.save_link(Link(area1="de", area2="fr"))
+    dao.save_links([Link(area1="de", area2="fr")])
     dao.save_scenario_builder(Ruleset(ntc={"de / fr": {"0": 7}}))
 
     result = dao.get_scenario_by_type(ScenarioType.LINK)
