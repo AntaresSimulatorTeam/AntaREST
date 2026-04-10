@@ -376,9 +376,9 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
     dao.save_xpansion_weight("mc_weights.csv", xpansion_weight_id)
 
     # Create binding constraint matrices — covers LT, GT, and EQ tables
-    bc_lt_id = matrix_service.create(bc_lt_df)
-    bc_gt_id = matrix_service.create(bc_gt_df)
-    bc_eq_id = matrix_service.create(bc_eq_df)
+    bc_lt_matrix_id = matrix_service.create(bc_lt_df)
+    bc_gt_matrix_id = matrix_service.create(bc_gt_df)
+    bc_eq_matrix_id = matrix_service.create(bc_eq_df)
     bc_both_id = "bc_both"
     bc_equal_id = "bc_equal"
     dao.save_constraints(
@@ -387,9 +387,9 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
             BindingConstraint(id=bc_equal_id, name=bc_equal_id, operator=BindingConstraintOperator.EQUAL),
         ]
     )
-    dao.save_constraint_less_term_matrix(bc_both_id, bc_lt_id)
-    dao.save_constraint_greater_term_matrix(bc_both_id, bc_gt_id)
-    dao.save_constraint_equal_term_matrix(bc_equal_id, bc_eq_id)
+    dao.save_constraint_less_term_matrix(bc_both_id, bc_lt_matrix_id)
+    dao.save_constraint_greater_term_matrix(bc_both_id, bc_gt_matrix_id)
+    dao.save_constraint_equal_term_matrix(bc_equal_id, bc_eq_matrix_id)
 
     return RealCaseStudy(
         area1=area_id,

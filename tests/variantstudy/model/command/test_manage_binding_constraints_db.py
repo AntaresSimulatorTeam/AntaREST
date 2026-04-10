@@ -43,8 +43,8 @@ def test_manage_binding_constraint(
     db_dao_88: DatabaseStudyDao,
     command_context: CommandContext,
 ) -> None:
-    bd1: ConstraintId = "bd 1"
-    bd2: ConstraintId = "bd 2"
+    bd1: ConstraintId = ConstraintId("bd 1")
+    bd2: ConstraintId = ConstraintId("bd 2")
 
     for db_dao_versioned in [db_dao_86, db_dao_88]:
         study_version = db_dao_versioned.get_version()
@@ -191,7 +191,7 @@ def test_scenario_builder(db_dao_88: DatabaseStudyDao, command_context: CommandC
     """
     study_version = db_dao_88.get_version()
     assert study_version >= STUDY_VERSION_8_7
-    bd1: ConstraintId = "bd 1"
+    bd1: ConstraintId = ConstraintId("bd 1")
 
     bc_group = "Group 1"
     output = CreateBindingConstraint(

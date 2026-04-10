@@ -47,9 +47,9 @@ from antarest.study.model import STUDY_VERSION_8_8, Study
 from tests.study.dao.conftest import build_db_dao
 
 # Common constraint IDs reused across many tests
-BC1: ConstraintId = "bc1"
-BC2: ConstraintId = "bc2"
-BC3: ConstraintId = "bc3"
+BC1: ConstraintId = ConstraintId("bc1")
+BC2: ConstraintId = ConstraintId("bc2")
+BC3: ConstraintId = ConstraintId("bc3")
 
 
 def _bc(constraint_id: ConstraintId, **kwargs) -> BindingConstraint:
@@ -85,9 +85,9 @@ def _assert_reset_matrix(df: pl.DataFrame) -> None:
 
 def test_constraint_crud(dao: StudyDao) -> None:
     """Full CRUD lifecycle: empty → save → get → update → delete."""
-    c1: ConstraintId = "c1"
-    c2: ConstraintId = "c2"
-    ghost: ConstraintId = "ghost"
+    c1: ConstraintId = ConstraintId("c1")
+    c2: ConstraintId = ConstraintId("c2")
+    ghost: ConstraintId = ConstraintId("ghost")
 
     # Initially empty
     assert dao.get_all_constraints() == {}
@@ -152,11 +152,11 @@ def test_constraint_crud(dao: StudyDao) -> None:
 
 def test_constraint_terms(dao: StudyDao) -> None:
     """Terms lifecycle: save link/cluster/mixed, no terms, term replacement, cartesian-product regression."""
-    lc: ConstraintId = "lc"
-    cc: ConstraintId = "cc"
-    mixed: ConstraintId = "mixed"
-    empty: ConstraintId = "empty"
-    bc_cart: ConstraintId = "bc_cart"
+    lc: ConstraintId = ConstraintId("lc")
+    cc: ConstraintId = ConstraintId("cc")
+    mixed: ConstraintId = ConstraintId("mixed")
+    empty: ConstraintId = ConstraintId("empty")
+    bc_cart: ConstraintId = ConstraintId("bc_cart")
 
     # Link term
     dao.save_constraints([_bc(lc, terms=[ConstraintTerm(weight=3.5, data=LinkTerm(area1="area_a", area2="area_b"))])])
@@ -278,8 +278,8 @@ def test_version_specific_fields(dao: StudyDao) -> None:
 def test_matrices(dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService]) -> None:
     """All four matrix types round-trip; upsert overwrites; each constraint has its own matrices."""
     dao, matrix_service = dao_and_matrix_service
-    bc_a: ConstraintId = "bc_a"
-    bc_b: ConstraintId = "bc_b"
+    bc_a: ConstraintId = ConstraintId("bc_a")
+    bc_b: ConstraintId = ConstraintId("bc_b")
 
     df_lt = pl.DataFrame({"lt": [0.5, 1.5]})
     df_gt = pl.DataFrame({"gt": [2.0, 3.0]})
@@ -745,7 +745,7 @@ def _assert_tables_empty(db_session: Session, tables: list[Table], study_id: str
 
 def test_constraint_crud_study_isolation(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     """Constraints are isolated per study."""
-    c1: ConstraintId = "c1"
+    c1: ConstraintId = ConstraintId("c1")
     db_dao.save_constraints([_bc(c1)])
     assert set(db_dao.get_all_constraints().keys()) == {c1}
 

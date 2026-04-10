@@ -47,10 +47,10 @@ def test_apply_database(db_dao_87: DatabaseStudyDao, command_context: CommandCon
     and assert the persisted state via dao.get_constraint().
     """
     dao = db_dao_87
-    bc_0: ConstraintId = "bc_0"
-    bc_1: ConstraintId = "bc_1"
-    bc_2: ConstraintId = "bc_2"
-    bc_3: ConstraintId = "bc_3"
+    bc_0: ConstraintId = ConstraintId("bc_0")
+    bc_1: ConstraintId = ConstraintId("bc_1")
+    bc_2: ConstraintId = ConstraintId("bc_2")
+    bc_3: ConstraintId = ConstraintId("bc_3")
 
     # Seed initial constraints (bc_0 acts as an unrelated constraint that must stay untouched)
     dao.save_constraints(
@@ -128,7 +128,7 @@ def test_update_time_step_via_table_mode_database(db_dao_88: DatabaseStudyDao, c
     - Assert persisted time_step is DAILY; operator must still be LESS.
     """
     dao = db_dao_88
-    bc1: ConstraintId = "bc1"
+    bc1: ConstraintId = ConstraintId("bc1")
 
     create_cmd = CreateBindingConstraint.model_validate(
         {
@@ -165,7 +165,7 @@ def test_update_time_step_via_table_mode_database(db_dao_88: DatabaseStudyDao, c
 
 def test_apply_unknown_bc_database(db_dao_87: DatabaseStudyDao, command_context: CommandContext) -> None:
     """UpdateBindingConstraints must return a failed output when the requested bc_id is not present."""
-    unknown_id: ConstraintId = "does_not_exist"
+    unknown_id: ConstraintId = ConstraintId("does_not_exist")
     cmd = UpdateBindingConstraints(
         study_version=STUDY_VERSION_8_7,
         bc_props_by_id={unknown_id: BindingConstraintUpdate(group="g")},
@@ -185,7 +185,7 @@ def test_time_step_change_resets_matrices(db_dao_93: DatabaseStudyDao, command_c
     The null matrix is stored; the simulator fills in correctly-sized zeros at runtime.
     """
     dao = db_dao_93
-    bc1: ConstraintId = "bc1"
+    bc1: ConstraintId = ConstraintId("bc1")
 
     create_cmd = CreateBindingConstraint.model_validate(
         {
@@ -234,7 +234,7 @@ def test_operator_change_moves_matrices(db_dao_93: DatabaseStudyDao, command_con
     The old data is preserved (aliased) rather than reset.
     """
     dao = db_dao_93
-    bc2: ConstraintId = "bc2"
+    bc2: ConstraintId = ConstraintId("bc2")
 
     create_cmd = CreateBindingConstraint.model_validate(
         {
@@ -277,7 +277,7 @@ def test_operator_change_both_to_less(db_dao_93: DatabaseStudyDao, command_conte
     Changing operator from BOTH → LESS must keep lt and delete gt.
     """
     dao = db_dao_93
-    bc3: ConstraintId = "bc3"
+    bc3: ConstraintId = ConstraintId("bc3")
 
     create_cmd = CreateBindingConstraint.model_validate(
         {
