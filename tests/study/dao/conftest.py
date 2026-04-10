@@ -241,11 +241,11 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
     # Create `load`, `solar`, `wind`, `reserves` and `misc-gen` matrices in DB
     area_id = "paris"
     dao.save_area(area_id)
-    dao.save_load(area_id, load_id)
-    dao.save_solar(area_id, solar_id)
-    dao.save_wind(area_id, wind_id)
-    dao.save_reserves(area_id, reserves_id)
-    dao.save_misc_gen(area_id, misc_gen_id)
+    dao.save_load({area_id: load_id})
+    dao.save_solar({area_id: solar_id})
+    dao.save_wind({area_id: wind_id})
+    dao.save_reserves({area_id: reserves_id})
+    dao.save_misc_gen({area_id: misc_gen_id})
 
     # Also create a link with `series`, `direct_capacity` and `indirect_capacity` matrices.
     area2 = "london"
@@ -267,7 +267,7 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
     # Create renewable cluster matrices
     renewable_id = "battery"
     dao.save_renewable(area_id, RenewableCluster(id=renewable_id, name="Battery Fr"))
-    dao.save_renewable_series(area_id, renewable_id, renewable_series_id)
+    dao.save_renewable_series({area_id: {renewable_id: renewable_series_id}})
 
     # Create ST Storage matrices
     st_storage_id = "battery_storage"

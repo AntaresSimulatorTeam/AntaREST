@@ -9,13 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import TypeAlias
+from antarest.core.exceptions import AreaNotFound
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 
-AreaId: TypeAlias = str
-ThermalId: TypeAlias = str
-RenewableId: TypeAlias = str
-SeriesId: TypeAlias = str
 
-ThermalSeriesMapping: TypeAlias = dict[AreaId, dict[ThermalId, SeriesId]]
-RenewableSeriesMapping: TypeAlias = dict[AreaId, dict[RenewableId, SeriesId]]
-AreaSeriesMapping: TypeAlias = dict[AreaId, SeriesId]
+def check_area_exists(study_data: FileStudyTreeConfig, area_id: str) -> None:
+    if area_id not in study_data.areas:
+        raise AreaNotFound(f"The area '{area_id}' does not exist")

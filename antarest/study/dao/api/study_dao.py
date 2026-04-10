@@ -84,7 +84,7 @@ from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
 from antarest.study.dao.api.timeseries_config_dao import ReadOnlyTimeSeriesConfigDao, TimeSeriesConfigDao
 from antarest.study.dao.api.user_resources_dao import ReadOnlyUserResourcesDao, UserResourcesDao
 from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
-from antarest.study.dao.common import ThermalSeriesMapping
+from antarest.study.dao.common import AreaSeriesMapping, RenewableSeriesMapping, ThermalSeriesMapping
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -320,6 +320,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_renewable_series(self, area_id: str, renewable_id: str) -> pl.DataFrame:
         return self._adaptee.get_renewable_series(area_id, renewable_id)
+
+    @override
+    def get_all_renewables_series(self) -> RenewableSeriesMapping:
+        return self._adaptee.get_all_renewables_series()
 
     @override
     def get_all_constraints(self) -> dict[str, BindingConstraint]:
@@ -632,6 +636,26 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_wind(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_wind(area_id)
+
+    @override
+    def get_all_load(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_load()
+
+    @override
+    def get_all_misc_gen(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_misc_gen()
+
+    @override
+    def get_all_reserves(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_reserves()
+
+    @override
+    def get_all_solar(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_solar()
+
+    @override
+    def get_all_wind(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_wind()
 
     @override
     def get_hydro_max_hourly_gen_power(self, area_id: str) -> pl.DataFrame:

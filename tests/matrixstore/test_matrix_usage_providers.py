@@ -20,6 +20,7 @@ import polars as pl
 import pytest
 from typing_extensions import override
 
+from antarest.blobstore.in_memory import InMemoryBlobService
 from antarest.core.config import DEFAULT_WORKSPACE_NAME, InternalMatrixFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
@@ -36,9 +37,8 @@ from antarest.output.variable_view.db import OutputVariablesViewsModel
 from antarest.output.variable_view.matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
-from antarest.study.model import MatrixFrequency, RawStudy
+from antarest.study.model import STUDY_VERSION_9_3, MatrixFrequency, RawStudy
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants.matrix_constants_usage_provider import (
@@ -57,6 +57,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from tests.conftest import empty_study_fixture
 from tests.helpers import build_dao_from_file_study, create_raw_study, with_admin_user, with_db_context
 
 
@@ -214,25 +215,31 @@ def test_command_matrix_usage_provider(
 @with_db_context
 @with_admin_user
 def test_command_matrix_usage_provider_with_snapshot(
-    empty_study_930: FileStudy, variant_study_service: VariantStudyService, command_context: CommandContext
+    tmp_path: Path, variant_study_service: VariantStudyService
 ) -> None:
     # Create a real matrix_service
-    bucket_dir = (
-        variant_study_service.command_factory.command_context.matrix_service.matrix_content_repository.bucket_dir
-    )
     matrix_service = MatrixService(
         repo=MatrixRepository(db.session),
         repo_dataset=MatrixDataSetRepository(db.session),
-        matrix_content_repository=MatrixContentRepository(bucket_dir, InternalMatrixFormat.TSV),
+        matrix_content_repository=MatrixContentRepository(tmp_path, InternalMatrixFormat.TSV),
         file_transfer_manager=Mock(),
         task_service=Mock(),
         config=Mock(),
         user_service=Mock(),
     )
-    variant_study_service.command_factory.command_context.matrix_service = matrix_service
+    # Create a command_context object based on this matrix_service
+    constants = GeneratorMatrixConstants(matrix_service=matrix_service)
+    constants.init_constant_matrices()
+    command_context = CommandContext(
+        generator_matrix_constants=constants,
+        matrix_service=matrix_service,
+        blob_service=InMemoryBlobService(),
+    )
+
+    # Create a FileStudy based on the matrix_service
+    study = empty_study_fixture(STUDY_VERSION_9_3, matrix_service, tmp_path)
 
     # Create a RawStudy with 1 area and 1 thermal
-    study = empty_study_930
     dao = build_dao_from_file_study(study, command_context)
     version = study.config.version
     create_area_cmd = CreateArea(area_name="fr", command_context=command_context, study_version=version)
