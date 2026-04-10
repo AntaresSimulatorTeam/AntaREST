@@ -207,32 +207,28 @@ class DatabaseHydroDao(HydroDao):
         return self._convert_row_to_inflow_structure(row)
 
     @override
-    def save_inflow_structure(self, inflow_structure: InflowStructure, area_id: str) -> None:
-        """
-        Save inflow structure configuration for an area.
-
-        Args:
-            inflow_structure: The InflowStructure configuration to save.
-            area_id: The area identifier.
-
-        Raises:
-            AreaNotFound: If the area does not exist.
-        """
+    def save_inflow_structure(self, inflow_structure: dict[AreaId, InflowStructure]) -> None:
+        """Save inflow structure configuration for several areas"""
         study_id = self.get_study_id()
         session = self.get_session()
 
-        values = {
-            "study_id": study_id,
-            "area_id": area_id,
-            "inter_monthly_correlation": inflow_structure.inter_monthly_correlation,
-        }
+        values = []
+        for area_id, inflow in inflow_structure.items():
+            values.append(
+                {
+                    "study_id": study_id,
+                    "area_id": area_id,
+                    "inter_monthly_correlation": inflow.inter_monthly_correlation,
+                }
+            )
+
         try:
-            upsert_one(session, HYDRO_INFLOW_STRUCTURE_TABLE, values)
+            upsert_multiple(session, HYDRO_INFLOW_STRUCTURE_TABLE, values)
             session.commit()
         except IntegrityError as e:
             session.rollback()
             # IntegrityError occurred can only mean that an area_id is invalid
-            raise AreaNotFound(area_id) from e
+            self._raise_the_right_area_exception(set(inflow_structure), e)
 
     @override
     def get_all_hydro_properties(self) -> dict[str, HydroProperties]:
