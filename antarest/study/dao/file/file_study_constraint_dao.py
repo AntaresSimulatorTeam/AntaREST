@@ -170,6 +170,10 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
     @override
     def delete_constraints(self, constraints: list[BindingConstraint]) -> None:
+        """Delete binding constraints and their associated matrix files from the study.
+
+        Deleting a constraint not present in the study is a no-op.
+        """
         study_data = self.get_file_study()
         ini_content = _get_all_constraints_ini(study_data)
         study_version = study_data.config.version

@@ -576,10 +576,15 @@ class DatabaseBindingConstraintDao(ConstraintDao):
 
     @override
     def delete_constraints(self, constraints: list[BindingConstraint]) -> None:
+        """
+        Delete binding constraints and their associated matrix rows from the database.
+
+        Deleting a constraint not present in the study is a no-op.
+        """
         db = self._db_session
         constraint_ids = {bc.id for bc in constraints}
 
-        # Delete BC rows first so the table reflects the final state,
+        # Order matters : delete BC rows first so the table reflects the final state,
         # then prune orphaned groups via a single subquery.
         db.execute(delete(BC).where((BC.c.study_id == self._study_id) & (BC.c.constraint_id.in_(constraint_ids))))
         self._cleanup_scenario_builder_groups()
