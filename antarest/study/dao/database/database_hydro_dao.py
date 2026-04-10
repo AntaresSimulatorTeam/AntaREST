@@ -41,7 +41,12 @@ from antarest.study.business.model.hydro_correlation_model import (
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.dao.api.hydro_dao import HydroDao
 from antarest.study.dao.common import AreaSeriesMapping
-from antarest.study.dao.database.common import get_row_representation_as_dict, save_area_matrix, validate_area_exists
+from antarest.study.dao.database.common import (
+    get_all_area_matrices,
+    get_row_representation_as_dict,
+    save_area_matrix,
+    validate_area_exists,
+)
 from antarest.study.dao.database.models.area import AREA_TABLE
 from antarest.study.dao.database.models.hydro import (
     HYDRO_ALLOCATION_TABLE,
@@ -545,6 +550,58 @@ class DatabaseHydroDao(HydroDao):
     @override
     def get_hydro_max_daily_pump_energy(self, area_id: str) -> pl.DataFrame:
         return self._get_hydro_matrix(area_id, HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE)
+
+    @override
+    def get_all_hydro_maxpower(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_id, self._db_session, HYDRO_MAXPOWER_TABLE)
+
+    @override
+    def get_all_hydro_reservoir(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_id, self._db_session, HYDRO_RESERVOIR_TABLE)
+
+    @override
+    def get_all_hydro_energy(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_id, self._db_session, HYDRO_ENERGY_TABLE)
+
+    @override
+    def get_all_hydro_run_of_river(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_id, self._db_session, HYDRO_RUN_OF_RIVER_TABLE)
+
+    @override
+    def get_all_hydro_modulation(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_id, self._db_session, HYDRO_MODULATION_TABLE)
+
+    @override
+    def get_all_hydro_credit_modulations(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_id, self._db_session, HYDRO_CREDIT_MODULATIONS_TABLE)
+
+    @override
+    def get_all_hydro_inflow_pattern(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_id, self._db_session, HYDRO_INFLOW_PATTERN_TABLE)
+
+    @override
+    def get_all_hydro_water_values(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_id, self._db_session, HYDRO_WATER_VALUES_TABLE)
+
+    @override
+    def get_all_hydro_mingen(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_id, self._db_session, HYDRO_MINGEN_TABLE)
+
+    @override
+    def get_all_hydro_max_hourly_gen_power(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_id, self._db_session, HYDRO_MAX_HOURLY_GEN_POWER_TABLE)
+
+    @override
+    def get_all_hydro_max_hourly_pump_power(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_id, self._db_session, HYDRO_MAX_HOURLY_PUMP_POWER_TABLE)
+
+    @override
+    def get_all_hydro_max_daily_gen_energy(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_id, self._db_session, HYDRO_MAX_DAILY_GEN_ENERGY_TABLE)
+
+    @override
+    def get_all_hydro_max_daily_pump_energy(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_id, self._db_session, HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE)
 
     @override
     def save_hydro_maxpower(self, series: AreaSeriesMapping) -> None:

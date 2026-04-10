@@ -31,7 +31,12 @@ from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo,
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_dao import AreaDao
 from antarest.study.dao.common import AreaSeriesMapping
-from antarest.study.dao.database.common import save_area_matrix, serialize_frequency_filters, validate_area_exists
+from antarest.study.dao.database.common import (
+    get_all_area_matrices,
+    save_area_matrix,
+    serialize_frequency_filters,
+    validate_area_exists,
+)
 from antarest.study.dao.database.models.area import (
     AREA_TABLE,
     AREA_UI_TABLE,
@@ -479,32 +484,25 @@ class DatabaseAreaDao(AreaDao):
     def get_wind(self, area_id: str) -> pl.DataFrame:
         return self._get_matrix(area_id, WIND_TABLE)
 
-    def _get_all_matrices(self, table: Table) -> AreaSeriesMapping:
-        study_id = self.get_study_id()
-        session = self.get_session()
-        stmt = select(table).where((table.c.study_id == study_id))
-        rows = session.execute(stmt).fetchall()
-        return {row.area_id: row.matrix_id for row in rows}
-
     @override
     def get_all_load(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(LOAD_TABLE)
+        return get_all_area_matrices(self._study_id, self._db_session, LOAD_TABLE)
 
     @override
     def get_all_misc_gen(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(MISC_GEN_TABLE)
+        return get_all_area_matrices(self._study_id, self._db_session, MISC_GEN_TABLE)
 
     @override
     def get_all_reserves(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(RESERVES_TABLE)
+        return get_all_area_matrices(self._study_id, self._db_session, RESERVES_TABLE)
 
     @override
     def get_all_solar(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(SOLAR_TABLE)
+        return get_all_area_matrices(self._study_id, self._db_session, SOLAR_TABLE)
 
     @override
     def get_all_wind(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(WIND_TABLE)
+        return get_all_area_matrices(self._study_id, self._db_session, WIND_TABLE)
 
     @override
     def save_load(self, series: AreaSeriesMapping) -> None:

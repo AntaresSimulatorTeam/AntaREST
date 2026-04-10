@@ -61,6 +61,12 @@ def save_area_matrix(dao: "DatabaseStudyDao", series: AreaSeriesMapping, table: 
     session.commit()
 
 
+def get_all_area_matrices(study_id: str, session: Session, table: Table) -> AreaSeriesMapping:
+    stmt = select(table).where((table.c.study_id == study_id))
+    rows = session.execute(stmt).fetchall()
+    return {row.area_id: row.matrix_id for row in rows}
+
+
 """
 Parse and Serialize the `FrequencyFilter` attribute which is stored as Text inside DB.
 """
