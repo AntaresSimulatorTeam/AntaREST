@@ -40,7 +40,7 @@ from antarest.study.business.model.hydro_correlation_model import (
 )
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.dao.api.hydro_dao import HydroDao
-from antarest.study.dao.common import AreaSeriesMapping
+from antarest.study.dao.common import AreaId, AreaSeriesMapping
 from antarest.study.dao.database.common import (
     get_all_area_matrices,
     get_row_representation_as_dict,
@@ -141,8 +141,17 @@ class DatabaseHydroDao(HydroDao):
 
         return self._convert_row_to_hydro_management(row)
 
+    def _raise_the_right_area_exception(self, area_ids: set[AreaId], exc: IntegrityError | None = None) -> None:
+        # Happens if some areas did not exist -> ForeignKey constraint fails
+
+        if invalid_areas := self.get_impl().get_invalid_area_ids(list(area_ids)):
+            raise AreaNotFound(*invalid_areas)
+
+        # All areas exist. It means that the DB table does not contain the information.
+        raise ValueError("One of the link table is not filled as it should") from exc
+
     @override
-    def save_hydro_management(self, hydro_management: HydroManagement, area_id: str) -> None:
+    def save_hydro_management(self, hydro_management: dict[AreaId, HydroManagement]) -> None:
         """
         Save hydro management configuration for an area.
 
@@ -156,16 +165,17 @@ class DatabaseHydroDao(HydroDao):
         study_id = self.get_study_id()
         session = self.get_session()
 
-        values = hydro_management.model_dump()
-        values["study_id"] = study_id
-        values["area_id"] = area_id
+        values = []
+        for area_id, management in hydro_management.items():
+            values.append({"study_id": study_id, "area_id": area_id, **management.model_dump()})
+
         try:
-            upsert_one(session, HYDRO_MANAGEMENT_TABLE, values)
+            upsert_multiple(session, HYDRO_MANAGEMENT_TABLE, values)
             session.commit()
         except IntegrityError as e:
             session.rollback()
             # IntegrityError occurred can only mean that an area_id is invalid
-            raise AreaNotFound(area_id) from e
+            self._raise_the_right_area_exception(set(hydro_management), e)
 
     @override
     def get_inflow_structure(self, area_id: str) -> InflowStructure:
