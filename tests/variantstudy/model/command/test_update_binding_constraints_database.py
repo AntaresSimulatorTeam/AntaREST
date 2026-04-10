@@ -26,6 +26,7 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
     BindingConstraintUpdate,
+    ConstraintId,
 )
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.model import STUDY_VERSION_8_7, STUDY_VERSION_8_8, STUDY_VERSION_9_3
@@ -64,30 +65,34 @@ def test_apply_database(db_dao_87: DatabaseStudyDao, command_context: CommandCon
     and assert the persisted state via dao.get_constraint().
     """
     dao = db_dao_87
+    bc_0: ConstraintId = "bc_0"
+    bc_1: ConstraintId = "bc_1"
+    bc_2: ConstraintId = "bc_2"
+    bc_3: ConstraintId = "bc_3"
 
     # Seed initial constraints (bc_0 acts as an unrelated constraint that must stay untouched)
     dao.save_constraints(
         [
             _bc(
-                "bc_0",
+                bc_0,
                 group="old_group1",
                 operator=BindingConstraintOperator.GREATER,
                 time_step=BindingConstraintFrequency.DAILY,
             ),
             _bc(
-                "bc_1",
+                bc_1,
                 group="old_group1",
                 operator=BindingConstraintOperator.GREATER,
                 time_step=BindingConstraintFrequency.DAILY,
             ),
             _bc(
-                "bc_2",
+                bc_2,
                 group="old_group2",
                 operator=BindingConstraintOperator.LESS,
                 time_step=BindingConstraintFrequency.HOURLY,
             ),
             _bc(
-                "bc_3",
+                bc_3,
                 group="old_group2",
                 operator=BindingConstraintOperator.LESS,
                 time_step=BindingConstraintFrequency.HOURLY,
@@ -98,12 +103,12 @@ def test_apply_database(db_dao_87: DatabaseStudyDao, command_context: CommandCon
     cmd = UpdateBindingConstraints(
         study_version=STUDY_VERSION_8_7,
         bc_props_by_id={
-            "bc_1": BindingConstraintUpdate(
+            bc_1: BindingConstraintUpdate(
                 group="new_group1",
                 operator=BindingConstraintOperator.GREATER,
                 time_step=BindingConstraintFrequency.DAILY,
             ),
-            "bc_2": BindingConstraintUpdate(
+            bc_2: BindingConstraintUpdate(
                 group="new_group2", operator=BindingConstraintOperator.LESS, time_step=BindingConstraintFrequency.HOURLY
             ),
         },
@@ -112,19 +117,19 @@ def test_apply_database(db_dao_87: DatabaseStudyDao, command_context: CommandCon
 
     assert cmd.apply(dao).status is True
 
-    bc1 = dao.get_constraint("bc_1")
-    assert bc1.group == "new_group1"
-    assert bc1.operator == BindingConstraintOperator.GREATER
-    assert bc1.time_step == BindingConstraintFrequency.DAILY
+    r_bc1 = dao.get_constraint(bc_1)
+    assert r_bc1.group == "new_group1"
+    assert r_bc1.operator == BindingConstraintOperator.GREATER
+    assert r_bc1.time_step == BindingConstraintFrequency.DAILY
 
-    bc2 = dao.get_constraint("bc_2")
-    assert bc2.group == "new_group2"
-    assert bc2.operator == BindingConstraintOperator.LESS
-    assert bc2.time_step == BindingConstraintFrequency.HOURLY
+    r_bc2 = dao.get_constraint(bc_2)
+    assert r_bc2.group == "new_group2"
+    assert r_bc2.operator == BindingConstraintOperator.LESS
+    assert r_bc2.time_step == BindingConstraintFrequency.HOURLY
 
     # bc_0 and bc_3 must be completely untouched
-    assert dao.get_constraint("bc_0").group == "old_group1"
-    assert dao.get_constraint("bc_3").group == "old_group2"
+    assert dao.get_constraint(bc_0).group == "old_group1"
+    assert dao.get_constraint(bc_3).group == "old_group2"
 
 
 # ---------------------------------------------------------------------------
@@ -141,10 +146,11 @@ def test_update_time_step_via_table_mode_database(db_dao_88: DatabaseStudyDao, c
     - Assert persisted time_step is DAILY; operator must still be LESS.
     """
     dao = db_dao_88
+    bc1: ConstraintId = "bc1"
 
     create_cmd = CreateBindingConstraint.model_validate(
         {
-            "name": "bc1",
+            "name": bc1,
             "time_step": BindingConstraintFrequency.HOURLY,
             "operator": BindingConstraintOperator.LESS,
             "command_context": command_context,
@@ -154,20 +160,20 @@ def test_update_time_step_via_table_mode_database(db_dao_88: DatabaseStudyDao, c
     )
     assert create_cmd.apply(dao).status is True
 
-    bc1 = dao.get_constraint("bc1")
-    assert bc1.time_step == BindingConstraintFrequency.HOURLY
-    assert bc1.operator == BindingConstraintOperator.LESS
+    r_bc1 = dao.get_constraint(bc1)
+    assert r_bc1.time_step == BindingConstraintFrequency.HOURLY
+    assert r_bc1.operator == BindingConstraintOperator.LESS
 
     update_cmd = UpdateBindingConstraints(
         study_version=STUDY_VERSION_8_8,
-        bc_props_by_id={"bc1": BindingConstraintUpdate(time_step=BindingConstraintFrequency.DAILY)},
+        bc_props_by_id={bc1: BindingConstraintUpdate(time_step=BindingConstraintFrequency.DAILY)},
         command_context=command_context,
     )
     assert update_cmd.apply(dao).status is True
 
-    bc1_updated = dao.get_constraint("bc1")
-    assert bc1_updated.time_step == BindingConstraintFrequency.DAILY
-    assert bc1_updated.operator == BindingConstraintOperator.LESS  # unchanged
+    r_bc1_updated = dao.get_constraint(bc1)
+    assert r_bc1_updated.time_step == BindingConstraintFrequency.DAILY
+    assert r_bc1_updated.operator == BindingConstraintOperator.LESS  # unchanged
 
 
 # ---------------------------------------------------------------------------
@@ -177,38 +183,13 @@ def test_update_time_step_via_table_mode_database(db_dao_88: DatabaseStudyDao, c
 
 def test_apply_unknown_bc_database(db_dao_87: DatabaseStudyDao, command_context: CommandContext) -> None:
     """UpdateBindingConstraints must return a failed output when the requested bc_id is not present."""
+    unknown_id: ConstraintId = "does_not_exist"
     cmd = UpdateBindingConstraints(
         study_version=STUDY_VERSION_8_7,
-        bc_props_by_id={"does_not_exist": BindingConstraintUpdate(group="g")},
+        bc_props_by_id={unknown_id: BindingConstraintUpdate(group="g")},
         command_context=command_context,
     )
     assert cmd.apply(db_dao_87).status is False
-
-
-# ---------------------------------------------------------------------------
-# test_to_dto — pure serialisation test, identical to the FS version
-# ---------------------------------------------------------------------------
-
-
-def test_to_dto(command_context: CommandContext) -> None:
-    cmd = UpdateBindingConstraints(
-        study_version=STUDY_VERSION_8_7,
-        bc_props_by_id={
-            "bc_1": BindingConstraintUpdate(
-                group="new_group1",
-                operator=BindingConstraintOperator.GREATER,
-                time_step=BindingConstraintFrequency.DAILY,
-            ),
-            "bc_2": BindingConstraintUpdate(
-                group="new_group2", operator=BindingConstraintOperator.LESS, time_step=BindingConstraintFrequency.HOURLY
-            ),
-        },
-        command_context=command_context,
-    )
-    dto = cmd.to_dto()
-    assert dto.action == "update_binding_constraints"
-    assert dto.version == 2
-    assert dto.study_version == STUDY_VERSION_8_7
 
 
 # ---------------------------------------------------------------------------
@@ -222,10 +203,11 @@ def test_time_step_change_resets_matrices(db_dao_93: DatabaseStudyDao, command_c
     The null matrix is stored; the simulator fills in correctly-sized zeros at runtime.
     """
     dao = db_dao_93
+    bc1: ConstraintId = "bc1"
 
     create_cmd = CreateBindingConstraint.model_validate(
         {
-            "name": "bc1",
+            "name": bc1,
             "time_step": BindingConstraintFrequency.HOURLY,
             "operator": BindingConstraintOperator.LESS,
             "command_context": command_context,
@@ -235,33 +217,33 @@ def test_time_step_change_resets_matrices(db_dao_93: DatabaseStudyDao, command_c
     )
     assert create_cmd.apply(dao).status is True
 
-    lt_initial = dao.get_constraint_less_term_matrix("bc1")
+    lt_initial = dao.get_constraint_less_term_matrix(bc1)
     assert lt_initial.shape == (8784, 1)
     assert lt_initial.sum().sum_horizontal().item() == 0
 
     with pytest.raises(BindingConstraintNotFound):
-        dao.get_constraint_greater_term_matrix("bc1")
+        dao.get_constraint_greater_term_matrix(bc1)
     with pytest.raises(BindingConstraintNotFound):
-        dao.get_constraint_equal_term_matrix("bc1")
+        dao.get_constraint_equal_term_matrix(bc1)
 
     update_cmd = UpdateBindingConstraints(
         study_version=STUDY_VERSION_9_3,
-        bc_props_by_id={"bc1": BindingConstraintUpdate(time_step=BindingConstraintFrequency.DAILY)},
+        bc_props_by_id={bc1: BindingConstraintUpdate(time_step=BindingConstraintFrequency.DAILY)},
         command_context=command_context,
     )
     assert update_cmd.apply(dao).status is True
 
-    bc1 = dao.get_constraint("bc1")
-    assert bc1.time_step == BindingConstraintFrequency.DAILY
-    assert bc1.operator == BindingConstraintOperator.LESS  # unchanged
+    r_bc1 = dao.get_constraint(bc1)
+    assert r_bc1.time_step == BindingConstraintFrequency.DAILY
+    assert r_bc1.operator == BindingConstraintOperator.LESS  # unchanged
 
-    lt_after = dao.get_constraint_less_term_matrix("bc1")
+    lt_after = dao.get_constraint_less_term_matrix(bc1)
     assert lt_after.is_empty() or lt_after.sum().sum_horizontal().item() == 0
 
     with pytest.raises(BindingConstraintNotFound):
-        dao.get_constraint_greater_term_matrix("bc1")
+        dao.get_constraint_greater_term_matrix(bc1)
     with pytest.raises(BindingConstraintNotFound):
-        dao.get_constraint_equal_term_matrix("bc1")
+        dao.get_constraint_equal_term_matrix(bc1)
 
 
 def test_operator_change_moves_matrices(db_dao_93: DatabaseStudyDao, command_context: CommandContext) -> None:
@@ -270,10 +252,11 @@ def test_operator_change_moves_matrices(db_dao_93: DatabaseStudyDao, command_con
     The old data is preserved (aliased) rather than reset.
     """
     dao = db_dao_93
+    bc2: ConstraintId = "bc2"
 
     create_cmd = CreateBindingConstraint.model_validate(
         {
-            "name": "bc2",
+            "name": bc2,
             "time_step": BindingConstraintFrequency.HOURLY,
             "operator": BindingConstraintOperator.LESS,
             "command_context": command_context,
@@ -283,28 +266,28 @@ def test_operator_change_moves_matrices(db_dao_93: DatabaseStudyDao, command_con
     )
     assert create_cmd.apply(dao).status is True
 
-    lt_initial = dao.get_constraint_less_term_matrix("bc2")
+    lt_initial = dao.get_constraint_less_term_matrix(bc2)
     assert lt_initial.shape == (8784, 1)
 
     update_cmd = UpdateBindingConstraints(
         study_version=STUDY_VERSION_9_3,
-        bc_props_by_id={"bc2": BindingConstraintUpdate(operator=BindingConstraintOperator.GREATER)},
+        bc_props_by_id={bc2: BindingConstraintUpdate(operator=BindingConstraintOperator.GREATER)},
         command_context=command_context,
     )
     assert update_cmd.apply(dao).status is True
 
-    bc2 = dao.get_constraint("bc2")
-    assert bc2.operator == BindingConstraintOperator.GREATER
-    assert bc2.time_step == BindingConstraintFrequency.HOURLY  # unchanged
+    r_bc2 = dao.get_constraint(bc2)
+    assert r_bc2.operator == BindingConstraintOperator.GREATER
+    assert r_bc2.time_step == BindingConstraintFrequency.HOURLY  # unchanged
 
-    gt_after = dao.get_constraint_greater_term_matrix("bc2")
+    gt_after = dao.get_constraint_greater_term_matrix(bc2)
     assert gt_after.shape == (8784, 1)
     assert gt_after.equals(lt_initial)
 
     with pytest.raises(BindingConstraintNotFound):
-        dao.get_constraint_less_term_matrix("bc2")
+        dao.get_constraint_less_term_matrix(bc2)
     with pytest.raises(BindingConstraintNotFound):
-        dao.get_constraint_equal_term_matrix("bc2")
+        dao.get_constraint_equal_term_matrix(bc2)
 
 
 def test_operator_change_both_to_less(db_dao_93: DatabaseStudyDao, command_context: CommandContext) -> None:
@@ -312,10 +295,11 @@ def test_operator_change_both_to_less(db_dao_93: DatabaseStudyDao, command_conte
     Changing operator from BOTH → LESS must keep lt and delete gt.
     """
     dao = db_dao_93
+    bc3: ConstraintId = "bc3"
 
     create_cmd = CreateBindingConstraint.model_validate(
         {
-            "name": "bc3",
+            "name": bc3,
             "time_step": BindingConstraintFrequency.DAILY,
             "operator": BindingConstraintOperator.BOTH,
             "command_context": command_context,
@@ -325,20 +309,20 @@ def test_operator_change_both_to_less(db_dao_93: DatabaseStudyDao, command_conte
     )
     assert create_cmd.apply(dao).status is True
 
-    lt_initial = dao.get_constraint_less_term_matrix("bc3")
-    gt_initial = dao.get_constraint_greater_term_matrix("bc3")
+    lt_initial = dao.get_constraint_less_term_matrix(bc3)
+    gt_initial = dao.get_constraint_greater_term_matrix(bc3)
     assert lt_initial.shape == (366, 1)
     assert gt_initial.shape == (366, 1)
 
     update_cmd = UpdateBindingConstraints(
         study_version=STUDY_VERSION_9_3,
-        bc_props_by_id={"bc3": BindingConstraintUpdate(operator=BindingConstraintOperator.LESS)},
+        bc_props_by_id={bc3: BindingConstraintUpdate(operator=BindingConstraintOperator.LESS)},
         command_context=command_context,
     )
     assert update_cmd.apply(dao).status is True
 
-    assert dao.get_constraint("bc3").operator == BindingConstraintOperator.LESS
-    assert dao.get_constraint_less_term_matrix("bc3").equals(lt_initial)
+    assert dao.get_constraint(bc3).operator == BindingConstraintOperator.LESS
+    assert dao.get_constraint_less_term_matrix(bc3).equals(lt_initial)
 
     with pytest.raises(BindingConstraintNotFound):
-        dao.get_constraint_greater_term_matrix("bc3")
+        dao.get_constraint_greater_term_matrix(bc3)

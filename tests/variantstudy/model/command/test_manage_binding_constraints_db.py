@@ -22,6 +22,7 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
     ClusterTerm,
+    ConstraintId,
     ConstraintTerm,
     LinkTerm,
 )
@@ -42,6 +43,9 @@ def test_manage_binding_constraint(
     db_dao_88: DatabaseStudyDao,
     command_context: CommandContext,
 ) -> None:
+    bd1: ConstraintId = "bd 1"
+    bd2: ConstraintId = "bd 2"
+
     for db_dao_versioned in [db_dao_86, db_dao_88]:
         study_version = db_dao_versioned.get_version()
 
@@ -77,46 +81,46 @@ def test_manage_binding_constraint(
         ).apply(db_dao_versioned)
         assert output.status, output.message
 
-        bd1 = db_dao_versioned.get_constraint("bd 1")
-        assert bd1.name == "BD 1"
-        assert bd1.enabled is True
-        assert bd1.comments == "Hello"
-        assert bd1.time_step == BindingConstraintFrequency.HOURLY
-        assert bd1.operator == BindingConstraintOperator.LESS
-        assert len(bd1.terms) == 1
-        assert isinstance(bd1.terms[0].data, LinkTerm)
-        assert bd1.terms[0].weight == 800
-        assert bd1.terms[0].offset == 30
+        r_bd1 = db_dao_versioned.get_constraint(bd1)
+        assert r_bd1.name == "BD 1"
+        assert r_bd1.enabled is True
+        assert r_bd1.comments == "Hello"
+        assert r_bd1.time_step == BindingConstraintFrequency.HOURLY
+        assert r_bd1.operator == BindingConstraintOperator.LESS
+        assert len(r_bd1.terms) == 1
+        assert isinstance(r_bd1.terms[0].data, LinkTerm)
+        assert r_bd1.terms[0].weight == 800
+        assert r_bd1.terms[0].offset == 30
 
         if study_version >= STUDY_VERSION_8_7:
             # LESS → only lt table populated
-            db_dao_versioned.get_constraint_less_term_matrix("bd 1")
+            db_dao_versioned.get_constraint_less_term_matrix(bd1)
             with pytest.raises(BindingConstraintNotFound):
-                db_dao_versioned.get_constraint_greater_term_matrix("bd 1")
+                db_dao_versioned.get_constraint_greater_term_matrix(bd1)
             with pytest.raises(BindingConstraintNotFound):
-                db_dao_versioned.get_constraint_equal_term_matrix("bd 1")
+                db_dao_versioned.get_constraint_equal_term_matrix(bd1)
             # BOTH → lt and gt tables populated
-            db_dao_versioned.get_constraint_less_term_matrix("bd 2")
-            db_dao_versioned.get_constraint_greater_term_matrix("bd 2")
+            db_dao_versioned.get_constraint_less_term_matrix(bd2)
+            db_dao_versioned.get_constraint_greater_term_matrix(bd2)
             with pytest.raises(BindingConstraintNotFound):
-                db_dao_versioned.get_constraint_equal_term_matrix("bd 2")
+                db_dao_versioned.get_constraint_equal_term_matrix(bd2)
         else:
             # Pre-8.7: single values table regardless of operator
-            db_dao_versioned.get_constraint_values_matrix("bd 1")
-            db_dao_versioned.get_constraint_values_matrix("bd 2")
+            db_dao_versioned.get_constraint_values_matrix(bd1)
+            db_dao_versioned.get_constraint_values_matrix(bd2)
 
-        bd2 = db_dao_versioned.get_constraint("bd 2")
-        assert bd2.name == "BD 2"
-        assert bd2.enabled is False
-        assert bd2.time_step == BindingConstraintFrequency.DAILY
-        assert bd2.operator == BindingConstraintOperator.BOTH
-        assert len(bd2.terms) == 1
-        assert isinstance(bd2.terms[0].data, ClusterTerm)
-        assert bd2.terms[0].weight == 50
+        r_bd2 = db_dao_versioned.get_constraint(bd2)
+        assert r_bd2.name == "BD 2"
+        assert r_bd2.enabled is False
+        assert r_bd2.time_step == BindingConstraintFrequency.DAILY
+        assert r_bd2.operator == BindingConstraintOperator.BOTH
+        assert len(r_bd2.terms) == 1
+        assert isinstance(r_bd2.terms[0].data, ClusterTerm)
+        assert r_bd2.terms[0].weight == 50
 
         output = UpdateBindingConstraint(
             **{
-                "id": "bd 1",
+                "id": bd1,
                 "parameters": {
                     "enabled": False,
                     "time_step": BindingConstraintFrequency.WEEKLY,
@@ -130,22 +134,22 @@ def test_manage_binding_constraint(
         ).apply(db_dao_versioned)
         assert output.status, output.message
 
-        bd1 = db_dao_versioned.get_constraint("bd 1")
-        assert bd1.enabled is False
-        assert bd1.time_step == BindingConstraintFrequency.WEEKLY
-        assert bd1.operator == BindingConstraintOperator.BOTH
-        assert bd1.comments == "Hello"  # comments are not updated
+        r_bd1 = db_dao_versioned.get_constraint(bd1)
+        assert r_bd1.enabled is False
+        assert r_bd1.time_step == BindingConstraintFrequency.WEEKLY
+        assert r_bd1.operator == BindingConstraintOperator.BOTH
+        assert r_bd1.comments == "Hello"  # comments are not updated
 
         if study_version >= STUDY_VERSION_8_7:
             # Operator changed LESS→BOTH and time step changed HOURLY→WEEKLY:
             # lt and gt tables must exist (reset to weekly zeros), eq must be gone
-            db_dao_versioned.get_constraint_less_term_matrix("bd 1")
-            db_dao_versioned.get_constraint_greater_term_matrix("bd 1")
+            db_dao_versioned.get_constraint_less_term_matrix(bd1)
+            db_dao_versioned.get_constraint_greater_term_matrix(bd1)
             with pytest.raises(BindingConstraintNotFound):
-                db_dao_versioned.get_constraint_equal_term_matrix("bd 1")
+                db_dao_versioned.get_constraint_equal_term_matrix(bd1)
         else:
             # Pre-8.7: values table still the only one, reset to weekly default
-            db_dao_versioned.get_constraint_values_matrix("bd 1")
+            db_dao_versioned.get_constraint_values_matrix(bd1)
 
         if study_version >= STUDY_VERSION_8_7:
             output = UpdateScenarioBuilder(
@@ -156,21 +160,21 @@ def test_manage_binding_constraint(
             assert output.status, output.message
 
         output = RemoveMultipleBindingConstraints(
-            id="bd 1", command_context=command_context, study_version=study_version
+            id=bd1, command_context=command_context, study_version=study_version
         ).apply(db_dao_versioned)
         assert output.status, output.message
 
         with pytest.raises(BindingConstraintNotFound):
-            db_dao_versioned.get_constraint("bd 1")
+            db_dao_versioned.get_constraint(bd1)
 
-        assert "bd 2" in db_dao_versioned.get_all_constraints()
+        assert bd2 in db_dao_versioned.get_all_constraints()
 
         if study_version >= STUDY_VERSION_8_7:
             # "BD 2" is still present in the "default" group — scenario builder must be untouched
             assert db_dao_versioned.get_ruleset().binding_constraints == {"default": {"0": 1}}
 
         output = RemoveMultipleBindingConstraints(
-            id="bd 2", command_context=command_context, study_version=study_version
+            id=bd2, command_context=command_context, study_version=study_version
         ).apply(db_dao_versioned)
         assert output.status, output.message
 
@@ -187,6 +191,7 @@ def test_scenario_builder(db_dao_88: DatabaseStudyDao, command_context: CommandC
     """
     study_version = db_dao_88.get_version()
     assert study_version >= STUDY_VERSION_8_7
+    bd1: ConstraintId = "bd 1"
 
     bc_group = "Group 1"
     output = CreateBindingConstraint(
@@ -218,7 +223,7 @@ def test_scenario_builder(db_dao_88: DatabaseStudyDao, command_context: CommandC
     # Rename the group — old group's scenario builder rules must be removed
     output = UpdateBindingConstraint(
         **{
-            "id": "bd 1",
+            "id": bd1,
             "parameters": {"group": "Group 2"},
             "matrices": {},
             "command_context": command_context,
