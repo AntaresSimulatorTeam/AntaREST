@@ -261,113 +261,134 @@ class FileStudyHydroDao(HydroDao):
 
     @override
     def get_hydro_maxpower(self, area_id: str) -> pl.DataFrame:
-        url = ["input", "hydro", "common", "capacity", f"maxpower_{area_id}"]
+        url = _get_max_power_path(area_id)
         return self.get_impl().get_matrix(url)
 
     @override
     def get_hydro_reservoir(self, area_id: str) -> pl.DataFrame:
-        url = ["input", "hydro", "common", "capacity", f"reservoir_{area_id}"]
+        url = _get_reservoir_path(area_id)
         return self.get_impl().get_matrix(url)
 
     @override
     def get_hydro_energy(self, area_id: str) -> pl.DataFrame:
-        url = ["input", "hydro", "prepro", area_id, "energy"]
+        url = _get_energy_path(area_id)
         return self.get_impl().get_matrix(url)
 
     @override
     def get_hydro_run_of_river(self, area_id: str) -> pl.DataFrame:
-        url = ["input", "hydro", "series", area_id, "ror"]
+        url = _get_run_of_river_path(area_id)
         return self.get_impl().get_matrix(url)
 
     @override
     def get_hydro_modulation(self, area_id: str) -> pl.DataFrame:
-        url = ["input", "hydro", "series", area_id, "mod"]
+        url = _get_modulation_path(area_id)
         return self.get_impl().get_matrix(url)
 
     @override
     def get_hydro_credit_modulations(self, area_id: str) -> pl.DataFrame:
-        url = ["input", "hydro", "common", "capacity", f"creditmodulations_{area_id}"]
+        url = _get_credit_modulations_path(area_id)
         return self.get_impl().get_matrix(url)
 
     @override
     def get_hydro_inflow_pattern(self, area_id: str) -> pl.DataFrame:
-        url = ["input", "hydro", "common", "capacity", f"inflowPattern_{area_id}"]
+        url = _get_inflow_pattern_path(area_id)
         return self.get_impl().get_matrix(url)
 
     @override
     def get_hydro_water_values(self, area_id: str) -> pl.DataFrame:
-        url = ["input", "hydro", "common", "capacity", f"waterValues_{area_id}"]
+        url = _get_water_values_path(area_id)
         return self.get_impl().get_matrix(url)
 
     @override
     def get_hydro_mingen(self, area_id: str) -> pl.DataFrame:
-        url = ["input", "hydro", "series", area_id, "mingen"]
+        url = _get_min_gen_path(area_id)
         return self.get_impl().get_matrix(url)
 
     @override
-    def save_hydro_maxpower(self, area_id: str, series_id: str) -> None:
-        file_study = self.get_file_study()
-        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"maxpower_{area_id}"])
-
-    @override
-    def save_hydro_reservoir(self, area_id: str, series_id: str) -> None:
-        file_study = self.get_file_study()
-        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"reservoir_{area_id}"])
-
-    @override
-    def save_hydro_energy(self, area_id: str, series_id: str) -> None:
-        file_study = self.get_file_study()
-        file_study.tree.save(series_id, ["input", "hydro", "prepro", area_id, "energy"])
-
-    @override
-    def save_hydro_run_of_river(self, area_id: str, series_id: str) -> None:
-        file_study = self.get_file_study()
-        file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "ror"])
-
-    @override
-    def save_hydro_modulation(self, area_id: str, series_id: str) -> None:
-        file_study = self.get_file_study()
-        file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "mod"])
-
-    @override
-    def save_hydro_credit_modulations(self, area_id: str, series_id: str) -> None:
-        file_study = self.get_file_study()
-        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"creditmodulations_{area_id}"])
-
-    @override
-    def save_hydro_inflow_pattern(self, area_id: str, series_id: str) -> None:
-        file_study = self.get_file_study()
-        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"inflowPattern_{area_id}"])
-
-    @override
-    def save_hydro_water_values(self, area_id: str, series_id: str) -> None:
-        file_study = self.get_file_study()
-        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"waterValues_{area_id}"])
-
-    @override
-    def save_hydro_mingen(self, area_id: str, series_id: str) -> None:
-        file_study = self.get_file_study()
-        file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "mingen"])
-
-    @override
     def get_hydro_max_hourly_gen_power(self, area_id: str) -> pl.DataFrame:
-        url = ["input", "hydro", "series", area_id, "maxHourlyGenPower"]
+        url = _get_max_hourly_gen_power_path(area_id)
         return self.get_impl().get_matrix(url)
 
     @override
     def get_hydro_max_hourly_pump_power(self, area_id: str) -> pl.DataFrame:
-        url = ["input", "hydro", "series", area_id, "maxHourlyPumpPower"]
+        url = _get_max_hourly_pump_power_path(area_id)
         return self.get_impl().get_matrix(url)
 
     @override
     def get_hydro_max_daily_gen_energy(self, area_id: str) -> pl.DataFrame:
-        url = ["input", "hydro", "common", "capacity", f"maxDailyGenEnergy_{area_id}"]
+        url = _get_max_daily_gen_energy_path(area_id)
         return self.get_impl().get_matrix(url)
 
     @override
     def get_hydro_max_daily_pump_energy(self, area_id: str) -> pl.DataFrame:
-        url = ["input", "hydro", "common", "capacity", f"maxDailyPumpEnergy_{area_id}"]
+        url = _get_max_daily_pump_energy_path(area_id)
         return self.get_impl().get_matrix(url)
+
+
+    @override
+    def save_hydro_maxpower(self, series: AreaSeriesMapping) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"maxpower_{area_id}"])
+
+    @override
+    def save_hydro_reservoir(self, series: AreaSeriesMapping) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"reservoir_{area_id}"])
+
+    @override
+    def save_hydro_energy(self, series: AreaSeriesMapping) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "prepro", area_id, "energy"])
+
+    @override
+    def save_hydro_run_of_river(self, series: AreaSeriesMapping) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "ror"])
+
+    @override
+    def save_hydro_modulation(self, series: AreaSeriesMapping) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "mod"])
+
+    @override
+    def save_hydro_credit_modulations(self, series: AreaSeriesMapping) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"creditmodulations_{area_id}"])
+
+    @override
+    def save_hydro_inflow_pattern(self, series: AreaSeriesMapping) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"inflowPattern_{area_id}"])
+
+    @override
+    def save_hydro_water_values(self, series: AreaSeriesMapping) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"waterValues_{area_id}"])
+
+    @override
+    def save_hydro_mingen(self, series: AreaSeriesMapping) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "mingen"])
+
+    @override
+    def save_hydro_max_hourly_gen_power(self, series: AreaSeriesMapping) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "maxHourlyGenPower"])
+
+    @override
+    def save_hydro_max_hourly_pump_power(self, series: AreaSeriesMapping) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "maxHourlyPumpPower"])
+
+    @override
+    def save_hydro_max_daily_gen_energy(self, series: AreaSeriesMapping) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"maxDailyGenEnergy_{area_id}"])
+
+    @override
+    def save_hydro_max_daily_pump_energy(self, series: AreaSeriesMapping) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"maxDailyPumpEnergy_{area_id}"])
 
     @override
     def get_all_hydro_maxpower(self) -> AreaSeriesMapping:
@@ -433,26 +454,6 @@ class FileStudyHydroDao(HydroDao):
     def get_all_hydro_max_daily_pump_energy(self) -> AreaSeriesMapping:
         study_data = self.get_file_study()
         return get_all_area_matrices(self.get_impl(), study_data, _get_max_daily_pump_energy_path)
-
-    @override
-    def save_hydro_max_hourly_gen_power(self, area_id: str, series_id: str) -> None:
-        file_study = self.get_file_study()
-        file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "maxHourlyGenPower"])
-
-    @override
-    def save_hydro_max_hourly_pump_power(self, area_id: str, series_id: str) -> None:
-        file_study = self.get_file_study()
-        file_study.tree.save(series_id, ["input", "hydro", "series", area_id, "maxHourlyPumpPower"])
-
-    @override
-    def save_hydro_max_daily_gen_energy(self, area_id: str, series_id: str) -> None:
-        file_study = self.get_file_study()
-        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"maxDailyGenEnergy_{area_id}"])
-
-    @override
-    def save_hydro_max_daily_pump_energy(self, area_id: str, series_id: str) -> None:
-        file_study = self.get_file_study()
-        file_study.tree.save(series_id, ["input", "hydro", "common", "capacity", f"maxDailyPumpEnergy_{area_id}"])
 
     @override
     def convert_hydro_pmax(

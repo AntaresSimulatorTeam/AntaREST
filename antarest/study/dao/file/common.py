@@ -12,6 +12,7 @@
 from typing import TYPE_CHECKING, Callable
 
 from antarest.core.exceptions import AreaNotFound
+from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.dao.common import AreaId, AreaSeriesMapping
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -47,3 +48,14 @@ def get_all_area_matrices(
         result[area_id] = matrix_id
 
     return result
+
+def save_area_matrices(file_study_dao: "FileStudyTreeDao", study_data: FileStudy, series: AreaSeriesMapping, url_getter: Callable[[AreaId], list[str]]) -> None:
+    matrices_mapping: dict[str, list[MatrixNode]] = {}
+    for area_id, series_id in series.items():
+        url = url_getter(area_id)
+        node = study_data.tree.get_node(url)
+        assert isinstance(node, MatrixNode)
+        matrix_id = extract_matrix_id(series_id)
+        matrices_mapping.setdefault(matrix_id, []).append(node)
+    file_study_dao.save_matrices(matrices_mapping)
+
