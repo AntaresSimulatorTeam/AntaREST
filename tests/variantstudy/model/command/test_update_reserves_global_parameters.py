@@ -31,6 +31,7 @@ def _make_dao(version: StudyVersion = STUDY_VERSION_10_0) -> InMemoryStudyDao:
 def test_apply_command(command_context: CommandContext) -> None:
     dao = _make_dao()
     area_id = "paris"
+    dao.save_area(area_id)
 
     update = ReservesGlobalParametersUpdate(
         reference_activation_duration_up=5,
@@ -50,6 +51,19 @@ def test_apply_command(command_context: CommandContext) -> None:
     assert result.energy_activation_ratio_up == 0.5
     assert result.reference_activation_duration_down == 1
     assert result.energy_activation_ratio_down == 1.0
+
+
+def test_area_not_found(command_context: CommandContext) -> None:
+    dao = _make_dao()
+
+    command = UpdateReservesGlobalParameters(
+        area_id="nonexistent",
+        parameters=ReservesGlobalParametersUpdate(reference_activation_duration_up=5),
+        command_context=command_context,
+        study_version=STUDY_VERSION_10_0,
+    )
+    output = command.apply(dao)
+    assert not output.status
 
 
 def test_version_check(command_context: CommandContext) -> None:

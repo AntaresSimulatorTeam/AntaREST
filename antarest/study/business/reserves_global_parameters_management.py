@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from antarest.core.exceptions import InvalidFieldForVersionError
+from antarest.core.exceptions import AreaNotFound, InvalidFieldForVersionError
 from antarest.study.business.model.reserves_global_parameters_model import (
     ReservesGlobalParameters,
     ReservesGlobalParametersUpdate,
@@ -27,12 +27,19 @@ def _check_version(study: StudyInterface) -> None:
         raise InvalidFieldForVersionError("Reserves global parameters are not valid for study version before 10.0")
 
 
+def _check_area_exists(study: StudyInterface, area_id: str) -> None:
+    invalid_areas = study.get_study_dao().get_invalid_area_ids([area_id])
+    if invalid_areas:
+        raise AreaNotFound(*invalid_areas)
+
+
 class ReservesGlobalParametersManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
     def get_reserves_global_parameters(self, study: StudyInterface, area_id: str) -> ReservesGlobalParameters:
         _check_version(study)
+        _check_area_exists(study, area_id)
         return study.get_study_dao().get_reserves_global_parameters(area_id)
 
     def update_reserves_global_parameters(
@@ -42,6 +49,7 @@ class ReservesGlobalParametersManager:
         parameters: ReservesGlobalParametersUpdate,
     ) -> ReservesGlobalParameters:
         _check_version(study)
+        _check_area_exists(study, area_id)
         command = UpdateReservesGlobalParameters(
             area_id=area_id,
             parameters=parameters,
@@ -53,6 +61,7 @@ class ReservesGlobalParametersManager:
 
     def delete_reserves_global_parameters(self, study: StudyInterface, area_id: str) -> None:
         _check_version(study)
+        _check_area_exists(study, area_id)
         defaults = ReservesGlobalParameters()
         command = UpdateReservesGlobalParameters(
             area_id=area_id,

@@ -19,7 +19,12 @@ from antarest.study.business.model.reserves_global_parameters_model import (
 )
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_10_0
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+    CommandOutput,
+    command_failed,
+    command_succeeded,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -41,6 +46,9 @@ class UpdateReservesGlobalParameters(ICommand):
     ) -> CommandOutput[ReservesGlobalParameters]:
         if self.study_version < STUDY_VERSION_10_0:
             raise InvalidFieldForVersionError("Reserves global parameters are not valid for study version before 10.0")
+
+        if self.area_id not in study_data.get_all_area_ids():
+            return command_failed(f"Area '{self.area_id}' does not exist")
 
         current = study_data.get_reserves_global_parameters(self.area_id)
         new_params = update_reserves_global_parameters(current, self.parameters)
