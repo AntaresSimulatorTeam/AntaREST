@@ -12,14 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { createContext } from "react";
-import type { getTreeData } from "../-utils";
+import { TreeItem } from "@mui/x-tree-view";
+import { createLink } from "@tanstack/react-router";
 
-const defaultDebugContextValue = {
-  reloadTree: (): ReturnType<typeof getTreeData> => Promise.resolve({}),
-  isTreeLoading: false,
-};
+const RouterTreeItem = createLink(TreeItem);
 
-const DebugContext = createContext(defaultDebugContextValue);
-
-export default DebugContext;
+export default RouterTreeItem;

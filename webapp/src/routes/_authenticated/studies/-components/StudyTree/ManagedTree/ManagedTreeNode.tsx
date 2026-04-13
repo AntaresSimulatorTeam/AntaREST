@@ -124,7 +124,7 @@ function ManagedTreeNode({
       itemId={path}
       label={
         <Stack justifyContent="space-between" gap={1}>
-          <Typography variant="body2" fontWeight={450} noWrap>
+          <Typography variant="body2" noWrap>
             {name}
           </Typography>
           <Stack gap={0.25} sx={nodeActionsContainerStyles}>
