@@ -298,11 +298,14 @@ class FileStudyXpansionDao(XpansionDao, ABC):
     @override
     def get_all_xpansion_constraints(self) -> XpansionConstraintsMapping:
         file_study = self.get_file_study()
-        folder_node = file_study.tree.get_node(self.get_resource_dir(XpansionResourceFileType.CONSTRAINTS))
+        try:
+            folder_node = file_study.tree.get_node(self.get_resource_dir(XpansionResourceFileType.CONSTRAINTS))
+        except ChildNotFoundError:
+            return {}
 
         result: XpansionConstraintsMapping = {}
         for file_name in folder_node.get():
-            content = folder_node.get(file_name)
+            content = folder_node.get([file_name])
             assert isinstance(content, bytes)
             result[file_name] = content
 
