@@ -199,8 +199,8 @@ export const AGGREGATE_TEST_CASES = [
     expected: {
       min: [1.1, 4.4],
       max: [3.3, 6.6],
-      avg: [2, 6],
-      total: [7, 17],
+      avg: [2.2, 5.5],
+      total: [6.6, 16.5],
     },
   },
   {
