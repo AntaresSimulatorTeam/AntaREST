@@ -91,18 +91,20 @@ class FileStudyXpansionDao(XpansionDao, ABC):
 
     @override
     def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: str | None = None) -> None:
-        self._save_xpansion_candidates({candidate: old_id})
+        self._save_xpansion_candidates([(candidate, old_id)])
 
-    def _save_xpansion_candidates(self, candidates: dict[XpansionCandidate, str | None]) -> None:
+    def _save_xpansion_candidates(self, candidates: list[tuple[XpansionCandidate, str | None]]) -> None:
         existing_candidates = self._get_all_xpansion_candidates()
         existing_ids = {value["name"]: key for key, value in existing_candidates.items()}
 
-        for candidate, old_id in candidates.items():
+        for candidate, old_id in candidates:
             if old_id:
                 # We should remove the candidate corresponding to the `old_id`
                 del existing_candidates[existing_ids[old_id]]
 
-            new_key = existing_ids.get(candidate.name, str(len(candidates) + 1))  # The first candidate key is 1
+            new_key = existing_ids.get(
+                candidate.name, str(len(existing_candidates) + 1)
+            )  # The first candidate key is 1
 
             existing_candidates[new_key] = candidate.model_dump(mode="json", by_alias=True, exclude_none=True)
 
@@ -110,7 +112,7 @@ class FileStudyXpansionDao(XpansionDao, ABC):
 
     @override
     def save_xpansion_candidates(self, candidates: list[XpansionCandidate]) -> None:
-        self._save_xpansion_candidates(dict.fromkeys(candidates, None))
+        self._save_xpansion_candidates([(cdt, None) for cdt in candidates])
 
     @override
     def delete_xpansion_candidate(self, candidate_name: str) -> None:
