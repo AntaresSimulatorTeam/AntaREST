@@ -81,6 +81,7 @@ from antarest.study.dao.api.user_resources_dao import ReadOnlyUserResourcesDao, 
 from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
 from antarest.study.dao.common import (
     AreaSeriesMapping,
+    BindingConstraintSeriesMapping,
     LinkSeriesMapping,
     RenewableSeriesMapping,
     ThermalSeriesMapping,
@@ -361,6 +362,22 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_constraint_equal_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         return self._adaptee.get_constraint_equal_term_matrix(constraint_id)
+
+    @override
+    def get_all_constraint_values_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._adaptee.get_all_constraint_values_matrix()
+
+    @override
+    def get_all_constraint_less_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._adaptee.get_all_constraint_less_term_matrix()
+
+    @override
+    def get_all_constraint_greater_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._adaptee.get_all_constraint_greater_term_matrix()
+
+    @override
+    def get_all_constraint_equal_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._adaptee.get_all_constraint_equal_term_matrix()
 
     @override
     def get_all_st_storages(self) -> dict[str, dict[str, STStorage]]:
