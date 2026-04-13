@@ -21,9 +21,10 @@ from typing_extensions import override
 from antarest.core.exceptions import ChildNotFoundError, LayerNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.core.model import JSON
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
+from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
 from antarest.study.dao.api.area_dao import AreaDao
-from antarest.study.dao.common import AreaId, AreaSeriesMapping, AreaUiMapping
+from antarest.study.dao.common import AreaId, AreaName, AreaSeriesMapping, AreaUiMapping
 from antarest.study.dao.file.common import get_all_area_matrices, save_area_matrices
 from antarest.study.model import (
     STUDY_VERSION_6_5,
@@ -230,8 +231,7 @@ class FileStudyAreaDao(AreaDao):
         study_data = self.get_file_study()
         return get_all_area_matrices(self.get_impl(), study_data, _get_wind_matrix_path)
 
-    @override
-    def save_area(self, area_name: str) -> None:
+    def _save_area(self, area_name: str) -> None:
         """
         Create a new area in the study with all necessary files and configurations.
         """
@@ -258,6 +258,13 @@ class FileStudyAreaDao(AreaDao):
 
         # Save to filesystem
         study_data.tree.save(new_area_data)
+
+    @override
+    def save_areas_with_properties(self, data: dict[AreaName, AreaProperties]) -> None:
+        for area_name, properties in data.items():
+            self._save_area(area_name)
+            area_id = transform_name_to_id(area_name)
+            self.get_impl().save_area_properties(area_id, properties)
 
     def _build_area_data_structure(self, area_id: str, config: FileStudyTreeConfig) -> JSON:
         generator_matrix_constants = self.get_impl().generator_matrix_constants

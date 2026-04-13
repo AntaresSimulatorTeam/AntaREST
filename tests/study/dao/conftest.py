@@ -26,6 +26,7 @@ from antarest.dbmodel import Base
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
     BindingConstraintOperator,
@@ -303,7 +304,7 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
 
     # Create `load`, `solar`, `wind`, `reserves` and `misc-gen` matrices in DB
     area_id = "paris"
-    dao.save_area(area_id)
+    dao.save_areas_with_properties({area_id: AreaProperties()})
     dao.save_load({area_id: load_id})
     dao.save_solar({area_id: solar_id})
     dao.save_wind({area_id: wind_id})
@@ -312,7 +313,7 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
 
     # Also create a link with `series`, `direct_capacity` and `indirect_capacity` matrices.
     area2 = "london"
-    dao.save_area(area2)
+    dao.save_areas_with_properties({area2: AreaProperties()})
     dao.save_links([Link(area1=area_id, area2=area2)])
     dao.save_link_series({(area_id, area2): link_series_id})
     dao.save_link_direct_capacities({(area_id, area2): link_direct_id})

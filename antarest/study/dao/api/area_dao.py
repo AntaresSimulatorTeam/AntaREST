@@ -14,7 +14,8 @@ from abc import ABC, abstractmethod
 import polars as pl
 
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
-from antarest.study.dao.common import AreaSeriesMapping, AreaUiMapping
+from antarest.study.business.model.area_properties_model import AreaProperties
+from antarest.study.dao.common import AreaName, AreaSeriesMapping, AreaUiMapping
 
 
 class ReadOnlyAreaDao(ABC):
@@ -125,15 +126,15 @@ class AreaDao(ReadOnlyAreaDao):
     """
 
     @abstractmethod
-    def save_area(self, area_name: str) -> None:
+    def save_areas_with_properties(self, data: dict[AreaName, AreaProperties]) -> None:
         """
-        Create a new area in the study.
+        Create multiple areas with their properties in the study.
 
         Args:
-            area_name: The name of the area to create.
+            data: A dictionary mapping area names to their properties.
 
         Raises:
-            ValueError: If the area already exists.
+            ValueError: If any area already exists.
         """
         raise NotImplementedError()
 

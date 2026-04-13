@@ -19,6 +19,7 @@ from antarest.study.business.model.binding_constraint_model import ConstraintId
 #  - Move these definitions inside their corresponding models.
 
 AreaId: TypeAlias = str
+AreaName: TypeAlias = str
 ThermalId: TypeAlias = str
 RenewableId: TypeAlias = str
 SeriesId: TypeAlias = str

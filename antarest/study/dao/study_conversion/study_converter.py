@@ -156,10 +156,11 @@ class StudyConverter:
             st_storages = {}
             st_storages_constraints = {}
 
-        # First create all areas to avoid config issues
+        # First, create all areas with their properties to avoid foreign key or config issues
+        new_area_properties = {}
         for area_id in area_properties:
-            area_name = area_names_and_thermals[area_id].name
-            self._new_dao.save_area(area_name)
+            new_area_properties[area_names_and_thermals[area_id].name] = area_properties[area_id]
+        self._new_dao.save_areas_with_properties(new_area_properties)
 
         # Thermals
         thermals = {area_info.id: area_info.thermals or [] for area_info in area_names_and_thermals.values()}
@@ -193,9 +194,6 @@ class StudyConverter:
         self._new_dao.save_area_ui(new_ui)
 
         for area_id in area_properties:
-            # Properties
-            self._new_dao.save_area_properties(area_id, area_properties[area_id])
-
             # Short-term storages
             if self._study_version >= STUDY_VERSION_8_6:
                 storages = list(st_storages.get(area_id, {}).values())
