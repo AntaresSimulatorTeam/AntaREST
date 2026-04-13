@@ -84,7 +84,13 @@ from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
 from antarest.study.dao.api.timeseries_config_dao import ReadOnlyTimeSeriesConfigDao, TimeSeriesConfigDao
 from antarest.study.dao.api.user_resources_dao import ReadOnlyUserResourcesDao, UserResourcesDao
 from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
-from antarest.study.dao.common import AreaSeriesMapping, LinkSeriesMapping, RenewableSeriesMapping, ThermalSeriesMapping
+from antarest.study.dao.common import (
+    AreaSeriesMapping,
+    BindingConstraintSeriesMapping,
+    LinkSeriesMapping,
+    RenewableSeriesMapping,
+    ThermalSeriesMapping,
+)
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -360,6 +366,22 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_constraint_equal_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         return self._adaptee.get_constraint_equal_term_matrix(constraint_id)
+
+    @override
+    def get_all_constraint_values_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._adaptee.get_all_constraint_values_matrix()
+
+    @override
+    def get_all_constraint_less_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._adaptee.get_all_constraint_less_term_matrix()
+
+    @override
+    def get_all_constraint_greater_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._adaptee.get_all_constraint_greater_term_matrix()
+
+    @override
+    def get_all_constraint_equal_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._adaptee.get_all_constraint_equal_term_matrix()
 
     @override
     def get_all_st_storages(self) -> dict[str, dict[str, STStorage]]:

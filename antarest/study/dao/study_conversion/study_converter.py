@@ -16,7 +16,6 @@ from antares.study.version import StudyVersion
 from antarest.core.exceptions import ChildNotFoundError, XpansionConfigurationDoesNotExist
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_model import AreaUI
-from antarest.study.business.model.binding_constraint_model import BindingConstraintOperator
 from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
@@ -124,21 +123,14 @@ class StudyConverter:
         constraints = list(self._source_dao.get_all_constraints().values())
         self._new_dao.save_constraints(constraints)
 
-        for constraint in constraints:
-            bc_id = constraint.id
-            if self._study_version < STUDY_VERSION_8_7:
-                matrix_id = self._matrix_service.create(self._source_dao.get_constraint_values_matrix(bc_id))
-                self._new_dao.save_constraint_values_matrix(bc_id, matrix_id)
-            else:
-                if constraint.operator in {BindingConstraintOperator.LESS, BindingConstraintOperator.BOTH}:
-                    matrix_id = self._matrix_service.create(self._source_dao.get_constraint_less_term_matrix(bc_id))
-                    self._new_dao.save_constraint_less_term_matrix(bc_id, matrix_id)
-                if constraint.operator in {BindingConstraintOperator.GREATER, BindingConstraintOperator.BOTH}:
-                    matrix_id = self._matrix_service.create(self._source_dao.get_constraint_greater_term_matrix(bc_id))
-                    self._new_dao.save_constraint_greater_term_matrix(bc_id, matrix_id)
-                if constraint.operator == BindingConstraintOperator.EQUAL:
-                    matrix_id = self._matrix_service.create(self._source_dao.get_constraint_equal_term_matrix(bc_id))
-                    self._new_dao.save_constraint_equal_term_matrix(bc_id, matrix_id)
+        if self._study_version < STUDY_VERSION_8_7:
+            values = self._source_dao.get_all_constraint_values_matrix()
+            self._new_dao.save_constraint_values_matrix(values)
+
+        else:
+            self._new_dao.save_constraint_less_term_matrix(self._source_dao.get_all_constraint_less_term_matrix())
+            self._new_dao.save_constraint_greater_term_matrix(self._source_dao.get_all_constraint_greater_term_matrix())
+            self._new_dao.save_constraint_equal_term_matrix(self._source_dao.get_all_constraint_equal_term_matrix())
 
     def _convert_links(self) -> None:
         links = self._source_dao.get_links()
