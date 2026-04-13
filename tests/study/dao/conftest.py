@@ -44,6 +44,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactor
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import create_study
+from tests.study.dao.utils import save_area
 
 
 def build_db_dao(db_session: Session, matrix_service: ISimpleMatrixService, version: StudyVersion) -> DatabaseStudyDao:
@@ -303,7 +304,7 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
 
     # Create `load`, `solar`, `wind`, `reserves` and `misc-gen` matrices in DB
     area_id = "paris"
-    dao.save_area(area_id)
+    save_area(dao, area_id)
     dao.save_load({area_id: load_id})
     dao.save_solar({area_id: solar_id})
     dao.save_wind({area_id: wind_id})
@@ -312,7 +313,7 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
 
     # Also create a link with `series`, `direct_capacity` and `indirect_capacity` matrices.
     area2 = "london"
-    dao.save_area(area2)
+    save_area(dao, area2)
     dao.save_links([Link(area1=area_id, area2=area2)])
     dao.save_link_series({(area_id, area2): link_series_id})
     dao.save_link_direct_capacities({(area_id, area2): link_direct_id})

@@ -229,10 +229,6 @@ class DatabaseAreaDao(AreaDao):
         return AreaUI()
 
     @override
-    def save_area(self, area_name: str) -> None:
-        self.save_areas_with_properties({area_name: AreaProperties()})
-
-    @override
     def save_areas_with_properties(self, data: dict[AreaName, AreaProperties]) -> None:
         values = []
         for area_name, properties in data.items():

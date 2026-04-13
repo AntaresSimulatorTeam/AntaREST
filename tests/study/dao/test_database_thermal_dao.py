@@ -39,11 +39,12 @@ from antarest.study.dao.database.models.thermal import (
 )
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.study.dao.utils import save_area
 
 
 def test_save_thermal_creates_cluster(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
 
     thermal = ThermalCluster(
         id="gas_cluster",
@@ -112,7 +113,7 @@ def test_save_thermal_creates_cluster(db_dao: DatabaseStudyDao) -> None:
 
 def test_save_thermal_overwrites_existing(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
 
     dao.save_thermals({"paris": [ThermalCluster(name="Gas", nominal_capacity=100.0)]})
     dao.save_thermals({"paris": [ThermalCluster(name="Gas", nominal_capacity=200.0)]})
@@ -123,7 +124,7 @@ def test_save_thermal_overwrites_existing(db_dao: DatabaseStudyDao) -> None:
 
 def test_save_multiple_thermal_clusters(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
 
     dao.save_thermals(
         {
@@ -167,7 +168,7 @@ def test_save_multiple_thermal_clusters(db_dao: DatabaseStudyDao) -> None:
 
 def test_get_one_thermal_cluster(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
     dao.save_thermals({"paris": [ThermalCluster(name="Gas")]})
 
     cluster = dao.get_thermal("paris", "gas")
@@ -183,8 +184,8 @@ def test_get_one_thermal_cluster(db_dao: DatabaseStudyDao) -> None:
 
 def test_get_all_thermals(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("Paris")
-    dao.save_area("London")
+    save_area(dao, "Paris")
+    save_area(dao, "London")
 
     dao.save_thermals({"paris": [ThermalCluster(name="Gas")], "london": [ThermalCluster(name="Coal")]})
 
@@ -199,7 +200,7 @@ def test_get_all_thermals(db_dao: DatabaseStudyDao) -> None:
 
 def test_delete_thermal(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
     thermal = ThermalCluster(id="gas", name="Gas")
     dao.save_thermals({"paris": [thermal]})
 
@@ -226,7 +227,7 @@ def test_thermal_exists_returns_false_for_unknown_area(db_dao: DatabaseStudyDao)
 
 def test_thermal_matrices_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
     dao.save_thermals({"paris": [ThermalCluster(name="Gas")]})
 
     matrix_service = dao._matrix_service
@@ -258,7 +259,7 @@ def test_thermal_matrices_lifecycle(db_session: Session, db_dao: DatabaseStudyDa
 
 def test_get_thermal_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
     dao.save_thermals({"paris": [ThermalCluster(name="Gas")]})
 
     getters = [
@@ -277,7 +278,7 @@ def test_get_thermal_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> Non
 
 def test_save_thermal_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
 
     savers = [
         dao.save_thermal_prepro,
@@ -296,8 +297,8 @@ def test_save_thermal_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> No
 
 def test_area_with_no_clusters_are_absent_from_clusters_dict(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("germany")
-    dao.save_area("italy")
+    save_area(dao, "germany")
+    save_area(dao, "italy")
 
     dao.save_thermals({"germany": [ThermalCluster(name="Gas")]})
 
@@ -310,7 +311,7 @@ def test_area_with_no_clusters_are_absent_from_clusters_dict(db_dao: DatabaseStu
 
 def test_save_thermal_and_upper_case_name(db_dao: DatabaseStudyDao, command_context: CommandContext) -> None:
     dao = db_dao
-    dao.save_area("fr")
+    save_area(dao, "fr")
     command = CreateCluster(
         area_id="fr",
         parameters=ThermalClusterCreation(name="MyThermal"),

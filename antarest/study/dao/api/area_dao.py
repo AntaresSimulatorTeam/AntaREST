@@ -126,13 +126,6 @@ class AreaDao(ReadOnlyAreaDao):
     """
 
     @abstractmethod
-    def save_area(self, area_name: AreaName) -> None:
-        """
-        Facade method only used inside tests to easily save a single area.
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
     def save_areas_with_properties(self, data: dict[AreaName, AreaProperties]) -> None:
         """
         Create multiple areas with their properties in the study.

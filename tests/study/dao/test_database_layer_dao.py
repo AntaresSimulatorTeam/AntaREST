@@ -22,6 +22,7 @@ from antarest.core.exceptions import LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.area import AREA_UI_TABLE
+from tests.study.dao.utils import save_area
 
 
 class TestInitializeStudy:
@@ -42,8 +43,8 @@ class TestDatabaseLayerDao:
 
     def test_get_layers_with_areas(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
-        dao.save_area("Paris")
-        dao.save_area("London")
+        save_area(dao, "Paris")
+        save_area(dao, "London")
 
         layers = dao.get_layers()
         assert len(layers) == 1
@@ -63,8 +64,8 @@ class TestDatabaseLayerDao:
 
     def test_save_layer_with_areas(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
-        dao.save_area("Paris")
-        dao.save_area("London")
+        save_area(dao, "Paris")
+        save_area(dao, "London")
 
         layer = Layer(id="1", name="Layer 1", areas=["paris", "london"])
         dao.save_layer(layer)
@@ -86,9 +87,9 @@ class TestDatabaseLayerDao:
 
     def test_save_layer_updates_areas(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
-        dao.save_area("Paris")
-        dao.save_area("London")
-        dao.save_area("Berlin")
+        save_area(dao, "Paris")
+        save_area(dao, "London")
+        save_area(dao, "Berlin")
 
         dao.save_layer(Layer(id="1", name="Layer 1", areas=["paris", "london"]))
         dao.save_layer(Layer(id="1", name="Layer 1", areas=["paris", "berlin"]))
@@ -109,8 +110,8 @@ class TestDatabaseLayerDao:
     def test_delete_layer_removes_area_associations(self, db_dao: DatabaseStudyDao, db_session: Session) -> None:
         dao = db_dao
         study_id = dao.get_study_id()
-        dao.save_area("Paris")
-        dao.save_area("London")
+        save_area(dao, "Paris")
+        save_area(dao, "London")
 
         dao.save_layer(Layer(id="1", name="Layer 1", areas=["paris", "london"]))
         dao.delete_layer(layer_id="1")
@@ -139,9 +140,9 @@ class TestDatabaseLayerDao:
 
     def test_multiple_layers(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
-        dao.save_area("Paris")
-        dao.save_area("London")
-        dao.save_area("Berlin")
+        save_area(dao, "Paris")
+        save_area(dao, "London")
+        save_area(dao, "Berlin")
 
         dao.save_layer(Layer(id="1", name="Layer 1", areas=["paris"]))
         dao.save_layer(Layer(id="2", name="Layer 2", areas=["london", "berlin"]))
@@ -159,8 +160,8 @@ class TestDatabaseLayerDao:
 
     def test_delete_area_removes_from_layers(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
-        dao.save_area("Paris")
-        dao.save_area("London")
+        save_area(dao, "Paris")
+        save_area(dao, "London")
 
         dao.save_layer(Layer(id="1", name="Layer 1", areas=["paris", "london"]))
 

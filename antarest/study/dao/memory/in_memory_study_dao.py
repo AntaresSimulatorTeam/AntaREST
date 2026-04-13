@@ -1253,10 +1253,6 @@ class InMemoryStudyDao(StudyDao):
         return self._area_ui.get(area_id, AreaUI())
 
     @override
-    def save_area(self, area_name: AreaName) -> None:
-        self.save_areas_with_properties({area_name: AreaProperties()})
-
-    @override
     def save_areas_with_properties(self, data: dict[AreaName, AreaProperties]) -> None:
         for area_name, properties in data.items():
             area_id = transform_name_to_id(area_name)
