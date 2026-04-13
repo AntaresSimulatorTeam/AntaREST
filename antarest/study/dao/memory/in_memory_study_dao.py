@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import PurePosixPath
 
@@ -76,6 +76,9 @@ from antarest.study.dao.common import (
     LinkSeriesMapping,
     RenewableSeriesMapping,
     ThermalSeriesMapping,
+    XpansionCapacitiesMapping,
+    XpansionConstraintsMapping,
+    XpansionWeightsMapping,
 )
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import StudyMetadataUpdate
@@ -1009,6 +1012,11 @@ class InMemoryStudyDao(StudyDao):
         self._xpansion_candidates[candidate.name] = candidate
 
     @override
+    def save_xpansion_candidates(self, candidates: list[XpansionCandidate]) -> None:
+        for candidate in candidates:
+            self._xpansion_candidates[candidate.name] = candidate
+
+    @override
     def delete_xpansion_candidate(self, candidate_name: str) -> None:
         del self._xpansion_candidates[candidate_name]
 
@@ -1049,6 +1057,20 @@ class InMemoryStudyDao(StudyDao):
         return self._xpansion_security_criterion
 
     @override
+    def get_all_xpansion_weights(self) -> XpansionWeightsMapping:
+        weights = self._xpansion_resources.get(XpansionResourceFileType.WEIGHTS, {})
+        return {file_name: content.decode("utf-8") for file_name, content in weights.items()}
+
+    @override
+    def get_all_xpansion_capacities(self) -> XpansionCapacitiesMapping:
+        capacities = self._xpansion_resources.get(XpansionResourceFileType.CAPACITIES, {})
+        return {file_name: content.decode("utf-8") for file_name, content in capacities.items()}
+
+    @override
+    def get_all_xpansion_constraints(self) -> XpansionConstraintsMapping:
+        return self._xpansion_resources.get(XpansionResourceFileType.CONSTRAINTS, {})
+
+    @override
     def get_thematic_trimming(self) -> ThematicTrimming:
         return self._thematic_trimming
 
@@ -1085,18 +1107,21 @@ class InMemoryStudyDao(StudyDao):
         del self._xpansion_resources[resource_type][filename]
 
     @override
-    def save_xpansion_constraint(self, filename: str, content: bytes) -> None:
-        self._xpansion_resources[XpansionResourceFileType.CONSTRAINTS][filename] = content
+    def save_xpansion_constraint(self, data: XpansionConstraintsMapping) -> None:
+        for filename, content in data.items():
+            self._xpansion_resources[XpansionResourceFileType.CONSTRAINTS][filename] = content
 
     @override
-    def save_xpansion_capacity(self, filename: str, series_id: str) -> None:
-        content = series_id.encode("utf-8")
-        self._xpansion_resources[XpansionResourceFileType.CAPACITIES][filename] = content
+    def save_xpansion_capacity(self, data: XpansionCapacitiesMapping) -> None:
+        for filename, series_id in data.items():
+            content = series_id.encode("utf-8")
+            self._xpansion_resources[XpansionResourceFileType.CAPACITIES][filename] = content
 
     @override
-    def save_xpansion_weight(self, filename: str, series_id: str) -> None:
-        content = series_id.encode("utf-8")
-        self._xpansion_resources[XpansionResourceFileType.WEIGHTS][filename] = content
+    def save_xpansion_weight(self, data: XpansionWeightsMapping) -> None:
+        for filename, series_id in data.items():
+            content = series_id.encode("utf-8")
+            self._xpansion_resources[XpansionResourceFileType.WEIGHTS][filename] = content
 
     @override
     def get_districts(self) -> Sequence[District]:
@@ -1157,18 +1182,23 @@ class InMemoryStudyDao(StudyDao):
         self._playlist_config = playlist
 
     @override
-    def get_all_user_resources(self) -> Iterator[UserResourceDataCreation]:
+    def get_all_user_resources(self) -> list[UserResourceDataCreation]:
+        result = []
         for path, content in self._user_resources.items():
             resource_type = ResourceType.FOLDER if content is None else ResourceType.FILE
-            yield UserResourceDataCreation(
-                path=path,
-                resource_type=resource_type,
-                blob_id=content,
+            result.append(
+                UserResourceDataCreation(
+                    path=path,
+                    resource_type=resource_type,
+                    blob_id=content,
+                )
             )
+        return result
 
     @override
-    def save_user_resource(self, resource_data: UserResourceDataCreation) -> None:
-        self._user_resources[resource_data.path] = resource_data.blob_id
+    def save_user_resources(self, resource_data: list[UserResourceDataCreation]) -> None:
+        for resource in resource_data:
+            self._user_resources[resource.path] = resource.blob_id
 
     @override
     def delete_user_resource(self, resource_path: PurePosixPath) -> None:

@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from collections.abc import Iterator, Sequence
+from collections.abc import Sequence
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -79,7 +79,15 @@ from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
 from antarest.study.dao.api.timeseries_config_dao import ReadOnlyTimeSeriesConfigDao, TimeSeriesConfigDao
 from antarest.study.dao.api.user_resources_dao import ReadOnlyUserResourcesDao, UserResourcesDao
 from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
-from antarest.study.dao.common import AreaSeriesMapping, LinkSeriesMapping, RenewableSeriesMapping, ThermalSeriesMapping
+from antarest.study.dao.common import (
+    AreaSeriesMapping,
+    LinkSeriesMapping,
+    RenewableSeriesMapping,
+    ThermalSeriesMapping,
+    XpansionCapacitiesMapping,
+    XpansionConstraintsMapping,
+    XpansionWeightsMapping,
+)
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -547,6 +555,18 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_xpansion_adequacy_criterion()
 
     @override
+    def get_all_xpansion_weights(self) -> XpansionWeightsMapping:
+        return self._adaptee.get_all_xpansion_weights()
+
+    @override
+    def get_all_xpansion_capacities(self) -> XpansionCapacitiesMapping:
+        return self._adaptee.get_all_xpansion_capacities()
+
+    @override
+    def get_all_xpansion_constraints(self) -> XpansionConstraintsMapping:
+        return self._adaptee.get_all_xpansion_constraints()
+
+    @override
     def get_thematic_trimming(self) -> ThematicTrimming:
         return self._adaptee.get_thematic_trimming()
 
@@ -619,7 +639,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_area_ui(area_id, layer)
 
     @override
-    def get_all_user_resources(self) -> Iterator[UserResourceDataCreation]:
+    def get_all_user_resources(self) -> list[UserResourceDataCreation]:
         return self._adaptee.get_all_user_resources()
 
     @override
