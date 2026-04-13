@@ -19,8 +19,16 @@ class ReadOnlyReservesGlobalParametersDao(ABC):
     def get_reserves_global_parameters(self, area_id: str) -> ReservesGlobalParameters:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_all_reserves_global_parameters(self) -> dict[str, ReservesGlobalParameters]:
+        raise NotImplementedError()
+
 
 class ReservesGlobalParametersDao(ReadOnlyReservesGlobalParametersDao):
     @abstractmethod
     def save_reserves_global_parameters(self, area_id: str, params: ReservesGlobalParameters) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_all_reserves_global_parameters(self, mapping: dict[str, ReservesGlobalParameters]) -> None:
         raise NotImplementedError()

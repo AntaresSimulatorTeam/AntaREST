@@ -38,8 +38,18 @@ class FileStudyReservesGlobalParametersDao(ReservesGlobalParametersDao, ABC):
         try:
             data = file_study.tree.get(_get_reserves_ini_path(area_id))
         except (ChildNotFoundError, KeyError):
-            return ReservesGlobalParameters()
+            data = {}
         return parse_reserves_global_parameters(data)
+
+    @override
+    def get_all_reserves_global_parameters(self) -> dict[str, ReservesGlobalParameters]:
+        file_study = self.get_file_study()
+        return {area_id: self.get_reserves_global_parameters(area_id) for area_id in file_study.config.areas}
+
+    @override
+    def save_all_reserves_global_parameters(self, mapping: dict[str, ReservesGlobalParameters]) -> None:
+        for area_id, params in mapping.items():
+            self.save_reserves_global_parameters(area_id, params)
 
     @override
     def save_reserves_global_parameters(self, area_id: str, params: ReservesGlobalParameters) -> None:

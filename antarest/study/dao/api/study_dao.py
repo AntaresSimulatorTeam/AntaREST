@@ -762,3 +762,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_reserves_global_parameters(self, area_id: str) -> ReservesGlobalParameters:
         return self._adaptee.get_reserves_global_parameters(area_id)
+
+    @override
+    def get_all_reserves_global_parameters(self) -> dict[str, ReservesGlobalParameters]:
+        return self._adaptee.get_all_reserves_global_parameters()

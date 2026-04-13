@@ -61,8 +61,20 @@ class DatabaseReservesGlobalParametersDao(ReservesGlobalParametersDao):
         return _convert_row_to_model(row)
 
     @override
-    def save_reserves_global_parameters(self, area_id: str, params: ReservesGlobalParameters) -> None:
+    def get_all_reserves_global_parameters(self) -> dict[str, ReservesGlobalParameters]:
+        study_id = self.get_study_id()
         session = self.get_session()
+        stmt = select(_TABLE).where(_TABLE.c.study_id == study_id)
+        rows = session.execute(stmt)
+        return {row.area_id: _convert_row_to_model(row) for row in rows}
+
+    @override
+    def save_all_reserves_global_parameters(self, mapping: dict[str, ReservesGlobalParameters]) -> None:
+        for area_id, params in mapping.items():
+            self._upsert_one(area_id, params)
+        self.get_session().commit()
+
+    def _upsert_one(self, area_id: str, params: ReservesGlobalParameters) -> None:
         values = {
             "study_id": self.get_study_id(),
             "area_id": area_id,
@@ -71,5 +83,9 @@ class DatabaseReservesGlobalParametersDao(ReservesGlobalParametersDao):
             "reference_activation_duration_down": params.reference_activation_duration_down,
             "energy_activation_ratio_down": params.energy_activation_ratio_down,
         }
-        upsert_one(session, _TABLE, values)
-        session.commit()
+        upsert_one(self.get_session(), _TABLE, values)
+
+    @override
+    def save_reserves_global_parameters(self, area_id: str, params: ReservesGlobalParameters) -> None:
+        self._upsert_one(area_id, params)
+        self.get_session().commit()

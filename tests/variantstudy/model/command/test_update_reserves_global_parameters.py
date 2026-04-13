@@ -11,7 +11,9 @@
 # This file is part of the Antares project.
 from unittest.mock import Mock
 
+import pytest
 from antares.study.version import StudyVersion
+from pydantic import ValidationError
 
 from antarest.study.business.model.reserves_global_parameters_model import (
     ReservesGlobalParametersUpdate,
@@ -38,8 +40,7 @@ def test_apply_command(command_context: CommandContext) -> None:
         energy_activation_ratio_up=0.5,
     )
     command = UpdateReservesGlobalParameters(
-        area_id=area_id,
-        parameters=update,
+        properties={area_id: update},
         command_context=command_context,
         study_version=STUDY_VERSION_10_0,
     )
@@ -53,12 +54,36 @@ def test_apply_command(command_context: CommandContext) -> None:
     assert result.energy_activation_ratio_down == 1.0
 
 
+def test_apply_multiple_areas(command_context: CommandContext) -> None:
+    dao = _make_dao()
+    dao.save_area("paris")
+    dao.save_area("lyon")
+
+    command = UpdateReservesGlobalParameters(
+        properties={
+            "paris": ReservesGlobalParametersUpdate(reference_activation_duration_up=5),
+            "lyon": ReservesGlobalParametersUpdate(energy_activation_ratio_down=0.3),
+        },
+        command_context=command_context,
+        study_version=STUDY_VERSION_10_0,
+    )
+    output = command.apply(dao)
+    assert output.status
+
+    paris = dao.get_reserves_global_parameters("paris")
+    assert paris.reference_activation_duration_up == 5
+    assert paris.energy_activation_ratio_up == 1.0
+
+    lyon = dao.get_reserves_global_parameters("lyon")
+    assert lyon.energy_activation_ratio_down == 0.3
+    assert lyon.reference_activation_duration_down == 1
+
+
 def test_area_not_found(command_context: CommandContext) -> None:
     dao = _make_dao()
 
     command = UpdateReservesGlobalParameters(
-        area_id="nonexistent",
-        parameters=ReservesGlobalParametersUpdate(reference_activation_duration_up=5),
+        properties={"nonexistent": ReservesGlobalParametersUpdate(reference_activation_duration_up=5)},
         command_context=command_context,
         study_version=STUDY_VERSION_10_0,
     )
@@ -67,16 +92,12 @@ def test_area_not_found(command_context: CommandContext) -> None:
 
 
 def test_version_check(command_context: CommandContext) -> None:
-    dao = _make_dao(version=StudyVersion.parse("9.2"))
-
-    command = UpdateReservesGlobalParameters(
-        area_id="paris",
-        parameters=ReservesGlobalParametersUpdate(reference_activation_duration_up=5),
-        command_context=command_context,
-        study_version=StudyVersion.parse("9.2"),
-    )
-    output = command.apply(dao)
-    assert not output.status
+    with pytest.raises(ValidationError, match="study version before 10.0"):
+        UpdateReservesGlobalParameters(
+            properties={"paris": ReservesGlobalParametersUpdate(reference_activation_duration_up=5)},
+            command_context=command_context,
+            study_version=StudyVersion.parse("9.2"),
+        )
 
 
 def test_to_dto(command_context: CommandContext) -> None:
@@ -85,13 +106,11 @@ def test_to_dto(command_context: CommandContext) -> None:
         energy_activation_ratio_up=0.5,
     )
     command = UpdateReservesGlobalParameters(
-        area_id="paris",
-        parameters=update,
+        properties={"paris": update},
         command_context=command_context,
         study_version=STUDY_VERSION_10_0,
     )
     dto = command.to_dto()
     assert dto.action == "update_reserves_global_parameters"
-    assert dto.args["area_id"] == "paris"
-    assert dto.args["parameters"]["reference_activation_duration_up"] == 5
-    assert dto.args["parameters"]["energy_activation_ratio_up"] == 0.5
+    assert dto.args["properties"]["paris"]["reference_activation_duration_up"] == 5
+    assert dto.args["properties"]["paris"]["energy_activation_ratio_up"] == 0.5

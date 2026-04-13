@@ -10,13 +10,13 @@
 #
 # This file is part of the Antares project.
 from pydantic import ConfigDict, Field
+from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
-from antarest.core.utils.string import to_camel_case
 
 
 class ReservesGlobalParameters(AntaresBaseModel):
-    model_config = ConfigDict(alias_generator=to_camel_case, extra="forbid", populate_by_name=True)
+    model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
     reference_activation_duration_up: int = Field(default=1, ge=0)
     energy_activation_ratio_up: float = Field(default=1.0, ge=0.0, le=1.0)
@@ -25,7 +25,7 @@ class ReservesGlobalParameters(AntaresBaseModel):
 
 
 class ReservesGlobalParametersUpdate(AntaresBaseModel):
-    model_config = ConfigDict(alias_generator=to_camel_case, extra="forbid", populate_by_name=True)
+    model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
     reference_activation_duration_up: int | None = Field(default=None, ge=0)
     energy_activation_ratio_up: float | None = Field(default=None, ge=0.0, le=1.0)
