@@ -84,7 +84,9 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
             <Box sx={{ flex: 1 }}>
               <NumberFE
                 label={t("matrix.filter.value")}
-                value={value}
+                // Falls back to empty string when value is undefined to keep
+                // the input controlled.
+                value={typeof value === "undefined" ? ("" as unknown as number) : value}
                 onChange={handleValueChangeEvent}
                 size="small"
                 sx={FORM_STYLES.textField}
