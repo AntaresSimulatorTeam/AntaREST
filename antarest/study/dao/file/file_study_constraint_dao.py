@@ -219,7 +219,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         study_data = self.get_file_study()
         matrices_mapping: dict[str, list[MatrixNode]] = {}
         for constraint_id, series_id in series.items():
-            url = url_getter(constraint_id)
+            url = url_getter(ConstraintId(constraint_id))
             node = study_data.tree.get_node(url)
             assert isinstance(node, MatrixNode)
             matrix_id = extract_matrix_id(series_id)
