@@ -19,10 +19,6 @@ class ReadOnlyReservesGlobalParametersDao(ABC):
     def get_reserves_global_parameters(self, area_id: str) -> ReservesGlobalParameters:
         raise NotImplementedError()
 
-    @abstractmethod
-    def get_all_reserves_global_parameters(self) -> dict[str, ReservesGlobalParameters]:
-        raise NotImplementedError()
-
 
 class ReservesGlobalParametersDao(ReadOnlyReservesGlobalParametersDao):
     @abstractmethod

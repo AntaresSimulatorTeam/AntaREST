@@ -22,8 +22,15 @@ from antarest.study.business.model.config.compatibility_parameters_model import 
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationArea
 from antarest.study.business.model.hydro_model import HydroManagement, InflowStructure
+from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_3, STUDY_VERSION_8_6, STUDY_VERSION_9_2
+from antarest.study.model import (
+    STUDY_VERSION_6_5,
+    STUDY_VERSION_8_3,
+    STUDY_VERSION_8_6,
+    STUDY_VERSION_9_2,
+    STUDY_VERSION_10_0,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -104,7 +111,10 @@ class CreateArea(ICommand):
         study_data.save_load({area_id: null_matrix})
         study_data.save_solar({area_id: null_matrix})
         study_data.save_wind({area_id: null_matrix})
-        study_data.save_reserves({area_id: constants.get_default_reserves()})
+        if self.study_version < STUDY_VERSION_10_0:
+            study_data.save_reserves({area_id: constants.get_default_reserves()})
+        else:
+            study_data.save_reserves_global_parameters(area_id, ReservesGlobalParameters())
         study_data.save_misc_gen({area_id: constants.get_default_miscgen()})
 
         return command_succeeded(message=f"Area '{self.area_name}' created", result=None)

@@ -42,14 +42,6 @@ class FileStudyReservesGlobalParametersDao(ReservesGlobalParametersDao, ABC):
         return parse_reserves_global_parameters(data)
 
     @override
-    def get_all_reserves_global_parameters(self) -> dict[str, ReservesGlobalParameters]:
-        file_study = self.get_file_study()
-        result: dict[str, ReservesGlobalParameters] = {}
-        for area_id in file_study.config.area_names():
-            result[area_id] = self.get_reserves_global_parameters(area_id)
-        return result
-
-    @override
     def save_reserves_global_parameters(self, area_id: str, params: ReservesGlobalParameters) -> None:
         file_study = self.get_file_study()
         path = _get_reserves_ini_path(area_id)

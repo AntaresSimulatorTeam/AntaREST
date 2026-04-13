@@ -58,15 +58,3 @@ class ReservesGlobalParametersManager:
         )
         study.add_commands([command])
         return study.get_study_dao().get_reserves_global_parameters(area_id)
-
-    def delete_reserves_global_parameters(self, study: StudyInterface, area_id: str) -> None:
-        _check_version(study)
-        _check_area_exists(study, area_id)
-        defaults = ReservesGlobalParameters()
-        command = UpdateReservesGlobalParameters(
-            area_id=area_id,
-            parameters=ReservesGlobalParametersUpdate.model_validate(defaults.model_dump()),
-            command_context=self._command_context,
-            study_version=study.version,
-        )
-        study.add_commands([command])

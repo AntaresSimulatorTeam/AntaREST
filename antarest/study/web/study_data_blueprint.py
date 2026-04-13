@@ -1553,21 +1553,6 @@ def create_study_data_routes() -> APIRouter:
             study_interface, area_id, form_fields
         )
 
-    @bp.delete(
-        path="/studies/{uuid}/areas/{area_id}/reserves/global-parameters",
-        summary="Reset reserves global parameters to defaults for a given area",
-        status_code=204,
-    )
-    def delete_reserves_global_parameters(
-        study_service: StudyServiceDep,
-        uuid: UuidStr,
-        area_id: SanitizedStr,
-    ) -> None:
-        logger.info("Deleting reserves global parameters for study %s and area %s", uuid, area_id)
-        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        study_interface = study_service.get_study_interface(study)
-        study_service.reserves_global_parameters_manager.delete_reserves_global_parameters(study_interface, area_id)
-
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
         summary="Get all renewable clusters",

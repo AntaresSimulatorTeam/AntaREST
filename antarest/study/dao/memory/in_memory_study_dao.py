@@ -1437,10 +1437,6 @@ class InMemoryStudyDao(StudyDao):
         return self._reserves_global_parameters.get(area_id, ReservesGlobalParameters())
 
     @override
-    def get_all_reserves_global_parameters(self) -> dict[str, ReservesGlobalParameters]:
-        return dict(self._reserves_global_parameters)
-
-    @override
     def save_reserves_global_parameters(self, area_id: str, params: ReservesGlobalParameters) -> None:
         self._reserves_global_parameters[area_id] = params
 

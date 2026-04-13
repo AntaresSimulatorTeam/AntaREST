@@ -61,13 +61,6 @@ class DatabaseReservesGlobalParametersDao(ReservesGlobalParametersDao):
         return _convert_row_to_model(row)
 
     @override
-    def get_all_reserves_global_parameters(self) -> dict[str, ReservesGlobalParameters]:
-        study_id = self.get_study_id()
-        session = self.get_session()
-        stmt = select(_TABLE).where(_TABLE.c.study_id == study_id)
-        return {row.area_id: _convert_row_to_model(row) for row in session.execute(stmt)}
-
-    @override
     def save_reserves_global_parameters(self, area_id: str, params: ReservesGlobalParameters) -> None:
         session = self.get_session()
         values = {

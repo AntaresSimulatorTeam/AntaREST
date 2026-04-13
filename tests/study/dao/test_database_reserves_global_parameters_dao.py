@@ -58,20 +58,6 @@ def test_save_updates_existing(db_dao: DatabaseStudyDao) -> None:
     assert result.reference_activation_duration_up == 10
 
 
-def test_get_all_reserves_global_parameters(db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
-    dao.save_area("paris")
-    dao.save_area("lyon")
-
-    params_paris = ReservesGlobalParameters(reference_activation_duration_up=5)
-    params_lyon = ReservesGlobalParameters(reference_activation_duration_down=10)
-    dao.save_reserves_global_parameters("paris", params_paris)
-    dao.save_reserves_global_parameters("lyon", params_lyon)
-
-    result = dao.get_all_reserves_global_parameters()
-    assert result == {"paris": params_paris, "lyon": params_lyon}
-
-
 def test_cascade_delete_on_area_removal(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     area_id = "paris"
