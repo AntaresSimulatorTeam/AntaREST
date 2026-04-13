@@ -51,7 +51,7 @@ def test_manage_binding_constraint(
     empty_study_720: FileStudy, empty_study_870: FileStudy, command_context: CommandContext
 ) -> None:
     for empty_study in [empty_study_720, empty_study_870]:
-        dao = build_dao_from_file_study(empty_study, command_context)
+        dao = build_dao_from_file_study(empty_study, command_context, True)
         study_path = empty_study.config.study_path
         study_version = empty_study.config.version
 
@@ -346,7 +346,7 @@ def test__update_matrices_names(
     new_operator: BindingConstraintOperator,
 ) -> None:
     empty_study = empty_study_870
-    dao = build_dao_from_file_study(empty_study, command_context)
+    dao = build_dao_from_file_study(empty_study, command_context, True)
     study_path = empty_study.config.study_path
     study_version = empty_study.config.version
 

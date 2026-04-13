@@ -387,9 +387,9 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
             BindingConstraint(id=bc_equal_id, name=bc_equal_id, operator=BindingConstraintOperator.EQUAL),
         ]
     )
-    dao.save_constraint_less_term_matrix(bc_both_id, bc_lt_matrix_id)
-    dao.save_constraint_greater_term_matrix(bc_both_id, bc_gt_matrix_id)
-    dao.save_constraint_equal_term_matrix(bc_equal_id, bc_eq_matrix_id)
+    dao.save_constraint_less_term_matrix({bc_both_id: bc_lt_matrix_id})
+    dao.save_constraint_greater_term_matrix({bc_both_id: bc_gt_matrix_id})
+    dao.save_constraint_equal_term_matrix({bc_equal_id: bc_eq_matrix_id})
 
     return RealCaseStudy(
         area1=area_id,
