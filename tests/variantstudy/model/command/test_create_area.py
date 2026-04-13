@@ -171,13 +171,7 @@ class TestCreateArea:
         output = create_area_command.apply(study_dao=dao)
         assert not output.status
 
-    @pytest.mark.parametrize(
-        ("hydro_pmax"),
-        [
-            "daily",
-            "hourly",
-        ],
-    )
+    @pytest.mark.parametrize(("hydro_pmax"), ["daily", "hourly"])
     def test_apply_hydro_pmax_920(
         self,
         empty_study_920: FileStudy,
@@ -185,7 +179,7 @@ class TestCreateArea:
         hydro_pmax: str,
     ) -> None:
         study = empty_study_920
-        dao = build_dao_from_file_study(study, command_context)
+        dao = build_dao_from_file_study(study, command_context, True)
         study_version = study.config.version
         study_path = study.config.study_path
 

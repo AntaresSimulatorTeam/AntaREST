@@ -25,7 +25,12 @@ from antarest.core.utils.utils import remove_first_match
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties, sort_filter_options
-from antarest.study.business.model.binding_constraint_model import BindingConstraint, ClusterTerm, LinkTerm
+from antarest.study.business.model.binding_constraint_model import (
+    BindingConstraint,
+    ClusterTerm,
+    ConstraintId,
+    LinkTerm,
+)
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters, HydroPmax
@@ -66,7 +71,13 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettingsUpdate,
 )
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.dao.common import AreaId, AreaSeriesMapping, RenewableSeriesMapping, ThermalSeriesMapping
+from antarest.study.dao.common import (
+    AreaId,
+    AreaSeriesMapping,
+    LinkSeriesMapping,
+    RenewableSeriesMapping,
+    ThermalSeriesMapping,
+)
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -165,11 +176,11 @@ class InMemoryStudyDao(StudyDao):
         self._st_storages_constraints_matrix: dict[AdditionalConstraintKey, str] = {}
         self._st_storages_constraints_terms: dict[str, dict[str, str]] = {}
         # Binding constraints
-        self._constraints: dict[str, BindingConstraint] = {}
-        self._constraints_values_matrix: dict[str, str] = {}
-        self._constraints_less_term_matrix: dict[str, str] = {}
-        self._constraints_greater_term_matrix: dict[str, str] = {}
-        self._constraints_equal_term_matrix: dict[str, str] = {}
+        self._constraints: dict[ConstraintId, BindingConstraint] = {}
+        self._constraints_values_matrix: dict[ConstraintId, str] = {}
+        self._constraints_less_term_matrix: dict[ConstraintId, str] = {}
+        self._constraints_greater_term_matrix: dict[ConstraintId, str] = {}
+        self._constraints_equal_term_matrix: dict[ConstraintId, str] = {}
         # General config
         self._general_config: GeneralConfig = GeneralConfig()
         # Optimization preferences config
@@ -333,20 +344,45 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def save_link(self, link: Link) -> None:
-        self._links[link_key(link.area1, link.area2)] = link
+    def get_all_links_series(self) -> LinkSeriesMapping:
+        result: LinkSeriesMapping = {}
+        for link_key, series_id in self._link_capacities.items():
+            result[link_key.area1_id, link_key.area2_id] = series_id
+        return result
 
     @override
-    def save_link_series(self, area_from: str, area_to: str, series_id: str) -> None:
-        self._link_capacities[link_key(area_from, area_to)] = series_id
+    def get_all_links_indirect_capacities(self) -> LinkSeriesMapping:
+        result: LinkSeriesMapping = {}
+        for link_key, series_id in self._link_indirect_capacities.items():
+            result[link_key.area1_id, link_key.area2_id] = series_id
+        return result
 
     @override
-    def save_link_direct_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        self._link_direct_capacities[link_key(area_from, area_to)] = series_id
+    def get_all_links_direct_capacities(self) -> LinkSeriesMapping:
+        result: LinkSeriesMapping = {}
+        for link_key, series_id in self._link_direct_capacities.items():
+            result[link_key.area1_id, link_key.area2_id] = series_id
+        return result
 
     @override
-    def save_link_indirect_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        self._link_indirect_capacities[link_key(area_from, area_to)] = series_id
+    def save_links(self, links: Sequence[Link]) -> None:
+        for link in links:
+            self._links[link_key(link.area1, link.area2)] = link
+
+    @override
+    def save_link_series(self, series: LinkSeriesMapping) -> None:
+        for (area_from, area_to), series_id in series.items():
+            self._link_capacities[link_key(area_from, area_to)] = series_id
+
+    @override
+    def save_link_direct_capacities(self, series: LinkSeriesMapping) -> None:
+        for (area_from, area_to), series_id in series.items():
+            self._link_direct_capacities[link_key(area_from, area_to)] = series_id
+
+    @override
+    def save_link_indirect_capacities(self, series: LinkSeriesMapping) -> None:
+        for (area_from, area_to), series_id in series.items():
+            self._link_indirect_capacities[link_key(area_from, area_to)] = series_id
 
     @override
     def delete_link(self, link: Link) -> None:
@@ -525,36 +561,96 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def save_hydro_management(self, hydro_management: HydroManagement, area_id: str) -> None:
-        self._hydro_properties[area_id].management_options = hydro_management
+    def get_all_hydro_maxpower(self) -> AreaSeriesMapping:
+        return self._hydro_maxpower
 
     @override
-    def save_inflow_structure(self, inflow_structure: InflowStructure, area_id: str) -> None:
-        self._hydro_properties[area_id].inflow_structure = inflow_structure
+    def get_all_hydro_reservoir(self) -> AreaSeriesMapping:
+        return self._hydro_reservoir
 
     @override
-    def save_hydro_allocation(self, area_id: str, allocation: HydroAllocation) -> None:
-        self._hydro_allocation[area_id] = allocation
+    def get_all_hydro_energy(self) -> AreaSeriesMapping:
+        return self._hydro_energy
 
     @override
-    def save_hydro_correlation(self, area_id: str, correlation: HydroCorrelation) -> None:
-        self._hydro_correlation[area_id] = correlation
+    def get_all_hydro_run_of_river(self) -> AreaSeriesMapping:
+        return self._hydro_run_of_river
 
     @override
-    def save_hydro_max_hourly_gen_power(self, area_id: str, series_id: str) -> None:
-        self._hydro_max_hourly_gen_power[area_id] = series_id
+    def get_all_hydro_modulation(self) -> AreaSeriesMapping:
+        return self._hydro_modulation
 
     @override
-    def save_hydro_max_hourly_pump_power(self, area_id: str, series_id: str) -> None:
-        self._hydro_max_hourly_pump_power[area_id] = series_id
+    def get_all_hydro_credit_modulations(self) -> AreaSeriesMapping:
+        return self._hydro_credit_modulations
 
     @override
-    def save_hydro_max_daily_gen_energy(self, area_id: str, series_id: str) -> None:
-        self._hydro_max_daily_gen_energy[area_id] = series_id
+    def get_all_hydro_inflow_pattern(self) -> AreaSeriesMapping:
+        return self._hydro_inflow_pattern
 
     @override
-    def save_hydro_max_daily_pump_energy(self, area_id: str, series_id: str) -> None:
-        self._hydro_max_daily_pump_energy[area_id] = series_id
+    def get_all_hydro_water_values(self) -> AreaSeriesMapping:
+        return self._hydro_water_values
+
+    @override
+    def get_all_hydro_mingen(self) -> AreaSeriesMapping:
+        return self._hydro_mingen
+
+    @override
+    def get_all_hydro_max_hourly_gen_power(self) -> AreaSeriesMapping:
+        return self._hydro_max_hourly_gen_power
+
+    @override
+    def get_all_hydro_max_hourly_pump_power(self) -> AreaSeriesMapping:
+        return self._hydro_max_hourly_pump_power
+
+    @override
+    def get_all_hydro_max_daily_gen_energy(self) -> AreaSeriesMapping:
+        return self._hydro_max_daily_gen_energy
+
+    @override
+    def get_all_hydro_max_daily_pump_energy(self) -> AreaSeriesMapping:
+        return self._hydro_max_daily_pump_energy
+
+    @override
+    def save_hydro_management(self, hydro_management: dict[AreaId, HydroManagement]) -> None:
+        for area_id, management_options in hydro_management.items():
+            self._hydro_properties[area_id].management_options = management_options
+
+    @override
+    def save_inflow_structure(self, inflow_structure: dict[AreaId, InflowStructure]) -> None:
+        for area_id, inflow in inflow_structure.items():
+            self._hydro_properties[area_id].inflow_structure = inflow
+
+    @override
+    def save_hydro_allocation(self, allocation_dict: dict[AreaId, HydroAllocation]) -> None:
+        for area_id, allocation in allocation_dict.items():
+            self._hydro_allocation[area_id] = allocation
+
+    @override
+    def save_hydro_correlation(self, correlation_dict: dict[AreaId, HydroCorrelation]) -> None:
+        for area_id, correlation in correlation_dict.items():
+            self._hydro_correlation[area_id] = correlation
+
+    @override
+    def save_hydro_max_hourly_gen_power(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_max_hourly_gen_power[area_id] = series_id
+
+    @override
+    def save_hydro_max_hourly_pump_power(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_max_hourly_pump_power[area_id] = series_id
+
+    @override
+    def save_hydro_max_daily_gen_energy(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_max_daily_gen_energy[area_id] = series_id
+
+    @override
+    def save_hydro_max_daily_pump_energy(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_max_daily_pump_energy[area_id] = series_id
 
     @override
     def convert_hydro_pmax(
@@ -575,10 +671,10 @@ class InMemoryStudyDao(StudyDao):
         if hydro_pmax == HydroPmax.HOURLY:
             # When converting to hourly, create and save the matrices
             for area_id in areas:
-                self.save_hydro_max_hourly_gen_power(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly))
-                self.save_hydro_max_hourly_pump_power(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly))
-                self.save_hydro_max_daily_gen_energy(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily))
-                self.save_hydro_max_daily_pump_energy(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily))
+                self.save_hydro_max_hourly_gen_power({area_id: MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly)})
+                self.save_hydro_max_hourly_pump_power({area_id: MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly)})
+                self.save_hydro_max_daily_gen_energy({area_id: MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily)})
+                self.save_hydro_max_daily_pump_energy({area_id: MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily)})
         else:
             # When converting away from hourly, remove the matrices from in-memory storage
             for area_id in areas:
@@ -643,30 +739,30 @@ class InMemoryStudyDao(StudyDao):
         del self._renewables[cluster_key(area_id, renewable.id)]
 
     @override
-    def get_all_constraints(self) -> dict[str, BindingConstraint]:
+    def get_all_constraints(self) -> dict[ConstraintId, BindingConstraint]:
         return self._constraints
 
     @override
-    def get_constraint(self, constraint_id: str) -> BindingConstraint:
+    def get_constraint(self, constraint_id: ConstraintId) -> BindingConstraint:
         return self._constraints[constraint_id]
 
     @override
-    def get_constraint_values_matrix(self, constraint_id: str) -> pl.DataFrame:
+    def get_constraint_values_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         matrix_id = self._constraints_values_matrix[constraint_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_constraint_less_term_matrix(self, constraint_id: str) -> pl.DataFrame:
+    def get_constraint_less_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         matrix_id = self._constraints_less_term_matrix[constraint_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_constraint_greater_term_matrix(self, constraint_id: str) -> pl.DataFrame:
+    def get_constraint_greater_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         matrix_id = self._constraints_greater_term_matrix[constraint_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_constraint_equal_term_matrix(self, constraint_id: str) -> pl.DataFrame:
+    def get_constraint_equal_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         matrix_id = self._constraints_equal_term_matrix[constraint_id]
         return self._matrix_service.get(matrix_id)
 
@@ -676,19 +772,19 @@ class InMemoryStudyDao(StudyDao):
             self._constraints[constraint.id] = constraint
 
     @override
-    def save_constraint_values_matrix(self, constraint_id: str, series_id: str) -> None:
+    def save_constraint_values_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
         self._constraints_values_matrix[constraint_id] = series_id
 
     @override
-    def save_constraint_less_term_matrix(self, constraint_id: str, series_id: str) -> None:
+    def save_constraint_less_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
         self._constraints_less_term_matrix[constraint_id] = series_id
 
     @override
-    def save_constraint_greater_term_matrix(self, constraint_id: str, series_id: str) -> None:
+    def save_constraint_greater_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
         self._constraints_greater_term_matrix[constraint_id] = series_id
 
     @override
-    def save_constraint_equal_term_matrix(self, constraint_id: str, series_id: str) -> None:
+    def save_constraint_equal_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
         self._constraints_equal_term_matrix[constraint_id] = series_id
 
     @override
@@ -1232,40 +1328,49 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def save_hydro_maxpower(self, area_id: str, series_id: str) -> None:
-        self._hydro_maxpower[area_id] = series_id
+    def save_hydro_maxpower(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_maxpower[area_id] = series_id
 
     @override
-    def save_hydro_reservoir(self, area_id: str, series_id: str) -> None:
-        self._hydro_reservoir[area_id] = series_id
+    def save_hydro_reservoir(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_reservoir[area_id] = series_id
 
     @override
-    def save_hydro_energy(self, area_id: str, series_id: str) -> None:
-        self._hydro_energy[area_id] = series_id
+    def save_hydro_energy(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_energy[area_id] = series_id
 
     @override
-    def save_hydro_run_of_river(self, area_id: str, series_id: str) -> None:
-        self._hydro_run_of_river[area_id] = series_id
+    def save_hydro_run_of_river(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_run_of_river[area_id] = series_id
 
     @override
-    def save_hydro_modulation(self, area_id: str, series_id: str) -> None:
-        self._hydro_modulation[area_id] = series_id
+    def save_hydro_modulation(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_modulation[area_id] = series_id
 
     @override
-    def save_hydro_credit_modulations(self, area_id: str, series_id: str) -> None:
-        self._hydro_credit_modulations[area_id] = series_id
+    def save_hydro_credit_modulations(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_credit_modulations[area_id] = series_id
 
     @override
-    def save_hydro_inflow_pattern(self, area_id: str, series_id: str) -> None:
-        self._hydro_inflow_pattern[area_id] = series_id
+    def save_hydro_inflow_pattern(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_inflow_pattern[area_id] = series_id
 
     @override
-    def save_hydro_water_values(self, area_id: str, series_id: str) -> None:
-        self._hydro_water_values[area_id] = series_id
+    def save_hydro_water_values(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_water_values[area_id] = series_id
 
     @override
-    def save_hydro_mingen(self, area_id: str, series_id: str) -> None:
-        self._hydro_mingen[area_id] = series_id
+    def save_hydro_mingen(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_mingen[area_id] = series_id
 
     @override
     def get_load(self, area_id: str) -> pl.DataFrame:

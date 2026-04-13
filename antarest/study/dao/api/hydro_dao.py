@@ -21,6 +21,7 @@ from antarest.study.business.model.hydro_model import (
     HydroProperties,
     InflowStructure,
 )
+from antarest.study.dao.common import AreaId, AreaSeriesMapping
 
 
 class ReadOnlyHydroDao(ABC):
@@ -104,74 +105,126 @@ class ReadOnlyHydroDao(ABC):
     def get_hydro_max_daily_pump_energy(self, area_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_all_hydro_maxpower(self) -> AreaSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_hydro_reservoir(self) -> AreaSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_hydro_energy(self) -> AreaSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_hydro_run_of_river(self) -> AreaSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_hydro_modulation(self) -> AreaSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_hydro_credit_modulations(self) -> AreaSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_hydro_inflow_pattern(self) -> AreaSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_hydro_water_values(self) -> AreaSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_hydro_mingen(self) -> AreaSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_hydro_max_hourly_gen_power(self) -> AreaSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_hydro_max_hourly_pump_power(self) -> AreaSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_hydro_max_daily_gen_energy(self) -> AreaSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_hydro_max_daily_pump_energy(self) -> AreaSeriesMapping:
+        raise NotImplementedError()
+
 
 class HydroDao(ReadOnlyHydroDao):
     @abstractmethod
-    def save_hydro_management(self, hydro_management: HydroManagement, area_id: str) -> None:
+    def save_hydro_management(self, hydro_management: dict[AreaId, HydroManagement]) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_inflow_structure(self, inflow_structure: InflowStructure, area_id: str) -> None:
+    def save_inflow_structure(self, inflow_structure: dict[AreaId, InflowStructure]) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_allocation(self, area_id: str, allocation: HydroAllocation) -> None:
+    def save_hydro_allocation(self, allocation_dict: dict[AreaId, HydroAllocation]) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_correlation(self, area_id: str, correlation: HydroCorrelation) -> None:
+    def save_hydro_correlation(self, correlation_dict: dict[AreaId, HydroCorrelation]) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_maxpower(self, area_id: str, series_id: str) -> None:
+    def save_hydro_maxpower(self, series: AreaSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_reservoir(self, area_id: str, series_id: str) -> None:
+    def save_hydro_reservoir(self, series: AreaSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_energy(self, area_id: str, series_id: str) -> None:
+    def save_hydro_energy(self, series: AreaSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_run_of_river(self, area_id: str, series_id: str) -> None:
+    def save_hydro_run_of_river(self, series: AreaSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_modulation(self, area_id: str, series_id: str) -> None:
+    def save_hydro_modulation(self, series: AreaSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_credit_modulations(self, area_id: str, series_id: str) -> None:
+    def save_hydro_credit_modulations(self, series: AreaSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_inflow_pattern(self, area_id: str, series_id: str) -> None:
+    def save_hydro_inflow_pattern(self, series: AreaSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_water_values(self, area_id: str, series_id: str) -> None:
+    def save_hydro_water_values(self, series: AreaSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_mingen(self, area_id: str, series_id: str) -> None:
+    def save_hydro_mingen(self, series: AreaSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_max_hourly_gen_power(self, area_id: str, series_id: str) -> None:
+    def save_hydro_max_hourly_gen_power(self, series: AreaSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_max_hourly_pump_power(self, area_id: str, series_id: str) -> None:
+    def save_hydro_max_hourly_pump_power(self, series: AreaSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_max_daily_gen_energy(self, area_id: str, series_id: str) -> None:
+    def save_hydro_max_daily_gen_energy(self, series: AreaSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_hydro_max_daily_pump_energy(self, area_id: str, series_id: str) -> None:
+    def save_hydro_max_daily_pump_energy(self, series: AreaSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod

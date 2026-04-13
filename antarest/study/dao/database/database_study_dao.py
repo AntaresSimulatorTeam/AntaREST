@@ -17,7 +17,6 @@ This DAO provides database-backed storage for studies when storage_mode=DATABASE
 Uses multiple inheritance to combine specialized DAOs (like FileStudyTreeDao).
 """
 
-from collections.abc import Sequence
 from typing import Self
 
 import polars as pl
@@ -28,10 +27,10 @@ from typing_extensions import override
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_properties_model import AreaProperties, sort_filter_options
-from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
 from antarest.study.dao.database.database_area_properties_dao import DatabaseAreaPropertiesDao
+from antarest.study.dao.database.database_binding_constraint_dao import DatabaseBindingConstraintDao
 from antarest.study.dao.database.database_district_dao import DatabaseDistrictDao
 from antarest.study.dao.database.database_hydro_dao import DatabaseHydroDao
 from antarest.study.dao.database.database_layer_dao import DatabaseLayerDao
@@ -70,6 +69,7 @@ class DatabaseStudyDao(
     DatabaseThematicTrimmingDao,
     DatabaseScenarioBuilderDao,
     DatabaseXpansionDao,
+    DatabaseBindingConstraintDao,
     DatabaseReservesGlobalParametersDao,
 ):
     """
@@ -106,6 +106,7 @@ class DatabaseStudyDao(
         DatabaseThematicTrimmingDao.__init__(self, study_id, db_session)
         DatabaseScenarioBuilderDao.__init__(self, study_id, db_session)
         DatabaseXpansionDao.__init__(self, study_id, db_session)
+        DatabaseBindingConstraintDao.__init__(self, study_id, db_session)
         DatabaseReservesGlobalParametersDao.__init__(self, study_id, db_session)
         self._matrix_service = matrix_service
         self._generator_matrix_constants = generator_matrix_constants
@@ -218,51 +219,3 @@ class DatabaseStudyDao(
 
     def get_matrix(self, matrix_id: str) -> pl.DataFrame:
         return self._matrix_service.get(matrix_id)
-
-    @override
-    def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_constraint_values_matrix(self, constraint_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_constraint_less_term_matrix(self, constraint_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_constraint_greater_term_matrix(self, constraint_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_constraint_equal_term_matrix(self, constraint_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def delete_constraints(self, constraints: list[BindingConstraint]) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_all_constraints(self) -> dict[str, BindingConstraint]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_constraint(self, constraint_id: str) -> BindingConstraint:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_constraint_values_matrix(self, constraint_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_constraint_less_term_matrix(self, constraint_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_constraint_greater_term_matrix(self, constraint_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_constraint_equal_term_matrix(self, constraint_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")

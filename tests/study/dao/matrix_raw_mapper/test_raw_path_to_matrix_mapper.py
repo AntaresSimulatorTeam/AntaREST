@@ -76,10 +76,14 @@ def test_get_matrix_from_path(
             hydro_max_daily_pump_energy_df,
             xpansion_capacity_df,
             xpansion_weight_df,
+            bc_lt_df,
+            bc_gt_df,
+            bc_eq_df,
         ) = result.dataframes
         area_id, area2 = result.area1, result.area2
         thermal_id, renewable_id, st_storage_id = result.thermal_id, result.renewable_id, result.sts_id
         constraint_id = result.sts_constraint_id
+        bc_both_id, bc_eq_id = result.bc_both_id, result.bc_eq_id
 
         ##########################
         # Nominal cases
@@ -229,7 +233,14 @@ def test_get_matrix_from_path(
         xpansion_weight = mapper.get_matrix_from_path(Path("user/expansion/weights/mc_weights.csv"))
         pl.testing.assert_frame_equal(xpansion_weight, xpansion_weight_df, check_dtypes=False)
 
-        # todo: We're missing BC tests as they are not yet implemented in DB.
+        bc_lt = mapper.get_matrix_from_path(Path(f"input/bindingconstraints/{bc_both_id}_lt"))
+        pl.testing.assert_frame_equal(bc_lt, bc_lt_df, check_dtypes=False)
+
+        bc_gt = mapper.get_matrix_from_path(Path(f"input/bindingconstraints/{bc_both_id}_gt"))
+        pl.testing.assert_frame_equal(bc_gt, bc_gt_df, check_dtypes=False)
+
+        bc_eq = mapper.get_matrix_from_path(Path(f"input/bindingconstraints/{bc_eq_id}_eq"))
+        pl.testing.assert_frame_equal(bc_eq, bc_eq_df, check_dtypes=False)
 
 
 def test_save_matrix_from_path(
@@ -253,6 +264,7 @@ def test_save_matrix_from_path(
         area_id, area2 = result.area1, result.area2
         thermal_id, renewable_id, st_storage_id = result.thermal_id, result.renewable_id, result.sts_id
         constraint_id = result.sts_constraint_id
+        bc_both_id, bc_eq_id = result.bc_both_id, result.bc_eq_id
 
         ##########################
         # Nominal cases
@@ -480,7 +492,20 @@ def test_save_matrix_from_path(
         assert isinstance(result_df, pl.DataFrame)
         pl.testing.assert_frame_equal(result_df, df, check_dtypes=False)
 
-        # todo: We're missing BC tests as they are not yet implemented in DB.
+        path = Path(f"input/bindingconstraints/{bc_both_id}_lt")
+        series_id, df = _build_random_dataframe()
+        mapper.save_matrix_from_path(path, series_id)
+        pl.testing.assert_frame_equal(dao.get_constraint_less_term_matrix(bc_both_id), df, check_dtypes=False)
+
+        path = Path(f"input/bindingconstraints/{bc_both_id}_gt")
+        series_id, df = _build_random_dataframe()
+        mapper.save_matrix_from_path(path, series_id)
+        pl.testing.assert_frame_equal(dao.get_constraint_greater_term_matrix(bc_both_id), df, check_dtypes=False)
+
+        path = Path(f"input/bindingconstraints/{bc_eq_id}_eq")
+        series_id, df = _build_random_dataframe()
+        mapper.save_matrix_from_path(path, series_id)
+        pl.testing.assert_frame_equal(dao.get_constraint_equal_term_matrix(bc_eq_id), df, check_dtypes=False)
 
 
 @pytest.mark.parametrize(

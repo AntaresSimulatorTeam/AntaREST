@@ -71,7 +71,7 @@ class TestHydroManagement:
 
         # Create initial config
         hydro_mgmt1 = HydroManagement(reservoir=False, reservoir_capacity=100.0)
-        dao.save_hydro_management(hydro_mgmt1, "paris")
+        dao.save_hydro_management({"paris": hydro_mgmt1})
 
         result = dao.get_hydro_management("paris")
         assert result.reservoir is False
@@ -79,7 +79,7 @@ class TestHydroManagement:
 
         # Update config
         hydro_mgmt2 = HydroManagement(reservoir=True, reservoir_capacity=999.0)
-        dao.save_hydro_management(hydro_mgmt2, "paris")
+        dao.save_hydro_management({"paris": hydro_mgmt2})
 
         # Verify update
         result = dao.get_hydro_management("paris")
@@ -90,7 +90,7 @@ class TestHydroManagement:
         """Test that save_hydro_management raises AreaNotFound with the invalid area ID."""
         hydro_mgmt = HydroManagement()
         with pytest.raises(AreaNotFound, match="nonexistent"):
-            db_dao.save_hydro_management(hydro_mgmt, "nonexistent")
+            db_dao.save_hydro_management({"nonexistent": hydro_mgmt})
 
     def test_hydro_management_with_version_specific_field(self, db_dao: DatabaseStudyDao) -> None:
         """Test that overflow_spilled_cost_difference (v9.2+) is handled correctly."""
@@ -98,15 +98,15 @@ class TestHydroManagement:
         dao.save_area("Paris")
 
         # Defaults to None when not provided
-        dao.save_hydro_management(HydroManagement(), "paris")
+        dao.save_hydro_management({"paris": HydroManagement()})
         assert dao.get_hydro_management("paris").overflow_spilled_cost_difference is None
 
         # Can be set to a value
-        dao.save_hydro_management(HydroManagement(overflow_spilled_cost_difference=5.5), "paris")
+        dao.save_hydro_management({"paris": HydroManagement(overflow_spilled_cost_difference=5.5)})
         assert dao.get_hydro_management("paris").overflow_spilled_cost_difference == 5.5
 
         # Can be set back to None
-        dao.save_hydro_management(HydroManagement(overflow_spilled_cost_difference=None), "paris")
+        dao.save_hydro_management({"paris": HydroManagement(overflow_spilled_cost_difference=None)})
         assert dao.get_hydro_management("paris").overflow_spilled_cost_difference is None
 
 
@@ -132,14 +132,14 @@ class TestInflowStructure:
         dao.save_area("Paris")
 
         # Create initial config
-        dao.save_inflow_structure(InflowStructure(inter_monthly_correlation=0.3), "paris")
+        dao.save_inflow_structure({"paris": InflowStructure(inter_monthly_correlation=0.3)})
 
         # Verify create
         result = dao.get_inflow_structure("paris")
         assert result.inter_monthly_correlation == 0.3
 
         # Update config
-        dao.save_inflow_structure(InflowStructure(inter_monthly_correlation=0.9), "paris")
+        dao.save_inflow_structure({"paris": InflowStructure(inter_monthly_correlation=0.9)})
 
         # Verify update
         result = dao.get_inflow_structure("paris")
@@ -149,7 +149,7 @@ class TestInflowStructure:
         """Test that save_inflow_structure raises AreaNotFound with the invalid area ID."""
         inflow = InflowStructure()
         with pytest.raises(AreaNotFound, match="nonexistent"):
-            db_dao.save_inflow_structure(inflow, "nonexistent")
+            db_dao.save_inflow_structure({"nonexistent": inflow})
 
 
 class TestGetAllHydroProperties:
@@ -167,8 +167,8 @@ class TestGetAllHydroProperties:
         dao.save_area("London")
 
         # Paris has only inflow, London has only management — neither is complete
-        dao.save_inflow_structure(InflowStructure(inter_monthly_correlation=0.5), "paris")
-        dao.save_hydro_management(HydroManagement(reservoir=True), "london")
+        dao.save_inflow_structure({"paris": InflowStructure(inter_monthly_correlation=0.5)})
+        dao.save_hydro_management({"london": HydroManagement(reservoir=True)})
 
         result = dao.get_all_hydro_properties()
         assert result == {}
@@ -180,12 +180,12 @@ class TestGetAllHydroProperties:
         dao.save_area("London")
 
         # Save complete hydro data for Paris
-        dao.save_hydro_management(HydroManagement(reservoir=True, reservoir_capacity=500.0), "paris")
-        dao.save_inflow_structure(InflowStructure(inter_monthly_correlation=0.6), "paris")
+        dao.save_hydro_management({"paris": HydroManagement(reservoir=True, reservoir_capacity=500.0)})
+        dao.save_inflow_structure({"paris": InflowStructure(inter_monthly_correlation=0.6)})
 
         # Save complete hydro data for London
-        dao.save_hydro_management(HydroManagement(reservoir=False), "london")
-        dao.save_inflow_structure(InflowStructure(inter_monthly_correlation=0.7), "london")
+        dao.save_hydro_management({"london": HydroManagement(reservoir=False)})
+        dao.save_inflow_structure({"london": InflowStructure(inter_monthly_correlation=0.7)})
 
         result = dao.get_all_hydro_properties()
 
@@ -227,18 +227,19 @@ class TestHydroAllocation:
 
         # Create initial allocation
         dao.save_hydro_allocation(
-            "paris", HydroAllocation(allocation=[HydroAllocationArea(area_id="paris", coefficient=1.0)])
+            {"paris": HydroAllocation(allocation=[HydroAllocationArea(area_id="paris", coefficient=1.0)])}
         )
 
         # Replace with new allocation
         dao.save_hydro_allocation(
-            "paris",
-            HydroAllocation(
-                allocation=[
-                    HydroAllocationArea(area_id="paris", coefficient=0.6),
-                    HydroAllocationArea(area_id="london", coefficient=0.4),
-                ]
-            ),
+            {
+                "paris": HydroAllocation(
+                    allocation=[
+                        HydroAllocationArea(area_id="paris", coefficient=0.6),
+                        HydroAllocationArea(area_id="london", coefficient=0.4),
+                    ]
+                )
+            },
         )
 
         result = dao.get_hydro_allocation("paris")
@@ -255,7 +256,7 @@ class TestHydroAllocation:
 
         allocation = HydroAllocation(allocation=[HydroAllocationArea(area_id="paris", coefficient=1.0)])
         with pytest.raises(AreaNotFound, match="nonexistent"):
-            dao.save_hydro_allocation("nonexistent", allocation)
+            dao.save_hydro_allocation({"nonexistent": allocation})
 
     def test_save_hydro_allocation_raises_error_for_nonexistent_target_area(self, db_dao: DatabaseStudyDao) -> None:
         """Test that save_hydro_allocation raises AreaNotFound with the invalid target area ID."""
@@ -264,7 +265,7 @@ class TestHydroAllocation:
 
         allocation = HydroAllocation(allocation=[HydroAllocationArea(area_id="nonexistent", coefficient=1.0)])
         with pytest.raises(AreaNotFound, match="nonexistent"):
-            dao.save_hydro_allocation("paris", allocation)
+            dao.save_hydro_allocation({"paris": allocation})
 
     def test_get_hydro_allocation_matrix(self, db_dao: DatabaseStudyDao) -> None:
         """Test that get_hydro_allocation_matrix returns all allocations."""
@@ -273,16 +274,17 @@ class TestHydroAllocation:
         dao.save_area("London")
 
         dao.save_hydro_allocation(
-            "paris",
-            HydroAllocation(
-                allocation=[
-                    HydroAllocationArea(area_id="paris", coefficient=0.7),
-                    HydroAllocationArea(area_id="london", coefficient=0.3),
-                ]
-            ),
+            {
+                "paris": HydroAllocation(
+                    allocation=[
+                        HydroAllocationArea(area_id="paris", coefficient=0.7),
+                        HydroAllocationArea(area_id="london", coefficient=0.3),
+                    ]
+                )
+            }
         )
         dao.save_hydro_allocation(
-            "london", HydroAllocation(allocation=[HydroAllocationArea(area_id="london", coefficient=1.0)])
+            {"london": HydroAllocation(allocation=[HydroAllocationArea(area_id="london", coefficient=1.0)])}
         )
 
         result = dao.get_hydro_allocation_matrix()
@@ -295,12 +297,13 @@ class TestHydroAllocation:
         assert result["london"].allocation[0].coefficient == 1.0
 
         dao.save_hydro_allocation(
-            "paris",
-            HydroAllocation(
-                allocation=[
-                    HydroAllocationArea(area_id="paris", coefficient=0.2),
-                ]
-            ),
+            {
+                "paris": HydroAllocation(
+                    allocation=[
+                        HydroAllocationArea(area_id="paris", coefficient=0.2),
+                    ]
+                )
+            }
         )
         result = dao.get_hydro_allocation_matrix()
         assert len(result["paris"].allocation) == 1
@@ -344,13 +347,14 @@ class TestHydroCorrelation:
 
         # Save from Paris perspective
         dao.save_hydro_correlation(
-            "paris",
-            HydroCorrelation(
-                correlation=[
-                    HydroCorrelationArea(area_id="paris", coefficient=100.0),
-                    HydroCorrelationArea(area_id="london", coefficient=75.0),
-                ]
-            ),
+            {
+                "paris": HydroCorrelation(
+                    correlation=[
+                        HydroCorrelationArea(area_id="paris", coefficient=100.0),
+                        HydroCorrelationArea(area_id="london", coefficient=75.0),
+                    ]
+                )
+            }
         )
 
         # Get from London perspective should show same correlation
@@ -373,7 +377,7 @@ class TestHydroCorrelation:
             ]
         )
         with pytest.raises(AreaNotFound, match="nonexistent"):
-            dao.save_hydro_correlation("paris", correlation)
+            dao.save_hydro_correlation({"paris": correlation})
 
         # Nonexistent source area
         correlation = HydroCorrelation(
@@ -382,7 +386,7 @@ class TestHydroCorrelation:
             ]
         )
         with pytest.raises(AreaNotFound, match="nonexistent"):
-            dao.save_hydro_correlation("nonexistent", correlation)
+            dao.save_hydro_correlation({"nonexistent": correlation})
 
     def test_get_hydro_correlation_matrix(self, db_dao: DatabaseStudyDao) -> None:
         """Test that get_hydro_correlation_matrix returns the full matrix."""
@@ -392,13 +396,14 @@ class TestHydroCorrelation:
 
         # Save correlation
         dao.save_hydro_correlation(
-            "paris",
-            HydroCorrelation(
-                correlation=[
-                    HydroCorrelationArea(area_id="paris", coefficient=100.0),
-                    HydroCorrelationArea(area_id="london", coefficient=60.0),
-                ]
-            ),
+            {
+                "paris": HydroCorrelation(
+                    correlation=[
+                        HydroCorrelationArea(area_id="paris", coefficient=100.0),
+                        HydroCorrelationArea(area_id="london", coefficient=60.0),
+                    ]
+                )
+            }
         )
         result = dao.get_hydro_correlation_matrix()
 
@@ -426,7 +431,7 @@ class TestCascadeDelete:
         """Test that hydro management is deleted when area is deleted."""
         dao = db_dao
         dao.save_area("Paris")
-        dao.save_hydro_management(HydroManagement(reservoir=True), "paris")
+        dao.save_hydro_management({"paris": HydroManagement(reservoir=True)})
 
         # Delete area
         dao.delete_area("paris")
@@ -444,8 +449,7 @@ class TestCascadeDelete:
         """Test that inflow structure is deleted when area is deleted."""
         dao = db_dao
         dao.save_area("Paris")
-        dao.save_inflow_structure(InflowStructure(inter_monthly_correlation=0.8), "paris")
-
+        dao.save_inflow_structure({"paris": InflowStructure(inter_monthly_correlation=0.8)})
         # Delete area
         dao.delete_area("paris")
 
@@ -464,13 +468,14 @@ class TestCascadeDelete:
         dao.save_area("Paris")
         dao.save_area("London")
         dao.save_hydro_allocation(
-            "paris",
-            HydroAllocation(
-                allocation=[
-                    HydroAllocationArea(area_id="paris", coefficient=0.6),
-                    HydroAllocationArea(area_id="london", coefficient=0.4),
-                ]
-            ),
+            {
+                "paris": HydroAllocation(
+                    allocation=[
+                        HydroAllocationArea(area_id="paris", coefficient=0.6),
+                        HydroAllocationArea(area_id="london", coefficient=0.4),
+                    ]
+                )
+            }
         )
 
         # Delete target area allocation row referencing it should be cascade-deleted
@@ -493,13 +498,14 @@ class TestCascadeDelete:
 
         dao.save_area("London")
         dao.save_hydro_allocation(
-            "paris",
-            HydroAllocation(
-                allocation=[
-                    HydroAllocationArea(area_id="paris", coefficient=0.6),
-                    HydroAllocationArea(area_id="london", coefficient=0.4),
-                ]
-            ),
+            {
+                "paris": HydroAllocation(
+                    allocation=[
+                        HydroAllocationArea(area_id="paris", coefficient=0.6),
+                        HydroAllocationArea(area_id="london", coefficient=0.4),
+                    ]
+                )
+            }
         )
 
         # Delete source area remaining allocation rows should be cascade-deleted
@@ -520,13 +526,14 @@ class TestCascadeDelete:
         dao.save_area("London")
         dao.save_area("Algiers")
         dao.save_hydro_correlation(
-            "paris",
-            HydroCorrelation(
-                correlation=[
-                    HydroCorrelationArea(area_id="london", coefficient=50.0),
-                    HydroCorrelationArea(area_id="algiers", coefficient=60.0),
-                ]
-            ),
+            {
+                "paris": HydroCorrelation(
+                    correlation=[
+                        HydroCorrelationArea(area_id="london", coefficient=50.0),
+                        HydroCorrelationArea(area_id="algiers", coefficient=60.0),
+                    ]
+                )
+            }
         )
 
         # Upper triangle stores: (algiers, paris, 0.6) and (london, paris, 0.5)
@@ -602,19 +609,19 @@ class TestHydroMatrices:
         df_max_daily_pump_energy, sid_max_daily_pump_energy = make([[49, 50], [51, 52]])
 
         # Save all matrices
-        dao.save_hydro_maxpower("paris", sid_maxpower)
-        dao.save_hydro_reservoir("paris", sid_reservoir)
-        dao.save_hydro_energy("paris", sid_energy)
-        dao.save_hydro_run_of_river("paris", sid_run_of_river)
-        dao.save_hydro_modulation("paris", sid_modulation)
-        dao.save_hydro_credit_modulations("paris", sid_credit_modulations)
-        dao.save_hydro_inflow_pattern("paris", sid_inflow_pattern)
-        dao.save_hydro_water_values("paris", sid_water_values)
-        dao.save_hydro_mingen("paris", sid_mingen)
-        dao.save_hydro_max_hourly_gen_power("paris", sid_max_hourly_gen_power)
-        dao.save_hydro_max_hourly_pump_power("paris", sid_max_hourly_pump_power)
-        dao.save_hydro_max_daily_gen_energy("paris", sid_max_daily_gen_energy)
-        dao.save_hydro_max_daily_pump_energy("paris", sid_max_daily_pump_energy)
+        dao.save_hydro_maxpower({"paris": sid_maxpower})
+        dao.save_hydro_reservoir({"paris": sid_reservoir})
+        dao.save_hydro_energy({"paris": sid_energy})
+        dao.save_hydro_run_of_river({"paris": sid_run_of_river})
+        dao.save_hydro_modulation({"paris": sid_modulation})
+        dao.save_hydro_credit_modulations({"paris": sid_credit_modulations})
+        dao.save_hydro_inflow_pattern({"paris": sid_inflow_pattern})
+        dao.save_hydro_water_values({"paris": sid_water_values})
+        dao.save_hydro_mingen({"paris": sid_mingen})
+        dao.save_hydro_max_hourly_gen_power({"paris": sid_max_hourly_gen_power})
+        dao.save_hydro_max_hourly_pump_power({"paris": sid_max_hourly_pump_power})
+        dao.save_hydro_max_daily_gen_energy({"paris": sid_max_daily_gen_energy})
+        dao.save_hydro_max_daily_pump_energy({"paris": sid_max_daily_pump_energy})
 
         # Retrieve and verify all matrices
         pl.testing.assert_frame_equal(dao.get_hydro_maxpower("paris"), df_maxpower, check_dtypes=False)
@@ -644,7 +651,7 @@ class TestHydroMatrices:
         # update
         dataframe2 = pl.DataFrame(data=[[2, 3, 4], [5, 6, 7.777]], orient="row")
         series_id2 = matrix_service.create(dataframe2)
-        dao.save_hydro_maxpower("paris", series_id2)
+        dao.save_hydro_maxpower({"paris": series_id2})
         pl.testing.assert_frame_equal(dao.get_hydro_maxpower("paris"), dataframe2, check_dtypes=False)
 
     def test_hydro_matrix_raises(self, db_dao: DatabaseStudyDao) -> None:
@@ -692,7 +699,7 @@ class TestHydroMatrices:
         ]
         for saver in savers:
             with pytest.raises(AreaNotFound):
-                saver("nonexistent", "some-matrix-id")
+                saver({"nonexistent": "some-matrix-id"})
 
     def test_cascade_delete_hydro_matrices(self, db_session: Session, db_dao: DatabaseStudyDao) -> None:
         """Test that all hydro matrices are deleted when the area is deleted."""
@@ -703,19 +710,19 @@ class TestHydroMatrices:
         series_id = matrix_service.create(pl.DataFrame(data=[[1, 2]], orient="row"))
 
         # Save a matrix in every table
-        dao.save_hydro_maxpower("paris", series_id)
-        dao.save_hydro_reservoir("paris", series_id)
-        dao.save_hydro_energy("paris", series_id)
-        dao.save_hydro_run_of_river("paris", series_id)
-        dao.save_hydro_modulation("paris", series_id)
-        dao.save_hydro_credit_modulations("paris", series_id)
-        dao.save_hydro_inflow_pattern("paris", series_id)
-        dao.save_hydro_water_values("paris", series_id)
-        dao.save_hydro_mingen("paris", series_id)
-        dao.save_hydro_max_hourly_gen_power("paris", series_id)
-        dao.save_hydro_max_hourly_pump_power("paris", series_id)
-        dao.save_hydro_max_daily_gen_energy("paris", series_id)
-        dao.save_hydro_max_daily_pump_energy("paris", series_id)
+        dao.save_hydro_maxpower({"paris": series_id})
+        dao.save_hydro_reservoir({"paris": series_id})
+        dao.save_hydro_energy({"paris": series_id})
+        dao.save_hydro_run_of_river({"paris": series_id})
+        dao.save_hydro_modulation({"paris": series_id})
+        dao.save_hydro_credit_modulations({"paris": series_id})
+        dao.save_hydro_inflow_pattern({"paris": series_id})
+        dao.save_hydro_water_values({"paris": series_id})
+        dao.save_hydro_mingen({"paris": series_id})
+        dao.save_hydro_max_hourly_gen_power({"paris": series_id})
+        dao.save_hydro_max_hourly_pump_power({"paris": series_id})
+        dao.save_hydro_max_daily_gen_energy({"paris": series_id})
+        dao.save_hydro_max_daily_pump_energy({"paris": series_id})
 
         dao.delete_area("paris")
 
@@ -762,10 +769,10 @@ class TestConvertHydroPmax:
         matrix_service = dao._matrix_service
         custom_hourly = matrix_service.create(pl.DataFrame({"0": [1.0, 2.0, 3.0]}))
         custom_daily = matrix_service.create(pl.DataFrame({"0": [99.0] * 365}))
-        dao.save_hydro_max_hourly_gen_power("paris", custom_hourly)
-        dao.save_hydro_max_hourly_pump_power("paris", custom_hourly)
-        dao.save_hydro_max_daily_gen_energy("paris", custom_daily)
-        dao.save_hydro_max_daily_pump_energy("paris", custom_daily)
+        dao.save_hydro_max_hourly_gen_power({"paris": custom_hourly})
+        dao.save_hydro_max_hourly_pump_power({"paris": custom_hourly})
+        dao.save_hydro_max_daily_gen_energy({"paris": custom_daily})
+        dao.save_hydro_max_daily_pump_energy({"paris": custom_daily})
 
         # Converting to HOURLY again is a no-op: custom values must be preserved
         dao.convert_hydro_pmax(HydroPmax.HOURLY)

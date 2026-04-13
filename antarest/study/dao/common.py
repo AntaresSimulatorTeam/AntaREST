@@ -11,6 +11,10 @@
 # This file is part of the Antares project.
 from typing import TypeAlias
 
+# TODO: It would be better to :
+#  - Use `NewType` instead of `TypeAlias`
+#  - Move these definitions inside their corresponding models.
+
 AreaId: TypeAlias = str
 ThermalId: TypeAlias = str
 RenewableId: TypeAlias = str
@@ -19,3 +23,4 @@ SeriesId: TypeAlias = str
 ThermalSeriesMapping: TypeAlias = dict[AreaId, dict[ThermalId, SeriesId]]
 RenewableSeriesMapping: TypeAlias = dict[AreaId, dict[RenewableId, SeriesId]]
 AreaSeriesMapping: TypeAlias = dict[AreaId, SeriesId]
+LinkSeriesMapping: TypeAlias = dict[tuple[AreaId, AreaId], SeriesId]
