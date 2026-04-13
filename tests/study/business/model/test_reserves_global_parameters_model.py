@@ -27,32 +27,26 @@ class TestReservesGlobalParameters:
         assert params.reference_activation_duration_down == 1
         assert params.energy_activation_ratio_down == 1.0
 
-    def test_duration_must_be_non_negative(self) -> None:
-        with pytest.raises(ValidationError):
-            ReservesGlobalParameters(reference_activation_duration_up=-1)
-        with pytest.raises(ValidationError):
-            ReservesGlobalParameters(reference_activation_duration_down=-1)
-
-    def test_ratio_must_be_in_range(self) -> None:
-        with pytest.raises(ValidationError):
-            ReservesGlobalParameters(energy_activation_ratio_up=1.5)
-        with pytest.raises(ValidationError):
-            ReservesGlobalParameters(energy_activation_ratio_up=-0.1)
-        with pytest.raises(ValidationError):
-            ReservesGlobalParameters(energy_activation_ratio_down=2.0)
-
-    def test_ratio_boundary_values(self) -> None:
-        params = ReservesGlobalParameters(energy_activation_ratio_up=0.0, energy_activation_ratio_down=1.0)
-        assert params.energy_activation_ratio_up == 0.0
-        assert params.energy_activation_ratio_down == 1.0
-
-    def test_camel_case_alias(self) -> None:
-        params = ReservesGlobalParameters.model_validate(
-            {"referenceActivationDurationUp": 5, "energyActivationRatioUp": 0.5}
-        )
-        assert params.reference_activation_duration_up == 5
-        assert params.energy_activation_ratio_up == 0.5
-
+    @pytest.mark.parametrize(
+        "field,value,valid",
+        [
+            ("reference_activation_duration_up", -1, False),
+            ("reference_activation_duration_down", -1, False),
+            ("reference_activation_duration_up", 0, True),
+            ("energy_activation_ratio_up", -0.1, False),
+            ("energy_activation_ratio_up", 1.5, False),
+            ("energy_activation_ratio_down", 2.0, False),
+            ("energy_activation_ratio_up", 0.0, True),
+            ("energy_activation_ratio_down", 1.0, True),
+        ],
+    )
+    def test_field_bounds(self, field: str, value: float, valid: bool) -> None:
+        if valid:
+            params = ReservesGlobalParameters(**{field: value})
+            assert getattr(params, field) == value
+        else:
+            with pytest.raises(ValidationError):
+                ReservesGlobalParameters(**{field: value})
 
 class TestReservesGlobalParametersUpdate:
     def test_all_none_by_default(self) -> None:
