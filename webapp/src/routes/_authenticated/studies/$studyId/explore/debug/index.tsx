@@ -42,7 +42,6 @@ function Debug() {
   // Allow to keep expanded items when the tree is reloaded with `reloadTree`
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const { path } = Route.useSearch();
-  const navigate = Route.useNavigate();
 
   const treeDataResponse = usePromiseWithSnackbarError(() => getTreeData(study.id), {
     errorMessage: t("studies.error.retrieveData"),
@@ -53,13 +52,10 @@ function Debug() {
 
   const contextValue = useMemo(
     () => ({
-      setPathSearchParam: (path: string | undefined) => {
-        navigate({ search: { path } });
-      },
       isTreeLoading,
       reloadTree,
     }),
-    [navigate, isTreeLoading, reloadTree],
+    [isTreeLoading, reloadTree],
   );
 
   // Update the selected file when the `path` URL parameter or the tree data change
