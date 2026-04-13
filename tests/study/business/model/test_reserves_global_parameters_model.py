@@ -48,6 +48,7 @@ class TestReservesGlobalParameters:
             with pytest.raises(ValidationError):
                 ReservesGlobalParameters(**{field: value})
 
+
 class TestReservesGlobalParametersUpdate:
     def test_all_none_by_default(self) -> None:
         update = ReservesGlobalParametersUpdate()
