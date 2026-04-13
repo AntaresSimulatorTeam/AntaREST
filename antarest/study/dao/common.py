@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from typing import TypeAlias
 
+from antarest.study.business.model.area_model import AreaUI
 from antarest.study.business.model.binding_constraint_model import ConstraintId
 
 # TODO: It would be better to :
@@ -21,9 +22,11 @@ AreaId: TypeAlias = str
 ThermalId: TypeAlias = str
 RenewableId: TypeAlias = str
 SeriesId: TypeAlias = str
+LayerId: TypeAlias = str
 
 ThermalSeriesMapping: TypeAlias = dict[AreaId, dict[ThermalId, SeriesId]]
 RenewableSeriesMapping: TypeAlias = dict[AreaId, dict[RenewableId, SeriesId]]
 AreaSeriesMapping: TypeAlias = dict[AreaId, SeriesId]
 LinkSeriesMapping: TypeAlias = dict[tuple[AreaId, AreaId], SeriesId]
 BindingConstraintSeriesMapping: TypeAlias = dict[ConstraintId, SeriesId]
+AreaUiMapping: TypeAlias = dict[AreaId, dict[LayerId, AreaUI]]

@@ -99,7 +99,7 @@ class UpdateAreaUI(ICommand):
         # Apply the update: merge current values with new values
         area_ui = update_area_ui(current_ui, self.parameters)
 
-        study_data.save_area_ui(self.area_id, self.layer, area_ui)
+        study_data.save_area_ui({self.area_id: {self.layer: area_ui}})
         return command_succeeded(message=f"area '{self.area_id}' UI updated", result=area_ui)
 
     @override

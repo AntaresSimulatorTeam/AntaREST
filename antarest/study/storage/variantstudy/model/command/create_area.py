@@ -70,7 +70,7 @@ class CreateArea(ICommand):
         if self.study_version >= STUDY_VERSION_8_3:
             area_properties.adequacy_patch_mode = AdequacyPatchMode.OUTSIDE
         study_data.save_area_properties(area_id, area_properties)
-        study_data.save_area_ui(area_id, layer=DEFAULT_LAYER_ID, area_ui=AreaUI())
+        study_data.save_area_ui({area_id: {DEFAULT_LAYER_ID: AreaUI()}})
 
         # Hydro
         allocation = HydroAllocation(allocation=[HydroAllocationArea(area_id=area_id, coefficient=1)])

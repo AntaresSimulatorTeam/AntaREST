@@ -22,6 +22,7 @@ from antarest.study.business.model.sts_model import STStorage, STStorageAddition
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
+from antarest.study.dao.common import AreaUiMapping
 from antarest.study.model import (
     STUDY_VERSION_6_5,
     STUDY_VERSION_8_1,
@@ -179,18 +180,21 @@ class StudyConverter:
         # Hydro
         self._convert_hydro()
 
-        for area_id in area_properties:
-            # Properties
-            self._new_dao.save_area_properties(area_id, area_properties[area_id])
-
-            # Ui
-            source_ui = areas_ui[area_id]
+        # Ui
+        new_ui: AreaUiMapping = {}
+        for area_id, source_ui in areas_ui.items():
+            new_ui[area_id] = {}
             for layer, x in source_ui.layer_x.items():
                 y = source_ui.layer_y[layer]
                 color = source_ui.layer_color[layer]
                 r, g, b = (int(c) for c in color.strip(" ").split(","))
                 area_ui = AreaUI(x=x, y=y, color_rgb=(r, g, b))
-                self._new_dao.save_area_ui(area_id, layer, area_ui)
+                new_ui[area_id][layer] = area_ui
+        self._new_dao.save_area_ui(new_ui)
+
+        for area_id in area_properties:
+            # Properties
+            self._new_dao.save_area_properties(area_id, area_properties[area_id])
 
             # Short-term storages
             if self._study_version >= STUDY_VERSION_8_6:

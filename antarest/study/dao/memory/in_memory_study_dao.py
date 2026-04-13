@@ -73,6 +73,7 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.common import (
     AreaId,
     AreaSeriesMapping,
+    AreaUiMapping,
     BindingConstraintSeriesMapping,
     LinkSeriesMapping,
     RenewableSeriesMapping,
@@ -1285,11 +1286,13 @@ class InMemoryStudyDao(StudyDao):
         self._area_ui.pop(area_id, None)
 
     @override
-    def save_area_ui(self, area_id: str, layer: str, area_ui: AreaUI) -> None:
-        if area_id not in self._area_names:
-            raise AreaNotFound(area_id)
+    def save_area_ui(self, data: AreaUiMapping) -> None:
+        for area_id, value in data.items():
+            if area_id not in self._area_names:
+                raise AreaNotFound(area_id)
 
-        self._area_ui[area_id] = area_ui
+            # The memory dao ignores layers
+            self._area_ui[area_id] = next(iter(value.values()))
 
     @override
     def save_layer_areas(self, layer_id: str, area_ids: list[str]) -> None:

@@ -30,7 +30,7 @@ from antarest.core.exceptions import AreaNotFound, LayerNotFound
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_dao import AreaDao
-from antarest.study.dao.common import AreaSeriesMapping
+from antarest.study.dao.common import AreaSeriesMapping, AreaUiMapping
 from antarest.study.dao.database.common import (
     get_all_area_matrices,
     save_area_matrix,
@@ -47,7 +47,7 @@ from antarest.study.dao.database.models.area import (
     WIND_TABLE,
 )
 from antarest.study.dao.database.models.district import DISTRICT_TABLE
-from antarest.study.dao.database.sql_utils import upsert_one
+from antarest.study.dao.database.sql_utils import upsert_multiple
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 if TYPE_CHECKING:
@@ -293,43 +293,43 @@ class DatabaseAreaDao(AreaDao):
         session.commit()
 
     @override
-    def save_area_ui(self, area_id: str, layer: str, area_ui: AreaUI) -> None:
-        """
-        Save an area's UI properties (position and color) for a specific layer.
-
-        Args:
-            area_id: The area identifier.
-            layer: The layer identifier (typically "0", "1", etc.).
-            area_ui: The UI properties to save (x, y, color_rgb).
-
-        Raises:
-            AreaNotFound: If the area does not exist.
-            LayerNotFound: If the layer does not exist.
-        """
+    def save_area_ui(self, data: AreaUiMapping) -> None:
         study_id = self.get_study_id()
         session = self.get_session()
 
         # Set values
-        r, g, b = area_ui.color_rgb
-        values = {
-            "study_id": study_id,
-            "area_id": area_id,
-            "layer_id": layer,
-            "x": area_ui.x,
-            "y": area_ui.y,
-            "color_r": r,
-            "color_g": g,
-            "color_b": b,
-        }
+        values = []
+        for area_id, value in data.items():
+            for layer, area_ui in value.items():
+                r, g, b = area_ui.color_rgb
+                values.append(
+                    {
+                        "study_id": study_id,
+                        "area_id": area_id,
+                        "layer_id": layer,
+                        "x": area_ui.x,
+                        "y": area_ui.y,
+                        "color_r": r,
+                        "color_g": g,
+                        "color_b": b,
+                    }
+                )
+
         # Performs the DB request
         try:
-            upsert_one(session, AREA_UI_TABLE, values)
+            upsert_multiple(session, AREA_UI_TABLE, values)
         except IntegrityError as e:
             # Could raise for area not found or layer not found.
-            if not self.get_impl().layer_exists(layer):
-                raise LayerNotFound(layer) from e
-            else:
-                raise AreaNotFound(area_id) from e
+
+            # First check the areas
+            if invalid_areas := self.get_impl().get_invalid_area_ids(list(data)):
+                raise AreaNotFound(*invalid_areas) from e
+            # Then the layers
+            for value in data.values():
+                for layer in value:
+                    if not self.get_impl().layer_exists(layer):
+                        raise LayerNotFound(layer) from e
+
         session.commit()
 
     @override

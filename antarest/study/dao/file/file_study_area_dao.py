@@ -23,7 +23,7 @@ from antarest.core.model import JSON
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
 from antarest.study.dao.api.area_dao import AreaDao
-from antarest.study.dao.common import AreaId, AreaSeriesMapping
+from antarest.study.dao.common import AreaId, AreaSeriesMapping, AreaUiMapping
 from antarest.study.dao.file.common import get_all_area_matrices, save_area_matrices
 from antarest.study.model import (
     STUDY_VERSION_6_5,
@@ -498,12 +498,17 @@ class FileStudyAreaDao(AreaDao):
                     config.districts[id_] = set_
 
     @override
-    def save_area_ui(self, area_id: str, layer: str, area_ui: AreaUI) -> None:
-        """
-        Save an area's UI properties (position and color) for a specific layer.
-        """
+    def save_area_ui(self, data: AreaUiMapping) -> None:
         study_data = self.get_file_study()
-        current_area = study_data.tree.get(["input", "areas", area_id, "ui"])
+        for area_id, value in data.items():
+            current_area = study_data.tree.get(["input", "areas", area_id, "ui"])
+            for layer, area_ui in value.items():
+                current_area = self._fill_area_ui(current_area, layer, area_ui)
+
+            study_data.tree.save(current_area, ["input", "areas", area_id, "ui"])
+
+    @staticmethod
+    def _fill_area_ui(current_area: dict[str, Any], layer: str, area_ui: AreaUI) -> dict[str, Any]:
         layer_int = int(layer)
 
         # Initialize sections if missing (happens when creating the area)
@@ -528,7 +533,7 @@ class FileStudyAreaDao(AreaDao):
             current_area["ui"]["color_g"] = g
             current_area["ui"]["color_b"] = b
 
-        study_data.tree.save(current_area, ["input", "areas", area_id, "ui"])
+        return current_area
 
     @staticmethod
     def _get_area_layers(area_uis: dict[str, Any], area: str) -> list[str]:
