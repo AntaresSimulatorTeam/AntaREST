@@ -231,7 +231,8 @@ class FileStudyAreaDao(AreaDao):
         study_data = self.get_file_study()
         return get_all_area_matrices(self.get_impl(), study_data, _get_wind_matrix_path)
 
-    def _save_area(self, area_name: str) -> None:
+    @override
+    def save_area(self, area_name: str) -> None:
         """
         Create a new area in the study with all necessary files and configurations.
         """
@@ -262,7 +263,7 @@ class FileStudyAreaDao(AreaDao):
     @override
     def save_areas_with_properties(self, data: dict[AreaName, AreaProperties]) -> None:
         for area_name, properties in data.items():
-            self._save_area(area_name)
+            self.save_area(area_name)
             area_id = transform_name_to_id(area_name)
             self.get_impl().save_area_properties(area_id, properties)
 
