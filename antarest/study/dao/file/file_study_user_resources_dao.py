@@ -65,15 +65,15 @@ class FileStudyUserResourceDao(UserResourcesDao, ABC):
         user_node = cast(User, study_tree.get_node(["user"]))
 
         # First, we validate all urls
-        resource_url_mapping = {}
+        resource_url_mapping = []
         for resource in resource_data:
             url = [item for item in resource.path.parts if item]
-            resource_url_mapping[resource] = url
+            resource_url_mapping.append((url, resource))
 
             if not is_url_writeable(user_node, url):
                 raise ResourceCreationNotAllowed(f"you are not allowed to create a resource here: {resource.path}")
 
-        for resource, url in resource_url_mapping.items():
+        for url, resource in resource_url_mapping:
             content: bytes | dict[str, str] = {}
             if resource.blob_id:
                 # We need to fetch the actual content inside the blob store
