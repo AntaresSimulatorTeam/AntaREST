@@ -42,13 +42,13 @@ from antarest.output.filestudy.utils import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
     MCRoot,
-    MultipleOutputHeaders,
     QueryFileType,
     get_output_object_type,
     get_start_column,
     normalize_df_column_names,
     parse_output_file,
 )
+from antarest.output.model import MultipleOutputHeaders
 from antarest.output.utils import find_mode_dir
 from antarest.study.model import MatrixFrequency
 

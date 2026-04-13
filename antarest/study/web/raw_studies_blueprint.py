@@ -16,6 +16,8 @@ import logging
 from pathlib import Path, PurePosixPath
 from typing import Annotated, Any, Literal, TypeAlias
 
+import numpy as np
+import pandas as pd
 import polars as pl
 from fastapi import APIRouter, Body, Depends, File, HTTPException
 from fastapi.openapi.models import Example
@@ -30,8 +32,10 @@ from antarest.core.serde.matrix_export import TableExportFormat, simplify_datafr
 from antarest.core.utils.utils import sanitize_string
 from antarest.core.utils.web import APITag
 from antarest.dependencies import StudyServiceDep, auth_required
+from antarest.output.model import OutputDataFrame
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.user_model import ResourceType
+from antarest.study.service import InputMatrix
 from antarest.study.storage.df_download import export_file
 
 logger = logging.getLogger(__name__)
@@ -142,6 +146,12 @@ class MatrixFormat(EnumIgnoreCase):
             return Response(content=buffer.getvalue(), media_type="application/vnd.apache.arrow.file")
 
 
+def output_matrix_to_json(output: OutputDataFrame) -> Any:
+    df = output.data.to_pandas().astype(np.float64)
+    df.columns = pd.MultiIndex.from_tuples(output.headers)  # type: ignore
+    return df.to_json(orient="split", index=False)
+
+
 def create_raw_study_routes() -> APIRouter:
     """
     Endpoint implementation for studies management
@@ -178,10 +188,14 @@ def create_raw_study_routes() -> APIRouter:
 
         output = study_service.get_raw_content(uuid, path, depth, formatted)
 
-        if isinstance(output, pl.DataFrame):
-            if matrix_format is None:
-                matrix_format = MatrixFormat.JSON if formatted else MatrixFormat.PLAIN
-            return matrix_format.serialize_dataframe(output)
+        # Matrix formatting, depending on whether we have an input or output matrix (for backwards compat)
+        match output:
+            case InputMatrix(matrix):
+                if matrix_format is None:
+                    matrix_format = MatrixFormat.JSON if formatted else MatrixFormat.PLAIN
+                return matrix_format.serialize_dataframe(matrix)
+            case OutputDataFrame():
+                return output_matrix_to_json(output)
 
         if matrix_format in {MatrixFormat.ARROW_COMPRESSED, MatrixFormat.ARROW_UNCOMPRESSED}:
             # The user asked for a format only supported for matrices.

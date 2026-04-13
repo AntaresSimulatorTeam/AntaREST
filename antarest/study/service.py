@@ -75,6 +75,7 @@ from antarest.output.filestudy.utils import (
     QueryFileType,
     parse_raw_output_matrix_path,
 )
+from antarest.output.model import OutputDataFrame
 from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
@@ -211,6 +212,12 @@ def _get_matrix_from_path(study_interface: StudyInterface, matrix_path: Path) ->
 
 
 OutputSelection: TypeAlias = Literal["all"] | list[str]
+
+
+# Plain dataclasses to allow distinguishing both types of matrices
+@dataclass(frozen=True)
+class InputMatrix:
+    matrix: pl.DataFrame
 
 
 def get_disk_usage(path: str | Path) -> int:
@@ -651,7 +658,7 @@ class IOutputsAccess(ABC):
         frequency: MatrixFrequency,
         item_id: str,
         mc_year: int | None = None,
-    ) -> pl.DataFrame:
+    ) -> OutputDataFrame:
         raise NotImplementedError()
 
 
@@ -2860,21 +2867,7 @@ class StudyService:
 
         self.storage_service.get_storage(study).normalize_study(study)
 
-    # def _read_raw_output_matrix(
-    #     self,
-    #     uuid: str,
-    #     parsed: RawOutputMatrixQuery,
-    # ) -> pl.DataFrame:
-    #     return self._get_outputs_access().get_item_output_data(
-    #         study_id=uuid,
-    #         output_id=parsed.output_id,
-    #         query_file=parsed.query_file,
-    #         frequency=parsed.frequency,
-    #         item_id=parsed.ids_to_consider,
-    #         mc_year=parsed.mc_year,
-    #     )
-
-    def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
+    def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> InputMatrix | OutputDataFrame | Any:
         """
         Returns the content of a node based on the provided arguments.
 
@@ -2894,7 +2887,7 @@ class StudyService:
         # Try to route output matrix requests
         parsed = parse_raw_output_matrix_path(url)
         if parsed is not None:
-            return self._get_outputs_access().get_item_output_data(
+            matrix = self._get_outputs_access().get_item_output_data(
                 study_id=uuid,
                 output_id=parsed.output_id,
                 query_file=parsed.query_file,
@@ -2902,10 +2895,11 @@ class StudyService:
                 item_id=parsed.ids_to_consider,
                 mc_year=parsed.mc_year,
             )
+            return OutputDataFrame(matrix)
 
         # We need to handle matrices differently if our study is stored in DB
         if study.storage_mode == StorageMode.DATABASE:
-            return _get_matrix_from_path(self.get_study_interface(study), Path(path))
+            return InputMatrix(_get_matrix_from_path(self.get_study_interface(study), Path(path)))
 
         else:
             file_study = self.get_file_study(study)
@@ -2913,7 +2907,7 @@ class StudyService:
 
             # Return a dataframe when possible instead of less memory & computation - efficient python objects
             if isinstance(node, MatrixNode):
-                return node.parse_as_dataframe()
+                return InputMatrix(node.parse_as_dataframe())
 
             return node.get(url=relative_url, depth=depth, formatted=formatted)
 

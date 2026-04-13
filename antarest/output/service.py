@@ -66,6 +66,7 @@ from antarest.output.filestudy.utils import (
     split_concatenated_columns_from_dataframe,
 )
 from antarest.output.model import (
+    OutputDataFrame,
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesViewResponse,
@@ -694,7 +695,7 @@ class OutputService:
         frequency: MatrixFrequency,
         item_id: str,
         mc_year: int | None = None,
-    ) -> pl.DataFrame:
+    ) -> OutputDataFrame:
         self._studies_repository.assert_permission(uuid, StudyPermissionType.READ)
         mc_years = [mc_year] if mc_year is not None else None
         chunks = list(

@@ -12,6 +12,8 @@
 from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import Enum, StrEnum
+from io import StringIO
+from itertools import islice
 from pathlib import Path
 from typing import TypeAlias
 
@@ -19,6 +21,7 @@ import pandas as pd
 import polars as pl
 from polars.exceptions import ComputeError
 
+from antarest.output.model import MultipleOutputHeaders, OutputDataFrame, VarColumn
 from antarest.study.model import MatrixFrequency, MatrixIndex, TimeSerie
 
 """Column name for the Monte Carlo year."""
@@ -155,10 +158,6 @@ def parse_raw_output_matrix_path(path_parts: list[str]) -> RawOutputMatrixQuery 
     )
 
 
-SingleOutputHeaders: TypeAlias = list[str]
-MultipleOutputHeaders: TypeAlias = list[list[str]]
-
-
 def get_output_object_type(file_type: QueryFileType, is_link: bool) -> str:
     if is_link:
         return "links"
@@ -174,17 +173,13 @@ def get_output_object_type(file_type: QueryFileType, is_link: bool) -> str:
             return "areas"
 
 
-@dataclass
-class OutputDataFrame:
-    """
-    We separate the polars dataframe and its headers as polars does not handle multi-headers columns.
-    """
-
-    data: pl.DataFrame
-    headers: SingleOutputHeaders | MultipleOutputHeaders
-
-
 def normalize_df_column_names(mc_root: MCRoot, output_headers: list[list[str]]) -> list[str]:
+    """
+    For mc-ind files, only keeps the variable name.
+    For mc-all files, just concatenates the variable name and the stat name (and uppercases it ...).
+
+    TODO: should only be decided at serialization time.
+    """
     if mc_root == MCRoot.MC_IND:
         return [col[0] for col in output_headers]
     return [" ".join([col[0], col[2]]).upper().strip() for col in output_headers]
@@ -205,25 +200,19 @@ def get_start_column(frequency: MatrixFrequency) -> int:
         raise NotImplementedError(f"Unknown frequency {frequency.value}")
 
 
-def parse_headers(content: str, start_col: int) -> MultipleOutputHeaders:
-    lines = content.splitlines()
-    header_lines = []
-    for idx, line in enumerate(lines[4:7]):
-        cols = line.split("\t")[start_col:]
-        if idx == 0:
+def parse_headers(content: str, start_col: int) -> list[VarColumn]:
+    header_lines: list[list[str]] = []
+    for line in islice(StringIO(content), 4, 7):  # Note: avoids to split the whole file
+        cols = [s.strip() for s in line.split("\t")[start_col:]]
+        if not header_lines:
             header_lines = [[col] for col in cols]
         else:
             for k, col in enumerate(cols):
                 header_lines[k].append(col)
-
-    return header_lines
-
-
-def concatenate_dataframe_multi_indexed_columns(data: OutputDataFrame) -> None:
-    """
-    Used inside Imagrid endpoint as we want to keep the unit of the column but pyarrow doesn't handle MultiIndex.
-    """
-    data.headers = [" % ".join(col) for col in data.headers]
+    return [
+        VarColumn(variable=col[0], unit=col[1] if len(col) > 1 else "", stat=col[2] if len(col) > 2 else "")
+        for col in header_lines
+    ]
 
 
 def split_concatenated_columns_from_dataframe(df: pd.DataFrame) -> Iterator[TimeSerie]:
@@ -241,16 +230,18 @@ def add_time_index_to_dataframe(df: pd.DataFrame, matrix_index: MatrixIndex) -> 
     df.index = time_column
 
 
-def _parse_output_dataframe(file_path: Path) -> pl.DataFrame:
+def _parse_output_dataframe(content: str) -> pl.DataFrame:
     try:
-        return pl.read_csv(file_path, skip_lines=7, separator="\t", has_header=False, null_values="N/A", n_threads=1)
+        return pl.read_csv(
+            StringIO(content), skip_lines=7, separator="\t", has_header=False, null_values="N/A", n_threads=1
+        )
     except ComputeError:
         # Happens if polars wrongly inferred the schema.
         # If so, we specify that it should read the entire file to be sure it doesn't infer a false schema.
         # It's significantly slower but it does not fail.
         # As no file is longer than 10.000 rows we use this value.
         return pl.read_csv(
-            file_path,
+            StringIO(content),
             skip_lines=7,
             separator="\t",
             has_header=False,
@@ -263,7 +254,7 @@ def _parse_output_dataframe(file_path: Path) -> pl.DataFrame:
 def parse_output_file(file_path: Path, first_column: int) -> OutputDataFrame:
     content = file_path.read_text(encoding="utf-8")
     output_headers = parse_headers(content, first_column)
-    polars_df = _parse_output_dataframe(file_path)
+    polars_df = _parse_output_dataframe(content)
 
     df = polars_df[polars_df.columns[first_column:]]
 
