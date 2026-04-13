@@ -112,6 +112,22 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         return self.get_impl().get_matrix(_get_equal_term_matrix_path(constraint_id))
 
     @override
+    def get_all_constraint_values_matrix(self) -> BindingConstraintSeriesMapping:
+        return self.get_all_bc_matrices(_get_values_matrix_path)
+
+    @override
+    def get_all_constraint_less_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self.get_all_bc_matrices(_get_less_term_matrix_path)
+
+    @override
+    def get_all_constraint_greater_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self.get_all_bc_matrices(_get_greater_term_matrix_path)
+
+    @override
+    def get_all_constraint_equal_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self.get_all_bc_matrices(_get_equal_term_matrix_path)
+
+    @override
     def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
         """This method can be called to save new constraints or to update existing ones."""
         study_data = self.get_file_study()

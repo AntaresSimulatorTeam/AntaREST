@@ -44,6 +44,22 @@ class ReadOnlyConstraintDao(ABC):
     def get_constraint_equal_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_all_constraint_values_matrix(self) -> BindingConstraintSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_constraint_less_term_matrix(self) -> BindingConstraintSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_constraint_greater_term_matrix(self) -> BindingConstraintSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_constraint_equal_term_matrix(self) -> BindingConstraintSeriesMapping:
+        raise NotImplementedError()
+
 
 class ConstraintDao(ReadOnlyConstraintDao):
     @abstractmethod

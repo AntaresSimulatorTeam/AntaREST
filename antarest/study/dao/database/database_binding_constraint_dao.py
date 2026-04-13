@@ -263,6 +263,29 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         return self._get_bc_matrix(constraint_id, BINDING_CONSTRAINT_EQ_MATRIX_TABLE)
 
     @override
+    def get_all_constraint_values_matrix(self) -> BindingConstraintSeriesMapping:
+        return self.get_all_bc_matrices(BINDING_CONSTRAINT_VALUES_MATRIX_TABLE)
+
+    @override
+    def get_all_constraint_less_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self.get_all_bc_matrices(BINDING_CONSTRAINT_LT_MATRIX_TABLE)
+
+    @override
+    def get_all_constraint_greater_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self.get_all_bc_matrices(BINDING_CONSTRAINT_GT_MATRIX_TABLE)
+
+    @override
+    def get_all_constraint_equal_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self.get_all_bc_matrices(BINDING_CONSTRAINT_EQ_MATRIX_TABLE)
+
+    def get_all_bc_matrices(self, table: Table) -> BindingConstraintSeriesMapping:
+        study_id = self._study_id
+        session = self._db_session
+        stmt = select(table).where((table.c.study_id == study_id))
+        rows = session.execute(stmt).fetchall()
+        return {row.constraint_id: row.matrix_id for row in rows}
+
+    @override
     def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
         if not constraints:
             return  # avoid making unnecessary database calls

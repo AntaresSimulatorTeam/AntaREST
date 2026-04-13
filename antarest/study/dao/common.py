@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import NewType, TypeAlias
+from typing import TypeAlias
 
 from antarest.study.business.model.scenario_builder_model import ConstraintId
 

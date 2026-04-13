@@ -177,10 +177,10 @@ class InMemoryStudyDao(StudyDao):
         self._st_storages_constraints_terms: dict[str, dict[str, str]] = {}
         # Binding constraints
         self._constraints: dict[ConstraintId, BindingConstraint] = {}
-        self._constraints_values_matrix: dict[ConstraintId, str] = {}
-        self._constraints_less_term_matrix: dict[ConstraintId, str] = {}
-        self._constraints_greater_term_matrix: dict[ConstraintId, str] = {}
-        self._constraints_equal_term_matrix: dict[ConstraintId, str] = {}
+        self._constraints_values_matrix: BindingConstraintSeriesMapping = {}
+        self._constraints_less_term_matrix: BindingConstraintSeriesMapping = {}
+        self._constraints_greater_term_matrix: BindingConstraintSeriesMapping = {}
+        self._constraints_equal_term_matrix: BindingConstraintSeriesMapping = {}
         # General config
         self._general_config: GeneralConfig = GeneralConfig()
         # Optimization preferences config
@@ -763,6 +763,22 @@ class InMemoryStudyDao(StudyDao):
     def get_constraint_equal_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         matrix_id = self._constraints_equal_term_matrix[constraint_id]
         return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_all_constraint_values_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._constraints_values_matrix
+
+    @override
+    def get_all_constraint_less_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._constraints_less_term_matrix
+
+    @override
+    def get_all_constraint_greater_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._constraints_greater_term_matrix
+
+    @override
+    def get_all_constraint_equal_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._constraints_equal_term_matrix
 
     @override
     def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
