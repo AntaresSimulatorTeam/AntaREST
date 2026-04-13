@@ -22,15 +22,6 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.reserves.reserv
 
 
 class InputReservesAreaFolder(FolderNode):
-    """Folder node for a single area's reserves: input/reserves/{area_id}/
-
-    For version >= 10.0, both the legacy matrix (input/reserves/{area_id}.txt)
-    and the new reserves.ini (input/reserves/{area_id}/reserves.ini) coexist.
-    When accessed directly via get_node(), returns the matrix node so that
-    existing matrix reading code (get_matrix, raw_path_to_matrix_mapper) keeps working.
-    When navigated deeper (e.g. ["reserves"]), delegates to folder children.
-    """
-
     def __init__(
         self,
         matrix_mapper: MatrixUriMapper,
