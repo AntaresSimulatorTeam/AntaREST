@@ -209,7 +209,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
         for node, matrix_id in matrices_mapping.items():
             constraint_id = matrix_nodes[node]
-            result[constraint_id] = constraint_id
+            result[constraint_id] = matrix_id
 
         return result
 

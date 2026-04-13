@@ -17,6 +17,7 @@ from pathlib import Path
 import polars as pl
 
 from antarest.core.exceptions import IncorrectPathError
+from antarest.study.business.model.binding_constraint_model import ConstraintId
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_2, STUDY_VERSION_8_7
@@ -122,16 +123,16 @@ class RawPathToMatrixMapper:
             dao.save_hydro_max_daily_pump_energy({area_id: series_id})
 
         def _save_constraint_values_matrix(constraint_id: str, series_id: str) -> None:
-            dao.save_constraint_values_matrix({constraint_id: series_id})
+            dao.save_constraint_values_matrix({ConstraintId(constraint_id): series_id})
 
         def _save_constraint_less_term_matrix(constraint_id: str, series_id: str) -> None:
-            dao.save_constraint_less_term_matrix({constraint_id: series_id})
+            dao.save_constraint_less_term_matrix({ConstraintId(constraint_id): series_id})
 
         def _save_constraint_equal_term_matrix(constraint_id: str, series_id: str) -> None:
-            dao.save_constraint_equal_term_matrix({constraint_id: series_id})
+            dao.save_constraint_equal_term_matrix({ConstraintId(constraint_id): series_id})
 
         def _save_constraint_greater_term_matrix(constraint_id: str, series_id: str) -> None:
-            dao.save_constraint_greater_term_matrix({constraint_id: series_id})
+            dao.save_constraint_greater_term_matrix({ConstraintId(constraint_id): series_id})
 
         self._path_matchers = [
             RegexMatcher(

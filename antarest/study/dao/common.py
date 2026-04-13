@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing import TypeAlias
 
-from antarest.study.business.model.scenario_builder_model import ConstraintId
+from antarest.study.business.model.binding_constraint_model import ConstraintId
 
 # TODO: It would be better to :
 #  - Use `NewType` instead of `TypeAlias`
