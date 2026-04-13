@@ -226,7 +226,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         return self.get_impl().get_matrix(row.matrix_id)
 
     def _raise_the_right_binding_constraint_exception(
-        self, bc_ids: set[ConstraintId], exc: IntegrityError | None = None
+        self, bc_ids: set[str], exc: IntegrityError | None = None
     ) -> None:
         # Checks if some binding constraints do not exist
         all_constraints = set(self.get_all_constraints())
