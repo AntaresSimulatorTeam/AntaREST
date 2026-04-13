@@ -121,6 +121,18 @@ class RawPathToMatrixMapper:
         def _save_hydro_max_daily_pump_energy(area_id: str, series_id: str) -> None:
             dao.save_hydro_max_daily_pump_energy({area_id: series_id})
 
+        def _save_constraint_values_matrix(constraint_id: str, series_id: str) -> None:
+            dao.save_constraint_values_matrix({constraint_id: series_id})
+
+        def _save_constraint_less_term_matrix(constraint_id: str, series_id: str) -> None:
+            dao.save_constraint_less_term_matrix({constraint_id: series_id})
+
+        def _save_constraint_equal_term_matrix(constraint_id: str, series_id: str) -> None:
+            dao.save_constraint_equal_term_matrix({constraint_id: series_id})
+
+        def _save_constraint_greater_term_matrix(constraint_id: str, series_id: str) -> None:
+            dao.save_constraint_greater_term_matrix({constraint_id: series_id})
+
         self._path_matchers = [
             RegexMatcher(
                 pattern=re.compile(r"user/expansion/capa/(?P<filename>[^/]+)"),
@@ -351,7 +363,7 @@ class RawPathToMatrixMapper:
                 RegexMatcher(
                     pattern=re.compile(r"input/bindingconstraints/(?P<constraint_id>[^/]+)"),
                     getter=dao.get_constraint_values_matrix,
-                    setter=dao.save_constraint_values_matrix,
+                    setter=_save_constraint_values_matrix,
                 )
             )
         else:
@@ -360,17 +372,17 @@ class RawPathToMatrixMapper:
                     RegexMatcher(
                         pattern=re.compile(r"input/bindingconstraints/(?P<constraint_id>[^/]+)_lt"),
                         getter=dao.get_constraint_less_term_matrix,
-                        setter=dao.save_constraint_less_term_matrix,
+                        setter=_save_constraint_less_term_matrix,
                     ),
                     RegexMatcher(
                         pattern=re.compile(r"input/bindingconstraints/(?P<constraint_id>[^/]+)_gt"),
                         getter=dao.get_constraint_greater_term_matrix,
-                        setter=dao.save_constraint_greater_term_matrix,
+                        setter=_save_constraint_greater_term_matrix,
                     ),
                     RegexMatcher(
                         pattern=re.compile(r"input/bindingconstraints/(?P<constraint_id>[^/]+)_eq"),
                         getter=dao.get_constraint_equal_term_matrix,
-                        setter=dao.save_constraint_equal_term_matrix,
+                        setter=_save_constraint_equal_term_matrix,
                     ),
                 ]
             )
