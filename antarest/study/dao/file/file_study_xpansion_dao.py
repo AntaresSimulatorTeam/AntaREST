@@ -267,10 +267,14 @@ class FileStudyXpansionDao(XpansionDao, ABC):
 
     def _get_all_resources(self, url: list[str]) -> dict[str, str]:
         file_study = self.get_file_study()
-        folder_node = file_study.tree.get_node(url)
+        try:
+            folder_node = file_study.tree.get_node(url)
+        except ChildNotFoundError:
+            return {}
         node_mapping = {}
         for file_name in folder_node.get():
-            node = folder_node.get(file_name)
+            node = folder_node.get_node([file_name])
+            assert isinstance(node, MatrixNode)
             node_mapping[node] = file_name
 
         result = {}
