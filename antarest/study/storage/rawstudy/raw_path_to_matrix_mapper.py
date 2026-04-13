@@ -403,8 +403,6 @@ class RawPathToMatrixMapper:
         raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 
     def get_matrix_from_path(self, path: Path) -> pl.DataFrame:
-        # todo: we do not support outputs matrices for the moment
-
         matcher, match = self._get_matcher(path)
         return matcher.getter(**match.groupdict())
 
