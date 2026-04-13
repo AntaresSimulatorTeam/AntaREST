@@ -26,4 +26,4 @@ ThermalSeriesMapping: TypeAlias = dict[AreaId, dict[ThermalId, SeriesId]]
 RenewableSeriesMapping: TypeAlias = dict[AreaId, dict[RenewableId, SeriesId]]
 AreaSeriesMapping: TypeAlias = dict[AreaId, SeriesId]
 LinkSeriesMapping: TypeAlias = dict[tuple[AreaId, AreaId], SeriesId]
-BindingConstraintSeriesMapping = NewType("BindingConstraintSeriesMapping", dict[ConstraintId, SeriesId])
+BindingConstraintSeriesMapping: TypeAlias = dict[ConstraintId, SeriesId]
