@@ -17,7 +17,7 @@ import polars as pl
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
-from antarest.core.exceptions import BindingConstraintNotFound
+from antarest.core.exceptions import BindingConstraintNotFound, ChildNotFoundError
 from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.business.model.binding_constraint_model import (
     OPERATOR_MATRICES_MAP,
@@ -195,7 +195,11 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         for bc in bindings:
             constraint_id = bc.id
             url = url_getter(constraint_id)
-            node = study_data.tree.get_node(url)
+            try:
+                node = study_data.tree.get_node(url)
+            except ChildNotFoundError:
+                # Can happen according to the version or the constraint operator
+                continue
             assert isinstance(node, MatrixNode)
             matrix_nodes[node] = constraint_id
 
