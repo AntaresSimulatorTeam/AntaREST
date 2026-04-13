@@ -1,7 +1,7 @@
 """add_reserves_global_parameters_table
 
 Revision ID: c61baf008ebd
-Revises: 444b392eeaa6
+Revises: 934d3eb1ebcf
 Create Date: 2026-04-09 10:00:00.000000
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "c61baf008ebd"
-down_revision = "444b392eeaa6"
+down_revision = "934d3eb1ebcf"
 branch_labels = None
 depends_on = None
 
