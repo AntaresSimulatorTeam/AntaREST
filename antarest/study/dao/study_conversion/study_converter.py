@@ -14,6 +14,7 @@ from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import ChildNotFoundError, XpansionConfigurationDoesNotExist
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.area_model import AreaUI
 from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import (
@@ -183,6 +184,14 @@ class StudyConverter:
         new_ui: AreaUiMapping = {}
         for area_id, source_ui in areas_ui.items():
             new_ui[area_id] = {}
+            for layer, x in source_ui.layer_x.items():
+                y = source_ui.layer_y[layer]
+                color = source_ui.layer_color[layer]
+                r, g, b = (int(c) for c in color.strip(" ").split(","))
+                area_ui = AreaUI(x=x, y=y, color_rgb=(r, g, b))
+                new_ui[area_id][layer] = area_ui
+        self._new_dao.save_area_ui(new_ui)
+
         # Short-term storages
         if st_storages:
             self._convert_short_term_storages(st_storages, st_storages_constraints)
