@@ -24,15 +24,16 @@ from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.area import AREA_TABLE, AREA_UI_TABLE
+from tests.study.dao.conftest import create_area
 from tests.study.dao.utils import save_area
 
 
-def test_save_area_creates_area_with_default_ui(db_session: Session, db_dao: DatabaseStudyDao) -> None:
+def test_create_area_with_default_ui(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     """
-    Test that save_area creates a new area with default UI for layer '0'.
+    Test that the `CreateArea` command creates a new area with the default UI for layer '0'.
     """
     dao = db_dao
-    save_area(dao, "Paris")
+    create_area("Paris", dao)
 
     study_id = dao.get_study_id()
 
@@ -223,8 +224,8 @@ def test_get_all_areas_ui_info_returns_all_layers(db_dao: DatabaseStudyDao) -> N
     Test that get_all_areas_ui_info returns UI data for all areas and layers.
     """
     dao = db_dao
-    save_area(dao, "Paris")
-    save_area(dao, "London")
+    create_area("Paris", dao)
+    create_area("London", dao)
     dao.save_layer(Layer(id="1", name="Layer 1"))
     dao.save_layer(Layer(id="2", name="Layer 2"))
 

@@ -21,6 +21,7 @@ from antares.study.version import StudyVersion
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from antarest.blobstore.service import IBlobService
 from antarest.core.interfaces.cache import ICache
 from antarest.dbmodel import Base
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
@@ -42,6 +43,7 @@ from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3, StorageMode
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import create_study
 from tests.study.dao.utils import save_area
@@ -396,3 +398,14 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
         bc_eq_id=bc_equal_id,
         dataframes=dataframes,
     )
+
+
+def create_area(area_name: str, dao: StudyDao) -> None:
+    constants = dao.generator_matrix_constants
+    command_context = CommandContext(
+        generator_matrix_constants=constants, matrix_service=dao.matrix_service, blob_service=Mock(spec=IBlobService)
+    )
+
+    command = CreateArea(area_name=area_name, command_context=command_context, study_version=dao.get_version())
+    output = command.apply(dao)
+    assert output.status
