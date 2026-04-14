@@ -87,7 +87,7 @@ EXPECTED_STORAGES = {
 
 
 @pytest.fixture
-def manager(matrix_service: ISimpleMatrixService, command_context: CommandContext) -> STStorageManager:
+def manager(command_context: CommandContext) -> STStorageManager:
     return STStorageManager(command_context)
 
 
@@ -150,7 +150,7 @@ def _set_up_study(study: StudyInterface, command_context: CommandContext) -> Non
 def study_interface(
     matrix_service: ISimpleMatrixService, empty_study_930: FileStudy, command_context: CommandContext
 ) -> StudyInterface:
-    study_interface = file_study_interface(empty_study_930)
+    study_interface = file_study_interface(empty_study_930, matrix_service)
     _set_up_study(study_interface, command_context)
     return study_interface
 
