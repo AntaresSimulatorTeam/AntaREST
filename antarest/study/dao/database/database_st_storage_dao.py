@@ -24,7 +24,12 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.core.exceptions import AreaNotFound, STStorageAdditionalConstraintNotFound, STStorageNotFound
+from antarest.core.exceptions import (
+    AreaNotFound,
+    STStorageAdditionalConstraintNotFound,
+    STStorageNotFound,
+    STStoragesNotFound,
+)
 from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
@@ -108,12 +113,31 @@ class DatabaseStStorageDao(STStorageDao):
         return STStorageAdditionalConstraint(**data)
 
     def _raise_the_right_storage_exception(
-        self, area_id: str, storage_id: str, exc: IntegrityError | None = None
+        self, data: dict[AreaId, list[StStorageId]], exc: IntegrityError | None = None
     ) -> NoReturn:
-        validate_area_exists(self._db_session, self._study_id, area_id)
-        if exc:
-            raise STStorageNotFound(area_id, storage_id) from exc
-        raise STStorageNotFound(area_id, storage_id)
+        # Checks if some areas are missing
+        existing_ids = set(self.get_impl().get_all_area_ids())
+        if invalid_areas := set(data) - existing_ids:
+            raise AreaNotFound(*invalid_areas)
+
+        # Means the issue lies in the short-term storages
+        all_existing_storages = self.get_all_st_storages()
+        invalid_sts_dict = {}
+        for area_id, value in data.items():
+            if invalid_sts := set(data[area_id]) - set(all_existing_storages.get(area_id, [])):
+                invalid_sts_dict[area_id] = invalid_sts
+
+        if len(invalid_sts_dict) == 1:
+            area_id = next(iter(invalid_sts_dict))
+            if len(invalid_sts_dict[area_id]) == 1:
+                # Only one short-term storage is missing, keep the clearer exception
+                raise STStorageNotFound(area_id, next(iter(invalid_sts_dict[area_id]))) from exc
+
+        elif not invalid_sts_dict:
+            # All short-term storages exist. It means that the DB table does not contain the information.
+            raise ValueError("One of the short-term storages table is not filled as it should") from exc
+
+        raise STStoragesNotFound(invalid_sts_dict) from exc
 
     def _raise_the_right_constraint_exception(
         self, area_id: str, storage_id: str, constraint_id: str, exc: IntegrityError | None = None
@@ -184,7 +208,7 @@ class DatabaseStStorageDao(STStorageDao):
         row = session.execute(stmt).fetchone()
 
         if not row:
-            self._raise_the_right_storage_exception(area_id, storage_id)
+            self._raise_the_right_storage_exception({area_id: [storage_id]})
 
         return self._convert_db_row_to_st_storage(row)
 
@@ -214,7 +238,7 @@ class DatabaseStStorageDao(STStorageDao):
 
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
-            self._raise_the_right_storage_exception(area_id, storage.id)
+            self._raise_the_right_storage_exception({area_id: [storage.id]})
 
         session.commit()
 
@@ -282,7 +306,7 @@ class DatabaseStStorageDao(STStorageDao):
 
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
-            self._raise_the_right_storage_exception(area_id, storage_id)
+            self._raise_the_right_storage_exception({area_id: [storage_id]})
 
         session.commit()
 
@@ -494,5 +518,5 @@ class DatabaseStStorageDao(STStorageDao):
     def _get_st_storage_matrix(self, area_id: str, storage_id: str, table: Table) -> pl.DataFrame:
         row = self._get_st_storage_matrix_row(area_id, storage_id, table)
         if not row:
-            self._raise_the_right_storage_exception(area_id, storage_id)
+            self._raise_the_right_storage_exception({area_id: [storage_id]})
         return self.get_impl().get_matrix(row.matrix_id)
