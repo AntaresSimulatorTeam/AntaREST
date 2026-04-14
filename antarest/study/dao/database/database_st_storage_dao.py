@@ -112,9 +112,7 @@ class DatabaseStStorageDao(STStorageDao):
         data["id"] = data.pop("constraint_id")
         return STStorageAdditionalConstraint(**data)
 
-    def _raise_the_right_storage_exception(
-        self, data: dict[AreaId, list[StStorageId]], exc: IntegrityError | None = None
-    ) -> NoReturn:
+    def _raise_the_right_exc(self, data: dict[AreaId, list[StStorageId]], exc: IntegrityError | None = None) -> None:
         # Checks if some areas are missing
         existing_ids = set(self.get_impl().get_all_area_ids())
         if invalid_areas := set(data) - existing_ids:
@@ -133,19 +131,34 @@ class DatabaseStStorageDao(STStorageDao):
                 # Only one short-term storage is missing, keep the clearer exception
                 raise STStorageNotFound(area_id, next(iter(invalid_sts_dict[area_id]))) from exc
 
-        elif not invalid_sts_dict:
-            # All short-term storages exist. It means that the DB table does not contain the information.
-            raise ValueError("One of the short-term storages table is not filled as it should") from exc
+        elif invalid_sts_dict:
+            raise STStoragesNotFound(invalid_sts_dict) from exc
 
-        raise STStoragesNotFound(invalid_sts_dict) from exc
+    def _raise_the_right_storage_exception(
+        self, data: dict[AreaId, list[StStorageId]], exc: IntegrityError | None = None
+    ) -> NoReturn:
+        self._raise_the_right_exc(data, exc)
+
+        # All short-term storages exist. It means that the DB table does not contain the information.
+        raise ValueError("One of the short-term storages table is not filled as it should") from exc
 
     def _raise_the_right_constraint_exception(
-        self, area_id: str, storage_id: str, constraint_id: str, exc: IntegrityError | None = None
+        self, data: dict[AreaId, dict[StStorageId, str]], exc: IntegrityError | None = None
     ) -> NoReturn:
-        validate_area_exists(self._db_session, self._study_id, area_id)
-        if not self.st_storage_exists(area_id, storage_id):
-            raise STStorageNotFound(area_id, storage_id) from exc
-        raise STStorageAdditionalConstraintNotFound(area_id, constraint_id) from exc
+        sts_data = {area_id: list(storage_ids) for area_id, storage_ids in data.items()}
+        self._raise_the_right_exc(sts_data, exc)
+
+        # Means the issue lies in the additional constraints
+        constraints_dict = self.get_all_st_storage_additional_constraints()
+        for area_id, sts_dict in data.items():
+            for sts_id in sts_dict:
+                existing_ids = {c.id for c in constraints_dict[area_id][sts_id]}
+                for constraint_id in sts_dict[sts_id]:
+                    if constraint_id not in existing_ids:
+                        raise STStorageAdditionalConstraintNotFound(area_id, constraint_id) from exc
+
+        # All constraints exist. It means that the DB table does not contain the information.
+        raise ValueError("One of the short-term storages constraints table is not filled as it should") from exc
 
     @override
     def save_st_storages(self, data: dict[AreaId, list[STStorage]]) -> None:
@@ -257,7 +270,11 @@ class DatabaseStStorageDao(STStorageDao):
         try:
             upsert_multiple(session, ST_STORAGE_ADDITIONAL_CONSTRAINT_TABLE, values)
         except IntegrityError as e:
-            self._raise_the_right_constraint_exception(area_id, storage_id, constraints[0].id, e)
+            invalid_data = {
+                area_id: {sts_id: constraint.id for sts_id, constraints in v.items() for constraint in constraints}
+                for area_id, v in data.items()
+            }
+            self._raise_the_right_constraint_exception(invalid_data, e)
 
         session.commit()
 
@@ -470,7 +487,7 @@ class DatabaseStStorageDao(STStorageDao):
         )
         row = self._db_session.execute(stmt).fetchone()
         if not row:
-            self._raise_the_right_constraint_exception(area_id, storage_id, constraint_id)
+            self._raise_the_right_constraint_exception({area_id: {storage_id: constraint_id}})
         return self.get_impl().get_matrix(row.matrix_id)
 
     @override
@@ -504,7 +521,10 @@ class DatabaseStStorageDao(STStorageDao):
         try:
             upsert_multiple(session, ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE, values)
         except IntegrityError as e:
-            invalid_data = {area_id: list(st_storage_dict) for area_id, st_storage_dict in series.items()}
+            invalid_data = {
+                area_id: {sts_id: constraint_id for sts_id, constraints in v.items() for constraint_id in constraints}
+                for area_id, v in series.items()
+            }
             self._raise_the_right_constraint_exception(invalid_data, e)
 
         session.commit()
