@@ -203,17 +203,11 @@ class STStorageDao(ReadOnlySTStorageDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_constraint_matrix(
-        self, area_id: str, storage_id: str, constraint_id: str, series_id: str
-    ) -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
     def save_st_storage_additional_constraints(
         self, data: dict[AreaId, dict[StStorageId, list[STStorageAdditionalConstraint]]]
     ) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_all_st_storage_additional_constraint_matrices(self, series: StStorageConstraintSeriesMapping) -> None:
+    def save_st_storage_constraint_matrices(self, series: StStorageConstraintSeriesMapping) -> None:
         raise NotImplementedError()

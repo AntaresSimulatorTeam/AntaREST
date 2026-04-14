@@ -265,7 +265,7 @@ class StudyConverter:
             self._new_dao.save_st_storage_additional_constraints(constraints)
 
             constraint_matrices = self._source_dao.get_all_st_storage_additional_constraint_matrices()
-            self._new_dao.save_all_st_storage_additional_constraint_matrices(constraint_matrices)
+            self._new_dao.save_st_storage_constraint_matrices(constraint_matrices)
 
     def _convert_hydro(self) -> None:
         hydro_properties = self._source_dao.get_all_hydro_properties()

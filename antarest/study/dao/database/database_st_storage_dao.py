@@ -50,7 +50,7 @@ from antarest.study.dao.database.models.st_storage import (
     ST_STORAGE_TABLE,
     UPPER_RULE_CURVE_TABLE,
 )
-from antarest.study.dao.database.sql_utils import upsert_multiple, upsert_one
+from antarest.study.dao.database.sql_utils import upsert_multiple
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -434,24 +434,6 @@ class DatabaseStStorageDao(STStorageDao):
         return self._get_all_sts_matrix(COST_VARIATION_WITHDRAWAL_TABLE)
 
     @override
-    def save_st_storage_constraint_matrix(
-        self, area_id: str, storage_id: str, constraint_id: str, series_id: str
-    ) -> None:
-        try:
-            values = {
-                "study_id": self._study_id,
-                "area_id": area_id,
-                "st_storage_id": storage_id,
-                "constraint_id": constraint_id,
-                "matrix_id": series_id,
-            }
-            upsert_one(self._db_session, ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE, values)
-        except IntegrityError as e:
-            self._raise_the_right_constraint_exception(area_id, storage_id, constraint_id, e)
-
-        self._db_session.commit()
-
-    @override
     def get_st_storage_additional_constraint_matrix(
         self, area_id: str, storage_id: str, constraint_id: str
     ) -> pl.DataFrame:
@@ -478,7 +460,7 @@ class DatabaseStStorageDao(STStorageDao):
         return result
 
     @override
-    def save_all_st_storage_additional_constraint_matrices(self, series: StStorageConstraintSeriesMapping) -> None:
+    def save_st_storage_constraint_matrices(self, series: StStorageConstraintSeriesMapping) -> None:
         study_id = self._study_id
         session = self._db_session
 

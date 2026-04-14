@@ -379,13 +379,6 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             return []
 
     @override
-    def save_st_storage_constraint_matrix(
-        self, area_id: str, storage_id: str, constraint_id: str, series_id: str
-    ) -> None:
-        study_data = self.get_file_study()
-        study_data.tree.save(series_id, _get_constraint_matrix_path(area_id, storage_id, constraint_id))
-
-    @override
     def get_st_storage_additional_constraint_matrix(
         self, area_id: str, storage_id: str, constraint_id: str
     ) -> pl.DataFrame:
@@ -472,7 +465,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             study_data.tree.save(content, url)
 
     @override
-    def save_all_st_storage_additional_constraint_matrices(self, series: StStorageConstraintSeriesMapping) -> None:
+    def save_st_storage_constraint_matrices(self, series: StStorageConstraintSeriesMapping) -> None:
         matrices_mapping: dict[str, list[MatrixNode]] = {}
         study_data = self.get_file_study()
         for area_id, value in series.items():
