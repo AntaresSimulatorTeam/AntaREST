@@ -77,6 +77,7 @@ from antarest.study.dao.common import (
     BindingConstraintSeriesMapping,
     LinkSeriesMapping,
     RenewableSeriesMapping,
+    ReservesGlobalParametersMapping,
     ThermalSeriesMapping,
     XpansionCapacitiesMapping,
     XpansionConstraintsMapping,
@@ -1488,15 +1489,11 @@ class InMemoryStudyDao(StudyDao):
         return self._reserves_global_parameters.get(area_id, ReservesGlobalParameters())
 
     @override
-    def get_all_reserves_global_parameters(self) -> dict[str, ReservesGlobalParameters]:
+    def get_all_reserves_global_parameters(self) -> ReservesGlobalParametersMapping:
         return dict(self._reserves_global_parameters)
 
     @override
-    def save_reserves_global_parameters(self, area_id: str, params: ReservesGlobalParameters) -> None:
-        self._reserves_global_parameters[area_id] = params
-
-    @override
-    def save_all_reserves_global_parameters(self, mapping: dict[str, ReservesGlobalParameters]) -> None:
+    def save_reserves_global_parameters(self, mapping: ReservesGlobalParametersMapping) -> None:
         self._reserves_global_parameters.update(mapping)
 
     @override

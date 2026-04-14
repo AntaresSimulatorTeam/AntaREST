@@ -38,7 +38,7 @@ def test_save_and_retrieve(db_dao: DatabaseStudyDao) -> None:
         reference_activation_duration_down=10,
         energy_activation_ratio_down=0.8,
     )
-    dao.save_reserves_global_parameters(area_id, params)
+    dao.save_reserves_global_parameters({area_id: params})
     result = dao.get_reserves_global_parameters(area_id)
     assert result == params
 
@@ -49,10 +49,10 @@ def test_save_updates_existing(db_dao: DatabaseStudyDao) -> None:
     dao.save_area(area_id)
 
     params1 = ReservesGlobalParameters(reference_activation_duration_up=5)
-    dao.save_reserves_global_parameters(area_id, params1)
+    dao.save_reserves_global_parameters({area_id: params1})
 
     params2 = ReservesGlobalParameters(reference_activation_duration_up=10)
-    dao.save_reserves_global_parameters(area_id, params2)
+    dao.save_reserves_global_parameters({area_id: params2})
 
     result = dao.get_reserves_global_parameters(area_id)
     assert result.reference_activation_duration_up == 10
@@ -63,8 +63,8 @@ def test_get_all(db_dao: DatabaseStudyDao) -> None:
     dao.save_area("paris")
     dao.save_area("lyon")
 
-    dao.save_reserves_global_parameters("paris", ReservesGlobalParameters(reference_activation_duration_up=5))
-    dao.save_reserves_global_parameters("lyon", ReservesGlobalParameters(energy_activation_ratio_down=0.3))
+    dao.save_reserves_global_parameters({"paris": ReservesGlobalParameters(reference_activation_duration_up=5)})
+    dao.save_reserves_global_parameters({"lyon": ReservesGlobalParameters(energy_activation_ratio_down=0.3)})
 
     result = dao.get_all_reserves_global_parameters()
     assert len(result) == 2
@@ -81,7 +81,7 @@ def test_save_all(db_dao: DatabaseStudyDao) -> None:
         "paris": ReservesGlobalParameters(reference_activation_duration_up=5),
         "lyon": ReservesGlobalParameters(energy_activation_ratio_down=0.3),
     }
-    dao.save_all_reserves_global_parameters(mapping)
+    dao.save_reserves_global_parameters(mapping)
 
     assert dao.get_reserves_global_parameters("paris").reference_activation_duration_up == 5
     assert dao.get_reserves_global_parameters("lyon").energy_activation_ratio_down == 0.3
@@ -93,7 +93,7 @@ def test_cascade_delete_on_area_removal(db_session: Session, db_dao: DatabaseStu
     dao.save_area(area_id)
 
     params = ReservesGlobalParameters(reference_activation_duration_up=5)
-    dao.save_reserves_global_parameters(area_id, params)
+    dao.save_reserves_global_parameters({area_id: params})
 
     with db_session:
         dao.delete_area(area_id)

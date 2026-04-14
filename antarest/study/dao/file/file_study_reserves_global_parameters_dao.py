@@ -16,6 +16,7 @@ from typing_extensions import override
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.dao.api.reserves_global_parameters_dao import ReservesGlobalParametersDao
+from antarest.study.dao.common import ReservesGlobalParametersMapping
 from antarest.study.storage.rawstudy.model.filesystem.config.reserves_global_parameters import (
     parse_reserves_global_parameters,
     serialize_reserves_global_parameters,
@@ -42,22 +43,18 @@ class FileStudyReservesGlobalParametersDao(ReservesGlobalParametersDao, ABC):
         return parse_reserves_global_parameters(data)
 
     @override
-    def get_all_reserves_global_parameters(self) -> dict[str, ReservesGlobalParameters]:
+    def get_all_reserves_global_parameters(self) -> ReservesGlobalParametersMapping:
         file_study = self.get_file_study()
         return {area_id: self.get_reserves_global_parameters(area_id) for area_id in file_study.config.areas}
 
     @override
-    def save_all_reserves_global_parameters(self, mapping: dict[str, ReservesGlobalParameters]) -> None:
-        for area_id, params in mapping.items():
-            self.save_reserves_global_parameters(area_id, params)
-
-    @override
-    def save_reserves_global_parameters(self, area_id: str, params: ReservesGlobalParameters) -> None:
+    def save_reserves_global_parameters(self, mapping: ReservesGlobalParametersMapping) -> None:
         file_study = self.get_file_study()
-        path = _get_reserves_ini_path(area_id)
-        try:
-            existing_data = file_study.tree.get(path)
-        except (ChildNotFoundError, KeyError):
-            existing_data = {}
-        existing_data["globalparameters"] = serialize_reserves_global_parameters(params)
-        file_study.tree.save(existing_data, path)
+        for area_id, params in mapping.items():
+            path = _get_reserves_ini_path(area_id)
+            try:
+                existing_data = file_study.tree.get(path)
+            except (ChildNotFoundError, KeyError):
+                existing_data = {}
+            existing_data["globalparameters"] = serialize_reserves_global_parameters(params)
+            file_study.tree.save(existing_data, path)

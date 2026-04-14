@@ -175,7 +175,7 @@ class StudyConverter:
 
         # Reserves global parameters (v10.0+)
         if self._study_version >= STUDY_VERSION_10_0:
-            self._new_dao.save_all_reserves_global_parameters(self._source_dao.get_all_reserves_global_parameters())
+            self._new_dao.save_reserves_global_parameters(self._source_dao.get_all_reserves_global_parameters())
 
         # Hydro
         self._convert_hydro()

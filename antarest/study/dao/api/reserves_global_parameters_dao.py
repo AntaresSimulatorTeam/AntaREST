@@ -12,6 +12,7 @@
 from abc import ABC, abstractmethod
 
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
+from antarest.study.dao.common import ReservesGlobalParametersMapping
 
 
 class ReadOnlyReservesGlobalParametersDao(ABC):
@@ -20,15 +21,11 @@ class ReadOnlyReservesGlobalParametersDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_all_reserves_global_parameters(self) -> dict[str, ReservesGlobalParameters]:
+    def get_all_reserves_global_parameters(self) -> ReservesGlobalParametersMapping:
         raise NotImplementedError()
 
 
 class ReservesGlobalParametersDao(ReadOnlyReservesGlobalParametersDao):
     @abstractmethod
-    def save_reserves_global_parameters(self, area_id: str, params: ReservesGlobalParameters) -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def save_all_reserves_global_parameters(self, mapping: dict[str, ReservesGlobalParameters]) -> None:
+    def save_reserves_global_parameters(self, mapping: ReservesGlobalParametersMapping) -> None:
         raise NotImplementedError()

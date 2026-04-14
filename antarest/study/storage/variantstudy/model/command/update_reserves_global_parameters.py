@@ -62,7 +62,7 @@ class UpdateReservesGlobalParameters(ICommand):
             current = study_data.get_reserves_global_parameters(area_id)
             new_params_mapping[area_id] = update_reserves_global_parameters(current, update)
 
-        study_data.save_all_reserves_global_parameters(new_params_mapping)
+        study_data.save_reserves_global_parameters(new_params_mapping)
 
         message = f"Reserves global parameters updated for areas: {', '.join(self.properties.keys())}"
         return command_succeeded(message=message, result=new_params_mapping)
