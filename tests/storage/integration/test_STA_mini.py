@@ -461,7 +461,7 @@ def test_sta_mini_list_studies(client: TestClient) -> None:
         UUID: {
             "id": UUID,
             "name": "STA-mini",
-            "version": "7",
+            "version": "7.0",
             "author": "Andrea SGATTONI",
             "editor": None,
             "created": str(datetime.fromtimestamp(1480683452)),
