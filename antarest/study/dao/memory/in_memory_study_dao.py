@@ -85,6 +85,7 @@ from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, LinkConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
 @dataclass(frozen=True)
@@ -237,6 +238,16 @@ class InMemoryStudyDao(StudyDao):
     @override
     def get_study_id(self) -> str:
         return self._study_id
+
+    @override
+    @property
+    def matrix_service(self) -> ISimpleMatrixService:
+        return self._matrix_service
+
+    @override
+    @property
+    def generator_matrix_constants(self) -> GeneratorMatrixConstants:
+        raise NotImplementedError()
 
     @override
     def get_synthesis(self) -> StudyDataSynthesis:

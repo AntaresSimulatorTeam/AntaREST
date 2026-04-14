@@ -215,7 +215,7 @@ def test_save_area_ui_raises_error_if_layer_not_exists(db_dao: DatabaseStudyDao)
     save_area(dao, "Paris")
     new_ui = AreaUI(x=100, y=200, color_rgb=(255, 0, 0))
     with pytest.raises(LayerNotFound):
-        dao.save_area_ui({"paris":{ "999": new_ui}})
+        dao.save_area_ui({"paris": {"999": new_ui}})
 
 
 def test_get_all_areas_ui_info_returns_all_layers(db_dao: DatabaseStudyDao) -> None:

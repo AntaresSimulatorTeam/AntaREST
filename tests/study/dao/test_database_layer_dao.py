@@ -14,15 +14,32 @@
 Unit tests for DatabaseLayerDao.
 """
 
+from unittest.mock import Mock
+
 import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from antarest.blobstore.service import IBlobService
 from antarest.core.exceptions import LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.study.business.model.layer_model import Layer
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.area import AREA_UI_TABLE
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.study.dao.utils import save_area
+
+
+def _create_area(area_name: str, dao: StudyDao) -> None:
+    constants = dao.generator_matrix_constants
+    command_context = CommandContext(
+        generator_matrix_constants=constants, matrix_service=dao.matrix_service, blob_service=Mock(spec=IBlobService)
+    )
+
+    command = CreateArea(area_name=area_name, command_context=command_context, study_version=dao.get_version())
+    output = command.apply(dao)
+    assert output.status
 
 
 class TestInitializeStudy:
@@ -43,8 +60,8 @@ class TestDatabaseLayerDao:
 
     def test_get_layers_with_areas(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
-        save_area(dao, "Paris")
-        save_area(dao, "London")
+        _create_area("Paris", dao)
+        _create_area("London", dao)
 
         layers = dao.get_layers()
         assert len(layers) == 1
@@ -64,8 +81,8 @@ class TestDatabaseLayerDao:
 
     def test_save_layer_with_areas(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
-        save_area(dao, "Paris")
-        save_area(dao, "London")
+        _create_area("Paris", dao)
+        _create_area("London", dao)
 
         layer = Layer(id="1", name="Layer 1", areas=["paris", "london"])
         dao.save_layer(layer)
@@ -87,9 +104,9 @@ class TestDatabaseLayerDao:
 
     def test_save_layer_updates_areas(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
-        save_area(dao, "Paris")
-        save_area(dao, "London")
-        save_area(dao, "Berlin")
+        _create_area("Paris", dao)
+        _create_area("London", dao)
+        _create_area("Berlin", dao)
 
         dao.save_layer(Layer(id="1", name="Layer 1", areas=["paris", "london"]))
         dao.save_layer(Layer(id="1", name="Layer 1", areas=["paris", "berlin"]))
@@ -140,9 +157,9 @@ class TestDatabaseLayerDao:
 
     def test_multiple_layers(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
-        save_area(dao, "Paris")
-        save_area(dao, "London")
-        save_area(dao, "Berlin")
+        _create_area("Paris", dao)
+        _create_area("London", dao)
+        _create_area("Berlin", dao)
 
         dao.save_layer(Layer(id="1", name="Layer 1", areas=["paris"]))
         dao.save_layer(Layer(id="2", name="Layer 2", areas=["london", "berlin"]))
@@ -160,8 +177,8 @@ class TestDatabaseLayerDao:
 
     def test_delete_area_removes_from_layers(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
-        save_area(dao, "Paris")
-        save_area(dao, "London")
+        _create_area("Paris", dao)
+        _create_area("London", dao)
 
         dao.save_layer(Layer(id="1", name="Layer 1", areas=["paris", "london"]))
 

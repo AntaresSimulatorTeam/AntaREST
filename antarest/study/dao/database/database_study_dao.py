@@ -17,7 +17,7 @@ This DAO provides database-backed storage for studies when storage_mode=DATABASE
 Uses multiple inheritance to combine specialized DAOs (like FileStudyTreeDao).
 """
 
-from typing import Self
+from typing import TYPE_CHECKING, Self
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -50,6 +50,10 @@ from antarest.study.model import Study, StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, LinkConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+
+if TYPE_CHECKING:
+    from antarest.matrixstore.service import ISimpleMatrixService
+    from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
 class DatabaseStudyDao(
@@ -107,6 +111,16 @@ class DatabaseStudyDao(
         DatabaseBindingConstraintDao.__init__(self, study_id, db_session)
         self._matrix_service = matrix_service
         self._generator_matrix_constants = generator_matrix_constants
+
+    @override
+    @property
+    def matrix_service(self) -> "ISimpleMatrixService":
+        return self._matrix_service
+
+    @override
+    @property
+    def generator_matrix_constants(self) -> "GeneratorMatrixConstants":
+        return self._generator_matrix_constants
 
     # Implementation of abstract methods required by StudyDao
     @override

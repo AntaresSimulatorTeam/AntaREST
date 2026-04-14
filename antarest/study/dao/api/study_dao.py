@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from abc import abstractmethod
 from collections.abc import Iterator, Sequence
+from typing import TYPE_CHECKING
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -90,6 +91,10 @@ from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
+if TYPE_CHECKING:
+    from antarest.matrixstore.service import ISimpleMatrixService
+    from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+
 
 class ReadOnlyStudyDao(
     ReadOnlyLinkDao,
@@ -128,6 +133,14 @@ class ReadOnlyStudyDao(
 
     @abstractmethod
     def get_synthesis(self) -> StudyDataSynthesis:
+        raise NotImplementedError()
+
+    @property
+    def matrix_service(self) -> "ISimpleMatrixService":
+        raise NotImplementedError()
+
+    @property
+    def generator_matrix_constants(self) -> "GeneratorMatrixConstants":
         raise NotImplementedError()
 
 
@@ -219,6 +232,16 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_synthesis(self) -> StudyDataSynthesis:
         return self._adaptee.get_synthesis()
+
+    @override
+    @property
+    def matrix_service(self) -> "ISimpleMatrixService":
+        return self.matrix_service
+
+    @override
+    @property
+    def generator_matrix_constants(self) -> "GeneratorMatrixConstants":
+        return self.generator_matrix_constants
 
     @override
     def get_links(self) -> Sequence[Link]:
