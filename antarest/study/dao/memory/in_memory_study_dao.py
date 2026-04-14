@@ -954,45 +954,51 @@ class InMemoryStudyDao(StudyDao):
             for storage in storages:
                 self._st_storages[cluster_key(area_id, storage.id)] = storage
 
-    @override
-    def save_st_storage_pmax_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_pmax_injection[cluster_key(area_id, storage_id)] = series_id
+    @staticmethod
+    def _save_sts_matrices(series: StStorageSeriesMapping, data: dict[ClusterKey, str]) -> None:
+        for area_id, value in series.items():
+            for storage_id, series_id in value.items():
+                data[cluster_key(area_id, storage_id)] = series_id
 
     @override
-    def save_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_pmax_withdrawal[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_pmax_injection(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_pmax_injection)
 
     @override
-    def save_st_storage_lower_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_lower_rule_curve[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_pmax_withdrawal(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_pmax_withdrawal)
 
     @override
-    def save_st_storage_upper_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_upper_rule_curve[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_lower_rule_curve(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_lower_rule_curve)
 
     @override
-    def save_st_storage_inflows(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_inflows[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_upper_rule_curve(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_upper_rule_curve)
 
     @override
-    def save_st_storage_cost_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_cost_injection[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_inflows(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_inflows)
 
     @override
-    def save_st_storage_cost_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_cost_withdrawal[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_cost_injection(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_cost_injection)
 
     @override
-    def save_st_storage_cost_level(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_cost_level[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_cost_withdrawal(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_cost_withdrawal)
 
     @override
-    def save_st_storage_cost_variation_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_cost_variation_injection[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_cost_level(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_cost_level)
 
     @override
-    def save_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_cost_variation_withdrawal[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_cost_variation_injection(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_cost_variation_injection)
+
+    @override
+    def save_st_storage_cost_variation_withdrawal(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_cost_variation_withdrawal)
 
     @override
     def delete_st_storage(self, area_id: str, storage: STStorage) -> None:

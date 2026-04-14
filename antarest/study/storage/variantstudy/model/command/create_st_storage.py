@@ -198,22 +198,22 @@ class CreateSTStorage(ICommand):
         # Matrices
         matrices = self._fill_none_matrices()
 
-        study_data.save_st_storage_pmax_injection(self.area_id, storage.id, matrices["pmax_injection"])
-        study_data.save_st_storage_pmax_withdrawal(self.area_id, storage.id, matrices["pmax_withdrawal"])
-        study_data.save_st_storage_upper_rule_curve(self.area_id, storage.id, matrices["upper_rule_curve"])
-        study_data.save_st_storage_lower_rule_curve(self.area_id, storage.id, matrices["lower_rule_curve"])
-        study_data.save_st_storage_inflows(self.area_id, storage.id, matrices["inflows"])
+        study_data.save_st_storage_pmax_injection({self.area_id: {storage.id: matrices["pmax_injection"]}})
+        study_data.save_st_storage_pmax_withdrawal({self.area_id: {storage.id: matrices["pmax_withdrawal"]}})
+        study_data.save_st_storage_upper_rule_curve({self.area_id: {storage.id: matrices["upper_rule_curve"]}})
+        study_data.save_st_storage_lower_rule_curve({self.area_id: {storage.id: matrices["lower_rule_curve"]}})
+        study_data.save_st_storage_inflows({self.area_id: {storage.id: matrices["inflows"]}})
 
         if self.study_version >= STUDY_VERSION_9_2:
-            study_data.save_st_storage_cost_injection(self.area_id, storage.id, matrices["cost_injection"])
-            study_data.save_st_storage_cost_withdrawal(self.area_id, storage.id, matrices["cost_withdrawal"])
-            study_data.save_st_storage_cost_level(self.area_id, storage.id, matrices["cost_level"])
+            study_data.save_st_storage_cost_injection({self.area_id: {storage.id: matrices["cost_injection"]}})
+            study_data.save_st_storage_cost_withdrawal({self.area_id: {storage.id: matrices["cost_withdrawal"]}})
+            study_data.save_st_storage_cost_level({self.area_id: {storage.id: matrices["cost_level"]}})
 
             matrix = matrices["cost_variation_injection"]
-            study_data.save_st_storage_cost_variation_injection(self.area_id, storage.id, matrix)
+            study_data.save_st_storage_cost_variation_injection({self.area_id: {storage.id: matrix}})
 
             matrix = matrices["cost_variation_withdrawal"]
-            study_data.save_st_storage_cost_variation_withdrawal(self.area_id, storage.id, matrix)
+            study_data.save_st_storage_cost_variation_withdrawal({self.area_id: {storage.id: matrix}})
 
         return command_succeeded(
             f"Short-term storage '{storage.id}' successfully added to area '{self.area_id}'.", result=storage

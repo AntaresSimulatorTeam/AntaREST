@@ -18,6 +18,7 @@ import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, ChildNotFoundError, STStorageConfigNotFound, STStorageNotFound
+from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
@@ -263,59 +264,59 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         for url, content in url_content_pairs:
             study_data.tree.save(content, url)
 
-    @override
-    def save_st_storage_pmax_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
+    def _save_sts_matrices(
+        self, series: StStorageSeriesMapping, url_getter: Callable[[AreaId, StStorageId], list[str]]
+    ) -> None:
+        matrices_mapping: dict[str, list[MatrixNode]] = {}
         study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "st-storage", "series", area_id, storage_id, "pmax_injection"])
+        for area_id, value in series.items():
+            for storage_id, series_id in value.items():
+                url = url_getter(area_id, storage_id)
+                node = study_data.tree.get_node(url)
+                assert isinstance(node, MatrixNode)
+                matrix_id = extract_matrix_id(series_id)
+                matrices_mapping.setdefault(matrix_id, []).append(node)
+        self.get_impl().save_matrices(matrices_mapping)
 
     @override
-    def save_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "st-storage", "series", area_id, storage_id, "pmax_withdrawal"])
+    def save_st_storage_pmax_injection(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, _get_pmax_injection)
 
     @override
-    def save_st_storage_lower_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
-        study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "st-storage", "series", area_id, storage_id, "lower_rule_curve"])
+    def save_st_storage_pmax_withdrawal(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, _get_pmax_withdrawal)
 
     @override
-    def save_st_storage_upper_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
-        study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "st-storage", "series", area_id, storage_id, "upper_rule_curve"])
+    def save_st_storage_lower_rule_curve(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, _get_lower_rule_curve)
 
     @override
-    def save_st_storage_inflows(self, area_id: str, storage_id: str, series_id: str) -> None:
-        study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "st-storage", "series", area_id, storage_id, "inflows"])
+    def save_st_storage_upper_rule_curve(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, _get_upper_rule_curve)
 
     @override
-    def save_st_storage_cost_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "st-storage", "series", area_id, storage_id, "cost_injection"])
+    def save_st_storage_inflows(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, _get_inflows)
 
     @override
-    def save_st_storage_cost_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "st-storage", "series", area_id, storage_id, "cost_withdrawal"])
+    def save_st_storage_cost_injection(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, _get_cost_injection)
 
     @override
-    def save_st_storage_cost_level(self, area_id: str, storage_id: str, series_id: str) -> None:
-        study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "st-storage", "series", area_id, storage_id, "cost_level"])
+    def save_st_storage_cost_withdrawal(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, _get_cost_withdrawal)
 
     @override
-    def save_st_storage_cost_variation_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        study_data = self.get_file_study()
-        study_data.tree.save(
-            series_id, ["input", "st-storage", "series", area_id, storage_id, "cost_variation_injection"]
-        )
+    def save_st_storage_cost_level(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, _get_cost_level)
 
     @override
-    def save_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        study_data = self.get_file_study()
-        study_data.tree.save(
-            series_id, ["input", "st-storage", "series", area_id, storage_id, "cost_variation_withdrawal"]
-        )
+    def save_st_storage_cost_variation_injection(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, _get_cost_variation_injection)
+
+    @override
+    def save_st_storage_cost_variation_withdrawal(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, _get_cost_variation_withdrawal)
 
     @override
     def delete_st_storage(self, area_id: str, storage: STStorage) -> None:

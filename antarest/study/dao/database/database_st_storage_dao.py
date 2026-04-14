@@ -286,45 +286,62 @@ class DatabaseStStorageDao(STStorageDao):
 
         session.commit()
 
-    @override
-    def save_st_storage_pmax_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._save_st_storage_matrix(area_id, storage_id, PMAX_INJECTION_TABLE, series_id)
+    def _save_st_storage_matrix(self, series: StStorageSeriesMapping, table: Table) -> None:
+        study_id = self._study_id
+        session = self._db_session
+
+        try:
+            values = []
+            for area_id, value in series.items():
+                for sts_id, matrix_id in value.items():
+                    data = {"study_id": study_id, "area_id": area_id, "st_storage_id": sts_id, "matrix_id": matrix_id}
+                    values.append(data)
+            upsert_multiple(session, table, values)
+        except IntegrityError as e:
+            invalid_data = {area_id: list(st_storage_dict) for area_id, st_storage_dict in series.items()}
+            self._raise_the_right_storage_exception(invalid_data, e)
+
+        session.commit()
 
     @override
-    def save_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._save_st_storage_matrix(area_id, storage_id, PMAX_WITHDRAWAL_TABLE, series_id)
+    def save_st_storage_pmax_injection(self, series: StStorageSeriesMapping) -> None:
+        self._save_st_storage_matrix(series, PMAX_INJECTION_TABLE)
 
     @override
-    def save_st_storage_lower_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._save_st_storage_matrix(area_id, storage_id, LOWER_RULE_CURVE_TABLE, series_id)
+    def save_st_storage_pmax_withdrawal(self, series: StStorageSeriesMapping) -> None:
+        self._save_st_storage_matrix(series, PMAX_WITHDRAWAL_TABLE)
 
     @override
-    def save_st_storage_upper_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._save_st_storage_matrix(area_id, storage_id, UPPER_RULE_CURVE_TABLE, series_id)
+    def save_st_storage_lower_rule_curve(self, series: StStorageSeriesMapping) -> None:
+        self._save_st_storage_matrix(series, LOWER_RULE_CURVE_TABLE)
 
     @override
-    def save_st_storage_inflows(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._save_st_storage_matrix(area_id, storage_id, INFLOWS_TABLE, series_id)
+    def save_st_storage_upper_rule_curve(self, series: StStorageSeriesMapping) -> None:
+        self._save_st_storage_matrix(series, UPPER_RULE_CURVE_TABLE)
 
     @override
-    def save_st_storage_cost_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._save_st_storage_matrix(area_id, storage_id, COST_INJECTION_TABLE, series_id)
+    def save_st_storage_inflows(self, series: StStorageSeriesMapping) -> None:
+        self._save_st_storage_matrix(series, INFLOWS_TABLE)
 
     @override
-    def save_st_storage_cost_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._save_st_storage_matrix(area_id, storage_id, COST_WITHDRAWAL_TABLE, series_id)
+    def save_st_storage_cost_injection(self, series: StStorageSeriesMapping) -> None:
+        self._save_st_storage_matrix(series, COST_INJECTION_TABLE)
 
     @override
-    def save_st_storage_cost_level(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._save_st_storage_matrix(area_id, storage_id, COST_LEVEL_TABLE, series_id)
+    def save_st_storage_cost_withdrawal(self, series: StStorageSeriesMapping) -> None:
+        self._save_st_storage_matrix(series, COST_WITHDRAWAL_TABLE)
 
     @override
-    def save_st_storage_cost_variation_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._save_st_storage_matrix(area_id, storage_id, COST_VARIATION_INJECTION_TABLE, series_id)
+    def save_st_storage_cost_level(self, series: StStorageSeriesMapping) -> None:
+        self._save_st_storage_matrix(series, COST_LEVEL_TABLE)
 
     @override
-    def save_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._save_st_storage_matrix(area_id, storage_id, COST_VARIATION_WITHDRAWAL_TABLE, series_id)
+    def save_st_storage_cost_variation_injection(self, series: StStorageSeriesMapping) -> None:
+        self._save_st_storage_matrix(series, COST_VARIATION_INJECTION_TABLE)
+
+    @override
+    def save_st_storage_cost_variation_withdrawal(self, series: StStorageSeriesMapping) -> None:
+        self._save_st_storage_matrix(series, COST_VARIATION_WITHDRAWAL_TABLE)
 
     @override
     def get_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
@@ -449,20 +466,6 @@ class DatabaseStStorageDao(STStorageDao):
         if not row:
             self._raise_the_right_constraint_exception(area_id, storage_id, constraint_id)
         return self.get_impl().get_matrix(row.matrix_id)
-
-    def _save_st_storage_matrix(self, area_id: str, storage_id: str, table: Table, matrix_id: str) -> None:
-        try:
-            values = {
-                "study_id": self._study_id,
-                "area_id": area_id,
-                "st_storage_id": storage_id,
-                "matrix_id": matrix_id,
-            }
-            upsert_one(self._db_session, table, values)
-        except IntegrityError as e:
-            self._raise_the_right_storage_exception(area_id, storage_id, e)
-
-        self._db_session.commit()
 
     def _get_st_storage_matrix_row(self, area_id: str, storage_id: str, table: Table) -> Row[Any] | None:
         stmt = select(table).where(

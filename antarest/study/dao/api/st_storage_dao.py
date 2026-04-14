@@ -147,43 +147,43 @@ class STStorageDao(ReadOnlySTStorageDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_pmax_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
+    def save_st_storage_pmax_injection(self, series: StStorageSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
+    def save_st_storage_pmax_withdrawal(self, series: StStorageSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_lower_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
+    def save_st_storage_lower_rule_curve(self, series: StStorageSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_upper_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
+    def save_st_storage_upper_rule_curve(self, series: StStorageSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_inflows(self, area_id: str, storage_id: str, series_id: str) -> None:
+    def save_st_storage_inflows(self, series: StStorageSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_cost_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
+    def save_st_storage_cost_injection(self, series: StStorageSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_cost_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
+    def save_st_storage_cost_withdrawal(self, series: StStorageSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_cost_level(self, area_id: str, storage_id: str, series_id: str) -> None:
+    def save_st_storage_cost_level(self, series: StStorageSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_cost_variation_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
+    def save_st_storage_cost_variation_injection(self, series: StStorageSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
+    def save_st_storage_cost_variation_withdrawal(self, series: StStorageSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
