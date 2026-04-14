@@ -33,7 +33,7 @@ from antarest.study.business.model.sts_model import (
     validate_st_storage_against_version,
 )
 from antarest.study.dao.api.st_storage_dao import STStorageDao
-from antarest.study.dao.common import AreaId
+from antarest.study.dao.common import AreaId, StStorageId
 from antarest.study.dao.database.common import get_row_representation_as_dict, validate_area_exists
 from antarest.study.dao.database.models.st_storage import (
     COST_INJECTION_TABLE,
@@ -220,11 +220,15 @@ class DatabaseStStorageDao(STStorageDao):
 
     @override
     def save_st_storage_additional_constraints(
-        self, area_id: str, storage_id: str, constraints: list[STStorageAdditionalConstraint]
+        self, data: dict[AreaId, dict[StStorageId, list[STStorageAdditionalConstraint]]]
     ) -> None:
         session = self._db_session
 
-        values = [self._convert_constraint_to_row(area_id, storage_id, constraint) for constraint in constraints]
+        values = []
+        for area_id, value in data.items():
+            for storage_id, constraints in value.items():
+                for constraint in constraints:
+                    values.append(self._convert_constraint_to_row(area_id, storage_id, constraint))
 
         try:
             upsert_multiple(session, ST_STORAGE_ADDITIONAL_CONSTRAINT_TABLE, values)

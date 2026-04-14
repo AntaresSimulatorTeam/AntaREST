@@ -76,6 +76,7 @@ from antarest.study.dao.common import (
     BindingConstraintSeriesMapping,
     LinkSeriesMapping,
     RenewableSeriesMapping,
+    StStorageId,
     ThermalSeriesMapping,
     XpansionCapacitiesMapping,
     XpansionConstraintsMapping,
@@ -1002,18 +1003,16 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def save_st_storage_additional_constraints(
-        self, area_id: str, storage_id: str, constraints: list[STStorageAdditionalConstraint]
+        self, data: dict[AreaId, dict[StStorageId, list[STStorageAdditionalConstraint]]]
     ) -> None:
-        existing_constraints = self._st_storages_constraints.get(area_id, {}).get(storage_id, [])
+        for area_id, value in data.items():
+            for storage_id, constraints in value.items():
+                existing_constraints = self._st_storages_constraints.get(area_id, {}).get(storage_id, [])
 
-        existing_map = {}
-        for constraint in existing_constraints:
-            existing_map[constraint.id] = constraint
+                existing_map = {constraint.id: constraint for constraint in existing_constraints}
+                existing_map.update({constraint.id: constraint for constraint in constraints})
 
-        for constraint in constraints:
-            existing_map[constraint.id] = constraint
-
-        self._st_storages_constraints.setdefault(area_id, {})[storage_id] = list(existing_map.values())
+                self._st_storages_constraints.setdefault(area_id, {})[storage_id] = list(existing_map.values())
 
     @override
     def get_all_xpansion_candidates(self) -> list[XpansionCandidate]:

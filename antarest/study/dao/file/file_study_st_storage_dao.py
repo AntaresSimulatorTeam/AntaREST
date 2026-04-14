@@ -24,7 +24,7 @@ from antarest.study.business.model.sts_model import (
     STStorageAdditionalConstraintsMap,
 )
 from antarest.study.dao.api.st_storage_dao import STStorageDao
-from antarest.study.dao.common import AreaId
+from antarest.study.dao.common import AreaId, StStorageId
 from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     parse_st_storage,
@@ -311,30 +311,37 @@ class FileStudySTStorageDao(STStorageDao, ABC):
 
     @override
     def save_st_storage_additional_constraints(
-        self, area_id: str, storage_id: str, constraints: list[STStorageAdditionalConstraint]
+        self, data: dict[AreaId, dict[StStorageId, list[STStorageAdditionalConstraint]]]
     ) -> None:
         study_data = self.get_file_study()
-        existing_constraints = self.get_st_storage_additional_constraints(area_id, storage_id)
 
-        existing_map = {c.id: c for c in existing_constraints}
-        existing_map.update({c.id: c for c in constraints})
+        # Hold everything in memory to validate the data before saving it.
+        url_content_pairs = []
 
-        ini_content = {}
-        for constraint_id, constraint in existing_map.items():
-            ini_content[constraint.name] = serialize_st_storage_additional_constraint(constraint)
+        for area_id, value in data.items():
+            for storage_id, constraints in value.items():
+                existing_constraints = self.get_st_storage_additional_constraints(area_id, storage_id)
 
-        # Save into the config
-        self._update_st_storage_additional_constraints_config(area_id, storage_id, constraints)
+                existing_map = {c.id: c for c in existing_constraints}
+                existing_map.update({c.id: c for c in constraints})
+
+                ini_content = {}
+                for constraint_id, constraint in existing_map.items():
+                    ini_content[constraint.name] = serialize_st_storage_additional_constraint(constraint)
+
+                # Save into the config
+                self._update_st_storage_additional_constraints_config(area_id, storage_id, constraints)
+
+                # We have to create the folder before saving the files
+                (study_data.config.study_path / "input" / "st-storage" / "constraints" / area_id / storage_id).mkdir(
+                    parents=True, exist_ok=True
+                )
+                url = ["input", "st-storage", "constraints", area_id, storage_id, "additional_constraints"]
+                url_content_pairs.append((url, ini_content))
 
         # Save into the files
-        if not existing_constraints:
-            # We have to create the folder first
-            (study_data.config.study_path / "input" / "st-storage" / "constraints" / area_id / storage_id).mkdir(
-                parents=True, exist_ok=True
-            )
-        study_data.tree.save(
-            ini_content, ["input", "st-storage", "constraints", area_id, storage_id, "additional_constraints"]
-        )
+        for url, content in url_content_pairs:
+            study_data.tree.save(content, url)
 
     @staticmethod
     def _get_all_storages_for_area(file_study: FileStudy, area_id: str) -> dict[str, STStorage]:

@@ -20,6 +20,7 @@ from antarest.study.business.model.binding_constraint_model import ConstraintId
 AreaId: TypeAlias = str
 ThermalId: TypeAlias = str
 RenewableId: TypeAlias = str
+StStorageId: TypeAlias = str
 SeriesId: TypeAlias = str
 XpansionFileName: TypeAlias = str
 

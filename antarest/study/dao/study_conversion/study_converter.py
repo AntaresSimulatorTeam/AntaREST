@@ -276,9 +276,9 @@ class StudyConverter:
 
         # Short-term storage constraints
         if constraints:
+            self._new_dao.save_st_storage_additional_constraints(constraints)
             for area_id, v in constraints.items():
                 for sts_id, storage_constraints in v.items():
-                    self._new_dao.save_st_storage_additional_constraints(area_id, sts_id, storage_constraints)
                     for constraint in storage_constraints:
                         rhs_matrix = self._source_dao.get_st_storage_additional_constraint_matrix(
                             area_id, sts_id, constraint.id
