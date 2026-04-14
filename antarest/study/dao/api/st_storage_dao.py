@@ -20,7 +20,7 @@ from antarest.study.business.model.sts_model import (
     STStorageAdditionalConstraint,
     STStorageAdditionalConstraintsMap,
 )
-from antarest.study.dao.common import AreaId, StStorageId, StStorageSeriesMapping
+from antarest.study.dao.common import AreaId, StStorageConstraintSeriesMapping, StStorageId, StStorageSeriesMapping
 
 
 class ReadOnlySTStorageDao(ABC):
@@ -138,6 +138,10 @@ class ReadOnlySTStorageDao(ABC):
     def get_st_storage_additional_constraint_matrix(
         self, area_id: str, storage_id: str, constraint_id: str
     ) -> pl.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_additional_constraint_matrix(self) -> StStorageConstraintSeriesMapping:
         raise NotImplementedError()
 
 

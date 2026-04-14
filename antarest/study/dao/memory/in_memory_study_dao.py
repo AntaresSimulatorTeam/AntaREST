@@ -76,6 +76,7 @@ from antarest.study.dao.common import (
     BindingConstraintSeriesMapping,
     LinkSeriesMapping,
     RenewableSeriesMapping,
+    StStorageConstraintSeriesMapping,
     StStorageId,
     StStorageSeriesMapping,
     ThermalSeriesMapping,
@@ -947,6 +948,14 @@ class InMemoryStudyDao(StudyDao):
     ) -> pl.DataFrame:
         matrix_id = self._st_storages_constraints_matrix[additional_constraint_key(area_id, storage_id, constraint_id)]
         return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_all_st_storage_additional_constraint_matrix(self) -> StStorageConstraintSeriesMapping:
+        data = self._st_storages_constraints_matrix
+        result: StStorageConstraintSeriesMapping = {}
+        for key, matrix_id in data.items():
+            result.setdefault(key.area_id, {}).setdefault(key.storage_id, {})[key.constraint_id] = matrix_id
+        return result
 
     @override
     def save_st_storages(self, data: dict[AreaId, list[STStorage]]) -> None:

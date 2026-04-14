@@ -33,7 +33,7 @@ from antarest.study.business.model.sts_model import (
     validate_st_storage_against_version,
 )
 from antarest.study.dao.api.st_storage_dao import STStorageDao
-from antarest.study.dao.common import AreaId, StStorageId, StStorageSeriesMapping
+from antarest.study.dao.common import AreaId, StStorageConstraintSeriesMapping, StStorageId, StStorageSeriesMapping
 from antarest.study.dao.database.common import get_row_representation_as_dict, validate_area_exists
 from antarest.study.dao.database.models.st_storage import (
     COST_INJECTION_TABLE,
@@ -466,6 +466,16 @@ class DatabaseStStorageDao(STStorageDao):
         if not row:
             self._raise_the_right_constraint_exception(area_id, storage_id, constraint_id)
         return self.get_impl().get_matrix(row.matrix_id)
+
+    @override
+    def get_all_st_storage_additional_constraint_matrix(self) -> StStorageConstraintSeriesMapping:
+        result: StStorageConstraintSeriesMapping = {}
+        table = ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE
+        stmt = select(table).where(table.c.study_id == self._study_id)
+        rows = self._db_session.execute(stmt).fetchall()
+        for row in rows:
+            result.setdefault(row.area_id, {}).setdefault(row.st_storage_id, {})[row.constraint_id] = row.matrix_id
+        return result
 
     def _get_st_storage_matrix_row(self, area_id: str, storage_id: str, table: Table) -> Row[Any] | None:
         stmt = select(table).where(
