@@ -77,6 +77,7 @@ from antarest.study.dao.common import (
     LinkSeriesMapping,
     RenewableSeriesMapping,
     StStorageId,
+    StStorageSeriesMapping,
     ThermalSeriesMapping,
     XpansionCapacitiesMapping,
     XpansionConstraintsMapping,
@@ -882,6 +883,63 @@ class InMemoryStudyDao(StudyDao):
     def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._storage_cost_variation_withdrawal[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
+
+    @staticmethod
+    def _get_all_sts_matrices(data: dict[ClusterKey, str]) -> StStorageSeriesMapping:
+        result: StStorageSeriesMapping = {}
+        for key, matrix_id in data.items():
+            result.setdefault(key.area_id, {})[key.cluster_id] = matrix_id
+        return result
+
+    @override
+    def get_all_st_storage_pmax_injection(self) -> StStorageSeriesMapping:
+        data = self._storage_pmax_injection
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_pmax_withdrawal(self) -> StStorageSeriesMapping:
+        data = self._storage_pmax_withdrawal
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_lower_rule_curve(self) -> StStorageSeriesMapping:
+        data = self._storage_lower_rule_curve
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_upper_rule_curve(self) -> StStorageSeriesMapping:
+        data = self._storage_upper_rule_curve
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_inflows(self) -> StStorageSeriesMapping:
+        data = self._storage_inflows
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_cost_injection(self) -> StStorageSeriesMapping:
+        data = self._storage_cost_injection
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_cost_withdrawal(self) -> StStorageSeriesMapping:
+        data = self._storage_cost_withdrawal
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_cost_level(self) -> StStorageSeriesMapping:
+        data = self._storage_cost_level
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_cost_variation_injection(self) -> StStorageSeriesMapping:
+        data = self._storage_cost_variation_injection
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_cost_variation_withdrawal(self) -> StStorageSeriesMapping:
+        data = self._storage_cost_variation_withdrawal
+        return self._get_all_sts_matrices(data)
 
     @override
     def get_st_storage_additional_constraint_matrix(

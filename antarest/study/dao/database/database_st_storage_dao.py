@@ -33,7 +33,7 @@ from antarest.study.business.model.sts_model import (
     validate_st_storage_against_version,
 )
 from antarest.study.dao.api.st_storage_dao import STStorageDao
-from antarest.study.dao.common import AreaId, StStorageId
+from antarest.study.dao.common import AreaId, StStorageId, StStorageSeriesMapping
 from antarest.study.dao.database.common import get_row_representation_as_dict, validate_area_exists
 from antarest.study.dao.database.models.st_storage import (
     COST_INJECTION_TABLE,
@@ -365,6 +365,56 @@ class DatabaseStStorageDao(STStorageDao):
     @override
     def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._get_st_storage_matrix(area_id, storage_id, COST_VARIATION_WITHDRAWAL_TABLE)
+
+    def _get_all_sts_matrix(self, table: Table) -> StStorageSeriesMapping:
+        study_id = self._study_id
+        session = self._db_session
+        stmt = select(table).where(table.c.study_id == study_id)
+        rows = session.execute(stmt).fetchall()
+        result: StStorageSeriesMapping = {}
+        for row in rows:
+            result.setdefault(row.area_id, {})[row.st_storage_id] = row.matrix_id
+        return result
+
+    @override
+    def get_all_st_storage_pmax_injection(self) -> StStorageSeriesMapping:
+        return self._get_all_sts_matrix(PMAX_INJECTION_TABLE)
+
+    @override
+    def get_all_st_storage_pmax_withdrawal(self) -> StStorageSeriesMapping:
+        return self._get_all_sts_matrix(PMAX_WITHDRAWAL_TABLE)
+
+    @override
+    def get_all_st_storage_lower_rule_curve(self) -> StStorageSeriesMapping:
+        return self._get_all_sts_matrix(LOWER_RULE_CURVE_TABLE)
+
+    @override
+    def get_all_st_storage_upper_rule_curve(self) -> StStorageSeriesMapping:
+        return self._get_all_sts_matrix(UPPER_RULE_CURVE_TABLE)
+
+    @override
+    def get_all_st_storage_inflows(self) -> StStorageSeriesMapping:
+        return self._get_all_sts_matrix(INFLOWS_TABLE)
+
+    @override
+    def get_all_st_storage_cost_injection(self) -> StStorageSeriesMapping:
+        return self._get_all_sts_matrix(COST_INJECTION_TABLE)
+
+    @override
+    def get_all_st_storage_cost_withdrawal(self) -> StStorageSeriesMapping:
+        return self._get_all_sts_matrix(COST_WITHDRAWAL_TABLE)
+
+    @override
+    def get_all_st_storage_cost_level(self) -> StStorageSeriesMapping:
+        return self._get_all_sts_matrix(COST_LEVEL_TABLE)
+
+    @override
+    def get_all_st_storage_cost_variation_injection(self) -> StStorageSeriesMapping:
+        return self._get_all_sts_matrix(COST_VARIATION_INJECTION_TABLE)
+
+    @override
+    def get_all_st_storage_cost_variation_withdrawal(self) -> StStorageSeriesMapping:
+        return self._get_all_sts_matrix(COST_VARIATION_WITHDRAWAL_TABLE)
 
     @override
     def save_st_storage_constraint_matrix(

@@ -20,7 +20,7 @@ from antarest.study.business.model.sts_model import (
     STStorageAdditionalConstraint,
     STStorageAdditionalConstraintsMap,
 )
-from antarest.study.dao.common import AreaId, StStorageId
+from antarest.study.dao.common import AreaId, StStorageId, StStorageSeriesMapping
 
 
 class ReadOnlySTStorageDao(ABC):
@@ -78,6 +78,46 @@ class ReadOnlySTStorageDao(ABC):
 
     @abstractmethod
     def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_pmax_injection(self) -> StStorageSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_pmax_withdrawal(self) -> StStorageSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_lower_rule_curve(self) -> StStorageSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_upper_rule_curve(self) -> StStorageSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_inflows(self) -> StStorageSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_cost_injection(self) -> StStorageSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_cost_withdrawal(self) -> StStorageSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_cost_level(self) -> StStorageSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_cost_variation_injection(self) -> StStorageSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_cost_variation_withdrawal(self) -> StStorageSeriesMapping:
         raise NotImplementedError()
 
     ##########################

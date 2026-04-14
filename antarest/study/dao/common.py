@@ -26,6 +26,7 @@ XpansionFileName: TypeAlias = str
 
 ThermalSeriesMapping: TypeAlias = dict[AreaId, dict[ThermalId, SeriesId]]
 RenewableSeriesMapping: TypeAlias = dict[AreaId, dict[RenewableId, SeriesId]]
+StStorageSeriesMapping: TypeAlias = dict[AreaId, dict[StStorageId, SeriesId]]
 AreaSeriesMapping: TypeAlias = dict[AreaId, SeriesId]
 LinkSeriesMapping: TypeAlias = dict[tuple[AreaId, AreaId], SeriesId]
 BindingConstraintSeriesMapping: TypeAlias = dict[ConstraintId, SeriesId]

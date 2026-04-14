@@ -12,7 +12,7 @@
 import operator
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 import polars as pl
 from typing_extensions import override
@@ -24,7 +24,7 @@ from antarest.study.business.model.sts_model import (
     STStorageAdditionalConstraintsMap,
 )
 from antarest.study.dao.api.st_storage_dao import STStorageDao
-from antarest.study.dao.common import AreaId, StStorageId
+from antarest.study.dao.common import AreaId, StStorageId, StStorageSeriesMapping
 from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     parse_st_storage,
@@ -33,12 +33,53 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     serialize_st_storage_additional_constraint,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
 _STORAGE_LIST_PATH = "input/st-storage/clusters/{area_id}/list/{storage_id}"
 _ALL_STORAGE_PATH = "input/st-storage/clusters"
+
+
+def _get_pmax_injection(area_id: AreaId, storage_id: StStorageId) -> list[str]:
+    return ["input", "st-storage", "series", area_id, storage_id, "pmax_injection"]
+
+
+def _get_pmax_withdrawal(area_id: AreaId, storage_id: StStorageId) -> list[str]:
+    return ["input", "st-storage", "series", area_id, storage_id, "pmax_withdrawal"]
+
+
+def _get_lower_rule_curve(area_id: AreaId, storage_id: StStorageId) -> list[str]:
+    return ["input", "st-storage", "series", area_id, storage_id, "lower_rule_curve"]
+
+
+def _get_upper_rule_curve(area_id: AreaId, storage_id: StStorageId) -> list[str]:
+    return ["input", "st-storage", "series", area_id, storage_id, "upper_rule_curve"]
+
+
+def _get_inflows(area_id: AreaId, storage_id: StStorageId) -> list[str]:
+    return ["input", "st-storage", "series", area_id, storage_id, "inflows"]
+
+
+def _get_cost_injection(area_id: AreaId, storage_id: StStorageId) -> list[str]:
+    return ["input", "st-storage", "series", area_id, storage_id, "cost_injection"]
+
+
+def _get_cost_withdrawal(area_id: AreaId, storage_id: StStorageId) -> list[str]:
+    return ["input", "st-storage", "series", area_id, storage_id, "cost_withdrawal"]
+
+
+def _get_cost_level(area_id: AreaId, storage_id: StStorageId) -> list[str]:
+    return ["input", "st-storage", "series", area_id, storage_id, "cost_level"]
+
+
+def _get_cost_variation_injection(area_id: AreaId, storage_id: StStorageId) -> list[str]:
+    return ["input", "st-storage", "series", area_id, storage_id, "cost_variation_injection"]
+
+
+def _get_cost_variation_withdrawal(area_id: AreaId, storage_id: StStorageId) -> list[str]:
+    return ["input", "st-storage", "series", area_id, storage_id, "cost_variation_withdrawal"]
 
 
 class FileStudySTStorageDao(STStorageDao, ABC):
@@ -101,45 +142,106 @@ class FileStudySTStorageDao(STStorageDao, ABC):
 
     @override
     def get_st_storage_pmax_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "pmax_injection"])
+        return self.get_impl().get_matrix(_get_pmax_injection(area_id, storage_id))
 
     @override
     def get_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "pmax_withdrawal"])
+        return self.get_impl().get_matrix(_get_pmax_withdrawal(area_id, storage_id))
 
     @override
     def get_st_storage_lower_rule_curve(self, area_id: str, storage_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "lower_rule_curve"])
+        return self.get_impl().get_matrix(_get_lower_rule_curve(area_id, storage_id))
 
     @override
     def get_st_storage_upper_rule_curve(self, area_id: str, storage_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "upper_rule_curve"])
+        return self.get_impl().get_matrix(_get_upper_rule_curve(area_id, storage_id))
 
     @override
     def get_st_storage_inflows(self, area_id: str, storage_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "inflows"])
+        return self.get_impl().get_matrix(_get_inflows(area_id, storage_id))
 
     @override
     def get_st_storage_cost_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "cost_injection"])
+        return self.get_impl().get_matrix(_get_cost_injection(area_id, storage_id))
 
     @override
     def get_st_storage_cost_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "cost_withdrawal"])
+        return self.get_impl().get_matrix(_get_cost_withdrawal(area_id, storage_id))
 
     @override
     def get_st_storage_cost_level(self, area_id: str, storage_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "st-storage", "series", area_id, storage_id, "cost_level"])
+        return self.get_impl().get_matrix(_get_cost_level(area_id, storage_id))
 
     @override
     def get_st_storage_cost_variation_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
-        url = ["input", "st-storage", "series", area_id, storage_id, "cost_variation_injection"]
-        return self.get_impl().get_matrix(url)
+        return self.get_impl().get_matrix(_get_cost_variation_injection(area_id, storage_id))
 
     @override
     def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
-        url = ["input", "st-storage", "series", area_id, storage_id, "cost_variation_withdrawal"]
-        return self.get_impl().get_matrix(url)
+        return self.get_impl().get_matrix(_get_cost_variation_withdrawal(area_id, storage_id))
+
+    def _get_sts_matrices(self, url_getter: Callable[[AreaId, StStorageId], list[str]]) -> StStorageSeriesMapping:
+        study_data = self.get_file_study()
+        matrix_nodes = {}
+
+        areas = study_data.config.areas
+        for area_id, value in areas.items():
+            for st_storage in value.st_storages:
+                sts_id = st_storage.id
+                url = url_getter(area_id, sts_id)
+                node = study_data.tree.get_node(url)
+                assert isinstance(node, MatrixNode)
+                matrix_nodes[node] = (area_id, sts_id)
+
+        result: StStorageSeriesMapping = {}
+
+        matrices_mapping = self.get_impl().get_matrices_ids(list(matrix_nodes))
+
+        for node, matrix_id in matrices_mapping.items():
+            area_id, sts_id = matrix_nodes[node]
+            result.setdefault(area_id, {})[sts_id] = matrix_id
+
+        return result
+
+    @override
+    def get_all_st_storage_pmax_injection(self) -> StStorageSeriesMapping:
+        return self._get_sts_matrices(_get_pmax_injection)
+
+    @override
+    def get_all_st_storage_pmax_withdrawal(self) -> StStorageSeriesMapping:
+        return self._get_sts_matrices(_get_pmax_withdrawal)
+
+    @override
+    def get_all_st_storage_lower_rule_curve(self) -> StStorageSeriesMapping:
+        return self._get_sts_matrices(_get_lower_rule_curve)
+
+    @override
+    def get_all_st_storage_upper_rule_curve(self) -> StStorageSeriesMapping:
+        return self._get_sts_matrices(_get_upper_rule_curve)
+
+    @override
+    def get_all_st_storage_inflows(self) -> StStorageSeriesMapping:
+        return self._get_sts_matrices(_get_inflows)
+
+    @override
+    def get_all_st_storage_cost_injection(self) -> StStorageSeriesMapping:
+        return self._get_sts_matrices(_get_cost_injection)
+
+    @override
+    def get_all_st_storage_cost_withdrawal(self) -> StStorageSeriesMapping:
+        return self._get_sts_matrices(_get_cost_withdrawal)
+
+    @override
+    def get_all_st_storage_cost_level(self) -> StStorageSeriesMapping:
+        return self._get_sts_matrices(_get_cost_level)
+
+    @override
+    def get_all_st_storage_cost_variation_injection(self) -> StStorageSeriesMapping:
+        return self._get_sts_matrices(_get_cost_variation_injection)
+
+    @override
+    def get_all_st_storage_cost_variation_withdrawal(self) -> StStorageSeriesMapping:
+        return self._get_sts_matrices(_get_cost_variation_withdrawal)
 
     @override
     def save_st_storages(self, data: dict[AreaId, list[STStorage]]) -> None:
