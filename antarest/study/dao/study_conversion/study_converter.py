@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import polars as pl
 from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import ChildNotFoundError, XpansionConfigurationDoesNotExist
@@ -20,7 +19,6 @@ from antarest.study.business.model.config.compatibility_parameters_model import 
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
 from antarest.study.model import (
     STUDY_VERSION_6_5,
@@ -61,8 +59,7 @@ class StudyConverter:
         self._convert_xpansion()
 
         # User resources
-        for user_resource in self._source_dao.get_all_user_resources():
-            self._new_dao.save_user_resource(user_resource)
+        self._new_dao.save_user_resources(self._source_dao.get_all_user_resources())
 
         # Settings
         self._convert_settings()
@@ -100,25 +97,24 @@ class StudyConverter:
         self._new_dao.create_xpansion_configuration()
         self._new_dao.save_xpansion_settings(settings)
         # Candidates
-        for candidate in self._source_dao.get_all_xpansion_candidates():
-            self._new_dao.save_xpansion_candidate(candidate)
+        self._new_dao.save_xpansion_candidates(self._source_dao.get_all_xpansion_candidates())
         # Adequacy criterion
         self._new_dao.save_xpansion_adequacy_criterion(self._source_dao.get_xpansion_adequacy_criterion())
-        # Resources
-        for resource_type in XpansionResourceFileType:
-            resources = self._source_dao.get_xpansion_resources(resource_type)
-            for filename in resources:
-                content = self._source_dao.get_xpansion_resource(resource_type, filename)
 
-                if resource_type == XpansionResourceFileType.WEIGHTS:
-                    assert isinstance(content, pl.DataFrame)
-                    self._new_dao.save_xpansion_weight(filename, self._matrix_service.create(content))
-                elif resource_type == XpansionResourceFileType.CAPACITIES:
-                    assert isinstance(content, pl.DataFrame)
-                    self._new_dao.save_xpansion_capacity(filename, self._matrix_service.create(content))
-                else:
-                    assert isinstance(content, bytes)
-                    self._new_dao.save_xpansion_constraint(filename, content)
+        # Weights
+        weights = self._source_dao.get_all_xpansion_weights()
+        if weights:
+            self._new_dao.save_xpansion_weight(weights)
+
+        # Capacities
+        capacities = self._source_dao.get_all_xpansion_capacities()
+        if capacities:
+            self._new_dao.save_xpansion_capacity(capacities)
+
+        # Constraints
+        constraints = self._source_dao.get_all_xpansion_constraints()
+        if constraints:
+            self._new_dao.save_xpansion_constraint(constraints)
 
     def _convert_binding_constraints(self) -> None:
         constraints = list(self._source_dao.get_all_constraints().values())
