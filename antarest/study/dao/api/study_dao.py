@@ -18,7 +18,7 @@ from typing_extensions import override
 
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
-from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.binding_constraint_model import BindingConstraint, ConstraintId
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
@@ -79,7 +79,13 @@ from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
 from antarest.study.dao.api.timeseries_config_dao import ReadOnlyTimeSeriesConfigDao, TimeSeriesConfigDao
 from antarest.study.dao.api.user_resources_dao import ReadOnlyUserResourcesDao, UserResourcesDao
 from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
-from antarest.study.dao.common import ThermalSeriesMapping
+from antarest.study.dao.common import (
+    AreaSeriesMapping,
+    BindingConstraintSeriesMapping,
+    LinkSeriesMapping,
+    RenewableSeriesMapping,
+    ThermalSeriesMapping,
+)
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -185,6 +191,10 @@ class StudyDao(
         """
         raise NotImplementedError()
 
+    @abstractmethod
+    def update_cache(self) -> None:
+        raise NotImplementedError()
+
 
 class ReadOnlyAdapter(ReadOnlyStudyDao):
     """
@@ -233,6 +243,18 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_link_series(self, area_from: str, area_to: str) -> pl.DataFrame:
         return self._adaptee.get_link_series(area_from, area_to)
+
+    @override
+    def get_all_links_series(self) -> LinkSeriesMapping:
+        return self._adaptee.get_all_links_series()
+
+    @override
+    def get_all_links_indirect_capacities(self) -> LinkSeriesMapping:
+        return self._adaptee.get_all_links_indirect_capacities()
+
+    @override
+    def get_all_links_direct_capacities(self) -> LinkSeriesMapping:
+        return self._adaptee.get_all_links_direct_capacities()
 
     @override
     def get_all_thermals(self) -> dict[str, dict[str, ThermalCluster]]:
@@ -311,28 +333,48 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_renewable_series(area_id, renewable_id)
 
     @override
-    def get_all_constraints(self) -> dict[str, BindingConstraint]:
+    def get_all_renewables_series(self) -> RenewableSeriesMapping:
+        return self._adaptee.get_all_renewables_series()
+
+    @override
+    def get_all_constraints(self) -> dict[ConstraintId, BindingConstraint]:
         return self._adaptee.get_all_constraints()
 
     @override
-    def get_constraint(self, constraint_id: str) -> BindingConstraint:
+    def get_constraint(self, constraint_id: ConstraintId) -> BindingConstraint:
         return self._adaptee.get_constraint(constraint_id)
 
     @override
-    def get_constraint_values_matrix(self, constraint_id: str) -> pl.DataFrame:
+    def get_constraint_values_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         return self._adaptee.get_constraint_values_matrix(constraint_id)
 
     @override
-    def get_constraint_less_term_matrix(self, constraint_id: str) -> pl.DataFrame:
+    def get_constraint_less_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         return self._adaptee.get_constraint_less_term_matrix(constraint_id)
 
     @override
-    def get_constraint_greater_term_matrix(self, constraint_id: str) -> pl.DataFrame:
+    def get_constraint_greater_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         return self._adaptee.get_constraint_greater_term_matrix(constraint_id)
 
     @override
-    def get_constraint_equal_term_matrix(self, constraint_id: str) -> pl.DataFrame:
+    def get_constraint_equal_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         return self._adaptee.get_constraint_equal_term_matrix(constraint_id)
+
+    @override
+    def get_all_constraint_values_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._adaptee.get_all_constraint_values_matrix()
+
+    @override
+    def get_all_constraint_less_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._adaptee.get_all_constraint_less_term_matrix()
+
+    @override
+    def get_all_constraint_greater_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._adaptee.get_all_constraint_greater_term_matrix()
+
+    @override
+    def get_all_constraint_equal_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._adaptee.get_all_constraint_equal_term_matrix()
 
     @override
     def get_all_st_storages(self) -> dict[str, dict[str, STStorage]]:
@@ -623,6 +665,26 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_wind(area_id)
 
     @override
+    def get_all_load(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_load()
+
+    @override
+    def get_all_misc_gen(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_misc_gen()
+
+    @override
+    def get_all_reserves(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_reserves()
+
+    @override
+    def get_all_solar(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_solar()
+
+    @override
+    def get_all_wind(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_wind()
+
+    @override
     def get_hydro_max_hourly_gen_power(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_max_hourly_gen_power(area_id)
 
@@ -637,3 +699,55 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_hydro_max_daily_pump_energy(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_max_daily_pump_energy(area_id)
+
+    @override
+    def get_all_hydro_maxpower(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_maxpower()
+
+    @override
+    def get_all_hydro_reservoir(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_reservoir()
+
+    @override
+    def get_all_hydro_energy(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_energy()
+
+    @override
+    def get_all_hydro_run_of_river(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_run_of_river()
+
+    @override
+    def get_all_hydro_modulation(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_modulation()
+
+    @override
+    def get_all_hydro_credit_modulations(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_credit_modulations()
+
+    @override
+    def get_all_hydro_inflow_pattern(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_inflow_pattern()
+
+    @override
+    def get_all_hydro_water_values(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_water_values()
+
+    @override
+    def get_all_hydro_mingen(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_mingen()
+
+    @override
+    def get_all_hydro_max_hourly_gen_power(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_max_hourly_gen_power()
+
+    @override
+    def get_all_hydro_max_hourly_pump_power(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_max_hourly_pump_power()
+
+    @override
+    def get_all_hydro_max_daily_gen_energy(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_max_daily_gen_energy()
+
+    @override
+    def get_all_hydro_max_daily_pump_energy(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_max_daily_pump_energy()

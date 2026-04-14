@@ -415,6 +415,34 @@ def test_study_settings(client: TestClient, admin_access_token: str) -> None:
     assert res_ts_config_json == {"thermal": {"number": 2}}
 
 
+def test_compatibility_settings(client: TestClient, admin_access_token: str) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    # Test hydro_pmax on a 9.3 study
+    created = client.post("/v1/studies", params={"name": "foo", "version": 930})
+    study_id = created.json()
+
+    res = client.get(f"/v1/studies/{study_id}/config/compatibility/form")
+    assert res.status_code == 200
+    assert res.json() == {"hydroPmax": "daily"}
+
+    res = client.put(
+        f"/v1/studies/{study_id}/config/compatibility/form",
+        json={"hydroPmax": "hourly"},
+    )
+    assert res.status_code == 200
+    res = client.get(f"/v1/studies/{study_id}/config/compatibility/form")
+    assert res.status_code == 200
+    assert res.json() == {"hydroPmax": "hourly"}
+
+    # reserves_enabled should be rejected on a study < 10.0
+    res = client.put(
+        f"/v1/studies/{study_id}/config/compatibility/form",
+        json={"reservesEnabled": True},
+    )
+    assert res.status_code == 422
+
+
 @pytest.mark.parametrize("study_type", ["raw", "variant"])
 def test_updated_changes_after_command(
     study_type: str,

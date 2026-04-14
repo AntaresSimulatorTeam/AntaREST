@@ -25,7 +25,6 @@ export const treeNodeIcons = {
 
 export const treeItemStyles: SxProps<Theme> = (theme) => ({
   "& > .MuiTreeItem-content": {
-    py: 0.25,
     "&:hover": {
       backgroundColor: theme.vars.palette.action.hover,
     },
@@ -47,10 +46,6 @@ export const treeItemStyles: SxProps<Theme> = (theme) => ({
         color: theme.vars.palette.text.secondary,
         fontSize: "1.2rem",
       },
-    },
-    "& > .MuiTreeItem-label": {
-      fontSize: 14,
-      fontWeight: 450,
     },
   },
 });

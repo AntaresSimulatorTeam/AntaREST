@@ -19,14 +19,11 @@ instead of filesystem storage for area data.
 NOTE: Currently, the DATABASE storage mode is a POC that only implements basic
 area operations via the DAO. The CREATE_AREA command also configures hydro management
 and other elements that are not yet implemented in the database DAO.
-Tests that require full command execution are marked as xfail until all required
-DAO methods are implemented.
 """
 
 import zipfile
 from pathlib import Path
 
-import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.serde.ini_reader import read_ini
@@ -34,12 +31,6 @@ from antarest.core.tasks.model import TaskStatus
 from tests.integration.prepare_proxy import PreparerProxy
 from tests.integration.utils import wait_task_completion
 from tests.test_helpers.download import download_to_file
-
-# Reason for xfail - CREATE_AREA command requires methods not yet implemented in DatabaseStudyDao
-DATABASE_MODE_INCOMPLETE = (
-    "DATABASE storage mode POC: CREATE_AREA command requires save_hydro_management and other methods "
-    "not yet implemented in DatabaseStudyDao"
-)
 
 
 class TestAreaDatabaseMode:
@@ -64,7 +55,6 @@ class TestAreaDatabaseMode:
         assert study_data["id"] == study_id
         assert study_data["name"] == "database-mode-study"
 
-    @pytest.mark.xfail(reason=DATABASE_MODE_INCOMPLETE, strict=True)
     def test_create_and_list_areas_in_database_mode(self, client: TestClient, user_access_token: str) -> None:
         """
         Test creating areas in a DATABASE mode study and listing them.
@@ -107,7 +97,6 @@ class TestAreaDatabaseMode:
             assert area_ui["layerY"] == {"0": 0}
             assert area_ui["layerColor"] == {"0": "230, 108, 44"}
 
-    @pytest.mark.xfail(reason=DATABASE_MODE_INCOMPLETE, strict=True)
     def test_update_area_ui_in_database_mode(self, client: TestClient, user_access_token: str) -> None:
         """
         Test updating area UI properties in DATABASE mode.
@@ -144,7 +133,6 @@ class TestAreaDatabaseMode:
         assert testarea_ui["layerY"] == {"0": 250}
         assert testarea_ui["layerColor"] == {"0": "100, 150, 200"}
 
-    @pytest.mark.xfail(reason=DATABASE_MODE_INCOMPLETE, strict=True)
     def test_delete_area_in_database_mode(self, client: TestClient, user_access_token: str) -> None:
         """
         Test deleting an area in DATABASE mode.
@@ -175,7 +163,6 @@ class TestAreaDatabaseMode:
         assert "tokeep" in areas
         assert "todelete" not in areas
 
-    @pytest.mark.xfail(reason=DATABASE_MODE_INCOMPLETE, strict=True)
     def test_area_duplicate_name_error_in_database_mode(self, client: TestClient, user_access_token: str) -> None:
         """
         Test that creating a duplicate area raises an error in DATABASE mode.
@@ -237,7 +224,6 @@ class TestAreaDatabaseMode:
         assert areas["area2"]["ui"]["color_g"] == 255
         assert areas["area2"]["ui"]["color_b"] == 0
 
-    @pytest.mark.xfail(reason=DATABASE_MODE_INCOMPLETE, strict=True)
     def test_persistence_after_multiple_operations_in_database_mode(
         self, client: TestClient, user_access_token: str
     ) -> None:
@@ -360,7 +346,6 @@ class TestDatabaseModeVsFilesystemMode:
         }
         assert res.json() == expected
 
-    @pytest.mark.xfail(reason=DATABASE_MODE_INCOMPLETE, strict=True)
     def test_area_operations_consistency_database(self, client: TestClient, user_access_token: str) -> None:
         """
         Test that area operations produce consistent results in DATABASE mode.

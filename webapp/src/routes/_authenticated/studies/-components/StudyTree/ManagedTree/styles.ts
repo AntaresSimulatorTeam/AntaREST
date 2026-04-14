@@ -24,7 +24,6 @@ export const treeNodeIcons = {
 
 export const treeItemStyles: SxProps<Theme> = (theme) => ({
   "& > .MuiTreeItem-content": {
-    py: 0.25,
     "&:hover": {
       backgroundColor: withOpacity(theme.vars.palette.info.main, 0.05),
     },

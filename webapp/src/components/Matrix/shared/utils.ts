@@ -27,6 +27,7 @@
  * This file is part of the Antares project.
  */
 
+import { Decimal } from "decimal.js-light";
 import { UTCDate } from "@date-fns/utc";
 import type { Locale } from "date-fns";
 import { enUS, fr } from "date-fns/locale";
@@ -304,16 +305,16 @@ export function calculateMatrixAggregates({
     }
 
     if (types.includes(Aggregate.Avg) || types.includes(Aggregate.Total)) {
-      const sum = row.reduce((acc, num) => acc + num, 0);
+      const sum = row.reduce((acc, num) => acc.plus(num), new Decimal(0));
 
       if (types.includes(Aggregate.Avg)) {
         aggregates.avg ??= [];
-        aggregates.avg.push(Number((sum / row.length).toFixed()));
+        aggregates.avg.push(sum.dividedBy(row.length).toNumber());
       }
 
       if (types.includes(Aggregate.Total)) {
         aggregates.total ??= [];
-        aggregates.total.push(Number(sum.toFixed()));
+        aggregates.total.push(sum.toNumber());
       }
     }
   }

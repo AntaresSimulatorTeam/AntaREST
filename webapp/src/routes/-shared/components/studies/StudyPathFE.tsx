@@ -12,19 +12,20 @@
  * This file is part of the Antares project.
  */
 
-import { InputAdornment, TextField, type TextFieldProps } from "@mui/material";
-import { useTranslation } from "react-i18next";
 import { TREE_ROOT_NAME } from "@/components/utils/constants";
 import reactHookFormSupport from "@/hoc/reactHookFormSupport";
 import { validatePath, validateString } from "@/utils/validation/string";
 import { combineValidators } from "@/utils/validation/utils";
+import { InputAdornment, TextField, type TextFieldProps } from "@mui/material";
+import { useTranslation } from "react-i18next";
 
 interface Props extends Omit<TextFieldProps, "type" | "value" | "defaultValue" | "label"> {
   value?: string;
   defaultValue?: string;
+  disableAdornment?: boolean;
 }
 
-function StudyPathFE({ slotProps, helperText, ...rest }: Props) {
+function StudyPathFE({ slotProps, helperText, disableAdornment = false, ...rest }: Props) {
   const { t } = useTranslation();
 
   return (
@@ -36,7 +37,9 @@ function StudyPathFE({ slotProps, helperText, ...rest }: Props) {
         ...slotProps,
         input: {
           ...slotProps?.input,
-          startAdornment: <InputAdornment position="start">{`${TREE_ROOT_NAME}/`}</InputAdornment>,
+          startAdornment: disableAdornment ? undefined : (
+            <InputAdornment position="start">{`${TREE_ROOT_NAME}/`}</InputAdornment>
+          ),
         },
       }}
       helperText={helperText ?? t("form.field.path.help")}

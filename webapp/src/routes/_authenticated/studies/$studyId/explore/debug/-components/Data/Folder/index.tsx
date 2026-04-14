@@ -15,6 +15,7 @@
 import UploadFileButton from "@/components/buttons/UploadFileButton";
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import EmptyView from "@/components/page/EmptyView";
+import RouterListItemButton from "@/components/router/RouterListItemButton";
 import useConfirm from "@/hooks/useConfirm";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
@@ -30,13 +31,13 @@ import {
   IconButton,
   List,
   ListItem,
-  ListItemButton,
   ListItemIcon,
   ListItemText,
   ListSubheader,
   Menu,
   MenuItem,
 } from "@mui/material";
+import { useParams } from "@tanstack/react-router";
 import { Fragment, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -52,7 +53,8 @@ import { Filename, Menubar } from "../styles";
 import CreateFolderDialog from "./CreateFolderDialog";
 
 function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProps) {
-  const { setPathSearchParam, reloadTree } = useContext(DebugContext);
+  const params = useParams({ from: "/_authenticated/studies/$studyId/explore/debug/" });
+  const { reloadTree } = useContext(DebugContext);
   const { t } = useTranslation();
   const study = useStudy();
   const replaceAction = useConfirm();
@@ -185,7 +187,11 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
                   }
                   disablePadding
                 >
-                  <ListItemButton onClick={() => setPathSearchParam(path)}>
+                  <RouterListItemButton
+                    to="/studies/$studyId/explore/debug"
+                    params={params}
+                    search={{ path }}
+                  >
                     <ListItemIcon>
                       <Icon />
                     </ListItemIcon>
@@ -198,7 +204,7 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
                         },
                       }}
                     />
-                  </ListItemButton>
+                  </RouterListItemButton>
                 </ListItem>
                 {isNotLast && <Divider variant="fullWidth" />}
               </Fragment>
@@ -210,9 +216,13 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
       </List>
       {/* Items menu */}
       <Menu anchorEl={menuData?.anchorEl} open={!!menuData} onClose={handleMenuClose}>
-        <MenuItem onClick={handleDeleteClick}>
-          <DeleteIcon sx={{ mr: 1 }} fontSize="small" />
-          {t("global.delete")}
+        <MenuItem onClick={handleDeleteClick} dense>
+          <ListItemIcon>
+            <DeleteIcon color="error" />
+          </ListItemIcon>
+          <ListItemText slotProps={{ primary: { color: "error" } }}>
+            {t("global.delete")}
+          </ListItemText>
         </MenuItem>
       </Menu>
       <CreateFolderDialog

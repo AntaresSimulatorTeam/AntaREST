@@ -12,9 +12,8 @@
 import contextlib
 import logging
 import re
-import typing as t
 from abc import abstractmethod
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import polars as pl
 from typing_extensions import override
@@ -24,6 +23,8 @@ from antarest.core.model import JSON
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
 from antarest.study.dao.api.area_dao import AreaDao
+from antarest.study.dao.common import AreaId, AreaSeriesMapping
+from antarest.study.dao.file.common import get_all_area_matrices, save_area_matrices
 from antarest.study.model import (
     STUDY_VERSION_6_5,
     STUDY_VERSION_8_1,
@@ -35,8 +36,28 @@ from antarest.study.storage.rawstudy.model.filesystem.config.identifier import t
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+
+
+def _get_solar_matrix_path(area_id: AreaId) -> list[str]:
+    return ["input", "solar", "series", f"solar_{area_id}"]
+
+
+def _get_load_matrix_path(area_id: AreaId) -> list[str]:
+    return ["input", "load", "series", f"load_{area_id}"]
+
+
+def _get_wind_matrix_path(area_id: AreaId) -> list[str]:
+    return ["input", "wind", "series", f"wind_{area_id}"]
+
+
+def _get_reserves_matrix_path(area_id: AreaId) -> list[str]:
+    return ["input", "reserves", area_id]
+
+
+def _get_misc_gen_matrix_path(area_id: AreaId) -> list[str]:
+    return ["input", "misc-gen", f"miscgen-{area_id}"]
 
 
 class FileStudyAreaDao(AreaDao):
@@ -166,23 +187,48 @@ class FileStudyAreaDao(AreaDao):
 
     @override
     def get_load(self, area_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "load", "series", f"load_{area_id}"])
+        return self.get_impl().get_matrix(_get_load_matrix_path(area_id))
 
     @override
     def get_misc_gen(self, area_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "misc-gen", f"miscgen-{area_id}"])
+        return self.get_impl().get_matrix(_get_misc_gen_matrix_path(area_id))
 
     @override
     def get_reserves(self, area_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "reserves", area_id])
+        return self.get_impl().get_matrix(_get_reserves_matrix_path(area_id))
 
     @override
     def get_solar(self, area_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "solar", "series", f"solar_{area_id}"])
+        return self.get_impl().get_matrix(_get_solar_matrix_path(area_id))
 
     @override
     def get_wind(self, area_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "wind", "series", f"wind_{area_id}"])
+        return self.get_impl().get_matrix(_get_wind_matrix_path(area_id))
+
+    @override
+    def get_all_load(self) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_load_matrix_path)
+
+    @override
+    def get_all_misc_gen(self) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_misc_gen_matrix_path)
+
+    @override
+    def get_all_reserves(self) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_reserves_matrix_path)
+
+    @override
+    def get_all_solar(self) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_solar_matrix_path)
+
+    @override
+    def get_all_wind(self) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_wind_matrix_path)
 
     @override
     def save_area(self, area_name: str) -> None:
@@ -543,26 +589,21 @@ class FileStudyAreaDao(AreaDao):
             study_data.tree.save(areas_ui[area], ["input", "areas", area, "ui"])
 
     @override
-    def save_load(self, area_id: str, series_id: str) -> None:
-        study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "load", "series", f"load_{area_id}"])
+    def save_load(self, series: AreaSeriesMapping) -> None:
+        save_area_matrices(self.get_impl(), self.get_file_study(), series, _get_load_matrix_path)
 
     @override
-    def save_misc_gen(self, area_id: str, series_id: str) -> None:
-        study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "misc-gen", f"miscgen-{area_id}"])
+    def save_misc_gen(self, series: AreaSeriesMapping) -> None:
+        save_area_matrices(self.get_impl(), self.get_file_study(), series, _get_misc_gen_matrix_path)
 
     @override
-    def save_reserves(self, area_id: str, series_id: str) -> None:
-        study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "reserves", area_id])
+    def save_reserves(self, series: AreaSeriesMapping) -> None:
+        save_area_matrices(self.get_impl(), self.get_file_study(), series, _get_reserves_matrix_path)
 
     @override
-    def save_solar(self, area_id: str, series_id: str) -> None:
-        study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "solar", "series", f"solar_{area_id}"])
+    def save_solar(self, series: AreaSeriesMapping) -> None:
+        save_area_matrices(self.get_impl(), self.get_file_study(), series, _get_solar_matrix_path)
 
     @override
-    def save_wind(self, area_id: str, series_id: str) -> None:
-        study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "wind", "series", f"wind_{area_id}"])
+    def save_wind(self, series: AreaSeriesMapping) -> None:
+        save_area_matrices(self.get_impl(), self.get_file_study(), series, _get_wind_matrix_path)

@@ -54,7 +54,6 @@ from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_REFERENCE_TEMPLATES,
-    STUDY_VERSION_9_0,
     MatrixFrequency,
     MatrixIndex,
     Study,
@@ -77,7 +76,7 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_autho
     Update antares study information in the study.antares file.
 
     Args:
-        metadata: Study metadata containing name, version, dates, etc.
+        metadata: Study metadata containing name, dates, etc.
         study_tree: File study tree to update
         update_author: Whether to update the author field
     """
@@ -89,9 +88,8 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_autho
 
     # Update basic fields
     antares_info["caption"] = metadata.name
-    antares_info["created"] = _format_timestamp(metadata.created_at)
-    antares_info["lastsave"] = _format_timestamp(metadata.updated_at)
-    antares_info["version"] = _format_version(metadata.version)
+    antares_info["created"] = format_timestamp(metadata.created_at)
+    antares_info["lastsave"] = format_timestamp(metadata.updated_at)
     antares_info["editor"] = editor
 
     # Update author-related fields if additional_data exists
@@ -101,15 +99,9 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_autho
     study_tree.save(study_data_info, ["study"])
 
 
-def _format_timestamp(dt: datetime | None) -> str:
-    """Format datetime as timestamp string or '0' if None."""
-    return str(dt.timestamp()) if dt is not None else "0"
-
-
-def _format_version(version_str: str) -> str:
-    """Format version string according to version rules."""
-    version = StudyVersion.parse(version_str)
-    return f"{version:2d}" if version >= STUDY_VERSION_9_0 else f"{version:ddd}"
+def format_timestamp(dt: datetime | None) -> float:
+    """Format datetime as a timestamp float or 0 if None."""
+    return dt.timestamp() if dt is not None else 0
 
 
 def fix_study_root(study_path: Path) -> None:

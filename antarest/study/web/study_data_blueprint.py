@@ -40,6 +40,7 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
     BindingConstraintUpdateWithMatrices,
+    ConstraintId,
     ConstraintTerm,
     ConstraintTermUpdate,
 )
@@ -939,7 +940,7 @@ def create_study_data_routes() -> APIRouter:
     def get_binding_constraint(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        binding_constraint_id: SanitizedStr,
+        binding_constraint_id: ConstraintId,
     ) -> BindingConstraint:
         logger.info(f"Fetching binding constraint {binding_constraint_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
@@ -953,7 +954,7 @@ def create_study_data_routes() -> APIRouter:
     def update_binding_constraint(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        binding_constraint_id: SanitizedStr,
+        binding_constraint_id: ConstraintId,
         data: BindingConstraintUpdateWithMatrices,
     ) -> BindingConstraint:
         logger.info(f"Update binding constraint {binding_constraint_id} for study {uuid}")
@@ -1090,8 +1091,8 @@ def create_study_data_routes() -> APIRouter:
     def duplicate_binding_constraint(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        binding_constraint_id: SanitizedStr,
-        new_constraint_name: SanitizedStr,
+        binding_constraint_id: ConstraintId,
+        new_constraint_name: ConstraintId,
     ) -> BindingConstraint:
         logger.info(f"Duplicates constraint {binding_constraint_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
@@ -1107,7 +1108,7 @@ def create_study_data_routes() -> APIRouter:
     def delete_binding_constraint(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        binding_constraint_id: SanitizedStr,
+        binding_constraint_id: ConstraintId,
     ) -> None:
         logger.info(f"Deleting the binding constraint {binding_constraint_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
@@ -1123,7 +1124,7 @@ def create_study_data_routes() -> APIRouter:
     def delete_multiple_binding_constraints(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        binding_constraints_ids: list[SanitizedStr],
+        binding_constraints_ids: list[ConstraintId],
     ) -> None:
         logger.info(f"Deleting the binding constraints {binding_constraints_ids!r} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
@@ -1140,7 +1141,7 @@ def create_study_data_routes() -> APIRouter:
     def add_constraint_term(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        binding_constraint_id: SanitizedStr,
+        binding_constraint_id: ConstraintId,
         term: ConstraintTerm,
     ) -> None:
         """
@@ -1166,7 +1167,7 @@ def create_study_data_routes() -> APIRouter:
     def add_constraint_terms(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        binding_constraint_id: SanitizedStr,
+        binding_constraint_id: ConstraintId,
         terms: Sequence[ConstraintTerm],
     ) -> None:
         """
@@ -1192,7 +1193,7 @@ def create_study_data_routes() -> APIRouter:
     def update_constraint_term(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        binding_constraint_id: SanitizedStr,
+        binding_constraint_id: ConstraintId,
         term: ConstraintTermUpdate,
     ) -> None:
         """
@@ -1218,7 +1219,7 @@ def create_study_data_routes() -> APIRouter:
     def update_constraint_terms(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        binding_constraint_id: SanitizedStr,
+        binding_constraint_id: ConstraintId,
         terms: Sequence[ConstraintTermUpdate],
     ) -> None:
         """
@@ -1244,7 +1245,7 @@ def create_study_data_routes() -> APIRouter:
     def remove_constraint_term(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        binding_constraint_id: SanitizedStr,
+        binding_constraint_id: ConstraintId,
         term_id: SanitizedStr,
     ) -> None:
         logger.info(f"Remove constraint term {term_id} from {binding_constraint_id} for study {uuid}")
@@ -1455,13 +1456,13 @@ def create_study_data_routes() -> APIRouter:
     def set_compatibility_parameters(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        field_values: CompatibilityParametersUpdate,
+        parameters: CompatibilityParametersUpdate,
     ) -> CompatibilityParameters:
         logger.info(f"Updating Compatibility parameters values for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         return study_service.compatibility_parameters_manager.update_compatibility_parameters(
-            study_interface, field_values
+            study_interface, parameters
         )
 
     @bp.put(

@@ -17,6 +17,7 @@ from pathlib import Path
 import polars as pl
 
 from antarest.core.exceptions import IncorrectPathError
+from antarest.study.business.model.binding_constraint_model import ConstraintId
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_2, STUDY_VERSION_8_7
@@ -55,6 +56,84 @@ class RawPathToMatrixMapper:
         def _save_thermal_co2_cost(area_id: str, thermal_id: str, series_id: str) -> None:
             dao.save_thermal_co2_cost({area_id: {thermal_id: series_id}})
 
+        def _save_renewable_series(area_id: str, renewable_id: str, series_id: str) -> None:
+            dao.save_renewable_series({area_id: {renewable_id: series_id}})
+
+        def _save_load(area_id: str, series_id: str) -> None:
+            dao.save_load({area_id: series_id})
+
+        def _save_solar(area_id: str, series_id: str) -> None:
+            dao.save_solar({area_id: series_id})
+
+        def _save_wind(area_id: str, series_id: str) -> None:
+            dao.save_wind({area_id: series_id})
+
+        def _save_reserves(area_id: str, series_id: str) -> None:
+            dao.save_reserves({area_id: series_id})
+
+        def _save_misc_gen(area_id: str, series_id: str) -> None:
+            dao.save_misc_gen({area_id: series_id})
+
+        def _save_link_series(area_from: str, area_to: str, series_id: str) -> None:
+            dao.save_link_series({(area_from, area_to): series_id})
+
+        def _save_link_direct_capacities(area_from: str, area_to: str, series_id: str) -> None:
+            dao.save_link_direct_capacities({(area_from, area_to): series_id})
+
+        def _save_link_indirect_capacities(area_from: str, area_to: str, series_id: str) -> None:
+            dao.save_link_indirect_capacities({(area_from, area_to): series_id})
+
+        def _save_hydro_max_power(area_id: str, series_id: str) -> None:
+            dao.save_hydro_maxpower({area_id: series_id})
+
+        def _save_hydro_reservoir(area_id: str, series_id: str) -> None:
+            dao.save_hydro_reservoir({area_id: series_id})
+
+        def _save_hydro_energy(area_id: str, series_id: str) -> None:
+            dao.save_hydro_energy({area_id: series_id})
+
+        def _save_hydro_run_of_river(area_id: str, series_id: str) -> None:
+            dao.save_hydro_run_of_river({area_id: series_id})
+
+        def _save_hydro_modulation(area_id: str, series_id: str) -> None:
+            dao.save_hydro_modulation({area_id: series_id})
+
+        def _save_hydro_credit_modulations(area_id: str, series_id: str) -> None:
+            dao.save_hydro_credit_modulations({area_id: series_id})
+
+        def _save_hydro_inflow_pattern(area_id: str, series_id: str) -> None:
+            dao.save_hydro_inflow_pattern({area_id: series_id})
+
+        def _save_hydro_water_values(area_id: str, series_id: str) -> None:
+            dao.save_hydro_water_values({area_id: series_id})
+
+        def _save_hydro_mingen(area_id: str, series_id: str) -> None:
+            dao.save_hydro_mingen({area_id: series_id})
+
+        def _save_hydro_max_hourly_gen_power(area_id: str, series_id: str) -> None:
+            dao.save_hydro_max_hourly_gen_power({area_id: series_id})
+
+        def _save_hydro_max_hourly_pump_power(area_id: str, series_id: str) -> None:
+            dao.save_hydro_max_hourly_pump_power({area_id: series_id})
+
+        def _save_hydro_max_daily_gen_energy(area_id: str, series_id: str) -> None:
+            dao.save_hydro_max_daily_gen_energy({area_id: series_id})
+
+        def _save_hydro_max_daily_pump_energy(area_id: str, series_id: str) -> None:
+            dao.save_hydro_max_daily_pump_energy({area_id: series_id})
+
+        def _save_constraint_values_matrix(constraint_id: str, series_id: str) -> None:
+            dao.save_constraint_values_matrix({ConstraintId(constraint_id): series_id})
+
+        def _save_constraint_less_term_matrix(constraint_id: str, series_id: str) -> None:
+            dao.save_constraint_less_term_matrix({ConstraintId(constraint_id): series_id})
+
+        def _save_constraint_equal_term_matrix(constraint_id: str, series_id: str) -> None:
+            dao.save_constraint_equal_term_matrix({ConstraintId(constraint_id): series_id})
+
+        def _save_constraint_greater_term_matrix(constraint_id: str, series_id: str) -> None:
+            dao.save_constraint_greater_term_matrix({ConstraintId(constraint_id): series_id})
+
         self._path_matchers = [
             RegexMatcher(
                 pattern=re.compile(r"user/expansion/capa/(?P<filename>[^/]+)"),
@@ -69,37 +148,37 @@ class RawPathToMatrixMapper:
             RegexMatcher(
                 pattern=re.compile(r"input/load/series/load_(?P<area_id>[^/]+)"),
                 getter=dao.get_load,
-                setter=dao.save_load,
+                setter=_save_load,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/wind/series/wind_(?P<area_id>[^/]+)"),
                 getter=dao.get_wind,
-                setter=dao.save_wind,
+                setter=_save_wind,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/solar/series/solar_(?P<area_id>[^/]+)"),
                 getter=dao.get_solar,
-                setter=dao.save_solar,
+                setter=_save_solar,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/misc-gen/miscgen-(?P<area_id>[^/]+)"),
                 getter=dao.get_misc_gen,
-                setter=dao.save_misc_gen,
+                setter=_save_misc_gen,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/reserves/(?P<area_id>[^/]+)"),
                 getter=dao.get_reserves,
-                setter=dao.save_reserves,
+                setter=_save_reserves,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/links/(?P<area_from>[^/]+)/capacities/(?P<area_to>[^/]+)_direct"),
                 getter=dao.get_link_direct_capacities,
-                setter=dao.save_link_direct_capacities,
+                setter=_save_link_direct_capacities,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/links/(?P<area_from>[^/]+)/capacities/(?P<area_to>[^/]+)_indirect"),
                 getter=dao.get_link_indirect_capacities,
-                setter=dao.save_link_indirect_capacities,
+                setter=_save_link_indirect_capacities,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/thermal/prepro/(?P<area_id>[^/]+)/(?P<thermal_id>[^/]+)/data"),
@@ -129,7 +208,7 @@ class RawPathToMatrixMapper:
             RegexMatcher(
                 pattern=re.compile(r"input/renewables/series/(?P<area_id>[^/]+)/(?P<renewable_id>[^/]+)/series"),
                 getter=dao.get_renewable_series,
-                setter=dao.save_renewable_series,
+                setter=_save_renewable_series,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/pmax_injection"),
@@ -192,67 +271,67 @@ class RawPathToMatrixMapper:
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/common/capacity/maxpower_(?P<area_id>[^/]+)"),
                 getter=dao.get_hydro_maxpower,
-                setter=dao.save_hydro_maxpower,
+                setter=_save_hydro_max_power,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/common/capacity/reservoir_(?P<area_id>[^/]+)"),
                 getter=dao.get_hydro_reservoir,
-                setter=dao.save_hydro_reservoir,
+                setter=_save_hydro_reservoir,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/prepro/(?P<area_id>[^/]+)/energy"),
                 getter=dao.get_hydro_energy,
-                setter=dao.save_hydro_energy,
+                setter=_save_hydro_energy,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/series/(?P<area_id>[^/]+)/ror"),
                 getter=dao.get_hydro_run_of_river,
-                setter=dao.save_hydro_run_of_river,
+                setter=_save_hydro_run_of_river,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/series/(?P<area_id>[^/]+)/mod"),
                 getter=dao.get_hydro_modulation,
-                setter=dao.save_hydro_modulation,
+                setter=_save_hydro_modulation,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/series/(?P<area_id>[^/]+)/mingen"),
                 getter=dao.get_hydro_mingen,
-                setter=dao.save_hydro_mingen,
+                setter=_save_hydro_mingen,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/series/(?P<area_id>[^/]+)/maxHourlyGenPower"),
                 getter=dao.get_hydro_max_hourly_gen_power,
-                setter=dao.save_hydro_max_hourly_gen_power,
+                setter=_save_hydro_max_hourly_gen_power,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/series/(?P<area_id>[^/]+)/maxHourlyPumpPower"),
                 getter=dao.get_hydro_max_hourly_pump_power,
-                setter=dao.save_hydro_max_hourly_pump_power,
+                setter=_save_hydro_max_hourly_pump_power,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/common/capacity/creditmodulations_(?P<area_id>[^/]+)"),
                 getter=dao.get_hydro_credit_modulations,
-                setter=dao.save_hydro_credit_modulations,
+                setter=_save_hydro_credit_modulations,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/common/capacity/inflowPattern_(?P<area_id>[^/]+)"),
                 getter=dao.get_hydro_inflow_pattern,
-                setter=dao.save_hydro_inflow_pattern,
+                setter=_save_hydro_inflow_pattern,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/common/capacity/waterValues_(?P<area_id>[^/]+)"),
                 getter=dao.get_hydro_water_values,
-                setter=dao.save_hydro_water_values,
+                setter=_save_hydro_water_values,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/common/capacity/maxDailyGenEnergy_(?P<area_id>[^/]+)"),
                 getter=dao.get_hydro_max_daily_gen_energy,
-                setter=dao.save_hydro_max_daily_gen_energy,
+                setter=_save_hydro_max_daily_gen_energy,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/common/capacity/maxDailyPumpEnergy_(?P<area_id>[^/]+)"),
                 getter=dao.get_hydro_max_daily_pump_energy,
-                setter=dao.save_hydro_max_daily_pump_energy,
+                setter=_save_hydro_max_daily_pump_energy,
             ),
             RegexMatcher(
                 pattern=re.compile(
@@ -269,7 +348,7 @@ class RawPathToMatrixMapper:
                 RegexMatcher(
                     pattern=re.compile(r"input/links/(?P<area_from>[^/]+)/(?P<area_to>[^/]+)"),
                     getter=dao.get_link_series,
-                    setter=dao.save_link_series,
+                    setter=_save_link_series,
                 )
             )
         else:
@@ -277,7 +356,7 @@ class RawPathToMatrixMapper:
                 RegexMatcher(
                     pattern=re.compile(r"input/links/(?P<area_from>[^/]+)/(?P<area_to>[^/]+)_parameters"),
                     getter=dao.get_link_series,
-                    setter=dao.save_link_series,
+                    setter=_save_link_series,
                 )
             )
         if study_version < STUDY_VERSION_8_7:
@@ -285,7 +364,7 @@ class RawPathToMatrixMapper:
                 RegexMatcher(
                     pattern=re.compile(r"input/bindingconstraints/(?P<constraint_id>[^/]+)"),
                     getter=dao.get_constraint_values_matrix,
-                    setter=dao.save_constraint_values_matrix,
+                    setter=_save_constraint_values_matrix,
                 )
             )
         else:
@@ -294,17 +373,17 @@ class RawPathToMatrixMapper:
                     RegexMatcher(
                         pattern=re.compile(r"input/bindingconstraints/(?P<constraint_id>[^/]+)_lt"),
                         getter=dao.get_constraint_less_term_matrix,
-                        setter=dao.save_constraint_less_term_matrix,
+                        setter=_save_constraint_less_term_matrix,
                     ),
                     RegexMatcher(
                         pattern=re.compile(r"input/bindingconstraints/(?P<constraint_id>[^/]+)_gt"),
                         getter=dao.get_constraint_greater_term_matrix,
-                        setter=dao.save_constraint_greater_term_matrix,
+                        setter=_save_constraint_greater_term_matrix,
                     ),
                     RegexMatcher(
                         pattern=re.compile(r"input/bindingconstraints/(?P<constraint_id>[^/]+)_eq"),
                         getter=dao.get_constraint_equal_term_matrix,
-                        setter=dao.save_constraint_equal_term_matrix,
+                        setter=_save_constraint_equal_term_matrix,
                     ),
                 ]
             )

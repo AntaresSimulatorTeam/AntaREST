@@ -23,7 +23,6 @@ from antares.study.version import StudyVersion
 from antarest.core.interfaces.cache import ICache, study_config_cache_key
 from antarest.matrixstore.matrix_uri_mapper import (
     MatrixUriMapperFactory,
-    NormalizedMatrixUriMapper,
     get_mapper_type,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build, parse_outputs
@@ -133,7 +132,3 @@ class StudyFactory:
                 FileStudyTreeConfigDTO.from_build_config(config).model_dump(),
             )
         return result
-
-    def create_from_config(self, config: FileStudyTreeConfig, mapper_type: NormalizedMatrixUriMapper) -> FileStudyTree:
-        matrix_mapper = self._matrix_mapper_factory.create(mapper_type)
-        return FileStudyTree(matrix_mapper, config)

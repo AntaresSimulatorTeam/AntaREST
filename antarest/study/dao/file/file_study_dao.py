@@ -16,6 +16,7 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.exceptions import NotAMatrixError
+from antarest.core.interfaces.cache import ICache, update_cache
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_adequacy_patch_parameters_dao import FileStudyAdequacyPatchParametersDao
 from antarest.study.dao.file.file_study_advanced_parameters import FileStudyAdvancedParametersDao
@@ -40,6 +41,7 @@ from antarest.study.dao.file.file_study_user_resources_dao import FileStudyUserR
 from antarest.study.dao.file.file_study_xpansion_dao import FileStudyXpansionDao
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import StudyMetadataUpdate
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
@@ -85,12 +87,14 @@ class FileStudyTreeDao(
         generator_matrix_constants: "GeneratorMatrixConstants",
         blob_service: "IBlobService",
         matrix_service: "ISimpleMatrixService",
+        cache: ICache,
     ) -> None:
         self._file_study = study
         self._generator_matrix_constants = generator_matrix_constants
         self._blob_service = blob_service
         self._matrix_service = matrix_service
         self._is_study_managed = is_study_managed
+        self._cache = cache
 
     @property
     def matrix_service(self) -> "ISimpleMatrixService":
@@ -146,6 +150,11 @@ class FileStudyTreeDao(
         if metadata.author:
             study_antares["author"] = metadata.author
         self._file_study.tree.save(study_antares, ["study", "antares"])
+
+    @override
+    def update_cache(self) -> None:
+        data = FileStudyTreeConfigDTO.from_build_config(self._file_study.config).model_dump()
+        update_cache(self._cache, self._file_study.config.study_id, data)
 
     def get_matrix(self, url: list[str]) -> pl.DataFrame:
         """

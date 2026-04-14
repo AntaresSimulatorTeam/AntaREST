@@ -27,12 +27,6 @@ from antarest.study.dao.file.file_study_constraint_dao import generate_replaceme
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
-    default_bc_weekly_daily as default_bc_weekly_daily_87,
-)
-from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
-    default_bc_hourly as default_bc_hourly_86,
-)
 from antarest.study.storage.variantstudy.command_factory import CommandValidationContext
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     CreateBindingConstraint,
@@ -228,38 +222,28 @@ def test_generate_replacement_matrices() -> None:
     # 8,6,0 HOURLY GREATER
     study_version = STUDY_VERSION_8_6
 
-    matrices = list(
-        generate_replacement_matrices(
-            bc_id, study_version, BindingConstraintFrequency.HOURLY, BindingConstraintOperator.GREATER
-        )
-    )
+    matrices = list(generate_replacement_matrices(bc_id, study_version, BindingConstraintOperator.GREATER))
     assert len(matrices) == 1
     assert matrices[0][0] == f"input/bindingconstraints/{bc_id}"
-    assert matrices[0][1] == default_bc_hourly_86().tolist()
+    # File DAO returns a null matrix placeholder (empty content). The simulator default
+    # matrix is provided at read-time by the matrix node layer.
+    assert matrices[0][1] == []
 
     # 8,7,0 DAILY BOTH
     bc_id = "bc_1"
     study_version = STUDY_VERSION_8_7
 
-    matrices = list(
-        generate_replacement_matrices(
-            bc_id, study_version, BindingConstraintFrequency.DAILY, BindingConstraintOperator.BOTH
-        )
-    )
+    matrices = list(generate_replacement_matrices(bc_id, study_version, BindingConstraintOperator.BOTH))
     assert len(matrices) == 2
     assert matrices[0][0] == f"input/bindingconstraints/{bc_id}_lt"
-    assert matrices[0][1] == default_bc_weekly_daily_87().tolist()
+    assert matrices[0][1] == []
     assert matrices[1][0] == f"input/bindingconstraints/{bc_id}_gt"
-    assert matrices[1][1] == default_bc_weekly_daily_87().tolist()
+    assert matrices[1][1] == []
 
     # 8,7,0 WEEKLY LESS
 
-    matrices = list(
-        generate_replacement_matrices(
-            bc_id, study_version, BindingConstraintFrequency.WEEKLY, BindingConstraintOperator.LESS
-        )
-    )
+    matrices = list(generate_replacement_matrices(bc_id, study_version, BindingConstraintOperator.LESS))
     assert len(matrices) == 1
     target = f"input/bindingconstraints/{bc_id}_lt"
     assert matrices[0][0] == target
-    assert matrices[0][1] == default_bc_weekly_daily_87().tolist()
+    assert matrices[0][1] == []

@@ -30,7 +30,13 @@ from antarest.core.exceptions import AreaNotFound, LayerNotFound
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_dao import AreaDao
-from antarest.study.dao.database.common import serialize_frequency_filters, validate_area_exists
+from antarest.study.dao.common import AreaSeriesMapping
+from antarest.study.dao.database.common import (
+    get_all_area_matrices,
+    save_area_matrix,
+    serialize_frequency_filters,
+    validate_area_exists,
+)
 from antarest.study.dao.database.models.area import (
     AREA_TABLE,
     AREA_UI_TABLE,
@@ -149,7 +155,7 @@ class DatabaseAreaDao(AreaDao):
                     "color_r": default_ui.color_r,
                     "color_g": default_ui.color_g,
                     "color_b": default_ui.color_b,
-                    "layers": " ".join(sorted([row.layer_id for row in ui_rows if row.layer_id != DEFAULT_LAYER_ID])),
+                    "layers": " ".join(sorted([row.layer_id for row in ui_rows], key=int)),
                 }
 
             # Build layer-specific data
@@ -287,14 +293,14 @@ class DatabaseAreaDao(AreaDao):
         session.commit()
 
     @override
-    def save_area_ui(self, area_id: str, layer: str, area_ui_data: AreaUI) -> None:
+    def save_area_ui(self, area_id: str, layer: str, area_ui: AreaUI) -> None:
         """
         Save an area's UI properties (position and color) for a specific layer.
 
         Args:
             area_id: The area identifier.
             layer: The layer identifier (typically "0", "1", etc.).
-            area_ui_data: The UI properties to save (x, y, color_rgb).
+            area_ui: The UI properties to save (x, y, color_rgb).
 
         Raises:
             AreaNotFound: If the area does not exist.
@@ -304,13 +310,13 @@ class DatabaseAreaDao(AreaDao):
         session = self.get_session()
 
         # Set values
-        r, g, b = area_ui_data.color_rgb
+        r, g, b = area_ui.color_rgb
         values = {
             "study_id": study_id,
             "area_id": area_id,
             "layer_id": layer,
-            "x": area_ui_data.x,
-            "y": area_ui_data.y,
+            "x": area_ui.x,
+            "y": area_ui.y,
             "color_r": r,
             "color_g": g,
             "color_b": b,
@@ -458,17 +464,6 @@ class DatabaseAreaDao(AreaDao):
 
         return session.execute(stmt).fetchone()
 
-    def _save_matrix(self, area_id: str, table: Table, matrix_id: str) -> None:
-        session = self.get_session()
-        study_id = self.get_study_id()
-
-        values = {"study_id": study_id, "area_id": area_id, "matrix_id": matrix_id}
-        try:
-            upsert_one(session, table, values)
-        except IntegrityError as e:
-            raise AreaNotFound(area_id) from e
-        session.commit()
-
     @override
     def get_load(self, area_id: str) -> pl.DataFrame:
         return self._get_matrix(area_id, LOAD_TABLE)
@@ -490,21 +485,41 @@ class DatabaseAreaDao(AreaDao):
         return self._get_matrix(area_id, WIND_TABLE)
 
     @override
-    def save_load(self, area_id: str, series_id: str) -> None:
-        self._save_matrix(area_id, LOAD_TABLE, series_id)
+    def get_all_load(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_id, self._db_session, LOAD_TABLE)
 
     @override
-    def save_misc_gen(self, area_id: str, series_id: str) -> None:
-        self._save_matrix(area_id, MISC_GEN_TABLE, series_id)
+    def get_all_misc_gen(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_id, self._db_session, MISC_GEN_TABLE)
 
     @override
-    def save_reserves(self, area_id: str, series_id: str) -> None:
-        self._save_matrix(area_id, RESERVES_TABLE, series_id)
+    def get_all_reserves(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_id, self._db_session, RESERVES_TABLE)
 
     @override
-    def save_solar(self, area_id: str, series_id: str) -> None:
-        self._save_matrix(area_id, SOLAR_TABLE, series_id)
+    def get_all_solar(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_id, self._db_session, SOLAR_TABLE)
 
     @override
-    def save_wind(self, area_id: str, series_id: str) -> None:
-        self._save_matrix(area_id, WIND_TABLE, series_id)
+    def get_all_wind(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_id, self._db_session, WIND_TABLE)
+
+    @override
+    def save_load(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, LOAD_TABLE)
+
+    @override
+    def save_misc_gen(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, MISC_GEN_TABLE)
+
+    @override
+    def save_reserves(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, RESERVES_TABLE)
+
+    @override
+    def save_solar(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, SOLAR_TABLE)
+
+    @override
+    def save_wind(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, WIND_TABLE)
