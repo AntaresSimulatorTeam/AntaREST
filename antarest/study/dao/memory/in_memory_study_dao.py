@@ -890,13 +890,10 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def save_st_storage(self, area_id: str, st_storage: STStorage) -> None:
-        self._st_storages[cluster_key(area_id, st_storage.id)] = st_storage
-
-    @override
-    def save_st_storages(self, area_id: str, storages: Sequence[STStorage]) -> None:
-        for storage in storages:
-            self.save_st_storage(area_id, storage)
+    def save_st_storages(self, data: dict[AreaId, list[STStorage]]) -> None:
+        for area_id, storages in data.items():
+            for storage in storages:
+                self._st_storages[cluster_key(area_id, storage.id)] = storage
 
     @override
     def save_st_storage_pmax_injection(self, area_id: str, storage_id: str, series_id: str) -> None:

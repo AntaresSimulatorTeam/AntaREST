@@ -24,7 +24,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.core.exceptions import STStorageAdditionalConstraintNotFound, STStorageNotFound
+from antarest.core.exceptions import AreaNotFound, STStorageAdditionalConstraintNotFound, STStorageNotFound
 from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
@@ -33,6 +33,7 @@ from antarest.study.business.model.sts_model import (
     validate_st_storage_against_version,
 )
 from antarest.study.dao.api.st_storage_dao import STStorageDao
+from antarest.study.dao.common import AreaId
 from antarest.study.dao.database.common import get_row_representation_as_dict, validate_area_exists
 from antarest.study.dao.database.models.st_storage import (
     COST_INJECTION_TABLE,
@@ -123,35 +124,22 @@ class DatabaseStStorageDao(STStorageDao):
         raise STStorageAdditionalConstraintNotFound(area_id, constraint_id) from exc
 
     @override
-    def save_st_storage(self, area_id: str, st_storage: STStorage) -> None:
-        session = self._db_session
-
-        value = self._convert_st_storage_to_row(area_id, st_storage)
-
-        try:
-            upsert_one(session, ST_STORAGE_TABLE, value)
-        except IntegrityError as e:
-            self._raise_the_right_storage_exception(area_id, st_storage.id, e)
-
-        session.commit()
-
-    @override
-    def save_st_storages(self, area_id: str, storages: Sequence[STStorage]) -> None:
-        if not storages:
+    def save_st_storages(self, data: dict[AreaId, list[STStorage]]) -> None:
+        if not data:
             return
 
+        values = []
+        for area_id, storages in data.items():
+            for storage in storages:
+                values.append(self._convert_st_storage_to_row(area_id, storage))
+
         session = self._db_session
-
-        values = [self._convert_st_storage_to_row(area_id, st_storage) for st_storage in storages]
-
         try:
             upsert_multiple(session, ST_STORAGE_TABLE, values)
         except IntegrityError as e:
-            validate_area_exists(session, self._study_id, area_id)
-            existing_storage_ids = {sts.id for sts in self.get_all_st_storages_for_area(area_id)}
-            for storage in storages:
-                if storage.id not in existing_storage_ids:
-                    raise STStorageNotFound(area_id, storage.id) from e
+            # Means an area does not exist
+            invalid_areas = self.get_impl().get_invalid_area_ids(list(data))
+            raise AreaNotFound(*invalid_areas) from e
 
         session.commit()
 

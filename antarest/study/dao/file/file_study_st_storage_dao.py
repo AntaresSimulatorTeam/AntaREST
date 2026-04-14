@@ -24,6 +24,7 @@ from antarest.study.business.model.sts_model import (
     STStorageAdditionalConstraintsMap,
 )
 from antarest.study.dao.api.st_storage_dao import STStorageDao
+from antarest.study.dao.common import AreaId
 from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     parse_st_storage,
@@ -141,25 +142,24 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         return self.get_impl().get_matrix(url)
 
     @override
-    def save_st_storage(self, area_id: str, st_storage: STStorage) -> None:
+    def save_st_storages(self, data: dict[AreaId, list[STStorage]]) -> None:
         study_data = self.get_file_study()
-        self._update_st_storage_config(area_id, st_storage)
 
-        study_data.tree.save(
-            serialize_st_storage(study_data.config.version, st_storage),
-            ["input", "st-storage", "clusters", area_id, "list", st_storage.id],
-        )
+        # Hold everything in memory to validate the data before saving it.
+        url_content_pairs = []
 
-    @override
-    def save_st_storages(self, area_id: str, storages: Sequence[STStorage]) -> None:
-        study_data = self.get_file_study()
-        all_storages = self._get_all_storages_for_area(study_data, area_id)
-        for st_storage in storages:
-            self._update_st_storage_config(area_id, st_storage)
-            all_storages[st_storage.id] = st_storage
+        for area_id, storages in data.items():
+            all_storages = self._get_all_storages_for_area(study_data, area_id)
+            for st_storage in storages:
+                self._update_st_storage_config(area_id, st_storage)
+                all_storages[st_storage.id] = st_storage
 
-        ini_content = {id: serialize_st_storage(study_data.config.version, sts) for id, sts in all_storages.items()}
-        study_data.tree.save(ini_content, ["input", "st-storage", "clusters", area_id, "list"])
+            ini_content = {id: serialize_st_storage(study_data.config.version, sts) for id, sts in all_storages.items()}
+            url_content_pairs.append((["input", "st-storage", "clusters", area_id, "list"], ini_content))
+
+        # Now we save everything in the files
+        for url, content in url_content_pairs:
+            study_data.tree.save(content, url)
 
     @override
     def save_st_storage_pmax_injection(self, area_id: str, storage_id: str, series_id: str) -> None:

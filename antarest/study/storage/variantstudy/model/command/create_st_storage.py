@@ -193,7 +193,7 @@ class CreateSTStorage(ICommand):
         if study_data.st_storage_exists(self.area_id, storage.id):
             return command_failed(f"Short-term storage '{storage.id}' already exists in the area '{self.area_id}'")
 
-        study_data.save_st_storage(self.area_id, storage)
+        study_data.save_st_storages({self.area_id: [storage]})
 
         # Matrices
         matrices = self._fill_none_matrices()

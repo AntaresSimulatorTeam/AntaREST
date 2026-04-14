@@ -17,7 +17,10 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_model import AreaUI
 from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
+from antarest.study.business.model.sts_model import (
+    STStorage,
+    STStorageAdditionalConstraintsMap,
+)
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
 from antarest.study.model import (
@@ -175,6 +178,10 @@ class StudyConverter:
         # Hydro
         self._convert_hydro()
 
+        # Short-term storages
+        if st_storages:
+            self._convert_short_term_storages(st_storages, st_storages_constraints)
+
         for area_id in area_properties:
             # Properties
             self._new_dao.save_area_properties(area_id, area_properties[area_id])
@@ -187,11 +194,6 @@ class StudyConverter:
                 r, g, b = (int(c) for c in color.strip(" ").split(","))
                 area_ui = AreaUI(x=x, y=y, color_rgb=(r, g, b))
                 self._new_dao.save_area_ui(area_id, layer, area_ui)
-
-            # Short-term storages
-            if self._study_version >= STUDY_VERSION_8_6:
-                storages = list(st_storages.get(area_id, {}).values())
-                self._convert_short_term_storages(area_id, storages, st_storages_constraints.get(area_id, {}))
 
     def _convert_thermal_clusters(self, data: dict[str, list[ThermalCluster]]) -> None:
         self._new_dao.save_thermals(data)
@@ -221,29 +223,61 @@ class StudyConverter:
         self._new_dao.save_renewable_series(series_mapping)
 
     def _convert_short_term_storages(
-        self, area_id: str, storages: list[STStorage], constraints: dict[str, list[STStorageAdditionalConstraint]]
+        self, storages: dict[str, dict[str, STStorage]], constraints: STStorageAdditionalConstraintsMap
     ) -> None:
-        self._new_dao.save_st_storages(area_id, storages)
-        for st_storage in storages:
-            sts_id = st_storage.id
-            p_max_inj_id = self._matrix_service.create(self._source_dao.get_st_storage_pmax_injection(area_id, sts_id))
-            self._new_dao.save_st_storage_pmax_injection(area_id, sts_id, p_max_inj_id)
+        # Short-term storages
+        self._new_dao.save_st_storages({area_id: list(value.values()) for area_id, value in storages.items()})
 
-            p_max_wit_id = self._matrix_service.create(self._source_dao.get_st_storage_pmax_withdrawal(area_id, sts_id))
-            self._new_dao.save_st_storage_pmax_withdrawal(area_id, sts_id, p_max_wit_id)
+        # Matrices
+        for area_id, value in storages.items():
+            for st_storage in value.values():
+                sts_id = st_storage.id
+                p_max_inj_id = self._matrix_service.create(
+                    self._source_dao.get_st_storage_pmax_injection(area_id, sts_id)
+                )
+                self._new_dao.save_st_storage_pmax_injection(area_id, sts_id, p_max_inj_id)
 
-            low_id = self._matrix_service.create(self._source_dao.get_st_storage_lower_rule_curve(area_id, sts_id))
-            self._new_dao.save_st_storage_lower_rule_curve(area_id, sts_id, low_id)
+                p_max_wit_id = self._matrix_service.create(
+                    self._source_dao.get_st_storage_pmax_withdrawal(area_id, sts_id)
+                )
+                self._new_dao.save_st_storage_pmax_withdrawal(area_id, sts_id, p_max_wit_id)
 
-            upper_id = self._matrix_service.create(self._source_dao.get_st_storage_upper_rule_curve(area_id, sts_id))
-            self._new_dao.save_st_storage_upper_rule_curve(area_id, sts_id, upper_id)
+                low_id = self._matrix_service.create(self._source_dao.get_st_storage_lower_rule_curve(area_id, sts_id))
+                self._new_dao.save_st_storage_lower_rule_curve(area_id, sts_id, low_id)
 
-            inflows_id = self._matrix_service.create(self._source_dao.get_st_storage_inflows(area_id, sts_id))
-            self._new_dao.save_st_storage_inflows(area_id, sts_id, inflows_id)
+                upper_id = self._matrix_service.create(
+                    self._source_dao.get_st_storage_upper_rule_curve(area_id, sts_id)
+                )
+                self._new_dao.save_st_storage_upper_rule_curve(area_id, sts_id, upper_id)
 
-            if self._study_version >= STUDY_VERSION_9_2:
-                storage_constraints = constraints.get(sts_id)
-                if storage_constraints:
+                inflows_id = self._matrix_service.create(self._source_dao.get_st_storage_inflows(area_id, sts_id))
+                self._new_dao.save_st_storage_inflows(area_id, sts_id, inflows_id)
+
+                if self._study_version >= STUDY_VERSION_9_2:
+                    cost_injection = self._source_dao.get_st_storage_cost_injection(area_id, sts_id)
+                    injection_id = self._matrix_service.create(cost_injection)
+                    self._new_dao.save_st_storage_cost_injection(area_id, sts_id, injection_id)
+
+                    cost_withdrawal = self._source_dao.get_st_storage_cost_withdrawal(area_id, sts_id)
+                    withdrawal_id = self._matrix_service.create(cost_withdrawal)
+                    self._new_dao.save_st_storage_cost_withdrawal(area_id, sts_id, withdrawal_id)
+
+                    cost_level = self._source_dao.get_st_storage_cost_level(area_id, sts_id)
+                    cost_level_id = self._matrix_service.create(cost_level)
+                    self._new_dao.save_st_storage_cost_level(area_id, sts_id, cost_level_id)
+
+                    cost_var_injection = self._source_dao.get_st_storage_cost_variation_injection(area_id, sts_id)
+                    cost_var_injection_id = self._matrix_service.create(cost_var_injection)
+                    self._new_dao.save_st_storage_cost_variation_injection(area_id, sts_id, cost_var_injection_id)
+
+                    cost_var_withdrawal = self._source_dao.get_st_storage_cost_variation_withdrawal(area_id, sts_id)
+                    cost_var_withdrawal_id = self._matrix_service.create(cost_var_withdrawal)
+                    self._new_dao.save_st_storage_cost_variation_withdrawal(area_id, sts_id, cost_var_withdrawal_id)
+
+        # Short-term storage constraints
+        if constraints:
+            for area_id, v in constraints.items():
+                for sts_id, storage_constraints in v.items():
                     self._new_dao.save_st_storage_additional_constraints(area_id, sts_id, storage_constraints)
                     for constraint in storage_constraints:
                         rhs_matrix = self._source_dao.get_st_storage_additional_constraint_matrix(
@@ -251,26 +285,6 @@ class StudyConverter:
                         )
                         rhs_matrix_id = self._matrix_service.create(rhs_matrix)
                         self._new_dao.save_st_storage_constraint_matrix(area_id, sts_id, constraint.id, rhs_matrix_id)
-
-                cost_injection = self._source_dao.get_st_storage_cost_injection(area_id, sts_id)
-                injection_id = self._matrix_service.create(cost_injection)
-                self._new_dao.save_st_storage_cost_injection(area_id, sts_id, injection_id)
-
-                cost_withdrawal = self._source_dao.get_st_storage_cost_withdrawal(area_id, sts_id)
-                withdrawal_id = self._matrix_service.create(cost_withdrawal)
-                self._new_dao.save_st_storage_cost_withdrawal(area_id, sts_id, withdrawal_id)
-
-                cost_level = self._source_dao.get_st_storage_cost_level(area_id, sts_id)
-                cost_level_id = self._matrix_service.create(cost_level)
-                self._new_dao.save_st_storage_cost_level(area_id, sts_id, cost_level_id)
-
-                cost_var_injection = self._source_dao.get_st_storage_cost_variation_injection(area_id, sts_id)
-                cost_var_injection_id = self._matrix_service.create(cost_var_injection)
-                self._new_dao.save_st_storage_cost_variation_injection(area_id, sts_id, cost_var_injection_id)
-
-                cost_var_withdrawal = self._source_dao.get_st_storage_cost_variation_withdrawal(area_id, sts_id)
-                cost_var_withdrawal_id = self._matrix_service.create(cost_var_withdrawal)
-                self._new_dao.save_st_storage_cost_variation_withdrawal(area_id, sts_id, cost_var_withdrawal_id)
 
     def _convert_hydro(self) -> None:
         hydro_properties = self._source_dao.get_all_hydro_properties()

@@ -20,6 +20,7 @@ from antarest.study.business.model.sts_model import (
     STStorageAdditionalConstraint,
     STStorageAdditionalConstraintsMap,
 )
+from antarest.study.dao.common import AreaId
 
 
 class ReadOnlySTStorageDao(ABC):
@@ -102,11 +103,7 @@ class ReadOnlySTStorageDao(ABC):
 
 class STStorageDao(ReadOnlySTStorageDao):
     @abstractmethod
-    def save_st_storage(self, area_id: str, st_storage: STStorage) -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def save_st_storages(self, area_id: str, storages: Sequence[STStorage]) -> None:
+    def save_st_storages(self, data: dict[AreaId, list[STStorage]]) -> None:
         raise NotImplementedError()
 
     @abstractmethod

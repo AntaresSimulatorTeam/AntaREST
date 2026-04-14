@@ -87,7 +87,7 @@ class UpdateSTStorages(ICommand):
             memory_mapping[area_id] = new_storages
 
         for area_id, new_storages in memory_mapping.items():
-            study_data.save_st_storages(area_id, new_storages)
+            study_data.save_st_storages({area_id: new_storages})
 
         return command_succeeded("The short-term storages were successfully updated.", result=memory_mapping)
 
