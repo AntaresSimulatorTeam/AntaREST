@@ -148,12 +148,8 @@ class StudyConverter:
         area_names_and_thermals = {a.id: a for a in self._source_dao.get_all_areas_info()}
         try:
             renewable_clusters = self._source_dao.get_all_renewables()
-            st_storages = self._source_dao.get_all_st_storages()
-            st_storages_constraints = self._source_dao.get_all_st_storage_additional_constraints()
         except ChildNotFoundError:  # Can happen, according to the enr-modeling and to the study version
             renewable_clusters = {}
-            st_storages = {}
-            st_storages_constraints = {}
 
         # First, create all areas with their properties to avoid foreign key or config issues
         new_area_properties = {}
@@ -193,8 +189,13 @@ class StudyConverter:
         self._new_dao.save_area_ui(new_ui)
 
         # Short-term storages
-        if st_storages:
-            self._convert_short_term_storages(st_storages, st_storages_constraints)
+        if self._study_version >= STUDY_VERSION_8_6:
+            st_storages = self._source_dao.get_all_st_storages()
+            if st_storages:
+                st_storages_constraints = {}
+                if self._study_version >= STUDY_VERSION_9_2:
+                    st_storages_constraints = self._source_dao.get_all_st_storage_additional_constraints()
+                self._convert_short_term_storages(st_storages, st_storages_constraints)
 
     def _convert_thermal_clusters(self, data: dict[str, list[ThermalCluster]]) -> None:
         self._new_dao.save_thermals(data)
