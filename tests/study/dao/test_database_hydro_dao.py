@@ -46,6 +46,7 @@ from antarest.study.dao.database.models.hydro import (
     HYDRO_RUN_OF_RIVER_TABLE,
     HYDRO_WATER_VALUES_TABLE,
 )
+from tests.study.dao.utils import save_area
 
 
 class TestHydroManagement:
@@ -54,7 +55,7 @@ class TestHydroManagement:
     def test_get_hydro_management_raises_error_for_area_without_hydro_config(self, db_dao: DatabaseStudyDao) -> None:
         """Test that get_hydro_management raises ValueError for an area without hydro config."""
         dao = db_dao
-        dao.save_area("Paris")
+        save_area(dao, "Paris")
 
         with pytest.raises(ValueError):
             dao.get_hydro_management("paris")
@@ -67,7 +68,7 @@ class TestHydroManagement:
     def test_save_hydro_management_updates_existing_record(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
         """Test that save_hydro_management updates an existing record."""
-        dao.save_area("Paris")
+        save_area(dao, "Paris")
 
         # Create initial config
         hydro_mgmt1 = HydroManagement(reservoir=False, reservoir_capacity=100.0)
@@ -95,7 +96,7 @@ class TestHydroManagement:
     def test_hydro_management_with_version_specific_field(self, db_dao: DatabaseStudyDao) -> None:
         """Test that overflow_spilled_cost_difference (v9.2+) is handled correctly."""
         dao = db_dao
-        dao.save_area("Paris")
+        save_area(dao, "Paris")
 
         # Defaults to None when not provided
         dao.save_hydro_management({"paris": HydroManagement()})
@@ -116,7 +117,7 @@ class TestInflowStructure:
     def test_get_inflow_structure_raises_error_for_area_without_config(self, db_dao: DatabaseStudyDao) -> None:
         """Test that get_inflow_structure raises ValueError for an area without config."""
         dao = db_dao
-        dao.save_area("Paris")
+        save_area(dao, "Paris")
 
         with pytest.raises(ValueError):
             dao.get_inflow_structure("paris")
@@ -129,7 +130,7 @@ class TestInflowStructure:
     def test_save_inflow_structure_updates_existing_record(self, db_dao: DatabaseStudyDao) -> None:
         """Test that save_inflow_structure updates an existing record."""
         dao = db_dao
-        dao.save_area("Paris")
+        save_area(dao, "Paris")
 
         # Create initial config
         dao.save_inflow_structure({"paris": InflowStructure(inter_monthly_correlation=0.3)})
@@ -163,8 +164,8 @@ class TestGetAllHydroProperties:
     def test_get_all_hydro_properties_excludes_areas_with_incomplete_data(self, db_dao: DatabaseStudyDao) -> None:
         """Test that areas missing management or inflow structure are excluded from results."""
         dao = db_dao
-        dao.save_area("Paris")
-        dao.save_area("London")
+        save_area(dao, "Paris")
+        save_area(dao, "London")
 
         # Paris has only inflow, London has only management — neither is complete
         dao.save_inflow_structure({"paris": InflowStructure(inter_monthly_correlation=0.5)})
@@ -176,8 +177,8 @@ class TestGetAllHydroProperties:
     def test_get_all_hydro_properties_aggregates_data(self, db_dao: DatabaseStudyDao) -> None:
         """Test that get_all_hydro_properties correctly aggregates hydro data for all areas."""
         dao = db_dao
-        dao.save_area("Paris")
-        dao.save_area("London")
+        save_area(dao, "Paris")
+        save_area(dao, "London")
 
         # Save complete hydro data for Paris
         dao.save_hydro_management({"paris": HydroManagement(reservoir=True, reservoir_capacity=500.0)})
@@ -209,7 +210,7 @@ class TestHydroAllocation:
     def test_get_hydro_allocation_raises_error_for_area_without_allocation(self, db_dao: DatabaseStudyDao) -> None:
         """Test that get_hydro_allocation raises ValueError for an area without allocation."""
         dao = db_dao
-        dao.save_area("Paris")
+        save_area(dao, "Paris")
 
         with pytest.raises(ValueError):
             dao.get_hydro_allocation("paris")
@@ -222,8 +223,8 @@ class TestHydroAllocation:
     def test_save_hydro_allocation_replaces_existing_records(self, db_dao: DatabaseStudyDao) -> None:
         """Test that save_hydro_allocation replaces existing allocation."""
         dao = db_dao
-        dao.save_area("Paris")
-        dao.save_area("London")
+        save_area(dao, "Paris")
+        save_area(dao, "London")
 
         # Create initial allocation
         dao.save_hydro_allocation(
@@ -252,7 +253,7 @@ class TestHydroAllocation:
     def test_save_hydro_allocation_raises_error_for_nonexistent_source_area(self, db_dao: DatabaseStudyDao) -> None:
         """Test that save_hydro_allocation raises AreaNotFound when source area doesn't exist."""
         dao = db_dao
-        dao.save_area("Paris")
+        save_area(dao, "Paris")
 
         allocation = HydroAllocation(allocation=[HydroAllocationArea(area_id="paris", coefficient=1.0)])
         with pytest.raises(AreaNotFound, match="nonexistent"):
@@ -261,7 +262,7 @@ class TestHydroAllocation:
     def test_save_hydro_allocation_raises_error_for_nonexistent_target_area(self, db_dao: DatabaseStudyDao) -> None:
         """Test that save_hydro_allocation raises AreaNotFound with the invalid target area ID."""
         dao = db_dao
-        dao.save_area("Paris")
+        save_area(dao, "Paris")
 
         allocation = HydroAllocation(allocation=[HydroAllocationArea(area_id="nonexistent", coefficient=1.0)])
         with pytest.raises(AreaNotFound, match="nonexistent"):
@@ -270,8 +271,8 @@ class TestHydroAllocation:
     def test_get_hydro_allocation_matrix(self, db_dao: DatabaseStudyDao) -> None:
         """Test that get_hydro_allocation_matrix returns all allocations."""
         dao = db_dao
-        dao.save_area("Paris")
-        dao.save_area("London")
+        save_area(dao, "Paris")
+        save_area(dao, "London")
 
         dao.save_hydro_allocation(
             {
@@ -317,7 +318,7 @@ class TestHydroCorrelation:
     def test_get_hydro_correlation_returns_self_correlation(self, db_dao: DatabaseStudyDao) -> None:
         """Test that get_hydro_correlation returns self-correlation for new area."""
         dao = db_dao
-        dao.save_area("Paris")
+        save_area(dao, "Paris")
 
         correlation = dao.get_hydro_correlation("paris")
 
@@ -325,7 +326,7 @@ class TestHydroCorrelation:
         assert correlation.correlation[0].area_id == "paris"
         assert correlation.correlation[0].coefficient == 100.0  # Diagonal = 100%
 
-        dao.save_area("Algiers")
+        save_area(dao, "Algiers")
         correlation = dao.get_hydro_correlation("paris")
 
         assert len(correlation.correlation) == 2
@@ -342,8 +343,8 @@ class TestHydroCorrelation:
     def test_save_hydro_correlation(self, db_dao: DatabaseStudyDao) -> None:
         """Test that correlation is stored symmetrically (only upper triangle)."""
         dao = db_dao
-        dao.save_area("Paris")
-        dao.save_area("London")
+        save_area(dao, "Paris")
+        save_area(dao, "London")
 
         # Save from Paris perspective
         dao.save_hydro_correlation(
@@ -368,7 +369,7 @@ class TestHydroCorrelation:
     def test_save_hydro_correlation_raises_error_for_nonexistent_area(self, db_dao: DatabaseStudyDao) -> None:
         """Test that save_hydro_correlation raises AreaNotFound with the invalid area ID."""
         dao = db_dao
-        dao.save_area("Paris")
+        save_area(dao, "Paris")
 
         # Nonexistent correlated area
         correlation = HydroCorrelation(
@@ -391,8 +392,8 @@ class TestHydroCorrelation:
     def test_get_hydro_correlation_matrix(self, db_dao: DatabaseStudyDao) -> None:
         """Test that get_hydro_correlation_matrix returns the full matrix."""
         dao = db_dao
-        dao.save_area("Paris")
-        dao.save_area("London")
+        save_area(dao, "Paris")
+        save_area(dao, "London")
 
         # Save correlation
         dao.save_hydro_correlation(
@@ -414,7 +415,7 @@ class TestHydroCorrelation:
         np.testing.assert_allclose(result.data, expected_matrix)
 
         # New area preserves matrix properties
-        dao.save_area("Algiers")
+        save_area(dao, "Algiers")
         result = dao.get_hydro_correlation_matrix()
         expected_matrix = [
             [1.0, 0.0, 0.0],
@@ -430,7 +431,7 @@ class TestCascadeDelete:
     def test_cascade_delete_hydro_management(self, db_session: Session, db_dao: DatabaseStudyDao) -> None:
         """Test that hydro management is deleted when area is deleted."""
         dao = db_dao
-        dao.save_area("Paris")
+        save_area(dao, "Paris")
         dao.save_hydro_management({"paris": HydroManagement(reservoir=True)})
 
         # Delete area
@@ -448,7 +449,7 @@ class TestCascadeDelete:
     def test_cascade_delete_inflow_structure(self, db_session: Session, db_dao: DatabaseStudyDao) -> None:
         """Test that inflow structure is deleted when area is deleted."""
         dao = db_dao
-        dao.save_area("Paris")
+        save_area(dao, "Paris")
         dao.save_inflow_structure({"paris": InflowStructure(inter_monthly_correlation=0.8)})
         # Delete area
         dao.delete_area("paris")
@@ -465,8 +466,8 @@ class TestCascadeDelete:
     def test_cascade_delete_hydro_allocation(self, db_session: Session, db_dao: DatabaseStudyDao) -> None:
         """Test that hydro allocation is deleted when source or target area is deleted."""
         dao = db_dao
-        dao.save_area("Paris")
-        dao.save_area("London")
+        save_area(dao, "Paris")
+        save_area(dao, "London")
         dao.save_hydro_allocation(
             {
                 "paris": HydroAllocation(
@@ -496,7 +497,7 @@ class TestCascadeDelete:
             rows = db_session.execute(stmt).fetchall()
             assert len(rows) == 1
 
-        dao.save_area("London")
+        save_area(dao, "London")
         dao.save_hydro_allocation(
             {
                 "paris": HydroAllocation(
@@ -522,9 +523,9 @@ class TestCascadeDelete:
     def test_cascade_delete_hydro_correlation(self, db_session: Session, db_dao: DatabaseStudyDao) -> None:
         """Test that hydro correlation is deleted when area_from or area_to is deleted."""
         dao = db_dao
-        dao.save_area("Paris")
-        dao.save_area("London")
-        dao.save_area("Algiers")
+        save_area(dao, "Paris")
+        save_area(dao, "London")
+        save_area(dao, "Algiers")
         dao.save_hydro_correlation(
             {
                 "paris": HydroCorrelation(
@@ -586,7 +587,7 @@ class TestHydroMatrices:
     def test_save_and_get_all_hydro_matrices(self, db_dao: DatabaseStudyDao) -> None:
         """Test saving and retrieving all 13 hydro matrix types."""
         dao = db_dao
-        dao.save_area("Paris")
+        save_area(dao, "Paris")
 
         matrix_service = dao._matrix_service
 
@@ -657,7 +658,7 @@ class TestHydroMatrices:
     def test_hydro_matrix_raises(self, db_dao: DatabaseStudyDao) -> None:
         """Test that get raises ValueError when area exists but matrix is not saved."""
         dao = db_dao
-        dao.save_area("Paris")
+        save_area(dao, "Paris")
 
         getters = [
             dao.get_hydro_maxpower,
@@ -704,7 +705,7 @@ class TestHydroMatrices:
     def test_cascade_delete_hydro_matrices(self, db_session: Session, db_dao: DatabaseStudyDao) -> None:
         """Test that all hydro matrices are deleted when the area is deleted."""
         dao = db_dao
-        dao.save_area("Paris")
+        save_area(dao, "Paris")
 
         matrix_service = dao._matrix_service
         series_id = matrix_service.create(pl.DataFrame(data=[[1, 2]], orient="row"))
@@ -741,8 +742,8 @@ class TestConvertHydroPmax:
 
     def test_roundtrip(self, db_dao_920: DatabaseStudyDao) -> None:
         dao = db_dao_920
-        dao.save_area("Paris")
-        dao.save_area("London")
+        save_area(dao, "Paris")
+        save_area(dao, "London")
 
         dao.convert_hydro_pmax(HydroPmax.HOURLY)
         assert dao.get_compatibility_parameters().hydro_pmax == HydroPmax.HOURLY
@@ -762,7 +763,7 @@ class TestConvertHydroPmax:
     def test_convert_hourly_noop_preserves_custom_matrices(self, db_dao_920: DatabaseStudyDao) -> None:
         """Converting to HOURLY when already HOURLY does not overwrite manually saved matrices."""
         dao = db_dao_920
-        dao.save_area("Paris")
+        save_area(dao, "Paris")
         dao.convert_hydro_pmax(HydroPmax.HOURLY)
 
         # Overwrite the default matrices with custom values

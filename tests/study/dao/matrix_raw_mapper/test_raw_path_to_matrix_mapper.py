@@ -22,7 +22,7 @@ from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_8_1
 from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
-from tests.study.dao.conftest import build_db_dao, build_real_case_study, get_matrix_service_from_dao
+from tests.study.dao.conftest import build_db_dao, build_real_case_study
 
 
 def test_get_matrix_from_path(
@@ -255,7 +255,7 @@ def test_save_matrix_from_path(
 
     def _build_random_dataframe() -> tuple[str, pl.DataFrame]:
         matrix = pl.DataFrame(generator.integers(0, 10, size=(5, 3)), orient="row")
-        matrix_id = get_matrix_service_from_dao(dao).create(matrix)
+        matrix_id = dao.matrix_service.create(matrix)
         return matrix_id, matrix
 
     for fixture in [db_dao_930_and_matrix_service, fs_dao_930_and_matrix_service]:

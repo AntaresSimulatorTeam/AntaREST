@@ -502,7 +502,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         constraint_ids = [bc.id for bc in constraints]
         # Fetch only the constraints being updated, not the entire study.
         existing = self._fetch_constraints(constraint_ids=constraint_ids)
-        null_matrix_id = _MatrixID(impl._generator_matrix_constants.get_null_matrix())
+        null_matrix_id = _MatrixID(impl.generator_matrix_constants.get_null_matrix())
         changes = _MatrixChanges()
 
         time_step_changed = []

@@ -24,6 +24,7 @@ from antarest.study.dao.database.models.area import (
     SOLAR_TABLE,
     WIND_TABLE,
 )
+from tests.study.dao.utils import save_area
 
 
 def test_load_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
@@ -33,7 +34,7 @@ def test_load_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     series_id = matrix_service.create(dataframe)
     area_id = "paris"
 
-    dao.save_area(area_id)
+    save_area(dao, area_id)
     dao.save_load({area_id: series_id})
 
     # Ensures we retrieve the load we created
@@ -59,7 +60,7 @@ def test_solar_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     series_id = matrix_service.create(dataframe)
     area_id = "paris"
 
-    dao.save_area(area_id)
+    save_area(dao, area_id)
     dao.save_solar({area_id: series_id})
 
     # Ensures we retrieve the solar matrix we created
@@ -85,7 +86,7 @@ def test_wind_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     series_id = matrix_service.create(dataframe)
     area_id = "paris"
 
-    dao.save_area(area_id)
+    save_area(dao, area_id)
     dao.save_wind({area_id: series_id})
 
     # Ensures we retrieve the wind matrix we created
@@ -111,7 +112,7 @@ def test_reserves_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> No
     series_id = matrix_service.create(dataframe)
     area_id = "paris"
 
-    dao.save_area(area_id)
+    save_area(dao, area_id)
     dao.save_reserves({area_id: series_id})
 
     # Ensures we retrieve the reserves matrix we created
@@ -137,7 +138,7 @@ def test_misc_gen_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> No
     series_id = matrix_service.create(dataframe)
     area_id = "paris"
 
-    dao.save_area(area_id)
+    save_area(dao, area_id)
     dao.save_misc_gen({area_id: series_id})
 
     # Ensures we retrieve the misc-gen matrix we created

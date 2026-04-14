@@ -674,7 +674,7 @@ class DatabaseHydroDao(HydroDao):
 
         if hydro_pmax == HydroPmax.HOURLY:
             area_ids = self.get_impl().get_all_area_ids()
-            generator = self.get_impl()._generator_matrix_constants
+            generator = self.get_impl().generator_matrix_constants
             hourly_matrix_id = generator.get_null_matrix().removeprefix(MATRIX_PROTOCOL_PREFIX)
             daily_matrix_id = generator.matrix_service.create(create_polars_dataframe(np.full((365, 1), 24)))
 
