@@ -392,7 +392,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         return self.get_impl().get_matrix(_get_constraint_matrix_path(area_id, storage_id, constraint_id))
 
     @override
-    def get_all_st_storage_additional_constraint_matrix(self) -> StStorageConstraintSeriesMapping:
+    def get_all_st_storage_additional_constraint_matrices(self) -> StStorageConstraintSeriesMapping:
         study_data = self.get_file_study()
         matrix_nodes = {}
 
@@ -470,6 +470,20 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         # Save into the files
         for url, content in url_content_pairs:
             study_data.tree.save(content, url)
+
+    @override
+    def save_all_st_storage_additional_constraint_matrices(self, series: StStorageConstraintSeriesMapping) -> None:
+        matrices_mapping: dict[str, list[MatrixNode]] = {}
+        study_data = self.get_file_study()
+        for area_id, value in series.items():
+            for storage_id, v in value.items():
+                for constraint_id, series_id in v.items():
+                    url = _get_constraint_matrix_path(area_id, storage_id, constraint_id)
+                    node = study_data.tree.get_node(url)
+                    assert isinstance(node, MatrixNode)
+                    matrix_id = extract_matrix_id(series_id)
+                    matrices_mapping.setdefault(matrix_id, []).append(node)
+        self.get_impl().save_matrices(matrices_mapping)
 
     @staticmethod
     def _get_all_storages_for_area(file_study: FileStudy, area_id: str) -> dict[str, STStorage]:

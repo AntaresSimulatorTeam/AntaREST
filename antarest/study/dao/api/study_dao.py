@@ -484,8 +484,8 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_st_storage_additional_constraint_matrix(area_id, storage_id, constraint_id)
 
     @override
-    def get_all_st_storage_additional_constraint_matrix(self) -> StStorageConstraintSeriesMapping:
-        return self._adaptee.get_all_st_storage_additional_constraint_matrix()
+    def get_all_st_storage_additional_constraint_matrices(self) -> StStorageConstraintSeriesMapping:
+        return self._adaptee.get_all_st_storage_additional_constraint_matrices()
 
     @override
     def get_all_hydro_properties(self) -> dict[str, HydroProperties]:

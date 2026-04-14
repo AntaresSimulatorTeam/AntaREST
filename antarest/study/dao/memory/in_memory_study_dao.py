@@ -950,7 +950,7 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_all_st_storage_additional_constraint_matrix(self) -> StStorageConstraintSeriesMapping:
+    def get_all_st_storage_additional_constraint_matrices(self) -> StStorageConstraintSeriesMapping:
         data = self._st_storages_constraints_matrix
         result: StStorageConstraintSeriesMapping = {}
         for key, matrix_id in data.items():
@@ -1086,6 +1086,14 @@ class InMemoryStudyDao(StudyDao):
                 existing_map.update({constraint.id: constraint for constraint in constraints})
 
                 self._st_storages_constraints.setdefault(area_id, {})[storage_id] = list(existing_map.values())
+
+    @override
+    def save_all_st_storage_additional_constraint_matrices(self, series: StStorageConstraintSeriesMapping) -> None:
+        for area_id, v in series.items():
+            for sts_id, value in v.items():
+                for constraint_id, matrix_id in value.items():
+                    constraint_key = additional_constraint_key(area_id, sts_id, constraint_id)
+                    self._st_storages_constraints_matrix[constraint_key] = matrix_id
 
     @override
     def get_all_xpansion_candidates(self) -> list[XpansionCandidate]:

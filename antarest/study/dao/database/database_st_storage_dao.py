@@ -468,7 +468,7 @@ class DatabaseStStorageDao(STStorageDao):
         return self.get_impl().get_matrix(row.matrix_id)
 
     @override
-    def get_all_st_storage_additional_constraint_matrix(self) -> StStorageConstraintSeriesMapping:
+    def get_all_st_storage_additional_constraint_matrices(self) -> StStorageConstraintSeriesMapping:
         result: StStorageConstraintSeriesMapping = {}
         table = ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE
         stmt = select(table).where(table.c.study_id == self._study_id)
@@ -476,6 +476,32 @@ class DatabaseStStorageDao(STStorageDao):
         for row in rows:
             result.setdefault(row.area_id, {}).setdefault(row.st_storage_id, {})[row.constraint_id] = row.matrix_id
         return result
+
+    @override
+    def save_all_st_storage_additional_constraint_matrices(self, series: StStorageConstraintSeriesMapping) -> None:
+        study_id = self._study_id
+        session = self._db_session
+
+        values = []
+        for area_id, value in series.items():
+            for sts_id, v in value.items():
+                for constraint_id, matrix_id in v.items():
+                    data = {
+                        "study_id": study_id,
+                        "area_id": area_id,
+                        "st_storage_id": sts_id,
+                        "constraint_id": constraint_id,
+                        "matrix_id": matrix_id,
+                    }
+                    values.append(data)
+
+        try:
+            upsert_multiple(session, ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE, values)
+        except IntegrityError as e:
+            invalid_data = {area_id: list(st_storage_dict) for area_id, st_storage_dict in series.items()}
+            self._raise_the_right_constraint_exception(invalid_data, e)
+
+        session.commit()
 
     def _get_st_storage_matrix_row(self, area_id: str, storage_id: str, table: Table) -> Row[Any] | None:
         stmt = select(table).where(

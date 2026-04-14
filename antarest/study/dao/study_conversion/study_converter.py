@@ -263,14 +263,9 @@ class StudyConverter:
         # Short-term storage constraints
         if constraints:
             self._new_dao.save_st_storage_additional_constraints(constraints)
-            for area_id, v in constraints.items():
-                for sts_id, storage_constraints in v.items():
-                    for constraint in storage_constraints:
-                        rhs_matrix = self._source_dao.get_st_storage_additional_constraint_matrix(
-                            area_id, sts_id, constraint.id
-                        )
-                        rhs_matrix_id = self._matrix_service.create(rhs_matrix)
-                        self._new_dao.save_st_storage_constraint_matrix(area_id, sts_id, constraint.id, rhs_matrix_id)
+
+            constraint_matrices = self._source_dao.get_all_st_storage_additional_constraint_matrices()
+            self._new_dao.save_all_st_storage_additional_constraint_matrices(constraint_matrices)
 
     def _convert_hydro(self) -> None:
         hydro_properties = self._source_dao.get_all_hydro_properties()
