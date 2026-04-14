@@ -17,7 +17,7 @@ from collections.abc import Iterator, MutableSequence, Sequence
 from dataclasses import dataclass
 from itertools import groupby
 from pathlib import Path
-from typing import Any, Generator, Literal, TypeAlias, cast
+from typing import Any, Callable, Generator, Literal, TypeAlias, cast
 
 import pandas as pd
 import polars as pl
@@ -229,6 +229,18 @@ class OutputMatrix:
     data: pl.LazyFrame  # Actual data, column names should be ignored, columns information is below
     columns: list[ColumnMetadata]  # Metadata about matrix columns
 
+    def filter_false(self, predicate: Callable[[ColumnMetadata], bool]) -> "OutputMatrix":
+        filtered_columns_indices = [k for k, col in enumerate(self.columns) if predicate(col)]
+        filtered_columns = [self.columns[k] for k in filtered_columns_indices]
+        filtered_matrix = self.data.select(cs.by_index(filtered_columns_indices))
+        return dataclasses.replace(self, data=filtered_matrix, columns=filtered_columns)
+
+    def sort_columns(self, sort_key: Callable[[ColumnMetadata], Any]) -> "OutputMatrix":
+        sorted_indices = [i for i, col in sorted(enumerate(self.columns), key=lambda tuple: sort_key(tuple[1]))]
+        final_columns = [self.columns[c] for c in sorted_indices]
+        final_df = self.data.select(cs.by_index(sorted_indices))
+        return dataclasses.replace(self, data=final_df, columns=final_columns)
+
 
 def stack_matrix(output_data: OutputMatrix) -> OutputMatrix:
     """
@@ -290,22 +302,18 @@ def filter_columns(data: OutputMatrix, filters: Sequence[str]) -> OutputMatrix:
     # else:
     #     filtered_columns = [c for c in df_columns if c.lower() in lower_case_columns]
 
-    lower_case_filers = set(f.lower() for f in filters)  # TODO: only once for all matrices
-    if not lower_case_filers:
+    lower_case_filters = set(f.lower() for f in filters)  # TODO: only once for all matrices
+    if not lower_case_filters:
         return data
 
     def passes_filter(col: ColumnMetadata) -> bool:
         match col:
             case VarColumn(variable=var) | ClusterVarColumn(variable=var):
-                return var.lower() in lower_case_filers
+                return var.lower() in lower_case_filters
             case _:
                 return True
 
-    filtered_columns_indices = [k for k, col in enumerate(data.columns) if passes_filter(col)]
-    filtered_columns = [data.columns[k] for k in filtered_columns_indices]
-    filtered_matrix = data.data.select(cs.by_index(filtered_columns_indices))
-
-    return dataclasses.replace(data, data=filtered_matrix, columns=filtered_columns)
+    return data.filter_false(passes_filter)
 
 
 def add_index_columns(output_matrix: OutputMatrix) -> OutputMatrix:
@@ -324,21 +332,22 @@ def add_index_columns(output_matrix: OutputMatrix) -> OutputMatrix:
     return dataclasses.replace(output_matrix, data=final_df, columns=new_cols + output_matrix.columns)
 
 
-def get_sort_key(col: ColumnMetadata) -> int:
+def get_sort_key(col: ColumnMetadata) -> tuple[int, str | None]:
     """
     location - cluster - year - time - others
     """
     values: dict[ColumnMetadata, int] = {"location": 1, "cluster": 2, "year": 3, "time": 4}
-    return values.get(col, 5)
+    match col:
+        case VarColumn():
+            return 5, None
+        case ClusterVarColumn(variable=var):
+            return 5, var
+        case _:
+            return (values.get(col, 5), None)
 
 
 def sort_columns(output_matrix: OutputMatrix) -> OutputMatrix:
-    sorted_indices = [
-        i for i, col in sorted(enumerate(output_matrix.columns), key=lambda tuple: get_sort_key(tuple[1]))
-    ]
-    final_columns = [output_matrix.columns[c] for c in sorted_indices]
-    final_df = output_matrix.data.select(cs.by_index(sorted_indices))
-    return dataclasses.replace(output_matrix, data=final_df, columns=final_columns)
+    return output_matrix.sort_columns(get_sort_key)
 
 
 def iterate_output_matrices(
