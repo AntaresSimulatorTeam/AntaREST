@@ -29,10 +29,10 @@ def test_file_study_dao(tmp_path: Path, empty_study_930: FileStudy, command_cont
     dao.save_links([Link(area1="fr", area2="de")])
     blob_id1 = command_context.blob_service.save(b"Usain Bolt")
     path1 = PurePosixPath("file1.txt")
-    dao.save_user_resource(UserResourceDataCreation(path=path1, resource_type=ResourceType.FILE, blob_id=blob_id1))
+    dao.save_user_resources([(UserResourceDataCreation(path=path1, resource_type=ResourceType.FILE, blob_id=blob_id1))])
     blob_id2 = command_context.blob_service.save(b"Gout Gout")
     path2 = PurePosixPath("folder_1/file2.txt")
-    dao.save_user_resource(UserResourceDataCreation(path=path2, resource_type=ResourceType.FILE, blob_id=blob_id2))
+    dao.save_user_resources([(UserResourceDataCreation(path=path2, resource_type=ResourceType.FILE, blob_id=blob_id2))])
 
     # Tests link matrices
     matrix1 = pl.DataFrame([[1, 2], [3, 4]])
