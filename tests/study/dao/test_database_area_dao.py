@@ -66,7 +66,7 @@ def test_save_area_raises_error_if_exists(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     save_area(dao, "Paris")
 
-    with pytest.raises(ValueError, match="already exists"):
+    with pytest.raises(ValueError, match="already exist"):
         save_area(dao, "Paris")
 
 
@@ -164,7 +164,7 @@ def test_save_area_ui_updates_existing(db_dao: DatabaseStudyDao) -> None:
 
     # Update UI
     new_ui = AreaUI(x=100, y=200, color_rgb=(255, 0, 0))
-    dao.save_area_ui("paris", "0", new_ui)
+    dao.save_area_ui({"paris": {"0": new_ui}})
 
     # Verify update
     ui = dao.get_area_ui("paris", "0")
@@ -183,7 +183,7 @@ def test_save_area_ui_creates_new_layer(db_dao: DatabaseStudyDao) -> None:
 
     # Create UI for layer "1"
     layer1_ui = AreaUI(x=300, y=400, color_rgb=(0, 255, 0))
-    dao.save_area_ui("paris", "1", layer1_ui)
+    dao.save_area_ui({"paris": {"1": layer1_ui}})
 
     # Verify layer "0" is unchanged
     ui_layer0 = dao.get_area_ui("paris", "0")
@@ -204,7 +204,7 @@ def test_save_area_ui_raises_error_if_area_not_exists(db_dao: DatabaseStudyDao) 
     dao = db_dao
     new_ui = AreaUI(x=100, y=200, color_rgb=(255, 0, 0))
     with pytest.raises(AreaNotFound):
-        dao.save_area_ui("nonexistent", "0", new_ui)
+        dao.save_area_ui({"nonexistent": {"0": new_ui}})
 
 
 def test_save_area_ui_raises_error_if_layer_not_exists(db_dao: DatabaseStudyDao) -> None:
@@ -215,7 +215,7 @@ def test_save_area_ui_raises_error_if_layer_not_exists(db_dao: DatabaseStudyDao)
     save_area(dao, "Paris")
     new_ui = AreaUI(x=100, y=200, color_rgb=(255, 0, 0))
     with pytest.raises(LayerNotFound):
-        dao.save_area_ui("paris", "999", new_ui)
+        dao.save_area_ui({"paris":{ "999": new_ui}})
 
 
 def test_get_all_areas_ui_info_returns_all_layers(db_dao: DatabaseStudyDao) -> None:
@@ -229,9 +229,15 @@ def test_get_all_areas_ui_info_returns_all_layers(db_dao: DatabaseStudyDao) -> N
     dao.save_layer(Layer(id="2", name="Layer 2"))
 
     # Add UI for different layers
-    dao.save_area_ui("paris", "1", AreaUI(x=100, y=100, color_rgb=(255, 0, 0)))
-    dao.save_area_ui("paris", "2", AreaUI(x=200, y=200, color_rgb=(0, 255, 0)))
-    dao.save_area_ui("london", "1", AreaUI(x=150, y=150, color_rgb=(0, 0, 255)))
+    dao.save_area_ui(
+        {
+            "paris": {
+                "1": AreaUI(x=100, y=100, color_rgb=(255, 0, 0)),
+                "2": AreaUI(x=200, y=200, color_rgb=(0, 255, 0)),
+            },
+            "london": {"1": AreaUI(x=150, y=150, color_rgb=(0, 0, 255))},
+        }
+    )
 
     all_ui = dao.get_all_areas_ui_info()
     assert len(all_ui) == 2
@@ -312,7 +318,7 @@ def test_save_layer_areas_copies_default_ui(db_dao: DatabaseStudyDao) -> None:
     save_area(dao, "Paris")
     dao.save_layer(Layer(id="1", name="Layer 1"))
     # Update layer "0" UI to non-default values
-    dao.save_area_ui("paris", "0", AreaUI(x=50, y=75, color_rgb=(100, 150, 200)))
+    dao.save_area_ui({"paris": {"0": AreaUI(x=50, y=75, color_rgb=(100, 150, 200))}})
 
     # Add Paris to layer "1"
     dao.save_layer_areas("1", ["paris"])
