@@ -151,7 +151,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
                                 resource_type=ResourceType.FILE,
                                 blob_id=blob_id,
                             )
-                            study_data.save_user_resource(resource_data)
+                            study_data.save_user_resources([resource_data])
 
                     generated_matrix = results.available_power
                     # 10- Write the matrix inside the matrix-store and store the id in memory

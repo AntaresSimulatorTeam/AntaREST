@@ -64,7 +64,7 @@ class CreateXpansionWeight(AbstractCreateXpansionMatrix):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         assert isinstance(self.matrix, str)
-        study_data.save_xpansion_weight(self.filename, self.matrix)
+        study_data.save_xpansion_weight({self.filename: self.matrix})
         return command_succeeded(message=f"Xpansion weight {self.filename} created successfully", result=None)
 
 
@@ -78,5 +78,5 @@ class CreateXpansionCapacity(AbstractCreateXpansionMatrix):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         assert isinstance(self.matrix, str)
-        study_data.save_xpansion_capacity(self.filename, self.matrix)
+        study_data.save_xpansion_capacity({self.filename: self.matrix})
         return command_succeeded(message=f"Xpansion capacity {self.filename} created successfully", result=None)

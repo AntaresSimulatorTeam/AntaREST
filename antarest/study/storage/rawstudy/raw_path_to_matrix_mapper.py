@@ -134,16 +134,22 @@ class RawPathToMatrixMapper:
         def _save_constraint_greater_term_matrix(constraint_id: str, series_id: str) -> None:
             dao.save_constraint_greater_term_matrix({ConstraintId(constraint_id): series_id})
 
+        def _save_xpansion_capacity(filename: str, series_id: str) -> None:
+            dao.save_xpansion_capacity({filename: series_id})
+
+        def _save_xpansion_weight(filename: str, series_id: str) -> None:
+            dao.save_xpansion_weight({filename: series_id})
+
         self._path_matchers = [
             RegexMatcher(
                 pattern=re.compile(r"user/expansion/capa/(?P<filename>[^/]+)"),
                 getter=lambda filename: dao.get_xpansion_resource(XpansionResourceFileType.CAPACITIES, filename),  # type: ignore
-                setter=dao.save_xpansion_capacity,
+                setter=_save_xpansion_capacity,
             ),
             RegexMatcher(
                 pattern=re.compile(r"user/expansion/weights/(?P<filename>[^/]+)"),
                 getter=lambda filename: dao.get_xpansion_resource(XpansionResourceFileType.WEIGHTS, filename),  # type: ignore
-                setter=dao.save_xpansion_weight,
+                setter=_save_xpansion_weight,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/load/series/load_(?P<area_id>[^/]+)"),
@@ -397,8 +403,6 @@ class RawPathToMatrixMapper:
         raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 
     def get_matrix_from_path(self, path: Path) -> pl.DataFrame:
-        # todo: we do not support outputs matrices for the moment
-
         matcher, match = self._get_matcher(path)
         return matcher.getter(**match.groupdict())
 

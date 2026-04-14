@@ -368,8 +368,8 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
 
     # Create xpansion capacity and weight matrices
     dao.create_xpansion_configuration()
-    dao.save_xpansion_capacity("link_capa.txt", xpansion_capacity_id)
-    dao.save_xpansion_weight("mc_weights.csv", xpansion_weight_id)
+    dao.save_xpansion_capacity({"link_capa.txt": xpansion_capacity_id})
+    dao.save_xpansion_weight({"mc_weights.csv": xpansion_weight_id})
 
     # Create binding constraint matrices — covers LT, GT, and EQ tables
     bc_lt_matrix_id = matrix_service.create(bc_lt_df)

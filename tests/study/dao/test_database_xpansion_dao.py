@@ -210,8 +210,8 @@ class TestXpansionSettings:
 
         # --- files exist: no raise ---
         series_id = matrix_service.create(pl.DataFrame({"col": [1.0]}))
-        db_dao.save_xpansion_weight("weights.csv", series_id)
-        db_dao.save_xpansion_constraint("constraints.txt", b"some content")
+        db_dao.save_xpansion_weight({"weights.csv": series_id})
+        db_dao.save_xpansion_constraint({"constraints.txt": b"some content"})
         db_dao.checks_xpansion_settings_are_correct(
             XpansionSettingsUpdate(additional_constraints="constraints.txt", yearly_weights="weights.csv")
         )  # must not raise
@@ -338,7 +338,7 @@ class TestXpansionCandidates:
 
         # --- profile file present: no raise ---
         series_id = matrix_service.create(pl.DataFrame({"col": [1.0]}))
-        db_dao.save_xpansion_capacity("missing_capa.txt", series_id)
+        db_dao.save_xpansion_capacity({"missing_capa.txt": series_id})
         db_dao.checks_xpansion_candidate_coherence(candidate)  # must not raise
 
 
@@ -457,9 +457,9 @@ class TestCascadeDelete:
         db_dao, matrix_service = db_dao_930_and_matrix_service
         db_dao.create_xpansion_configuration()
         series_id = matrix_service.create(pl.DataFrame({"col": [1.0]}))
-        db_dao.save_xpansion_constraint("my.txt", b"content")
-        db_dao.save_xpansion_capacity("capa.txt", series_id)
-        db_dao.save_xpansion_weight("weights.csv", series_id)
+        db_dao.save_xpansion_constraint({"my.txt": b"content"})
+        db_dao.save_xpansion_capacity({"capa.txt": series_id})
+        db_dao.save_xpansion_weight({"weights.csv": series_id})
 
         db_dao.delete_xpansion_configuration()
 
@@ -482,13 +482,12 @@ class TestXpansionResources:
         assert db_dao.get_xpansion_resources(XpansionResourceFileType.CONSTRAINTS) == []
 
         # --- save and get ---
-        db_dao.save_xpansion_constraint("my_constraints.txt", b"line1\nline2")
+        db_dao.save_xpansion_constraint({"my_constraints.txt": b"line1\nline2"})
         result = db_dao.get_xpansion_resource(XpansionResourceFileType.CONSTRAINTS, "my_constraints.txt")
         assert result == b"line1\nline2"
 
         # --- listing (sorted) ---
-        db_dao.save_xpansion_constraint("zzz.txt", b"z")
-        db_dao.save_xpansion_constraint("aaa.txt", b"a")
+        db_dao.save_xpansion_constraint({"zzz.txt": b"z", "aaa.txt": b"a"})
         assert db_dao.get_xpansion_resources(XpansionResourceFileType.CONSTRAINTS) == [
             "aaa.txt",
             "my_constraints.txt",
@@ -496,7 +495,7 @@ class TestXpansionResources:
         ]
 
         # --- upsert ---
-        db_dao.save_xpansion_constraint("my_constraints.txt", b"updated")
+        db_dao.save_xpansion_constraint({"my_constraints.txt": b"updated"})
         result = db_dao.get_xpansion_resource(XpansionResourceFileType.CONSTRAINTS, "my_constraints.txt")
         assert result == b"updated"
 
@@ -525,15 +524,14 @@ class TestXpansionResources:
         # --- save and get ---
         df = pl.DataFrame({"col1": [1.0, 2.0], "col2": [3.0, 4.0]})
         series_id = matrix_service.create(df)
-        db_dao.save_xpansion_capacity("link_capa.txt", series_id)
+        db_dao.save_xpansion_capacity({"link_capa.txt": series_id})
 
         result = db_dao.get_xpansion_resource(XpansionResourceFileType.CAPACITIES, "link_capa.txt")
         assert isinstance(result, pl.DataFrame)
         assert result.equals(df)
 
         # --- listing (sorted) ---
-        db_dao.save_xpansion_capacity("zzz.txt", series_id)
-        db_dao.save_xpansion_capacity("aaa.txt", series_id)
+        db_dao.save_xpansion_capacity({"zzz.txt": series_id, "aaa.txt": series_id})
         assert db_dao.get_xpansion_resources(XpansionResourceFileType.CAPACITIES) == [
             "aaa.txt",
             "link_capa.txt",
@@ -543,7 +541,7 @@ class TestXpansionResources:
         # --- upsert with different series ---
         df2 = pl.DataFrame({"col1": [9.0]})
         series_id2 = matrix_service.create(df2)
-        db_dao.save_xpansion_capacity("link_capa.txt", series_id2)
+        db_dao.save_xpansion_capacity({"link_capa.txt": series_id2})
         result = db_dao.get_xpansion_resource(XpansionResourceFileType.CAPACITIES, "link_capa.txt")
         assert isinstance(result, pl.DataFrame)
         assert result.equals(df2)
@@ -570,15 +568,14 @@ class TestXpansionResources:
         # --- save and get ---
         df = pl.DataFrame({"w": [0.5, 0.3, 0.2]})
         series_id = matrix_service.create(df)
-        db_dao.save_xpansion_weight("mc_weights.csv", series_id)
+        db_dao.save_xpansion_weight({"mc_weights.csv": series_id})
 
         result = db_dao.get_xpansion_resource(XpansionResourceFileType.WEIGHTS, "mc_weights.csv")
         assert isinstance(result, pl.DataFrame)
         assert result.equals(df)
 
         # --- listing (sorted) ---
-        db_dao.save_xpansion_weight("zzz.csv", series_id)
-        db_dao.save_xpansion_weight("aaa.csv", series_id)
+        db_dao.save_xpansion_weight({"zzz.csv": series_id, "aaa.csv": series_id})
         assert db_dao.get_xpansion_resources(XpansionResourceFileType.WEIGHTS) == [
             "aaa.csv",
             "mc_weights.csv",
@@ -588,7 +585,7 @@ class TestXpansionResources:
         # --- upsert with different series ---
         df2 = pl.DataFrame({"w": [0.9]})
         series_id2 = matrix_service.create(df2)
-        db_dao.save_xpansion_weight("mc_weights.csv", series_id2)
+        db_dao.save_xpansion_weight({"mc_weights.csv": series_id2})
         result = db_dao.get_xpansion_resource(XpansionResourceFileType.WEIGHTS, "mc_weights.csv")
         assert isinstance(result, pl.DataFrame)
         assert result.equals(df2)
@@ -608,13 +605,13 @@ class TestXpansionResources:
     def test_checks_constraint_can_be_deleted_raises_if_used_in_settings(self, db_dao: DatabaseStudyDao) -> None:
         """checks_xpansion_resource_can_be_deleted should raise if constraint file is referenced by settings."""
         db_dao.create_xpansion_configuration()
-        db_dao.save_xpansion_constraint("my.txt", b"data")
+        db_dao.save_xpansion_constraint({"my.txt": b"data"})
         db_dao.save_xpansion_settings(XpansionSettings(additional_constraints="my.txt"))
 
         with pytest.raises(FileCurrentlyUsedInSettings):
             db_dao.checks_xpansion_resource_can_be_deleted(XpansionResourceFileType.CONSTRAINTS, "my.txt")
 
-        db_dao.save_xpansion_constraint("other.txt", b"x")
+        db_dao.save_xpansion_constraint({"other.txt": b"x"})
         db_dao.checks_xpansion_resource_can_be_deleted(XpansionResourceFileType.CONSTRAINTS, "other.txt")  # no raise
 
     def test_checks_weight_can_be_deleted_raises_if_used_in_settings(self, db_dao: DatabaseStudyDao) -> None:
