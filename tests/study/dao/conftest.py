@@ -21,6 +21,7 @@ from antares.study.version import StudyVersion
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from antarest.blobstore.service import IBlobService
 from antarest.core.interfaces.cache import ICache
 from antarest.dbmodel import Base
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
@@ -42,8 +43,10 @@ from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3, StorageMode
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import create_study
+from tests.study.dao.utils import save_area
 
 
 def build_db_dao(db_session: Session, matrix_service: ISimpleMatrixService, version: StudyVersion) -> DatabaseStudyDao:
@@ -203,13 +206,6 @@ class RealCaseStudy:
     dataframes: list[pl.DataFrame]
 
 
-def get_matrix_service_from_dao(dao: StudyDao) -> ISimpleMatrixService:
-    if isinstance(dao, DatabaseStudyDao):
-        return dao._matrix_service
-    else:
-        return dao._generator_matrix_constants.matrix_service
-
-
 def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -> RealCaseStudy:
     # Create matrices in the matrix-store with different contents to diversify tests.
     base_data = [[1, 2.5], [3, 4.7]]
@@ -303,7 +299,7 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
 
     # Create `load`, `solar`, `wind`, `reserves` and `misc-gen` matrices in DB
     area_id = "paris"
-    dao.save_area(area_id)
+    save_area(dao, area_id)
     dao.save_load({area_id: load_id})
     dao.save_solar({area_id: solar_id})
     dao.save_wind({area_id: wind_id})
@@ -312,7 +308,7 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
 
     # Also create a link with `series`, `direct_capacity` and `indirect_capacity` matrices.
     area2 = "london"
-    dao.save_area(area2)
+    save_area(dao, area2)
     dao.save_links([Link(area1=area_id, area2=area2)])
     dao.save_link_series({(area_id, area2): link_series_id})
     dao.save_link_direct_capacities({(area_id, area2): link_direct_id})
@@ -400,3 +396,14 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
         bc_eq_id=bc_equal_id,
         dataframes=dataframes,
     )
+
+
+def create_area(area_name: str, dao: StudyDao) -> None:
+    constants = dao.generator_matrix_constants
+    command_context = CommandContext(
+        generator_matrix_constants=constants, matrix_service=dao.matrix_service, blob_service=Mock(spec=IBlobService)
+    )
+
+    command = CreateArea(area_name=area_name, command_context=command_context, study_version=dao.get_version())
+    output = command.apply(dao)
+    assert output.status

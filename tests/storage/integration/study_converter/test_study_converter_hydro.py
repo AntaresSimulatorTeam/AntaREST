@@ -23,12 +23,13 @@ from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from tests.study.dao.conftest import build_db_dao
+from tests.study.dao.utils import save_area
 
 
 def _setup_area_with_hydro(dao: DatabaseStudyDao, area_name: str) -> str:
     """Create an area with all required hydro config and matrices for conversion."""
     area_id = area_name.lower()
-    dao.save_area(area_name)
+    save_area(dao, area_name)
     dao.save_hydro_management({area_id: HydroManagement()})
     dao.save_inflow_structure({area_id: InflowStructure()})
     dao.save_hydro_allocation(
@@ -80,7 +81,7 @@ class TestConvertHydroPmaxMatrices:
         source_dao.save_hydro_max_daily_pump_energy({area_id: source_dao._matrix_service.create(daily_pump)})
 
         # Prepare target area
-        target_dao.save_area("Paris")
+        save_area(target_dao, "Paris")
 
         # Run converter
         converter = StudyConverter(source_dao, target_dao, STUDY_VERSION_9_2, matrix_service)
@@ -108,7 +109,7 @@ class TestConvertHydroPmaxMatrices:
         area_id = _setup_area_with_hydro(source_dao, "Paris")
 
         # Default is DAILY, no pmax matrices exist in source
-        target_dao.save_area("Paris")
+        save_area(target_dao, "Paris")
 
         converter = StudyConverter(source_dao, target_dao, STUDY_VERSION_9_2, matrix_service)
         converter._convert_hydro()
@@ -129,7 +130,7 @@ class TestConvertHydroPmaxMatrices:
         target_dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
 
         area_id = _setup_area_with_hydro(source_dao, "Paris")
-        target_dao.save_area("Paris")
+        save_area(target_dao, "Paris")
 
         converter = StudyConverter(source_dao, target_dao, STUDY_VERSION_8_8, matrix_service)
         converter._convert_hydro()

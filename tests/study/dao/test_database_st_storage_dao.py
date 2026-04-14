@@ -37,11 +37,12 @@ from antarest.study.dao.database.models.st_storage import (
     ST_STORAGE_TABLE,
     UPPER_RULE_CURVE_TABLE,
 )
+from tests.study.dao.utils import save_area
 
 
 def test_save_st_storage(db_dao_930: DatabaseStudyDao) -> None:
     dao = db_dao_930
-    dao.save_area("area_1")
+    save_area(dao, "area_1")
 
     dao.save_st_storages(
         {
@@ -88,7 +89,7 @@ def test_save_st_storage(db_dao_930: DatabaseStudyDao) -> None:
 
 def test_save_multiple_st_storages(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("area_1")
+    save_area(dao, "area_1")
 
     dao.save_st_storages(
         {
@@ -118,8 +119,8 @@ def test_save_multiple_st_storages(db_dao: DatabaseStudyDao) -> None:
 
 def test_get_all_st_storages(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("area_1")
-    dao.save_area("area_2")
+    save_area(dao, "area_1")
+    save_area(dao, "area_2")
 
     dao.save_st_storages(
         {
@@ -136,7 +137,7 @@ def test_get_all_st_storages(db_dao: DatabaseStudyDao) -> None:
 
 def test_get_st_storage_raises_when_missing(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("area_1")
+    save_area(dao, "area_1")
     dao.save_st_storages({"area_1": [STStorage(id="st_storage_id_1", name="st-storage-1")]})
 
     with pytest.raises(STStorageNotFound):
@@ -148,7 +149,7 @@ def test_get_st_storage_raises_when_missing(db_dao: DatabaseStudyDao) -> None:
 
 def test_st_storage_exists(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("area_1")
+    save_area(dao, "area_1")
     dao.save_st_storages({"area_1": [STStorage(id="st_storage_id_1", name="st-storage-1", efficiency=0.8)]})
     assert dao.st_storage_exists("area_1", "st_storage_id_1")
 
@@ -159,7 +160,7 @@ def test_st_storage_exists_returns_false_for_unknown(db_dao: DatabaseStudyDao) -
 
 def test_delete_st_storage(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("area_1")
+    save_area(dao, "area_1")
 
     dao.save_st_storages({"area_1": [STStorage(id="st_storage_id_1", name="st-storage-1", efficiency=0.8)]})
     assert dao.st_storage_exists("area_1", "st_storage_id_1")
@@ -178,7 +179,7 @@ def test_delete_st_storage(db_dao: DatabaseStudyDao) -> None:
 
 def test_save_additional_constraints(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("area_1")
+    save_area(dao, "area_1")
     dao.save_st_storages({"area_1": [STStorage(id="st_storage_id_1", name="st-storage-1", efficiency=0.8)]})
 
     dao.save_st_storage_additional_constraints(
@@ -205,7 +206,7 @@ def test_save_additional_constraints(db_dao: DatabaseStudyDao) -> None:
 
 def test_delete_additional_constraints(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("area_1")
+    save_area(dao, "area_1")
     dao.save_st_storages({"area_1": [STStorage(id="st_storage_id_1", name="st-storage-1", efficiency=0.8)]})
 
     dao.save_st_storage_additional_constraints(
@@ -227,7 +228,7 @@ def test_delete_additional_constraints(db_dao: DatabaseStudyDao) -> None:
 
 def test_get_all_additional_constraints(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("area_1")
+    save_area(dao, "area_1")
     dao.save_st_storages({"area_1": [STStorage(id="st_storage_id_1", name="st-storage-1")]})
 
     dao.save_st_storage_additional_constraints(
@@ -248,7 +249,7 @@ def test_get_all_additional_constraints(db_dao: DatabaseStudyDao) -> None:
 
 def test_st_storage_matrices_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("area_1")
+    save_area(dao, "area_1")
     dao.save_st_storages({"area_1": [STStorage(id="battery", name="Battery")]})
 
     matrix_service = dao._matrix_service
@@ -328,7 +329,7 @@ def test_st_storage_matrices_lifecycle(db_session: Session, db_dao: DatabaseStud
 
 def test_get_st_storage_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("area_1")
+    save_area(dao, "area_1")
     dao.save_st_storages({"area_1": [STStorage(id="battery", name="Battery")]})
 
     getters = [
@@ -352,7 +353,7 @@ def test_get_st_storage_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> 
 
 def test_save_st_storage_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("area_1")
+    save_area(dao, "area_1")
 
     savers = [
         dao.save_st_storage_pmax_injection,
@@ -375,7 +376,7 @@ def test_save_st_storage_matrix_raises_when_missing(db_dao: DatabaseStudyDao) ->
 
 def test_constraint_matrix_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("area_1")
+    save_area(dao, "area_1")
     dao.save_st_storages({"area_1": [STStorage(id="battery", name="Battery")]})
     dao.save_st_storage_additional_constraints(
         {"area_1": {"battery": [STStorageAdditionalConstraint(id="c1", name="constraint-1")]}}
@@ -406,8 +407,8 @@ def test_constraint_matrix_lifecycle(db_session: Session, db_dao: DatabaseStudyD
 
 def test_area_with_no_storages_absent_from_dict(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("area_1")
-    dao.save_area("area_2")
+    save_area(dao, "area_1")
+    save_area(dao, "area_2")
 
     dao.save_st_storages({"area_1": [STStorage(id="battery", name="Battery")]})
 

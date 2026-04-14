@@ -14,7 +14,6 @@ from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import ChildNotFoundError, XpansionConfigurationDoesNotExist
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.model.area_model import AreaUI
 from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import (
@@ -23,6 +22,7 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
+from antarest.study.dao.common import AreaUiMapping
 from antarest.study.model import (
     STUDY_VERSION_6_5,
     STUDY_VERSION_8_1,
@@ -154,10 +154,11 @@ class StudyConverter:
             st_storages = {}
             st_storages_constraints = {}
 
-        # First create all areas to avoid config issues
+        # First, create all areas with their properties to avoid foreign key or config issues
+        new_area_properties = {}
         for area_id in area_properties:
-            area_name = area_names_and_thermals[area_id].name
-            self._new_dao.save_area(area_name)
+            new_area_properties[area_names_and_thermals[area_id].name] = area_properties[area_id]
+        self._new_dao.save_areas_with_properties(new_area_properties)
 
         # Thermals
         thermals = {area_info.id: area_info.thermals or [] for area_info in area_names_and_thermals.values()}
@@ -178,22 +179,13 @@ class StudyConverter:
         # Hydro
         self._convert_hydro()
 
+        # Ui
+        new_ui: AreaUiMapping = {}
+        for area_id, source_ui in areas_ui.items():
+            new_ui[area_id] = {}
         # Short-term storages
         if st_storages:
             self._convert_short_term_storages(st_storages, st_storages_constraints)
-
-        for area_id in area_properties:
-            # Properties
-            self._new_dao.save_area_properties(area_id, area_properties[area_id])
-
-            # Ui
-            source_ui = areas_ui[area_id]
-            for layer, x in source_ui.layer_x.items():
-                y = source_ui.layer_y[layer]
-                color = source_ui.layer_color[layer]
-                r, g, b = (int(c) for c in color.strip(" ").split(","))
-                area_ui = AreaUI(x=x, y=y, color_rgb=(r, g, b))
-                self._new_dao.save_area_ui(area_id, layer, area_ui)
 
     def _convert_thermal_clusters(self, data: dict[str, list[ThermalCluster]]) -> None:
         self._new_dao.save_thermals(data)

@@ -20,11 +20,12 @@ from antarest.study.business.model.scenario_builder_model import Ruleset, Scenar
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from tests.study.dao.utils import save_area
 
 
 def _setup_areas(dao: DatabaseStudyDao, *area_names: str) -> None:
     for name in area_names:
-        dao.save_area(name)
+        save_area(dao, name)
 
 
 def test_save_empty_ruleset(db_dao: DatabaseStudyDao) -> None:

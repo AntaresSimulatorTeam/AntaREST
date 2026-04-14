@@ -96,6 +96,7 @@ class FileStudyTreeDao(
         self._is_study_managed = is_study_managed
         self._cache = cache
 
+    @override
     @property
     def matrix_service(self) -> "ISimpleMatrixService":
         return self._matrix_service
@@ -104,6 +105,7 @@ class FileStudyTreeDao(
     def blob_service(self) -> "IBlobService":
         return self._blob_service
 
+    @override
     @property
     def generator_matrix_constants(self) -> "GeneratorMatrixConstants":
         return self._generator_matrix_constants
