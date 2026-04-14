@@ -243,7 +243,7 @@ class DatabaseAreaDao(AreaDao):
         except IntegrityError as e:
             # Means an area already existed
             existing_ids = set(self.get_all_area_ids())
-            invalid_ids = set(data) - existing_ids
+            invalid_ids = {transform_name_to_id(area_name) for area_name in data} - existing_ids
             ids_formatted = ", ".join(f"'{a}'" for a in invalid_ids)
             raise ValueError(f"Areas '{ids_formatted}' already exist and could not be created") from e
 

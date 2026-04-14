@@ -72,7 +72,6 @@ class CreateArea(ICommand):
 
         area_id = transform_name_to_id(self.area_name)
         study_data.save_hydro_management({area_id: HydroManagement()})
-        study_data.save_area_properties(area_id, area_properties)
         study_data.save_area_ui({area_id: {DEFAULT_LAYER_ID: AreaUI()}})
 
         # Hydro

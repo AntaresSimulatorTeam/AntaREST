@@ -12,8 +12,8 @@
 
 
 from antarest.study.business.model.area_properties_model import AreaProperties
-from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.dao.api.study_dao import StudyDao
 
 
-def save_area(dao: DatabaseStudyDao, area_name: str) -> None:
+def save_area(dao: StudyDao, area_name: str) -> None:
     dao.save_areas_with_properties({area_name: AreaProperties()})

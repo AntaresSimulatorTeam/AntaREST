@@ -239,12 +239,12 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     @property
     def matrix_service(self) -> "ISimpleMatrixService":
-        return self.matrix_service
+        return self._adaptee.matrix_service
 
     @override
     @property
     def generator_matrix_constants(self) -> "GeneratorMatrixConstants":
-        return self.generator_matrix_constants
+        return self._adaptee.generator_matrix_constants
 
     @override
     def get_links(self) -> Sequence[Link]:
