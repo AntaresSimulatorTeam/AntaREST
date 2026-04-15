@@ -17,6 +17,7 @@ import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import (
+    AreaNotFound,
     ChildNotFoundError,
     ThermalClusterConfigNotFound,
     ThermalClusterNotFound,
@@ -98,7 +99,10 @@ class FileStudyThermalDao(ThermalDao, ABC):
     @override
     def get_all_thermals_for_area(self, area_id: str) -> Sequence[ThermalCluster]:
         file_study = self.get_file_study()
-        clusters_data = self._get_all_thermals_for_area(file_study, area_id)
+        try:
+            clusters_data = self._get_all_thermals_for_area(file_study, area_id)
+        except ChildNotFoundError:
+            raise AreaNotFound(area_id) from None
         return [parse_thermal_cluster(file_study.config.version, c) for c in clusters_data.values()]
 
     @override
@@ -107,6 +111,8 @@ class FileStudyThermalDao(ThermalDao, ABC):
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=thermal_id)
         try:
             cluster_data = file_study.tree.get(path.split("/"), depth=1)
+        except ChildNotFoundError:
+            raise AreaNotFound(area_id) from None
         except KeyError:
             raise ThermalClusterNotFound(area_id, thermal_id) from None
         return parse_thermal_cluster(file_study.config.version, cluster_data)
@@ -197,7 +203,11 @@ class FileStudyThermalDao(ThermalDao, ABC):
     @override
     def delete_thermal(self, area_id: str, thermal_id: str) -> None:
         study_data = self.get_file_study()
+        if area_id not in study_data.config.areas:
+            raise AreaNotFound(area_id)
         cluster_id = thermal_id.lower()
+        if not any(c.id.lower() == cluster_id for c in study_data.config.areas[area_id].thermals):
+            raise ThermalClusterNotFound(area_id, thermal_id)
         paths = [
             ["input", "thermal", "clusters", area_id, "list", cluster_id],
             ["input", "thermal", "prepro", area_id, cluster_id],

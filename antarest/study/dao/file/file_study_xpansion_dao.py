@@ -94,7 +94,8 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         existing_ids = {value["name"]: key for key, value in candidates.items()}
 
         if old_id:
-            # We should remove the candidate corresponding to the `old_id`
+            if old_id not in existing_ids:
+                raise CandidateNotFoundError(f"The candidate '{old_id}' does not exist")
             del candidates[existing_ids[old_id]]
 
         new_key = existing_ids.get(candidate.name, str(len(candidates) + 1))  # The first candidate key is 1
@@ -105,6 +106,8 @@ class FileStudyXpansionDao(XpansionDao, ABC):
     def delete_xpansion_candidate(self, candidate_name: str) -> None:
         candidates = self._get_all_xpansion_candidates()
         existing_ids = {value["name"]: key for key, value in candidates.items()}
+        if candidate_name not in existing_ids:
+            raise CandidateNotFoundError(f"The candidate '{candidate_name}' does not exist")
         del candidates[existing_ids[candidate_name]]
         # Reorder keys of the dict
         new_dict = {str(i): v for i, (k, v) in enumerate(candidates.items(), 1)}
@@ -113,7 +116,10 @@ class FileStudyXpansionDao(XpansionDao, ABC):
     @override
     def get_xpansion_settings(self) -> XpansionSettings:
         file_study = self.get_file_study()
-        settings = self._get_settings(file_study)
+        try:
+            settings = self._get_settings(file_study)
+        except ChildNotFoundError:
+            raise XpansionConfigurationDoesNotExist(file_study.config.study_id) from None
         sensitivity_settings = self._get_sensitivity_settings(file_study)
         settings.sensitivity_config = sensitivity_settings
         return settings
@@ -149,7 +155,10 @@ class FileStudyXpansionDao(XpansionDao, ABC):
     @override
     def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pl.DataFrame:
         file_study = self.get_file_study()
-        node = file_study.tree.get_node(self.get_resource_dir(resource_type) + [filename])
+        try:
+            node = file_study.tree.get_node(self.get_resource_dir(resource_type) + [filename])
+        except ChildNotFoundError:
+            raise XpansionFileNotFoundError(f"The '{resource_type.value}' file '{filename}' does not exist") from None
 
         if isinstance(node, MatrixNode):
             return node.parse_as_dataframe()
@@ -223,7 +232,10 @@ class FileStudyXpansionDao(XpansionDao, ABC):
     @override
     def delete_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> None:
         file_study = self.get_file_study()
-        file_study.tree.delete(self.get_resource_dir(resource_type) + [filename])
+        try:
+            file_study.tree.delete(self.get_resource_dir(resource_type) + [filename])
+        except ChildNotFoundError:
+            raise XpansionFileNotFoundError(f"The '{resource_type.value}' file '{filename}' does not exist") from None
 
     @override
     def save_xpansion_constraint(self, filename: str, content: bytes) -> None:

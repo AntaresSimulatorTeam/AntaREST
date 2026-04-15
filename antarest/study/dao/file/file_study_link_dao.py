@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Callable
 import polars as pl
 from typing_extensions import override
 
-from antarest.core.exceptions import LinkNotFound
+from antarest.core.exceptions import AreaNotFound, ChildNotFoundError, LinkNotFound
 from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.business.model.link_model import (
     Link,
@@ -75,7 +75,7 @@ class FileStudyLinkDao(LinkDao, ABC):
             area1_id, area2_id = sorted((area1_id, area2_id))
             file_study.tree.get(["input", "links", area1_id, "properties", area2_id])
             return True
-        except KeyError:
+        except (KeyError, ChildNotFoundError):
             return False
 
     @override
@@ -124,8 +124,8 @@ class FileStudyLinkDao(LinkDao, ABC):
         try:
             area_links = file_study.tree.get(["input", "links", area_from, "properties", area_to])
             return parse_link(area_links, area_from, area_to)
-        except KeyError:
-            raise LinkNotFound(f"The link {area_from} -> {area_to} is not present in the study")
+        except (KeyError, ChildNotFoundError):
+            raise LinkNotFound(f"The link {area_from} -> {area_to} is not present in the study") from None
 
     @override
     def save_links(self, links: Sequence[Link]) -> None:
@@ -138,7 +138,7 @@ class FileStudyLinkDao(LinkDao, ABC):
         study_data = self.get_file_study().config
         for area in [area1_id, area2_id]:
             if area not in study_data.areas:
-                raise ValueError(f"The area '{area}' does not exist")
+                raise AreaNotFound(area)
 
         area_from, area_to = sorted([area1_id, area2_id])
         study_data.areas[area_from].links[area_to] = link.to_config()
