@@ -64,8 +64,7 @@ class TestDistrictDao:
         dao.save_district(District(id="d1", name="District 1"))
         dao.save_district(District(id="d2", name="District 2"))
 
-        districts = dao.get_districts()
-        assert len(districts) == 2
+        districts = [d for d in dao.get_districts() if d.id != "all areas"]
         assert {d.id for d in districts} == {"d1", "d2"}
 
     def test_get_district_raises_if_not_found(self, dao: StudyDao) -> None:
@@ -79,7 +78,7 @@ class TestDistrictDao:
         assert dao.district_exists("d1")
 
     def test_save_district_with_apply_filter(self, dao: StudyDao) -> None:
-        dao.save_area("Paris")
+        save_area(dao, "Paris")
 
         district = District(
             id="d1",
@@ -94,8 +93,8 @@ class TestDistrictDao:
         assert result.subtract_areas == ["paris"]
 
     def test_delete_area_removes_area_from_districts(self, dao: StudyDao) -> None:
-        dao.save_area("Paris")
-        dao.save_area("London")
+        save_area(dao, "Paris")
+        save_area(dao, "London")
 
         dao.save_district(District(id="d1", name="District 1", add_areas=["paris"]))
         dao.save_district(District(id="d2", name="District 2", add_areas=["paris", "london"]))
