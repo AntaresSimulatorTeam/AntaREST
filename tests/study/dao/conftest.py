@@ -330,26 +330,24 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
 
     # Create ST Storage matrices
     st_storage_id = "battery_storage"
-    dao.save_st_storage(area_id, STStorage(id=st_storage_id, name="Battery Storage"))
-    dao.save_st_storage_pmax_injection(area_id, st_storage_id, sts_pmax_injection_id)
-    dao.save_st_storage_pmax_withdrawal(area_id, st_storage_id, sts_pmax_withdrawal_id)
-    dao.save_st_storage_lower_rule_curve(area_id, st_storage_id, sts_lower_rule_curve_id)
-    dao.save_st_storage_upper_rule_curve(area_id, st_storage_id, sts_upper_rule_curve_id)
-    dao.save_st_storage_inflows(area_id, st_storage_id, sts_inflows_id)
-    dao.save_st_storage_cost_injection(area_id, st_storage_id, sts_cost_injection_id)
-    dao.save_st_storage_cost_withdrawal(area_id, st_storage_id, sts_cost_withdrawal_id)
-    dao.save_st_storage_cost_level(area_id, st_storage_id, sts_cost_level_id)
-    dao.save_st_storage_cost_variation_injection(area_id, st_storage_id, sts_cost_variation_injection_id)
-    dao.save_st_storage_cost_variation_withdrawal(area_id, st_storage_id, sts_cost_variation_withdrawal_id)
+    dao.save_st_storages({area_id: [STStorage(id=st_storage_id, name="Battery Storage")]})
+    dao.save_st_storage_pmax_injection({area_id: {st_storage_id: sts_pmax_injection_id}})
+    dao.save_st_storage_pmax_withdrawal({area_id: {st_storage_id: sts_pmax_withdrawal_id}})
+    dao.save_st_storage_lower_rule_curve({area_id: {st_storage_id: sts_lower_rule_curve_id}})
+    dao.save_st_storage_upper_rule_curve({area_id: {st_storage_id: sts_upper_rule_curve_id}})
+    dao.save_st_storage_inflows({area_id: {st_storage_id: sts_inflows_id}})
+    dao.save_st_storage_cost_injection({area_id: {st_storage_id: sts_cost_injection_id}})
+    dao.save_st_storage_cost_withdrawal({area_id: {st_storage_id: sts_cost_withdrawal_id}})
+    dao.save_st_storage_cost_level({area_id: {st_storage_id: sts_cost_level_id}})
+    dao.save_st_storage_cost_variation_injection({area_id: {st_storage_id: sts_cost_variation_injection_id}})
+    dao.save_st_storage_cost_variation_withdrawal({area_id: {st_storage_id: sts_cost_variation_withdrawal_id}})
 
     # Create ST Storage additional constraint matrix
     constraint_id = "constraint_1"
     dao.save_st_storage_additional_constraints(
-        area_id,
-        storage_id=st_storage_id,
-        constraints=[STStorageAdditionalConstraint(id=constraint_id, name="Constraint 1")],
+        {area_id: {st_storage_id: [STStorageAdditionalConstraint(id=constraint_id, name="Constraint 1")]}},
     )
-    dao.save_st_storage_constraint_matrix(area_id, st_storage_id, constraint_id, sts_constraint_matrix_id)
+    dao.save_st_storage_constraint_matrices({area_id: {st_storage_id: {constraint_id: sts_constraint_matrix_id}}})
 
     # Create hydro matrices
     dao.save_hydro_maxpower({area_id: hydro_maxpower_id})

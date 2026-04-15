@@ -80,6 +80,9 @@ from antarest.study.dao.common import (
     LinkSeriesMapping,
     RenewableSeriesMapping,
     ReservesGlobalParametersMapping,
+    StStorageConstraintSeriesMapping,
+    StStorageId,
+    StStorageSeriesMapping,
     ThermalSeriesMapping,
     XpansionCapacitiesMapping,
     XpansionConstraintsMapping,
@@ -899,6 +902,63 @@ class InMemoryStudyDao(StudyDao):
         matrix_id = self._storage_cost_variation_withdrawal[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
+    @staticmethod
+    def _get_all_sts_matrices(data: dict[ClusterKey, str]) -> StStorageSeriesMapping:
+        result: StStorageSeriesMapping = {}
+        for key, matrix_id in data.items():
+            result.setdefault(key.area_id, {})[key.cluster_id] = matrix_id
+        return result
+
+    @override
+    def get_all_st_storage_pmax_injection(self) -> StStorageSeriesMapping:
+        data = self._storage_pmax_injection
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_pmax_withdrawal(self) -> StStorageSeriesMapping:
+        data = self._storage_pmax_withdrawal
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_lower_rule_curve(self) -> StStorageSeriesMapping:
+        data = self._storage_lower_rule_curve
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_upper_rule_curve(self) -> StStorageSeriesMapping:
+        data = self._storage_upper_rule_curve
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_inflows(self) -> StStorageSeriesMapping:
+        data = self._storage_inflows
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_cost_injection(self) -> StStorageSeriesMapping:
+        data = self._storage_cost_injection
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_cost_withdrawal(self) -> StStorageSeriesMapping:
+        data = self._storage_cost_withdrawal
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_cost_level(self) -> StStorageSeriesMapping:
+        data = self._storage_cost_level
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_cost_variation_injection(self) -> StStorageSeriesMapping:
+        data = self._storage_cost_variation_injection
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_cost_variation_withdrawal(self) -> StStorageSeriesMapping:
+        data = self._storage_cost_variation_withdrawal
+        return self._get_all_sts_matrices(data)
+
     @override
     def get_st_storage_additional_constraint_matrix(
         self, area_id: str, storage_id: str, constraint_id: str
@@ -907,53 +967,64 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def save_st_storage(self, area_id: str, st_storage: STStorage) -> None:
-        self._st_storages[cluster_key(area_id, st_storage.id)] = st_storage
+    def get_all_st_storage_additional_constraint_matrices(self) -> StStorageConstraintSeriesMapping:
+        data = self._st_storages_constraints_matrix
+        result: StStorageConstraintSeriesMapping = {}
+        for key, matrix_id in data.items():
+            result.setdefault(key.area_id, {}).setdefault(key.storage_id, {})[key.constraint_id] = matrix_id
+        return result
 
     @override
-    def save_st_storages(self, area_id: str, storages: Sequence[STStorage]) -> None:
-        for storage in storages:
-            self.save_st_storage(area_id, storage)
+    def save_st_storages(self, data: dict[AreaId, list[STStorage]]) -> None:
+        for area_id, storages in data.items():
+            for storage in storages:
+                self._st_storages[cluster_key(area_id, storage.id)] = storage
+
+    @staticmethod
+    def _save_sts_matrices(series: StStorageSeriesMapping, data: dict[ClusterKey, str]) -> None:
+        for area_id, value in series.items():
+            for storage_id, series_id in value.items():
+                data[cluster_key(area_id, storage_id)] = series_id
 
     @override
-    def save_st_storage_pmax_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_pmax_injection[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_pmax_injection(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_pmax_injection)
 
     @override
-    def save_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_pmax_withdrawal[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_pmax_withdrawal(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_pmax_withdrawal)
 
     @override
-    def save_st_storage_lower_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_lower_rule_curve[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_lower_rule_curve(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_lower_rule_curve)
 
     @override
-    def save_st_storage_upper_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_upper_rule_curve[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_upper_rule_curve(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_upper_rule_curve)
 
     @override
-    def save_st_storage_inflows(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_inflows[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_inflows(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_inflows)
 
     @override
-    def save_st_storage_cost_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_cost_injection[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_cost_injection(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_cost_injection)
 
     @override
-    def save_st_storage_cost_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_cost_withdrawal[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_cost_withdrawal(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_cost_withdrawal)
 
     @override
-    def save_st_storage_cost_level(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_cost_level[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_cost_level(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_cost_level)
 
     @override
-    def save_st_storage_cost_variation_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_cost_variation_injection[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_cost_variation_injection(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_cost_variation_injection)
 
     @override
-    def save_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_cost_variation_withdrawal[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_cost_variation_withdrawal(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_cost_variation_withdrawal)
 
     @override
     def delete_st_storage(self, area_id: str, storage: STStorage) -> None:
@@ -1002,12 +1073,6 @@ class InMemoryStudyDao(StudyDao):
         return self._st_storages_constraints.get(area_id, {}).get(storage_id, [])
 
     @override
-    def save_st_storage_constraint_matrix(
-        self, area_id: str, storage_id: str, constraint_id: str, series_id: str
-    ) -> None:
-        self._st_storages_constraints_matrix[additional_constraint_key(area_id, storage_id, constraint_id)] = series_id
-
-    @override
     def delete_st_storage_additional_constraints(self, area_id: str, storage_id: str, constraints: list[str]) -> None:
         existing_constraints = self._st_storages_constraints[area_id][storage_id]
         constraints_to_remove = []
@@ -1022,18 +1087,24 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def save_st_storage_additional_constraints(
-        self, area_id: str, storage_id: str, constraints: list[STStorageAdditionalConstraint]
+        self, data: dict[AreaId, dict[StStorageId, list[STStorageAdditionalConstraint]]]
     ) -> None:
-        existing_constraints = self._st_storages_constraints.get(area_id, {}).get(storage_id, [])
+        for area_id, value in data.items():
+            for storage_id, constraints in value.items():
+                existing_constraints = self._st_storages_constraints.get(area_id, {}).get(storage_id, [])
 
-        existing_map = {}
-        for constraint in existing_constraints:
-            existing_map[constraint.id] = constraint
+                existing_map = {constraint.id: constraint for constraint in existing_constraints}
+                existing_map.update({constraint.id: constraint for constraint in constraints})
 
-        for constraint in constraints:
-            existing_map[constraint.id] = constraint
+                self._st_storages_constraints.setdefault(area_id, {})[storage_id] = list(existing_map.values())
 
-        self._st_storages_constraints.setdefault(area_id, {})[storage_id] = list(existing_map.values())
+    @override
+    def save_st_storage_constraint_matrices(self, series: StStorageConstraintSeriesMapping) -> None:
+        for area_id, v in series.items():
+            for sts_id, value in v.items():
+                for constraint_id, matrix_id in value.items():
+                    constraint_key = additional_constraint_key(area_id, sts_id, constraint_id)
+                    self._st_storages_constraints_matrix[constraint_key] = matrix_id
 
     @override
     def get_all_xpansion_candidates(self) -> list[XpansionCandidate]:
