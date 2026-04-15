@@ -13,6 +13,7 @@ from typing import TypeAlias
 
 from antarest.study.business.model.area_model import AreaUI
 from antarest.study.business.model.binding_constraint_model import ConstraintId
+from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 
 # TODO: It would be better to :
 #  - Use `NewType` instead of `TypeAlias`
@@ -35,3 +36,4 @@ XpansionWeightsMapping: TypeAlias = dict[XpansionFileName, SeriesId]
 XpansionCapacitiesMapping: TypeAlias = dict[XpansionFileName, SeriesId]
 XpansionConstraintsMapping: TypeAlias = dict[XpansionFileName, bytes]
 AreaUiMapping: TypeAlias = dict[AreaId, dict[LayerId, AreaUI]]
+ReservesGlobalParametersMapping: TypeAlias = dict[AreaId, ReservesGlobalParameters]

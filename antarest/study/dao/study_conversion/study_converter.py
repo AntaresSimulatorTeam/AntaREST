@@ -29,6 +29,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_6,
     STUDY_VERSION_8_7,
     STUDY_VERSION_9_2,
+    STUDY_VERSION_10_0,
 )
 
 
@@ -173,6 +174,10 @@ class StudyConverter:
         self._new_dao.save_wind(self._source_dao.get_all_wind())
         self._new_dao.save_reserves(self._source_dao.get_all_reserves())
         self._new_dao.save_misc_gen(self._source_dao.get_all_misc_gen())
+
+        # Reserves global parameters (v10.0+)
+        if self._study_version >= STUDY_VERSION_10_0:
+            self._new_dao.save_reserves_global_parameters(self._source_dao.get_all_reserves_global_parameters())
 
         # Hydro
         self._convert_hydro()
