@@ -125,11 +125,10 @@ class DatabaseStStorageDao(STStorageDao):
             if invalid_sts := set(data[area_id]) - set(all_existing_storages.get(area_id, [])):
                 invalid_sts_dict[area_id] = invalid_sts
 
-        if len(invalid_sts_dict) == 1:
+        if len(invalid_sts_dict) == 1 and len(list(invalid_sts_dict.values())[0]) == 1:
+            # Only one short-term storage is missing, keep the clearer exception
             area_id = next(iter(invalid_sts_dict))
-            if len(invalid_sts_dict[area_id]) == 1:
-                # Only one short-term storage is missing, keep the clearer exception
-                raise STStorageNotFound(area_id, next(iter(invalid_sts_dict[area_id]))) from exc
+            raise STStorageNotFound(area_id, next(iter(invalid_sts_dict[area_id]))) from exc
 
         elif invalid_sts_dict:
             raise STStoragesNotFound(invalid_sts_dict) from exc
@@ -152,7 +151,7 @@ class DatabaseStStorageDao(STStorageDao):
         constraints_dict = self.get_all_st_storage_additional_constraints()
         for area_id, sts_dict in data.items():
             for sts_id in sts_dict:
-                existing_ids = {c.id for c in constraints_dict[area_id][sts_id]}
+                existing_ids = {c.id for c in constraints_dict.get(area_id, {}).get(sts_id, [])}
                 for constraint_id in sts_dict[sts_id]:
                     if constraint_id not in existing_ids:
                         raise STStorageAdditionalConstraintNotFound(area_id, constraint_id) from exc
