@@ -10,10 +10,6 @@
 #
 # This file is part of the Antares project.
 
-"""
-SQLAlchemy Core table definition for per-reserve parameters (reserve definitions).
-"""
-
 from sqlalchemy import Column, Enum, Float, ForeignKeyConstraint, Integer, String, Table
 
 from antarest.dbmodel import Base

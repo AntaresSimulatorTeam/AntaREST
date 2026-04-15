@@ -19,12 +19,6 @@ from antarest.study.business.model.reserve_definition_model import ReserveDefini
 
 
 class ReserveDefinitionFileData(AntaresBaseModel):
-    """
-    Reserve definition data parsed from a `[Reserve X]` section of
-    `input/reserves/<area>/reserves.ini`. Field names use kebab-case when
-    written to the INI file.
-    """
-
     model_config = ConfigDict(alias_generator=to_kebab_case, extra="forbid", populate_by_name=True)
 
     name: str
@@ -44,17 +38,8 @@ class ReserveDefinitionFileData(AntaresBaseModel):
 
 
 def parse_reserve_definition(data: dict[str, Any]) -> ReserveDefinition:
-    """
-    Parse a single `[Reserve X]` section dictionary into a `ReserveDefinition`.
-    The dictionary is expected to contain a `name` entry (set by the file DAO
-    from the section header when absent).
-    """
     return ReserveDefinitionFileData.model_validate(data).to_model()
 
 
 def serialize_reserve_definition(reserve: ReserveDefinition) -> dict[str, Any]:
-    """
-    Serialize a `ReserveDefinition` to the kebab-case dict layout used inside
-    an INI section. The `id` is excluded (carried by the section header).
-    """
     return ReserveDefinitionFileData.from_model(reserve).model_dump(mode="json", by_alias=True)

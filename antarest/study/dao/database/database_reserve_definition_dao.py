@@ -10,10 +10,6 @@
 #
 # This file is part of the Antares project.
 
-"""
-Database implementation of ReserveDefinitionDao using SQLAlchemy Core.
-"""
-
 from collections.abc import Sequence
 from typing import Any
 
