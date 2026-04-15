@@ -71,30 +71,29 @@ def upsert_multiple(
     if not values:
         return
 
+    dialect = session.get_bind().dialect.name
+    if dialect not in {"postgresql", "sqlite"}:
+        raise NotImplementedError(f"Dialect {dialect} not supported")
+
     # SQL seems to have a limit of 2¹⁵ parameters to give inside a single insert statement
     # If we have too many values, we need to split them in multiple insert statements
     max_insert_size = 8000
     batches = [values[i : i + max_insert_size] for i in range(0, len(values), max_insert_size)]
 
+    key_columns = _key_columns(table)
+    prototype_value = batches[0][0]
+    update_columns = [c for c in _update_columns(table) if c.name in prototype_value]
+
     for batch in batches:
-        prototype_value = batch[0]
-
-        dialect = session.get_bind().dialect.name
-        if dialect in {"postgresql", "sqlite"}:
-            key_columns = _key_columns(table)
-            update_columns = [c for c in _update_columns(table) if c.name in prototype_value]
-
-            # Note: the postgres and sqlite syntax requires to explicitly
-            # state the list of columns that we want to update, hence the set_ clause.
-            stmt: PgInsert | SqliteInsert
-            if dialect == "postgresql":
-                stmt = pg_insert(table).values(batch)
-            else:
-                stmt = sqlite_insert(table).values(batch)
-            stmt = stmt.on_conflict_do_update(
-                index_elements=key_columns,
-                set_={column: getattr(stmt.excluded, column.name) for column in update_columns},
-            )
-            session.execute(stmt)
+        # Note: the postgres and sqlite syntax requires to explicitly
+        # state the list of columns that we want to update, hence the set_ clause.
+        stmt: PgInsert | SqliteInsert
+        if dialect == "postgresql":
+            stmt = pg_insert(table).values(batch)
         else:
-            raise NotImplementedError(f"Dialect {dialect} not supported")
+            stmt = sqlite_insert(table).values(batch)
+        stmt = stmt.on_conflict_do_update(
+            index_elements=key_columns,
+            set_={column: getattr(stmt.excluded, column.name) for column in update_columns},
+        )
+        session.execute(stmt)
