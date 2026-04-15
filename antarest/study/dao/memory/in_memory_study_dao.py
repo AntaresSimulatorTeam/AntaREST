@@ -49,6 +49,7 @@ from antarest.study.business.model.hydro_model import (
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.business.model.scenario_builder_model import (
     AnyScenarios,
     Ruleset,
@@ -78,6 +79,7 @@ from antarest.study.dao.common import (
     BindingConstraintSeriesMapping,
     LinkSeriesMapping,
     RenewableSeriesMapping,
+    ReservesGlobalParametersMapping,
     StStorageConstraintSeriesMapping,
     StStorageId,
     StStorageSeriesMapping,
@@ -234,6 +236,8 @@ class InMemoryStudyDao(StudyDao):
         self._load: dict[str, str] = {}
         # Reserves
         self._reserves: dict[str, str] = {}
+        # Reserves global parameters
+        self._reserves_global_parameters: dict[str, ReservesGlobalParameters] = {}
         # Misc-gen
         self._misc_gen: dict[str, str] = {}
         # Solar
@@ -1562,6 +1566,18 @@ class InMemoryStudyDao(StudyDao):
     def save_reserves(self, series: AreaSeriesMapping) -> None:
         for area_id, series_id in series.items():
             self._reserves[area_id] = series_id
+
+    @override
+    def get_reserves_global_parameters(self, area_id: str) -> ReservesGlobalParameters:
+        return self._reserves_global_parameters.get(area_id, ReservesGlobalParameters())
+
+    @override
+    def get_all_reserves_global_parameters(self) -> ReservesGlobalParametersMapping:
+        return dict(self._reserves_global_parameters)
+
+    @override
+    def save_reserves_global_parameters(self, mapping: ReservesGlobalParametersMapping) -> None:
+        self._reserves_global_parameters.update(mapping)
 
     @override
     def save_solar(self, series: AreaSeriesMapping) -> None:
