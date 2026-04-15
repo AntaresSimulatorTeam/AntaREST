@@ -131,3 +131,16 @@ def test_save_link(dao: StudyDao) -> None:
     # Create a link with wrong area and ensure we raise a clear exception
     with pytest.raises(AreaNotFound):
         dao.save_links([Link(area1="paris", area2="fake_area")])
+
+
+def test_delete_area(dao: StudyDao) -> None:
+    _create_default_link(dao)
+    save_area(dao, "Toulouse")
+    dao.save_links([Link(area1="paris", area2="toulouse")])
+
+    # Removing the area `Paris` should remove the 2 links as they both reference it.
+    # For one link, it's `area2` and for the other `area1`
+    dao.delete_area("paris")
+
+    rows = dao.get_links()
+    assert rows == []
