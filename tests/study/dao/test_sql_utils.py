@@ -103,3 +103,16 @@ def test_upsert_one(session: Session) -> None:
     upsert_one(session, TEST_TABLE, values={"id": "1", "sub_id": "1", "str_value": "val3", "int_value": 3})
     rows = session.execute(select(TEST_TABLE)).fetchall()
     assert rows == [("1", "1", "val3", 3), ("2", "2", "val2", 2)]
+
+
+def test_upsert_with_too_many_lines(engine: Engine, session: Session) -> None:
+    """
+    SQL seems to have a limit of 2¹⁵ values to upsert at a time.
+    When trying to insert more than 2¹⁵ values, the `upsert_multiple` function should split the data in chunks to
+    avoid raising an error.
+    """
+    values = [{"id": str(k), "sub_id": str(k), "str_value": "val1", "int_value": 1} for k in range(8200)]
+
+    with DBStatementRecorder(engine) as db_recorder:
+        upsert_multiple(session, TEST_TABLE, values=values)
+        assert len(db_recorder.sql_statements) == 2  # We split the data in 2 batches
