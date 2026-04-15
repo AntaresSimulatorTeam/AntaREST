@@ -29,7 +29,6 @@ from antarest.study.business.model.reserves_global_parameters_model import Reser
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import (
     STUDY_VERSION_6_5,
-    STUDY_VERSION_8_3,
     STUDY_VERSION_8_6,
     STUDY_VERSION_9_2,
     STUDY_VERSION_10_0,

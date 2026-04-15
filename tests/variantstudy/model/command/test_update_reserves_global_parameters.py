@@ -24,6 +24,7 @@ from antarest.study.storage.variantstudy.model.command.update_reserves_global_pa
     UpdateReservesGlobalParameters,
 )
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.study.dao.utils import save_area
 
 
 def _make_dao(version: StudyVersion = STUDY_VERSION_10_0) -> InMemoryStudyDao:
@@ -33,7 +34,7 @@ def _make_dao(version: StudyVersion = STUDY_VERSION_10_0) -> InMemoryStudyDao:
 def test_apply_command(command_context: CommandContext) -> None:
     dao = _make_dao()
     area_id = "paris"
-    dao.save_area(area_id)
+    save_area(dao, area_id)
 
     update = ReservesGlobalParametersUpdate(
         reference_activation_duration_up=5,
@@ -56,8 +57,8 @@ def test_apply_command(command_context: CommandContext) -> None:
 
 def test_apply_multiple_areas(command_context: CommandContext) -> None:
     dao = _make_dao()
-    dao.save_area("paris")
-    dao.save_area("lyon")
+    save_area(dao, "paris")
+    save_area(dao, "lyon")
 
     command = UpdateReservesGlobalParameters(
         properties={

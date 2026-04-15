@@ -17,6 +17,7 @@ from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.dao.api.reserves_global_parameters_dao import ReservesGlobalParametersDao
 from antarest.study.dao.common import ReservesGlobalParametersMapping
+from antarest.study.dao.file.common import check_area_exists
 from antarest.study.storage.rawstudy.model.filesystem.config.reserves_global_parameters import (
     parse_reserves_global_parameters,
     serialize_reserves_global_parameters,
@@ -50,6 +51,8 @@ class FileStudyReservesGlobalParametersDao(ReservesGlobalParametersDao, ABC):
     @override
     def save_reserves_global_parameters(self, mapping: ReservesGlobalParametersMapping) -> None:
         file_study = self.get_file_study()
+        for area_id in mapping:
+            check_area_exists(file_study.config, area_id)
         for area_id, params in mapping.items():
             path = _get_reserves_ini_path(area_id)
             try:

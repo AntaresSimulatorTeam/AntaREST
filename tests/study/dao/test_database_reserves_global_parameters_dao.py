@@ -10,27 +10,35 @@
 #
 # This file is part of the Antares project.
 
+import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.area import RESERVES_GLOBAL_PARAMETERS_TABLE
+from tests.study.dao.utils import save_area
 
 
-def test_get_default_when_no_row(db_dao: DatabaseStudyDao) -> None:
+def test_get_raises_when_no_row_for_existing_area(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     area_id = "paris"
-    dao.save_area(area_id)
+    save_area(dao, area_id)
 
-    result = dao.get_reserves_global_parameters(area_id)
-    assert result == ReservesGlobalParameters()
+    with pytest.raises(ValueError):
+        dao.get_reserves_global_parameters(area_id)
+
+
+def test_get_raises_when_area_does_not_exist(db_dao: DatabaseStudyDao) -> None:
+    with pytest.raises(AreaNotFound):
+        db_dao.get_reserves_global_parameters("nonexistent")
 
 
 def test_save_and_retrieve(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     area_id = "paris"
-    dao.save_area(area_id)
+    save_area(dao, area_id)
 
     params = ReservesGlobalParameters(
         reference_activation_duration_up=5,
@@ -46,7 +54,7 @@ def test_save_and_retrieve(db_dao: DatabaseStudyDao) -> None:
 def test_save_updates_existing(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     area_id = "paris"
-    dao.save_area(area_id)
+    save_area(dao, area_id)
 
     params1 = ReservesGlobalParameters(reference_activation_duration_up=5)
     dao.save_reserves_global_parameters({area_id: params1})
@@ -60,8 +68,8 @@ def test_save_updates_existing(db_dao: DatabaseStudyDao) -> None:
 
 def test_get_all(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("paris")
-    dao.save_area("lyon")
+    save_area(dao, "paris")
+    save_area(dao, "lyon")
 
     dao.save_reserves_global_parameters({"paris": ReservesGlobalParameters(reference_activation_duration_up=5)})
     dao.save_reserves_global_parameters({"lyon": ReservesGlobalParameters(energy_activation_ratio_down=0.3)})
@@ -74,8 +82,8 @@ def test_get_all(db_dao: DatabaseStudyDao) -> None:
 
 def test_save_all(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("paris")
-    dao.save_area("lyon")
+    save_area(dao, "paris")
+    save_area(dao, "lyon")
 
     mapping = {
         "paris": ReservesGlobalParameters(reference_activation_duration_up=5),
@@ -90,7 +98,7 @@ def test_save_all(db_dao: DatabaseStudyDao) -> None:
 def test_cascade_delete_on_area_removal(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     area_id = "paris"
-    dao.save_area(area_id)
+    save_area(dao, area_id)
 
     params = ReservesGlobalParameters(reference_activation_duration_up=5)
     dao.save_reserves_global_parameters({area_id: params})

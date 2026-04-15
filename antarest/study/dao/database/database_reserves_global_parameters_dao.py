@@ -23,6 +23,7 @@ from typing_extensions import override
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.dao.api.reserves_global_parameters_dao import ReservesGlobalParametersDao
 from antarest.study.dao.common import ReservesGlobalParametersMapping
+from antarest.study.dao.database.common import validate_area_exists
 from antarest.study.dao.database.models.area import RESERVES_GLOBAL_PARAMETERS_TABLE
 from antarest.study.dao.database.sql_utils import upsert_multiple
 
@@ -58,7 +59,8 @@ class DatabaseReservesGlobalParametersDao(ReservesGlobalParametersDao):
         stmt = select(_TABLE).where((_TABLE.c.study_id == study_id) & (_TABLE.c.area_id == area_id))
         row = session.execute(stmt).fetchone()
         if not row:
-            return ReservesGlobalParameters()
+            validate_area_exists(session, study_id, area_id)
+            raise ValueError(f"Reserves global parameters not found for area '{area_id}'")
         return _convert_row_to_model(row)
 
     @override
