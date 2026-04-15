@@ -47,6 +47,7 @@ from antarest.study.dao.database.models.xpansion import (
     XPANSION_SETTINGS_TABLE,
     XPANSION_WEIGHT_TABLE,
 )
+from tests.study.dao.utils import save_area
 
 
 def _assert_tables_empty(db_session: Session, tables: list[Table], study_id: str) -> None:
@@ -96,8 +97,8 @@ class TestXpansionConfiguration:
         """Deleting the configuration should remove settings, candidates and adequacy rows."""
         # --- setup ---
         db_dao.create_xpansion_configuration()
-        db_dao.save_area("Paris")
-        db_dao.save_area("Lyon")
+        save_area(db_dao, "Paris")
+        save_area(db_dao, "Lyon")
         db_dao.save_links([Link(area1="paris", area2="lyon")])
         db_dao.save_xpansion_candidate(_make_candidate("cand1", "lyon", "paris"))
 
@@ -148,8 +149,8 @@ class TestXpansionSettings:
         """save_xpansion_settings should persist all non-default values and allow retrieval."""
         # --- setup ---
         db_dao.create_xpansion_configuration()
-        db_dao.save_area("x")
-        db_dao.save_area("y")
+        save_area(db_dao, "x")
+        save_area(db_dao, "y")
         db_dao.save_links([Link(area1="x", area2="y")])
         # Projection candidates must exist before being referenced
         db_dao.save_xpansion_candidate(_make_candidate("cand_a", "x", "y"))
@@ -227,9 +228,9 @@ class TestXpansionCandidates:
     def test_candidate_lifecycle(self, db_dao: DatabaseStudyDao) -> None:
         """Full candidate lifecycle: coherence checks, CRUD, upsert, rename (all cases), projection, delete."""
         db_dao.create_xpansion_configuration()
-        db_dao.save_area("Paris")
-        db_dao.save_area("Lyon")
-        db_dao.save_area("Bordeaux")
+        save_area(db_dao, "Paris")
+        save_area(db_dao, "Lyon")
+        save_area(db_dao, "Bordeaux")
         db_dao.save_links([Link(area1="paris", area2="lyon"), Link(area1="bordeaux", area2="paris")])
 
         # --- coherence: missing area / link raises, valid passes ---
@@ -319,8 +320,8 @@ class TestXpansionCandidates:
         """checks_xpansion_candidate_coherence should raise when a link profile references a non-existent capacity."""
         db_dao, matrix_service = db_dao_930_and_matrix_service
         db_dao.create_xpansion_configuration()
-        db_dao.save_area("Paris")
-        db_dao.save_area("Lyon")
+        save_area(db_dao, "Paris")
+        save_area(db_dao, "Lyon")
         db_dao.save_links([Link(area1="paris", area2="lyon")])
 
         candidate = XpansionCandidate(
@@ -356,8 +357,8 @@ class TestXpansionAdequacyCriterion:
         assert result.criterion_count_threshold == defaults.criterion_count_threshold
         assert result.patterns == defaults.patterns
 
-        db_dao.save_area("Paris")
-        db_dao.save_area("Lyon")
+        save_area(db_dao, "Paris")
+        save_area(db_dao, "Lyon")
 
         # --- round-trip with patterns ---
         criterion = XpansionAdequacyCriterion(
@@ -395,8 +396,8 @@ class TestCascadeDelete:
         """Deleting the configuration should cascade-delete candidates, projection, criterion and patterns."""
         # --- setup ---
         db_dao.create_xpansion_configuration()
-        db_dao.save_area("Paris")
-        db_dao.save_area("Lyon")
+        save_area(db_dao, "Paris")
+        save_area(db_dao, "Lyon")
         db_dao.save_links([Link(area1="paris", area2="lyon")])
         db_dao.save_xpansion_candidate(_make_candidate("cand", "lyon", "paris"))
         db_dao.save_xpansion_settings(
@@ -439,8 +440,8 @@ class TestCascadeDelete:
     def test_deleting_link_cascades_to_candidates(self, db_dao: DatabaseStudyDao) -> None:
         """Deleting a link should cascade-delete all candidates referencing it."""
         db_dao.create_xpansion_configuration()
-        db_dao.save_area("Paris")
-        db_dao.save_area("Lyon")
+        save_area(db_dao, "Paris")
+        save_area(db_dao, "Lyon")
         db_dao.save_links([Link(area1="paris", area2="lyon")])
         db_dao.save_xpansion_candidate(_make_candidate("cand1", "lyon", "paris"))
         db_dao.save_xpansion_candidate(_make_candidate("cand2", "lyon", "paris"))
@@ -639,8 +640,8 @@ class TestXpansionResources:
     ) -> None:
         """checks_xpansion_resource_can_be_deleted should raise for any of the 6 candidate profile columns."""
         db_dao.create_xpansion_configuration()
-        db_dao.save_area("Paris")
-        db_dao.save_area("Lyon")
+        save_area(db_dao, "Paris")
+        save_area(db_dao, "Lyon")
         db_dao.save_links([Link(area1="paris", area2="lyon")])
 
         candidate = XpansionCandidate(

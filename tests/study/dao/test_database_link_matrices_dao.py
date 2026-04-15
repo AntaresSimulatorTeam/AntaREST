@@ -23,6 +23,7 @@ from antarest.study.dao.database.models.link import (
     LINK_INDIRECT_CAPACITY_TABLE,
     LINK_SERIES_TABLE,
 )
+from tests.study.dao.utils import save_area
 
 
 def _set_up(dao: DatabaseStudyDao) -> tuple[str, str, pl.DataFrame, pl.DataFrame, Link]:
@@ -35,8 +36,8 @@ def _set_up(dao: DatabaseStudyDao) -> tuple[str, str, pl.DataFrame, pl.DataFrame
     area2 = "london"
     link = Link(area1=area1, area2=area2)
 
-    dao.save_area(area1)
-    dao.save_area(area2)
+    save_area(dao, area1)
+    save_area(dao, area2)
     dao.save_links([link])
     return series1_id, series2_id, df1, df2, link
 

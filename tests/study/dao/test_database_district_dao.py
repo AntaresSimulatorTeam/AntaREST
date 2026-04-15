@@ -19,6 +19,7 @@ import pytest
 from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
 from antarest.study.business.model.district_model import District, DistrictApplyFilter
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from tests.study.dao.utils import save_area
 
 
 class TestDatabaseDistrictDao:
@@ -35,8 +36,8 @@ class TestDatabaseDistrictDao:
 
     def test_save_district_with_areas(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
-        dao.save_area("Paris")
-        dao.save_area("London")
+        save_area(dao, "Paris")
+        save_area(dao, "London")
 
         district = District(id="d1", name="District 1", add_areas=["paris", "london"])
         dao.save_district(district)
@@ -87,7 +88,7 @@ class TestDatabaseDistrictDao:
 
     def test_save_district_with_apply_filter(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
-        dao.save_area("Paris")
+        save_area(dao, "Paris")
 
         district = District(
             id="d1",
@@ -103,8 +104,8 @@ class TestDatabaseDistrictDao:
 
     def test_delete_area_removes_area_from_districts(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
-        dao.save_area("Paris")
-        dao.save_area("London")
+        save_area(dao, "Paris")
+        save_area(dao, "London")
 
         dao.save_district(District(id="d1", name="District 1", add_areas=["paris"]))
         dao.save_district(District(id="d2", name="District 2", add_areas=["paris", "london"]))
@@ -128,7 +129,7 @@ class TestDatabaseDistrictDao:
 
     def test_delete_area_removes_area_from_subtract_areas(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
-        dao.save_area("Paris")
+        save_area(dao, "Paris")
 
         dao.save_district(
             District(

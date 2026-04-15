@@ -17,7 +17,10 @@ from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaUI
-from antarest.study.business.model.area_properties_model import AdequacyPatchMode, AreaProperties
+from antarest.study.business.model.area_properties_model import (
+    AreaProperties,
+    initialize_area_properties,
+)
 from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationArea
@@ -70,14 +73,13 @@ class CreateArea(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
-        study_data.save_area(self.area_name)
+        area_properties = AreaProperties()
+        initialize_area_properties(area_properties, self.study_version)
+        study_data.save_areas_with_properties({self.area_name: area_properties})
+
         area_id = transform_name_to_id(self.area_name)
         study_data.save_hydro_management({area_id: HydroManagement()})
-        area_properties = AreaProperties()
-        if self.study_version >= STUDY_VERSION_8_3:
-            area_properties.adequacy_patch_mode = AdequacyPatchMode.OUTSIDE
-        study_data.save_area_properties(area_id, area_properties)
-        study_data.save_area_ui(area_id, layer=DEFAULT_LAYER_ID, area_ui=AreaUI())
+        study_data.save_area_ui({area_id: {DEFAULT_LAYER_ID: AreaUI()}})
 
         # Hydro
         allocation = HydroAllocation(allocation=[HydroAllocationArea(area_id=area_id, coefficient=1)])

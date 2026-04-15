@@ -73,7 +73,9 @@ from antarest.study.business.model.xpansion_model import (
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.common import (
     AreaId,
+    AreaName,
     AreaSeriesMapping,
+    AreaUiMapping,
     BindingConstraintSeriesMapping,
     LinkSeriesMapping,
     RenewableSeriesMapping,
@@ -88,6 +90,7 @@ from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, LinkConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
 @dataclass(frozen=True)
@@ -242,6 +245,16 @@ class InMemoryStudyDao(StudyDao):
     @override
     def get_study_id(self) -> str:
         return self._study_id
+
+    @override
+    @property
+    def matrix_service(self) -> ISimpleMatrixService:
+        return self._matrix_service
+
+    @override
+    @property
+    def generator_matrix_constants(self) -> GeneratorMatrixConstants:
+        raise NotImplementedError()
 
     @override
     def get_synthesis(self) -> StudyDataSynthesis:
@@ -1285,14 +1298,11 @@ class InMemoryStudyDao(StudyDao):
         return self._area_ui.get(area_id, AreaUI())
 
     @override
-    def save_area(self, area_name: str) -> None:
-        area_id = transform_name_to_id(area_name)
-        if area_id in self._area_names:
-            raise ValueError(f"Area '{area_name}' already exists and could not be created")
-        self._area_names.append(area_id)
-
-        # Initialize default UI for the new area
-        self._area_ui[area_id] = AreaUI()
+    def save_areas_with_properties(self, data: dict[AreaName, AreaProperties]) -> None:
+        for area_name, properties in data.items():
+            area_id = transform_name_to_id(area_name)
+            self._area_names.append(area_id)
+            self._area_properties[area_id] = properties
 
     @override
     def delete_area(self, area_id: str) -> None:
@@ -1319,11 +1329,13 @@ class InMemoryStudyDao(StudyDao):
         self._area_ui.pop(area_id, None)
 
     @override
-    def save_area_ui(self, area_id: str, layer: str, area_ui: AreaUI) -> None:
-        if area_id not in self._area_names:
-            raise AreaNotFound(area_id)
+    def save_area_ui(self, data: AreaUiMapping) -> None:
+        for area_id, value in data.items():
+            if area_id not in self._area_names:
+                raise AreaNotFound(area_id)
 
-        self._area_ui[area_id] = area_ui
+            # The memory dao ignores layers
+            self._area_ui[area_id] = next(iter(value.values()))
 
     @override
     def save_layer_areas(self, layer_id: str, area_ids: list[str]) -> None:

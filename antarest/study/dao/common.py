@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from typing import TypeAlias
 
+from antarest.study.business.model.area_model import AreaUI
 from antarest.study.business.model.binding_constraint_model import ConstraintId
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 
@@ -19,10 +20,12 @@ from antarest.study.business.model.reserves_global_parameters_model import Reser
 #  - Move these definitions inside their corresponding models.
 
 AreaId: TypeAlias = str
+AreaName: TypeAlias = str
 ThermalId: TypeAlias = str
 RenewableId: TypeAlias = str
 SeriesId: TypeAlias = str
 XpansionFileName: TypeAlias = str
+LayerId: TypeAlias = str
 
 ThermalSeriesMapping: TypeAlias = dict[AreaId, dict[ThermalId, SeriesId]]
 RenewableSeriesMapping: TypeAlias = dict[AreaId, dict[RenewableId, SeriesId]]
@@ -32,4 +35,5 @@ BindingConstraintSeriesMapping: TypeAlias = dict[ConstraintId, SeriesId]
 XpansionWeightsMapping: TypeAlias = dict[XpansionFileName, SeriesId]
 XpansionCapacitiesMapping: TypeAlias = dict[XpansionFileName, SeriesId]
 XpansionConstraintsMapping: TypeAlias = dict[XpansionFileName, bytes]
+AreaUiMapping: TypeAlias = dict[AreaId, dict[LayerId, AreaUI]]
 ReservesGlobalParametersMapping: TypeAlias = dict[AreaId, ReservesGlobalParameters]

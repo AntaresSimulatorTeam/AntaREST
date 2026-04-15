@@ -14,7 +14,8 @@ from abc import ABC, abstractmethod
 import polars as pl
 
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
-from antarest.study.dao.common import AreaSeriesMapping
+from antarest.study.business.model.area_properties_model import AreaProperties
+from antarest.study.dao.common import AreaName, AreaSeriesMapping, AreaUiMapping
 
 
 class ReadOnlyAreaDao(ABC):
@@ -125,15 +126,15 @@ class AreaDao(ReadOnlyAreaDao):
     """
 
     @abstractmethod
-    def save_area(self, area_name: str) -> None:
+    def save_areas_with_properties(self, data: dict[AreaName, AreaProperties]) -> None:
         """
-        Create a new area in the study.
+        Create multiple areas with their properties in the study.
 
         Args:
-            area_name: The name of the area to create.
+            data: A dictionary mapping area names to their properties.
 
         Raises:
-            ValueError: If the area already exists.
+            ValueError: If any area already exists.
         """
         raise NotImplementedError()
 
@@ -151,18 +152,8 @@ class AreaDao(ReadOnlyAreaDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_area_ui(self, area_id: str, layer: str, area_ui: AreaUI) -> None:
-        """
-        Save an area's UI properties (position and color) for a specific layer.
-
-        Args:
-            area_id: The area identifier.
-            layer: The layer identifier (typically "0", "1", etc.).
-            area_ui: The UI properties to save (x, y, color_rgb).
-
-        Raises:
-            AreaNotFound: If the area does not exist.
-        """
+    def save_area_ui(self, data: AreaUiMapping) -> None:
+        """Save several area UI properties (position and color) for given layers."""
         raise NotImplementedError()
 
     @abstractmethod
