@@ -59,7 +59,7 @@ class TestSTStorage:
         assert res.json() == {
             "id": internal_study_id,
             "name": "STA-mini",
-            "version": min_study_version,
+            "version": "8.6",
             "author": "Andrea SGATTONI",
             "editor": "Andrea SGATTONI",
             "created": ANY,  # ISO8601 Date/time

@@ -51,7 +51,7 @@ class UpdateInflowStructure(ICommand):
         current_inflow = study_data.get_inflow_structure(self.area_id)
         updated_inflow_structure = update_inflow_structure(current_inflow, self.properties)
 
-        study_data.save_inflow_structure(updated_inflow_structure, self.area_id)
+        study_data.save_inflow_structure({self.area_id: updated_inflow_structure})
 
         return command_succeeded(f"Inflow properties in '{self.area_id}' updated.", result=updated_inflow_structure)
 

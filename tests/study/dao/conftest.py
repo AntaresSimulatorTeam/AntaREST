@@ -21,6 +21,7 @@ from antares.study.version import StudyVersion
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from antarest.blobstore.service import IBlobService
 from antarest.core.interfaces.cache import ICache
 from antarest.dbmodel import Base
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
@@ -42,8 +43,10 @@ from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3, StorageMode
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import create_study
+from tests.study.dao.utils import save_area
 
 
 def build_db_dao(db_session: Session, matrix_service: ISimpleMatrixService, version: StudyVersion) -> DatabaseStudyDao:
@@ -203,13 +206,6 @@ class RealCaseStudy:
     dataframes: list[pl.DataFrame]
 
 
-def get_matrix_service_from_dao(dao: StudyDao) -> ISimpleMatrixService:
-    if isinstance(dao, DatabaseStudyDao):
-        return dao._matrix_service
-    else:
-        return dao._generator_matrix_constants.matrix_service
-
-
 def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -> RealCaseStudy:
     # Create matrices in the matrix-store with different contents to diversify tests.
     base_data = [[1, 2.5], [3, 4.7]]
@@ -303,7 +299,7 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
 
     # Create `load`, `solar`, `wind`, `reserves` and `misc-gen` matrices in DB
     area_id = "paris"
-    dao.save_area(area_id)
+    save_area(dao, area_id)
     dao.save_load({area_id: load_id})
     dao.save_solar({area_id: solar_id})
     dao.save_wind({area_id: wind_id})
@@ -312,7 +308,7 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
 
     # Also create a link with `series`, `direct_capacity` and `indirect_capacity` matrices.
     area2 = "london"
-    dao.save_area(area2)
+    save_area(dao, area2)
     dao.save_links([Link(area1=area_id, area2=area2)])
     dao.save_link_series({(area_id, area2): link_series_id})
     dao.save_link_direct_capacities({(area_id, area2): link_direct_id})
@@ -334,46 +330,44 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
 
     # Create ST Storage matrices
     st_storage_id = "battery_storage"
-    dao.save_st_storage(area_id, STStorage(id=st_storage_id, name="Battery Storage"))
-    dao.save_st_storage_pmax_injection(area_id, st_storage_id, sts_pmax_injection_id)
-    dao.save_st_storage_pmax_withdrawal(area_id, st_storage_id, sts_pmax_withdrawal_id)
-    dao.save_st_storage_lower_rule_curve(area_id, st_storage_id, sts_lower_rule_curve_id)
-    dao.save_st_storage_upper_rule_curve(area_id, st_storage_id, sts_upper_rule_curve_id)
-    dao.save_st_storage_inflows(area_id, st_storage_id, sts_inflows_id)
-    dao.save_st_storage_cost_injection(area_id, st_storage_id, sts_cost_injection_id)
-    dao.save_st_storage_cost_withdrawal(area_id, st_storage_id, sts_cost_withdrawal_id)
-    dao.save_st_storage_cost_level(area_id, st_storage_id, sts_cost_level_id)
-    dao.save_st_storage_cost_variation_injection(area_id, st_storage_id, sts_cost_variation_injection_id)
-    dao.save_st_storage_cost_variation_withdrawal(area_id, st_storage_id, sts_cost_variation_withdrawal_id)
+    dao.save_st_storages({area_id: [STStorage(id=st_storage_id, name="Battery Storage")]})
+    dao.save_st_storage_pmax_injection({area_id: {st_storage_id: sts_pmax_injection_id}})
+    dao.save_st_storage_pmax_withdrawal({area_id: {st_storage_id: sts_pmax_withdrawal_id}})
+    dao.save_st_storage_lower_rule_curve({area_id: {st_storage_id: sts_lower_rule_curve_id}})
+    dao.save_st_storage_upper_rule_curve({area_id: {st_storage_id: sts_upper_rule_curve_id}})
+    dao.save_st_storage_inflows({area_id: {st_storage_id: sts_inflows_id}})
+    dao.save_st_storage_cost_injection({area_id: {st_storage_id: sts_cost_injection_id}})
+    dao.save_st_storage_cost_withdrawal({area_id: {st_storage_id: sts_cost_withdrawal_id}})
+    dao.save_st_storage_cost_level({area_id: {st_storage_id: sts_cost_level_id}})
+    dao.save_st_storage_cost_variation_injection({area_id: {st_storage_id: sts_cost_variation_injection_id}})
+    dao.save_st_storage_cost_variation_withdrawal({area_id: {st_storage_id: sts_cost_variation_withdrawal_id}})
 
     # Create ST Storage additional constraint matrix
     constraint_id = "constraint_1"
     dao.save_st_storage_additional_constraints(
-        area_id,
-        storage_id=st_storage_id,
-        constraints=[STStorageAdditionalConstraint(id=constraint_id, name="Constraint 1")],
+        {area_id: {st_storage_id: [STStorageAdditionalConstraint(id=constraint_id, name="Constraint 1")]}},
     )
-    dao.save_st_storage_constraint_matrix(area_id, st_storage_id, constraint_id, sts_constraint_matrix_id)
+    dao.save_st_storage_constraint_matrices({area_id: {st_storage_id: {constraint_id: sts_constraint_matrix_id}}})
 
     # Create hydro matrices
-    dao.save_hydro_maxpower(area_id, hydro_maxpower_id)
-    dao.save_hydro_reservoir(area_id, hydro_reservoir_id)
-    dao.save_hydro_energy(area_id, hydro_energy_id)
-    dao.save_hydro_run_of_river(area_id, hydro_run_of_river_id)
-    dao.save_hydro_modulation(area_id, hydro_modulation_id)
-    dao.save_hydro_credit_modulations(area_id, hydro_credit_modulations_id)
-    dao.save_hydro_inflow_pattern(area_id, hydro_inflow_pattern_id)
-    dao.save_hydro_water_values(area_id, hydro_water_values_id)
-    dao.save_hydro_mingen(area_id, hydro_mingen_id)
-    dao.save_hydro_max_hourly_gen_power(area_id, hydro_max_hourly_gen_power_id)
-    dao.save_hydro_max_hourly_pump_power(area_id, hydro_max_hourly_pump_power_id)
-    dao.save_hydro_max_daily_gen_energy(area_id, hydro_max_daily_gen_energy_id)
-    dao.save_hydro_max_daily_pump_energy(area_id, hydro_max_daily_pump_energy_id)
+    dao.save_hydro_maxpower({area_id: hydro_maxpower_id})
+    dao.save_hydro_reservoir({area_id: hydro_reservoir_id})
+    dao.save_hydro_energy({area_id: hydro_energy_id})
+    dao.save_hydro_run_of_river({area_id: hydro_run_of_river_id})
+    dao.save_hydro_modulation({area_id: hydro_modulation_id})
+    dao.save_hydro_credit_modulations({area_id: hydro_credit_modulations_id})
+    dao.save_hydro_inflow_pattern({area_id: hydro_inflow_pattern_id})
+    dao.save_hydro_water_values({area_id: hydro_water_values_id})
+    dao.save_hydro_mingen({area_id: hydro_mingen_id})
+    dao.save_hydro_max_hourly_gen_power({area_id: hydro_max_hourly_gen_power_id})
+    dao.save_hydro_max_hourly_pump_power({area_id: hydro_max_hourly_pump_power_id})
+    dao.save_hydro_max_daily_gen_energy({area_id: hydro_max_daily_gen_energy_id})
+    dao.save_hydro_max_daily_pump_energy({area_id: hydro_max_daily_pump_energy_id})
 
     # Create xpansion capacity and weight matrices
     dao.create_xpansion_configuration()
-    dao.save_xpansion_capacity("link_capa.txt", xpansion_capacity_id)
-    dao.save_xpansion_weight("mc_weights.csv", xpansion_weight_id)
+    dao.save_xpansion_capacity({"link_capa.txt": xpansion_capacity_id})
+    dao.save_xpansion_weight({"mc_weights.csv": xpansion_weight_id})
 
     # Create binding constraint matrices — covers LT, GT, and EQ tables
     bc_lt_matrix_id = matrix_service.create(bc_lt_df)
@@ -387,9 +381,9 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
             BindingConstraint(id=bc_equal_id, name=bc_equal_id, operator=BindingConstraintOperator.EQUAL),
         ]
     )
-    dao.save_constraint_less_term_matrix(bc_both_id, bc_lt_matrix_id)
-    dao.save_constraint_greater_term_matrix(bc_both_id, bc_gt_matrix_id)
-    dao.save_constraint_equal_term_matrix(bc_equal_id, bc_eq_matrix_id)
+    dao.save_constraint_less_term_matrix({bc_both_id: bc_lt_matrix_id})
+    dao.save_constraint_greater_term_matrix({bc_both_id: bc_gt_matrix_id})
+    dao.save_constraint_equal_term_matrix({bc_equal_id: bc_eq_matrix_id})
 
     return RealCaseStudy(
         area1=area_id,
@@ -402,3 +396,14 @@ def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -
         bc_eq_id=bc_equal_id,
         dataframes=dataframes,
     )
+
+
+def create_area(area_name: str, dao: StudyDao) -> None:
+    constants = dao.generator_matrix_constants
+    command_context = CommandContext(
+        generator_matrix_constants=constants, matrix_service=dao.matrix_service, blob_service=Mock(spec=IBlobService)
+    )
+
+    command = CreateArea(area_name=area_name, command_context=command_context, study_version=dao.get_version())
+    output = command.apply(dao)
+    assert output.status

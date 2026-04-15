@@ -31,6 +31,7 @@ from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.renewable import RENEWABLE_CLUSTER_TABLE, RENEWABLE_SERIES_TABLE
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.study.dao.utils import save_area
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Shared tests — run on both database and filesystem backends
@@ -38,7 +39,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 def test_save_renewable_creates_cluster(dao: StudyDao) -> None:
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
 
     renewable = RenewableCluster(
         id="battery",
@@ -67,7 +68,7 @@ def test_save_renewable_creates_cluster(dao: StudyDao) -> None:
 
 
 def test_save_renewable_overwrites_existing(dao: StudyDao) -> None:
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
 
     dao.save_renewable("paris", RenewableCluster(id="gas", name="Gas", nominal_capacity=100.0))
     dao.save_renewable("paris", RenewableCluster(id="gas", name="Gas", nominal_capacity=200.0))
@@ -77,7 +78,7 @@ def test_save_renewable_overwrites_existing(dao: StudyDao) -> None:
 
 
 def test_save_multiple_renewable_clusters(dao: StudyDao) -> None:
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
 
     dao.save_renewables(
         {
@@ -124,7 +125,8 @@ def test_save_multiple_renewable_clusters(dao: StudyDao) -> None:
 
 
 def test_get_one_renewable_cluster(dao: StudyDao) -> None:
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
+
     dao.save_renewable("paris", RenewableCluster(id="battery", name="Battery"))
 
     cluster = dao.get_renewable("paris", "battery")
@@ -140,8 +142,8 @@ def test_get_one_renewable_cluster(dao: StudyDao) -> None:
 
 
 def test_get_all_renewables(dao: StudyDao) -> None:
-    dao.save_area("Paris")
-    dao.save_area("London")
+    save_area(dao, "Paris")
+    save_area(dao, "London")
 
     dao.save_renewable("paris", RenewableCluster(id="battery", name="Battery"))
     dao.save_renewable("london", RenewableCluster(id="wind", name="Wind"))
@@ -156,7 +158,8 @@ def test_get_all_renewables(dao: StudyDao) -> None:
 
 
 def test_delete_renewable(dao: StudyDao) -> None:
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
+
     renewable = RenewableCluster(id="battery", name="Battery")
     dao.save_renewable("paris", renewable)
 
@@ -184,7 +187,7 @@ def test_renewable_exists_returns_false_for_unknown_area(dao: StudyDao) -> None:
 def test_renewable_matrix_round_trip(dao_and_matrix_service) -> None:
     """Matrix survives a save/get round-trip on both backends."""
     dao, matrix_service = dao_and_matrix_service
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
     renewable = RenewableCluster(id="battery", name="Battery")
     dao.save_renewable("paris", renewable)
 
@@ -194,10 +197,31 @@ def test_renewable_matrix_round_trip(dao_and_matrix_service) -> None:
     dao.save_renewable_series({"paris": {"battery": series_id}})
     pl.testing.assert_frame_equal(dao.get_renewable_series("paris", "battery"), dataframe, check_dtypes=False)
 
+    dao.delete_renewable("paris", renewable)
+
+
+# def test_get_renewable_matrix_raises_when_missing(dao: StudyDao) -> None:
+#     save_area(dao, "Paris")
+#     dao.save_renewable("paris", RenewableCluster(id="battery", name="Battery"))
+
+#     with pytest.raises(RenewableClusterNotFound):
+#         dao.get_renewable_series("paris", "gas")
+#     with pytest.raises(AreaNotFound):
+#         dao.get_renewable_series("nonexistent", "gas")
+
+
+# def test_save_renewable_matrix_raises_when_missing(dao: StudyDao) -> None:
+#     save_area(dao, "Paris")
+
+#     with pytest.raises(RenewableClusterNotFound):
+#         dao.save_renewable_series({"paris": {"gas": "missing-matrix-id"}})
+#     with pytest.raises(AreaNotFound):
+#         dao.save_renewable_series({"nonexistent": {"gas": "missing-matrix-id"}})
+
 
 def test_area_with_no_clusters_are_absent_from_clusters_dict(dao: StudyDao) -> None:
-    dao.save_area("germany")
-    dao.save_area("italy")
+    save_area(dao, "germany")
+    save_area(dao, "italy")
 
     dao.save_renewable("germany", RenewableCluster(id="battery", name="Battery"))
 
@@ -209,7 +233,7 @@ def test_area_with_no_clusters_are_absent_from_clusters_dict(dao: StudyDao) -> N
 
 
 def test_save_renewable_with_upper_case_name(dao: StudyDao, command_context: CommandContext) -> None:
-    dao.save_area("fr")
+    save_area(dao, "fr")
     command = CreateRenewablesCluster(
         area_id="fr",
         parameters=RenewableClusterCreation(name="MyRenewableCluster"),
@@ -227,7 +251,7 @@ def test_save_renewable_with_upper_case_name(dao: StudyDao, command_context: Com
 
 def test_renewable_series_cascade_delete(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     """Test that renewable series rows are cascade-deleted with the cluster."""
-    db_dao.save_area("Paris")
+    save_area(db_dao, "Paris")
     renewable = RenewableCluster(id="battery", name="Battery")
     db_dao.save_renewable("paris", renewable)
 
@@ -244,7 +268,7 @@ def test_renewable_series_cascade_delete(db_session: Session, db_dao: DatabaseSt
 
 
 def test_get_renewable_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> None:
-    db_dao.save_area("Paris")
+    save_area(db_dao, "Paris")
     db_dao.save_renewable("paris", RenewableCluster(id="battery", name="Battery"))
 
     with pytest.raises(RenewableClusterNotFound):
@@ -254,7 +278,7 @@ def test_get_renewable_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> N
 
 
 def test_save_renewable_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> None:
-    db_dao.save_area("Paris")
+    save_area(db_dao, "Paris")
 
     with pytest.raises(RenewableClusterNotFound):
         db_dao.save_renewable_series({"paris": {"gas": "missing-matrix-id"}})

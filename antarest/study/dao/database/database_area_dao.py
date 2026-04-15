@@ -30,8 +30,13 @@ from antarest.core.exceptions import AreaNotFound, LayerNotFound
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_dao import AreaDao
-from antarest.study.dao.common import AreaSeriesMapping
-from antarest.study.dao.database.common import serialize_frequency_filters, validate_area_exists
+from antarest.study.dao.common import AreaId, AreaName, AreaSeriesMapping, AreaUiMapping
+from antarest.study.dao.database.common import (
+    get_all_area_matrices,
+    save_area_matrix,
+    serialize_frequency_filters,
+    validate_area_exists,
+)
 from antarest.study.dao.database.models.area import (
     AREA_TABLE,
     AREA_UI_TABLE,
@@ -42,7 +47,7 @@ from antarest.study.dao.database.models.area import (
     WIND_TABLE,
 )
 from antarest.study.dao.database.models.district import DISTRICT_TABLE
-from antarest.study.dao.database.sql_utils import upsert_multiple, upsert_one
+from antarest.study.dao.database.sql_utils import upsert_multiple
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 if TYPE_CHECKING:
@@ -74,6 +79,25 @@ class DatabaseAreaDao(AreaDao):
     @abstractmethod
     def get_impl(self) -> "DatabaseStudyDao":
         pass
+
+    def _convert_area_properties_to_row(
+        self, area_properties: AreaProperties, area_id: AreaId, area_name: AreaName
+    ) -> dict[str, Any]:
+        return {
+            "study_id": self._study_id,
+            "area_id": area_id,
+            "area_name": area_name,
+            "energy_cost_unsupplied": area_properties.energy_cost_unsupplied,
+            "energy_cost_spilled": area_properties.energy_cost_spilled,
+            "non_dispatch_power": area_properties.non_dispatch_power,
+            "dispatch_hydro_power": area_properties.dispatch_hydro_power,
+            "other_dispatch_power": area_properties.other_dispatch_power,
+            "spread_unsupplied_energy_cost": area_properties.spread_unsupplied_energy_cost,
+            "spread_spilled_energy_cost": area_properties.spread_spilled_energy_cost,
+            "filter_synthesis": serialize_frequency_filters(area_properties.filter_synthesis),
+            "filter_by_year": serialize_frequency_filters(area_properties.filter_by_year),
+            "adequacy_patch_mode": area_properties.adequacy_patch_mode,
+        }
 
     @override
     def get_all_area_ids(self) -> list[str]:
@@ -205,45 +229,23 @@ class DatabaseAreaDao(AreaDao):
         return AreaUI()
 
     @override
-    def save_area(self, area_name: str) -> None:
-        """
-        Create a new area in the study.
+    def save_areas_with_properties(self, data: dict[AreaName, AreaProperties]) -> None:
+        values = []
+        for area_name, properties in data.items():
+            area_id = transform_name_to_id(area_name)
+            values.append(self._convert_area_properties_to_row(properties, area_id, area_name))
 
-        Args:
-            area_name: The name of the area to create.
-
-        Raises:
-            ValueError: If the area already exists.
-        """
-        study_id = self.get_study_id()
-        session = self.get_session()
-
-        area_id = transform_name_to_id(area_name)
-
-        # Insert new area
-        area_properties = AreaProperties()
-        stmt_area = insert(AREA_TABLE).values(
-            study_id=study_id,
-            area_id=area_id,
-            area_name=area_name,
-            energy_cost_unsupplied=area_properties.energy_cost_unsupplied,
-            energy_cost_spilled=area_properties.energy_cost_spilled,
-            non_dispatch_power=area_properties.non_dispatch_power,
-            dispatch_hydro_power=area_properties.dispatch_hydro_power,
-            other_dispatch_power=area_properties.other_dispatch_power,
-            spread_unsupplied_energy_cost=area_properties.spread_unsupplied_energy_cost,
-            spread_spilled_energy_cost=area_properties.spread_spilled_energy_cost,
-            filter_synthesis=serialize_frequency_filters(area_properties.filter_synthesis),
-            filter_by_year=serialize_frequency_filters(area_properties.filter_by_year),
-            adequacy_patch_mode=area_properties.adequacy_patch_mode,
-        )
+        stmt = insert(AREA_TABLE).values(values)
         try:
-            session.execute(stmt_area)
+            session = self.get_session()
+            session.execute(stmt)
+            session.commit()
         except IntegrityError as e:
-            raise ValueError(f"Area '{area_name}' already exists and could not be created") from e
-
-        # The commit is handled inside the next method.
-        self._create_new_ui(area_id, DEFAULT_LAYER_ID, AreaUI())
+            # Means an area already existed
+            existing_ids = set(self.get_all_area_ids())
+            invalid_ids = {transform_name_to_id(area_name) for area_name in data} - existing_ids
+            ids_formatted = ", ".join(f"'{a}'" for a in invalid_ids)
+            raise ValueError(f"Areas '{ids_formatted}' already exist and could not be created") from e
 
     @override
     def delete_area(self, area_id: str) -> None:
@@ -288,43 +290,43 @@ class DatabaseAreaDao(AreaDao):
         session.commit()
 
     @override
-    def save_area_ui(self, area_id: str, layer: str, area_ui: AreaUI) -> None:
-        """
-        Save an area's UI properties (position and color) for a specific layer.
-
-        Args:
-            area_id: The area identifier.
-            layer: The layer identifier (typically "0", "1", etc.).
-            area_ui: The UI properties to save (x, y, color_rgb).
-
-        Raises:
-            AreaNotFound: If the area does not exist.
-            LayerNotFound: If the layer does not exist.
-        """
+    def save_area_ui(self, data: AreaUiMapping) -> None:
         study_id = self.get_study_id()
         session = self.get_session()
 
         # Set values
-        r, g, b = area_ui.color_rgb
-        values = {
-            "study_id": study_id,
-            "area_id": area_id,
-            "layer_id": layer,
-            "x": area_ui.x,
-            "y": area_ui.y,
-            "color_r": r,
-            "color_g": g,
-            "color_b": b,
-        }
+        values = []
+        for area_id, value in data.items():
+            for layer, area_ui in value.items():
+                r, g, b = area_ui.color_rgb
+                values.append(
+                    {
+                        "study_id": study_id,
+                        "area_id": area_id,
+                        "layer_id": layer,
+                        "x": area_ui.x,
+                        "y": area_ui.y,
+                        "color_r": r,
+                        "color_g": g,
+                        "color_b": b,
+                    }
+                )
+
         # Performs the DB request
         try:
-            upsert_one(session, AREA_UI_TABLE, values)
+            upsert_multiple(session, AREA_UI_TABLE, values)
         except IntegrityError as e:
             # Could raise for area not found or layer not found.
-            if not self.get_impl().layer_exists(layer):
-                raise LayerNotFound(layer) from e
-            else:
-                raise AreaNotFound(area_id) from e
+
+            # First check the areas
+            if invalid_areas := self.get_impl().get_invalid_area_ids(list(data)):
+                raise AreaNotFound(*invalid_areas) from e
+            # Then the layers
+            for value in data.values():
+                for layer in value:
+                    if not self.get_impl().layer_exists(layer):
+                        raise LayerNotFound(layer) from e
+
         session.commit()
 
     @override
@@ -459,27 +461,6 @@ class DatabaseAreaDao(AreaDao):
 
         return session.execute(stmt).fetchone()
 
-    def _save_matrix(self, series: AreaSeriesMapping, table: Table) -> None:
-        study_id = self._study_id
-        session = self._db_session
-
-        try:
-            values = []
-            for area_id, series_id in series.items():
-                data = {"study_id": study_id, "area_id": area_id, "matrix_id": series_id}
-                values.append(data)
-            upsert_multiple(session, table, values)
-
-        except IntegrityError as e:
-            invalid_ids = set(series) - set(self.get_all_area_ids())
-            if invalid_ids:
-                raise AreaNotFound(*invalid_ids)
-            else:
-                # All areas exist. It means that the DB table does not contain the information.
-                raise ValueError("One of the area matrices table is not filled as it should") from e
-
-        session.commit()
-
     @override
     def get_load(self, area_id: str) -> pl.DataFrame:
         return self._get_matrix(area_id, LOAD_TABLE)
@@ -500,49 +481,42 @@ class DatabaseAreaDao(AreaDao):
     def get_wind(self, area_id: str) -> pl.DataFrame:
         return self._get_matrix(area_id, WIND_TABLE)
 
-    def _get_all_matrices(self, table: Table) -> AreaSeriesMapping:
-        study_id = self.get_study_id()
-        session = self.get_session()
-        stmt = select(table).where((table.c.study_id == study_id))
-        rows = session.execute(stmt).fetchall()
-        return {row.area_id: row.matrix_id for row in rows}
-
     @override
     def get_all_load(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(LOAD_TABLE)
+        return get_all_area_matrices(self._study_id, self._db_session, LOAD_TABLE)
 
     @override
     def get_all_misc_gen(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(MISC_GEN_TABLE)
+        return get_all_area_matrices(self._study_id, self._db_session, MISC_GEN_TABLE)
 
     @override
     def get_all_reserves(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(RESERVES_TABLE)
+        return get_all_area_matrices(self._study_id, self._db_session, RESERVES_TABLE)
 
     @override
     def get_all_solar(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(SOLAR_TABLE)
+        return get_all_area_matrices(self._study_id, self._db_session, SOLAR_TABLE)
 
     @override
     def get_all_wind(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(WIND_TABLE)
+        return get_all_area_matrices(self._study_id, self._db_session, WIND_TABLE)
 
     @override
     def save_load(self, series: AreaSeriesMapping) -> None:
-        self._save_matrix(series, LOAD_TABLE)
+        save_area_matrix(self.get_impl(), series, LOAD_TABLE)
 
     @override
     def save_misc_gen(self, series: AreaSeriesMapping) -> None:
-        self._save_matrix(series, MISC_GEN_TABLE)
+        save_area_matrix(self.get_impl(), series, MISC_GEN_TABLE)
 
     @override
     def save_reserves(self, series: AreaSeriesMapping) -> None:
-        self._save_matrix(series, RESERVES_TABLE)
+        save_area_matrix(self.get_impl(), series, RESERVES_TABLE)
 
     @override
     def save_solar(self, series: AreaSeriesMapping) -> None:
-        self._save_matrix(series, SOLAR_TABLE)
+        save_area_matrix(self.get_impl(), series, SOLAR_TABLE)
 
     @override
     def save_wind(self, series: AreaSeriesMapping) -> None:
-        self._save_matrix(series, WIND_TABLE)
+        save_area_matrix(self.get_impl(), series, WIND_TABLE)

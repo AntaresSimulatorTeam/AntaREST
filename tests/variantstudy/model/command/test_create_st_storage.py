@@ -254,11 +254,7 @@ class TestCreateSTStorage:
 
         # Then, the output should be an error
         assert command_output.status is False
-        assert re.search(
-            rf"'{re.escape(create_st_storage.area_id)}'.*does not exist",
-            command_output.message,
-            flags=re.IGNORECASE,
-        )
+        assert "Area is not found: 'unknown area'" in command_output.message
 
     def test_apply__duplicate_storage(self, empty_study_860: FileStudy, command_context: CommandContext) -> None:
         recent_study = empty_study_860
@@ -326,7 +322,7 @@ class TestCreateSTStorage:
     # noinspection SpellCheckingInspection
     def test_apply__nominal_case(self, empty_study_860: FileStudy, command_context: CommandContext) -> None:
         recent_study = empty_study_860
-        dao = build_dao_from_file_study(recent_study, command_context)
+        dao = build_dao_from_file_study(recent_study, command_context, True)
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR", command_context=command_context, study_version=recent_study.config.version

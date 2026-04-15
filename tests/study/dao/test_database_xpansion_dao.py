@@ -49,6 +49,7 @@ from antarest.study.dao.database.models.xpansion import (
     XPANSION_SETTINGS_TABLE,
     XPANSION_WEIGHT_TABLE,
 )
+from tests.study.dao.utils import save_area
 
 
 def _assert_tables_empty(db_session: Session, tables: list[Table], study_id: str) -> None:
@@ -98,8 +99,8 @@ class TestXpansionConfiguration:
         """Deleting the configuration should remove settings, candidates and adequacy rows."""
         # --- setup ---
         db_dao.create_xpansion_configuration()
-        db_dao.save_area("Paris")
-        db_dao.save_area("Lyon")
+        save_area(db_dao, "Paris")
+        save_area(db_dao, "Lyon")
         db_dao.save_links([Link(area1="paris", area2="lyon")])
         db_dao.save_xpansion_candidate(_make_candidate("cand1", "lyon", "paris"))
 
@@ -150,8 +151,8 @@ class TestXpansionSettings:
         """save_xpansion_settings should persist all non-default values and allow retrieval."""
         # --- setup ---
         dao.create_xpansion_configuration()
-        dao.save_area("x")
-        dao.save_area("y")
+        save_area(dao, "x")
+        save_area(dao, "y")
         dao.save_links([Link(area1="x", area2="y")])
         # Projection candidates must exist before being referenced
         dao.save_xpansion_candidate(_make_candidate("cand_a", "x", "y"))
@@ -214,8 +215,8 @@ class TestXpansionSettings:
 
         # --- files exist: no raise ---
         series_id = matrix_service.create(pl.DataFrame({"col": [1.0]}))
-        dao.save_xpansion_weight("weights.csv", series_id)
-        dao.save_xpansion_constraint("constraints.txt", b"some content")
+        dao.save_xpansion_weight({"weights.csv": series_id})
+        dao.save_xpansion_constraint({"constraints.txt": b"some content"})
         dao.checks_xpansion_settings_are_correct(
             XpansionSettingsUpdate(additional_constraints="constraints.txt", yearly_weights="weights.csv")
         )  # must not raise
@@ -232,9 +233,9 @@ class TestXpansionCandidates:
     def test_candidate_lifecycle(self, dao: StudyDao) -> None:
         """Full candidate lifecycle: coherence checks, CRUD, upsert, rename (all cases), projection, delete."""
         dao.create_xpansion_configuration()
-        dao.save_area("Paris")
-        dao.save_area("Lyon")
-        dao.save_area("Bordeaux")
+        save_area(dao, "Paris")
+        save_area(dao, "Lyon")
+        save_area(dao, "Bordeaux")
         dao.save_links([Link(area1="paris", area2="lyon"), Link(area1="bordeaux", area2="paris")])
 
         # --- coherence: missing area / link raises, valid passes ---
@@ -330,8 +331,8 @@ class TestXpansionCandidates:
         """checks_xpansion_candidate_coherence should raise when a link profile references a non-existent capacity."""
         dao, matrix_service = dao_and_matrix_service
         dao.create_xpansion_configuration()
-        dao.save_area("Paris")
-        dao.save_area("Lyon")
+        save_area(dao, "Paris")
+        save_area(dao, "Lyon")
         dao.save_links([Link(area1="paris", area2="lyon")])
 
         candidate = XpansionCandidate(
@@ -348,7 +349,7 @@ class TestXpansionCandidates:
 
         # --- profile file present: no raise ---
         series_id = matrix_service.create(pl.DataFrame({"col": [1.0]}))
-        dao.save_xpansion_capacity("missing_capa.txt", series_id)
+        dao.save_xpansion_capacity({"missing_capa.txt": series_id})
         dao.checks_xpansion_candidate_coherence(candidate)  # must not raise
 
 
@@ -367,8 +368,8 @@ class TestXpansionAdequacyCriterion:
         assert result.criterion_count_threshold == defaults.criterion_count_threshold
         assert result.patterns == defaults.patterns
 
-        dao.save_area("Paris")
-        dao.save_area("Lyon")
+        save_area(dao, "Paris")
+        save_area(dao, "Lyon")
 
         # --- round-trip with patterns ---
         criterion = XpansionAdequacyCriterion(
@@ -406,8 +407,8 @@ class TestCascadeDelete:
         """Deleting the configuration should cascade-delete candidates, projection, criterion and patterns."""
         # --- setup ---
         db_dao.create_xpansion_configuration()
-        db_dao.save_area("Paris")
-        db_dao.save_area("Lyon")
+        save_area(db_dao, "Paris")
+        save_area(db_dao, "Lyon")
         db_dao.save_links([Link(area1="paris", area2="lyon")])
         db_dao.save_xpansion_candidate(_make_candidate("cand", "lyon", "paris"))
         db_dao.save_xpansion_settings(
@@ -451,8 +452,8 @@ class TestCascadeDelete:
         """Deleting a link should cascade-delete all candidates referencing it.
         DB enforces this via FK cascade; FS does not (gap: #TODO)."""
         dao.create_xpansion_configuration()
-        dao.save_area("Paris")
-        dao.save_area("Lyon")
+        save_area(dao, "Paris")
+        save_area(dao, "Lyon")
         dao.save_links([Link(area1="paris", area2="lyon")])
         dao.save_xpansion_candidate(_make_candidate("cand1", "lyon", "paris"))
         dao.save_xpansion_candidate(_make_candidate("cand2", "lyon", "paris"))
@@ -472,9 +473,9 @@ class TestCascadeDelete:
         db_dao, matrix_service = db_dao_930_and_matrix_service
         db_dao.create_xpansion_configuration()
         series_id = matrix_service.create(pl.DataFrame({"col": [1.0]}))
-        db_dao.save_xpansion_constraint("my.txt", b"content")
-        db_dao.save_xpansion_capacity("capa.txt", series_id)
-        db_dao.save_xpansion_weight("weights.csv", series_id)
+        db_dao.save_xpansion_constraint({"my.txt": b"content"})
+        db_dao.save_xpansion_capacity({"capa.txt": series_id})
+        db_dao.save_xpansion_weight({"weights.csv": series_id})
 
         db_dao.delete_xpansion_configuration()
 
@@ -497,13 +498,12 @@ class TestXpansionResources:
         assert dao.get_xpansion_resources(XpansionResourceFileType.CONSTRAINTS) == []
 
         # --- save and get ---
-        dao.save_xpansion_constraint("my_constraints.txt", b"line1\nline2")
+        dao.save_xpansion_constraint({"my_constraints.txt": b"line1\nline2"})
         result = dao.get_xpansion_resource(XpansionResourceFileType.CONSTRAINTS, "my_constraints.txt")
         assert result == b"line1\nline2"
 
         # --- listing (sorted) ---
-        dao.save_xpansion_constraint("zzz.txt", b"z")
-        dao.save_xpansion_constraint("aaa.txt", b"a")
+        dao.save_xpansion_constraint({"zzz.txt": b"z", "aaa.txt": b"a"})
         assert dao.get_xpansion_resources(XpansionResourceFileType.CONSTRAINTS) == [
             "aaa.txt",
             "my_constraints.txt",
@@ -511,7 +511,7 @@ class TestXpansionResources:
         ]
 
         # --- upsert ---
-        dao.save_xpansion_constraint("my_constraints.txt", b"updated")
+        dao.save_xpansion_constraint({"my_constraints.txt": b"updated"})
         result = dao.get_xpansion_resource(XpansionResourceFileType.CONSTRAINTS, "my_constraints.txt")
         assert result == b"updated"
 
@@ -538,15 +538,14 @@ class TestXpansionResources:
         # --- save and get ---
         df = pl.DataFrame({"col1": [1.0, 2.0], "col2": [3.0, 4.0]})
         series_id = matrix_service.create(df)
-        dao.save_xpansion_capacity("link_capa.txt", series_id)
+        dao.save_xpansion_capacity({"link_capa.txt": series_id})
 
         result = dao.get_xpansion_resource(XpansionResourceFileType.CAPACITIES, "link_capa.txt")
         assert isinstance(result, pl.DataFrame)
         assert result.equals(df)
 
         # --- listing (sorted) ---
-        dao.save_xpansion_capacity("zzz.txt", series_id)
-        dao.save_xpansion_capacity("aaa.txt", series_id)
+        dao.save_xpansion_capacity({"zzz.txt": series_id, "aaa.txt": series_id})
         assert dao.get_xpansion_resources(XpansionResourceFileType.CAPACITIES) == [
             "aaa.txt",
             "link_capa.txt",
@@ -556,7 +555,7 @@ class TestXpansionResources:
         # --- upsert with different series ---
         df2 = pl.DataFrame({"col1": [9.0]})
         series_id2 = matrix_service.create(df2)
-        dao.save_xpansion_capacity("link_capa.txt", series_id2)
+        dao.save_xpansion_capacity({"link_capa.txt": series_id2})
         result = dao.get_xpansion_resource(XpansionResourceFileType.CAPACITIES, "link_capa.txt")
         assert isinstance(result, pl.DataFrame)
         assert result.equals(df2)
@@ -581,15 +580,14 @@ class TestXpansionResources:
         # --- save and get ---
         df = pl.DataFrame({"w": [0.5, 0.3, 0.2]})
         series_id = matrix_service.create(df)
-        dao.save_xpansion_weight("mc_weights.csv", series_id)
+        dao.save_xpansion_weight({"mc_weights.csv": series_id})
 
         result = dao.get_xpansion_resource(XpansionResourceFileType.WEIGHTS, "mc_weights.csv")
         assert isinstance(result, pl.DataFrame)
         assert result.equals(df)
 
         # --- listing (sorted) ---
-        dao.save_xpansion_weight("zzz.csv", series_id)
-        dao.save_xpansion_weight("aaa.csv", series_id)
+        dao.save_xpansion_weight({"zzz.csv": series_id, "aaa.csv": series_id})
         assert dao.get_xpansion_resources(XpansionResourceFileType.WEIGHTS) == [
             "aaa.csv",
             "mc_weights.csv",
@@ -599,7 +597,7 @@ class TestXpansionResources:
         # --- upsert with different series ---
         df2 = pl.DataFrame({"w": [0.9]})
         series_id2 = matrix_service.create(df2)
-        dao.save_xpansion_weight("mc_weights.csv", series_id2)
+        dao.save_xpansion_weight({"mc_weights.csv": series_id2})
         result = dao.get_xpansion_resource(XpansionResourceFileType.WEIGHTS, "mc_weights.csv")
         assert isinstance(result, pl.DataFrame)
         assert result.equals(df2)
@@ -619,13 +617,13 @@ class TestXpansionResources:
     def test_checks_constraint_can_be_deleted_raises_if_used_in_settings(self, dao: StudyDao) -> None:
         """checks_xpansion_resource_can_be_deleted should raise if constraint file is referenced by settings."""
         dao.create_xpansion_configuration()
-        dao.save_xpansion_constraint("my.txt", b"data")
+        dao.save_xpansion_constraint({"my.txt": b"data"})
         dao.save_xpansion_settings(XpansionSettings(additional_constraints="my.txt"))
 
         with pytest.raises(FileCurrentlyUsedInSettings):
             dao.checks_xpansion_resource_can_be_deleted(XpansionResourceFileType.CONSTRAINTS, "my.txt")
 
-        dao.save_xpansion_constraint("other.txt", b"x")
+        dao.save_xpansion_constraint({"other.txt": b"x"})
         dao.checks_xpansion_resource_can_be_deleted(XpansionResourceFileType.CONSTRAINTS, "other.txt")  # no raise
 
     def test_checks_weight_can_be_deleted_raises_if_used_in_settings(self, dao: StudyDao) -> None:
@@ -654,8 +652,8 @@ class TestXpansionResources:
     ) -> None:
         """checks_xpansion_resource_can_be_deleted should raise for any of the 6 candidate profile columns."""
         dao.create_xpansion_configuration()
-        dao.save_area("Paris")
-        dao.save_area("Lyon")
+        save_area(dao, "Paris")
+        save_area(dao, "Lyon")
         dao.save_links([Link(area1="paris", area2="lyon")])
 
         candidate = XpansionCandidate(

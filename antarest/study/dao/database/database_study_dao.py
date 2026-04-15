@@ -17,7 +17,7 @@ This DAO provides database-backed storage for studies when storage_mode=DATABASE
 Uses multiple inheritance to combine specialized DAOs (like FileStudyTreeDao).
 """
 
-from typing import Self
+from typing import TYPE_CHECKING, Self
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -36,6 +36,7 @@ from antarest.study.dao.database.database_hydro_dao import DatabaseHydroDao
 from antarest.study.dao.database.database_layer_dao import DatabaseLayerDao
 from antarest.study.dao.database.database_link_dao import DatabaseLinkDao
 from antarest.study.dao.database.database_renewable_dao import DatabaseRenewableDao
+from antarest.study.dao.database.database_reserves_global_parameters_dao import DatabaseReservesGlobalParametersDao
 from antarest.study.dao.database.database_scenario_builder_dao import DatabaseScenarioBuilderDao
 from antarest.study.dao.database.database_st_storage_dao import DatabaseStStorageDao
 from antarest.study.dao.database.database_study_settings_dao import DatabaseStudySettingsDao
@@ -50,6 +51,10 @@ from antarest.study.model import Study, StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, LinkConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+
+if TYPE_CHECKING:
+    from antarest.matrixstore.service import ISimpleMatrixService
+    from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
 class DatabaseStudyDao(
@@ -69,6 +74,7 @@ class DatabaseStudyDao(
     DatabaseScenarioBuilderDao,
     DatabaseXpansionDao,
     DatabaseBindingConstraintDao,
+    DatabaseReservesGlobalParametersDao,
 ):
     """
     Database implementation of StudyDao.
@@ -105,8 +111,19 @@ class DatabaseStudyDao(
         DatabaseScenarioBuilderDao.__init__(self, study_id, db_session)
         DatabaseXpansionDao.__init__(self, study_id, db_session)
         DatabaseBindingConstraintDao.__init__(self, study_id, db_session)
+        DatabaseReservesGlobalParametersDao.__init__(self, study_id, db_session)
         self._matrix_service = matrix_service
         self._generator_matrix_constants = generator_matrix_constants
+
+    @override
+    @property
+    def matrix_service(self) -> "ISimpleMatrixService":
+        return self._matrix_service
+
+    @override
+    @property
+    def generator_matrix_constants(self) -> "GeneratorMatrixConstants":
+        return self._generator_matrix_constants
 
     # Implementation of abstract methods required by StudyDao
     @override

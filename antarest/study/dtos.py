@@ -19,7 +19,7 @@ from antarest.output.storage.output_storage import OutputDetails, OutputStorageT
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
-from antarest.study.model import StudyVersionInt
+from antarest.study.model import StudyVersionStr
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
     EnrModelling,
@@ -61,7 +61,7 @@ class StudyDataSynthesis(AntaresBaseModel):
     """
 
     study_id: str
-    version: StudyVersionInt
+    version: StudyVersionStr
     districts: dict[str, District] = {}
     areas: dict[str, AreaConfig] = {}
     bindings: list[BindingConstraint] = []
@@ -93,7 +93,7 @@ class StudySynthesis(AntaresBaseModel):
     """
 
     study_id: str
-    version: StudyVersionInt
+    version: StudyVersionStr
     districts: dict[str, District] = {}
     areas: dict[str, AreaConfig] = {}
     outputs: dict[str, OutputSynthesis] = {}

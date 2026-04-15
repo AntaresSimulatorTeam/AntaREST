@@ -19,6 +19,7 @@ import pytest
 from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
 from antarest.study.business.model.district_model import District, DistrictApplyFilter
 from antarest.study.dao.api.study_dao import StudyDao
+from tests.study.dao.utils import save_area
 
 
 class TestDistrictDao:
@@ -33,8 +34,8 @@ class TestDistrictDao:
         assert result.comments == "test"
 
     def test_save_district_with_areas(self, dao: StudyDao) -> None:
-        dao.save_area("Paris")
-        dao.save_area("London")
+        save_area(dao, "Paris")
+        save_area(dao, "London")
 
         district = District(id="d1", name="District 1", add_areas=["paris", "london"])
         dao.save_district(district)
@@ -117,7 +118,7 @@ class TestDistrictDao:
         assert d3.add_areas == ["london"]
 
     def test_delete_area_removes_area_from_subtract_areas(self, dao: StudyDao) -> None:
-        dao.save_area("Paris")
+        save_area(dao, "Paris")
 
         dao.save_district(
             District(

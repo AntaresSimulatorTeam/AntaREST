@@ -11,13 +11,14 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable
 
 import polars as pl
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
-from antarest.core.exceptions import BindingConstraintNotFound
+from antarest.core.exceptions import BindingConstraintNotFound, ChildNotFoundError
+from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.business.model.binding_constraint_model import (
     OPERATOR_MATRICES_MAP,
     OPERATOR_MATRIX_FILE_MAP,
@@ -26,6 +27,7 @@ from antarest.study.business.model.binding_constraint_model import (
     ConstraintId,
 )
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao
+from antarest.study.dao.common import BindingConstraintSeriesMapping
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     parse_binding_constraint,
@@ -33,9 +35,26 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+
+
+def _get_values_matrix_path(constraint_id: ConstraintId) -> list[str]:
+    return ["input", "bindingconstraints", constraint_id]
+
+
+def _get_less_term_matrix_path(constraint_id: ConstraintId) -> list[str]:
+    return ["input", "bindingconstraints", f"{constraint_id}_lt"]
+
+
+def _get_greater_term_matrix_path(constraint_id: ConstraintId) -> list[str]:
+    return ["input", "bindingconstraints", f"{constraint_id}_gt"]
+
+
+def _get_equal_term_matrix_path(constraint_id: ConstraintId) -> list[str]:
+    return ["input", "bindingconstraints", f"{constraint_id}_eq"]
 
 
 def get_next_available_key(ini_content: dict[str, Any]) -> str:
@@ -78,19 +97,35 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
     @override
     def get_constraint_values_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "bindingconstraints", constraint_id])
+        return self.get_impl().get_matrix(_get_values_matrix_path(constraint_id))
 
     @override
     def get_constraint_less_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "bindingconstraints", f"{constraint_id}_lt"])
+        return self.get_impl().get_matrix(_get_less_term_matrix_path(constraint_id))
 
     @override
     def get_constraint_greater_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "bindingconstraints", f"{constraint_id}_gt"])
+        return self.get_impl().get_matrix(_get_greater_term_matrix_path(constraint_id))
 
     @override
     def get_constraint_equal_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "bindingconstraints", f"{constraint_id}_eq"])
+        return self.get_impl().get_matrix(_get_equal_term_matrix_path(constraint_id))
+
+    @override
+    def get_all_constraint_values_matrix(self) -> BindingConstraintSeriesMapping:
+        return self.get_all_bc_matrices(_get_values_matrix_path)
+
+    @override
+    def get_all_constraint_less_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self.get_all_bc_matrices(_get_less_term_matrix_path)
+
+    @override
+    def get_all_constraint_greater_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self.get_all_bc_matrices(_get_greater_term_matrix_path)
+
+    @override
+    def get_all_constraint_equal_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self.get_all_bc_matrices(_get_equal_term_matrix_path)
 
     @override
     def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
@@ -152,21 +187,60 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
             removed_groups = {group for group in old_groups if not old_groups[group]}
             _remove_groups_from_scenario_builder(study_data, removed_groups)
 
-    @override
-    def save_constraint_values_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
-        _save_matrix(self.get_file_study(), constraint_id, "", series_id)
+    def get_all_bc_matrices(self, url_getter: Callable[[ConstraintId], list[str]]) -> BindingConstraintSeriesMapping:
+        study_data = self.get_file_study()
+        matrix_nodes = {}
+
+        bindings = study_data.config.bindings
+        for bc in bindings:
+            constraint_id = bc.id
+            url = url_getter(constraint_id)
+            try:
+                node = study_data.tree.get_node(url)
+            except ChildNotFoundError:
+                # Can happen according to the version or the constraint operator
+                continue
+            assert isinstance(node, MatrixNode)
+            matrix_nodes[node] = constraint_id
+
+        result: BindingConstraintSeriesMapping = {}
+
+        matrices_mapping = self.get_impl().get_matrices_ids(list(matrix_nodes))
+
+        for node, matrix_id in matrices_mapping.items():
+            constraint_id = matrix_nodes[node]
+            result[constraint_id] = matrix_id
+
+        return result
+
+    def save_bc_matrices(
+        self, series: BindingConstraintSeriesMapping, url_getter: Callable[[ConstraintId], list[str]]
+    ) -> None:
+        study_data = self.get_file_study()
+        matrices_mapping: dict[str, list[MatrixNode]] = {}
+        for constraint_id, series_id in series.items():
+            url = url_getter(ConstraintId(constraint_id))
+            node = study_data.tree.get_node(url)
+            assert isinstance(node, MatrixNode)
+            matrix_id = extract_matrix_id(series_id)
+            matrices_mapping.setdefault(matrix_id, []).append(node)
+        self.get_impl().save_matrices(matrices_mapping)
 
     @override
-    def save_constraint_less_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
-        _save_matrix(self.get_file_study(), constraint_id, "_lt", series_id)
+    def save_constraint_values_matrix(self, series: BindingConstraintSeriesMapping) -> None:
+        self.save_bc_matrices(series, _get_values_matrix_path)
 
     @override
-    def save_constraint_greater_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
-        _save_matrix(self.get_file_study(), constraint_id, "_gt", series_id)
+    def save_constraint_less_term_matrix(self, series: BindingConstraintSeriesMapping) -> None:
+        self.save_bc_matrices(series, _get_less_term_matrix_path)
 
     @override
-    def save_constraint_equal_term_matrix(self, constraint_id: ConstraintId, series_id: str) -> None:
-        _save_matrix(self.get_file_study(), constraint_id, "_eq", series_id)
+    def save_constraint_greater_term_matrix(self, series: BindingConstraintSeriesMapping) -> None:
+        self.save_bc_matrices(series, _get_greater_term_matrix_path)
+
+    @override
+    def save_constraint_equal_term_matrix(self, series: BindingConstraintSeriesMapping) -> None:
+        self.save_bc_matrices(series, _get_equal_term_matrix_path)
 
     @override
     def delete_constraints(self, constraints: list[BindingConstraint]) -> None:

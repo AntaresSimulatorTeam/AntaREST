@@ -20,13 +20,12 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.link import LINK_TABLE
 from tests.db_statement_recorder import DBStatementRecorder
+from tests.study.dao.utils import save_area
 
 
 def _create_default_link(dao: StudyDao) -> None:
-    dao.save_area("Paris")
-    dao.save_area("London")
-    link = Link(area1="paris", area2="london")
-    dao.save_links([link])
+    save_area(dao, "Paris")
+    save_area(dao, "London")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -37,8 +36,8 @@ def _create_default_link(dao: StudyDao) -> None:
 def test_create_link_with_default_properties(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     study_id = dao.get_study_id()
-    dao.save_area("Paris")
-    dao.save_area("London")
+    save_area(dao, "Paris")
+    save_area(dao, "London")
     link = Link(area1="paris", area2="london")
     dao.save_links([link])
 
@@ -73,7 +72,7 @@ def test_create_link_with_default_properties(db_session: Session, db_dao: Databa
 def test_get_all_links(db_dao: DatabaseStudyDao, db_session: Session) -> None:
     dao = db_dao
     _create_default_link(dao)
-    dao.save_area("Berlin")
+    save_area(dao, "Berlin")
     dao.save_links([Link(area1="paris", area2="berlin")])
 
     # Ensures we do not perform N+1 requests
@@ -104,7 +103,7 @@ def test_delete_link(db_dao: DatabaseStudyDao, db_session: Session) -> None:
 def test_delete_area(db_dao: DatabaseStudyDao, db_session: Session) -> None:
     dao = db_dao
     _create_default_link(dao)
-    dao.save_area("Toulouse")
+    save_area(dao, "Toulouse")
     dao.save_links([Link(area1="paris", area2="toulouse")])
 
     # Removing the area `Paris` should remove the 2 links as they both reference it.

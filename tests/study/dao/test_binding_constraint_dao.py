@@ -294,24 +294,24 @@ def test_matrices(dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService])
         ]
     )
 
-    dao.save_constraint_less_term_matrix(BC1, matrix_service.create(df_lt))
-    dao.save_constraint_greater_term_matrix(BC2, matrix_service.create(df_gt))
-    dao.save_constraint_equal_term_matrix(BC3, matrix_service.create(df_eq))
+    dao.save_constraint_less_term_matrix({BC1: matrix_service.create(df_lt)})
+    dao.save_constraint_greater_term_matrix({BC2: matrix_service.create(df_gt)})
+    dao.save_constraint_equal_term_matrix({BC3: matrix_service.create(df_eq)})
 
     assert dao.get_constraint_less_term_matrix(BC1).equals(df_lt)
     assert dao.get_constraint_greater_term_matrix(BC2).equals(df_gt)
     assert dao.get_constraint_equal_term_matrix(BC3).equals(df_eq)
 
     # Upsert: saving the same matrix type twice overwrites
-    dao.save_constraint_less_term_matrix(BC1, matrix_service.create(df_new))
+    dao.save_constraint_less_term_matrix({BC1: matrix_service.create(df_new)})
     assert dao.get_constraint_less_term_matrix(BC1).equals(df_new)
 
     # Each constraint has its own independent matrices
     df_a = pl.DataFrame({"a": [1.0]})
     df_b = pl.DataFrame({"b": [2.0]})
     dao.save_constraints([_bc(bc_a), _bc(bc_b)])
-    dao.save_constraint_less_term_matrix(bc_a, matrix_service.create(df_a))
-    dao.save_constraint_less_term_matrix(bc_b, matrix_service.create(df_b))
+    dao.save_constraint_less_term_matrix({bc_a: matrix_service.create(df_a)})
+    dao.save_constraint_less_term_matrix({bc_b: matrix_service.create(df_b)})
     assert dao.get_constraint_less_term_matrix(bc_a).equals(df_a)
     assert dao.get_constraint_less_term_matrix(bc_b).equals(df_b)
 
@@ -326,7 +326,7 @@ def test_metadata_change_preserves_matrices(
     dao.save_constraints(
         [_bc(BC1, operator=BindingConstraintOperator.LESS, time_step=BindingConstraintFrequency.HOURLY)]
     )
-    dao.save_constraint_less_term_matrix(BC1, matrix_service.create(df_lt))
+    dao.save_constraint_less_term_matrix({BC1: matrix_service.create(df_lt)})
 
     # Change comments and enabled — operator and time_step stay the same
     dao.save_constraints(
@@ -434,7 +434,7 @@ def test_operator_change_renames_matrix(
     # Setup: save constraint with initial operator and seed matrices
     dao.save_constraints([_bc(BC1, operator=existing_op)])
     for term in initial_terms:
-        save[term](BC1, matrix_service.create(term_df[term]))
+        save[term]({BC1: matrix_service.create(term_df[term])})
 
     # Act: change the operator
     dao.save_constraints([_bc(BC1, operator=new_op)])
@@ -491,7 +491,7 @@ def test_time_step_change_regenerates_matrix(
     # Setup: save constraint with initial time step and non-zero matrices
     dao.save_constraints([_bc(BC1, operator=operator, time_step=old_ts)])
     for saver in savers[operator]:
-        saver(BC1, matrix_service.create(df_custom))
+        saver({BC1: matrix_service.create(df_custom)})
 
     # Act: change the time step
     dao.save_constraints([_bc(BC1, operator=operator, time_step=new_ts)])
@@ -521,7 +521,7 @@ def test_time_step_change_regenerates_matrix_pre_v87(
 
     # Setup: save constraint with initial time step and a non-zero values matrix
     dao.save_constraints([_bc(BC1, time_step=old_ts)])
-    dao.save_constraint_values_matrix(BC1, matrix_service.create(pl.DataFrame({"v": [99.0, 99.0, 99.0]})))
+    dao.save_constraint_values_matrix({BC1: matrix_service.create(pl.DataFrame({"v": [99.0, 99.0, 99.0]}))})
 
     # Act: change the time step
     dao.save_constraints([_bc(BC1, time_step=new_ts)])
@@ -544,8 +544,8 @@ def test_time_step_and_operator_change_drops_old_matrices(
     dao.save_constraints(
         [_bc(BC1, operator=BindingConstraintOperator.BOTH, time_step=BindingConstraintFrequency.HOURLY)]
     )
-    dao.save_constraint_less_term_matrix(BC1, matrix_service.create(df_custom))
-    dao.save_constraint_greater_term_matrix(BC1, matrix_service.create(df_custom))
+    dao.save_constraint_less_term_matrix({BC1: matrix_service.create(df_custom)})
+    dao.save_constraint_greater_term_matrix({BC1: matrix_service.create(df_custom)})
 
     # Act: change to LESS (only lt) + new time step — gt must be deleted, lt must be zeroed
     dao.save_constraints(
@@ -573,7 +573,7 @@ def test_time_step_and_operator_change_single_to_both(
     dao.save_constraints(
         [_bc(BC1, operator=BindingConstraintOperator.LESS, time_step=BindingConstraintFrequency.HOURLY)]
     )
-    dao.save_constraint_less_term_matrix(BC1, matrix_service.create(df_custom))
+    dao.save_constraint_less_term_matrix({BC1: matrix_service.create(df_custom)})
 
     # Act: change to BOTH + DAILY — both lt and gt must be zeroed to 366 rows
     dao.save_constraints(
@@ -705,9 +705,9 @@ def test_mixed_matrix_changes_in_one_call(
             _bc(BC3, operator=BindingConstraintOperator.EQUAL, time_step=BindingConstraintFrequency.HOURLY),
         ]
     )
-    dao.save_constraint_less_term_matrix(BC1, matrix_service.create(df_nonzero_1))
-    dao.save_constraint_greater_term_matrix(BC2, matrix_service.create(df_nonzero_2))
-    dao.save_constraint_equal_term_matrix(BC3, matrix_service.create(df_nonzero_3))
+    dao.save_constraint_less_term_matrix({BC1: matrix_service.create(df_nonzero_1)})
+    dao.save_constraint_greater_term_matrix({BC2: matrix_service.create(df_nonzero_2)})
+    dao.save_constraint_equal_term_matrix({BC3: matrix_service.create(df_nonzero_3)})
 
     # Act: bc1 changes time step, bc2 changes operator, bc3 unchanged — all in one call
     dao.save_constraints(
@@ -770,10 +770,10 @@ def test_cascade_deletes(
         ],
     )
     db_dao.save_constraints([constraint])
-    db_dao.save_constraint_values_matrix(BC1, series_id)
-    db_dao.save_constraint_less_term_matrix(BC1, series_id)
-    db_dao.save_constraint_greater_term_matrix(BC1, series_id)
-    db_dao.save_constraint_equal_term_matrix(BC1, series_id)
+    db_dao.save_constraint_values_matrix({BC1: series_id})
+    db_dao.save_constraint_less_term_matrix({BC1: series_id})
+    db_dao.save_constraint_greater_term_matrix({BC1: series_id})
+    db_dao.save_constraint_equal_term_matrix({BC1: series_id})
 
     # Delete constraint → all child rows gone
     db_dao.delete_constraints([constraint])
@@ -793,7 +793,7 @@ def test_cascade_deletes(
 
     # Delete study row → DB-level cascade removes everything
     db_dao.save_constraints([_bc(BC2, terms=[ConstraintTerm(weight=1.0, data=LinkTerm(area1="x", area2="y"))])])
-    db_dao.save_constraint_less_term_matrix(BC2, series_id)
+    db_dao.save_constraint_less_term_matrix({BC2: series_id})
 
     with db_session:
         study = db_session.get(Study, study_id)

@@ -13,18 +13,19 @@ import contextlib
 import logging
 import re
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, LayerNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.core.model import JSON
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
+from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
 from antarest.study.dao.api.area_dao import AreaDao
-from antarest.study.dao.common import AreaId, AreaSeriesMapping
+from antarest.study.dao.common import AreaId, AreaName, AreaSeriesMapping, AreaUiMapping
+from antarest.study.dao.file.common import get_all_area_matrices, save_area_matrices
 from antarest.study.model import (
     STUDY_VERSION_6_5,
     STUDY_VERSION_8_1,
@@ -35,7 +36,6 @@ from antarest.study.model import (
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -206,49 +206,32 @@ class FileStudyAreaDao(AreaDao):
     def get_wind(self, area_id: str) -> pl.DataFrame:
         return self.get_impl().get_matrix(_get_wind_matrix_path(area_id))
 
-    def _get_all_matrices(self, url_getter: Callable[[AreaId], list[str]]) -> AreaSeriesMapping:
-        study_data = self.get_file_study()
-        matrix_nodes = {}
-
-        areas = study_data.config.areas
-        for area_id in areas:
-            url = url_getter(area_id)
-            node = study_data.tree.get_node(url)
-            assert isinstance(node, MatrixNode)
-            matrix_nodes[node] = area_id
-
-        result: AreaSeriesMapping = {}
-
-        matrices_mapping = self.get_impl().get_matrices_ids(list(matrix_nodes))
-
-        for node, matrix_id in matrices_mapping.items():
-            area_id = matrix_nodes[node]
-            result[area_id] = matrix_id
-
-        return result
-
     @override
     def get_all_load(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(_get_load_matrix_path)
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_load_matrix_path)
 
     @override
     def get_all_misc_gen(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(_get_misc_gen_matrix_path)
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_misc_gen_matrix_path)
 
     @override
     def get_all_reserves(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(_get_reserves_matrix_path)
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_reserves_matrix_path)
 
     @override
     def get_all_solar(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(_get_solar_matrix_path)
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_solar_matrix_path)
 
     @override
     def get_all_wind(self) -> AreaSeriesMapping:
-        return self._get_all_matrices(_get_wind_matrix_path)
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_wind_matrix_path)
 
-    @override
-    def save_area(self, area_name: str) -> None:
+    def _save_area(self, area_name: str) -> None:
         """
         Create a new area in the study with all necessary files and configurations.
         """
@@ -275,6 +258,13 @@ class FileStudyAreaDao(AreaDao):
 
         # Save to filesystem
         study_data.tree.save(new_area_data)
+
+    @override
+    def save_areas_with_properties(self, data: dict[AreaName, AreaProperties]) -> None:
+        for area_name, properties in data.items():
+            self._save_area(area_name)
+            area_id = transform_name_to_id(area_name)
+            self.get_impl().save_area_properties(area_id, properties)
 
     def _build_area_data_structure(self, area_id: str, config: FileStudyTreeConfig) -> JSON:
         generator_matrix_constants = self.get_impl().generator_matrix_constants
@@ -515,12 +505,17 @@ class FileStudyAreaDao(AreaDao):
                     config.districts[id_] = set_
 
     @override
-    def save_area_ui(self, area_id: str, layer: str, area_ui: AreaUI) -> None:
-        """
-        Save an area's UI properties (position and color) for a specific layer.
-        """
+    def save_area_ui(self, data: AreaUiMapping) -> None:
         study_data = self.get_file_study()
-        current_area = study_data.tree.get(["input", "areas", area_id, "ui"])
+        for area_id, value in data.items():
+            current_area = study_data.tree.get(["input", "areas", area_id, "ui"])
+            for layer, area_ui in value.items():
+                current_area = self._fill_area_ui(current_area, layer, area_ui)
+
+            study_data.tree.save(current_area, ["input", "areas", area_id, "ui"])
+
+    @staticmethod
+    def _fill_area_ui(current_area: dict[str, Any], layer: str, area_ui: AreaUI) -> dict[str, Any]:
         layer_int = int(layer)
 
         # Initialize sections if missing (happens when creating the area)
@@ -545,7 +540,7 @@ class FileStudyAreaDao(AreaDao):
             current_area["ui"]["color_g"] = g
             current_area["ui"]["color_b"] = b
 
-        study_data.tree.save(current_area, ["input", "areas", area_id, "ui"])
+        return current_area
 
     @staticmethod
     def _get_area_layers(area_uis: dict[str, Any], area: str) -> list[str]:
@@ -605,33 +600,22 @@ class FileStudyAreaDao(AreaDao):
         for area in to_remove_areas + to_add_areas:
             study_data.tree.save(areas_ui[area], ["input", "areas", area, "ui"])
 
-    def _save_area_matrices(self, series: AreaSeriesMapping, url_getter: Callable[[AreaId], list[str]]) -> None:
-        matrices_mapping: dict[str, list[MatrixNode]] = {}
-        study_data = self.get_file_study()
-        for area_id, series_id in series.items():
-            url = url_getter(area_id)
-            node = study_data.tree.get_node(url)
-            assert isinstance(node, MatrixNode)
-            matrix_id = extract_matrix_id(series_id)
-            matrices_mapping.setdefault(matrix_id, []).append(node)
-        self.get_impl().save_matrices(matrices_mapping)
-
     @override
     def save_load(self, series: AreaSeriesMapping) -> None:
-        self._save_area_matrices(series, _get_load_matrix_path)
+        save_area_matrices(self.get_impl(), self.get_file_study(), series, _get_load_matrix_path)
 
     @override
     def save_misc_gen(self, series: AreaSeriesMapping) -> None:
-        self._save_area_matrices(series, _get_misc_gen_matrix_path)
+        save_area_matrices(self.get_impl(), self.get_file_study(), series, _get_misc_gen_matrix_path)
 
     @override
     def save_reserves(self, series: AreaSeriesMapping) -> None:
-        self._save_area_matrices(series, _get_reserves_matrix_path)
+        save_area_matrices(self.get_impl(), self.get_file_study(), series, _get_reserves_matrix_path)
 
     @override
     def save_solar(self, series: AreaSeriesMapping) -> None:
-        self._save_area_matrices(series, _get_solar_matrix_path)
+        save_area_matrices(self.get_impl(), self.get_file_study(), series, _get_solar_matrix_path)
 
     @override
     def save_wind(self, series: AreaSeriesMapping) -> None:
-        self._save_area_matrices(series, _get_wind_matrix_path)
+        save_area_matrices(self.get_impl(), self.get_file_study(), series, _get_wind_matrix_path)
