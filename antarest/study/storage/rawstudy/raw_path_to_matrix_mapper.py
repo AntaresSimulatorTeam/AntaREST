@@ -140,6 +140,39 @@ class RawPathToMatrixMapper:
         def _save_xpansion_weight(filename: str, series_id: str) -> None:
             dao.save_xpansion_weight({filename: series_id})
 
+        def _save_st_storage_pmax_injection(area_id: str, storage_id: str, series_id: str) -> None:
+            dao.save_st_storage_pmax_injection({area_id: {storage_id: series_id}})
+
+        def _save_st_storage_pmax_withdrawal(area_id: str, storage_id: str, series_id: str) -> None:
+            dao.save_st_storage_pmax_withdrawal({area_id: {storage_id: series_id}})
+
+        def _save_st_storage_inflows(area_id: str, storage_id: str, series_id: str) -> None:
+            dao.save_st_storage_inflows({area_id: {storage_id: series_id}})
+
+        def _save_st_storage_upper_rule_curve(area_id: str, storage_id: str, series_id: str) -> None:
+            dao.save_st_storage_upper_rule_curve({area_id: {storage_id: series_id}})
+
+        def _save_st_storage_lower_rule_curve(area_id: str, storage_id: str, series_id: str) -> None:
+            dao.save_st_storage_lower_rule_curve({area_id: {storage_id: series_id}})
+
+        def _save_st_storage_cost_withdrawal(area_id: str, storage_id: str, series_id: str) -> None:
+            dao.save_st_storage_cost_withdrawal({area_id: {storage_id: series_id}})
+
+        def _save_st_storage_cost_injection(area_id: str, storage_id: str, series_id: str) -> None:
+            dao.save_st_storage_cost_injection({area_id: {storage_id: series_id}})
+
+        def _save_st_storage_cost_level(area_id: str, storage_id: str, series_id: str) -> None:
+            dao.save_st_storage_cost_level({area_id: {storage_id: series_id}})
+
+        def _save_st_storage_cost_variation_injection(area_id: str, storage_id: str, series_id: str) -> None:
+            dao.save_st_storage_cost_variation_injection({area_id: {storage_id: series_id}})
+
+        def _save_st_storage_cost_variation_withdrawal(area_id: str, storage_id: str, series_id: str) -> None:
+            dao.save_st_storage_cost_variation_withdrawal({area_id: {storage_id: series_id}})
+
+        def _save_st_storage_constraint(area_id: str, storage_id: str, constraint_id: str, series_id: str) -> None:
+            dao.save_st_storage_constraint_matrices({area_id: {storage_id: {constraint_id: series_id}}})
+
         self._path_matchers = [
             RegexMatcher(
                 pattern=re.compile(r"user/expansion/capa/(?P<filename>[^/]+)"),
@@ -219,60 +252,60 @@ class RawPathToMatrixMapper:
             RegexMatcher(
                 pattern=re.compile(r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/pmax_injection"),
                 getter=dao.get_st_storage_pmax_injection,
-                setter=dao.save_st_storage_pmax_injection,
+                setter=_save_st_storage_pmax_injection,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/pmax_withdrawal"),
                 getter=dao.get_st_storage_pmax_withdrawal,
-                setter=dao.save_st_storage_pmax_withdrawal,
+                setter=_save_st_storage_pmax_withdrawal,
             ),
             RegexMatcher(
                 pattern=re.compile(
                     r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/lower_rule_curve"
                 ),
                 getter=dao.get_st_storage_lower_rule_curve,
-                setter=dao.save_st_storage_lower_rule_curve,
+                setter=_save_st_storage_lower_rule_curve,
             ),
             RegexMatcher(
                 pattern=re.compile(
                     r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/upper_rule_curve"
                 ),
                 getter=dao.get_st_storage_upper_rule_curve,
-                setter=dao.save_st_storage_upper_rule_curve,
+                setter=_save_st_storage_upper_rule_curve,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/inflows"),
                 getter=dao.get_st_storage_inflows,
-                setter=dao.save_st_storage_inflows,
+                setter=_save_st_storage_inflows,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/cost_injection"),
                 getter=dao.get_st_storage_cost_injection,
-                setter=dao.save_st_storage_cost_injection,
+                setter=_save_st_storage_cost_injection,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/cost_withdrawal"),
                 getter=dao.get_st_storage_cost_withdrawal,
-                setter=dao.save_st_storage_cost_withdrawal,
+                setter=_save_st_storage_cost_withdrawal,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/cost_level"),
                 getter=dao.get_st_storage_cost_level,
-                setter=dao.save_st_storage_cost_level,
+                setter=_save_st_storage_cost_level,
             ),
             RegexMatcher(
                 pattern=re.compile(
                     r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/cost_variation_injection"
                 ),
                 getter=dao.get_st_storage_cost_variation_injection,
-                setter=dao.save_st_storage_cost_variation_injection,
+                setter=_save_st_storage_cost_variation_injection,
             ),
             RegexMatcher(
                 pattern=re.compile(
                     r"input/st-storage/series/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/cost_variation_withdrawal"
                 ),
                 getter=dao.get_st_storage_cost_variation_withdrawal,
-                setter=dao.save_st_storage_cost_variation_withdrawal,
+                setter=_save_st_storage_cost_variation_withdrawal,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/common/capacity/maxpower_(?P<area_id>[^/]+)"),
@@ -344,7 +377,7 @@ class RawPathToMatrixMapper:
                     r"input/st-storage/constraints/(?P<area_id>[^/]+)/(?P<storage_id>[^/]+)/rhs_(?P<constraint_id>[^/]+)"
                 ),
                 getter=dao.get_st_storage_additional_constraint_matrix,
-                setter=dao.save_st_storage_constraint_matrix,
+                setter=_save_st_storage_constraint,
             ),
         ]
         # Handle version specific patterns

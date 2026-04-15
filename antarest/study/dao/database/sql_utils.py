@@ -71,24 +71,30 @@ def upsert_multiple(
     if not values:
         return
 
-    prototype_value = values[0]
-
     dialect = session.get_bind().dialect.name
-    if dialect in {"postgresql", "sqlite"}:
-        key_columns = _key_columns(table)
-        update_columns = [c for c in _update_columns(table) if c.name in prototype_value]
+    if dialect not in {"postgresql", "sqlite"}:
+        raise NotImplementedError(f"Dialect {dialect} not supported")
 
+    # SQL seems to have a limit of 2¹⁵ parameters to give inside a single insert statement
+    # If we have too many values, we need to split them in multiple insert statements
+    max_insert_size = 2**15 - 1
+    batch_size = max_insert_size // len(table.columns)
+    batches = [values[i : i + batch_size] for i in range(0, len(values), batch_size)]
+
+    key_columns = _key_columns(table)
+    prototype_value = batches[0][0]
+    update_columns = [c for c in _update_columns(table) if c.name in prototype_value]
+
+    for batch in batches:
         # Note: the postgres and sqlite syntax requires to explicitly
         # state the list of columns that we want to update, hence the set_ clause.
         stmt: PgInsert | SqliteInsert
         if dialect == "postgresql":
-            stmt = pg_insert(table).values(values)
+            stmt = pg_insert(table).values(batch)
         else:
-            stmt = sqlite_insert(table).values(values)
+            stmt = sqlite_insert(table).values(batch)
         stmt = stmt.on_conflict_do_update(
             index_elements=key_columns,
             set_={column: getattr(stmt.excluded, column.name) for column in update_columns},
         )
         session.execute(stmt)
-    else:
-        raise NotImplementedError(f"Dialect {dialect} not supported")

@@ -843,3 +843,9 @@ class RenewableClustersNotFound(HTTPException):
     def __init__(self, invalid_renewable_ids: dict[str, set[str]]) -> None:
         msg = f"Renewable clusters not found: {invalid_renewable_ids}"
         super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class STStoragesNotFound(HTTPException):
+    def __init__(self, invalid_sts_ids: dict[str, set[str]]) -> None:
+        msg = f"Short term storages not found: {invalid_sts_ids}"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)

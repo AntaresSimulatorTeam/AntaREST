@@ -96,6 +96,8 @@ from antarest.study.dao.common import (
     LinkSeriesMapping,
     RenewableSeriesMapping,
     ReserveDefinitionsMapping,
+    StStorageConstraintSeriesMapping,
+    StStorageSeriesMapping,
     ThermalSeriesMapping,
     XpansionCapacitiesMapping,
     XpansionConstraintsMapping,
@@ -474,10 +476,54 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_st_storage_cost_variation_withdrawal(area_id, storage_id)
 
     @override
+    def get_all_st_storage_pmax_injection(self) -> StStorageSeriesMapping:
+        return self._adaptee.get_all_st_storage_pmax_injection()
+
+    @override
+    def get_all_st_storage_pmax_withdrawal(self) -> StStorageSeriesMapping:
+        return self._adaptee.get_all_st_storage_pmax_withdrawal()
+
+    @override
+    def get_all_st_storage_lower_rule_curve(self) -> StStorageSeriesMapping:
+        return self._adaptee.get_all_st_storage_lower_rule_curve()
+
+    @override
+    def get_all_st_storage_upper_rule_curve(self) -> StStorageSeriesMapping:
+        return self._adaptee.get_all_st_storage_upper_rule_curve()
+
+    @override
+    def get_all_st_storage_inflows(self) -> StStorageSeriesMapping:
+        return self._adaptee.get_all_st_storage_inflows()
+
+    @override
+    def get_all_st_storage_cost_injection(self) -> StStorageSeriesMapping:
+        return self._adaptee.get_all_st_storage_cost_injection()
+
+    @override
+    def get_all_st_storage_cost_withdrawal(self) -> StStorageSeriesMapping:
+        return self._adaptee.get_all_st_storage_cost_withdrawal()
+
+    @override
+    def get_all_st_storage_cost_level(self) -> StStorageSeriesMapping:
+        return self._adaptee.get_all_st_storage_cost_level()
+
+    @override
+    def get_all_st_storage_cost_variation_injection(self) -> StStorageSeriesMapping:
+        return self._adaptee.get_all_st_storage_cost_variation_injection()
+
+    @override
+    def get_all_st_storage_cost_variation_withdrawal(self) -> StStorageSeriesMapping:
+        return self._adaptee.get_all_st_storage_cost_variation_withdrawal()
+
+    @override
     def get_st_storage_additional_constraint_matrix(
         self, area_id: str, storage_id: str, constraint_id: str
     ) -> pl.DataFrame:
         return self._adaptee.get_st_storage_additional_constraint_matrix(area_id, storage_id, constraint_id)
+
+    @override
+    def get_all_st_storage_additional_constraint_matrices(self) -> StStorageConstraintSeriesMapping:
+        return self._adaptee.get_all_st_storage_additional_constraint_matrices()
 
     @override
     def get_all_hydro_properties(self) -> dict[str, HydroProperties]:
