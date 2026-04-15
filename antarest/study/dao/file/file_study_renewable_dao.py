@@ -82,22 +82,21 @@ class FileStudyRenewableDao(RenewableDao, ABC):
     @override
     def get_all_renewables_for_area(self, area_id: str) -> Sequence[RenewableCluster]:
         file_study = self.get_file_study()
-        try:
-            clusters_data = self._get_all_renewables_for_area(file_study, area_id)
-        except ChildNotFoundError:
-            raise AreaNotFound(area_id) from None
+        if area_id not in file_study.config.areas:
+            raise AreaNotFound(area_id)
+        clusters_data = self._get_all_renewables_for_area(file_study, area_id)
         return [parse_renewable_cluster(file_study.config.version, cluster) for cluster in clusters_data.values()]
 
     @override
     def get_renewable(self, area_id: str, renewable_id: str) -> RenewableCluster:
         file_study = self.get_file_study()
+        if area_id not in file_study.config.areas:
+            raise AreaNotFound(area_id)
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=renewable_id)
         try:
             cluster = file_study.tree.get(path.split("/"), depth=1)
-        except ChildNotFoundError:
-            raise AreaNotFound(area_id) from None
         except KeyError:
-            raise RenewableClusterNotFound(area_id, renewable_id) from None
+            raise RenewableClusterNotFound(area_id, renewable_id)
         return parse_renewable_cluster(file_study.config.version, cluster)
 
     @override

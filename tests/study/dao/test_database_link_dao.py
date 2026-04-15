@@ -26,6 +26,7 @@ from tests.study.dao.utils import save_area
 def _create_default_link(dao: StudyDao) -> None:
     save_area(dao, "Paris")
     save_area(dao, "London")
+    dao.save_links([Link(area1="paris", area2="london")])
 
 
 # ──────────────────────────────────────────────────────────────────────────────

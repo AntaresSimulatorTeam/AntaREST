@@ -430,22 +430,22 @@ class TestHydroManagementDbOnly:
         """Test that save_hydro_management raises AreaNotFound with the invalid area ID."""
         hydro_mgmt = HydroManagement()
         with pytest.raises(AreaNotFound, match="nonexistent"):
-            db_dao.save_hydro_management(hydro_mgmt, "nonexistent")
+            db_dao.save_hydro_management({"nonexistent": hydro_mgmt})
 
     def test_hydro_management_with_version_specific_field(self, db_dao: DatabaseStudyDao) -> None:
         """Test that overflow_spilled_cost_difference (v9.2+) is handled correctly on DB (no version guard)."""
         save_area(db_dao, "Paris")
 
         # Defaults to None when not provided
-        db_dao.save_hydro_management(HydroManagement(), "paris")
+        db_dao.save_hydro_management({"paris": HydroManagement()})
         assert db_dao.get_hydro_management("paris").overflow_spilled_cost_difference is None
 
         # Can be set to a value
-        db_dao.save_hydro_management(HydroManagement(overflow_spilled_cost_difference=5.5), "paris")
+        db_dao.save_hydro_management({"paris": HydroManagement(overflow_spilled_cost_difference=5.5)})
         assert db_dao.get_hydro_management("paris").overflow_spilled_cost_difference == 5.5
 
         # Can be set back to None
-        db_dao.save_hydro_management(HydroManagement(overflow_spilled_cost_difference=None), "paris")
+        db_dao.save_hydro_management({"paris": HydroManagement(overflow_spilled_cost_difference=None)})
         assert db_dao.get_hydro_management("paris").overflow_spilled_cost_difference is None
 
 
@@ -468,7 +468,7 @@ class TestInflowStructureDbOnly:
         """Test that save_inflow_structure raises AreaNotFound with the invalid area ID."""
         inflow = InflowStructure()
         with pytest.raises(AreaNotFound, match="nonexistent"):
-            db_dao.save_inflow_structure(inflow, "nonexistent")
+            db_dao.save_inflow_structure({"nonexistent": inflow})
 
 
 class TestGetAllHydroPropertiesDbOnly:
@@ -480,8 +480,8 @@ class TestGetAllHydroPropertiesDbOnly:
         save_area(db_dao, "London")
 
         # Paris has only inflow, London has only management — neither is complete
-        db_dao.save_inflow_structure(InflowStructure(inter_monthly_correlation=0.5), "paris")
-        db_dao.save_hydro_management(HydroManagement(reservoir=True), "london")
+        db_dao.save_inflow_structure({"paris": InflowStructure(inter_monthly_correlation=0.5)})
+        db_dao.save_hydro_management({"london": HydroManagement(reservoir=True)})
 
         result = db_dao.get_all_hydro_properties()
         assert result == {}
@@ -585,7 +585,7 @@ class TestCascadeDelete:
     def test_cascade_delete_hydro_management(self, db_session: Session, db_dao: DatabaseStudyDao) -> None:
         """Test that hydro management is deleted when area is deleted."""
         save_area(db_dao, "Paris")
-        db_dao.save_hydro_management(HydroManagement(reservoir=True), "paris")
+        db_dao.save_hydro_management({"paris": HydroManagement(reservoir=True)})
 
         # Delete area
         db_dao.delete_area("paris")
@@ -602,7 +602,7 @@ class TestCascadeDelete:
     def test_cascade_delete_inflow_structure(self, db_session: Session, db_dao: DatabaseStudyDao) -> None:
         """Test that inflow structure is deleted when area is deleted."""
         save_area(db_dao, "Paris")
-        db_dao.save_inflow_structure(InflowStructure(inter_monthly_correlation=0.8), "paris")
+        db_dao.save_inflow_structure({"paris": InflowStructure(inter_monthly_correlation=0.8)})
 
         # Delete area
         db_dao.delete_area("paris")
@@ -621,13 +621,14 @@ class TestCascadeDelete:
         save_area(db_dao, "Paris")
         save_area(db_dao, "London")
         db_dao.save_hydro_allocation(
-            "paris",
-            HydroAllocation(
-                allocation=[
-                    HydroAllocationArea(area_id="paris", coefficient=0.6),
-                    HydroAllocationArea(area_id="london", coefficient=0.4),
-                ]
-            ),
+            {
+                "paris": HydroAllocation(
+                    allocation=[
+                        HydroAllocationArea(area_id="paris", coefficient=0.6),
+                        HydroAllocationArea(area_id="london", coefficient=0.4),
+                    ]
+                )
+            }
         )
 
         # Delete target area allocation row referencing it should be cascade-deleted
@@ -650,13 +651,14 @@ class TestCascadeDelete:
 
         save_area(db_dao, "London")
         db_dao.save_hydro_allocation(
-            "paris",
-            HydroAllocation(
-                allocation=[
-                    HydroAllocationArea(area_id="paris", coefficient=0.6),
-                    HydroAllocationArea(area_id="london", coefficient=0.4),
-                ]
-            ),
+            {
+                "paris": HydroAllocation(
+                    allocation=[
+                        HydroAllocationArea(area_id="paris", coefficient=0.6),
+                        HydroAllocationArea(area_id="london", coefficient=0.4),
+                    ]
+                )
+            }
         )
 
         # Delete source area remaining allocation rows should be cascade-deleted
@@ -676,13 +678,14 @@ class TestCascadeDelete:
         save_area(db_dao, "London")
         save_area(db_dao, "Algiers")
         db_dao.save_hydro_correlation(
-            "paris",
-            HydroCorrelation(
-                correlation=[
-                    HydroCorrelationArea(area_id="london", coefficient=50.0),
-                    HydroCorrelationArea(area_id="algiers", coefficient=60.0),
-                ]
-            ),
+            {
+                "paris": HydroCorrelation(
+                    correlation=[
+                        HydroCorrelationArea(area_id="london", coefficient=50.0),
+                        HydroCorrelationArea(area_id="algiers", coefficient=60.0),
+                    ]
+                )
+            }
         )
 
         # Upper triangle stores: (algiers, paris, 0.6) and (london, paris, 0.5)
@@ -718,19 +721,19 @@ class TestCascadeDelete:
         series_id = matrix_service.create(pl.DataFrame(data=[[1, 2]], orient="row"))
 
         # Save a matrix in every table
-        db_dao.save_hydro_maxpower("paris", series_id)
-        db_dao.save_hydro_reservoir("paris", series_id)
-        db_dao.save_hydro_energy("paris", series_id)
-        db_dao.save_hydro_run_of_river("paris", series_id)
-        db_dao.save_hydro_modulation("paris", series_id)
-        db_dao.save_hydro_credit_modulations("paris", series_id)
-        db_dao.save_hydro_inflow_pattern("paris", series_id)
-        db_dao.save_hydro_water_values("paris", series_id)
-        db_dao.save_hydro_mingen("paris", series_id)
-        db_dao.save_hydro_max_hourly_gen_power("paris", series_id)
-        db_dao.save_hydro_max_hourly_pump_power("paris", series_id)
-        db_dao.save_hydro_max_daily_gen_energy("paris", series_id)
-        db_dao.save_hydro_max_daily_pump_energy("paris", series_id)
+        db_dao.save_hydro_maxpower({"paris": series_id})
+        db_dao.save_hydro_reservoir({"paris": series_id})
+        db_dao.save_hydro_energy({"paris": series_id})
+        db_dao.save_hydro_run_of_river({"paris": series_id})
+        db_dao.save_hydro_modulation({"paris": series_id})
+        db_dao.save_hydro_credit_modulations({"paris": series_id})
+        db_dao.save_hydro_inflow_pattern({"paris": series_id})
+        db_dao.save_hydro_water_values({"paris": series_id})
+        db_dao.save_hydro_mingen({"paris": series_id})
+        db_dao.save_hydro_max_hourly_gen_power({"paris": series_id})
+        db_dao.save_hydro_max_hourly_pump_power({"paris": series_id})
+        db_dao.save_hydro_max_daily_gen_energy({"paris": series_id})
+        db_dao.save_hydro_max_daily_pump_energy({"paris": series_id})
 
         db_dao.delete_area("paris")
 

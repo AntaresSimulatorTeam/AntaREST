@@ -98,10 +98,9 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         existing_ids = {value["name"]: key for key, value in existing_candidates.items()}
 
         for candidate, old_id in candidates:
-            if old_id not in existing_ids:
-                raise CandidateNotFoundError(f"The candidate '{old_id}' does not exist")
             if old_id:
-                # We should remove the candidate corresponding to the `old_id`
+                if old_id not in existing_ids:
+                    raise CandidateNotFoundError(f"The candidate '{old_id}' does not exist")
                 del existing_candidates[existing_ids[old_id]]
 
             new_key = existing_ids.get(

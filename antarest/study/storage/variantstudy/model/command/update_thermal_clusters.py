@@ -14,7 +14,7 @@ from typing import Any, Self
 from pydantic import model_validator
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError
+from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     ThermalClusterUpdates,
@@ -68,7 +68,7 @@ class UpdateThermalClusters(ICommand):
         for area_id, value in self.cluster_properties.items():
             try:
                 all_thermals_per_area = study_data.get_all_thermals_for_area(area_id)
-            except ChildNotFoundError:
+            except AreaNotFound:
                 return command_failed(f"Area '{area_id}' does not exist")
 
             existing_ids = {th.id.lower(): th for th in all_thermals_per_area}
