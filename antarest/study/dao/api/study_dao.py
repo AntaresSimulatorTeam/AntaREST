@@ -34,6 +34,7 @@ from antarest.study.business.model.hydro_model import HydroManagement, HydroProp
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.reserve_definition_model import ReserveDefinition
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.business.model.scenario_builder_model import AnyScenarios, Ruleset, ScenarioType
 from antarest.study.business.model.sts_model import (
@@ -74,6 +75,10 @@ from antarest.study.dao.api.optimization_preferences_dao import (
 )
 from antarest.study.dao.api.playlist_config_dao import PlaylistConfigDao, ReadOnlyPlaylistConfigDao
 from antarest.study.dao.api.renewable_dao import ReadOnlyRenewableDao, RenewableDao
+from antarest.study.dao.api.reserve_definition_dao import (
+    ReadOnlyReserveDefinitionDao,
+    ReserveDefinitionDao,
+)
 from antarest.study.dao.api.reserves_global_parameters_dao import (
     ReadOnlyReservesGlobalParametersDao,
     ReservesGlobalParametersDao,
@@ -90,6 +95,7 @@ from antarest.study.dao.common import (
     BindingConstraintSeriesMapping,
     LinkSeriesMapping,
     RenewableSeriesMapping,
+    ReserveDefinitionsMapping,
     ThermalSeriesMapping,
     XpansionCapacitiesMapping,
     XpansionConstraintsMapping,
@@ -127,6 +133,7 @@ class ReadOnlyStudyDao(
     ReadOnlyScenarioBuilderDao,
     ReadOnlyAreaDao,
     ReadOnlyReservesGlobalParametersDao,
+    ReadOnlyReserveDefinitionDao,
 ):
     @abstractmethod
     def get_study_id(self) -> str:
@@ -177,6 +184,7 @@ class StudyDao(
     AreaPropertiesDao,
     AreaDao,
     ReservesGlobalParametersDao,
+    ReserveDefinitionDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -804,3 +812,19 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_all_reserves_global_parameters(self) -> dict[str, ReservesGlobalParameters]:
         return self._adaptee.get_all_reserves_global_parameters()
+
+    @override
+    def get_all_reserve_definitions(self) -> ReserveDefinitionsMapping:
+        return self._adaptee.get_all_reserve_definitions()
+
+    @override
+    def get_all_reserve_definitions_for_area(self, area_id: str) -> Sequence[ReserveDefinition]:
+        return self._adaptee.get_all_reserve_definitions_for_area(area_id)
+
+    @override
+    def get_reserve_definition(self, area_id: str, reserve_id: str) -> ReserveDefinition:
+        return self._adaptee.get_reserve_definition(area_id, reserve_id)
+
+    @override
+    def reserve_definition_exists(self, area_id: str, reserve_id: str) -> bool:
+        return self._adaptee.reserve_definition_exists(area_id, reserve_id)

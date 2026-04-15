@@ -1070,6 +1070,36 @@ COMMANDS = [
         None,
         id="update_reserves_enabled",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.CREATE_RESERVE_DEFINITION.value,
+            args={
+                "area_id": "paris",
+                "parameters": {"name": "Reserve 1", "type": "up"},
+            },
+            study_version=STUDY_VERSION_10_0,
+        ),
+        None,
+        id="create_reserve_definition",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_RESERVE_DEFINITIONS.value,
+            args={"reserve_properties": {"paris": {"Reserve 1": {"failureCost": 500.0}}}},
+            study_version=STUDY_VERSION_10_0,
+        ),
+        None,
+        id="update_reserve_definitions",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REMOVE_RESERVE_DEFINITION.value,
+            args={"area_id": "paris", "reserve_id": "Reserve 1"},
+            study_version=STUDY_VERSION_10_0,
+        ),
+        None,
+        id="remove_reserve_definition",
+    ),
 ]
 
 

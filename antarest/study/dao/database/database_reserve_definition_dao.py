@@ -1,0 +1,116 @@
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
+"""
+Database implementation of ReserveDefinitionDao using SQLAlchemy Core.
+"""
+
+from collections.abc import Sequence
+from typing import Any
+
+from sqlalchemy import CursorResult, Row, Select, delete, select
+from sqlalchemy.orm import Session
+from typing_extensions import override
+
+from antarest.core.exceptions import ReserveDefinitionNotFound
+from antarest.study.business.model.reserve_definition_model import ReserveDefinition
+from antarest.study.dao.api.reserve_definition_dao import ReserveDefinitionDao
+from antarest.study.dao.common import AreaId, ReserveDefinitionId, ReserveDefinitionsMapping
+from antarest.study.dao.database.common import get_row_representation_as_dict, validate_area_exists
+from antarest.study.dao.database.models.reserve_definition import RESERVE_DEFINITION_TABLE
+from antarest.study.dao.database.sql_utils import upsert_multiple
+
+_TABLE = RESERVE_DEFINITION_TABLE
+
+
+def _convert_row_to_model(row: Row[Any]) -> ReserveDefinition:
+    data = get_row_representation_as_dict(row)
+    del data["study_id"]
+    del data["area_id"]
+    data["id"] = data.pop("reserve_id")
+    return ReserveDefinition.model_validate(data)
+
+
+def _convert_model_to_row(study_id: str, area_id: str, reserve: ReserveDefinition) -> dict[str, Any]:
+    values = dict(study_id=study_id, area_id=area_id, **reserve.model_dump())
+    values["reserve_id"] = values.pop("id")
+    return values
+
+
+class DatabaseReserveDefinitionDao(ReserveDefinitionDao):
+    """Database implementation of ReserveDefinitionDao."""
+
+    def __init__(self, study_id: str, db_session: Session) -> None:
+        self._study_id = study_id
+        self._db_session = db_session
+
+    def _select_reserve(self, area_id: str, reserve_id: str) -> Select[Any]:
+        return select(_TABLE).where(
+            (_TABLE.c.study_id == self._study_id) & (_TABLE.c.area_id == area_id) & (_TABLE.c.reserve_id == reserve_id)
+        )
+
+    @override
+    def get_all_reserve_definitions(self) -> ReserveDefinitionsMapping:
+        stmt = select(_TABLE).where(_TABLE.c.study_id == self._study_id)
+        rows = self._db_session.execute(stmt).fetchall()
+        result: ReserveDefinitionsMapping = {}
+        for row in rows:
+            reserve = _convert_row_to_model(row)
+            result.setdefault(row.area_id, {})[reserve.id] = reserve
+        return result
+
+    @override
+    def get_all_reserve_definitions_for_area(self, area_id: str) -> Sequence[ReserveDefinition]:
+        stmt = select(_TABLE).where((_TABLE.c.study_id == self._study_id) & (_TABLE.c.area_id == area_id))
+        rows = self._db_session.execute(stmt).fetchall()
+        if not rows:
+            validate_area_exists(self._db_session, self._study_id, area_id)
+        return [_convert_row_to_model(row) for row in rows]
+
+    @override
+    def get_reserve_definition(self, area_id: str, reserve_id: str) -> ReserveDefinition:
+        row = self._db_session.execute(self._select_reserve(area_id, reserve_id)).fetchone()
+        if not row:
+            validate_area_exists(self._db_session, self._study_id, area_id)
+            raise ReserveDefinitionNotFound(area_id, reserve_id)
+        return _convert_row_to_model(row)
+
+    @override
+    def reserve_definition_exists(self, area_id: str, reserve_id: str) -> bool:
+        return self._db_session.execute(self._select_reserve(area_id, reserve_id)).fetchone() is not None
+
+    @override
+    def save_reserve_definitions(self, data: dict[AreaId, list[ReserveDefinition]]) -> None:
+        if not data:
+            return
+
+        values = []
+        for area_id, reserves in data.items():
+            for reserve in reserves:
+                values.append(_convert_model_to_row(self._study_id, area_id, reserve))
+
+        upsert_multiple(session=self._db_session, table=_TABLE, values=values)
+        self._db_session.commit()
+
+    @override
+    def delete_reserve_definition(self, area_id: AreaId, reserve_id: ReserveDefinitionId) -> None:
+        result = self._db_session.execute(
+            delete(_TABLE).where(
+                (_TABLE.c.study_id == self._study_id)
+                & (_TABLE.c.area_id == area_id)
+                & (_TABLE.c.reserve_id == reserve_id)
+            )
+        )
+        assert isinstance(result, CursorResult)
+        if result.rowcount == 0:
+            raise ReserveDefinitionNotFound(area_id, reserve_id)
+        self._db_session.commit()

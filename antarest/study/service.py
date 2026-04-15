@@ -78,6 +78,7 @@ from antarest.study.business.allocation_management import AllocationManager
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.areas.hydro_management import HydroManager
 from antarest.study.business.areas.renewable_management import RenewableManager
+from antarest.study.business.areas.reserve_definitions_management import ReserveDefinitionsManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintFilters
@@ -679,6 +680,7 @@ class StudyService:
         self.advanced_parameters_manager = AdvancedParamsManager(command_context)
         self.compatibility_parameters_manager = CompatibilityParamsManager(command_context)
         self.reserves_global_parameters_manager = ReservesGlobalParametersManager(command_context)
+        self.reserve_definitions_manager = ReserveDefinitionsManager(command_context)
         self.hydro_manager = HydroManager(command_context)
         self.allocation_manager = AllocationManager(command_context)
         self.renewable_manager = RenewableManager(command_context)

@@ -142,6 +142,12 @@ class STStorageNotFound(ClusterNotFound):
     object_name = "Short-term storage"
 
 
+class ReserveDefinitionNotFound(ClusterNotFound):
+    """Reserve definition is not found (404 Not Found)"""
+
+    object_name = "Reserve definition"
+
+
 # ============================================================
 # Duplicate (409)
 # ============================================================
@@ -197,6 +203,16 @@ class DuplicateSTStorage(DuplicateConfigSection):
     """Duplicate Short-term storage (409 Conflict)"""
 
     object_name = SHORT_TERM_STORAGE
+
+
+class ReservedReserveDefinitionName(HTTPException):
+    """Reserve definition name is reserved (422 Unprocessable Entity)"""
+
+    def __init__(self, name: str) -> None:
+        super().__init__(
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            f"Reserve definition name '{name}' is reserved",
+        )
 
 
 class StudyNotFoundError(HTTPException):

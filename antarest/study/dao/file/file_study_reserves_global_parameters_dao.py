@@ -19,6 +19,7 @@ from antarest.study.dao.api.reserves_global_parameters_dao import ReservesGlobal
 from antarest.study.dao.common import ReservesGlobalParametersMapping
 from antarest.study.dao.file.common import check_area_exists
 from antarest.study.storage.rawstudy.model.filesystem.config.reserves_global_parameters import (
+    GLOBAL_PARAMETERS_SECTION,
     parse_reserves_global_parameters,
     serialize_reserves_global_parameters,
 )
@@ -59,5 +60,5 @@ class FileStudyReservesGlobalParametersDao(ReservesGlobalParametersDao, ABC):
                 existing_data = file_study.tree.get(path)
             except (ChildNotFoundError, KeyError):
                 existing_data = {}
-            existing_data["globalparameters"] = serialize_reserves_global_parameters(params)
+            existing_data[GLOBAL_PARAMETERS_SECTION] = serialize_reserves_global_parameters(params)
             file_study.tree.save(existing_data, path)

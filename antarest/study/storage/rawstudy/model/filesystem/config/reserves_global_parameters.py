@@ -17,6 +17,8 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 
+GLOBAL_PARAMETERS_SECTION = "globalparameters"
+
 
 class ReservesGlobalParametersFileData(AntaresBaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, alias_generator=to_kebab_case)
@@ -35,7 +37,7 @@ class ReservesGlobalParametersFileData(AntaresBaseModel):
 
 
 def parse_reserves_global_parameters(data: dict[str, Any]) -> ReservesGlobalParameters:
-    global_params_data = data.get("globalparameters", {})
+    global_params_data = data.get(GLOBAL_PARAMETERS_SECTION, {})
     return ReservesGlobalParametersFileData.model_validate(global_params_data).to_model()
 
 
