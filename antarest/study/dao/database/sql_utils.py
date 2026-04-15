@@ -77,7 +77,6 @@ def upsert_multiple(
     batches = [values[i : i + max_insert_size] for i in range(0, len(values), max_insert_size)]
 
     for batch in batches:
-
         prototype_value = batch[0]
 
         dialect = session.get_bind().dialect.name
