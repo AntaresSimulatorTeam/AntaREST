@@ -77,8 +77,9 @@ def upsert_multiple(
 
     # SQL seems to have a limit of 2¹⁵ parameters to give inside a single insert statement
     # If we have too many values, we need to split them in multiple insert statements
-    max_insert_size = 8000
-    batches = [values[i : i + max_insert_size] for i in range(0, len(values), max_insert_size)]
+    max_insert_size = 2**15 - 1
+    batch_size = max_insert_size // len(table.columns)
+    batches = [values[i : i + batch_size] for i in range(0, len(values), batch_size)]
 
     key_columns = _key_columns(table)
     prototype_value = batches[0][0]
