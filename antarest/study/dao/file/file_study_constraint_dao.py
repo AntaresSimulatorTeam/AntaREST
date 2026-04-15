@@ -17,7 +17,7 @@ import polars as pl
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
-from antarest.core.exceptions import BindingConstraintNotFound, ChildNotFoundError
+from antarest.core.exceptions import BindingConstraintNotFound
 from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.business.model.binding_constraint_model import (
     OPERATOR_MATRICES_MAP,
@@ -34,6 +34,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     serialize_binding_constraint,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 
@@ -64,6 +65,15 @@ def get_next_available_key(ini_content: dict[str, Any]) -> str:
     while next_key in existing_keys:
         next_key += 1
     return str(next_key)
+
+
+def _get_constraint_id_from_matrix_file_name(filename: str, term: str | None = None) -> str | None:
+    if not term:
+        # Means we're before the v8.7
+        return filename
+    if filename.endswith(f"_{term}"):
+        return filename.removesuffix(f"_{term}")
+    return None
 
 
 class FileStudyConstraintDao(ConstraintDao, ABC):
@@ -113,19 +123,19 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
     @override
     def get_all_constraint_values_matrix(self) -> BindingConstraintSeriesMapping:
-        return self.get_all_bc_matrices(_get_values_matrix_path)
+        return self._get_all_bc_matrices()
 
     @override
     def get_all_constraint_less_term_matrix(self) -> BindingConstraintSeriesMapping:
-        return self.get_all_bc_matrices(_get_less_term_matrix_path)
+        return self._get_all_bc_matrices("lt")
 
     @override
     def get_all_constraint_greater_term_matrix(self) -> BindingConstraintSeriesMapping:
-        return self.get_all_bc_matrices(_get_greater_term_matrix_path)
+        return self._get_all_bc_matrices("gt")
 
     @override
     def get_all_constraint_equal_term_matrix(self) -> BindingConstraintSeriesMapping:
-        return self.get_all_bc_matrices(_get_equal_term_matrix_path)
+        return self._get_all_bc_matrices("eq")
 
     @override
     def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
@@ -187,26 +197,23 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
             removed_groups = {group for group in old_groups if not old_groups[group]}
             _remove_groups_from_scenario_builder(study_data, removed_groups)
 
-    def get_all_bc_matrices(self, url_getter: Callable[[ConstraintId], list[str]]) -> BindingConstraintSeriesMapping:
+    def _get_all_bc_matrices(self, term: str | None = None) -> BindingConstraintSeriesMapping:
         study_data = self.get_file_study()
         matrix_nodes = {}
 
-        bindings = study_data.config.bindings
-        for bc in bindings:
-            constraint_id = bc.id
-            url = url_getter(constraint_id)
-            try:
-                node = study_data.tree.get_node(url)
-            except ChildNotFoundError:
-                # Can happen according to the version or the constraint operator
-                continue
+        folder_node = study_data.tree.get_node(["input", "bindingconstraints"])
+        assert isinstance(folder_node, FolderNode)
+        tree = folder_node.build()
+        del tree["bindingconstraints"]  # We only care about matrices
+        for node_id, node in tree.items():
             assert isinstance(node, MatrixNode)
-            matrix_nodes[node] = constraint_id
-
-        result: BindingConstraintSeriesMapping = {}
+            if constraint_id := _get_constraint_id_from_matrix_file_name(node_id, term):
+                # We only keep the constraints with the right terms
+                matrix_nodes[node] = ConstraintId(constraint_id)
 
         matrices_mapping = self.get_impl().get_matrices_ids(list(matrix_nodes))
 
+        result: BindingConstraintSeriesMapping = {}
         for node, matrix_id in matrices_mapping.items():
             constraint_id = matrix_nodes[node]
             result[constraint_id] = matrix_id
