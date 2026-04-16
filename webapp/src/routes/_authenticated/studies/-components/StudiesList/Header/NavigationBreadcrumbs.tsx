@@ -15,12 +15,12 @@
 import { Breadcrumbs, Link, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import type { BreadcrumbItem } from "./types";
+import { buildKey } from "@/utils/reactUtils";
 
 interface NavigationBreadcrumbsProps {
   items: BreadcrumbItem[];
   studyCount: number;
   onNavigate: (item: BreadcrumbItem) => void;
-  activeTree: "managed" | "external";
 }
 
 function NavigationBreadcrumbs({ items, studyCount, onNavigate }: NavigationBreadcrumbsProps) {
@@ -34,7 +34,7 @@ function NavigationBreadcrumbs({ items, studyCount, onNavigate }: NavigationBrea
 
           return (
             <Link
-              key={item.id}
+              key={buildKey(item.label, index)}
               underline="hover"
               color="inherit"
               onClick={() => !isLast && onNavigate(item)}
