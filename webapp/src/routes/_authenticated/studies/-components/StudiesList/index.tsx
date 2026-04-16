@@ -24,6 +24,7 @@ import { useCallback, useState } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeGrid, type GridOnScrollProps } from "react-window";
 import useDebounce from "@/hooks/useDebounce";
+import { buildKey } from "@/utils/reactUtils";
 import StudyLaunchDialog from "../../../../-shared/components/studies/dialogs/StudyLaunchDialog";
 import Header from "./Header";
 import StudyCardCell from "./StudyCardCell";
@@ -31,7 +32,7 @@ import type { StudyCellData } from "./StudyCardCell/types";
 import type { ViewMode } from "./types";
 
 const CARD_TARGET_WIDTH = 380;
-const CARD_HEIGHT = 130;
+const CARD_HEIGHT = 155;
 const LIST_ROW_HEIGHT = 76;
 
 export interface StudiesListProps {
@@ -97,7 +98,7 @@ function StudiesList({ studyIds }: StudiesListProps) {
 
             return (
               <FixedSizeGrid
-                key={`${viewMode}-${studyIds.join()}`}
+                key={buildKey(viewMode, studyIds)}
                 columnCount={columnCount}
                 columnWidth={columnWidth}
                 height={height}

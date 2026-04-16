@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import usePrevious from "react-use/lib/usePrevious";
+import * as R from "ramda";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
@@ -44,19 +46,16 @@ function ExternalTree({ studies }: ExternalTreeProps) {
     workspaces: workspacesStable,
   });
 
-  const [syncedPath, setSyncedPath] = useState(path);
+  const prevPath = usePrevious(path);
   const [expandedItems, setExpandedItems] = useState<string[]>(() =>
     [...getParentPaths(path), path].filter(Boolean),
   );
 
   // When `path` changes externally (e.g. from a study card's folder link),
   // ensure all ancestors of the newly selected path are expanded.
-  // Derived-state pattern: runs synchronously during render, avoids an extra paint.
-  if (syncedPath !== path) {
+  if (prevPath !== path) {
     const required = [...getParentPaths(path), path].filter(Boolean);
-    const expandedSet = new Set(expandedItems);
-    const missing = required.filter((id) => !expandedSet.has(id));
-    setSyncedPath(path);
+    const missing = R.difference(required, expandedItems);
     if (missing.length > 0) {
       setExpandedItems([...expandedItems, ...missing]);
     }

@@ -13,6 +13,8 @@
  */
 
 import useUpdatedRef from "@/hooks/useUpdatedRef";
+import usePrevious from "react-use/lib/usePrevious";
+import * as R from "ramda";
 import { directoryQueries } from "@/queries/directories/queries";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
@@ -41,19 +43,16 @@ function ManagedTree({ isCreatingDirectory, onDirectoryCreated }: ManagedTreePro
 
   const directoryTree = useMemo(() => buildDirectoryTree(directories), [directories]);
 
-  const [syncedDirectoryId, setSyncedDirectoryId] = useState(directoryId);
+  const prevDirectoryId = usePrevious(directoryId);
   const [expandedItems, setExpandedItems] = useState<string[]>(() =>
     directoryId ? getDirectoryPath(directoryTree, directoryId) : [],
   );
 
   // When `directoryId` changes externally (e.g. from a study card's folder link),
   // ensure all ancestors of the newly selected directory are expanded.
-  // Derived-state pattern: runs synchronously during render, avoids an extra paint.
-  if (syncedDirectoryId !== directoryId) {
+  if (prevDirectoryId !== directoryId) {
     const required = directoryId ? getDirectoryPath(directoryTree, directoryId) : [];
-    const expandedSet = new Set(expandedItems);
-    const missing = required.filter((id) => !expandedSet.has(id));
-    setSyncedDirectoryId(directoryId);
+    const missing = R.difference(required, expandedItems);
     if (missing.length > 0) {
       setExpandedItems([...expandedItems, ...missing]);
     }

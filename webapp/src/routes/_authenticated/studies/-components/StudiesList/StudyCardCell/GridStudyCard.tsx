@@ -58,7 +58,14 @@ function GridStudyCard({
 
   return (
     <Card className="StudyCard" elevation={3} sx={cardSx(width, height, accentColor, isSelected)}>
-      <CardContent sx={{ ...gridCardContentSx, ...cardContentBaseSx, gap: 0.75 }}>
+      <CardContent
+        sx={{
+          ...gridCardContentSx,
+          ...cardContentBaseSx,
+          gap: 0.75,
+          justifyContent: "space-between",
+        }}
+      >
         {/* Row 1: study type icon + title + actions */}
         <Box sx={rowSx}>
           <StudyTypeIcon study={study} />
@@ -91,44 +98,46 @@ function GridStudyCard({
           <StudyOwnerTag name={study.owner.name} />
         </Box>
 
-        <Divider sx={{ mx: -1.5 }} />
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+          <Divider sx={{ mx: -1.5 }} />
 
-        {/* Row 3: study chips (left) + metadata (right) */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            rowGap: 0.5,
-            gap: 1,
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}>
-            {study.managed ? (
-              <Chip label={t("studies.managedStudy")} size="small" color="info" sx={chipSx} />
-            ) : (
-              <Chip label={study.workspace} size="small" sx={chipSx} />
-            )}
-            {study.archived && (
-              <Chip label={t("studies.archivedStudy")} size="small" color="warning" sx={chipSx} />
-            )}
-            {isVariant && (
-              <Chip
-                icon={<CallSplitIcon />}
-                label={t("studies.variant")}
-                size="small"
-                color="primary"
-                sx={variantChipSx}
-              />
-            )}
+          {/* Row 3: study chips (left) + metadata (right) */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              rowGap: 0.5,
+              gap: 1,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}>
+              {study.managed ? (
+                <Chip label={t("studies.managedStudy")} size="small" color="info" sx={chipSx} />
+              ) : (
+                <Chip label={study.workspace} size="small" sx={chipSx} />
+              )}
+              {study.archived && (
+                <Chip label={t("studies.archivedStudy")} size="small" color="warning" sx={chipSx} />
+              )}
+              {isVariant && (
+                <Chip
+                  icon={<CallSplitIcon />}
+                  label={t("studies.variant")}
+                  size="small"
+                  color="primary"
+                  sx={variantChipSx}
+                />
+              )}
+            </Box>
+            <StudyMetadataRow
+              creationDate={study.creationDate}
+              modificationDate={study.modificationDate}
+              version={study.version}
+              noWrap
+            />
           </Box>
-          <StudyMetadataRow
-            creationDate={study.creationDate}
-            modificationDate={study.modificationDate}
-            version={study.version}
-            noWrap
-          />
         </Box>
       </CardContent>
     </Card>
