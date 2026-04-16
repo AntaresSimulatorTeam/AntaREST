@@ -401,7 +401,7 @@ class RawPathToMatrixMapper:
                 pattern=re.compile(r"input/hydro/common/capacity/creditmodulations_(?P<area_id>[^/]+)"),
                 getter=dao.get_hydro_credit_modulations,
                 setter=_save_hydro_credit_modulations,
-                frequency=lambda x: MatrixFrequency.HOURLY,  # Weird but retro-compatible
+                frequency=lambda x: MatrixFrequency.HOURLY,  # No frequency -> We return the default value
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/common/capacity/inflowPattern_(?P<area_id>[^/]+)"),
