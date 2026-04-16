@@ -70,12 +70,15 @@ class OutputSimulationTsNumbers(FolderNode):
        │   ├── ch.txt
        │   ├── pompage.txt
        │   └── turbinage.txt
-       └── st-storage
+       ├── st-storage
+       │   └── at
+       │      └── sts_1
+       │          ├── inflows.txt
+       │          └── constraint_1.txt
+       └── ntc
            └── at
-               └── sts_1
-                    ├── inflows.txt
-                    └── constraint_1.txt
-                    ...
+               ├── be.txt
+               └── fr.txt
     """
 
     @override
@@ -98,4 +101,7 @@ class OutputSimulationTsNumbers(FolderNode):
             )
         if (self.config.path / "st-storage").exists():
             children["st-storage"] = ShortTermStorageTsNumbers(self.matrix_mapper, self.config.next_file("st-storage"))
+        if (self.config.path / "ntc").exists():
+            children["ntc"] = ShortTermStorageTsNumbers(self.matrix_mapper, self.config.next_file("ntc"))
+
         return children
