@@ -33,7 +33,7 @@ from antarest.core.serde.parquet_writer import (
     write_dataframes_stream_parquet,
     yield_dataframes_from_parquet,
 )
-from antarest.output.filestudy.aggregator_management import AggregatorManager
+from antarest.output.filestudy.aggregation import aggregate_output_data
 from antarest.output.filestudy.utils import (
     MCYEAR_COL,
     TIME_ID_COL,
@@ -109,16 +109,14 @@ def _aggregate_to_parquet(
     ids_to_consider: list[str],
     target_path: Path,
 ) -> None:
-    manager = AggregatorManager(
-        output_path=output_dir,
-        query_file=query_file,
-        frequency=frequency,
-        ids_to_consider=ids_to_consider,
-        columns_names=[],
-        transform_columns_headers=True,
-    )
     try:
-        dataframes = manager.aggregate_output_data()
+        dataframes = aggregate_output_data(
+            output_path=output_dir,
+            query_file=query_file,
+            frequency=frequency,
+            ids_to_consider=ids_to_consider,
+            columns_names=[],
+        )
     except (OutputNotFound, OutputSubFolderNotFound, OutputAggregationError, MCRootNotHandled) as e:
         logger.warning(f"Skipping {query_file.value}-{frequency.value}: {e}")
         return
@@ -199,15 +197,11 @@ def _parse_bc_file(file: Path, mc_root: MCRoot, mc_year: int | None = None) -> p
 
     start_col = get_start_column(frequency)
     try:
-        output_data = parse_output_file(file, start_col)
+        output_table = parse_output_file(file, start_col)
     except Exception as e:
         logger.debug(f"Skipping binding constraint {file.name}: {e}")
         return None
 
-    df = output_data.data
-    headers = cast(MultipleOutputHeaders, output_data.headers)
-    col_names = normalize_df_column_names(mc_root, headers)
-    df.columns = col_names
     df = df.with_row_index(TIME_ID_COL, offset=1)
 
     if mc_year is not None:

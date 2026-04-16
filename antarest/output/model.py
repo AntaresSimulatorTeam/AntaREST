@@ -9,11 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import dataclasses
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Annotated, TypeAlias
+from typing import Annotated, Any, Callable, Generic, Literal, Self, Sequence, TypeAlias, TypeVar
 
 import polars as pl
+import polars.selectors as cs
 from pydantic import BeforeValidator
 from pydantic.alias_generators import to_camel
 
@@ -132,11 +134,44 @@ class ClusterVarColumn:
     stat: str | None
 
 
+# An output column can be any of an "index" column (time step ...), or a full variable column,
+# or a "cluster" variable column where unit is not present any more.
+OutputColumn: TypeAlias = Literal["location", "cluster", "year", "time"] | VarColumn | ClusterVarColumn
+
+
+DF = TypeVar("DF", pl.DataFrame, pl.LazyFrame)
+C = TypeVar("C")
+
+
 @dataclass(frozen=True)
-class OutputDataFrame:
+class Table(Generic[DF, C]):
     """
-    We separate the polars dataframe and its headers as polars does not handle multi-headers columns.
+    We separate the polars dataframe and its columns to better represent columns metadata with specific classes.
     """
 
-    data: pl.DataFrame
-    headers: list[VarColumn]
+    columns: Sequence[C]
+    data: DF
+
+    def select(self, predicate: Callable[[C], bool]) -> "Self":
+        filtered_columns_indices = [k for k, col in enumerate(self.columns) if predicate(col)]
+        filtered_columns = [self.columns[k] for k in filtered_columns_indices]
+        filtered_matrix = self.data.select(cs.by_index(filtered_columns_indices))
+        return dataclasses.replace(self, data=filtered_matrix, columns=filtered_columns)
+
+    def sort_columns(self, sort_key: Callable[[C], Any]) -> "Self":
+        sorted_indices = [i for i, col in sorted(enumerate(self.columns), key=lambda tuple: sort_key(tuple[1]))]
+        final_columns = [self.columns[c] for c in sorted_indices]
+        final_df = self.data.select(cs.by_index(sorted_indices))
+        return dataclasses.replace(self, data=final_df, columns=final_columns)
+
+
+class LazyTable(Table[pl.LazyFrame, C]):
+    def collect(self, naming: Callable[[C], str]) -> pl.DataFrame:
+        renamings = [cs.by_index(i).alias(naming(col)) for i, col in enumerate(self.columns)]
+        return self.data.select(*renamings).collect()
+
+
+OutputTable: TypeAlias = Table[pl.DataFrame, OutputColumn]
+
+# Using lazy frames for better performances where relevant
+LazyOutputTable: TypeAlias = LazyTable[OutputColumn]

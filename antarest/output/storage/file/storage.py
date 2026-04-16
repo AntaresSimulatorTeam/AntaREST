@@ -42,7 +42,7 @@ from antarest.core.utils.archives import (
 from antarest.core.utils.utils import StopWatch
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
-from antarest.output.filestudy.aggregator_management import AggregatorManager
+from antarest.output.filestudy.aggregation import aggregate_output_data
 from antarest.output.filestudy.file_output_utils import extract_variables_list
 from antarest.output.filestudy.utils import QueryFileType
 from antarest.output.model import OutputVariablesList
@@ -491,20 +491,17 @@ class InStudyFileOutputStorage(IOutputStorage):
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
-        transform_columns_headers: bool,
         mc_years: Sequence[int] | None = None,
     ) -> Iterator[pl.DataFrame]:
         study_outputs = self._outputs_provider.get_outputs(study_id)
-        aggregator_manager = AggregatorManager(
+        return aggregate_output_data(
             _output_path(study_outputs.outputs_path, output_id),
             query_file,
             frequency,
             ids_to_consider,
             columns_names,
-            transform_columns_headers,
             mc_years,
         )
-        return aggregator_manager.aggregate_output_data()
 
     @override
     def get_variables_list(self, study_id: str, output_id: str) -> OutputVariablesList:

@@ -19,7 +19,6 @@ from polars.testing import assert_frame_equal
 from typing_extensions import override
 
 from antarest.core.serde.parquet_writer import write_dataframes_stream_parquet
-from antarest.output.model import OutputDataFrame
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
 try:

@@ -21,7 +21,7 @@ import pandas as pd
 import polars as pl
 from polars.exceptions import ComputeError
 
-from antarest.output.model import MultipleOutputHeaders, OutputDataFrame, VarColumn
+from antarest.output.model import OutputTable, VarColumn
 from antarest.study.model import MatrixFrequency, MatrixIndex, TimeSerie
 
 """Column name for the Monte Carlo year."""
@@ -251,7 +251,7 @@ def _parse_output_dataframe(content: str) -> pl.DataFrame:
         )
 
 
-def parse_output_file(file_path: Path, first_column: int) -> OutputDataFrame:
+def parse_output_file(file_path: Path, first_column: int) -> OutputTable:
     content = file_path.read_text(encoding="utf-8")
     output_headers = parse_headers(content, first_column)
     polars_df = _parse_output_dataframe(content)
@@ -262,4 +262,4 @@ def parse_output_file(file_path: Path, first_column: int) -> OutputDataFrame:
     # So we change this to be Float64 to harmonize everything.
     df = df.with_columns(pl.col(pl.Utf8).cast(pl.Float64))
 
-    return OutputDataFrame(data=df, headers=output_headers)
+    return OutputTable(data=df, columns=output_headers)

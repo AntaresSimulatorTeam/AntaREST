@@ -75,7 +75,7 @@ from antarest.output.filestudy.utils import (
     QueryFileType,
     parse_raw_output_matrix_path,
 )
-from antarest.output.model import OutputDataFrame
+from antarest.output.model import OutputTable
 from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
@@ -658,7 +658,7 @@ class IOutputsAccess(ABC):
         frequency: MatrixFrequency,
         item_id: str,
         mc_year: int | None = None,
-    ) -> OutputDataFrame:
+    ) -> OutputTable:
         raise NotImplementedError()
 
 
@@ -2867,13 +2867,14 @@ class StudyService:
 
         self.storage_service.get_storage(study).normalize_study(study)
 
-    def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> InputMatrix | OutputDataFrame | Any:
+    def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> InputMatrix | OutputTable | Any:
         """
         Returns the content of a node based on the provided arguments.
 
         Depending on the type of node, it may return the following types of data:
           - an arbitrary dictionary (ini files ...)
-          - a dataframe (input matrices ...)
+          - an input matrix (containing time series)
+          - an output table (containing columns metadata and values)
           - raw file content (arbitrary user files ...)
 
         This allows callers to handle the result as most appropriate.
@@ -2887,7 +2888,7 @@ class StudyService:
         # Try to route output matrix requests
         parsed = parse_raw_output_matrix_path(url)
         if parsed is not None:
-            matrix = self._get_outputs_access().get_item_output_data(
+            return self._get_outputs_access().get_item_output_data(
                 study_id=uuid,
                 output_id=parsed.output_id,
                 query_file=parsed.query_file,
@@ -2895,7 +2896,6 @@ class StudyService:
                 item_id=parsed.ids_to_consider,
                 mc_year=parsed.mc_year,
             )
-            return OutputDataFrame(matrix)
 
         # We need to handle matrices differently if our study is stored in DB
         if study.storage_mode == StorageMode.DATABASE:

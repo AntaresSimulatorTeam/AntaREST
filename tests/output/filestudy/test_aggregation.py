@@ -1,4 +1,8 @@
+import functools
+import itertools
 import zipfile
+from io import StringIO
+from itertools import islice
 from pathlib import Path
 
 import plyer.platforms.macosx.libs.osx_motion_sensor
@@ -6,17 +10,28 @@ import polars as pl
 import pytest
 from polars.testing import assert_frame_equal
 
-from antarest.output.filestudy.aggregator_management import (
-    AggregatorManager,
+from antarest.core.serde.matrix_export import TableExportFormat
+from antarest.output.filestudy.aggregation import (
     OutputMatrix,
     add_index_columns,
+    aggregate_output_data,
     filter_columns,
+    identify_files,
+    iterate_output_matrices,
     sort_columns,
     stack_matrix,
 )
-from antarest.output.filestudy.utils import MCAllAreasQueryFile, parse_output_file
+from antarest.output.filestudy.utils import (
+    MCAllAreasQueryFile,
+    MCIndAreasQueryFile,
+    MCIndLinksQueryFile,
+    parse_headers,
+    parse_output_file,
+)
 from antarest.output.model import ClusterVarColumn, VarColumn
 from antarest.study.model import MatrixFrequency
+from antarest.study.storage.df_download import export_df_chunks
+from antarest.study.web.raw_studies_blueprint import ExportFormatQuery
 
 
 @pytest.fixture
@@ -182,24 +197,6 @@ def test_unpivot_matrix() -> None:
     assert_frame_equal(stacked_df, expected_df)
 
 
-# TODO: a supprimer
-@pytest.fixture
-def output_matrix() -> OutputMatrix:
-    path = Path(
-        "/home/leclercsyl/feature_tests/antares/output-agregation/output/20250127-1459eco/economy/mc-ind/00001/areas/fr/details-hourly.txt"
-    )
-    matrix = parse_output_file(path, 5)
-    return OutputMatrix(data=matrix.data.lazy(), columns=matrix.headers, year=1, path=path, location="my-area")
-
-
-def test_with_real_data(output_matrix: OutputMatrix) -> None:
-
-    with_index = add_index_columns(output_matrix)
-    with_index.data.collect()
-    stacked = stack_matrix(with_index)
-    stacked.data.collect()
-
-
 def test_sort_columns() -> None:
     unsorted_df = pl.DataFrame(
         data={
@@ -237,3 +234,111 @@ def test_sort_columns() -> None:
         }
     )
     assert_frame_equal(sorted.data.collect(), expected_df)
+
+
+# TODO: a supprimer
+@pytest.fixture
+def output_matrix() -> OutputMatrix:
+    path = Path(
+        "/home/leclercsyl/feature_tests/antares/output-agregation/output/20250127-1459eco/economy/mc-ind/00001/areas/fr/details-hourly.txt"
+    )
+    matrix = parse_output_file(path, 5)
+    return OutputMatrix(data=matrix.data.lazy(), columns=matrix.headers, year=1, path=path, location="my-area")
+
+
+def test_with_real_data(output_matrix: OutputMatrix) -> None:
+
+    with_index = add_index_columns(output_matrix)
+    with_index.data.collect()
+    stacked = stack_matrix(with_index)
+    stacked.data.collect()
+
+
+@pytest.fixture
+def output_path() -> Path:
+    return Path("/home/leclercsyl/feature_tests/antares/output-agregation/output/20250127-1459eco")
+
+
+def _parse_headers_str(file: Path, start_col: int) -> list[VarColumn]:
+    content = file.read_text(encoding="utf-8")
+    header_lines: list[list[str]] = []
+    for line in islice(StringIO(content), 4, 7):  # Note: avoids to split the whole file
+        cols = [s.strip() for s in line.split("\t")[start_col:]]
+        if not header_lines:
+            header_lines = [[col] for col in cols]
+        else:
+            for k, col in enumerate(cols):
+                header_lines[k].append(col)
+    return [
+        VarColumn(variable=col[0], unit=col[1] if len(col) > 1 else "", stat=col[2] if len(col) > 2 else "")
+        for col in header_lines
+    ]
+
+
+def _parse_headers_stream(file: Path, start_col: int) -> list[VarColumn]:
+    with open(file, "r", encoding="utf-8") as f:
+        header_lines: list[list[str]] = []
+        for line in islice(f, 4, 7):  # Note: avoids to split the whole file
+            cols = [s.strip() for s in line.split("\t")[start_col:]]
+            if not header_lines:
+                header_lines = [[col] for col in cols]
+            else:
+                for k, col in enumerate(cols):
+                    header_lines[k].append(col)
+        return [
+            VarColumn(variable=col[0], unit=col[1] if len(col) > 1 else "", stat=col[2] if len(col) > 2 else "")
+            for col in header_lines
+        ]
+
+
+def test_read_all_headers_str(output_path: Path) -> None:
+    # 10sec
+    files = identify_files(
+        output_path,
+        query_file=MCIndLinksQueryFile.VALUES,
+        frequency=MatrixFrequency.HOURLY,
+        mc_years=[],
+        ids_to_consider=[],
+    )
+
+    assert len(files) == 47000
+    files = itertools.islice(files, 5000)
+    columns = map(lambda f: _parse_headers_str(f.path, 5), files)
+    collect = [c for c in columns]
+    assert len(collect) == 5000
+
+
+def test_read_all_headers_stream(output_path: Path) -> None:
+    # Only 1 sec
+    files = identify_files(
+        output_path,
+        query_file=MCIndLinksQueryFile.VALUES,
+        frequency=MatrixFrequency.HOURLY,
+        mc_years=[],
+        ids_to_consider=[],
+    )
+
+    assert len(files) == 47000
+    files = itertools.islice(files, 47000)
+    columns = map(lambda f: _parse_headers_stream(f.path, 5), files)
+
+    def reduce(aggregate: dict, input: list) -> dict:
+        # allows to keep input sort order, also a lot faster
+        aggregate.update(dict.fromkeys(input))
+        return aggregate
+
+    collect = functools.reduce(reduce, columns, {})
+    assert [c for c in collect.keys()] == []
+
+
+def test_to_parquet(output_path: Path, tmp_path: Path) -> None:
+    results = aggregate_output_data(
+        output_path,
+        query_file=MCIndLinksQueryFile.VALUES,
+        frequency=MatrixFrequency.HOURLY,
+        mc_years=range(1, 100),
+        ids_to_consider=[],
+        columns_names=[],
+    )
+
+    export_df_chunks(tmp_path, tmp_path / "toto.parquet", results, TableExportFormat.PARQUET)

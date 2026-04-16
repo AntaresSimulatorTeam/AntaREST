@@ -10,21 +10,17 @@
 #
 # This file is part of the Antares project.
 import dataclasses
-import itertools
 import logging
 import warnings
 from collections.abc import Iterator, MutableSequence, Sequence
 from dataclasses import dataclass
-from itertools import groupby
 from pathlib import Path
-from typing import Any, Callable, Generator, Literal, TypeAlias, cast
+from typing import Any, Callable, cast
 
-import pandas as pd
 import polars as pl
 import polars.selectors as cs
-from polars import LazyFrame
 
-from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
+from antarest.core.exceptions import MCRootNotHandled, OutputNotFound, OutputSubFolderNotFound
 from antarest.output.filestudy.utils import (
     MCYEAR_COL,
     TIME_ID_COL,
@@ -39,9 +35,8 @@ from antarest.output.filestudy.utils import (
 )
 from antarest.output.model import (
     ClusterVarColumn,
-    MultipleOutputHeaders,
-    OutputDataFrame,
-    SingleOutputHeaders,
+    LazyOutputTable,
+    OutputColumn,
     VarColumn,
 )
 from antarest.output.utils import find_mode_dir
@@ -192,6 +187,9 @@ def identify_files(
     ids_to_consider: Sequence[str],
     mc_years: Sequence[int] | None = None,
 ) -> list[OutputFile]:
+    """
+    Returns the list of matrix files that correspond to the filters in arguments.
+    """
     match query_file:
         case MCIndAreasQueryFile() | MCIndLinksQueryFile():
             return identify_mc_ind_files(output_path, query_file, frequency, ids_to_consider, mc_years)
@@ -212,7 +210,14 @@ def is_details(query_file: QueryFileType) -> bool:
     ]
 
 
-ColumnMetadata: TypeAlias = Literal["location", "cluster", "year", "time"] | VarColumn | ClusterVarColumn
+def is_synthesis(query_file: QueryFileType) -> bool:
+    match query_file:
+        case MCIndAreasQueryFile() | MCIndLinksQueryFile():
+            return False
+        case MCAllAreasQueryFile() | MCAllLinksQueryFile():
+            return True
+        case _:
+            raise MCRootNotHandled(f"Unknown output file type: {query_file}")
 
 
 @dataclass(frozen=True)
@@ -226,20 +231,17 @@ class OutputMatrix:
     file_type: QueryFileType
     year: int | None  # None if we're working on mc-all data
     location: str  # Area or link
-    data: pl.LazyFrame  # Actual data, column names should be ignored, columns information is below
-    columns: list[ColumnMetadata]  # Metadata about matrix columns
 
-    def filter_false(self, predicate: Callable[[ColumnMetadata], bool]) -> "OutputMatrix":
-        filtered_columns_indices = [k for k, col in enumerate(self.columns) if predicate(col)]
-        filtered_columns = [self.columns[k] for k in filtered_columns_indices]
-        filtered_matrix = self.data.select(cs.by_index(filtered_columns_indices))
-        return dataclasses.replace(self, data=filtered_matrix, columns=filtered_columns)
+    data: LazyOutputTable
 
-    def sort_columns(self, sort_key: Callable[[ColumnMetadata], Any]) -> "OutputMatrix":
-        sorted_indices = [i for i, col in sorted(enumerate(self.columns), key=lambda tuple: sort_key(tuple[1]))]
-        final_columns = [self.columns[c] for c in sorted_indices]
-        final_df = self.data.select(cs.by_index(sorted_indices))
-        return dataclasses.replace(self, data=final_df, columns=final_columns)
+    def filter_false(self, predicate: Callable[[OutputColumn], bool]) -> "OutputMatrix":
+        return dataclasses.replace(self, data=self.data.select(predicate))
+
+    def sort_columns(self, sort_key: Callable[[OutputColumn], Any]) -> "OutputMatrix":
+        return dataclasses.replace(self, data=self.data.sort_columns(sort_key))
+
+    def collect(self, naming: Callable[[OutputColumn], str]) -> pl.DataFrame:
+        return self.data.collect(naming)
 
 
 def stack_matrix(output_data: OutputMatrix) -> OutputMatrix:
@@ -249,8 +251,8 @@ def stack_matrix(output_data: OutputMatrix) -> OutputMatrix:
     Before: X columns for each cluster
     After: X columns + 1 column for the cluster id
     """
-    initial_cols = output_data.columns
-    initial_df = output_data.data
+    initial_cols = output_data.data.columns
+    initial_df = output_data.data.data
 
     # Mapping cluster variable -> column index in final DF
     col_indices: dict[ClusterVarColumn, int] = {}
@@ -260,7 +262,7 @@ def stack_matrix(output_data: OutputMatrix) -> OutputMatrix:
 
     preserved_cols_indices = []
 
-    final_columns: list[ColumnMetadata] = ["cluster"]
+    final_columns: list[OutputColumn] = ["cluster"]
     for idx, col in enumerate(initial_cols):
         if not isinstance(col, VarColumn):
             preserved_cols_indices.append(idx)
@@ -291,25 +293,29 @@ def stack_matrix(output_data: OutputMatrix) -> OutputMatrix:
     # Then just concatenate the clusters slices together
     final_df = pl.concat(final_clusters_dfs, how="vertical_relaxed")
 
-    return dataclasses.replace(output_data, data=final_df, columns=final_columns)
+    final_table = LazyOutputTable(data=final_df, columns=final_columns)
+    return dataclasses.replace(output_data, data=final_table)
 
 
 def filter_columns(data: OutputMatrix, filters: Sequence[str]) -> OutputMatrix:
-
-    # TODO: there was a diff between mc-ind and mc-all, why ? Maybe because the stat was par of the name ?
-    # elif self.mc_root == MCRoot.MC_ALL:
-    #     filtered_columns = [c for c in df_columns if any(regex in c.lower() for regex in lower_case_columns)]
-    # else:
-    #     filtered_columns = [c for c in df_columns if c.lower() in lower_case_columns]
-
     lower_case_filters = set(f.lower() for f in filters)  # TODO: only once for all matrices
     if not lower_case_filters:
         return data
 
-    def passes_filter(col: ColumnMetadata) -> bool:
+    synthesis = is_synthesis(data.file_type)
+
+    def passes_filter(col: OutputColumn) -> bool:
+        # TODO:
+        # This logic seems nonsense, and is not even in line with R package antaresRead.
+        # Should probably be broken to get simpler ?
         match col:
-            case VarColumn(variable=var) | ClusterVarColumn(variable=var):
-                return var.lower() in lower_case_filters
+            case ClusterVarColumn(variable=var):
+                return any(f in var.lower() for f in lower_case_filters)
+            case VarColumn(variable=var):
+                if synthesis:
+                    return any(f in var.lower() for f in lower_case_filters)
+                else:
+                    return var.lower() in lower_case_filters
             case _:
                 return True
 
@@ -320,23 +326,25 @@ def add_index_columns(output_matrix: OutputMatrix) -> OutputMatrix:
     """
     Adds columns location, year, and time
     """
-    initial_df = output_matrix.data
+    initial_df = output_matrix.data.data
     year = output_matrix.year
 
-    new_cols: list[ColumnMetadata] = ["location", "time"] if year is None else ["location", "year", "time"]
+    new_cols: list[OutputColumn] = ["location", "time"] if year is None else ["location", "year", "time"]
     df = initial_df.with_row_index("time", offset=1)
     exprs = [pl.lit(output_matrix.location).alias("location")]
     if output_matrix.year is not None:
         exprs.append(pl.lit(output_matrix.year).alias("year"))
     final_df = df.select(*exprs, pl.all())
-    return dataclasses.replace(output_matrix, data=final_df, columns=new_cols + output_matrix.columns)
+    final_table = LazyOutputTable(data=final_df, columns=new_cols + list(output_matrix.data.columns))
+
+    return dataclasses.replace(output_matrix, data=final_table)
 
 
-def get_sort_key(col: ColumnMetadata) -> tuple[int, str | None]:
+def get_sort_key(col: OutputColumn) -> tuple[int, str | None]:
     """
     location - cluster - year - time - others
     """
-    values: dict[ColumnMetadata, int] = {"location": 1, "cluster": 2, "year": 3, "time": 4}
+    values: dict[OutputColumn, int] = {"location": 1, "cluster": 2, "year": 3, "time": 4}
     match col:
         case VarColumn():
             return 5, None
@@ -375,8 +383,7 @@ def iterate_output_matrices(
             file_type=query_file,
             year=f.year,
             location=f.location,
-            data=output_df.data.lazy(),
-            columns=cast(list[ColumnMetadata], output_df.headers),
+            data=LazyOutputTable(data=output_df.data.lazy(), columns=output_df.columns),
         )
 
     output_data = map(parse_file, files)
@@ -402,9 +409,7 @@ def to_polars(output_matrix: OutputMatrix) -> pl.DataFrame:
         case MCAllLinksQueryFile() | MCIndLinksQueryFile():
             location_name = "link"
 
-    df = output_matrix.data.rename({"location": location_name})
-
-    def rename(col: ColumnMetadata) -> str:
+    def naming(col: OutputColumn) -> str:
         match col:
             case "location":
                 return location_name
@@ -412,62 +417,31 @@ def to_polars(output_matrix: OutputMatrix) -> pl.DataFrame:
                 return "mcYear"
             case "time":
                 return "timeId"
-            case VarColumn() | ClusterVarColumn():
-                return col.variable
+            case VarColumn(variable=var, stat=stat):
+                return f"{var} {stat.upper()}" if stat else var
+            case ClusterVarColumn(variable=var):
+                return var
             case _:
                 return col
 
-    renamings = [cs.by_index(i).alias(rename(col)) for i, col in enumerate(output_matrix.columns)]
-    return df.select(*renamings).collect()
+    return output_matrix.collect(naming)
 
 
-class AggregatorManager:
-    def __init__(
-        self,
-        output_path: Path,
-        query_file: QueryFileType,
-        frequency: MatrixFrequency,
-        ids_to_consider: Sequence[str],
-        columns_names: Sequence[str],
-        transform_columns_headers: bool = True,
-        mc_years: Sequence[int] | None = None,
-    ):
-        self.output_path = output_path
-        self.output_id = self.output_path.name
-        self.query_file = query_file
-        self.frequency = frequency
-        self.mc_years = mc_years
-        self.columns_names = columns_names
-        self.ids_to_consider = ids_to_consider
-        self.output_type = (
-            "areas"
-            if (isinstance(query_file, MCIndAreasQueryFile) or isinstance(query_file, MCAllAreasQueryFile))
-            else "links"
-        )
-        _mode_dir = find_mode_dir(self.output_path)
-        if _mode_dir is None:
-            raise OutputSubFolderNotFound(self.output_id, f"economy/{MCRoot.MC_IND.value}")
-        self.mc_ind_path = _mode_dir / MCRoot.MC_IND.value
-        self.mc_all_path = _mode_dir / MCRoot.MC_ALL.value
-        self.mc_root = (
-            MCRoot.MC_IND
-            if (isinstance(query_file, MCIndAreasQueryFile) or isinstance(query_file, MCIndLinksQueryFile))
-            else MCRoot.MC_ALL
-        )
-        self._output_first_column = get_start_column(self.frequency)
+def aggregate_output_data(
+    output_path: Path,
+    query_file: QueryFileType,
+    frequency: MatrixFrequency,
+    ids_to_consider: Sequence[str],
+    columns_names: Sequence[str],
+    mc_years: Sequence[int] | None = None,
+) -> Iterator[pl.DataFrame]:
+    matrices = iterate_output_matrices(
+        output_path=output_path,
+        query_file=query_file,
+        frequency=frequency,
+        ids_to_consider=ids_to_consider,
+        columns_names=columns_names,
+        mc_years=mc_years,
+    )
 
-    def aggregate_output_data(self) -> Iterator[pl.DataFrame]:
-        """
-        Aggregates the output data of a study and returns it as a DataFrame
-        """
-
-        matrices = iterate_output_matrices(
-            output_path=self.output_path,
-            query_file=self.query_file,
-            frequency=self.frequency,
-            ids_to_consider=self.ids_to_consider,
-            columns_names=self.columns_names,
-            mc_years=self.mc_years,
-        )
-
-        return map(to_polars, matrices)
+    return map(to_polars, matrices)

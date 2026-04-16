@@ -49,7 +49,7 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.output.filestudy.aggregator_management import (
+from antarest.output.filestudy.aggregation import (
     AREA_COL,
     CLUSTER_ID_COL,
     LINK_COL,
@@ -66,7 +66,7 @@ from antarest.output.filestudy.utils import (
     split_concatenated_columns_from_dataframe,
 )
 from antarest.output.model import (
-    OutputDataFrame,
+    OutputTable,
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesViewResponse,
@@ -505,7 +505,6 @@ class OutputService:
                     data.columns,
                     data.filter,
                     file_path,
-                    transform_columns_headers=False,
                     mc_years=data.years,
                 )
                 # Wait for the aggregation to end
@@ -695,7 +694,7 @@ class OutputService:
         frequency: MatrixFrequency,
         item_id: str,
         mc_year: int | None = None,
-    ) -> OutputDataFrame:
+    ) -> OutputTable:
         self._studies_repository.assert_permission(uuid, StudyPermissionType.READ)
         mc_years = [mc_year] if mc_year is not None else None
         chunks = list(
@@ -706,7 +705,6 @@ class OutputService:
                 frequency=frequency,
                 ids_to_consider=[item_id],
                 columns_names=[],
-                transform_columns_headers=False,
                 mc_years=mc_years,
             )
         )
@@ -724,7 +722,6 @@ class OutputService:
         columns_names: Sequence[str],
         ids_to_consider: Sequence[str],
         file_path: Path,
-        transform_columns_headers: bool = True,
         mc_years: Sequence[int] | None = None,
         on_success: Callable[[], None] | None = None,
         on_failure: Callable[[Exception], None] | None = None,
@@ -763,7 +760,6 @@ class OutputService:
                     frequency=frequency,
                     ids_to_consider=ids_to_consider,
                     columns_names=columns_names,
-                    transform_columns_headers=transform_columns_headers,
                     mc_years=mc_years,
                 )
                 export_df_chunks(self._tmp_dir, file_path, results, export_format)

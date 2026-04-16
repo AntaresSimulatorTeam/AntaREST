@@ -49,7 +49,7 @@ class OutputSeriesMatrix(LazyNode[bytes | JSON, bytes | JSON, JSON]):
         try:
             output = parse_output_file(file_path, output_first_column)
             df = output.data.to_pandas().astype(np.float64)
-            df.columns = pd.MultiIndex.from_tuples(map(VarColumn.to_tuple, output.headers))
+            df.columns = pd.MultiIndex.from_tuples(map(VarColumn.to_tuple, output.columns))
             return df
         except FileNotFoundError as e:
             # Raise 404 'Not Found' if the TSV file is not found
