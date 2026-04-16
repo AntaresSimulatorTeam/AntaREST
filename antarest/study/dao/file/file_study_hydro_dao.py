@@ -416,7 +416,7 @@ class FileStudyHydroDao(HydroDao):
 
     @override
     def get_all_hydro_maxpower(self) -> AreaSeriesMapping:
-        return self._get_all_capacity_matrices("max_power")
+        return self._get_all_capacity_matrices("maxpower")
 
     @override
     def get_all_hydro_reservoir(self) -> AreaSeriesMapping:
