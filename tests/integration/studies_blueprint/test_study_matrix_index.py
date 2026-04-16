@@ -206,3 +206,40 @@ class TestStudyMatrixIndex:
             "steps": 1,
         }
         assert actual == expected
+
+    def test_get_study_matrix_index_for_database_study(self, client: TestClient, user_access_token: str) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # Create a database study
+        res = client.post("/v1/studies?name=database_study&storage_mode=database")
+        assert res.status_code == 201, res.json()
+        database_study_id = res.json()
+
+        # Create areas, links, clusters, binding constraints and short-term storages to have various matrices
+        res = client.post(f"/v1/studies/{database_study_id}/areas", json={"name": "france"})
+        res.raise_for_status()
+        res = client.post(f"/v1/studies/{database_study_id}/areas", json={"name": "belgium"})
+        res.raise_for_status()
+        res = client.post(f"/v1/studies/{database_study_id}/links", json={"area1": "france", "area2": "belgium"})
+        res.raise_for_status()
+        res = client.post(f"/v1/studies/{database_study_id}/bindingconstraints", json={"name": "bc1"})
+        res.raise_for_status()
+        res = client.post(f"/v1/studies/{database_study_id}/areas/france/clusters/thermal", json={"name": "th1"})
+        res.raise_for_status()
+        res = client.post(f"/v1/studies/{database_study_id}/areas/france/clusters/renewable", json={"name": "r1"})
+        res.raise_for_status()
+        res = client.post(f"/v1/studies/{database_study_id}/areas/france/storages", json={"name": "st-storage"})
+        res.raise_for_status()
+
+        # Try to fetch the matrix index for different matrices
+        url = f"/v1/studies/{database_study_id}/matrixindex"
+        res = client.get(url, params={"path": "input/load/series/load_france"})
+        assert res.status_code == 200, res.json()
+        actual = res.json()
+        expected = {
+            "first_week_size": 7,
+            "start_date": "2018-01-01 00:00:00",
+            "steps": 8760,
+            "level": "hourly",
+        }
+        assert actual == expected
