@@ -24,7 +24,7 @@ dependencies = [
     "uvicorn[standard]~=0.42.0",
     "pydantic~=2.12.5",
     "httpx~=0.28.1",
-    "python-multipart~=0.0.20",
+    "python-multipart~=0.0.26",
     "alembic~=1.18.4",
     "bcrypt~=5.0.0",
     "click~=8.3.0",
@@ -51,7 +51,7 @@ dependencies = [
     "celery[redis]~=5.6.2",
     "redis~=5.3.1",
     "SQLAlchemy~=2.0.41",
-    "tables==3.10.2",
+    "tables==3.11.0",
     "typing_extensions~=4.15.0",
     "xlsxwriter~=3.2.0",
 ]
