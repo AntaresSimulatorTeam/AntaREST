@@ -425,9 +425,11 @@ class FileStudyHydroDao(HydroDao):
 
         nodes_and_area_ids = self._get_nodes_with_their_area_id(prefix)
         for node, area_id in nodes_and_area_ids:
-            series_id = series[area_id]
-            matrix_id = extract_matrix_id(series_id)
-            matrices_mapping.setdefault(matrix_id, []).append(node)
+            if area_id in series:
+                # We only want to save the series for given area and the method returned them all
+                series_id = series[area_id]
+                matrix_id = extract_matrix_id(series_id)
+                matrices_mapping.setdefault(matrix_id, []).append(node)
 
         self.get_impl().save_matrices(matrices_mapping)
 
