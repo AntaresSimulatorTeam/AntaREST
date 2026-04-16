@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -198,18 +198,8 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
             _remove_groups_from_scenario_builder(study_data, removed_groups)
 
     def _get_all_bc_matrices(self, term: str | None = None) -> BindingConstraintSeriesMapping:
-        study_data = self.get_file_study()
-        matrix_nodes = {}
-
-        folder_node = study_data.tree.get_node(["input", "bindingconstraints"])
-        assert isinstance(folder_node, FolderNode)
-        tree = folder_node.build()
-        del tree["bindingconstraints"]  # We only care about matrices
-        for node_id, node in tree.items():
-            assert isinstance(node, MatrixNode)
-            if constraint_id := _get_constraint_id_from_matrix_file_name(node_id, term):
-                # We only keep the constraints with the right terms
-                matrix_nodes[node] = ConstraintId(constraint_id)
+        nodes_and_bc_ids = self._get_nodes_with_their_bc_id(term)
+        matrix_nodes = dict(nodes_and_bc_ids)
 
         matrices_mapping = self.get_impl().get_matrices_ids(list(matrix_nodes))
 
@@ -220,34 +210,47 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
         return result
 
-    def save_bc_matrices(
-        self, series: BindingConstraintSeriesMapping, url_getter: Callable[[ConstraintId], list[str]]
-    ) -> None:
+    def _get_nodes_with_their_bc_id(self, term: str | None = None) -> list[tuple[MatrixNode, ConstraintId]]:
         study_data = self.get_file_study()
-        matrices_mapping: dict[str, list[MatrixNode]] = {}
-        for constraint_id, series_id in series.items():
-            url = url_getter(ConstraintId(constraint_id))
-            node = study_data.tree.get_node(url)
+        result = []
+
+        folder_node = study_data.tree.get_node(["input", "bindingconstraints"])
+        assert isinstance(folder_node, FolderNode)
+        tree = folder_node.build()
+        del tree["bindingconstraints"]  # We only care about matrices
+        for node_id, node in tree.items():
             assert isinstance(node, MatrixNode)
+            if constraint_id := _get_constraint_id_from_matrix_file_name(node_id, term):
+                # We only keep the constraints with the right terms
+                result.append((node, ConstraintId(constraint_id)))
+        return result
+
+    def _save_all_bc_matrices(self, series: BindingConstraintSeriesMapping, term: str | None = None) -> None:
+        matrices_mapping: dict[str, list[MatrixNode]] = {}
+
+        nodes_and_bc_ids = self._get_nodes_with_their_bc_id(term)
+        for node, constraint_id in nodes_and_bc_ids:
+            series_id = series[constraint_id]
             matrix_id = extract_matrix_id(series_id)
             matrices_mapping.setdefault(matrix_id, []).append(node)
+
         self.get_impl().save_matrices(matrices_mapping)
 
     @override
     def save_constraint_values_matrix(self, series: BindingConstraintSeriesMapping) -> None:
-        self.save_bc_matrices(series, _get_values_matrix_path)
+        self._save_all_bc_matrices(series, None)
 
     @override
     def save_constraint_less_term_matrix(self, series: BindingConstraintSeriesMapping) -> None:
-        self.save_bc_matrices(series, _get_less_term_matrix_path)
+        self._save_all_bc_matrices(series, "lt")
 
     @override
     def save_constraint_greater_term_matrix(self, series: BindingConstraintSeriesMapping) -> None:
-        self.save_bc_matrices(series, _get_greater_term_matrix_path)
+        self._save_all_bc_matrices(series, "gt")
 
     @override
     def save_constraint_equal_term_matrix(self, series: BindingConstraintSeriesMapping) -> None:
-        self.save_bc_matrices(series, _get_equal_term_matrix_path)
+        self._save_all_bc_matrices(series, "eq")
 
     @override
     def delete_constraints(self, constraints: list[BindingConstraint]) -> None:
