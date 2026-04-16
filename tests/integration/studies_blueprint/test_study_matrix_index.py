@@ -299,7 +299,7 @@ class TestStudyMatrixIndex:
         assert res.json() == daily_response
 
         # We update the constraint to have a daily time step
-        res = client.put(f"/v1/studies/{study_id}/bindingconstraints/bc1", json={"timeStep": "weekly"})
+        res = client.put(f"/v1/studies/{study_id}/bindingconstraints/bc1", json={"timeStep": "daily"})
         assert res.status_code == 200, res.json()
 
         # We should still see the daily index for the constraint
