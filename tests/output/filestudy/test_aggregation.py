@@ -1,3 +1,15 @@
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
 import functools
 import itertools
 import zipfile
@@ -5,7 +17,6 @@ from io import StringIO
 from itertools import islice
 from pathlib import Path
 
-import plyer.platforms.macosx.libs.osx_motion_sensor
 import polars as pl
 import pytest
 from polars.testing import assert_frame_equal
@@ -17,21 +28,17 @@ from antarest.output.filestudy.aggregation import (
     aggregate_output_data,
     filter_columns,
     identify_files,
-    iterate_output_matrices,
     sort_columns,
     stack_matrix,
 )
 from antarest.output.filestudy.utils import (
     MCAllAreasQueryFile,
-    MCIndAreasQueryFile,
     MCIndLinksQueryFile,
-    parse_headers,
     parse_output_file,
 )
 from antarest.output.model import ClusterVarColumn, VarColumn
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.df_download import export_df_chunks
-from antarest.study.web.raw_studies_blueprint import ExportFormatQuery
 
 
 @pytest.fixture
@@ -48,9 +55,7 @@ def output_path(tmp_path: Path, sta_mini_zip_path: Path) -> Path:
 
 
 def test_aggregation(output_path: Path) -> None:
-    dfs = AggregatorManager(
-        output_path, MCAllAreasQueryFile.VALUES, MatrixFrequency.DAILY, [], [], False, []
-    ).aggregate_output_data()
+    dfs = aggregate_output_data(output_path, MCAllAreasQueryFile.VALUES, MatrixFrequency.DAILY, [], [], False, [])
     dfs = list(dfs)
     assert dfs[0].columns == []
 
@@ -104,7 +109,7 @@ def test_filter_columns__with_filters() -> None:
             "3": [20, 21, 22],
         }
     )
-    assert_frame_equal(filtered.data.collect(), expected_df)
+    assert_frame_equal(filtered.data.to_polars(), expected_df)
     assert filtered.path == output_matrix.path
     assert filtered.year == output_matrix.year
 
@@ -139,7 +144,7 @@ def test_filter_columns__with_clusters_vars() -> None:
             "4": [20, 21, 22],
         }
     )
-    assert_frame_equal(filtered.data.collect(), expected_df)
+    assert_frame_equal(filtered.data.to_polars(), expected_df)
     assert filtered.path == output_matrix.path
     assert filtered.year == output_matrix.year
 
@@ -193,7 +198,7 @@ def test_unpivot_matrix() -> None:
         }
     )
 
-    stacked_df = stacked.data.collect()
+    stacked_df = stacked.data.to_polars()
     assert_frame_equal(stacked_df, expected_df)
 
 
@@ -233,7 +238,7 @@ def test_sort_columns() -> None:
             "1": [40],
         }
     )
-    assert_frame_equal(sorted.data.collect(), expected_df)
+    assert_frame_equal(sorted.data.to_polars(), expected_df)
 
 
 # TODO: a supprimer
@@ -249,13 +254,13 @@ def output_matrix() -> OutputMatrix:
 def test_with_real_data(output_matrix: OutputMatrix) -> None:
 
     with_index = add_index_columns(output_matrix)
-    with_index.data.collect()
+    with_index.data.to_polars()
     stacked = stack_matrix(with_index)
-    stacked.data.collect()
+    stacked.data.to_polars()
 
 
 @pytest.fixture
-def output_path() -> Path:
+def large_output_path() -> Path:
     return Path("/home/leclercsyl/feature_tests/antares/output-agregation/output/20250127-1459eco")
 
 
@@ -291,10 +296,10 @@ def _parse_headers_stream(file: Path, start_col: int) -> list[VarColumn]:
         ]
 
 
-def test_read_all_headers_str(output_path: Path) -> None:
+def test_read_all_headers_str(large_output_path: Path) -> None:
     # 10sec
     files = identify_files(
-        output_path,
+        large_output_path,
         query_file=MCIndLinksQueryFile.VALUES,
         frequency=MatrixFrequency.HOURLY,
         mc_years=[],
@@ -308,10 +313,10 @@ def test_read_all_headers_str(output_path: Path) -> None:
     assert len(collect) == 5000
 
 
-def test_read_all_headers_stream(output_path: Path) -> None:
+def test_read_all_headers_stream(large_output_path: Path) -> None:
     # Only 1 sec
     files = identify_files(
-        output_path,
+        large_output_path,
         query_file=MCIndLinksQueryFile.VALUES,
         frequency=MatrixFrequency.HOURLY,
         mc_years=[],
@@ -331,9 +336,9 @@ def test_read_all_headers_stream(output_path: Path) -> None:
     assert [c for c in collect.keys()] == []
 
 
-def test_to_parquet(output_path: Path, tmp_path: Path) -> None:
+def test_to_parquet(large_output_path: Path, tmp_path: Path) -> None:
     results = aggregate_output_data(
-        output_path,
+        large_output_path,
         query_file=MCIndLinksQueryFile.VALUES,
         frequency=MatrixFrequency.HOURLY,
         mc_years=range(1, 100),

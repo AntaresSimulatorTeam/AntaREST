@@ -35,7 +35,7 @@ from antarest.dependencies import StudyServiceDep, auth_required
 from antarest.output.model import OutputTable, VarColumn
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.user_model import ResourceType
-from antarest.study.service import InputMatrix
+from antarest.study.service import InputMatrix, OutputMatrix
 from antarest.study.storage.df_download import export_file
 
 logger = logging.getLogger(__name__)
@@ -146,7 +146,7 @@ class MatrixFormat(EnumIgnoreCase):
             return Response(content=buffer.getvalue(), media_type="application/vnd.apache.arrow.file")
 
 
-def output_matrix_to_json(output: OutputTable) -> Any:
+def output_matrix_to_json(output: OutputTable) -> str:
     df = output.data.to_pandas().astype(np.float64)
     df.columns = pd.MultiIndex.from_tuples(map(VarColumn.to_tuple, output.columns))  # type: ignore
     return df.to_json(orient="split", index=False)
@@ -194,8 +194,9 @@ def create_raw_study_routes() -> APIRouter:
                 if matrix_format is None:
                     matrix_format = MatrixFormat.JSON if formatted else MatrixFormat.PLAIN
                 return matrix_format.serialize_dataframe(matrix)
-            case OutputTable():
-                return output_matrix_to_json(output)
+            case OutputMatrix(table):
+                content = output_matrix_to_json(table)
+                return Response(content=content, media_type="application/json")
 
         if matrix_format in {MatrixFormat.ARROW_COMPRESSED, MatrixFormat.ARROW_UNCOMPRESSED}:
             # The user asked for a format only supported for matrices.

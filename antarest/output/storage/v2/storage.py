@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import functools
 import logging
 import shutil
 import tempfile
@@ -21,7 +22,6 @@ import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import (
-    OutputAggregationError,
     OutputAlreadyExists,
     OutputNotFound,
     ShouldNotHappenException,
@@ -44,7 +44,7 @@ from antarest.output.filestudy.file_output_utils import (
     find_simulation_log,
 )
 from antarest.output.filestudy.utils import QueryFileType
-from antarest.output.model import OutputVariablesList
+from antarest.output.model import OutputTable, OutputVariablesList
 from antarest.output.storage.output_storage import (
     IOutputStorage,
     OutputDetails,
@@ -359,7 +359,7 @@ class V2OutputStorage(IOutputStorage):
 
     @override
     def get_digest(self, study_id: str, output_id: str) -> DigestUI:
-        # TODO: at import time, extract and dave either as file or in DB
+        # TODO: at import time, extract and save either as file or in DB
         raise NotImplementedError()
 
     @override
@@ -390,7 +390,7 @@ class V2OutputStorage(IOutputStorage):
         return get_matrix_index(simulation_range, is_output=True, level=frequency)
 
     @override
-    def aggregate_output_data(
+    def iterate_output_table(
         self,
         study_id: str,
         output_id: str,
@@ -398,20 +398,37 @@ class V2OutputStorage(IOutputStorage):
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
-        transform_columns_headers: bool,
         mc_years: Sequence[int] | None = None,
-    ) -> Iterator[pl.DataFrame]:
+    ) -> Iterator[OutputTable]:
         target_dir = parquet_output_dir(self._variables_dir, study_id, output_id)
-        has_data = False
-        for batch in read_output_from_parquet(
-            target_dir, query_file, frequency, ids_to_consider, columns_names, mc_years
-        ):
-            if batch.is_empty():
-                continue
-            has_data = True
-            if not transform_columns_headers:
-                batch = batch.drop("timeId", strict=False)
-            yield batch
+        return read_output_from_parquet(target_dir, query_file, frequency, ids_to_consider, columns_names, mc_years)
 
-        if not has_data:
-            raise OutputAggregationError(output_id, "No output data matching the criteria were found")
+    @override
+    def get_output_item_table(
+        self,
+        study_id: str,
+        output_id: str,
+        query_file: QueryFileType,
+        frequency: MatrixFrequency,
+        item_id: str,
+        mc_year: int | None = None,
+    ) -> OutputTable:
+        """
+        Returns the output table for one business item.
+        """
+        target_dir = parquet_output_dir(self._variables_dir, study_id, output_id)
+        # very unlikely to have multiple chunks, but let's not assume it
+        output_tables = read_output_from_parquet(
+            target_dir, query_file, frequency, [item_id], [], [mc_year] if mc_year is not None else None
+        )
+        return functools.reduce(_concat_tables, output_tables)
+
+
+def _concat_tables(left: OutputTable, right: OutputTable) -> OutputTable:
+    if left.columns != right.columns:
+        raise ValueError("Output columns mismatch.")
+
+    return OutputTable(
+        data=pl.concat([left.data, right.data], how="vertical"),
+        columns=left.columns,
+    )

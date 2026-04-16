@@ -220,6 +220,11 @@ class InputMatrix:
     matrix: pl.DataFrame
 
 
+@dataclass(frozen=True)
+class OutputMatrix:
+    matrix: OutputTable
+
+
 def get_disk_usage(path: str | Path) -> int:
     """Calculate the total disk usage (in bytes) of a study in a compressed file or directory."""
     path = Path(path)

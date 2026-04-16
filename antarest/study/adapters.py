@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 from pathlib import Path
 
-import polars as pl
 from typing_extensions import override
 
 from antarest.output.filestudy.utils import QueryFileType

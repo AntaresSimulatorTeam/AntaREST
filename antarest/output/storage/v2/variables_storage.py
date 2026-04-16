@@ -33,7 +33,7 @@ from antarest.core.serde.parquet_writer import (
     write_dataframes_stream_parquet,
     yield_dataframes_from_parquet,
 )
-from antarest.output.filestudy.aggregation import aggregate_output_data
+from antarest.output.filestudy.aggregation import iterate_output_matrices
 from antarest.output.filestudy.utils import (
     MCYEAR_COL,
     TIME_ID_COL,
@@ -45,10 +45,9 @@ from antarest.output.filestudy.utils import (
     QueryFileType,
     get_output_object_type,
     get_start_column,
-    normalize_df_column_names,
     parse_output_file,
 )
-from antarest.output.model import MultipleOutputHeaders
+from antarest.output.model import ClusterVarColumn, OutputColumn, OutputTable, VarColumn
 from antarest.output.utils import find_mode_dir
 from antarest.study.model import MatrixFrequency
 
@@ -110,13 +109,14 @@ def _aggregate_to_parquet(
     target_path: Path,
 ) -> None:
     try:
-        dataframes = aggregate_output_data(
+        matrices = iterate_output_matrices(
             output_path=output_dir,
             query_file=query_file,
             frequency=frequency,
             ids_to_consider=ids_to_consider,
             columns_names=[],
         )
+        dataframes = map(lambda m: m.to_polars(serialize_column_metadata), matrices)
     except (OutputNotFound, OutputSubFolderNotFound, OutputAggregationError, MCRootNotHandled) as e:
         logger.warning(f"Skipping {query_file.value}-{frequency.value}: {e}")
         return
@@ -188,7 +188,7 @@ def _extract_links(
         _aggregate_to_parquet(output_dir, query_file, frequency, link_ids, target_dir / file_name)
 
 
-def _parse_bc_file(file: Path, mc_root: MCRoot, mc_year: int | None = None) -> pl.DataFrame | None:
+def _parse_bc_file(file: Path, mc_year: int | None = None) -> pl.DataFrame | None:
     freq_str = file.stem.split("-")[-1]
     try:
         frequency = MatrixFrequency(freq_str)
@@ -202,7 +202,7 @@ def _parse_bc_file(file: Path, mc_root: MCRoot, mc_year: int | None = None) -> p
         logger.debug(f"Skipping binding constraint {file.name}: {e}")
         return None
 
-    df = df.with_row_index(TIME_ID_COL, offset=1)
+    df = output_table.data.with_row_index(TIME_ID_COL, offset=1)
 
     if mc_year is not None:
         df = df.with_columns(pl.lit(mc_year).alias(MCYEAR_COL))
@@ -221,7 +221,6 @@ def _discover_bc_frequencies(bc_path: Path) -> set[str]:
 def _generate_bc_dataframes(
     bc_paths: list[tuple[Path, int | None]],
     freq_str: str,
-    mc_root: MCRoot,
 ) -> Iterator[pl.DataFrame]:
     for bc_path, mc_year in bc_paths:
         for file in bc_path.iterdir():
@@ -229,7 +228,7 @@ def _generate_bc_dataframes(
                 continue
             if file.stem.split("-")[-1] != freq_str:
                 continue
-            df = _parse_bc_file(file, mc_root, mc_year)
+            df = _parse_bc_file(file, mc_year)
             if df is not None:
                 yield df
 
@@ -269,7 +268,7 @@ def _extract_binding_constraints(
         file_name = _parquet_file_name(mc_root, "binding_constraints", frequency)
         intermediate_dir = Path(tempfile.mkdtemp())
         try:
-            dataframes = _generate_bc_dataframes(bc_paths, freq_str, mc_root)
+            dataframes = _generate_bc_dataframes(bc_paths, freq_str)
             file_paths, new_index = write_dataframes_in_parquet_format_by_column_sets(intermediate_dir, dataframes)
             if file_paths:
                 _merge_intermediate_parquets(file_paths, new_index, target_dir / file_name)
@@ -364,6 +363,43 @@ def _read_filtered(
     yield from lazy.collect_batches()
 
 
+METADATA_SEPARATOR = "__"
+
+
+def serialize_column_metadata(column: OutputColumn) -> str:
+    """
+    Formats metadata to be stored as a string in parquet column header.
+    """
+    match column:
+        case VarColumn():
+            return METADATA_SEPARATOR.join((column.variable, column.unit, column.stat or ""))
+        case ClusterVarColumn():
+            return METADATA_SEPARATOR.join((column.variable, column.stat or ""))
+        case _:
+            return column
+
+
+def parse_column_metadata(column: str) -> OutputColumn:
+    """
+    Parses metadata from parquet column header.
+    """
+    parts = str.split(column, METADATA_SEPARATOR)
+    match parts:
+        case [idx] if idx in {"area", "link", "year", "time", "cluster"}:
+            return cast(OutputColumn, idx)
+        case [variable, stat]:
+            return ClusterVarColumn(variable, stat)
+        case [variable, unit, stat]:
+            return VarColumn(variable, unit, stat)
+        case _:
+            raise ValueError(f"Invalid column metadata: {column}")
+
+
+def _df_to_table(df: pl.DataFrame) -> OutputTable:
+    columns = [parse_column_metadata(c) for c in df.columns]
+    return OutputTable(data=df, columns=columns)
+
+
 def read_output_from_parquet(
     target_dir: Path,
     query_file: QueryFileType,
@@ -371,7 +407,7 @@ def read_output_from_parquet(
     ids_to_consider: Sequence[str],
     columns_names: Sequence[str],
     mc_years: Sequence[int] | None,
-) -> Iterator[pl.DataFrame]:
+) -> Iterator[OutputTable]:
     mc_root = _mc_root_for_query_file(query_file)
     is_link = isinstance(query_file, (MCIndLinksQueryFile, MCAllLinksQueryFile))
     is_details = "details" in query_file.value
@@ -389,9 +425,13 @@ def read_output_from_parquet(
     # Read main file (areas, links, or details)
     if area_ids or not ids_to_consider:
         parquet_path = target_dir / _parquet_file_name(mc_root, obj_type, frequency)
-        yield from _read_filtered(parquet_path, id_col, area_ids, mc_root, mc_years, columns_names, is_details)
+        dataframes = _read_filtered(parquet_path, id_col, area_ids, mc_root, mc_years, columns_names, is_details)
+        return map(_df_to_table, dataframes)
 
     # Read districts file if needed
     if district_ids:
         parquet_path = target_dir / _parquet_file_name(mc_root, "districts", frequency)
-        yield from _read_filtered(parquet_path, id_col, district_ids, mc_root, mc_years, columns_names, is_details)
+        dataframes = _read_filtered(parquet_path, id_col, district_ids, mc_root, mc_years, columns_names, is_details)
+        return map(_df_to_table, dataframes)
+
+    raise ValueError(f"Invalid ids_to_consider: {ids_to_consider}")

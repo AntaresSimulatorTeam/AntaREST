@@ -19,7 +19,6 @@ from pathlib import Path, PurePosixPath
 from typing import BinaryIO, cast
 from uuid import uuid4
 
-import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import (
@@ -42,10 +41,14 @@ from antarest.core.utils.archives import (
 from antarest.core.utils.utils import StopWatch
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
-from antarest.output.filestudy.aggregation import aggregate_output_data
+from antarest.output.filestudy.aggregation import (
+    OutputMatrix,
+    get_output_item_table,
+    iterate_output_matrices,
+)
 from antarest.output.filestudy.file_output_utils import extract_variables_list
 from antarest.output.filestudy.utils import QueryFileType
-from antarest.output.model import OutputVariablesList
+from antarest.output.model import OutputTable, OutputVariablesList
 from antarest.output.storage.file.repository import FileOutputRepository
 from antarest.output.storage.output_storage import (
     IOutputStorage,
@@ -483,7 +486,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         return get_start_date(file_study, output_id, frequency)
 
     @override
-    def aggregate_output_data(
+    def iterate_output_table(
         self,
         study_id: str,
         output_id: str,
@@ -492,15 +495,43 @@ class InStudyFileOutputStorage(IOutputStorage):
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
         mc_years: Sequence[int] | None = None,
-    ) -> Iterator[pl.DataFrame]:
+    ) -> Iterator[OutputTable]:
         study_outputs = self._outputs_provider.get_outputs(study_id)
-        return aggregate_output_data(
+        output_matrices = iterate_output_matrices(
             _output_path(study_outputs.outputs_path, output_id),
             query_file,
             frequency,
             ids_to_consider,
             columns_names,
             mc_years,
+        )
+
+        def to_output_table(matrix: OutputMatrix) -> OutputTable:
+            # just strips off unrequired data, and collect lazy frame
+            return OutputTable(data=matrix.data.data.collect(), columns=matrix.data.columns)
+
+        return map(to_output_table, output_matrices)
+
+    @override
+    def get_output_item_table(
+        self,
+        study_id: str,
+        output_id: str,
+        query_file: QueryFileType,
+        frequency: MatrixFrequency,
+        item_id: str,
+        mc_year: int | None = None,
+    ) -> OutputTable:
+        """
+        Returns the output table for one business item.
+        """
+        study_outputs = self._outputs_provider.get_outputs(study_id)
+        return get_output_item_table(
+            _output_path(study_outputs.outputs_path, output_id),
+            query_file,
+            frequency,
+            item_id,
+            mc_year,
         )
 
     @override

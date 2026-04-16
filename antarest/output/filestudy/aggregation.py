@@ -15,7 +15,7 @@ import warnings
 from collections.abc import Iterator, MutableSequence, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, cast
+from typing import Any, Callable, Literal
 
 import polars as pl
 import polars.selectors as cs
@@ -37,6 +37,7 @@ from antarest.output.model import (
     ClusterVarColumn,
     LazyOutputTable,
     OutputColumn,
+    OutputTable,
     VarColumn,
 )
 from antarest.output.utils import find_mode_dir
@@ -220,6 +221,15 @@ def is_synthesis(query_file: QueryFileType) -> bool:
             raise MCRootNotHandled(f"Unknown output file type: {query_file}")
 
 
+def location_type(query_file: QueryFileType) -> Literal["area", "link"]:
+    match query_file:
+        case MCIndAreasQueryFile() | MCAllAreasQueryFile():
+            return "area"
+        case MCIndLinksQueryFile() | MCAllLinksQueryFile():
+            return "link"
+    raise ValueError(f"Unknown query file type: {query_file}")
+
+
 @dataclass(frozen=True)
 class OutputMatrix:
     """
@@ -234,14 +244,17 @@ class OutputMatrix:
 
     data: LazyOutputTable
 
+    def location_col(self) -> Literal["area", "link"]:
+        return location_type(self.file_type)
+
     def filter_false(self, predicate: Callable[[OutputColumn], bool]) -> "OutputMatrix":
         return dataclasses.replace(self, data=self.data.select(predicate))
 
     def sort_columns(self, sort_key: Callable[[OutputColumn], Any]) -> "OutputMatrix":
         return dataclasses.replace(self, data=self.data.sort_columns(sort_key))
 
-    def collect(self, naming: Callable[[OutputColumn], str]) -> pl.DataFrame:
-        return self.data.collect(naming)
+    def to_polars(self, naming: Callable[[OutputColumn], str]) -> pl.DataFrame:
+        return self.data.collect().to_polars(naming)
 
 
 def stack_matrix(output_data: OutputMatrix) -> OutputMatrix:
@@ -329,7 +342,8 @@ def add_index_columns(output_matrix: OutputMatrix) -> OutputMatrix:
     initial_df = output_matrix.data.data
     year = output_matrix.year
 
-    new_cols: list[OutputColumn] = ["location", "time"] if year is None else ["location", "year", "time"]
+    location_col = output_matrix.location_col()
+    new_cols: list[OutputColumn] = [location_col, "time"] if year is None else [location_col, "year", "time"]
     df = initial_df.with_row_index("time", offset=1)
     exprs = [pl.lit(output_matrix.location).alias("location")]
     if output_matrix.year is not None:
@@ -342,9 +356,9 @@ def add_index_columns(output_matrix: OutputMatrix) -> OutputMatrix:
 
 def get_sort_key(col: OutputColumn) -> tuple[int, str | None]:
     """
-    location - cluster - year - time - others
+    area/link - cluster - year - time - others
     """
-    values: dict[OutputColumn, int] = {"location": 1, "cluster": 2, "year": 3, "time": 4}
+    values: dict[OutputColumn, int] = {"area": 1, "link": 1, "cluster": 2, "year": 3, "time": 4}
     match col:
         case VarColumn():
             return 5, None
@@ -402,29 +416,18 @@ def iterate_output_matrices(
     return output_data
 
 
-def to_polars(output_matrix: OutputMatrix) -> pl.DataFrame:
-    match output_matrix.file_type:
-        case MCAllAreasQueryFile() | MCIndAreasQueryFile():
-            location_name = "area"
-        case MCAllLinksQueryFile() | MCIndLinksQueryFile():
-            location_name = "link"
-
-    def naming(col: OutputColumn) -> str:
-        match col:
-            case "location":
-                return location_name
-            case "year":
-                return "mcYear"
-            case "time":
-                return "timeId"
-            case VarColumn(variable=var, stat=stat):
-                return f"{var} {stat.upper()}" if stat else var
-            case ClusterVarColumn(variable=var):
-                return var
-            case _:
-                return col
-
-    return output_matrix.collect(naming)
+def aggregation_column_naming(col: OutputColumn) -> str:
+    match col:
+        case "year":
+            return "mcYear"
+        case "time":
+            return "timeId"
+        case VarColumn(variable=var, stat=stat):
+            return f"{var} {stat.upper()}" if stat else var
+        case ClusterVarColumn(variable=var):
+            return var
+        case _:
+            return col
 
 
 def aggregate_output_data(
@@ -444,4 +447,23 @@ def aggregate_output_data(
         mc_years=mc_years,
     )
 
-    return map(to_polars, matrices)
+    return map(lambda m: m.to_polars(aggregation_column_naming), matrices)
+
+
+def get_output_item_table(
+    output_path: Path,
+    query_file: QueryFileType,
+    frequency: MatrixFrequency,
+    item_id: str,
+    mc_year: int | None = None,
+) -> OutputTable:
+    """
+    Returns the output table for one business item.
+    # TODO SL: not in "aggregation" file
+    """
+    years = [mc_year] if mc_year is not None else []
+    files = identify_files(output_path, query_file, frequency, [item_id], years)
+    if len(files) != 1:
+        raise OutputNotFound(f"Could not find output file for {item_id} in {output_path.name}")
+    output_file = files[0]
+    return parse_output_file(output_file.path, get_start_column(frequency))

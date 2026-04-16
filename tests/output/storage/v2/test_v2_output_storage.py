@@ -773,7 +773,7 @@ def test_aggregate_areas_values(
         output_name = storage.import_output(study_id, output_path)
 
         dfs = list(
-            storage.aggregate_output_data(
+            storage.iterate_output_table(
                 study_id,
                 output_name,
                 query_file=MCAllAreasQueryFile.VALUES,
@@ -801,7 +801,7 @@ def test_aggregate_with_area_filter(
         output_name = storage.import_output(study_id, output_path)
 
         dfs = list(
-            storage.aggregate_output_data(
+            storage.iterate_output_table(
                 study_id,
                 output_name,
                 query_file=MCAllAreasQueryFile.VALUES,
@@ -825,7 +825,7 @@ def test_aggregate_with_column_filter(
         output_name = storage.import_output(study_id, output_path)
 
         dfs = list(
-            storage.aggregate_output_data(
+            storage.iterate_output_table(
                 study_id,
                 output_name,
                 query_file=MCAllAreasQueryFile.VALUES,
@@ -850,7 +850,7 @@ def test_aggregate_thermal_clusters(
         output_name = storage.import_output(study_id, output_path)
 
         dfs = list(
-            storage.aggregate_output_data(
+            storage.iterate_output_table(
                 study_id,
                 output_name,
                 query_file=MCAllAreasQueryFile.DETAILS,

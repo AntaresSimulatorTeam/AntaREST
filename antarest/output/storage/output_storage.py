@@ -17,7 +17,6 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any, BinaryIO
 
-import polars as pl
 from pydantic import ConfigDict, Field, SerializerFunctionWrapHandler, model_serializer
 from pydantic.alias_generators import to_camel
 
@@ -25,7 +24,7 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.output.filestudy.utils import QueryFileType
-from antarest.output.model import OutputVariablesList
+from antarest.output.model import OutputTable, OutputVariablesList
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency, MatrixIndex
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
@@ -241,7 +240,7 @@ class IOutputStorage(ABC):
         """
 
     @abstractmethod
-    def aggregate_output_data(
+    def iterate_output_table(
         self,
         study_id: str,
         output_id: str,
@@ -250,9 +249,27 @@ class IOutputStorage(ABC):
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
         mc_years: Sequence[int] | None = None,
-    ) -> Iterator[pl.DataFrame]:
+    ) -> Iterator[OutputTable]:
         """
-        Aggregates output data based on several filtering conditions, as a stream of dataframes.
+        Returns output table based on several filtering conditions, as a stream to avoid larger than memory tables.
+
+        All tables of the stream are guaranteed to have the same columns, in the same order, they
+        are really to be considered as slices of a larger table.
+        The slices must not be assumed to map to a particular business object (area, year, ...).
+        """
+
+    @abstractmethod
+    def get_output_item_table(
+        self,
+        study_id: str,
+        output_id: str,
+        query_file: QueryFileType,
+        frequency: MatrixFrequency,
+        item_id: str,
+        mc_year: int | None = None,
+    ) -> OutputTable:
+        """
+        Returns the output table for one business item.
         """
 
     @abstractmethod

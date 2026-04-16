@@ -53,10 +53,10 @@ from antarest.output.filestudy.aggregation import (
     AREA_COL,
     CLUSTER_ID_COL,
     LINK_COL,
+    aggregation_column_naming,
 )
 from antarest.output.filestudy.utils import (
     MCYEAR_COL,
-    RAW_OUTPUT_MATRIX_METADATA_COLUMNS,
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
@@ -696,21 +696,15 @@ class OutputService:
         mc_year: int | None = None,
     ) -> OutputTable:
         self._studies_repository.assert_permission(uuid, StudyPermissionType.READ)
-        mc_years = [mc_year] if mc_year is not None else None
-        chunks = list(
-            self._find_output_storage(uuid, output_id).aggregate_output_data(
-                study_id=uuid,
-                output_id=output_id,
-                query_file=query_file,
-                frequency=frequency,
-                ids_to_consider=[item_id],
-                columns_names=[],
-                mc_years=mc_years,
-            )
+
+        return self._find_output_storage(uuid, output_id).get_output_item_table(
+            study_id=uuid,
+            output_id=output_id,
+            query_file=query_file,
+            frequency=frequency,
+            item_id=item_id,
+            mc_year=mc_year,
         )
-        df = chunks[0] if chunks else pl.DataFrame()
-        metadata_cols = [col for col in RAW_OUTPUT_MATRIX_METADATA_COLUMNS if col in df.columns]
-        return df.drop(metadata_cols) if metadata_cols else df
 
     def start_aggregate_output_data(
         self,
@@ -753,7 +747,7 @@ class OutputService:
                 stopwatch = StopWatch()
                 logger.info(f"Launch aggregation step for output '{output_id}' of study '{uuid}'.")
 
-                results = self._find_output_storage(uuid, output_id).aggregate_output_data(
+                output_tables = self._find_output_storage(uuid, output_id).iterate_output_table(
                     study_id=uuid,
                     output_id=output_id,
                     query_file=query_file,
@@ -762,7 +756,8 @@ class OutputService:
                     columns_names=columns_names,
                     mc_years=mc_years,
                 )
-                export_df_chunks(self._tmp_dir, file_path, results, export_format)
+                dataframes = map(lambda t: t.to_polars(aggregation_column_naming), output_tables)
+                export_df_chunks(self._tmp_dir, file_path, dataframes, export_format)
 
                 logger.info(f"Created aggregated outputs file '{file_path}' in {stopwatch}s.")
 

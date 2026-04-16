@@ -15,7 +15,7 @@ from enum import Enum, StrEnum
 from io import StringIO
 from itertools import islice
 from pathlib import Path
-from typing import TypeAlias
+from typing import IO, TypeAlias
 
 import pandas as pd
 import polars as pl
@@ -63,7 +63,22 @@ class MCAllLinksQueryFile(StrEnum):
     ID = "id"
 
 
-QueryFileType: TypeAlias = MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile
+class MCIndBCQueryFile(StrEnum):
+    BINDING_CONSTRAINTS = "binding-constraints"
+
+
+class MCAllBCQueryFile(StrEnum):
+    BINDING_CONSTRAINTS = "binding-constraints"
+
+
+QueryFileType: TypeAlias = (
+    MCIndAreasQueryFile
+    | MCAllAreasQueryFile
+    | MCIndLinksQueryFile
+    | MCAllLinksQueryFile
+    | MCIndBCQueryFile
+    | MCAllBCQueryFile
+)
 
 
 @dataclass(frozen=True)
@@ -173,18 +188,6 @@ def get_output_object_type(file_type: QueryFileType, is_link: bool) -> str:
             return "areas"
 
 
-def normalize_df_column_names(mc_root: MCRoot, output_headers: list[list[str]]) -> list[str]:
-    """
-    For mc-ind files, only keeps the variable name.
-    For mc-all files, just concatenates the variable name and the stat name (and uppercases it ...).
-
-    TODO: should only be decided at serialization time.
-    """
-    if mc_root == MCRoot.MC_IND:
-        return [col[0] for col in output_headers]
-    return [" ".join([col[0], col[2]]).upper().strip() for col in output_headers]
-
-
 def get_start_column(frequency: MatrixFrequency) -> int:
     if frequency == MatrixFrequency.ANNUAL:
         return 2
@@ -200,9 +203,9 @@ def get_start_column(frequency: MatrixFrequency) -> int:
         raise NotImplementedError(f"Unknown frequency {frequency.value}")
 
 
-def parse_headers(content: str, start_col: int) -> list[VarColumn]:
+def parse_headers(content: IO[str], start_col: int) -> list[VarColumn]:
     header_lines: list[list[str]] = []
-    for line in islice(StringIO(content), 4, 7):  # Note: avoids to split the whole file
+    for line in islice(content, 4, 7):  # Note: avoids to go over the whole file, much faster for larger files
         cols = [s.strip() for s in line.split("\t")[start_col:]]
         if not header_lines:
             header_lines = [[col] for col in cols]
@@ -253,7 +256,7 @@ def _parse_output_dataframe(content: str) -> pl.DataFrame:
 
 def parse_output_file(file_path: Path, first_column: int) -> OutputTable:
     content = file_path.read_text(encoding="utf-8")
-    output_headers = parse_headers(content, first_column)
+    output_headers = parse_headers(StringIO(content), first_column)
     polars_df = _parse_output_dataframe(content)
 
     df = polars_df[polars_df.columns[first_column:]]

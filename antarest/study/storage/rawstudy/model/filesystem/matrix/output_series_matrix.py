@@ -20,12 +20,20 @@ from antarest.core.exceptions import ChildNotFoundError, MustNotModifyOutputExce
 from antarest.core.model import JSON
 from antarest.matrixstore.matrix_uri_mapper import add_matrix_id_prefix
 from antarest.output.filestudy.utils import get_start_column, parse_output_file
-from antarest.output.model import VarColumn
+from antarest.output.model import OutputColumn, VarColumn
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
 logger = logging.getLogger(__name__)
+
+
+def _output_column_to_tuple(col: OutputColumn) -> tuple[str, str, str]:
+    match col:
+        case VarColumn(variable, unit, stat):
+            return variable, unit, stat or ""
+        case _:
+            raise ValueError(f"Invalid column metadata: {col}")
 
 
 class OutputSeriesMatrix(LazyNode[bytes | JSON, bytes | JSON, JSON]):
@@ -49,7 +57,7 @@ class OutputSeriesMatrix(LazyNode[bytes | JSON, bytes | JSON, JSON]):
         try:
             output = parse_output_file(file_path, output_first_column)
             df = output.data.to_pandas().astype(np.float64)
-            df.columns = pd.MultiIndex.from_tuples(map(VarColumn.to_tuple, output.columns))
+            df.columns = pd.MultiIndex.from_tuples(map(_output_column_to_tuple, output.columns))
             return df
         except FileNotFoundError as e:
             # Raise 404 'Not Found' if the TSV file is not found

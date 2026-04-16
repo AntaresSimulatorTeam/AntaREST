@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from collections.abc import Iterator
 from pathlib import Path
-from typing import IO, Any, Protocol
+from typing import IO, Protocol
 
 import pandas as pd
 import polars as pl

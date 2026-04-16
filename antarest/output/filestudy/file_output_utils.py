@@ -17,6 +17,7 @@ from typing import Any
 from antarest.core.serde.ini_reader import IniReader
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
+from antarest.output.filestudy.aggregation import is_details
 from antarest.output.filestudy.utils import (
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
@@ -26,10 +27,9 @@ from antarest.output.filestudy.utils import (
     QueryFileType,
     get_output_object_type,
     get_start_column,
-    normalize_df_column_names,
     parse_headers,
 )
-from antarest.output.model import OutputVariablesList
+from antarest.output.model import ClusterVarColumn, OutputVariablesList, VarColumn
 from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency
@@ -120,6 +120,18 @@ def _filter_files_with_same_prefix(
     return file_dict
 
 
+def _to_column_name(col: VarColumn | ClusterVarColumn) -> str:
+    """
+    For mc-ind files, only keeps the variable name.
+    For mc-all files, just concatenates the variable name and the stat name (and uppercases it ...).
+
+    TODO: should only be decided at serialization time.
+    """
+    if col.stat:
+        return " ".join((col.variable, col.stat)).upper().strip()  # why uppercasing here and not for mc-ind ?
+    return col.variable
+
+
 def _read_headers_only(
     file_path: Path, mc_root: MCRoot, file_type: QueryFileType, start_column: int
 ) -> list[ColumnHeader]:
@@ -135,15 +147,19 @@ def _read_headers_only(
     Returns:
         - A list of ColumnHeader objects
     """
-    output_headers = parse_headers(file_path.read_text(encoding="utf-8"), start_column)
+    with open(file_path, mode="r", encoding="utf-8") as f:
+        output_headers = parse_headers(f, start_column)
 
-    if "details" in file_type.value:
-        cols_mapping: dict[str, set[str]] = {}
+    if is_details(file_type):
+        cols_mapping: dict[str, list[str]] = {}
         for col in output_headers:
-            cols_mapping.setdefault(col[0], set()).add(col[1])
+            item_id = col.variable
+            item_col = ClusterVarColumn(col.unit, col.stat)
+            cols_mapping.setdefault(item_id, []).append(_to_column_name(item_col))
+
         return [ColumnHeader(name=col, sub_columns_names=list(vars)) for col, vars in cols_mapping.items()]
 
-    return [ColumnHeader(name=col) for col in normalize_df_column_names(mc_root, output_headers)]
+    return [ColumnHeader(name=col) for col in map(_to_column_name, output_headers)]
 
 
 def _get_all_headers_and_file_type(

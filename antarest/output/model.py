@@ -136,8 +136,7 @@ class ClusterVarColumn:
 
 # An output column can be any of an "index" column (time step ...), or a full variable column,
 # or a "cluster" variable column where unit is not present any more.
-OutputColumn: TypeAlias = Literal["location", "cluster", "year", "time"] | VarColumn | ClusterVarColumn
-
+OutputColumn: TypeAlias = Literal["area", "link", "cluster", "year", "time"] | VarColumn | ClusterVarColumn
 
 DF = TypeVar("DF", pl.DataFrame, pl.LazyFrame)
 C = TypeVar("C")
@@ -165,13 +164,18 @@ class Table(Generic[DF, C]):
         return dataclasses.replace(self, data=final_df, columns=final_columns)
 
 
-class LazyTable(Table[pl.LazyFrame, C]):
-    def collect(self, naming: Callable[[C], str]) -> pl.DataFrame:
+class DataTable(Table[pl.DataFrame, C]):
+    def to_polars(self, naming: Callable[[C], str]) -> pl.DataFrame:
         renamings = [cs.by_index(i).alias(naming(col)) for i, col in enumerate(self.columns)]
-        return self.data.select(*renamings).collect()
+        return self.data.select(*renamings)
 
 
-OutputTable: TypeAlias = Table[pl.DataFrame, OutputColumn]
+class LazyTable(Table[pl.LazyFrame, C]):
+    def collect(self) -> DataTable[C]:
+        return DataTable(data=self.data.collect(), columns=self.columns)
+
+
+OutputTable: TypeAlias = DataTable[OutputColumn]
 
 # Using lazy frames for better performances where relevant
 LazyOutputTable: TypeAlias = LazyTable[OutputColumn]
