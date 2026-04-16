@@ -24,6 +24,8 @@ from antarest.study.business.model.hydro_correlation_model import (
 from antarest.study.dao.common import AreaId, AreaSeriesMapping
 from antarest.study.dao.file.common import get_all_area_matrices, save_area_matrices
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -390,15 +392,35 @@ class FileStudyHydroDao(HydroDao):
     def save_hydro_max_daily_pump_energy(self, series: AreaSeriesMapping) -> None:
         save_area_matrices(self.get_impl(), self.get_file_study(), series, _get_max_daily_pump_energy_path)
 
+    def _get_all_capacity_matrices(self, prefix: str) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        matrix_nodes = {}
+
+        folder_node = study_data.tree.get_node(["input", "hydro", "common", "capacity"])
+        assert isinstance(folder_node, FolderNode)
+        tree = folder_node.build()
+        for node_id, node in tree.items():
+            assert isinstance(node, MatrixNode)
+            if node_id.startswith(prefix):
+                # We only keep the matrices with the rigth prefix
+                matrix_nodes[node] = node_id.removeprefix(f"{prefix}_")
+
+        matrices_mapping = self.get_impl().get_matrices_ids(list(matrix_nodes))
+
+        result: AreaSeriesMapping = {}
+        for node, matrix_id in matrices_mapping.items():
+            area_id = matrix_nodes[node]
+            result[area_id] = matrix_id
+
+        return result
+
     @override
     def get_all_hydro_maxpower(self) -> AreaSeriesMapping:
-        study_data = self.get_file_study()
-        return get_all_area_matrices(self.get_impl(), study_data, _get_max_power_path)
+        return self._get_all_capacity_matrices("max_power")
 
     @override
     def get_all_hydro_reservoir(self) -> AreaSeriesMapping:
-        study_data = self.get_file_study()
-        return get_all_area_matrices(self.get_impl(), study_data, _get_reservoir_path)
+        return self._get_all_capacity_matrices("reservoir")
 
     @override
     def get_all_hydro_energy(self) -> AreaSeriesMapping:
@@ -417,18 +439,15 @@ class FileStudyHydroDao(HydroDao):
 
     @override
     def get_all_hydro_credit_modulations(self) -> AreaSeriesMapping:
-        study_data = self.get_file_study()
-        return get_all_area_matrices(self.get_impl(), study_data, _get_credit_modulations_path)
+        return self._get_all_capacity_matrices("creditmodulations")
 
     @override
     def get_all_hydro_inflow_pattern(self) -> AreaSeriesMapping:
-        study_data = self.get_file_study()
-        return get_all_area_matrices(self.get_impl(), study_data, _get_inflow_pattern_path)
+        return self._get_all_capacity_matrices("inflowPattern")
 
     @override
     def get_all_hydro_water_values(self) -> AreaSeriesMapping:
-        study_data = self.get_file_study()
-        return get_all_area_matrices(self.get_impl(), study_data, _get_water_values_path)
+        return self._get_all_capacity_matrices("waterValues")
 
     @override
     def get_all_hydro_mingen(self) -> AreaSeriesMapping:
@@ -447,13 +466,11 @@ class FileStudyHydroDao(HydroDao):
 
     @override
     def get_all_hydro_max_daily_gen_energy(self) -> AreaSeriesMapping:
-        study_data = self.get_file_study()
-        return get_all_area_matrices(self.get_impl(), study_data, _get_max_daily_gen_energy_path)
+        return self._get_all_capacity_matrices("maxDailyGenEnergy")
 
     @override
     def get_all_hydro_max_daily_pump_energy(self) -> AreaSeriesMapping:
-        study_data = self.get_file_study()
-        return get_all_area_matrices(self.get_impl(), study_data, _get_max_daily_pump_energy_path)
+        return self._get_all_capacity_matrices("maxDailyPumpEnergy")
 
     @override
     def convert_hydro_pmax(
