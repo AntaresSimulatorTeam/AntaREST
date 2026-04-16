@@ -9,14 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-"""
-Tests for FileStudyReserveDefinitionDao.
-
-Critical test focus: the reserves.ini file contains both [globalparameters]
-(handled by the PR #3154) and [Reserve X] sections (handled by this PR).
-Per-reserve CRUD operations must NOT clobber the [globalparameters] section,
-and list/delete operations must NOT return or touch it.
-"""
 
 from pathlib import Path
 from unittest.mock import Mock
