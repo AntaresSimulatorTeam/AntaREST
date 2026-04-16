@@ -282,3 +282,26 @@ class TestStudyMatrixIndex:
         ]:
             res = client.get(url, params={"path": path})
             assert res.json() == daily_response
+
+        ############ Binding constraints ############
+        bc_matrix_path = "input/bindingconstraints/bc1_eq"
+
+        # At first the constraint is created with time_step HOURLY
+        res = client.get(url, params={"path": bc_matrix_path})
+        assert res.json() == hourly_response
+
+        # We update the constraint to have a weekly time step
+        res = client.put(f"/v1/studies/{study_id}/bindingconstraints/bc1", json={"timeStep": "weekly"})
+        assert res.status_code == 200, res.json()
+
+        # Now we should see the daily index for the constraint (weekly constraint means daily timestep)
+        res = client.get(url, params={"path": bc_matrix_path})
+        assert res.json() == daily_response
+
+        # We update the constraint to have a daily time step
+        res = client.put(f"/v1/studies/{study_id}/bindingconstraints/bc1", json={"timeStep": "weekly"})
+        assert res.status_code == 200, res.json()
+
+        # We should still see the daily index for the constraint
+        res = client.get(url, params={"path": bc_matrix_path})
+        assert res.json() == daily_response
