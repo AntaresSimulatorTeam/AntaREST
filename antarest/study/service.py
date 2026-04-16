@@ -168,9 +168,11 @@ from antarest.study.storage.utils import (
     assert_permission,
     assert_permission_on_studies,
     create_new_empty_study,
+    get_matrix_index,
     get_start_date,
     is_managed,
     is_study_folder,
+    parse_simulation_range_from_model,
     remove_from_cache,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
@@ -1078,9 +1080,19 @@ class StudyService:
         outputs = self._get_outputs_access().get_outputs_details(study.id)
         return StudySynthesis.aggregate(input_synthesis, outputs)
 
-    def get_input_matrix_startdate(self, study_id: str, path: str | None) -> MatrixIndex:
+    def get_input_matrix_startdate(self, study_id: str, path: str) -> MatrixIndex:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
+
+        # We need to handle matrices index differently if our study is stored in DB
+        if study.storage_mode == StorageMode.DATABASE:
+            dao = self.get_study_interface(study).get_study_dao()
+            # We can give a readOnly Dao as we won't use the save methods
+            mapper = RawPathToMatrixMapper(dao)  # type: ignore
+            matrix_frequency = mapper.get_matrix_frequency_from_path(Path(path))
+            simulation_range = parse_simulation_range_from_model(dao.get_general_config())
+            return get_matrix_index(simulation_range, False, matrix_frequency)
+
         file_study = self.get_file_study(study)
         output_id = None
         frequency = MatrixFrequency.HOURLY
