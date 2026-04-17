@@ -38,6 +38,7 @@ from antarest.study.dao.common import AreaId, RenewableId, RenewableSeriesMappin
 from antarest.study.dao.database.common import get_row_representation_as_dict, validate_area_exists
 from antarest.study.dao.database.models.renewable import RENEWABLE_CLUSTER_TABLE, RENEWABLE_SERIES_TABLE
 from antarest.study.dao.database.sql_utils import upsert_multiple, upsert_one
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import default_scenario_hourly
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -239,7 +240,8 @@ class DatabaseRenewableDao(RenewableDao):
         row = session.execute(stmt).fetchone()
         if not row:
             self._raise_the_right_renewable_exception({area_id: [renewable_id]})
-        return self.get_impl().get_matrix(row.matrix_id)
+
+        return self.get_impl().get_matrix(row.matrix_id, default_empty=default_scenario_hourly)
 
     @override
     def get_all_renewables_series(self) -> RenewableSeriesMapping:
