@@ -1022,7 +1022,7 @@ def test_columns_mismatch(tmp_path: Path, client: TestClient, user_access_token:
     download_id = res.json()
 
     # wait for the task to be completed
-    download_to_bytes(client, download_id)
+    content = download_to_bytes(client, download_id)
     actual_df = pd.read_parquet(BytesIO(content))
     expected_df = pd.DataFrame(
         columns=["area", "mcYear", "timeId", "CO2 EMIS."],
