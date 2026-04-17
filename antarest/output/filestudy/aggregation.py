@@ -343,11 +343,11 @@ def add_index_columns(output_matrix: OutputMatrix) -> OutputMatrix:
     year = output_matrix.year
 
     location_col = output_matrix.location_col()
-    new_cols: list[OutputColumn] = [location_col, "time"] if year is None else [location_col, "year", "time"]
+    new_cols: list[OutputColumn] = [location_col, "timeId"] if year is None else [location_col, "mcYear", "timeId"]
     df = initial_df.with_row_index("time", offset=1)
-    exprs = [pl.lit(output_matrix.location).alias("location")]
+    exprs = [pl.lit(output_matrix.location).alias(location_col)]
     if output_matrix.year is not None:
-        exprs.append(pl.lit(output_matrix.year).alias("year"))
+        exprs.append(pl.lit(output_matrix.year).alias("mcYear"))
     final_df = df.select(*exprs, pl.all())
     final_table = LazyOutputTable(data=final_df, columns=new_cols + list(output_matrix.data.columns))
 
@@ -358,7 +358,7 @@ def get_sort_key(col: OutputColumn) -> tuple[int, str | None]:
     """
     area/link - cluster - year - time - others
     """
-    values: dict[OutputColumn, int] = {"area": 1, "link": 1, "cluster": 2, "year": 3, "time": 4}
+    values: dict[OutputColumn, int] = {"area": 1, "link": 1, "cluster": 2, "mcYear": 3, "timeId": 4}
     match col:
         case VarColumn():
             return 5, None

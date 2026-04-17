@@ -2872,7 +2872,7 @@ class StudyService:
 
         self.storage_service.get_storage(study).normalize_study(study)
 
-    def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> InputMatrix | OutputTable | Any:
+    def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> InputMatrix | OutputMatrix | Any:
         """
         Returns the content of a node based on the provided arguments.
 
@@ -2893,13 +2893,15 @@ class StudyService:
         # Try to route output matrix requests
         parsed = parse_raw_output_matrix_path(url)
         if parsed is not None:
-            return self._get_outputs_access().get_item_output_data(
-                study_id=uuid,
-                output_id=parsed.output_id,
-                query_file=parsed.query_file,
-                frequency=parsed.frequency,
-                item_id=parsed.ids_to_consider,
-                mc_year=parsed.mc_year,
+            return OutputMatrix(
+                self._get_outputs_access().get_item_output_data(
+                    study_id=uuid,
+                    output_id=parsed.output_id,
+                    query_file=parsed.query_file,
+                    frequency=parsed.frequency,
+                    item_id=parsed.ids_to_consider,
+                    mc_year=parsed.mc_year,
+                )
             )
 
         # We need to handle matrices differently if our study is stored in DB

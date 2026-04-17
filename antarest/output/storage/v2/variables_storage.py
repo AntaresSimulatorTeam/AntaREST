@@ -318,21 +318,26 @@ def _mc_root_for_query_file(query_file: QueryFileType) -> MCRoot:
 def _filter_columns(
     schema_names: list[str],
     columns_names: Sequence[str],
-    mc_root: MCRoot,
-    is_details: bool,
 ) -> list[str]:
-    lower_filters = [c.lower() for c in columns_names]
-    selected = []
-    for col in schema_names:
-        if col in _ID_COLUMNS:
-            selected.append(col)
-        elif mc_root == MCRoot.MC_IND and not is_details:
-            if col.lower() in lower_filters:
-                selected.append(col)
-        else:
-            if any(f in col.lower() for f in lower_filters):
-                selected.append(col)
-    return selected
+    lower_case_filters = [c.lower() for c in columns_names]
+
+    def passes_filter(name: str) -> bool:
+        # TODO:
+        # This logic seems nonsense, and is not even in line with R package antaresRead.
+        # Should probably be broken to get simpler ?
+        col = parse_column_metadata(name)
+        match col:
+            case ClusterVarColumn(variable=var):
+                return any(f in var.lower() for f in lower_case_filters)
+            case VarColumn(variable=var, stat=stat):
+                if stat:
+                    return any(f in var.lower() for f in lower_case_filters)
+                else:
+                    return var.lower() in lower_case_filters
+            case _:
+                return True
+
+    return list(filter(passes_filter, schema_names))
 
 
 def _read_filtered(
@@ -357,7 +362,7 @@ def _read_filtered(
 
     if columns_names:
         schema_names = lazy.collect_schema().names()
-        selected = _filter_columns(schema_names, columns_names, mc_root, is_details)
+        selected = _filter_columns(schema_names, columns_names)
         lazy = lazy.select(selected)
 
     yield from lazy.collect_batches()
@@ -385,7 +390,7 @@ def parse_column_metadata(column: str) -> OutputColumn:
     """
     parts = str.split(column, METADATA_SEPARATOR)
     match parts:
-        case [idx] if idx in {"area", "link", "year", "time", "cluster"}:
+        case [idx] if idx in {"area", "link", "mcYear", "timeId", "cluster"}:
             return cast(OutputColumn, idx)
         case [variable, stat]:
             return ClusterVarColumn(variable, stat)

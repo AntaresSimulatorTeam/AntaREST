@@ -60,7 +60,7 @@ def test_get_raw_output_matrix(admin_client: TestClient, internal_study_id: str)
             ["DTG MRG", "MWh", ""],
             ["MAX MRG", "MWh", ""],
             ["NP COST", "Euro", ""],
-            ["NODU", " ", ""],
+            ["NODU", "", ""],
         ],
         "data": [
             [
@@ -235,10 +235,10 @@ def test_get_raw_output_matrix(admin_client: TestClient, internal_study_id: str)
             ["NP COST", "Euro", "std"],
             ["NP COST", "Euro", "min"],
             ["NP COST", "Euro", "max"],
-            ["NODU", " ", "EXP"],
-            ["NODU", " ", "std"],
-            ["NODU", " ", "min"],
-            ["NODU", " ", "max"],
+            ["NODU", "", "EXP"],
+            ["NODU", "", "std"],
+            ["NODU", "", "min"],
+            ["NODU", "", "max"],
         ],
         "data": [
             [

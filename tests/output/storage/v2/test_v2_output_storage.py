@@ -824,16 +824,13 @@ def test_aggregate_with_column_filter(
     with db():
         output_name = storage.import_output(study_id, output_path)
 
-        dfs = list(
-            storage.iterate_output_table(
-                study_id,
-                output_name,
-                query_file=MCAllAreasQueryFile.VALUES,
-                frequency=MatrixFrequency.DAILY,
-                ids_to_consider=[],
-                columns_names=["load"],
-                transform_columns_headers=True,
-            )
+        dfs = storage.iterate_output_table(
+            study_id,
+            output_name,
+            query_file=MCAllAreasQueryFile.VALUES,
+            frequency=MatrixFrequency.DAILY,
+            ids_to_consider=[],
+            columns_names=["load"],
         )
         df = pl.concat(dfs)
 

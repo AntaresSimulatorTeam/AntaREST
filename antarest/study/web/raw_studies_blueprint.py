@@ -32,7 +32,7 @@ from antarest.core.serde.matrix_export import TableExportFormat, simplify_datafr
 from antarest.core.utils.utils import sanitize_string
 from antarest.core.utils.web import APITag
 from antarest.dependencies import StudyServiceDep, auth_required
-from antarest.output.model import OutputTable, VarColumn
+from antarest.output.model import OutputTable, column_to_tuple
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.user_model import ResourceType
 from antarest.study.service import InputMatrix, OutputMatrix
@@ -146,10 +146,14 @@ class MatrixFormat(EnumIgnoreCase):
             return Response(content=buffer.getvalue(), media_type="application/vnd.apache.arrow.file")
 
 
-def output_matrix_to_json(output: OutputTable) -> str:
+def _output_matrix_to_json_response(output: OutputTable) -> Response:
     df = output.data.to_pandas().astype(np.float64)
-    df.columns = pd.MultiIndex.from_tuples(map(VarColumn.to_tuple, output.columns))  # type: ignore
-    return df.to_json(orient="split", index=False)
+    df.columns = pd.MultiIndex.from_tuples(map(column_to_tuple, output.columns))
+    # We want to allow `NaN`, `+Infinity`, and `-Infinity` values in the JSON response
+    # even though they are not standard JSON values because they are supported in JavaScript.
+    # Additionally, we cannot use `orjson` because, despite its superior performance, it converts
+    # `NaN` and other values to `null`, even when using a custom encoder.
+    return Response(content=to_json(df.to_dict(orient="split", index=False)), media_type="application/json")
 
 
 def create_raw_study_routes() -> APIRouter:
@@ -195,8 +199,7 @@ def create_raw_study_routes() -> APIRouter:
                     matrix_format = MatrixFormat.JSON if formatted else MatrixFormat.PLAIN
                 return matrix_format.serialize_dataframe(matrix)
             case OutputMatrix(table):
-                content = output_matrix_to_json(table)
-                return Response(content=content, media_type="application/json")
+                return _output_matrix_to_json_response(table)
 
         if matrix_format in {MatrixFormat.ARROW_COMPRESSED, MatrixFormat.ARROW_UNCOMPRESSED}:
             # The user asked for a format only supported for matrices.

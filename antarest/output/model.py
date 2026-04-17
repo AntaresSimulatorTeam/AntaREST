@@ -116,10 +116,6 @@ class VarColumn:
     def to_tuple(self) -> tuple[str, str, str]:
         return self.variable, self.unit, (self.stat or "")
 
-    @classmethod
-    def from_tuple(cls, tuple_: tuple[str, str, str]) -> "VarColumn":
-        return cls(variable=tuple_[0], unit=tuple_[1], stat=tuple_[2])
-
 
 @dataclass(frozen=True)
 class ClusterVarColumn:
@@ -136,7 +132,18 @@ class ClusterVarColumn:
 
 # An output column can be any of an "index" column (time step ...), or a full variable column,
 # or a "cluster" variable column where unit is not present any more.
-OutputColumn: TypeAlias = Literal["area", "link", "cluster", "year", "time"] | VarColumn | ClusterVarColumn
+OutputColumn: TypeAlias = Literal["area", "link", "cluster", "mcYear", "timeId"] | VarColumn | ClusterVarColumn
+
+
+def column_to_tuple(col: OutputColumn) -> tuple[str, str, str]:
+    match col:
+        case VarColumn(var, unit, stat):
+            return var, unit, stat or ""
+        case ClusterVarColumn(var, stat):
+            return var, "", stat or ""
+        case _:
+            return col, "", ""
+
 
 DF = TypeVar("DF", pl.DataFrame, pl.LazyFrame)
 C = TypeVar("C")
