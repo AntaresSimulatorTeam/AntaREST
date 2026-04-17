@@ -12,10 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { TREE_ROOT_NAME } from "@/components/utils/constants";
-import { directoryQueries } from "@/queries/directories/queries";
 import type { Directory } from "@/services/api/directories/types";
 import { buildDirectoryTree, getDirectoryPath } from "../../../StudyTree/ManagedTree/utils";
 import type { BreadcrumbItem } from "../types";
@@ -24,15 +22,15 @@ interface UseBreadcrumbsParams {
   activeTree: "managed" | "external";
   managedDirectoryId: string | null;
   externalPath: string;
+  directories: Directory[];
 }
 
 export function useBreadcrumbs({
   activeTree,
   managedDirectoryId,
   externalPath,
+  directories,
 }: UseBreadcrumbsParams): BreadcrumbItem[] {
-  const { data: directories } = useSuspenseQuery(directoryQueries.list());
-
   return useMemo((): BreadcrumbItem[] => {
     const rootItem: BreadcrumbItem = {
       label: TREE_ROOT_NAME,

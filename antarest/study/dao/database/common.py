@@ -9,14 +9,20 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
-from sqlalchemy import Row, select
+from sqlalchemy import Row, Table, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.area_properties_model import FILTER_OPTIONS, FrequencyFilter, sort_filter_options
+from antarest.study.dao.common import AreaSeriesMapping
 from antarest.study.dao.database.models.area import AREA_TABLE
+from antarest.study.dao.database.sql_utils import upsert_multiple
+
+if TYPE_CHECKING:
+    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
 def validate_area_exists(session: Session, study_id: str, area_id: str) -> None:
@@ -31,6 +37,34 @@ def area_exists(session: Session, study_id: str, area_id: str) -> bool:
 
 def get_row_representation_as_dict(row: Row[Any]) -> dict[str, Any]:
     return row._asdict()
+
+
+def save_area_matrix(dao: "DatabaseStudyDao", series: AreaSeriesMapping, table: Table) -> None:
+    session = dao.get_session()
+    study_id = dao.get_study_id()
+
+    try:
+        values = []
+        for area_id, series_id in series.items():
+            data = {"study_id": study_id, "area_id": area_id, "matrix_id": series_id}
+            values.append(data)
+        upsert_multiple(session, table, values)
+
+    except IntegrityError as e:
+        invalid_ids = set(series) - set(dao.get_all_area_ids())
+        if invalid_ids:
+            raise AreaNotFound(*invalid_ids)
+        else:
+            # All areas exist. It means that the DB table does not contain the information.
+            raise ValueError("One of the area matrices table is not filled as it should") from e
+
+    session.commit()
+
+
+def get_all_area_matrices(study_id: str, session: Session, table: Table) -> AreaSeriesMapping:
+    stmt = select(table).where((table.c.study_id == study_id))
+    rows = session.execute(stmt).fetchall()
+    return {row.area_id: row.matrix_id for row in rows}
 
 
 """

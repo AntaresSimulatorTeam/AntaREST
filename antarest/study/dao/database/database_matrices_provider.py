@@ -19,6 +19,12 @@ from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.database.models.area import LOAD_TABLE, MISC_GEN_TABLE, RESERVES_TABLE, SOLAR_TABLE, WIND_TABLE
+from antarest.study.dao.database.models.binding_constraint import (
+    BINDING_CONSTRAINT_EQ_MATRIX_TABLE,
+    BINDING_CONSTRAINT_GT_MATRIX_TABLE,
+    BINDING_CONSTRAINT_LT_MATRIX_TABLE,
+    BINDING_CONSTRAINT_VALUES_MATRIX_TABLE,
+)
 from antarest.study.dao.database.models.hydro import (
     HYDRO_CREDIT_MODULATIONS_TABLE,
     HYDRO_ENERGY_TABLE,
@@ -103,6 +109,10 @@ MATRIX_TABLES = [
     HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE,
     XPANSION_CAPACITY_TABLE,
     XPANSION_WEIGHT_TABLE,
+    BINDING_CONSTRAINT_VALUES_MATRIX_TABLE,
+    BINDING_CONSTRAINT_LT_MATRIX_TABLE,
+    BINDING_CONSTRAINT_GT_MATRIX_TABLE,
+    BINDING_CONSTRAINT_EQ_MATRIX_TABLE,
 ]
 
 

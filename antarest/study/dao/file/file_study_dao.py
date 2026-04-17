@@ -32,6 +32,7 @@ from antarest.study.dao.file.file_study_link_dao import FileStudyLinkDao
 from antarest.study.dao.file.file_study_optimization_preferences import FileStudyOptimizationPreferencesDao
 from antarest.study.dao.file.file_study_playlist_config_dao import FileStudyPlaylistConfigDao
 from antarest.study.dao.file.file_study_renewable_dao import FileStudyRenewableDao
+from antarest.study.dao.file.file_study_reserves_global_parameters_dao import FileStudyReservesGlobalParametersDao
 from antarest.study.dao.file.file_study_scenario_builder_dao import FileStudyScenarioBuilderDao
 from antarest.study.dao.file.file_study_st_storage_dao import FileStudySTStorageDao
 from antarest.study.dao.file.file_study_thematic_trimming_dao import FileStudyThematicTrimmingDao
@@ -75,6 +76,7 @@ class FileStudyTreeDao(
     FileStudyAreaPropertiesDao,
     FileStudyScenarioBuilderDao,
     FileStudyAreaDao,
+    FileStudyReservesGlobalParametersDao,
 ):
     """
     Implementation of study DAO over the simulator input format.
@@ -96,6 +98,7 @@ class FileStudyTreeDao(
         self._is_study_managed = is_study_managed
         self._cache = cache
 
+    @override
     @property
     def matrix_service(self) -> "ISimpleMatrixService":
         return self._matrix_service
@@ -104,6 +107,7 @@ class FileStudyTreeDao(
     def blob_service(self) -> "IBlobService":
         return self._blob_service
 
+    @override
     @property
     def generator_matrix_constants(self) -> "GeneratorMatrixConstants":
         return self._generator_matrix_constants

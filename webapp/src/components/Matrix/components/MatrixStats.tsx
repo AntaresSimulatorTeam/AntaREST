@@ -28,13 +28,13 @@ interface MatrixStatsProps {
 function MatrixStats({ stats }: MatrixStatsProps) {
   const statItems = [
     { label: "Nb", value: stats?.count ?? 0 },
-    { label: "Total", value: formatGridNumber({ value: stats?.sum ?? 0 }) },
+    { label: "Total", value: formatGridNumber({ value: stats?.sum ?? 0, maxDecimals: 3 }) },
     {
       label: "Avg",
-      value: formatGridNumber({ value: stats?.average ?? 0, maxDecimals: 2 }),
+      value: formatGridNumber({ value: stats?.average ?? 0, maxDecimals: 3 }),
     },
-    { label: "Min", value: formatGridNumber({ value: stats?.min ?? 0 }) },
-    { label: "Max", value: formatGridNumber({ value: stats?.max ?? 0 }) },
+    { label: "Min", value: formatGridNumber({ value: stats?.min ?? 0, maxDecimals: 3 }) },
+    { label: "Max", value: formatGridNumber({ value: stats?.max ?? 0, maxDecimals: 3 }) },
   ];
 
   ////////////////////////////////////////////////////////////////

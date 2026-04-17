@@ -24,14 +24,16 @@ from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.area import AREA_TABLE, AREA_UI_TABLE
+from tests.study.dao.conftest import create_area
+from tests.study.dao.utils import save_area
 
 
-def test_save_area_creates_area_with_default_ui(db_session: Session, db_dao: DatabaseStudyDao) -> None:
+def test_create_area_with_default_ui(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     """
-    Test that save_area creates a new area with default UI for layer '0'.
+    Test that the `CreateArea` command creates a new area with the default UI for layer '0'.
     """
     dao = db_dao
-    dao.save_area("Paris")
+    create_area("Paris", dao)
 
     study_id = dao.get_study_id()
 
@@ -63,10 +65,10 @@ def test_save_area_raises_error_if_exists(db_dao: DatabaseStudyDao) -> None:
     Test that save_area raises ValueError if area already exists.
     """
     dao = db_dao
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
 
-    with pytest.raises(ValueError, match="already exists"):
-        dao.save_area("Paris")
+    with pytest.raises(ValueError, match="already exist"):
+        save_area(dao, "Paris")
 
 
 def test_delete_area_removes_area_and_ui(db_session: Session, db_dao: DatabaseStudyDao) -> None:
@@ -74,7 +76,7 @@ def test_delete_area_removes_area_and_ui(db_session: Session, db_dao: DatabaseSt
     Test that delete_area removes the area and cascades to area_ui.
     """
     dao = db_dao
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
     dao.delete_area("paris")
 
     with db_session:
@@ -99,9 +101,9 @@ def test_get_all_areas_info_returns_areas(db_dao: DatabaseStudyDao) -> None:
     Test that get_all_areas_info returns all areas for a study with original names preserved.
     """
     dao = db_dao
-    dao.save_area("Paris")
-    dao.save_area("London")
-    dao.save_area("Berlin")
+    save_area(dao, "Paris")
+    save_area(dao, "London")
+    save_area(dao, "Berlin")
     dao.save_thermals({"paris": [ThermalCluster(name="Gas")], "berlin": [ThermalCluster(name="Coal")]})
 
     areas = dao.get_all_areas_info()
@@ -123,7 +125,7 @@ def test_get_area_ui_returns_ui_for_layer(db_dao: DatabaseStudyDao) -> None:
     Test that get_area_ui returns UI data for a specific layer.
     """
     dao = db_dao
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
 
     # Get default UI
     ui = dao.get_area_ui("paris", "0")
@@ -137,7 +139,7 @@ def test_get_area_ui_falls_back_to_layer_zero(db_dao: DatabaseStudyDao) -> None:
     Test that get_area_ui falls back to layer '0' if requested layer doesn't exist.
     """
     dao = db_dao
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
 
     # Request non-existent layer, should fall back to layer "0"
     ui = dao.get_area_ui("paris", "99")
@@ -159,11 +161,11 @@ def test_save_area_ui_updates_existing(db_dao: DatabaseStudyDao) -> None:
     Test that save_area_ui updates existing UI data.
     """
     dao = db_dao
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
 
     # Update UI
     new_ui = AreaUI(x=100, y=200, color_rgb=(255, 0, 0))
-    dao.save_area_ui("paris", "0", new_ui)
+    dao.save_area_ui({"paris": {"0": new_ui}})
 
     # Verify update
     ui = dao.get_area_ui("paris", "0")
@@ -177,12 +179,12 @@ def test_save_area_ui_creates_new_layer(db_dao: DatabaseStudyDao) -> None:
     Test that save_area_ui creates UI for a new layer.
     """
     dao = db_dao
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
     dao.save_layer(Layer(id="1", name="Layer 1"))
 
     # Create UI for layer "1"
     layer1_ui = AreaUI(x=300, y=400, color_rgb=(0, 255, 0))
-    dao.save_area_ui("paris", "1", layer1_ui)
+    dao.save_area_ui({"paris": {"1": layer1_ui}})
 
     # Verify layer "0" is unchanged
     ui_layer0 = dao.get_area_ui("paris", "0")
@@ -203,7 +205,7 @@ def test_save_area_ui_raises_error_if_area_not_exists(db_dao: DatabaseStudyDao) 
     dao = db_dao
     new_ui = AreaUI(x=100, y=200, color_rgb=(255, 0, 0))
     with pytest.raises(AreaNotFound):
-        dao.save_area_ui("nonexistent", "0", new_ui)
+        dao.save_area_ui({"nonexistent": {"0": new_ui}})
 
 
 def test_save_area_ui_raises_error_if_layer_not_exists(db_dao: DatabaseStudyDao) -> None:
@@ -211,10 +213,10 @@ def test_save_area_ui_raises_error_if_layer_not_exists(db_dao: DatabaseStudyDao)
     Test that save_area_ui raises LayerNotFound if layer doesn't exist.
     """
     dao = db_dao
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
     new_ui = AreaUI(x=100, y=200, color_rgb=(255, 0, 0))
     with pytest.raises(LayerNotFound):
-        dao.save_area_ui("paris", "999", new_ui)
+        dao.save_area_ui({"paris": {"999": new_ui}})
 
 
 def test_get_all_areas_ui_info_returns_all_layers(db_dao: DatabaseStudyDao) -> None:
@@ -222,15 +224,21 @@ def test_get_all_areas_ui_info_returns_all_layers(db_dao: DatabaseStudyDao) -> N
     Test that get_all_areas_ui_info returns UI data for all areas and layers.
     """
     dao = db_dao
-    dao.save_area("Paris")
-    dao.save_area("London")
+    create_area("Paris", dao)
+    create_area("London", dao)
     dao.save_layer(Layer(id="1", name="Layer 1"))
     dao.save_layer(Layer(id="2", name="Layer 2"))
 
     # Add UI for different layers
-    dao.save_area_ui("paris", "1", AreaUI(x=100, y=100, color_rgb=(255, 0, 0)))
-    dao.save_area_ui("paris", "2", AreaUI(x=200, y=200, color_rgb=(0, 255, 0)))
-    dao.save_area_ui("london", "1", AreaUI(x=150, y=150, color_rgb=(0, 0, 255)))
+    dao.save_area_ui(
+        {
+            "paris": {
+                "1": AreaUI(x=100, y=100, color_rgb=(255, 0, 0)),
+                "2": AreaUI(x=200, y=200, color_rgb=(0, 255, 0)),
+            },
+            "london": {"1": AreaUI(x=150, y=150, color_rgb=(0, 0, 255))},
+        }
+    )
 
     all_ui = dao.get_all_areas_ui_info()
     assert len(all_ui) == 2
@@ -241,7 +249,7 @@ def test_get_all_areas_ui_info_returns_all_layers(db_dao: DatabaseStudyDao) -> N
     paris_ui = all_ui["paris"]
     assert paris_ui.ui["x"] == 0
     assert paris_ui.ui["y"] == 0
-    assert paris_ui.ui["layers"] == "1 2"
+    assert paris_ui.ui["layers"] == "0 1 2"
     assert paris_ui.layer_x == {"0": 0, "1": 100, "2": 200}
     assert paris_ui.layer_y == {"0": 0, "1": 100, "2": 200}
     assert paris_ui.layer_color == {"0": "230, 108, 44", "1": "255, 0, 0", "2": "0, 255, 0"}
@@ -250,7 +258,7 @@ def test_get_all_areas_ui_info_returns_all_layers(db_dao: DatabaseStudyDao) -> N
     london_ui = all_ui["london"]
     assert london_ui.ui["x"] == 0
     assert london_ui.ui["y"] == 0
-    assert london_ui.ui["layers"] == "1"
+    assert london_ui.ui["layers"] == "0 1"
     assert london_ui.layer_x == {"0": 0, "1": 150}
     assert london_ui.layer_y == {"0": 0, "1": 150}
     assert london_ui.layer_color == {"0": "230, 108, 44", "1": "0, 0, 255"}
@@ -261,9 +269,9 @@ def test_save_layer_areas_adds_and_removes(db_session: Session, db_dao: Database
     Test that save_layer_areas adds and removes areas from a layer.
     """
     dao = db_dao
-    dao.save_area("Paris")
-    dao.save_area("London")
-    dao.save_area("Berlin")
+    save_area(dao, "Paris")
+    save_area(dao, "London")
+    save_area(dao, "Berlin")
     dao.save_layer(Layer(id="1", name="Layer 1"))
 
     dao.save_layer_areas("1", ["paris", "london"])
@@ -308,10 +316,10 @@ def test_save_layer_areas_copies_default_ui(db_dao: DatabaseStudyDao) -> None:
     Test that save_layer_areas copies default UI from layer '0' when adding areas to a new layer.
     """
     dao = db_dao
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
     dao.save_layer(Layer(id="1", name="Layer 1"))
     # Update layer "0" UI to non-default values
-    dao.save_area_ui("paris", "0", AreaUI(x=50, y=75, color_rgb=(100, 150, 200)))
+    dao.save_area_ui({"paris": {"0": AreaUI(x=50, y=75, color_rgb=(100, 150, 200))}})
 
     # Add Paris to layer "1"
     dao.save_layer_areas("1", ["paris"])

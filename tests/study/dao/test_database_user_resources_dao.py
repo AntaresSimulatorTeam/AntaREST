@@ -20,10 +20,12 @@ from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 def test_save_user_resources_file(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_user_resource(
-        UserResourceDataCreation(
-            path=PurePosixPath("file_path"), resource_type=ResourceType.FILE, blob_id="test_blob_id"
-        )
+    dao.save_user_resources(
+        [
+            UserResourceDataCreation(
+                path=PurePosixPath("file_path"), resource_type=ResourceType.FILE, blob_id="test_blob_id"
+            )
+        ]
     )
 
     result = list(dao.get_all_user_resources())
@@ -39,8 +41,8 @@ def test_save_user_resources_file(db_dao: DatabaseStudyDao) -> None:
 
 def test_save_user_resources_folder(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_user_resource(
-        UserResourceDataCreation(path=PurePosixPath("folder_path"), resource_type=ResourceType.FOLDER)
+    dao.save_user_resources(
+        [UserResourceDataCreation(path=PurePosixPath("folder_path"), resource_type=ResourceType.FOLDER)]
     )
     result = list(dao.get_all_user_resources())
     assert len(result) == 1
@@ -54,12 +56,12 @@ def test_update_blob_id(db_dao: DatabaseStudyDao) -> None:
     resource = UserResourceDataCreation(
         path=PurePosixPath("file_path"), resource_type=ResourceType.FILE, blob_id="test_blob_id"
     )
-    dao.save_user_resource(resource)
+    dao.save_user_resources([resource])
 
     updated_resource = UserResourceDataCreation(
         path=PurePosixPath("file_path"), resource_type=ResourceType.FILE, blob_id="test_blob_id_updated"
     )
-    dao.save_user_resource(updated_resource)
+    dao.save_user_resources([updated_resource])
 
     result = list(dao.get_all_user_resources())
     assert len(result) == 1

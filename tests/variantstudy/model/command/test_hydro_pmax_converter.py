@@ -22,7 +22,7 @@ def test_hydro_pmax_converter_creates_and_cleans_matrices(
     empty_study_920: FileStudy, command_context: CommandContext
 ) -> None:
     study = empty_study_920
-    dao = build_dao_from_file_study(study, command_context)
+    dao = build_dao_from_file_study(study, command_context, True)
     study_version = study.config.version
 
     output = CreateArea(area_name="fr", command_context=command_context, study_version=study_version).apply(

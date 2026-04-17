@@ -23,6 +23,7 @@ from antarest.study.business.model.thermal_cluster_model import ThermalCluster, 
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, LinkConfig
+from tests.study.dao.utils import save_area
 
 ALL_FILTERS = list(FILTER_OPTIONS)
 
@@ -44,12 +45,12 @@ class TestDatabaseSynthesisDao:
         dao = db_dao
         version = dao.get_version()
 
-        dao.save_area("France")
-        dao.save_area("Germany")
+        save_area(dao, "France")
+        save_area(dao, "Germany")
 
         dao.save_thermals({"france": [ThermalCluster(id="coal_plant", name="Coal Plant")]})
         dao.save_renewable("france", RenewableCluster(id="wind_farm", name="Wind Farm"))
-        dao.save_st_storage("germany", STStorage(id="battery", name="Battery"))
+        dao.save_st_storages({"germany": [STStorage(id="battery", name="Battery")]})
 
         synthesis = dao.get_synthesis()
 
@@ -81,8 +82,8 @@ class TestDatabaseSynthesisDao:
     def test_get_synthesis_with_links(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
 
-        dao.save_area("France")
-        dao.save_area("Germany")
+        save_area(dao, "France")
+        save_area(dao, "Germany")
 
         link = Link(area1="france", area2="germany")
         dao.save_links([link])
@@ -111,7 +112,7 @@ class TestDatabaseSynthesisDao:
     def test_get_synthesis_with_districts(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
 
-        dao.save_area("France")
+        save_area(dao, "France")
         dao.save_district(District(id="north", name="North", add_areas=["france"]))
         dao.save_district(District(id="south", name="South"))
 
@@ -125,7 +126,7 @@ class TestDatabaseSynthesisDao:
     def test_get_synthesis_with_area_filters(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
 
-        dao.save_area("France")
+        save_area(dao, "France")
         dao.save_area_properties("france", AreaProperties(filter_synthesis={"hourly", "daily"}))
 
         synthesis = dao.get_synthesis()
@@ -157,7 +158,7 @@ class TestDatabaseSynthesisDao:
 
     def test_get_synthesis_via_read_only_adapter(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao
-        dao.save_area("Spain")
+        save_area(dao, "Spain")
 
         read_only = dao.read_only()
         synthesis = read_only.get_synthesis()

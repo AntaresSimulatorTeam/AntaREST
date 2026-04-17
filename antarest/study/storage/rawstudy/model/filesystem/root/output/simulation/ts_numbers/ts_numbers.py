@@ -19,11 +19,12 @@ from antarest.study.storage.rawstudy.model.filesystem.common.area_matrix_list im
 )
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_numbers.sts_ts_numbers import (
-    ShortTermStorageTsNumbers,
-)
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_numbers.ts_numbers_data import (
     TsNumbersVector,
+)
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_numbers.various_ts_numbers import (
+    GenericSubFolder,
+    ShortTermStorageTsNumbers,
 )
 
 
@@ -70,12 +71,15 @@ class OutputSimulationTsNumbers(FolderNode):
        │   ├── ch.txt
        │   ├── pompage.txt
        │   └── turbinage.txt
-       └── st-storage
+       ├── st-storage
+       │   └── at
+       │      └── sts_1
+       │          ├── inflows.txt
+       │          └── constraint_1.txt
+       └── ntc
            └── at
-               └── sts_1
-                    ├── inflows.txt
-                    └── constraint_1.txt
-                    ...
+               ├── be.txt
+               └── fr.txt
     """
 
     @override
@@ -98,4 +102,7 @@ class OutputSimulationTsNumbers(FolderNode):
             )
         if (self.config.path / "st-storage").exists():
             children["st-storage"] = ShortTermStorageTsNumbers(self.matrix_mapper, self.config.next_file("st-storage"))
+        if (self.config.path / "ntc").exists():
+            children["ntc"] = GenericSubFolder(self.matrix_mapper, self.config.next_file("ntc"))
+
         return children

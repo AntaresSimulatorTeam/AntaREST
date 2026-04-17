@@ -18,21 +18,22 @@ from antarest.study.business.model.user_model import ResourceType, UserResourceD
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import build_dao_from_file_study
+from tests.study.dao.utils import save_area
 
 
 def test_file_study_dao(tmp_path: Path, empty_study_930: FileStudy, command_context: CommandContext) -> None:
     dao = build_dao_from_file_study(empty_study_930, command_context, True)
     # Create 2 areas, 1 link, an Xpansion configuration and several user resources
     dao.create_xpansion_configuration()
-    dao.save_area("FR")
-    dao.save_area("de")
+    save_area(dao, "FR")
+    save_area(dao, "de")
     dao.save_links([Link(area1="fr", area2="de")])
     blob_id1 = command_context.blob_service.save(b"Usain Bolt")
     path1 = PurePosixPath("file1.txt")
-    dao.save_user_resource(UserResourceDataCreation(path=path1, resource_type=ResourceType.FILE, blob_id=blob_id1))
+    dao.save_user_resources([(UserResourceDataCreation(path=path1, resource_type=ResourceType.FILE, blob_id=blob_id1))])
     blob_id2 = command_context.blob_service.save(b"Gout Gout")
     path2 = PurePosixPath("folder_1/file2.txt")
-    dao.save_user_resource(UserResourceDataCreation(path=path2, resource_type=ResourceType.FILE, blob_id=blob_id2))
+    dao.save_user_resources([(UserResourceDataCreation(path=path2, resource_type=ResourceType.FILE, blob_id=blob_id2))])
 
     # Tests link matrices
     matrix1 = pl.DataFrame([[1, 2], [3, 4]])

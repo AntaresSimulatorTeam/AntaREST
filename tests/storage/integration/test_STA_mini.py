@@ -385,6 +385,10 @@ def test_sta_mini_input_for_R_scripts(client: TestClient, url: str, expected_out
             f"/v1/studies/{UUID}/raw?path=output/20241807-1540eco-extra-outputs/ts-numbers/st-storage/area/sts_2/inflows",
             [1],
         ),
+        (
+            f"/v1/studies/{UUID}/raw?path=output/20241807-1540eco-extra-outputs/ts-numbers/ntc/de/fr",
+            [1],
+        ),
     ],
 )
 def test_sta_mini_output(storage_service: StudyService, url: str, expected_output: Any) -> None:
@@ -491,7 +495,7 @@ def test_sta_mini_list_studies(client: TestClient) -> None:
         UUID: {
             "id": UUID,
             "name": "STA-mini",
-            "version": 700,
+            "version": "7.0",
             "author": "Andrea SGATTONI",
             "editor": None,
             "created": str(datetime.fromtimestamp(1480683452)),

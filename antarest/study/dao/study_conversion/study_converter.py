@@ -10,20 +10,20 @@
 #
 # This file is part of the Antares project.
 
-import polars as pl
 from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import ChildNotFoundError, XpansionConfigurationDoesNotExist
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_model import AreaUI
-from antarest.study.business.model.binding_constraint_model import BindingConstraintOperator
 from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
-from antarest.study.business.model.hydro_model import HydroProperties
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
+from antarest.study.business.model.sts_model import (
+    STStorage,
+    STStorageAdditionalConstraintsMap,
+)
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
+from antarest.study.dao.common import AreaUiMapping
 from antarest.study.model import (
     STUDY_VERSION_6_5,
     STUDY_VERSION_8_1,
@@ -32,6 +32,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_6,
     STUDY_VERSION_8_7,
     STUDY_VERSION_9_2,
+    STUDY_VERSION_10_0,
 )
 
 
@@ -62,8 +63,7 @@ class StudyConverter:
         self._convert_xpansion()
 
         # User resources
-        for user_resource in self._source_dao.get_all_user_resources():
-            self._new_dao.save_user_resource(user_resource)
+        self._new_dao.save_user_resources(self._source_dao.get_all_user_resources())
 
         # Settings
         self._convert_settings()
@@ -101,45 +101,37 @@ class StudyConverter:
         self._new_dao.create_xpansion_configuration()
         self._new_dao.save_xpansion_settings(settings)
         # Candidates
-        for candidate in self._source_dao.get_all_xpansion_candidates():
-            self._new_dao.save_xpansion_candidate(candidate)
+        self._new_dao.save_xpansion_candidates(self._source_dao.get_all_xpansion_candidates())
         # Adequacy criterion
         self._new_dao.save_xpansion_adequacy_criterion(self._source_dao.get_xpansion_adequacy_criterion())
-        # Resources
-        for resource_type in XpansionResourceFileType:
-            resources = self._source_dao.get_xpansion_resources(resource_type)
-            for filename in resources:
-                content = self._source_dao.get_xpansion_resource(resource_type, filename)
 
-                if resource_type == XpansionResourceFileType.WEIGHTS:
-                    assert isinstance(content, pl.DataFrame)
-                    self._new_dao.save_xpansion_weight(filename, self._matrix_service.create(content))
-                elif resource_type == XpansionResourceFileType.CAPACITIES:
-                    assert isinstance(content, pl.DataFrame)
-                    self._new_dao.save_xpansion_capacity(filename, self._matrix_service.create(content))
-                else:
-                    assert isinstance(content, bytes)
-                    self._new_dao.save_xpansion_constraint(filename, content)
+        # Weights
+        weights = self._source_dao.get_all_xpansion_weights()
+        if weights:
+            self._new_dao.save_xpansion_weight(weights)
+
+        # Capacities
+        capacities = self._source_dao.get_all_xpansion_capacities()
+        if capacities:
+            self._new_dao.save_xpansion_capacity(capacities)
+
+        # Constraints
+        constraints = self._source_dao.get_all_xpansion_constraints()
+        if constraints:
+            self._new_dao.save_xpansion_constraint(constraints)
 
     def _convert_binding_constraints(self) -> None:
         constraints = list(self._source_dao.get_all_constraints().values())
         self._new_dao.save_constraints(constraints)
 
-        for constraint in constraints:
-            bc_id = constraint.id
-            if self._study_version < STUDY_VERSION_8_7:
-                matrix_id = self._matrix_service.create(self._source_dao.get_constraint_values_matrix(bc_id))
-                self._new_dao.save_constraint_values_matrix(bc_id, matrix_id)
-            else:
-                if constraint.operator in {BindingConstraintOperator.LESS, BindingConstraintOperator.BOTH}:
-                    matrix_id = self._matrix_service.create(self._source_dao.get_constraint_less_term_matrix(bc_id))
-                    self._new_dao.save_constraint_less_term_matrix(bc_id, matrix_id)
-                if constraint.operator in {BindingConstraintOperator.GREATER, BindingConstraintOperator.BOTH}:
-                    matrix_id = self._matrix_service.create(self._source_dao.get_constraint_greater_term_matrix(bc_id))
-                    self._new_dao.save_constraint_greater_term_matrix(bc_id, matrix_id)
-                if constraint.operator == BindingConstraintOperator.EQUAL:
-                    matrix_id = self._matrix_service.create(self._source_dao.get_constraint_equal_term_matrix(bc_id))
-                    self._new_dao.save_constraint_equal_term_matrix(bc_id, matrix_id)
+        if self._study_version < STUDY_VERSION_8_7:
+            values = self._source_dao.get_all_constraint_values_matrix()
+            self._new_dao.save_constraint_values_matrix(values)
+
+        else:
+            self._new_dao.save_constraint_less_term_matrix(self._source_dao.get_all_constraint_less_term_matrix())
+            self._new_dao.save_constraint_greater_term_matrix(self._source_dao.get_all_constraint_greater_term_matrix())
+            self._new_dao.save_constraint_equal_term_matrix(self._source_dao.get_all_constraint_equal_term_matrix())
 
     def _convert_links(self) -> None:
         links = self._source_dao.get_links()
@@ -155,20 +147,16 @@ class StudyConverter:
         area_properties = self._source_dao.get_all_area_properties()
         areas_ui = self._source_dao.get_all_areas_ui_info()
         area_names_and_thermals = {a.id: a for a in self._source_dao.get_all_areas_info()}
-        hydro_properties = self._source_dao.get_all_hydro_properties()
         try:
             renewable_clusters = self._source_dao.get_all_renewables()
-            st_storages = self._source_dao.get_all_st_storages()
-            st_storages_constraints = self._source_dao.get_all_st_storage_additional_constraints()
         except ChildNotFoundError:  # Can happen, according to the enr-modeling and to the study version
             renewable_clusters = {}
-            st_storages = {}
-            st_storages_constraints = {}
 
-        # First create all areas to avoid config issues
+        # First, create all areas with their properties to avoid foreign key or config issues
+        new_area_properties = {}
         for area_id in area_properties:
-            area_name = area_names_and_thermals[area_id].name
-            self._new_dao.save_area(area_name)
+            new_area_properties[area_names_and_thermals[area_id].name] = area_properties[area_id]
+        self._new_dao.save_areas_with_properties(new_area_properties)
 
         # Thermals
         thermals = {area_info.id: area_info.thermals or [] for area_info in area_names_and_thermals.values()}
@@ -186,26 +174,33 @@ class StudyConverter:
         self._new_dao.save_reserves(self._source_dao.get_all_reserves())
         self._new_dao.save_misc_gen(self._source_dao.get_all_misc_gen())
 
-        for area_id in area_properties:
-            # Properties
-            self._new_dao.save_area_properties(area_id, area_properties[area_id])
+        # Reserves global parameters (v10.0+)
+        if self._study_version >= STUDY_VERSION_10_0:
+            self._new_dao.save_reserves_global_parameters(self._source_dao.get_all_reserves_global_parameters())
 
-            # Ui
-            source_ui = areas_ui[area_id]
+        # Hydro
+        self._convert_hydro()
+
+        # Ui
+        new_ui: AreaUiMapping = {}
+        for area_id, source_ui in areas_ui.items():
+            new_ui[area_id] = {}
             for layer, x in source_ui.layer_x.items():
                 y = source_ui.layer_y[layer]
                 color = source_ui.layer_color[layer]
                 r, g, b = (int(c) for c in color.strip(" ").split(","))
                 area_ui = AreaUI(x=x, y=y, color_rgb=(r, g, b))
-                self._new_dao.save_area_ui(area_id, layer, area_ui)
+                new_ui[area_id][layer] = area_ui
+        self._new_dao.save_area_ui(new_ui)
 
-            # Hydro
-            self._convert_hydro(area_id, hydro_properties[area_id])
-
-            # Short-term storages
-            if self._study_version >= STUDY_VERSION_8_6:
-                storages = list(st_storages.get(area_id, {}).values())
-                self._convert_short_term_storages(area_id, storages, st_storages_constraints.get(area_id, {}))
+        # Short-term storages
+        if self._study_version >= STUDY_VERSION_8_6:
+            st_storages = self._source_dao.get_all_st_storages()
+            if st_storages:
+                st_storages_constraints = {}
+                if self._study_version >= STUDY_VERSION_9_2:
+                    st_storages_constraints = self._source_dao.get_all_st_storage_additional_constraints()
+                self._convert_short_term_storages(st_storages, st_storages_constraints)
 
     def _convert_thermal_clusters(self, data: dict[str, list[ThermalCluster]]) -> None:
         self._new_dao.save_thermals(data)
@@ -235,104 +230,112 @@ class StudyConverter:
         self._new_dao.save_renewable_series(series_mapping)
 
     def _convert_short_term_storages(
-        self, area_id: str, storages: list[STStorage], constraints: dict[str, list[STStorageAdditionalConstraint]]
+        self, storages: dict[str, dict[str, STStorage]], constraints: STStorageAdditionalConstraintsMap
     ) -> None:
-        self._new_dao.save_st_storages(area_id, storages)
-        for st_storage in storages:
-            sts_id = st_storage.id
-            p_max_inj_id = self._matrix_service.create(self._source_dao.get_st_storage_pmax_injection(area_id, sts_id))
-            self._new_dao.save_st_storage_pmax_injection(area_id, sts_id, p_max_inj_id)
-
-            p_max_wit_id = self._matrix_service.create(self._source_dao.get_st_storage_pmax_withdrawal(area_id, sts_id))
-            self._new_dao.save_st_storage_pmax_withdrawal(area_id, sts_id, p_max_wit_id)
-
-            low_id = self._matrix_service.create(self._source_dao.get_st_storage_lower_rule_curve(area_id, sts_id))
-            self._new_dao.save_st_storage_lower_rule_curve(area_id, sts_id, low_id)
-
-            upper_id = self._matrix_service.create(self._source_dao.get_st_storage_upper_rule_curve(area_id, sts_id))
-            self._new_dao.save_st_storage_upper_rule_curve(area_id, sts_id, upper_id)
-
-            inflows_id = self._matrix_service.create(self._source_dao.get_st_storage_inflows(area_id, sts_id))
-            self._new_dao.save_st_storage_inflows(area_id, sts_id, inflows_id)
-
-            if self._study_version >= STUDY_VERSION_9_2:
-                storage_constraints = constraints.get(sts_id)
-                if storage_constraints:
-                    self._new_dao.save_st_storage_additional_constraints(area_id, sts_id, storage_constraints)
-                    for constraint in storage_constraints:
-                        rhs_matrix = self._source_dao.get_st_storage_additional_constraint_matrix(
-                            area_id, sts_id, constraint.id
-                        )
-                        rhs_matrix_id = self._matrix_service.create(rhs_matrix)
-                        self._new_dao.save_st_storage_constraint_matrix(area_id, sts_id, constraint.id, rhs_matrix_id)
-
-                cost_injection = self._source_dao.get_st_storage_cost_injection(area_id, sts_id)
-                injection_id = self._matrix_service.create(cost_injection)
-                self._new_dao.save_st_storage_cost_injection(area_id, sts_id, injection_id)
-
-                cost_withdrawal = self._source_dao.get_st_storage_cost_withdrawal(area_id, sts_id)
-                withdrawal_id = self._matrix_service.create(cost_withdrawal)
-                self._new_dao.save_st_storage_cost_withdrawal(area_id, sts_id, withdrawal_id)
-
-                cost_level = self._source_dao.get_st_storage_cost_level(area_id, sts_id)
-                cost_level_id = self._matrix_service.create(cost_level)
-                self._new_dao.save_st_storage_cost_level(area_id, sts_id, cost_level_id)
-
-                cost_var_injection = self._source_dao.get_st_storage_cost_variation_injection(area_id, sts_id)
-                cost_var_injection_id = self._matrix_service.create(cost_var_injection)
-                self._new_dao.save_st_storage_cost_variation_injection(area_id, sts_id, cost_var_injection_id)
-
-                cost_var_withdrawal = self._source_dao.get_st_storage_cost_variation_withdrawal(area_id, sts_id)
-                cost_var_withdrawal_id = self._matrix_service.create(cost_var_withdrawal)
-                self._new_dao.save_st_storage_cost_variation_withdrawal(area_id, sts_id, cost_var_withdrawal_id)
-
-    def _convert_hydro(self, area_id: str, properties: HydroProperties) -> None:
-        self._new_dao.save_hydro_management(properties.management_options, area_id)
-        self._new_dao.save_inflow_structure(properties.inflow_structure, area_id)
-        self._new_dao.save_hydro_allocation(area_id, self._source_dao.get_hydro_allocation(area_id))
-        self._new_dao.save_hydro_correlation(area_id, self._source_dao.get_hydro_correlation(area_id))
+        # Short-term storages
+        self._new_dao.save_st_storages({area_id: list(value.values()) for area_id, value in storages.items()})
 
         # Matrices
-        energy = self._matrix_service.create(self._source_dao.get_hydro_energy(area_id))
-        self._new_dao.save_hydro_energy(area_id, energy)
+        pmax_injection = self._source_dao.get_all_st_storage_pmax_injection()
+        self._new_dao.save_st_storage_pmax_injection(pmax_injection)
 
-        run_of_river = self._matrix_service.create(self._source_dao.get_hydro_run_of_river(area_id))
-        self._new_dao.save_hydro_run_of_river(area_id, run_of_river)
+        pmax_withdrawal = self._source_dao.get_all_st_storage_pmax_withdrawal()
+        self._new_dao.save_st_storage_pmax_withdrawal(pmax_withdrawal)
 
-        modulation = self._matrix_service.create(self._source_dao.get_hydro_modulation(area_id))
-        self._new_dao.save_hydro_modulation(area_id, modulation)
+        lower_rule_curve = self._source_dao.get_all_st_storage_lower_rule_curve()
+        self._new_dao.save_st_storage_lower_rule_curve(lower_rule_curve)
 
-        max_power = self._matrix_service.create(self._source_dao.get_hydro_maxpower(area_id))
-        self._new_dao.save_hydro_maxpower(area_id, max_power)
+        upper_rule_curve = self._source_dao.get_all_st_storage_upper_rule_curve()
+        self._new_dao.save_st_storage_upper_rule_curve(upper_rule_curve)
 
-        reservoir = self._matrix_service.create(self._source_dao.get_hydro_reservoir(area_id))
-        self._new_dao.save_hydro_reservoir(area_id, reservoir)
+        inflows = self._source_dao.get_all_st_storage_inflows()
+        self._new_dao.save_st_storage_inflows(inflows)
+
+        if self._study_version >= STUDY_VERSION_9_2:
+            cost_injection = self._source_dao.get_all_st_storage_cost_injection()
+            self._new_dao.save_st_storage_cost_injection(cost_injection)
+
+            cost_withdrawal = self._source_dao.get_all_st_storage_cost_withdrawal()
+            self._new_dao.save_st_storage_cost_withdrawal(cost_withdrawal)
+
+            cost_level = self._source_dao.get_all_st_storage_cost_level()
+            self._new_dao.save_st_storage_cost_level(cost_level)
+
+            cost_var_injection = self._source_dao.get_all_st_storage_cost_variation_injection()
+            self._new_dao.save_st_storage_cost_variation_injection(cost_var_injection)
+
+            cost_var_withdrawal = self._source_dao.get_all_st_storage_cost_variation_withdrawal()
+            self._new_dao.save_st_storage_cost_variation_withdrawal(cost_var_withdrawal)
+
+        # Short-term storage constraints
+        if constraints:
+            self._new_dao.save_st_storage_additional_constraints(constraints)
+
+            constraint_matrices = self._source_dao.get_all_st_storage_additional_constraint_matrices()
+            self._new_dao.save_st_storage_constraint_matrices(constraint_matrices)
+
+    def _convert_hydro(self) -> None:
+        hydro_properties = self._source_dao.get_all_hydro_properties()
+
+        # Properties
+        management = {}
+        inflow_structure = {}
+        for area_id, properties in hydro_properties.items():
+            management[area_id] = properties.management_options
+            inflow_structure[area_id] = properties.inflow_structure
+
+        self._new_dao.save_hydro_management(management)
+        self._new_dao.save_inflow_structure(inflow_structure)
+
+        # Allocation
+        allocation = self._source_dao.get_hydro_allocation_matrix()
+        self._new_dao.save_hydro_allocation(allocation)
+
+        # Correlation
+        correlation_dict = self._source_dao.get_hydro_correlation_matrix().to_hydro_correlations()
+        self._new_dao.save_hydro_correlation(correlation_dict)
+
+        # Matrices
+        energy = self._source_dao.get_all_hydro_energy()
+        self._new_dao.save_hydro_energy(energy)
+
+        run_of_river = self._source_dao.get_all_hydro_run_of_river()
+        self._new_dao.save_hydro_run_of_river(run_of_river)
+
+        modulation = self._source_dao.get_all_hydro_modulation()
+        self._new_dao.save_hydro_modulation(modulation)
+
+        max_power = self._source_dao.get_all_hydro_maxpower()
+        self._new_dao.save_hydro_maxpower(max_power)
+
+        reservoir = self._source_dao.get_all_hydro_reservoir()
+        self._new_dao.save_hydro_reservoir(reservoir)
 
         if self._study_version > STUDY_VERSION_6_5:
-            credit_modulations = self._matrix_service.create(self._source_dao.get_hydro_credit_modulations(area_id))
-            self._new_dao.save_hydro_credit_modulations(area_id, credit_modulations)
+            credit_modulations = self._source_dao.get_all_hydro_credit_modulations()
+            self._new_dao.save_hydro_credit_modulations(credit_modulations)
 
-            inflow_pattern = self._matrix_service.create(self._source_dao.get_hydro_inflow_pattern(area_id))
-            self._new_dao.save_hydro_inflow_pattern(area_id, inflow_pattern)
+            inflow_pattern = self._source_dao.get_all_hydro_inflow_pattern()
+            self._new_dao.save_hydro_inflow_pattern(inflow_pattern)
 
-            water_values = self._matrix_service.create(self._source_dao.get_hydro_water_values(area_id))
-            self._new_dao.save_hydro_water_values(area_id, water_values)
+            water_values = self._source_dao.get_all_hydro_water_values()
+            self._new_dao.save_hydro_water_values(water_values)
 
         if self._study_version >= STUDY_VERSION_8_6:
-            mingen = self._matrix_service.create(self._source_dao.get_hydro_mingen(area_id))
-            self._new_dao.save_hydro_mingen(area_id, mingen)
+            mingen = self._source_dao.get_all_hydro_mingen()
+            self._new_dao.save_hydro_mingen(mingen)
 
         if self._study_version >= STUDY_VERSION_9_2:
             compatibility_data = self._source_dao.get_compatibility_parameters()
             if compatibility_data.hydro_pmax == HydroPmax.HOURLY:
-                max_hourly_gen = self._matrix_service.create(self._source_dao.get_hydro_max_hourly_gen_power(area_id))
-                self._new_dao.save_hydro_max_hourly_gen_power(area_id, max_hourly_gen)
+                max_hourly_gen = self._source_dao.get_all_hydro_max_hourly_gen_power()
+                self._new_dao.save_hydro_max_hourly_gen_power(max_hourly_gen)
 
-                max_hourly_pump = self._matrix_service.create(self._source_dao.get_hydro_max_hourly_pump_power(area_id))
-                self._new_dao.save_hydro_max_hourly_pump_power(area_id, max_hourly_pump)
+                max_hourly_pump = self._source_dao.get_all_hydro_max_hourly_pump_power()
+                self._new_dao.save_hydro_max_hourly_pump_power(max_hourly_pump)
 
-                max_daily_gen = self._matrix_service.create(self._source_dao.get_hydro_max_daily_gen_energy(area_id))
-                self._new_dao.save_hydro_max_daily_gen_energy(area_id, max_daily_gen)
+                max_daily_gen = self._source_dao.get_all_hydro_max_daily_gen_energy()
+                self._new_dao.save_hydro_max_daily_gen_energy(max_daily_gen)
 
-                max_daily_pump = self._matrix_service.create(self._source_dao.get_hydro_max_daily_pump_energy(area_id))
-                self._new_dao.save_hydro_max_daily_pump_energy(area_id, max_daily_pump)
+                max_daily_pump = self._source_dao.get_all_hydro_max_daily_pump_energy()
+                self._new_dao.save_hydro_max_daily_pump_energy(max_daily_pump)

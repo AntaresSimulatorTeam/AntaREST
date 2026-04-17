@@ -109,6 +109,7 @@ from antarest.study.business.model.xpansion_model import (
 )
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
+from antarest.study.business.reserves_global_parameters_management import ReservesGlobalParametersManager
 from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.table_mode_management import TableModeManager
@@ -171,6 +172,8 @@ from antarest.study.storage.utils import (
     assert_permission,
     assert_permission_on_studies,
     create_new_empty_study,
+    extract_simulation_range_from_model,
+    get_matrix_index,
     get_start_date,
     is_managed,
     is_study_folder,
@@ -204,7 +207,7 @@ MAX_MISSING_STUDY_TIMEOUT = 2  # days
 MAX_BATCH_DELETE_SIZE = 100
 
 
-def _get_matrix_from_path(study_interface: StudyInterface, matrix_path: Path) -> pl.DataFrame:
+def _get_matrix_from_path(study_interface: StudyInterface, matrix_path: PurePosixPath) -> pl.DataFrame:
     """We give a ReadOnlyStudyDao instead of a StudyDao, but it does not matter as we only use the getter methods."""
     mapper = RawPathToMatrixMapper(study_interface.get_study_dao())  # type: ignore
     return mapper.get_matrix_from_path(matrix_path)
@@ -704,6 +707,7 @@ class StudyService:
         self.adequacy_patch_manager = AdequacyPatchManager(command_context)
         self.advanced_parameters_manager = AdvancedParamsManager(command_context)
         self.compatibility_parameters_manager = CompatibilityParamsManager(command_context)
+        self.reserves_global_parameters_manager = ReservesGlobalParametersManager(command_context)
         self.hydro_manager = HydroManager(command_context)
         self.allocation_manager = AllocationManager(command_context)
         self.renewable_manager = RenewableManager(command_context)
@@ -1103,9 +1107,19 @@ class StudyService:
         outputs = self._get_outputs_access().get_outputs_details(study.id)
         return StudySynthesis.aggregate(input_synthesis, outputs)
 
-    def get_input_matrix_startdate(self, study_id: str, path: str | None) -> MatrixIndex:
+    def get_input_matrix_startdate(self, study_id: str, path: str) -> MatrixIndex:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
+
+        # We need to handle matrices index differently if our study is stored in DB
+        if study.storage_mode == StorageMode.DATABASE:
+            dao = self.get_study_interface(study).get_study_dao()
+            # We can give a readOnly Dao as we won't use the save methods
+            mapper = RawPathToMatrixMapper(dao)  # type: ignore
+            matrix_frequency = mapper.get_matrix_frequency_from_path(PurePosixPath(path))
+            simulation_range = extract_simulation_range_from_model(dao.get_general_config())
+            return get_matrix_index(simulation_range, False, matrix_frequency)
+
         file_study = self.get_file_study(study)
         output_id = None
         frequency = MatrixFrequency.HOURLY
@@ -2722,7 +2736,7 @@ class StudyService:
             HTTPException: If the matrix does not exist or the user does not have the necessary permissions.
         """
 
-        matrix_path = Path(path)
+        matrix_path = PurePosixPath(path)
         study = self.get_study(study_id)
         study_interface = self.get_study_interface(study)
 
@@ -2905,8 +2919,7 @@ class StudyService:
 
         # We need to handle matrices differently if our study is stored in DB
         if study.storage_mode == StorageMode.DATABASE:
-            return InputMatrix(_get_matrix_from_path(self.get_study_interface(study), Path(path)))
-
+            return InputMatrix(_get_matrix_from_path(self.get_study_interface(study), PurePosixPath(path)))
         else:
             file_study = self.get_file_study(study)
             node, relative_url = file_study.tree.get_node_and_remainder(url)
