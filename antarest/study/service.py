@@ -203,7 +203,7 @@ MAX_MISSING_STUDY_TIMEOUT = 2  # days
 MAX_BATCH_DELETE_SIZE = 100
 
 
-def _get_matrix_from_path(study_interface: StudyInterface, matrix_path: Path) -> pl.DataFrame:
+def _get_matrix_from_path(study_interface: StudyInterface, matrix_path: PurePosixPath) -> pl.DataFrame:
     """We give a ReadOnlyStudyDao instead of a StudyDao, but it does not matter as we only use the getter methods."""
     mapper = RawPathToMatrixMapper(study_interface.get_study_dao())  # type: ignore
     return mapper.get_matrix_from_path(matrix_path)
@@ -1089,7 +1089,7 @@ class StudyService:
             dao = self.get_study_interface(study).get_study_dao()
             # We can give a readOnly Dao as we won't use the save methods
             mapper = RawPathToMatrixMapper(dao)  # type: ignore
-            matrix_frequency = mapper.get_matrix_frequency_from_path(Path(path))
+            matrix_frequency = mapper.get_matrix_frequency_from_path(PurePosixPath(path))
             simulation_range = parse_simulation_range_from_model(dao.get_general_config())
             return get_matrix_index(simulation_range, False, matrix_frequency)
 
@@ -2709,7 +2709,7 @@ class StudyService:
             HTTPException: If the matrix does not exist or the user does not have the necessary permissions.
         """
 
-        matrix_path = Path(path)
+        matrix_path = PurePosixPath(path)
         study = self.get_study(study_id)
         study_interface = self.get_study_interface(study)
 
@@ -2875,7 +2875,7 @@ class StudyService:
 
         # We need to handle matrices differently if our study is stored in DB
         if study.storage_mode == StorageMode.DATABASE:
-            return _get_matrix_from_path(self.get_study_interface(study), Path(path))
+            return _get_matrix_from_path(self.get_study_interface(study), PurePosixPath(path))
 
         else:
             file_study = self.get_file_study(study)

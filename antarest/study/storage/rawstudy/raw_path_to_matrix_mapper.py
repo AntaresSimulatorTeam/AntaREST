@@ -12,7 +12,7 @@
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import PurePosixPath
 
 import polars as pl
 
@@ -489,7 +489,7 @@ class RawPathToMatrixMapper:
                 ]
             )
 
-    def _get_matcher(self, path: Path) -> tuple[RegexMatcher, re.Match[str]]:
+    def _get_matcher(self, path: PurePosixPath) -> tuple[RegexMatcher, re.Match[str]]:
         for regex_matcher in self._path_matchers:
             match = regex_matcher.pattern.fullmatch(path.as_posix())
             if match:
@@ -497,14 +497,14 @@ class RawPathToMatrixMapper:
 
         raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 
-    def get_matrix_from_path(self, path: Path) -> pl.DataFrame:
+    def get_matrix_from_path(self, path: PurePosixPath) -> pl.DataFrame:
         matcher, match = self._get_matcher(path)
         return matcher.getter(**match.groupdict())
 
-    def save_matrix_from_path(self, path: Path, series_id: str) -> None:
+    def save_matrix_from_path(self, path: PurePosixPath, series_id: str) -> None:
         matcher, match = self._get_matcher(path)
         return matcher.setter(**{**match.groupdict(), "series_id": series_id})
 
-    def get_matrix_frequency_from_path(self, path: Path) -> MatrixFrequency:
+    def get_matrix_frequency_from_path(self, path: PurePosixPath) -> MatrixFrequency:
         matcher, match = self._get_matcher(path)
         return matcher.frequency(**match.groupdict())
