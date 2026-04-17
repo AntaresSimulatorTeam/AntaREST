@@ -31,7 +31,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     validate_thermal_cluster_against_version,
 )
 from antarest.study.dao.api.thermal_dao import ThermalDao
-from antarest.study.dao.common import AreaId, ThermalId, ThermalSeriesMapping
+from antarest.study.dao.common import AreaId, SeriesId, ThermalId, ThermalSeriesMapping
 from antarest.study.dao.database.common import get_row_representation_as_dict, validate_area_exists
 from antarest.study.dao.database.models.thermal import (
     THERMAL_CLUSTER_TABLE,
@@ -42,6 +42,11 @@ from antarest.study.dao.database.models.thermal import (
     THERMAL_SERIES_TABLE,
 )
 from antarest.study.dao.database.sql_utils import upsert_multiple
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import default_scenario_hourly
+from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.prepro.area.thermal.thermal import (
+    default_data_matrix,
+    default_modulation_matrix,
+)
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -94,11 +99,11 @@ class DatabaseThermalDao(ThermalDao):
         )
         return session.execute(stmt).fetchone()
 
-    def _get_thermal_matrix(self, area_id: str, thermal_id: str, table: Table) -> pl.DataFrame:
+    def _get_thermal_matrix(self, area_id: str, thermal_id: str, table: Table) -> SeriesId:
         row = self._get_thermal_matrix_row(area_id, thermal_id, table)
         if not row:
             self._raise_the_right_exception({area_id: [thermal_id]})
-        return self.get_impl().get_matrix(row.matrix_id)
+        return str(row.matrix_id)
 
     def _save_thermal_matrix(self, series: ThermalSeriesMapping, table: Table) -> None:
         study_id = self._study_id
@@ -258,23 +263,28 @@ class DatabaseThermalDao(ThermalDao):
 
     @override
     def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pl.DataFrame:
-        return self._get_thermal_matrix(area_id, thermal_id, THERMAL_PREPRO_TABLE)
+        matrix_id = self._get_thermal_matrix(area_id, thermal_id, THERMAL_PREPRO_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty=default_data_matrix)
 
     @override
     def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pl.DataFrame:
-        return self._get_thermal_matrix(area_id, thermal_id, THERMAL_MODULATION_TABLE)
+        matrix_id = self._get_thermal_matrix(area_id, thermal_id, THERMAL_MODULATION_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty=default_modulation_matrix)
 
     @override
     def get_thermal_series(self, area_id: str, thermal_id: str) -> pl.DataFrame:
-        return self._get_thermal_matrix(area_id, thermal_id, THERMAL_SERIES_TABLE)
+        matrix_id = self._get_thermal_matrix(area_id, thermal_id, THERMAL_SERIES_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty=default_scenario_hourly)
 
     @override
     def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
-        return self._get_thermal_matrix(area_id, thermal_id, THERMAL_FUEL_COST_TABLE)
+        matrix_id = self._get_thermal_matrix(area_id, thermal_id, THERMAL_FUEL_COST_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty=default_scenario_hourly)
 
     @override
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
-        return self._get_thermal_matrix(area_id, thermal_id, THERMAL_CO2_COST_TABLE)
+        matrix_id = self._get_thermal_matrix(area_id, thermal_id, THERMAL_CO2_COST_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty=default_scenario_hourly)
 
     def _get_all_thermal_matrix(self, table: Table) -> ThermalSeriesMapping:
         study_id = self._study_id
