@@ -13,6 +13,10 @@ from polars.testing import assert_frame_equal
 
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.binding_constraint_model import (
+    BindingConstraint,
+    BindingConstraintFrequency,
+)
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
@@ -35,6 +39,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.prepro.
 )
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
     default_bc_hourly,
+    default_bc_weekly_daily,
 )
 from tests.study.dao.conftest import build_real_case_study
 
@@ -68,6 +73,7 @@ def test_empty_matrices(dao_and_matrix_service: tuple[DatabaseStudyDao, ISimpleM
     default_water_values_dataframe = create_polars_dataframe(default_water_values())
     default_credit_modulation_dataframe = create_polars_dataframe(default_credit_modulation())
     default_bc_hourly_dataframe = create_polars_dataframe(default_bc_hourly())
+    default_bc_daily_weekly_dataframe = create_polars_dataframe(default_bc_weekly_daily())
     null_dataframe = create_polars_dataframe([[]])
 
     # Test each DAO matrix getter
@@ -199,3 +205,9 @@ def test_empty_matrices(dao_and_matrix_service: tuple[DatabaseStudyDao, ISimpleM
 
     bc_eq = dao.get_constraint_equal_term_matrix(bc_eq_id)
     assert_frame_equal(bc_eq, default_bc_hourly_dataframe, check_dtypes=False)
+
+    # Change the binding constraint timestep to ensure we get the right matrix
+    dao.save_constraints([BindingConstraint(name=bc_eq_id, time_step=BindingConstraintFrequency.WEEKLY)])
+
+    bc_eq = dao.get_constraint_equal_term_matrix(bc_eq_id)
+    assert_frame_equal(bc_eq, default_bc_daily_weekly_dataframe, check_dtypes=False)
