@@ -41,7 +41,8 @@ from tests.study.dao.conftest import build_real_case_study
 
 def test_empty_matrices(dao_and_matrix_service: tuple[DatabaseStudyDao, ISimpleMatrixService]) -> None:
     """
-    Test that the DAO methods return the default matrices provided by the simulator if the matrix_id saved in the database corresponds to the null matrix.
+    Parametrized test for both FS and DB DAOs.
+    Ensures DAO methods return the default matrices when the null_matrix is saved.
     """
     dao, matrix_service = dao_and_matrix_service
     result = build_real_case_study(dao, matrix_service, null_matrices=True)
