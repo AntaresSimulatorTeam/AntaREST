@@ -168,11 +168,11 @@ from antarest.study.storage.utils import (
     assert_permission,
     assert_permission_on_studies,
     create_new_empty_study,
+    extract_simulation_range_from_model,
     get_matrix_index,
     get_start_date,
     is_managed,
     is_study_folder,
-    parse_simulation_range_from_model,
     remove_from_cache,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
@@ -1090,7 +1090,7 @@ class StudyService:
             # We can give a readOnly Dao as we won't use the save methods
             mapper = RawPathToMatrixMapper(dao)  # type: ignore
             matrix_frequency = mapper.get_matrix_frequency_from_path(PurePosixPath(path))
-            simulation_range = parse_simulation_range_from_model(dao.get_general_config())
+            simulation_range = extract_simulation_range_from_model(dao.get_general_config())
             return get_matrix_index(simulation_range, False, matrix_frequency)
 
         file_study = self.get_file_study(study)

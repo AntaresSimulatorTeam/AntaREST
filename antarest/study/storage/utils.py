@@ -342,7 +342,7 @@ def parse_simulation_range(config: dict[str, Any]) -> SimulationRangeDefinition:
     )
 
 
-def parse_simulation_range_from_model(general: GeneralConfig) -> SimulationRangeDefinition:
+def extract_simulation_range_from_model(general: GeneralConfig) -> SimulationRangeDefinition:
     starting_month = general.first_month
     starting_day = general.first_january
     leapyear = general.leap_year
