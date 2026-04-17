@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, LinkNotFound, LinksNotFound
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.study.business.model.link_model import Link
 from antarest.study.dao.api.link_dao import LinkDao
 from antarest.study.dao.common import LinkSeriesMapping
@@ -32,6 +33,12 @@ from antarest.study.dao.database.models.link import (
     LINK_TABLE,
 )
 from antarest.study.dao.database.sql_utils import upsert_multiple
+from antarest.study.model import STUDY_VERSION_8_2
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
+    default_6_fixed_hourly,
+    default_8_fixed_hourly,
+    default_scenario_hourly,
+)
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -179,15 +186,28 @@ class DatabaseLinkDao(LinkDao):
 
     @override
     def get_link_direct_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
-        return self._get_link_matrix(area_from, area_to, LINK_DIRECT_CAPACITY_TABLE)
+        matrix = self._get_link_matrix(area_from, area_to, LINK_DIRECT_CAPACITY_TABLE)
+        if matrix.is_empty():
+            return create_polars_dataframe(default_scenario_hourly())
+        return matrix
 
     @override
     def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
-        return self._get_link_matrix(area_from, area_to, LINK_INDIRECT_CAPACITY_TABLE)
+        matrix = self._get_link_matrix(area_from, area_to, LINK_INDIRECT_CAPACITY_TABLE)
+        if matrix.is_empty():
+            return create_polars_dataframe(default_scenario_hourly())
+        return matrix
 
     @override
     def get_link_series(self, area_from: str, area_to: str) -> pl.DataFrame:
-        return self._get_link_matrix(area_from, area_to, LINK_SERIES_TABLE)
+        matrix = self._get_link_matrix(area_from, area_to, LINK_SERIES_TABLE)
+
+        if matrix.is_empty():
+            if self.get_impl().get_version() < STUDY_VERSION_8_2:
+                return create_polars_dataframe(default_8_fixed_hourly())
+            return create_polars_dataframe(default_6_fixed_hourly())
+
+        return matrix
 
     def _get_link_matrices(self, table: Table) -> LinkSeriesMapping:
         study_id = self._study_id
