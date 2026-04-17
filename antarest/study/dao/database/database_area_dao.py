@@ -27,6 +27,7 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, LayerNotFound
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_dao import AreaDao
@@ -49,6 +50,11 @@ from antarest.study.dao.database.models.area import (
 from antarest.study.dao.database.models.district import DISTRICT_TABLE
 from antarest.study.dao.database.sql_utils import upsert_multiple
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
+    default_4_fixed_hourly,
+    default_8_fixed_hourly,
+    default_scenario_hourly,
+)
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -463,23 +469,38 @@ class DatabaseAreaDao(AreaDao):
 
     @override
     def get_load(self, area_id: str) -> pl.DataFrame:
-        return self._get_matrix(area_id, LOAD_TABLE)
+        matrix = self._get_matrix(area_id, LOAD_TABLE)
+        if matrix.is_empty():
+            return create_polars_dataframe(default_scenario_hourly())
+        return matrix
 
     @override
     def get_misc_gen(self, area_id: str) -> pl.DataFrame:
-        return self._get_matrix(area_id, MISC_GEN_TABLE)
+        matrix = self._get_matrix(area_id, MISC_GEN_TABLE)
+        if matrix.is_empty():
+            return create_polars_dataframe(default_8_fixed_hourly())
+        return matrix
 
     @override
     def get_reserves(self, area_id: str) -> pl.DataFrame:
-        return self._get_matrix(area_id, RESERVES_TABLE)
+        matrix = self._get_matrix(area_id, RESERVES_TABLE)
+        if matrix.is_empty():
+            return create_polars_dataframe(default_4_fixed_hourly())
+        return matrix
 
     @override
     def get_solar(self, area_id: str) -> pl.DataFrame:
-        return self._get_matrix(area_id, SOLAR_TABLE)
+        matrix = self._get_matrix(area_id, SOLAR_TABLE)
+        if matrix.is_empty():
+            return create_polars_dataframe(default_scenario_hourly())
+        return matrix
 
     @override
     def get_wind(self, area_id: str) -> pl.DataFrame:
-        return self._get_matrix(area_id, WIND_TABLE)
+        matrix = self._get_matrix(area_id, WIND_TABLE)
+        if matrix.is_empty():
+            return create_polars_dataframe(default_scenario_hourly())
+        return matrix
 
     @override
     def get_all_load(self) -> AreaSeriesMapping:
