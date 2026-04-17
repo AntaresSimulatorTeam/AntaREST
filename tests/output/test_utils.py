@@ -16,7 +16,7 @@ from antarest.output.filestudy.utils import (
     RawOutputMatrixQuery,
     parse_raw_output_matrix_path,
 )
-from antarest.output.model import MCAllAreasFile, MCAllLinksFile, MCIndAreasFile, MCIndLinksFile
+from antarest.output.model import MCAllAreasData, MCAllLinksData, MCIndAreasData, MCIndLinksData
 from antarest.study.model import MatrixFrequency
 
 
@@ -27,7 +27,7 @@ class TestParseRawOutputMatrixPath:
         )
         assert result == RawOutputMatrixQuery(
             output_id="20201014-1422eco",
-            query_file=MCAllAreasFile.VALUES,
+            query_file=MCAllAreasData.VALUES,
             frequency=MatrixFrequency.HOURLY,
             ids_to_consider="fr",
             mc_year=None,
@@ -38,7 +38,7 @@ class TestParseRawOutputMatrixPath:
             ["output", "20201014-1422eco", "economy", "mc-all", "areas", "de", "details-daily"]
         )
         assert result is not None
-        assert result.query_file == MCAllAreasFile.DETAILS
+        assert result.query_file == MCAllAreasData.DETAILS
         assert result.frequency == MatrixFrequency.DAILY
 
     def test_mc_all_areas_details_st_storage(self) -> None:
@@ -46,7 +46,7 @@ class TestParseRawOutputMatrixPath:
             ["output", "20201014-1422eco", "economy", "mc-all", "areas", "fr", "details-STstorage-monthly"]
         )
         assert result is not None
-        assert result.query_file == MCAllAreasFile.DETAILS_ST_STORAGE
+        assert result.query_file == MCAllAreasData.DETAILS_ST_STORAGE
         assert result.frequency == MatrixFrequency.MONTHLY
 
     def test_mc_all_areas_details_res(self) -> None:
@@ -54,7 +54,7 @@ class TestParseRawOutputMatrixPath:
             ["output", "20201014-1422eco", "economy", "mc-all", "areas", "fr", "details-res-weekly"]
         )
         assert result is not None
-        assert result.query_file == MCAllAreasFile.DETAILS_RES
+        assert result.query_file == MCAllAreasData.DETAILS_RES
         assert result.frequency == MatrixFrequency.WEEKLY
 
     def test_mc_all_areas_id(self) -> None:
@@ -62,7 +62,7 @@ class TestParseRawOutputMatrixPath:
             ["output", "20201014-1422eco", "economy", "mc-all", "areas", "fr", "id-annual"]
         )
         assert result is not None
-        assert result.query_file == MCAllAreasFile.ID
+        assert result.query_file == MCAllAreasData.ID
         assert result.frequency == MatrixFrequency.ANNUAL
 
     def test_mc_all_links(self) -> None:
@@ -71,7 +71,7 @@ class TestParseRawOutputMatrixPath:
         )
         assert result == RawOutputMatrixQuery(
             output_id="20201014-1422eco",
-            query_file=MCAllLinksFile.VALUES,
+            query_file=MCAllLinksData.VALUES,
             frequency=MatrixFrequency.HOURLY,
             ids_to_consider="fr - de",
             mc_year=None,
@@ -83,7 +83,7 @@ class TestParseRawOutputMatrixPath:
         )
         assert result == RawOutputMatrixQuery(
             output_id="20201014-1422eco",
-            query_file=MCIndAreasFile.VALUES,
+            query_file=MCIndAreasData.VALUES,
             frequency=MatrixFrequency.HOURLY,
             ids_to_consider="fr",
             mc_year=1,
@@ -94,7 +94,7 @@ class TestParseRawOutputMatrixPath:
             ["output", "20201014-1422eco", "economy", "mc-ind", "00042", "links", "fr", "de", "values-daily"]
         )
         assert result is not None
-        assert result.query_file == MCIndLinksFile.VALUES
+        assert result.query_file == MCIndLinksData.VALUES
         assert result.mc_year == 42
 
     def test_adequacy_mode(self) -> None:

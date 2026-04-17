@@ -184,14 +184,14 @@ OutputTable: TypeAlias = DataTable[OutputColumn]
 LazyOutputTable: TypeAlias = LazyTable[OutputColumn]
 
 
-class MCIndAreasFile(StrEnum):
+class MCIndAreasData(StrEnum):
     VALUES = "values"
     DETAILS = "details"
     DETAILS_ST_STORAGE = "details-STstorage"
     DETAILS_RES = "details-res"
 
 
-class MCAllAreasFile(StrEnum):
+class MCAllAreasData(StrEnum):
     VALUES = "values"
     DETAILS = "details"
     DETAILS_ST_STORAGE = "details-STstorage"
@@ -199,13 +199,13 @@ class MCAllAreasFile(StrEnum):
     ID = "id"
 
 
-class MCIndLinksFile(StrEnum):
+class MCIndLinksData(StrEnum):
     VALUES = "values"
 
 
-class MCAllLinksFile(StrEnum):
+class MCAllLinksData(StrEnum):
     VALUES = "values"
     ID = "id"
 
 
-OutputFileType: TypeAlias = MCIndAreasFile | MCAllAreasFile | MCIndLinksFile | MCAllLinksFile
+OutputDataType: TypeAlias = MCIndAreasData | MCAllAreasData | MCIndLinksData | MCAllLinksData

@@ -74,7 +74,7 @@ from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.output.filestudy.utils import (
     parse_raw_output_matrix_path,
 )
-from antarest.output.model import OutputFileType, OutputTable
+from antarest.output.model import OutputDataType, OutputTable
 from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
@@ -658,7 +658,7 @@ class IOutputsAccess(ABC):
         self,
         study_id: str,
         output_id: str,
-        query_file: "OutputFileType",
+        query_file: "OutputDataType",
         frequency: MatrixFrequency,
         item_id: str,
         mc_year: int | None = None,

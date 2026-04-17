@@ -22,11 +22,11 @@ import polars as pl
 from polars.exceptions import ComputeError
 
 from antarest.output.model import (
-    MCAllAreasFile,
-    MCAllLinksFile,
-    MCIndAreasFile,
-    MCIndLinksFile,
-    OutputFileType,
+    MCAllAreasData,
+    MCAllLinksData,
+    MCIndAreasData,
+    MCIndLinksData,
+    OutputDataType,
     OutputTable,
     VarColumn,
 )
@@ -52,17 +52,17 @@ class RawOutputMatrixQuery:
     """Parsed parameters from the /raw output matrix path"""
 
     output_id: str
-    query_file: OutputFileType
+    query_file: OutputDataType
     frequency: MatrixFrequency
     ids_to_consider: str
     mc_year: int | None
 
 
-_QUERY_FILE_MAP: dict[tuple[str, str], dict[str, OutputFileType]] = {
-    ("mc-all", "areas"): {e.value: e for e in MCAllAreasFile},
-    ("mc-all", "links"): {e.value: e for e in MCAllLinksFile},
-    ("mc-ind", "areas"): {e.value: e for e in MCIndAreasFile},
-    ("mc-ind", "links"): {e.value: e for e in MCIndLinksFile},
+_QUERY_FILE_MAP: dict[tuple[str, str], dict[str, OutputDataType]] = {
+    ("mc-all", "areas"): {e.value: e for e in MCAllAreasData},
+    ("mc-all", "links"): {e.value: e for e in MCAllLinksData},
+    ("mc-ind", "areas"): {e.value: e for e in MCIndAreasData},
+    ("mc-ind", "links"): {e.value: e for e in MCIndLinksData},
 }
 
 
@@ -139,16 +139,16 @@ def parse_raw_output_matrix_path(path_parts: list[str]) -> RawOutputMatrixQuery 
     )
 
 
-def get_output_object_type(file_type: OutputFileType, is_link: bool) -> str:
+def get_output_object_type(file_type: OutputDataType, is_link: bool) -> str:
     if is_link:
         return "links"
 
     match file_type:
-        case MCIndAreasFile.DETAILS:
+        case MCIndAreasData.DETAILS:
             return "thermal_clusters"
-        case MCIndAreasFile.DETAILS_RES:
+        case MCIndAreasData.DETAILS_RES:
             return "renewable_clusters"
-        case MCIndAreasFile.DETAILS_ST_STORAGE:
+        case MCIndAreasData.DETAILS_ST_STORAGE:
             return "short_term_storages"
         case _:
             return "areas"

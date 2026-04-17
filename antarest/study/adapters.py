@@ -13,7 +13,7 @@ from pathlib import Path
 
 from typing_extensions import override
 
-from antarest.output.model import OutputFileType, OutputTable
+from antarest.output.model import OutputDataType, OutputTable
 from antarest.output.service import OutputService
 from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
 from antarest.study.model import MatrixFrequency
@@ -55,7 +55,7 @@ def adapt_output_service_to_study_service(output_service: OutputService) -> IOut
             self,
             study_id: str,
             output_id: str,
-            query_file: OutputFileType,
+            query_file: OutputDataType,
             frequency: MatrixFrequency,
             item_id: str,
             mc_year: int | None = None,

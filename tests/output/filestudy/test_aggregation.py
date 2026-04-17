@@ -33,7 +33,7 @@ from antarest.output.filestudy.aggregation import (
 from antarest.output.filestudy.utils import (
     parse_output_file,
 )
-from antarest.output.model import ClusterVarColumn, MCAllAreasFile, MCIndLinksFile, VarColumn
+from antarest.output.model import ClusterVarColumn, MCAllAreasData, MCIndLinksData, VarColumn
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.df_download import export_df_chunks
 
@@ -52,7 +52,7 @@ def output_path(tmp_path: Path, sta_mini_zip_path: Path) -> Path:
 
 
 def test_aggregation(output_path: Path) -> None:
-    dfs = aggregate_output_data(output_path, MCAllAreasFile.VALUES, MatrixFrequency.DAILY, [], [], False, [])
+    dfs = aggregate_output_data(output_path, MCAllAreasData.VALUES, MatrixFrequency.DAILY, [], [], False, [])
     dfs = list(dfs)
     assert dfs[0].columns == []
 
@@ -297,7 +297,7 @@ def test_read_all_headers_str(large_output_path: Path) -> None:
     # 10sec
     files = identify_files(
         large_output_path,
-        file_type=MCIndLinksFile.VALUES,
+        file_type=MCIndLinksData.VALUES,
         frequency=MatrixFrequency.HOURLY,
         mc_years=[],
         item_ids=[],
@@ -314,7 +314,7 @@ def test_read_all_headers_stream(large_output_path: Path) -> None:
     # Only 1 sec
     files = identify_files(
         large_output_path,
-        file_type=MCIndLinksFile.VALUES,
+        file_type=MCIndLinksData.VALUES,
         frequency=MatrixFrequency.HOURLY,
         mc_years=[],
         item_ids=[],
@@ -336,7 +336,7 @@ def test_read_all_headers_stream(large_output_path: Path) -> None:
 def test_to_parquet(large_output_path: Path, tmp_path: Path) -> None:
     results = aggregate_output_data(
         large_output_path,
-        query_file=MCIndLinksFile.VALUES,
+        query_file=MCIndLinksData.VALUES,
         frequency=MatrixFrequency.HOURLY,
         mc_years=range(1, 100),
         ids_to_consider=[],

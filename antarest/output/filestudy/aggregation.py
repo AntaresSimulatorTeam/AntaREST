@@ -29,12 +29,12 @@ from antarest.output.filestudy.utils import (
 from antarest.output.model import (
     ClusterVarColumn,
     LazyOutputTable,
-    MCAllAreasFile,
-    MCAllLinksFile,
-    MCIndAreasFile,
-    MCIndLinksFile,
+    MCAllAreasData,
+    MCAllLinksData,
+    MCIndAreasData,
+    MCIndLinksData,
     OutputColumn,
-    OutputFileType,
+    OutputDataType,
     OutputTable,
     VarColumn,
 )
@@ -92,7 +92,7 @@ def _filter_files(folder_path: Path, ids: set[str]) -> list[str]:
 
 def identify_mc_ind_files(
     output_path: Path,
-    query_file: MCIndAreasFile | MCIndLinksFile,
+    query_file: MCIndAreasData | MCIndLinksData,
     frequency: MatrixFrequency,
     ids_to_consider: Sequence[str],
     mc_years: Sequence[int] | None,
@@ -101,7 +101,7 @@ def identify_mc_ind_files(
     if mode_dir is None:
         raise OutputSubFolderNotFound(output_path.name, f"economy/{MCRoot.MC_IND.value}")
     mc_ind_path = mode_dir / MCRoot.MC_IND.value
-    output_type = "areas" if isinstance(query_file, MCIndAreasFile) else "links"
+    output_type = "areas" if isinstance(query_file, MCIndAreasData) else "links"
 
     # Monte Carlo years filtering
     all_mc_years = [d.name for d in mc_ind_path.iterdir()]
@@ -136,7 +136,7 @@ def identify_mc_ind_files(
 
 def identify_mc_all_files(
     output_path: Path,
-    query_file: MCAllAreasFile | MCAllLinksFile,
+    query_file: MCAllAreasData | MCAllLinksData,
     frequency: MatrixFrequency,
     ids_to_consider: Sequence[str],
 ) -> list[OutputFile]:
@@ -144,7 +144,7 @@ def identify_mc_all_files(
     if mode_dir is None:
         raise OutputSubFolderNotFound(output_path.name, f"economy/{MCRoot.MC_ALL.value}")
     mc_all_path = mode_dir / MCRoot.MC_ALL.value
-    output_type = "areas" if isinstance(query_file, MCAllAreasFile) else "links"
+    output_type = "areas" if isinstance(query_file, MCAllAreasData) else "links"
 
     # Links / Areas ids filtering
     areas_or_links_ids = _filter_files(mc_all_path / output_type, set(ids_to_consider))
@@ -163,7 +163,7 @@ def identify_mc_all_files(
 
 def identify_files(
     output_path: Path,
-    file_type: OutputFileType,
+    file_type: OutputDataType,
     frequency: MatrixFrequency,
     item_ids: Sequence[str],
     mc_years: Sequence[int] | None = None,
@@ -172,40 +172,40 @@ def identify_files(
     Returns the list of matrix files that correspond to the filters in arguments.
     """
     match file_type:
-        case MCIndAreasFile() | MCIndLinksFile():
+        case MCIndAreasData() | MCIndLinksData():
             return identify_mc_ind_files(output_path, file_type, frequency, item_ids, mc_years)
-        case MCAllAreasFile() | MCAllLinksFile():
+        case MCAllAreasData() | MCAllLinksData():
             return identify_mc_all_files(output_path, file_type, frequency, item_ids)
         case _:
             raise MCRootNotHandled(f"Unknown output file type: {file_type}")
 
 
-def is_details(query_file: OutputFileType) -> bool:
+def is_details(query_file: OutputDataType) -> bool:
     return query_file in [
-        MCIndAreasFile.DETAILS,
-        MCAllAreasFile.DETAILS,
-        MCIndAreasFile.DETAILS_ST_STORAGE,
-        MCAllAreasFile.DETAILS_ST_STORAGE,
-        MCIndAreasFile.DETAILS_RES,
-        MCAllAreasFile.DETAILS_RES,
+        MCIndAreasData.DETAILS,
+        MCAllAreasData.DETAILS,
+        MCIndAreasData.DETAILS_ST_STORAGE,
+        MCAllAreasData.DETAILS_ST_STORAGE,
+        MCIndAreasData.DETAILS_RES,
+        MCAllAreasData.DETAILS_RES,
     ]
 
 
-def is_synthesis(file_type: OutputFileType) -> bool:
+def is_synthesis(file_type: OutputDataType) -> bool:
     match file_type:
-        case MCIndAreasFile() | MCIndLinksFile():
+        case MCIndAreasData() | MCIndLinksData():
             return False
-        case MCAllAreasFile() | MCAllLinksFile():
+        case MCAllAreasData() | MCAllLinksData():
             return True
         case _:
             raise MCRootNotHandled(f"Unknown output file type: {file_type}")
 
 
-def location_type(file_type: OutputFileType) -> Literal["area", "link"]:
+def location_type(file_type: OutputDataType) -> Literal["area", "link"]:
     match file_type:
-        case MCIndAreasFile() | MCAllAreasFile():
+        case MCIndAreasData() | MCAllAreasData():
             return "area"
-        case MCIndLinksFile() | MCAllLinksFile():
+        case MCIndLinksData() | MCAllLinksData():
             return "link"
     raise ValueError(f"Unknown query file type: {file_type}")
 
@@ -218,7 +218,7 @@ class OutputMatrix:
     """
 
     path: Path  # File from which was read
-    file_type: OutputFileType
+    file_type: OutputDataType
     year: int | None  # None if we're working on mc-all data
     location: str  # Area or link
 
@@ -354,7 +354,7 @@ def sort_columns(output_matrix: OutputMatrix) -> OutputMatrix:
 
 def iterate_output_matrices(
     output_path: Path,
-    query_file: OutputFileType,
+    query_file: OutputDataType,
     frequency: MatrixFrequency,
     ids_to_consider: Sequence[str],
     columns_names: Sequence[str],
@@ -412,7 +412,7 @@ def aggregation_column_naming(col: OutputColumn) -> str:
 
 def aggregate_output_data(
     output_path: Path,
-    query_file: OutputFileType,
+    query_file: OutputDataType,
     frequency: MatrixFrequency,
     ids_to_consider: Sequence[str],
     columns_names: Sequence[str],
@@ -432,7 +432,7 @@ def aggregate_output_data(
 
 def get_output_item_table(
     output_path: Path,
-    query_file: OutputFileType,
+    query_file: OutputDataType,
     frequency: MatrixFrequency,
     item_id: str,
     mc_year: int | None = None,

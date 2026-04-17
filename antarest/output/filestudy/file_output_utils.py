@@ -26,11 +26,11 @@ from antarest.output.filestudy.utils import (
 )
 from antarest.output.model import (
     ClusterVarColumn,
-    MCAllAreasFile,
-    MCAllLinksFile,
-    MCIndAreasFile,
-    MCIndLinksFile,
-    OutputFileType,
+    MCAllAreasData,
+    MCAllLinksData,
+    MCIndAreasData,
+    MCIndLinksData,
+    OutputDataType,
     OutputVariablesList,
     VarColumn,
 )
@@ -92,8 +92,8 @@ class ColumnHeader:
 
 
 def _filter_files_with_same_prefix(
-    parent_folder: Path, file_type_class: type[OutputFileType]
-) -> dict[OutputFileType, MatrixFrequency]:
+    parent_folder: Path, file_type_class: type[OutputDataType]
+) -> dict[OutputDataType, MatrixFrequency]:
     """
     Iterate over all existing files inside the parent_folder.
     Returns only one file for each query file class.
@@ -137,7 +137,7 @@ def _to_column_name(col: VarColumn | ClusterVarColumn) -> str:
 
 
 def _read_headers_only(
-    file_path: Path, mc_root: MCRoot, file_type: OutputFileType, start_column: int
+    file_path: Path, mc_root: MCRoot, file_type: OutputDataType, start_column: int
 ) -> list[ColumnHeader]:
     """
     Returns the headers of a given output file.
@@ -167,8 +167,8 @@ def _read_headers_only(
 
 
 def _get_all_headers_and_file_type(
-    mc_root: MCRoot, parent_path: Path, file_type_class: type[OutputFileType]
-) -> Iterator[tuple[list[ColumnHeader], OutputFileType]]:
+    mc_root: MCRoot, parent_path: Path, file_type_class: type[OutputDataType]
+) -> Iterator[tuple[list[ColumnHeader], OutputDataType]]:
     """
     Returns the headers of all output files located in the parent_path.
     For each header, also returns it corresponding file type.
@@ -205,7 +205,7 @@ def extract_variables_list(output_path: Path) -> OutputVariablesList:
 
         # Areas
         areas_folder = mc_path / "areas"
-        file_type_class = MCIndAreasFile if mc_root == MCRoot.MC_IND else MCAllAreasFile
+        file_type_class = MCIndAreasData if mc_root == MCRoot.MC_IND else MCAllAreasData
         if areas_folder.exists():
             for area in sorted(areas_folder.iterdir()):
                 areas_dict: dict[str, Any] = {"name": area.name}
@@ -223,7 +223,7 @@ def extract_variables_list(output_path: Path) -> OutputVariablesList:
 
         # Links
         links_folder = mc_path / "links"
-        file_type_klass = MCIndLinksFile if mc_root == MCRoot.MC_IND else MCAllLinksFile
+        file_type_klass = MCIndLinksData if mc_root == MCRoot.MC_IND else MCAllLinksData
         if links_folder.exists():
             for link_path in sorted(links_folder.iterdir()):
                 area1, area2 = link_path.name.split(" - ")

@@ -14,7 +14,7 @@ from typing import Annotated, Literal, TypeAlias
 from pydantic import BaseModel, Field
 
 from antarest.core.exceptions import OutputVariablesViewError
-from antarest.output.model import MCIndAreasFile, MCIndLinksFile, OutputFileType, OutputVariablesList
+from antarest.output.model import MCIndAreasData, MCIndLinksData, OutputDataType, OutputVariablesList
 
 
 class ThermalClusterOutputId(BaseModel, extra="forbid"):
@@ -72,18 +72,18 @@ def get_ids_for_aggregation(item_id: OutputItemId) -> tuple[str, str | None]:
             raise NotImplementedError("Unknown output item type")
 
 
-def get_query_file(item_id: OutputItemId) -> OutputFileType:
+def get_query_file(item_id: OutputItemId) -> OutputDataType:
     match item_id:
         case AreaOutputId():
-            return MCIndAreasFile.VALUES
+            return MCIndAreasData.VALUES
         case LinkOutputId():
-            return MCIndLinksFile.VALUES
+            return MCIndLinksData.VALUES
         case ThermalClusterOutputId():
-            return MCIndAreasFile.DETAILS
+            return MCIndAreasData.DETAILS
         case RenewableClusterOutputId():
-            return MCIndAreasFile.DETAILS_RES
+            return MCIndAreasData.DETAILS_RES
         case ShortTermStorageOutputId():
-            return MCIndAreasFile.DETAILS_ST_STORAGE
+            return MCIndAreasData.DETAILS_ST_STORAGE
         case _:
             raise NotImplementedError("Unknown output item type")
 

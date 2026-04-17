@@ -61,11 +61,11 @@ from antarest.output.filestudy.utils import (
     split_concatenated_columns_from_dataframe,
 )
 from antarest.output.model import (
-    MCAllAreasFile,
-    MCAllLinksFile,
-    MCIndAreasFile,
-    MCIndLinksFile,
-    OutputFileType,
+    MCAllAreasData,
+    MCAllLinksData,
+    MCIndAreasData,
+    MCIndLinksData,
+    OutputDataType,
     OutputTable,
     OutputVariablesInformation,
     OutputVariablesList,
@@ -481,14 +481,14 @@ class OutputService:
         time_index = self.get_output_time_index(study_id, output_id, data.level)
 
         # Fetches the data
-        query_files: list[OutputFileType]
+        query_files: list[OutputDataType]
         if data.type == StudyDownloadType.LINK:
-            query_files = [MCIndLinksFile.VALUES]
+            query_files = [MCIndLinksData.VALUES]
         else:
-            query_files = [MCIndAreasFile.VALUES]
+            query_files = [MCIndAreasData.VALUES]
             if data.include_clusters:
-                query_files.append(MCIndAreasFile.DETAILS)
-                query_files.append(MCIndAreasFile.DETAILS_RES)
+                query_files.append(MCIndAreasData.DETAILS)
+                query_files.append(MCIndAreasData.DETAILS_RES)
 
         file_paths = []
         try:
@@ -643,7 +643,7 @@ class OutputService:
         self,
         uuid: str,
         output_id: str,
-        query_file: MCIndAreasFile | MCAllAreasFile | MCIndLinksFile | MCAllLinksFile,
+        query_file: MCIndAreasData | MCAllAreasData | MCIndLinksData | MCAllLinksData,
         frequency: MatrixFrequency,
         export_format: TableExportFormat,
         columns_names: Sequence[str],
@@ -690,7 +690,7 @@ class OutputService:
         self,
         uuid: str,
         output_id: str,
-        query_file: OutputFileType,
+        query_file: OutputDataType,
         frequency: MatrixFrequency,
         item_id: str,
         mc_year: int | None = None,
@@ -710,7 +710,7 @@ class OutputService:
         self,
         uuid: str,
         output_id: str,
-        query_file: OutputFileType,
+        query_file: OutputDataType,
         frequency: MatrixFrequency,
         export_format: TableExportFormat,
         columns_names: Sequence[str],
