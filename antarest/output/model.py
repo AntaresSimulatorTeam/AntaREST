@@ -114,7 +114,7 @@ class VarColumn:
 
 
 @dataclass(frozen=True)
-class ClusterVarColumn:
+class ClusterVarColumn:  # TODO: rename to DetailsVarColumn for consistency with data type ?
     """
     Col metadata for a variable of one cluster:
     in details files, the first line is actually the cluster name, while the second line is considered the variable name
