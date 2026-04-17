@@ -230,9 +230,11 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
         nodes_and_bc_ids = self._get_nodes_with_their_bc_id(term)
         for node, constraint_id in nodes_and_bc_ids:
-            series_id = series[constraint_id]
-            matrix_id = extract_matrix_id(series_id)
-            matrices_mapping.setdefault(matrix_id, []).append(node)
+            if constraint_id in series:
+                # We only want to save the series for given constraints and the method returned them all
+                series_id = series[constraint_id]
+                matrix_id = extract_matrix_id(series_id)
+                matrices_mapping.setdefault(matrix_id, []).append(node)
 
         self.get_impl().save_matrices(matrices_mapping)
 
