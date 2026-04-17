@@ -14,6 +14,7 @@
 Unit tests for ScenarioBuilderDao — run on both database and filesystem backends.
 """
 
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.scenario_builder_model import Ruleset, ScenarioType
@@ -61,8 +62,11 @@ def test_save_ruleset_with_area_scenarios(dao: StudyDao) -> None:
     assert result.wind == {"de": {"0": 3}}
 
 
-def test_save_ruleset_with_all_area_types(dao: StudyDao) -> None:
-    # Uses only fields valid from v8.8 (hydro_final_levels requires v9.2+)
+def test_save_ruleset_with_all_area_types(
+    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
+) -> None:
+    # hydro_final_levels + hydro_generation_power require v9.2+
+    dao, _ = dao_and_matrix_service
     _setup_areas(dao, "fr")
     ruleset = Ruleset(
         load={"fr": {"0": 1}},
@@ -70,6 +74,8 @@ def test_save_ruleset_with_all_area_types(dao: StudyDao) -> None:
         wind={"fr": {"0": 3}},
         solar={"fr": {"0": 4}},
         hydro_initial_levels={"fr": {"0": 0.5}},
+        hydro_final_levels={"fr": {"0": 0.8}},
+        hydro_generation_power={"fr": {"0": 5}},
     )
     dao.save_scenario_builder(ruleset)
     result = dao.get_ruleset()
@@ -79,19 +85,6 @@ def test_save_ruleset_with_all_area_types(dao: StudyDao) -> None:
     assert result.wind == {"fr": {"0": 3}}
     assert result.solar == {"fr": {"0": 4}}
     assert result.hydro_initial_levels == {"fr": {"0": 0.5}}
-
-
-def test_save_ruleset_with_hydro_final_levels_and_generation_power(dao_and_matrix_service) -> None:
-    # hydro_final_levels requires v9.2+; dao_and_matrix_service uses v9.3
-    dao, _ = dao_and_matrix_service
-    _setup_areas(dao, "fr")
-    ruleset = Ruleset(
-        hydro_final_levels={"fr": {"0": 0.8}},
-        hydro_generation_power={"fr": {"0": 5}},
-    )
-    dao.save_scenario_builder(ruleset)
-    result = dao.get_ruleset()
-
     assert result.hydro_final_levels == {"fr": {"0": 0.8}}
     assert result.hydro_generation_power == {"fr": {"0": 5}}
 
@@ -195,7 +188,9 @@ def test_get_scenario_by_type_thermal(dao: StudyDao) -> None:
     assert result == {"fr": {"gas": {"0": 1}, "nuc": {"0": 2}}}
 
 
-def test_get_scenario_by_type_storage_constraints(dao_and_matrix_service) -> None:
+def test_get_scenario_by_type_storage_constraints(
+    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
+) -> None:
     # storage_constraints requires v9.3+
     dao, _ = dao_and_matrix_service
     _setup_areas(dao, "fr")
@@ -272,7 +267,9 @@ def test_scenario_builder_link_deleted(dao: StudyDao) -> None:
     assert result == {}
 
 
-def test_scenario_builder_st_storage_deleted(dao_and_matrix_service) -> None:
+def test_scenario_builder_st_storage_deleted(
+    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
+) -> None:
     # storage_inflows requires v9.3+
     dao, _ = dao_and_matrix_service
     _setup_areas(dao, "fr")
@@ -289,7 +286,9 @@ def test_scenario_builder_st_storage_deleted(dao_and_matrix_service) -> None:
     assert _prune_empty(result) == {}
 
 
-def test_scenario_builder_st_storage_constraint_deleted(dao_and_matrix_service) -> None:
+def test_scenario_builder_st_storage_constraint_deleted(
+    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
+) -> None:
     # storage_constraints requires v9.3+
     dao, _ = dao_and_matrix_service
     _setup_areas(dao, "fr")
@@ -309,7 +308,9 @@ def test_scenario_builder_st_storage_constraint_deleted(dao_and_matrix_service) 
     assert _prune_empty(result) == {}
 
 
-def test_scenario_builder_st_storage_deleted_cascades_to_constraints(dao_and_matrix_service) -> None:
+def test_scenario_builder_st_storage_deleted_cascades_to_constraints(
+    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
+) -> None:
     # storage_inflows + storage_constraints require v9.3+
     dao, _ = dao_and_matrix_service
     _setup_areas(dao, "fr")
