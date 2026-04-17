@@ -17,10 +17,10 @@ from antarest.study.business.model.xpansion_model import XpansionResourceFileTyp
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
     default_4_fixed_hourly,
+    default_6_fixed_hourly,
     default_8_fixed_hourly,
     default_cost_level,
     default_credit_modulation,
-    default_data,
     default_energy,
     default_maxpower,
     default_reservoir,
@@ -29,14 +29,21 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default i
     default_scenario_hourly_ones,
     default_water_values,
 )
+from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.prepro.area.thermal.thermal import (
+    default_data_matrix,
+    default_modulation_matrix,
+)
+from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
+    default_bc_hourly,
+)
 from tests.study.dao.conftest import build_real_case_study
 
 
-def test_empty_matrices(db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, ISimpleMatrixService]) -> None:
+def test_empty_matrices(dao_and_matrix_service: tuple[DatabaseStudyDao, ISimpleMatrixService]) -> None:
     """
     Test that the DAO methods return the default matrices provided by the simulator if the matrix_id saved in the database corresponds to the null matrix.
     """
-    dao, matrix_service = db_dao_930_and_matrix_service
+    dao, matrix_service = dao_and_matrix_service
     result = build_real_case_study(dao, matrix_service, null_matrices=True)
 
     area_id, area2 = result.area1, result.area2
@@ -44,30 +51,13 @@ def test_empty_matrices(db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, I
     constraint_id = result.sts_constraint_id
     bc_both_id, bc_eq_id = result.bc_both_id, result.bc_eq_id
 
-    """
-    default_matrices = {
-        default_cost_level: "sts_cost_level",
-        default_energy: "hydro energy",
-        default_water_values: "hydro water values",
-        default_credit_modulation: "hydro credit modulations",
-        default_reservoir: "hydro reservoir",
-        default_maxpower: "hydro maxpower",
-        default_data: "thermal data",
-        default_8_fixed_hourly: ["misc gen", "links parameters before v8.2"],
-        default_6_fixed_hourly: "link parameters after v8.2",
-        default_4_fixed_hourly: "area reserves",
-        default_scenario_monthly: "hydro mod before v6.5",
-        default_scenario_hourly_ones: ["sts pmax injection", "sts pmax withdrawal", "sts upper rule curve"],
-        default_scenario_daily: ["hydro mod after v6.5", "hydro inflow pattern", "hydro max daily p",
-                                 "hydro max daily g"],
-    }
-    """
-
     # Declare expected dataframes
     default_scenario_hourly_dataframe = create_polars_dataframe(default_scenario_hourly())
     default_8_fixed_hourly_dataframe = create_polars_dataframe(default_8_fixed_hourly())
+    default_6_fixed_hourly_dataframe = create_polars_dataframe(default_6_fixed_hourly())
     default_4_fixed_hourly_dataframe = create_polars_dataframe(default_4_fixed_hourly())
-    default_data_dataframe = create_polars_dataframe(default_data())
+    default_data_dataframe = create_polars_dataframe(default_data_matrix())
+    default_modulation_dataframe = create_polars_dataframe(default_modulation_matrix())
     default_scenario_hourly_ones_dataframe = create_polars_dataframe(default_scenario_hourly_ones())
     default_cost_level_dataframe = create_polars_dataframe(default_cost_level())
     default_maxpower_dataframe = create_polars_dataframe(default_maxpower())
@@ -76,6 +66,8 @@ def test_empty_matrices(db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, I
     default_scenario_daily_dataframe = create_polars_dataframe(default_scenario_daily())
     default_water_values_dataframe = create_polars_dataframe(default_water_values())
     default_credit_modulation_dataframe = create_polars_dataframe(default_credit_modulation())
+    default_bc_hourly_dataframe = create_polars_dataframe(default_bc_hourly())
+    null_dataframe = create_polars_dataframe([[]])
 
     # Test each DAO matrix getter
     load = dao.get_load(area_id)
@@ -94,7 +86,7 @@ def test_empty_matrices(db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, I
     assert_frame_equal(reserves, default_4_fixed_hourly_dataframe, check_dtypes=False)
 
     link_series = dao.get_link_series(area_id, area2)
-    assert_frame_equal(link_series, default_8_fixed_hourly_dataframe, check_dtypes=False)
+    assert_frame_equal(link_series, default_6_fixed_hourly_dataframe, check_dtypes=False)
 
     link_direct_capacity = dao.get_link_direct_capacities(area_id, area2)
     assert_frame_equal(link_direct_capacity, default_scenario_hourly_dataframe, check_dtypes=False)
@@ -106,7 +98,7 @@ def test_empty_matrices(db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, I
     assert_frame_equal(thermal_prepro, default_data_dataframe, check_dtypes=False)
 
     thermal_modulation = dao.get_thermal_modulation(area_id, thermal_id)
-    assert_frame_equal(thermal_modulation, default_scenario_hourly_dataframe, check_dtypes=False)
+    assert_frame_equal(thermal_modulation, default_modulation_dataframe, check_dtypes=False)
 
     thermal_series = dao.get_thermal_series(area_id, thermal_id)
     assert_frame_equal(thermal_series, default_scenario_hourly_dataframe, check_dtypes=False)
@@ -193,16 +185,16 @@ def test_empty_matrices(db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, I
     assert_frame_equal(hydro_max_daily_pump_energy, default_scenario_daily_dataframe, check_dtypes=False)
 
     xpansion_capacity = dao.get_xpansion_resource(XpansionResourceFileType.CAPACITIES, "link_capa.txt")
-    assert_frame_equal(xpansion_capacity, default_scenario_hourly_dataframe, check_dtypes=False)
+    assert_frame_equal(xpansion_capacity, null_dataframe, check_dtypes=False)
 
     xpansion_weight = dao.get_xpansion_resource(XpansionResourceFileType.WEIGHTS, "mc_weights.csv")
-    assert_frame_equal(xpansion_weight, default_scenario_hourly_dataframe, check_dtypes=False)
+    assert_frame_equal(xpansion_weight, null_dataframe, check_dtypes=False)
 
     bc_lt = dao.get_constraint_less_term_matrix(bc_both_id)
-    assert_frame_equal(bc_lt, default_scenario_hourly_dataframe, check_dtypes=False)
+    assert_frame_equal(bc_lt, default_bc_hourly_dataframe, check_dtypes=False)
 
     bc_gt = dao.get_constraint_greater_term_matrix(bc_both_id)
-    assert_frame_equal(bc_gt, default_scenario_hourly_dataframe, check_dtypes=False)
+    assert_frame_equal(bc_gt, default_bc_hourly_dataframe, check_dtypes=False)
 
     bc_eq = dao.get_constraint_equal_term_matrix(bc_eq_id)
-    assert_frame_equal(bc_eq, default_scenario_hourly_dataframe, check_dtypes=False)
+    assert_frame_equal(bc_eq, default_bc_hourly_dataframe, check_dtypes=False)
