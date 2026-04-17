@@ -30,6 +30,7 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
     BindingConstraintOperator,
+    ConstraintId,
 )
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -201,8 +202,8 @@ class RealCaseStudy:
     renewable_id: str
     sts_id: str
     sts_constraint_id: str
-    bc_both_id: str
-    bc_eq_id: str
+    bc_both_id: ConstraintId
+    bc_eq_id: ConstraintId
     dataframes: list[pl.DataFrame]
 
 
