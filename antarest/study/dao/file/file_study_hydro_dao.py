@@ -424,12 +424,21 @@ class FileStudyHydroDao(HydroDao):
         matrices_mapping: dict[str, list[MatrixNode]] = {}
 
         nodes_and_area_ids = self._get_nodes_with_their_area_id(prefix)
+
+        existing_area_ids = set()
+
         for node, area_id in nodes_and_area_ids:
+            existing_area_ids.add(area_id)
             if area_id in series:
                 # We only want to save the series for given area and the method returned them all
                 series_id = series[area_id]
                 matrix_id = extract_matrix_id(series_id)
                 matrices_mapping.setdefault(matrix_id, []).append(node)
+
+        # Validate that all the area ids are present in the study
+        invalids_ids = set(series) - existing_area_ids
+        if invalids_ids:
+            raise AreaNotFound(*invalids_ids)
 
         self.get_impl().save_matrices(matrices_mapping)
 
