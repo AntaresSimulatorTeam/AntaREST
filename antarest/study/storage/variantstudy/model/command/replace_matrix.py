@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from pathlib import Path
+from pathlib import PurePosixPath
 
 from pydantic import Field, ValidationInfo, field_validator
 from typing_extensions import override
@@ -57,7 +57,7 @@ class ReplaceMatrix(ICommand):
 
         mapper = RawPathToMatrixMapper(study_data)
         assert isinstance(self.matrix, str)
-        mapper.save_matrix_from_path(Path(self.target), self.matrix)
+        mapper.save_matrix_from_path(PurePosixPath(self.target), self.matrix)
         return command_succeeded(message=f"Matrix '{self.target}' has been successfully replaced.", result=None)
 
     @override
