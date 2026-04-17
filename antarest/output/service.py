@@ -61,7 +61,7 @@ from antarest.output.filestudy.utils import (
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
-    QueryFileType,
+    OutputFileType,
     add_time_index_to_dataframe,
     split_concatenated_columns_from_dataframe,
 )
@@ -481,7 +481,7 @@ class OutputService:
         time_index = self.get_output_time_index(study_id, output_id, data.level)
 
         # Fetches the data
-        query_files: list[QueryFileType]
+        query_files: list[OutputFileType]
         if data.type == StudyDownloadType.LINK:
             query_files = [MCIndLinksQueryFile.VALUES]
         else:
@@ -690,7 +690,7 @@ class OutputService:
         self,
         uuid: str,
         output_id: str,
-        query_file: QueryFileType,
+        query_file: OutputFileType,
         frequency: MatrixFrequency,
         item_id: str,
         mc_year: int | None = None,
@@ -710,7 +710,7 @@ class OutputService:
         self,
         uuid: str,
         output_id: str,
-        query_file: QueryFileType,
+        query_file: OutputFileType,
         frequency: MatrixFrequency,
         export_format: TableExportFormat,
         columns_names: Sequence[str],

@@ -71,7 +71,7 @@ class MCAllBCQueryFile(StrEnum):
     BINDING_CONSTRAINTS = "binding-constraints"
 
 
-QueryFileType: TypeAlias = (
+OutputFileType: TypeAlias = (
     MCIndAreasQueryFile
     | MCAllAreasQueryFile
     | MCIndLinksQueryFile
@@ -86,13 +86,13 @@ class RawOutputMatrixQuery:
     """Parsed parameters from the /raw output matrix path"""
 
     output_id: str
-    query_file: QueryFileType
+    query_file: OutputFileType
     frequency: MatrixFrequency
     ids_to_consider: str
     mc_year: int | None
 
 
-_QUERY_FILE_MAP: dict[tuple[str, str], dict[str, QueryFileType]] = {
+_QUERY_FILE_MAP: dict[tuple[str, str], dict[str, OutputFileType]] = {
     ("mc-all", "areas"): {e.value: e for e in MCAllAreasQueryFile},
     ("mc-all", "links"): {e.value: e for e in MCAllLinksQueryFile},
     ("mc-ind", "areas"): {e.value: e for e in MCIndAreasQueryFile},
@@ -173,7 +173,7 @@ def parse_raw_output_matrix_path(path_parts: list[str]) -> RawOutputMatrixQuery 
     )
 
 
-def get_output_object_type(file_type: QueryFileType, is_link: bool) -> str:
+def get_output_object_type(file_type: OutputFileType, is_link: bool) -> str:
     if is_link:
         return "links"
 

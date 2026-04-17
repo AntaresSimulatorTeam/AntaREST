@@ -299,10 +299,10 @@ def test_read_all_headers_str(large_output_path: Path) -> None:
     # 10sec
     files = identify_files(
         large_output_path,
-        query_file=MCIndLinksQueryFile.VALUES,
+        file_type=MCIndLinksQueryFile.VALUES,
         frequency=MatrixFrequency.HOURLY,
         mc_years=[],
-        ids_to_consider=[],
+        item_ids=[],
     )
 
     assert len(files) == 47000
@@ -316,10 +316,10 @@ def test_read_all_headers_stream(large_output_path: Path) -> None:
     # Only 1 sec
     files = identify_files(
         large_output_path,
-        query_file=MCIndLinksQueryFile.VALUES,
+        file_type=MCIndLinksQueryFile.VALUES,
         frequency=MatrixFrequency.HOURLY,
         mc_years=[],
-        ids_to_consider=[],
+        item_ids=[],
     )
 
     assert len(files) == 47000

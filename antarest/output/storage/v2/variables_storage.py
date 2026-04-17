@@ -42,7 +42,7 @@ from antarest.output.filestudy.utils import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
     MCRoot,
-    QueryFileType,
+    OutputFileType,
     get_output_object_type,
     get_start_column,
     parse_output_file,
@@ -67,10 +67,10 @@ _SKIPPED_QUERY_FILES = {"id"}
 
 
 def _discover_file_type_frequencies(
-    folders: list[Path], file_type_class: type[QueryFileType]
-) -> list[tuple[QueryFileType, MatrixFrequency]]:
+    folders: list[Path], file_type_class: type[OutputFileType]
+) -> list[tuple[OutputFileType, MatrixFrequency]]:
     seen: set[tuple[str, str]] = set()
-    result: list[tuple[QueryFileType, MatrixFrequency]] = []
+    result: list[tuple[OutputFileType, MatrixFrequency]] = []
     for folder in folders:
         for file in folder.iterdir():
             if not file.name.endswith(".txt"):
@@ -103,7 +103,7 @@ def _merge_intermediate_parquets(file_paths: list[Path], new_index: list[str], t
 
 def _aggregate_to_parquet(
     output_dir: Path,
-    query_file: QueryFileType,
+    query_file: OutputFileType,
     frequency: MatrixFrequency,
     ids_to_consider: list[str],
     target_path: Path,
@@ -148,7 +148,7 @@ def _extract_areas(
         else:
             area_ids.append(item)
 
-    file_type_class: type[QueryFileType] = MCIndAreasQueryFile if mc_root == MCRoot.MC_IND else MCAllAreasQueryFile
+    file_type_class: type[OutputFileType] = MCIndAreasQueryFile if mc_root == MCRoot.MC_IND else MCAllAreasQueryFile
 
     ref_folders = [areas_path / a for a in all_ids]
     combos = _discover_file_type_frequencies(ref_folders, file_type_class)
@@ -179,7 +179,7 @@ def _extract_links(
     if not link_ids:
         return
 
-    file_type_class: type[QueryFileType] = MCIndLinksQueryFile if mc_root == MCRoot.MC_IND else MCAllLinksQueryFile
+    file_type_class: type[OutputFileType] = MCIndLinksQueryFile if mc_root == MCRoot.MC_IND else MCAllLinksQueryFile
     ref_folders = [links_path / lid for lid in link_ids]
     combos = _discover_file_type_frequencies(ref_folders, file_type_class)
 
@@ -309,7 +309,7 @@ _ID_COLUMNS = {"area", "link", MCYEAR_COL, TIME_ID_COL, "cluster"}
 """Columns that are not variable data but identification/index columns."""
 
 
-def _mc_root_for_query_file(query_file: QueryFileType) -> MCRoot:
+def _mc_root_for_query_file(query_file: OutputFileType) -> MCRoot:
     if isinstance(query_file, (MCIndAreasQueryFile, MCIndLinksQueryFile)):
         return MCRoot.MC_IND
     return MCRoot.MC_ALL
@@ -407,7 +407,7 @@ def _df_to_table(df: pl.DataFrame) -> OutputTable:
 
 def read_output_from_parquet(
     target_dir: Path,
-    query_file: QueryFileType,
+    query_file: OutputFileType,
     frequency: MatrixFrequency,
     ids_to_consider: Sequence[str],
     columns_names: Sequence[str],

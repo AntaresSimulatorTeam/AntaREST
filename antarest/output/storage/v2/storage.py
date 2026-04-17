@@ -43,7 +43,7 @@ from antarest.output.filestudy.file_output_utils import (
     extract_variables_list,
     find_simulation_log,
 )
-from antarest.output.filestudy.utils import QueryFileType
+from antarest.output.filestudy.utils import OutputFileType
 from antarest.output.model import OutputTable, OutputVariablesList
 from antarest.output.storage.output_storage import (
     IOutputStorage,
@@ -394,7 +394,7 @@ class V2OutputStorage(IOutputStorage):
         self,
         study_id: str,
         output_id: str,
-        query_file: QueryFileType,
+        query_file: OutputFileType,
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
@@ -408,7 +408,7 @@ class V2OutputStorage(IOutputStorage):
         self,
         study_id: str,
         output_id: str,
-        query_file: QueryFileType,
+        query_file: OutputFileType,
         frequency: MatrixFrequency,
         item_id: str,
         mc_year: int | None = None,

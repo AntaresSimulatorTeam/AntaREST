@@ -72,7 +72,7 @@ from antarest.login.service import LoginService, UserNotFoundError
 from antarest.login.utils import get_current_user, get_user_id, get_user_impersonator
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.output.filestudy.utils import (
-    QueryFileType,
+    OutputFileType,
     parse_raw_output_matrix_path,
 )
 from antarest.output.model import OutputTable
@@ -659,7 +659,7 @@ class IOutputsAccess(ABC):
         self,
         study_id: str,
         output_id: str,
-        query_file: "QueryFileType",
+        query_file: "OutputFileType",
         frequency: MatrixFrequency,
         item_id: str,
         mc_year: int | None = None,

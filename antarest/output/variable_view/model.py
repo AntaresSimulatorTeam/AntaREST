@@ -14,7 +14,7 @@ from typing import Annotated, Literal, TypeAlias
 from pydantic import BaseModel, Field
 
 from antarest.core.exceptions import OutputVariablesViewError
-from antarest.output.filestudy.utils import MCIndAreasQueryFile, MCIndLinksQueryFile, QueryFileType
+from antarest.output.filestudy.utils import MCIndAreasQueryFile, MCIndLinksQueryFile, OutputFileType
 from antarest.output.model import OutputVariablesList
 
 
@@ -73,7 +73,7 @@ def get_ids_for_aggregation(item_id: OutputItemId) -> tuple[str, str | None]:
             raise NotImplementedError("Unknown output item type")
 
 
-def get_query_file(item_id: OutputItemId) -> QueryFileType:
+def get_query_file(item_id: OutputItemId) -> OutputFileType:
     match item_id:
         case AreaOutputId():
             return MCIndAreasQueryFile.VALUES

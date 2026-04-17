@@ -24,7 +24,7 @@ from antarest.output.filestudy.utils import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
     MCRoot,
-    QueryFileType,
+    OutputFileType,
     get_output_object_type,
     get_start_column,
     parse_headers,
@@ -88,8 +88,8 @@ class ColumnHeader:
 
 
 def _filter_files_with_same_prefix(
-    parent_folder: Path, file_type_class: type[QueryFileType]
-) -> dict[QueryFileType, MatrixFrequency]:
+    parent_folder: Path, file_type_class: type[OutputFileType]
+) -> dict[OutputFileType, MatrixFrequency]:
     """
     Iterate over all existing files inside the parent_folder.
     Returns only one file for each query file class.
@@ -133,7 +133,7 @@ def _to_column_name(col: VarColumn | ClusterVarColumn) -> str:
 
 
 def _read_headers_only(
-    file_path: Path, mc_root: MCRoot, file_type: QueryFileType, start_column: int
+    file_path: Path, mc_root: MCRoot, file_type: OutputFileType, start_column: int
 ) -> list[ColumnHeader]:
     """
     Returns the headers of a given output file.
@@ -163,8 +163,8 @@ def _read_headers_only(
 
 
 def _get_all_headers_and_file_type(
-    mc_root: MCRoot, parent_path: Path, file_type_class: type[QueryFileType]
-) -> Iterator[tuple[list[ColumnHeader], QueryFileType]]:
+    mc_root: MCRoot, parent_path: Path, file_type_class: type[OutputFileType]
+) -> Iterator[tuple[list[ColumnHeader], OutputFileType]]:
     """
     Returns the headers of all output files located in the parent_path.
     For each header, also returns it corresponding file type.

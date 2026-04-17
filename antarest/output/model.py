@@ -99,10 +99,6 @@ class OutputVariablesViewResponse(AntaresBaseModel, extra="forbid", alias_genera
     task_id: str | None
 
 
-SingleOutputHeaders: TypeAlias = list[str]
-MultipleOutputHeaders: TypeAlias = list[list[str]]
-
-
 @dataclass(frozen=True)
 class VarColumn:
     """

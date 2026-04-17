@@ -23,7 +23,7 @@ from pydantic.alias_generators import to_camel
 from antarest.core.serde import AntaresBaseModel
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
-from antarest.output.filestudy.utils import QueryFileType
+from antarest.output.filestudy.utils import OutputFileType
 from antarest.output.model import OutputTable, OutputVariablesList
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency, MatrixIndex
@@ -244,7 +244,7 @@ class IOutputStorage(ABC):
         self,
         study_id: str,
         output_id: str,
-        query_file: QueryFileType,
+        query_file: OutputFileType,
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
@@ -263,7 +263,7 @@ class IOutputStorage(ABC):
         self,
         study_id: str,
         output_id: str,
-        query_file: QueryFileType,
+        query_file: OutputFileType,
         frequency: MatrixFrequency,
         item_id: str,
         mc_year: int | None = None,
