@@ -508,7 +508,7 @@ class DatabaseStStorageDao(STStorageDao):
         row = self._db_session.execute(stmt).fetchone()
         if not row:
             self._raise_the_right_constraint_exception({area_id: {storage_id: constraint_id}})
-        return self.get_impl().get_matrix(row.matrix_id)
+        return self.get_impl().get_matrix(row.matrix_id, default_empty=default_scenario_hourly)
 
     @override
     def get_all_st_storage_additional_constraint_matrices(self) -> StStorageConstraintSeriesMapping:
