@@ -469,27 +469,27 @@ class DatabaseAreaDao(AreaDao):
     @override
     def get_load(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._get_matrix(area_id, LOAD_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_scenario_hourly)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_misc_gen(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._get_matrix(area_id, MISC_GEN_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_8_fixed_hourly)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_8_fixed_hourly)
 
     @override
     def get_reserves(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._get_matrix(area_id, RESERVES_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_4_fixed_hourly)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_4_fixed_hourly)
 
     @override
     def get_solar(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._get_matrix(area_id, SOLAR_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_scenario_hourly)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_wind(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._get_matrix(area_id, WIND_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_scenario_hourly)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_all_load(self) -> AreaSeriesMapping:

@@ -397,52 +397,52 @@ class DatabaseStStorageDao(STStorageDao):
     @override
     def get_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._get_st_storage_matrix(area_id, storage_id, PMAX_WITHDRAWAL_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_scenario_hourly_ones)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly_ones)
 
     @override
     def get_st_storage_pmax_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._get_st_storage_matrix(area_id, storage_id, PMAX_INJECTION_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_scenario_hourly_ones)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly_ones)
 
     @override
     def get_st_storage_lower_rule_curve(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._get_st_storage_matrix(area_id, storage_id, LOWER_RULE_CURVE_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_scenario_hourly)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_st_storage_upper_rule_curve(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._get_st_storage_matrix(area_id, storage_id, UPPER_RULE_CURVE_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_scenario_hourly_ones)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly_ones)
 
     @override
     def get_st_storage_inflows(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._get_st_storage_matrix(area_id, storage_id, INFLOWS_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_scenario_hourly)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_st_storage_cost_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._get_st_storage_matrix(area_id, storage_id, COST_INJECTION_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_scenario_hourly)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_st_storage_cost_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._get_st_storage_matrix(area_id, storage_id, COST_WITHDRAWAL_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_scenario_hourly)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_st_storage_cost_level(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._get_st_storage_matrix(area_id, storage_id, COST_LEVEL_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_cost_level)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_cost_level)
 
     @override
     def get_st_storage_cost_variation_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._get_st_storage_matrix(area_id, storage_id, COST_VARIATION_INJECTION_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_scenario_hourly)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         matrix_id = self._get_st_storage_matrix(area_id, storage_id, COST_VARIATION_WITHDRAWAL_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_scenario_hourly)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     def _get_all_sts_matrix(self, table: Table) -> StStorageSeriesMapping:
         study_id = self._study_id
@@ -508,7 +508,7 @@ class DatabaseStStorageDao(STStorageDao):
         row = self._db_session.execute(stmt).fetchone()
         if not row:
             self._raise_the_right_constraint_exception({area_id: {storage_id: constraint_id}})
-        return self.get_impl().get_matrix(row.matrix_id, default_empty=default_scenario_hourly)
+        return self.get_impl().get_matrix(row.matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_all_st_storage_additional_constraint_matrices(self) -> StStorageConstraintSeriesMapping:

@@ -264,27 +264,27 @@ class DatabaseThermalDao(ThermalDao):
     @override
     def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         matrix_id = self._get_thermal_matrix(area_id, thermal_id, THERMAL_PREPRO_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_data_matrix)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_data_matrix)
 
     @override
     def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         matrix_id = self._get_thermal_matrix(area_id, thermal_id, THERMAL_MODULATION_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_modulation_matrix)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_modulation_matrix)
 
     @override
     def get_thermal_series(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         matrix_id = self._get_thermal_matrix(area_id, thermal_id, THERMAL_SERIES_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_scenario_hourly)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         matrix_id = self._get_thermal_matrix(area_id, thermal_id, THERMAL_FUEL_COST_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_scenario_hourly)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         matrix_id = self._get_thermal_matrix(area_id, thermal_id, THERMAL_CO2_COST_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_scenario_hourly)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     def _get_all_thermal_matrix(self, table: Table) -> ThermalSeriesMapping:
         study_id = self._study_id

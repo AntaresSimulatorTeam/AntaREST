@@ -420,7 +420,7 @@ class DatabaseXpansionDao(XpansionDao):
         ).fetchone()
         if row is None:
             raise XpansionFileNotFoundError(f"Resource '{filename}' not found")
-        return self.get_impl().get_matrix(row.matrix_id)
+        return self.get_impl().get_matrix(row.matrix_id, None)
 
     @override
     def get_xpansion_resources(self, resource_type: XpansionResourceFileType) -> list[str]:

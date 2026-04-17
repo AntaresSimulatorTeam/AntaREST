@@ -241,7 +241,7 @@ class DatabaseRenewableDao(RenewableDao):
         if not row:
             self._raise_the_right_renewable_exception({area_id: [renewable_id]})
 
-        return self.get_impl().get_matrix(row.matrix_id, default_empty=default_scenario_hourly)
+        return self.get_impl().get_matrix(row.matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_all_renewables_series(self) -> RenewableSeriesMapping:

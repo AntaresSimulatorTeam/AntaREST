@@ -233,11 +233,11 @@ class DatabaseStudyDao(
             "get_file_study() is not supported in database storage mode. Use database-specific methods instead."
         )
 
-    def get_matrix(self, matrix_id: str, default_empty: MatrixSupplier) -> pl.DataFrame:
+    def get_matrix(self, matrix_id: str, default_empty_supplier: MatrixSupplier | None) -> pl.DataFrame:
         matrix = self._matrix_service.get(matrix_id)
 
-        if matrix.is_empty():
+        if matrix.is_empty() and default_empty_supplier is not None:
             # We have to return the given default matrix
-            return create_polars_dataframe(default_empty())
+            return create_polars_dataframe(default_empty_supplier())
 
         return matrix

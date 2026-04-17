@@ -186,19 +186,19 @@ class DatabaseLinkDao(LinkDao):
     @override
     def get_link_direct_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
         matrix_id = self._get_link_matrix(area_from, area_to, LINK_DIRECT_CAPACITY_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_scenario_hourly)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
         matrix_id = self._get_link_matrix(area_from, area_to, LINK_INDIRECT_CAPACITY_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_scenario_hourly)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_link_series(self, area_from: str, area_to: str) -> pl.DataFrame:
         matrix_id = self._get_link_matrix(area_from, area_to, LINK_SERIES_TABLE)
         version = self.get_impl().get_version()
         default_empty = default_8_fixed_hourly if version < STUDY_VERSION_8_2 else default_6_fixed_hourly
-        return self.get_impl().get_matrix(matrix_id, default_empty=default_empty)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_empty)
 
     def _get_link_matrices(self, table: Table) -> LinkSeriesMapping:
         study_id = self._study_id
