@@ -198,8 +198,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
             _remove_groups_from_scenario_builder(study_data, removed_groups)
 
     def _get_all_bc_matrices(self, term: str | None = None) -> BindingConstraintSeriesMapping:
-        nodes_and_bc_ids = self._get_nodes_with_their_bc_id(term)
-        matrix_nodes = dict(nodes_and_bc_ids)
+        matrix_nodes = self._get_nodes_with_their_bc_id(term)
 
         matrices_mapping = self.get_impl().get_matrices_ids(list(matrix_nodes))
 
@@ -210,9 +209,9 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
         return result
 
-    def _get_nodes_with_their_bc_id(self, term: str | None = None) -> list[tuple[MatrixNode, ConstraintId]]:
+    def _get_nodes_with_their_bc_id(self, term: str | None = None) -> dict[MatrixNode, ConstraintId]:
         study_data = self.get_file_study()
-        result = []
+        result = {}
 
         folder_node = study_data.tree.get_node(["input", "bindingconstraints"])
         assert isinstance(folder_node, FolderNode)
@@ -222,7 +221,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
             assert isinstance(node, MatrixNode)
             if constraint_id := _get_constraint_id_from_matrix_file_name(node_id, term):
                 # We only keep the constraints with the right terms
-                result.append((node, ConstraintId(constraint_id)))
+                result[node] = ConstraintId(constraint_id)
         return result
 
     def _save_all_bc_matrices(self, series: BindingConstraintSeriesMapping, term: str | None = None) -> None:
@@ -230,10 +229,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
         nodes_and_bc_ids = self._get_nodes_with_their_bc_id(term)
 
-        existing_constraint_ids = set()
-
-        for node, constraint_id in nodes_and_bc_ids:
-            existing_constraint_ids.add(constraint_id)
+        for node, constraint_id in nodes_and_bc_ids.items():
             if constraint_id in series:
                 # We only want to save the series for given constraints and the method returned them all
                 series_id = series[constraint_id]
@@ -241,7 +237,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
                 matrices_mapping.setdefault(matrix_id, []).append(node)
 
         # Validate that all the binding constraint ids are present in the study
-        invalids_ids = set(series) - existing_constraint_ids
+        invalids_ids = set(series) - set(nodes_and_bc_ids.values())
         if invalids_ids:
             raise BindingConstraintNotFound(*invalids_ids)
 

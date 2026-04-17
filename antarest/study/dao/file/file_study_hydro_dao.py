@@ -394,8 +394,7 @@ class FileStudyHydroDao(HydroDao):
         self._save_all_capacity_matrices(series, "maxDailyPumpEnergy")
 
     def _get_all_capacity_matrices(self, prefix: str) -> AreaSeriesMapping:
-        nodes_and_area_ids = self._get_nodes_with_their_area_id(prefix)
-        matrix_nodes = dict(nodes_and_area_ids)
+        matrix_nodes = self._get_nodes_with_their_area_id(prefix)
 
         matrices_mapping = self.get_impl().get_matrices_ids(list(matrix_nodes))
 
@@ -406,9 +405,9 @@ class FileStudyHydroDao(HydroDao):
 
         return result
 
-    def _get_nodes_with_their_area_id(self, prefix: str) -> list[tuple[MatrixNode, AreaId]]:
+    def _get_nodes_with_their_area_id(self, prefix: str) -> dict[MatrixNode, AreaId]:
         study_data = self.get_file_study()
-        result = []
+        result = {}
 
         folder_node = study_data.tree.get_node(["input", "hydro", "common", "capacity"])
         assert isinstance(folder_node, FolderNode)
@@ -417,7 +416,7 @@ class FileStudyHydroDao(HydroDao):
             assert isinstance(node, MatrixNode)
             if node_id.startswith(prefix):
                 # We only keep the matrices with the rigth prefix
-                result.append((node, node_id.removeprefix(f"{prefix}_")))
+                result[node] = node_id.removeprefix(f"{prefix}_")
         return result
 
     def _save_all_capacity_matrices(self, series: AreaSeriesMapping, prefix: str) -> None:
@@ -425,10 +424,7 @@ class FileStudyHydroDao(HydroDao):
 
         nodes_and_area_ids = self._get_nodes_with_their_area_id(prefix)
 
-        existing_area_ids = set()
-
-        for node, area_id in nodes_and_area_ids:
-            existing_area_ids.add(area_id)
+        for node, area_id in nodes_and_area_ids.items():
             if area_id in series:
                 # We only want to save the series for given area and the method returned them all
                 series_id = series[area_id]
@@ -436,7 +432,7 @@ class FileStudyHydroDao(HydroDao):
                 matrices_mapping.setdefault(matrix_id, []).append(node)
 
         # Validate that all the area ids are present in the study
-        invalids_ids = set(series) - existing_area_ids
+        invalids_ids = set(series) - set(nodes_and_area_ids.values())
         if invalids_ids:
             raise AreaNotFound(*invalids_ids)
 
