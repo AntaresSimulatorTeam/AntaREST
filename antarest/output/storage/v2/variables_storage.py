@@ -37,17 +37,22 @@ from antarest.output.filestudy.aggregation import iterate_output_matrices
 from antarest.output.filestudy.utils import (
     MCYEAR_COL,
     TIME_ID_COL,
-    MCAllAreasQueryFile,
-    MCAllLinksQueryFile,
-    MCIndAreasQueryFile,
-    MCIndLinksQueryFile,
     MCRoot,
-    OutputFileType,
     get_output_object_type,
     get_start_column,
     parse_output_file,
 )
-from antarest.output.model import ClusterVarColumn, OutputColumn, OutputTable, VarColumn
+from antarest.output.model import (
+    ClusterVarColumn,
+    MCAllAreasFile,
+    MCAllLinksFile,
+    MCIndAreasFile,
+    MCIndLinksFile,
+    OutputColumn,
+    OutputFileType,
+    OutputTable,
+    VarColumn,
+)
 from antarest.output.utils import find_mode_dir
 from antarest.study.model import MatrixFrequency
 
@@ -148,7 +153,7 @@ def _extract_areas(
         else:
             area_ids.append(item)
 
-    file_type_class: type[OutputFileType] = MCIndAreasQueryFile if mc_root == MCRoot.MC_IND else MCAllAreasQueryFile
+    file_type_class: type[OutputFileType] = MCIndAreasFile if mc_root == MCRoot.MC_IND else MCAllAreasFile
 
     ref_folders = [areas_path / a for a in all_ids]
     combos = _discover_file_type_frequencies(ref_folders, file_type_class)
@@ -179,7 +184,7 @@ def _extract_links(
     if not link_ids:
         return
 
-    file_type_class: type[OutputFileType] = MCIndLinksQueryFile if mc_root == MCRoot.MC_IND else MCAllLinksQueryFile
+    file_type_class: type[OutputFileType] = MCIndLinksFile if mc_root == MCRoot.MC_IND else MCAllLinksFile
     ref_folders = [links_path / lid for lid in link_ids]
     combos = _discover_file_type_frequencies(ref_folders, file_type_class)
 
@@ -310,7 +315,7 @@ _ID_COLUMNS = {"area", "link", MCYEAR_COL, TIME_ID_COL, "cluster"}
 
 
 def _mc_root_for_query_file(query_file: OutputFileType) -> MCRoot:
-    if isinstance(query_file, (MCIndAreasQueryFile, MCIndLinksQueryFile)):
+    if isinstance(query_file, (MCIndAreasFile, MCIndLinksFile)):
         return MCRoot.MC_IND
     return MCRoot.MC_ALL
 
@@ -414,7 +419,7 @@ def read_output_from_parquet(
     mc_years: Sequence[int] | None,
 ) -> Iterator[OutputTable]:
     mc_root = _mc_root_for_query_file(query_file)
-    is_link = isinstance(query_file, (MCIndLinksQueryFile, MCAllLinksQueryFile))
+    is_link = isinstance(query_file, (MCIndLinksFile, MCAllLinksFile))
     is_details = "details" in query_file.value
     obj_type = get_output_object_type(query_file, is_link)
     id_col = "link" if is_link else "area"

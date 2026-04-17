@@ -23,8 +23,7 @@ from pydantic.alias_generators import to_camel
 from antarest.core.serde import AntaresBaseModel
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
-from antarest.output.filestudy.utils import OutputFileType
-from antarest.output.model import OutputTable, OutputVariablesList
+from antarest.output.model import OutputFileType, OutputTable, OutputVariablesList
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency, MatrixIndex
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI

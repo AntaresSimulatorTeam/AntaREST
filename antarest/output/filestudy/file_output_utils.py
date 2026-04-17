@@ -19,17 +19,21 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.output.filestudy.aggregation import is_details
 from antarest.output.filestudy.utils import (
-    MCAllAreasQueryFile,
-    MCAllLinksQueryFile,
-    MCIndAreasQueryFile,
-    MCIndLinksQueryFile,
     MCRoot,
-    OutputFileType,
     get_output_object_type,
     get_start_column,
     parse_headers,
 )
-from antarest.output.model import ClusterVarColumn, OutputVariablesList, VarColumn
+from antarest.output.model import (
+    ClusterVarColumn,
+    MCAllAreasFile,
+    MCAllLinksFile,
+    MCIndAreasFile,
+    MCIndLinksFile,
+    OutputFileType,
+    OutputVariablesList,
+    VarColumn,
+)
 from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency
@@ -201,7 +205,7 @@ def extract_variables_list(output_path: Path) -> OutputVariablesList:
 
         # Areas
         areas_folder = mc_path / "areas"
-        file_type_class = MCIndAreasQueryFile if mc_root == MCRoot.MC_IND else MCAllAreasQueryFile
+        file_type_class = MCIndAreasFile if mc_root == MCRoot.MC_IND else MCAllAreasFile
         if areas_folder.exists():
             for area in sorted(areas_folder.iterdir()):
                 areas_dict: dict[str, Any] = {"name": area.name}
@@ -219,7 +223,7 @@ def extract_variables_list(output_path: Path) -> OutputVariablesList:
 
         # Links
         links_folder = mc_path / "links"
-        file_type_klass = MCIndLinksQueryFile if mc_root == MCRoot.MC_IND else MCAllLinksQueryFile
+        file_type_klass = MCIndLinksFile if mc_root == MCRoot.MC_IND else MCAllLinksFile
         if links_folder.exists():
             for link_path in sorted(links_folder.iterdir()):
                 area1, area2 = link_path.name.split(" - ")

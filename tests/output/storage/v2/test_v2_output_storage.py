@@ -26,7 +26,7 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.lfs.dir_lfs import DirLargeFileStorage
 from antarest.lfs.lfs import ILargeFileStorage
-from antarest.output.filestudy.utils import MCAllAreasQueryFile
+from antarest.output.model import MCAllAreasFile
 from antarest.output.storage.v2.repository import OutputV2Repository
 from antarest.output.storage.v2.storage import V2OutputStorage
 from antarest.output.storage.v2.variables_storage import parquet_output_dir
@@ -776,7 +776,7 @@ def test_aggregate_areas_values(
             storage.iterate_output_table(
                 study_id,
                 output_name,
-                query_file=MCAllAreasQueryFile.VALUES,
+                query_file=MCAllAreasFile.VALUES,
                 frequency=MatrixFrequency.DAILY,
                 ids_to_consider=[],
                 columns_names=[],
@@ -804,7 +804,7 @@ def test_aggregate_with_area_filter(
             storage.iterate_output_table(
                 study_id,
                 output_name,
-                query_file=MCAllAreasQueryFile.VALUES,
+                query_file=MCAllAreasFile.VALUES,
                 frequency=MatrixFrequency.DAILY,
                 ids_to_consider=["de"],
                 columns_names=[],
@@ -827,7 +827,7 @@ def test_aggregate_with_column_filter(
         dfs = storage.iterate_output_table(
             study_id,
             output_name,
-            query_file=MCAllAreasQueryFile.VALUES,
+            query_file=MCAllAreasFile.VALUES,
             frequency=MatrixFrequency.DAILY,
             ids_to_consider=[],
             columns_names=["load"],
@@ -850,7 +850,7 @@ def test_aggregate_thermal_clusters(
             storage.iterate_output_table(
                 study_id,
                 output_name,
-                query_file=MCAllAreasQueryFile.DETAILS,
+                query_file=MCAllAreasFile.DETAILS,
                 frequency=MatrixFrequency.DAILY,
                 ids_to_consider=[],
                 columns_names=[],

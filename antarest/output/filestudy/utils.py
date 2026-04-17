@@ -11,17 +11,25 @@
 # This file is part of the Antares project.
 from collections.abc import Iterator
 from dataclasses import dataclass
-from enum import Enum, StrEnum
+from enum import Enum
 from io import StringIO
 from itertools import islice
 from pathlib import Path
-from typing import IO, TypeAlias
+from typing import IO
 
 import pandas as pd
 import polars as pl
 from polars.exceptions import ComputeError
 
-from antarest.output.model import OutputTable, VarColumn
+from antarest.output.model import (
+    MCAllAreasFile,
+    MCAllLinksFile,
+    MCIndAreasFile,
+    MCIndLinksFile,
+    OutputFileType,
+    OutputTable,
+    VarColumn,
+)
 from antarest.study.model import MatrixFrequency, MatrixIndex, TimeSerie
 
 """Column name for the Monte Carlo year."""
@@ -39,48 +47,6 @@ class MCRoot(Enum):
     MC_ALL = "mc-all"
 
 
-class MCIndAreasQueryFile(StrEnum):
-    VALUES = "values"
-    DETAILS = "details"
-    DETAILS_ST_STORAGE = "details-STstorage"
-    DETAILS_RES = "details-res"
-
-
-class MCAllAreasQueryFile(StrEnum):
-    VALUES = "values"
-    DETAILS = "details"
-    DETAILS_ST_STORAGE = "details-STstorage"
-    DETAILS_RES = "details-res"
-    ID = "id"
-
-
-class MCIndLinksQueryFile(StrEnum):
-    VALUES = "values"
-
-
-class MCAllLinksQueryFile(StrEnum):
-    VALUES = "values"
-    ID = "id"
-
-
-class MCIndBCQueryFile(StrEnum):
-    BINDING_CONSTRAINTS = "binding-constraints"
-
-
-class MCAllBCQueryFile(StrEnum):
-    BINDING_CONSTRAINTS = "binding-constraints"
-
-
-OutputFileType: TypeAlias = (
-    MCIndAreasQueryFile
-    | MCAllAreasQueryFile
-    | MCIndLinksQueryFile
-    | MCAllLinksQueryFile
-    | MCIndBCQueryFile
-    | MCAllBCQueryFile
-)
-
-
 @dataclass(frozen=True)
 class RawOutputMatrixQuery:
     """Parsed parameters from the /raw output matrix path"""
@@ -93,10 +59,10 @@ class RawOutputMatrixQuery:
 
 
 _QUERY_FILE_MAP: dict[tuple[str, str], dict[str, OutputFileType]] = {
-    ("mc-all", "areas"): {e.value: e for e in MCAllAreasQueryFile},
-    ("mc-all", "links"): {e.value: e for e in MCAllLinksQueryFile},
-    ("mc-ind", "areas"): {e.value: e for e in MCIndAreasQueryFile},
-    ("mc-ind", "links"): {e.value: e for e in MCIndLinksQueryFile},
+    ("mc-all", "areas"): {e.value: e for e in MCAllAreasFile},
+    ("mc-all", "links"): {e.value: e for e in MCAllLinksFile},
+    ("mc-ind", "areas"): {e.value: e for e in MCIndAreasFile},
+    ("mc-ind", "links"): {e.value: e for e in MCIndLinksFile},
 }
 
 
@@ -178,11 +144,11 @@ def get_output_object_type(file_type: OutputFileType, is_link: bool) -> str:
         return "links"
 
     match file_type:
-        case MCIndAreasQueryFile.DETAILS:
+        case MCIndAreasFile.DETAILS:
             return "thermal_clusters"
-        case MCIndAreasQueryFile.DETAILS_RES:
+        case MCIndAreasFile.DETAILS_RES:
             return "renewable_clusters"
-        case MCIndAreasQueryFile.DETAILS_ST_STORAGE:
+        case MCIndAreasFile.DETAILS_ST_STORAGE:
             return "short_term_storages"
         case _:
             return "areas"

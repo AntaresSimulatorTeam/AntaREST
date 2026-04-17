@@ -72,10 +72,9 @@ from antarest.login.service import LoginService, UserNotFoundError
 from antarest.login.utils import get_current_user, get_user_id, get_user_impersonator
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.output.filestudy.utils import (
-    OutputFileType,
     parse_raw_output_matrix_path,
 )
-from antarest.output.model import OutputTable
+from antarest.output.model import OutputFileType, OutputTable
 from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager

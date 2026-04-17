@@ -182,3 +182,30 @@ OutputTable: TypeAlias = DataTable[OutputColumn]
 
 # Using lazy frames for better performances where relevant
 LazyOutputTable: TypeAlias = LazyTable[OutputColumn]
+
+
+class MCIndAreasFile(StrEnum):
+    VALUES = "values"
+    DETAILS = "details"
+    DETAILS_ST_STORAGE = "details-STstorage"
+    DETAILS_RES = "details-res"
+
+
+class MCAllAreasFile(StrEnum):
+    VALUES = "values"
+    DETAILS = "details"
+    DETAILS_ST_STORAGE = "details-STstorage"
+    DETAILS_RES = "details-res"
+    ID = "id"
+
+
+class MCIndLinksFile(StrEnum):
+    VALUES = "values"
+
+
+class MCAllLinksFile(StrEnum):
+    VALUES = "values"
+    ID = "id"
+
+
+OutputFileType: TypeAlias = MCIndAreasFile | MCAllAreasFile | MCIndLinksFile | MCAllLinksFile

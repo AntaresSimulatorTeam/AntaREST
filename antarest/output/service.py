@@ -57,15 +57,15 @@ from antarest.output.filestudy.aggregation import (
 )
 from antarest.output.filestudy.utils import (
     MCYEAR_COL,
-    MCAllAreasQueryFile,
-    MCAllLinksQueryFile,
-    MCIndAreasQueryFile,
-    MCIndLinksQueryFile,
-    OutputFileType,
     add_time_index_to_dataframe,
     split_concatenated_columns_from_dataframe,
 )
 from antarest.output.model import (
+    MCAllAreasFile,
+    MCAllLinksFile,
+    MCIndAreasFile,
+    MCIndLinksFile,
+    OutputFileType,
     OutputTable,
     OutputVariablesInformation,
     OutputVariablesList,
@@ -483,12 +483,12 @@ class OutputService:
         # Fetches the data
         query_files: list[OutputFileType]
         if data.type == StudyDownloadType.LINK:
-            query_files = [MCIndLinksQueryFile.VALUES]
+            query_files = [MCIndLinksFile.VALUES]
         else:
-            query_files = [MCIndAreasQueryFile.VALUES]
+            query_files = [MCIndAreasFile.VALUES]
             if data.include_clusters:
-                query_files.append(MCIndAreasQueryFile.DETAILS)
-                query_files.append(MCIndAreasQueryFile.DETAILS_RES)
+                query_files.append(MCIndAreasFile.DETAILS)
+                query_files.append(MCIndAreasFile.DETAILS_RES)
 
         file_paths = []
         try:
@@ -643,7 +643,7 @@ class OutputService:
         self,
         uuid: str,
         output_id: str,
-        query_file: MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile,
+        query_file: MCIndAreasFile | MCAllAreasFile | MCIndLinksFile | MCAllLinksFile,
         frequency: MatrixFrequency,
         export_format: TableExportFormat,
         columns_names: Sequence[str],

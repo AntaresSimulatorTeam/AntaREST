@@ -18,8 +18,7 @@ from pathlib import Path
 import polars as pl
 import pytest
 
-from antarest.output.filestudy.utils import MCIndAreasQueryFile
-from antarest.output.model import ClusterVarColumn, OutputTable, VarColumn
+from antarest.output.model import ClusterVarColumn, MCIndAreasFile, OutputTable, VarColumn
 from antarest.output.storage.v2.variables_storage import extract_output_to_parquet, read_output_from_parquet
 from antarest.study.model import MatrixFrequency
 
@@ -67,7 +66,7 @@ def test_store_variables(goodbye_output_path: Path, tmp_path: Path) -> None:
 
     tables = read_output_from_parquet(
         parquet_dir,
-        query_file=MCIndAreasQueryFile.VALUES,
+        query_file=MCIndAreasFile.VALUES,
         frequency=MatrixFrequency.HOURLY,
         mc_years=[],
         columns_names=[],
@@ -117,7 +116,7 @@ def test_store_variables(goodbye_output_path: Path, tmp_path: Path) -> None:
 
     tables = read_output_from_parquet(
         parquet_dir,
-        query_file=MCIndAreasQueryFile.DETAILS,
+        query_file=MCIndAreasFile.DETAILS,
         frequency=MatrixFrequency.HOURLY,
         mc_years=[1],
         columns_names=[],

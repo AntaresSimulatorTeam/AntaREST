@@ -22,19 +22,19 @@ import polars.selectors as cs
 
 from antarest.core.exceptions import MCRootNotHandled, OutputNotFound, OutputSubFolderNotFound
 from antarest.output.filestudy.utils import (
-    MCAllAreasQueryFile,
-    MCAllLinksQueryFile,
-    MCIndAreasQueryFile,
-    MCIndLinksQueryFile,
     MCRoot,
-    OutputFileType,
     get_start_column,
     parse_output_file,
 )
 from antarest.output.model import (
     ClusterVarColumn,
     LazyOutputTable,
+    MCAllAreasFile,
+    MCAllLinksFile,
+    MCIndAreasFile,
+    MCIndLinksFile,
     OutputColumn,
+    OutputFileType,
     OutputTable,
     VarColumn,
 )
@@ -92,7 +92,7 @@ def _filter_files(folder_path: Path, ids: set[str]) -> list[str]:
 
 def identify_mc_ind_files(
     output_path: Path,
-    query_file: MCIndAreasQueryFile | MCIndLinksQueryFile,
+    query_file: MCIndAreasFile | MCIndLinksFile,
     frequency: MatrixFrequency,
     ids_to_consider: Sequence[str],
     mc_years: Sequence[int] | None,
@@ -101,7 +101,7 @@ def identify_mc_ind_files(
     if mode_dir is None:
         raise OutputSubFolderNotFound(output_path.name, f"economy/{MCRoot.MC_IND.value}")
     mc_ind_path = mode_dir / MCRoot.MC_IND.value
-    output_type = "areas" if isinstance(query_file, MCIndAreasQueryFile) else "links"
+    output_type = "areas" if isinstance(query_file, MCIndAreasFile) else "links"
 
     # Monte Carlo years filtering
     all_mc_years = [d.name for d in mc_ind_path.iterdir()]
@@ -136,7 +136,7 @@ def identify_mc_ind_files(
 
 def identify_mc_all_files(
     output_path: Path,
-    query_file: MCAllAreasQueryFile | MCAllLinksQueryFile,
+    query_file: MCAllAreasFile | MCAllLinksFile,
     frequency: MatrixFrequency,
     ids_to_consider: Sequence[str],
 ) -> list[OutputFile]:
@@ -144,7 +144,7 @@ def identify_mc_all_files(
     if mode_dir is None:
         raise OutputSubFolderNotFound(output_path.name, f"economy/{MCRoot.MC_ALL.value}")
     mc_all_path = mode_dir / MCRoot.MC_ALL.value
-    output_type = "areas" if isinstance(query_file, MCAllAreasQueryFile) else "links"
+    output_type = "areas" if isinstance(query_file, MCAllAreasFile) else "links"
 
     # Links / Areas ids filtering
     areas_or_links_ids = _filter_files(mc_all_path / output_type, set(ids_to_consider))
@@ -172,9 +172,9 @@ def identify_files(
     Returns the list of matrix files that correspond to the filters in arguments.
     """
     match file_type:
-        case MCIndAreasQueryFile() | MCIndLinksQueryFile():
+        case MCIndAreasFile() | MCIndLinksFile():
             return identify_mc_ind_files(output_path, file_type, frequency, item_ids, mc_years)
-        case MCAllAreasQueryFile() | MCAllLinksQueryFile():
+        case MCAllAreasFile() | MCAllLinksFile():
             return identify_mc_all_files(output_path, file_type, frequency, item_ids)
         case _:
             raise MCRootNotHandled(f"Unknown output file type: {file_type}")
@@ -182,20 +182,20 @@ def identify_files(
 
 def is_details(query_file: OutputFileType) -> bool:
     return query_file in [
-        MCIndAreasQueryFile.DETAILS,
-        MCAllAreasQueryFile.DETAILS,
-        MCIndAreasQueryFile.DETAILS_ST_STORAGE,
-        MCAllAreasQueryFile.DETAILS_ST_STORAGE,
-        MCIndAreasQueryFile.DETAILS_RES,
-        MCAllAreasQueryFile.DETAILS_RES,
+        MCIndAreasFile.DETAILS,
+        MCAllAreasFile.DETAILS,
+        MCIndAreasFile.DETAILS_ST_STORAGE,
+        MCAllAreasFile.DETAILS_ST_STORAGE,
+        MCIndAreasFile.DETAILS_RES,
+        MCAllAreasFile.DETAILS_RES,
     ]
 
 
 def is_synthesis(file_type: OutputFileType) -> bool:
     match file_type:
-        case MCIndAreasQueryFile() | MCIndLinksQueryFile():
+        case MCIndAreasFile() | MCIndLinksFile():
             return False
-        case MCAllAreasQueryFile() | MCAllLinksQueryFile():
+        case MCAllAreasFile() | MCAllLinksFile():
             return True
         case _:
             raise MCRootNotHandled(f"Unknown output file type: {file_type}")
@@ -203,9 +203,9 @@ def is_synthesis(file_type: OutputFileType) -> bool:
 
 def location_type(file_type: OutputFileType) -> Literal["area", "link"]:
     match file_type:
-        case MCIndAreasQueryFile() | MCAllAreasQueryFile():
+        case MCIndAreasFile() | MCAllAreasFile():
             return "area"
-        case MCIndLinksQueryFile() | MCAllLinksQueryFile():
+        case MCIndLinksFile() | MCAllLinksFile():
             return "link"
     raise ValueError(f"Unknown query file type: {file_type}")
 

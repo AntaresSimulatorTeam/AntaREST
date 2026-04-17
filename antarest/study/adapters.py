@@ -13,8 +13,7 @@ from pathlib import Path
 
 from typing_extensions import override
 
-from antarest.output.filestudy.utils import OutputFileType
-from antarest.output.model import OutputTable
+from antarest.output.model import OutputFileType, OutputTable
 from antarest.output.service import OutputService
 from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
 from antarest.study.model import MatrixFrequency
