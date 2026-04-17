@@ -23,7 +23,8 @@ def wait_download_ready(client: TestClient, download_id: str) -> Response:
 
     # Wait download
     def is_ready() -> bool:
-        return client.get(f"/v1/downloads/{download_id}/metadata").json()["ready"]
+        res = client.get(f"/v1/downloads/{download_id}/metadata")
+        return res.status_code == 200 and res.json()["ready"]
 
     wait_for(is_ready, sleep_time=0.05)
     return client.get(f"/v1/downloads/{download_id}/metadata")
@@ -32,11 +33,11 @@ def wait_download_ready(client: TestClient, download_id: str) -> Response:
 def wait_download_error(client: TestClient, download_id: str) -> Response:
 
     # Wait download
-    def is_in_error() -> bool:
+    def is_complete() -> bool:
         res = client.get(f"/v1/downloads/{download_id}/metadata")
-        return res.status_code != 200
+        return res.status_code != 417
 
-    wait_for(is_in_error, sleep_time=0.05)
+    wait_for(is_complete, sleep_time=0.05)
     return client.get(f"/v1/downloads/{download_id}/metadata")
 
 
@@ -44,7 +45,8 @@ def download_to_io(client: TestClient, download_id: str, target: BinaryIO) -> No
 
     # Wait download
     def is_ready() -> bool:
-        return client.get(f"/v1/downloads/{download_id}/metadata").json()["ready"]
+        res = client.get(f"/v1/downloads/{download_id}/metadata")
+        return res.status_code == 200 and res.json()["ready"]
 
     wait_for(is_ready, sleep_time=0.05)
 

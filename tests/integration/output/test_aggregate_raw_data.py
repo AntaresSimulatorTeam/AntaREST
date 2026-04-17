@@ -950,7 +950,7 @@ class TestDataAggregationCreationOperations:
         download_id = res.json()
 
         # download metadata returns an error explaining that the file is not ready
-        res = wait_download_error(client, download_id)
+        res = client.get(f"/v1/downloads/{download_id}/metadata")
         assert res.status_code == 417
         assert res.json()["description"] == "File is still in process."
 
