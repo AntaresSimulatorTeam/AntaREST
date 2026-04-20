@@ -200,7 +200,7 @@ class TestRemoveReserveDefinitions:
         )
         output = command.apply(dao)
         assert not output.status
-        assert "do not exist" in output.message
+        assert "not found" in output.message
 
     def test_version_check(self, command_context: CommandContext) -> None:
         with pytest.raises(ValidationError, match="study version before 10.0"):

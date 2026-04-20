@@ -47,7 +47,7 @@ Duration = Annotated[int, Field(ge=0)]
 
 
 def _check_not_reserved_name(name: str) -> None:
-    if transform_name_to_id(name, lower=True) in _RESERVED_RESERVE_IDS:
+    if transform_name_to_id(name) in _RESERVED_RESERVE_IDS:
         raise ReservedReserveDefinitionName(name)
 
 

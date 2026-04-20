@@ -21,7 +21,6 @@ from antarest.study.model import STUDY_VERSION_10_0
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
-    command_failed,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -47,9 +46,6 @@ class RemoveReserveDefinitions(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
-        missing = [rid for rid in self.reserve_ids if not study_data.reserve_definition_exists(self.area_id, rid)]
-        if missing:
-            return command_failed(f"Reserve definition(s) {missing} in area '{self.area_id}' do not exist")
         study_data.delete_reserve_definitions(self.area_id, self.reserve_ids)
         return command_succeeded(
             f"Reserve definition(s) {list(self.reserve_ids)} inside area '{self.area_id}' deleted",

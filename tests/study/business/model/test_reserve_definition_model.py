@@ -83,19 +83,13 @@ class TestReserveDefinitionCreation:
         assert creation.name == "R1"
         assert creation.failure_cost is None
 
-    def test_reserved_name_rejected(self) -> None:
+    @pytest.mark.parametrize(
+        "name",
+        ["global-parameters", "GLOBAL-PARAMETERS", "globalparameters", "GlobalParameters"],
+    )
+    def test_reserved_name_rejected(self, name: str) -> None:
         with pytest.raises(ReservedReserveDefinitionName):
-            ReserveDefinitionCreation(name="global-parameters", type=ReserveType.UP)
-
-    def test_reserved_name_rejected_case_insensitive(self) -> None:
-        with pytest.raises(ReservedReserveDefinitionName):
-            ReserveDefinitionCreation(name="GLOBAL-PARAMETERS", type=ReserveType.UP)
-
-    def test_reserved_ini_section_name_rejected(self) -> None:
-        with pytest.raises(ReservedReserveDefinitionName):
-            ReserveDefinitionCreation(name="globalparameters", type=ReserveType.UP)
-        with pytest.raises(ReservedReserveDefinitionName):
-            ReserveDefinitionCreation(name="GlobalParameters", type=ReserveType.UP)
+            ReserveDefinitionCreation(name=name, type=ReserveType.UP)
 
     def test_missing_type_invalid(self) -> None:
         with pytest.raises(ValidationError):
