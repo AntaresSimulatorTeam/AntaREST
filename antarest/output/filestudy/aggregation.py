@@ -104,6 +104,8 @@ def identify_mc_ind_files(
     output_type = "areas" if isinstance(query_file, MCIndAreasData) else "links"
 
     # Monte Carlo years filtering
+    if not mc_ind_path.is_dir():
+        return []
     all_mc_years = [d.name for d in mc_ind_path.iterdir()]
     if mc_years:
         all_mc_years = [y for y in all_mc_years if int(y) in frozenset(mc_years)]

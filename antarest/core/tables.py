@@ -35,18 +35,27 @@ class Table(Generic[DF, C]):
     dataframe: DF
 
     def select(self, predicate: Callable[[C], bool]) -> "Self":
+        """
+        Selects only columns for which the predicate is true.
+        """
         filtered_columns_indices = [k for k, col in enumerate(self.columns) if predicate(col)]
         filtered_columns = [self.columns[k] for k in filtered_columns_indices]
         filtered_matrix = self.dataframe.select(cs.by_index(filtered_columns_indices))
         return dataclasses.replace(self, dataframe=filtered_matrix, columns=filtered_columns)
 
     def sort_columns(self, sort_key: Callable[[C], Any]) -> "Self":
+        """
+        Sorts columns according to the given sort key provider.
+        """
         sorted_indices = [i for i, col in sorted(enumerate(self.columns), key=lambda tuple: sort_key(tuple[1]))]
         final_columns = [self.columns[c] for c in sorted_indices]
         final_df = self.dataframe.select(cs.by_index(sorted_indices))
         return dataclasses.replace(self, dataframe=final_df, columns=final_columns)
 
     def to_polars(self, naming: Callable[[C], str]) -> DF:
+        """
+        Converts to a plain polars frame, you need to provide a function to create unique column names for each col.
+        """
         renamings = [cs.by_index(i).alias(naming(col)) for i, col in enumerate(self.columns)]
         return self.dataframe.select(*renamings)
 
@@ -57,4 +66,7 @@ class LazyTable(Table[pl.LazyFrame, C]):
     """
 
     def collect(self) -> Table[pl.DataFrame, C]:
+        """
+        Converts the lazy frame to a collected dataframe.
+        """
         return Table(dataframe=self.dataframe.collect(), columns=self.columns)
