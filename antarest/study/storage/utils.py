@@ -50,7 +50,7 @@ from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.login.model import Group
 from antarest.login.utils import require_current_user
-from antarest.study.business.model.config.general_model import Mode
+from antarest.study.business.model.config.general_model import GeneralConfig, Mode
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_REFERENCE_TEMPLATES,
@@ -327,6 +327,28 @@ def parse_simulation_range(config: dict[str, Any]) -> SimulationRangeDefinition:
     first_week_day = cast(str, config.get("first.weekday"))
     simulation_start = cast(int, config.get("simulation.start"))
     simulation_end = cast(int, config.get("simulation.end"))
+
+    starting_month_index = MONTHS[starting_month.title()]
+    starting_day_index = DAY_NAMES.index(starting_day.title())
+    first_week_day_index = DAY_NAMES.index(first_week_day)
+
+    return SimulationRangeDefinition(
+        starting_month=starting_month_index,
+        january_1st_weekday=starting_day_index,
+        leap_year=leapyear,
+        start_day=simulation_start,
+        end_day=simulation_end,
+        first_weekday=first_week_day_index,
+    )
+
+
+def extract_simulation_range_from_model(general: GeneralConfig) -> SimulationRangeDefinition:
+    starting_month = general.first_month
+    starting_day = general.first_january
+    leapyear = general.leap_year
+    first_week_day = general.first_week_day
+    simulation_start = general.first_day
+    simulation_end = general.last_day
 
     starting_month_index = MONTHS[starting_month.title()]
     starting_day_index = DAY_NAMES.index(starting_day.title())
