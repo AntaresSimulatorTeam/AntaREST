@@ -245,7 +245,7 @@ def output_matrix() -> OutputMatrix:
         "/home/leclercsyl/feature_tests/antares/output-agregation/output/20250127-1459eco/economy/mc-ind/00001/areas/fr/details-hourly.txt"
     )
     matrix = parse_output_file(path, 5)
-    return OutputMatrix(data=matrix.data.lazy(), columns=matrix.headers, year=1, path=path, location="my-area")
+    return OutputMatrix(data=matrix.dataframe.lazy(), columns=matrix.headers, year=1, path=path, location="my-area")
 
 
 def test_with_real_data(output_matrix: OutputMatrix) -> None:

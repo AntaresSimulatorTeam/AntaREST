@@ -428,6 +428,6 @@ def _concat_tables(left: OutputTable, right: OutputTable) -> OutputTable:
         raise ValueError("Output columns mismatch.")
 
     return OutputTable(
-        data=pl.concat([left.data, right.data], how="vertical"),
+        dataframe=pl.concat([left.dataframe, right.dataframe], how="vertical"),
         columns=left.columns,
     )

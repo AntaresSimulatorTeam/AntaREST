@@ -9,17 +9,16 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import dataclasses
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Annotated, Any, Callable, Generic, Literal, Self, Sequence, TypeAlias, TypeVar
+from typing import Annotated, Literal, TypeAlias
 
 import polars as pl
-import polars.selectors as cs
 from pydantic import BeforeValidator
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
+from antarest.core.tables import LazyTable, Table
 
 Variables: TypeAlias = Annotated[list[str], BeforeValidator(lambda x: sorted(x))]
 
@@ -103,6 +102,8 @@ class OutputVariablesViewResponse(AntaresBaseModel, extra="forbid", alias_genera
 class VarColumn:
     """
     Column metadata for a variable as defined in output files: variable name, unit name, and statistic (exp, std, ...).
+
+    Statistic is None for mc-ind files, not None for mc-all files.
     """
 
     variable: str
@@ -141,46 +142,10 @@ def column_to_tuple(col: OutputColumn) -> tuple[str, str, str]:
             return col, "", ""
 
 
-DF = TypeVar("DF", pl.DataFrame, pl.LazyFrame)
-C = TypeVar("C")
+# An output table is a polars table with OutputColumn metadata for colums
+OutputTable: TypeAlias = Table[pl.DataFrame, OutputColumn]
 
-
-@dataclass(frozen=True)
-class Table(Generic[DF, C]):
-    """
-    We separate the polars dataframe and its columns to better represent columns metadata with specific classes.
-    """
-
-    columns: Sequence[C]
-    data: DF
-
-    def select(self, predicate: Callable[[C], bool]) -> "Self":
-        filtered_columns_indices = [k for k, col in enumerate(self.columns) if predicate(col)]
-        filtered_columns = [self.columns[k] for k in filtered_columns_indices]
-        filtered_matrix = self.data.select(cs.by_index(filtered_columns_indices))
-        return dataclasses.replace(self, data=filtered_matrix, columns=filtered_columns)
-
-    def sort_columns(self, sort_key: Callable[[C], Any]) -> "Self":
-        sorted_indices = [i for i, col in sorted(enumerate(self.columns), key=lambda tuple: sort_key(tuple[1]))]
-        final_columns = [self.columns[c] for c in sorted_indices]
-        final_df = self.data.select(cs.by_index(sorted_indices))
-        return dataclasses.replace(self, data=final_df, columns=final_columns)
-
-
-class DataTable(Table[pl.DataFrame, C]):
-    def to_polars(self, naming: Callable[[C], str]) -> pl.DataFrame:
-        renamings = [cs.by_index(i).alias(naming(col)) for i, col in enumerate(self.columns)]
-        return self.data.select(*renamings)
-
-
-class LazyTable(Table[pl.LazyFrame, C]):
-    def collect(self) -> DataTable[C]:
-        return DataTable(data=self.data.collect(), columns=self.columns)
-
-
-OutputTable: TypeAlias = DataTable[OutputColumn]
-
-# Using lazy frames for better performances where relevant
+# Using lazy frames for performance tuning where relevant
 LazyOutputTable: TypeAlias = LazyTable[OutputColumn]
 
 

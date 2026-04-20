@@ -245,7 +245,7 @@ def stack_matrix(output_data: OutputMatrix) -> OutputMatrix:
     After: X columns + 1 column for the cluster id
     """
     initial_cols = output_data.data.columns
-    initial_df = output_data.data.data
+    initial_df = output_data.data.dataframe
 
     # Mapping cluster variable -> column index in final DF
     col_indices: dict[ClusterVarColumn, int] = {}
@@ -286,7 +286,7 @@ def stack_matrix(output_data: OutputMatrix) -> OutputMatrix:
     # Then just concatenate the clusters slices together
     final_df = pl.concat(final_clusters_dfs, how="vertical_relaxed")
 
-    final_table = LazyOutputTable(data=final_df, columns=final_columns)
+    final_table = LazyOutputTable(dataframe=final_df, columns=final_columns)
     return dataclasses.replace(output_data, data=final_table)
 
 
@@ -319,7 +319,7 @@ def add_index_columns(output_matrix: OutputMatrix) -> OutputMatrix:
     """
     Adds columns location, year, and time
     """
-    initial_df = output_matrix.data.data
+    initial_df = output_matrix.data.dataframe
     year = output_matrix.year
 
     location_col = output_matrix.location_col()
@@ -329,7 +329,7 @@ def add_index_columns(output_matrix: OutputMatrix) -> OutputMatrix:
     if output_matrix.year is not None:
         exprs.append(pl.lit(output_matrix.year).alias("mcYear"))
     final_df = df.select(*exprs, pl.all())
-    final_table = LazyOutputTable(data=final_df, columns=new_cols + list(output_matrix.data.columns))
+    final_table = LazyOutputTable(dataframe=final_df, columns=new_cols + list(output_matrix.data.columns))
 
     return dataclasses.replace(output_matrix, data=final_table)
 
@@ -377,7 +377,7 @@ def iterate_output_matrices(
             file_type=query_file,
             year=f.year,
             location=f.location,
-            data=LazyOutputTable(data=output_df.data.lazy(), columns=output_df.columns),
+            data=LazyOutputTable(dataframe=output_df.dataframe.lazy(), columns=output_df.columns),
         )
 
     output_data = map(parse_file, files)
