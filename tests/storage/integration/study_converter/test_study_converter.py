@@ -14,6 +14,7 @@ from unittest.mock import MagicMock, Mock
 
 import numpy as np
 import polars as pl
+import pytest
 
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.study.business.model.area_model import AreaUIData
@@ -51,7 +52,7 @@ from antarest.study.business.model.xpansion_model import (
 )
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
-from antarest.study.model import STUDY_VERSION_7_0
+from antarest.study.model import STUDY_VERSION_7_0, STUDY_VERSION_9_2
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -417,6 +418,8 @@ def test_matrices_normalized(storage_service: StudyService, tmp_path: Path) -> N
 def test_convert_short_term_storages_also_converts_additional_constraint_matrix() -> None:
     source_dao = MagicMock()
     new_dao = MagicMock()
+    source_dao.get_version.return_value = STUDY_VERSION_9_2
+    new_dao.get_version.return_value = STUDY_VERSION_9_2
 
     converter = StudyConverter(source_dao=source_dao, new_dao=new_dao, matrix_service=MagicMock())
 
@@ -429,3 +432,13 @@ def test_convert_short_term_storages_also_converts_additional_constraint_matrix(
 
     source_dao.get_all_st_storage_additional_constraint_matrices.assert_called_once()
     new_dao.save_st_storage_constraint_matrices.assert_called_once()
+
+
+def test_conversion_with_different_versions() -> None:
+    source_dao = MagicMock()
+    new_dao = MagicMock()
+    source_dao.get_version.return_value = STUDY_VERSION_9_2
+    new_dao.get_version.return_value = STUDY_VERSION_7_0
+
+    with pytest.raises(ValueError):
+        StudyConverter(source_dao=source_dao, new_dao=new_dao, matrix_service=MagicMock())
