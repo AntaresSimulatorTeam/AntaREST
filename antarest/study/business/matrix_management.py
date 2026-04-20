@@ -13,6 +13,7 @@
 import itertools
 import logging
 import operator
+from pathlib import PurePosixPath
 
 import numpy as np
 import pandas as pd
@@ -21,7 +22,7 @@ import polars as pl
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction, MatrixSlice, Operation
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -247,19 +248,10 @@ class MatrixManager:
         edit_instructions: list[MatrixEditInstruction],
     ) -> None:
         logger.info(f"Starting matrix update for {study.id}...")
-        file_study = study.get_files()
         matrix_service = self._command_context.matrix_service
 
-        matrix_node = file_study.tree.get_node(url=path.split("/"))
-
-        if not isinstance(matrix_node, InputSeriesMatrix):  # pragma: no cover
-            raise TypeError(repr(type(matrix_node)))
-
-        try:
-            logger.info(f"Loading matrix data from node '{path}'...")
-            matrix_df = matrix_node.parse_as_dataframe()
-        except ValueError as exc:
-            raise MatrixManagerError(f"Cannot parse matrix: {exc}") from exc
+        mapper = RawPathToMatrixMapper(study.get_study_dao())  # type: ignore
+        matrix_df = mapper.get_matrix_from_path(PurePosixPath(path))
 
         logger.info(f"Merging {len(edit_instructions)} instructions...")
         edit_instructions = merge_edit_instructions(edit_instructions)
