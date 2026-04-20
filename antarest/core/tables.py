@@ -11,13 +11,15 @@
 # This file is part of the Antares project.
 import dataclasses
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, Self, Sequence, TypeVar
+from typing import Any, Callable, Generic, Iterator, Self, Sequence, TypeAlias, TypeVar
 
 import polars as pl
 from polars import selectors as cs
 
 DF = TypeVar("DF", pl.DataFrame, pl.LazyFrame)
 C = TypeVar("C")
+
+ColumnNaming: TypeAlias = Callable[[C], str]
 
 
 @dataclass(frozen=True)
@@ -52,7 +54,7 @@ class Table(Generic[DF, C]):
         final_df = self.dataframe.select(cs.by_index(sorted_indices))
         return dataclasses.replace(self, dataframe=final_df, columns=final_columns)
 
-    def to_polars(self, naming: Callable[[C], str]) -> DF:
+    def to_polars(self, naming: ColumnNaming[C]) -> DF:
         """
         Converts to a plain polars frame, you need to provide a function to create unique column names for each col.
         """
@@ -70,3 +72,10 @@ class LazyTable(Table[pl.LazyFrame, C]):
         Converts the lazy frame to a collected dataframe.
         """
         return Table(dataframe=self.dataframe.collect(), columns=self.columns)
+
+
+def concat_tables_to_dataframe(tables: Iterator[Table[DF, C]], naming: ColumnNaming[C]) -> DF:
+    """
+    Concatenate a list of tables to a single dataframe, using provided naming function.
+    """
+    return pl.concat((table.to_polars(naming) for table in tables))

@@ -207,7 +207,7 @@ def _parse_bc_file(file: Path, mc_year: int | None = None) -> pl.DataFrame | Non
         logger.debug(f"Skipping binding constraint {file.name}: {e}")
         return None
 
-    df = output_table.data.with_row_index(TIME_ID_COL, offset=1)
+    df = output_table.dataframe.with_row_index(TIME_ID_COL, offset=1)
 
     if mc_year is not None:
         df = df.with_columns(pl.lit(mc_year).alias(MCYEAR_COL))
@@ -407,7 +407,7 @@ def parse_column_metadata(column: str) -> OutputColumn:
 
 def _df_to_table(df: pl.DataFrame) -> OutputTable:
     columns = [parse_column_metadata(c) for c in df.columns]
-    return OutputTable(data=df, columns=columns)
+    return OutputTable(dataframe=df, columns=columns)
 
 
 def read_output_from_parquet(

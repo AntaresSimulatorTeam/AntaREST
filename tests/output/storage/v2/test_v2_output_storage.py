@@ -19,6 +19,7 @@ import polars as pl
 import pytest
 from sqlalchemy import Engine
 
+from antarest.core.tables import concat_tables_to_dataframe
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
@@ -26,6 +27,7 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.lfs.dir_lfs import DirLargeFileStorage
 from antarest.lfs.lfs import ILargeFileStorage
+from antarest.output.filestudy.aggregation import aggregation_column_naming
 from antarest.output.model import MCAllAreasData
 from antarest.output.storage.v2.repository import OutputV2Repository
 from antarest.output.storage.v2.storage import V2OutputStorage
@@ -697,8 +699,8 @@ def test_parquet_areas_content(
     assert set(areas_daily["area"]) == {"de", "es"}
     assert "area" in areas_daily.columns
     assert "timeId" in areas_daily.columns
-    assert "LOAD EXP" in areas_daily.columns
-    assert "BALANCE EXP" in areas_daily.columns
+    assert "LOAD__MWh__EXP" in areas_daily.columns
+    assert "BALANCE__MWh__EXP" in areas_daily.columns
 
 
 def test_parquet_thermal_clusters_content(
@@ -772,19 +774,15 @@ def test_aggregate_areas_values(
     with db():
         output_name = storage.import_output(study_id, output_path)
 
-        dfs = list(
-            storage.iterate_output_table(
-                study_id,
-                output_name,
-                query_file=MCAllAreasData.VALUES,
-                frequency=MatrixFrequency.DAILY,
-                ids_to_consider=[],
-                columns_names=[],
-                transform_columns_headers=True,
-            )
+        dfs = storage.iterate_output_table(
+            study_id,
+            output_name,
+            query_file=MCAllAreasData.VALUES,
+            frequency=MatrixFrequency.DAILY,
+            ids_to_consider=[],
+            columns_names=[],
         )
-        assert len(dfs) >= 1
-        df = pl.concat(dfs)
+        df = concat_tables_to_dataframe(dfs, aggregation_column_naming)
 
         assert "area" in df.columns
         assert "timeId" in df.columns
@@ -800,19 +798,16 @@ def test_aggregate_with_area_filter(
     with db():
         output_name = storage.import_output(study_id, output_path)
 
-        dfs = list(
-            storage.iterate_output_table(
-                study_id,
-                output_name,
-                query_file=MCAllAreasData.VALUES,
-                frequency=MatrixFrequency.DAILY,
-                ids_to_consider=["de"],
-                columns_names=[],
-                transform_columns_headers=True,
-            )
+        dfs = storage.iterate_output_table(
+            study_id,
+            output_name,
+            query_file=MCAllAreasData.VALUES,
+            frequency=MatrixFrequency.DAILY,
+            ids_to_consider=["de"],
+            columns_names=[],
         )
 
-        df = pl.concat(dfs)
+        df = concat_tables_to_dataframe(dfs, aggregation_column_naming)
         assert set(df["area"]) == {"de"}
 
 
@@ -832,7 +827,7 @@ def test_aggregate_with_column_filter(
             ids_to_consider=[],
             columns_names=["load"],
         )
-        df = pl.concat(dfs)
+        df = concat_tables_to_dataframe(dfs, aggregation_column_naming)
 
         variable_cols = [c for c in df.columns if c not in {"area", "timeId", "mcYear", "cluster"}]
         assert all("LOAD" in c for c in variable_cols)
@@ -846,18 +841,15 @@ def test_aggregate_thermal_clusters(
     with db():
         output_name = storage.import_output(study_id, output_path)
 
-        dfs = list(
-            storage.iterate_output_table(
-                study_id,
-                output_name,
-                query_file=MCAllAreasData.DETAILS,
-                frequency=MatrixFrequency.DAILY,
-                ids_to_consider=[],
-                columns_names=[],
-                transform_columns_headers=True,
-            )
+        dfs = storage.iterate_output_table(
+            study_id,
+            output_name,
+            query_file=MCAllAreasData.DETAILS,
+            frequency=MatrixFrequency.DAILY,
+            ids_to_consider=[],
+            columns_names=[],
         )
-        df = pl.concat(dfs)
+        df = concat_tables_to_dataframe(dfs, aggregation_column_naming)
 
         assert "area" in df.columns
         assert "cluster" in df.columns
