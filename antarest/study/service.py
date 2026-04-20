@@ -705,14 +705,10 @@ class StudyService:
         self._outputs_access: IOutputsAccess | None = None
         self._matrix_service = command_context.matrix_service
         StudyDatabaseMatrixUsageProvider(self._matrix_service)
-        self._study_dao_factories = {
-            StorageMode.DATABASE: DatabaseStudyDaoFactory(
-                self._matrix_service, command_context.generator_matrix_constants
-            ),
-            StorageMode.FILESYSTEM: FileStudyDaoFactory(
-                command_context, raw_study_service.study_factory, cache_service
-            ),
-        }
+        # DAO factory
+        db_dao_factory = DatabaseStudyDaoFactory(self._matrix_service, command_context.generator_matrix_constants)
+        fs_dao_factory = FileStudyDaoFactory(command_context, raw_study_service.study_factory, cache_service)
+        self._study_dao_factories = {StorageMode.DATABASE: db_dao_factory, StorageMode.FILESYSTEM: fs_dao_factory}
 
     def register_output_access(self, output_access: IOutputsAccess) -> None:
         """
