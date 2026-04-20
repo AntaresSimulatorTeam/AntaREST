@@ -18,7 +18,7 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintFrequency,
 )
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
-from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
     default_4_fixed_hourly,
     default_6_fixed_hourly,
@@ -44,7 +44,7 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
 from tests.study.dao.conftest import build_real_case_study
 
 
-def test_empty_matrices(dao_and_matrix_service: tuple[DatabaseStudyDao, ISimpleMatrixService]) -> None:
+def test_empty_matrices(dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService]) -> None:
     """
     Parametrized test for both FS and DB DAOs.
     Ensures DAO methods return the default matrices when the null_matrix is saved.

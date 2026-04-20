@@ -23,7 +23,7 @@ import polars as pl
 from antares.study.version import StudyVersion
 from sqlalchemy import Row, Table, delete, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, join
 from sqlalchemy.sql import outerjoin
 from typing_extensions import override
 
@@ -240,13 +240,24 @@ class DatabaseBindingConstraintDao(ConstraintDao):
             raise BindingConstraintNotFound(f"Constraint {constraint_id} not found")
         return result[constraint_id]
 
-    def _get_bc_matrix(self, constraint_id: ConstraintId, table: Table) -> SeriesId:
-        row = self._db_session.execute(
-            select(table).where((table.c.study_id == self._study_id) & (table.c.constraint_id == constraint_id))
-        ).fetchone()
+    def _get_bc_matrix_and_frequency(
+        self, constraint_id: ConstraintId, table: Table
+    ) -> tuple[SeriesId, BindingConstraintFrequency]:
+        """
+        We need to fetch a constraint frequency to know the default matrix to use.
+        We want to avoid fetching terms as we do not need them.
+        That's why we use a specific DB request
+        """
+        join_query = join(
+            BC,
+            table,
+            (BC.c.study_id == table.c.study_id) & (BC.c.constraint_id == table.c.constraint_id == constraint_id),
+        )
+        q = select(BC.c.time_step, table.c.matrix_id).select_from(join_query)
+        row = self._db_session.execute(q).fetchone()
         if row is None:
             raise BindingConstraintNotFound(f"Matrix for constraint {constraint_id} not found")
-        return str(row.matrix_id)
+        return str(row.matrix_id), row.time_step
 
     def _raise_the_right_binding_constraint_exception(
         self, bc_ids: set[str], exc: IntegrityError | None = None
@@ -269,39 +280,24 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         except IntegrityError as e:
             self._raise_the_right_binding_constraint_exception(set(series), e)
 
-    def _get_constraint_frequency(self, constraint_id: ConstraintId) -> BindingConstraintFrequency:
-        """
-        We need to fetch a constraint frequency to know the default matrix to use.
-        We want to avoid fetching terms as we do not need them.
-        Furthermore, we fetched the `matrix_id`, so there is no risk of the constraint not existing inside DB.
-        That's why we use a specific DB request
-        """
-        stmt = select(BC.c.time_step).where((BC.c.study_id == self._study_id) & (BC.c.constraint_id == constraint_id))
-        row = self._db_session.execute(stmt).fetchone()
-        return row.time_step  # type: ignore
-
     @override
     def get_constraint_values_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
-        matrix_id = self._get_bc_matrix(constraint_id, BINDING_CONSTRAINT_VALUES_MATRIX_TABLE)
-        frequency = self._get_constraint_frequency(constraint_id)
+        matrix_id, frequency = self._get_bc_matrix_and_frequency(constraint_id, BINDING_CONSTRAINT_VALUES_MATRIX_TABLE)
         return self.get_impl().get_matrix(matrix_id, default_empty_supplier=DEFAULT_MATRICES_BEFORE_V87[frequency])
 
     @override
     def get_constraint_less_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
-        matrix_id = self._get_bc_matrix(constraint_id, BINDING_CONSTRAINT_LT_MATRIX_TABLE)
-        frequency = self._get_constraint_frequency(constraint_id)
+        matrix_id, frequency = self._get_bc_matrix_and_frequency(constraint_id, BINDING_CONSTRAINT_LT_MATRIX_TABLE)
         return self.get_impl().get_matrix(matrix_id, default_empty_supplier=DEFAULT_MATRICES_AFTER_V87[frequency])
 
     @override
     def get_constraint_greater_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
-        matrix_id = self._get_bc_matrix(constraint_id, BINDING_CONSTRAINT_GT_MATRIX_TABLE)
-        frequency = self._get_constraint_frequency(constraint_id)
+        matrix_id, frequency = self._get_bc_matrix_and_frequency(constraint_id, BINDING_CONSTRAINT_GT_MATRIX_TABLE)
         return self.get_impl().get_matrix(matrix_id, default_empty_supplier=DEFAULT_MATRICES_AFTER_V87[frequency])
 
     @override
     def get_constraint_equal_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
-        matrix_id = self._get_bc_matrix(constraint_id, BINDING_CONSTRAINT_EQ_MATRIX_TABLE)
-        frequency = self._get_constraint_frequency(constraint_id)
+        matrix_id, frequency = self._get_bc_matrix_and_frequency(constraint_id, BINDING_CONSTRAINT_EQ_MATRIX_TABLE)
         return self.get_impl().get_matrix(matrix_id, default_empty_supplier=DEFAULT_MATRICES_AFTER_V87[frequency])
 
     @override
