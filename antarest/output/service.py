@@ -521,6 +521,11 @@ class OutputService:
 
             # Once they all ended, build the final response
             intermediary_dict: dict[str, Any] = {}
+            # TODO:
+            #  - we must not assume that the chunks will be "cut" between 2 objects, which we seem to do here
+            #  - the aggregated files contain one column for each variable that appears at least for one object.
+            #    For each object, we should filter out the columns that don't come from that object
+
             # We're opening the parquet files chunk by chunk to avoid flooding memory
             for dataframe in yield_dataframes_from_parquet(file_paths, []):
                 # Convert the dataframe in the right response

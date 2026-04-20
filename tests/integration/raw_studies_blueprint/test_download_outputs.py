@@ -44,7 +44,8 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
     actual_result = json.loads(json.dumps(actual_result), parse_constant=_convert_nan_to_none)
     with py7zr.SevenZipFile(ASSETS_DIR / "res1.7z", mode="r") as szf:
         expected_content = from_json(szf.read(["."])["."].read())
-    assert expected_content == actual_result
+        assert res.status_code == 200
+    assert actual_result == expected_content
 
     # Annual
     body["level"] = "annual"

@@ -194,6 +194,9 @@ def _extract_links(
 
 
 def _parse_bc_file(file: Path, mc_year: int | None = None) -> pl.DataFrame | None:
+    # TODO: We must reshape those dataframes, like we do for details dataframes:
+    #       They contain 1 column for each binding constraint
+
     freq_str = file.stem.split("-")[-1]
     try:
         frequency = MatrixFrequency(freq_str)

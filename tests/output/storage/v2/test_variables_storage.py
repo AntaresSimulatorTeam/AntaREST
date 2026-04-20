@@ -122,7 +122,7 @@ def test_store_variables(goodbye_output_path: Path, tmp_path: Path) -> None:
         columns_names=[],
         ids_to_consider=["de", "fr", "it"],
     )
-    table = functools.reduce(_concat_tables, tables, OutputTable(data=pl.DataFrame([]), columns=[]))
+    table = functools.reduce(_concat_tables, tables, OutputTable(dataframe=pl.DataFrame([]), columns=[]))
 
     assert table.columns == [
         "area",
@@ -142,7 +142,7 @@ def _concat_tables(left: OutputTable, right: OutputTable) -> OutputTable:
         raise ValueError("Output columns mismatch.")
 
     return OutputTable(
-        data=pl.concat([left.data, right.data], how="vertical"),
+        dataframe=pl.concat([left.dataframe, right.dataframe], how="vertical"),
         columns=right.columns,
     )
 
