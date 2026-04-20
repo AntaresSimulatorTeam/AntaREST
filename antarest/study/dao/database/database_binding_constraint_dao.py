@@ -23,7 +23,7 @@ import polars as pl
 from antares.study.version import StudyVersion
 from sqlalchemy import Row, Table, delete, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session, join
+from sqlalchemy.orm import Session
 from sqlalchemy.sql import outerjoin
 from typing_extensions import override
 
@@ -248,12 +248,12 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         We want to avoid fetching terms as we do not need them.
         That's why we use a specific DB request
         """
-        join_query = join(
-            BC,
-            table,
-            (BC.c.study_id == table.c.study_id) & (BC.c.constraint_id == table.c.constraint_id == constraint_id),
+        join_query = BC.join(table, BC.c.constraint_id == table.c.constraint_id)
+        q = (
+            select(BC.c.time_step, table.c.matrix_id)
+            .where((BC.c.study_id == self._study_id) & (BC.c.constraint_id == constraint_id))
+            .select_from(join_query)
         )
-        q = select(BC.c.time_step, table.c.matrix_id).select_from(join_query)
         row = self._db_session.execute(q).fetchone()
         if row is None:
             raise BindingConstraintNotFound(f"Matrix for constraint {constraint_id} not found")
