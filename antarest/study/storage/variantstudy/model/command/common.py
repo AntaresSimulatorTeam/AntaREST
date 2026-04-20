@@ -108,7 +108,7 @@ class CommandName(Enum):
     UPDATE_RESERVES_GLOBAL_PARAMETERS = "update_reserves_global_parameters"
     CREATE_RESERVE_DEFINITION = "create_reserve_definition"
     UPDATE_RESERVE_DEFINITIONS = "update_reserve_definitions"
-    REMOVE_RESERVE_DEFINITION = "remove_reserve_definition"
+    REMOVE_RESERVE_DEFINITIONS = "remove_reserve_definitions"
 
 
 @dataclass(frozen=True)

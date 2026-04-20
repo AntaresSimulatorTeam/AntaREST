@@ -56,7 +56,7 @@ from antarest.study.storage.variantstudy.model.command.remove_multiple_storage_c
     RemoveMultipleSTStorageConstraints,
 )
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
-from antarest.study.storage.variantstudy.model.command.remove_reserve_definition import RemoveReserveDefinition
+from antarest.study.storage.variantstudy.model.command.remove_reserve_definitions import RemoveReserveDefinitions
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_user_resource import RemoveUserResource
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate import RemoveXpansionCandidate
@@ -181,7 +181,7 @@ COMMAND_MAPPING: dict[str, type[ICommand]] = {
     CommandName.UPDATE_RESERVES_GLOBAL_PARAMETERS.value: UpdateReservesGlobalParameters,
     CommandName.CREATE_RESERVE_DEFINITION.value: CreateReserveDefinition,
     CommandName.UPDATE_RESERVE_DEFINITIONS.value: UpdateReserveDefinitions,
-    CommandName.REMOVE_RESERVE_DEFINITION.value: RemoveReserveDefinition,
+    CommandName.REMOVE_RESERVE_DEFINITIONS.value: RemoveReserveDefinitions,
 }
 
 

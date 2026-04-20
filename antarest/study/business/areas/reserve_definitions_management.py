@@ -21,7 +21,7 @@ from antarest.study.business.model.reserve_definition_model import (
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.create_reserve_definition import CreateReserveDefinition
-from antarest.study.storage.variantstudy.model.command.remove_reserve_definition import RemoveReserveDefinition
+from antarest.study.storage.variantstudy.model.command.remove_reserve_definitions import RemoveReserveDefinitions
 from antarest.study.storage.variantstudy.model.command.update_reserve_definitions import UpdateReserveDefinitions
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -67,13 +67,10 @@ class ReserveDefinitionsManager:
         return updated
 
     def delete_reserve_definitions(self, study: StudyInterface, area_id: str, reserve_ids: Sequence[str]) -> None:
-        commands = [
-            RemoveReserveDefinition(
-                area_id=area_id,
-                reserve_id=reserve_id,
-                study_version=study.version,
-                command_context=self._command_context,
-            )
-            for reserve_id in reserve_ids
-        ]
-        study.add_commands(commands)
+        command = RemoveReserveDefinitions(
+            area_id=area_id,
+            reserve_ids=reserve_ids,
+            study_version=study.version,
+            command_context=self._command_context,
+        )
+        study.add_commands([command])

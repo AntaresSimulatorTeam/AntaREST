@@ -14,12 +14,12 @@ from abc import ABC, abstractmethod
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
+from antarest.study.business.model.reserve_definition_model import GLOBAL_PARAMETERS_SECTION
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.dao.api.reserves_global_parameters_dao import ReservesGlobalParametersDao
 from antarest.study.dao.common import ReservesGlobalParametersMapping
 from antarest.study.dao.file.common import check_area_exists
 from antarest.study.storage.rawstudy.model.filesystem.config.reserves_global_parameters import (
-    GLOBAL_PARAMETERS_SECTION,
     parse_reserves_global_parameters,
     serialize_reserves_global_parameters,
 )

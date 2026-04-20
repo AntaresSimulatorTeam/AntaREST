@@ -15,9 +15,8 @@ from pydantic import ConfigDict
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
+from antarest.study.business.model.reserve_definition_model import GLOBAL_PARAMETERS_SECTION
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
-
-GLOBAL_PARAMETERS_SECTION = "globalparameters"
 
 
 class ReservesGlobalParametersFileData(AntaresBaseModel):

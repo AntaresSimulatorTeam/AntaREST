@@ -40,5 +40,5 @@ class ReserveDefinitionDao(ReadOnlyReserveDefinitionDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def delete_reserve_definition(self, area_id: AreaId, reserve_id: ReserveDefinitionId) -> None:
+    def delete_reserve_definitions(self, area_id: AreaId, reserve_ids: Sequence[ReserveDefinitionId]) -> None:
         raise NotImplementedError()

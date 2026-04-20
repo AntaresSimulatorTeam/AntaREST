@@ -24,7 +24,7 @@ from antarest.study.business.model.reserve_definition_model import (
 from antarest.study.dao.memory.in_memory_study_dao import InMemoryStudyDao
 from antarest.study.model import STUDY_VERSION_10_0
 from antarest.study.storage.variantstudy.model.command.create_reserve_definition import CreateReserveDefinition
-from antarest.study.storage.variantstudy.model.command.remove_reserve_definition import RemoveReserveDefinition
+from antarest.study.storage.variantstudy.model.command.remove_reserve_definitions import RemoveReserveDefinitions
 from antarest.study.storage.variantstudy.model.command.update_reserve_definitions import UpdateReserveDefinitions
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.study.dao.utils import save_area
@@ -48,10 +48,10 @@ class TestCreateReserveDefinition:
         output = command.apply(dao)
         assert output.status
         assert isinstance(output.result, ReserveDefinition)
-        assert output.result.id == "Reserve 1"
+        assert output.result.id == "reserve 1"
         assert output.result.type == ReserveType.UP
 
-        assert dao.reserve_definition_exists("paris", "Reserve 1")
+        assert dao.reserve_definition_exists("paris", "reserve 1")
 
     def test_apply_duplicate_fails(self, command_context: CommandContext) -> None:
         dao = _make_dao()
@@ -123,8 +123,8 @@ class TestUpdateReserveDefinitions:
         command = UpdateReserveDefinitions(
             reserve_properties={
                 "paris": {
-                    "R1": ReserveDefinitionUpdate(failure_cost=999.0),
-                    "R2": ReserveDefinitionUpdate(spillage_cost=5.0),
+                    "r1": ReserveDefinitionUpdate(failure_cost=999.0),
+                    "r2": ReserveDefinitionUpdate(spillage_cost=5.0),
                 }
             },
             command_context=command_context,
@@ -133,8 +133,8 @@ class TestUpdateReserveDefinitions:
         output = command.apply(dao)
         assert output.status
 
-        assert dao.get_reserve_definition("paris", "R1").failure_cost == 999.0
-        assert dao.get_reserve_definition("paris", "R2").spillage_cost == 5.0
+        assert dao.get_reserve_definition("paris", "r1").failure_cost == 999.0
+        assert dao.get_reserve_definition("paris", "r2").spillage_cost == 5.0
 
     def test_apply_not_found(self, command_context: CommandContext) -> None:
         dao = self._seed(command_context)
@@ -167,7 +167,7 @@ class TestUpdateReserveDefinitions:
         assert dto.args["reserve_properties"]["paris"]["R1"]["failureCost"] == 999.0
 
 
-class TestRemoveReserveDefinition:
+class TestRemoveReserveDefinitions:
     def test_apply(self, command_context: CommandContext) -> None:
         dao = _make_dao()
         save_area(dao, "paris")
@@ -178,38 +178,47 @@ class TestRemoveReserveDefinition:
             study_version=STUDY_VERSION_10_0,
         ).apply(dao)
 
-        command = RemoveReserveDefinition(
+        command = RemoveReserveDefinitions(
             area_id="paris",
-            reserve_id="R1",
+            reserve_ids=["r1"],
             command_context=command_context,
             study_version=STUDY_VERSION_10_0,
         )
         output = command.apply(dao)
         assert output.status
-        assert not dao.reserve_definition_exists("paris", "R1")
+        assert not dao.reserve_definition_exists("paris", "r1")
 
     def test_not_found(self, command_context: CommandContext) -> None:
         dao = _make_dao()
         save_area(dao, "paris")
 
-        command = RemoveReserveDefinition(
+        command = RemoveReserveDefinitions(
             area_id="paris",
-            reserve_id="unknown",
+            reserve_ids=["unknown"],
             command_context=command_context,
             study_version=STUDY_VERSION_10_0,
         )
         output = command.apply(dao)
         assert not output.status
-        assert "does not exist" in output.message
+        assert "do not exist" in output.message
+
+    def test_version_check(self, command_context: CommandContext) -> None:
+        with pytest.raises(ValidationError, match="study version before 10.0"):
+            RemoveReserveDefinitions(
+                area_id="paris",
+                reserve_ids=["r1"],
+                command_context=command_context,
+                study_version=StudyVersion.parse("9.2"),
+            )
 
     def test_to_dto(self, command_context: CommandContext) -> None:
-        command = RemoveReserveDefinition(
+        command = RemoveReserveDefinitions(
             area_id="paris",
-            reserve_id="R1",
+            reserve_ids=["r1", "r2"],
             command_context=command_context,
             study_version=STUDY_VERSION_10_0,
         )
         dto = command.to_dto()
-        assert dto.action == "remove_reserve_definition"
+        assert dto.action == "remove_reserve_definitions"
         assert dto.args["area_id"] == "paris"
-        assert dto.args["reserve_id"] == "R1"
+        assert dto.args["reserve_ids"] == ["r1", "r2"]

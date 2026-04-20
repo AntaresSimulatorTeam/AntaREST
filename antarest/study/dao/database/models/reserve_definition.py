@@ -17,8 +17,6 @@ from antarest.study.business.model.reserve_definition_model import ReserveType
 
 metadata = Base.metadata
 
-_RESERVE_TYPE_ENUM = Enum(ReserveType, name="reservetype")
-
 RESERVE_DEFINITION_TABLE = Table(
     "reserve_definition",
     metadata,
@@ -26,7 +24,7 @@ RESERVE_DEFINITION_TABLE = Table(
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("reserve_id", String(255), nullable=False, primary_key=True),
     Column("name", String(255), nullable=False),
-    Column("type", _RESERVE_TYPE_ENUM, nullable=False),
+    Column("type", Enum(ReserveType), nullable=False),
     Column("failure_cost", Float, nullable=False),
     Column("spillage_cost", Float, nullable=False),
     Column("reference_activation_duration", Integer, nullable=False),

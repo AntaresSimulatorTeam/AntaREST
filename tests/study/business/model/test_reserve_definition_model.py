@@ -30,7 +30,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.reserve_definition 
 class TestReserveDefinition:
     def test_defaults_applied(self) -> None:
         reserve = ReserveDefinition(name="Reserve 1", type=ReserveType.UP)
-        assert reserve.id == "Reserve 1"
+        assert reserve.id == "reserve 1"
         assert reserve.name == "Reserve 1"
         assert reserve.type == ReserveType.UP
         assert reserve.failure_cost == 0.0
@@ -41,7 +41,7 @@ class TestReserveDefinition:
 
     def test_id_derived_from_name(self) -> None:
         reserve = ReserveDefinition(name="Primary Up!!", type=ReserveType.UP)
-        assert reserve.id == "Primary Up"
+        assert reserve.id == "primary up"
 
     def test_explicit_id_preserved(self) -> None:
         reserve = ReserveDefinition(id="custom_id", name="whatever", type=ReserveType.DOWN)
@@ -108,9 +108,9 @@ class TestReserveDefinitionUpdate:
         assert update.type is None
         assert update.failure_cost is None
 
-    def test_name_is_ignored(self) -> None:
+    def test_name_is_accepted(self) -> None:
         update = ReserveDefinitionUpdate.model_validate({"name": "new-name", "failureCost": 2.0})
-        assert not hasattr(update, "name") or getattr(update, "name", None) is None
+        assert update.name == "new-name"
         assert update.failure_cost == 2.0
 
 
@@ -120,7 +120,7 @@ class TestCreateAndUpdateHelpers:
         reserve = create_reserve_definition(creation)
         assert reserve.reference_activation_duration == 1
         assert reserve.energy_activation_ratio == 1.0
-        assert reserve.id == "R1"
+        assert reserve.id == "r1"
 
     def test_update_partial(self) -> None:
         reserve = ReserveDefinition(name="R1", type=ReserveType.UP, failure_cost=100.0, reference_activation_duration=5)
@@ -152,7 +152,7 @@ class TestFileDataRoundTrip:
             "reference-activation-duration": 10,
         }
         reserve = parse_reserve_definition(data)
-        assert reserve.id == "Reserve 1"
+        assert reserve.id == "reserve 1"
         assert reserve.name == "Reserve 1"
         assert reserve.type == ReserveType.UP
         assert reserve.failure_cost == 500.0

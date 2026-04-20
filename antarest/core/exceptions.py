@@ -142,10 +142,12 @@ class STStorageNotFound(ClusterNotFound):
     object_name = "Short-term storage"
 
 
-class ReserveDefinitionNotFound(ClusterNotFound):
+class ReserveDefinitionNotFound(HTTPException):
     """Reserve definition is not found (404 Not Found)"""
 
-    object_name = "Reserve definition"
+    def __init__(self, area_id: str, reserve_id: str):
+        msg = f"Reserve definition '{reserve_id}' not found in area '{area_id}'"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
 # ============================================================

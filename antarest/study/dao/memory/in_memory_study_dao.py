@@ -117,6 +117,12 @@ class ClusterKey:
 
 
 @dataclass(frozen=True)
+class ReserveKey:
+    area_id: str
+    reserve_id: str
+
+
+@dataclass(frozen=True)
 class AdditionalConstraintKey:
     area_id: str
     storage_id: str
@@ -130,6 +136,10 @@ def link_key(area1_id: str, area2_id: str) -> LinkKey:
 
 def cluster_key(area_id: str, cluster_id: str) -> ClusterKey:
     return ClusterKey(area_id, cluster_id)
+
+
+def reserve_key(area_id: str, reserve_id: str) -> ReserveKey:
+    return ReserveKey(area_id, reserve_id)
 
 
 def additional_constraint_key(area_id: str, storage_id: str, constraint_id: str) -> AdditionalConstraintKey:
@@ -247,7 +257,7 @@ class InMemoryStudyDao(StudyDao):
         # Reserves global parameters
         self._reserves_global_parameters: dict[str, ReservesGlobalParameters] = {}
         # Reserve definitions (per-reserve parameters)
-        self._reserve_definitions: dict[ClusterKey, ReserveDefinition] = {}
+        self._reserve_definitions: dict[ReserveKey, ReserveDefinition] = {}
         # Misc-gen
         self._misc_gen: dict[str, str] = {}
         # Solar
@@ -1593,7 +1603,7 @@ class InMemoryStudyDao(StudyDao):
     def get_all_reserve_definitions(self) -> ReserveDefinitionsMapping:
         result: ReserveDefinitionsMapping = {}
         for key, reserve in self._reserve_definitions.items():
-            result.setdefault(key.area_id, {})[key.cluster_id] = reserve
+            result.setdefault(key.area_id, {})[key.reserve_id] = reserve
         return result
 
     @override
@@ -1607,7 +1617,7 @@ class InMemoryStudyDao(StudyDao):
         if area_id not in self.get_all_area_ids():
             raise AreaNotFound(area_id)
         try:
-            return self._reserve_definitions[cluster_key(area_id, reserve_id)]
+            return self._reserve_definitions[reserve_key(area_id, reserve_id)]
         except KeyError as exc:
             raise ReserveDefinitionNotFound(area_id, reserve_id) from exc
 
@@ -1615,20 +1625,21 @@ class InMemoryStudyDao(StudyDao):
     def reserve_definition_exists(self, area_id: str, reserve_id: str) -> bool:
         if area_id not in self.get_all_area_ids():
             return False
-        return cluster_key(area_id, reserve_id) in self._reserve_definitions
+        return reserve_key(area_id, reserve_id) in self._reserve_definitions
 
     @override
     def save_reserve_definitions(self, data: dict[AreaId, list[ReserveDefinition]]) -> None:
         for area_id, reserves in data.items():
             for reserve in reserves:
-                self._reserve_definitions[cluster_key(area_id, reserve.id)] = reserve
+                self._reserve_definitions[reserve_key(area_id, reserve.id)] = reserve
 
     @override
-    def delete_reserve_definition(self, area_id: AreaId, reserve_id: ReserveDefinitionId) -> None:
-        try:
-            del self._reserve_definitions[cluster_key(area_id, reserve_id)]
-        except KeyError as exc:
-            raise ReserveDefinitionNotFound(area_id, reserve_id) from exc
+    def delete_reserve_definitions(self, area_id: AreaId, reserve_ids: Sequence[ReserveDefinitionId]) -> None:
+        for rid in reserve_ids:
+            try:
+                del self._reserve_definitions[reserve_key(area_id, rid)]
+            except KeyError as exc:
+                raise ReserveDefinitionNotFound(area_id, rid) from exc
 
     @override
     def save_solar(self, series: AreaSeriesMapping) -> None:

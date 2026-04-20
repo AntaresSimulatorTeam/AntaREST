@@ -1093,12 +1093,12 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.REMOVE_RESERVE_DEFINITION.value,
-            args={"area_id": "paris", "reserve_id": "Reserve 1"},
+            action=CommandName.REMOVE_RESERVE_DEFINITIONS.value,
+            args={"area_id": "paris", "reserve_ids": ["Reserve 1"]},
             study_version=STUDY_VERSION_10_0,
         ),
         None,
-        id="remove_reserve_definition",
+        id="remove_reserve_definitions",
     ),
 ]
 

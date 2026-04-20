@@ -19,10 +19,9 @@ from antarest.core.exceptions import ReservedReserveDefinitionName
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.reserves_global_parameters import (
-    GLOBAL_PARAMETERS_SECTION,
-)
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import ItemName
+
+GLOBAL_PARAMETERS_SECTION = "globalparameters"
 
 # Reserved reserve ids:
 # - "global-parameters": collides with the /areas/{id}/reserves/global-parameters route.
@@ -56,7 +55,7 @@ class ReserveDefinition(AntaresBaseModel):
     @classmethod
     def set_id(cls, data: Any) -> Any:
         if isinstance(data, dict) and "id" not in data and "name" in data:
-            data["id"] = transform_name_to_id(data["name"], lower=False)
+            data["id"] = transform_name_to_id(data["name"])
         return data
 
     id: str
@@ -89,13 +88,7 @@ class ReserveDefinitionCreation(AntaresBaseModel):
 class ReserveDefinitionUpdate(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
-    @model_validator(mode="before")
-    @classmethod
-    def _ignore_name(cls, data: Any) -> Any:
-        if isinstance(data, dict) and "name" in data:
-            del data["name"]
-        return data
-
+    name: str | None = None
     type: ReserveType | None = None
     failure_cost: Cost | None = None
     spillage_cost: Cost | None = None

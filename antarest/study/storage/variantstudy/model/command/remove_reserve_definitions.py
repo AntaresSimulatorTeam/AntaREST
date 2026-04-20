@@ -9,9 +9,14 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing_extensions import override
+from collections.abc import Sequence
 
+from pydantic import model_validator
+from typing_extensions import Self, override
+
+from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.model import STUDY_VERSION_10_0
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
@@ -23,23 +28,30 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class RemoveReserveDefinition(ICommand):
+class RemoveReserveDefinitions(ICommand):
     """
-    Command used to remove a reserve definition from an area.
+    Command used to remove reserve definitions from an area.
     """
 
-    command_name: CommandName = CommandName.REMOVE_RESERVE_DEFINITION
+    command_name: CommandName = CommandName.REMOVE_RESERVE_DEFINITIONS
 
     area_id: str
-    reserve_id: str
+    reserve_ids: Sequence[str]
+
+    @model_validator(mode="after")
+    def _validate_version(self) -> Self:
+        if self.study_version < STUDY_VERSION_10_0:
+            raise InvalidFieldForVersionError("Reserve definitions are not valid for study version before 10.0")
+        return self
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
-        if not study_data.reserve_definition_exists(self.area_id, self.reserve_id):
-            return command_failed(f"Reserve definition '{self.reserve_id}' in area '{self.area_id}' does not exist")
-        study_data.delete_reserve_definition(self.area_id, self.reserve_id)
+        missing = [rid for rid in self.reserve_ids if not study_data.reserve_definition_exists(self.area_id, rid)]
+        if missing:
+            return command_failed(f"Reserve definition(s) {missing} in area '{self.area_id}' do not exist")
+        study_data.delete_reserve_definitions(self.area_id, self.reserve_ids)
         return command_succeeded(
-            f"Reserve definition '{self.reserve_id}' inside area '{self.area_id}' deleted",
+            f"Reserve definition(s) {list(self.reserve_ids)} inside area '{self.area_id}' deleted",
             result=None,
         )
 
@@ -47,6 +59,6 @@ class RemoveReserveDefinition(ICommand):
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
-            args={"area_id": self.area_id, "reserve_id": self.reserve_id},
+            args={"area_id": self.area_id, "reserve_ids": list(self.reserve_ids)},
             study_version=self.study_version,
         )
