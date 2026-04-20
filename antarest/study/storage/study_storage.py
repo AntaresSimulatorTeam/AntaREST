@@ -15,40 +15,10 @@ from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
 
 from antarest.core.exceptions import StudyNotFoundError
-from antarest.core.model import JSON
 from antarest.study.model import Study, StudyMetadataDTO
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 
 
 class IStudyStorage(ABC):
-    @abstractmethod
-    def get(self, metadata: Study, url: str = "", depth: int = 3, formatted: bool = True) -> JSON:
-        """
-        Entry point to fetch data inside study.
-        Args:
-            metadata: study
-            url: path data inside study to reach
-            depth: tree depth to reach after reach data path
-            formatted: indicate if raw files must be parsed and formatted
-
-        Returns: study data formatted in json
-
-        """
-
-    @abstractmethod
-    def get_file(self, metadata: Study, url: str = "") -> OriginalFile:
-        """
-        Entry point to fetch for a specific file inside a study folder
-
-        Args:
-            metadata: study
-            url: path data inside study to reach the file
-
-        Returns: study file content and extension
-
-        """
-
     @abstractmethod
     def exists(self, metadata: Study) -> bool:
         """
@@ -91,23 +61,6 @@ class IStudyStorage(ABC):
         """
 
     @abstractmethod
-    def get_raw(
-        self,
-        metadata: Study,
-        use_cache: bool = True,
-        output_dir: Path | None = None,
-    ) -> FileStudy:
-        """
-        Fetch a study raw tree object and its config
-        Args:
-            metadata: study
-            use_cache: use cache
-            output_dir: optional output dir override
-        Returns: the config and study tree object
-
-        """
-
-    @abstractmethod
     def delete(self, metadata: Study) -> None:
         """
         Delete study
@@ -115,17 +68,6 @@ class IStudyStorage(ABC):
             metadata: study
 
         Returns:
-
-        """
-
-    @abstractmethod
-    def get_study_path(self, metadata: Study) -> Path:
-        """
-        Get study path
-        Args:
-            metadata: study information
-
-        Returns: study path
 
         """
 
@@ -156,10 +98,4 @@ class IStudyStorage(ABC):
             metadata: study.
             dst_path: destination path.
             denormalize: denormalize the study (replace matrix links by real matrices).
-        """
-
-    @abstractmethod
-    def normalize_study(self, study: Study) -> None:
-        """
-        Put every matrix in the study in the matrix-store.
         """

@@ -160,28 +160,6 @@ class RawStudyService(AbstractStorageService):
         return path.joinpath("study.antares").is_file()
 
     @override
-    def get_raw(
-        self,
-        metadata: Study,
-        use_cache: bool = True,
-        output_dir: Path | None = None,
-    ) -> FileStudy:
-        """
-        Fetch a study object and its config
-        Args:
-            metadata: study
-            use_cache: use cache
-            output_dir: optional output dir override
-        Returns: the config and study tree object
-
-        """
-        self._check_study_exists(metadata)
-        study_path = self.get_study_path(metadata)
-        return self.study_factory.create_from_fs(
-            study_path, is_managed(metadata), metadata.id, output_dir, use_cache=use_cache
-        )
-
-    @override
     def copy(
         self,
         src_meta: Study,
@@ -364,39 +342,12 @@ class RawStudyService(AbstractStorageService):
                 return path
         raise FileNotFoundError(f"Study {study.id} archiving process is corrupted (no archive file found).")
 
-    @override
-    def get_study_path(self, metadata: Study) -> Path:
-        """
-        Get study path
-        Args:
-            metadata: study information
-
-        Returns: study path
-
-        """
-        if metadata.archived:
-            return self.find_archive_path(metadata)
-        return Path(metadata.path)
-
     @staticmethod
     def checks_antares_web_compatibility(study: Study) -> None:
         """
         A new compatibility section has been introduced with the Simulator version 9.2
         """
         pass
-
-    @override
-    def normalize_study(self, study: Study) -> None:
-        """
-        Method used to normalize a study.
-        It will put every matrix in the study in the matrix-store.
-        """
-        if study.storage_mode == StorageMode.DATABASE:
-            # Nothing to do
-            return
-
-        file_study = self.get_raw(study)
-        self.normalize_file_study(file_study)
 
     def denormalize_study(self, study: Study) -> None:
         if study.storage_mode == StorageMode.DATABASE:

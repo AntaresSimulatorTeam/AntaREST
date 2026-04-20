@@ -39,7 +39,7 @@ from antarest.core.exceptions import (
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
-from antarest.core.model import JSON, PermissionInfo, StudyPermissionType
+from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.json import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
@@ -59,8 +59,7 @@ from antarest.study.model import (
 )
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
-from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
+from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import (
     assert_permission,
@@ -534,66 +533,6 @@ class VariantStudyService(AbstractStorageService):
 
         return output_list
 
-    @override
-    def get(
-        self,
-        metadata: Study,
-        url: str = "",
-        depth: int = 3,
-        formatted: bool = True,
-        use_cache: bool = True,
-    ) -> JSON:
-        """
-        Entry point to fetch data inside study.
-        Args:
-            metadata: study
-            url: path data inside study to reach
-            depth: tree depth to reach after reach data path
-            formatted: indicate if raw files must be parsed and formatted
-            use_cache: indicate if cache should be used
-
-        Returns: study data formatted in json
-        """
-        if isinstance(metadata, VariantStudy):
-            self._safe_generation(metadata, timeout=600)
-        else:
-            raise TypeError(f"Expected {VariantStudy} but received {type(metadata)}")
-        self.repository.refresh(metadata)
-        return super().get(
-            metadata=metadata,
-            url=url,
-            depth=depth,
-            formatted=formatted,
-            use_cache=use_cache,
-        )
-
-    @override
-    def get_file(
-        self,
-        metadata: Study,
-        url: str = "",
-        use_cache: bool = True,
-    ) -> OriginalFile:
-        """
-        Entry point to fetch for a file inside a study folder.
-        Args:
-            metadata: study
-            url: path data inside study to reach
-            use_cache: indicate if cache should be used to fetch study tree
-
-        Returns: the file content and extension
-        """
-        if isinstance(metadata, VariantStudy):
-            self._safe_generation(metadata, timeout=600)
-        else:
-            raise TypeError(f"Expected {VariantStudy} but received {type(metadata)}")
-        self.repository.refresh(metadata)
-        return super().get_file(
-            metadata=metadata,
-            url=url,
-            use_cache=use_cache,
-        )
-
     def create_variant_study(self, uuid: str, name: str) -> VariantStudy:
         """
         Create a new variant study.
@@ -845,33 +784,6 @@ class VariantStudyService(AbstractStorageService):
             raise VariantGenerationError(f"Error while generating variant {metadata.id} {e}") from None
 
     @override
-    def get_raw(
-        self,
-        metadata: Study,
-        use_cache: bool = True,
-        output_dir: Path | None = None,
-    ) -> FileStudy:
-        """
-        Fetch a study raw tree object and its config
-        Args:
-            metadata: study
-            use_cache: use cache
-            output_dir: optional output dir override
-        Returns: the config and study tree object
-        """
-        variant = _cast_study_to_variant(metadata)
-        self._safe_generation(variant)
-
-        study_path = self.get_study_path(variant)
-        return self.study_factory.create_from_fs(
-            study_path,
-            is_managed(variant),
-            variant.id,
-            output_dir or Path(variant.path) / "output",
-            use_cache=use_cache,
-        )
-
-    @override
     def delete(self, metadata: Study) -> None:
         """
         Delete study
@@ -883,19 +795,6 @@ class VariantStudyService(AbstractStorageService):
         if study_path.exists():
             shutil.rmtree(study_path)
             remove_from_cache(self.cache, metadata.id)
-
-    @override
-    def get_study_path(self, metadata: Study) -> Path:
-        """
-        Get study path
-        Args:
-            metadata: study information
-
-        Returns: study path
-
-        """
-        variant = _cast_study_to_variant(metadata)
-        return variant.snapshot_dir
 
     @override
     def export_study_flat(
@@ -938,15 +837,6 @@ class VariantStudyService(AbstractStorageService):
             progress=None,
             custom_event_messages=None,
         )
-
-    @override
-    def normalize_study(self, study: Study) -> None:
-        if study.storage_mode == StorageMode.DATABASE:
-            # Nothing to do
-            return
-
-        file_study = self.get_raw(study)
-        self.raw_study_service.normalize_file_study(file_study)
 
 
 class SnapshotCleanerTask:
