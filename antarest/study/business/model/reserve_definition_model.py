@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Annotated, Any
+from typing import Annotated, Any, NewType, TypeAlias
 
 from pydantic import ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
@@ -20,6 +20,9 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import ItemName
+
+AreaId: TypeAlias = str
+ReserveDefinitionId = NewType("ReserveDefinitionId", str)
 
 GLOBAL_PARAMETERS_SECTION = "globalparameters"
 
@@ -58,7 +61,7 @@ class ReserveDefinition(AntaresBaseModel):
             data["id"] = transform_name_to_id(data["name"])
         return data
 
-    id: str
+    id: ReserveDefinitionId
     name: ItemName
     type: ReserveType
     failure_cost: Cost = 0.0
@@ -97,7 +100,7 @@ class ReserveDefinitionUpdate(AntaresBaseModel):
     energy_activation_ratio: Ratio | None = None
 
 
-ReserveDefinitionUpdates = dict[str, dict[str, ReserveDefinitionUpdate]]
+ReserveDefinitionUpdates = dict[AreaId, dict[ReserveDefinitionId, ReserveDefinitionUpdate]]
 
 
 def create_reserve_definition(data: ReserveDefinitionCreation) -> ReserveDefinition:

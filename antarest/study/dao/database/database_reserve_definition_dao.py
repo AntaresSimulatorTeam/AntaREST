@@ -105,6 +105,8 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao):
 
     @override
     def delete_reserve_definitions(self, area_id: AreaId, reserve_ids: Sequence[ReserveDefinitionId]) -> None:
+        if not reserve_ids:
+            return
         result = self._db_session.execute(
             delete(_TABLE).where(
                 (_TABLE.c.study_id == self._study_id)
