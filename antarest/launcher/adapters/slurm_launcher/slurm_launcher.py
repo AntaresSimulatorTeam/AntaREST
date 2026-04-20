@@ -170,6 +170,7 @@ class SlurmLauncher(AbstractLauncher):
         cache: ICache,
         use_private_workspace: bool = True,
         retrieve_existing_jobs: bool = False,
+        workspace_id: str = f"workspace-{ANTAREST_WORKER_ID}",
     ) -> None:
         super().__init__(callbacks, event_bus, cache)
         self.slurm_config: SlurmConfig = config
@@ -181,7 +182,7 @@ class SlurmLauncher(AbstractLauncher):
         self._check_config()
         self.antares_launcher_lock = threading.Lock()
 
-        self.local_workspace = self._init_workspace(use_private_workspace)
+        self.local_workspace = self._init_workspace(use_private_workspace, workspace_id)
 
         self.log_tail_manager = LogTailManager()
 
@@ -200,11 +201,11 @@ class SlurmLauncher(AbstractLauncher):
             self.slurm_config.local_workspace.exists() and self.slurm_config.local_workspace.is_dir()
         )  # and check write permission
 
-    def _init_workspace(self, use_private_workspace: bool) -> Path:
+    def _init_workspace(self, use_private_workspace: bool, workspace_id: str) -> Path:
         if not use_private_workspace:
             return Path(self.slurm_config.local_workspace)
 
-        workspace_dir = self.slurm_config.local_workspace / f"workspace-{ANTAREST_WORKER_ID}"
+        workspace_dir = self.slurm_config.local_workspace / workspace_id
         if workspace_dir.exists() and workspace_dir.is_dir():
             logger.info(f"Initiating slurm workspace into existing directory {workspace_dir}")
         else:
