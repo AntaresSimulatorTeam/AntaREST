@@ -440,24 +440,6 @@ class VariantStudyService(AbstractStorageService):
         for child in self.get_children(parent_id=study_id):
             self.on_variant_rebase(child)
 
-    def _invalidate_snapshot(
-        self,
-        variant_study: VariantStudy,
-    ) -> None:
-        """
-        Invalidates snapshot so that it is regenerated from scratch
-        next time the study is accessed.
-        """
-        if variant_study.snapshot:
-            variant_study.snapshot.last_executed_command = None
-        variant_study.updated_at = current_time()
-        self.repository.save(metadata=variant_study)
-
-    def clear_snapshot(self, variant_study: VariantStudy) -> None:
-        logger.info(f"Clearing snapshot for study {variant_study.id}")
-        self._invalidate_snapshot(variant_study)
-        shutil.rmtree(self.get_study_path(variant_study), ignore_errors=True)
-
     def has_children(self, study: Study) -> bool:
         return self.repository.has_children(study.id)
 
@@ -700,57 +682,6 @@ class VariantStudyService(AbstractStorageService):
             return self.task_service.status_task(task_id=task_id, with_logs=True)
         raise StudyValidationError(f"Variant study '{study_id}' has no generation task")
 
-    @override
-    def exists(self, metadata: Study) -> bool:
-        """
-        Check if the study snapshot exists and is up-to-date.
-
-        Args:
-            metadata: Study metadata.
-
-        Returns: `True` if the study is present on disk, `False` otherwise.
-        """
-        if not isinstance(metadata, VariantStudy):
-            return False
-
-        return (
-            (metadata.snapshot is not None)
-            and (metadata.snapshot.created_at >= metadata.updated_at)
-            and (self.get_study_path(metadata) / "study.antares").is_file()
-        )
-
-    @override
-    def copy(
-        self,
-        src_study: Study,
-        dest_study_name: str,
-        groups: Sequence[str],
-        destination_folder: PurePosixPath,
-    ) -> RawStudy:
-        """
-        Create a new variant study by copying a reference study.
-
-        Args:
-            src_study: The source study that you want to copy.
-            dest_study_name: The name for the destination study.
-            groups: A list of groups to assign to the destination study.
-            destination_folder: Path where the destination study will be stored. If not specified, the destination path will be the same as the source study.
-
-        Returns:
-            The newly created study.
-        """
-
-        dest_study = self.raw_study_service.build_raw_study(dest_study_name, groups, src_study, destination_folder)
-
-        variant = _cast_study_to_variant(src_study)
-        file_study = self.get_raw(metadata=variant)
-
-        src_path = file_study.config.path
-        dest_path = dest_study.path
-        shutil.copytree(src_path, dest_path)
-        update_antares_info(dest_study, file_study.tree, update_author=True)
-        return dest_study
-
     def _safe_generation(self, metadata: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
         try:
             if self.exists(metadata):
@@ -782,61 +713,6 @@ class VariantStudyService(AbstractStorageService):
             # raise a EXPECTATION_FAILED error (417)
             logger.error(f"⚡ Fail to generate variant study {metadata.id}", exc_info=e)
             raise VariantGenerationError(f"Error while generating variant {metadata.id} {e}") from None
-
-    @override
-    def delete(self, metadata: Study) -> None:
-        """
-        Delete study
-        Args:
-            metadata: study
-        Returns:
-        """
-        study_path = Path(metadata.path)
-        if study_path.exists():
-            shutil.rmtree(study_path)
-            remove_from_cache(self.cache, metadata.id)
-
-    @override
-    def export_study_flat(
-        self,
-        metadata: Study,
-        dst_path: Path,
-        denormalize: bool = True,
-    ) -> None:
-        variant = _cast_study_to_variant(metadata)
-
-        self._safe_generation(variant)
-
-        self.raw_study_service.export_study_to_flat_directory(variant.snapshot_dir, dst_path, denormalize=denormalize)
-
-    def clear_all_snapshots(self, retention_time: timedelta) -> str:
-        """
-        Admin command that clear all variant snapshots older than `retention_hours` (in hours).
-        Only available for admin users.
-
-        Args:
-            retention_time: number of retention hours
-        Returns: None
-
-        Raises:
-            UserHasNotPermissionError
-        """
-        user = require_current_user()
-        if not (user.is_site_admin() or user.is_admin_token()):
-            raise UserHasNotPermissionError()
-
-        task_name = f"Cleaning all snapshot updated or accessed at least {humanize.precisedelta(retention_time)} ago."
-
-        snapshot_clearing_task_instance = SnapshotCleanerTask(variant_study_service=self, retention_time=retention_time)
-
-        return self.task_service.add_task(
-            snapshot_clearing_task_instance,
-            task_name,
-            task_type=TaskType.SNAPSHOT_CLEARING,
-            ref_id=None,
-            progress=None,
-            custom_event_messages=None,
-        )
 
 
 class SnapshotCleanerTask:

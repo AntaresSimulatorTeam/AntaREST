@@ -38,7 +38,6 @@ class AbstractStorageService(IStudyStorage, ABC):
         self.config: Config = config
         self.cache = cache
 
-    @override
     def get_study_information(
         self,
         study: Study,
@@ -74,32 +73,3 @@ class AbstractStorageService(IStudyStorage, ABC):
             directory_id=study.directory_id,
             parent_id=study.parent_id,
         )
-
-    def _update_study_data_from_files(self, file_study: FileStudy, metadata: Study) -> None:
-        logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
-        horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
-        study_antares = file_study.tree.get(url=["study", "antares"])
-        author = study_antares.get("author")
-        editor = study_antares.get("editor", author)
-        assert isinstance(author, str)
-        assert isinstance(editor, str)
-        assert isinstance(horizon, (str, int))
-        metadata.horizon = horizon
-        metadata.author = author
-        metadata.editor = editor
-
-    @staticmethod
-    def _get_user_name_from_id(user_id: int) -> str:
-        """
-        Utility method that retrieves a user's name based on their id.
-        Args:
-            user_id: user id (user must exist)
-        Returns: String representing the user's name
-        """
-        user_obj: Identity | None = db.session.get(Identity, user_id)
-        if user_obj is None:
-            return "Unnamed"
-        return str(user_obj.name)
-
-    def _get_current_user_name(self) -> str:
-        return self._get_user_name_from_id(get_user_impersonator())

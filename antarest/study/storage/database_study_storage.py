@@ -11,11 +11,13 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
-from antarest.study.model import Study, StudyMetadataDTO
+from antarest.core.model import JSON
+from antarest.study.model import Study
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 
 
-class IStudyStorage(ABC):
+class IDataBaseStudyStorage(ABC):
     pass
