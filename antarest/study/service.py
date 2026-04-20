@@ -749,7 +749,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
 
-        return self.storage_service.get_storage(study).get(study, url, depth, formatted)
+        return self.storage_service.get_file_study_storage(study).get(study, url, depth, formatted)
 
     def get_file(self, uuid: str, url: str) -> OriginalFile:
         """
@@ -765,7 +765,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
 
-        output = self.storage_service.get_storage(study).get_file(study, url)
+        output = self.storage_service.get_file_study_storage(study).get_file(study, url)
 
         return output
 
@@ -969,7 +969,7 @@ class StudyService:
             raise ValueError(f"Unsupported study type '{study.type}'")
 
     def get_file_study(self, study: Study) -> FileStudy:
-        return self.storage_service.get_storage(study).get_raw(study)
+        return self.storage_service.get_file_study_storage(study).get_raw(study)
 
     def get_study_path(self, uuid: str) -> Path:
         """
@@ -984,7 +984,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.RUN)
 
         logger.info("study %s path asked by user %s", uuid, get_user_id())
-        return self.storage_service.get_storage(study).get_study_path(study)
+        return self.storage_service.get_file_study_storage(study).get_study_path(study)
 
     def create_study(
         self,
@@ -1738,7 +1738,7 @@ class StudyService:
             url: data path to reach
             data: new data to replace
         """
-        study_service = self.storage_service.get_storage(study)
+        study_service = self.storage_service.get_file_study_storage(study)
         file_study = study_service.get_raw(metadata=study)
         version = file_study.config.version
 
@@ -2686,7 +2686,7 @@ class StudyService:
         """
         study = self.get_study(uuid=uuid)
         assert_permission(study, StudyPermissionType.READ)
-        study_path = self.storage_service.raw_study_service.get_study_path(study)
+        study_path = self.storage_service.get_file_study_storage(study).get_study_path(study)
         # If the study is a variant, it's possible that it only exists in DB and not on disk. If so, we return 0.
         return get_disk_usage(study_path) if study_path.exists() else 0
 
