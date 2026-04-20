@@ -35,7 +35,7 @@ class FileStudyDaoFactory(StudyFactoryDao):
         self._cache = cache
 
     @override
-    def create_study_dao(self, study: Study, denormalize_matrices: bool) -> FileStudyTreeDao:
+    def create_study_dao(self, study: Study, denormalize_matrices: bool = False) -> FileStudyTreeDao:
         study_path = Path(study.path)
         if isinstance(study, VariantStudy):
             study_path = study.snapshot_dir

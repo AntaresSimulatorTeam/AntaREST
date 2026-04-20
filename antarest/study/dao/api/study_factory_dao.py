@@ -18,5 +18,5 @@ from antarest.study.model import Study
 
 class StudyFactoryDao(ABC):
     @abstractmethod
-    def create_study_dao(self, study: Study, denormalize_matrices: bool) -> StudyDao:
+    def create_study_dao(self, study: Study, denormalize_matrices: bool = False) -> StudyDao:
         raise NotImplementedError()

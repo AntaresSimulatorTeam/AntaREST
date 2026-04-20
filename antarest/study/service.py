@@ -1034,7 +1034,7 @@ class StudyService:
 
         raw.content_status = StudyContentStatus.VALID
         self.repository.save(raw)
-        self._study_dao_factories[raw.storage_mode].create_study_dao(raw, False)
+        self._study_dao_factories[raw.storage_mode].create_study_dao(raw)
 
         self.event_bus.push(
             Event(
