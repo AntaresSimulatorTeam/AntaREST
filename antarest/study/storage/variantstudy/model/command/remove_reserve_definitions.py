@@ -15,6 +15,7 @@ from pydantic import model_validator
 from typing_extensions import Self, override
 
 from antarest.core.exceptions import InvalidFieldForVersionError
+from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_10_0
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -36,7 +37,7 @@ class RemoveReserveDefinitions(ICommand):
     command_name: CommandName = CommandName.REMOVE_RESERVE_DEFINITIONS
 
     area_id: str
-    reserve_ids: Sequence[str]
+    reserve_ids: Sequence[ReserveDefinitionId]
 
     @model_validator(mode="after")
     def _validate_version(self) -> Self:

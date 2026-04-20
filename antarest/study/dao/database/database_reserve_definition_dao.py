@@ -19,9 +19,9 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound
-from antarest.study.business.model.reserve_definition_model import ReserveDefinition
+from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveDefinitionId
 from antarest.study.dao.api.reserve_definition_dao import ReserveDefinitionDao
-from antarest.study.dao.common import AreaId, ReserveDefinitionId, ReserveDefinitionsMapping
+from antarest.study.dao.common import AreaId, ReserveDefinitionsMapping
 from antarest.study.dao.database.common import area_exists, get_row_representation_as_dict, validate_area_exists
 from antarest.study.dao.database.models.reserve_definition import RESERVE_DEFINITION_TABLE
 from antarest.study.dao.database.sql_utils import upsert_multiple

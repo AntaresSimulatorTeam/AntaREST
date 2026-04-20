@@ -54,7 +54,7 @@ from antarest.study.business.model.hydro_model import (
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.reserve_definition_model import ReserveDefinition
+from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveDefinitionId
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.business.model.scenario_builder_model import (
     AnyScenarios,
@@ -85,7 +85,6 @@ from antarest.study.dao.common import (
     BindingConstraintSeriesMapping,
     LinkSeriesMapping,
     RenewableSeriesMapping,
-    ReserveDefinitionId,
     ReserveDefinitionsMapping,
     ReservesGlobalParametersMapping,
     StStorageConstraintSeriesMapping,
@@ -1603,7 +1602,7 @@ class InMemoryStudyDao(StudyDao):
     def get_all_reserve_definitions(self) -> ReserveDefinitionsMapping:
         result: ReserveDefinitionsMapping = {}
         for key, reserve in self._reserve_definitions.items():
-            result.setdefault(key.area_id, {})[key.reserve_id] = reserve
+            result.setdefault(key.area_id, {})[ReserveDefinitionId(key.reserve_id)] = reserve
         return result
 
     @override

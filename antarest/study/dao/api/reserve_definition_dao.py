@@ -12,8 +12,8 @@
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 
-from antarest.study.business.model.reserve_definition_model import ReserveDefinition
-from antarest.study.dao.common import AreaId, ReserveDefinitionId, ReserveDefinitionsMapping
+from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveDefinitionId
+from antarest.study.dao.common import AreaId, ReserveDefinitionsMapping
 
 
 class ReadOnlyReserveDefinitionDao(ABC):

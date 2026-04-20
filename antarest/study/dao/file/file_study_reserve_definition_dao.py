@@ -19,9 +19,13 @@ from antarest.core.exceptions import (
     ChildNotFoundError,
     ReserveDefinitionNotFound,
 )
-from antarest.study.business.model.reserve_definition_model import GLOBAL_PARAMETERS_SECTION, ReserveDefinition
+from antarest.study.business.model.reserve_definition_model import (
+    GLOBAL_PARAMETERS_SECTION,
+    ReserveDefinition,
+    ReserveDefinitionId,
+)
 from antarest.study.dao.api.reserve_definition_dao import ReserveDefinitionDao
-from antarest.study.dao.common import AreaId, ReserveDefinitionId, ReserveDefinitionsMapping
+from antarest.study.dao.common import AreaId, ReserveDefinitionsMapping
 from antarest.study.dao.file.common import check_area_exists
 from antarest.study.storage.rawstudy.model.filesystem.config.reserve_definition import (
     parse_reserve_definition,
