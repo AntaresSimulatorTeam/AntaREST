@@ -34,7 +34,7 @@ from antarest.core.utils.utils import StopWatch, current_time
 from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StorageMode, Study
-from antarest.study.storage.file_study_storage import IFileStudyStorage
+from antarest.study.storage.abstract_file_study_storage import AbstractFileStudyStorage
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.utils import (
@@ -46,11 +46,11 @@ from antarest.study.storage.utils import (
 logger = logging.getLogger(__name__)
 
 
-class RawFileStudyStorage(IFileStudyStorage):
+class RawFileStudyStorage(AbstractFileStudyStorage):
     def __init__(
         self, cache: ICache, study_factory: StudyFactory, config: Config, matrix_service: ISimpleMatrixService
     ):
-
+        super().__init__(config=config, cache=cache)
         self.study_factory = study_factory
         self._matrix_service = matrix_service
         self.cache = cache
@@ -103,6 +103,19 @@ class RawFileStudyStorage(IFileStudyStorage):
 
             else:
                 raise e
+
+    def _update_study_data_from_files(self, file_study: FileStudy, metadata: Study) -> None:
+        logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
+        horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
+        study_antares = file_study.tree.get(url=["study", "antares"])
+        author = study_antares.get("author")
+        editor = study_antares.get("editor", author)
+        assert isinstance(author, str)
+        assert isinstance(editor, str)
+        assert isinstance(horizon, (str, int))
+        metadata.horizon = horizon
+        metadata.author = author
+        metadata.editor = editor
 
     def update_name_and_version_from_raw_meta(self, metadata: RawStudy) -> bool:
         """

@@ -1,0 +1,119 @@
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
+import logging
+from abc import ABC
+
+from typing_extensions import override
+
+from antarest.core.config import Config
+from antarest.core.interfaces.cache import ICache, study_raw_cache_key
+from antarest.core.model import JSON
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.login.model import Identity
+from antarest.login.utils import get_user_impersonator
+from antarest.study.model import (
+    Study,
+)
+from antarest.study.storage.file_study_storage import IFileStudyStorage
+from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
+
+logger = logging.getLogger(__name__)
+
+
+class AbstractFileStudyStorage(IFileStudyStorage, ABC):
+    def __init__(self, config: Config, cache: ICache):
+        self.config: Config = config
+        self.cache = cache
+
+    @override
+    def get(
+        self,
+        metadata: Study,
+        url: str = "",
+        depth: int = 3,
+        formatted: bool = True,
+        use_cache: bool = True,
+    ) -> JSON:
+        """
+        Entry point to fetch data inside study.
+        Args:
+            metadata: study
+            url: path data inside study to reach
+            depth: tree depth to reach after reach data path
+            formatted: indicate if raw files must be parsed and formatted
+            use_cache: indicate if the cache must be used
+
+        Returns: study data formatted in json
+
+        """
+        self._check_study_exists(metadata)
+        study = self.get_raw(metadata, use_cache)
+        parts = [item for item in url.split("/") if item]
+
+        if url == "" and depth == -1:
+            cache_id = study_raw_cache_key(metadata.id)
+            from_cache: JSON | None = None
+            if use_cache:
+                from_cache = self.cache.get(cache_id)
+            if from_cache is not None:
+                logger.info(f"Raw Study {metadata.id} read from cache")
+                data = from_cache
+            else:
+                data = study.tree.get(parts, depth=depth, formatted=formatted)
+                self.cache.put(cache_id, data)
+                logger.info(f"Cache new entry from RawStudyService (studyID: {metadata.id})")
+        else:
+            data = study.tree.get(parts, depth=depth, formatted=formatted)
+        del study
+        return data
+
+    @override
+    def get_file(
+        self,
+        metadata: Study,
+        url: str = "",
+        use_cache: bool = True,
+    ) -> OriginalFile:
+        """
+        Entry point to fetch data inside study.
+        Args:
+            metadata: study
+            url: path data inside study to reach
+            use_cache: indicate if the cache must be used
+
+        Returns: a file content with its extension and name
+
+        """
+        self._check_study_exists(metadata)
+        study = self.get_raw(metadata, use_cache)
+        parts = [item for item in url.split("/") if item]
+
+        file_node = study.tree.get_node(parts)
+
+        return file_node.get_file_content()
+
+    @staticmethod
+    def _get_user_name_from_id(user_id: int) -> str:
+        """
+        Utility method that retrieves a user's name based on their id.
+        Args:
+            user_id: user id (user must exist)
+        Returns: String representing the user's name
+        """
+        user_obj: Identity | None = db.session.get(Identity, user_id)
+        if user_obj is None:
+            return "Unnamed"
+        return str(user_obj.name)
+
+    def _get_current_user_name(self) -> str:
+        return self._get_user_name_from_id(get_user_impersonator())

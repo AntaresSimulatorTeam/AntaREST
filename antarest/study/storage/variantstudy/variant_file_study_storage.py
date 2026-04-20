@@ -15,9 +15,11 @@ from pathlib import Path
 
 from typing_extensions import override
 
+from antarest.core.config import Config
 from antarest.core.exceptions import (
     StudyNotFoundError,
 )
+from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.model import JSON, StudyPermissionType
 from antarest.core.tasks.service import ITaskService
@@ -26,7 +28,7 @@ from antarest.study.model import (
     StorageMode,
     Study,
 )
-from antarest.study.storage.file_study_storage import IFileStudyStorage
+from antarest.study.storage.abstract_file_study_storage import AbstractFileStudyStorage
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -47,17 +49,20 @@ def _cast_study_to_variant(study: Study) -> VariantStudy:
     return study
 
 
-class VariantFileStudyStorage(IFileStudyStorage):
+class VariantFileStudyStorage(AbstractFileStudyStorage):
     def __init__(
         self,
         task_service: ITaskService,
+        cache: ICache,
         raw_study_service: RawStudyService,
         command_factory: CommandFactory,
         study_factory: StudyFactory,
         repository: VariantStudyRepository,
         event_bus: IEventBus,
+        config: Config,
         matrix_service: ISimpleMatrixService,
     ):
+        super().__init__(config=config, cache=cache)
         self.task_service = task_service
         self.raw_study_service = raw_study_service
         self.repository = repository
