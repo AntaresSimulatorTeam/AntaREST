@@ -10,21 +10,12 @@
 #
 # This file is part of the Antares project.
 import logging
-from collections.abc import Sequence
-from pathlib import Path, PurePosixPath
-from typing import BinaryIO
-from uuid import uuid4
-
-from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
-from antarest.core.model import PublicMode
-from antarest.core.utils.utils import current_time
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.abstract_storage_service import AbstractStorageService
+from antarest.study.storage.abstract.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 

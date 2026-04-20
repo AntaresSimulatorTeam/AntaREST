@@ -10,14 +10,8 @@
 #
 # This file is part of the Antares project.
 
-from abc import ABC, abstractmethod
-from pathlib import Path
 
-from antarest.core.model import JSON
-from antarest.study.model import Study
 from antarest.study.storage.database_study_storage import IDataBaseStudyStorage
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 
 
 class RawDataBaseStudyStorage(IDataBaseStudyStorage):

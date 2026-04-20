@@ -12,17 +12,14 @@
 
 import logging
 import re
-import shutil
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from datetime import timedelta
 from functools import reduce
-from pathlib import Path, PurePosixPath
 from typing import cast
 from uuid import uuid4
 
 import humanize
 from filelock import FileLock
-from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
@@ -52,20 +49,17 @@ from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import (
-    RawStudy,
     StorageMode,
     Study,
     StudyMetadataDTO,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter
-from antarest.study.storage.abstract_storage_service import AbstractStorageService
+from antarest.study.storage.abstract.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import (
     assert_permission,
     is_managed,
-    remove_from_cache,
-    update_antares_info,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_blob_usage_provider import CommandBlobUsageProvider

@@ -13,21 +13,16 @@
 import logging
 from abc import ABC
 
-from typing_extensions import override
-
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
-from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.login.model import GroupDTO, Identity
-from antarest.login.utils import get_user_impersonator
+from antarest.login.model import GroupDTO
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     OwnerInfo,
     Study,
     StudyMetadataDTO,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_storage import IStudyStorage
 
 logger = logging.getLogger(__name__)

@@ -28,7 +28,7 @@ from antarest.study.model import (
     StorageMode,
     Study,
 )
-from antarest.study.storage.abstract_file_study_storage import AbstractFileStudyStorage
+from antarest.study.storage.abstract.abstract_file_study_storage import AbstractFileStudyStorage
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
