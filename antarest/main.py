@@ -70,7 +70,6 @@ from antarest.study.web.study_data_blueprint import create_study_data_routes
 from antarest.study.web.variant_blueprint import create_study_variant_routes
 from antarest.study.web.watcher_blueprint import create_watcher_routes
 from antarest.study.web.xpansion_studies_blueprint import create_xpansion_routes
-from antarest.tools.admin_lib import clean_locks
 
 logger = logging.getLogger(__name__)
 
@@ -411,7 +410,6 @@ LOGGING_CONFIG["formatters"]["access"]["fmt"] = (
 def main() -> None:
     arguments = parse_arguments()
     if arguments.module == Module.APP:
-        clean_locks(arguments.config_file)
         app = fastapi_app(
             arguments.config_file,
             mount_front=not arguments.no_front,
