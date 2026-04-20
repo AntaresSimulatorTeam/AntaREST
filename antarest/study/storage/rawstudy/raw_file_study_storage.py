@@ -335,3 +335,20 @@ class RawFileStudyStorage(AbstractFileStudyStorage):
         for matrix_content in self._matrix_service.yield_matrices(list(matrices_mapping)):
             for node in matrices_mapping[matrix_content.id]:
                 node.write_dataframe(matrix_content.data)
+
+    @override
+    def exists(self, study: Study) -> bool:
+        """
+        Check if the study exists in the filesystem.
+
+        Args:
+            study: The study to check.
+
+        Returns: true if study presents in disk, false else.
+        """
+        if study.archived:
+            archive_path = self.find_archive_path(study)
+            return archive_path.is_file()
+
+        path = self.get_study_path(study)
+        return path.joinpath("study.antares").is_file()

@@ -16,6 +16,7 @@ from abc import ABC
 from typing_extensions import override
 
 from antarest.core.config import Config
+from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.interfaces.cache import ICache, study_raw_cache_key
 from antarest.core.model import JSON
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -76,6 +77,19 @@ class AbstractFileStudyStorage(IFileStudyStorage, ABC):
             data = study.tree.get(parts, depth=depth, formatted=formatted)
         del study
         return data
+
+    def _check_study_exists(self, metadata: Study) -> None:
+        """
+        Check study on filesystem.
+
+        Args:
+            metadata: study
+
+        Returns: none or raise error if not found
+
+        """
+        if not self.exists(metadata):
+            raise StudyNotFoundError(f"Study with the uuid {metadata.id} does not exist.")
 
     @override
     def get_file(

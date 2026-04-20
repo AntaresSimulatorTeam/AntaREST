@@ -231,3 +231,22 @@ class VariantFileStudyStorage(AbstractFileStudyStorage):
 
         file_study = self.get_raw(study)
         self.raw_study_service.normalize_file_study(file_study)
+
+    @override
+    def exists(self, metadata: Study) -> bool:
+        """
+        Check if the study snapshot exists and is up-to-date.
+
+        Args:
+            metadata: Study metadata.
+
+        Returns: `True` if the study is present on disk, `False` otherwise.
+        """
+        if not isinstance(metadata, VariantStudy):
+            return False
+
+        return (
+            (metadata.snapshot is not None)
+            and (metadata.snapshot.created_at >= metadata.updated_at)
+            and (self.get_study_path(metadata) / "study.antares").is_file()
+        )

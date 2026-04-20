@@ -80,3 +80,14 @@ class IFileStudyStorage(ABC):
         """
         Put every matrix in the study in the matrix-store.
         """
+
+    @abstractmethod
+    def exists(self, metadata: Study) -> bool:
+        """
+        Check study exist.
+        Args:
+            metadata: study
+
+        Returns: true if study presents in disk, false else.
+
+        """
