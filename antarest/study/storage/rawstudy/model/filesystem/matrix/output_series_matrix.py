@@ -56,7 +56,7 @@ class OutputSeriesMatrix(LazyNode[bytes | JSON, bytes | JSON, JSON]):
         file_path = self.config.path
         try:
             output = parse_output_file(file_path, output_first_column)
-            df = output.data.to_pandas().astype(np.float64)
+            df = output.dataframe.to_pandas().astype(np.float64)
             df.columns = pd.MultiIndex.from_tuples(map(_output_column_to_tuple, output.columns))
             return df
         except FileNotFoundError as e:

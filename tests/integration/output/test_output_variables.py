@@ -34,7 +34,7 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
     output_id = "20201014-1425eco-goodbye"
     res = client.get(f"/v1/studies/{internal_study_id}/output/{output_id}/variables-list")
     expected_content = from_json((ASSETS_DIR / "res1.json").read_bytes())
-    assert expected_content == res.json()
+    assert res.json() == expected_content
 
     # Ensures we saved the data inside the DB and that we're still able to read it
     with db():

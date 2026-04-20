@@ -400,12 +400,8 @@ def iterate_output_matrices(
 
 def aggregation_column_naming(col: OutputColumn) -> str:
     match col:
-        case "year":
-            return "mcYear"
-        case "time":
-            return "timeId"
         case VarColumn(variable=var, stat=stat):
-            return f"{var} {stat.upper()}" if stat else var
+            return f"{var} {stat}".upper() if stat else var  # TODO: why upper case only for mc-all ??
         case ClusterVarColumn(variable=var):
             return var
         case _:

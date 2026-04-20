@@ -231,4 +231,4 @@ def parse_output_file(file_path: Path, first_column: int) -> OutputTable:
     # So we change this to be Float64 to harmonize everything.
     df = df.with_columns(pl.col(pl.Utf8).cast(pl.Float64))
 
-    return OutputTable(data=df, columns=output_headers)
+    return OutputTable(dataframe=df, columns=output_headers)

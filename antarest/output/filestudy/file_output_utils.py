@@ -129,11 +129,15 @@ def _to_column_name(col: VarColumn | ClusterVarColumn) -> str:
     For mc-ind files, only keeps the variable name.
     For mc-all files, just concatenates the variable name and the stat name (and uppercases it ...).
 
-    TODO: should only be decided at serialization time.
+    TODO: should only be d ecided at serialization time.
     """
-    if col.stat:
-        return " ".join((col.variable, col.stat)).upper().strip()  # why uppercasing here and not for mc-ind ?
-    return col.variable
+    match col:
+        case VarColumn(variable=var, stat=stat):
+            return f"{var} {stat}".upper() if stat else var  # TODO: why upper case only for mc-all ??
+        case ClusterVarColumn(variable=var):
+            return var
+        case _:
+            raise ValueError(f"Invalid column type: {type(col)}")
 
 
 def _read_headers_only(
