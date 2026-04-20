@@ -51,7 +51,7 @@ from antarest.study.business.model.xpansion_model import (
 )
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
-from antarest.study.model import STUDY_VERSION_7_0, STUDY_VERSION_9_2
+from antarest.study.model import STUDY_VERSION_7_0
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -418,9 +418,7 @@ def test_convert_short_term_storages_also_converts_additional_constraint_matrix(
     source_dao = MagicMock()
     new_dao = MagicMock()
 
-    converter = StudyConverter(
-        source_dao=source_dao, new_dao=new_dao, study_version=STUDY_VERSION_9_2, matrix_service=MagicMock()
-    )
+    converter = StudyConverter(source_dao=source_dao, new_dao=new_dao, matrix_service=MagicMock())
 
     storage = STStorage(id="battery", name="Battery")
     constraint = STStorageAdditionalConstraint(id="c1", name="Constraint 1")

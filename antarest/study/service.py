@@ -167,7 +167,6 @@ from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_
 from antarest.study.storage.utils import (
     assert_permission,
     assert_permission_on_studies,
-    create_new_empty_study,
     extract_simulation_range_from_model,
     get_matrix_index,
     get_start_date,
@@ -1038,7 +1037,7 @@ class StudyService:
 
         raw.content_status = StudyContentStatus.VALID
         self.repository.save(raw)
-        self._study_dao_factories[raw.storage_mode].create_study_dao(raw)
+        self._study_dao_factories[raw.storage_mode].create_study_dao(raw, False)
 
         self.event_bus.push(
             Event(
@@ -3019,26 +3018,12 @@ class StudyService:
         assert_permission(study, StudyPermissionType.READ)
         source_dao = self.get_study_interface(study).get_study_dao()
 
-        # Create empty study on the filesystem
-        study_version = StudyVersion.parse(study.version)
-        assert study.name is not None
-        create_new_empty_study(study_version, path, study.name, study.author or "Unknown")
+        # Create the FileStudyTreeDao
+        fs_dao = self._study_dao_factories[StorageMode.FILESYSTEM].create_study_dao(study, not normalize_matrices)
 
-        # Create the FileStudyDAO
-        file_study = self.storage_service.raw_study_service.study_factory.create_from_fs(
-            path, with_matrix_normalization=normalize_matrices, study_id="", use_cache=False
-        )
-        context = self.storage_service.variant_study_service.command_factory.command_context
-        file_study_dao = FileStudyTreeDao(
-            file_study,
-            normalize_matrices,
-            context.generator_matrix_constants,
-            context.blob_service,
-            context.matrix_service,
-            self.cache_service,
-        )
         # Write the given study input in the filesystem
-        converter = StudyConverter(source_dao, file_study_dao, study_version, context.matrix_service)
+        context = self.storage_service.variant_study_service.command_factory.command_context
+        converter = StudyConverter(source_dao, fs_dao, context.matrix_service)
         converter.convert_study_inputs()
 
         # Copy the `output` folder if asked

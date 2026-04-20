@@ -84,7 +84,7 @@ class TestConvertHydroPmaxMatrices:
         save_area(target_dao, "Paris")
 
         # Run converter
-        converter = StudyConverter(source_dao, target_dao, STUDY_VERSION_9_2, matrix_service)
+        converter = StudyConverter(source_dao, target_dao, matrix_service)
         converter._convert_hydro()
 
         # Verify pmax matrices were copied
@@ -111,7 +111,7 @@ class TestConvertHydroPmaxMatrices:
         # Default is DAILY, no pmax matrices exist in source
         save_area(target_dao, "Paris")
 
-        converter = StudyConverter(source_dao, target_dao, STUDY_VERSION_9_2, matrix_service)
+        converter = StudyConverter(source_dao, target_dao, matrix_service)
         converter._convert_hydro()
 
         # Pmax matrices should NOT exist in target
@@ -132,7 +132,7 @@ class TestConvertHydroPmaxMatrices:
         area_id = _setup_area_with_hydro(source_dao, "Paris")
         save_area(target_dao, "Paris")
 
-        converter = StudyConverter(source_dao, target_dao, STUDY_VERSION_8_8, matrix_service)
+        converter = StudyConverter(source_dao, target_dao, matrix_service)
         converter._convert_hydro()
 
         # Pmax matrices should NOT exist

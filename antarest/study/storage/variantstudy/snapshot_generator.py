@@ -104,7 +104,7 @@ class SnapshotGenerator:
                 self._export_ref_study(snapshot_dir, ref_study)
 
             # The snapshot is generated, we also need to de-normalize the matrices.
-            study_dao = dao_factory.create_study_dao(variant_study)
+            study_dao = dao_factory.create_study_dao(variant_study, False)
 
             logger.info(f"Applying commands to the reference study '{ref_study.id}'...")
             results = self._apply_commands(study_dao, variant_study, cmd_blocks, listener)

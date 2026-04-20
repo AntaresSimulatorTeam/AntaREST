@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import ChildNotFoundError, XpansionConfigurationDoesNotExist
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -37,17 +36,14 @@ from antarest.study.model import (
 
 
 class StudyConverter:
-    def __init__(
-        self,
-        source_dao: ReadOnlyStudyDao,
-        new_dao: StudyDao,
-        study_version: StudyVersion,
-        matrix_service: ISimpleMatrixService,
-    ):
+    def __init__(self, source_dao: ReadOnlyStudyDao, new_dao: StudyDao, matrix_service: ISimpleMatrixService):
         self._source_dao = source_dao
         self._new_dao = new_dao
-        self._study_version = study_version
         self._matrix_service = matrix_service
+
+        if source_dao.get_version() != new_dao.get_version():
+            raise ValueError("The source and the target study versions must be the same")
+        self._study_version = source_dao.get_version()
 
     def convert_study_inputs(self) -> None:
         # Areas
