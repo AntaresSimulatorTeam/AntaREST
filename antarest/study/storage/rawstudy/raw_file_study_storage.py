@@ -20,7 +20,9 @@ from uuid import uuid4
 
 from typing_extensions import override
 
+from antarest.core.config import Config
 from antarest.core.exceptions import StudyImportFailed
+from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.utils.archives import (
     ArchiveFormat,
@@ -45,10 +47,14 @@ logger = logging.getLogger(__name__)
 
 
 class RawFileStudyStorage(IFileStudyStorage):
-    def __init__(self, study_factory: StudyFactory, matrix_service: ISimpleMatrixService):
+    def __init__(
+        self, cache: ICache, study_factory: StudyFactory, config: Config, matrix_service: ISimpleMatrixService
+    ):
 
         self.study_factory = study_factory
         self._matrix_service = matrix_service
+        self.cache = cache
+        self.config = config
 
     @property
     def matrix_service(self) -> ISimpleMatrixService:
