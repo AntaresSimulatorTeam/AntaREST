@@ -14,7 +14,6 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
 
-from antarest.core.exceptions import StudyNotFoundError
 from antarest.study.model import Study, StudyMetadataDTO
 
 
@@ -70,19 +69,6 @@ class IStudyStorage(ABC):
         Returns:
 
         """
-
-    def _check_study_exists(self, metadata: Study) -> None:
-        """
-        Check study on filesystem.
-
-        Args:
-            metadata: study
-
-        Returns: none or raise error if not found
-
-        """
-        if not self.exists(metadata):
-            raise StudyNotFoundError(f"Study with the uuid {metadata.id} does not exist.")
 
     @abstractmethod
     def export_study_flat(

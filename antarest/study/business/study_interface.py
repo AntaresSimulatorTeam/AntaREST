@@ -99,10 +99,6 @@ class InMemoryStudyInterface(StudyInterface):
         return self._study_dao.get_version()
 
     @override
-    def get_files(self) -> FileStudy:
-        raise NotImplementedError("In memory studies cannot be converted to file study.")
-
-    @override
     def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
         for command in commands:
             result: CommandOutput[Any] = command.apply(self._study_dao, listener)

@@ -1215,7 +1215,6 @@ class StudyService:
                         )
 
                     self.storage_service.raw_study_service.update_from_raw_meta(study, fallback_on_default=True)
-                    self.storage_service.raw_study_service.checks_antares_web_compatibility(study)
 
                     logger.warning("Skipping study format error analysis")
                     # TODO re enable this on an async worker
