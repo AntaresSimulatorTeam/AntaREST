@@ -115,7 +115,6 @@ from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
-from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
@@ -704,10 +703,12 @@ class StudyService:
         self.config = config
         self.on_deletion_callbacks: list[Callable[[str], None]] = []
         self._outputs_access: IOutputsAccess | None = None
-        matrix_service = command_context.matrix_service
-        StudyDatabaseMatrixUsageProvider(matrix_service)
-        self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
-            StorageMode.DATABASE: DatabaseStudyDaoFactory(matrix_service, command_context.generator_matrix_constants),
+        self._matrix_service = command_context.matrix_service
+        StudyDatabaseMatrixUsageProvider(self._matrix_service)
+        self._study_dao_factories = {
+            StorageMode.DATABASE: DatabaseStudyDaoFactory(
+                self._matrix_service, command_context.generator_matrix_constants
+            ),
             StorageMode.FILESYSTEM: FileStudyDaoFactory(
                 command_context, raw_study_service.study_factory, cache_service
             ),
@@ -3022,8 +3023,7 @@ class StudyService:
         fs_dao = self._study_dao_factories[StorageMode.FILESYSTEM].create_study_dao(study, not normalize_matrices)
 
         # Write the given study input in the filesystem
-        context = self.storage_service.variant_study_service.command_factory.command_context
-        converter = StudyConverter(source_dao, fs_dao, context.matrix_service)
+        converter = StudyConverter(source_dao, fs_dao, self._matrix_service)
         converter.convert_study_inputs()
 
         # Copy the `output` folder if asked
