@@ -15,7 +15,6 @@ import logging
 import os
 import re
 import shutil
-import tempfile
 import threading
 import time
 import traceback
@@ -28,7 +27,6 @@ from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
 from antareslauncher.main import MainParameters, run_with
 from antareslauncher.main_option_parser import MainOptionParser, ParserParameters
 from antareslauncher.study_dto import StudyDTO
-from filelock import FileLock
 from typing_extensions import override
 
 from antarest.core.config import NbCoresConfig, SlurmConfig, TimeLimitConfig
@@ -40,6 +38,7 @@ from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
 from antarest.core.utils.archives import unzip
 from antarest.core.utils.utils import assert_this
+from antarest.globals import ANTAREST_WORKER_ID
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType, XpansionParametersDTO
@@ -50,7 +49,6 @@ from antarest.login.utils import current_user_context, require_current_user
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
 
-WORKSPACE_LOCK_FILE_NAME = ".lock"
 LOCK_FILE_NAME = "slurm_launcher_init.lock"
 LOG_DIR_NAME = "LOGS"
 STUDIES_INPUT_DIR_NAME = "STUDIES_IN"
@@ -183,14 +181,12 @@ class SlurmLauncher(AbstractLauncher):
         self._check_config()
         self.antares_launcher_lock = threading.Lock()
 
-        # use an absolute path instead of `LOCK_FILE_NAME`:
-        local_workspace_dir = Path(self.slurm_config.local_workspace)
-        with FileLock(local_workspace_dir.joinpath(LOCK_FILE_NAME)):
-            self.local_workspace = self._init_workspace(use_private_workspace)
-        self.log_tail_manager = LogTailManager(local_workspace_dir)
+        self.local_workspace = self._init_workspace(use_private_workspace)
 
-        self.launcher_args = self._init_launcher_arguments(self.local_workspace)
-        self.launcher_params = self._init_launcher_parameters(self.local_workspace)
+        self.log_tail_manager = LogTailManager()
+
+        self.launcher_args = self._init_launcher_arguments()
+        self.launcher_params = self._init_launcher_parameters()
 
         self.data_repo_tinydb = DataRepoTinydb(
             database_file_path=(self.launcher_params.json_dir / self.launcher_params.default_json_db_name),
@@ -208,22 +204,13 @@ class SlurmLauncher(AbstractLauncher):
         if not use_private_workspace:
             return Path(self.slurm_config.local_workspace)
 
-        for existing_workspace in self.slurm_config.local_workspace.iterdir():
-            lock_file = existing_workspace / WORKSPACE_LOCK_FILE_NAME
-            if (
-                existing_workspace.is_dir()
-                and existing_workspace != self.slurm_config.local_workspace / LOG_DIR_NAME
-                and not lock_file.exists()
-            ):
-                logger.info(f"Initiating slurm workspace into existing directory {existing_workspace}")
-                lock_file.touch()
-                return existing_workspace
-
-        new_workspace = Path(tempfile.mkdtemp(dir=str(self.slurm_config.local_workspace)))
-        lock_file = new_workspace / WORKSPACE_LOCK_FILE_NAME
-        lock_file.touch()
-        logger.info(f"Initiating slurm workspace in new directory {new_workspace}")
-        return new_workspace
+        workspace_dir = self.slurm_config.local_workspace / f"workspace-{ANTAREST_WORKER_ID}"
+        if workspace_dir.exists() and workspace_dir.is_dir():
+            logger.info(f"Initiating slurm workspace into existing directory {workspace_dir}")
+        else:
+            logger.info(f"Initiating slurm workspace in new directory {workspace_dir}")
+            os.makedirs(workspace_dir)
+        return workspace_dir
 
     def _retrieve_running_jobs(self) -> None:
         if len(self.data_repo_tinydb.get_list_of_studies()) > 0:
@@ -263,14 +250,14 @@ class SlurmLauncher(AbstractLauncher):
         self.thread = None
         logger.info("slurm_launcher loop stopped")
 
-    def _init_launcher_arguments(self, local_workspace: Path | None = None) -> argparse.Namespace:
+    def _init_launcher_arguments(self) -> argparse.Namespace:
         main_options_parameters = ParserParameters(
             default_wait_time=self.slurm_config.default_wait_time,
             default_time_limit=self.slurm_config.time_limit.default * 3600,
             default_n_cpu=self.slurm_config.nb_cores.default,
-            studies_in_dir=str(Path(local_workspace or self.slurm_config.local_workspace) / STUDIES_INPUT_DIR_NAME),
-            log_dir=str(Path(self.slurm_config.local_workspace) / LOG_DIR_NAME),
-            finished_dir=str(Path(local_workspace or self.slurm_config.local_workspace) / STUDIES_OUTPUT_DIR_NAME),
+            studies_in_dir=str(self.local_workspace / STUDIES_INPUT_DIR_NAME),
+            log_dir=str(self.local_workspace / LOG_DIR_NAME),
+            finished_dir=str(self.local_workspace / STUDIES_OUTPUT_DIR_NAME),
             ssh_config_file_is_required=False,
             ssh_configfile_path_alternate1=None,
             ssh_configfile_path_alternate2=None,
@@ -292,9 +279,9 @@ class SlurmLauncher(AbstractLauncher):
 
         return arguments
 
-    def _init_launcher_parameters(self, local_workspace: Path | None = None) -> MainParameters:
+    def _init_launcher_parameters(self) -> MainParameters:
         return MainParameters(
-            json_dir=local_workspace or self.slurm_config.local_workspace,
+            json_dir=self.local_workspace,
             default_json_db_name=self.slurm_config.default_json_db_name,
             slurm_script_path=self.slurm_config.slurm_script_path,
             partition=self.slurm_config.partition,
