@@ -507,7 +507,7 @@ class InStudyFileOutputStorage(IOutputStorage):
 
         def to_output_table(matrix: OutputMatrix) -> OutputTable:
             # just strips off unrequired data, and collect lazy frame
-            return OutputTable(data=matrix.data.data.collect(), columns=matrix.data.columns)
+            return matrix.data.collect()
 
         return map(to_output_table, output_matrices)
 
