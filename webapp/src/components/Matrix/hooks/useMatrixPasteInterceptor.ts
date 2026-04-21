@@ -13,7 +13,7 @@
  */
 
 import type { GridSelection, Item } from "@glideapps/glide-data-grid";
-import React, { useEffect } from "react";
+import { useEffect, useEffectEvent } from "react";
 import type { EnhancedGridColumn } from "../shared/types";
 import { parseClipboardNumber } from "../shared/utils";
 
@@ -57,7 +57,7 @@ export function useMatrixPasteInterceptor({
 }: UseMatrixPasteInterceptorOptions) {
   const enabled = !readOnly && !!onBulkPaste;
 
-  const handlePaste = React.useEffectEvent((e: ClipboardEvent) => {
+  const handlePaste = useEffectEvent((e: ClipboardEvent) => {
     if (!onBulkPaste) {
       return;
     }
@@ -72,83 +72,35 @@ export function useMatrixPasteInterceptor({
       return;
     }
 
-    e.preventDefault();
-    e.stopImmediatePropagation();
-
-    const pasteRows = text
-      .split(/\r?\n/)
-      .filter((row) => row.length > 0)
-      .map((row) => row.split("\t"));
-
+    const pasteRows = parseTsv(text);
     if (pasteRows.length === 0) {
       return;
     }
 
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
     const { x: startCol, y: startRow } = targetRange;
-    const pasteColCount = pasteRows[0].length;
 
-    // When the filter is active, `visibleColumns` is a subset of `columns`. Build a
-    // lookup once so each paste column resolves to its original index in O(1).
-    const idToOriginalCol = filterActive ? new Map(columns.map((col, i) => [col.id, i])) : null;
+    const colMapping = buildColumnMapping({
+      startCol,
+      pasteColCount: pasteRows[0].length,
+      columns,
+      visibleColumns,
+      filterActive,
+      gridToData,
+    });
 
-    // Pre-compute the visible-col -> data-col mapping once (O(cols) instead of
-    // O(rows × cols) lookups inside the inner paste loop).
-    const colMapping = new Array<number | undefined>(pasteColCount);
-    for (let colOffset = 0; colOffset < pasteColCount; colOffset++) {
-      const visibleCol = startCol + colOffset;
-
-      if (visibleCol >= visibleColumns.length) {
-        continue;
-      }
-
-      const originalCol = idToOriginalCol
-        ? (idToOriginalCol.get(visibleColumns[visibleCol].id) ?? -1)
-        : visibleCol;
-
-      if (originalCol < 0 || originalCol >= columns.length) {
-        continue;
-      }
-
-      colMapping[colOffset] = gridToData([originalCol, 0])?.[0];
-    }
-
-    const updatedData: number[][] = data.map((row) => row.slice());
-    const dataRowCount = updatedData.length;
-    const dataColCount = updatedData[0]?.length ?? 0;
-
-    for (let rowOffset = 0; rowOffset < pasteRows.length; rowOffset++) {
-      const visibleRow = startRow + rowOffset;
-
-      if (visibleRow >= visibleRows) {
-        break;
-      }
-
-      const dataRow = getDataRowIndex(visibleRow);
-
-      if (dataRow >= dataRowCount) {
-        break;
-      }
-
-      const pasteRow = pasteRows[rowOffset];
-
-      for (let colOffset = 0; colOffset < pasteRow.length; colOffset++) {
-        const dataCol = colMapping[colOffset];
-
-        if (dataCol === undefined || dataCol >= dataColCount) {
-          continue;
-        }
-
-        const num = parseClipboardNumber(pasteRow[colOffset]);
-
-        if (Number.isNaN(num)) {
-          continue;
-        }
-
-        updatedData[dataRow][dataCol] = num;
-      }
-    }
-
-    onBulkPaste(updatedData);
+    onBulkPaste(
+      applyPasteToMatrix({
+        data,
+        pasteRows,
+        colMapping,
+        startRow,
+        visibleRows,
+        getDataRowIndex,
+      }),
+    );
   });
 
   useEffect(() => {
@@ -156,8 +108,118 @@ export function useMatrixPasteInterceptor({
       return;
     }
 
-    const listener = (e: ClipboardEvent) => handlePaste(e);
-    window.addEventListener("paste", listener, { capture: true });
-    return () => window.removeEventListener("paste", listener, { capture: true });
-  }, [enabled, handlePaste]);
+    window.addEventListener("paste", handlePaste, { capture: true });
+    return () => window.removeEventListener("paste", handlePaste, { capture: true });
+    // `handlePaste` is a React 19 Effect Event (stable), intentionally omitted.
+    // Can drop this disable once `eslint-plugin-react-hooks` is bumped to ≥ 7.1.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled]);
+}
+
+function parseTsv(text: string): string[][] {
+  return text
+    .split(/\r?\n/)
+    .filter((row) => row.length > 0)
+    .map((row) => row.split("\t"));
+}
+
+interface BuildColumnMappingOptions {
+  startCol: number;
+  pasteColCount: number;
+  columns: readonly EnhancedGridColumn[];
+  visibleColumns: readonly EnhancedGridColumn[];
+  filterActive: boolean;
+  gridToData: (item: Item) => Item | null;
+}
+
+// Pre-compute visible-col -> data-col index once (O(cols)) so the inner paste loop
+// stays O(rows × cols) instead of degenerating to O(rows × cols × cols) lookups.
+function buildColumnMapping({
+  startCol,
+  pasteColCount,
+  columns,
+  visibleColumns,
+  filterActive,
+  gridToData,
+}: BuildColumnMappingOptions): Array<number | undefined> {
+  // When the filter is active, `visibleColumns` is a subset of `columns`. Build a lookup
+  // once so each paste column resolves to its original index in O(1).
+  const idToOriginalCol = filterActive ? new Map(columns.map((col, i) => [col.id, i])) : null;
+
+  const mapping = new Array<number | undefined>(pasteColCount);
+  for (let colOffset = 0; colOffset < pasteColCount; colOffset++) {
+    const visibleCol = startCol + colOffset;
+
+    if (visibleCol >= visibleColumns.length) {
+      continue;
+    }
+
+    const originalCol = idToOriginalCol
+      ? (idToOriginalCol.get(visibleColumns[visibleCol].id) ?? -1)
+      : visibleCol;
+
+    if (originalCol < 0 || originalCol >= columns.length) {
+      continue;
+    }
+
+    mapping[colOffset] = gridToData([originalCol, 0])?.[0];
+  }
+
+  return mapping;
+}
+
+interface ApplyPasteToMatrixOptions {
+  data: ReadonlyArray<readonly number[]>;
+  pasteRows: string[][];
+  colMapping: Array<number | undefined>;
+  startRow: number;
+  visibleRows: number;
+  getDataRowIndex: (visibleRow: number) => number;
+}
+
+function applyPasteToMatrix({
+  data,
+  pasteRows,
+  colMapping,
+  startRow,
+  visibleRows,
+  getDataRowIndex,
+}: ApplyPasteToMatrixOptions): number[][] {
+  const updatedData = data.map((row) => row.slice());
+  const dataRowCount = updatedData.length;
+  const dataColCount = updatedData[0]?.length ?? 0;
+
+  for (let rowOffset = 0; rowOffset < pasteRows.length; rowOffset++) {
+    const visibleRow = startRow + rowOffset;
+
+    if (visibleRow >= visibleRows) {
+      break;
+    }
+
+    const dataRow = getDataRowIndex(visibleRow);
+
+    if (dataRow >= dataRowCount) {
+      break;
+    }
+
+    const pasteRow = pasteRows[rowOffset];
+
+    for (let colOffset = 0; colOffset < pasteRow.length; colOffset++) {
+      const dataCol = colMapping[colOffset];
+
+      if (dataCol === undefined || dataCol >= dataColCount) {
+        continue;
+      }
+
+      const num = parseClipboardNumber(pasteRow[colOffset]);
+
+      if (Number.isNaN(num)) {
+        continue;
+      }
+
+      updatedData[dataRow][dataCol] = num;
+    }
+  }
+
+  return updatedData;
 }
