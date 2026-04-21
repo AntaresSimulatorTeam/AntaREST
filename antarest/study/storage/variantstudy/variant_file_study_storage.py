@@ -24,7 +24,7 @@ from antarest.core.exceptions import (
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.model import JSON, StudyPermissionType
-from antarest.core.tasks.service import ITaskService
+from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import (
     Study,
@@ -62,9 +62,8 @@ class VariantFileStudyStorage(AbstractFileStudyStorage):
         event_bus: IEventBus,
         config: Config,
         matrix_service: ISimpleMatrixService,
-        generation_task_callable: Callable[[VariantStudy, int | None], None],
     ):
-        super().__init__(config=config, cache=cache)
+        super().__init__(config=config, cache=cache, matrix_service=matrix_service)
         self.task_service = task_service
         self.raw_study_service = raw_study_service
         self.repository = repository
@@ -72,7 +71,9 @@ class VariantFileStudyStorage(AbstractFileStudyStorage):
         self.command_factory = command_factory
         self.study_factory = study_factory
         self._matrix_service = matrix_service
-        self._generation_task_callable = generation_task_callable
+
+    def register_callable(self, func: Callable[[VariantStudy, int], None]) -> None:
+        self._generation_task_callable = func
 
     def _update_editor(self, study: VariantStudy) -> None:
         user_name = self._get_current_user_name()
@@ -202,7 +203,7 @@ class VariantFileStudyStorage(AbstractFileStudyStorage):
         Returns: the config and study tree object
         """
         variant = _cast_study_to_variant(metadata)
-        self._generation_task_callable(variant, None)
+        self._generation_task_callable(variant, DEFAULT_AWAIT_MAX_TIMEOUT)
 
         study_path = self.get_study_path(variant)
         return self.study_factory.create_from_fs(

@@ -42,7 +42,7 @@ from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.json import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
-from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService, TaskNotFoundError
+from antarest.core.tasks.service import ITaskNotifier, ITaskService, TaskNotFoundError
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, current_time, suppress_exception
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
@@ -717,7 +717,7 @@ class VariantStudyService(AbstractStorageService):
             custom_event_messages=None,
         )
 
-    def _safe_generation(self, study: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
+    def safe_generation(self, study: VariantStudy, timeout: int) -> None:
         try:
             if self.exists(study):
                 # The study is already present on disk => nothing to do

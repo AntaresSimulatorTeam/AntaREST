@@ -22,19 +22,24 @@ from antarest.core.model import JSON
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Identity
 from antarest.login.utils import get_user_impersonator
+from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import (
     Study,
 )
 from antarest.study.storage.file_study_storage import IFileStudyStorage
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 
 logger = logging.getLogger(__name__)
 
 
 class AbstractFileStudyStorage(IFileStudyStorage, ABC):
-    def __init__(self, config: Config, cache: ICache):
+    def __init__(self, config: Config, cache: ICache, matrix_service: ISimpleMatrixService):
         self.config: Config = config
         self.cache = cache
+        self._matrix_service = matrix_service
 
     @override
     def get(
@@ -115,6 +120,26 @@ class AbstractFileStudyStorage(IFileStudyStorage, ABC):
         file_node = study.tree.get_node(parts)
 
         return file_node.get_file_content()
+
+    @override
+    def denormalize_study(self, study: Study) -> None:
+        file_study = self.get_raw(study)
+        self.denormalize_file_study(file_study)
+
+    def denormalize_file_study(self, file_study: FileStudy) -> None:
+        matrix_nodes = file_study.tree.get_matrix_nodes_to_denormalize()
+        if not matrix_nodes:
+            return
+
+        matrices_mapping: dict[str, list[MatrixNode]] = {}
+        for node in matrix_nodes:
+            link_content = node.matrix_mapper.get_link_content(node)
+            assert link_content is not None
+            matrices_mapping.setdefault(extract_matrix_id(link_content), []).append(node)
+
+        for matrix_content in self._matrix_service.yield_matrices(list(matrices_mapping)):
+            for node in matrices_mapping[matrix_content.id]:
+                node.write_dataframe(matrix_content.data)
 
     @staticmethod
     def _get_user_name_from_id(user_id: int) -> str:

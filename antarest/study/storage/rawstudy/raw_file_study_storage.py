@@ -30,12 +30,10 @@ from antarest.core.utils.archives import (
     extract_archive_from_stream,
 )
 from antarest.core.utils.utils import StopWatch, current_time
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study
 from antarest.study.storage.abstract.abstract_file_study_storage import AbstractFileStudyStorage
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.utils import (
     fix_study_root,
     is_managed,
@@ -49,7 +47,7 @@ class RawFileStudyStorage(AbstractFileStudyStorage):
     def __init__(
         self, cache: ICache, study_factory: StudyFactory, config: Config, matrix_service: ISimpleMatrixService
     ):
-        super().__init__(config=config, cache=cache)
+        super().__init__(config=config, cache=cache, matrix_service=matrix_service)
         self.study_factory = study_factory
         self._matrix_service = matrix_service
         self.cache = cache
@@ -295,11 +293,6 @@ class RawFileStudyStorage(AbstractFileStudyStorage):
         self.normalize_file_study(file_study)
 
     @override
-    def denormalize_study(self, study: Study) -> None:
-        file_study = self.get_raw(study)
-        self.denormalize_file_study(file_study)
-
-    @override
     def create_snapshot(self, study: Study) -> None:
         raise NotImplementedError()
 
@@ -311,21 +304,6 @@ class RawFileStudyStorage(AbstractFileStudyStorage):
         matrix_ids = self._matrix_service.create_batch(node.parse_content() for node in matrix_nodes)
         for k, node in enumerate(matrix_nodes):
             node.matrix_mapper.save_matrix(node, matrix_ids[k])
-
-    def denormalize_file_study(self, file_study: FileStudy) -> None:
-        matrix_nodes = file_study.tree.get_matrix_nodes_to_denormalize()
-        if not matrix_nodes:
-            return
-
-        matrices_mapping: dict[str, list[MatrixNode]] = {}
-        for node in matrix_nodes:
-            link_content = node.matrix_mapper.get_link_content(node)
-            assert link_content is not None
-            matrices_mapping.setdefault(extract_matrix_id(link_content), []).append(node)
-
-        for matrix_content in self._matrix_service.yield_matrices(list(matrices_mapping)):
-            for node in matrices_mapping[matrix_content.id]:
-                node.write_dataframe(matrix_content.data)
 
     @override
     def exists(self, study: Study) -> bool:
