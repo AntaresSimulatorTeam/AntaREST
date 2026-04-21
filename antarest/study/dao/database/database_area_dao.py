@@ -30,7 +30,7 @@ from antarest.core.exceptions import AreaNotFound, LayerNotFound
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_dao import AreaDao
-from antarest.study.dao.common import AreaId, AreaName, AreaSeriesMapping, AreaUiMapping
+from antarest.study.dao.common import AreaId, AreaName, AreaSeriesMapping, AreaUiMapping, SeriesId
 from antarest.study.dao.database.common import (
     get_all_area_matrices,
     save_area_matrix,
@@ -49,6 +49,11 @@ from antarest.study.dao.database.models.area import (
 from antarest.study.dao.database.models.district import DISTRICT_TABLE
 from antarest.study.dao.database.sql_utils import upsert_multiple
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
+    default_4_fixed_hourly,
+    default_8_fixed_hourly,
+    default_scenario_hourly,
+)
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -448,11 +453,11 @@ class DatabaseAreaDao(AreaDao):
         self.get_session().execute(stmt_insert)
         self.get_session().commit()
 
-    def _get_matrix(self, area_id: str, table: Table) -> pl.DataFrame:
+    def _get_matrix(self, area_id: str, table: Table) -> SeriesId:
         row = self._get_matrix_row(area_id, table)
         if not row:
             raise AreaNotFound(area_id)
-        return self.get_impl().get_matrix(row.matrix_id)
+        return str(row.matrix_id)
 
     def _get_matrix_row(self, area_id: str, table: Table) -> Row[Any] | None:
         study_id = self.get_study_id()
@@ -463,23 +468,28 @@ class DatabaseAreaDao(AreaDao):
 
     @override
     def get_load(self, area_id: str) -> pl.DataFrame:
-        return self._get_matrix(area_id, LOAD_TABLE)
+        matrix_id = self._get_matrix(area_id, LOAD_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_misc_gen(self, area_id: str) -> pl.DataFrame:
-        return self._get_matrix(area_id, MISC_GEN_TABLE)
+        matrix_id = self._get_matrix(area_id, MISC_GEN_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_8_fixed_hourly)
 
     @override
     def get_reserves(self, area_id: str) -> pl.DataFrame:
-        return self._get_matrix(area_id, RESERVES_TABLE)
+        matrix_id = self._get_matrix(area_id, RESERVES_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_4_fixed_hourly)
 
     @override
     def get_solar(self, area_id: str) -> pl.DataFrame:
-        return self._get_matrix(area_id, SOLAR_TABLE)
+        matrix_id = self._get_matrix(area_id, SOLAR_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_wind(self, area_id: str) -> pl.DataFrame:
-        return self._get_matrix(area_id, WIND_TABLE)
+        matrix_id = self._get_matrix(area_id, WIND_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_all_load(self) -> AreaSeriesMapping:
