@@ -30,6 +30,7 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
     BindingConstraintOperator,
+    ConstraintId,
 )
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -201,15 +202,24 @@ class RealCaseStudy:
     renewable_id: str
     sts_id: str
     sts_constraint_id: str
-    bc_both_id: str
-    bc_eq_id: str
+    bc_both_id: ConstraintId
+    bc_eq_id: ConstraintId
     dataframes: list[pl.DataFrame]
 
 
-def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -> RealCaseStudy:
-    # Create matrices in the matrix-store with different contents to diversify tests.
-    base_data = [[1, 2.5], [3, 4.7]]
-    dataframes = [pl.DataFrame(data=[[a + i, b + i] for a, b in base_data], orient="row") for i in range(43)]
+def build_real_case_study(
+    dao: StudyDao, matrix_service: ISimpleMatrixService, null_matrices: bool = False
+) -> RealCaseStudy:
+    """
+    If `null_matrices` is True, the created matrices will all be the same empty matrix.
+    Otherwise, the matrices will be created with different contents to diversify tests.
+    """
+    if null_matrices:
+        dataframes = [pl.DataFrame(orient="row")] * 43
+    else:
+        base_data = [[1, 2.5], [3, 4.7]]
+        dataframes = [pl.DataFrame(data=[[a + i, b + i] for a, b in base_data], orient="row") for i in range(43)]
+
     (
         load_df,
         solar_df,
