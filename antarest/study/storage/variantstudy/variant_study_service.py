@@ -610,13 +610,7 @@ class VariantStudyService(AbstractStorageService):
             study_id = metadata.id
 
             def callback(notifier: ITaskNotifier) -> TaskResult:
-                generator = SnapshotGenerator(
-                    cache=self.cache,
-                    raw_study_service=self.raw_study_service,
-                    command_factory=self.command_factory,
-                    study_factory=self.study_factory,
-                    repository=self.repository,
-                )
+                generator = SnapshotGenerator(variant_study_service=self)
 
                 # Build the Dao factory first
                 ctx = self.command_factory.command_context
@@ -683,6 +677,9 @@ class VariantStudyService(AbstractStorageService):
         if task_id:
             return self.task_service.status_task(task_id=task_id, with_logs=True)
         raise StudyValidationError(f"Variant study '{study_id}' has no generation task")
+
+    def create_snapshot(self, study: Study):
+        self._storage_mapping[study.storage_mode].create_snapshot(study)
 
     def _safe_generation(self, metadata: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
         try:

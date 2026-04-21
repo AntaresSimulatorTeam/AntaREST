@@ -17,32 +17,27 @@ This module dedicated to variant snapshot generation.
 import logging
 import shutil
 from collections.abc import Sequence
-from pathlib import Path
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 from antarest.core.exceptions import VariantGenerationError
-from antarest.core.interfaces.cache import (
-    ICache,
-)
 from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
 from antarest.core.utils.utils import current_time
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
-from antarest.study.model import RawStudy, Study, StudyMetadataUpdate
-from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
-from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.model import Study, StudyMetadataUpdate
 from antarest.study.storage.utils import (
     assert_permission_on_studies,
     format_timestamp,
     remove_from_cache,
 )
-from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
 from antarest.study.storage.variantstudy.model.model import GenerationResultInfoDTO
-from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_command_generator import apply_commands_to_variant
+
+if TYPE_CHECKING:
+    from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
 logger = logging.getLogger(__name__)
 
@@ -52,19 +47,12 @@ class SnapshotGenerator:
     Helper class used to generate snapshots for variant studies.
     """
 
-    def __init__(
-        self,
-        cache: ICache,
-        raw_study_service: RawStudyService,
-        command_factory: CommandFactory,
-        study_factory: StudyFactory,
-        repository: VariantStudyRepository,
-    ):
-        self.cache = cache
-        self.raw_study_service = raw_study_service
-        self.command_factory = command_factory
-        self.study_factory = study_factory
-        self.repository = repository
+    def __init__(self, variant_study_service: "VariantStudyService"):
+        self.cache = variant_study_service.cache
+        self.variant_study_service = variant_study_service
+        self.command_factory = variant_study_service.command_factory
+        self.study_factory = variant_study_service.study_factory
+        self.repository = variant_study_service.repository
 
     def generate_snapshot(
         self,
@@ -98,10 +86,7 @@ class SnapshotGenerator:
 
         try:
             if search_result.force_regenerate or not snapshot_dir.exists():
-                remove_from_cache(self.cache, variant_study_id)
-                logger.info(f"Exporting the reference study '{ref_study.id}' to '{snapshot_dir.name}'...")
-                shutil.rmtree(snapshot_dir, ignore_errors=True)
-                self._export_ref_study(snapshot_dir, ref_study)
+                self.variant_study_service.create_snapshot(ref_study)
 
             # The snapshot is generated, we also need to de-normalize the matrices.
             study_dao = dao_factory.create_study_dao(variant_study)
@@ -146,19 +131,6 @@ class SnapshotGenerator:
         descendants = self.repository.find_variants(descendant_ids)
         root_study = self.repository.one(descendant_ids[0])
         return root_study, descendants
-
-    def _export_ref_study(self, snapshot_dir: Path, ref_study: Study) -> None:
-        if isinstance(ref_study, VariantStudy):
-            snapshot_dir.parent.mkdir(parents=True, exist_ok=True)
-            self.raw_study_service.export_study_to_flat_directory(ref_study.snapshot_dir, snapshot_dir, False)
-        elif isinstance(ref_study, RawStudy):
-            self.raw_study_service.export_study_flat(
-                ref_study,
-                snapshot_dir,
-                denormalize=False,  # de-normalization is done at the end
-            )
-        else:  # pragma: no cover
-            raise TypeError(repr(type(ref_study)))
 
     def _apply_commands(
         self,

@@ -95,3 +95,7 @@ class IFileStudyStorage(ABC):
     @abstractmethod
     def denormalize_study(self, study: Study) -> None:
         raise NotImplementedError()
+
+    @abstractmethod
+    def create_snapshot(self, study: Study) -> None:
+        raise NotImplementedError()
