@@ -52,6 +52,64 @@ import type {
 } from "./types";
 
 /**
+ * Parses a numeric string using any locale's separator conventions
+ * (US "1,234.56", European "1.234,56", International "1 234.56", etc.).
+ *
+ * Of the two ambiguous separators (`,` and `.`), whichever appears last is
+ * treated as the decimal; the other is stripped as a thousands separator.
+ * Whitespace is always stripped. A lone comma followed by exactly three digits
+ * is treated as a thousands separator ("4,567" → 4567); otherwise decimal
+ * ("1234,56" → 1234.56).
+ *
+ * @param raw - The raw numeric string from clipboard or user input.
+ * @returns The parsed number, or `NaN` if the string is empty or unparsable.
+ */
+export function parseClipboardNumber(raw: string): number {
+  const cleaned = raw.replace(/\s/g, "");
+
+  if (!cleaned) {
+    return NaN;
+  }
+
+  return Number(normalizeLocaleSeparators(cleaned));
+}
+
+function normalizeLocaleSeparators(value: string): string {
+  const lastComma = value.lastIndexOf(",");
+  const lastPeriod = value.lastIndexOf(".");
+  const hasComma = lastComma !== -1;
+  const hasPeriod = lastPeriod !== -1;
+
+  // No separators — nothing to strip.
+  if (!hasComma && !hasPeriod) {
+    return value;
+  }
+
+  // Both separators -> whichever appears last is the decimal.
+  if (hasComma && hasPeriod) {
+    return lastPeriod > lastComma
+      ? value.replace(/,/g, "") // "1,234,567.89" → "1234567.89"
+      : value.replace(/\./g, "").replace(",", "."); // "1.234.567,89" → "1234567.89"
+  }
+
+  // Only periods -> 2+ means thousands-only, 1 is a standard decimal.
+  if (hasPeriod) {
+    return (value.match(/\./g) ?? []).length > 1 ? value.replace(/\./g, "") : value;
+  }
+
+  // Only commas -> 2+ means thousands-only.
+  if ((value.match(/,/g) ?? []).length > 1) {
+    return value.replace(/,/g, "");
+  }
+
+  // Single comma is ambiguous, 3 trailing digits -> thousands, else decimal.
+  const digitsAfterComma = value.length - lastComma - 1;
+  return digitsAfterComma === 3
+    ? value.replace(",", "") // "4,567" → "4567"
+    : value.replace(",", "."); // "1234,56" → "1234.56"
+}
+
+/**
  * Formats a number for display in a grid cell by adding thousand separators and handling decimals.
  *
  * This function is particularly useful for displaying load factors,
