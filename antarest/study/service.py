@@ -482,8 +482,7 @@ class RawStudyInterface(StudyInterface):
     def version(self) -> StudyVersion:
         return self._version
 
-    @override
-    def get_files(self) -> FileStudy:
+    def _get_files(self) -> FileStudy:
         if not self._cached_file_study:
             self._cached_file_study = self._raw_study_service.get_raw(self._study)
         return self._cached_file_study
@@ -562,10 +561,6 @@ class VariantStudyInterface(StudyInterface):
     @property
     def version(self) -> StudyVersion:
         return self._version
-
-    @override
-    def get_files(self) -> FileStudy:
-        return self._variant_service.get_raw(self._study)
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
