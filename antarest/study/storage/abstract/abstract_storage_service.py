@@ -15,8 +15,6 @@ from abc import ABC
 
 from typing_extensions import override
 
-from antarest.core.config import Config
-from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import GroupDTO, Identity
@@ -34,10 +32,6 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractStorageService(IStudyService, ABC):
-    def __init__(self, config: Config, cache: ICache):
-        self.config: Config = config
-        self.cache = cache
-
     @override
     def get_study_information(
         self,

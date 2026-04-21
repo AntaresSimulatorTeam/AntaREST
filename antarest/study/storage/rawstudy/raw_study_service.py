@@ -47,7 +47,7 @@ class RawStudyService(AbstractStorageService):
         matrix_service: ISimpleMatrixService,
     ):
 
-        super().__init__(config=config, cache=cache)
+        super().__init__()
 
         self.study_factory = study_factory
         self._matrix_service = matrix_service
@@ -56,6 +56,7 @@ class RawStudyService(AbstractStorageService):
             StorageMode.FILESYSTEM: DatabaseStudyStorage(config=config, cache=cache, matrix_service=matrix_service),
         }
         RawStudyMatrixUsageProvider(StudyMetadataRepository(cache_service=cache), matrix_service=self._matrix_service)
+        self.cache = cache
 
     @override
     def get_disk_usage(self, study: Study) -> int:
