@@ -1808,10 +1808,20 @@ class StudyService:
 
         # We need to handle matrices differently if our study is stored in DB
         if study.storage_mode == StorageMode.DATABASE:
-            context = self.storage_service.variant_study_service.command_factory.command_context
-            command = ReplaceMatrix(
-                target=url, matrix=new, command_context=context, study_version=StudyVersion.parse(study.version)
-            )
+            # Different commands need to be applied according to the given path
+            study_version = StudyVersion.parse(study.version)
+            command: ICommand
+
+            try:
+                _get_path_inside_user_folder(url, ResourceCreationNotAllowed)
+                file_relpath = PurePosixPath(url.strip().strip("/"))
+                command = self._create_replace_user_resource_command(study_version, new, file_relpath)
+
+            except ResourceCreationNotAllowed:
+                # The url does not point towards a user resource, we use the `ReplaceMatrix` command
+                context = self.storage_service.variant_study_service.command_factory.command_context
+                command = ReplaceMatrix(target=url, matrix=new, command_context=context, study_version=study_version)
+
             self.get_study_interface(study).add_commands([command])
 
         else:
