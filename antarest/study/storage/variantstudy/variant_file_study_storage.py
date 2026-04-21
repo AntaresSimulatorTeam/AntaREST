@@ -13,19 +13,18 @@
 import logging
 import shutil
 from pathlib import Path
+from typing import Callable
 
 from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
     StudyNotFoundError,
-    VariantGenerationError,
-    VariantGenerationTimeoutError,
 )
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.model import JSON, StudyPermissionType
-from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService
+from antarest.core.tasks.service import ITaskService
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import (
     Study,
@@ -63,6 +62,7 @@ class VariantFileStudyStorage(AbstractFileStudyStorage):
         event_bus: IEventBus,
         config: Config,
         matrix_service: ISimpleMatrixService,
+        generation_task_callable: Callable[[VariantStudy, int | None], None],
     ):
         super().__init__(config=config, cache=cache)
         self.task_service = task_service
@@ -72,6 +72,7 @@ class VariantFileStudyStorage(AbstractFileStudyStorage):
         self.command_factory = command_factory
         self.study_factory = study_factory
         self._matrix_service = matrix_service
+        self._generation_task_callable = generation_task_callable
 
     def _update_editor(self, study: VariantStudy) -> None:
         user_name = self._get_current_user_name()
@@ -146,7 +147,7 @@ class VariantFileStudyStorage(AbstractFileStudyStorage):
         Returns: study data formatted in json
         """
         if isinstance(metadata, VariantStudy):
-            self._safe_generation(metadata, timeout=600)
+            self._generation_task_callable(metadata, 600)
         else:
             raise TypeError(f"Expected {VariantStudy} but received {type(metadata)}")
         self.repository.refresh(metadata)
@@ -175,7 +176,7 @@ class VariantFileStudyStorage(AbstractFileStudyStorage):
         Returns: the file content and extension
         """
         if isinstance(metadata, VariantStudy):
-            self._safe_generation(metadata, timeout=600)
+            self._generation_task_callable(metadata, 600)
         else:
             raise TypeError(f"Expected {VariantStudy} but received {type(metadata)}")
         self.repository.refresh(metadata)
@@ -201,7 +202,7 @@ class VariantFileStudyStorage(AbstractFileStudyStorage):
         Returns: the config and study tree object
         """
         variant = _cast_study_to_variant(metadata)
-        self._safe_generation(variant)
+        self._generation_task_callable(variant)
 
         study_path = self.get_study_path(variant)
         return self.study_factory.create_from_fs(
@@ -251,35 +252,3 @@ class VariantFileStudyStorage(AbstractFileStudyStorage):
     @override
     def create_snapshot(self, study: Study) -> None:
         raise NotImplementedError()
-
-    def _safe_generation(self, study: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
-        try:
-            if self.exists(study):
-                # The study is already present on disk => nothing to do
-                return
-
-            logger.info("🔹 Starting variant study generation...")
-            # Create and run the generation task in a thread pool.
-            task_id = self.generate_task(study)
-            self.task_service.await_task(task_id, timeout)
-            result = self.task_service.status_task(task_id)
-            if not result.result:
-                raise ValueError("No task result")
-            if result.result.success:
-                # OK, the study has been generated
-                return
-            # The variant generation failed, we have to raise a clear exception.
-            error_msg = result.result.message
-            stripped_msg = error_msg.removeprefix(f"417: Failed to generate variant study {study.id}")
-            raise ValueError(stripped_msg)
-
-        except TimeoutError as e:
-            # Raise a REQUEST_TIMEOUT error (408)
-            msg = f"⚡ Timeout while waiting for generation of variant study {study.id}"
-            logger.error(msg, exc_info=e)
-            raise VariantGenerationTimeoutError(msg) from None
-
-        except Exception as e:
-            # raise a EXPECTATION_FAILED error (417)
-            logger.error(f"⚡ Fail to generate variant study {study.id}", exc_info=e)
-            raise VariantGenerationError(f"Error while generating variant {study.id} {e}") from None
