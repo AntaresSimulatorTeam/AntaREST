@@ -10,6 +10,8 @@
 #
 # This file is part of the Antares project.
 import logging
+from pathlib import Path
+from typing import BinaryIO
 
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
@@ -57,3 +59,21 @@ class RawStudyService(AbstractStorageService):
 
     def update_name_and_version_from_raw_meta(self, study: RawStudy) -> bool:
         return self._storage_mapping[study.storage_mode].update_name_and_version_from_raw_meta(study)
+
+    def import_study(self, metadata: RawStudy, stream: BinaryIO) -> RawStudy:
+        """
+        Import study in the directory of the study.
+
+        Args:
+            metadata: study information.
+            stream: binary content of the study compressed in ZIP or 7z format.
+
+        Returns:
+            Updated study information.
+
+        Raises:
+            BadArchiveContent: If the archive is corrupted or in an unknown format.
+        """
+        study_path = Path(metadata.path)
+        self._extract_and_setup(metadata, study_path, stream)
+        return metadata
