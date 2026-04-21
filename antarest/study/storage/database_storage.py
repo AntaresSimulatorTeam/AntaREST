@@ -21,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 class DatabaseStudyStorage(IStudyStorage):
     def __init__(self, cache: ICache, config: Config, matrix_service: ISimpleMatrixService):
-        super().__init__(config=config, cache=cache, matrix_service=matrix_service)
         self._matrix_service = matrix_service
         self.cache = cache
         self.config = config

@@ -25,7 +25,6 @@ from antarest.study.model import (
     Study,
     StudyMetadataDTO,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_service_interface import IStudyService
 
 logger = logging.getLogger(__name__)
@@ -68,7 +67,6 @@ class AbstractStorageService(IStudyService, ABC):
             directory_id=study.directory_id,
             parent_id=study.parent_id,
         )
-
 
     @staticmethod
     def _get_user_name_from_id(user_id: int) -> str:
