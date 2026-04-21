@@ -98,6 +98,7 @@ def build_study_service(
         raw_file_study_storage=raw_fs_storage,
         raw_database_study_storage=raw_db_storage,
     )
+    raw_fs_storage.register_callable(raw_study_service.export_study_flat)
 
     # Variant study service
     variant_fs_storage = VariantFileStudyStorage(

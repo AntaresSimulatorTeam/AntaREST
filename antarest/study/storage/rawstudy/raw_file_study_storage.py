@@ -15,7 +15,7 @@ import tempfile
 from collections.abc import Sequence
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
-from typing import BinaryIO
+from typing import BinaryIO, Callable
 from uuid import uuid4
 
 from typing_extensions import override
@@ -56,6 +56,9 @@ class RawFileStudyStorage(AbstractFileStudyStorage):
     @property
     def matrix_service(self) -> ISimpleMatrixService:
         return self._matrix_service
+
+    def register_callable(self, func: Callable[[Study, Path], None]) -> None:
+        self._exporter_callable = func
 
     def update_from_raw_metadata(
         self, metadata: RawStudy, fallback_on_default: bool | None = False, study_path: Path | None = None
@@ -225,7 +228,7 @@ class RawFileStudyStorage(AbstractFileStudyStorage):
         with tempfile.TemporaryDirectory(dir=self.config.storage.tmp_dir) as tmpdir:
             logger.info(f"Exporting study {study.id} to temporary path {tmpdir}")
             tmp_study_path = Path(tmpdir) / "tmp_copy"
-            self.export_study_flat(study, tmp_study_path)
+            self._exporter_callable(study, tmp_study_path)
             stopwatch = StopWatch()
             archive_dir(tmp_study_path, archive_path, archive_format=ArchiveFormat.SEVEN_ZIP)
             logger.info(f"Study {path_study} exported ({archive_path.suffix} format) in {stopwatch}s")
