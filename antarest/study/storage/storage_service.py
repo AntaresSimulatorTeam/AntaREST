@@ -16,7 +16,7 @@ It determines the appropriate study storage service based on the type of study p
 """
 
 from antarest.study.model import RawStudy, Study
-from antarest.study.storage.file_study_storage import IFileStudyStorage
+from antarest.study.storage.file_study_storage import FileStudyStorage
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.study_service_interface import IStudyService
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
@@ -49,7 +49,7 @@ class StudyStorageService:
         self.raw_study_service = raw_study_service
         self.variant_study_service = variant_study_service
 
-    def get_file_study_storage(self, study: Study) -> IFileStudyStorage:
+    def get_file_study_storage(self, study: Study) -> FileStudyStorage:
         """
         Introduced for legacy reasons for `/raw` endpoints.
         """
