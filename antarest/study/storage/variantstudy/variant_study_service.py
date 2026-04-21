@@ -435,7 +435,7 @@ class VariantStudyService(AbstractStorageService):
         it will need a generation from scratch, and children need
         to be rebased too.
         """
-        self._invalidate_snapshot(study)
+        self.invalidate_snapshot(study)
         self.on_parent_change(study.id)
 
     def on_parent_change(self, study_id: str) -> None:
@@ -685,15 +685,18 @@ class VariantStudyService(AbstractStorageService):
     def create_snapshot(self, study: Study) -> None:
         self._storage_mapping[study.storage_mode].create_snapshot(study)
 
-    def _safe_generation(self, metadata: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
+    def exists(self, study: VariantStudy) -> bool:
+        return self._storage_mapping[study.storage_mode].exists(study)
+
+    def _safe_generation(self, study: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
         try:
-            if self.exists(metadata):
+            if self.exists(study):
                 # The study is already present on disk => nothing to do
                 return
 
             logger.info("🔹 Starting variant study generation...")
             # Create and run the generation task in a thread pool.
-            task_id = self.generate_task(metadata)
+            task_id = self.generate_task(study)
             self.task_service.await_task(task_id, timeout)
             result = self.task_service.status_task(task_id)
             if not result.result:
@@ -703,19 +706,19 @@ class VariantStudyService(AbstractStorageService):
                 return
             # The variant generation failed, we have to raise a clear exception.
             error_msg = result.result.message
-            stripped_msg = error_msg.removeprefix(f"417: Failed to generate variant study {metadata.id}")
+            stripped_msg = error_msg.removeprefix(f"417: Failed to generate variant study {study.id}")
             raise ValueError(stripped_msg)
 
         except TimeoutError as e:
             # Raise a REQUEST_TIMEOUT error (408)
-            msg = f"⚡ Timeout while waiting for generation of variant study {metadata.id}"
+            msg = f"⚡ Timeout while waiting for generation of variant study {study.id}"
             logger.error(msg, exc_info=e)
             raise VariantGenerationTimeoutError(msg) from None
 
         except Exception as e:
             # raise a EXPECTATION_FAILED error (417)
-            logger.error(f"⚡ Fail to generate variant study {metadata.id}", exc_info=e)
-            raise VariantGenerationError(f"Error while generating variant {metadata.id} {e}") from None
+            logger.error(f"⚡ Fail to generate variant study {study.id}", exc_info=e)
+            raise VariantGenerationError(f"Error while generating variant {study.id} {e}") from None
 
     def clear_all_snapshots(self, retention_time: timedelta) -> str:
         """
@@ -788,6 +791,17 @@ class VariantStudyService(AbstractStorageService):
 
     def clear_snapshot(self, variant_study: VariantStudy) -> None:
         self._storage_mapping[variant_study.storage_mode].clear_snapshot(variant_study)
+        self.invalidate_snapshot(variant_study)
+
+    def invalidate_snapshot(self, variant_study: VariantStudy) -> None:
+        """
+        Invalidates snapshot so that it is regenerated from scratch
+        next time the study is accessed.
+        """
+        if variant_study.snapshot:
+            variant_study.snapshot.last_executed_command = None
+        variant_study.updated_at = current_time()
+        self.repository.save(metadata=variant_study)
 
 
 class SnapshotCleanerTask:

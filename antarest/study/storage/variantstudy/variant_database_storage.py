@@ -20,3 +20,6 @@ class VariantDataBaseStudyStorage(IDataBaseStudyStorage):
 
     def create_snapshot(self, study: Study) -> None:
         raise NotImplementedError()
+
+    def exists(self, study: VariantStudy) -> bool:
+        raise NotImplementedError()
