@@ -52,7 +52,7 @@ class RawStudyService(AbstractStorageService):
 
         self.study_factory = study_factory
         self._matrix_service = matrix_service
-        self._storage_mapping = {
+        self._storage_mapping: dict[StorageMode, RawFileStudyStorage | RawDataBaseStudyStorage] = {
             StorageMode.DATABASE: raw_database_study_storage,
             StorageMode.FILESYSTEM: raw_file_study_storage,
         }
