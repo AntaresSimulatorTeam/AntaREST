@@ -719,7 +719,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
 
-        return self.storage_service.get_file_study_storage(study).get(study, url, depth, formatted)
+        return self.storage_service.get_storage(study).get(study, url, depth, formatted)
 
     def get_file(self, uuid: str, url: str) -> OriginalFile:
         """
@@ -735,7 +735,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
 
-        output = self.storage_service.get_file_study_storage(study).get_file(study, url)
+        output = self.storage_service.get_storage(study).get_file(study, url)
 
         return output
 
@@ -925,7 +925,7 @@ class StudyService:
         return self.storage_service.get_storage(study).get_study_interface(study)
 
     def get_file_study(self, study: Study) -> FileStudy:
-        return self.storage_service.get_file_study_storage(study).get_raw(study)
+        return self.storage_service.get_storage(study).get_raw(study)
 
     def create_study(
         self,
@@ -1670,7 +1670,7 @@ class StudyService:
             url: data path to reach
             data: new data to replace
         """
-        study_service = self.storage_service.get_file_study_storage(study)
+        study_service = self.storage_service.get_storage(study)
         file_study = study_service.get_raw(metadata=study)
         version = file_study.config.version
 
