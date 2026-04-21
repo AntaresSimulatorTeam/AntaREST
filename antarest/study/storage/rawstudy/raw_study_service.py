@@ -89,7 +89,9 @@ class RawStudyService(AbstractStorageService):
     def export_study_flat(self, study: Study, dst_path: Path) -> None:
         raise NotImplementedError()
 
-    ###### Specific methods #########
+    ##########################
+    # Specific methods
+    ##########################
 
     def find_archive_path(self, study: Study) -> Path:
         raise NotImplementedError()

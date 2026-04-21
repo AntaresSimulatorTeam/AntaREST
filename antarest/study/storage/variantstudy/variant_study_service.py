@@ -120,6 +120,56 @@ class VariantStudyService(AbstractStorageService):
         CommandMatrixUsageProvider(variant_study_repo=repository, command_factory=command_factory)
         CommandBlobUsageProvider(variant_study_repo=repository, command_factory=command_factory)
 
+    @override
+    def get_disk_usage(self, study: Study) -> int:
+        raise NotImplementedError()
+
+    @override
+    def archive(self, study: Study) -> None:
+        raise NotImplementedError()
+
+    @override
+    def unarchive(self, study: Study) -> None:
+        raise NotImplementedError()
+
+    @override
+    def delete(self, study: Study) -> None:
+        raise NotImplementedError()
+
+    @override
+    def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
+        raise NotImplementedError()
+
+    @override
+    def get_study_interface(self, study: Study) -> StudyInterface:
+        raise NotImplementedError()
+
+    @override
+    def get_study_dao(self, study: Study) -> StudyDao:
+        raise NotImplementedError()
+
+    @override
+    def export_study_flat(self, study: Study, dst_path: Path) -> None:
+        raise NotImplementedError()
+
+    ##########################
+    # Specific methods
+    ##########################
+
+    def invalidate_snapshot(self, variant_study: VariantStudy) -> None:
+        """
+        Invalidates snapshot so that it is regenerated from scratch
+        next time the study is accessed.
+        """
+        if variant_study.snapshot:
+            variant_study.snapshot.last_executed_command = None
+        variant_study.updated_at = current_time()
+        self.repository.save(metadata=variant_study)
+
+    def clear_snapshot(self, variant_study: VariantStudy) -> None:
+        self._storage_mapping[variant_study.storage_mode].clear_snapshot(variant_study)
+        self.invalidate_snapshot(variant_study)
+
     def _update_editor(self, study: VariantStudy) -> None:
         user_name = self._get_current_user_name()
         study.editor = user_name
@@ -747,52 +797,6 @@ class VariantStudyService(AbstractStorageService):
             # raise a EXPECTATION_FAILED error (417)
             logger.error(f"⚡ Fail to generate variant study {study.id}", exc_info=e)
             raise VariantGenerationError(f"Error while generating variant {study.id} {e}") from None
-
-    @override
-    def get_disk_usage(self, study: Study) -> int:
-        raise NotImplementedError()
-
-    @override
-    def archive(self, study: Study) -> None:
-        raise NotImplementedError()
-
-    @override
-    def unarchive(self, study: Study) -> None:
-        raise NotImplementedError()
-
-    @override
-    def delete(self, study: Study) -> None:
-        raise NotImplementedError()
-
-    @override
-    def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
-        raise NotImplementedError()
-
-    @override
-    def get_study_interface(self, study: Study) -> StudyInterface:
-        raise NotImplementedError()
-
-    @override
-    def get_study_dao(self, study: Study) -> StudyDao:
-        raise NotImplementedError()
-
-    @override
-    def export_study_flat(self, study: Study, dst_path: Path) -> None:
-        raise NotImplementedError()
-
-    def clear_snapshot(self, variant_study: VariantStudy) -> None:
-        self._storage_mapping[variant_study.storage_mode].clear_snapshot(variant_study)
-        self.invalidate_snapshot(variant_study)
-
-    def invalidate_snapshot(self, variant_study: VariantStudy) -> None:
-        """
-        Invalidates snapshot so that it is regenerated from scratch
-        next time the study is accessed.
-        """
-        if variant_study.snapshot:
-            variant_study.snapshot.last_executed_command = None
-        variant_study.updated_at = current_time()
-        self.repository.save(metadata=variant_study)
 
 
 class SnapshotCleanerTask:
