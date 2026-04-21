@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
+import shutil
 from pathlib import Path
 
 from typing_extensions import override
@@ -23,6 +24,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.model import JSON, StudyPermissionType
 from antarest.core.tasks.service import ITaskService
+from antarest.core.utils.utils import current_time
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import (
     Study,
@@ -245,3 +247,21 @@ class VariantFileStudyStorage(AbstractFileStudyStorage):
             and (metadata.snapshot.created_at >= metadata.updated_at)
             and (self.get_study_path(metadata) / "study.antares").is_file()
         )
+
+    def _invalidate_snapshot(
+        self,
+        variant_study: VariantStudy,
+    ) -> None:
+        """
+        Invalidates snapshot so that it is regenerated from scratch
+        next time the study is accessed.
+        """
+        if variant_study.snapshot:
+            variant_study.snapshot.last_executed_command = None
+        variant_study.updated_at = current_time()
+        self.repository.save(metadata=variant_study)
+
+    def clear_snapshot(self, variant_study: VariantStudy) -> None:
+        logger.info(f"Clearing snapshot for study {variant_study.id}")
+        self._invalidate_snapshot(variant_study)
+        shutil.rmtree(self.get_study_path(variant_study), ignore_errors=True)

@@ -786,6 +786,9 @@ class VariantStudyService(AbstractStorageService):
     def find_archive_path(self, study: Study) -> Path:
         raise NotImplementedError()
 
+    def clear_snapshot(self, variant_study: VariantStudy) -> None:
+        self._storage_mapping[variant_study.storage_mode].clear_snapshot(variant_study)
+
 
 class SnapshotCleanerTask:
     def __init__(

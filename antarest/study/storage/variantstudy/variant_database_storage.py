@@ -12,7 +12,9 @@
 
 
 from antarest.study.storage.database_study_storage import IDataBaseStudyStorage
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 
 class VariantDataBaseStudyStorage(IDataBaseStudyStorage):
-    pass
+    def clear_snapshot(self, variant_study: VariantStudy) -> None:
+        raise NotImplementedError()
