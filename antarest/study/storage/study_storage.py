@@ -58,3 +58,7 @@ class IStudyStorage(ABC):
     @abstractmethod
     def export_study_flat(self, study: Study, dst_path: Path) -> None:
         raise NotImplementedError()
+
+    @abstractmethod
+    def find_archive_path(self, study: Study) -> Path:
+        raise NotImplementedError()

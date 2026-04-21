@@ -1155,7 +1155,7 @@ class StudyService:
                             study.id,
                         )
 
-                    self.storage_service.raw_study_service.update_from_raw_meta(study, fallback_on_default=True)
+                    self.storage_service.raw_study_service.update_from_raw_metadata(study)
 
                     logger.warning("Skipping study format error analysis")
                     # TODO re enable this on an async worker
@@ -1453,14 +1453,6 @@ class StudyService:
         for task_id in generation_tasks:
             self.task_service.await_task(task_id, timeout)
 
-    def _delete_study_from_filesystem(self, study: Study) -> None:
-        """Delete study files from disk (handles both archived and unarchived studies)."""
-        if study.archived:
-            os.unlink(self.storage_service.raw_study_service.find_archive_path(study))
-
-        elif study.storage_mode == StorageMode.FILESYSTEM:
-            self.storage_service.get_storage(study).delete(study)
-
     def _notify_study_deleted(self, study: Study, study_info: Any) -> None:
         """Push deletion event, log the action, and run deletion callbacks."""
         self.event_bus.push(
@@ -1555,7 +1547,7 @@ class StudyService:
         self.repository.delete(*studies_to_delete.keys())
 
         for study in studies_to_delete.values():
-            self._delete_study_from_filesystem(study)
+            self.storage_service.get_storage(study).delete(study)
             self._notify_study_deleted(study, study_infos[study.id])
 
     def import_study(
@@ -2135,8 +2127,6 @@ class StudyService:
             with db():
                 study_to_unarchive = clone_raw_study(assert_raw(self.get_study(uuid)))
 
-            archive_path = self.storage_service.raw_study_service.find_archive_path(study_to_unarchive)
-
             self.storage_service.get_storage(study_to_unarchive).unarchive(study_to_unarchive)
 
             with db():
@@ -2154,7 +2144,6 @@ class StudyService:
                 )
                 remove_from_cache(cache=self.cache_service, root_id=uuid)
 
-            os.unlink(archive_path)
             return TaskResult(success=True, message="ok")
 
         return self.task_service.add_task(
