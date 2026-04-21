@@ -1689,8 +1689,7 @@ class StudyService:
             url: data path to reach
             data: new data to replace
         """
-        study_service = self.storage_service.get_storage(study)
-        file_study = study_service.get_study_dao(study).get_file_study()
+        file_study = self.get_file_study(study)
         version = file_study.config.version
 
         command: ICommand
