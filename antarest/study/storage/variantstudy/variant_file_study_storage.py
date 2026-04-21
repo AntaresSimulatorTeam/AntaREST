@@ -267,5 +267,5 @@ class VariantFileStudyStorage(AbstractFileStudyStorage):
         shutil.rmtree(self.get_study_path(variant_study), ignore_errors=True)
 
     @override
-    def create_snapshot(self, study: Study):
+    def create_snapshot(self, study: Study) -> None:
         raise NotImplementedError()
