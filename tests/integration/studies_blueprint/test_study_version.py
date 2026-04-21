@@ -62,7 +62,7 @@ class TestStudyVersions:
             # Gets study information
             res = client.get(f"v1/studies/{study_id}")
             res.raise_for_status()
-            assert res.json()["version"] == "9.2" if f == final_path else "7.0"
+            assert res.json()["version"] == 920 if f == final_path else 700
 
             # Reads `study.version` file
             res = client.get(f"v1/studies/{study_id}/raw?path=study")
