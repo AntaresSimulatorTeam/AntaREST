@@ -15,11 +15,13 @@ import re
 from collections.abc import Callable
 from datetime import timedelta
 from functools import reduce
+from pathlib import Path, PurePosixPath
 from typing import cast
 from uuid import uuid4
 
 import humanize
 from filelock import FileLock
+from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
@@ -45,6 +47,8 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, current_time, suppress_exception
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
+from antarest.study.business.study_interface import StudyInterface
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
@@ -741,6 +745,46 @@ class VariantStudyService(AbstractStorageService):
             progress=None,
             custom_event_messages=None,
         )
+
+    @override
+    def get_disk_usage(self, study: Study) -> int:
+        raise NotImplementedError()
+
+    @override
+    def archive(self, study: Study) -> None:
+        raise NotImplementedError()
+
+    @override
+    def unarchive(self, study: Study) -> None:
+        raise NotImplementedError()
+
+    @override
+    def delete(self, study: Study) -> None:
+        raise NotImplementedError()
+
+    @override
+    def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
+        raise NotImplementedError()
+
+    @override
+    def get_study_interface(self, study: Study) -> StudyInterface:
+        raise NotImplementedError()
+
+    @override
+    def normalize_study(self, study: Study) -> None:
+        raise NotImplementedError()
+
+    @override
+    def get_study_dao(self, study: Study) -> StudyDao:
+        raise NotImplementedError()
+
+    @override
+    def export_study_flat(self, study: Study, dst_path: Path) -> None:
+        raise NotImplementedError()
+
+    @override
+    def find_archive_path(self, study: Study) -> Path:
+        raise NotImplementedError()
 
 
 class SnapshotCleanerTask:

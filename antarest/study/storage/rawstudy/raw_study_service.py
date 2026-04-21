@@ -10,12 +10,16 @@
 #
 # This file is part of the Antares project.
 import logging
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import BinaryIO
+
+from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.study_interface import StudyInterface
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import RawStudy, StorageMode, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract.abstract_storage_service import AbstractStorageService
@@ -77,3 +81,43 @@ class RawStudyService(AbstractStorageService):
         study_path = Path(metadata.path)
         self._extract_and_setup(metadata, study_path, stream)
         return metadata
+
+    @override
+    def get_disk_usage(self, study: Study) -> int:
+        raise NotImplementedError()
+
+    @override
+    def archive(self, study: Study) -> None:
+        raise NotImplementedError()
+
+    @override
+    def unarchive(self, study: Study) -> None:
+        raise NotImplementedError()
+
+    @override
+    def delete(self, study: Study) -> None:
+        raise NotImplementedError()
+
+    @override
+    def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
+        raise NotImplementedError()
+
+    @override
+    def get_study_interface(self, study: Study) -> StudyInterface:
+        raise NotImplementedError()
+
+    @override
+    def normalize_study(self, study: Study) -> None:
+        raise NotImplementedError()
+
+    @override
+    def get_study_dao(self, study: Study) -> StudyDao:
+        raise NotImplementedError()
+
+    @override
+    def export_study_flat(self, study: Study, dst_path: Path) -> None:
+        raise NotImplementedError()
+
+    @override
+    def find_archive_path(self, study: Study) -> Path:
+        raise NotImplementedError()
