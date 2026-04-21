@@ -100,7 +100,11 @@ class DatabaseStudyDaoFactory(StudyFactoryDao):
 
     @override
     def create_study_dao(self, study: Study) -> DatabaseStudyDao:
-        dao = DatabaseStudyDao(study.id, self.session, self._matrix_service, self._generator_matrix_constants)
+        dao = self.get_study_dao(study)
         dao.save_layer(Layer(id=DEFAULT_LAYER_ID, name=DEFAULT_LAYER_NAME))
         _create_default_settings(dao, study)
         return dao
+
+    @override
+    def get_study_dao(self, study: Study) -> DatabaseStudyDao:
+        return DatabaseStudyDao(study.id, self.session, self._matrix_service, self._generator_matrix_constants)

@@ -20,3 +20,7 @@ class StudyFactoryDao(ABC):
     @abstractmethod
     def create_study_dao(self, study: Study) -> StudyDao:
         raise NotImplementedError()
+
+    @abstractmethod
+    def get_study_dao(self, study: Study) -> StudyDao:
+        raise NotImplementedError()
