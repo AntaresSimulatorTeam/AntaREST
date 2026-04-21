@@ -2145,7 +2145,7 @@ class StudyService:
                 if not output.in_study and not output.archived:
                     self._get_outputs_access().archive_output(study_to_archive.id, output.id)
 
-            self.storage_service.raw_study_service.archive(study_to_archive)
+            self.storage_service.get_storage(study_to_archive).archive(study_to_archive)
 
             with db():
                 study_db = self.repository.get(uuid)
@@ -2196,7 +2196,7 @@ class StudyService:
 
             archive_path = self.storage_service.raw_study_service.find_archive_path(study_to_unarchive)
 
-            self.storage_service.raw_study_service.unarchive(study_to_unarchive)
+            self.storage_service.get_storage(study_to_unarchive).unarchive(study_to_unarchive)
 
             with db():
                 study_db = self.repository.get(uuid)
@@ -2685,9 +2685,7 @@ class StudyService:
         """
         study = self.get_study(uuid=uuid)
         assert_permission(study, StudyPermissionType.READ)
-        study_path = self.storage_service.get_file_study_storage(study).get_study_path(study)
-        # If the study is a variant, it's possible that it only exists in DB and not on disk. If so, we return 0.
-        return get_disk_usage(study_path) if study_path.exists() else 0
+        return self.storage_service.get_storage(study).get_disk_usage(study)
 
     def get_matrix_with_index_and_header(
         self, *, study_id: str, path: str, with_index: bool, with_header: bool
