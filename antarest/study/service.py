@@ -952,39 +952,10 @@ class StudyService:
         """
         Creates the business interface to a particular study.
         """
-        if isinstance(study, VariantStudy):
-            return VariantStudyInterface(
-                self.storage_service.variant_study_service,
-                study,
-            )
-        elif isinstance(study, RawStudy):
-            return RawStudyInterface(
-                self.storage_service.raw_study_service,
-                self.storage_service.variant_study_service,
-                self.user_service,
-                self.repository,
-                study,
-            )
-        else:
-            raise ValueError(f"Unsupported study type '{study.type}'")
+        return self.storage_service.get_storage(study).get_study_interface(study)
 
     def get_file_study(self, study: Study) -> FileStudy:
         return self.storage_service.get_file_study_storage(study).get_raw(study)
-
-    def get_study_path(self, uuid: str) -> Path:
-        """
-        Retrieve study path
-        Args:
-            uuid: study uuid
-
-        Returns:
-
-        """
-        study = self.get_study(uuid)
-        assert_permission(study, StudyPermissionType.RUN)
-
-        logger.info("study %s path asked by user %s", uuid, get_user_id())
-        return self.storage_service.get_file_study_storage(study).get_study_path(study)
 
     def create_study(
         self,
