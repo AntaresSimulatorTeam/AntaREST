@@ -49,18 +49,6 @@ class StudyInterface(ABC):
     def version(self) -> StudyVersion:
         raise NotImplementedError()
 
-    # TODO: in the end this should provide a read-only DAO which encapsulates
-    #       the actual storage implementation
-    @abstractmethod
-    def get_files(self) -> FileStudy:
-        """
-        Gets the file representation of the study.
-
-        This is meant to be a "read-only" access to the study,
-        modifications should be made through commands.
-        """
-        raise NotImplementedError()
-
     @abstractmethod
     def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
         """
@@ -97,10 +85,6 @@ class InMemoryStudyInterface(StudyInterface):
     @property
     def version(self) -> StudyVersion:
         return self._study_dao.get_version()
-
-    @override
-    def get_files(self) -> FileStudy:
-        raise NotImplementedError("In memory studies cannot be converted to file study.")
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
@@ -150,7 +134,6 @@ class FileStudyInterface(StudyInterface):
     def version(self) -> StudyVersion:
         return self.file_study.config.version
 
-    @override
     def get_files(self) -> FileStudy:
         return self.file_study
 

@@ -778,9 +778,10 @@ class TestConvertHydroPmax:
         dao.convert_hydro_pmax(HydroPmax.HOURLY)
         assert dao.get_compatibility_parameters().hydro_pmax == HydroPmax.HOURLY
         expected_daily = np.full((365, 1), 24.0)
+        expected_hourly = np.zeros((8760, 1))  # Default matrix as it was replaced
         for area_id in ["paris", "london"]:
-            assert dao.get_hydro_max_hourly_gen_power(area_id).is_empty()
-            assert dao.get_hydro_max_hourly_pump_power(area_id).is_empty()
+            assert (dao.get_hydro_max_hourly_gen_power(area_id).to_numpy() == expected_hourly).all()
+            assert (dao.get_hydro_max_hourly_pump_power(area_id).to_numpy() == expected_hourly).all()
             assert (dao.get_hydro_max_daily_gen_energy(area_id).to_numpy() == expected_daily).all()
             assert (dao.get_hydro_max_daily_pump_energy(area_id).to_numpy() == expected_daily).all()
 

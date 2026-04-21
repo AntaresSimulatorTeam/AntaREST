@@ -91,13 +91,13 @@ def manager(command_context: CommandContext) -> STStorageManager:
     return STStorageManager(command_context)
 
 
-def _set_up_study(study: StudyInterface, command_context: CommandContext) -> None:
-    study_data = study.get_files()
-    dao = build_dao_from_file_study(study_data, command_context)
+def _set_up_study(study: FileStudy, command_context: CommandContext) -> None:
+    dao = build_dao_from_file_study(study, command_context)
+    version = study.config.version
     # Create 2 areas
-    output = CreateArea(command_context=command_context, area_name="fr", study_version=study.version).apply(dao)
+    output = CreateArea(command_context=command_context, area_name="fr", study_version=version).apply(dao)
     assert output.status
-    output = CreateArea(command_context=command_context, area_name="DE", study_version=study.version).apply(dao)
+    output = CreateArea(command_context=command_context, area_name="DE", study_version=version).apply(dao)
     assert output.status
     # Create 2 storages in fr area and 1 in DE area
     cmd = CreateSTStorage(
@@ -112,7 +112,7 @@ def _set_up_study(study: StudyInterface, command_context: CommandContext) -> Non
             efficiency=0.94,
             initial_level_optim=True,
         ),
-        study_version=study.version,
+        study_version=version,
     )
     output = cmd.apply(dao)
     assert output.status
@@ -125,7 +125,7 @@ def _set_up_study(study: StudyInterface, command_context: CommandContext) -> Non
             group="my_own_group",
             enabled=False,
         ),
-        study_version=study.version,
+        study_version=version,
     )
     output = cmd.apply(dao)
     assert output.status
@@ -140,7 +140,7 @@ def _set_up_study(study: StudyInterface, command_context: CommandContext) -> Non
             penalize_variation_injection=True,
             allow_overflow=True,
         ),
-        study_version=study.version,
+        study_version=version,
     )
     output = cmd.apply(dao)
     assert output.status
@@ -151,7 +151,7 @@ def study_interface(
     matrix_service: ISimpleMatrixService, empty_study_930: FileStudy, command_context: CommandContext
 ) -> StudyInterface:
     study_interface = file_study_interface(empty_study_930, matrix_service)
-    _set_up_study(study_interface, command_context)
+    _set_up_study(empty_study_930, command_context)
     return study_interface
 
 
