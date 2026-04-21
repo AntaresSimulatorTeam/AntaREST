@@ -106,9 +106,8 @@ class RawStudyService(AbstractStorageService):
     def get_study_interface(self, study: Study) -> StudyInterface:
         raise NotImplementedError()
 
-    @override
     def normalize_study(self, study: Study) -> None:
-        raise NotImplementedError()
+        self._storage_mapping[study.storage_mode].normalize_study(study)
 
     @override
     def get_study_dao(self, study: Study) -> StudyDao:

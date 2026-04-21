@@ -286,7 +286,6 @@ class RawFileStudyStorage(AbstractFileStudyStorage):
             return self.find_archive_path(metadata)
         return Path(metadata.path)
 
-    @override
     def normalize_study(self, study: Study) -> None:
         """
         Method used to normalize a study.

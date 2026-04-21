@@ -774,10 +774,6 @@ class VariantStudyService(AbstractStorageService):
         raise NotImplementedError()
 
     @override
-    def normalize_study(self, study: Study) -> None:
-        raise NotImplementedError()
-
-    @override
     def get_study_dao(self, study: Study) -> StudyDao:
         raise NotImplementedError()
 

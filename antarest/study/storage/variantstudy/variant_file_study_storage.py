@@ -224,11 +224,6 @@ class VariantFileStudyStorage(AbstractFileStudyStorage):
         return variant.snapshot_dir
 
     @override
-    def normalize_study(self, study: Study) -> None:
-        file_study = self.get_raw(study)
-        self.raw_study_service._storage_mapping[study.storage_mode].normalize_file_study(file_study)
-
-    @override
     def exists(self, metadata: Study) -> bool:
         """
         Check if the study snapshot exists and is up-to-date.

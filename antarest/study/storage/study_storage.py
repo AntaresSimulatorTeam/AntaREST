@@ -48,10 +48,6 @@ class IStudyStorage(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def normalize_study(self, study: Study) -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
     def get_study_dao(self, study: Study) -> StudyDao:
         raise NotImplementedError()
 

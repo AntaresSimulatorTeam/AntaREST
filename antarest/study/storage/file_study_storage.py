@@ -76,12 +76,6 @@ class IFileStudyStorage(ABC):
         """
 
     @abstractmethod
-    def normalize_study(self, study: Study) -> None:
-        """
-        Put every matrix in the study in the matrix-store.
-        """
-
-    @abstractmethod
     def exists(self, metadata: Study) -> bool:
         """
         Check study exist.

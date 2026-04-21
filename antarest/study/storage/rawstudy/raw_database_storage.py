@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from antarest.study.model import RawStudy
+from antarest.study.model import RawStudy, Study
 from antarest.study.storage.database_study_storage import IDataBaseStudyStorage
 
 
@@ -21,3 +21,7 @@ class RawDataBaseStudyStorage(IDataBaseStudyStorage):
     def update_name_and_version_from_raw_meta(self, study: RawStudy) -> bool:
         # Nothing to do
         return True
+
+    def normalize_study(self, study: Study) -> None:
+        # Nothing to do
+        pass
