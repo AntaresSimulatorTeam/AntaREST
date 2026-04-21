@@ -384,21 +384,27 @@ class DatabaseXpansionDao(XpansionDao):
     @override
     def get_all_xpansion_weights(self) -> XpansionWeightsMapping:
         rows = self._db_session.execute(
-            select(XPANSION_WEIGHT_TABLE.c.content).where(XPANSION_WEIGHT_TABLE.c.study_id == self._study_id)
+            select(XPANSION_WEIGHT_TABLE.c.matrix_id, XPANSION_WEIGHT_TABLE.c.filename).where(
+                XPANSION_WEIGHT_TABLE.c.study_id == self._study_id
+            )
         ).fetchall()
         return {row.filename: row.matrix_id for row in rows}
 
     @override
     def get_all_xpansion_capacities(self) -> XpansionCapacitiesMapping:
         rows = self._db_session.execute(
-            select(XPANSION_CAPACITY_TABLE.c.content).where(XPANSION_CAPACITY_TABLE.c.study_id == self._study_id)
+            select(XPANSION_CAPACITY_TABLE.c.matrix_id, XPANSION_CAPACITY_TABLE.c.filename).where(
+                XPANSION_CAPACITY_TABLE.c.study_id == self._study_id
+            )
         ).fetchall()
         return {row.filename: row.matrix_id for row in rows}
 
     @override
     def get_all_xpansion_constraints(self) -> XpansionConstraintsMapping:
         rows = self._db_session.execute(
-            select(XPANSION_CONSTRAINT_TABLE.c.content).where(XPANSION_CONSTRAINT_TABLE.c.study_id == self._study_id)
+            select(XPANSION_CONSTRAINT_TABLE.c.content, XPANSION_CONSTRAINT_TABLE.c.filename).where(
+                XPANSION_CONSTRAINT_TABLE.c.study_id == self._study_id
+            )
         ).fetchall()
         return {row.filename: row.content for row in rows}
 
