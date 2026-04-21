@@ -21,7 +21,6 @@ from uuid import uuid4
 from typing_extensions import override
 
 from antarest.core.config import Config
-from antarest.core.exceptions import StudyImportFailed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.utils.archives import (
@@ -201,10 +200,6 @@ class RawFileStudyStorage(AbstractFileStudyStorage):
         except Exception:
             shutil.rmtree(study_path)
             raise
-        try:
-            self.checks_antares_web_compatibility(study)
-        except NotImplementedError as e:
-            raise StudyImportFailed(study.name or "Unknown Study", e.args[0])
         study.path = str(study_path)
 
     def import_study(self, metadata: RawStudy, stream: BinaryIO) -> RawStudy:
@@ -297,10 +292,6 @@ class RawFileStudyStorage(AbstractFileStudyStorage):
         Method used to normalize a study.
         It will put every matrix in the study in the matrix-store.
         """
-        if study.storage_mode == StorageMode.DATABASE:
-            # Nothing to do
-            return
-
         file_study = self.get_raw(study)
         self.normalize_file_study(file_study)
 

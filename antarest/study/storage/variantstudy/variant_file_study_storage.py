@@ -25,7 +25,6 @@ from antarest.core.model import JSON, StudyPermissionType
 from antarest.core.tasks.service import ITaskService
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import (
-    StorageMode,
     Study,
 )
 from antarest.study.storage.abstract.abstract_file_study_storage import AbstractFileStudyStorage
@@ -225,12 +224,8 @@ class VariantFileStudyStorage(AbstractFileStudyStorage):
 
     @override
     def normalize_study(self, study: Study) -> None:
-        if study.storage_mode == StorageMode.DATABASE:
-            # Nothing to do
-            return
-
         file_study = self.get_raw(study)
-        self.raw_study_service.normalize_file_study(file_study)
+        self.raw_study_service._storage_mapping[study.storage_mode].normalize_file_study(file_study)
 
     @override
     def exists(self, metadata: Study) -> bool:

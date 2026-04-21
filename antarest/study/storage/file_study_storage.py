@@ -91,3 +91,7 @@ class IFileStudyStorage(ABC):
         Returns: true if study presents in disk, false else.
 
         """
+
+    @abstractmethod
+    def denormalize_study(self, study: Study) -> None:
+        raise NotImplementedError()
