@@ -248,7 +248,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         We want to avoid fetching terms as we do not need them.
         That's why we use a specific DB request
         """
-        join_query = BC.join(table, BC.c.constraint_id == table.c.constraint_id)
+        join_query = BC.join(table, (BC.c.study_id == table.c.study_id) & (BC.c.constraint_id == table.c.constraint_id))
         q = (
             select(BC.c.time_step, table.c.matrix_id)
             .where((BC.c.study_id == self._study_id) & (BC.c.constraint_id == constraint_id))
