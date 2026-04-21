@@ -202,7 +202,7 @@ class VariantFileStudyStorage(AbstractFileStudyStorage):
         Returns: the config and study tree object
         """
         variant = _cast_study_to_variant(metadata)
-        self._generation_task_callable(variant)
+        self._generation_task_callable(variant, None)
 
         study_path = self.get_study_path(variant)
         return self.study_factory.create_from_fs(
