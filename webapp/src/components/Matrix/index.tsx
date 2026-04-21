@@ -18,7 +18,7 @@ import type { fetchMatrixFn } from "@/routes/_authenticated/studies/$studyId/exp
 import type { StudyMetadata } from "@/types/types";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { Box, Tooltip } from "@mui/material";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import CustomScrollbar from "../CustomScrollbar";
 import EmptyView from "../page/EmptyView";
@@ -30,7 +30,7 @@ import { useMatrixColumns } from "./hooks/useMatrixColumns";
 import { useMatrixData } from "./hooks/useMatrixData";
 import { useMatrixMutations } from "./hooks/useMatrixMutations";
 import { type AggregateConfig, isNonEmptyMatrix, type RowCountSource } from "./shared/types";
-import { getAggregateTypes } from "./shared/utils";
+import { calculateMatrixAggregates, getAggregateTypes } from "./shared/utils";
 import { MatrixContainer, MatrixHeader, MatrixTitle } from "./styles";
 
 interface MatrixProps {
@@ -127,6 +127,14 @@ function Matrix({
       aggregateTypes,
     });
 
+  const handleBulkPaste = useCallback(
+    (newData: number[][]) => {
+      const newAggregates = calculateMatrixAggregates({ matrix: newData, types: aggregateTypes });
+      setMatrixData({ data: newData, aggregates: newAggregates });
+    },
+    [setMatrixData, aggregateTypes],
+  );
+
   const columns = useMatrixColumns({
     data: currentState.data,
     dateTimeColumn,
@@ -199,6 +207,7 @@ function Matrix({
             dateTime={dateTime}
             onCellEdit={handleCellEdit}
             onMultipleCellsEdit={handleMultipleCellsEdit}
+            onBulkPaste={handleBulkPaste}
             readOnly={isSubmitting || readOnly}
             showPercent={showPercent}
           />

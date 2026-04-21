@@ -41,7 +41,14 @@ from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3, StorageMode
+from antarest.study.model import (
+    STUDY_VERSION_8_6,
+    STUDY_VERSION_8_8,
+    STUDY_VERSION_9_2,
+    STUDY_VERSION_9_3,
+    STUDY_VERSION_10_0,
+    StorageMode,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -176,6 +183,25 @@ def dao_and_matrix_service(
         return build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3), matrix_service
     else:
         return _build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
+
+
+@pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
+def dao_10_0(
+    request,
+    db_session: Session,
+    matrix_service: ISimpleMatrixService,
+    command_context: "CommandContext",
+    tmp_path: Path,
+    core_cache: "ICache",
+) -> StudyDao:
+    """A DAO parameterized over both backends (v10.0)."""
+    if request.param == "db":
+        return build_db_dao(db_session, matrix_service, STUDY_VERSION_10_0)
+    else:
+        # v10.0 has no study template on disk — create a v9.3 study and force its config version to 10.0.
+        dao, _ = _build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
+        dao.get_file_study().config.version = STUDY_VERSION_10_0
+        return dao
 
 
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
