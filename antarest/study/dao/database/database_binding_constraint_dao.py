@@ -31,6 +31,7 @@ from antarest.core.exceptions import BindingConstraintNotFound, BindingConstrain
 from antarest.study.business.model.binding_constraint_model import (
     OPERATOR_MATRICES_MAP,
     BindingConstraint,
+    BindingConstraintFrequency,
     BindingConstraintOperator,
     ClusterTerm,
     ConstraintId,
@@ -38,7 +39,7 @@ from antarest.study.business.model.binding_constraint_model import (
     LinkTerm,
 )
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao
-from antarest.study.dao.common import BindingConstraintSeriesMapping
+from antarest.study.dao.common import BindingConstraintSeriesMapping, SeriesId
 from antarest.study.dao.database.common import get_row_representation_as_dict
 from antarest.study.dao.database.models.binding_constraint import (
     BINDING_CONSTRAINT_CLUSTER_TERM_TABLE as CT,
@@ -58,6 +59,30 @@ from antarest.study.dao.database.models.binding_constraint import (
 from antarest.study.dao.database.models.ruleset import SCENARIO_BINDING_CONSTRAINTS_TABLE
 from antarest.study.dao.database.sql_utils import upsert_multiple
 from antarest.study.model import STUDY_VERSION_8_7
+from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
+    default_bc_hourly as default_bc_hourly_87,
+)
+from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
+    default_bc_weekly_daily as default_bc_weekly_daily_87,
+)
+from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
+    default_bc_hourly as default_bc_hourly_86,
+)
+from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
+    default_bc_weekly_daily as default_bc_weekly_daily_86,
+)
+
+DEFAULT_MATRICES_AFTER_V87 = {
+    BindingConstraintFrequency.HOURLY: default_bc_hourly_87,
+    BindingConstraintFrequency.DAILY: default_bc_weekly_daily_87,
+    BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_87,
+}
+
+DEFAULT_MATRICES_BEFORE_V87 = {
+    BindingConstraintFrequency.HOURLY: default_bc_hourly_86,
+    BindingConstraintFrequency.DAILY: default_bc_weekly_daily_86,
+    BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_86,
+}
 
 
 class _MatrixType(str, Enum):
@@ -215,15 +240,24 @@ class DatabaseBindingConstraintDao(ConstraintDao):
             raise BindingConstraintNotFound(f"Constraint {constraint_id} not found")
         return result[constraint_id]
 
-    def _get_bc_matrix(self, constraint_id: ConstraintId, table: Table) -> pl.DataFrame:
-        row = self._db_session.execute(
-            select(table).where((table.c.study_id == self._study_id) & (table.c.constraint_id == constraint_id))
-        ).fetchone()
+    def _get_bc_matrix_and_frequency(
+        self, constraint_id: ConstraintId, table: Table
+    ) -> tuple[SeriesId, BindingConstraintFrequency]:
+        """
+        We need to fetch a constraint frequency to know the default matrix to use.
+        We want to avoid fetching terms as we do not need them.
+        That's why we use a specific DB request
+        """
+        join_query = BC.join(table, (BC.c.study_id == table.c.study_id) & (BC.c.constraint_id == table.c.constraint_id))
+        q = (
+            select(BC.c.time_step, table.c.matrix_id)
+            .where((BC.c.study_id == self._study_id) & (BC.c.constraint_id == constraint_id))
+            .select_from(join_query)
+        )
+        row = self._db_session.execute(q).fetchone()
         if row is None:
             raise BindingConstraintNotFound(f"Matrix for constraint {constraint_id} not found")
-        # TODO: convert null matrix to a properly-sized zero matrix based on the constraint's time step,
-        #  so the DB DAO returns the same shape as the file DAO after a time-step change.
-        return self.get_impl().get_matrix(row.matrix_id)
+        return str(row.matrix_id), row.time_step
 
     def _raise_the_right_binding_constraint_exception(
         self, bc_ids: set[str], exc: IntegrityError | None = None
@@ -248,19 +282,23 @@ class DatabaseBindingConstraintDao(ConstraintDao):
 
     @override
     def get_constraint_values_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
-        return self._get_bc_matrix(constraint_id, BINDING_CONSTRAINT_VALUES_MATRIX_TABLE)
+        matrix_id, frequency = self._get_bc_matrix_and_frequency(constraint_id, BINDING_CONSTRAINT_VALUES_MATRIX_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=DEFAULT_MATRICES_BEFORE_V87[frequency])
 
     @override
     def get_constraint_less_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
-        return self._get_bc_matrix(constraint_id, BINDING_CONSTRAINT_LT_MATRIX_TABLE)
+        matrix_id, frequency = self._get_bc_matrix_and_frequency(constraint_id, BINDING_CONSTRAINT_LT_MATRIX_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=DEFAULT_MATRICES_AFTER_V87[frequency])
 
     @override
     def get_constraint_greater_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
-        return self._get_bc_matrix(constraint_id, BINDING_CONSTRAINT_GT_MATRIX_TABLE)
+        matrix_id, frequency = self._get_bc_matrix_and_frequency(constraint_id, BINDING_CONSTRAINT_GT_MATRIX_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=DEFAULT_MATRICES_AFTER_V87[frequency])
 
     @override
     def get_constraint_equal_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
-        return self._get_bc_matrix(constraint_id, BINDING_CONSTRAINT_EQ_MATRIX_TABLE)
+        matrix_id, frequency = self._get_bc_matrix_and_frequency(constraint_id, BINDING_CONSTRAINT_EQ_MATRIX_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=DEFAULT_MATRICES_AFTER_V87[frequency])
 
     @override
     def get_all_constraint_values_matrix(self) -> BindingConstraintSeriesMapping:
