@@ -22,6 +22,7 @@ import {
   generateDateTime,
   generateTimeSeriesColumns,
   getAggregateTypes,
+  parseClipboardNumber,
 } from "../utils";
 import {
   AGGREGATE_CONFIG_CASES,
@@ -127,6 +128,53 @@ describe("Matrix Utils", () => {
       test.each(cases)("$description", ({ value, maxDecimals, expected }) => {
         expect(formatGridNumber({ value, maxDecimals })).toBe(expected);
       });
+    });
+  });
+
+  describe("parseClipboardNumber", () => {
+    test.each([
+      // International / SI (space thousands, period decimal)
+      { input: "1 234 567.89", expected: 1234567.89 },
+      { input: "1 234 567", expected: 1234567 },
+      // US / UK (comma thousands, period decimal)
+      { input: "1,234,567.89", expected: 1234567.89 },
+      { input: "1,234,567", expected: 1234567 },
+      { input: "1,234.56", expected: 1234.56 },
+      { input: "1,234", expected: 1234 },
+      // European (period thousands, comma decimal)
+      { input: "1.234.567,89", expected: 1234567.89 },
+      { input: "1.234.567", expected: 1234567 },
+      { input: "1.234,56", expected: 1234.56 },
+      { input: "1.234", expected: 1234 },
+      // Plain numbers
+      { input: "1234567.89", expected: 1234567.89 },
+      { input: "1234567", expected: 1234567 },
+      // Single comma: exactly 3 digits after → thousands separator (US/UK "4,567" = 4567)
+      { input: "4,567", expected: 4567 },
+      { input: "1,000", expected: 1000 },
+      // Single comma: ≠ 3 digits after → decimal separator (European "1234,56" = 1234.56)
+      { input: "1234,56", expected: 1234.56 },
+      { input: "0,5", expected: 0.5 },
+      { input: "12,1234", expected: 12.1234 },
+      // Negative numbers
+      { input: "-1,234,567.89", expected: -1234567.89 },
+      { input: "-1.234.567,89", expected: -1234567.89 },
+      { input: "-1234,56", expected: -1234.56 },
+      // Small decimals
+      { input: "0.5", expected: 0.5 },
+      // Whitespace padding
+      { input: "  1 234.5  ", expected: 1234.5 },
+      // Invalid
+      { input: "", expected: NaN },
+      { input: "abc", expected: NaN },
+    ])('parses "$input" → $expected', ({ input, expected }) => {
+      const result = parseClipboardNumber(input);
+
+      if (Number.isNaN(expected)) {
+        expect(result).toBeNaN();
+      } else {
+        expect(result).toBe(expected);
+      }
     });
   });
 
