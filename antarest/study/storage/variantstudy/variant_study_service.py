@@ -708,6 +708,35 @@ class VariantStudyService(AbstractStorageService):
             logger.error(f"⚡ Fail to generate variant study {metadata.id}", exc_info=e)
             raise VariantGenerationError(f"Error while generating variant {metadata.id} {e}") from None
 
+    def clear_all_snapshots(self, retention_time: timedelta) -> str:
+        """
+        Admin command that clear all variant snapshots older than `retention_hours` (in hours).
+        Only available for admin users.
+
+        Args:
+            retention_time: number of retention hours
+        Returns: None
+
+        Raises:
+            UserHasNotPermissionError
+        """
+        user = require_current_user()
+        if not (user.is_site_admin() or user.is_admin_token()):
+            raise UserHasNotPermissionError()
+
+        task_name = f"Cleaning all snapshot updated or accessed at least {humanize.precisedelta(retention_time)} ago."
+
+        snapshot_clearing_task_instance = SnapshotCleanerTask(variant_study_service=self, retention_time=retention_time)
+
+        return self.task_service.add_task(
+            snapshot_clearing_task_instance,
+            task_name,
+            task_type=TaskType.SNAPSHOT_CLEARING,
+            ref_id=None,
+            progress=None,
+            custom_event_messages=None,
+        )
+
 
 class SnapshotCleanerTask:
     def __init__(

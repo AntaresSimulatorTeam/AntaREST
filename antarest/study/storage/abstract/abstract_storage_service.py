@@ -13,6 +13,8 @@
 import logging
 from abc import ABC
 
+from typing_extensions import override
+
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
@@ -33,6 +35,7 @@ class AbstractStorageService(IStudyStorage, ABC):
         self.config: Config = config
         self.cache = cache
 
+    @override
     def get_study_information(
         self,
         study: Study,
