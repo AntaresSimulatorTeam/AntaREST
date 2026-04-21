@@ -52,7 +52,7 @@ class RawStudyService(AbstractStorageService):
         self._matrix_service = matrix_service
         self._storage_mapping: dict[StorageMode, IStudyStorage] = {
             StorageMode.DATABASE: FileStudyStorage(config=config, cache=cache, matrix_service=matrix_service),
-            StorageMode.FILESYSTEM: DatabaseStudyStorage(config=config, cache=cache, matrix_service=matrix_service),
+            StorageMode.FILESYSTEM: DatabaseStudyStorage(config=config, matrix_service=matrix_service),
         }
         RawStudyMatrixUsageProvider(StudyMetadataRepository(cache_service=cache), matrix_service=self._matrix_service)
         self.cache = cache

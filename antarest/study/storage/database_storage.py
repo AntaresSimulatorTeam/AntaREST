@@ -11,16 +11,27 @@
 # This file is part of the Antares project.
 import logging
 
+from typing_extensions import override
+
 from antarest.core.config import Config
-from antarest.core.interfaces.cache import ICache
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.model import Study
 from antarest.study.storage.study_storage_interface import IStudyStorage
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 logger = logging.getLogger(__name__)
 
 
 class DatabaseStudyStorage(IStudyStorage):
-    def __init__(self, cache: ICache, config: Config, matrix_service: ISimpleMatrixService):
+    def __init__(
+        self, config: Config, matrix_service: ISimpleMatrixService, generator_matrix_constants: GeneratorMatrixConstants
+    ):
         self._matrix_service = matrix_service
-        self.cache = cache
-        self.config = config
+        self._generator_matrix_constants = generator_matrix_constants
+        self._config = config
+
+    @override
+    def get_dao(self, study: Study) -> DatabaseStudyDao:
+        return DatabaseStudyDao(study.id, db.session, self._matrix_service, self._generator_matrix_constants)

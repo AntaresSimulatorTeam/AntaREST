@@ -10,8 +10,13 @@
 #
 # This file is part of the Antares project.
 
-from abc import ABC
+from abc import ABC, abstractmethod
+
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.model import Study
 
 
 class IStudyStorage(ABC):
-    pass
+    @abstractmethod
+    def get_dao(self, study: Study) -> StudyDao:
+        raise NotImplementedError()

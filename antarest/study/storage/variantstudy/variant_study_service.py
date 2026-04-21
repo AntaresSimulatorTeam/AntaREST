@@ -114,9 +114,12 @@ class VariantStudyService(AbstractStorageService):
         self.command_factory = command_factory
         self.study_factory = study_factory
         self._matrix_service = matrix_service
+        ctx = command_factory.command_context
         self._storage_mapping: dict[StorageMode, IStudyStorage] = {
-            StorageMode.DATABASE: FileStudyStorage(config=config, cache=cache, matrix_service=matrix_service),
-            StorageMode.FILESYSTEM: DatabaseStudyStorage(config=config, cache=cache, matrix_service=matrix_service),
+            StorageMode.DATABASE: FileStudyStorage(config=config, cache=cache, command_context=ctx),
+            StorageMode.FILESYSTEM: DatabaseStudyStorage(
+                config=config, matrix_service=matrix_service, generator_matrix_constants=ctx.generator_matrix_constants
+            ),
         }
         CommandMatrixUsageProvider(variant_study_repo=repository, command_factory=command_factory)
         CommandBlobUsageProvider(variant_study_repo=repository, command_factory=command_factory)
@@ -143,7 +146,7 @@ class VariantStudyService(AbstractStorageService):
 
     @override
     def get_study_dao(self, study: Study) -> StudyDao:
-        raise NotImplementedError()
+        return self._storage_mapping[study.storage_mode].get_dao(study)
 
     @override
     def export_study_flat(self, study: Study, dst_path: Path) -> None:
