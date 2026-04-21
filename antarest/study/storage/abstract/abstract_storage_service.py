@@ -69,18 +69,6 @@ class AbstractStorageService(IStudyService, ABC):
             parent_id=study.parent_id,
         )
 
-    def _update_study_data_from_files(self, file_study: FileStudy, metadata: Study) -> None:
-        logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
-        horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
-        study_antares = file_study.tree.get(url=["study", "antares"])
-        author = study_antares.get("author")
-        editor = study_antares.get("editor", author)
-        assert isinstance(author, str)
-        assert isinstance(editor, str)
-        assert isinstance(horizon, (str, int))
-        metadata.horizon = horizon
-        metadata.author = author
-        metadata.editor = editor
 
     @staticmethod
     def _get_user_name_from_id(user_id: int) -> str:
