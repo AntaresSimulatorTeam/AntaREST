@@ -140,10 +140,12 @@ describe("Matrix Utils", () => {
       { input: "1,234,567.89", expected: 1234567.89 },
       { input: "1,234,567", expected: 1234567 },
       { input: "1,234.56", expected: 1234.56 },
+      { input: "1,234", expected: 1234 },
       // European (period thousands, comma decimal)
       { input: "1.234.567,89", expected: 1234567.89 },
       { input: "1.234.567", expected: 1234567 },
       { input: "1.234,56", expected: 1234.56 },
+      { input: "1.234", expected: 1234 },
       // Plain numbers
       { input: "1234567.89", expected: 1234567.89 },
       { input: "1234567", expected: 1234567 },

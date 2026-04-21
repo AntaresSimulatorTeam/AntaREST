@@ -55,11 +55,10 @@ import type {
  * Parses a numeric string using any locale's separator conventions
  * (US "1,234.56", European "1.234,56", International "1 234.56", etc.).
  *
- * Of the two ambiguous separators (`,` and `.`), whichever appears last is
- * treated as the decimal; the other is stripped as a thousands separator.
- * Whitespace is always stripped. A lone comma followed by exactly three digits
- * is treated as a thousands separator ("4,567" → 4567); otherwise decimal
- * ("1234,56" → 1234.56).
+ * Whitespace is stripped. Both separators present → the one appearing last is
+ * the decimal. Single separator → exactly three trailing digits means thousands
+ * ("1,234" = 1234, "1.234" = 1234), anything else means decimal ("1,5" = 1.5,
+ * "1.5" = 1.5).
  *
  * @param raw - The raw numeric string from clipboard or user input.
  * @returns The parsed number, or `NaN` if the string is empty or unparsable.
@@ -92,17 +91,27 @@ function normalizeLocaleSeparators(value: string): string {
       : value.replace(/\./g, "").replace(",", "."); // "1.234.567,89" → "1234567.89"
   }
 
-  // Only periods -> 2+ means thousands-only, 1 is a standard decimal.
+  // Only periods.
   if (hasPeriod) {
-    return (value.match(/\./g) ?? []).length > 1 ? value.replace(/\./g, "") : value;
+    const periodCount = (value.match(/\./g) ?? []).length;
+
+    if (periodCount > 1) {
+      return value.replace(/\./g, ""); // "1.234.567" → "1234567"
+    }
+
+    // Single period: 3 trailing digits → thousands, else decimal.
+    const digitsAfterPeriod = value.length - lastPeriod - 1;
+    return digitsAfterPeriod === 3 ? value.replace(".", "") : value; // "1.234" → "1234", "0.5" stays
   }
 
-  // Only commas -> 2+ means thousands-only.
-  if ((value.match(/,/g) ?? []).length > 1) {
-    return value.replace(/,/g, "");
+  // Only commas.
+  const commaCount = (value.match(/,/g) ?? []).length;
+
+  if (commaCount > 1) {
+    return value.replace(/,/g, ""); // "1,234,567" → "1234567"
   }
 
-  // Single comma is ambiguous, 3 trailing digits -> thousands, else decimal.
+  // Single comma: 3 trailing digits → thousands, else decimal.
   const digitsAfterComma = value.length - lastComma - 1;
   return digitsAfterComma === 3
     ? value.replace(",", "") // "4,567" → "4567"
