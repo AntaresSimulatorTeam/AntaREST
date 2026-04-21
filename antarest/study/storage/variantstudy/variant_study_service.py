@@ -114,7 +114,7 @@ class VariantStudyService(AbstractStorageService):
         self.command_factory = command_factory
         self.study_factory = study_factory
         self._matrix_service = matrix_service
-        self._storage_mapping = {
+        self._storage_mapping: dict[StorageMode, VariantFileStudyStorage | VariantDataBaseStudyStorage] = {
             StorageMode.DATABASE: variant_database_study_storage,
             StorageMode.FILESYSTEM: variant_file_study_storage,
         }
