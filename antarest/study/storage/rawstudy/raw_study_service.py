@@ -120,3 +120,6 @@ class RawStudyService(AbstractStorageService):
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
         return self._storage_mapping[metadata.storage_mode].import_study(metadata, stream)
+
+    def denormalize_study(self, study: Study) -> None:
+        raise NotImplementedError()
