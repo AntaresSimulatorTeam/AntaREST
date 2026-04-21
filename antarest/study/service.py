@@ -719,7 +719,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
 
-        file_study = self.storage_service.get_storage(study).get_study_dao(study).get_file_study()
+        file_study = self.get_file_study(study)
         parts = [item for item in url.split("/") if item]
 
         if url == "" and depth == -1:
@@ -754,7 +754,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
 
-        file_study = self.storage_service.get_storage(study).get_study_dao(study).get_file_study()
+        file_study = self.get_file_study(study)
         parts = [item for item in url.split("/") if item]
         file_node = file_study.tree.get_node(parts)
 
@@ -946,7 +946,7 @@ class StudyService:
         return self.storage_service.get_storage(study).get_study_interface(study)
 
     def get_file_study(self, study: Study) -> FileStudy:
-        return self.storage_service.get_storage(study).get_raw(study)
+        return self.storage_service.get_storage(study).get_study_dao(study).get_file_study()
 
     def create_study(
         self,
