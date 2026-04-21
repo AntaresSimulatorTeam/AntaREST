@@ -50,6 +50,9 @@ class StudyStorageService:
         self.variant_study_service = variant_study_service
 
     def get_file_study_storage(self, study: Study) -> IFileStudyStorage:
+        """
+        Introduced for legacy reasons for `/raw` endpoints.
+        """
         raise NotImplementedError()
 
     def get_storage(self, study: Study) -> IStudyStorage:
