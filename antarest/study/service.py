@@ -754,9 +754,11 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
 
-        output = self.storage_service.get_storage(study).get_file(study, url)
+        file_study = self.storage_service.get_storage(study).get_study_dao(study).get_file_study()
+        parts = [item for item in url.split("/") if item]
+        file_node = file_study.tree.get_node(parts)
 
-        return output
+        return file_node.get_file_content()
 
     def get_comments(self, study_id: str) -> str:
         """
