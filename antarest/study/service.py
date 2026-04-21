@@ -483,8 +483,7 @@ class RawStudyInterface(StudyInterface):
     def version(self) -> StudyVersion:
         return self._version
 
-    @override
-    def get_files(self) -> FileStudy:
+    def _get_files(self) -> FileStudy:
         if not self._cached_file_study:
             self._cached_file_study = self._raw_study_service.get_raw(self._study)
         return self._cached_file_study
@@ -527,7 +526,7 @@ class RawStudyInterface(StudyInterface):
         if self._study.storage_mode == StorageMode.DATABASE:
             return DatabaseStudyDao(self._study.id, db.session, self._matrix_service, matrix_constants)
         return FileStudyTreeDao(
-            self.get_files(),
+            self._get_files(),
             is_managed(self._study),
             matrix_constants,
             context.blob_service,
@@ -576,14 +575,10 @@ class VariantStudyInterface(StudyInterface):
         return self._version
 
     @override
-    def get_files(self) -> FileStudy:
-        return self._variant_service.get_raw(self._study)
-
-    @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
         context = self._variant_service.command_factory.command_context
         return FileStudyTreeDao(
-            self.get_files(),
+            self._variant_service.get_raw(self._study),
             True,
             context.generator_matrix_constants,
             context.blob_service,
