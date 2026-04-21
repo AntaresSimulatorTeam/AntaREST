@@ -58,6 +58,7 @@ from antarest.study.model import (
     StudyMetadataDTO,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter
+from antarest.study.service import VariantStudyInterface
 from antarest.study.storage.abstract.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.database_storage import DatabaseStudyStorage
 from antarest.study.storage.file_study_storage import FileStudyStorage
@@ -144,7 +145,8 @@ class VariantStudyService(AbstractStorageService):
 
     @override
     def get_study_interface(self, study: Study) -> StudyInterface:
-        raise NotImplementedError()
+        variant_study = _cast_study_to_variant(study)
+        return VariantStudyInterface(self, variant_study)
 
     @override
     def get_study_dao(self, study: Study) -> StudyDao:
