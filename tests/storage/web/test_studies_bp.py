@@ -43,7 +43,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_8,
     OwnerInfo,
     StorageMode,
-    StudyMetadataDTO,
+    StudyMetadataDTO, StudyType,
 )
 from antarest.study.service import StudyService
 from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
@@ -226,7 +226,7 @@ def test_list_studies(tmp_path: str) -> None:
             version=STUDY_VERSION_7_0,
             created=str(datetime.utcfromtimestamp(0)),
             updated=str(datetime.utcfromtimestamp(0)),
-            type="RawStudy",
+            type=StudyType.RAW,
             owner=OwnerInfo(name="foo"),
             groups=[],
             public_mode=PublicMode.FULL,
@@ -240,7 +240,7 @@ def test_list_studies(tmp_path: str) -> None:
             version=STUDY_VERSION_7_0,
             created=str(datetime.utcfromtimestamp(0)),
             updated=str(datetime.utcfromtimestamp(0)),
-            type="RawStudy",
+            type=StudyType.RAW,
             owner=OwnerInfo(name="foo"),
             groups=[],
             public_mode=PublicMode.FULL,
@@ -266,7 +266,7 @@ def test_study_metadata(tmp_path: str) -> None:
         version=STUDY_VERSION_7_0,
         created=str(datetime.utcfromtimestamp(0)),
         updated=str(datetime.utcfromtimestamp(0)),
-        type="RawStudy",
+        type=StudyType.RAW,
         owner=OwnerInfo(name="foo"),
         groups=[],
         public_mode=PublicMode.FULL,
