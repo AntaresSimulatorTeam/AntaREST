@@ -111,7 +111,12 @@ class FileStudyRenewableDao(RenewableDao, ABC):
 
     @override
     def get_renewable_series(self, area_id: str, renewable_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(_get_renewable_series_path(area_id, renewable_id))
+        if area_id not in self.get_file_study().config.areas:
+            raise AreaNotFound(area_id)
+        try:
+            return self.get_impl().get_matrix(_get_renewable_series_path(area_id, renewable_id))
+        except ChildNotFoundError:
+            raise RenewableClusterNotFound(area_id, renewable_id) from None
 
     @override
     def get_all_renewables_series(self) -> RenewableSeriesMapping:
@@ -165,9 +170,14 @@ class FileStudyRenewableDao(RenewableDao, ABC):
         matrices_mapping: dict[str, list[MatrixNode]] = {}
         study_data = self.get_file_study()
         for area_id, value in series.items():
+            if area_id not in study_data.config.areas:
+                raise AreaNotFound(area_id)
             for renewable_id, series_id in value.items():
                 url = _get_renewable_series_path(area_id, renewable_id)
-                node = study_data.tree.get_node(url)
+                try:
+                    node = study_data.tree.get_node(url)
+                except ChildNotFoundError:
+                    raise RenewableClusterNotFound(area_id, renewable_id) from None
                 assert isinstance(node, MatrixNode)
                 matrix_id = extract_matrix_id(series_id)
                 matrices_mapping.setdefault(matrix_id, []).append(node)
