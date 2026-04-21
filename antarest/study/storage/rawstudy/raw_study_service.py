@@ -14,9 +14,12 @@ import logging
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.model import StorageMode
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
+from antarest.study.storage.rawstudy.raw_database_storage import RawDataBaseStudyStorage
+from antarest.study.storage.rawstudy.raw_file_study_storage import RawFileStudyStorage
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 
 logger = logging.getLogger(__name__)
@@ -30,10 +33,21 @@ class RawStudyService(AbstractStorageService):
     """
 
     def __init__(
-        self, config: Config, study_factory: StudyFactory, cache: ICache, matrix_service: ISimpleMatrixService
+        self,
+        config: Config,
+        study_factory: StudyFactory,
+        cache: ICache,
+        matrix_service: ISimpleMatrixService,
+        raw_file_study_storage: RawFileStudyStorage,
+        raw_database_study_storage: RawDataBaseStudyStorage,
     ):
+
         super().__init__(config=config, cache=cache)
 
         self.study_factory = study_factory
         self._matrix_service = matrix_service
+        self._storage_mapping = {
+            StorageMode.DATABASE: raw_database_study_storage,
+            StorageMode.FILESYSTEM: raw_file_study_storage,
+        }
         RawStudyMatrixUsageProvider(StudyMetadataRepository(cache_service=cache), matrix_service=self._matrix_service)

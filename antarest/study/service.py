@@ -117,7 +117,6 @@ from antarest.study.business.xpansion_management import (
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
-from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
@@ -408,7 +407,7 @@ class StudyUpgraderTask:
                 study_upgrader = StudyUpgrader(study_path, target_version)
                 if is_managed(study_to_upgrade) and study_upgrader.should_denormalize_study():
                     # We have to denormalize the study because the upgrade impacts study matrices
-                    self.storage_service.raw_study_service.denormalize_study(study_to_upgrade)
+                    self.storage_service.get_file_study_storage(study_to_upgrade).denormalize_study(study_to_upgrade)
                     is_study_denormalized = True
                 study_upgrader.upgrade()
                 remove_from_cache(self.cache_service, study_to_upgrade.id)
@@ -522,18 +521,7 @@ class RawStudyInterface(StudyInterface):
         self._variant_study_service.on_parent_change(study.id)
 
     def _get_dao(self) -> StudyDao:
-        context = self._variant_study_service.command_factory.command_context
-        matrix_constants = context.generator_matrix_constants
-        if self._study.storage_mode == StorageMode.DATABASE:
-            return DatabaseStudyDao(self._study.id, db.session, self._matrix_service, matrix_constants)
-        return FileStudyTreeDao(
-            self.get_files(),
-            is_managed(self._study),
-            matrix_constants,
-            context.blob_service,
-            self._matrix_service,
-            self._raw_study_service.cache,
-        )
+        return self._raw_study_service.get_study_dao(self._study)
 
     @override
     def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
@@ -581,15 +569,7 @@ class VariantStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        context = self._variant_service.command_factory.command_context
-        return FileStudyTreeDao(
-            self.get_files(),
-            True,
-            context.generator_matrix_constants,
-            context.blob_service,
-            context.matrix_service,
-            self._variant_service.cache,
-        ).read_only()
+        return self._variant_service.get_study_dao(self._study).read_only()
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:

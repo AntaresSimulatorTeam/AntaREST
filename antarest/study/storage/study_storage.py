@@ -14,6 +14,7 @@ from abc import ABC, abstractmethod
 from pathlib import PurePosixPath
 
 from antarest.study.business.study_interface import StudyInterface
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import Study, StudyMetadataDTO
 
 
@@ -48,4 +49,8 @@ class IStudyStorage(ABC):
 
     @abstractmethod
     def normalize_study(self, study: Study) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_study_dao(self, study: Study) -> StudyDao:
         raise NotImplementedError()
