@@ -14,7 +14,7 @@ import logging
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.model import StorageMode
+from antarest.study.model import RawStudy, StorageMode, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
@@ -51,3 +51,9 @@ class RawStudyService(AbstractStorageService):
             StorageMode.FILESYSTEM: raw_file_study_storage,
         }
         RawStudyMatrixUsageProvider(StudyMetadataRepository(cache_service=cache), matrix_service=self._matrix_service)
+
+    def update_from_metadata(self, study: Study) -> None:
+        self._storage_mapping[study.storage_mode].update_from_metadata(study, fallback_on_default=True)
+
+    def update_name_and_version_from_raw_meta(self, study: RawStudy) -> bool:
+        return self._storage_mapping[study.storage_mode].update_name_and_version_from_raw_meta(study)

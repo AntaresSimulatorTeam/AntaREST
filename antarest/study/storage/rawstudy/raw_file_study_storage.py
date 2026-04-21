@@ -32,7 +32,7 @@ from antarest.core.utils.archives import (
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StorageMode, Study
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study
 from antarest.study.storage.abstract.abstract_file_study_storage import AbstractFileStudyStorage
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
