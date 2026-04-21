@@ -14,5 +14,10 @@ from antarest.study.storage.database_study_storage import IDataBaseStudyStorage
 
 
 class RawDataBaseStudyStorage(IDataBaseStudyStorage):
-    def update_from_raw_metadata(self, metadata: RawStudy, fallback_on_default: bool | None = False) -> None:
-        raise NotImplementedError()
+    def update_from_raw_metadata(self, study: RawStudy, fallback_on_default: bool | None = False) -> None:
+        # Nothing to do
+        pass
+
+    def update_name_and_version_from_raw_meta(self, study: RawStudy) -> None:
+        # Nothing to do
+        pass
