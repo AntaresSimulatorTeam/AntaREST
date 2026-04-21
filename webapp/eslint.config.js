@@ -93,8 +93,10 @@ export default [
             },
             {
               group: ["react"],
+              // Targets TYPE imports (PascalCase). Hooks (`use*`) are excluded so named
+              // imports like `useEffectEvent` are allowed.
               importNamePattern:
-                "^(React|Function|Ref|Mutable|CSS|Component|Props|Form|Element)|(Event|Handler|Attributes)$",
+                "^(?!use)(React|Function|Ref|Mutable|CSS|Component|Props|Form|Element)|^(?!use).*(Event|Handler|Attributes)$",
               message:
                 'Use `React.[TYPE]` (e.g. `React.ReactNode`) instead of importing it directly from "react".',
             },
