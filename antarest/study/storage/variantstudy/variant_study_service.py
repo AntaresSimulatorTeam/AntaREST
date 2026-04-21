@@ -781,10 +781,6 @@ class VariantStudyService(AbstractStorageService):
     def export_study_flat(self, study: Study, dst_path: Path) -> None:
         raise NotImplementedError()
 
-    @override
-    def find_archive_path(self, study: Study) -> Path:
-        raise NotImplementedError()
-
     def clear_snapshot(self, variant_study: VariantStudy) -> None:
         self._storage_mapping[variant_study.storage_mode].clear_snapshot(variant_study)
         self.invalidate_snapshot(variant_study)
