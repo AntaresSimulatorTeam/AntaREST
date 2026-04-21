@@ -13,7 +13,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path, PurePosixPath
 
-from antarest.study.business.study_interface import StudyInterface
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import Study, StudyMetadataDTO
 
@@ -41,10 +40,6 @@ class IStudyService(ABC):
 
     @abstractmethod
     def get_study_information(self, metadata: Study, folder_path: str | None = None) -> StudyMetadataDTO:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def get_study_interface(self, study: Study) -> StudyInterface:
         raise NotImplementedError()
 
     @abstractmethod

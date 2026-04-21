@@ -47,7 +47,6 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, current_time, suppress_exception
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
-from antarest.study.business.study_interface import StudyInterface
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
@@ -58,7 +57,6 @@ from antarest.study.model import (
     StudyMetadataDTO,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter
-from antarest.study.service import VariantStudyInterface
 from antarest.study.storage.abstract.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.database_storage import DatabaseStudyStorage
 from antarest.study.storage.file_study_storage import FileStudyStorage
@@ -142,11 +140,6 @@ class VariantStudyService(AbstractStorageService):
     @override
     def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
         raise NotImplementedError()
-
-    @override
-    def get_study_interface(self, study: Study) -> StudyInterface:
-        variant_study = _cast_study_to_variant(study)
-        return VariantStudyInterface(self, variant_study)
 
     @override
     def get_study_dao(self, study: Study) -> StudyDao:

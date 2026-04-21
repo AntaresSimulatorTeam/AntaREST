@@ -18,11 +18,9 @@ from typing_extensions import override
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.study_interface import StudyInterface
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import RawStudy, StorageMode, Study
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.service import RawStudyInterface
 from antarest.study.storage.abstract.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.database_storage import DatabaseStudyStorage
 from antarest.study.storage.file_study_storage import FileStudyStorage
@@ -78,10 +76,6 @@ class RawStudyService(AbstractStorageService):
     @override
     def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
         raise NotImplementedError()
-
-    @override
-    def get_study_interface(self, study: Study) -> StudyInterface:
-        return RawStudyInterface(self, study)
 
     @override
     def get_study_dao(self, study: Study) -> StudyDao:

@@ -925,7 +925,21 @@ class StudyService:
         """
         Creates the business interface to a particular study.
         """
-        return self.storage_service.get_storage(study).get_study_interface(study)
+        if isinstance(study, VariantStudy):
+            return VariantStudyInterface(
+                self.storage_service.variant_study_service,
+                study,
+            )
+        elif isinstance(study, RawStudy):
+            return RawStudyInterface(
+                self.storage_service.raw_study_service,
+                self.storage_service.variant_study_service,
+                self.user_service,
+                self.repository,
+                study,
+            )
+        else:
+            raise ValueError(f"Unsupported study type '{study.type}'")
 
     def get_file_study(self, study: Study) -> FileStudy:
         return self.storage_service.get_storage(study).get_study_dao(study).get_file_study()
