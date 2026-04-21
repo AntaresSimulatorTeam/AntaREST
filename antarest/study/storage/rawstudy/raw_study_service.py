@@ -58,7 +58,7 @@ class RawStudyService(AbstractStorageService):
         }
         RawStudyMatrixUsageProvider(StudyMetadataRepository(cache_service=cache), matrix_service=self._matrix_service)
 
-    def update_from_raw_metadata(self, study: Study) -> None:
+    def update_from_raw_metadata(self, study: RawStudy) -> None:
         self._storage_mapping[study.storage_mode].update_from_raw_metadata(study, fallback_on_default=True)
 
     def update_name_and_version_from_raw_meta(self, study: RawStudy) -> bool:
