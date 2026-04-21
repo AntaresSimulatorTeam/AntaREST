@@ -17,6 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.config.compatibility_parameters_model import (
     HydroPmax,
 )
@@ -741,6 +742,25 @@ class TestCascadeDelete:
             for table in _ALL_HYDRO_MATRIX_TABLES:
                 rows = db_session.execute(select(table)).fetchall()
                 assert rows == [], f"Table {table.name} should be empty after cascade delete"
+
+    def test_errors_inside_save_matrices(self, dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService]) -> None:
+        dao, matrix_service = dao_and_matrix_service
+
+        series_id = matrix_service.create(pl.DataFrame([[4]]))
+
+        save_methods = [
+            dao.save_hydro_credit_modulations,
+            dao.save_hydro_water_values,
+            dao.save_hydro_inflow_pattern,
+            dao.save_hydro_max_daily_gen_energy,
+            dao.save_hydro_max_daily_pump_energy,
+            dao.save_hydro_maxpower,
+            dao.save_hydro_reservoir,
+        ]
+
+        for save_method in save_methods:
+            with pytest.raises(AreaNotFound, match="Area is not found: 'fake_area'"):
+                save_method({"fake_area": series_id})
 
 
 class TestConvertHydroPmax:

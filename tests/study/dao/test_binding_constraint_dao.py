@@ -810,3 +810,20 @@ def test_cascade_deletes(
             ],
             study_id,
         )
+
+
+def test_errors_inside_save_matrices(dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService]) -> None:
+    dao, matrix_service = dao_and_matrix_service
+
+    series_id = matrix_service.create(pl.DataFrame([[4]]))
+
+    save_methods = [
+        dao.save_constraint_less_term_matrix,
+        dao.save_constraint_greater_term_matrix,
+        dao.save_constraint_equal_term_matrix,
+        dao.save_constraint_values_matrix,
+    ]
+
+    for save_method in save_methods:
+        with pytest.raises(BindingConstraintNotFound, match="fake_bc"):
+            save_method({ConstraintId("fake_bc"): series_id})

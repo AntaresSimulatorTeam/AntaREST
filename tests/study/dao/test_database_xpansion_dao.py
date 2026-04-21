@@ -614,6 +614,37 @@ class TestXpansionResources:
         with pytest.raises(XpansionFileNotFoundError):
             dao.delete_xpansion_resource(XpansionResourceFileType.WEIGHTS, "mc_weights.csv")
 
+    def test_get_all_xpansion_weights_returns_saved_data(
+        self, db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, ISimpleMatrixService]
+    ) -> None:
+        """get_all_xpansion_weights should return {filename: matrix_id} for all saved weights."""
+        db_dao, matrix_service = db_dao_930_and_matrix_service
+        db_dao.create_xpansion_configuration()
+
+        series_id = matrix_service.create(pl.DataFrame({"col": [1.0, 2.0]}))
+        db_dao.save_xpansion_weight({"weights.csv": series_id})
+
+        assert db_dao.get_all_xpansion_weights() == {"weights.csv": series_id}
+
+    def test_get_all_xpansion_capacities_returns_saved_data(
+        self, db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, ISimpleMatrixService]
+    ) -> None:
+        """get_all_xpansion_capacities should return {filename: matrix_id} for all saved capacities."""
+        db_dao, matrix_service = db_dao_930_and_matrix_service
+        db_dao.create_xpansion_configuration()
+
+        series_id = matrix_service.create(pl.DataFrame({"col": [1.0, 2.0]}))
+        db_dao.save_xpansion_capacity({"capa.txt": series_id})
+
+        assert db_dao.get_all_xpansion_capacities() == {"capa.txt": series_id}
+
+    def test_get_all_xpansion_constraints_returns_saved_data(self, db_dao: DatabaseStudyDao) -> None:
+        """get_all_xpansion_constraints should return {filename: content-bytes} for all saved constraints."""
+        db_dao.create_xpansion_configuration()
+        db_dao.save_xpansion_constraint({"constraint.txt": b"content-bytes"})
+
+        assert db_dao.get_all_xpansion_constraints() == {"constraint.txt": b"content-bytes"}
+
     def test_checks_constraint_can_be_deleted_raises_if_used_in_settings(self, dao: StudyDao) -> None:
         """checks_xpansion_resource_can_be_deleted should raise if constraint file is referenced by settings."""
         dao.create_xpansion_configuration()
