@@ -18,7 +18,7 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import Study, StudyMetadataDTO
 
 
-class IStudyStorage(ABC):
+class IStudyService(ABC):
     @abstractmethod
     def get_disk_usage(self, study: Study) -> int:
         raise NotImplementedError()

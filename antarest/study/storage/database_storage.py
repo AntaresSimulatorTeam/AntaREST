@@ -19,7 +19,7 @@ from antarest.study.storage.study_storage_interface import IStudyStorage
 logger = logging.getLogger(__name__)
 
 
-class FileStudyStorage(IStudyStorage):
+class DatabaseStudyStorage(IStudyStorage):
     def __init__(self, cache: ICache, config: Config, matrix_service: ISimpleMatrixService):
         super().__init__(config=config, cache=cache, matrix_service=matrix_service)
         self._matrix_service = matrix_service

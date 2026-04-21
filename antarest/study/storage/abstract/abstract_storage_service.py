@@ -27,12 +27,12 @@ from antarest.study.model import (
     Study,
     StudyMetadataDTO,
 )
-from antarest.study.storage.study_storage import IStudyStorage
+from antarest.study.storage.study_service_interface import IStudyService
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractStorageService(IStudyStorage, ABC):
+class AbstractStorageService(IStudyService, ABC):
     def __init__(self, config: Config, cache: ICache):
         self.config: Config = config
         self.cache = cache

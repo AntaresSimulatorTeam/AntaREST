@@ -25,14 +25,10 @@ from antarest.study.directory_service import DirectoryService
 from antarest.study.repository import DirectoryRepository, StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
-from antarest.study.storage.rawstudy.raw_database_storage import RawDataBaseStudyStorage
-from antarest.study.storage.rawstudy.raw_file_study_storage import RawFileStudyStorage
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
-from antarest.study.storage.variantstudy.variant_database_storage import VariantDataBaseStudyStorage
-from antarest.study.storage.variantstudy.variant_file_study_storage import VariantFileStudyStorage
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
 
@@ -85,34 +81,11 @@ def build_study_service(
         generator_matrix_constants=generator_matrix_constants, matrix_service=matrix_service, blob_service=blob_service
     )
 
-    # Raw study service
-    raw_fs_storage = RawFileStudyStorage(
+    raw_study_service = RawStudyService(
         config=config, study_factory=study_factory, cache=cache, matrix_service=matrix_service
     )
-    raw_db_storage = RawDataBaseStudyStorage()
-    raw_study_service = RawStudyService(
-        config=config,
-        study_factory=study_factory,
-        cache=cache,
-        matrix_service=matrix_service,
-        raw_file_study_storage=raw_fs_storage,
-        raw_database_study_storage=raw_db_storage,
-    )
-    raw_fs_storage.register_callable(raw_study_service.export_study_flat)
 
     # Variant study service
-    variant_fs_storage = VariantFileStudyStorage(
-        task_service=task_service,
-        cache=cache,
-        raw_study_service=raw_study_service,
-        command_factory=command_factory,
-        study_factory=study_factory,
-        repository=variant_repository,
-        event_bus=event_bus,
-        config=config,
-        matrix_service=matrix_service,
-    )
-    variant_db_storage = VariantDataBaseStudyStorage()
     variant_study_service = VariantStudyService(
         task_service=task_service,
         cache=cache,
@@ -123,10 +96,7 @@ def build_study_service(
         event_bus=event_bus,
         config=config,
         matrix_service=matrix_service,
-        variant_file_study_storage=variant_fs_storage,
-        variant_database_study_storage=variant_db_storage,
     )
-    variant_fs_storage.register_callable(variant_study_service.safe_generation)
 
     directory_service = DirectoryService(directory_repository=DirectoryRepository())
 

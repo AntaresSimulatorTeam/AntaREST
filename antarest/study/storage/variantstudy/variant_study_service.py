@@ -59,8 +59,11 @@ from antarest.study.model import (
 )
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract.abstract_storage_service import AbstractStorageService
+from antarest.study.storage.database_storage import DatabaseStudyStorage
+from antarest.study.storage.file_study_storage import FileStudyStorage
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.utils import (
     assert_permission,
     is_managed,
@@ -79,8 +82,6 @@ from antarest.study.storage.variantstudy.model.model import (
 )
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator
-from antarest.study.storage.variantstudy.variant_database_storage import VariantDataBaseStudyStorage
-from antarest.study.storage.variantstudy.variant_file_study_storage import VariantFileStudyStorage
 
 logger = logging.getLogger(__name__)
 
@@ -103,8 +104,6 @@ class VariantStudyService(AbstractStorageService):
         event_bus: IEventBus,
         config: Config,
         matrix_service: ISimpleMatrixService,
-        variant_file_study_storage: VariantFileStudyStorage,
-        variant_database_study_storage: VariantDataBaseStudyStorage,
     ):
         super().__init__(config=config, cache=cache)
         self.task_service = task_service
@@ -114,9 +113,9 @@ class VariantStudyService(AbstractStorageService):
         self.command_factory = command_factory
         self.study_factory = study_factory
         self._matrix_service = matrix_service
-        self._storage_mapping: dict[StorageMode, VariantFileStudyStorage | VariantDataBaseStudyStorage] = {
-            StorageMode.DATABASE: variant_database_study_storage,
-            StorageMode.FILESYSTEM: variant_file_study_storage,
+        self._storage_mapping: dict[StorageMode, IStudyStorage] = {
+            StorageMode.DATABASE: FileStudyStorage(config=config, cache=cache, matrix_service=matrix_service),
+            StorageMode.FILESYSTEM: DatabaseStudyStorage(config=config, cache=cache, matrix_service=matrix_service),
         }
         CommandMatrixUsageProvider(variant_study_repo=repository, command_factory=command_factory)
         CommandBlobUsageProvider(variant_study_repo=repository, command_factory=command_factory)

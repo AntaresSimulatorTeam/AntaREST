@@ -23,10 +23,11 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import RawStudy, StorageMode, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract.abstract_storage_service import AbstractStorageService
+from antarest.study.storage.database_storage import DatabaseStudyStorage
+from antarest.study.storage.file_study_storage import FileStudyStorage
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
-from antarest.study.storage.rawstudy.raw_database_storage import RawDataBaseStudyStorage
-from antarest.study.storage.rawstudy.raw_file_study_storage import RawFileStudyStorage
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
+from antarest.study.storage.study_storage_interface import IStudyStorage
 
 logger = logging.getLogger(__name__)
 
@@ -44,41 +45,17 @@ class RawStudyService(AbstractStorageService):
         study_factory: StudyFactory,
         cache: ICache,
         matrix_service: ISimpleMatrixService,
-        raw_file_study_storage: RawFileStudyStorage,
-        raw_database_study_storage: RawDataBaseStudyStorage,
     ):
 
         super().__init__(config=config, cache=cache)
 
         self.study_factory = study_factory
         self._matrix_service = matrix_service
-        self._storage_mapping: dict[StorageMode, RawFileStudyStorage | RawDataBaseStudyStorage] = {
-            StorageMode.DATABASE: raw_database_study_storage,
-            StorageMode.FILESYSTEM: raw_file_study_storage,
+        self._storage_mapping: dict[StorageMode, IStudyStorage] = {
+            StorageMode.DATABASE: FileStudyStorage(config=config, cache=cache, matrix_service=matrix_service),
+            StorageMode.FILESYSTEM: DatabaseStudyStorage(config=config, cache=cache, matrix_service=matrix_service),
         }
         RawStudyMatrixUsageProvider(StudyMetadataRepository(cache_service=cache), matrix_service=self._matrix_service)
-
-    def update_from_raw_metadata(self, study: RawStudy) -> None:
-        self._storage_mapping[study.storage_mode].update_from_raw_metadata(study, fallback_on_default=True)
-
-    def update_name_and_version_from_raw_meta(self, study: RawStudy) -> bool:
-        return self._storage_mapping[study.storage_mode].update_name_and_version_from_raw_meta(study)
-
-    def import_study(self, metadata: RawStudy, stream: BinaryIO) -> RawStudy:
-        """
-        Import study in the directory of the study.
-
-        Args:
-            metadata: study information.
-            stream: binary content of the study compressed in ZIP or 7z format.
-
-        Returns:
-            Updated study information.
-
-        Raises:
-            BadArchiveContent: If the archive is corrupted or in an unknown format.
-        """
-        return self._storage_mapping[metadata.storage_mode].import_study(metadata, stream)
 
     @override
     def get_disk_usage(self, study: Study) -> int:
@@ -104,9 +81,6 @@ class RawStudyService(AbstractStorageService):
     def get_study_interface(self, study: Study) -> StudyInterface:
         raise NotImplementedError()
 
-    def normalize_study(self, study: Study) -> None:
-        self._storage_mapping[study.storage_mode].normalize_study(study)
-
     @override
     def get_study_dao(self, study: Study) -> StudyDao:
         raise NotImplementedError()
@@ -115,5 +89,32 @@ class RawStudyService(AbstractStorageService):
     def export_study_flat(self, study: Study, dst_path: Path) -> None:
         raise NotImplementedError()
 
+    ###### Specific methods #########
+
     def find_archive_path(self, study: Study) -> Path:
         raise NotImplementedError()
+
+    def normalize_study(self, study: Study) -> None:
+        self._storage_mapping[study.storage_mode].normalize_study(study)
+
+    def update_from_raw_metadata(self, study: RawStudy) -> None:
+        self._storage_mapping[study.storage_mode].update_from_raw_metadata(study, fallback_on_default=True)
+
+    def update_name_and_version_from_raw_meta(self, study: RawStudy) -> bool:
+        return self._storage_mapping[study.storage_mode].update_name_and_version_from_raw_meta(study)
+
+    def import_study(self, metadata: RawStudy, stream: BinaryIO) -> RawStudy:
+        """
+        Import study in the directory of the study.
+
+        Args:
+            metadata: study information.
+            stream: binary content of the study compressed in ZIP or 7z format.
+
+        Returns:
+            Updated study information.
+
+        Raises:
+            BadArchiveContent: If the archive is corrupted or in an unknown format.
+        """
+        return self._storage_mapping[metadata.storage_mode].import_study(metadata, stream)
