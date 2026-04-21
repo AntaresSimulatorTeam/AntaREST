@@ -102,10 +102,9 @@ class TestReserveDefinitionUpdate:
         assert update.type is None
         assert update.failure_cost is None
 
-    def test_name_is_accepted(self) -> None:
-        update = ReserveDefinitionUpdate.model_validate({"name": "new-name", "failureCost": 2.0})
-        assert update.name == "new-name"
-        assert update.failure_cost == 2.0
+    def test_name_is_rejected(self) -> None:
+        with pytest.raises(ValidationError):
+            ReserveDefinitionUpdate.model_validate({"name": "new-name", "failureCost": 2.0})
 
 
 class TestCreateAndUpdateHelpers:

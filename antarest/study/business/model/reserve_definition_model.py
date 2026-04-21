@@ -91,7 +91,6 @@ class ReserveDefinitionCreation(AntaresBaseModel):
 class ReserveDefinitionUpdate(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
-    name: str | None = None
     type: ReserveType | None = None
     failure_cost: Cost | None = None
     spillage_cost: Cost | None = None
