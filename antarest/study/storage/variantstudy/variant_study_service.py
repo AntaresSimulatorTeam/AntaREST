@@ -682,7 +682,7 @@ class VariantStudyService(AbstractStorageService):
             return self.task_service.status_task(task_id=task_id, with_logs=True)
         raise StudyValidationError(f"Variant study '{study_id}' has no generation task")
 
-    def create_snapshot(self, study: Study):
+    def create_snapshot(self, study: Study) -> None:
         self._storage_mapping[study.storage_mode].create_snapshot(study)
 
     def _safe_generation(self, metadata: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:

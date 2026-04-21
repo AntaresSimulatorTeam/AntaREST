@@ -18,7 +18,9 @@ from typing_extensions import override
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
-from antarest.login.model import GroupDTO
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.login.model import GroupDTO, Identity
+from antarest.login.utils import get_user_impersonator
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     OwnerInfo,
@@ -71,3 +73,19 @@ class AbstractStorageService(IStudyStorage, ABC):
             directory_id=study.directory_id,
             parent_id=study.parent_id,
         )
+
+    @staticmethod
+    def _get_user_name_from_id(user_id: int) -> str:
+        """
+        Utility method that retrieves a user's name based on their id.
+        Args:
+            user_id: user id (user must exist)
+        Returns: String representing the user's name
+        """
+        user_obj: Identity | None = db.session.get(Identity, user_id)
+        if user_obj is None:
+            return "Unnamed"
+        return str(user_obj.name)
+
+    def _get_current_user_name(self) -> str:
+        return self._get_user_name_from_id(get_user_impersonator())
