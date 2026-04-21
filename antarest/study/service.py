@@ -719,7 +719,26 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
 
-        return self.storage_service.get_storage(study).get(study, url, depth, formatted)
+        file_study = self.storage_service.get_storage(study).get_study_dao(study).get_file_study()
+        parts = [item for item in url.split("/") if item]
+
+        if url == "" and depth == -1:
+            # Means we're asking for `Debug` view
+            cache_id = study_raw_cache_key(study.id)
+            from_cache = self.cache_service.get(cache_id)
+            if from_cache is not None:
+                logger.info(f"Raw Study {study.id} read from cache")
+                data = from_cache
+            else:
+                data = file_study.tree.get(parts, depth=depth, formatted=formatted)
+                self.cache_service.put(cache_id, data)
+                logger.info(f"Cache new entry from RawStudyService (studyID: {study.id})")
+
+        else:
+            data = file_study.tree.get(parts, depth, formatted)
+
+        del file_study  # What the fuck does this do ?
+        return data
 
     def get_file(self, uuid: str, url: str) -> OriginalFile:
         """
@@ -1671,7 +1690,7 @@ class StudyService:
             data: new data to replace
         """
         study_service = self.storage_service.get_storage(study)
-        file_study = study_service.get_raw(metadata=study)
+        file_study = study_service.get_study_dao(study).get_file_study()
         version = file_study.config.version
 
         command: ICommand

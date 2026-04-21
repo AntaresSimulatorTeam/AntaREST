@@ -16,8 +16,8 @@ from abc import ABC
 from typing_extensions import override
 
 from antarest.core.config import Config
-from antarest.core.interfaces.cache import ICache, study_raw_cache_key
-from antarest.core.model import JSON, PublicMode
+from antarest.core.interfaces.cache import ICache
+from antarest.core.model import PublicMode
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import GroupDTO, Identity
 from antarest.login.utils import get_user_impersonator
@@ -28,13 +28,12 @@ from antarest.study.model import (
     StudyMetadataDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
-from antarest.study.storage.study_storage import IStudyStorage
+from antarest.study.storage.study_service_interface import IStudyService
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractStorageService(IStudyStorage, ABC):
+class AbstractStorageService(IStudyService, ABC):
     def __init__(self, config: Config, cache: ICache):
         self.config: Config = config
         self.cache = cache
@@ -88,73 +87,6 @@ class AbstractStorageService(IStudyStorage, ABC):
         metadata.horizon = horizon
         metadata.author = author
         metadata.editor = editor
-
-    @override
-    def get(
-        self,
-        metadata: Study,
-        url: str = "",
-        depth: int = 3,
-        formatted: bool = True,
-        use_cache: bool = True,
-    ) -> JSON:
-        """
-        Entry point to fetch data inside study.
-        Args:
-            metadata: study
-            url: path data inside study to reach
-            depth: tree depth to reach after reach data path
-            formatted: indicate if raw files must be parsed and formatted
-            use_cache: indicate if the cache must be used
-
-        Returns: study data formatted in json
-
-        """
-        self._check_study_exists(metadata)
-        study = self.get_raw(metadata, use_cache)
-        parts = [item for item in url.split("/") if item]
-
-        if url == "" and depth == -1:
-            cache_id = study_raw_cache_key(metadata.id)
-            from_cache: JSON | None = None
-            if use_cache:
-                from_cache = self.cache.get(cache_id)
-            if from_cache is not None:
-                logger.info(f"Raw Study {metadata.id} read from cache")
-                data = from_cache
-            else:
-                data = study.tree.get(parts, depth=depth, formatted=formatted)
-                self.cache.put(cache_id, data)
-                logger.info(f"Cache new entry from RawStudyService (studyID: {metadata.id})")
-        else:
-            data = study.tree.get(parts, depth=depth, formatted=formatted)
-        del study
-        return data
-
-    @override
-    def get_file(
-        self,
-        metadata: Study,
-        url: str = "",
-        use_cache: bool = True,
-    ) -> OriginalFile:
-        """
-        Entry point to fetch data inside study.
-        Args:
-            metadata: study
-            url: path data inside study to reach
-            use_cache: indicate if the cache must be used
-
-        Returns: a file content with its extension and name
-
-        """
-        self._check_study_exists(metadata)
-        study = self.get_raw(metadata, use_cache)
-        parts = [item for item in url.split("/") if item]
-
-        file_node = study.tree.get_node(parts)
-
-        return file_node.get_file_content()
 
     @staticmethod
     def _get_user_name_from_id(user_id: int) -> str:
