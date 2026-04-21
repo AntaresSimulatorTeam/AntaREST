@@ -601,5 +601,5 @@ def get_disk_usage(path: Path) -> int:
                     if entry.is_file():
                         total_size += entry.stat().st_size
                     elif entry.is_dir():
-                        total_size += get_disk_usage(path=str(entry.path))
+                        total_size += get_disk_usage(path=Path(entry.path))
     return total_size
