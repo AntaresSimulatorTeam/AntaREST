@@ -265,3 +265,7 @@ class VariantFileStudyStorage(AbstractFileStudyStorage):
         logger.info(f"Clearing snapshot for study {variant_study.id}")
         self._invalidate_snapshot(variant_study)
         shutil.rmtree(self.get_study_path(variant_study), ignore_errors=True)
+
+    @override
+    def create_snapshot(self, study: Study):
+        raise NotImplementedError()

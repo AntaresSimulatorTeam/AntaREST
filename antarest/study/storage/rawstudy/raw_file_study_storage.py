@@ -59,7 +59,7 @@ class RawFileStudyStorage(AbstractFileStudyStorage):
     def matrix_service(self) -> ISimpleMatrixService:
         return self._matrix_service
 
-    def update_from_raw_meta(
+    def update_from_raw_metadata(
         self, metadata: RawStudy, fallback_on_default: bool | None = False, study_path: Path | None = None
     ) -> None:
         """
@@ -196,7 +196,7 @@ class RawFileStudyStorage(AbstractFileStudyStorage):
             else:
                 extract_archive_from_stream(source, study_path, tmp_dir=self.config.storage.tmp_dir)
             fix_study_root(study_path)
-            self.update_from_raw_meta(study, study_path=study_path)
+            self.update_from_raw_metadata(study, study_path=study_path)
         except Exception:
             shutil.rmtree(study_path)
             raise
@@ -299,6 +299,10 @@ class RawFileStudyStorage(AbstractFileStudyStorage):
     def denormalize_study(self, study: Study) -> None:
         file_study = self.get_raw(study)
         self.denormalize_file_study(file_study)
+
+    @override
+    def create_snapshot(self, study: Study) -> None:
+        raise NotImplementedError()
 
     def normalize_file_study(self, file_study: FileStudy) -> None:
         matrix_nodes = file_study.tree.get_matrix_nodes_to_normalize()
