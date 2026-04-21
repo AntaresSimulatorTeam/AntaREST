@@ -1640,7 +1640,6 @@ class StudyService:
 
         sid = str(uuid4())
         path = str(self.config.get_workspace_path() / sid)
-        directory_id = self.directory_service.get_directory_by_path(directory)
         study = RawStudy(
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,
@@ -1649,9 +1648,9 @@ class StudyService:
             public_mode=PublicMode.NONE if group_ids else PublicMode.READ,
             owner=owner,
             groups=groups,
-            directory_id=directory_id,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
+        study.directory_id = self.directory_service.get_directory_by_path(directory)
         study.updated_at = current_time()
 
         self._save_study(study)

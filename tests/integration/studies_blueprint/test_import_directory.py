@@ -84,3 +84,19 @@ class TestImportStudyDirectory:
         )
         assert res.status_code == 400
         assert "illegal character" in res.json()["description"]
+
+    def test_failed_import_does_not_leak_directories(self, client: TestClient, admin_access_token: str) -> None:
+        client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+        # Snapshot directories before the failing import
+        before = {d["name"] for d in client.get("/v1/directories").json()}
+
+        # Send a corrupted archive targeting a fresh nested path
+        res = client.post(
+            "/v1/studies/_import?directory=orphan/should/not/exist",
+            files={"study": io.BytesIO(b"not-a-valid-archive")},
+        )
+        assert res.status_code == 415
+
+        after = {d["name"] for d in client.get("/v1/directories").json()}
+        assert after == before, "Failed imports must not leave orphan directories behind"
