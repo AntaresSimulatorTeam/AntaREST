@@ -18,6 +18,6 @@ class RawDataBaseStudyStorage(IDataBaseStudyStorage):
         # Nothing to do
         pass
 
-    def update_name_and_version_from_raw_meta(self, study: RawStudy) -> None:
+    def update_name_and_version_from_raw_meta(self, study: RawStudy) -> bool:
         # Nothing to do
-        pass
+        return True
