@@ -19,11 +19,13 @@ from typing_extensions import override
 from antarest.core.config import Config
 from antarest.core.exceptions import (
     StudyNotFoundError,
+    VariantGenerationError,
+    VariantGenerationTimeoutError,
 )
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.model import JSON, StudyPermissionType
-from antarest.core.tasks.service import ITaskService
+from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import (
     Study,
@@ -249,3 +251,35 @@ class VariantFileStudyStorage(AbstractFileStudyStorage):
     @override
     def create_snapshot(self, study: Study) -> None:
         raise NotImplementedError()
+
+    def _safe_generation(self, study: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
+        try:
+            if self.exists(study):
+                # The study is already present on disk => nothing to do
+                return
+
+            logger.info("🔹 Starting variant study generation...")
+            # Create and run the generation task in a thread pool.
+            task_id = self.generate_task(study)
+            self.task_service.await_task(task_id, timeout)
+            result = self.task_service.status_task(task_id)
+            if not result.result:
+                raise ValueError("No task result")
+            if result.result.success:
+                # OK, the study has been generated
+                return
+            # The variant generation failed, we have to raise a clear exception.
+            error_msg = result.result.message
+            stripped_msg = error_msg.removeprefix(f"417: Failed to generate variant study {study.id}")
+            raise ValueError(stripped_msg)
+
+        except TimeoutError as e:
+            # Raise a REQUEST_TIMEOUT error (408)
+            msg = f"⚡ Timeout while waiting for generation of variant study {study.id}"
+            logger.error(msg, exc_info=e)
+            raise VariantGenerationTimeoutError(msg) from None
+
+        except Exception as e:
+            # raise a EXPECTATION_FAILED error (417)
+            logger.error(f"⚡ Fail to generate variant study {study.id}", exc_info=e)
+            raise VariantGenerationError(f"Error while generating variant {study.id} {e}") from None
