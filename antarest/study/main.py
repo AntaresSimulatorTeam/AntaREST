@@ -25,6 +25,8 @@ from antarest.study.directory_service import DirectoryService
 from antarest.study.repository import DirectoryRepository, StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
+from antarest.study.storage.rawstudy.raw_database_storage import RawDataBaseStudyStorage
+from antarest.study.storage.rawstudy.raw_file_study_storage import RawFileStudyStorage
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
@@ -76,10 +78,6 @@ def build_study_service(
     variant_repository = variant_repository or VariantStudyRepository(cache)
     job_result_repository = job_result_repository or JobResultRepository()
 
-    raw_study_service = RawStudyService(
-        config=config, study_factory=study_factory, cache=cache, matrix_service=matrix_service
-    )
-
     if not generator_matrix_constants:
         generator_matrix_constants = GeneratorMatrixConstants(matrix_service=matrix_service)
         generator_matrix_constants.init_constant_matrices()
@@ -87,6 +85,21 @@ def build_study_service(
         generator_matrix_constants=generator_matrix_constants, matrix_service=matrix_service, blob_service=blob_service
     )
 
+    # Raw study service
+    raw_fs_storage = RawFileStudyStorage(
+        config=config, study_factory=study_factory, cache=cache, matrix_service=matrix_service
+    )
+    raw_db_storage = RawDataBaseStudyStorage()
+    raw_study_service = RawStudyService(
+        config=config,
+        study_factory=study_factory,
+        cache=cache,
+        matrix_service=matrix_service,
+        raw_file_study_storage=raw_fs_storage,
+        raw_database_study_storage=raw_db_storage,
+    )
+
+    # Variant study service
     variant_fs_storage = VariantFileStudyStorage(
         task_service=task_service,
         cache=cache,
