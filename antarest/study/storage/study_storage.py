@@ -45,3 +45,7 @@ class IStudyStorage(ABC):
     @abstractmethod
     def get_study_interface(self, study: Study) -> StudyInterface:
         raise NotImplementedError()
+
+    @abstractmethod
+    def normalize_study(self, study: Study) -> None:
+        raise NotImplementedError()
