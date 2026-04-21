@@ -17,7 +17,6 @@ from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
-from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import RawStudy, StorageMode, Study
 from antarest.study.repository import StudyMetadataRepository
@@ -27,6 +26,7 @@ from antarest.study.storage.file_study_storage import FileStudyStorage
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.study_storage_interface import IStudyStorage
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
 
@@ -38,21 +38,21 @@ class RawStudyService(AbstractStorageService):
 
     """
 
-    def __init__(
-        self,
-        config: Config,
-        study_factory: StudyFactory,
-        cache: ICache,
-        matrix_service: ISimpleMatrixService,
-    ):
+    def __init__(self, config: Config, study_factory: StudyFactory, cache: ICache, command_context: CommandContext):
 
         super().__init__()
 
         self.study_factory = study_factory
-        self._matrix_service = matrix_service
+        self._matrix_service = command_context.matrix_service
         self._storage_mapping: dict[StorageMode, IStudyStorage] = {
-            StorageMode.DATABASE: FileStudyStorage(config=config, cache=cache, matrix_service=matrix_service),
-            StorageMode.FILESYSTEM: DatabaseStudyStorage(config=config, matrix_service=matrix_service),
+            StorageMode.DATABASE: FileStudyStorage(
+                cache=cache, command_context=command_context, study_factory=study_factory
+            ),
+            StorageMode.FILESYSTEM: DatabaseStudyStorage(
+                config=config,
+                matrix_service=self._matrix_service,
+                generator_matrix_constants=command_context.generator_matrix_constants,
+            ),
         }
         RawStudyMatrixUsageProvider(StudyMetadataRepository(cache_service=cache), matrix_service=self._matrix_service)
         self.cache = cache
