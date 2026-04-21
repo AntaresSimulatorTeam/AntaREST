@@ -25,6 +25,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_properties_model import AreaProperties, sort_filter_options
 from antarest.study.dao.api.study_dao import StudyDao
@@ -36,6 +37,7 @@ from antarest.study.dao.database.database_hydro_dao import DatabaseHydroDao
 from antarest.study.dao.database.database_layer_dao import DatabaseLayerDao
 from antarest.study.dao.database.database_link_dao import DatabaseLinkDao
 from antarest.study.dao.database.database_renewable_dao import DatabaseRenewableDao
+from antarest.study.dao.database.database_reserve_definition_dao import DatabaseReserveDefinitionDao
 from antarest.study.dao.database.database_reserves_global_parameters_dao import DatabaseReservesGlobalParametersDao
 from antarest.study.dao.database.database_scenario_builder_dao import DatabaseScenarioBuilderDao
 from antarest.study.dao.database.database_st_storage_dao import DatabaseStStorageDao
@@ -50,6 +52,7 @@ from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import Study, StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, LinkConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import MatrixSupplier
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 if TYPE_CHECKING:
@@ -75,6 +78,7 @@ class DatabaseStudyDao(
     DatabaseXpansionDao,
     DatabaseBindingConstraintDao,
     DatabaseReservesGlobalParametersDao,
+    DatabaseReserveDefinitionDao,
 ):
     """
     Database implementation of StudyDao.
@@ -112,6 +116,7 @@ class DatabaseStudyDao(
         DatabaseXpansionDao.__init__(self, study_id, db_session)
         DatabaseBindingConstraintDao.__init__(self, study_id, db_session)
         DatabaseReservesGlobalParametersDao.__init__(self, study_id, db_session)
+        DatabaseReserveDefinitionDao.__init__(self, study_id, db_session)
         self._matrix_service = matrix_service
         self._generator_matrix_constants = generator_matrix_constants
 
@@ -231,5 +236,11 @@ class DatabaseStudyDao(
             "get_file_study() is not supported in database storage mode. Use database-specific methods instead."
         )
 
-    def get_matrix(self, matrix_id: str) -> pl.DataFrame:
-        return self._matrix_service.get(matrix_id)
+    def get_matrix(self, matrix_id: str, default_empty_supplier: MatrixSupplier | None) -> pl.DataFrame:
+        matrix = self._matrix_service.get(matrix_id)
+
+        if matrix.is_empty() and default_empty_supplier is not None:
+            # We have to return the given default matrix
+            return create_polars_dataframe(default_empty_supplier())
+
+        return matrix

@@ -30,6 +30,7 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
     BindingConstraintOperator,
+    ConstraintId,
 )
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -40,7 +41,14 @@ from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3, StorageMode
+from antarest.study.model import (
+    STUDY_VERSION_8_6,
+    STUDY_VERSION_8_8,
+    STUDY_VERSION_9_2,
+    STUDY_VERSION_9_3,
+    STUDY_VERSION_10_0,
+    StorageMode,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -178,6 +186,25 @@ def dao_and_matrix_service(
 
 
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
+def dao_10_0(
+    request,
+    db_session: Session,
+    matrix_service: ISimpleMatrixService,
+    command_context: "CommandContext",
+    tmp_path: Path,
+    core_cache: "ICache",
+) -> StudyDao:
+    """A DAO parameterized over both backends (v10.0)."""
+    if request.param == "db":
+        return build_db_dao(db_session, matrix_service, STUDY_VERSION_10_0)
+    else:
+        # v10.0 has no study template on disk — create a v9.3 study and force its config version to 10.0.
+        dao, _ = _build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
+        dao.get_file_study().config.version = STUDY_VERSION_10_0
+        return dao
+
+
+@pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
 def dao_860_and_matrix_service(
     request,
     db_session: Session,
@@ -201,15 +228,24 @@ class RealCaseStudy:
     renewable_id: str
     sts_id: str
     sts_constraint_id: str
-    bc_both_id: str
-    bc_eq_id: str
+    bc_both_id: ConstraintId
+    bc_eq_id: ConstraintId
     dataframes: list[pl.DataFrame]
 
 
-def build_real_case_study(dao: StudyDao, matrix_service: ISimpleMatrixService) -> RealCaseStudy:
-    # Create matrices in the matrix-store with different contents to diversify tests.
-    base_data = [[1, 2.5], [3, 4.7]]
-    dataframes = [pl.DataFrame(data=[[a + i, b + i] for a, b in base_data], orient="row") for i in range(43)]
+def build_real_case_study(
+    dao: StudyDao, matrix_service: ISimpleMatrixService, null_matrices: bool = False
+) -> RealCaseStudy:
+    """
+    If `null_matrices` is True, the created matrices will all be the same empty matrix.
+    Otherwise, the matrices will be created with different contents to diversify tests.
+    """
+    if null_matrices:
+        dataframes = [pl.DataFrame(orient="row")] * 43
+    else:
+        base_data = [[1, 2.5], [3, 4.7]]
+        dataframes = [pl.DataFrame(data=[[a + i, b + i] for a, b in base_data], orient="row") for i in range(43)]
+
     (
         load_df,
         solar_df,

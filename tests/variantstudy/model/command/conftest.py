@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7, STUDY_VERSION_8_8, STUDY_VERSION_9_3
-from tests.study.dao.conftest import build_db_dao
+from tests.study.dao.conftest import build_db_dao, dao_10_0  # noqa: F401
 
 
 @pytest.fixture

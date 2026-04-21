@@ -1198,7 +1198,7 @@ class TestSnapshotGenerator:
         # Fill the cache for the test.
         study = db.session.get(VariantStudy, variant_study_id)  #  `variant_study` isn't bound to the session yet.
         study_interface = VariantStudyInterface(variant_study_service, study)
-        file_study = study_interface.get_files()
+        file_study = study_interface._variant_service.get_raw(study)
         data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
         update_cache(cache, variant_study_id, data)
 
