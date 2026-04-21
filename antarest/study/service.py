@@ -407,7 +407,7 @@ class StudyUpgraderTask:
                 study_upgrader = StudyUpgrader(study_path, target_version)
                 if is_managed(study_to_upgrade) and study_upgrader.should_denormalize_study():
                     # We have to denormalize the study because the upgrade impacts study matrices
-                    self.storage_service.get_file_study_storage(study_to_upgrade).denormalize_study(study_to_upgrade)
+                    self.storage_service.get_storage(study_to_upgrade).denormalize_study(study_to_upgrade)
                     is_study_denormalized = True
                 study_upgrader.upgrade()
                 remove_from_cache(self.cache_service, study_to_upgrade.id)
