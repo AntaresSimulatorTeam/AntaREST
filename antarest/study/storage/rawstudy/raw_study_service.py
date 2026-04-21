@@ -78,9 +78,7 @@ class RawStudyService(AbstractStorageService):
         Raises:
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
-        study_path = Path(metadata.path)
-        self._extract_and_setup(metadata, study_path, stream)
-        return metadata
+        return self._storage_mapping[metadata.storage_mode].import_study(metadata, stream)
 
     @override
     def get_disk_usage(self, study: Study) -> int:
