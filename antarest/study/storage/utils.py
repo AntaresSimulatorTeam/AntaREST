@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import calendar
+import contextlib
 import logging
 import math
 import os
@@ -48,6 +49,7 @@ from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
+from antarest.core.utils.archives import is_archive_format
 from antarest.login.model import Group
 from antarest.login.utils import require_current_user
 from antarest.study.business.model.config.general_model import GeneralConfig, Mode
@@ -585,3 +587,19 @@ def rec_scan_for_studies(
     except Exception as e:
         logger.error(f"Failed to scan dir {path}", exc_info=e)
         return []
+
+
+def get_disk_usage(path: Path) -> int:
+    """Calculate the total disk usage (in bytes) of a study in a compressed file or directory."""
+    if is_archive_format(path.suffix.lower()):
+        return os.path.getsize(path)
+    total_size = 0
+    with contextlib.suppress(FileNotFoundError, PermissionError):
+        with os.scandir(path) as it:
+            for entry in it:
+                with contextlib.suppress(FileNotFoundError, PermissionError):
+                    if entry.is_file():
+                        total_size += entry.stat().st_size
+                    elif entry.is_dir():
+                        total_size += get_disk_usage(path=str(entry.path))
+    return total_size

@@ -16,7 +16,6 @@ import enum
 import http
 import io
 import logging
-import os
 import shutil
 import tempfile
 from abc import ABC, abstractmethod
@@ -63,7 +62,7 @@ from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
-from antarest.core.utils.archives import ArchiveFormat, archive_dir, is_archive_format
+from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.launcher.repository import JobResultRepository
@@ -209,23 +208,6 @@ def _get_matrix_from_path(study_interface: StudyInterface, matrix_path: PurePosi
 
 
 OutputSelection: TypeAlias = Literal["all"] | list[str]
-
-
-def get_disk_usage(path: str | Path) -> int:
-    """Calculate the total disk usage (in bytes) of a study in a compressed file or directory."""
-    path = Path(path)
-    if is_archive_format(path.suffix.lower()):
-        return os.path.getsize(path)
-    total_size = 0
-    with contextlib.suppress(FileNotFoundError, PermissionError):
-        with os.scandir(path) as it:
-            for entry in it:
-                with contextlib.suppress(FileNotFoundError, PermissionError):
-                    if entry.is_file():
-                        total_size += entry.stat().st_size
-                    elif entry.is_dir():
-                        total_size += get_disk_usage(path=str(entry.path))
-    return total_size
 
 
 def _get_path_inside_user_folder(
