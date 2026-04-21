@@ -82,7 +82,7 @@ def build_study_service(
     )
 
     raw_study_service = RawStudyService(
-        config=config, study_factory=study_factory, cache=cache, matrix_service=matrix_service
+        config=config, study_factory=study_factory, cache=cache, command_context=command_factory.command_context
     )
 
     # Variant study service
