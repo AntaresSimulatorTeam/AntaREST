@@ -737,7 +737,7 @@ class StudyService:
         else:
             data = file_study.tree.get(parts, depth, formatted)
 
-        del file_study  # What the fuck does this do ?
+        del file_study
         return data
 
     def get_file(self, uuid: str, url: str) -> OriginalFile:
