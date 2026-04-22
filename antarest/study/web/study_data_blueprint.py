@@ -95,6 +95,11 @@ from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
     RenewableClusterUpdate,
 )
+from antarest.study.business.model.reserve_definition_model import (
+    ReserveDefinition,
+    ReserveDefinitionCreation,
+    ReserveDefinitionUpdate,
+)
 from antarest.study.business.model.reserves_global_parameters_model import (
     ReservesGlobalParameters,
     ReservesGlobalParametersUpdate,
@@ -1552,6 +1557,86 @@ def create_study_data_routes() -> APIRouter:
         return study_service.reserves_global_parameters_manager.update_reserves_global_parameters(
             study_interface, area_id, form_fields
         )
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/reserves",
+        summary="Get all reserve definitions for a given area",
+    )
+    def get_reserve_definitions(
+        study_service: StudyServiceDep,
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+    ) -> Sequence[ReserveDefinition]:
+        logger.info("Getting reserve definitions for study %s and area %s", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserve_definitions_manager.get_reserve_definitions(study_interface, area_id)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/reserves/{reserve_id}",
+        summary="Get a reserve definition for a given area",
+    )
+    def get_reserve_definition(
+        study_service: StudyServiceDep,
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        reserve_id: SanitizedStr,
+    ) -> ReserveDefinition:
+        logger.info("Getting reserve definition %s for study %s and area %s", reserve_id, uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserve_definitions_manager.get_reserve_definition(study_interface, area_id, reserve_id)
+
+    @bp.post(
+        path="/studies/{uuid}/areas/{area_id}/reserves",
+        summary="Create a new reserve definition for a given area",
+    )
+    def create_reserve_definition(
+        study_service: StudyServiceDep,
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        reserve_data: ReserveDefinitionCreation,
+    ) -> ReserveDefinition:
+        logger.info("Creating reserve definition for study '%s' and area '%s'", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserve_definitions_manager.create_reserve_definition(
+            study_interface, area_id, reserve_data
+        )
+
+    @bp.patch(
+        path="/studies/{uuid}/areas/{area_id}/reserves/{reserve_id}",
+        summary="Update a reserve definition for a given area",
+    )
+    def update_reserve_definition(
+        study_service: StudyServiceDep,
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        reserve_id: SanitizedStr,
+        reserve_data: ReserveDefinitionUpdate,
+    ) -> ReserveDefinition:
+        logger.info("Updating reserve definition %s for study '%s' and area '%s'", reserve_id, uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserve_definitions_manager.update_reserve_definition(
+            study_interface, area_id, reserve_id, reserve_data
+        )
+
+    @bp.delete(
+        path="/studies/{uuid}/areas/{area_id}/reserves",
+        summary="Remove reserve definitions for a given area",
+        status_code=HTTPStatus.NO_CONTENT,
+    )
+    def delete_reserve_definitions(
+        study_service: StudyServiceDep,
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        reserve_ids: Sequence[SanitizedStr],
+    ) -> None:
+        logger.info("Deleting reserve definitions %r for study '%s' and area '%s'", reserve_ids, uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        study_service.reserve_definitions_manager.delete_reserve_definitions(study_interface, area_id, reserve_ids)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",

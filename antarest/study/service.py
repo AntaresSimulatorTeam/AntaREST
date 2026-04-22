@@ -78,6 +78,7 @@ from antarest.study.business.allocation_management import AllocationManager
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.areas.hydro_management import HydroManager
 from antarest.study.business.areas.renewable_management import RenewableManager
+from antarest.study.business.areas.reserve_definitions_management import ReserveDefinitionsManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintFilters
@@ -676,6 +677,7 @@ class StudyService:
         self.advanced_parameters_manager = AdvancedParamsManager(command_context)
         self.compatibility_parameters_manager = CompatibilityParamsManager(command_context)
         self.reserves_global_parameters_manager = ReservesGlobalParametersManager(command_context)
+        self.reserve_definitions_manager = ReserveDefinitionsManager(command_context)
         self.hydro_manager = HydroManager(command_context)
         self.allocation_manager = AllocationManager(command_context)
         self.renewable_manager = RenewableManager(command_context)
@@ -1617,6 +1619,7 @@ class StudyService:
         self,
         stream: BinaryIO,
         group_ids: list[str],
+        directory: str = "",
     ) -> str:
         """
         Import a compressed study.
@@ -1624,6 +1627,7 @@ class StudyService:
         Args:
             stream: binary content of the study compressed in ZIP or 7z format.
             group_ids: group to attach to study
+            directory: Optional directory path where the study will be imported (e.g., 'project/subfolder').
 
         Returns:
             New study UUID.
@@ -1646,6 +1650,7 @@ class StudyService:
             groups=groups,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
+        study.directory_id = self.directory_service.get_directory_by_path(directory)
         study.updated_at = current_time()
 
         self._save_study(study)

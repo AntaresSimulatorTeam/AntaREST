@@ -177,6 +177,12 @@ class StudyConverter:
         # Reserves global parameters (v10.0+)
         if self._study_version >= STUDY_VERSION_10_0:
             self._new_dao.save_reserves_global_parameters(self._source_dao.get_all_reserves_global_parameters())
+            # Reserve definitions parameters
+            reserve_definitions = self._source_dao.get_all_reserve_definitions()
+            if reserve_definitions:
+                self._new_dao.save_reserve_definitions(
+                    {area_id: list(reserves.values()) for area_id, reserves in reserve_definitions.items()}
+                )
 
         # Hydro
         self._convert_hydro()

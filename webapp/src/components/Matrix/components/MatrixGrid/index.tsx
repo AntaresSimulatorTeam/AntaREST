@@ -27,6 +27,7 @@ import { useTranslation } from "react-i18next";
 import { MatrixContext } from "../../context/MatrixContext";
 import { useColumnMapping } from "../../hooks/useColumnMapping";
 import { useGridCellContent } from "../../hooks/useGridCellContent";
+import { useMatrixPasteInterceptor } from "../../hooks/useMatrixPasteInterceptor";
 import { useSelectionStats } from "../../hooks/useSelectionStats";
 import { Column } from "../../shared/constants";
 import type {
@@ -50,6 +51,11 @@ export interface MatrixGridProps {
   height?: string;
   onCellEdit?: (update: GridUpdate) => void;
   onMultipleCellsEdit?: (updates: GridUpdate[]) => void;
+  /**
+   * Called on paste with the full updated matrix (same shape as `data`). Omit this prop
+   * to make paste a no-op (e.g. for read-only standalone usage).
+   */
+  onBulkPaste?: (newData: number[][]) => void;
   readOnly?: boolean;
   showPercent?: boolean;
   showStats?: boolean;
@@ -66,6 +72,7 @@ function MatrixGrid({
   height = "100%",
   onCellEdit,
   onMultipleCellsEdit,
+  onBulkPaste,
   readOnly,
   showPercent,
   showStats = true,
@@ -193,6 +200,19 @@ function MatrixGrid({
     data: filteredData,
     selection: gridSelection,
     gridToData,
+  });
+
+  useMatrixPasteInterceptor({
+    readOnly: !!readOnly,
+    data,
+    columns,
+    visibleColumns,
+    visibleRows,
+    filterActive: filterPreview.active,
+    gridSelection,
+    gridToData,
+    getDataRowIndex,
+    onBulkPaste,
   });
 
   ////////////////////////////////////////////////////////////////
@@ -397,7 +417,10 @@ function MatrixGrid({
         onCellEdited={handleCellEdited}
         onCellsEdited={handleCellsEdited}
         getCellsForSelection
-        onPaste={!readOnly}
+        // Disable glide-data-grid's own Ctrl+V handler: its async `Number.parseFloat` path
+        // races our locale-aware capture-phase listener and wins the last write, corrupting
+        // thousand-separator values like "4,567" into 4.
+        keybindings={{ paste: false }}
         fillHandle={!readOnly}
         onKeyDown={readOnly ? undefined : handleKeyDown}
         allowedFillDirections="any"
