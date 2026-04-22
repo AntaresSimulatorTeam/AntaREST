@@ -119,8 +119,8 @@ class VariantStudyService(AbstractService):
         self._matrix_service = matrix_service
         ctx = command_factory.command_context
         self._storage_mapping: dict[StorageMode, IStudyStorage] = {
-            StorageMode.DATABASE: FileStudyStorage(cache, config, ctx, study_factory),
-            StorageMode.FILESYSTEM: DatabaseStudyStorage(
+            StorageMode.FILESYSTEM: FileStudyStorage(cache, config, ctx, study_factory),
+            StorageMode.DATABASE: DatabaseStudyStorage(
                 config=config, matrix_service=matrix_service, generator_matrix_constants=ctx.generator_matrix_constants
             ),
         }
