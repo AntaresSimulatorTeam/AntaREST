@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import Study
@@ -27,5 +27,5 @@ class IStudyStorage(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def exists(self, study: Study) -> bool:
+    def write_study_to_filesytem(self, study: Study) -> Path:
         raise NotImplementedError()

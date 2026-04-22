@@ -13,7 +13,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path, PurePosixPath
 
-from antarest.core.exceptions import StudyNotFoundError
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import Study, StudyMetadataDTO
 

@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import logging
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 
 from typing_extensions import override
 
@@ -39,4 +39,8 @@ class DatabaseStudyStorage(IStudyStorage):
 
     @override
     def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
+        raise NotImplementedError()
+
+    @override
+    def write_study_to_filesytem(self, study: Study) -> Path:
         raise NotImplementedError()
