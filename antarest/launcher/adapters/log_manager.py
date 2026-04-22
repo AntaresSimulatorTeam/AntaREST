@@ -25,9 +25,8 @@ logger = logging.getLogger(__name__)
 class LogTailManager:
     BATCH_SIZE = 10
 
-    def __init__(self, log_base_dir: Path) -> None:
+    def __init__(self) -> None:
         logger.info("Initiating Log manager")
-        self.log_base_dir = log_base_dir
         self.tracked_logs: dict[str, Thread] = {}
 
     def track(self, log_path: Path | None, handler: Callable[[str], None]) -> None:

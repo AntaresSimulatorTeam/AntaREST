@@ -19,7 +19,6 @@ from sqlalchemy import Engine, create_engine, update
 from antarest.core.config import Config
 from antarest.core.tasks.model import TaskJob, TaskStatus
 from antarest.core.utils.utils import current_time, get_local_path
-from antarest.launcher.adapters.slurm_launcher.slurm_launcher import WORKSPACE_LOCK_FILE_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -34,23 +33,6 @@ def _create_config(config_path: Path) -> Config:
     res = get_local_path() / "resources"
     config_obj = Config.from_yaml_file(res=res, file=config_path)
     return config_obj
-
-
-def clean_locks_from_config(config: Config) -> None:
-    for slurm_config in config.launcher.get_slurm_configs():
-        slurm_workspace = slurm_config.local_workspace
-        if slurm_workspace.exists() and slurm_workspace.is_dir():
-            for workspace in slurm_workspace.iterdir():
-                lock_file = workspace / WORKSPACE_LOCK_FILE_NAME
-                if lock_file.exists():
-                    logger.info(f"Removing slurm workspace lock file {lock_file}")
-                    lock_file.unlink()
-
-
-def clean_locks(config: Path) -> None:
-    """Clean app locks"""
-    config_obj = _create_config(config)
-    clean_locks_from_config(config_obj)
 
 
 def reindex_table(config: Path) -> None:
