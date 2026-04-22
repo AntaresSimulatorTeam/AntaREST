@@ -1542,7 +1542,7 @@ class StudyService:
                 continue
 
             # Ensures we're allowed to delete the studies
-            if not self.config.storage.allow_deletion or not is_managed(study):
+            if not self.config.storage.allow_deletion and not is_managed(study):
                 raise StudyDeletionNotAllowed(study.id)
 
             self._validate_children_deletion(study, with_variants, variant_service)
