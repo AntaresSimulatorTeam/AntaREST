@@ -52,7 +52,7 @@ class FileStudyStorage(IStudyStorage):
     def copy(self, src_study: Study, dst_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
         dest_study = self._build_raw_study(dst_name, groups, src_study, destination_folder)
 
-        src_path = self.get_study_path(src_study)
+        src_path = Path(src_study.path)
         dest_path = Path(dest_study.path)
 
         shutil.copytree(src_path, dest_path, ignore=shutil.ignore_patterns("output"))
