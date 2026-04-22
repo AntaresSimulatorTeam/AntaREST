@@ -137,44 +137,12 @@ class VariantStudyService(AbstractService):
     @override
     def export_study_flat(self, study: Study, dst_path: Path) -> None:
         variant = _cast_study_to_variant(study)
-        self._safe_generation(variant)
+        self.safe_generation(variant)
         self.raw_study_service.export_study_to_flat_directory(variant.snapshot_dir, dst_path)
 
     ##########################
     # Specific methods
     ##########################
-
-    def _safe_generation(self, metadata: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
-        try:
-            if self.exists(metadata):
-                # The study is already present on disk => nothing to do
-                return
-
-            logger.info("🔹 Starting variant study generation...")
-            # Create and run the generation task in a thread pool.
-            task_id = self.generate_task(metadata)
-            self.task_service.await_task(task_id, timeout)
-            result = self.task_service.status_task(task_id)
-            if not result.result:
-                raise ValueError("No task result")
-            if result.result.success:
-                # OK, the study has been generated
-                return
-            # The variant generation failed, we have to raise a clear exception.
-            error_msg = result.result.message
-            stripped_msg = error_msg.removeprefix(f"417: Failed to generate variant study {metadata.id}")
-            raise ValueError(stripped_msg)
-
-        except TimeoutError as e:
-            # Raise a REQUEST_TIMEOUT error (408)
-            msg = f"⚡ Timeout while waiting for generation of variant study {metadata.id}"
-            logger.error(msg, exc_info=e)
-            raise VariantGenerationTimeoutError(msg) from None
-
-        except Exception as e:
-            # raise a EXPECTATION_FAILED error (417)
-            logger.error(f"⚡ Fail to generate variant study {metadata.id}", exc_info=e)
-            raise VariantGenerationError(f"Error while generating variant {metadata.id} {e}") from None
 
     def invalidate_snapshot(self, variant_study: VariantStudy) -> None:
         """
@@ -783,7 +751,7 @@ class VariantStudyService(AbstractService):
             custom_event_messages=None,
         )
 
-    def safe_generation(self, study: VariantStudy, timeout: int) -> None:
+    def safe_generation(self, study: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
         try:
             if self._storage_mapping[study.storage_mode].is_snapshot_up_to_date(study):
                 # Nothing to do
