@@ -128,7 +128,6 @@ class VariantStudyService(AbstractService):
 
     @override
     def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
-        self._check_study_exists(src_study)
         return self._storage_mapping[src_study.storage_mode].copy(src_study, dest_name, groups, destination_folder)
 
     @override
