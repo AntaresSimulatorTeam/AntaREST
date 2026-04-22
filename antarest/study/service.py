@@ -1605,6 +1605,7 @@ class StudyService:
             public_mode=PublicMode.NONE if group_ids else PublicMode.READ,
             owner=owner,
             groups=groups,
+            storage_mode=StorageMode.FILESYSTEM,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
         study.updated_at = current_time()
