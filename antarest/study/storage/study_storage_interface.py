@@ -29,3 +29,11 @@ class IStudyStorage(ABC):
     @abstractmethod
     def write_study_to_filesytem(self, study: Study) -> Path:
         raise NotImplementedError()
+
+    @abstractmethod
+    def normalize_study(self, study: Study) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def update_from_raw_metadata(self, study: Study) -> None:
+        raise NotImplementedError()

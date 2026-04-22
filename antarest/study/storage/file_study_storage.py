@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import logging
 import shutil
+from datetime import datetime
 from pathlib import Path, PurePosixPath
 from uuid import uuid4
 
@@ -67,6 +68,55 @@ class FileStudyStorage(IStudyStorage):
         file_study = self._get_file_study(study_path, is_managed(study), study.id)
         self._denormalize_file_study(file_study)
         return study_path
+
+    @override
+    def normalize_study(self, study: Study) -> None:
+        file_study = self._get_file_study(Path(study.path), is_managed(study), study.id)
+        matrix_nodes = file_study.tree.get_matrix_nodes_to_normalize()
+        if not matrix_nodes:
+            return
+
+        matrix_ids = self._matrix_service.create_batch(node.parse_content() for node in matrix_nodes)
+        for k, node in enumerate(matrix_nodes):
+            node.matrix_mapper.save_matrix(node, matrix_ids[k])
+
+    @override
+    def update_from_raw_metadata(self, study: Study) -> None:
+        file_study = self._get_file_study(Path(study.path), is_managed(study), "")
+        try:
+            raw_meta = file_study.tree.get(["study", "antares"])
+
+            if study.editor:
+                raw_meta["editor"] = study.editor
+                file_study.tree.save(raw_meta, ["study", "antares"])
+
+            study.name = raw_meta["caption"]
+            study.version = str(raw_meta["version"])
+            study.created_at = datetime.utcfromtimestamp(raw_meta["created"])
+            study.updated_at = datetime.utcfromtimestamp(raw_meta["lastsave"])
+
+            self._update_study_data_from_files(file_study, study)
+
+        except Exception as e:
+            logger.error("Failed to fetch study %s raw study!", str(study.path), exc_info=e)
+            study.name = study.name or "unnamed"
+            study.created_at = study.created_at or current_time()
+            study.updated_at = study.updated_at or current_time()
+            study.author = study.author or "Unknown"
+            study.editor = study.editor or "Unknown"
+
+    def _update_study_data_from_files(self, file_study: FileStudy, study: Study) -> None:
+        logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
+        horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
+        study_antares = file_study.tree.get(url=["study", "antares"])
+        author = study_antares.get("author")
+        editor = study_antares.get("editor", author)
+        assert isinstance(author, str)
+        assert isinstance(editor, str)
+        assert isinstance(horizon, (str, int))
+        study.horizon = horizon
+        study.author = author
+        study.editor = editor
 
     def _get_file_study(self, study_path: Path, managed: bool, study_id: str) -> FileStudy:
         return self._study_factory.create_from_fs(study_path, managed, study_id=study_id)

@@ -44,3 +44,13 @@ class DatabaseStudyStorage(IStudyStorage):
     @override
     def write_study_to_filesytem(self, study: Study) -> Path:
         raise NotImplementedError()
+
+    @override
+    def normalize_study(self, study: Study) -> None:
+        # Nothing to do
+        pass
+
+    @override
+    def update_from_raw_metadata(self, study: Study) -> None:
+        # Nothing to do
+        pass

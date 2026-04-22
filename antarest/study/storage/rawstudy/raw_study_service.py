@@ -97,7 +97,7 @@ class RawStudyService(AbstractService):
         self._storage_mapping[study.storage_mode].normalize_study(study)
 
     def update_from_raw_metadata(self, study: RawStudy) -> None:
-        self._storage_mapping[study.storage_mode].update_from_raw_metadata(study, fallback_on_default=True)
+        self._storage_mapping[study.storage_mode].update_from_raw_metadata(study)
 
     def update_name_and_version_from_raw_meta(self, study: RawStudy) -> bool:
         return self._storage_mapping[study.storage_mode].update_name_and_version_from_raw_meta(study)
