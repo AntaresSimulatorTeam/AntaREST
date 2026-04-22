@@ -79,7 +79,7 @@ class RawStudyService(AbstractStorageService):
 
     @override
     def get_study_dao(self, study: Study) -> StudyDao:
-        raise NotImplementedError()
+        return self._storage_mapping[study.storage_mode].get_dao(study)
 
     @override
     def export_study_flat(self, study: Study, dst_path: Path) -> None:
