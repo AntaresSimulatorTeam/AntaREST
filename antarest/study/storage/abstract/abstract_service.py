@@ -11,10 +11,13 @@
 # This file is part of the Antares project.
 
 import logging
+import shutil
 from abc import ABC
+from pathlib import Path
 
 from typing_extensions import override
 
+from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.login.model import GroupDTO
 from antarest.study.model import (
@@ -24,11 +27,15 @@ from antarest.study.model import (
     StudyMetadataDTO,
 )
 from antarest.study.storage.study_service_interface import IStudyService
+from antarest.study.storage.utils import remove_from_cache
 
 logger = logging.getLogger(__name__)
 
 
 class AbstractService(IStudyService, ABC):
+    def __init__(self, cache: ICache):
+        self._cache = cache
+
     @override
     def get_study_information(
         self,
@@ -65,3 +72,17 @@ class AbstractService(IStudyService, ABC):
             directory_id=study.directory_id,
             parent_id=study.parent_id,
         )
+
+    @override
+    def delete_from_filesystem(self, study: Study) -> None:
+        study_path = self._get_study_path_on_file_system(study)
+        shutil.rmtree(study_path, ignore_errors=True)
+        remove_from_cache(self._cache, study.id)
+
+    def _get_study_path_on_file_system(self, metadata: Study) -> Path:
+        if metadata.archived:
+            return self.find_archive_path(metadata)
+        return Path(metadata.path)
+
+    def find_archive_path(self, study: Study) -> Path:
+        raise NotImplementedError()

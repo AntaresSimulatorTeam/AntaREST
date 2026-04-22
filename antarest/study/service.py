@@ -1540,6 +1540,11 @@ class StudyService:
         for study in studies_to_check:
             if study.id in studies_to_delete:
                 continue
+
+            # Ensures we're allowed to delete the studies
+            if not self.config.storage.allow_deletion or not is_managed(study):
+                raise StudyDeletionNotAllowed(study.id)
+
             self._validate_children_deletion(study, with_variants, variant_service)
 
             if variant_service.has_children(study):
@@ -1566,7 +1571,7 @@ class StudyService:
         self.repository.delete(*studies_to_delete.keys())
 
         for study in studies_to_delete.values():
-            self.storage_service.get_storage(study).delete(study)
+            self.storage_service.get_storage(study).delete_from_filesystem(study)
             self._notify_study_deleted(study, study_infos[study.id])
 
     def import_study(

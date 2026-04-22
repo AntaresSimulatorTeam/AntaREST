@@ -32,7 +32,7 @@ class IStudyService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def delete(self, study: Study) -> None:
+    def delete_from_filesystem(self, study: Study) -> None:
         raise NotImplementedError()
 
     @abstractmethod

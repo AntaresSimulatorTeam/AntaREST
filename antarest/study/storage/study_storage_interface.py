@@ -25,3 +25,7 @@ class IStudyStorage(ABC):
     @abstractmethod
     def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
         raise NotImplementedError()
+
+    @abstractmethod
+    def exists(self, study: Study) -> bool:
+        raise NotImplementedError()

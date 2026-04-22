@@ -40,7 +40,7 @@ class RawStudyService(AbstractService):
 
     def __init__(self, config: Config, study_factory: StudyFactory, cache: ICache, command_context: CommandContext):
 
-        super().__init__()
+        super().__init__(cache)
 
         self.study_factory = study_factory
         self._matrix_service = command_context.matrix_service
@@ -68,10 +68,6 @@ class RawStudyService(AbstractService):
         raise NotImplementedError()
 
     @override
-    def delete(self, study: Study) -> None:
-        raise NotImplementedError()
-
-    @override
     def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
         self._check_study_exists(src_study)
         return self._storage_mapping[src_study.storage_mode].copy(src_study, dest_name, groups, destination_folder)
@@ -84,16 +80,9 @@ class RawStudyService(AbstractService):
     def export_study_flat(self, study: Study, dst_path: Path) -> None:
         raise NotImplementedError()
 
-    @override
-    def exists(self, study: Study) -> bool:
-        raise NotImplementedError()
-
     ##########################
     # Specific methods
     ##########################
-
-    def find_archive_path(self, study: Study) -> Path:
-        raise NotImplementedError()
 
     def normalize_study(self, study: Study) -> None:
         self._storage_mapping[study.storage_mode].normalize_study(study)

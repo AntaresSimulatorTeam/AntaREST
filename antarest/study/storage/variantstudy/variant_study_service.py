@@ -106,7 +106,7 @@ class VariantStudyService(AbstractService):
         config: Config,
         matrix_service: ISimpleMatrixService,
     ):
-        super().__init__()
+        super().__init__(cache)
         self.cache = cache
         self.config = config
         self.task_service = task_service
@@ -136,10 +136,6 @@ class VariantStudyService(AbstractService):
 
     @override
     def unarchive(self, study: Study) -> None:
-        raise NotImplementedError()
-
-    @override
-    def delete(self, study: Study) -> None:
         raise NotImplementedError()
 
     @override
