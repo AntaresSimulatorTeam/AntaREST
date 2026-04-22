@@ -129,7 +129,9 @@ class VariantStudyService(AbstractService):
 
     @override
     def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
-        return self._storage_mapping[src_study.storage_mode].copy(src_study, dest_name, groups, destination_folder)
+        variant_study = _cast_study_to_variant(src_study)
+        self.safe_generation(variant_study, 600)
+        return self.raw_study_service.copy(src_study, dest_name, groups, destination_folder)
 
     @override
     def get_study_dao(self, study: Study) -> StudyDao:

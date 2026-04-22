@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import BinaryIO
 
 from antarest.study.dao.api.study_dao import StudyDao
@@ -25,7 +25,7 @@ class IStudyStorage(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
+    def copy(self, src_study: Study, new_study: RawStudy) -> RawStudy:
         raise NotImplementedError()
 
     @abstractmethod

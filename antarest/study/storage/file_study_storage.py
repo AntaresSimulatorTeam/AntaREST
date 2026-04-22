@@ -12,26 +12,23 @@
 import logging
 import shutil
 from datetime import datetime
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import BinaryIO
-from uuid import uuid4
 
 from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
-from antarest.core.model import PublicMode
 from antarest.core.utils.utils import current_time
 from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study
+from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.utils import (
     export_study_to_flat_directory,
-    get_current_user_name,
     is_managed,
     remove_from_cache,
     update_antares_info,
@@ -56,19 +53,17 @@ class FileStudyStorage(IStudyStorage):
         return factory.get_study_dao(study)
 
     @override
-    def copy(self, src_study: Study, dst_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
-        dest_study = self._build_raw_study(dst_name, groups, src_study, destination_folder)
-
-        src_path = Path(src_study.path)
-        dest_path = Path(dest_study.path)
+    def copy(self, src_study: Study, new_study: RawStudy) -> RawStudy:
+        src_path = src_study.get_path()
+        dest_path = Path(new_study.path)
 
         shutil.copytree(src_path, dest_path, ignore=shutil.ignore_patterns("output"))
 
-        file_study = self._get_file_study(dest_path, is_managed(src_study), dest_study.id)
+        file_study = self._get_file_study(dest_path, True, new_study.id)
 
-        update_antares_info(dest_study, file_study.tree, update_author=False)
+        update_antares_info(new_study, file_study.tree, update_author=False)
 
-        return dest_study
+        return new_study
 
     @override
     def write_study_to_filesytem(self, study: Study, denormalize: bool) -> Path:
@@ -96,11 +91,7 @@ class FileStudyStorage(IStudyStorage):
 
     @override
     def is_snapshot_up_to_date(self, study: VariantStudy) -> bool:
-        return (
-            (study.snapshot is not None)
-            and (study.snapshot.created_at >= study.updated_at)
-            and (study.snapshot_dir / "study.antares").is_file()
-        )
+        return study.is_snapshot_up_to_date()
 
     @override
     def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
@@ -200,25 +191,3 @@ class FileStudyStorage(IStudyStorage):
         for matrix_content in self._matrix_service.yield_matrices(list(matrices_mapping)):
             for node in matrices_mapping[matrix_content.id]:
                 node.write_dataframe(matrix_content.data)
-
-    def _build_raw_study(
-        self, dest_study_name: str, groups: list[str], src_study: Study, destination_folder: PurePosixPath
-    ) -> RawStudy:
-        dest_id = str(uuid4())
-        now_utc = current_time()
-        dest_study = RawStudy(
-            id=dest_id,
-            name=dest_study_name,
-            workspace=DEFAULT_WORKSPACE_NAME,
-            path=str(self._config.get_workspace_path() / dest_id),
-            created_at=now_utc,
-            updated_at=now_utc,
-            version=src_study.version,
-            author=src_study.author,
-            editor=get_current_user_name(),
-            horizon=src_study.horizon,
-            public_mode=PublicMode.NONE if groups else PublicMode.READ,
-            groups=groups,
-            folder=str(destination_folder / dest_id),
-        )
-        return dest_study

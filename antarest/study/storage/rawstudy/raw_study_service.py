@@ -28,7 +28,7 @@ from antarest.study.storage.file_study_storage import FileStudyStorage
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.study_storage_interface import IStudyStorage
-from antarest.study.storage.utils import export_study_to_flat_directory, fix_study_root
+from antarest.study.storage.utils import build_raw_study_from_source, export_study_to_flat_directory, fix_study_root
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
@@ -60,7 +60,10 @@ class RawStudyService(AbstractService):
 
     @override
     def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
-        return self._storage_mapping[src_study.storage_mode].copy(src_study, dest_name, groups, destination_folder)
+        new_study = build_raw_study_from_source(
+            dest_name, self._config.get_workspace_path(), groups, src_study, destination_folder
+        )
+        return self._storage_mapping[src_study.storage_mode].copy(src_study, new_study)
 
     @override
     def get_study_dao(self, study: Study) -> StudyDao:

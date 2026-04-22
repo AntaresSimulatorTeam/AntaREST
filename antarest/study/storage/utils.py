@@ -21,7 +21,7 @@ import time
 from collections.abc import Sequence
 from datetime import datetime, timedelta
 from io import StringIO
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, cast
 from uuid import uuid4
 from zipfile import ZipFile
@@ -44,7 +44,7 @@ from antarest.core.interfaces.cache import (
     study_config_cache_key,
     study_raw_cache_key,
 )
-from antarest.core.model import PermissionInfo, StudyPermissionType
+from antarest.core.model import PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde import AntaresBaseModel
@@ -52,6 +52,7 @@ from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.utils.archives import is_archive_format
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Identity
 from antarest.login.utils import get_user_impersonator, require_current_user
 from antarest.study.business.model.config.general_model import GeneralConfig, Mode
@@ -60,6 +61,7 @@ from antarest.study.model import (
     STUDY_REFERENCE_TEMPLATES,
     MatrixFrequency,
     MatrixIndex,
+    RawStudy,
     Study,
     StudyFolder,
     StudyMetadataDTO,
@@ -635,3 +637,27 @@ def export_study_to_flat_directory(study_dir: Path, dest: Path) -> None:
     stop_time = time.time()
     duration = f"{stop_time - start_time:.3f}"
     logger.info(f"Study '{study_dir}' exported (flat mode) in {duration}s")
+
+
+def build_raw_study_from_source(
+    name: str, path: Path, groups: list[str], src_study: Study, destination_folder: PurePosixPath
+) -> RawStudy:
+    dest_id = str(uuid4())
+    now_utc = current_time()
+    dest_study = RawStudy(
+        id=dest_id,
+        name=name,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        path=str(path / dest_id),
+        created_at=now_utc,
+        updated_at=now_utc,
+        version=src_study.version,
+        author=src_study.author,
+        editor=get_current_user_name(),
+        horizon=src_study.horizon,
+        public_mode=PublicMode.NONE if groups else PublicMode.READ,
+        groups=groups,
+        folder=str(destination_folder / dest_id),
+        storage_mode=src_study.storage_mode,
+    )
+    return dest_study
