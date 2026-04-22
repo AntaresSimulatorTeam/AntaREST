@@ -74,7 +74,8 @@ def test_normalize_denormalized_methods(tmp_path: Path, study_factory: StudyFact
     file_study = empty_study_fixture(STUDY_VERSION_8_8, matrix_service, tmp_path)
 
     # Create a `RawStudy` object based on the `FileStudy`
-    study = create_raw_study(id=file_study.config.study_id, path=str(file_study.config.study_path))
+    study_path = file_study.config.study_path
+    study = create_raw_study(id=file_study.config.study_id, path=str(study_path), workspace=DEFAULT_WORKSPACE_NAME)
 
     # Use this matrix_service in the raw_study_service and in the command_context
     matrix_constants = GeneratorMatrixConstants(matrix_service)
@@ -103,7 +104,6 @@ def test_normalize_denormalized_methods(tmp_path: Path, study_factory: StudyFact
     assert output.status
 
     # Ensures the matrix is normalized for now
-    study_path = file_study.config.study_path
     normalized_path = study_path / "input" / "load" / "series" / "load_fr.txt.link"
     denormalized_path = study_path / "input" / "load" / "series" / "load_fr.txt"
     assert normalized_path.exists()
