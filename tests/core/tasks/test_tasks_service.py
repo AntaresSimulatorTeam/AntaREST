@@ -19,12 +19,13 @@ from unittest.mock import ANY, Mock
 import numpy as np
 import pandas as pd
 import pytest
+from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine.base import Engine
 
 from antarest.core.config import Config
-from antarest.core.interfaces.eventbus import DummyEventBusService, EventType, IEventBus
+from antarest.core.interfaces.eventbus import EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.persistence import Base
@@ -46,12 +47,11 @@ from antarest.eventbus.service import EventBusService
 from antarest.login.model import User
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context, get_current_user
+from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
-from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import ThermalClusterTimeSeriesGeneratorTask
-from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
-from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.variantstudy.command_factory import CommandFactory
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.helpers import create_raw_study, with_admin_user, with_db_context
 from tests.study.service.test_service import build_study_service
@@ -397,24 +397,10 @@ def test_get_progress(admin_user: JWTUser, core_config: Config, event_bus: IEven
 
 @with_admin_user
 @with_db_context
-def test_ts_generation_task(
-    tmp_path: Path,
-    core_config: Config,
-    raw_study_service: RawStudyService,
-    study_factory: StudyFactory,
-    command_factory: CommandFactory,
-) -> None:
+def test_ts_generation_task(tmp_path: Path, variant_study_service: VariantStudyService) -> None:
     # =======================
     #  SET UP
     # =======================
-
-    event_bus = DummyEventBusService()
-
-    # Create a TaskJobService and add tasks
-    task_job_repo = TaskJobRepository()
-
-    # Create a TaskJobService
-    task_job_service = TaskJobService(config=core_config, repository=task_job_repo, event_bus=event_bus)
 
     # Create a raw study
     raw_study_path = tmp_path / "study"
@@ -435,71 +421,54 @@ def test_ts_generation_task(
         owner=regular_user,
         path=str(raw_study_path),
     )
-    study_metadata_repository = StudyMetadataRepository(Mock(), None)
     db.session.add(raw_study)
     db.session.commit()
 
     # Set up the Raw Study
-    FileStudyDaoFactory(command_factory.command_context, study_factory, Mock()).create_study_dao(raw_study)
-    # Create an area
-    areas_path = raw_study_path / "input" / "areas"
-    areas_path.mkdir(parents=True, exist_ok=True)
-    (areas_path / "fr").mkdir(parents=True, exist_ok=True)
-    (areas_path / "list.txt").touch(exist_ok=True)
-    with open(areas_path / "list.txt", mode="w") as f:
-        f.writelines(["fr"])
-    # Create 2 thermal clusters
-    thermal_path = raw_study_path / "input" / "thermal"
-    thermal_path.mkdir(parents=True, exist_ok=True)
-    fr_path = thermal_path / "clusters" / "fr"
-    fr_path.mkdir(parents=True, exist_ok=True)
-    (fr_path / "list.ini").touch(exist_ok=True)
-    content = """
-    [th_1]
-name = th_1
-nominalcapacity = 14.0
+    cmd_ctx = variant_study_service.command_factory.command_context
+    dao_factory = FileStudyDaoFactory(
+        cmd_ctx,
+        variant_study_service.study_factory,
+        variant_study_service.cache,
+    )
+    dao = dao_factory.create_study_dao(raw_study)
 
-[th_2]
-name = th_2
-nominalcapacity = 14.0
-"""
-    (fr_path / "list.ini").write_text(content)
-    # Create matrix files
-    for th_name in ["th_1", "th_2"]:
-        prepro_folder = thermal_path / "prepro" / "fr" / th_name
-        prepro_folder.mkdir(parents=True, exist_ok=True)
-        # Modulation
-        modulation_df = pd.DataFrame(data=np.ones((8760, 3)))
-        modulation_df.to_csv(prepro_folder / "modulation.txt", sep="\t", header=False, index=False)
-        (prepro_folder / "data.txt").touch()
-        # Data
-        data_df = pd.DataFrame(data=np.zeros((365, 6)))
-        data_df[0] = [1] * 365
-        data_df[1] = [1] * 365
-        data_df.to_csv(prepro_folder / "data.txt", sep="\t", header=False, index=False)
-        # Series
-        series_path = thermal_path / "series" / "fr" / th_name
-        series_path.mkdir(parents=True, exist_ok=True)
-        (series_path / "series.txt").touch()
+    # Create an area
+    study_version = StudyVersion.parse(raw_study.version)
+    cmd = CreateArea(area_name="fr", command_context=cmd_ctx, study_version=study_version)
+    output = cmd.apply(dao)
+    assert output.status
+    # Create 2 thermal clusters
+    modulation = np.ones((8760, 3)).tolist()
+    prepro_array = pd.DataFrame(data=np.zeros((365, 6)))
+    prepro_array[0] = [1] * 365
+    prepro_array[1] = [1] * 365
+    prepro = prepro_array.to_numpy().tolist()
+    for name in ["th_1", "th_2"]:
+        cmd = CreateCluster(
+            area_id="fr",
+            parameters=ThermalClusterCreation(name=name, nominal_capacity=14),
+            command_context=cmd_ctx,
+            study_version=study_version,
+            modulation=modulation,
+            prepro=prepro,
+        )
+        output = cmd.apply(dao)
+        assert output.status
 
     # Set up the mocks
-    variant_study_service = Mock(spec=VariantStudyService)
-    variant_study_service.command_factory = command_factory
-    config = Mock(spec=Config)
-
     user_service = Mock(spec=LoginService)
     user_service.get_identity.return_value = regular_user
     study_service = build_study_service(
-        raw_study_service,
+        variant_study_service.raw_study_service,
         Mock(),
-        study_metadata_repository,
-        config,
+        variant_study_service.repository,
+        variant_study_service.config,
         user_service=user_service,
-        task_service=task_job_service,
-        event_bus=event_bus,
+        task_service=variant_study_service.task_service,
+        event_bus=variant_study_service.event_bus,
         variant_study_service=variant_study_service,
     )
-    raw_study_service.study_factory = study_factory
 
     # =======================
     #  TEST CASE
@@ -535,7 +504,7 @@ nominalcapacity = 14.0
     assert task.progress == 100
 
     # Check eventbus
-    events = event_bus.events
+    events = study_service.event_bus.events
     assert len(events) == 6
     assert events[0].type == EventType.TASK_ADDED
     assert events[1].type == EventType.TASK_RUNNING
