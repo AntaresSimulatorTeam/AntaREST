@@ -785,8 +785,8 @@ class VariantStudyService(AbstractService):
 
     def safe_generation(self, study: VariantStudy, timeout: int) -> None:
         try:
-            if self.exists(study):
-                # The study is already present on disk => nothing to do
+            if self._storage_mapping[study.storage_mode].is_snapshot_up_to_date(study):
+                # Nothing to do
                 return
 
             logger.info("🔹 Starting variant study generation...")

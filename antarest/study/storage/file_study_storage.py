@@ -31,6 +31,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import Matri
 from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.utils import get_current_user_name, is_managed, update_antares_info
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +86,14 @@ class FileStudyStorage(IStudyStorage):
     def import_study(self, study: RawStudy, stream: BinaryIO) -> RawStudy:
         self.normalize_study(study)
         return study
+
+    @override
+    def is_snapshot_up_to_date(self, study: VariantStudy) -> bool:
+        return (
+            (study.snapshot is not None)
+            and (study.snapshot.created_at >= study.updated_at)
+            and (study.snapshot_dir / "study.antares").is_file()
+        )
 
     def update_from_raw_metadata(self, study: Study) -> None:
         """
