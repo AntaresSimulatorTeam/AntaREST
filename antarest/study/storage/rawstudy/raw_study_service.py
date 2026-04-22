@@ -121,4 +121,4 @@ class RawStudyService(AbstractService):
             raise
 
     def denormalize_study(self, study: Study) -> None:
-        raise NotImplementedError()
+        self._file_study_storage.denormalize_study(study)

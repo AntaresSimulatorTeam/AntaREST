@@ -182,6 +182,10 @@ class FileStudyStorage(IStudyStorage):
     def _get_file_study(self, study_path: Path, managed: bool, study_id: str = "") -> FileStudy:
         return self._study_factory.create_from_fs(study_path, managed, study_id=study_id)
 
+    def denormalize_study(self, study: Study) -> None:
+        file_study = self._get_file_study(Path(study.path), is_managed(study), study.id)
+        self._denormalize_file_study(file_study)
+
     def _denormalize_file_study(self, file_study: FileStudy) -> None:
         matrix_nodes = file_study.tree.get_matrix_nodes_to_denormalize()
         if not matrix_nodes:
