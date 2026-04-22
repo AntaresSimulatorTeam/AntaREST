@@ -91,13 +91,7 @@ def _create_variant(
 
 
 def _build_generator(variant_study_service: VariantStudyService) -> SnapshotGenerator:
-    return SnapshotGenerator(
-        cache=variant_study_service.cache,
-        raw_study_service=variant_study_service.raw_study_service,
-        command_factory=variant_study_service.command_factory,
-        study_factory=variant_study_service.study_factory,
-        repository=variant_study_service.repository,
-    )
+    return SnapshotGenerator(variant_study_service)
 
 
 def _get_dao_factory(variant_id: str, variant_study_service: VariantStudyService) -> StudyFactoryDao:
@@ -854,7 +848,7 @@ class TestSnapshotGenerator:
         """
         generator = _build_generator(variant_study_service)
         assert generator.cache == variant_study_service.cache
-        assert generator.raw_study_service == variant_study_service.raw_study_service
+        assert generator.variant_study_service == variant_study_service
         assert generator.command_factory == variant_study_service.command_factory
         assert generator.study_factory == variant_study_service.study_factory
         assert generator.repository == variant_study_service.repository
