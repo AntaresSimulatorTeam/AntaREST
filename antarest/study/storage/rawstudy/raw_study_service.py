@@ -11,9 +11,8 @@
 # This file is part of the Antares project.
 import logging
 import shutil
-import time
 from pathlib import Path, PurePosixPath
-from typing import BinaryIO, Sequence
+from typing import BinaryIO
 
 from typing_extensions import override
 
@@ -29,7 +28,7 @@ from antarest.study.storage.file_study_storage import FileStudyStorage
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.study_storage_interface import IStudyStorage
-from antarest.study.storage.utils import fix_study_root
+from antarest.study.storage.utils import export_study_to_flat_directory, fix_study_root
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
@@ -69,25 +68,12 @@ class RawStudyService(AbstractService):
 
     @override
     def export_study_flat(self, study: Study, dst_path: Path) -> None:
-        src_path = self._storage_mapping[study.storage_mode].write_study_to_filesytem(study)
-        self.export_study_to_flat_directory(src_path, dst_path)
+        src_path = self._storage_mapping[study.storage_mode].write_study_to_filesytem(study, False)
+        export_study_to_flat_directory(src_path, dst_path)
 
     ##########################
     # Specific methods
     ##########################
-
-    @staticmethod
-    def export_study_to_flat_directory(study_dir: Path, dest: Path) -> None:
-        start_time = time.time()
-
-        def ignore_outputs(directory: str, _: Sequence[str]) -> Sequence[str]:
-            return ["output"] if str(directory) == str(study_dir) else []
-
-        shutil.copytree(src=study_dir, dst=dest, ignore=ignore_outputs)
-
-        stop_time = time.time()
-        duration = f"{stop_time - start_time:.3f}"
-        logger.info(f"Study '{study_dir}' exported (flat mode) in {duration}s")
 
     def archive(self, study: Study) -> None:
         raise NotImplementedError()

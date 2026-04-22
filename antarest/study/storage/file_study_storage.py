@@ -29,7 +29,13 @@ from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.study_storage_interface import IStudyStorage
-from antarest.study.storage.utils import get_current_user_name, is_managed, update_antares_info
+from antarest.study.storage.utils import (
+    export_study_to_flat_directory,
+    get_current_user_name,
+    is_managed,
+    remove_from_cache,
+    update_antares_info,
+)
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
@@ -65,10 +71,11 @@ class FileStudyStorage(IStudyStorage):
         return dest_study
 
     @override
-    def write_study_to_filesytem(self, study: Study) -> Path:
+    def write_study_to_filesytem(self, study: Study, denormalize: bool) -> Path:
         study_path = Path(study.path)
         file_study = self._get_file_study(study_path, is_managed(study), study.id)
-        self._denormalize_file_study(file_study)
+        if denormalize:
+            self._denormalize_file_study(file_study)
         return study_path
 
     @override
@@ -94,6 +101,20 @@ class FileStudyStorage(IStudyStorage):
             and (study.snapshot.created_at >= study.updated_at)
             and (study.snapshot_dir / "study.antares").is_file()
         )
+
+    @override
+    def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
+        remove_from_cache(self._cache, variant_study.id)
+        snapshot_dir = variant_study.snapshot_dir
+        logger.info(f"Exporting the reference study '{ref_study.id}' to '{snapshot_dir.name}'...")
+        shutil.rmtree(snapshot_dir, ignore_errors=True)
+
+        if isinstance(ref_study, VariantStudy):
+            snapshot_dir.parent.mkdir(parents=True, exist_ok=True)
+            export_study_to_flat_directory(ref_study.snapshot_dir, snapshot_dir)
+        elif isinstance(ref_study, RawStudy):
+            src_path = self.write_study_to_filesytem(ref_study, False)
+            export_study_to_flat_directory(src_path, snapshot_dir)
 
     def update_from_raw_metadata(self, study: Study) -> None:
         """

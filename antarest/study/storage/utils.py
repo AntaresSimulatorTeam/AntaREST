@@ -17,6 +17,7 @@ import math
 import os
 import re
 import shutil
+import time
 from collections.abc import Sequence
 from datetime import datetime, timedelta
 from io import StringIO
@@ -621,3 +622,16 @@ def get_user_name_from_id(user_id: int) -> str:
 
 def get_current_user_name() -> str:
     return get_user_name_from_id(get_user_impersonator())
+
+
+def export_study_to_flat_directory(study_dir: Path, dest: Path) -> None:
+    start_time = time.time()
+
+    def ignore_outputs(directory: str, _: Sequence[str]) -> Sequence[str]:
+        return ["output"] if str(directory) == str(study_dir) else []
+
+    shutil.copytree(src=study_dir, dst=dest, ignore=ignore_outputs)
+
+    stop_time = time.time()
+    duration = f"{stop_time - start_time:.3f}"
+    logger.info(f"Study '{study_dir}' exported (flat mode) in {duration}s")

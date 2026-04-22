@@ -44,7 +44,7 @@ class DatabaseStudyStorage(IStudyStorage):
         raise NotImplementedError()
 
     @override
-    def write_study_to_filesytem(self, study: Study) -> Path:
+    def write_study_to_filesytem(self, study: Study, denormalize: bool) -> Path:
         raise NotImplementedError()
 
     @override
@@ -58,4 +58,8 @@ class DatabaseStudyStorage(IStudyStorage):
 
     @override
     def is_snapshot_up_to_date(self, study: VariantStudy) -> bool:
+        raise NotImplementedError()
+
+    @override
+    def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
         raise NotImplementedError()

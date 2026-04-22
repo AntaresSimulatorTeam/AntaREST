@@ -65,6 +65,7 @@ from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.utils import (
     assert_permission,
+    export_study_to_flat_directory,
     get_current_user_name,
     get_user_name_from_id,
     is_managed,
@@ -138,7 +139,7 @@ class VariantStudyService(AbstractService):
     def export_study_flat(self, study: Study, dst_path: Path) -> None:
         variant = _cast_study_to_variant(study)
         self.safe_generation(variant)
-        self.raw_study_service.export_study_to_flat_directory(variant.snapshot_dir, dst_path)
+        export_study_to_flat_directory(variant.snapshot_dir, dst_path)
 
     ##########################
     # Specific methods
@@ -719,8 +720,8 @@ class VariantStudyService(AbstractService):
             return self.task_service.status_task(task_id=task_id, with_logs=True)
         raise StudyValidationError(f"Variant study '{study_id}' has no generation task")
 
-    def create_snapshot(self, study: Study) -> None:
-        self._storage_mapping[study.storage_mode].create_snapshot(study)
+    def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
+        self._storage_mapping[ref_study.storage_mode].create_snapshot(ref_study, variant_study)
 
     def clear_all_snapshots(self, retention_time: timedelta) -> str:
         """

@@ -29,7 +29,7 @@ class IStudyStorage(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def write_study_to_filesytem(self, study: Study) -> Path:
+    def write_study_to_filesytem(self, study: Study, denormalize: bool) -> Path:
         raise NotImplementedError()
 
     @abstractmethod
@@ -42,4 +42,8 @@ class IStudyStorage(ABC):
 
     @abstractmethod
     def is_snapshot_up_to_date(self, study: VariantStudy) -> bool:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
         raise NotImplementedError()

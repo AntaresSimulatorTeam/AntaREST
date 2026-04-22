@@ -86,7 +86,7 @@ class SnapshotGenerator:
 
         try:
             if search_result.force_regenerate or not snapshot_dir.exists():
-                self.variant_study_service.create_snapshot(ref_study)
+                self.variant_study_service.create_snapshot(ref_study, variant_study)
 
             # The snapshot is generated, we also need to de-normalize the matrices.
             study_dao = dao_factory.get_study_dao(variant_study)
