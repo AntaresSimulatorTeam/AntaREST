@@ -15,7 +15,6 @@ from pathlib import Path
 
 import click
 
-from antarest.tools.admin_lib import clean_locks as do_clean_locks
 from antarest.tools.admin_lib import fix_interrupted_tasks_status
 from antarest.tools.admin_lib import reindex_table as do_reindex_table
 
@@ -26,20 +25,6 @@ logger = logging.getLogger(__name__)
 @click.group()
 def commands() -> None:
     pass
-
-
-@commands.command()
-@click.option(
-    "--config",
-    "-c",
-    nargs=1,
-    required=True,
-    type=click.Path(exists=True),
-    help="Application config",
-)
-def clean_locks(config: str) -> None:
-    """Clean app locks"""
-    do_clean_locks(Path(config))
 
 
 @commands.command()
