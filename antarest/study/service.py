@@ -2150,7 +2150,7 @@ class StudyService:
             with db():
                 study_to_unarchive = clone_raw_study(assert_raw(self.get_study(uuid)))
 
-            self.storage_service.get_storage(study_to_unarchive).unarchive(study_to_unarchive)
+            self.storage_service.raw_study_service.unarchive(study_to_unarchive)
 
             with db():
                 study_db = self.repository.get(uuid)

@@ -24,10 +24,6 @@ class IStudyService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def unarchive(self, study: Study) -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
     def delete_from_filesystem(self, study: Study) -> None:
         raise NotImplementedError()
 
