@@ -2101,7 +2101,7 @@ class StudyService:
                 if not output.in_study and not output.archived:
                     self._get_outputs_access().archive_output(study_to_archive.id, output.id)
 
-            self.storage_service.get_storage(study_to_archive).archive(study_to_archive)
+            self.storage_service.raw_study_service.archive(study_to_archive)
 
             with db():
                 study_db = self.repository.get(uuid)

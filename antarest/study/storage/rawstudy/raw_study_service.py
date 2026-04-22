@@ -55,7 +55,6 @@ class RawStudyService(AbstractService):
         RawStudyMatrixUsageProvider(StudyMetadataRepository(cache_service=cache), matrix_service=self._matrix_service)
         self.cache = cache
 
-    @override
     def archive(self, study: Study) -> None:
         raise NotImplementedError()
 

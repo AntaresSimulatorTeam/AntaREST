@@ -127,10 +127,6 @@ class VariantStudyService(AbstractService):
         CommandBlobUsageProvider(variant_study_repo=repository, command_factory=command_factory)
 
     @override
-    def archive(self, study: Study) -> None:
-        raise NotImplementedError()
-
-    @override
     def unarchive(self, study: Study) -> None:
         raise NotImplementedError()
 
