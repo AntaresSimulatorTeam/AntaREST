@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path, PurePosixPath
 
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.model import Study
+from antarest.study.model import RawStudy, Study
 
 
 class IStudyStorage(ABC):
@@ -36,4 +36,8 @@ class IStudyStorage(ABC):
 
     @abstractmethod
     def update_from_raw_metadata(self, study: Study) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def update_name_and_version_from_raw_meta(self, study: RawStudy) -> bool:
         raise NotImplementedError()

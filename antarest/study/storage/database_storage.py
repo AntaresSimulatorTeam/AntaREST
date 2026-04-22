@@ -18,7 +18,7 @@ from antarest.core.config import Config
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.model import Study
+from antarest.study.model import RawStudy, Study
 from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
@@ -54,3 +54,8 @@ class DatabaseStudyStorage(IStudyStorage):
     def update_from_raw_metadata(self, study: Study) -> None:
         # Nothing to do
         pass
+
+    @override
+    def update_name_and_version_from_raw_meta(self, study: RawStudy) -> bool:
+        # Nothing to do
+        return True

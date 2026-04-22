@@ -82,7 +82,7 @@ class FileStudyStorage(IStudyStorage):
 
     @override
     def update_from_raw_metadata(self, study: Study) -> None:
-        file_study = self._get_file_study(Path(study.path), is_managed(study), "")
+        file_study = self._get_file_study(Path(study.path), is_managed(study))
         try:
             raw_meta = file_study.tree.get(["study", "antares"])
 
@@ -105,6 +105,25 @@ class FileStudyStorage(IStudyStorage):
             study.author = study.author or "Unknown"
             study.editor = study.editor or "Unknown"
 
+    @override
+    def update_name_and_version_from_raw_meta(self, study: RawStudy) -> bool:
+        path = Path(study.path)
+        try:
+            file_study = self._get_file_study(path, is_managed(study))
+            raw_meta = file_study.tree.get(["study", "antares"])
+            version_as_string = str(raw_meta["version"])
+            if study.name != raw_meta["caption"] or study.version != version_as_string:
+                logger.info(
+                    f"Updating name/version for study {study.id} ({study.name}) to {raw_meta['caption']}/{version_as_string}"
+                )
+                study.name = raw_meta["caption"]
+                study.version = version_as_string
+                return True
+            return False
+        except Exception as e:
+            logger.error("Failed to update study %s name and version from raw metadata!", str(study.path), exc_info=e)
+            return False
+
     def _update_study_data_from_files(self, file_study: FileStudy, study: Study) -> None:
         logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
         horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
@@ -118,7 +137,7 @@ class FileStudyStorage(IStudyStorage):
         study.author = author
         study.editor = editor
 
-    def _get_file_study(self, study_path: Path, managed: bool, study_id: str) -> FileStudy:
+    def _get_file_study(self, study_path: Path, managed: bool, study_id: str = "") -> FileStudy:
         return self._study_factory.create_from_fs(study_path, managed, study_id=study_id)
 
     def _denormalize_file_study(self, file_study: FileStudy) -> None:
