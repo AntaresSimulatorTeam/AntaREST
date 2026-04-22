@@ -26,7 +26,6 @@ from antarest.core.utils.string import to_kebab_case
 from antarest.study.business.model.area_properties_model import (
     AdequacyPatchMode,
     AreaProperties,
-    initialize_area_properties,
     parse_filters,
     serialize_filters,
 )
@@ -256,7 +255,7 @@ class AreaPropertiesFileData(AntaresBaseModel, extra="forbid", populate_by_name=
     adequacy_patch_properties: AdequacyPatchFileData
 
     def get_area_properties(self, area_id: str, study_version: StudyVersion) -> AreaProperties:
-        props = AreaProperties(
+        return AreaProperties(
             energy_cost_unsupplied=self.thermal_properties.unserverd_energy_cost.get(area_id, 0.0),
             energy_cost_spilled=self.thermal_properties.spilled_energy_cost.get(area_id, 0.0),
             non_dispatch_power=self.optimization_properties.nodal_optimization.non_dispatchable_power,
@@ -268,8 +267,6 @@ class AreaPropertiesFileData(AntaresBaseModel, extra="forbid", populate_by_name=
             filter_by_year=parse_filters(self.optimization_properties.filtering.filter_year_by_year),
             adequacy_patch_mode=self.adequacy_patch_properties.adequacy_patch.adequacy_patch_mode,
         )
-        initialize_area_properties(props, study_version)
-        return props
 
     def set_area_properties(self, area_id: str, properties: AreaProperties) -> None:
         self.thermal_properties.unserverd_energy_cost[area_id] = properties.energy_cost_unsupplied

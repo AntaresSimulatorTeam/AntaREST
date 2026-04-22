@@ -10,37 +10,18 @@
 #
 # This file is part of the Antares project.
 import pytest
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.area_properties_model import AreaProperties
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.dao.database.models.area import AREA_TABLE
 from tests.db_statement_recorder import DBStatementRecorder
 from tests.study.dao.utils import save_area
 
 
-def test_save_area_creates_area_with_default_properties(db_session: Session, db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def test_save_area_creates_area_with_default_properties(dao: StudyDao) -> None:
     save_area(dao, "Paris")
-    study_id = dao.get_study_id()
-
-    # Check default AreaProperties were created
-    stmt_properties = select(AREA_TABLE).where(AREA_TABLE.c.study_id == study_id)
-    row = db_session.execute(stmt_properties).fetchone()
-    assert row.study_id == study_id
-    assert row.area_id == "paris"
-    assert row.energy_cost_unsupplied == 0
-    assert row.energy_cost_spilled == 0
-    assert row.non_dispatch_power is True
-    assert row.dispatch_hydro_power is True
-    assert row.other_dispatch_power is True
-    assert row.spread_unsupplied_energy_cost == 0
-    assert row.spread_spilled_energy_cost == 0
-    assert row.filter_synthesis == "hourly, daily, weekly, monthly, annual"
-    assert row.filter_by_year == "hourly, daily, weekly, monthly, annual"
-    assert row.adequacy_patch_mode is None
 
     # Ensures we're able to read the data
     properties = dao.get_area_properties(area_id="paris")
@@ -51,7 +32,7 @@ def test_save_area_creates_area_with_default_properties(db_session: Session, db_
 
     assert dao.get_all_area_properties() == {}
 
-    rows = db_session.execute(select(AREA_TABLE)).fetchall()
+    rows = dao.get_all_area_ids()
     assert not rows
 
 
@@ -69,8 +50,7 @@ def test_multiple_areas(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
-def test_error_cases(db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def test_error_cases(dao: StudyDao) -> None:
     # Try to get properties for a fake area
     with pytest.raises(AreaNotFound, match="Area is not found: 'fake_area'"):
         dao.get_area_properties("fake_area")
@@ -80,8 +60,7 @@ def test_error_cases(db_dao: DatabaseStudyDao) -> None:
         dao.save_area_properties("fake_area", AreaProperties())
 
 
-def test_modify_properties(db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def test_modify_properties(dao: StudyDao) -> None:
     area_id = "paris"
     save_area(dao, area_id)
 
