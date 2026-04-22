@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import logging
+from pathlib import PurePosixPath
 
 from typing_extensions import override
 
@@ -35,3 +36,7 @@ class DatabaseStudyStorage(IStudyStorage):
     @override
     def get_dao(self, study: Study) -> DatabaseStudyDao:
         return DatabaseStudyDao(study.id, db.session, self._matrix_service, self._generator_matrix_constants)
+
+    @override
+    def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
+        raise NotImplementedError()
