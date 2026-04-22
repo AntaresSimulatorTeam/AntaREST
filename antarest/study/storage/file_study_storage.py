@@ -66,12 +66,12 @@ class FileStudyStorage(IStudyStorage):
         return new_study
 
     @override
-    def write_study_to_filesytem(self, study: Study, denormalize: bool) -> Path:
-        study_path = Path(study.path)
-        file_study = self._get_file_study(study_path, is_managed(study), study.id)
-        if denormalize:
-            self._denormalize_file_study(file_study)
-        return study_path
+    def write_study_to_filesytem(self, study: Study) -> None:
+        self.denormalize_study(study)
+
+    @override
+    def write_study_for_archive(self, study: RawStudy) -> None:
+        self.denormalize_study(study)
 
     @override
     def normalize_study(self, study: Study) -> None:
@@ -104,8 +104,7 @@ class FileStudyStorage(IStudyStorage):
             snapshot_dir.parent.mkdir(parents=True, exist_ok=True)
             export_study_to_flat_directory(ref_study.snapshot_dir, snapshot_dir)
         elif isinstance(ref_study, RawStudy):
-            src_path = self.write_study_to_filesytem(ref_study, False)
-            export_study_to_flat_directory(src_path, snapshot_dir)
+            export_study_to_flat_directory(Path(ref_study.path), snapshot_dir)
 
     @override
     def clear_snapshot(self, variant_study: VariantStudy) -> None:
