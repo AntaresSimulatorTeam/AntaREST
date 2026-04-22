@@ -36,34 +36,31 @@ preload_app = False
 
 def child_exit(server, worker):
     """
-    Notify prometheus that this worker stops
+    Notify prometheus that this worker stops, and release its ID slot.
+    Runs in master process.
     """
     multiprocess.mark_process_dead(worker.pid)
+    worker_id = getattr(worker, "_antarest_worker_id", None)
+    if worker_id is not None:
+        _worker_ids[worker_id] = 0
 
 
-# Below: logic to assign a unique identifier to each worker, from 1 to workers count
-_worker_ids = [0 for _ in range(workers)]
+# Below: logic to assign a unique identifier to each worker, from 1 to workers count.
+# Index 0 is unused so that worker IDs are 1-based (matching the range 1..workers).
+_worker_ids = [0 for _ in range(workers + 1)]
 
 
 def pre_fork(server, worker):
-    # Runs in master — assign a free slot to this worker's PID
+    # Runs in master before fork — find a free slot and attach it to the worker object.
+    # worker.pid is not yet set at this point, so we store the slot on the worker itself.
     for i in range(1, workers + 1):
         if _worker_ids[i] == 0:
-            _worker_ids[i] = worker.pid
+            _worker_ids[i] = 1  # mark as taken
+            worker._antarest_worker_id = i
             break
 
 
 def post_fork(server, worker):
-    # Runs in child — find our PID in the inherited array and read our slot
-    for i in range(1, workers + 1):
-        if _worker_ids[i] == worker.pid:
-            os.environ["ANTAREST_WORKER_ID"] = str(i)
-            break
-
-
-def worker_exit(server, worker):
-    # Runs in master — release the slot
-    for i in range(1, workers + 1):
-        if _worker_ids[i] == worker.pid:
-            _worker_ids[i] = 0
-            break
+    # Runs in child after fork — export the pre-assigned slot as an env var so that
+    # antarest.globals.ANTAREST_WORKER_ID (read at import time) picks it up.
+    os.environ["ANTAREST_WORKER_ID"] = str(getattr(worker, "_antarest_worker_id", 0))
