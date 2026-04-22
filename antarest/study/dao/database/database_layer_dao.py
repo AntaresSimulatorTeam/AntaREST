@@ -117,7 +117,6 @@ class DatabaseLayerDao(LayerDao):
 
         values = {"study_id": study_id, "layer_id": layer.id, "name": layer.name}
         upsert_one(session, LAYER_TABLE, values)
-        self.get_impl().save_layer_areas(layer.id, layer.areas)
         session.commit()
 
     @override
