@@ -272,7 +272,7 @@ def test_command_matrix_usage_provider_with_snapshot(
     variant_study_service.append_command(variant_study.id, command.to_dto())
 
     # Generate the snapshot
-    variant_study_service.get_raw(variant_study)
+    variant_study_service.safe_generation(variant_study)
 
     # Ensures the provider sees matrices in the snapshot as the variant contains the command `GenerateThermalClusterTimeSeries`.
     # This way it won't be cleaned by the garbage collector.
@@ -293,7 +293,7 @@ def test_command_matrix_usage_provider_with_snapshot(
     assert command.get_inner_matrices() == InnerMatrices(generates_matrices_at_run_time=False)
     variant_study_service.append_command(variant_study.id, command.to_dto())
     # Generate its snapshot
-    variant_study_service.get_raw(variant_study)
+    variant_study_service.safe_generation(variant_study)
     # Ensures no matrix is used even if the snapshot exists
     used_matrices = list(provider.get_matrix_usage())
     assert len(used_matrices) == 0
