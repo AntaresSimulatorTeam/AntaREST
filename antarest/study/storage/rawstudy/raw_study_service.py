@@ -78,11 +78,12 @@ class RawStudyService(AbstractService):
     # Specific methods
     ##########################
 
-    def archive(self, study: Study) -> None:
+    def archive(self, study: RawStudy) -> None:
         raise NotImplementedError()
 
-    def unarchive(self, study: Study) -> None:
-        raise NotImplementedError()
+    def unarchive(self, study: RawStudy) -> None:
+        archive_path = self.find_archive_path(study)
+        self._extract_and_setup(study, archive_path)
 
     def normalize_study(self, study: Study) -> None:
         self._storage_mapping[study.storage_mode].normalize_study(study)
