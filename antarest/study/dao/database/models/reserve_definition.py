@@ -23,7 +23,6 @@ RESERVE_DEFINITION_TABLE = Table(
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("reserve_id", String(255), nullable=False, primary_key=True),
-    Column("name", String(255), nullable=False),
     Column("type", Enum(ReserveType), nullable=False),
     Column("failure_cost", Float, nullable=False),
     Column("spillage_cost", Float, nullable=False),

@@ -40,9 +40,9 @@ def filestudy_dao_v10(empty_study_930: FileStudy, matrix_service: ISimpleMatrixS
     )
 
 
-def _make_reserve(name: str, reserve_type: ReserveType = ReserveType.UP, **overrides) -> ReserveDefinition:
+def _make_reserve(id_: str, reserve_type: ReserveType = ReserveType.UP, **overrides) -> ReserveDefinition:
     base = dict(
-        name=name,
+        id=id_,
         type=reserve_type,
         failure_cost=10.0,
         spillage_cost=5.0,
@@ -68,7 +68,7 @@ class TestCoexistenceWithGlobalParameters:
 
         reserves = list(filestudy_dao_v10.get_all_reserve_definitions_for_area("paris"))
         ids = sorted(r.id for r in reserves)
-        assert ids == ["reserve 1", "reserve 2"]
+        assert ids == ["Reserve 1", "Reserve 2"]
         assert "globalparameters" not in ids
 
     def test_save_reserve_preserves_global_parameters(self, filestudy_dao_v10: FileStudyTreeDao) -> None:
@@ -90,7 +90,7 @@ class TestCoexistenceWithGlobalParameters:
             {"paris": ReservesGlobalParameters(reference_activation_duration_up=9)}
         )
 
-        assert filestudy_dao_v10.get_reserve_definition("paris", "r1") == reserve
+        assert filestudy_dao_v10.get_reserve_definition("paris", "R1") == reserve
 
     def test_delete_reserve_preserves_global_parameters(self, filestudy_dao_v10: FileStudyTreeDao) -> None:
         save_area(filestudy_dao_v10, "paris")
@@ -98,10 +98,10 @@ class TestCoexistenceWithGlobalParameters:
         filestudy_dao_v10.save_reserves_global_parameters({"paris": global_params})
         filestudy_dao_v10.save_reserve_definitions({"paris": [_make_reserve("R1")]})
 
-        filestudy_dao_v10.delete_reserve_definitions("paris", ["r1"])
+        filestudy_dao_v10.delete_reserve_definitions("paris", ["R1"])
 
         assert filestudy_dao_v10.get_reserves_global_parameters("paris") == global_params
-        assert filestudy_dao_v10.reserve_definition_exists("paris", "r1") is False
+        assert filestudy_dao_v10.reserve_definition_exists("paris", "R1") is False
 
     def test_upsert_multiple_reserves_preserves_global_parameters(self, filestudy_dao_v10: FileStudyTreeDao) -> None:
         save_area(filestudy_dao_v10, "paris")
@@ -115,6 +115,6 @@ class TestCoexistenceWithGlobalParameters:
         )
 
         assert filestudy_dao_v10.get_reserves_global_parameters("paris") == global_params
-        assert filestudy_dao_v10.get_reserve_definition("paris", "r1").failure_cost == 999.0
-        assert filestudy_dao_v10.reserve_definition_exists("paris", "r2") is True
-        assert filestudy_dao_v10.reserve_definition_exists("paris", "r3") is True
+        assert filestudy_dao_v10.get_reserve_definition("paris", "R1").failure_cost == 999.0
+        assert filestudy_dao_v10.reserve_definition_exists("paris", "R2") is True
+        assert filestudy_dao_v10.reserve_definition_exists("paris", "R3") is True
