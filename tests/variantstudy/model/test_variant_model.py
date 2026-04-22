@@ -159,13 +159,7 @@ class TestVariantStudyService:
         assert len(commands) == command_count
 
         # Generate using the SnapshotGenerator
-        generator = SnapshotGenerator(
-            cache=variant_study_service.cache,
-            raw_study_service=variant_study_service.raw_study_service,
-            command_factory=variant_study_service.command_factory,
-            study_factory=variant_study_service.study_factory,
-            repository=variant_study_service.repository,
-        )
+        generator = SnapshotGenerator(variant_study_service)
         # Build the dao factory
         ctx = variant_study_service.command_factory.command_context
 
