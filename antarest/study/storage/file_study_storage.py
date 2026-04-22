@@ -63,6 +63,8 @@ class FileStudyStorage(IStudyStorage):
 
         update_antares_info(new_study, file_study.tree, update_author=False)
 
+        self.normalize_file_study(file_study)
+
         return new_study
 
     @override
@@ -76,6 +78,9 @@ class FileStudyStorage(IStudyStorage):
     @override
     def normalize_study(self, study: Study) -> None:
         file_study = self._get_file_study(Path(study.path), is_managed(study), study.id)
+        self.normalize_file_study(file_study)
+
+    def normalize_file_study(self, file_study: FileStudy) -> None:
         matrix_nodes = file_study.tree.get_matrix_nodes_to_normalize()
         if not matrix_nodes:
             return

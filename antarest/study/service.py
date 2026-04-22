@@ -1271,7 +1271,6 @@ class StudyService:
             study.directory_id = self.directory_service.get_directory_by_path(destination_folder.as_posix())
 
             self._save_study(study)
-            self.storage_service.raw_study_service.normalize_study(study)
 
             match outputs_selection:
                 case "all":
