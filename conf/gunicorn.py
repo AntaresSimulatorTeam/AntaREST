@@ -42,20 +42,19 @@ def child_exit(server, worker):
     multiprocess.mark_process_dead(worker.pid)
     worker_id = getattr(worker, "_antarest_worker_id", None)
     if worker_id is not None:
-        _worker_ids[worker_id] = 0
+        _taken_worker_ids.discard(worker_id)
 
 
 # Below: logic to assign a unique identifier to each worker, from 1 to workers count.
-# Index 0 is unused so that worker IDs are 1-based (matching the range 1..workers).
-_worker_ids = [0 for _ in range(workers + 1)]
+_taken_worker_ids: set[int] = set()
 
 
 def pre_fork(server, worker):
     # Runs in master before fork — find a free slot and attach it to the worker object.
     # worker.pid is not yet set at this point, so we store the slot on the worker itself.
     for i in range(1, workers + 1):
-        if _worker_ids[i] == 0:
-            _worker_ids[i] = 1  # mark as taken
+        if i not in _taken_worker_ids:
+            _taken_worker_ids.add(i)
             worker._antarest_worker_id = i
             break
 
