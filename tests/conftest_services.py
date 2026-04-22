@@ -373,7 +373,7 @@ def raw_study_service_fixture(
     core_config: Config,
     study_factory: StudyFactory,
     core_cache: ICache,
-    command_context: CommandContext,
+    command_factory: CommandFactory,
 ) -> RawStudyService:
     """
     Fixture that creates a RawStudyService instance.
@@ -387,7 +387,10 @@ def raw_study_service_fixture(
         An instance of the RawStudyService class with the provided dependencies.
     """
     return RawStudyService(
-        config=core_config, study_factory=study_factory, cache=core_cache, command_context=command_context
+        config=core_config,
+        study_factory=study_factory,
+        cache=core_cache,
+        command_context=command_factory.command_context,
     )
 
 
