@@ -106,7 +106,7 @@ class VariantStudyService(AbstractService):
         config: Config,
         matrix_service: ISimpleMatrixService,
     ):
-        super().__init__(cache)
+        super().__init__(cache, config)
         self.cache = cache
         self.config = config
         self.task_service = task_service

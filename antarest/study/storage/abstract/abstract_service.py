@@ -17,8 +17,10 @@ from pathlib import Path
 
 from typing_extensions import override
 
+from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
+from antarest.core.utils.archives import ArchiveFormat
 from antarest.login.model import GroupDTO
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -33,8 +35,9 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractService(IStudyService, ABC):
-    def __init__(self, cache: ICache):
+    def __init__(self, cache: ICache, config: Config):
         self._cache = cache
+        self._config = config
 
     @override
     def get_study_information(
@@ -85,7 +88,21 @@ class AbstractService(IStudyService, ABC):
         return Path(metadata.path)
 
     def find_archive_path(self, study: Study) -> Path:
-        raise NotImplementedError()
+        """
+        Fetch for archive path of a study if it exists else raise an incorrectly archived study.
+
+        Args:
+            study: The study to get the archive path for.
+
+        Returns:
+            The full path of the archive file (zip or 7z).
+        """
+        archive_dir: Path = self._config.storage.archive_dir
+        for suffix in list(ArchiveFormat):
+            path = archive_dir.joinpath(f"{study.id}{suffix}")
+            if path.is_file():
+                return path
+        raise FileNotFoundError(f"Study {study.id} archiving process is corrupted (no archive file found).")
 
     @override
     def get_disk_usage(self, study: Study) -> int:

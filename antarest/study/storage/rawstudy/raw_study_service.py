@@ -40,7 +40,7 @@ class RawStudyService(AbstractService):
 
     def __init__(self, config: Config, study_factory: StudyFactory, cache: ICache, command_context: CommandContext):
 
-        super().__init__(cache)
+        super().__init__(cache, config)
 
         self.study_factory = study_factory
         self._matrix_service = command_context.matrix_service
