@@ -80,7 +80,7 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
     command_context = CommandContext(
         generator_matrix_constants=matrix_constants, matrix_service=matrix_service, blob_service=blob_service
     )
-    raw_study_service = RawStudyService(Mock(), Mock(), Mock(), matrix_service)
+    raw_study_service = RawStudyService(Mock(), Mock(), Mock(), command_context)
     dao = build_dao_from_file_study(study, command_context, True)
 
     # Create an area and a thermal with specific matrices to have real DB matrices in our study

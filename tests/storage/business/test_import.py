@@ -42,7 +42,7 @@ def test_import_study(tmp_path: Path) -> None:
 
     config = Mock()
     config.storage.tmp_dir = tmp_path
-    study_service = RawStudyService(config=config, study_factory=study_factory, cache=Mock(), matrix_service=Mock())
+    study_service = RawStudyService(config=config, study_factory=study_factory, cache=Mock(), command_context=Mock())
     study_service.get = Mock()
     study_service.get_study_path = Mock()
     study_service.get.return_value = data
