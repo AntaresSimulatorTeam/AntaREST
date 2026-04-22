@@ -1619,6 +1619,7 @@ class StudyService:
         self,
         stream: BinaryIO,
         group_ids: list[str],
+        directory: str = "",
     ) -> str:
         """
         Import a compressed study.
@@ -1626,6 +1627,7 @@ class StudyService:
         Args:
             stream: binary content of the study compressed in ZIP or 7z format.
             group_ids: group to attach to study
+            directory: Optional directory path where the study will be imported (e.g., 'project/subfolder').
 
         Returns:
             New study UUID.
@@ -1648,6 +1650,7 @@ class StudyService:
             groups=groups,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
+        study.directory_id = self.directory_service.get_directory_by_path(directory)
         study.updated_at = current_time()
 
         self._save_study(study)
