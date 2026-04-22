@@ -150,7 +150,7 @@ class RawStudyService(AbstractService):
             fix_study_root(study_path)
             self.update_from_raw_metadata(study)
         except Exception:
-            shutil.rmtree(study_path)
+            shutil.rmtree(study_path, ignore_errors=True)
             raise
 
     def denormalize_study(self, study: Study) -> None:
