@@ -50,7 +50,6 @@ from antarest.login.utils import current_user_context, get_current_user
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.service import ThermalClusterTimeSeriesGeneratorTask
-from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
@@ -459,15 +458,11 @@ def test_ts_generation_task(tmp_path: Path, variant_study_service: VariantStudyS
     user_service = Mock(spec=LoginService)
     user_service.get_identity.return_value = regular_user
 
-    config = variant_study_service.config
-    raw_study_service = RawStudyService(config, study_factory, cache, cmd_ctx)
-    variant_study_service.raw_study_service = raw_study_service
-
     study_service = build_study_service(
-        raw_study_service,
+        variant_study_service.raw_study_service,
         Mock(),
         variant_study_service.repository,
-        config,
+        variant_study_service.config,
         user_service=user_service,
         task_service=variant_study_service.task_service,
         event_bus=variant_study_service.event_bus,
