@@ -16,6 +16,7 @@ from pydantic import ValidationError
 from antarest.study.business.model.reserve_definition_model import (
     ReserveDefinition,
     ReserveDefinitionCreation,
+    ReserveDefinitionId,
     ReserveDefinitionUpdate,
     ReserveType,
 )
@@ -89,6 +90,22 @@ class TestCreateReserveDefinition:
         assert dto.args["parameters"]["name"] == "Reserve 1"
         assert dto.args["parameters"]["type"] == "up"
         assert dto.args["parameters"]["failureCost"] == 500.0
+
+    def test_apply_creates_default_need_matrix(self, dao_10_0: StudyDao, command_context: CommandContext) -> None:
+        save_area(dao_10_0, "paris")
+
+        command = CreateReserveDefinition(
+            area_id="paris",
+            parameters=ReserveDefinitionCreation(name="R1", type=ReserveType.UP),
+            command_context=command_context,
+            study_version=STUDY_VERSION_10_0,
+        )
+        output = command.apply(dao_10_0)
+        assert output.status
+
+        matrix = dao_10_0.get_reserve_need("paris", "r1")
+        assert matrix.shape == (8760, 1)
+        assert matrix.to_numpy().sum() == 0.0
 
 
 def _seed_two_reserves(dao: StudyDao, command_context: CommandContext) -> None:
@@ -211,3 +228,28 @@ class TestRemoveReserveDefinitions:
         assert dto.action == "remove_reserve_definitions"
         assert dto.args["area_id"] == "paris"
         assert dto.args["reserve_ids"] == ["r1", "r2"]
+
+    def test_apply_removes_need_matrix(self, dao_10_0: StudyDao, command_context: CommandContext) -> None:
+        save_area(dao_10_0, "paris")
+        CreateReserveDefinition(
+            area_id="paris",
+            parameters=ReserveDefinitionCreation(name="R1", type=ReserveType.UP),
+            command_context=command_context,
+            study_version=STUDY_VERSION_10_0,
+        ).apply(dao_10_0)
+
+        # Matrix exists now (auto-created by CreateReserveDefinition — see task 7).
+        reserve_id = ReserveDefinitionId("r1")
+        assert dao_10_0.get_all_reserve_needs().get("paris", {}).get(reserve_id) is not None
+
+        command = RemoveReserveDefinitions(
+            area_id="paris",
+            reserve_ids=[reserve_id],
+            command_context=command_context,
+            study_version=STUDY_VERSION_10_0,
+        )
+        output = command.apply(dao_10_0)
+        assert output.status
+
+        # Matrix gone.
+        assert reserve_id not in dao_10_0.get_all_reserve_needs().get("paris", {})

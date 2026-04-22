@@ -96,6 +96,7 @@ from antarest.study.dao.common import (
     LinkSeriesMapping,
     RenewableSeriesMapping,
     ReserveDefinitionsMapping,
+    ReserveNeedsMapping,
     StStorageConstraintSeriesMapping,
     StStorageSeriesMapping,
     ThermalSeriesMapping,
@@ -874,3 +875,11 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def reserve_definition_exists(self, area_id: str, reserve_id: str) -> bool:
         return self._adaptee.reserve_definition_exists(area_id, reserve_id)
+
+    @override
+    def get_reserve_need(self, area_id: str, reserve_id: str) -> pl.DataFrame:
+        return self._adaptee.get_reserve_need(area_id, reserve_id)
+
+    @override
+    def get_all_reserve_needs(self) -> ReserveNeedsMapping:
+        return self._adaptee.get_all_reserve_needs()

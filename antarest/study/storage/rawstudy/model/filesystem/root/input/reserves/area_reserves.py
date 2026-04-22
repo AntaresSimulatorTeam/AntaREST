@@ -13,12 +13,23 @@ from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import default_scenario_hourly
 from antarest.study.storage.rawstudy.model.filesystem.root.input.reserves.reserves_ini import InputReservesIni
 
 
 class InputReservesAreaFolder(FolderNode):
     @override
     def build(self) -> TREE:
-        return {
+        area_id = self.config.path.name
+        tree: TREE = {
             "reserves": InputReservesIni(self.config.next_file("reserves.ini")),
         }
+        for reserve in self.config.areas[area_id].reserves:
+            tree[reserve.id] = InputSeriesMatrix(
+                self.matrix_mapper,
+                self.config.next_file(f"{reserve.id}.txt"),
+                default_empty=default_scenario_hourly,
+                should_exist=False,
+            )
+        return tree

@@ -73,6 +73,9 @@ ST_STORAGE_LOWER_RULE_CURVE = EMPTY_SCENARIO_MATRIX
 ST_STORAGE_UPPER_RULE_CURVE = ONES_SCENARIO_MATRIX
 ST_STORAGE_INFLOWS = EMPTY_SCENARIO_MATRIX
 
+# Reserve need alias (since v10.0)
+RESERVE_NEED = EMPTY_SCENARIO_MATRIX
+
 
 # noinspection SpellCheckingInspection
 class GeneratorMatrixConstants:
@@ -222,6 +225,10 @@ class GeneratorMatrixConstants:
     def get_st_storage_inflows(self) -> str:
         """2D-matrix of shape (8760, 1), filled-in with zeros."""
         return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_INFLOWS]
+
+    def get_reserve_need(self) -> str:
+        """2D-matrix of shape (8760, 1), filled-in with zeros."""
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[RESERVE_NEED]
 
     def get_hydro_max_hourly_gen_power(self) -> str:
         return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_SERIES_MAX_HOURLY_GEN_POWER]

@@ -9,10 +9,16 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import polars as pl
 import pytest
 
 from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound
-from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
+from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.reserve_definition_model import (
+    ReserveDefinition,
+    ReserveDefinitionId,
+    ReserveType,
+)
 from antarest.study.dao.api.study_dao import StudyDao
 from tests.study.dao.utils import save_area
 
@@ -129,3 +135,31 @@ def test_delete_not_found_raises(dao_10_0: StudyDao) -> None:
     save_area(dao_10_0, "paris")
     with pytest.raises(ReserveDefinitionNotFound):
         dao_10_0.delete_reserve_definitions("paris", ["unknown"])
+
+
+def test_save_and_retrieve_reserve_need(dao_10_0: StudyDao, matrix_service: ISimpleMatrixService) -> None:
+    save_area(dao_10_0, "paris")
+    dao_10_0.save_reserve_definitions({"paris": [_reserve("R1")]})
+
+    matrix_df = pl.DataFrame([[0.0]] * 8760, orient="row")
+    matrix_id = matrix_service.create(matrix_df)
+    dao_10_0.save_reserve_need({"paris": {ReserveDefinitionId("r1"): matrix_id}})
+
+    fetched = dao_10_0.get_reserve_need("paris", "r1")
+    assert fetched.shape == (8760, 1)
+
+
+def test_get_all_reserve_needs_empty(dao_10_0: StudyDao) -> None:
+    save_area(dao_10_0, "paris")
+    assert dao_10_0.get_all_reserve_needs() == {}
+
+
+def test_delete_reserve_need(dao_10_0: StudyDao, matrix_service: ISimpleMatrixService) -> None:
+    save_area(dao_10_0, "paris")
+    dao_10_0.save_reserve_definitions({"paris": [_reserve("R1")]})
+    reserve_id = ReserveDefinitionId("r1")
+    matrix_id = matrix_service.create(pl.DataFrame([[0.0]] * 8760, orient="row"))
+    dao_10_0.save_reserve_need({"paris": {reserve_id: matrix_id}})
+
+    dao_10_0.delete_reserve_need("paris", reserve_id)
+    assert dao_10_0.get_all_reserve_needs().get("paris", {}).get(reserve_id) is None

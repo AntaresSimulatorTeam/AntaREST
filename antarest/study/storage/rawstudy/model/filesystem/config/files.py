@@ -33,9 +33,10 @@ from antarest.study.business.model.binding_constraint_model import (
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.reserve_definition_model import GLOBAL_PARAMETERS_SECTION, ReserveDefinition
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6, STUDY_VERSION_9_2
+from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6, STUDY_VERSION_9_2, STUDY_VERSION_10_0
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     parse_binding_constraint,
 )
@@ -52,6 +53,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import parse_renewable_cluster
+from antarest.study.storage.rawstudy.model.filesystem.config.reserve_definition import parse_reserve_definition
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     parse_st_storage,
     parse_st_storage_additional_constraint,
@@ -398,6 +400,7 @@ def parse_area(root: Path, area: str) -> "AreaConfig":
         filters_year=filter_year_by_year,
         st_storages=st_storages,
         st_storages_additional_constraints=_parse_st_storage_additional_constraints(root, area_id, st_storages),
+        reserves=_parse_reserves(root, area_id),
     )
 
 
@@ -505,6 +508,34 @@ def _parse_st_storage_additional_constraints(
                 )
         config[storage.id] = config_list
     return config
+
+
+def _parse_reserves(root: Path, area: str) -> list[ReserveDefinition]:
+    """
+    Parse the reserves INI file, return an empty list if missing.
+    """
+
+    # Reserve definitions exist only since v10.0
+    version = _parse_version(root)
+    if version < STUDY_VERSION_10_0:
+        return []
+
+    relpath = Path(f"input/reserves/{area}/reserves.ini")
+    config_dict: dict[str, Any] = _extract_data_from_file(
+        root=root,
+        inside_root_path=relpath,
+        file_type=FileType.SIMPLE_INI,
+    )
+    config_list = []
+    for section, values in config_dict.items():
+        if section.lower() == GLOBAL_PARAMETERS_SECTION:
+            continue
+        try:
+            config_list.append(parse_reserve_definition({"name": section, **values}))
+        except ValueError as exc:
+            config_path = root.joinpath(relpath)
+            logger.warning(f"Invalid reserve configuration: '{section}' in '{config_path}'", exc_info=exc)
+    return config_list
 
 
 def _parse_links_filtering(root: Path, area: str) -> dict[str, LinkConfig]:

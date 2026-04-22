@@ -12,8 +12,10 @@
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 
+import polars as pl
+
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveDefinitionId
-from antarest.study.dao.common import AreaId, ReserveDefinitionsMapping
+from antarest.study.dao.common import AreaId, ReserveDefinitionsMapping, ReserveNeedsMapping
 
 
 class ReadOnlyReserveDefinitionDao(ABC):
@@ -33,6 +35,14 @@ class ReadOnlyReserveDefinitionDao(ABC):
     def reserve_definition_exists(self, area_id: str, reserve_id: str) -> bool:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_reserve_need(self, area_id: str, reserve_id: str) -> pl.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_reserve_needs(self) -> ReserveNeedsMapping:
+        raise NotImplementedError()
+
 
 class ReserveDefinitionDao(ReadOnlyReserveDefinitionDao):
     @abstractmethod
@@ -41,4 +51,12 @@ class ReserveDefinitionDao(ReadOnlyReserveDefinitionDao):
 
     @abstractmethod
     def delete_reserve_definitions(self, area_id: AreaId, reserve_ids: Sequence[ReserveDefinitionId]) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_reserve_need(self, mapping: ReserveNeedsMapping) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def delete_reserve_need(self, area_id: AreaId, reserve_id: ReserveDefinitionId) -> None:
         raise NotImplementedError()

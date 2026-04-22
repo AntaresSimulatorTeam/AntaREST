@@ -60,6 +60,9 @@ class CreateReserveDefinition(ICommand):
 
         study_data.save_reserve_definitions({self.area_id: [reserve]})
 
+        default_matrix_id = self.command_context.generator_matrix_constants.get_reserve_need()
+        study_data.save_reserve_need({self.area_id: {reserve.id: default_matrix_id}})
+
         return command_succeeded(
             f"Reserve definition '{reserve.id}' added to area '{self.area_id}'.",
             result=reserve,
