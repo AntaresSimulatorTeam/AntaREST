@@ -13,6 +13,7 @@ import logging
 import shutil
 from datetime import datetime
 from pathlib import Path, PurePosixPath
+from typing import BinaryIO
 from uuid import uuid4
 
 from typing_extensions import override
@@ -80,7 +81,15 @@ class FileStudyStorage(IStudyStorage):
         for k, node in enumerate(matrix_nodes):
             node.matrix_mapper.save_matrix(node, matrix_ids[k])
 
+    @override
+    def import_study(self, study: RawStudy, stream: BinaryIO) -> RawStudy:
+        self.normalize_study(study)
+        return study
+
     def update_from_raw_metadata(self, study: Study) -> None:
+        """
+        The given `study` object needs to be updated according to the real filesystem data
+        """
         file_study = self._get_file_study(Path(study.path), is_managed(study))
         try:
             raw_meta = file_study.tree.get(["study", "antares"])

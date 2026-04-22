@@ -12,9 +12,10 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path, PurePosixPath
+from typing import BinaryIO
 
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.model import Study
+from antarest.study.model import RawStudy, Study
 
 
 class IStudyStorage(ABC):
@@ -32,4 +33,8 @@ class IStudyStorage(ABC):
 
     @abstractmethod
     def normalize_study(self, study: Study) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def import_study(self, study: RawStudy, stream: BinaryIO) -> RawStudy:
         raise NotImplementedError()

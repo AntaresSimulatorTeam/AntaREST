@@ -19,6 +19,7 @@ from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
+from antarest.core.utils.archives import extract_archive_from_path, extract_archive_from_stream
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import RawStudy, StorageMode, Study
 from antarest.study.repository import StudyMetadataRepository
@@ -28,6 +29,7 @@ from antarest.study.storage.file_study_storage import FileStudyStorage
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.study_storage_interface import IStudyStorage
+from antarest.study.storage.utils import fix_study_root
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
@@ -102,12 +104,12 @@ class RawStudyService(AbstractService):
     def update_name_and_version_from_raw_meta(self, study: RawStudy) -> bool:
         return self._file_study_storage.update_name_and_version_from_raw_meta(study)
 
-    def import_study(self, metadata: RawStudy, stream: BinaryIO) -> RawStudy:
+    def import_study(self, study: RawStudy, stream: BinaryIO) -> RawStudy:
         """
         Import study in the directory of the study.
 
         Args:
-            metadata: study information.
+            study: study information.
             stream: binary content of the study compressed in ZIP or 7z format.
 
         Returns:
@@ -116,7 +118,21 @@ class RawStudyService(AbstractService):
         Raises:
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
-        return self._storage_mapping[metadata.storage_mode].import_study(metadata, stream)
+        self._extract_and_setup(study, stream)
+        return self._storage_mapping[study.storage_mode].import_study(study, stream)
+
+    def _extract_and_setup(self, study: RawStudy, source: Path | BinaryIO) -> None:
+        study_path = Path(study.path)
+        try:
+            if isinstance(source, Path):
+                extract_archive_from_path(source, study_path)
+            else:
+                extract_archive_from_stream(source, study_path, tmp_dir=self._config.storage.tmp_dir)
+            fix_study_root(study_path)
+            self.update_from_raw_metadata(study)
+        except Exception:
+            shutil.rmtree(study_path)
+            raise
 
     def denormalize_study(self, study: Study) -> None:
         raise NotImplementedError()
