@@ -299,8 +299,6 @@ class TestVariantStudyService:
                     db.session.merge(variant)
                     db.session.commit()
 
-            variant_study_service.get(variant_list[index])
-
         variant_study_path = Path(tmp_path).joinpath("internal_studies")
 
         # Check if everything was correctly initialized

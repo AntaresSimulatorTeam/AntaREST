@@ -167,7 +167,7 @@ def test_export_study_flat(
         else:
             res_study_files.add(relpath)
 
-    # Check the matrice
+    # Check the matrices
     # If de-normalization is enabled, the previous loop won't find the matrices
     # because the matrix extensions are ".txt" instead of ".txt.link".
     # Therefore, it is necessary to move the corresponding ".txt" files
