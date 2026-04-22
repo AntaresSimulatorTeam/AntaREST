@@ -48,7 +48,10 @@ class FileStudyDaoFactory(StudyFactoryDao):
             create_new_empty_study(version=StudyVersion.parse(study.version), path_study=study_path)
 
         file_study = self._study_factory.create_from_fs(study_path, is_study_managed, study.id)
-        update_antares_info(study, file_study.tree, update_author=True)
+
+        if create_study:
+            # We do not want to update the `study.antares` file each time we're building the DAO object
+            update_antares_info(study, file_study.tree, update_author=True)
 
         context = self._command_context
         return FileStudyTreeDao(
