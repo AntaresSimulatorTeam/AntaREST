@@ -56,10 +56,6 @@ class RawStudyService(AbstractService):
         self.cache = cache
 
     @override
-    def get_disk_usage(self, study: Study) -> int:
-        raise NotImplementedError()
-
-    @override
     def archive(self, study: Study) -> None:
         raise NotImplementedError()
 
