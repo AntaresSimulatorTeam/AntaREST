@@ -43,9 +43,7 @@ class FileStudyDaoFactory(StudyFactoryDao):
         return self._build_dao(study, create_study=False)
 
     def _build_dao(self, study: Study, create_study: bool) -> FileStudyTreeDao:
-        study_path = Path(study.path)
-        if isinstance(study, VariantStudy):
-            study_path = study.snapshot_dir
+        study_path = study.get_path()
         is_study_managed = is_managed(study)
 
         if create_study:
