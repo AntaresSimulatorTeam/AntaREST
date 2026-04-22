@@ -45,8 +45,6 @@ class FileStudyStorage(IStudyStorage):
 
     @override
     def copy(self, src_study: Study, dst_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
-        self._check_study_exists(src_study)
-
         dest_study = self._build_raw_study(dst_name, groups, src_study, destination_folder)
 
         src_path = self.get_study_path(src_study)

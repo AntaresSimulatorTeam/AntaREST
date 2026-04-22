@@ -144,7 +144,8 @@ class VariantStudyService(AbstractService):
 
     @override
     def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
-        raise NotImplementedError()
+        self._check_study_exists(src_study)
+        return self._storage_mapping[src_study.storage_mode].copy(src_study, dest_name, groups, destination_folder)
 
     @override
     def get_study_dao(self, study: Study) -> StudyDao:
@@ -152,6 +153,10 @@ class VariantStudyService(AbstractService):
 
     @override
     def export_study_flat(self, study: Study, dst_path: Path) -> None:
+        raise NotImplementedError()
+
+    @override
+    def exists(self, study: Study) -> bool:
         raise NotImplementedError()
 
     ##########################
@@ -735,9 +740,6 @@ class VariantStudyService(AbstractService):
 
     def create_snapshot(self, study: Study) -> None:
         self._storage_mapping[study.storage_mode].create_snapshot(study)
-
-    def exists(self, study: VariantStudy) -> bool:
-        return self._storage_mapping[study.storage_mode].exists(study)
 
     def clear_all_snapshots(self, retention_time: timedelta) -> str:
         """

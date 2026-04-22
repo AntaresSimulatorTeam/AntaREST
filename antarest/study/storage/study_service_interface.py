@@ -13,6 +13,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path, PurePosixPath
 
+from antarest.core.exceptions import StudyNotFoundError
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import Study, StudyMetadataDTO
 
@@ -49,3 +50,11 @@ class IStudyService(ABC):
     @abstractmethod
     def export_study_flat(self, study: Study, dst_path: Path) -> None:
         raise NotImplementedError()
+
+    @abstractmethod
+    def exists(self, study: Study) -> bool:
+        raise NotImplementedError()
+
+    def _check_study_exists(self, study: Study) -> None:
+        if not self.exists(study):
+            raise StudyNotFoundError(f"Study with the uuid {study.id} does not exist.")
