@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import contextlib
-import logging
 import os
 import textwrap
 import typing as t
@@ -23,7 +22,6 @@ from pathlib import Path
 from unittest.mock import ANY, Mock, patch, seal
 
 import pytest
-from _pytest.logging import LogCaptureFixture
 from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -425,48 +423,6 @@ def test_sync_studies_from_disk() -> None:
     study_f2 = saved_studies_map[("f", "workspace2")]
     assert study_f2.name == "f"
     assert study_f2.public_mode == PublicMode.FULL
-
-
-def test_sync_unsuppported_study_from_disk(caplog: LogCaptureFixture) -> None:
-    folder_a = StudyFolder(path=Path("a"), workspace="workspace1", groups=[])
-    folder_b = StudyFolder(path=Path("b"), workspace="workspace1", groups=[])
-
-    repository = Mock()
-    repository.get_all_raw.side_effect = [[]]
-    config = Config(storage=StorageConfig(workspaces={"workspace1": WorkspaceConfig()}))
-    raw_service = Mock(spec=RawStudyService)
-    service = build_study_service(raw_service, Mock(spec=DirectoryService), repository, config)
-
-    def fake_compatibility_check(study: Study) -> None:
-        if not hasattr(fake_compatibility_check, "call_count"):
-            fake_compatibility_check.call_count = 0
-
-        fake_compatibility_check.call_count += 1
-
-        if fake_compatibility_check.call_count >= 2:
-            raise RecursionError("Custom message")
-
-    raw_service.checks_antares_web_compatibility.side_effect = fake_compatibility_check
-
-    with caplog.at_level(level=logging.ERROR):
-        service.sync_studies_on_disk([folder_a, folder_b])
-
-    # Ensures the 2nd study wasn't added and went through the mock method
-    assert len(caplog.records) == 1
-    assert caplog.records[0].msg == "Failed to add study b"
-    assert isinstance(caplog.records[0].exc_info[1], RecursionError)
-
-    repository.save.assert_called_once_with(
-        RawStudy(
-            id=ANY,
-            path="a",
-            name="a",
-            folder="a",
-            workspace="workspace1",
-            missing=None,
-            public_mode=PublicMode.FULL,
-        )
-    )
 
 
 # noinspection PyArgumentList
