@@ -239,7 +239,7 @@ class StudyMetadataRepository:
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
         # We also need to fetch the additional data to display the study information
-        # efficiently (see: `AbstractStorageService.get_study_information`)
+        # efficiently (see: `AbstractService.get_study_information`)
         entity = with_polymorphic(Study, "*")
 
         q = self._search_studies(study_filter)
@@ -301,7 +301,7 @@ class StudyMetadataRepository:
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
         # We also need to fetch the additional data to display the study information
-        # efficiently (see: `AbstractStorageService.get_study_information`)
+        # efficiently (see: `AbstractService.get_study_information`)
         entity = with_polymorphic(Study, "*")
 
         escape_char = "\\"

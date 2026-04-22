@@ -50,8 +50,9 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.utils.archives import is_archive_format
-from antarest.login.model import Group
-from antarest.login.utils import require_current_user
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.login.model import Group, Identity
+from antarest.login.utils import get_user_impersonator, require_current_user
 from antarest.study.business.model.config.general_model import GeneralConfig, Mode
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -603,3 +604,20 @@ def get_disk_usage(path: Path) -> int:
                     elif entry.is_dir():
                         total_size += get_disk_usage(path=Path(entry.path))
     return total_size
+
+
+def get_user_name_from_id(user_id: int) -> str:
+    """
+    Utility method that retrieves a user's name based on their id.
+    Args:
+        user_id: user id (user must exist)
+    Returns: String representing the user's name
+    """
+    user_obj: Identity | None = db.session.get(Identity, user_id)
+    if user_obj is None:
+        return "Unnamed"
+    return str(user_obj.name)
+
+
+def get_current_user_name() -> str:
+    return get_user_name_from_id(get_user_impersonator())

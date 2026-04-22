@@ -57,7 +57,7 @@ from antarest.study.model import (
     StudyMetadataDTO,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter
-from antarest.study.storage.abstract.abstract_storage_service import AbstractStorageService
+from antarest.study.storage.abstract.abstract_service import AbstractService
 from antarest.study.storage.database_storage import DatabaseStudyStorage
 from antarest.study.storage.file_study_storage import FileStudyStorage
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
@@ -65,6 +65,8 @@ from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.utils import (
     assert_permission,
+    get_current_user_name,
+    get_user_name_from_id,
     is_managed,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
@@ -91,7 +93,7 @@ def _cast_study_to_variant(study: Study) -> VariantStudy:
     return study
 
 
-class VariantStudyService(AbstractStorageService):
+class VariantStudyService(AbstractService):
     def __init__(
         self,
         task_service: ITaskService,
@@ -116,7 +118,7 @@ class VariantStudyService(AbstractStorageService):
         self._matrix_service = matrix_service
         ctx = command_factory.command_context
         self._storage_mapping: dict[StorageMode, IStudyStorage] = {
-            StorageMode.DATABASE: FileStudyStorage(cache=cache, command_context=ctx, study_factory=study_factory),
+            StorageMode.DATABASE: FileStudyStorage(cache, config, ctx, study_factory),
             StorageMode.FILESYSTEM: DatabaseStudyStorage(
                 config=config, matrix_service=matrix_service, generator_matrix_constants=ctx.generator_matrix_constants
             ),
@@ -171,7 +173,7 @@ class VariantStudyService(AbstractStorageService):
         self.invalidate_snapshot(variant_study)
 
     def _update_editor(self, study: VariantStudy) -> None:
-        user_name = self._get_current_user_name()
+        user_name = get_current_user_name()
         study.editor = user_name
         self.repository.save(study)
 
@@ -188,7 +190,7 @@ class VariantStudyService(AbstractStorageService):
         try:
             index = [command.id for command in study.commands].index(command_id)
             command: CommandBlock = study.commands[index]
-            user_name = self._get_user_name_from_id(command.user_id) if command.user_id else None
+            user_name = get_user_name_from_id(command.user_id) if command.user_id else None
             return command.to_dto().to_api(user_name)
         except ValueError:
             raise CommandNotFoundError(f"Command with id {command_id} not found") from None
@@ -207,7 +209,7 @@ class VariantStudyService(AbstractStorageService):
 
         for command in study.commands:
             if command.user_id and command.user_id not in id_to_name.keys():
-                user_name: str = self._get_user_name_from_id(command.user_id)
+                user_name: str = get_user_name_from_id(command.user_id)
                 id_to_name[command.user_id] = user_name
             command_list.append(command.to_dto().to_api(id_to_name.get(command.user_id)))
         return command_list
@@ -600,7 +602,7 @@ class VariantStudyService(AbstractStorageService):
         assert_permission(study, StudyPermissionType.READ)
         new_id = str(uuid4())
         study_path = str(self.config.get_workspace_path() / new_id)
-        user_name = self._get_current_user_name()
+        user_name = get_current_user_name()
 
         now_utc = current_time()
         variant_study = VariantStudy(

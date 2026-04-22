@@ -20,7 +20,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import RawStudy, StorageMode, Study
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.abstract.abstract_storage_service import AbstractStorageService
+from antarest.study.storage.abstract.abstract_service import AbstractService
 from antarest.study.storage.database_storage import DatabaseStudyStorage
 from antarest.study.storage.file_study_storage import FileStudyStorage
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
@@ -31,7 +31,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 logger = logging.getLogger(__name__)
 
 
-class RawStudyService(AbstractStorageService):
+class RawStudyService(AbstractService):
     """
     Manage set of raw studies stored in the workspaces.
     Instantiate and manage tree struct for each request
@@ -45,9 +45,7 @@ class RawStudyService(AbstractStorageService):
         self.study_factory = study_factory
         self._matrix_service = command_context.matrix_service
         self._storage_mapping: dict[StorageMode, IStudyStorage] = {
-            StorageMode.DATABASE: FileStudyStorage(
-                cache=cache, command_context=command_context, study_factory=study_factory
-            ),
+            StorageMode.DATABASE: FileStudyStorage(cache, config, command_context, study_factory),
             StorageMode.FILESYSTEM: DatabaseStudyStorage(
                 config=config,
                 matrix_service=self._matrix_service,
@@ -75,7 +73,7 @@ class RawStudyService(AbstractStorageService):
 
     @override
     def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
-        raise NotImplementedError()
+        return self._storage_mapping[src_study.storage_mode].copy(src_study, dest_name, groups, destination_folder)
 
     @override
     def get_study_dao(self, study: Study) -> StudyDao:
