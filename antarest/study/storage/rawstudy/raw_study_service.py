@@ -68,7 +68,7 @@ class RawStudyService(AbstractService):
 
     @override
     def export_study_flat(self, study: Study, dst_path: Path) -> None:
-        src_path = self._storage_mapping[study.storage_mode].write_study_to_filesytem(study, False)
+        src_path = self._storage_mapping[study.storage_mode].write_study_to_filesytem(study, True)
         export_study_to_flat_directory(src_path, dst_path)
 
     ##########################
