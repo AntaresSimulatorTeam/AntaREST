@@ -52,13 +52,15 @@ import type {
 } from "./types";
 
 /**
- * Parses a numeric string using any locale's separator conventions
- * (US "1,234.56", European "1.234,56", International "1 234.56", etc.).
+ * Parses a numeric string, disambiguating `.` and `,` using the following rules:
  *
- * Whitespace is stripped. Both separators present → the one appearing last is
- * the decimal. Single separator → exactly three trailing digits means thousands
- * ("1,234" = 1234, "1.234" = 1234), anything else means decimal ("1,5" = 1.5,
- * "1.5" = 1.5).
+ * - Both separators present → the last one is the decimal
+ *   (`"1,234.56"` → 1234.56, `"1.234,56"` → 1234.56).
+ * - One separator repeated → it's a thousands separator
+ *   (`"1.234.567"` → 1234567).
+ * - Single occurrence → locale decides: EN uses `.` as decimal, FR uses `,`.
+ *
+ * Whitespace (spaces, non-breaking spaces, tabs…) is always stripped first.
  *
  * @param raw - The raw numeric string from clipboard or user input.
  * @returns The parsed number, or `NaN` if the string is empty or unparsable.
@@ -70,52 +72,31 @@ export function parseClipboardNumber(raw: string): number {
     return NaN;
   }
 
-  return Number(normalizeLocaleSeparators(cleaned));
-}
+  const periodCount = (cleaned.match(/\./g) ?? []).length;
+  const commaCount = (cleaned.match(/,/g) ?? []).length;
 
-function normalizeLocaleSeparators(value: string): string {
-  const lastComma = value.lastIndexOf(",");
-  const lastPeriod = value.lastIndexOf(".");
-  const hasComma = lastComma !== -1;
-  const hasPeriod = lastPeriod !== -1;
-
-  // No separators — nothing to strip.
-  if (!hasComma && !hasPeriod) {
-    return value;
+  // Both separators present → the last one is the decimal, the other is thousands.
+  if (periodCount > 0 && commaCount > 0) {
+    return cleaned.lastIndexOf(".") > cleaned.lastIndexOf(",")
+      ? Number(cleaned.replace(/,/g, ""))
+      : Number(cleaned.replace(/\./g, "").replace(",", "."));
   }
 
-  // Both separators -> whichever appears last is the decimal.
-  if (hasComma && hasPeriod) {
-    return lastPeriod > lastComma
-      ? value.replace(/,/g, "") // "1,234,567.89" → "1234567.89"
-      : value.replace(/\./g, "").replace(",", "."); // "1.234.567,89" → "1234567.89"
+  // A single separator appearing multiple times can only be thousands grouping.
+  if (periodCount > 1) {
+    return Number(cleaned.replace(/\./g, ""));
   }
-
-  // Only periods.
-  if (hasPeriod) {
-    const periodCount = (value.match(/\./g) ?? []).length;
-
-    if (periodCount > 1) {
-      return value.replace(/\./g, ""); // "1.234.567" → "1234567"
-    }
-
-    // Single period: 3 trailing digits → thousands, else decimal.
-    const digitsAfterPeriod = value.length - lastPeriod - 1;
-    return digitsAfterPeriod === 3 ? value.replace(".", "") : value; // "1.234" → "1234", "0.5" stays
-  }
-
-  // Only commas.
-  const commaCount = (value.match(/,/g) ?? []).length;
 
   if (commaCount > 1) {
-    return value.replace(/,/g, ""); // "1,234,567" → "1234567"
+    return Number(cleaned.replace(/,/g, ""));
   }
 
-  // Single comma: 3 trailing digits → thousands, else decimal.
-  const digitsAfterComma = value.length - lastComma - 1;
-  return digitsAfterComma === 3
-    ? value.replace(",", "") // "4,567" → "4567"
-    : value.replace(",", "."); // "1234,56" → "1234.56"
+  // Single occurrence (or none) → locale decides.
+  const isFrench = getCurrentLanguage().startsWith("fr");
+  const decimalSep = isFrench ? "," : ".";
+  const thousandsSep = isFrench ? "." : ",";
+
+  return Number(cleaned.split(thousandsSep).join("").replace(decimalSep, "."));
 }
 
 /**
