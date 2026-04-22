@@ -49,6 +49,7 @@ from antarest.eventbus.web import register_websocket_routes
 from antarest.fastapi_jwt_auth.exceptions import AuthJWTException
 from antarest.favorite.web import create_favorite_routes
 from antarest.front import add_front_app
+from antarest.globals import ANTAREST_WORKER_ID
 from antarest.launcher.web import create_launcher_api
 from antarest.login.model import init_admin_user
 from antarest.login.web import create_login_api, create_user_api
@@ -70,7 +71,6 @@ from antarest.study.web.study_data_blueprint import create_study_data_routes
 from antarest.study.web.variant_blueprint import create_study_variant_routes
 from antarest.study.web.watcher_blueprint import create_watcher_routes
 from antarest.study.web.xpansion_studies_blueprint import create_xpansion_routes
-from antarest.tools.admin_lib import clean_locks
 
 logger = logging.getLogger(__name__)
 
@@ -378,7 +378,7 @@ def fastapi_app(
 
     configure_logger(config)
 
-    logger.info("Initiating application")
+    logger.info(f"Initiating application (worker {ANTAREST_WORKER_ID})")
 
     app = base_fastapi_app(config.api_prefix, config.root_path)
 
@@ -411,7 +411,6 @@ LOGGING_CONFIG["formatters"]["access"]["fmt"] = (
 def main() -> None:
     arguments = parse_arguments()
     if arguments.module == Module.APP:
-        clean_locks(arguments.config_file)
         app = fastapi_app(
             arguments.config_file,
             mount_front=not arguments.no_front,
