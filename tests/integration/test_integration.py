@@ -1031,6 +1031,13 @@ def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, in
     study_res = client.post("/v1/studies?name=foo")
     study_id = study_res.json()
 
+    # Drop a fake in-study output to ensure it survives archive/unarchive.
+    study_path = tmp_path / "internal_workspace" / study_id
+    fake_output_dir = study_path / "output" / "20240101-0000eco"
+    fake_output_dir.mkdir(parents=True, exist_ok=True)
+    fake_output_file = fake_output_dir / "simulation.log"
+    fake_output_file.write_text("Simulation done")
+
     res = client.put(f"/v1/studies/{study_id}/archive")
     assert res.status_code == 200
     task_id = res.json()
@@ -1062,6 +1069,8 @@ def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, in
     res = client.get(f"/v1/studies/{study_id}")
     assert not res.json()["archived"]
     assert not (tmp_path / "archive_dir" / f"{study_id}.7z").exists()
+    assert fake_output_file.exists()
+    assert fake_output_file.read_text() == "Simulation done"
 
 
 def test_maintenance(client: TestClient, admin_access_token: str) -> None:
