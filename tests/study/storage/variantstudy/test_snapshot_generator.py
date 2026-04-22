@@ -37,7 +37,6 @@ from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import StorageMode
-from antarest.study.service import VariantStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
@@ -1191,8 +1190,7 @@ class TestSnapshotGenerator:
 
         # Fill the cache for the test.
         study = db.session.get(VariantStudy, variant_study_id)  #  `variant_study` isn't bound to the session yet.
-        study_interface = VariantStudyInterface(variant_study_service, study)
-        file_study = study_interface._variant_service.get_raw(study)
+        file_study = variant_study_service.get_study_dao(study).get_file_study()
         data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
         update_cache(cache, variant_study_id, data)
 
@@ -1207,8 +1205,6 @@ class TestSnapshotGenerator:
         # Ensures we shouldn't have to invalidate the cache as all commands updated the config correctly
         assert not results.should_invalidate_cache
         generated_cache = cache.get(cache_key)
-        # Performs a little modification in memory just to check that the caches are the same.
-        generated_cache["output_path"] = generated_cache["output_path"].parent.parent / "output"
         assert generated_cache == starting_cache
 
         # Add a `create_cluster` command
