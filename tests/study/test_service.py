@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 import pytest
 
-from antarest.study.service import get_disk_usage
+from antarest.study.storage.utils import get_disk_usage
 
 
 def test_get_disk_usage__nominal_case(tmp_path: Path) -> None:
