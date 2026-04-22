@@ -47,3 +47,7 @@ class IStudyStorage(ABC):
     @abstractmethod
     def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
         raise NotImplementedError()
+
+    @abstractmethod
+    def clear_snapshot(self, variant_study: VariantStudy) -> None:
+        raise NotImplementedError()

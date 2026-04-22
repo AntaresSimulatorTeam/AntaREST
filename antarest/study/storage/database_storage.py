@@ -63,3 +63,7 @@ class DatabaseStudyStorage(IStudyStorage):
     @override
     def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
         raise NotImplementedError()
+
+    @override
+    def clear_snapshot(self, variant_study: VariantStudy) -> None:
+        raise NotImplementedError()

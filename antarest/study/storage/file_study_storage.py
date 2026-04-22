@@ -116,6 +116,11 @@ class FileStudyStorage(IStudyStorage):
             src_path = self.write_study_to_filesytem(ref_study, False)
             export_study_to_flat_directory(src_path, snapshot_dir)
 
+    @override
+    def clear_snapshot(self, variant_study: VariantStudy) -> None:
+        logger.info(f"Clearing snapshot for study {variant_study.id}")
+        shutil.rmtree(variant_study.snapshot_dir, ignore_errors=True)
+
     def update_from_raw_metadata(self, study: Study) -> None:
         """
         The given `study` object needs to be updated according to the real filesystem data
