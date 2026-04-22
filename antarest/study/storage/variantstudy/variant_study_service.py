@@ -133,6 +133,8 @@ class VariantStudyService(AbstractService):
 
     @override
     def get_study_dao(self, study: Study) -> StudyDao:
+        variant_study = _cast_study_to_variant(study)
+        self.safe_generation(variant_study, 600)
         return self._storage_mapping[study.storage_mode].get_dao(study)
 
     @override
