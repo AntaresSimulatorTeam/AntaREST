@@ -80,7 +80,6 @@ class FileStudyStorage(IStudyStorage):
         for k, node in enumerate(matrix_nodes):
             node.matrix_mapper.save_matrix(node, matrix_ids[k])
 
-    @override
     def update_from_raw_metadata(self, study: Study) -> None:
         file_study = self._get_file_study(Path(study.path), is_managed(study))
         try:
@@ -105,7 +104,6 @@ class FileStudyStorage(IStudyStorage):
             study.author = study.author or "Unknown"
             study.editor = study.editor or "Unknown"
 
-    @override
     def update_name_and_version_from_raw_meta(self, study: RawStudy) -> bool:
         path = Path(study.path)
         try:

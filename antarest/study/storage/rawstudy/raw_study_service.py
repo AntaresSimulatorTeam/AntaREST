@@ -46,13 +46,13 @@ class RawStudyService(AbstractService):
 
         self.study_factory = study_factory
         self._matrix_service = command_context.matrix_service
+        self._file_study_storage = FileStudyStorage(cache, config, command_context, study_factory)
+        self._database_study_storage = DatabaseStudyStorage(
+            config, self._matrix_service, command_context.generator_matrix_constants
+        )
         self._storage_mapping: dict[StorageMode, IStudyStorage] = {
-            StorageMode.DATABASE: FileStudyStorage(cache, config, command_context, study_factory),
-            StorageMode.FILESYSTEM: DatabaseStudyStorage(
-                config=config,
-                matrix_service=self._matrix_service,
-                generator_matrix_constants=command_context.generator_matrix_constants,
-            ),
+            StorageMode.FILESYSTEM: self._file_study_storage,
+            StorageMode.DATABASE: self._database_study_storage,
         }
         RawStudyMatrixUsageProvider(StudyMetadataRepository(cache_service=cache), matrix_service=self._matrix_service)
         self.cache = cache
@@ -97,10 +97,10 @@ class RawStudyService(AbstractService):
         self._storage_mapping[study.storage_mode].normalize_study(study)
 
     def update_from_raw_metadata(self, study: RawStudy) -> None:
-        self._storage_mapping[study.storage_mode].update_from_raw_metadata(study)
+        self._file_study_storage.update_from_raw_metadata(study)
 
     def update_name_and_version_from_raw_meta(self, study: RawStudy) -> bool:
-        return self._storage_mapping[study.storage_mode].update_name_and_version_from_raw_meta(study)
+        return self._file_study_storage.update_name_and_version_from_raw_meta(study)
 
     def import_study(self, metadata: RawStudy, stream: BinaryIO) -> RawStudy:
         """
