@@ -93,8 +93,7 @@ class RawStudyService(AbstractService):
         self._storage_mapping[study.storage_mode].write_study_for_archive(study)
 
         study_path = Path(study.path)
-        archive_folder_path = self._config.storage.archive_dir.joinpath(f"{study.id}{ArchiveFormat.SEVEN_ZIP}")
-        archive_path = archive_folder_path / f"{study.id}{ArchiveFormat.SEVEN_ZIP}"
+        archive_path = self._config.storage.archive_dir.joinpath(f"{study.id}{ArchiveFormat.SEVEN_ZIP}")
 
         try:
             stopwatch = StopWatch()
@@ -113,6 +112,7 @@ class RawStudyService(AbstractService):
     def unarchive(self, study: RawStudy) -> None:
         archive_path = self.find_archive_path(study)
         self._extract_and_setup(study, archive_path)
+        archive_path.unlink()
 
     def normalize_study(self, study: Study) -> None:
         self._storage_mapping[study.storage_mode].normalize_study(study)
