@@ -19,16 +19,19 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
 
+from antarest.blobstore.service import BlobService
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyDeletionNotAllowed
-from antarest.core.interfaces.cache import CacheConstants
+from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import PublicMode
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.output.storage.file.storage import (
     FileStudyOutputs,
     IFileOutputsProvider,
     InStudyFileOutputStorage,
 )
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
+from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -382,14 +385,29 @@ def test_delete_raw_study(tmp_path: Path, study_service: StudyService) -> None:
 
 @with_admin_user
 @with_db_context
-def test_delete_variant_study(tmp_path: Path, study_service: StudyService) -> None:
+def test_delete_variant_study(tmp_path: Path) -> None:
     # Set Up
+    cache = Mock(spec=ICache)
+    cache.get.return_value = None
+
+    config = build_config(tmp_path, workspace_name="foo", allow_deletion=True)
+    repo = Mock()
+    study_service, _ = build_study_service(
+        config,
+        matrix_service=Mock(spec=ISimpleMatrixService),
+        cache=cache,
+        metadata_repository=repo,
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
+        user_service=Mock(),
+        event_bus=Mock(),
+        blob_service=Mock(spec=BlobService),
+    )
+
     study_path = _create_fake_study(tmp_path)
     name = study_path.name
 
     variant_study = create_variant_study(id=name, path=str(study_path))
-    repo = Mock()
-    study_service.repository = repo
     repo.get.return_value = variant_study
 
     fake_output_access = Mock()
@@ -399,7 +417,7 @@ def test_delete_variant_study(tmp_path: Path, study_service: StudyService) -> No
     # Delete study
     study_service.delete_study(variant_study.id, children=False)
 
-    study_service.storage_service.raw_study_service.cache.invalidate_all.assert_called_once_with(
+    cache.invalidate_all.assert_called_once_with(
         [
             f"{CacheConstants.RAW_STUDY}/{name}",
             f"{CacheConstants.STUDY_FACTORY}/{name}",
