@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path, PurePosixPath
 
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.model import Study, StudyMetadataDTO
+from antarest.study.model import RawStudy, Study, StudyMetadataDTO
 
 
 class IStudyService(ABC):
@@ -23,7 +23,7 @@ class IStudyService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
+    def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> RawStudy:
         raise NotImplementedError()
 
     @abstractmethod

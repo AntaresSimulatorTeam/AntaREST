@@ -52,6 +52,7 @@ from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import (
+    RawStudy,
     StorageMode,
     Study,
     StudyMetadataDTO,
@@ -128,7 +129,7 @@ class VariantStudyService(AbstractService):
         CommandBlobUsageProvider(variant_study_repo=repository, command_factory=command_factory)
 
     @override
-    def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
+    def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> RawStudy:
         variant_study = _cast_study_to_variant(src_study)
         self.safe_generation(variant_study, 600)
         return self.raw_study_service.copy(src_study, dest_name, groups, destination_folder)

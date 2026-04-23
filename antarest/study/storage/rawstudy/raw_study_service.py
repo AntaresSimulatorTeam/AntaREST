@@ -71,7 +71,7 @@ class RawStudyService(AbstractService):
         self.cache = cache
 
     @override
-    def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> Study:
+    def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> RawStudy:
         new_study = build_raw_study_from_source(
             dest_name, self._config.get_workspace_path(), groups, src_study, destination_folder
         )
