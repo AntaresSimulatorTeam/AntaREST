@@ -320,6 +320,11 @@ class RawStudyService(AbstractStorageService):
             logger.info(f"Exporting study {study.id} to temporary path {tmpdir}")
             tmp_study_path = Path(tmpdir) / "tmp_copy"
             self.export_study_flat(study, tmp_study_path)
+
+            src_output = path_study / "output"
+            if src_output.exists():
+                shutil.copytree(src_output, tmp_study_path / "output")
+
             stopwatch = StopWatch()
             archive_dir(tmp_study_path, archive_path, archive_format=ArchiveFormat.SEVEN_ZIP)
             logger.info(f"Study {path_study} exported ({archive_path.suffix} format) in {stopwatch}s")
