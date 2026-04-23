@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import datetime
-import os
 import re
 from pathlib import Path, PurePosixPath
 from unittest.mock import Mock
@@ -24,6 +23,8 @@ from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyDeletionNotAllowed
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import PublicMode
+from antarest.core.serde.ini_reader import read_ini
+from antarest.login.model import User
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.output.storage.file.storage import (
     FileStudyOutputs,
@@ -233,48 +234,32 @@ def test_create_study_versions(tmp_path: str, project_path: Path) -> None:
 
 @with_db_context
 @with_admin_user
-def test_copy_study(tmp_path: Path) -> None:
-    source_name = "study1"
-    path_study = tmp_path / source_name
-    path_study.mkdir()
-    path_study_info = path_study / "study.antares"
-    path_study_info.touch()
+def test_copy_study(empty_study_930: FileStudy, study_service: StudyService) -> None:
+    file_study = empty_study_930
+    study_path = file_study.config.study_path
+    study_id = file_study.config.study_id
 
-    value = {
-        "antares": {
-            "caption": "ex1",
-            "created": 1480683452,
-            "lastsave": 1602678639,
-            "author": "unknown",
-        },
-    }
+    study = create_raw_study(id=study_id, path=str(study_path), public_mode=PublicMode.NONE, groups=[])
 
-    study = Mock()
-    study.get.return_value = value
-    study_factory = Mock()
+    repo = Mock()
+    study_service.repository = repo
+    repo.get.return_value = study
+    study_service.user_service.get_user.return_value = User(id=1, name="admin")
 
-    config = Mock()
-    study_factory.create_from_fs.return_value = FileStudy(config, study)
+    destination = PurePosixPath("myfolder/subfolder")
+    groups = ["admin"]  # Only existing group
+    new_study = study_service.storage_service.raw_study_service.copy(study, "new_name", groups, destination)
 
-    url_engine = Mock()
-    url_engine.resolve.return_value = None, None, None
-    config = build_config(tmp_path)
-    study_service = RawStudyService(config=config, cache=Mock(), study_factory=study_factory, command_context=Mock())
-    groups = ["fake_group_1", "fake_group_2"]
+    assert new_study.path == str(study_path.parent / "internal_studies" / new_study.id)
+    assert new_study.public_mode == PublicMode.NONE
+    assert new_study.groups == groups
+    assert new_study.folder == f"{destination.as_posix()}/{new_study.id}"
+    assert new_study.name == "new_name"
 
-    src_md = create_raw_study(
-        id=source_name,
-        workspace=DEFAULT_WORKSPACE_NAME,
-        path=str(path_study),
-        version="700",
-        groups=groups,
-    )
-    md = study_service.copy(src_md, "dst_name", groups, PurePosixPath())
-    md_id = md.id
-    assert str(md.path) == f"{tmp_path}{os.sep}{md_id}"
-    assert md.public_mode == PublicMode.NONE
-    assert md.groups == groups
-    study.get.assert_called_once_with(["study"])
+    # Checks study.antares is correctly updated
+    study_path = study_path.parent / "internal_studies" / new_study.id
+    assert study_path.exists()
+    assert read_ini(study_path / "study.antares")["antares"]["caption"] == "new_name"
 
 
 def test_zipped_output(tmp_path: Path) -> None:
