@@ -57,7 +57,6 @@ if TYPE_CHECKING:
     from antarest.core.tasks.model import TaskJob
 
 DEFAULT_WORKSPACE_NAME = "default"
-OUTPUT_FOLDER_NAME = "output"
 
 NEW_DEFAULT_STUDY_VERSION: StudyVersion = StudyVersion.parse("9.3")
 STUDY_VERSION_6_5 = StudyVersion.parse("6.5")
@@ -372,9 +371,6 @@ class Study(Base):
 
     def get_path(self) -> Path:
         return Path(self.path)
-
-    def get_output_path(self) -> Path:
-        return Path(self.path) / OUTPUT_FOLDER_NAME
 
     @validates("folder")
     def validate_folder(self, key: str, folder: str | None) -> str | None:
