@@ -89,6 +89,7 @@ export interface DataGridFormProps<TData extends Data = Data, SubmitReturnValue 
   submitButtonText?: string;
   submitButtonIcon?: ButtonProps["startIcon"];
   hideSubmitButton?: boolean;
+  groupRows?: ReadonlySet<string>;
   disableErrorSnackbar?: boolean;
 }
 
@@ -113,6 +114,7 @@ function DataGridForm<TData extends Data>({
   submitButtonText,
   submitButtonIcon = <SaveIcon />,
   hideSubmitButton = false,
+  groupRows,
   disableErrorSnackbar = false,
 }: DataGridFormProps<TData>) {
   const { t } = useTranslation();
@@ -158,6 +160,11 @@ function DataGridForm<TData extends Data>({
   );
 
   const columnIds = useMemo(() => columns.map((column) => column.id), [columns]);
+
+  const isGroupRow = useCallback(
+    (rowIndex: number) => groupRows?.has(rowNames[rowIndex]) ?? false,
+    [groupRows, rowNames],
+  );
 
   const rowMarkers = useMemo<RowMarkers>(
     () =>
@@ -360,6 +367,7 @@ function DataGridForm<TData extends Data>({
         onRowAppended={onRowAppended}
         trailingRowOptions={trailingRowOptions}
         enableColumnResize={enableColumnResize}
+        isGroupRow={groupRows ? isGroupRow : undefined}
         getCellsForSelection
         onPaste
       />

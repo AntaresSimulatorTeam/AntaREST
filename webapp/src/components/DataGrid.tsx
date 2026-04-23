@@ -26,7 +26,13 @@ import {
 import "@glideapps/glide-data-grid/dist/index.css";
 import { useCallback, useMemo, useState } from "react";
 import { useUpdateEffect } from "react-use";
-import { darkTheme, lightTheme, readOnlyDarkTheme, readOnlyLightTheme } from "./Matrix/styles";
+import {
+  darkTheme,
+  groupRowTheme,
+  lightTheme,
+  readOnlyDarkTheme,
+  readOnlyLightTheme,
+} from "./Matrix/styles";
 
 interface StringRowMarkerOptions {
   kind: "string" | "clickable-string";
@@ -46,6 +52,7 @@ export interface DataGridProps
   rowMarkers?: RowMarkers;
   enableColumnResize?: boolean;
   readOnly?: boolean;
+  isGroupRow?: (rowIndex: number) => boolean;
 }
 
 function isStringRowMarkerOptions(
@@ -66,6 +73,7 @@ function DataGrid({
   onGridSelectionChange,
   enableColumnResize = true,
   readOnly = false,
+  isGroupRow,
   freezeColumns,
   rows,
   ...rest
@@ -140,11 +148,19 @@ function DataGrid({
   const getCellContentWrapper = useCallback<DataEditorProps["getCellContent"]>(
     (cell) => {
       const [colIndex, rowIndex] = cell;
+      const isGroup = isGroupRow?.(rowIndex) ?? false;
 
       return ifElseStringRowMarkers(
         colIndex,
         ({ getTitle }) => {
           const title = getTitle ? getTitle(rowIndex) : `Row ${rowIndex + 1}`;
+          const bgColor = isGroup
+            ? isDarkMode
+              ? groupRowTheme.dark.bgCell
+              : groupRowTheme.light.bgCell
+            : isDarkMode
+              ? darkTheme.bgHeader
+              : "#efeff1";
 
           return {
             kind: GridCellKind.Text,
@@ -153,16 +169,30 @@ function DataGrid({
             allowOverlay: false,
             readonly: true,
             themeOverride: {
-              bgCell: isDarkMode ? darkTheme.bgHeader : "#efeff1",
+              bgCell: bgColor,
+              ...(isGroup && { baseFontStyle: "bold 13px" }),
             },
           } satisfies GridCell;
         },
         (adjustedColIndex) => {
+          if (isGroup) {
+            return {
+              kind: GridCellKind.Text,
+              data: "",
+              displayData: "",
+              allowOverlay: false,
+              readonly: true,
+              themeOverride: {
+                bgCell: isDarkMode ? groupRowTheme.dark.bgCell : groupRowTheme.light.bgCell,
+              },
+            };
+          }
+
           return getCellContent([adjustedColIndex, rowIndex]);
         },
       );
     },
-    [getCellContent, isStringRowMarkers, isDarkMode],
+    [getCellContent, isStringRowMarkers, isDarkMode, isGroupRow],
   );
 
   ////////////////////////////////////////////////////////////////
@@ -183,6 +213,11 @@ function DataGrid({
         .map((item) => {
           const { location } = item;
           const [colIndex, rowIndex] = location;
+
+          // Skip group rows
+          if (isGroupRow?.(rowIndex)) {
+            return null;
+          }
 
           return ifElseStringRowMarkers(
             colIndex,
