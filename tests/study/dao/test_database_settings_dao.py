@@ -36,14 +36,14 @@ from antarest.study.business.model.config.optimization_config_model import (
 )
 from antarest.study.business.model.config.playlist_model import Playlist, PlaylistValues
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration, TimeSeriesType
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.comments import COMMENTS_TABLE
 from antarest.study.model import STUDY_VERSION_9_3
 from tests.study.dao.conftest import build_db_dao
 
 
-def test_nominal_case(db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def test_nominal_case(dao: StudyDao) -> None:
     # General Config
     new_general_config = GeneralConfig(
         mode=Mode.ECONOMY,
@@ -116,7 +116,16 @@ def test_nominal_case(db_dao: DatabaseStudyDao) -> None:
     # Playlist Config
     playlist = Playlist(years={4: PlaylistValues(status=False, weight=0.2), 7: PlaylistValues(weight=1.1)})
     dao.save_playlist_config(playlist)
-    assert dao.get_playlist_config() == playlist
+    expected_playlist = Playlist(
+        years={
+            1: PlaylistValues(status=False),
+            2: PlaylistValues(status=False),
+            3: PlaylistValues(status=False),
+            4: PlaylistValues(status=False, weight=0.2),
+            7: PlaylistValues(weight=1.1),
+        }
+    )
+    assert dao.get_playlist_config() == expected_playlist
 
     # Optimization preferences
     preferences = OptimizationPreferences(
@@ -146,17 +155,17 @@ def test_compatibility_parameters(db_session: Session, matrix_service: ISimpleMa
     assert dao.get_compatibility_parameters() == new_parameters
 
 
-def test_get_comments_returns_empty_string_by_default(db_dao: DatabaseStudyDao) -> None:
-    assert db_dao.get_comments() == ""
+def test_get_comments_returns_empty_string_by_default(dao: StudyDao) -> None:
+    assert dao.get_comments() == ""
 
 
-def test_save_comments_persists_value(db_dao: DatabaseStudyDao, db_session: Session) -> None:
-    dao = db_dao
+def test_save_comments_persists_value(dao: StudyDao, db_session: Session) -> None:
     comments = "test comment study"
 
     dao.save_comments(comments)
 
     assert dao.get_comments() == comments
 
-    stmt = select(COMMENTS_TABLE.c.comments).where(COMMENTS_TABLE.c.study_id == dao.get_study_id())
-    assert db_session.execute(stmt).scalar_one() == comments
+    if isinstance(dao, DatabaseStudyDao):
+        stmt = select(COMMENTS_TABLE.c.comments).where(COMMENTS_TABLE.c.study_id == dao.get_study_id())
+        assert db_session.execute(stmt).scalar_one() == comments

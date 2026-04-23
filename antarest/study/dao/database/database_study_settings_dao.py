@@ -26,7 +26,7 @@ from antarest.study.business.model.config.compatibility_parameters_model import 
 )
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
-from antarest.study.business.model.config.playlist_model import Playlist
+from antarest.study.business.model.config.playlist_model import Playlist, PlaylistValues
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration, TimeSeriesType
 from antarest.study.dao.api.adequacy_patch_parameters_dao import AdequacyPatchParametersDao
 from antarest.study.dao.api.advanced_parameters_dao import AdvancedParametersDao
@@ -49,6 +49,24 @@ from antarest.study.dao.database.sql_utils import upsert_one
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+
+
+def _expand_playlist(playlist: Playlist, nb_years: int) -> Playlist:
+    """
+    Expand sparse playlist to cover years 1..nb_years, mimicking filesystem DAO semantic.
+    Missing year default status follows majority rule of saved entries (matches fs `playlist_reset`).
+    Empty playlist defaults to status=True (matches fs default when no `[playlist]` INI section).
+    """
+    if not playlist.years:
+        default_status = True
+    else:
+        activated = sum(1 for v in playlist.years.values() if v.status)
+        default_status = activated > len(playlist.years) // 2
+    expanded = dict(playlist.years)
+    for year in range(1, nb_years + 1):
+        if year not in expanded:
+            expanded[year] = PlaylistValues(status=default_status)
+    return Playlist(years=expanded)
 
 
 class DatabaseStudySettingsDao(
@@ -221,4 +239,6 @@ class DatabaseStudySettingsDao(
         row = self.get_session().execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
-        return Playlist(years=from_json(row.years))
+        sparse = Playlist(years=from_json(row.years))
+        nb_years = self.get_general_config().nb_years
+        return _expand_playlist(sparse, nb_years)
