@@ -53,7 +53,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactor
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import create_study
+from tests.helpers import create_raw_study, create_study
 from tests.study.dao.utils import save_area
 
 
@@ -86,7 +86,7 @@ def build_filesystem_dao(
     """
     # Create the study
     study_id = str(uuid.uuid4())
-    study = create_study(id=study_id, name="Test Study", version=str(version), path=str(study_path / "my_study"))
+    study = create_raw_study(id=study_id, name="Test Study", version=str(version), path=str(study_path / "my_study"))
     study.storage_mode = StorageMode.FILESYSTEM
     with db_session:
         db_session.add(study)
