@@ -55,7 +55,7 @@ class FileStudyStorage(IStudyStorage):
 
     @override
     def copy(self, src_study: Study, new_study: RawStudy) -> RawStudy:
-        src_path = src_study.get_path()
+        src_path = Path(src_study.path)
         dest_path = Path(new_study.path)
 
         shutil.copytree(src_path, dest_path, ignore=shutil.ignore_patterns("output"))

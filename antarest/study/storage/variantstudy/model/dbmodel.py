@@ -168,10 +168,6 @@ class VariantStudy(Study):
     def __str__(self) -> str:
         return super().__str__() + f", snapshot={self.snapshot}"
 
-    @override
-    def get_path(self) -> Path:
-        return self.snapshot_dir
-
     @property
     def snapshot_dir(self) -> Path:
         """Get the path of the snapshot directory."""

@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
+from typing import cast
 
 from antares.study.version import StudyVersion
 from typing_extensions import override
@@ -17,10 +18,11 @@ from typing_extensions import override
 from antarest.core.interfaces.cache import ICache
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.model import Study
+from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.utils import create_new_empty_study, is_managed, update_antares_info
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 
 class FileStudyDaoFactory(StudyFactoryDao):
@@ -42,13 +44,18 @@ class FileStudyDaoFactory(StudyFactoryDao):
         return self._build_dao(study, create_study=False)
 
     def _build_dao(self, study: Study, create_study: bool) -> FileStudyTreeDao:
-        study_path = study.get_path()
-        output_path = Path(study.path) / "output"  # Needed to parse the output config for variants
-        is_study_managed = is_managed(study)
+        # We need to differentiate `RawStudy` and `VariantStudy` to be able to parse the config
+        if isinstance(study, RawStudy):
+            study_path = Path(study.path)
+            output_path = None
+        else:
+            study_path = cast(VariantStudy, study).snapshot_dir
+            output_path = Path(study.path) / "output"
 
         if create_study:
             create_new_empty_study(version=StudyVersion.parse(study.version), path_study=study_path)
 
+        is_study_managed = is_managed(study)
         file_study = self._study_factory.create_from_fs(study_path, is_study_managed, study.id, output_path)
 
         if create_study:
