@@ -50,7 +50,6 @@ from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
-from antarest.core.utils.archives import is_archive_format
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Identity
@@ -594,8 +593,8 @@ def rec_scan_for_studies(
 
 
 def get_disk_usage(path: Path) -> int:
-    """Calculate the total disk usage (in bytes) of a study in a compressed file or directory."""
-    if is_archive_format(path.suffix.lower()):
+    """Calculate the total disk usage (in bytes) for a given Path."""
+    if path.is_file():
         return os.path.getsize(path)
     total_size = 0
     with contextlib.suppress(FileNotFoundError, PermissionError):
