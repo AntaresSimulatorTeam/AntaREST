@@ -133,37 +133,40 @@ describe("Matrix Utils", () => {
 
   describe("parseClipboardNumber", () => {
     test.each([
-      // International / SI (space thousands, period decimal)
-      { input: "1 234 567.89", expected: 1234567.89 },
-      { input: "1 234 567", expected: 1234567 },
+      // `.` is the decimal, `,` and whitespace are thousands (stripped)
+      { input: "1,234.567", expected: 1234.567 },
+      { input: "1 234.567", expected: 1234.567 },
+      { input: "1 234,567", expected: 1234567 },
       // US / UK (comma thousands, period decimal)
       { input: "1,234,567.89", expected: 1234567.89 },
       { input: "1,234,567", expected: 1234567 },
       { input: "1,234.56", expected: 1234.56 },
       { input: "1,234", expected: 1234 },
-      // European (period thousands, comma decimal)
-      { input: "1.234.567,89", expected: 1234567.89 },
-      { input: "1.234.567", expected: 1234567 },
-      { input: "1.234,56", expected: 1234.56 },
-      { input: "1.234", expected: 1234 },
+      { input: "4,567", expected: 4567 },
+      { input: "1,000", expected: 1000 },
+      // International / SI (space thousands, period decimal)
+      { input: "1 234 567.89", expected: 1234567.89 },
+      { input: "1 234 567", expected: 1234567 },
       // Plain numbers
       { input: "1234567.89", expected: 1234567.89 },
       { input: "1234567", expected: 1234567 },
-      // Single comma: exactly 3 digits after → thousands separator (US/UK "4,567" = 4567)
-      { input: "4,567", expected: 4567 },
-      { input: "1,000", expected: 1000 },
-      // Single comma: ≠ 3 digits after → decimal separator (European "1234,56" = 1234.56)
-      { input: "1234,56", expected: 1234.56 },
-      { input: "0,5", expected: 0.5 },
-      { input: "12,1234", expected: 12.1234 },
+      { input: "0.5", expected: 0.5 },
       // Negative numbers
       { input: "-1,234,567.89", expected: -1234567.89 },
-      { input: "-1.234.567,89", expected: -1234567.89 },
-      { input: "-1234,56", expected: -1234.56 },
-      // Small decimals
-      { input: "0.5", expected: 0.5 },
-      // Whitespace padding
+      { input: "-1234.56", expected: -1234.56 },
       { input: "  1 234.5  ", expected: 1234.5 },
+      // Malformed comma placement is rejected (comma not followed by exactly 3 digits
+      // before end, another comma, or a period) — avoids silent data corruption for
+      // European decimal-comma inputs.
+      { input: "1234,56", expected: NaN },
+      { input: "0,5", expected: NaN },
+      { input: "12,1234", expected: NaN },
+      { input: "-1234,56", expected: NaN },
+      { input: "12,34.567", expected: NaN },
+      // European thousands "1.234.567" is rejected (multi-period) → paste interceptor
+      // skips the cell, avoiding silent corruption
+      { input: "1.234.567,89", expected: NaN },
+      { input: "1.234.567", expected: NaN },
       // Invalid
       { input: "", expected: NaN },
       { input: "abc", expected: NaN },

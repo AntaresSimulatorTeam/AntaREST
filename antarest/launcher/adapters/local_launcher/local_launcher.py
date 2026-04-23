@@ -68,7 +68,7 @@ class LocalLauncher(AbstractLauncher):
         logs_path = self.local_workspace / "LOGS"
         logs_path.mkdir(parents=True, exist_ok=True)
         self.log_directory = logs_path
-        self.log_tail_manager = LogTailManager(self.local_workspace)
+        self.log_tail_manager = LogTailManager()
         self.submitted_jobs: dict[str, LauncherParametersDTO] = {}
         self.job_id_to_study_id: dict[str, tuple[str, Path, subprocess.Popen]] = {}  # type: ignore
         self.logs: dict[str, str] = {}
