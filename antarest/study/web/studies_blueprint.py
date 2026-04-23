@@ -237,13 +237,22 @@ def create_study_routes() -> APIRouter:
         status_code=HTTPStatus.CREATED,
         summary="Import Study",
     )
-    def import_study(study_service: StudyServiceDep, study: UploadFile, groups: SanitizedStr = "") -> str:
+    def import_study(
+        study_service: StudyServiceDep,
+        study: UploadFile,
+        groups: SanitizedStr = "",
+        directory: Annotated[
+            SanitizedStr,
+            Query(description="Directory path where the study will be imported (e.g., 'project/subfolder')"),
+        ] = "",
+    ) -> str:
         """
         Upload and import a compressed study from your computer to the Antares Web server.
 
         Args:
         - `study`: The binary content of the study file in ZIP or 7z format.
         - `groups`: The groups your study will belong to (Default: current user's groups).
+        - `directory`: Optional logical directory path where the study will be placed.
 
         Returns:
         - The ID of the imported study.
@@ -257,8 +266,10 @@ def create_study_routes() -> APIRouter:
         group_ids_raw = _split_comma_separated_values(groups, default=[group.id for group in user.groups])
         group_ids = [sanitize_string(gid) for gid in group_ids_raw]
 
+        directory_path_sanitized = validate_folder_path(directory) if directory else ""
+
         try:
-            uuid = study_service.import_study(study.file, group_ids)
+            uuid = study_service.import_study(study.file, group_ids, directory=directory_path_sanitized)
         except BadArchiveContent as e:
             raise BadZipBinary(str(e))
 
