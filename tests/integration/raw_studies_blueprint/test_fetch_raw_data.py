@@ -537,6 +537,30 @@ class TestFetchRawData:
         res = client.get(f"/v1/studies/{variant_study_id}/raw?path=user/test.txt")
         assert res.content == variant_content
 
+    def test_alter_user_resources_for_database_study(self, client: TestClient, user_access_token: str) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # Create a Raw study with storage_mode `database`
+        res = client.post("/v1/studies?name=MyStudy&storage_mode=database")
+        assert res.status_code == 201
+        study_id = res.json()
+        raw_url = f"/v1/studies/{study_id}/raw"
+
+        # Create a user file inside the study
+        content = b"My file content"
+        res = client.put(raw_url, params={"path": "user/test.txt"}, files={"file": io.BytesIO(content)})
+        assert res.status_code == 204
+
+        # Create a folder inside the study
+        res = client.put(raw_url, params={"path": "user/newFolder", "resource_type": "folder"})
+        assert res.status_code == 204
+
+        # Deletes both resources
+        res = client.delete(f"{raw_url}?path=user/test.txt")
+        assert res.status_code == 200
+        res = client.delete(f"{raw_url}?path=user/newFolder")
+        assert res.status_code == 200
+
 
 class TestFetchOriginalFile:
     """

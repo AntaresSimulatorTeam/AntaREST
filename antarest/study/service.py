@@ -55,7 +55,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import ICache, study_raw_cache_key
+from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import JWTGroup
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
@@ -1808,10 +1808,20 @@ class StudyService:
 
         # We need to handle matrices differently if our study is stored in DB
         if study.storage_mode == StorageMode.DATABASE:
-            context = self.storage_service.variant_study_service.command_factory.command_context
-            command = ReplaceMatrix(
-                target=url, matrix=new, command_context=context, study_version=StudyVersion.parse(study.version)
-            )
+            # Different commands need to be applied according to the given path
+            study_version = StudyVersion.parse(study.version)
+            command: ICommand
+
+            try:
+                _get_path_inside_user_folder(url, ResourceCreationNotAllowed)
+                file_relpath = PurePosixPath(url.strip().strip("/"))
+                command = self._create_replace_user_resource_command(study_version, new, file_relpath)
+
+            except ResourceCreationNotAllowed:
+                # The url does not point towards a user resource, we use the `ReplaceMatrix` command
+                context = self.storage_service.variant_study_service.command_factory.command_context
+                command = ReplaceMatrix(target=url, matrix=new, command_context=context, study_version=study_version)
+
             self.get_study_interface(study).add_commands([command])
 
         else:
@@ -2832,16 +2842,10 @@ class StudyService:
             "command_context": self.storage_service.variant_study_service.command_factory.command_context,
         }
         command = command_class.model_validate(args)
-        file_study = self.get_file_study(study)
         try:
             self.get_study_interface(study).add_commands([command])
         except CommandApplicationError as e:
             raise exception_class(e.detail) from e
-
-        # update cache
-        cache_id = study_raw_cache_key(study.id)
-        updated_tree = file_study.tree.get()
-        self.storage_service.get_storage(study).cache.put(cache_id, updated_tree)  # type: ignore
 
     def normalize_study_by_id(self, study_id: str) -> None:
         """
