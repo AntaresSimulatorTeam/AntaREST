@@ -1031,6 +1031,20 @@ def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, in
     study_res = client.post("/v1/studies?name=foo")
     study_id = study_res.json()
 
+    # Drop a fake in-study output to ensure it survives archive/unarchive.
+    study_path = tmp_path / "internal_workspace" / study_id
+    outputs_path = study_path / "output"
+    outputs_path.mkdir(parents=True, exist_ok=True)
+
+    fake_output_dir = outputs_path / "20240101-0000eco"
+    fake_output_dir.mkdir()
+    fake_output_file = fake_output_dir / "simulation.log"
+    fake_output_file.write_text("Simulation done")
+
+    fake_zipped_output = outputs_path / "20240201-0000eco.zip"
+    with zipfile.ZipFile(fake_zipped_output, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("simulation.log", data="Zipped simulation done")
+
     res = client.put(f"/v1/studies/{study_id}/archive")
     assert res.status_code == 200
     task_id = res.json()
@@ -1062,6 +1076,11 @@ def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, in
     res = client.get(f"/v1/studies/{study_id}")
     assert not res.json()["archived"]
     assert not (tmp_path / "archive_dir" / f"{study_id}.7z").exists()
+    assert fake_output_file.exists()
+    assert fake_output_file.read_text() == "Simulation done"
+    assert fake_zipped_output.is_file()
+    with zipfile.ZipFile(fake_zipped_output) as zf:
+        assert zf.read("simulation.log").decode() == "Zipped simulation done"
 
 
 def test_maintenance(client: TestClient, admin_access_token: str) -> None:

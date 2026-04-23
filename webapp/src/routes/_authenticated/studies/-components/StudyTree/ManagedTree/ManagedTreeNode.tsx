@@ -14,20 +14,17 @@
 
 import TreeItemEnhanced from "@/components/TreeItemEnhanced";
 import { TREE_ROOT_NAME } from "@/components/utils/constants";
+import FavoriteDirectoryToggle from "@/routes/-shared/components/studies/FavoriteToggle/FavoriteDirectoryToggle";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import { Box, IconButton } from "@mui/material";
+import { IconButton, Stack, Typography } from "@mui/material";
 import * as R from "ramda";
 import { useMemo } from "react";
 import EditableTreeItem from "./EditableTreeItem";
 import {
   actionButtonStyles,
-  addSubDirectoryIconStyles,
-  deleteIconStyles,
   nodeActionsContainerStyles,
-  nodeLabelContainerStyles,
-  renameIconStyles,
   treeItemStyles,
   treeNodeIcons,
 } from "./styles";
@@ -126,25 +123,27 @@ function ManagedTreeNode({
     <TreeItemEnhanced
       itemId={path}
       label={
-        <Box sx={nodeLabelContainerStyles}>
-          <Box
-            component="span"
-            sx={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
-          >
+        <Stack justifyContent="space-between" gap={1}>
+          <Typography variant="body2" noWrap>
             {name}
-          </Box>
-          <Box sx={nodeActionsContainerStyles}>
+          </Typography>
+          <Stack gap={0.25} sx={nodeActionsContainerStyles}>
+            <FavoriteDirectoryToggle
+              directoryId={id}
+              slotProps={{ icon: { fontSize: "extra-small" } }}
+              sx={actionButtonStyles}
+            />
             <IconButton size="small" onClick={handleAddSubDirectory} sx={actionButtonStyles}>
-              <CreateNewFolderIcon sx={addSubDirectoryIconStyles} />
+              <CreateNewFolderIcon fontSize="extra-small" />
             </IconButton>
             <IconButton size="small" onClick={handleStartUpdate} sx={actionButtonStyles}>
-              <EditIcon sx={renameIconStyles} />
+              <EditIcon fontSize="extra-small" />
             </IconButton>
             <IconButton size="small" onClick={handleDelete} sx={actionButtonStyles}>
-              <DeleteIcon sx={deleteIconStyles} />
+              <DeleteIcon fontSize="extra-small" color="error" />
             </IconButton>
-          </Box>
-        </Box>
+          </Stack>
+        </Stack>
       }
       slots={{
         collapseIcon: treeNodeIcons.folderOpen,

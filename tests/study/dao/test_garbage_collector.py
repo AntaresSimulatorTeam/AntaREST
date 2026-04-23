@@ -87,10 +87,14 @@ def test_garbage_collection(db_dao: DatabaseStudyDao, db_session: Session, tmp_p
         hydro_max_daily_pump_energy_df,
         xpansion_capacity_df,
         xpansion_weight_df,
+        bc_lt_df,
+        bc_gt_df,
+        bc_eq_df,
     ) = result.dataframes
     area_id, area2 = result.area1, result.area2
     thermal_id, renewable_id, st_storage_id = result.thermal_id, result.renewable_id, result.sts_id
     constraint_id = result.sts_constraint_id
+    bc_both_id, bc_eq_id = result.bc_both_id, result.bc_eq_id
 
     # Launch the Garbage collection
     task = clean_matrices(matrix_service=matrix_service, dry_run=False, retention_time=0)
@@ -217,3 +221,12 @@ def test_garbage_collection(db_dao: DatabaseStudyDao, db_session: Session, tmp_p
 
     xpansion_weight = dao.get_xpansion_resource(XpansionResourceFileType.WEIGHTS, "mc_weights.csv")
     pl.testing.assert_frame_equal(xpansion_weight, xpansion_weight_df, check_dtypes=False)
+
+    bc_lt = dao.get_constraint_less_term_matrix(bc_both_id)
+    pl.testing.assert_frame_equal(bc_lt, bc_lt_df, check_dtypes=False)
+
+    bc_gt = dao.get_constraint_greater_term_matrix(bc_both_id)
+    pl.testing.assert_frame_equal(bc_gt, bc_gt_df, check_dtypes=False)
+
+    bc_eq = dao.get_constraint_equal_term_matrix(bc_eq_id)
+    pl.testing.assert_frame_equal(bc_eq, bc_eq_df, check_dtypes=False)

@@ -15,7 +15,7 @@ import logging
 import random
 import threading
 import uuid
-from typing import Awaitable, Callable, Dict, List, Optional
+from collections.abc import Awaitable, Callable
 
 from typing_extensions import override
 
@@ -31,10 +31,10 @@ EVENT_LOOP_REST_TIME = 0.2
 class EventBusService(IEventBus):
     def __init__(self, backend: IEventBusBackend, autostart: bool = True) -> None:
         self.backend = backend
-        self.listeners: Dict[EventType, Dict[str, Callable[[Event], Awaitable[None]]]] = {
+        self.listeners: dict[EventType, dict[str, Callable[[Event], Awaitable[None]]]] = {
             ev_type: {} for ev_type in EventType
         }
-        self.consumers: Dict[str, Dict[str, Callable[[Event], Awaitable[None]]]] = {}
+        self.consumers: dict[str, dict[str, Callable[[Event], Awaitable[None]]]] = {}
 
         self.lock = threading.Lock()
         if autostart:
@@ -68,7 +68,7 @@ class EventBusService(IEventBus):
     def add_listener(
         self,
         listener: Callable[[Event], Awaitable[None]],
-        type_filter: Optional[List[EventType]] = None,
+        type_filter: list[EventType] | None = None,
     ) -> str:
         with self.lock:
             listener_id = str(uuid.uuid4())

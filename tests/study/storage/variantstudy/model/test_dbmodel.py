@@ -52,8 +52,8 @@ def fixture_raw_study_id(tmp_path: Path, db_session: Session, user_id: int) -> s
             workspace="default",
             path=str(tmp_path.joinpath("root_study")),
             version="860",
-            created_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-            updated_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+            created_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
+            updated_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
             author="john.doe",
             owner_id=user_id,
         )

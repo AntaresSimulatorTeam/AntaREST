@@ -10,14 +10,13 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
-from typing import Callable
 
 import pytest
 from sqlalchemy import Column, Engine, Integer, MetaData, String, Table, create_engine, select
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import CompileError
 from sqlalchemy.orm import Session, sessionmaker
 
-from antarest.study.dao.database.sql_utils import generic_upsert_multiple, upsert_multiple, upsert_one
+from antarest.study.dao.database.sql_utils import upsert_multiple, upsert_one
 from tests.db_statement_recorder import DBStatementRecorder
 
 METADATA = MetaData()
@@ -44,20 +43,15 @@ def session(engine: Engine) -> Session:
     return sessionmaker(bind=engine)()
 
 
-@pytest.mark.parametrize(
-    "upsert_method, expected_queries_1, expected_queries_2", [(generic_upsert_multiple, 2, 3), (upsert_multiple, 1, 1)]
-)
-def test_upsert_multiple(
-    engine: Engine, session: Session, upsert_method: Callable, expected_queries_1: int, expected_queries_2: int
-) -> None:
+def test_upsert_multiple(engine: Engine, session: Session) -> None:
     with DBStatementRecorder(engine) as db_recorder:
         insertions = [
             {"id": "1", "sub_id": "2", "str_value": "val1", "int_value": 12},
             {"id": "1", "sub_id": "3", "str_value": "val2", "int_value": 52},
             {"id": "2", "sub_id": "3", "str_value": "val3", "int_value": 66},
         ]
-        upsert_method(session, TEST_TABLE, values=insertions)
-        assert len(db_recorder.sql_statements) == expected_queries_1
+        upsert_multiple(session, TEST_TABLE, values=insertions)
+        assert len(db_recorder.sql_statements) == 1
 
     rows = session.execute(select(TEST_TABLE)).fetchall()
     assert rows == [("1", "2", "val1", 12), ("1", "3", "val2", 52), ("2", "3", "val3", 66)]
@@ -68,12 +62,12 @@ def test_upsert_multiple(
             {"id": "1", "sub_id": "2", "str_value": "val1_updated", "int_value": 72},
             {"id": "3", "sub_id": "4", "str_value": "val4", "int_value": 0},
         ]
-        upsert_method(
+        upsert_multiple(
             session,
             TEST_TABLE,
             values=updates,
         )
-        assert len(db_recorder.sql_statements) == expected_queries_2
+        assert len(db_recorder.sql_statements) == 1
 
     rows = session.execute(select(TEST_TABLE)).fetchall()
     assert rows == [
@@ -86,11 +80,11 @@ def test_upsert_multiple(
 
 def test_upsert_multiple_missing_key_raises(session: Session) -> None:
     insertions = [
-        {},
-        {"id": "1", "sub_id": "3", "str_value": "val2", "int_value": 52},
+        {"id": "1", "sub_id": "1", "str_value": "val2", "int_value": 52},
+        {"id": "1", "sub_id": "3", "str_value": "val2"},
         {"id": "2", "sub_id": "3", "str_value": "val3", "int_value": 66},
     ]
-    with pytest.raises(OperationalError):
+    with pytest.raises(CompileError):
         upsert_multiple(session, TEST_TABLE, values=insertions)
 
 
@@ -111,6 +105,14 @@ def test_upsert_one(session: Session) -> None:
     assert rows == [("1", "1", "val3", 3), ("2", "2", "val2", 2)]
 
 
-def test_upsert_one_missing_key_raises(session: Session) -> None:
-    with pytest.raises(OperationalError):
-        upsert_one(session, TEST_TABLE, values={})
+def test_upsert_with_too_many_lines(engine: Engine, session: Session) -> None:
+    """
+    SQL seems to have a limit of 2¹⁵ values to upsert at a time.
+    When trying to insert more than 2¹⁵ values, the `upsert_multiple` function should split the data in chunks to
+    avoid raising an error.
+    """
+    values = [{"id": str(k), "sub_id": str(k), "str_value": "val1", "int_value": 1} for k in range(8200)]
+
+    with DBStatementRecorder(engine) as db_recorder:
+        upsert_multiple(session, TEST_TABLE, values=values)
+        assert len(db_recorder.sql_statements) == 2  # We split the data in 2 batches

@@ -11,20 +11,21 @@
 # This file is part of the Antares project.
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
-from typing import BinaryIO, Iterator, Optional, Sequence
+from typing import Any, BinaryIO
 
 import polars as pl
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, SerializerFunctionWrapHandler, model_serializer
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
-from antarest.output.output_model import OutputVariablesList
-from antarest.output.utils import QueryFileType
+from antarest.output.filestudy.utils import QueryFileType
+from antarest.output.model import OutputVariablesList
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency, MatrixIndex
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
@@ -112,8 +113,16 @@ class OutputDetails(AntaresBaseModel):
     by_year: bool
     nb_years: int
     archived: bool
+    storage_type: OutputStorageType
 
     settings: OutputSettings | None = Field(deprecated=True, default=None)
+
+    @model_serializer(mode="wrap")
+    def _serialize(self, handler: SerializerFunctionWrapHandler) -> dict[str, Any]:
+        data: dict[str, object] = handler(self)
+        if data.get("settings") is None:
+            data.pop("settings", None)
+        return data
 
 
 class IOutputStorage(ABC):
@@ -134,7 +143,7 @@ class IOutputStorage(ABC):
         self,
         study_id: str,
         output: BinaryIO | Path,
-        output_name_suffix: Optional[str] = None,
+        output_name_suffix: str | None = None,
         logs: SimulationLogs = SimulationLogs.no_logs(),
     ) -> str:
         """
@@ -240,16 +249,16 @@ class IOutputStorage(ABC):
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
         transform_columns_headers: bool,
-        mc_years: Optional[Sequence[int]] = None,
+        mc_years: Sequence[int] | None = None,
     ) -> Iterator[pl.DataFrame]:
         """
         Aggregates output data based on several filtering conditions, as a stream of dataframes.
         """
 
     @abstractmethod
-    def extract_variables_list(self, study_id: str, output_id: str) -> OutputVariablesList:
+    def get_variables_list(self, study_id: str, output_id: str) -> OutputVariablesList:
         """
-        Extract variables list from output.
+        Get variables list of this output.
         """
 
     @abstractmethod

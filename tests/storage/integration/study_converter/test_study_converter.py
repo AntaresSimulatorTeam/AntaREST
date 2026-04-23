@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 
 import numpy as np
 import polars as pl
@@ -72,7 +72,9 @@ def test_nominal_case(storage_service, tmp_path: Path, command_context: CommandC
     factory = storage_service.storage_service.raw_study_service.study_factory
     file_study = factory.create_from_fs(new_path, with_matrix_normalization=False, study_id="", use_cache=False)
     context = command_context
-    file_study_dao = FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service)
+    file_study_dao = FileStudyTreeDao(
+        file_study, False, context.generator_matrix_constants, context.blob_service, context.matrix_service, Mock()
+    )
 
     # Version
     assert file_study_dao.get_version() == STUDY_VERSION_7_0
@@ -415,37 +417,17 @@ def test_matrices_normalized(storage_service: StudyService, tmp_path: Path) -> N
 def test_convert_short_term_storages_also_converts_additional_constraint_matrix() -> None:
     source_dao = MagicMock()
     new_dao = MagicMock()
-    matrix_service = MagicMock()
-    matrix_service.create.return_value = "matrix-id"
 
     converter = StudyConverter(
-        source_dao=source_dao,
-        new_dao=new_dao,
-        study_version=STUDY_VERSION_9_2,
-        matrix_service=matrix_service,
+        source_dao=source_dao, new_dao=new_dao, study_version=STUDY_VERSION_9_2, matrix_service=MagicMock()
     )
-
-    df = pl.DataFrame({"0": [0.0]})
-    source_dao.get_st_storage_pmax_injection.return_value = df
-    source_dao.get_st_storage_pmax_withdrawal.return_value = df
-    source_dao.get_st_storage_lower_rule_curve.return_value = df
-    source_dao.get_st_storage_upper_rule_curve.return_value = df
-    source_dao.get_st_storage_inflows.return_value = df
-    source_dao.get_st_storage_cost_injection.return_value = df
-    source_dao.get_st_storage_cost_withdrawal.return_value = df
-    source_dao.get_st_storage_cost_level.return_value = df
-    source_dao.get_st_storage_cost_variation_injection.return_value = df
-    source_dao.get_st_storage_cost_variation_withdrawal.return_value = df
-    source_dao.get_st_storage_additional_constraint_matrix.return_value = df
 
     storage = STStorage(id="battery", name="Battery")
     constraint = STStorageAdditionalConstraint(id="c1", name="Constraint 1")
 
     converter._convert_short_term_storages(
-        area_id="fr",
-        storages=[storage],
-        constraints={"battery": [constraint]},
+        storages={"fr": {"battery": storage}}, constraints={"fr": {"battery": [constraint]}}
     )
 
-    source_dao.get_st_storage_additional_constraint_matrix.assert_called_once_with("fr", "battery", "c1")
-    new_dao.save_st_storage_constraint_matrix.assert_called_once_with("fr", "battery", "c1", "matrix-id")
+    source_dao.get_all_st_storage_additional_constraint_matrices.assert_called_once()
+    new_dao.save_st_storage_constraint_matrices.assert_called_once()

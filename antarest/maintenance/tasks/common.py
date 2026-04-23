@@ -13,7 +13,6 @@
 """Shared types for maintenance tasks."""
 
 from enum import IntEnum, StrEnum
-from typing import Optional
 
 from celery.schedules import crontab
 from redis.exceptions import ConnectionError as RedisConnectionError
@@ -84,9 +83,9 @@ class GarbageCollectorTaskResult(AntaresBaseModel):
     deleted_count: int
     failed_count: int = 0
     duration_seconds: float
-    dry_run: Optional[bool] = None
-    reason: Optional[str] = None
-    error: Optional[str] = None
+    dry_run: bool | None = None
+    reason: str | None = None
+    error: str | None = None
 
 
 class LockId(IntEnum):
@@ -99,6 +98,7 @@ class LockId(IntEnum):
     VARIABLE_VIEW_GC = 1005
     TASKS_GC = 1006
     DISK_USAGE = 1007
+    STUDY_DISK_SPACE = 1008
 
 
 class WatcherScanTaskResult(AntaresBaseModel):
@@ -108,5 +108,5 @@ class WatcherScanTaskResult(AntaresBaseModel):
     studies_found: int
     duration_seconds: float
     dry_run: bool = False
-    reason: Optional[str] = None
-    error: Optional[str] = None
+    reason: str | None = None
+    error: str | None = None

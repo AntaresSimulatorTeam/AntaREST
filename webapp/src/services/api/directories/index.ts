@@ -22,10 +22,10 @@ import {
 import type { CreateDirectoryParams, Directory, UpdateDirectoryParams } from "./types";
 
 /**
- * GET /v1/directories - List all directories
+ * GET /v1/directories - Gets all directories.
  *
- * @returns Promise<Directory[]> - List of directories
- * @throws {ZodError} If the response doesn't match the expected schema
+ * @returns List of directories
+ * @throws If the response doesn't match the expected schema.
  */
 export async function getDirectories() {
   const res = await client.get<Directory[]>("/v1/directories");
@@ -33,11 +33,11 @@ export async function getDirectories() {
 }
 
 /**
- * POST /v1/directories - Create a new directory
+ * POST /v1/directories - Creates a new directory.
  *
  * @param data - Directory data to create
- * @returns Promise<Directory> - Created directory data
- * @throws {ZodError} If the params or response doesn't match the expected schema
+ * @returns Created directory data
+ * @throws If the params or response doesn't match the expected schema
  */
 export async function createDirectory(data: CreateDirectoryParams) {
   const params = createDirectoryParamsSchema.parse(data);
@@ -46,13 +46,13 @@ export async function createDirectory(data: CreateDirectoryParams) {
 }
 
 /**
- * PATCH /v1/directories/{directoryId} - Update directory
+ * PATCH /v1/directories/{directoryId} - Updates a directory.
  *
  * @param params - Update parameters
  * @param params.id - ID of the directory to update
  * @param params.data - Partial directory data to update
- * @returns Promise<Directory> - Updated directory data
- * @throws {ZodError} If the params or response doesn't match the expected schema
+ * @returns Updated directory data
+ * @throws If the response doesn't match the expected schema.
  */
 export async function updateDirectory({ id, data }: UpdateDirectoryParams) {
   const params = updateDirectoryParamsSchema.parse({ id, data });
@@ -61,10 +61,9 @@ export async function updateDirectory({ id, data }: UpdateDirectoryParams) {
 }
 
 /**
- * DELETE /v1/directories/{directoryId} - Delete directory
+ * DELETE /v1/directories/{directoryId} - Deletes a directory.
  *
  * @param directoryId - ID of the directory to delete
- * @returns Promise<void>
  */
 export async function deleteDirectory(directoryId: string) {
   await client.delete(`/v1/directories/${directoryId}`);

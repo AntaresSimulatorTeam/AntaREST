@@ -15,7 +15,7 @@
 import datetime
 import logging
 import time
-from typing import List, NamedTuple, Optional
+from typing import NamedTuple
 
 from pydantic import BaseModel
 
@@ -24,7 +24,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_lock
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, LockId
-from antarest.output.output_service import OutputService
+from antarest.output.service import OutputService
 from antarest.study.model import RawStudy, Study
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 class ArchiveStudyResult(NamedTuple):
     archived_studies: int
-    error: Optional[str] = None
+    error: str | None = None
 
 
 class AutoArchiveTaskResult(BaseModel):
@@ -43,8 +43,8 @@ class AutoArchiveTaskResult(BaseModel):
     archived_studies: int
     duration_seconds: float
     dry_run: bool
-    errors: List[str] = []
-    reason: Optional[str] = None
+    errors: list[str] = []
+    reason: str | None = None
 
 
 class StudyToArchive(NamedTuple):

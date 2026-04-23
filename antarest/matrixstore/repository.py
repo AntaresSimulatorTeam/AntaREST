@@ -14,7 +14,6 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -40,7 +39,7 @@ class MatrixDataSetRepository:
     Database connector to manage Matrix metadata entity
     """
 
-    def __init__(self, session: Optional[Session] = None) -> None:
+    def __init__(self, session: Session | None = None) -> None:
         self._session = session
 
     @property
@@ -63,20 +62,20 @@ class MatrixDataSetRepository:
         logger.debug(f"Matrix dataset {matrix_user_metadata.id} for user {matrix_user_metadata.owner_id} saved")
         return matrix_user_metadata
 
-    def get(self, id_number: str) -> Optional[MatrixDataSet]:
+    def get(self, id_number: str) -> MatrixDataSet | None:
         return self.session.get(MatrixDataSet, id_number)
 
-    def get_all_datasets(self) -> List[MatrixDataSet]:
+    def get_all_datasets(self) -> list[MatrixDataSet]:
         stmt = select(MatrixDataSet)
         result = self.session.execute(stmt)
-        matrix_datasets: List[MatrixDataSet] = list(result.scalars().all())
+        matrix_datasets: list[MatrixDataSet] = list(result.scalars().all())
         return matrix_datasets
 
     def query(
         self,
-        name: Optional[str],
-        owner: Optional[int] = None,
-    ) -> List[MatrixDataSet]:
+        name: str | None,
+        owner: int | None = None,
+    ) -> list[MatrixDataSet]:
         """
         Query a list of MatrixUserMetadata by searching for each one separately if a set of filter match
 
@@ -93,7 +92,7 @@ class MatrixDataSetRepository:
         if owner is not None:
             stmt = stmt.where(MatrixDataSet.owner_id == owner)
         result = self.session.execute(stmt.distinct())
-        datasets: List[MatrixDataSet] = list(result.scalars().all())
+        datasets: list[MatrixDataSet] = list(result.scalars().all())
         return datasets
 
     def delete(self, dataset_id: str) -> None:
@@ -107,7 +106,7 @@ class MatrixRepository:
     Database connector to manage Matrix entity.
     """
 
-    def __init__(self, session: Optional[Session] = None) -> None:
+    def __init__(self, session: Session | None = None) -> None:
         self._session = session
 
     @property
@@ -139,7 +138,7 @@ class MatrixRepository:
             for matrix in matrices:
                 self.save(matrix)
 
-    def get(self, matrix_hash: str) -> Optional[Matrix]:
+    def get(self, matrix_hash: str) -> Matrix | None:
         return self.session.get(Matrix, matrix_hash)
 
     def get_matrices(self) -> list[Matrix]:
@@ -369,7 +368,7 @@ class MatrixContentRepository:
             return os.stat(matrix_path).st_size
         raise FileNotFoundError(str(self.bucket_dir.joinpath(matrix_hash)))
 
-    def _get_matrix_path_n_format(self, matrix_hash: str) -> tuple[Optional[Path], InternalMatrixFormat]:
+    def _get_matrix_path_n_format(self, matrix_hash: str) -> tuple[Path | None, InternalMatrixFormat]:
         for internal_format in InternalMatrixFormat:
             matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
             if matrix_path.exists():

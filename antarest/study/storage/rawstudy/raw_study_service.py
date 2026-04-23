@@ -13,12 +13,12 @@ import logging
 import shutil
 import tempfile
 import time
+from collections.abc import Sequence
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
-from typing import BinaryIO, Optional, Sequence
+from typing import BinaryIO
 from uuid import uuid4
 
-from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.config import Config
@@ -32,15 +32,11 @@ from antarest.core.utils.archives import (
     extract_archive_from_stream,
 )
 from antarest.core.utils.utils import StopWatch, current_time
-from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper, extract_matrix_id
+from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.dtos import StudyDataSynthesis
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StorageMode, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    FileStudyTreeConfig,
-)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
@@ -75,7 +71,7 @@ class RawStudyService(AbstractStorageService):
         return self._matrix_service
 
     def update_from_raw_meta(
-        self, metadata: RawStudy, fallback_on_default: Optional[bool] = False, study_path: Optional[Path] = None
+        self, metadata: RawStudy, fallback_on_default: bool | None = False, study_path: Path | None = None
     ) -> None:
         """
         Update metadata from study raw metadata
@@ -168,7 +164,7 @@ class RawStudyService(AbstractStorageService):
         self,
         metadata: Study,
         use_cache: bool = True,
-        output_dir: Optional[Path] = None,
+        output_dir: Path | None = None,
     ) -> FileStudy:
         """
         Fetch a study object and its config
@@ -184,13 +180,6 @@ class RawStudyService(AbstractStorageService):
         return self.study_factory.create_from_fs(
             study_path, is_managed(metadata), metadata.id, output_dir, use_cache=use_cache
         )
-
-    @override
-    def get_synthesis(self, metadata: Study) -> StudyDataSynthesis:
-        self._check_study_exists(metadata)
-        study_path = self.get_study_path(metadata)
-        study = self.study_factory.create_from_fs(study_path, is_managed(metadata), metadata.id)
-        return StudyDataSynthesis.from_study_config(study.config)
 
     @override
     def copy(
@@ -317,12 +306,7 @@ class RawStudyService(AbstractStorageService):
                 else:
                     raise TypeError(f"unarchive requires a RawStudy, got {type(metadata)}")
 
-            self.export_study_to_flat_directory(
-                Path(metadata.path),
-                dst_path,
-                denormalize,
-                is_study_managed=is_managed(metadata),
-            )
+            self.export_study_to_flat_directory(Path(metadata.path), dst_path, denormalize=denormalize)
 
         finally:
             if metadata.archived:
@@ -336,6 +320,11 @@ class RawStudyService(AbstractStorageService):
             logger.info(f"Exporting study {study.id} to temporary path {tmpdir}")
             tmp_study_path = Path(tmpdir) / "tmp_copy"
             self.export_study_flat(study, tmp_study_path)
+
+            src_output = path_study / "output"
+            if src_output.exists():
+                shutil.copytree(src_output, tmp_study_path / "output")
+
             stopwatch = StopWatch()
             archive_dir(tmp_study_path, archive_path, archive_format=ArchiveFormat.SEVEN_ZIP)
             logger.info(f"Study {path_study} exported ({archive_path.suffix} format) in {stopwatch}s")
@@ -394,31 +383,6 @@ class RawStudyService(AbstractStorageService):
             return self.find_archive_path(metadata)
         return Path(metadata.path)
 
-    def check_and_update_study_version_in_database(self, study: RawStudy) -> None:
-        try:
-            study_path = self.get_study_path(study)
-            if study_path:
-                config = FileStudyTreeConfig(
-                    study_path=study_path,
-                    path=study_path,
-                    study_id="",
-                    version=StudyVersion.parse(0),
-                )
-                raw_study = self.study_factory.create_from_config(config, NormalizedMatrixUriMapper.NORMALIZED)
-                file_metadata = raw_study.get(url=["study", "antares"])
-                study_version = str(file_metadata.get("version", study.version))
-                if study_version != study.version:
-                    logger.warning(
-                        f"Study version in file ({study_version}) is different from the one stored in db ({study.version}), returning file version"
-                    )
-                    study.version = study_version
-        except Exception as e:
-            logger.error(
-                "Failed to check and/or update study version in database for study %s",
-                study.id,
-                exc_info=e,
-            )
-
     @staticmethod
     def checks_antares_web_compatibility(study: Study) -> None:
         """
@@ -426,29 +390,38 @@ class RawStudyService(AbstractStorageService):
         """
         pass
 
-    def normalize_study(self, study: Study | FileStudy) -> None:
+    @override
+    def normalize_study(self, study: Study) -> None:
         """
         Method used to normalize a study.
         It will put every matrix in the study in the matrix-store.
         """
-        if isinstance(study, Study):
-            study = self.get_raw(study)
-        matrix_nodes = study.tree.get_matrix_nodes_to_normalize()
+        if study.storage_mode == StorageMode.DATABASE:
+            # Nothing to do
+            return
+
+        file_study = self.get_raw(study)
+        self.normalize_file_study(file_study)
+
+    def denormalize_study(self, study: Study) -> None:
+        if study.storage_mode == StorageMode.DATABASE:
+            # Nothing to do
+            return
+
+        file_study = self.get_raw(study)
+        self.denormalize_file_study(file_study)
+
+    def normalize_file_study(self, file_study: FileStudy) -> None:
+        matrix_nodes = file_study.tree.get_matrix_nodes_to_normalize()
         if not matrix_nodes:
             return
 
-        matrix_ids = self._matrix_service.create_batch((node.parse_content() for node in matrix_nodes))
+        matrix_ids = self._matrix_service.create_batch(node.parse_content() for node in matrix_nodes)
         for k, node in enumerate(matrix_nodes):
             node.matrix_mapper.save_matrix(node, matrix_ids[k])
 
-    def denormalize_study(self, study: Study | FileStudy) -> None:
-        """
-        Method used to denormalize a study.
-        It will replace every `.link` file in the study with its content stored in the matrix-store.
-        """
-        if isinstance(study, Study):
-            study = self.get_raw(study)
-        matrix_nodes = study.tree.get_matrix_nodes_to_denormalize()
+    def denormalize_file_study(self, file_study: FileStudy) -> None:
+        matrix_nodes = file_study.tree.get_matrix_nodes_to_denormalize()
         if not matrix_nodes:
             return
 
@@ -458,17 +431,11 @@ class RawStudyService(AbstractStorageService):
             assert link_content is not None
             matrices_mapping.setdefault(extract_matrix_id(link_content), []).append(node)
 
-        for matrix_content in self._matrix_service.yield_matrices(list(matrices_mapping.keys())):
+        for matrix_content in self._matrix_service.yield_matrices(list(matrices_mapping)):
             for node in matrices_mapping[matrix_content.id]:
                 node.write_dataframe(matrix_content.data)
 
-    def export_study_to_flat_directory(
-        self,
-        study_dir: Path,
-        dest: Path,
-        denormalize: bool = True,
-        is_study_managed: bool = True,
-    ) -> None:
+    def export_study_to_flat_directory(self, study_dir: Path, dest: Path, denormalize: bool = True) -> None:
         start_time = time.time()
 
         def ignore_outputs(directory: str, _: Sequence[str]) -> Sequence[str]:
@@ -477,10 +444,9 @@ class RawStudyService(AbstractStorageService):
         shutil.copytree(src=study_dir, dst=dest, ignore=ignore_outputs)
 
         stop_time = time.time()
-        duration = "{:.3f}".format(stop_time - start_time)
+        duration = f"{stop_time - start_time:.3f}"
         logger.info(f"Study '{study_dir}' exported (flat mode) in {duration}s")
+
         if denormalize:
-            study = self.study_factory.create_from_fs(dest, is_study_managed, "", use_cache=False)
-            self.denormalize_study(study)
-            duration = "{:.3f}".format(time.time() - stop_time)
-            logger.info(f"Study '{study_dir}' denormalized in {duration}s")
+            study = self.study_factory.create_from_fs(dest, False, "", use_cache=False)
+            self.denormalize_file_study(study)

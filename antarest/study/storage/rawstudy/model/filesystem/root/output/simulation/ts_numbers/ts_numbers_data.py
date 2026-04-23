@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import List, Optional, Union
 
 from typing_extensions import override
 
@@ -23,18 +22,18 @@ from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 logger = logging.getLogger(__name__)
 
 
-class TsNumbersVector(LazyNode[List[int], List[int], JSON]):
+class TsNumbersVector(LazyNode[list[int], list[int], JSON]):
     def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
         super().__init__(config)
 
     @override
     def load(
-        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, formatted: bool = True
-    ) -> List[int]:
+        self, url: list[str] | None = None, depth: int = -1, expanded: bool = False, formatted: bool = True
+    ) -> list[int]:
         file_path = self.config.path
 
         if file_path.exists():
-            with open(file_path, "r") as fh:
+            with open(file_path) as fh:
                 data = fh.readlines()
 
             if len(data) >= 1:
@@ -44,7 +43,7 @@ class TsNumbersVector(LazyNode[List[int], List[int], JSON]):
         return []
 
     @override
-    def dump(self, data: Union[str, bytes, List[int]], url: Optional[List[str]] = None) -> None:
+    def dump(self, data: str | bytes | list[int], url: list[str] | None = None) -> None:
         self.config.path.parent.mkdir(exist_ok=True, parents=True)
         with open(self.config.path, "w") as fh:
             fh.write(f"size:1x{len(data)}\n")

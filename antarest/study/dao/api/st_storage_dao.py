@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
-from typing import Sequence
+from collections.abc import Sequence
 
 import polars as pl
 
@@ -20,6 +20,7 @@ from antarest.study.business.model.sts_model import (
     STStorageAdditionalConstraint,
     STStorageAdditionalConstraintsMap,
 )
+from antarest.study.dao.common import AreaId, StStorageConstraintSeriesMapping, StStorageId, StStorageSeriesMapping
 
 
 class ReadOnlySTStorageDao(ABC):
@@ -79,6 +80,46 @@ class ReadOnlySTStorageDao(ABC):
     def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_all_st_storage_pmax_injection(self) -> StStorageSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_pmax_withdrawal(self) -> StStorageSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_lower_rule_curve(self) -> StStorageSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_upper_rule_curve(self) -> StStorageSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_inflows(self) -> StStorageSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_cost_injection(self) -> StStorageSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_cost_withdrawal(self) -> StStorageSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_cost_level(self) -> StStorageSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_cost_variation_injection(self) -> StStorageSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_cost_variation_withdrawal(self) -> StStorageSeriesMapping:
+        raise NotImplementedError()
+
     ##########################
     # Additional constraints part
     ##########################
@@ -99,54 +140,54 @@ class ReadOnlySTStorageDao(ABC):
     ) -> pl.DataFrame:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_all_st_storage_additional_constraint_matrices(self) -> StStorageConstraintSeriesMapping:
+        raise NotImplementedError()
+
 
 class STStorageDao(ReadOnlySTStorageDao):
     @abstractmethod
-    def save_st_storage(self, area_id: str, st_storage: STStorage) -> None:
+    def save_st_storages(self, data: dict[AreaId, list[STStorage]]) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storages(self, area_id: str, storages: Sequence[STStorage]) -> None:
+    def save_st_storage_pmax_injection(self, series: StStorageSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_pmax_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
+    def save_st_storage_pmax_withdrawal(self, series: StStorageSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
+    def save_st_storage_lower_rule_curve(self, series: StStorageSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_lower_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
+    def save_st_storage_upper_rule_curve(self, series: StStorageSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_upper_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
+    def save_st_storage_inflows(self, series: StStorageSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_inflows(self, area_id: str, storage_id: str, series_id: str) -> None:
+    def save_st_storage_cost_injection(self, series: StStorageSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_cost_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
+    def save_st_storage_cost_withdrawal(self, series: StStorageSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_cost_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
+    def save_st_storage_cost_level(self, series: StStorageSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_cost_level(self, area_id: str, storage_id: str, series_id: str) -> None:
+    def save_st_storage_cost_variation_injection(self, series: StStorageSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_cost_variation_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def save_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
+    def save_st_storage_cost_variation_withdrawal(self, series: StStorageSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
@@ -162,13 +203,11 @@ class STStorageDao(ReadOnlySTStorageDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_constraint_matrix(
-        self, area_id: str, storage_id: str, constraint_id: str, series_id: str
+    def save_st_storage_additional_constraints(
+        self, data: dict[AreaId, dict[StStorageId, list[STStorageAdditionalConstraint]]]
     ) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_additional_constraints(
-        self, area_id: str, storage_id: str, constraints: list[STStorageAdditionalConstraint]
-    ) -> None:
+    def save_st_storage_constraint_matrices(self, series: StStorageConstraintSeriesMapping) -> None:
         raise NotImplementedError()

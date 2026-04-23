@@ -20,7 +20,11 @@ from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixRepository
 from antarest.matrixstore.service import MatrixService
-from antarest.output.storage.file_output_storage import FileStudyOutputs, IFileOutputsProvider, InStudyFileOutputStorage
+from antarest.output.storage.file.storage import (
+    FileStudyOutputs,
+    IFileOutputsProvider,
+    InStudyFileOutputStorage,
+)
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -31,8 +35,8 @@ from antarest.study.storage.variantstudy.model.command.create_cluster import Cre
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.conftest import empty_study_fixture
 from tests.db_statement_recorder import DBStatementRecorder
-from tests.helpers import create_raw_study, dirhash, with_db_context
-from tests.integration.test_helpers.outputs import create_minimal_output_dir_from_name
+from tests.helpers import build_dao_from_file_study, create_raw_study, dirhash, with_db_context
+from tests.test_helpers.outputs import create_minimal_output_dir_from_name
 
 
 def test_export_flat_export_all_files_except_output(
@@ -77,11 +81,12 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
         generator_matrix_constants=matrix_constants, matrix_service=matrix_service, blob_service=blob_service
     )
     raw_study_service = RawStudyService(Mock(), Mock(), Mock(), matrix_service)
+    dao = build_dao_from_file_study(study, command_context, True)
 
     # Create an area and a thermal with specific matrices to have real DB matrices in our study
     version = study.config.version
     cmd = CreateArea(command_context=command_context, area_name="fr", study_version=version)
-    output = cmd.apply(study)
+    output = cmd.apply(dao)
     assert output.status
     cmd = CreateCluster(
         area_id="fr",
@@ -90,7 +95,7 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
         command_context=command_context,
         study_version=version,
     )
-    output = cmd.apply(study)
+    output = cmd.apply(dao)
     assert output.status
 
     # Ensures the matrix is normalized for now
@@ -103,7 +108,7 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
 
     # Normalize the study
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        raw_study_service.normalize_study(study)
+        raw_study_service.normalize_file_study(study)
         assert len(db_recorder.sql_statements) == 0  # no DB request as there is nothing to do
 
     assert normalized_path.read_text() == content
@@ -111,7 +116,7 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
 
     # Denormalize the study
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        raw_study_service.denormalize_study(study)
+        raw_study_service.denormalize_file_study(study)
         assert len(db_recorder.sql_statements) == 1  # 1 DB request for all matrices
 
     assert not normalized_path.exists()
@@ -120,7 +125,7 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
 
     # Denormalize again
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        raw_study_service.denormalize_study(study)
+        raw_study_service.denormalize_file_study(study)
         assert len(db_recorder.sql_statements) == 0  # no DB request as there is nothing to do
 
     assert not normalized_path.exists()
@@ -129,7 +134,7 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
 
     # Normalize the study to come back to the initial point
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        raw_study_service.normalize_study(study)
+        raw_study_service.normalize_file_study(study)
         assert len(db_recorder.sql_statements) == 1  # 1 DB request for all matrices
 
     assert normalized_path.exists()
@@ -162,7 +167,9 @@ def test_export_output(tmp_path: Path) -> None:
                 study_workspace=DEFAULT_WORKSPACE_NAME,
             )
 
-    output_storage = InStudyFileOutputStorage(OutputsProvider(), cache=Mock(), remote_executor=Mock())
+    output_storage = InStudyFileOutputStorage(
+        OutputsProvider(), cache=Mock(), remote_executor=Mock(), repository=Mock()
+    )
 
     output_storage.export_output(study.id, output_id, export_path)
     zipf = ZipFile(export_path)

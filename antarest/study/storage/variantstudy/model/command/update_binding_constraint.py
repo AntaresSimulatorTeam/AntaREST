@@ -9,8 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-from typing import Any, Optional, Self
+from typing import Any, Self
 
 from antares.study.version import StudyVersion
 from pydantic import model_validator
@@ -19,10 +18,12 @@ from typing_extensions import override
 
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.model.binding_constraint_model import (
+    BindingConstraint,
     BindingConstraintFrequency,
     BindingConstraintMatrices,
     BindingConstraintOperator,
     BindingConstraintUpdate,
+    ConstraintId,
     update_binding_constraint,
     validate_binding_constraint_against_version,
 )
@@ -125,8 +126,10 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             self.matrices.equal_term_matrix = self.validate_matrix(self.matrices.equal_term_matrix, time_step)
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        current_constraint = study_data.get_constraint(self.id)
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[BindingConstraint]:
+        current_constraint = study_data.get_constraint(ConstraintId(self.id))
         constraint = update_binding_constraint(current_constraint, self.parameters)
 
         self._validate_and_fill_matrices(constraint.time_step)
@@ -137,25 +140,25 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         if self.study_version < STUDY_VERSION_8_7:
             if self.matrices.values:
                 assert isinstance(self.matrices.values, str)
-                study_data.save_constraint_values_matrix(constraint.id, self.matrices.values)
+                study_data.save_constraint_values_matrix({constraint.id: self.matrices.values})
         else:
             operator = constraint.operator
             if operator == BindingConstraintOperator.EQUAL:
                 if self.matrices.equal_term_matrix:
                     assert isinstance(self.matrices.equal_term_matrix, str)
-                    study_data.save_constraint_equal_term_matrix(constraint.id, self.matrices.equal_term_matrix)
+                    study_data.save_constraint_equal_term_matrix({constraint.id: self.matrices.equal_term_matrix})
 
             if operator in {BindingConstraintOperator.GREATER, BindingConstraintOperator.BOTH}:
                 if self.matrices.greater_term_matrix:
                     assert isinstance(self.matrices.greater_term_matrix, str)
-                    study_data.save_constraint_greater_term_matrix(constraint.id, self.matrices.greater_term_matrix)
+                    study_data.save_constraint_greater_term_matrix({constraint.id: self.matrices.greater_term_matrix})
 
             if operator in {BindingConstraintOperator.LESS, BindingConstraintOperator.BOTH}:
                 if self.matrices.less_term_matrix:
                     assert isinstance(self.matrices.less_term_matrix, str)
-                    study_data.save_constraint_less_term_matrix(constraint.id, self.matrices.less_term_matrix)
+                    study_data.save_constraint_less_term_matrix({constraint.id: self.matrices.less_term_matrix})
 
-        return command_succeeded(f"Binding constraint '{constraint.id}' updated successfully.")
+        return command_succeeded(f"Binding constraint '{constraint.id}' updated successfully.", result=constraint)
 
     @override
     def to_dto(self) -> CommandDTO:

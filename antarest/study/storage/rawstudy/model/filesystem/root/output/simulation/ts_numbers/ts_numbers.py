@@ -22,6 +22,10 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_numbers.ts_numbers_data import (
     TsNumbersVector,
 )
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_numbers.various_ts_numbers import (
+    GenericSubFolder,
+    ShortTermStorageTsNumbers,
+)
 
 
 # noinspection SpellCheckingInspection
@@ -62,11 +66,20 @@ class OutputSimulationTsNumbers(FolderNode):
        │   ├── ch [...]
        │   ├── pompage [...]
        │   └── turbinage [...]
-       └── wind
-           ├── at.txt
-           ├── ch.txt
-           ├── pompage.txt
-           └── turbinage.txt
+       ├── wind
+       │   ├── at.txt
+       │   ├── ch.txt
+       │   ├── pompage.txt
+       │   └── turbinage.txt
+       ├── st-storage
+       │   └── at
+       │      └── sts_1
+       │          ├── inflows.txt
+       │          └── constraint_1.txt
+       └── ntc
+           └── at
+               ├── be.txt
+               └── fr.txt
     """
 
     @override
@@ -87,4 +100,9 @@ class OutputSimulationTsNumbers(FolderNode):
             children["thermal"] = AreaMultipleMatrixList(
                 self.matrix_mapper, self.config.next_file("thermal"), ThermalMatrixList, TsNumbersVector
             )
+        if (self.config.path / "st-storage").exists():
+            children["st-storage"] = ShortTermStorageTsNumbers(self.matrix_mapper, self.config.next_file("st-storage"))
+        if (self.config.path / "ntc").exists():
+            children["ntc"] = GenericSubFolder(self.matrix_mapper, self.config.next_file("ntc"))
+
         return children

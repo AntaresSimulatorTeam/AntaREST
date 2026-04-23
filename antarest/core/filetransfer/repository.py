@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional
 
 from sqlalchemy import select
 
@@ -23,7 +22,7 @@ class FileDownloadRepository:
         db.session.add(download)
         db.session.commit()
 
-    def get(self, download_id: str) -> Optional[FileDownload]:
+    def get(self, download_id: str) -> FileDownload | None:
         download = db.session.get(FileDownload, download_id)
         db.session.refresh(download)
         return download
@@ -33,7 +32,7 @@ class FileDownloadRepository:
         db.session.add(download)
         db.session.commit()
 
-    def get_all(self, owner: Optional[int] = None) -> List[FileDownload]:
+    def get_all(self, owner: int | None = None) -> list[FileDownload]:
         stmt = select(FileDownload)
         if owner:
             stmt = stmt.where(FileDownload.owner == owner)

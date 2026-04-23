@@ -99,7 +99,7 @@ class TestVariantStudyRepository:
         db_session.commit()
 
         descendants = repository.get_all_descendants(parent_id=raw_study.id)
-        assert set(d.id for d in descendants) == {v1.id, v2.id, v1a.id}
+        assert {d.id for d in descendants} == {v1.id, v2.id, v1a.id}
 
         descendants = repository.get_all_descendants(parent_id=v1.id)
         assert [d.id for d in descendants] == [v1a.id]
@@ -111,7 +111,7 @@ class TestVariantStudyRepository:
         db_session.commit()
 
         descendants = repository.get_all_descendants(parent_id=raw_study.id)
-        assert set(d.id for d in descendants) == {v1.id, v2.id, v1a.id, v1a1.id}
+        assert {d.id for d in descendants} == {v1.id, v2.id, v1a.id, v1a1.id}
 
         descendants = repository.get_all_descendants(parent_id=v1.id)
-        assert set(d.id for d in descendants) == {v1a.id, v1a1.id}
+        assert {d.id for d in descendants} == {v1a.id, v1a1.id}

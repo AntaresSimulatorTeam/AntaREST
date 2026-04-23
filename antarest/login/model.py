@@ -12,7 +12,8 @@
 
 import contextlib
 import uuid
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any
 
 import bcrypt
 from sqlalchemy import Boolean, Enum, ForeignKey, Integer, Sequence, String
@@ -57,7 +58,7 @@ class BotRoleCreateDTO(AntaresBaseModel):
 
 class BotCreateDTO(AntaresBaseModel):
     name: str
-    roles: List[BotRoleCreateDTO]
+    roles: list[BotRoleCreateDTO]
     is_author: bool = True
 
 
@@ -73,7 +74,7 @@ class GroupDTO(AntaresBaseModel):
 
 class GroupCreationDTO(AntaresBaseModel):
     name: str
-    id: Optional[str] = None
+    id: str | None = None
 
 
 class RoleCreationDTO(AntaresBaseModel):
@@ -83,7 +84,7 @@ class RoleCreationDTO(AntaresBaseModel):
 
 
 class RoleDTO(AntaresBaseModel):
-    group_id: Optional[str]
+    group_id: str | None
     group_name: str
     identity_id: int
     type: RoleType
@@ -92,7 +93,7 @@ class RoleDTO(AntaresBaseModel):
 class IdentityDTO(AntaresBaseModel):
     id: int
     name: str
-    roles: List[RoleDTO]
+    roles: list[RoleDTO]
 
 
 class RoleDetailDTO(AntaresBaseModel):
@@ -105,7 +106,7 @@ class BotIdentityDTO(AntaresBaseModel):
     id: int
     name: str
     isAuthor: bool
-    roles: List[RoleDTO]
+    roles: list[RoleDTO]
 
 
 class BotDTO(UserInfo):
@@ -120,7 +121,7 @@ class UserRoleDTO(AntaresBaseModel):
 
 
 class GroupDetailDTO(GroupDTO):
-    users: List[UserRoleDTO]
+    users: list[UserRoleDTO]
 
 
 class Password:
@@ -154,18 +155,18 @@ class Identity(Base):
     __tablename__ = "identities"
 
     id: Mapped[int] = mapped_column(Integer, Sequence("identity_id_seq"), primary_key=True)
-    name: Mapped[Optional[str]] = mapped_column(String(255))
-    type: Mapped[Optional[str]] = mapped_column(String(50))
+    name: Mapped[str | None] = mapped_column(String(255))
+    type: Mapped[str | None] = mapped_column(String(50))
 
     # Define a one-to-many relationship with `JobResult`.
     # If an identity is deleted, all the associated job results are detached from the identity.
-    job_results: Mapped[List["JobResult"]] = relationship(
+    job_results: Mapped[list["JobResult"]] = relationship(
         "JobResult", back_populates="owner", cascade="save-update, merge"
     )
 
     # Define a one-to-many relationship with `TaskJob`.
     # If an identity is deleted, all the associated task jobs are detached from the identity.
-    owned_jobs: Mapped[List["TaskJob"]] = relationship("TaskJob", back_populates="owner", cascade="save-update, merge")
+    owned_jobs: Mapped[list["TaskJob"]] = relationship("TaskJob", back_populates="owner", cascade="save-update, merge")
 
     def to_dto(self) -> UserInfo:
         return UserInfo(id=self.id, name=self.name)
@@ -192,7 +193,7 @@ class User(Identity):
         ForeignKey("identities.id"),
         primary_key=True,
     )
-    _pwd: Mapped[Optional[str]] = mapped_column(String(255))
+    _pwd: Mapped[str | None] = mapped_column(String(255))
 
     __mapper_args__ = {
         "polymorphic_identity": "users",
@@ -227,9 +228,9 @@ class UserLdap(Identity):
         ForeignKey("identities.id"),
         primary_key=True,
     )
-    external_id: Mapped[Optional[str]] = mapped_column(String)
-    firstname: Mapped[Optional[str]] = mapped_column(String)
-    lastname: Mapped[Optional[str]] = mapped_column(String)
+    external_id: Mapped[str | None] = mapped_column(String)
+    firstname: Mapped[str | None] = mapped_column(String)
+    lastname: Mapped[str | None] = mapped_column(String)
     __mapper_args__ = {
         "polymorphic_identity": "users_ldap",
     }
@@ -290,7 +291,7 @@ class Group(Base):
         default=lambda: str(uuid.uuid4()),
         unique=True,
     )
-    name: Mapped[Optional[str]] = mapped_column(String(255))
+    name: Mapped[str | None] = mapped_column(String(255))
 
     def to_dto(self) -> GroupDTO:
         return GroupDTO(id=self.id, name=self.name)

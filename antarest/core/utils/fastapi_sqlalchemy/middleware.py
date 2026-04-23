@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from contextvars import ContextVar, Token
-from typing import Any, Callable, Dict, Optional, Type, Union
+from typing import Any, TypeAlias
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
@@ -10,12 +11,12 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
-from typing_extensions import TypeAlias, override
+from typing_extensions import override
 
 from antarest.core.utils.fastapi_sqlalchemy.exceptions import MissingSessionError, SessionNotInitialisedError
 
-_Session: Optional[sessionmaker[Session]] = None
-_session: ContextVar[Optional[Session]] = ContextVar("_session", default=None)
+_Session: sessionmaker[Session] | None = None
+_session: ContextVar[Session | None] = ContextVar("_session", default=None)
 
 
 def _is_sqlite_engine(engine: Engine) -> bool:
@@ -32,35 +33,39 @@ def enable_sqlite_foreign_keys(dbapi_connection: Any, connection_record: Any) ->
     cursor.close()
 
 
+def init_db_singleton(
+    db_url: str | URL | None = None,
+    custom_engine: Engine | None = None,
+    engine_args: dict[str, Any] | None = None,
+    session_args: dict[str, Any] | None = None,
+) -> None:
+    global _Session
+    engine_args = engine_args or {}
+
+    session_args = session_args or {}
+    if not custom_engine and not db_url:
+        raise ValueError("You need to pass a db_url or a custom_engine parameter.")
+    if not custom_engine:
+        assert db_url is not None, "Database URL cannot be None"
+        engine = create_engine(db_url, **engine_args)
+    else:
+        engine = custom_engine
+
+    if _is_sqlite_engine(engine):
+        listen(engine, "connect", enable_sqlite_foreign_keys)
+
+    _Session = sessionmaker(bind=engine, **session_args)
+
+
 class DBSessionMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
-        app: Optional[ASGIApp],
-        db_url: Optional[Union[str, URL]] = None,
-        custom_engine: Optional[Engine] = None,
-        engine_args: Optional[Dict[str, Any]] = None,
-        session_args: Optional[Dict[str, Any]] = None,
+        app: ASGIApp | None,
         commit_on_exit: bool = False,
     ) -> None:
         if app:
             super().__init__(app)
-        global _Session
-        engine_args = engine_args or {}
         self.commit_on_exit = commit_on_exit
-
-        session_args = session_args or {}
-        if not custom_engine and not db_url:
-            raise ValueError("You need to pass a db_url or a custom_engine parameter.")
-        if not custom_engine:
-            assert db_url is not None, "Database URL cannot be None"
-            engine = create_engine(db_url, **engine_args)
-        else:
-            engine = custom_engine
-
-        if _is_sqlite_engine(engine):
-            listen(engine, "connect", enable_sqlite_foreign_keys)
-
-        _Session = sessionmaker(bind=engine, **session_args)
 
     @override
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
@@ -100,11 +105,11 @@ class DBSession(metaclass=DBSessionMeta):
         session_factory: SessionFactory = _default_create_session,
         commit_on_exit: bool = False,
     ) -> None:
-        self.token: Optional[Token[Optional[Any]]] = None
+        self.token: Token[Any | None] | None = None
         self.session_factory = session_factory
         self.commit_on_exit = commit_on_exit
 
-    def __enter__(self) -> Type["DBSession"]:
+    def __enter__(self) -> type["DBSession"]:
         self.token = _session.set(self.session_factory())
         return type(self)
 
@@ -128,4 +133,4 @@ class DBSession(metaclass=DBSessionMeta):
             _session.reset(self.token)
 
 
-db: Type[DBSession] = DBSession
+db: type[DBSession] = DBSession

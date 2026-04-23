@@ -1508,7 +1508,8 @@
       "synthesis": true,
       "byYear": true,
       "nbYears": 1,
-      "archived": false
+      "archived": false,
+      "storageType": "IN_STUDY_FILE_TREE"
     },
     "20201014-1425eco-goodbye": {
       "name": "20201014-1425eco-goodbye",
@@ -1516,7 +1517,8 @@
       "synthesis": true,
       "byYear": true,
       "nbYears": 2,
-      "archived": false
+      "archived": false,
+      "storageType": "IN_STUDY_FILE_TREE"
     },
     "20201014-1427eco": {
       "name": "20201014-1427eco",
@@ -1524,7 +1526,8 @@
       "synthesis": true,
       "byYear": false,
       "nbYears": 1,
-      "archived": false
+      "archived": false,
+      "storageType": "IN_STUDY_FILE_TREE"
     },
     "20201014-1430adq": {
       "name": "20201014-1430adq",
@@ -1532,7 +1535,8 @@
       "synthesis": true,
       "byYear": false,
       "nbYears": 1,
-      "archived": false
+      "archived": false,
+      "storageType": "IN_STUDY_FILE_TREE"
     },
     "20201014-1430adq-2": {
       "name": "20201014-1430adq-2",
@@ -1540,7 +1544,8 @@
       "synthesis": true,
       "byYear": false,
       "nbYears": 1,
-      "archived": true
+      "archived": true,
+      "storageType": "IN_STUDY_FILE_TREE"
     },
     "20241807-1540eco-extra-outputs": {
       "name": "20241807-1540eco-extra-outputs",
@@ -1548,7 +1553,8 @@
       "synthesis": true,
       "byYear": true,
       "nbYears": 1,
-      "archived": false
+      "archived": false,
+      "storageType": "IN_STUDY_FILE_TREE"
     }
   },
   "bindings": [],

@@ -12,9 +12,10 @@
 import logging
 import time
 from abc import ABC, abstractmethod
+from collections.abc import Awaitable, Callable, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from http import HTTPStatus
-from typing import Awaitable, Callable, Dict, List, Optional, Sequence, TypeAlias
+from typing import TypeAlias
 
 from fastapi import HTTPException
 from sqlalchemy import select, update
@@ -72,11 +73,11 @@ class ITaskService(ABC):
     def add_task(
         self,
         action: Task,
-        name: Optional[str],
+        name: str | None,
         task_type: TaskType,
-        ref_id: Optional[str],
-        progress: Optional[int],
-        custom_event_messages: Optional[CustomTaskEventMessages],
+        ref_id: str | None,
+        progress: int | None,
+        custom_event_messages: CustomTaskEventMessages | None,
     ) -> str:
         raise NotImplementedError()
 
@@ -95,7 +96,7 @@ class ITaskService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def list_tasks(self, task_filter: TaskListFilter) -> List[TaskDTO]:
+    def list_tasks(self, task_filter: TaskListFilter) -> list[TaskDTO]:
         raise NotImplementedError()
 
     @abstractmethod
@@ -106,6 +107,14 @@ class ITaskService(ABC):
         Raises:
             TimeoutError: if the task is not completed before the timeout
         """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def cancel_task(self, task_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_task_progress(self, task_id: str) -> int | None:
         raise NotImplementedError()
 
     @abstractmethod
@@ -216,7 +225,7 @@ class TaskJobService(ITaskService):
     ):
         self.repo = repository
         self.event_bus = event_bus
-        self.tasks: Dict[str, Future[None]] = {}
+        self.tasks: dict[str, Future[None]] = {}
         self.threadpool = ThreadPoolExecutor(max_workers=config.tasks.max_workers, thread_name_prefix="taskjob_")
         self.event_bus.add_listener(self.create_task_event_callback(), [EventType.TASK_CANCEL_REQUEST])
         self._listeners = list(listeners) if listeners else []
@@ -225,11 +234,11 @@ class TaskJobService(ITaskService):
     def add_task(
         self,
         action: Task,
-        name: Optional[str],
+        name: str | None,
         task_type: TaskType,
-        ref_id: Optional[str],
-        progress: Optional[int],
-        custom_event_messages: Optional[CustomTaskEventMessages],
+        ref_id: str | None,
+        progress: int | None,
+        custom_event_messages: CustomTaskEventMessages | None,
     ) -> str:
         task = self._create_task(name, task_type, ref_id, progress)
         self._launch_task(action, task, custom_event_messages)
@@ -237,10 +246,10 @@ class TaskJobService(ITaskService):
 
     def _create_task(
         self,
-        name: Optional[str],
-        task_type: Optional[TaskType],
-        ref_id: Optional[str],
-        progress: Optional[int],
+        name: str | None,
+        task_type: TaskType | None,
+        ref_id: str | None,
+        progress: int | None,
     ) -> TaskJob:
         user = require_current_user()
         return self.repo.save(
@@ -257,7 +266,7 @@ class TaskJobService(ITaskService):
         self,
         action: Task,
         task: TaskJob,
-        custom_event_messages: Optional[CustomTaskEventMessages],
+        custom_event_messages: CustomTaskEventMessages | None,
     ) -> None:
         user = require_current_user()
 
@@ -288,6 +297,7 @@ class TaskJobService(ITaskService):
 
         return task_event_callback
 
+    @override
     def cancel_task(self, task_id: str) -> None:
         task = self.repo.get_or_raise(task_id)
         user = require_current_user()
@@ -337,10 +347,10 @@ class TaskJobService(ITaskService):
             raise TaskNotFoundError(detail=f"Failed to retrieve task {task_id} in db")
 
     @override
-    def list_tasks(self, task_filter: TaskListFilter) -> List[TaskDTO]:
+    def list_tasks(self, task_filter: TaskListFilter) -> list[TaskDTO]:
         return [task.to_dto() for task in self._list_db_tasks(task_filter)]
 
-    def _list_db_tasks(self, task_filter: TaskListFilter) -> List[TaskJob]:
+    def _list_db_tasks(self, task_filter: TaskListFilter) -> list[TaskJob]:
         current_user = require_current_user()
         user = None if current_user.is_site_admin() else current_user.impersonator
         return self.repo.list(task_filter, user)
@@ -381,7 +391,7 @@ class TaskJobService(ITaskService):
         task_id: str,
         task_type: TaskType,
         jwt_user: JWTUser,
-        custom_event_messages: Optional[CustomTaskEventMessages] = None,
+        custom_event_messages: CustomTaskEventMessages | None = None,
     ) -> None:
         # We need to catch all exceptions so that the calling thread is guaranteed
         # to not die
@@ -509,7 +519,8 @@ class TaskJobService(ITaskService):
                 if task_id in self.tasks:
                     del self.tasks[task_id]
 
-    def get_task_progress(self, task_id: str) -> Optional[int]:
+    @override
+    def get_task_progress(self, task_id: str) -> int | None:
         task = self.repo.get_or_raise(task_id)
         user = get_current_user()
         if user and (user.is_site_admin() or user.is_admin_token() or task.owner_id == user.impersonator):

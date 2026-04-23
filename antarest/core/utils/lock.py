@@ -21,7 +21,6 @@ import logging
 import threading
 from abc import ABC, abstractmethod
 from types import TracebackType
-from typing import Dict, Optional, Type
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -57,9 +56,9 @@ class DistributedLock(ABC):
     @abstractmethod
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         pass
 
@@ -127,9 +126,9 @@ class PostgresqlLock(DistributedLock):
     @override
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         if self._lock_acquired:
             logger.debug(f"Releasing advisory lock {self._lock_id}")
@@ -156,10 +155,10 @@ class ThreadLock(DistributedLock):
     """
 
     # Class-level registry of locks by ID (shared across all instances)
-    _locks: Dict[int, threading.Lock] = {}
+    _locks: dict[int, threading.Lock] = {}
     _registry_lock = threading.Lock()
 
-    def __init__(self, session: Optional[Session] = None, *, lock_id: int, blocking: bool = False) -> None:
+    def __init__(self, session: Session | None = None, *, lock_id: int, blocking: bool = False) -> None:
         # session is ignored - accepted for API compatibility with PostgresqlLock
         self._lock_id = lock_id
         self._blocking = blocking
@@ -187,9 +186,9 @@ class ThreadLock(DistributedLock):
     @override
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         if self._lock_acquired:
             logger.debug(f"Releasing thread lock {self._lock_id}")

@@ -16,22 +16,27 @@ This module dedicated to variant snapshot generation.
 
 import logging
 import shutil
+from collections.abc import Sequence
 from pathlib import Path
-from typing import List, NamedTuple, Optional, Sequence, Tuple
+from typing import NamedTuple
 
 from antarest.core.exceptions import VariantGenerationError
 from antarest.core.interfaces.cache import (
     ICache,
-    update_cache,
 )
 from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
 from antarest.core.utils.utils import current_time
-from antarest.study.model import RawStudy, Study
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
+from antarest.study.model import RawStudy, Study, StudyMetadataUpdate
+from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.utils import assert_permission_on_studies, is_managed, remove_from_cache
+from antarest.study.storage.utils import (
+    assert_permission_on_studies,
+    format_timestamp,
+    remove_from_cache,
+)
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
@@ -40,9 +45,6 @@ from antarest.study.storage.variantstudy.repository import VariantStudyRepositor
 from antarest.study.storage.variantstudy.variant_command_generator import apply_commands_to_variant
 
 logger = logging.getLogger(__name__)
-
-
-OUTPUT_RELATIVE_PATH = "output"
 
 
 class SnapshotGenerator:
@@ -68,10 +70,10 @@ class SnapshotGenerator:
         self,
         variant_study_id: str,
         *,
-        denormalize: bool = True,
+        dao_factory: StudyFactoryDao,
         from_scratch: bool = False,
         notifier: ITaskNotifier = NoopNotifier(),
-        listener: Optional[ICommandListener] = None,
+        listener: ICommandListener | None = None,
     ) -> GenerationResultInfoDTO:
         # ATTENTION: since we are making changes to disk, a file lock is needed.
         # The locking is currently done in the `VariantStudyService.generate_task` function
@@ -102,18 +104,10 @@ class SnapshotGenerator:
                 self._export_ref_study(snapshot_dir, ref_study)
 
             # The snapshot is generated, we also need to de-normalize the matrices.
-            file_study = self.study_factory.create_from_fs(
-                snapshot_dir,
-                True,
-                study_id=variant_study_id,
-                output_path=snapshot_dir / OUTPUT_RELATIVE_PATH,
-                use_cache=True,
-            )
+            study_dao = dao_factory.create_study_dao(variant_study)
+
             logger.info(f"Applying commands to the reference study '{ref_study.id}'...")
-            results = self._apply_commands(file_study, variant_study, cmd_blocks, listener)
-            if denormalize:
-                logger.info(f"Denormalizing variant study {variant_study_id}")
-                self.raw_study_service.denormalize_study(file_study)
+            results = self._apply_commands(study_dao, variant_study, cmd_blocks, listener)
 
             # Finally, we can update the database.
             logger.info(f"Saving new snapshot for study {variant_study_id}")
@@ -122,17 +116,13 @@ class SnapshotGenerator:
                 created_at=current_time(),
                 last_executed_command=variant_study.commands[-1].id if variant_study.commands else None,
             )
-
-            logger.info(f"Reading additional data from files for study {variant_study_id}")
-            self._update_study_data(file_study, variant_study)
             self.repository.save(variant_study)
 
             if results.should_invalidate_cache:
                 # We need to remove the cache
                 remove_from_cache(self.cache, variant_study_id)
             else:
-                data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
-                update_cache(self.cache, variant_study_id, data)
+                study_dao.update_cache()
 
         except Exception:
             remove_from_cache(self.cache, variant_study_id)
@@ -148,7 +138,7 @@ class SnapshotGenerator:
 
         return results
 
-    def _retrieve_descendants(self, variant_study_id: str) -> Tuple[Study, Sequence[VariantStudy]]:
+    def _retrieve_descendants(self, variant_study_id: str) -> tuple[Study, Sequence[VariantStudy]]:
         # Get all ancestors of the current study from bottom to top
         # The first IDs are variant IDs, the last is the root study ID.
         ancestor_ids = self.repository.get_ancestor_or_self_ids(variant_study_id)
@@ -160,12 +150,7 @@ class SnapshotGenerator:
     def _export_ref_study(self, snapshot_dir: Path, ref_study: Study) -> None:
         if isinstance(ref_study, VariantStudy):
             snapshot_dir.parent.mkdir(parents=True, exist_ok=True)
-            self.raw_study_service.export_study_to_flat_directory(
-                ref_study.snapshot_dir,
-                snapshot_dir,
-                denormalize=False,
-                is_study_managed=is_managed(ref_study),
-            )
+            self.raw_study_service.export_study_to_flat_directory(ref_study.snapshot_dir, snapshot_dir, False)
         elif isinstance(ref_study, RawStudy):
             self.raw_study_service.export_study_flat(
                 ref_study,
@@ -177,13 +162,13 @@ class SnapshotGenerator:
 
     def _apply_commands(
         self,
-        file_study: FileStudy,
+        study_dao: StudyDao,
         variant_study: VariantStudy,
         cmd_blocks: Sequence[CommandBlock],
-        listener: Optional[ICommandListener] = None,
+        listener: ICommandListener | None = None,
     ) -> GenerationResultInfoDTO:
         commands = [self.command_factory.to_command(cb.to_dto()) for cb in cmd_blocks]
-        results = apply_commands_to_variant(commands, study=file_study, metadata=variant_study, listener=listener)
+        results = apply_commands_to_variant(commands, study=study_dao, metadata=variant_study, listener=listener)
         if not results.success:
             message = f"Failed to generate variant study {variant_study.id}"
             if results.details:
@@ -197,18 +182,17 @@ class SnapshotGenerator:
                 else:  # pragma: no cover
                     raise NotImplementedError(f"Unexpected detail type: {type(detail)}")
             raise VariantGenerationError(message)
-        return results
 
-    def _update_study_data(self, file_study: FileStudy, metadata: Study) -> None:
-        horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
-        author = file_study.tree.get(url=["study", "antares", "author"])
-        editor = file_study.tree.get(url=["study", "antares", "editor"])
-        assert isinstance(author, str)
-        assert isinstance(editor, str)
-        assert isinstance(horizon, (str, int))
-        metadata.horizon = horizon
-        metadata.author = author
-        metadata.editor = editor
+        metadata = StudyMetadataUpdate(
+            name=variant_study.name,
+            author=variant_study.author,
+            editor=variant_study.editor,
+            created_at=format_timestamp(variant_study.created_at),
+            last_save=format_timestamp(variant_study.updated_at),
+        )
+
+        study_dao.update_antares_file(metadata)
+        return results
 
 
 class RefStudySearchResult(NamedTuple):
@@ -246,7 +230,7 @@ def search_ref_study(
     ref_study: Study
 
     # The commands to apply on the reference study to generate the current variant
-    cmd_blocks: List[CommandBlock]
+    cmd_blocks: list[CommandBlock]
 
     if from_scratch:
         # In the case of a from scratch generation, the root study will be used as the reference study.

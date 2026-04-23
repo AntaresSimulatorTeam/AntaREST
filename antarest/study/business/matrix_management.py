@@ -13,7 +13,7 @@
 import itertools
 import logging
 import operator
-from typing import List, Tuple
+from pathlib import PurePosixPath
 
 import numpy as np
 import pandas as pd
@@ -22,7 +22,7 @@ import polars as pl
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction, MatrixSlice, Operation
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -51,7 +51,7 @@ class MatrixIndexError(MatrixUpdateError):
     def __init__(
         self,
         operation: Operation,
-        coordinates: Tuple[int, int],
+        coordinates: tuple[int, int],
         exc: Exception,
     ) -> None:
         reason = f"invalid coordinates {coordinates}: {exc}"
@@ -60,7 +60,7 @@ class MatrixIndexError(MatrixUpdateError):
 
 def update_matrix_content_with_slices(
     matrix_data: pl.DataFrame,
-    slices: List[MatrixSlice],
+    slices: list[MatrixSlice],
     operation: Operation,
 ) -> pl.DataFrame:
     pandas_df = matrix_data.to_pandas()
@@ -84,7 +84,7 @@ def update_matrix_content_with_slices(
 
 def update_matrix_content_with_coordinates(
     df: pl.DataFrame,
-    coordinates: List[Tuple[int, int]],
+    coordinates: list[tuple[int, int]],
     operation: Operation,
 ) -> pl.DataFrame:
     columns = df.columns
@@ -101,7 +101,7 @@ def update_matrix_content_with_coordinates(
     return df
 
 
-def group_by_slices(cells: List[Tuple[int, int]]) -> List[Tuple[Tuple[int, int], Tuple[int, int]]]:
+def group_by_slices(cells: list[tuple[int, int]]) -> list[tuple[tuple[int, int], tuple[int, int]]]:
     """
     Groups the given cells into rectangular slices based on their coordinates.
 
@@ -160,8 +160,8 @@ def group_by_slices(cells: List[Tuple[int, int]]) -> List[Tuple[Tuple[int, int],
 
 
 def merge_edit_instructions(
-    edit_instructions: List[MatrixEditInstruction],
-) -> List[MatrixEditInstruction]:
+    edit_instructions: list[MatrixEditInstruction],
+) -> list[MatrixEditInstruction]:
     """
     Merges edit instructions for the same operation and value into
     slice-based edit instructions to reduce computation time when a large
@@ -245,22 +245,13 @@ class MatrixManager:
         self,
         study: StudyInterface,
         path: str,
-        edit_instructions: List[MatrixEditInstruction],
+        edit_instructions: list[MatrixEditInstruction],
     ) -> None:
         logger.info(f"Starting matrix update for {study.id}...")
-        file_study = study.get_files()
         matrix_service = self._command_context.matrix_service
 
-        matrix_node = file_study.tree.get_node(url=path.split("/"))
-
-        if not isinstance(matrix_node, InputSeriesMatrix):  # pragma: no cover
-            raise TypeError(repr(type(matrix_node)))
-
-        try:
-            logger.info(f"Loading matrix data from node '{path}'...")
-            matrix_df = matrix_node.parse_as_dataframe()
-        except ValueError as exc:
-            raise MatrixManagerError(f"Cannot parse matrix: {exc}") from exc
+        mapper = RawPathToMatrixMapper(study.get_study_dao())  # type: ignore
+        matrix_df = mapper.get_matrix_from_path(PurePosixPath(path))
 
         logger.info(f"Merging {len(edit_instructions)} instructions...")
         edit_instructions = merge_edit_instructions(edit_instructions)

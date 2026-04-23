@@ -20,11 +20,12 @@ from antarest.study.business.model.scenario_builder_model import Ruleset, Scenar
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from tests.study.dao.utils import save_area
 
 
 def _setup_areas(dao: DatabaseStudyDao, *area_names: str) -> None:
     for name in area_names:
-        dao.save_area(name)
+        save_area(dao, name)
 
 
 def test_save_empty_ruleset(db_dao: DatabaseStudyDao) -> None:
@@ -74,7 +75,7 @@ def test_save_ruleset_with_all_area_types(db_dao: DatabaseStudyDao) -> None:
 def test_save_ruleset_with_link_scenarios(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     _setup_areas(dao, "fr", "de")
-    dao.save_link(Link(area1="de", area2="fr"))
+    dao.save_links([Link(area1="de", area2="fr")])
     ruleset = Ruleset(ntc={"de / fr": {"0": 1, "1": 2}})
     dao.save_scenario_builder(ruleset)
     result = dao.get_ruleset()
@@ -94,7 +95,7 @@ def test_save_ruleset_with_binding_constraints(db_dao: DatabaseStudyDao) -> None
 def test_save_ruleset_with_thermal_scenarios(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     _setup_areas(dao, "fr")
-    dao.save_thermal("fr", ThermalCluster(id="gas_cluster", name="Gas Cluster"))
+    dao.save_thermals({"fr": [ThermalCluster(name="Gas_Cluster")]})
     ruleset = Ruleset(thermal={"fr": {"gas_cluster": {"0": 1, "1": 2}}})
     dao.save_scenario_builder(ruleset)
     result = dao.get_ruleset()
@@ -116,7 +117,7 @@ def test_save_ruleset_with_renewable_scenarios(db_dao: DatabaseStudyDao) -> None
 def test_save_ruleset_with_storage_inflows(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     _setup_areas(dao, "fr")
-    dao.save_st_storage("fr", STStorage(id="battery_1", name="Battery 1"))
+    dao.save_st_storages({"fr": [STStorage(id="battery_1", name="Battery 1")]})
     ruleset = Ruleset(storage_inflows={"fr": {"battery_1": {"0": 4, "1": 5}}})
     dao.save_scenario_builder(ruleset)
     result = dao.get_ruleset()
@@ -127,11 +128,9 @@ def test_save_ruleset_with_storage_inflows(db_dao: DatabaseStudyDao) -> None:
 def test_save_ruleset_with_storage_constraints(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     _setup_areas(dao, "fr")
-    dao.save_st_storage("fr", STStorage(id="battery", name="Battery"))
+    dao.save_st_storages({"fr": [STStorage(id="battery", name="Battery")]})
     dao.save_st_storage_additional_constraints(
-        "fr",
-        storage_id="battery",
-        constraints=[STStorageAdditionalConstraint(id="constraint_a", name="Constraint A")],
+        {"fr": {"battery": [STStorageAdditionalConstraint(name="Constraint_A")]}}
     )
     ruleset = Ruleset(storage_constraints={"fr": {"battery": {"constraint_a": {"0": 10, "1": 20}}}})
     dao.save_scenario_builder(ruleset)
@@ -171,8 +170,7 @@ def test_get_scenario_by_type_binding_constraints(db_dao: DatabaseStudyDao) -> N
 def test_get_scenario_by_type_thermal(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     _setup_areas(dao, "fr")
-    dao.save_thermal("fr", ThermalCluster(id="gas", name="Gas"))
-    dao.save_thermal("fr", ThermalCluster(id="nuc", name="Nuc"))
+    dao.save_thermals({"fr": [ThermalCluster(name="Gas"), ThermalCluster(name="Nuc")]})
     dao.save_scenario_builder(Ruleset(thermal={"fr": {"gas": {"0": 1}, "nuc": {"0": 2}}}))
 
     result = dao.get_scenario_by_type(ScenarioType.THERMAL)
@@ -182,12 +180,8 @@ def test_get_scenario_by_type_thermal(db_dao: DatabaseStudyDao) -> None:
 def test_get_scenario_by_type_storage_constraints(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     _setup_areas(dao, "fr")
-    dao.save_st_storage("fr", STStorage(id="battery", name="Battery"))
-    dao.save_st_storage_additional_constraints(
-        "fr",
-        storage_id="battery",
-        constraints=[STStorageAdditionalConstraint(id="c1", name="C1")],
-    )
+    dao.save_st_storages({"fr": [STStorage(id="battery", name="Battery")]})
+    dao.save_st_storage_additional_constraints({"fr": {"battery": [STStorageAdditionalConstraint(id="c1", name="C1")]}})
     dao.save_scenario_builder(Ruleset(storage_constraints={"fr": {"battery": {"c1": {"0": 10}}}}))
 
     result = dao.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS)
@@ -220,7 +214,7 @@ def test_scenario_builder_thermal_deleted(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     _setup_areas(dao, "fr")
 
-    dao.save_thermal("fr", ThermalCluster(id="gas", name="Gas"))
+    dao.save_thermals({"fr": [ThermalCluster(name="Gas")]})
     dao.save_scenario_builder(Ruleset(thermal={"fr": {"gas": {"0": 1}}}))
 
     result = dao.get_scenario_by_type(ScenarioType.THERMAL)
@@ -252,7 +246,7 @@ def test_scenario_builder_link_deleted(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     _setup_areas(dao, "de", "fr")
 
-    dao.save_link(Link(area1="de", area2="fr"))
+    dao.save_links([Link(area1="de", area2="fr")])
     dao.save_scenario_builder(Ruleset(ntc={"de / fr": {"0": 7}}))
 
     result = dao.get_scenario_by_type(ScenarioType.LINK)
@@ -268,7 +262,7 @@ def test_scenario_builder_st_storage_deleted(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     _setup_areas(dao, "fr")
 
-    dao.save_st_storage("fr", STStorage(id="battery_1", name="Battery 1"))
+    dao.save_st_storages({"fr": [STStorage(id="battery_1", name="Battery 1")]})
     dao.save_scenario_builder(Ruleset(storage_inflows={"fr": {"battery_1": {"0": 4}}}))
 
     result = dao.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_INFLOWS)
@@ -284,11 +278,9 @@ def test_scenario_builder_st_storage_constraint_deleted(db_dao: DatabaseStudyDao
     dao = db_dao
     _setup_areas(dao, "fr")
 
-    dao.save_st_storage("fr", STStorage(id="battery", name="Battery"))
+    dao.save_st_storages({"fr": [STStorage(id="battery", name="Battery")]})
     dao.save_st_storage_additional_constraints(
-        "fr",
-        storage_id="battery",
-        constraints=[STStorageAdditionalConstraint(id="constraint_a", name="Constraint A")],
+        {"fr": {"battery": [STStorageAdditionalConstraint(name="Constraint_A")]}}
     )
     dao.save_scenario_builder(Ruleset(storage_constraints={"fr": {"battery": {"constraint_a": {"0": 10}}}}))
 
@@ -305,12 +297,8 @@ def test_scenario_builder_st_storage_deleted_cascades_to_constraints(db_dao: Dat
     dao = db_dao
     _setup_areas(dao, "fr")
 
-    dao.save_st_storage("fr", STStorage(id="battery", name="Battery"))
-    dao.save_st_storage_additional_constraints(
-        "fr",
-        storage_id="battery",
-        constraints=[STStorageAdditionalConstraint(id="c1", name="C1")],
-    )
+    dao.save_st_storages({"fr": [STStorage(id="battery", name="Battery")]})
+    dao.save_st_storage_additional_constraints({"fr": {"battery": [STStorageAdditionalConstraint(name="C1")]}})
     dao.save_scenario_builder(
         Ruleset(
             storage_inflows={"fr": {"battery": {"0": 4}}},
@@ -333,7 +321,7 @@ def test_scenario_builder_area_deleted_cascades(db_dao: DatabaseStudyDao) -> Non
     dao = db_dao
     _setup_areas(dao, "fr")
 
-    dao.save_thermal("fr", ThermalCluster(id="gas", name="Gas"))
+    dao.save_thermals({"fr": [ThermalCluster(name="Gas")]})
     dao.save_renewable("fr", RenewableCluster(id="wind", name="Wind"))
     dao.save_scenario_builder(
         Ruleset(

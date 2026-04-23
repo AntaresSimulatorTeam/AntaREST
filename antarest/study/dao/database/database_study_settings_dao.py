@@ -20,7 +20,10 @@ from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.serde.json import from_json, to_json_string
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
-from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
+from antarest.study.business.model.config.compatibility_parameters_model import (
+    CompatibilityParameters,
+    initialize_compatibility_parameters_against_version,
+)
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
@@ -85,7 +88,7 @@ class DatabaseStudySettingsDao(
     @override
     def get_general_config(self) -> GeneralConfig:
         study_id = self._study_id
-        stmt = select(GENERAL_CONFIG_TABLE).where((GENERAL_CONFIG_TABLE.c.study_id == study_id))
+        stmt = select(GENERAL_CONFIG_TABLE).where(GENERAL_CONFIG_TABLE.c.study_id == study_id)
         row = self.get_session().execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
@@ -110,7 +113,7 @@ class DatabaseStudySettingsDao(
     @override
     def get_optimization_preferences(self) -> OptimizationPreferences:
         study_id = self._study_id
-        stmt = select(OPTIMIZATION_PREFERENCES_TABLE).where((OPTIMIZATION_PREFERENCES_TABLE.c.study_id == study_id))
+        stmt = select(OPTIMIZATION_PREFERENCES_TABLE).where(OPTIMIZATION_PREFERENCES_TABLE.c.study_id == study_id)
         row = self.get_session().execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
@@ -139,7 +142,7 @@ class DatabaseStudySettingsDao(
     @override
     def get_advanced_parameters(self) -> AdvancedParameters:
         study_id = self._study_id
-        stmt = select(ADVANCED_PARAMETERS_TABLE).where((ADVANCED_PARAMETERS_TABLE.c.study_id == study_id))
+        stmt = select(ADVANCED_PARAMETERS_TABLE).where(ADVANCED_PARAMETERS_TABLE.c.study_id == study_id)
         row = self.get_session().execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
@@ -151,15 +154,20 @@ class DatabaseStudySettingsDao(
     @override
     def get_compatibility_parameters(self) -> CompatibilityParameters:
         study_id = self._study_id
-        stmt = select(COMPATIBILITY_PARAMETERS_TABLE).where((COMPATIBILITY_PARAMETERS_TABLE.c.study_id == study_id))
+        stmt = select(COMPATIBILITY_PARAMETERS_TABLE).where(COMPATIBILITY_PARAMETERS_TABLE.c.study_id == study_id)
         row = self.get_session().execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
-        return CompatibilityParameters(hydro_pmax=row.hydro_pmax)
+        parameters = CompatibilityParameters(hydro_pmax=row.hydro_pmax, reserves_enabled=row.reserves_enabled)
+        version = self.get_impl().get_version()
+        initialize_compatibility_parameters_against_version(parameters, version)
+        return parameters
 
     @override
     def save_compatibility_parameters(self, parameters: CompatibilityParameters) -> None:
-        values = dict(study_id=self.get_study_id(), hydro_pmax=parameters.hydro_pmax)
+        values = dict(
+            study_id=self.get_study_id(), hydro_pmax=parameters.hydro_pmax, reserves_enabled=parameters.reserves_enabled
+        )
         session = self.get_session()
         upsert_one(session, COMPATIBILITY_PARAMETERS_TABLE, values)
         session.commit()
@@ -174,7 +182,7 @@ class DatabaseStudySettingsDao(
     @override
     def get_adequacy_patch_parameters(self) -> AdequacyPatchParameters:
         study_id = self._study_id
-        stmt = select(ADEQUACY_PATCH_PARAMETERS_TABLE).where((ADEQUACY_PATCH_PARAMETERS_TABLE.c.study_id == study_id))
+        stmt = select(ADEQUACY_PATCH_PARAMETERS_TABLE).where(ADEQUACY_PATCH_PARAMETERS_TABLE.c.study_id == study_id)
         row = self.get_session().execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
@@ -193,7 +201,7 @@ class DatabaseStudySettingsDao(
     @override
     def get_timeseries_config(self) -> TimeSeriesConfiguration:
         study_id = self._study_id
-        stmt = select(TIMESERIES_CONFIG_TABLE).where((TIMESERIES_CONFIG_TABLE.c.study_id == study_id))
+        stmt = select(TIMESERIES_CONFIG_TABLE).where(TIMESERIES_CONFIG_TABLE.c.study_id == study_id)
         row = self.get_session().execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
@@ -209,7 +217,7 @@ class DatabaseStudySettingsDao(
     @override
     def get_playlist_config(self) -> Playlist:
         study_id = self._study_id
-        stmt = select(PLAYLIST_TABLE).where((PLAYLIST_TABLE.c.study_id == study_id))
+        stmt = select(PLAYLIST_TABLE).where(PLAYLIST_TABLE.c.study_id == study_id)
         row = self.get_session().execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)

@@ -14,7 +14,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from enum import StrEnum
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 import polars as pl
 from typing_extensions import override
@@ -93,7 +93,7 @@ class MatrixUriMapper(ABC):
         pass
 
     @abstractmethod
-    def get_link_content(self, node: MatrixNode) -> Optional[str]:
+    def get_link_content(self, node: MatrixNode) -> str | None:
         """Returns the content of the .link file if it exists, otherwise None"""
         pass
 
@@ -127,7 +127,7 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         return self._matrix_service.exists(extract_matrix_id(uri))
 
     @override
-    def delete(self, node: MatrixNode, url: Optional[List[str]] = None) -> None:
+    def delete(self, node: MatrixNode, url: list[str] | None = None) -> None:
         link_path = Path(f"{get_path(node)}.link")
         if link_path.exists():
             link_path.unlink()
@@ -141,7 +141,7 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         return self.get_link_path(node).exists()
 
     @override
-    def get_link_content(self, node: MatrixNode) -> Optional[str]:
+    def get_link_content(self, node: MatrixNode) -> str | None:
         link_path = self.get_link_path(node)
         if link_path.exists():
             return link_path.read_text()
@@ -163,6 +163,11 @@ class MatrixUriMapperManaged(BaseMatrixUriMapper):
     @override
     def save_matrix(self, node: MatrixNode, matrix_uri: str) -> None:
         link_path = self.get_link_path(node)
+
+        if not link_path.parent.exists():
+            # Can happen when creating a new object and the file structure is not yet fully created
+            link_path.parent.mkdir(parents=True)
+
         link_path.write_text(matrix_uri)
         if node.config.path.exists():
             node.config.path.unlink()

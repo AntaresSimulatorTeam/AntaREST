@@ -10,19 +10,73 @@
 #
 # This file is part of the Antares project.
 
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Literal
 
 import pandas as pd
 import polars as pl
 import pyarrow as pa
 from pyarrow.parquet import ParquetFile, ParquetWriter
 
-from antarest.output.utils import MCYEAR_COL, TIME_ID_COL
+from antarest.output.filestudy.utils import MCYEAR_COL, TIME_ID_COL
+
+# 1M rows, which is the default in pyarrow parquet too
+DEFAULT_ROW_GROUP_SIZE = 1024 * 1024
+# Best performance/compression ratio
+PARQUET_COMPRESSION: Literal["zstd"] = "zstd"
+# Could probably use 2.4 or 2.6 if we need
+PARQUET_DATA_PAGE_VERSION: Literal["2.0"] = "2.0"
 
 
-def _parquet_writer(output_file: Path, schema: pa.Schema) -> ParquetWriter:
-    return ParquetWriter(output_file, schema, compression="zstd", data_page_version="2.0")
+class BatchParquetWriter:
+    """
+    Wrapper around a plain parquet writer to ensure we write row groups of at least some target size.
+
+    It's very important to use not too small row groups, in order to:
+     - have efficient IO
+     - avoid excessive memory usage for metadata (as shown by experience)
+
+    """
+
+    def __init__(self, output_file: Path, schema: pa.Schema, row_group_size: int = DEFAULT_ROW_GROUP_SIZE):
+        self._row_group_size = row_group_size
+        self._writer = ParquetWriter(
+            output_file, schema, compression=PARQUET_COMPRESSION, data_page_version=PARQUET_DATA_PAGE_VERSION
+        )
+
+        self._current_batch: list[pa.Table] = []
+        self._current_batch_size = 0
+        self._closed = False
+
+    def __enter__(self) -> "BatchParquetWriter":
+        return self
+
+    def __exit__(self, *args: Any, **kwargs: Any) -> None:
+        self.close()
+
+    def add_table(self, table: pa.Table) -> None:
+        if self._closed:
+            raise ValueError("Writer is closed")
+        self._current_batch.append(table)
+        self._current_batch_size += table.num_rows
+        if self._current_batch_size >= self._row_group_size:
+            self._write_tables()
+
+    def _write_tables(self) -> None:
+        if self._current_batch:
+            self._writer.write_table(pa.concat_tables(self._current_batch))
+            self._current_batch = []
+            self._current_batch_size = 0
+
+    def close(self) -> None:
+        if self._closed:
+            return
+        try:
+            self._write_tables()
+        finally:
+            self._writer.close()
+            self._closed = True
 
 
 def _adapt_polars_schema(df: pl.DataFrame) -> pl.DataFrame:
@@ -60,8 +114,8 @@ def write_dataframes_in_parquet_format_by_column_sets(
 
         first_df = _adapt_polars_schema(first_df)
         table = first_df.to_arrow()
-        current_writer = _parquet_writer(file_path, table.schema)
-        current_writer.write_table(table)
+        current_writer = BatchParquetWriter(file_path, table.schema)
+        current_writer.add_table(table)
 
         while True:
             try:
@@ -87,9 +141,9 @@ def write_dataframes_in_parquet_format_by_column_sets(
                     file_paths.append(file_path)
                     file_counter += 1
 
-                    current_writer = _parquet_writer(file_path, table.schema)
+                    current_writer = BatchParquetWriter(file_path, table.schema)
 
-                current_writer.write_table(table)
+                current_writer.add_table(table)
 
             except StopIteration:
                 return file_paths, new_index
@@ -126,8 +180,8 @@ def write_dataframes_stream_parquet(path: Path, dataframes: Iterator[pd.DataFram
     except StopIteration:
         raise ValueError("No dataframe provided")
 
-    with _parquet_writer(path, schema) as writer:
-        writer.write_table(first_table)
+    with BatchParquetWriter(path, schema) as writer:
+        writer.add_table(first_table)
         for df in dataframes:
             table = pa.Table.from_pandas(df)
-            writer.write_table(table)
+            writer.add_table(table)

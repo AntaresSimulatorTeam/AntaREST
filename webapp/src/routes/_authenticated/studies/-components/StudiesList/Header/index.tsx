@@ -33,7 +33,7 @@ import MoveStudyDialog from "@/routes/-shared/components/studies/dialogs/MoveStu
 import FilterControls from "./FilterControls";
 import { useBreadcrumbs } from "./hooks/useBreadcrumbs";
 import NavigationBreadcrumbs from "./NavigationBreadcrumbs";
-import ScanFolderDialog from "./ScanFolderDialog";
+import ScanDirectoryDialog from "./ScanDirectoryDialog";
 import type { BreadcrumbItem, HeaderProps } from "./types";
 
 function Header({
@@ -41,6 +41,8 @@ function Header({
   selectedStudyIds,
   setSelectedStudyIds,
   setStudiesToLaunch,
+  viewMode,
+  onViewModeChange,
 }: HeaderProps) {
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
@@ -52,7 +54,7 @@ function Header({
   const sortConfig = useAppSelector(getStudySortConfig);
 
   // Local state
-  const [confirmFolderScan, setConfirmFolderScan] = useState(false);
+  const [confirmDirectoryScan, setConfirmDirectoryScan] = useState(false);
   const [isRecursiveScan, setIsRecursiveScan] = useState(false);
   const [confirmDeleteStudies, setConfirmDeleteStudies] = useState(false);
   const [confirmMoveStudies, setConfirmMoveStudies] = useState(false);
@@ -68,14 +70,15 @@ function Header({
   const showDescendants =
     activeTree === "external" ? external.showDescendants : managed.showDescendants;
 
+  const { data: directories } = useSuspenseQuery(directoryQueries.list());
+
   // Breadcrumb navigation
   const breadcrumbItems = useBreadcrumbs({
     activeTree,
     managedDirectoryId: managed.directoryId,
     externalPath: external.path,
+    directories,
   });
-
-  const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -111,7 +114,7 @@ function Header({
   };
 
   const handleToggleStudyType = () => {
-    dispatch(updateStudyFilters({ type: filters.type !== "references" ? "references" : "all" }));
+    dispatch(updateStudyFilters({ type: isReferenceStudyTypeActive ? "all" : "references" }));
   };
 
   const handleSortChange = (config: StudySortConfig) => {
@@ -145,11 +148,11 @@ function Header({
   };
 
   const handleOpenScanDialog = () => {
-    setConfirmFolderScan(true);
+    setConfirmDirectoryScan(true);
   };
 
   const handleCloseScanDialog = () => {
-    setConfirmFolderScan(false);
+    setConfirmDirectoryScan(false);
     setIsRecursiveScan(false);
   };
 
@@ -166,7 +169,7 @@ function Header({
   };
 
   const handleToggleRecursiveScan = () => {
-    setIsRecursiveScan(!isRecursiveScan);
+    setIsRecursiveScan((prev) => !prev);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -190,7 +193,6 @@ function Header({
               items={breadcrumbItems}
               studyCount={studyIds.length}
               onNavigate={handleNavigate}
-              activeTree={activeTree}
             />
           </Box>
 
@@ -199,7 +201,7 @@ function Header({
             managedCount={selectedManagedStudies.length}
             onLaunch={handleLaunchStudies}
             onMove={selectedManagedStudies.length > 0 ? handleMoveStudies : undefined}
-            onDelete={handleDeleteStudies}
+            onDelete={selectedManagedStudies.length > 0 ? handleDeleteStudies : undefined}
             onDeselectAll={handleDeselectAll}
           />
 
@@ -209,17 +211,19 @@ function Header({
             isReferenceTypeActive={isReferenceStudyTypeActive}
             canScan={canScan}
             sortConfig={sortConfig}
+            viewMode={viewMode}
             onToggleShowDescendants={handleToggleShowDescendants}
             onToggleStudyType={handleToggleStudyType}
-            onScanFolder={handleOpenScanDialog}
+            onScanDirectory={handleOpenScanDialog}
             onSortChange={handleSortChange}
+            onViewModeChange={onViewModeChange}
           />
         </Box>
       </CustomScrollbar>
 
-      <ScanFolderDialog
-        open={confirmFolderScan}
-        folderPath={external.path}
+      <ScanDirectoryDialog
+        open={confirmDirectoryScan}
+        directoryPath={external.path}
         isRecursive={isRecursiveScan}
         showRecursiveOption={!isDesktopMode}
         onConfirm={handleConfirmScan}
@@ -228,17 +232,13 @@ function Header({
       />
 
       <DeleteStudiesDialog
-        studyIds={selectedStudyIds}
+        studyIds={selectedManagedStudies.map((s) => s.id)}
         open={confirmDeleteStudies}
         onClose={handleCloseDeleteDialog}
       />
 
-      {confirmMoveStudies && selectedStudies.length > 0 && (
-        <MoveStudyDialog
-          studies={selectedManagedStudies}
-          open={confirmMoveStudies}
-          onClose={handleCloseMoveDialog}
-        />
+      {confirmMoveStudies && (
+        <MoveStudyDialog studies={selectedManagedStudies} open onClose={handleCloseMoveDialog} />
       )}
     </>
   );

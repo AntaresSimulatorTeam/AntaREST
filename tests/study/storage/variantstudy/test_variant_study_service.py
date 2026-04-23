@@ -106,13 +106,6 @@ EXPECTED_DENORMALIZED = {
 
 class TestVariantStudyService:
     @pytest.mark.parametrize(
-        "denormalize",
-        [
-            pytest.param(True, id="denormalize_yes"),
-            pytest.param(False, id="denormalize_no"),
-        ],
-    )
-    @pytest.mark.parametrize(
         "from_scratch",
         [
             pytest.param(True, id="from_scratch__yes"),
@@ -129,8 +122,7 @@ class TestVariantStudyService:
         simple_blob_service: IBlobService,
         generator_matrix_constants: GeneratorMatrixConstants,
         study_service: StudyService,
-        # pytest parameters
-        denormalize: bool,
+        # pytest parameter
         from_scratch: bool,
     ) -> None:
         ## Prepare database objects
@@ -168,7 +160,7 @@ class TestVariantStudyService:
 
         ## Prepare the RAW Study
         context = variant_study_service.command_factory.command_context
-        FileStudyDaoFactory(context, raw_study_service.study_factory).create_study_dao(raw_study)
+        FileStudyDaoFactory(context, raw_study_service.study_factory, Mock()).create_study_dao(raw_study)
         study_version = StudyVersion.parse(raw_study.version)
 
         with current_user_context(jwt_user):
@@ -210,7 +202,6 @@ class TestVariantStudyService:
             ## Run the "generate" task
             actual_uui = variant_study_service.generate_task(
                 variant_study,
-                denormalize=denormalize,
                 from_scratch=from_scratch,
             )
         assert re.fullmatch(
@@ -225,11 +216,7 @@ class TestVariantStudyService:
         snapshot_dir = internal_studies_dir.joinpath(variant_study.snapshot.id, "snapshot")
         res_study_files = {study_file.relative_to(snapshot_dir).as_posix() for study_file in snapshot_dir.rglob("*.*")}
 
-        if denormalize:
-            expected = {f.replace(".link", "") for f in EXPECTED_DENORMALIZED}
-        else:
-            expected = EXPECTED_DENORMALIZED
-        assert res_study_files == expected
+        assert res_study_files == EXPECTED_DENORMALIZED
 
     @with_db_context
     def test_clear_all_snapshots(
@@ -291,7 +278,7 @@ class TestVariantStudyService:
 
         # Set up the Raw Study
         context = variant_study_service.command_factory.command_context
-        FileStudyDaoFactory(context, raw_study_service.study_factory).create_study_dao(raw_study)
+        FileStudyDaoFactory(context, raw_study_service.study_factory, Mock()).create_study_dao(raw_study)
 
         # Variant studies
         variant_list = []
@@ -299,10 +286,10 @@ class TestVariantStudyService:
         # For each variant created
         for index in range(3):
             with current_user_context(DEFAULT_ADMIN_USER):
-                variant_study = variant_study_service.create_variant_study(raw_study.id, "Variant{}".format(str(index)))
+                variant_study = variant_study_service.create_variant_study(raw_study.id, f"Variant{str(index)}")
                 variant_list.append(variant_study)
                 # Generate a snapshot for each variant
-                variant_study_service.generate(variant_list[index].id, False, False)
+                variant_study_service.generate(variant_list[index].id, False)
 
                 # Modify the `created_at` and `updated_at` attributes in DB.
                 with db():
@@ -338,17 +325,17 @@ class TestVariantStudyService:
             assert list(variant.iterdir())
 
         # Simulate access for two old snapshots
-        variant_list[0].last_access = datetime.datetime.now(datetime.timezone.utc).replace(
-            tzinfo=None
-        ) - datetime.timedelta(days=60)
-        variant_list[1].last_access = datetime.datetime.now(datetime.timezone.utc).replace(
-            tzinfo=None
-        ) - datetime.timedelta(hours=6)
+        variant_list[0].last_access = datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - datetime.timedelta(
+            days=60
+        )
+        variant_list[1].last_access = datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - datetime.timedelta(
+            hours=6
+        )
 
         # Simulate access for a recent one
-        variant_list[2].last_access = datetime.datetime.now(datetime.timezone.utc).replace(
-            tzinfo=None
-        ) - datetime.timedelta(hours=1)
+        variant_list[2].last_access = datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - datetime.timedelta(
+            hours=1
+        )
         db.session.commit()
 
         # Clear old snapshots

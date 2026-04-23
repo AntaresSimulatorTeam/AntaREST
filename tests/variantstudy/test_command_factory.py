@@ -13,7 +13,7 @@
 import importlib
 import itertools
 import pkgutil
-from typing import Any, Dict, Optional, Set
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -21,7 +21,13 @@ import pytest
 from antarest.blobstore.service import BlobService
 from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
+from antarest.study.model import (
+    STUDY_VERSION_8_6,
+    STUDY_VERSION_8_8,
+    STUDY_VERSION_9_2,
+    STUDY_VERSION_9_3,
+    STUDY_VERSION_10_0,
+)
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -1055,6 +1061,45 @@ COMMANDS = [
         None,
         id="convert_hydro_pmax_daily",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_RESERVES_ENABLED.value,
+            args={"reserves_enabled": True},
+            study_version=STUDY_VERSION_10_0,
+        ),
+        None,
+        id="update_reserves_enabled",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.CREATE_RESERVE_DEFINITION.value,
+            args={
+                "area_id": "paris",
+                "parameters": {"name": "Reserve 1", "type": "up"},
+            },
+            study_version=STUDY_VERSION_10_0,
+        ),
+        None,
+        id="create_reserve_definition",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_RESERVE_DEFINITIONS.value,
+            args={"reserve_properties": {"paris": {"Reserve 1": {"failureCost": 500.0}}}},
+            study_version=STUDY_VERSION_10_0,
+        ),
+        None,
+        id="update_reserve_definitions",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REMOVE_RESERVE_DEFINITIONS.value,
+            args={"area_id": "paris", "reserve_ids": ["Reserve 1"]},
+            study_version=STUDY_VERSION_10_0,
+        ),
+        None,
+        id="remove_reserve_definitions",
+    ),
 ]
 
 
@@ -1077,7 +1122,7 @@ def command_factory() -> CommandFactory:
 
 
 class TestCommandFactory:
-    def _get_command_classes(self) -> Set[str]:
+    def _get_command_classes(self) -> set[str]:
         """
         Imports all modules from the `antarest.study.storage.variantstudy.model.command` package
         and creates a set of command class names derived from the `ICommand` abstract class.
@@ -1099,7 +1144,7 @@ class TestCommandFactory:
     def test_command_factory(
         self,
         command_dto: CommandDTO,
-        expected_args: Optional[Dict[str, Any]],
+        expected_args: dict[str, Any] | None,
         command_factory: CommandFactory,
     ) -> None:
         commands = command_factory.to_command(command_dto=command_dto)

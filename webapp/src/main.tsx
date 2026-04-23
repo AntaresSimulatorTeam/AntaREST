@@ -12,16 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { QueryClient } from "@tanstack/react-query";
+import SimpleLoader from "@/components/loaders/SimpleLoader";
+import ErrorView from "@/components/page/ErrorView";
+import { queryClient } from "@/queries/queryClient";
+import store from "@/redux/store";
+import { initConfig } from "@/services/config";
 import { createRouter } from "@tanstack/react-router";
 import { createRoot } from "react-dom/client";
 import App from "./app/App";
 import PageNotFound from "./app/PageNotFound";
-import SimpleLoader from "./components/loaders/SimpleLoader";
-import ErrorView from "./components/page/ErrorView";
-import store from "./redux/store";
 import { routeTree } from "./routeTree.gen";
-import { initConfig } from "./services/config";
 
 if (import.meta.env.DEV) {
   // Remove message from Emotion library about unsafe usage in SSR
@@ -36,14 +36,6 @@ if (import.meta.env.DEV) {
     originalError(message, ...rest);
   };
 }
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60 * 1000, // 1 minute
-    },
-  },
-});
 
 const router = createRouter({
   routeTree,

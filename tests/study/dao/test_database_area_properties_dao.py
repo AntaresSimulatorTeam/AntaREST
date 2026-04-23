@@ -18,11 +18,12 @@ from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.area import AREA_TABLE
 from tests.db_statement_recorder import DBStatementRecorder
+from tests.study.dao.utils import save_area
 
 
 def test_save_area_creates_area_with_default_properties(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("Paris")
+    save_area(dao, "Paris")
     study_id = dao.get_study_id()
 
     # Check default AreaProperties were created
@@ -56,8 +57,8 @@ def test_save_area_creates_area_with_default_properties(db_session: Session, db_
 
 def test_multiple_areas(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_area("Paris")
-    dao.save_area("London")
+    save_area(dao, "Paris")
+    save_area(dao, "London")
 
     # Ensures we do not perform N+1 requests
     with DBStatementRecorder(db_session.bind) as db_recorder:
@@ -82,7 +83,7 @@ def test_error_cases(db_dao: DatabaseStudyDao) -> None:
 def test_modify_properties(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     area_id = "paris"
-    dao.save_area(area_id)
+    save_area(dao, area_id)
 
     assert dao.get_area_properties(area_id) == AreaProperties()
 

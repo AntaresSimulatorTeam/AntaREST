@@ -16,16 +16,18 @@ import math
 import os
 import re
 import shutil
+from collections.abc import Sequence
 from datetime import datetime, timedelta
 from io import StringIO
 from pathlib import Path
-from typing import List, Optional, Sequence, cast
+from typing import Any, cast
 from uuid import uuid4
 from zipfile import ZipFile
 
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
 from antares.study.version.upgrade_app import is_temporary_upgrade_dir
+from pydantic import ConfigDict
 
 from antarest.core.config import Config, WorkspaceConfig
 from antarest.core.exceptions import (
@@ -43,16 +45,15 @@ from antarest.core.interfaces.cache import (
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
+from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
-from antarest.core.utils.archives import is_archive_format
 from antarest.login.model import Group
 from antarest.login.utils import require_current_user
-from antarest.study.business.model.config.general_model import Mode
+from antarest.study.business.model.config.general_model import GeneralConfig, Mode
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_REFERENCE_TEMPLATES,
-    STUDY_VERSION_9_0,
     MatrixFrequency,
     MatrixIndex,
     Study,
@@ -75,7 +76,7 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_autho
     Update antares study information in the study.antares file.
 
     Args:
-        metadata: Study metadata containing name, version, dates, etc.
+        metadata: Study metadata containing name, dates, etc.
         study_tree: File study tree to update
         update_author: Whether to update the author field
     """
@@ -87,9 +88,8 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_autho
 
     # Update basic fields
     antares_info["caption"] = metadata.name
-    antares_info["created"] = _format_timestamp(metadata.created_at)
-    antares_info["lastsave"] = _format_timestamp(metadata.updated_at)
-    antares_info["version"] = _format_version(metadata.version)
+    antares_info["created"] = format_timestamp(metadata.created_at)
+    antares_info["lastsave"] = format_timestamp(metadata.updated_at)
     antares_info["editor"] = editor
 
     # Update author-related fields if additional_data exists
@@ -99,15 +99,9 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_autho
     study_tree.save(study_data_info, ["study"])
 
 
-def _format_timestamp(dt: Optional[datetime]) -> str:
-    """Format datetime as timestamp string or '0' if None."""
-    return str(dt.timestamp()) if dt is not None else "0"
-
-
-def _format_version(version_str: str) -> str:
-    """Format version string according to version rules."""
-    version = StudyVersion.parse(version_str)
-    return f"{version:2d}" if version >= STUDY_VERSION_9_0 else f"{version:ddd}"
+def format_timestamp(dt: datetime | None) -> float:
+    """Format datetime as a timestamp float or 0 if None."""
+    return dt.timestamp() if dt is not None else 0
 
 
 def fix_study_root(study_path: Path) -> None:
@@ -117,10 +111,6 @@ def fix_study_root(study_path: Path) -> None:
     Args:
         study_path: the study initial root path
     """
-    # TODO: what if it is a zipped output ?
-    if is_archive_format(study_path.suffix):
-        return None
-
     if not study_path.is_dir():
         raise StudyValidationError("Not a directory: '{study_path}'")
 
@@ -163,7 +153,7 @@ def is_output_archived(path_output: Path) -> bool:
     return any((path_output.parent / (path_output.name + suffix)).exists() for suffix in suffixes)
 
 
-def extract_output_name(path_output: Path, new_suffix_name: Optional[str] = None) -> str:
+def extract_output_name(path_output: Path, new_suffix_name: str | None = None) -> str:
     """
     Constructs the full output name such as "20201014-1422eco-hello" from the info.antares-output file content.
 
@@ -253,7 +243,7 @@ def assert_permission_on_studies(
         raise UserHasNotPermissionError(msg)
 
 
-def assert_permission(study: Optional[Study | StudyMetadataDTO], permission_type: StudyPermissionType) -> None:
+def assert_permission(study: Study | StudyMetadataDTO | None, permission_type: StudyPermissionType) -> None:
     """
     Assert user has permission to edit or read study.
 
@@ -292,10 +282,92 @@ MONTHS = {
 DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 
-def get_start_date(
-    file_study: FileStudy,
-    output_id: Optional[str] = None,
-    level: MatrixFrequency = MatrixFrequency.HOURLY,
+class SimulationRangeDefinition(AntaresBaseModel):
+    """
+    Definition of the time range for a simulation.
+
+    Together, the starting month, january 1st and leapyear define the 12-months target range.
+    Then the actually simulated range may be reduced with simulation_start and simulation_end
+    parameters, which define the first and last day to be simulated in that 12-months range.
+    first_weekday is only used for weekly aggregation of data in the output, it defines on which
+    day the week starts.
+
+    Attributes:
+        starting_month: index of the month in which the simulation starts (1-12)
+        january_1st_weekday: weekday of january 1st in the simulated year
+        leap_year: whether the simulated year is a leap year
+        start_day: first day of the actual simulated range inside the 12-months range
+        end_day: last day of the actual simulated range inside the 12-months range
+        first_weekday: only used to determine where weeks should be "cut", when computing weekly aggregates.
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    # together, those parameters define the 12-months range
+    starting_month: int
+    january_1st_weekday: int
+    leap_year: bool
+
+    # possible reduction of simulated range
+    start_day: int
+    end_day: int
+
+    # defines where weeks are "cut" in weekly aggregation of outputs
+    first_weekday: int
+
+
+def parse_simulation_range(config: dict[str, Any]) -> SimulationRangeDefinition:
+    """
+    Parses a dictionary as defined in the "general" section of generaldata.ini or parameters.ini
+    """
+
+    starting_month = cast(str, config.get("first-month-in-year"))
+    starting_day = cast(str, config.get("january.1st"))
+    leapyear = cast(bool, config.get("leapyear"))
+    first_week_day = cast(str, config.get("first.weekday"))
+    simulation_start = cast(int, config.get("simulation.start"))
+    simulation_end = cast(int, config.get("simulation.end"))
+
+    starting_month_index = MONTHS[starting_month.title()]
+    starting_day_index = DAY_NAMES.index(starting_day.title())
+    first_week_day_index = DAY_NAMES.index(first_week_day)
+
+    return SimulationRangeDefinition(
+        starting_month=starting_month_index,
+        january_1st_weekday=starting_day_index,
+        leap_year=leapyear,
+        start_day=simulation_start,
+        end_day=simulation_end,
+        first_weekday=first_week_day_index,
+    )
+
+
+def extract_simulation_range_from_model(general: GeneralConfig) -> SimulationRangeDefinition:
+    starting_month = general.first_month
+    starting_day = general.first_january
+    leapyear = general.leap_year
+    first_week_day = general.first_week_day
+    simulation_start = general.first_day
+    simulation_end = general.last_day
+
+    starting_month_index = MONTHS[starting_month.title()]
+    starting_day_index = DAY_NAMES.index(starting_day.title())
+    first_week_day_index = DAY_NAMES.index(first_week_day)
+
+    return SimulationRangeDefinition(
+        starting_month=starting_month_index,
+        january_1st_weekday=starting_day_index,
+        leap_year=leapyear,
+        start_day=simulation_start,
+        end_day=simulation_end,
+        first_weekday=first_week_day_index,
+    )
+
+
+def get_matrix_index(
+    simulation_range: SimulationRangeDefinition,
+    is_output: bool,
+    level: MatrixFrequency,
 ) -> MatrixIndex:
     """
     Retrieve the index (start date and step count) for output or input matrices
@@ -306,16 +378,13 @@ def get_start_date(
         level: granularity of the steps
 
     """
-    config = FileStudyHelpers.get_config(file_study, output_id)["general"]
-    starting_month = cast(str, config.get("first-month-in-year"))
-    starting_day = cast(str, config.get("january.1st"))
-    leapyear = cast(bool, config.get("leapyear"))
-    first_week_day = cast(str, config.get("first.weekday"))
-    start_offset = cast(int, config.get("simulation.start"))
-    end = cast(int, config.get("simulation.end"))
+    starting_month_index = simulation_range.starting_month
+    starting_day_index = simulation_range.january_1st_weekday
+    leapyear = simulation_range.leap_year
+    first_week_day_index = simulation_range.first_weekday
+    start_offset = simulation_range.start_day
+    end = simulation_range.end_day
 
-    starting_month_index = MONTHS[starting_month.title()]
-    starting_day_index = DAY_NAMES.index(starting_day.title())
     target_year = 2018
     while True:
         if leapyear == calendar.isleap(target_year + (starting_month_index > 2)):
@@ -324,12 +393,10 @@ def get_start_date(
                 break
         target_year += 1
 
-    start_offset_days = timedelta(days=(0 if output_id is None else start_offset - 1))
+    start_offset_days = timedelta(days=(0 if not is_output else start_offset - 1))
     start_date = datetime(target_year, starting_month_index, 1) + start_offset_days
 
-    def _get_steps(
-        daily_steps: int, temporality: MatrixFrequency, begin_date: datetime, is_output: Optional[str] = None
-    ) -> int:
+    def _get_steps(daily_steps: int, temporality: MatrixFrequency, begin_date: datetime, is_output: bool) -> int:
         temporality_mapping = {
             MatrixFrequency.DAILY: daily_steps,
             MatrixFrequency.HOURLY: daily_steps * 24,
@@ -345,10 +412,9 @@ def get_start_date(
 
         return temporality_mapping[temporality]
 
-    days_count = MATRIX_INPUT_DAYS_COUNT if output_id is None else end - start_offset + 1
-    steps = _get_steps(days_count, level, start_date, output_id)
+    days_count = MATRIX_INPUT_DAYS_COUNT if not is_output else end - start_offset + 1
+    steps = _get_steps(days_count, level, start_date, is_output)
 
-    first_week_day_index = DAY_NAMES.index(first_week_day)
     first_week_offset = 0
     for first_week_offset in range(7):
         first_day = start_date + timedelta(days=first_week_offset)
@@ -362,6 +428,25 @@ def get_start_date(
         first_week_size=first_week_size,
         level=level,
     )
+
+
+def get_start_date(
+    file_study: FileStudy,
+    output_id: str | None = None,
+    level: MatrixFrequency = MatrixFrequency.HOURLY,
+) -> MatrixIndex:
+    """
+    Retrieve the index (start date and step count) for output or input matrices
+
+    Args:
+        file_study: Study data
+        output_id: id of the output, if None, then it's the start date of the input matrices
+        level: granularity of the steps
+
+    """
+    config = FileStudyHelpers.get_config(file_study, output_id)["general"]
+    simulation_range = parse_simulation_range(config)
+    return get_matrix_index(simulation_range, output_id is not None, level)
 
 
 def is_folder_safe(workspace: WorkspaceConfig, folder: str) -> bool:
@@ -421,7 +506,7 @@ def is_ts_gen_tmp_dir(path: Path) -> bool:
     return path.name.startswith(TS_GEN_PREFIX) and "".join(path.suffixes[-2:]) == TS_GEN_SUFFIX and path.is_dir()
 
 
-def should_ignore_folder_for_scan(path: Path, filter_in: List[str], filter_out: List[str]) -> bool:
+def should_ignore_folder_for_scan(path: Path, filter_in: list[str], filter_out: list[str]) -> bool:
     if is_aw_no_scan(path):
         logger.info(f"No scan directive file found. Will skip further scan of folder {path}")
         return True
@@ -441,7 +526,7 @@ def should_ignore_folder_for_scan(path: Path, filter_in: List[str], filter_out: 
     )
 
 
-def has_children(path: Path, filter_in: List[str], filter_out: List[str], show_hidden_file: bool = False) -> bool:
+def has_children(path: Path, filter_in: list[str], filter_out: list[str], show_hidden_file: bool = False) -> bool:
     for sub_path in path.iterdir():
         try:
             show = show_hidden_file or not sub_path.name.startswith(".")
@@ -455,11 +540,11 @@ def has_children(path: Path, filter_in: List[str], filter_out: List[str], show_h
 def rec_scan_for_studies(
     path: Path,
     workspace: str,
-    groups: List[Group],
-    filter_in: List[str],
-    filter_out: List[str],
-    max_depth: Optional[int] = None,
-) -> List[StudyFolder]:
+    groups: list[Group],
+    filter_in: list[str],
+    filter_out: list[str],
+    max_depth: int | None = None,
+) -> list[StudyFolder]:
     """
     Recursively scan a directory for studies.
 
@@ -488,7 +573,7 @@ def rec_scan_for_studies(
             logger.info(f"Scan was configured to not go any deeper, max_depth: {max_depth}")
             return []
 
-        folders: List[StudyFolder] = []
+        folders: list[StudyFolder] = []
         if path.is_dir():
             for child in path.iterdir():
                 child_max_depth = max_depth - 1 if max_depth is not None else None

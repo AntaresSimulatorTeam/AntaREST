@@ -19,20 +19,18 @@ instead of filesystem storage for area data.
 NOTE: Currently, the DATABASE storage mode is a POC that only implements basic
 area operations via the DAO. The CREATE_AREA command also configures hydro management
 and other elements that are not yet implemented in the database DAO.
-Tests that require full command execution are marked as xfail until all required
-DAO methods are implemented.
 """
 
-import pytest
+import zipfile
+from pathlib import Path
+
 from starlette.testclient import TestClient
 
+from antarest.core.serde.ini_reader import read_ini
+from antarest.core.tasks.model import TaskStatus
 from tests.integration.prepare_proxy import PreparerProxy
-
-# Reason for xfail - CREATE_AREA command requires methods not yet implemented in DatabaseStudyDao
-DATABASE_MODE_INCOMPLETE = (
-    "DATABASE storage mode POC: CREATE_AREA command requires save_hydro_management and other methods "
-    "not yet implemented in DatabaseStudyDao"
-)
+from tests.integration.utils import wait_task_completion
+from tests.test_helpers.download import download_to_file
 
 
 class TestAreaDatabaseMode:
@@ -57,7 +55,6 @@ class TestAreaDatabaseMode:
         assert study_data["id"] == study_id
         assert study_data["name"] == "database-mode-study"
 
-    @pytest.mark.xfail(reason=DATABASE_MODE_INCOMPLETE, strict=True)
     def test_create_and_list_areas_in_database_mode(self, client: TestClient, user_access_token: str) -> None:
         """
         Test creating areas in a DATABASE mode study and listing them.
@@ -100,7 +97,6 @@ class TestAreaDatabaseMode:
             assert area_ui["layerY"] == {"0": 0}
             assert area_ui["layerColor"] == {"0": "230, 108, 44"}
 
-    @pytest.mark.xfail(reason=DATABASE_MODE_INCOMPLETE, strict=True)
     def test_update_area_ui_in_database_mode(self, client: TestClient, user_access_token: str) -> None:
         """
         Test updating area UI properties in DATABASE mode.
@@ -137,7 +133,6 @@ class TestAreaDatabaseMode:
         assert testarea_ui["layerY"] == {"0": 250}
         assert testarea_ui["layerColor"] == {"0": "100, 150, 200"}
 
-    @pytest.mark.xfail(reason=DATABASE_MODE_INCOMPLETE, strict=True)
     def test_delete_area_in_database_mode(self, client: TestClient, user_access_token: str) -> None:
         """
         Test deleting an area in DATABASE mode.
@@ -168,7 +163,6 @@ class TestAreaDatabaseMode:
         assert "tokeep" in areas
         assert "todelete" not in areas
 
-    @pytest.mark.xfail(reason=DATABASE_MODE_INCOMPLETE, strict=True)
     def test_area_duplicate_name_error_in_database_mode(self, client: TestClient, user_access_token: str) -> None:
         """
         Test that creating a duplicate area raises an error in DATABASE mode.
@@ -230,7 +224,6 @@ class TestAreaDatabaseMode:
         assert areas["area2"]["ui"]["color_g"] == 255
         assert areas["area2"]["ui"]["color_b"] == 0
 
-    @pytest.mark.xfail(reason=DATABASE_MODE_INCOMPLETE, strict=True)
     def test_persistence_after_multiple_operations_in_database_mode(
         self, client: TestClient, user_access_token: str
     ) -> None:
@@ -353,7 +346,6 @@ class TestDatabaseModeVsFilesystemMode:
         }
         assert res.json() == expected
 
-    @pytest.mark.xfail(reason=DATABASE_MODE_INCOMPLETE, strict=True)
     def test_area_operations_consistency_database(self, client: TestClient, user_access_token: str) -> None:
         """
         Test that area operations produce consistent results in DATABASE mode.
@@ -416,3 +408,73 @@ class TestDatabaseModeVsFilesystemMode:
             },
         }
         assert res.json() == expected
+
+
+def test_db_study_properties_edition_and_deletion(
+    client: TestClient, user_access_token: str, admin_access_token: str
+) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    preparer = PreparerProxy(client, admin_access_token)
+    study_id = preparer.create_study("MyStudy", version=870, storage_mode="database")
+    # We should be able to rename the study
+    res = client.put(f"/v1/studies/{study_id}", json={"name": "MyRenamedStudy"})
+    assert res.status_code == 200
+    res = client.get(f"/v1/studies/{study_id}")
+    assert res.json()["name"] == "MyRenamedStudy"
+    # Change the study owner
+    res = client.put(f"v1/studies/{study_id}/owner/2")  # The new owner should be George
+    assert res.status_code == 200
+    res = client.get(f"/v1/studies/{study_id}")
+    assert res.json()["owner"] == {"id": 2, "name": "George"}
+    # We should be able to delete the study
+    res = client.delete(f"/v1/studies/{study_id}")
+    assert res.status_code == 200
+    # Ensures the study no longer exists
+    res = client.get(f"/v1/studies/{study_id}")
+    assert res.status_code == 404
+
+
+def _export_variant(client: TestClient, tmp_path: Path, variant_id: str) -> dict:
+    res = client.get(f"/v1/studies/{variant_id}/export")
+    download_id = res.json()["file"]["id"]
+
+    zip_path = tmp_path / "variant.zip"
+    variant_path = tmp_path / "variant"
+    download_to_file(client, download_id, zip_path)
+    with zipfile.ZipFile(zip_path) as zip_file:
+        zip_file.extractall(variant_path)
+
+    return read_ini(variant_path / "study.antares")
+
+
+def test_variant_name_edition(client: TestClient, user_access_token: str, tmp_path: Path) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    preparer = PreparerProxy(client, user_access_token)
+    study_id = preparer.create_study("MyStudy", version=870)
+    variant_id = preparer.create_variant(study_id, name="Variant1")
+
+    # Renaming the variant before the snapshot is generated should work well.
+    # We should also see the new name inside the study.antares when exporting the variant
+    res = client.put(f"/v1/studies/{variant_id}", json={"name": "MyRenamedStudy"})
+    assert res.status_code == 200
+    res = client.get(f"/v1/studies/{variant_id}")
+    assert res.json()["name"] == "MyRenamedStudy"
+
+    ini_content = _export_variant(client, tmp_path, variant_id)
+    assert ini_content["antares"]["caption"] == "MyRenamedStudy"
+
+    # Generate the snapshot and then rename the study.
+    # We should see the same result
+    res = client.put(f"/v1/studies/{variant_id}/generate", params={"from_scratch": True})
+    res.raise_for_status()
+    task_id = res.json()
+    task = wait_task_completion(client, user_access_token, task_id, base_timeout=20)
+    assert task.status == TaskStatus.COMPLETED
+
+    res = client.put(f"/v1/studies/{variant_id}", json={"name": "New_name_v2"})
+    assert res.status_code == 200
+    res = client.get(f"/v1/studies/{variant_id}")
+    assert res.json()["name"] == "New_name_v2"
+
+    ini_content = _export_variant(client, tmp_path, variant_id)
+    assert ini_content["antares"]["caption"] == "New_name_v2"

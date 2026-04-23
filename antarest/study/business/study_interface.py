@@ -10,7 +10,8 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Optional, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
 
 from antares.study.version import StudyVersion
 from typing_extensions import override
@@ -20,12 +21,15 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.memory.in_memory_study_dao import InMemoryStudyDao
+from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.command.common import CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 
 if TYPE_CHECKING:
     from antarest.blobstore.service import IBlobService
+    from antarest.core.interfaces.cache import ICache
     from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
@@ -45,20 +49,8 @@ class StudyInterface(ABC):
     def version(self) -> StudyVersion:
         raise NotImplementedError()
 
-    # TODO: in the end this should provide a read-only DAO which encapsulates
-    #       the actual storage implementation
     @abstractmethod
-    def get_files(self) -> FileStudy:
-        """
-        Gets the file representation of the study.
-
-        This is meant to be a "read-only" access to the study,
-        modifications should be made through commands.
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
+    def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
         """
         Adds commands to that study.
         Note that implementations are not required to actually modify the underlying file study.
@@ -67,6 +59,10 @@ class StudyInterface(ABC):
 
     @abstractmethod
     def get_study_dao(self) -> ReadOnlyStudyDao:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
         raise NotImplementedError()
 
 
@@ -78,7 +74,7 @@ class InMemoryStudyInterface(StudyInterface):
 
     def __init__(self, id: str, version: StudyVersion, matrix_service: ISimpleMatrixService):
         self._id = id
-        self._study_dao = InMemoryStudyDao(version, matrix_service)
+        self._study_dao = InMemoryStudyDao(version, matrix_service, study_id=id)
 
     @override
     @property
@@ -91,19 +87,19 @@ class InMemoryStudyInterface(StudyInterface):
         return self._study_dao.get_version()
 
     @override
-    def get_files(self) -> FileStudy:
-        raise NotImplementedError("In memory studies cannot be converted to file study.")
-
-    @override
-    def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
+    def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
         for command in commands:
-            result = command.apply(self._study_dao, listener)
+            result: CommandOutput[Any] = command.apply(self._study_dao, listener)
             if not result.status:
                 raise CommandApplicationError(result.message)
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
         return self._study_dao.read_only()
+
+    @override
+    def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
+        self._study_dao.update_antares_file(metadata)
 
 
 class FileStudyInterface(StudyInterface):
@@ -115,12 +111,18 @@ class FileStudyInterface(StudyInterface):
     def __init__(
         self,
         file_study: FileStudy,
+        is_study_managed: bool,
         generator_matrix_constants: "GeneratorMatrixConstants",
         blob_service: "IBlobService",
+        matrix_service: ISimpleMatrixService,
+        cache: "ICache",
     ):
         self.file_study = file_study
         self._generator_matrix_constants = generator_matrix_constants
         self._blob_service = blob_service
+        self._matrix_service = matrix_service
+        self._is_study_managed = is_study_managed
+        self._cache = cache
 
     @override
     @property
@@ -132,21 +134,31 @@ class FileStudyInterface(StudyInterface):
     def version(self) -> StudyVersion:
         return self.file_study.config.version
 
-    @override
     def get_files(self) -> FileStudy:
         return self.file_study
 
     @override
-    def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
+    def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
+        dao = self._get_dao()
         for command in commands:
-            context = command.command_context
-            result = command.apply(
-                FileStudyTreeDao(self.file_study, context.generator_matrix_constants, context.blob_service),
-                listener,
-            )
+            result = command.apply(dao, listener)
             if not result.status:
                 raise CommandApplicationError(result.message)
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        return FileStudyTreeDao(self.file_study, self._generator_matrix_constants, self._blob_service).read_only()
+        return self._get_dao().read_only()
+
+    def _get_dao(self) -> FileStudyTreeDao:
+        return FileStudyTreeDao(
+            self.file_study,
+            self._is_study_managed,
+            self._generator_matrix_constants,
+            self._blob_service,
+            self._matrix_service,
+            self._cache,
+        )
+
+    @override
+    def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
+        self._get_dao().update_antares_file(metadata)

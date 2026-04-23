@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import uuid
-from typing import Dict, List, Optional
 from unittest.mock import Mock
 
 from typing_extensions import override
@@ -30,11 +29,11 @@ class SimpleSyncTaskService(ITaskService):
     def add_task(
         self,
         action: Task,
-        name: Optional[str],
-        task_type: Optional[TaskType],
-        ref_id: Optional[str],
-        progress: Optional[int],
-        custom_event_messages: Optional[CustomTaskEventMessages],
+        name: str | None,
+        task_type: TaskType | None,
+        ref_id: str | None,
+        progress: int | None,
+        custom_event_messages: CustomTaskEventMessages | None,
     ) -> str:
         action(NoopNotifier())
         return str(uuid.uuid4())
@@ -57,12 +56,20 @@ class SimpleSyncTaskService(ITaskService):
         )
 
     @override
-    def list_tasks(self, task_filter: TaskListFilter) -> List[TaskDTO]:
+    def list_tasks(self, task_filter: TaskListFilter) -> list[TaskDTO]:
         return []
 
     @override
-    def await_task(self, task_id: str, timeout_sec: Optional[int] = None) -> None:
+    def await_task(self, task_id: str, timeout_sec: int | None = None) -> None:
         pass
+
+    @override
+    def cancel_task(self, task_id: str) -> None:
+        pass
+
+    @override
+    def get_task_progress(self, task_id: str) -> int | None:
+        return None
 
     @override
     def delete_task_by_creation_date(self, task_retention_duration: int) -> int:
@@ -71,14 +78,14 @@ class SimpleSyncTaskService(ITaskService):
 
 class FileDownloadRepositoryMock(FileDownloadRepository):
     def __init__(self) -> None:
-        self.downloads: Dict[str, FileDownload] = {}
+        self.downloads: dict[str, FileDownload] = {}
 
     @override
     def add(self, download: FileDownload) -> None:
         self.downloads[download.id] = download
 
     @override
-    def get(self, download_id: str) -> Optional[FileDownload]:
+    def get(self, download_id: str) -> FileDownload | None:
         return self.downloads.get(download_id, None)
 
     @override
@@ -86,7 +93,7 @@ class FileDownloadRepositoryMock(FileDownloadRepository):
         self.downloads[download.id] = download
 
     @override
-    def get_all(self, owner: Optional[int] = None) -> List[FileDownload]:
+    def get_all(self, owner: int | None = None) -> list[FileDownload]:
         return list(self.downloads.values())
 
 

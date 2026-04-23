@@ -23,6 +23,7 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 def test_optional_matrices(
@@ -30,9 +31,10 @@ def test_optional_matrices(
 ) -> None:
     # Create an area containing 1 thermal cluster and 1 short-term storage
     study = empty_study_920
+    dao = build_dao_from_file_study(study, command_context)
     version = study.config.version
     cmd = CreateArea(area_name="fr", command_context=command_context, study_version=version)
-    output = cmd.apply(study)
+    output = cmd.apply(dao)
     assert output.status
     cmd = CreateCluster(
         area_id="fr",
@@ -40,7 +42,7 @@ def test_optional_matrices(
         command_context=command_context,
         study_version=version,
     )
-    output = cmd.apply(study)
+    output = cmd.apply(dao)
     assert output.status
     cmd = CreateSTStorage(
         command_context=command_context,
@@ -48,7 +50,7 @@ def test_optional_matrices(
         parameters=STStorageCreation(name="sts"),
         study_version=version,
     )
-    output = cmd.apply(study)
+    output = cmd.apply(dao)
     assert output.status
 
     expected_content = np.zeros((8760, 1)).tolist()
@@ -79,7 +81,7 @@ def test_optional_matrices(
     assert matrix.to_numpy().tolist() == expected_cost_level_content
 
     # Ensures the normalization succeeds even if the files are missing
-    raw_study_service.normalize_study(study)
+    raw_study_service.normalize_file_study(study)
 
     # Removes a file that's not optional for the Simulator
     url = ["input", "thermal", "series", "fr", "thermal_cluster", "series"]
@@ -99,4 +101,4 @@ def test_optional_matrices(
         ChildNotFoundError,
         match="404: File 'input/thermal/series/fr/thermal_cluster/series.txt' not found in the study ''",
     ):
-        raw_study_service.normalize_study(study)
+        raw_study_service.normalize_file_study(study)

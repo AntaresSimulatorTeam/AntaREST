@@ -18,7 +18,8 @@ This module provides database-backed storage for districts when storage_mode=DAT
 
 import json
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import CursorResult, delete, select
 from sqlalchemy.orm import Session

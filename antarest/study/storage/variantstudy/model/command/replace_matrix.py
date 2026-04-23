@@ -9,8 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from pathlib import Path
-from typing import List, Optional
+from pathlib import PurePosixPath
 
 from pydantic import Field, ValidationInfo, field_validator
 from typing_extensions import override
@@ -45,21 +44,21 @@ class ReplaceMatrix(ICommand):
     # ==================
 
     target: str
-    matrix: List[List[MatrixData]] | str = Field(validate_default=True)
+    matrix: list[list[MatrixData]] | str = Field(validate_default=True)
 
     @field_validator("matrix", mode="before")
-    def matrix_validator(cls, matrix: List[List[MatrixData]] | str, values: ValidationInfo) -> str:
+    def matrix_validator(cls, matrix: list[list[MatrixData]] | str, values: ValidationInfo) -> str:
         return validate_matrix(matrix, values.data)
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         if self.target[0] == "@":
             self.target = AliasDecoder.decode(self.target, self.study_version)
 
         mapper = RawPathToMatrixMapper(study_data)
         assert isinstance(self.matrix, str)
-        mapper.save_matrix_from_path(Path(self.target), self.matrix)
-        return command_succeeded(message=f"Matrix '{self.target}' has been successfully replaced.")
+        mapper.save_matrix_from_path(PurePosixPath(self.target), self.matrix)
+        return command_succeeded(message=f"Matrix '{self.target}' has been successfully replaced.", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

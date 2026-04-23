@@ -15,10 +15,11 @@ import math
 import os
 import time
 import uuid
+from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union, cast
+from typing import Any, cast
 from unittest.mock import Mock
 
 import numpy as np
@@ -30,14 +31,17 @@ from typing_extensions import override
 from antarest.core.model import SUB_JSON
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.utils import current_user_context
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.study_interface import FileStudyInterface
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from tests.conftest_instances import create_admin_user
 
 
-def dirhash(dirname: Union[str, Path], hashfunc: str = "md5") -> str:
+def dirhash(dirname: str | Path, hashfunc: str = "md5") -> str:
     """Compute a single hash for all files in a directory tree (replacement for checksumdir.dirhash)."""
     hash_constructor = getattr(hashlib, hashfunc)
     hashvalues = []
@@ -76,14 +80,14 @@ def with_admin_user(f: Callable[..., Any]) -> Callable[..., Any]:
     return wrapper
 
 
-def _assert_dict(a: Dict[str, Any], b: Dict[str, Any]) -> None:
+def _assert_dict(a: dict[str, Any], b: dict[str, Any]) -> None:
     if a.keys() != b.keys():
         raise AssertionError(f"study level has not the same keys {a.keys()} != {b.keys()}")
     for k, v in a.items():
         assert_study(v, b[k])
 
 
-def _assert_list(a: List[Any], b: List[Any]) -> None:
+def _assert_list(a: list[Any], b: list[Any]) -> None:
     for i, j in zip(a, b):
         assert_study(i, j)
 
@@ -121,9 +125,9 @@ def assert_study(a: SUB_JSON, b: SUB_JSON) -> None:
     elif isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
         _assert_array(a, b)
     elif isinstance(a, np.ndarray) and isinstance(b, list):
-        _assert_list(cast(List[float], a.tolist()), b)
+        _assert_list(cast(list[float], a.tolist()), b)
     elif isinstance(a, list) and isinstance(b, np.ndarray):
-        _assert_list(a, cast(List[float], b.tolist()))
+        _assert_list(a, cast(list[float], b.tolist()))
     elif isinstance(a, float) and math.isnan(a):
         assert math.isnan(b)
     else:
@@ -165,9 +169,9 @@ class AnyUUID:
 
 
 def create_study(
-    id: Optional[str] = None,
-    name: Optional[str] = None,
-    path: Optional[str] = None,
+    id: str | None = None,
+    name: str | None = None,
+    path: str | None = None,
     version: str = "880",
     **kwargs: Any,
 ) -> Study:
@@ -194,9 +198,9 @@ def create_study(
 
 
 def create_raw_study(
-    id: Optional[str] = None,
-    name: Optional[str] = None,
-    path: Optional[str] = None,
+    id: str | None = None,
+    name: str | None = None,
+    path: str | None = None,
     version: str = "880",
     **kwargs: Any,
 ) -> RawStudy:
@@ -223,9 +227,9 @@ def create_raw_study(
 
 
 def create_variant_study(
-    id: Optional[str] = None,
-    name: Optional[str] = None,
-    path: Optional[str] = None,
+    id: str | None = None,
+    name: str | None = None,
+    path: str | None = None,
     version: str = "880",
     **kwargs: Any,
 ) -> VariantStudy:
@@ -251,8 +255,23 @@ def create_variant_study(
     )
 
 
-def file_study_interface(file_study: FileStudy) -> FileStudyInterface:
+def file_study_interface(
+    file_study: FileStudy, matrix_service: ISimpleMatrixService | None = None
+) -> FileStudyInterface:
     """
     Utils function to avoid declaring Mocks everywhere inside the tests
     """
-    return FileStudyInterface(file_study, Mock(), Mock())
+    return FileStudyInterface(file_study, False, Mock(), Mock(), matrix_service or Mock(), Mock())
+
+
+def build_dao_from_file_study(
+    file_study: FileStudy, command_context: CommandContext, managed: bool = False
+) -> FileStudyTreeDao:
+    return FileStudyTreeDao(
+        file_study,
+        managed,
+        command_context.generator_matrix_constants,
+        command_context.blob_service,
+        command_context.matrix_service,
+        Mock(),
+    )

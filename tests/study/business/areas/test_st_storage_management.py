@@ -28,7 +28,7 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import file_study_interface
+from tests.helpers import build_dao_from_file_study, file_study_interface
 
 EXPECTED_STORAGES = {
     "de": [
@@ -87,16 +87,17 @@ EXPECTED_STORAGES = {
 
 
 @pytest.fixture
-def manager(matrix_service: ISimpleMatrixService, command_context: CommandContext) -> STStorageManager:
+def manager(command_context: CommandContext) -> STStorageManager:
     return STStorageManager(command_context)
 
 
-def _set_up_study(study: StudyInterface, command_context: CommandContext) -> None:
-    study_data = study.get_files()
+def _set_up_study(study: FileStudy, command_context: CommandContext) -> None:
+    dao = build_dao_from_file_study(study, command_context)
+    version = study.config.version
     # Create 2 areas
-    output = CreateArea(command_context=command_context, area_name="fr", study_version=study.version).apply(study_data)
+    output = CreateArea(command_context=command_context, area_name="fr", study_version=version).apply(dao)
     assert output.status
-    output = CreateArea(command_context=command_context, area_name="DE", study_version=study.version).apply(study_data)
+    output = CreateArea(command_context=command_context, area_name="DE", study_version=version).apply(dao)
     assert output.status
     # Create 2 storages in fr area and 1 in DE area
     cmd = CreateSTStorage(
@@ -111,9 +112,9 @@ def _set_up_study(study: StudyInterface, command_context: CommandContext) -> Non
             efficiency=0.94,
             initial_level_optim=True,
         ),
-        study_version=study.version,
+        study_version=version,
     )
-    output = cmd.apply(study_data)
+    output = cmd.apply(dao)
     assert output.status
 
     cmd = CreateSTStorage(
@@ -124,9 +125,9 @@ def _set_up_study(study: StudyInterface, command_context: CommandContext) -> Non
             group="my_own_group",
             enabled=False,
         ),
-        study_version=study.version,
+        study_version=version,
     )
-    output = cmd.apply(study_data)
+    output = cmd.apply(dao)
     assert output.status
 
     cmd = CreateSTStorage(
@@ -139,9 +140,9 @@ def _set_up_study(study: StudyInterface, command_context: CommandContext) -> Non
             penalize_variation_injection=True,
             allow_overflow=True,
         ),
-        study_version=study.version,
+        study_version=version,
     )
-    output = cmd.apply(study_data)
+    output = cmd.apply(dao)
     assert output.status
 
 
@@ -149,8 +150,8 @@ def _set_up_study(study: StudyInterface, command_context: CommandContext) -> Non
 def study_interface(
     matrix_service: ISimpleMatrixService, empty_study_930: FileStudy, command_context: CommandContext
 ) -> StudyInterface:
-    study_interface = file_study_interface(empty_study_930)
-    _set_up_study(study_interface, command_context)
+    study_interface = file_study_interface(empty_study_930, matrix_service)
+    _set_up_study(empty_study_930, command_context)
     return study_interface
 
 
@@ -297,7 +298,8 @@ def test_delete_storages_from_sc_builder(manager: STStorageManager, study_interf
 
     # Remove the area `fr`. 2 lines should disappear as they concern objects inside area `fr`.
     cmd = RemoveArea(command_context=manager._command_context, id="fr", study_version=file_study.config.version)
-    output = cmd.apply(file_study)
+    dao = build_dao_from_file_study(file_study, manager._command_context)
+    output = cmd.apply(dao)
     assert output.status
     sc_builder = file_study.tree.get(["settings", "scenariobuilder", "Default Ruleset"])
     assert sc_builder == {}

@@ -12,7 +12,6 @@
 
 import shutil
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
 
 from typing_extensions import override
 
@@ -46,7 +45,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         self,
         matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
-        children_glob_exceptions: Optional[List[str]] = None,
+        children_glob_exceptions: list[str] | None = None,
     ) -> None:
         super().__init__(config)
         self.matrix_mapper = matrix_mapper
@@ -58,7 +57,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
 
     def _forward_get(
         self,
-        url: List[str],
+        url: list[str],
         depth: int,
         formatted: bool,
     ) -> JSON:
@@ -93,7 +92,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
     @override
     def get(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
@@ -106,7 +105,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
     @override
     def get_node_and_remainder(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
     ) -> tuple[INode[JSON, SUB_JSON, JSON], list[str]]:
         if not url:
             return self, []
@@ -121,7 +120,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
     def save(
         self,
         data: SUB_JSON,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
     ) -> None:
         self._assert_not_in_zipped_file()
         children = self.build()
@@ -137,7 +136,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
                 children[key].save(data[key])
 
     @override
-    def delete(self, url: Optional[List[str]] = None) -> None:
+    def delete(self, url: list[str] | None = None) -> None:
         if url and url != [""]:
             children = self.build()
             names, sub_url = self._extract_child(children, url)
@@ -162,7 +161,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
             nodes.extend(node)
         return nodes
 
-    def _extract_child(self, children: TREE, url: List[str]) -> Tuple[List[str], List[str]]:
+    def _extract_child(self, children: TREE, url: list[str]) -> tuple[list[str], list[str]]:
         names, sub_url = url[0].split(","), url[1:]
         names = (
             list(

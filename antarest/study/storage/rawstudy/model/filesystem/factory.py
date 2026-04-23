@@ -15,7 +15,7 @@ import os.path
 import tempfile
 import time
 from pathlib import Path
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 import filelock
 from antares.study.version import StudyVersion
@@ -23,7 +23,6 @@ from antares.study.version import StudyVersion
 from antarest.core.interfaces.cache import ICache, study_config_cache_key
 from antarest.matrixstore.matrix_uri_mapper import (
     MatrixUriMapperFactory,
-    NormalizedMatrixUriMapper,
     get_mapper_type,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build, parse_outputs
@@ -73,7 +72,7 @@ class StudyFactory:
         path: Path,
         with_matrix_normalization: bool,
         study_id: str,
-        output_path: Optional[Path] = None,
+        output_path: Path | None = None,
         use_cache: bool = True,
     ) -> FileStudy:
         """
@@ -105,7 +104,7 @@ class StudyFactory:
         path: Path,
         with_matrix_normalization: bool,
         study_id: str,
-        output_path: Optional[Path] = None,
+        output_path: Path | None = None,
         use_cache: bool = True,
     ) -> FileStudy:
         mapper_type = get_mapper_type(with_matrix_normalization)
@@ -123,7 +122,7 @@ class StudyFactory:
                 return FileStudy(config, FileStudyTree(matrix_mapper, config))
         start_time = time.time()
         config = build(path, study_id, output_path)
-        duration = "{:.3f}".format(time.time() - start_time)
+        duration = f"{time.time() - start_time:.3f}"
         logger.info(f"Study {study_id} config built in {duration}s")
         result = FileStudy(config, FileStudyTree(matrix_mapper, config))
         if study_id and use_cache:
@@ -133,7 +132,3 @@ class StudyFactory:
                 FileStudyTreeConfigDTO.from_build_config(config).model_dump(),
             )
         return result
-
-    def create_from_config(self, config: FileStudyTreeConfig, mapper_type: NormalizedMatrixUriMapper) -> FileStudyTree:
-        matrix_mapper = self._matrix_mapper_factory.create(mapper_type)
-        return FileStudyTree(matrix_mapper, config)

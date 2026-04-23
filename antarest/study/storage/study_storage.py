@@ -11,12 +11,11 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from pathlib import Path, PurePosixPath
-from typing import Optional, Sequence
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
-from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import Study, StudyMetadataDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
@@ -83,7 +82,7 @@ class IStudyStorage(ABC):
         """
 
     @abstractmethod
-    def get_study_information(self, metadata: Study, folder_path: Optional[str] = None) -> StudyMetadataDTO:
+    def get_study_information(self, metadata: Study, folder_path: str | None = None) -> StudyMetadataDTO:
         """Get study information.
 
         Args:
@@ -96,7 +95,7 @@ class IStudyStorage(ABC):
         self,
         metadata: Study,
         use_cache: bool = True,
-        output_dir: Optional[Path] = None,
+        output_dir: Path | None = None,
     ) -> FileStudy:
         """
         Fetch a study raw tree object and its config
@@ -160,7 +159,7 @@ class IStudyStorage(ABC):
         """
 
     @abstractmethod
-    def get_synthesis(self, metadata: Study) -> StudyDataSynthesis:
+    def normalize_study(self, study: Study) -> None:
         """
-        Return study synthesis
+        Put every matrix in the study in the matrix-store.
         """

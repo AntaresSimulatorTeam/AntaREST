@@ -54,7 +54,8 @@ elif [ "$use_uvicorn" = true ]; then
   do
     # we still use gunicorn in that case to restart workers in case they are killed,
     # although each gunicorn instance has only one worker
-    gunicorn --worker-class=uvicorn.workers.UvicornWorker \
+    #
+    ANTAREST_WORKER_ID=$((1 + $i)) gunicorn --worker-class=uvicorn.workers.UvicornWorker \
              --bind=0.0.0.0:$((5000 + $i)) \
              --workers=1 \
              --log-level info \

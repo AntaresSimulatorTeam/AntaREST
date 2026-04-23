@@ -27,6 +27,7 @@
  * This file is part of the Antares project.
  */
 
+import { Decimal } from "decimal.js-light";
 import { UTCDate } from "@date-fns/utc";
 import type { Locale } from "date-fns";
 import { enUS, fr } from "date-fns/locale";
@@ -49,6 +50,35 @@ import type {
   ResultColumnsOptions,
   TimeSeriesColumnOptions,
 } from "./types";
+
+/**
+ * Parses a numeric string using US/International conventions:
+ * `.` is the decimal separator; `,` and whitespace are thousands separators (stripped).
+ *
+ * Commas must form a valid thousands grouping — every `,` must be followed by
+ * exactly three digits before end-of-string, another `,`, or `.`. Malformed
+ * placements (`1234,56`, `0,5`, `12,34.567`) and multi-period strings
+ * (`1.234.567`) return `NaN`, so the paste interceptor skips the cell instead
+ * of silently corrupting the value.
+ *
+ * @param raw - The raw numeric string from clipboard or user input.
+ * @returns The parsed number, or `NaN` if the string is empty or unparsable.
+ */
+export function parseClipboardNumber(raw: string): number {
+  const cleaned = raw.replace(/\s/g, "");
+
+  if (!cleaned) {
+    return NaN;
+  }
+
+  // Reject malformed comma placement — every comma must be followed by exactly
+  // three digits before the next comma, the decimal point, or end-of-string.
+  if (/,(?!\d{3}(?:[,.]|$))/.test(cleaned)) {
+    return NaN;
+  }
+
+  return Number(cleaned.replace(/,/g, ""));
+}
 
 /**
  * Formats a number for display in a grid cell by adding thousand separators and handling decimals.
@@ -304,16 +334,16 @@ export function calculateMatrixAggregates({
     }
 
     if (types.includes(Aggregate.Avg) || types.includes(Aggregate.Total)) {
-      const sum = row.reduce((acc, num) => acc + num, 0);
+      const sum = row.reduce((acc, num) => acc.plus(num), new Decimal(0));
 
       if (types.includes(Aggregate.Avg)) {
         aggregates.avg ??= [];
-        aggregates.avg.push(Number((sum / row.length).toFixed()));
+        aggregates.avg.push(sum.dividedBy(row.length).toNumber());
       }
 
       if (types.includes(Aggregate.Total)) {
         aggregates.total ??= [];
-        aggregates.total.push(Number(sum.toFixed()));
+        aggregates.total.push(sum.toNumber());
       }
     }
   }

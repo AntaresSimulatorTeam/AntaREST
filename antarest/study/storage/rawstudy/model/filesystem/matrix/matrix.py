@@ -14,7 +14,7 @@ import io
 import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional, Self, TypeAlias
+from typing import Self, TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -38,7 +38,7 @@ def dump_dataframe(df: pl.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
         df.write_csv(path_or_buf, separator="\t", include_header=False)
 
 
-def imports_matrix_from_bytes(data: bytes) -> Optional[NpArray]:
+def imports_matrix_from_bytes(data: bytes) -> NpArray | None:
     """Tries to convert bytes to a numpy array when importing a matrix"""
     str_data = data.decode("utf-8")
     if not str_data:
@@ -64,7 +64,7 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
         self.freq = freq
 
     @override
-    def get_lazy_content(self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False) -> str:
+    def get_lazy_content(self, url: list[str] | None = None, depth: int = -1, expanded: bool = False) -> str:
         link_content = self.matrix_mapper.get_link_content(self)
         matrix_id = link_content or self.config.path.name
         return add_matrix_id_prefix(matrix_id)
@@ -74,29 +74,33 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
         """
         Return a list of itself if the node is not in the matrix-store. Else, return an empty list.
         """
-        return [] if self.matrix_mapper.has_link(self) else [self]
+        return [] if self.is_normalized else [self]
 
     @override
     def get_matrix_nodes_to_denormalize(self) -> list[Self]:
         """
         Return a list of itself if the node is in the matrix-store. Else, return an empty list.
         """
-        return [self] if self.matrix_mapper.has_link(self) else []
+        return [self] if self.is_normalized else []
+
+    @property
+    def is_normalized(self) -> bool:
+        return self.matrix_mapper.has_link(self)
 
     @override
     def load(
-        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, formatted: bool = True
+        self, url: list[str] | None = None, depth: int = -1, expanded: bool = False, formatted: bool = True
     ) -> JSON:
         raise NotImplementedError("Legacy method. We should use `parse_as_dataframe` from now on.")
 
     @override
-    def delete(self, url: Optional[List[str]] = None) -> None:
+    def delete(self, url: list[str] | None = None) -> None:
         self._assert_url_end(url)
         self.matrix_mapper.delete(self)
         super().delete(url)
 
     @override
-    def dump(self, data: MatrixId | MatrixContent, url: Optional[List[str]] = None) -> None:
+    def dump(self, data: MatrixId | MatrixContent, url: list[str] | None = None) -> None:
         """
         Write matrix data to file.
 

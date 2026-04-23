@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pytest
 from starlette.testclient import TestClient
 
 from antarest.study.business.model.config.optimization_config_model import (
@@ -17,6 +18,7 @@ from antarest.study.business.model.config.optimization_config_model import (
     UnfeasibleProblemBehavior,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
+from tests.integration.prepare_proxy import PreparerProxy
 
 
 def test_study_settings(client: TestClient, admin_access_token: str) -> None:
@@ -411,3 +413,52 @@ def test_study_settings(client: TestClient, admin_access_token: str) -> None:
     res_ts_config = client.get(f"/v1/studies/{study_id}/timeseries/config")
     res_ts_config_json = res_ts_config.json()
     assert res_ts_config_json == {"thermal": {"number": 2}}
+
+
+def test_compatibility_settings(client: TestClient, admin_access_token: str) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    # Test hydro_pmax on a 9.3 study
+    created = client.post("/v1/studies", params={"name": "foo", "version": 930})
+    study_id = created.json()
+
+    res = client.get(f"/v1/studies/{study_id}/config/compatibility/form")
+    assert res.status_code == 200
+    assert res.json() == {"hydroPmax": "daily"}
+
+    res = client.put(
+        f"/v1/studies/{study_id}/config/compatibility/form",
+        json={"hydroPmax": "hourly"},
+    )
+    assert res.status_code == 200
+    res = client.get(f"/v1/studies/{study_id}/config/compatibility/form")
+    assert res.status_code == 200
+    assert res.json() == {"hydroPmax": "hourly"}
+
+    # reserves_enabled should be rejected on a study < 10.0
+    res = client.put(
+        f"/v1/studies/{study_id}/config/compatibility/form",
+        json={"reservesEnabled": True},
+    )
+    assert res.status_code == 422
+
+
+@pytest.mark.parametrize("study_type", ["raw", "variant"])
+def test_updated_changes_after_command(
+    study_type: str,
+    client: TestClient,
+    admin_access_token: str,
+) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    preparer = PreparerProxy(client, admin_access_token)
+
+    study_id = preparer.create_study("foo", version=860)
+    if study_type == "variant":
+        study_id = preparer.create_variant(study_id, name="foo_variant")
+
+    updated_before = client.get(f"/v1/studies/{study_id}").json()["updated"]
+
+    preparer.create_area(study_id, name="Area 1")
+
+    updated_after = client.get(f"/v1/studies/{study_id}").json()["updated"]
+    assert updated_after > updated_before

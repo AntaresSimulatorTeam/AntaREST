@@ -16,7 +16,6 @@ import logging
 import time
 from html import escape
 from pathlib import Path
-from typing import List
 
 from antarest.core.config import Config
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -30,7 +29,7 @@ from antarest.study.storage.utils import rec_scan_for_studies
 logger = logging.getLogger(__name__)
 
 
-def _collect_studies(config: Config) -> List[StudyFolder]:
+def _collect_studies(config: Config) -> list[StudyFolder]:
     """
     Collect studies from all workspaces (except default).
 
@@ -40,7 +39,7 @@ def _collect_studies(config: Config) -> List[StudyFolder]:
     Returns:
         List of StudyFolder found in all workspaces.
     """
-    studies: List[StudyFolder] = []
+    studies: list[StudyFolder] = []
     for name, workspace in config.storage.workspaces.items():
         if name != DEFAULT_WORKSPACE_NAME:
             path = Path(workspace.path)

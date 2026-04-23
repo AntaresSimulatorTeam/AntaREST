@@ -13,6 +13,8 @@
  */
 
 import useUpdatedRef from "@/hooks/useUpdatedRef";
+import usePrevious from "react-use/lib/usePrevious";
+import * as R from "ramda";
 import { directoryQueries } from "@/queries/directories/queries";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
@@ -21,7 +23,6 @@ import { getStudyFilters } from "@/redux/selectors";
 import { Box, Typography } from "@mui/material";
 import { SimpleTreeView } from "@mui/x-tree-view";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import * as R from "ramda";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import DeleteDirectoryDialog from "./DeleteDirectoryDialog";
@@ -35,18 +36,27 @@ import { buildDirectoryTree, getDescendantIds, getDirectoryPath } from "./utils"
 function ManagedTree({ isCreatingDirectory, onDirectoryCreated }: ManagedTreeProps) {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const directoryId = useAppSelector((state) => getStudyFilters(state).managed.directoryId, R.T);
+  const directoryId = useAppSelector((state) => getStudyFilters(state).managed.directoryId);
+  const isActive = useAppSelector((state) => getStudyFilters(state).activeTree === "managed");
 
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
   const directoryTree = useMemo(() => buildDirectoryTree(directories), [directories]);
 
-  const initialExpandedItems = useMemo(
-    () => (directoryId ? getDirectoryPath(directoryTree, directoryId) : []),
-    [directoryTree, directoryId],
+  const prevDirectoryId = usePrevious(directoryId);
+  const [expandedItems, setExpandedItems] = useState<string[]>(() =>
+    directoryId ? getDirectoryPath(directoryTree, directoryId) : [],
   );
 
-  const [expandedItems, setExpandedItems] = useState<string[]>(() => initialExpandedItems);
+  // When `directoryId` changes externally (e.g. from a study card's folder link),
+  // ensure all ancestors of the newly selected directory are expanded.
+  if (prevDirectoryId !== directoryId) {
+    const required = directoryId ? getDirectoryPath(directoryTree, directoryId) : [];
+    const missing = R.difference(required, expandedItems);
+    if (missing.length > 0) {
+      setExpandedItems([...expandedItems, ...missing]);
+    }
+  }
 
   const deleteDialog = useDeleteDirectoryDialog(directoryTree);
 
@@ -166,7 +176,7 @@ function ManagedTree({ isCreatingDirectory, onDirectoryCreated }: ManagedTreePro
       <SimpleTreeView
         expandedItems={expandedItems}
         onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
-        defaultSelectedItems={directoryId || ""}
+        selectedItems={isActive ? directoryId : null}
         onItemClick={handleItemClick}
       >
         <ManagedTreeNode

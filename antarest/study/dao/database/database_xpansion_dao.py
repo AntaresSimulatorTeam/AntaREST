@@ -15,7 +15,7 @@ Database implementation of XpansionDao.
 """
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import polars as pl
 from sqlalchemy import CursorResult, Table, asc, delete, insert, or_, select, update
@@ -45,6 +45,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettingsUpdate,
 )
 from antarest.study.dao.api.xpansion_dao import XpansionDao
+from antarest.study.dao.common import XpansionCapacitiesMapping, XpansionConstraintsMapping, XpansionWeightsMapping
 from antarest.study.dao.database.common import get_row_representation_as_dict
 from antarest.study.dao.database.models.xpansion import (
     XPANSION_ADEQUACY_CRITERION_TABLE,
@@ -56,7 +57,7 @@ from antarest.study.dao.database.models.xpansion import (
     XPANSION_SETTINGS_TABLE,
     XPANSION_WEIGHT_TABLE,
 )
-from antarest.study.dao.database.sql_utils import upsert_one
+from antarest.study.dao.database.sql_utils import upsert_multiple, upsert_one
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -214,7 +215,7 @@ class DatabaseXpansionDao(XpansionDao):
         return self._row_to_candidate(row)
 
     @override
-    def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
+    def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: str | None = None) -> None:
         """
         Upsert a candidate.
 
@@ -250,6 +251,11 @@ class DatabaseXpansionDao(XpansionDao):
         else:
             upsert_one(self._db_session, XPANSION_CANDIDATE_TABLE, self._candidate_to_row(candidate))
         self._db_session.commit()
+
+    @override
+    def save_xpansion_candidates(self, candidates: list[XpansionCandidate]) -> None:
+        values = [self._candidate_to_row(candidate) for candidate in candidates]
+        upsert_multiple(self._db_session, XPANSION_CANDIDATE_TABLE, values)
 
     @override
     def delete_xpansion_candidate(self, candidate_name: str) -> None:
@@ -376,6 +382,33 @@ class DatabaseXpansionDao(XpansionDao):
         }[resource_type]
 
     @override
+    def get_all_xpansion_weights(self) -> XpansionWeightsMapping:
+        rows = self._db_session.execute(
+            select(XPANSION_WEIGHT_TABLE.c.matrix_id, XPANSION_WEIGHT_TABLE.c.filename).where(
+                XPANSION_WEIGHT_TABLE.c.study_id == self._study_id
+            )
+        ).fetchall()
+        return {row.filename: row.matrix_id for row in rows}
+
+    @override
+    def get_all_xpansion_capacities(self) -> XpansionCapacitiesMapping:
+        rows = self._db_session.execute(
+            select(XPANSION_CAPACITY_TABLE.c.matrix_id, XPANSION_CAPACITY_TABLE.c.filename).where(
+                XPANSION_CAPACITY_TABLE.c.study_id == self._study_id
+            )
+        ).fetchall()
+        return {row.filename: row.matrix_id for row in rows}
+
+    @override
+    def get_all_xpansion_constraints(self) -> XpansionConstraintsMapping:
+        rows = self._db_session.execute(
+            select(XPANSION_CONSTRAINT_TABLE.c.content, XPANSION_CONSTRAINT_TABLE.c.filename).where(
+                XPANSION_CONSTRAINT_TABLE.c.study_id == self._study_id
+            )
+        ).fetchall()
+        return {row.filename: row.content for row in rows}
+
+    @override
     def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pl.DataFrame:
         if resource_type == XpansionResourceFileType.CONSTRAINTS:
             row = self._db_session.execute(
@@ -393,7 +426,7 @@ class DatabaseXpansionDao(XpansionDao):
         ).fetchone()
         if row is None:
             raise XpansionFileNotFoundError(f"Resource '{filename}' not found")
-        return self.get_impl().get_matrix(row.matrix_id)
+        return self.get_impl().get_matrix(row.matrix_id, None)
 
     @override
     def get_xpansion_resources(self, resource_type: XpansionResourceFileType) -> list[str]:
@@ -454,40 +487,28 @@ class DatabaseXpansionDao(XpansionDao):
         self._db_session.commit()
 
     @override
-    def save_xpansion_constraint(self, filename: str, content: bytes) -> None:
-        upsert_one(
-            self._db_session,
-            XPANSION_CONSTRAINT_TABLE,
-            {
-                "study_id": self._study_id,
-                "filename": filename,
-                "content": content,
-            },
-        )
+    def save_xpansion_constraint(self, data: XpansionConstraintsMapping) -> None:
+        values = []
+        for filename, content in data.items():
+            values.append({"study_id": self._study_id, "filename": filename, "content": content})
+
+        upsert_multiple(self._db_session, XPANSION_CONSTRAINT_TABLE, values)
         self._db_session.commit()
 
     @override
-    def save_xpansion_capacity(self, filename: str, series_id: str) -> None:
-        upsert_one(
-            self._db_session,
-            XPANSION_CAPACITY_TABLE,
-            {
-                "study_id": self._study_id,
-                "filename": filename,
-                "matrix_id": series_id,
-            },
-        )
+    def save_xpansion_capacity(self, data: XpansionCapacitiesMapping) -> None:
+        values = []
+        for filename, series_id in data.items():
+            values.append({"study_id": self._study_id, "filename": filename, "matrix_id": series_id})
+
+        upsert_multiple(self._db_session, XPANSION_CAPACITY_TABLE, values)
         self._db_session.commit()
 
     @override
-    def save_xpansion_weight(self, filename: str, series_id: str) -> None:
-        upsert_one(
-            self._db_session,
-            XPANSION_WEIGHT_TABLE,
-            {
-                "study_id": self._study_id,
-                "filename": filename,
-                "matrix_id": series_id,
-            },
-        )
+    def save_xpansion_weight(self, data: XpansionWeightsMapping) -> None:
+        values = []
+        for filename, series_id in data.items():
+            values.append({"study_id": self._study_id, "filename": filename, "matrix_id": series_id})
+
+        upsert_multiple(self._db_session, XPANSION_WEIGHT_TABLE, values)
         self._db_session.commit()

@@ -13,7 +13,7 @@
 import io
 import logging
 from pathlib import PurePosixPath
-from typing import Any, Dict, Final, Optional
+from typing import Any, Final
 
 import numpy as np
 import polars as pl
@@ -57,7 +57,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
 
     @model_validator(mode="before")
     @classmethod
-    def _validate_model(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+    def _validate_model(cls, values: dict[str, Any], info: ValidationInfo) -> dict[str, Any]:
         if info.context:
             version = info.context.version
             if version < 2 and "thermal_outage_details" not in values:
@@ -65,7 +65,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
         return values
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         series_mapping: dict[str, dict[str, str]] = {}
         # 1- Get the seed and nb_years to generate
         # NB: Default seed in IHM Legacy: 5489, default seed in web: 3005489.
@@ -151,7 +151,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
                                 resource_type=ResourceType.FILE,
                                 blob_id=blob_id,
                             )
-                            study_data.save_user_resource(resource_data)
+                            study_data.save_user_resources([resource_data])
 
                     generated_matrix = results.available_power
                     # 10- Write the matrix inside the matrix-store and store the id in memory
@@ -169,11 +169,9 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     return command_failed(f"Area {area_id}, cluster {thermal.id.lower()}: " + e.args[0])
 
         # 12- Once we've written all matrices inside the matrix-store, modify the input folder.
-        for area_id, values in series_mapping.items():
-            for thermal_id, series in values.items():
-                study_data.save_thermal_series(area_id, thermal_id, series)
+        study_data.save_thermal_series(series_mapping)
 
-        return command_succeeded(message="All time series were generated successfully")
+        return command_succeeded(message="All time series were generated successfully", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

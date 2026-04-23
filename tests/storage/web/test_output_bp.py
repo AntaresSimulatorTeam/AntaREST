@@ -15,7 +15,7 @@ from unittest.mock import Mock
 
 from antarest.core.config import Config, StorageConfig
 from antarest.core.filetransfer.model import FileDownloadDTO, FileDownloadTaskDTO
-from antarest.output.output_service import OutputService
+from antarest.output.service import OutputService
 from tests.storage.conftest import SimpleFileTransferManager
 from tests.storage.integration.conftest import UUID
 from tests.storage.web.test_studies_bp import create_test_client
@@ -44,4 +44,4 @@ def test_output_whole_download(tmp_path: Path) -> None:
     res = client.get(
         f"/v1/studies/{UUID}/outputs/{output_id}/export",
     )
-    assert res.status_code == HTTPStatus.OK
+    assert res.status_code == HTTPStatus.OK, res.json()

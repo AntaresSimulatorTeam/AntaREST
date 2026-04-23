@@ -10,11 +10,12 @@
 #
 # This file is part of the Antares project.
 
-from typing import Callable, Dict, Iterator, List, Sequence
+from collections.abc import Callable, Iterator, Sequence
 
 import polars as pl
 from typing_extensions import override
 
+from antarest.matrixstore.matrix_uri_mapper import add_matrix_id_prefix
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixContent, MatrixMetadataDTO, MatrixMismatchDTO, MatrixReferencesDTO
 from antarest.matrixstore.repository import compute_hash
@@ -27,14 +28,16 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
     """
 
     def __init__(self) -> None:
-        self._content: Dict[str, pl.DataFrame] = {}
-        self.usage_providers: List[IMatrixUsageProvider] = []
+        self._content: dict[str, pl.DataFrame] = {}
+        self.usage_providers: list[IMatrixUsageProvider] = []
         self._predefined_matrices: dict[str, Callable[[], pl.DataFrame]] = {}
 
     @override
     def add_predefined_matrix(self, matrix_factory: Callable[[], pl.DataFrame]) -> str:
         matrix_id = compute_hash(matrix_factory())
         self._predefined_matrices[matrix_id] = matrix_factory
+        # DAO methods support prefixed IDs, so we register the prefixed ID as well
+        self._predefined_matrices[add_matrix_id_prefix(matrix_id)] = matrix_factory
         return matrix_id
 
     @override
@@ -55,7 +58,14 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
 
     @override
     def exists(self, matrix_id: str) -> bool:
-        return matrix_id in self._predefined_matrices or matrix_id in self._content
+        return self.all_exist([matrix_id])
+
+    @override
+    def all_exist(self, matrix_ids: Sequence[str]) -> bool:
+        for matrix_id in matrix_ids:
+            if matrix_id not in self._predefined_matrices and matrix_id not in self._content:
+                return False
+        return True
 
     @override
     def delete(self, matrix_id: str) -> None:

@@ -9,9 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-
-from typing import Any, Dict, Final, List, Optional, Self, TypeAlias, cast
+from typing import Any, Final, Self, TypeAlias, cast
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -20,7 +18,7 @@ from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
 from antarest.matrixstore.model import MatrixData
-from antarest.study.business.model.sts_model import STStorageCreation, validate_st_storage_against_version
+from antarest.study.business.model.sts_model import STStorage, STStorageCreation, validate_st_storage_against_version
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -39,7 +37,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-MatrixType: TypeAlias = Optional[list[list[MatrixData]] | str]
+MatrixType: TypeAlias = list[list[MatrixData]] | str | None
 
 
 # noinspection SpellCheckingInspection
@@ -88,7 +86,7 @@ class CreateSTStorage(ICommand):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_model(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+    def validate_model(cls, values: dict[str, Any], info: ValidationInfo) -> dict[str, Any]:
         if isinstance(values["parameters"], dict):
             properties_as_dict = values["parameters"]
         else:
@@ -190,34 +188,36 @@ class CreateSTStorage(ICommand):
         return self
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[STStorage]:
         storage = parse_st_storage(self.study_version, self.parameters.model_dump(mode="json"))
         if study_data.st_storage_exists(self.area_id, storage.id):
             return command_failed(f"Short-term storage '{storage.id}' already exists in the area '{self.area_id}'")
 
-        study_data.save_st_storage(self.area_id, storage)
+        study_data.save_st_storages({self.area_id: [storage]})
 
         # Matrices
         matrices = self._fill_none_matrices()
 
-        study_data.save_st_storage_pmax_injection(self.area_id, storage.id, matrices["pmax_injection"])
-        study_data.save_st_storage_pmax_withdrawal(self.area_id, storage.id, matrices["pmax_withdrawal"])
-        study_data.save_st_storage_upper_rule_curve(self.area_id, storage.id, matrices["upper_rule_curve"])
-        study_data.save_st_storage_lower_rule_curve(self.area_id, storage.id, matrices["lower_rule_curve"])
-        study_data.save_st_storage_inflows(self.area_id, storage.id, matrices["inflows"])
+        study_data.save_st_storage_pmax_injection({self.area_id: {storage.id: matrices["pmax_injection"]}})
+        study_data.save_st_storage_pmax_withdrawal({self.area_id: {storage.id: matrices["pmax_withdrawal"]}})
+        study_data.save_st_storage_upper_rule_curve({self.area_id: {storage.id: matrices["upper_rule_curve"]}})
+        study_data.save_st_storage_lower_rule_curve({self.area_id: {storage.id: matrices["lower_rule_curve"]}})
+        study_data.save_st_storage_inflows({self.area_id: {storage.id: matrices["inflows"]}})
 
         if self.study_version >= STUDY_VERSION_9_2:
-            study_data.save_st_storage_cost_injection(self.area_id, storage.id, matrices["cost_injection"])
-            study_data.save_st_storage_cost_withdrawal(self.area_id, storage.id, matrices["cost_withdrawal"])
-            study_data.save_st_storage_cost_level(self.area_id, storage.id, matrices["cost_level"])
+            study_data.save_st_storage_cost_injection({self.area_id: {storage.id: matrices["cost_injection"]}})
+            study_data.save_st_storage_cost_withdrawal({self.area_id: {storage.id: matrices["cost_withdrawal"]}})
+            study_data.save_st_storage_cost_level({self.area_id: {storage.id: matrices["cost_level"]}})
 
             matrix = matrices["cost_variation_injection"]
-            study_data.save_st_storage_cost_variation_injection(self.area_id, storage.id, matrix)
+            study_data.save_st_storage_cost_variation_injection({self.area_id: {storage.id: matrix}})
 
             matrix = matrices["cost_variation_withdrawal"]
-            study_data.save_st_storage_cost_variation_withdrawal(self.area_id, storage.id, matrix)
+            study_data.save_st_storage_cost_variation_withdrawal({self.area_id: {storage.id: matrix}})
 
-        return command_succeeded(f"Short-term storage '{storage.id}' successfully added to area '{self.area_id}'.")
+        return command_succeeded(
+            f"Short-term storage '{storage.id}' successfully added to area '{self.area_id}'.", result=storage
+        )
 
     @override
     def to_dto(self) -> CommandDTO:
@@ -247,7 +247,7 @@ class CreateSTStorage(ICommand):
         """
         Retrieves the list of matrix IDs.
         """
-        matrices: List[str] = []
+        matrices: list[str] = []
         for matrix_name, matrix_data in self._get_matrices().items():
             if matrix_data is not None:
                 matrices.append(strip_matrix_protocol(matrix_data))

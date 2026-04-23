@@ -15,15 +15,17 @@ from unittest.mock import Mock, call
 from uuid import uuid4
 
 import pytest
+from antares.study.version import SolverVersion
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
-from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
-from antarest.launcher.main import build_launcher
+from antarest.dependencies import AppState
 from antarest.launcher.model import JobResult, JobResultDTO, JobStatus, LauncherParametersDTO, LogType
+from antarest.launcher.web import create_launcher_api
+from antarest.main import add_exception_handlers
 
 ADMIN = JWTUser(
     id=1,
@@ -34,19 +36,14 @@ ADMIN = JWTUser(
 
 
 def create_app(service: Mock) -> FastAPI:
-    build_ctxt = create_app_ctxt(FastAPI(title=__name__))
-    build_launcher(
-        build_ctxt,
-        study_service=Mock(),
-        output_service=Mock(),
-        login_service=Mock(),
-        file_transfer_manager=Mock(),
-        task_service=Mock(),
-        service_launcher=service,
-        config=Config(security=SecurityConfig(disabled=True)),
-        cache=Mock(),
-    )
-    return build_ctxt.build()
+    config = Config(security=SecurityConfig(disabled=True))
+    services = Mock()
+    services.launcher = service
+    app = FastAPI(title=__name__)
+    add_exception_handlers(app)
+    app.state.app_state = AppState(config=config, services=services, ws_manager=Mock())
+    app.include_router(create_launcher_api())
+    return app
 
 
 def test_run() -> None:
@@ -126,8 +123,9 @@ def test_jobs() -> None:
 
 def test_get_solver_versions() -> None:
     service = Mock()
-    output = ["1", "2", "3"]
-    service.get_solver_versions.return_value = output
+    output = ["880", "920", "930"]
+    solver_versions = [SolverVersion.parse(v) for v in output]
+    service.get_solver_versions.return_value = solver_versions
 
     app = create_app(service)
     client = TestClient(app)
@@ -155,14 +153,16 @@ def test_get_solver_versions__with_query_string(
     launcher: str,
     param_name: str,
 ) -> None:
+    output = ["880", "920", "930"]
+    solver_versions = [SolverVersion.parse(v) for v in output]
     service = Mock()
-    service.get_solver_versions.return_value = ["1", "2", "3"]
+    service.get_solver_versions.return_value = solver_versions
 
     app = create_app(service)
     client = TestClient(app)
     res = client.get(f"/v1/launcher/versions?{param_name}={launcher}")
     assert res.status_code == http.HTTPStatus.OK  # OK or UNPROCESSABLE_ENTITY
-    assert res.json() == ["1", "2", "3"]
+    assert res.json() == output
 
 
 def test_get_job_log() -> None:

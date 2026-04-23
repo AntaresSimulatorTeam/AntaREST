@@ -10,8 +10,7 @@
 #
 # This file is part of the Antares project.
 import logging
-from pathlib import Path
-from typing import Iterable, List
+from collections.abc import Iterable
 
 from typing_extensions import override
 
@@ -21,7 +20,7 @@ from antarest.matrixstore.model import MatrixReference
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock
+from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 
@@ -43,9 +42,9 @@ class CommandMatrixUsageProvider(IMatrixUsageProvider):
     def get_matrix_usage(self) -> Iterable[MatrixReference]:
         logger.info("Getting all matrices used in variant studies")
         # First gets all matrices used in commands
-        command_blocks: List[CommandBlock] = self.variant_study_repo.get_all_command_blocks()
+        command_blocks: list[CommandBlock] = self.variant_study_repo.get_all_command_blocks()
 
-        def transform_to_command(command_dto: CommandDTO, study_ref: str) -> List[ICommand]:
+        def transform_to_command(command_dto: CommandDTO, study_ref: str) -> list[ICommand]:
             try:
                 return self.command_factory.to_command(command_dto)
             except Exception as e:
@@ -76,7 +75,8 @@ class CommandMatrixUsageProvider(IMatrixUsageProvider):
         )
         for study in self.variant_study_repo.get_all(study_filter):
             study_id = study.id
-            snapshot_path = Path(study.path) / "snapshot"
+            assert isinstance(study, VariantStudy)
+            snapshot_path = study.snapshot_dir
             if snapshot_path.exists():
                 for f in snapshot_path.rglob("*.link"):
                     matrix_id = extract_matrix_id(f.read_text())

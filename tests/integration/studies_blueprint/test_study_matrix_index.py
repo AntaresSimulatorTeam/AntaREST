@@ -9,8 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import pytest
 from starlette.testclient import TestClient
+
+from antarest.study.model import StorageMode
 
 
 class TestStudyMatrixIndex:
@@ -206,3 +208,100 @@ class TestStudyMatrixIndex:
             "steps": 1,
         }
         assert actual == expected
+
+    @pytest.mark.parametrize("mode", [StorageMode.DATABASE, StorageMode.FILESYSTEM])
+    def test_for_both_type_of_studies(self, client: TestClient, user_access_token: str, mode: StorageMode) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # Create a database study
+        res = client.post(f"/v1/studies?name=study&storage_mode={mode}")
+        assert res.status_code == 201, res.json()
+        study_id = res.json()
+
+        # Create areas, links, clusters, binding constraints and short-term storages to have various matrices
+        res = client.post(f"/v1/studies/{study_id}/areas", json={"name": "france"})
+        res.raise_for_status()
+        res = client.post(f"/v1/studies/{study_id}/areas", json={"name": "belgium"})
+        res.raise_for_status()
+        res = client.post(f"/v1/studies/{study_id}/links", json={"area1": "france", "area2": "belgium"})
+        res.raise_for_status()
+        res = client.post(f"/v1/studies/{study_id}/bindingconstraints", json={"name": "bc1"})
+        res.raise_for_status()
+        res = client.post(f"/v1/studies/{study_id}/areas/france/clusters/thermal", json={"name": "th1"})
+        res.raise_for_status()
+        res = client.post(f"/v1/studies/{study_id}/areas/france/clusters/renewable", json={"name": "r1"})
+        res.raise_for_status()
+        res = client.post(f"/v1/studies/{study_id}/areas/france/storages", json={"name": "st-storage"})
+        res.raise_for_status()
+
+        # Try to fetch the matrix index for different matrices
+        url = f"/v1/studies/{study_id}/matrixindex"
+        hourly_response = {"first_week_size": 7, "start_date": "2018-01-01 00:00:00", "steps": 8760, "level": "hourly"}
+        daily_response = {"first_week_size": 7, "start_date": "2018-01-01 00:00:00", "steps": 365, "level": "daily"}
+
+        # Hourly matrices
+        for path in [
+            "input/load/series/load_france",
+            "input/wind/series/wind_france",
+            "input/solar/series/solar_france",
+            "input/misc-gen/miscgen-france",
+            "input/reserves/france",
+            "input/links/belgium/capacities/france_direct",
+            "input/links/belgium/capacities/france_indirect",
+            "input/thermal/prepro/france/th1/modulation",
+            "input/thermal/series/france/th1/series",
+            "input/thermal/series/france/th1/fuelCost",
+            "input/thermal/series/france/th1/CO2Cost",
+            "input/renewables/series/france/r1/series",
+            "input/st-storage/series/france/st-storage/pmax_injection",
+            "input/st-storage/series/france/st-storage/pmax_withdrawal",
+            "input/st-storage/series/france/st-storage/lower_rule_curve",
+            "input/st-storage/series/france/st-storage/upper_rule_curve",
+            "input/st-storage/series/france/st-storage/inflows",
+            "input/st-storage/series/france/st-storage/cost_injection",
+            "input/st-storage/series/france/st-storage/cost_withdrawal",
+            "input/st-storage/series/france/st-storage/cost_level",
+            "input/st-storage/series/france/st-storage/cost_variation_injection",
+            "input/st-storage/series/france/st-storage/cost_variation_withdrawal",
+            "input/hydro/prepro/france/energy",
+            "input/hydro/series/france/ror",
+            "input/hydro/series/france/mingen",
+            "input/hydro/common/capacity/creditmodulations_france",
+        ]:
+            res = client.get(url, params={"path": path})
+            assert res.json() == hourly_response
+
+        # Daily matrices
+        for path in [
+            "input/thermal/prepro/france/th1/data",
+            "input/hydro/common/capacity/inflowPattern_france",
+            "input/hydro/common/capacity/waterValues_france",
+            "input/hydro/series/france/mod",
+            "input/hydro/common/capacity/maxpower_france",
+            "input/hydro/common/capacity/reservoir_france",
+        ]:
+            res = client.get(url, params={"path": path})
+            assert res.json() == daily_response
+
+        ############ Binding constraints ############
+        bc_matrix_path = "input/bindingconstraints/bc1_eq"
+
+        # At first the constraint is created with time_step HOURLY
+        res = client.get(url, params={"path": bc_matrix_path})
+        assert res.json() == hourly_response
+
+        # We update the constraint to have a weekly time step
+        res = client.put(f"/v1/studies/{study_id}/bindingconstraints/bc1", json={"timeStep": "weekly"})
+        assert res.status_code == 200, res.json()
+
+        # Now we should see the daily index for the constraint (weekly constraint means daily timestep)
+        res = client.get(url, params={"path": bc_matrix_path})
+        assert res.json() == daily_response
+
+        # We update the constraint to have a daily time step
+        res = client.put(f"/v1/studies/{study_id}/bindingconstraints/bc1", json={"timeStep": "daily"})
+        assert res.status_code == 200, res.json()
+
+        # We should still see the daily index for the constraint
+        res = client.get(url, params={"path": bc_matrix_path})
+        assert res.json() == daily_response

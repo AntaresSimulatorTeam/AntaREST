@@ -14,8 +14,9 @@ import enum
 import json
 import re
 import typing
+from collections.abc import MutableMapping
 from datetime import datetime
-from typing import Annotated, Any, Dict, List, MutableMapping, Optional, TypeAlias
+from typing import Annotated, Any, TypeAlias
 from uuid import uuid4
 
 from antares.study.version import SolverVersion
@@ -39,7 +40,7 @@ from antarest.login.model import Identity, UserInfo
 from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import ItemName
 
-SolverParams = Dict[str, str]
+SolverParams = dict[str, str]
 
 
 def _format_solver_version(v: SolverVersion) -> str:
@@ -57,7 +58,7 @@ MIN_SOLVER_PRESETS_FOR_OPTIM_PARAMS = STUDY_VERSION_9_2
 
 
 class XpansionParametersDTO(AntaresBaseModel, extra="forbid"):
-    output_id: Optional[str] = None
+    output_id: str | None = None
     sensitivity_mode: bool = False
     enabled: bool = True
     adequacy_criterion: bool = False
@@ -73,21 +74,21 @@ class LauncherParametersDTO(AntaresBaseModel, extra="forbid"):
     # Warning ! This class must be retro-compatible (that's the reason for the weird bool/XpansionParametersDTO union)
     # The reason is that it's stored in json format in database and deserialized using the latest class version
     # If compatibility is to be broken, an (alembic) data migration script should be added
-    adequacy_patch: Optional[Dict[str, Any]] = None
-    nb_cpu: Optional[int] = None
+    adequacy_patch: dict[str, Any] | None = None
+    nb_cpu: int | None = None
     post_processing: bool = False
     time_limit: int = 240 * 3600  # Default value set to 240 hours (in seconds)
     xpansion: XpansionParametersDTO | bool | None = None
     xpansion_r_version: bool = False
     archive_output: bool = True
     auto_unzip: bool = True
-    output_suffix: Optional[str] = None
-    other_options: Optional[str] = None
+    output_suffix: str | None = None
+    other_options: str | None = None
 
     # add extensions field here
 
     @classmethod
-    def from_launcher_params(cls, params: Optional[str]) -> "LauncherParametersDTO":
+    def from_launcher_params(cls, params: str | None) -> "LauncherParametersDTO":
         """
         Convert the launcher parameters from a string to a `LauncherParametersDTO` object.
         """
@@ -101,7 +102,7 @@ class LogType(enum.StrEnum):
     STDERR = "STDERR"
 
     @staticmethod
-    def from_filename(filename: str) -> Optional["LogType"]:
+    def from_filename(filename: str) -> "LogType | None":
         if filename == "antares-err.log":
             return LogType.STDERR
         elif filename == "antares-out.log":
@@ -151,16 +152,16 @@ class JobResultDTO(AntaresBaseModel):
 
     id: str
     study_id: str
-    launcher: Optional[str]
-    launcher_params: Optional[str]
+    launcher: str | None
+    launcher_params: str | None
     status: JobStatus
     creation_date: str
-    completion_date: Optional[str]
-    msg: Optional[str]
-    output_id: Optional[str]
-    exit_code: Optional[int]
-    solver_stats: Optional[str]
-    owner: Optional[UserInfo]
+    completion_date: str | None
+    msg: str | None
+    output_id: str | None
+    exit_code: int | None
+    solver_stats: str | None
+    owner: UserInfo | None
 
     @staticmethod
     def model_config_json_schema_extra(schema: MutableMapping[str, Any]) -> None:
@@ -211,24 +212,22 @@ class JobResult(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     study_id: Mapped[str] = mapped_column(String(36))
-    launcher: Mapped[Optional[str]] = mapped_column(String)
-    launcher_params: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    job_status: Mapped[Optional[JobStatus]] = mapped_column(Enum(JobStatus), nullable=True)
+    launcher: Mapped[str | None] = mapped_column(String)
+    launcher_params: Mapped[str | None] = mapped_column(String, nullable=True)
+    job_status: Mapped[JobStatus | None] = mapped_column(Enum(JobStatus), nullable=True)
     creation_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    completion_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    msg: Mapped[Optional[str]] = mapped_column(String())
-    output_id: Mapped[Optional[str]] = mapped_column(String())
-    exit_code: Mapped[Optional[int]] = mapped_column(Integer)
+    completion_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    msg: Mapped[str | None] = mapped_column(String())
+    output_id: Mapped[str | None] = mapped_column(String())
+    exit_code: Mapped[int | None] = mapped_column(Integer)
 
-    solver_stats: Mapped[Optional[str]] = mapped_column(String(), nullable=True)
-    owner_id: Mapped[Optional[int]] = mapped_column(
-        Integer(), ForeignKey(Identity.id, ondelete="SET NULL"), nullable=True
-    )
+    solver_stats: Mapped[str | None] = mapped_column(String(), nullable=True)
+    owner_id: Mapped[int | None] = mapped_column(Integer(), ForeignKey(Identity.id, ondelete="SET NULL"), nullable=True)
 
     # Define a many-to-one relationship between `JobResult` and `Identity`.
     # This relationship is required to display the owner of a job result in the UI.
     # If the owner is deleted, the job result is detached from the owner (but not deleted).
-    owner: Mapped[Optional[Identity]] = relationship(Identity, back_populates="job_results", uselist=False)
+    owner: Mapped[Identity | None] = relationship(Identity, back_populates="job_results", uselist=False)
 
     logs = relationship(JobLog, uselist=True, cascade="all, delete, delete-orphan")
 
@@ -319,7 +318,7 @@ class LauncherListDTO(AntaresBaseModel):
         populate_by_name=True,
     )
 
-    launchers: List[LauncherInfoDTO]
+    launchers: list[LauncherInfoDTO]
     default_launcher: str
 
 
@@ -383,11 +382,11 @@ class SolverPresets(AntaresBaseModel):
     id: str
     name: ItemName
     linear_solver: str
-    min_antares_version: Optional[SolverVersionStr] = None
-    max_antares_version: Optional[SolverVersionStr] = None
-    linear_solver_param_optim_1: Optional[SolverParams] = None
-    linear_solver_param_optim_2: Optional[SolverParams] = None
-    linear_solver_param: Optional[SolverParams] = None
+    min_antares_version: SolverVersionStr | None = None
+    max_antares_version: SolverVersionStr | None = None
+    linear_solver_param_optim_1: SolverParams | None = None
+    linear_solver_param_optim_2: SolverParams | None = None
+    linear_solver_param: SolverParams | None = None
     use_optim_1_basis_next_week: bool = True
     use_optim_1_basis_optim_2: bool = True
 
@@ -396,7 +395,7 @@ class SolverPresets(AntaresBaseModel):
         "linear_solver_param_optim_1",
         "linear_solver_param_optim_2",
     )
-    def validate_solver_params(cls, sp: Optional[SolverParams]) -> Optional[SolverParams]:
+    def validate_solver_params(cls, sp: SolverParams | None) -> SolverParams | None:
         if not sp:
             return sp
         for k, v in sp.items():
@@ -453,7 +452,7 @@ class SolverPresets(AntaresBaseModel):
             options.append("nobasis2")
 
         # Build per-optim strings
-        def build_param_str(param_list: Dict[str, str]) -> str:
+        def build_param_str(param_list: dict[str, str]) -> str:
             return " ".join(f"{k} {v}" for k, v in param_list.items())
 
         # param-optim1
@@ -496,13 +495,13 @@ class SolverPresetsCreation(AntaresBaseModel):
 
     name: ItemName
     linear_solver: str
-    min_antares_version: Optional[SolverVersionStr] = None
-    max_antares_version: Optional[SolverVersionStr] = None
-    linear_solver_param_optim_1: Optional[SolverParams] = None
-    linear_solver_param_optim_2: Optional[SolverParams] = None
-    linear_solver_param: Optional[SolverParams] = None
-    use_optim_1_basis_next_week: Optional[bool] = None
-    use_optim_1_basis_optim_2: Optional[bool] = None
+    min_antares_version: SolverVersionStr | None = None
+    max_antares_version: SolverVersionStr | None = None
+    linear_solver_param_optim_1: SolverParams | None = None
+    linear_solver_param_optim_2: SolverParams | None = None
+    linear_solver_param: SolverParams | None = None
+    use_optim_1_basis_next_week: bool | None = None
+    use_optim_1_basis_optim_2: bool | None = None
 
 
 class SolverPresetsUpdate(AntaresBaseModel):
@@ -526,14 +525,14 @@ class SolverPresetsUpdate(AntaresBaseModel):
         json_schema_extra=model_config_json_schema_extra,
     )
 
-    linear_solver: Optional[str] = None
-    min_antares_version: Optional[SolverVersionStr] = None
-    max_antares_version: Optional[SolverVersionStr] = None
-    linear_solver_param_optim_1: Optional[SolverParams] = None
-    linear_solver_param_optim_2: Optional[SolverParams] = None
-    linear_solver_param: Optional[SolverParams] = None
-    use_optim_1_basis_next_week: Optional[bool] = None
-    use_optim_1_basis_optim_2: Optional[bool] = None
+    linear_solver: str | None = None
+    min_antares_version: SolverVersionStr | None = None
+    max_antares_version: SolverVersionStr | None = None
+    linear_solver_param_optim_1: SolverParams | None = None
+    linear_solver_param_optim_2: SolverParams | None = None
+    linear_solver_param: SolverParams | None = None
+    use_optim_1_basis_next_week: bool | None = None
+    use_optim_1_basis_optim_2: bool | None = None
 
 
 class SolverPresetsDB(Base):

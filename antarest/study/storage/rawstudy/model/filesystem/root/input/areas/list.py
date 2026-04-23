@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional
 
 from typing_extensions import override
 
@@ -22,7 +21,7 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 AREAS_LIST_RELATIVE_PATH = "input/areas/list.txt"
 
 
-class InputAreasList(INode[List[str], List[str], List[str]]):
+class InputAreasList(INode[list[str], list[str], list[str]]):
     def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
         super().__init__(config)
         self.matrix_mapper = matrix_mapper
@@ -30,21 +29,21 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
     @override
     def get_node_and_remainder(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
-    ) -> tuple[INode[List[str], List[str], List[str]], list[str]]:
+    ) -> tuple[INode[list[str], list[str], list[str]], list[str]]:
         return self, []
 
     @override
     def get(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
-    ) -> List[str]:
+    ) -> list[str]:
         if self.config.archive_path:
             lines = extract_lines_from_archive(self.config.archive_path, AREAS_LIST_RELATIVE_PATH)
         else:
@@ -52,11 +51,11 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
         return [line.strip() for line in lines if line.strip()]
 
     @override
-    def save(self, data: List[str], url: Optional[List[str]] = None) -> None:
+    def save(self, data: list[str], url: list[str] | None = None) -> None:
         self._assert_not_in_zipped_file()
         self.config.path.write_text("\n".join(data))
 
     @override
-    def delete(self, url: Optional[List[str]] = None) -> None:
+    def delete(self, url: list[str] | None = None) -> None:
         if self.config.path.exists():
             self.config.path.unlink()

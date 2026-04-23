@@ -12,7 +12,8 @@
 
 import collections
 import logging
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 from antarest.core.exceptions import (
     BindingConstraintNotFound,
@@ -37,6 +38,7 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintUpdate,
     BindingConstraintUpdates,
     ClusterTerm,
+    ConstraintId,
     ConstraintTerm,
     ConstraintTermUpdate,
     LinkTerm,
@@ -78,12 +80,12 @@ class ConstraintFilters(AntaresBaseModel, extra="forbid"):
         cluster_id: cluster ID ('area.cluster') in at least one term.
     """
 
-    bc_id: str = ""
-    enabled: Optional[bool] = None
-    operator: Optional[BindingConstraintOperator] = None
+    bc_id: ConstraintId = ConstraintId("")
+    enabled: bool | None = None
+    operator: BindingConstraintOperator | None = None
     comments: str = ""
     group: str = ""
-    time_step: Optional[BindingConstraintFrequency] = None
+    time_step: BindingConstraintFrequency | None = None
     area_name: str = ""
     cluster_name: str = ""
     link_id: str = ""
@@ -164,7 +166,7 @@ class ConstraintFilters(AntaresBaseModel, extra="forbid"):
 
 def _get_references_by_widths(
     study: StudyInterface, bcs: Sequence[BindingConstraint]
-) -> Mapping[int, Sequence[Tuple[str, str]]]:
+) -> Mapping[int, Sequence[tuple[str, str]]]:
     """
     Iterates over each BC and its associated matrices.
     For each matrix, it checks its width according to the expected matrix shapes.
@@ -175,7 +177,7 @@ def _get_references_by_widths(
         but the width should be consistent within a group of binding constraints.
     """
 
-    references_by_width: Dict[int, List[Tuple[str, str]]] = {}
+    references_by_width: dict[int, list[tuple[str, str]]] = {}
     _total = len(bcs)
     study_dao = study.get_study_dao()
     for _index, bc in enumerate(bcs):
@@ -217,7 +219,7 @@ def _validate_binding_constraints(study: StudyInterface, bcs: Sequence[BindingCo
 
     if len(references_by_widths) > 1:
         most_common = collections.Counter(references_by_widths.keys()).most_common()
-        invalid_constraints: Dict[str, str] = {}
+        invalid_constraints: dict[str, str] = {}
 
         for width, _ in most_common[1:]:
             references = references_by_widths[width]
@@ -244,7 +246,7 @@ class BindingConstraintManager:
     ) -> None:
         self._command_context = command_context
 
-    def get_binding_constraint(self, study: StudyInterface, bc_id: str) -> BindingConstraint:
+    def get_binding_constraint(self, study: StudyInterface, bc_id: ConstraintId) -> BindingConstraint:
         """
         Retrieves a binding constraint by its ID within a given study.
 
@@ -387,7 +389,7 @@ class BindingConstraintManager:
         data: BindingConstraintCreation,
         matrices: BindingConstraintMatrices,
     ) -> BindingConstraint:
-        bc_id = transform_name_to_id(data.name)
+        bc_id = ConstraintId(transform_name_to_id(data.name))
 
         if not bc_id:
             raise InvalidConstraintName(f"Invalid binding constraint name: {data.name}.")
@@ -411,7 +413,7 @@ class BindingConstraintManager:
         return new_constraint
 
     def duplicate_binding_constraint(
-        self, study: StudyInterface, source_id: str, new_constraint_name: str
+        self, study: StudyInterface, source_id: ConstraintId, new_constraint_name: ConstraintId
     ) -> BindingConstraint:
         """
         Creates a duplicate constraint with a new name.
@@ -479,7 +481,7 @@ class BindingConstraintManager:
     def update_binding_constraint(
         self,
         study: StudyInterface,
-        binding_constraint_id: str,
+        binding_constraint_id: ConstraintId,
         data: BindingConstraintUpdate,
         matrices: BindingConstraintMatrices,
     ) -> BindingConstraint:
@@ -507,7 +509,7 @@ class BindingConstraintManager:
         self,
         study: StudyInterface,
         bcs_by_ids: BindingConstraintUpdates,
-    ) -> Mapping[str, BindingConstraint]:
+    ) -> Mapping[ConstraintId, BindingConstraint]:
         """
         Updates multiple binding constraints within a study.
 
@@ -523,7 +525,7 @@ class BindingConstraintManager:
         """
         study_dao = study.get_study_dao()
         all_constraints = study_dao.get_all_constraints()
-        constraints = {}
+        constraints: dict[ConstraintId, BindingConstraint] = {}
 
         for bc_id, bc_update in bcs_by_ids.items():
             # check binding constraint id sent by user exist for this study
@@ -545,7 +547,9 @@ class BindingConstraintManager:
 
         return constraints
 
-    def remove_multiple_binding_constraints(self, study: StudyInterface, binding_constraints_ids: List[str]) -> None:
+    def remove_multiple_binding_constraints(
+        self, study: StudyInterface, binding_constraints_ids: list[ConstraintId]
+    ) -> None:
         """
         Removes multiple binding constraints from a study.
 
@@ -582,7 +586,7 @@ class BindingConstraintManager:
         study.add_commands([command])
 
     def add_constraint_terms(
-        self, study: StudyInterface, binding_constraint_id: str, constraint_terms: Sequence[ConstraintTerm]
+        self, study: StudyInterface, binding_constraint_id: ConstraintId, constraint_terms: Sequence[ConstraintTerm]
     ) -> None:
         """
         Adds new constraint terms to an existing binding constraint.
@@ -605,7 +609,10 @@ class BindingConstraintManager:
         self._update_constraint_with_terms(study, constraint, sorted_terms)
 
     def update_constraint_terms(
-        self, study: StudyInterface, binding_constraint_id: str, constraint_terms: Sequence[ConstraintTermUpdate]
+        self,
+        study: StudyInterface,
+        binding_constraint_id: ConstraintId,
+        constraint_terms: Sequence[ConstraintTermUpdate],
     ) -> None:
         """
         Update the specified constraint terms.
@@ -635,7 +642,7 @@ class BindingConstraintManager:
     def remove_constraint_term(
         self,
         study: StudyInterface,
-        binding_constraint_id: str,
+        binding_constraint_id: ConstraintId,
         term_id: str,
     ) -> None:
         """

@@ -10,8 +10,8 @@
 #
 # This file is part of the Antares project.
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 from antarest.core.serde.ini_common import any_section_option_matcher
 from antarest.core.serde.ini_writer import LOWER_CASE_SERIALIZER, IniWriter
