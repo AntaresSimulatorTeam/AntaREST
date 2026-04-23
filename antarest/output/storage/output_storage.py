@@ -266,3 +266,9 @@ class IOutputStorage(ABC):
         """
         Retrieve logs.
         """
+
+    @abstractmethod
+    def get_disk_usage(self, study_id: str, output_id: str) -> int:
+        """
+        Retrieve disk usage for a specific output.
+        """

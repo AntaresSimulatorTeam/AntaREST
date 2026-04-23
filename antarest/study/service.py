@@ -591,6 +591,10 @@ class IOutputsAccess(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def get_disk_usage(self, study_id: str, output_id: str) -> int:
+        raise NotImplementedError()
+
+    @abstractmethod
     def write_output_to_dir(self, study_id: str, output_id: str, parent_dir: Path) -> None:
         raise NotImplementedError()
 
@@ -2638,7 +2642,11 @@ class StudyService:
         """
         study = self.get_study(uuid=uuid)
         assert_permission(study, StudyPermissionType.READ)
-        return self.storage_service.get_storage(study).get_disk_usage(study)
+        disk_usage = self.storage_service.raw_study_service.get_disk_usage(study)
+
+        for output in self._get_outputs_access().list_outputs(study.id):
+            disk_usage += self._get_outputs_access().get_disk_usage(study.id, output.id)
+        return disk_usage
 
     def get_matrix_with_index_and_header(
         self, *, study_id: str, path: str, with_index: bool, with_header: bool

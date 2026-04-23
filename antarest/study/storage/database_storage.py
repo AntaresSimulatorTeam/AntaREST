@@ -54,6 +54,10 @@ class DatabaseStudyStorage(IStudyStorage):
         pass
 
     @override
+    def get_disk_usage(self, study: Study) -> int:
+        return 0
+
+    @override
     def normalize_study(self, study: Study) -> None:
         # Nothing to do
         pass

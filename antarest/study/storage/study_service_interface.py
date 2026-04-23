@@ -19,10 +19,6 @@ from antarest.study.model import Study, StudyMetadataDTO
 
 class IStudyService(ABC):
     @abstractmethod
-    def get_disk_usage(self, study: Study) -> int:
-        raise NotImplementedError()
-
-    @abstractmethod
     def delete_from_filesystem(self, study: Study) -> None:
         raise NotImplementedError()
 

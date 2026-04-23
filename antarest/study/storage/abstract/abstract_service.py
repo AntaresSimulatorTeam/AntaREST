@@ -29,7 +29,7 @@ from antarest.study.model import (
     StudyMetadataDTO,
 )
 from antarest.study.storage.study_service_interface import IStudyService
-from antarest.study.storage.utils import get_disk_usage, remove_from_cache
+from antarest.study.storage.utils import remove_from_cache
 
 logger = logging.getLogger(__name__)
 
@@ -103,8 +103,3 @@ class AbstractService(IStudyService, ABC):
             if path.is_file():
                 return path
         raise FileNotFoundError(f"Study {study.id} archiving process is corrupted (no archive file found).")
-
-    @override
-    def get_disk_usage(self, study: Study) -> int:
-        study_path = self._get_study_path_on_file_system(study)
-        return get_disk_usage(study_path)

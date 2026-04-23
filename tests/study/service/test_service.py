@@ -25,6 +25,7 @@ import pytest
 from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
+from typing_extensions import override
 
 from antarest.blobstore.service import BlobService
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
@@ -157,21 +158,31 @@ def build_study_service(
     )
 
     class OutputsAccessMock(IOutputsAccess):
+        @override
         def list_outputs(self, study_id: str) -> list[OutputMetadata]:
             return []
 
+        @override
         def get_outputs_details(self, study_id: str) -> dict[str, Simulation]:
             return {}
 
+        @override
         def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:
             pass
 
+        @override
         def delete_output(self, study_id: str, output_id: str) -> None:
             pass
 
+        @override
         def archive_output(self, study_id: str, output_id: str) -> None:
             pass
 
+        @override
+        def get_disk_usage(self, study_id: str, output_id: str) -> int:
+            return 0
+
+        @override
         def write_output_to_dir(self, study_id: str, output_id: str, parent_dir: Path) -> None:
             pass
 

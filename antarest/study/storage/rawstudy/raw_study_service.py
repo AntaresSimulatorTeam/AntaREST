@@ -38,6 +38,7 @@ from antarest.study.storage.utils import (
     build_raw_study_from_source,
     export_study_to_flat_directory,
     fix_study_root,
+    get_disk_usage,
     remove_from_cache,
 )
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -88,6 +89,11 @@ class RawStudyService(AbstractService):
     ##########################
     # Specific methods
     ##########################
+
+    def get_disk_usage(self, study: Study) -> int:
+        if study.archived:
+            return get_disk_usage(self.find_archive_path(study))
+        return self._storage_mapping[study.storage_mode].get_disk_usage(study)
 
     def archive(self, study: RawStudy) -> None:
         self._storage_mapping[study.storage_mode].write_study_for_archive(study)

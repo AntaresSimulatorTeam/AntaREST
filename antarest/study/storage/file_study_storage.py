@@ -29,6 +29,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import Matri
 from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.utils import (
     export_study_to_flat_directory,
+    get_disk_usage,
     is_managed,
     remove_from_cache,
     update_antares_info,
@@ -74,6 +75,16 @@ class FileStudyStorage(IStudyStorage):
     @override
     def write_study_for_archive(self, study: RawStudy) -> None:
         self.denormalize_study(study)
+
+    @override
+    def get_disk_usage(self, study: Study) -> int:
+        # We need to exclude the output folder
+        study_path = Path(study.path)
+        total_disk_usage = 0
+        for entry in study_path.iterdir():
+            if entry.name != "output":
+                total_disk_usage += get_disk_usage(entry)
+        return total_disk_usage
 
     @override
     def normalize_study(self, study: Study) -> None:
