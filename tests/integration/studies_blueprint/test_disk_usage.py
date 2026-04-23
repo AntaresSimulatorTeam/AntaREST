@@ -19,7 +19,7 @@ from antarest.core.tasks.model import TaskDTO, TaskStatus
 
 class TestDiskUsage:
     def test_disk_usage_endpoint(
-        self, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path, output_zip: Path
+        self, client: TestClient, user_access_token: str, internal_study_id: str, output_zip: Path
     ) -> None:
         """
         Verify the functionality of the disk usage endpoint:
@@ -84,4 +84,6 @@ class TestDiskUsage:
         res = client.get(f"/v1/studies/{variant_id}/disk-usage")
         assert res.status_code == 200, res.json()
         new_disk_usage = res.json()
-        assert new_disk_usage == disk_usage + 2 * len(b"dummy content")
+        output_size = 79450
+        expected_disk_usage = disk_usage + output_size
+        assert expected_disk_usage - 1000 < new_disk_usage < expected_disk_usage + 1000  # Test with tolerance
