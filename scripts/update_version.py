@@ -143,8 +143,8 @@ def upgrade_version(new_version: str, new_date: str) -> None:
         ),
         (
             "uv.lock",
-            "\nversion = .*",
-            f'\nversion = "{new_version}"',
+            'name = "antarest"\nversion = .*',
+            f'name = "antarest"\nversion = "{new_version}"',
         ),
     ]
     print(f"Updating files to version {new_version}...")
