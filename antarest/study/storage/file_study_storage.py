@@ -80,6 +80,11 @@ class FileStudyStorage(IStudyStorage):
     def get_disk_usage(self, study: Study) -> int:
         # We need to exclude the output folder
         study_path = Path(study.path)
+
+        if not study_path.exists():
+            # Could be the case for a variant that was not generated yet
+            return 0
+
         total_disk_usage = 0
         for entry in study_path.iterdir():
             if entry.name != "output":

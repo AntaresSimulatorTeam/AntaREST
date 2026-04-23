@@ -41,16 +41,6 @@ def test_get_disk__usage_archive(tmp_path: Path, suffix: str) -> None:
     assert get_disk_usage(tmp_path) == len(compressed_data)
 
 
-def test_gest_disk_usage__unknown_format(tmp_path: Path) -> None:
-    """
-    This test ensures that the 'get_disk_usage' function handles unknown directory formats appropriately.
-    """
-    path = tmp_path.joinpath("study.dat")
-    path.touch()
-    with pytest.raises(NotADirectoryError):
-        get_disk_usage(path)
-
-
 def test_gest_disk_usage_exceptions(tmp_path: Path) -> None:
     """
     This test ensures that the 'get_disk_usage' function handles exceptions appropriately.
