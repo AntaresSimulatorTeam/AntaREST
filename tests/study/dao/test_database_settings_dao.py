@@ -155,8 +155,8 @@ def test_compatibility_parameters(db_session: Session, matrix_service: ISimpleMa
     assert dao.get_compatibility_parameters() == new_parameters
 
 
-def test_get_comments_returns_empty_string_by_default(dao: StudyDao) -> None:
-    assert dao.get_comments() == ""
+def test_get_comments_returns_empty_string_by_default(db_dao: DatabaseStudyDao) -> None:
+    assert db_dao.get_comments() == ""
 
 
 def test_save_comments_persists_value(dao: StudyDao, db_session: Session) -> None:
