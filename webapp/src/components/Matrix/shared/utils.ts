@@ -52,13 +52,14 @@ import type {
 } from "./types";
 
 /**
- * Parses a numeric string using any locale's separator conventions
- * (US "1,234.56", European "1.234,56", International "1 234.56", etc.).
+ * Parses a numeric string using US/International conventions:
+ * `.` is the decimal separator; `,` and whitespace are thousands separators (stripped).
  *
- * Whitespace is stripped. Both separators present → the one appearing last is
- * the decimal. Single separator → exactly three trailing digits means thousands
- * ("1,234" = 1234, "1.234" = 1234), anything else means decimal ("1,5" = 1.5,
- * "1.5" = 1.5).
+ * Commas must form a valid thousands grouping — every `,` must be followed by
+ * exactly three digits before end-of-string, another `,`, or `.`. Malformed
+ * placements (`1234,56`, `0,5`, `12,34.567`) and multi-period strings
+ * (`1.234.567`) return `NaN`, so the paste interceptor skips the cell instead
+ * of silently corrupting the value.
  *
  * @param raw - The raw numeric string from clipboard or user input.
  * @returns The parsed number, or `NaN` if the string is empty or unparsable.
@@ -70,52 +71,13 @@ export function parseClipboardNumber(raw: string): number {
     return NaN;
   }
 
-  return Number(normalizeLocaleSeparators(cleaned));
-}
-
-function normalizeLocaleSeparators(value: string): string {
-  const lastComma = value.lastIndexOf(",");
-  const lastPeriod = value.lastIndexOf(".");
-  const hasComma = lastComma !== -1;
-  const hasPeriod = lastPeriod !== -1;
-
-  // No separators — nothing to strip.
-  if (!hasComma && !hasPeriod) {
-    return value;
+  // Reject malformed comma placement — every comma must be followed by exactly
+  // three digits before the next comma, the decimal point, or end-of-string.
+  if (/,(?!\d{3}(?:[,.]|$))/.test(cleaned)) {
+    return NaN;
   }
 
-  // Both separators -> whichever appears last is the decimal.
-  if (hasComma && hasPeriod) {
-    return lastPeriod > lastComma
-      ? value.replace(/,/g, "") // "1,234,567.89" → "1234567.89"
-      : value.replace(/\./g, "").replace(",", "."); // "1.234.567,89" → "1234567.89"
-  }
-
-  // Only periods.
-  if (hasPeriod) {
-    const periodCount = (value.match(/\./g) ?? []).length;
-
-    if (periodCount > 1) {
-      return value.replace(/\./g, ""); // "1.234.567" → "1234567"
-    }
-
-    // Single period: 3 trailing digits → thousands, else decimal.
-    const digitsAfterPeriod = value.length - lastPeriod - 1;
-    return digitsAfterPeriod === 3 ? value.replace(".", "") : value; // "1.234" → "1234", "0.5" stays
-  }
-
-  // Only commas.
-  const commaCount = (value.match(/,/g) ?? []).length;
-
-  if (commaCount > 1) {
-    return value.replace(/,/g, ""); // "1,234,567" → "1234567"
-  }
-
-  // Single comma: 3 trailing digits → thousands, else decimal.
-  const digitsAfterComma = value.length - lastComma - 1;
-  return digitsAfterComma === 3
-    ? value.replace(",", "") // "4,567" → "4567"
-    : value.replace(",", "."); // "1234,56" → "1234.56"
+  return Number(cleaned.replace(/,/g, ""));
 }
 
 /**
