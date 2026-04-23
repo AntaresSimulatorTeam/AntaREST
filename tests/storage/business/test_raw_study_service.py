@@ -33,6 +33,7 @@ from antarest.output.storage.file.storage import (
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -330,21 +331,39 @@ def _create_fake_study(path: Path) -> Path:
     return study_path
 
 
+def _build_study_service(config: Config, cache: ICache, repo: StudyMetadataRepository) -> StudyService:
+    study_service, _ = build_study_service(
+        config,
+        matrix_service=Mock(spec=ISimpleMatrixService),
+        cache=cache,
+        metadata_repository=repo,
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
+        user_service=Mock(),
+        event_bus=Mock(),
+        blob_service=Mock(spec=BlobService),
+    )
+    return study_service
+
+
 @with_admin_user
 @with_db_context
-def test_delete_raw_study(tmp_path: Path, study_service: StudyService) -> None:
+def test_delete_raw_study(tmp_path: Path) -> None:
     # Set Up
+    cache = Mock(spec=ICache)
+    cache.get.return_value = None
+
     study_path = _create_fake_study(tmp_path)
     name = study_path.name
 
     raw_study = create_raw_study(id=name, workspace="foo", path=str(study_path), groups=[])
+
+    config = build_config(tmp_path, workspace_name="foo", allow_deletion=False)
     repo = Mock()
-    study_service.repository = repo
     repo.get.return_value = raw_study
+    study_service = _build_study_service(config, cache, repo)
 
-    # Forbid deletion
-    study_service.config = build_config(tmp_path, workspace_name="foo", allow_deletion=False)
-
+    # Deletion is forbidden
     with pytest.raises(StudyDeletionNotAllowed):
         study_service.delete_study(raw_study.id, children=False)
 
@@ -375,17 +394,7 @@ def test_delete_variant_study(tmp_path: Path) -> None:
 
     config = build_config(tmp_path, workspace_name="foo", allow_deletion=True)
     repo = Mock()
-    study_service, _ = build_study_service(
-        config,
-        matrix_service=Mock(spec=ISimpleMatrixService),
-        cache=cache,
-        metadata_repository=repo,
-        file_transfer_manager=Mock(),
-        task_service=Mock(),
-        user_service=Mock(),
-        event_bus=Mock(),
-        blob_service=Mock(spec=BlobService),
-    )
+    study_service = _build_study_service(config, cache, repo)
 
     study_path = _create_fake_study(tmp_path)
     name = study_path.name
