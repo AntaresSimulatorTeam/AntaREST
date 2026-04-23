@@ -369,6 +369,9 @@ class Study(Base):
     def to_json_summary(self) -> Any:
         return {"id": self.id, "name": self.name}
 
+    def get_path(self) -> Path:
+        return Path(self.path)
+
     @validates("folder")
     def validate_folder(self, key: str, folder: str | None) -> str | None:
         """

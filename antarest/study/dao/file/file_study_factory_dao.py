@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
-from typing import cast
 
 from antares.study.version import StudyVersion
 from typing_extensions import override
@@ -22,7 +21,6 @@ from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.utils import create_new_empty_study, is_managed, update_antares_info
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 
 class FileStudyDaoFactory(StudyFactoryDao):
@@ -46,12 +44,11 @@ class FileStudyDaoFactory(StudyFactoryDao):
     def _build_dao(self, study: Study, create_study: bool) -> FileStudyTreeDao:
         # We need to differentiate `RawStudy` and `VariantStudy` to be able to parse the config
         if isinstance(study, RawStudy):
-            study_path = Path(study.path)
             output_path = None
         else:
-            study_path = cast(VariantStudy, study).snapshot_dir
             output_path = Path(study.path) / "output"
 
+        study_path = study.get_path()
         if create_study:
             create_new_empty_study(version=StudyVersion.parse(study.version), path_study=study_path)
 
