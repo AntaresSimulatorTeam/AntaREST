@@ -17,7 +17,6 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import UserHasNotPermissionError
@@ -32,38 +31,6 @@ from tests.helpers import create_variant_study
 
 def build_config(study_path: Path) -> Config:
     return Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=study_path)}))
-
-
-def test_delete_study(tmp_path: Path) -> None:
-    name = "my-study"
-    study_path = tmp_path / name
-    study_path.mkdir()
-    (study_path / "study.antares").touch()
-
-    cache = Mock()
-
-    study_service = VariantStudyService(
-        raw_study_service=Mock(),
-        cache=cache,
-        task_service=Mock(),
-        command_factory=Mock(),
-        study_factory=Mock(),
-        config=build_config(tmp_path),
-        repository=Mock(),
-        event_bus=Mock(),
-        matrix_service=Mock(),
-    )
-
-    md = create_variant_study(id=name, path=str(study_path))
-
-    study_service.delete(md)
-    cache.invalidate_all.assert_called_once_with(
-        [
-            f"{CacheConstants.RAW_STUDY}/{name}",
-            f"{CacheConstants.STUDY_FACTORY}/{name}",
-        ]
-    )
-    assert not study_path.exists()
 
 
 def test_get_variant_children(tmp_path: Path, admin_user: Any) -> None:

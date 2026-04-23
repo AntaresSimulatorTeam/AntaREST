@@ -33,7 +33,7 @@ from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from tests.helpers import create_raw_study, with_admin_user, with_db_context
+from tests.helpers import create_raw_study, create_variant_study, with_admin_user, with_db_context
 
 
 def build_config(
@@ -346,7 +346,7 @@ def _create_fake_study(path: Path) -> Path:
 
 @with_admin_user
 @with_db_context
-def test_delete_study(tmp_path: Path, study_service: StudyService) -> None:
+def test_delete_raw_study(tmp_path: Path, study_service: StudyService) -> None:
     # Set Up
     study_path = _create_fake_study(tmp_path)
     name = study_path.name
@@ -371,6 +371,34 @@ def test_delete_study(tmp_path: Path, study_service: StudyService) -> None:
     study_service.delete_study(raw_study.id, children=False)
 
     # Ensures the cache was called
+    study_service.storage_service.raw_study_service.cache.invalidate_all.assert_called_once_with(
+        [
+            f"{CacheConstants.RAW_STUDY}/{name}",
+            f"{CacheConstants.STUDY_FACTORY}/{name}",
+        ]
+    )
+    assert not study_path.exists()
+
+
+@with_admin_user
+@with_db_context
+def test_delete_variant_study(tmp_path: Path, study_service: StudyService) -> None:
+    # Set Up
+    study_path = _create_fake_study(tmp_path)
+    name = study_path.name
+
+    variant_study = create_variant_study(id=name, path=str(study_path))
+    repo = Mock()
+    study_service.repository = repo
+    repo.get.return_value = variant_study
+
+    fake_output_access = Mock()
+    fake_output_access.list_outputs.return_value = []
+    study_service.register_output_access(fake_output_access)
+
+    # Delete study
+    study_service.delete_study(variant_study.id, children=False)
+
     study_service.storage_service.raw_study_service.cache.invalidate_all.assert_called_once_with(
         [
             f"{CacheConstants.RAW_STUDY}/{name}",
