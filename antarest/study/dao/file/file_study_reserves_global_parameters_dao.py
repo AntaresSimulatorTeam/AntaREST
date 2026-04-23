@@ -14,6 +14,7 @@ from abc import ABC, abstractmethod
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
+from antarest.study.business.model.reserve_definition_model import GLOBAL_PARAMETERS_SECTION
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.dao.api.reserves_global_parameters_dao import ReservesGlobalParametersDao
 from antarest.study.dao.common import ReservesGlobalParametersMapping
@@ -59,5 +60,5 @@ class FileStudyReservesGlobalParametersDao(ReservesGlobalParametersDao, ABC):
                 existing_data = file_study.tree.get(path)
             except (ChildNotFoundError, KeyError):
                 existing_data = {}
-            existing_data["globalparameters"] = serialize_reserves_global_parameters(params)
+            existing_data[GLOBAL_PARAMETERS_SECTION] = serialize_reserves_global_parameters(params)
             file_study.tree.save(existing_data, path)

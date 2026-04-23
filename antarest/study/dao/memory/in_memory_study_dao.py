@@ -19,7 +19,12 @@ import polars as pl
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
-from antarest.core.exceptions import AreaNotFound, LinkNotFound, ReferencedObjectDeletionNotAllowed
+from antarest.core.exceptions import (
+    AreaNotFound,
+    LinkNotFound,
+    ReferencedObjectDeletionNotAllowed,
+    ReserveDefinitionNotFound,
+)
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.utils import remove_first_match
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
@@ -49,6 +54,7 @@ from antarest.study.business.model.hydro_model import (
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveDefinitionId
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.business.model.scenario_builder_model import (
     AnyScenarios,
@@ -79,6 +85,7 @@ from antarest.study.dao.common import (
     BindingConstraintSeriesMapping,
     LinkSeriesMapping,
     RenewableSeriesMapping,
+    ReserveDefinitionsMapping,
     ReservesGlobalParametersMapping,
     StStorageConstraintSeriesMapping,
     StStorageId,
@@ -109,6 +116,12 @@ class ClusterKey:
 
 
 @dataclass(frozen=True)
+class ReserveKey:
+    area_id: str
+    reserve_id: str
+
+
+@dataclass(frozen=True)
 class AdditionalConstraintKey:
     area_id: str
     storage_id: str
@@ -122,6 +135,10 @@ def link_key(area1_id: str, area2_id: str) -> LinkKey:
 
 def cluster_key(area_id: str, cluster_id: str) -> ClusterKey:
     return ClusterKey(area_id, cluster_id)
+
+
+def reserve_key(area_id: str, reserve_id: str) -> ReserveKey:
+    return ReserveKey(area_id, reserve_id)
 
 
 def additional_constraint_key(area_id: str, storage_id: str, constraint_id: str) -> AdditionalConstraintKey:
@@ -238,6 +255,8 @@ class InMemoryStudyDao(StudyDao):
         self._reserves: dict[str, str] = {}
         # Reserves global parameters
         self._reserves_global_parameters: dict[str, ReservesGlobalParameters] = {}
+        # Reserve definitions (per-reserve parameters)
+        self._reserve_definitions: dict[ReserveKey, ReserveDefinition] = {}
         # Misc-gen
         self._misc_gen: dict[str, str] = {}
         # Solar
@@ -1578,6 +1597,48 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_reserves_global_parameters(self, mapping: ReservesGlobalParametersMapping) -> None:
         self._reserves_global_parameters.update(mapping)
+
+    @override
+    def get_all_reserve_definitions(self) -> ReserveDefinitionsMapping:
+        result: ReserveDefinitionsMapping = {}
+        for key, reserve in self._reserve_definitions.items():
+            result.setdefault(key.area_id, {})[ReserveDefinitionId(key.reserve_id)] = reserve
+        return result
+
+    @override
+    def get_all_reserve_definitions_for_area(self, area_id: str) -> Sequence[ReserveDefinition]:
+        if area_id not in self.get_all_area_ids():
+            raise AreaNotFound(area_id)
+        return [reserve for key, reserve in self._reserve_definitions.items() if key.area_id == area_id]
+
+    @override
+    def get_reserve_definition(self, area_id: str, reserve_id: str) -> ReserveDefinition:
+        if area_id not in self.get_all_area_ids():
+            raise AreaNotFound(area_id)
+        try:
+            return self._reserve_definitions[reserve_key(area_id, reserve_id)]
+        except KeyError as exc:
+            raise ReserveDefinitionNotFound(area_id, reserve_id) from exc
+
+    @override
+    def reserve_definition_exists(self, area_id: str, reserve_id: str) -> bool:
+        if area_id not in self.get_all_area_ids():
+            return False
+        return reserve_key(area_id, reserve_id) in self._reserve_definitions
+
+    @override
+    def save_reserve_definitions(self, data: dict[AreaId, list[ReserveDefinition]]) -> None:
+        for area_id, reserves in data.items():
+            for reserve in reserves:
+                self._reserve_definitions[reserve_key(area_id, reserve.id)] = reserve
+
+    @override
+    def delete_reserve_definitions(self, area_id: AreaId, reserve_ids: Sequence[ReserveDefinitionId]) -> None:
+        for rid in reserve_ids:
+            try:
+                del self._reserve_definitions[reserve_key(area_id, rid)]
+            except KeyError as exc:
+                raise ReserveDefinitionNotFound(area_id, rid) from exc
 
     @override
     def save_solar(self, series: AreaSeriesMapping) -> None:

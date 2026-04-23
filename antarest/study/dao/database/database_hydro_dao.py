@@ -40,7 +40,7 @@ from antarest.study.business.model.hydro_correlation_model import (
 )
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.dao.api.hydro_dao import HydroDao
-from antarest.study.dao.common import AreaId, AreaSeriesMapping
+from antarest.study.dao.common import AreaId, AreaSeriesMapping, SeriesId
 from antarest.study.dao.database.common import (
     get_all_area_matrices,
     get_row_representation_as_dict,
@@ -68,6 +68,17 @@ from antarest.study.dao.database.models.hydro import (
     HYDRO_WATER_VALUES_TABLE,
 )
 from antarest.study.dao.database.sql_utils import upsert_multiple, upsert_one
+from antarest.study.model import STUDY_VERSION_6_5
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
+    default_credit_modulation,
+    default_energy,
+    default_maxpower,
+    default_reservoir,
+    default_scenario_daily,
+    default_scenario_hourly,
+    default_scenario_monthly,
+    default_water_values,
+)
 
 _MANAGEMENT_COLS = [c for c in HYDRO_MANAGEMENT_TABLE.c if c.name not in ("study_id", "area_id")]
 
@@ -486,7 +497,7 @@ class DatabaseHydroDao(HydroDao):
 
     # ==================== Matrix Methods ====================
 
-    def _get_hydro_matrix(self, area_id: str, table: Table) -> pl.DataFrame:
+    def _get_hydro_matrix(self, area_id: str, table: Table) -> SeriesId:
         study_id = self.get_study_id()
         session = self.get_session()
         stmt = select(table).where((table.c.study_id == study_id) & (table.c.area_id == area_id))
@@ -494,7 +505,7 @@ class DatabaseHydroDao(HydroDao):
         if not row:
             validate_area_exists(session, study_id, area_id)
             raise ValueError(f"Hydro matrix not found for area '{area_id}' in table '{table.name}'")
-        return self.get_impl().get_matrix(row.matrix_id)
+        return str(row.matrix_id)
 
     def _save_hydro_matrix(self, area_id: str, table: Table, matrix_id: str) -> None:
         session = self.get_session()
@@ -509,55 +520,70 @@ class DatabaseHydroDao(HydroDao):
 
     @override
     def get_hydro_maxpower(self, area_id: str) -> pl.DataFrame:
-        return self._get_hydro_matrix(area_id, HYDRO_MAXPOWER_TABLE)
+        matrix_id = self._get_hydro_matrix(area_id, HYDRO_MAXPOWER_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_maxpower)
 
     @override
     def get_hydro_reservoir(self, area_id: str) -> pl.DataFrame:
-        return self._get_hydro_matrix(area_id, HYDRO_RESERVOIR_TABLE)
+        matrix_id = self._get_hydro_matrix(area_id, HYDRO_RESERVOIR_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_reservoir)
 
     @override
     def get_hydro_energy(self, area_id: str) -> pl.DataFrame:
-        return self._get_hydro_matrix(area_id, HYDRO_ENERGY_TABLE)
+        matrix_id = self._get_hydro_matrix(area_id, HYDRO_ENERGY_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_energy)
 
     @override
     def get_hydro_run_of_river(self, area_id: str) -> pl.DataFrame:
-        return self._get_hydro_matrix(area_id, HYDRO_RUN_OF_RIVER_TABLE)
+        matrix_id = self._get_hydro_matrix(area_id, HYDRO_RUN_OF_RIVER_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_hydro_modulation(self, area_id: str) -> pl.DataFrame:
-        return self._get_hydro_matrix(area_id, HYDRO_MODULATION_TABLE)
+        matrix_id = self._get_hydro_matrix(area_id, HYDRO_MODULATION_TABLE)
+        version = self.get_impl().get_version()
+        default_empty_supplier = default_scenario_daily if version >= STUDY_VERSION_6_5 else default_scenario_monthly
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_empty_supplier)
 
     @override
     def get_hydro_credit_modulations(self, area_id: str) -> pl.DataFrame:
-        return self._get_hydro_matrix(area_id, HYDRO_CREDIT_MODULATIONS_TABLE)
+        matrix_id = self._get_hydro_matrix(area_id, HYDRO_CREDIT_MODULATIONS_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_credit_modulation)
 
     @override
     def get_hydro_inflow_pattern(self, area_id: str) -> pl.DataFrame:
-        return self._get_hydro_matrix(area_id, HYDRO_INFLOW_PATTERN_TABLE)
+        matrix_id = self._get_hydro_matrix(area_id, HYDRO_INFLOW_PATTERN_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_daily)
 
     @override
     def get_hydro_water_values(self, area_id: str) -> pl.DataFrame:
-        return self._get_hydro_matrix(area_id, HYDRO_WATER_VALUES_TABLE)
+        matrix_id = self._get_hydro_matrix(area_id, HYDRO_WATER_VALUES_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_water_values)
 
     @override
     def get_hydro_mingen(self, area_id: str) -> pl.DataFrame:
-        return self._get_hydro_matrix(area_id, HYDRO_MINGEN_TABLE)
+        matrix_id = self._get_hydro_matrix(area_id, HYDRO_MINGEN_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_hydro_max_hourly_gen_power(self, area_id: str) -> pl.DataFrame:
-        return self._get_hydro_matrix(area_id, HYDRO_MAX_HOURLY_GEN_POWER_TABLE)
+        matrix_id = self._get_hydro_matrix(area_id, HYDRO_MAX_HOURLY_GEN_POWER_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_hydro_max_hourly_pump_power(self, area_id: str) -> pl.DataFrame:
-        return self._get_hydro_matrix(area_id, HYDRO_MAX_HOURLY_PUMP_POWER_TABLE)
+        matrix_id = self._get_hydro_matrix(area_id, HYDRO_MAX_HOURLY_PUMP_POWER_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_hydro_max_daily_gen_energy(self, area_id: str) -> pl.DataFrame:
-        return self._get_hydro_matrix(area_id, HYDRO_MAX_DAILY_GEN_ENERGY_TABLE)
+        matrix_id = self._get_hydro_matrix(area_id, HYDRO_MAX_DAILY_GEN_ENERGY_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_daily)
 
     @override
     def get_hydro_max_daily_pump_energy(self, area_id: str) -> pl.DataFrame:
-        return self._get_hydro_matrix(area_id, HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE)
+        matrix_id = self._get_hydro_matrix(area_id, HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_daily)
 
     @override
     def get_all_hydro_maxpower(self) -> AreaSeriesMapping:

@@ -23,7 +23,7 @@ from typing_extensions import override
 from antarest.core.exceptions import AreaNotFound, LinkNotFound, LinksNotFound
 from antarest.study.business.model.link_model import Link
 from antarest.study.dao.api.link_dao import LinkDao
-from antarest.study.dao.common import LinkSeriesMapping
+from antarest.study.dao.common import LinkSeriesMapping, SeriesId
 from antarest.study.dao.database.common import get_row_representation_as_dict
 from antarest.study.dao.database.models.link import (
     LINK_DIRECT_CAPACITY_TABLE,
@@ -32,6 +32,12 @@ from antarest.study.dao.database.models.link import (
     LINK_TABLE,
 )
 from antarest.study.dao.database.sql_utils import upsert_multiple
+from antarest.study.model import STUDY_VERSION_8_2
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
+    default_6_fixed_hourly,
+    default_8_fixed_hourly,
+    default_scenario_hourly,
+)
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -144,11 +150,11 @@ class DatabaseLinkDao(LinkDao):
         stmt = select(table).where((table.c.study_id == study_id) & (table.c.area1 == area1) & (table.c.area2 == area2))
         return session.execute(stmt).fetchone()
 
-    def _get_link_matrix(self, area_from_id: str, area_to_id: str, table: Table) -> pl.DataFrame:
+    def _get_link_matrix(self, area_from_id: str, area_to_id: str, table: Table) -> SeriesId:
         row = self._get_row(area_from_id, area_to_id, table)
         if not row:
             raise LinkNotFound(f"The link {area_from_id} -> {area_to_id} is not present in the study")
-        return self.get_impl().get_matrix(row.matrix_id)
+        return str(row.matrix_id)
 
     def _save_link_matrices(self, series: LinkSeriesMapping, table: Table) -> None:
         session = self.get_session()
@@ -179,15 +185,20 @@ class DatabaseLinkDao(LinkDao):
 
     @override
     def get_link_direct_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
-        return self._get_link_matrix(area_from, area_to, LINK_DIRECT_CAPACITY_TABLE)
+        matrix_id = self._get_link_matrix(area_from, area_to, LINK_DIRECT_CAPACITY_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
-        return self._get_link_matrix(area_from, area_to, LINK_INDIRECT_CAPACITY_TABLE)
+        matrix_id = self._get_link_matrix(area_from, area_to, LINK_INDIRECT_CAPACITY_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_link_series(self, area_from: str, area_to: str) -> pl.DataFrame:
-        return self._get_link_matrix(area_from, area_to, LINK_SERIES_TABLE)
+        matrix_id = self._get_link_matrix(area_from, area_to, LINK_SERIES_TABLE)
+        version = self.get_impl().get_version()
+        default_empty = default_8_fixed_hourly if version < STUDY_VERSION_8_2 else default_6_fixed_hourly
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_empty)
 
     def _get_link_matrices(self, table: Table) -> LinkSeriesMapping:
         study_id = self._study_id
