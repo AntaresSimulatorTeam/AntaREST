@@ -134,6 +134,34 @@ def assert_study(a: SUB_JSON, b: SUB_JSON) -> None:
         _assert_others(a, b)
 
 
+def explain_model_diff(actual: Any, expected: Any) -> str:
+    """
+    Produce a readable per-field diff between two pydantic models (or dicts).
+    Intended as a lazy assert message: `assert a == b, explain_model_diff(a, b)`.
+    Only called on assertion failure.
+    """
+
+    def _to_dict(obj: Any) -> Any:
+        if hasattr(obj, "model_dump"):
+            return obj.model_dump()
+        return obj
+
+    a = _to_dict(actual)
+    b = _to_dict(expected)
+    if not (isinstance(a, dict) and isinstance(b, dict)):
+        return f"actual={actual!r}\nexpected={expected!r}"
+
+    lines: list[str] = []
+    for key in sorted(set(a) | set(b)):
+        av = a.get(key, "<missing>")
+        bv = b.get(key, "<missing>")
+        if av != bv:
+            lines.append(f"  {key}: actual={av!r}  expected={bv!r}")
+    if not lines:
+        return "models dump identical — check types or non-dumped fields"
+    return "Field diff (actual vs expected):\n" + "\n".join(lines)
+
+
 def auto_retry_assert(predicate: Callable[..., bool], timeout: int = 2, delay: float = 0.2) -> None:
     threshold = datetime.now(timezone.utc) + timedelta(seconds=timeout)
     while datetime.now(timezone.utc) < threshold:

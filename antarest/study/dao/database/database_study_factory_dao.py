@@ -22,6 +22,7 @@ from antarest.study.business.model.config.adequacy_patch_model import (
 )
 from antarest.study.business.model.config.advanced_parameters_model import (
     AdvancedParameters,
+    SheddingPolicy,
     initialize_advanced_parameters_against_version,
 )
 from antarest.study.business.model.config.compatibility_parameters_model import (
@@ -29,7 +30,10 @@ from antarest.study.business.model.config.compatibility_parameters_model import 
     initialize_compatibility_parameters_against_version,
 )
 from antarest.study.business.model.config.general_model import GeneralConfig, initialize_general_config_against_version
-from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
+from antarest.study.business.model.config.optimization_config_model import (
+    OptimizationPreferences,
+    TransmissionCapacities,
+)
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.layer_model import Layer
@@ -39,7 +43,13 @@ from antarest.study.business.model.thematic_trimming_model import (
 )
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_9_2, Study
+from antarest.study.model import (
+    STUDY_VERSION_7_2,
+    STUDY_VERSION_8_3,
+    STUDY_VERSION_8_4,
+    STUDY_VERSION_9_2,
+    Study,
+)
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
@@ -49,6 +59,8 @@ def _create_default_settings(dao: DatabaseStudyDao, study: Study) -> None:
 
     general_config = GeneralConfig()
     initialize_general_config_against_version(general_config, study_version)
+    if study_version == STUDY_VERSION_7_2:
+        general_config.horizon = "0"
     dao.save_general_config(general_config)
 
     dao.save_playlist_config(Playlist())
@@ -57,9 +69,14 @@ def _create_default_settings(dao: DatabaseStudyDao, study: Study) -> None:
 
     advanced_parameters = AdvancedParameters()
     initialize_advanced_parameters_against_version(advanced_parameters, study_version)
+    if study_version >= STUDY_VERSION_9_2:
+        advanced_parameters.shedding_policy = SheddingPolicy.ACCURATE_SHAVE_PEAKS
     dao.save_advanced_parameters(advanced_parameters)
 
-    dao.save_optimization_preferences(OptimizationPreferences())
+    op = OptimizationPreferences()
+    if study_version >= STUDY_VERSION_8_4:
+        op.transmission_capacities = TransmissionCapacities.LOCAL_VALUES
+    dao.save_optimization_preferences(op)
 
     thematic_trimming = ThematicTrimming()
     initialize_thematic_trimming_against_version(thematic_trimming, study_version)

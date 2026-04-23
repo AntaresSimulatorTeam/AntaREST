@@ -13,6 +13,7 @@ import contextlib
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 from unittest.mock import Mock
 
 import polars as pl
@@ -167,6 +168,26 @@ def dao(
     else:
         dao, _ = _build_fs_dao(db_session, STUDY_VERSION_8_8, command_context, core_cache, tmp_path)
         return dao
+
+
+@pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
+def dao_builder(
+    request,
+    db_session: Session,
+    matrix_service: ISimpleMatrixService,
+    command_context: "CommandContext",
+    tmp_path: Path,
+    core_cache: "ICache",
+) -> Callable[[StudyVersion], StudyDao]:
+    """A DAO factory parameterized over both backends, accepting the study version as argument."""
+
+    def _build(version: StudyVersion) -> StudyDao:
+        if request.param == "db":
+            return build_db_dao(db_session, matrix_service, version)
+        dao, _ = _build_fs_dao(db_session, version, command_context, core_cache, tmp_path)
+        return dao
+
+    return _build
 
 
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
