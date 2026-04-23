@@ -336,14 +336,20 @@ timestamp = 1599488150
     assert not (study_path / "output" / (expected_output_name + ".zip")).exists()
 
 
+def _create_fake_study(path: Path) -> Path:
+    name = "my-study"
+    study_path = path / name
+    study_path.mkdir()
+    (study_path / "study.antares").touch()
+    return study_path
+
+
 @with_admin_user
 @with_db_context
 def test_delete_study(tmp_path: Path, study_service: StudyService) -> None:
     # Set Up
-    name = "my-study"
-    study_path = tmp_path / name
-    study_path.mkdir()
-    (study_path / "study.antares").touch()
+    study_path = _create_fake_study(tmp_path)
+    name = study_path.name
 
     raw_study = create_raw_study(id=name, workspace="foo", path=str(study_path), groups=[])
     repo = Mock()
