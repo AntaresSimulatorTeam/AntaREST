@@ -24,7 +24,6 @@ from antarest.core.exceptions import StudyDeletionNotAllowed
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import PublicMode
 from antarest.core.serde.ini_reader import read_ini
-from antarest.login.model import User
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.output.storage.file.storage import (
     FileStudyOutputs,
@@ -244,7 +243,6 @@ def test_copy_study(empty_study_930: FileStudy, study_service: StudyService) -> 
     repo = Mock()
     study_service.repository = repo
     repo.get.return_value = study
-    study_service.user_service.get_user.return_value = User(id=1, name="admin")
 
     destination = PurePosixPath("myfolder/subfolder")
     groups = ["admin"]  # Only existing group
