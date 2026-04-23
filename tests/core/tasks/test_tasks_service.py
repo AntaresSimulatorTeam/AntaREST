@@ -25,7 +25,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine.base import Engine
 
 from antarest.core.config import Config
-from antarest.core.interfaces.eventbus import EventType, IEventBus
+from antarest.core.interfaces.eventbus import DummyEventBusService, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.persistence import Base
@@ -402,6 +402,10 @@ def test_ts_generation_task(tmp_path: Path, variant_study_service: VariantStudyS
     #  SET UP
     # =======================
 
+    event_bus = DummyEventBusService()
+    variant_study_service.event_bus = event_bus
+    variant_study_service.task_service.event_bus = event_bus
+
     # Create a raw study
     raw_study_path = tmp_path / "study"
 
@@ -503,7 +507,7 @@ def test_ts_generation_task(tmp_path: Path, variant_study_service: VariantStudyS
     assert task.progress == 100
 
     # Check eventbus
-    events = study_service.event_bus.backend.events
+    events = event_bus.events
     assert len(events) == 6
     assert events[0].type == EventType.TASK_ADDED
     assert events[1].type == EventType.TASK_RUNNING
