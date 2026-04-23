@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from pathlib import Path
 
 from antares.study.version import StudyVersion
 from typing_extensions import override
@@ -42,12 +43,13 @@ class FileStudyDaoFactory(StudyFactoryDao):
 
     def _build_dao(self, study: Study, create_study: bool) -> FileStudyTreeDao:
         study_path = study.get_path()
+        output_path = Path(study.path) / "output"  # Needed to parse the output config for variants
         is_study_managed = is_managed(study)
 
         if create_study:
             create_new_empty_study(version=StudyVersion.parse(study.version), path_study=study_path)
 
-        file_study = self._study_factory.create_from_fs(study_path, is_study_managed, study.id)
+        file_study = self._study_factory.create_from_fs(study_path, is_study_managed, study.id, output_path)
 
         if create_study:
             # We do not want to update the `study.antares` file each time we're building the DAO object
