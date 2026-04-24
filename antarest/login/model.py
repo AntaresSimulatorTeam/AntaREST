@@ -100,7 +100,7 @@ class UserCreateDTO(AntaresBaseModel):
             raise ValueError("Password must contain at least one digit")
 
         if not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
-            raise ValueError("Password must contain at least one special character (!@#$%^&*(),.?\":{}|<>)")
+            raise ValueError('Password must contain at least one special character (!@#$%^&*(),.?":{}|<>)')
 
         return v
 
