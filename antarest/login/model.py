@@ -87,6 +87,9 @@ class UserCreateDTO(AntaresBaseModel):
         if not (8 <= len(v) <= 50):
             raise ValueError("Password must be between 8 and 50 characters")
 
+        if len(v.encode("utf-8")) > 72:
+            raise ValueError("Password must not exceed 72 bytes when encoded in UTF-8")
+
         if not re.search(r"[a-z]", v):
             raise ValueError("Password must contain at least one lowercase letter")
 
