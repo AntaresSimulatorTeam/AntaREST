@@ -10,12 +10,12 @@
 #
 # This file is part of the Antares project.
 
-from typing import Annotated, Any, NewType, TypeAlias
+from typing import Annotated, NewType, TypeAlias
 
 from pydantic import ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 
-from antarest.core.exceptions import ReservedReserveDefinitionName
+from antarest.core.exceptions import ReservedReserveDefinitionId
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -46,23 +46,15 @@ Ratio = Annotated[float, Field(ge=0, le=1)]
 Duration = Annotated[int, Field(ge=0)]
 
 
-def _check_not_reserved_name(name: str) -> None:
-    if transform_name_to_id(name) in _RESERVED_RESERVE_IDS:
-        raise ReservedReserveDefinitionName(name)
+def _check_not_reserved_id(id_: str) -> None:
+    if transform_name_to_id(id_) in _RESERVED_RESERVE_IDS:
+        raise ReservedReserveDefinitionId(id_)
 
 
 class ReserveDefinition(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
-    @model_validator(mode="before")
-    @classmethod
-    def set_id(cls, data: Any) -> Any:
-        if isinstance(data, dict) and "id" not in data and "name" in data:
-            data["id"] = transform_name_to_id(data["name"])
-        return data
-
-    id: ReserveDefinitionId
-    name: ItemName
+    id: ItemName
     type: ReserveType
     failure_cost: Cost = 0.0
     spillage_cost: Cost = 0.0
@@ -74,7 +66,7 @@ class ReserveDefinition(AntaresBaseModel):
 class ReserveDefinitionCreation(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
-    name: ItemName
+    id: ItemName
     type: ReserveType
     failure_cost: Cost | None = None
     spillage_cost: Cost | None = None
@@ -83,8 +75,8 @@ class ReserveDefinitionCreation(AntaresBaseModel):
     energy_activation_ratio: Ratio | None = None
 
     @model_validator(mode="after")
-    def _check_name(self) -> "ReserveDefinitionCreation":
-        _check_not_reserved_name(self.name)
+    def _check_id(self) -> "ReserveDefinitionCreation":
+        _check_not_reserved_id(self.id)
         return self
 
 

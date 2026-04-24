@@ -21,7 +21,6 @@ from antarest.study.business.model.reserve_definition_model import ReserveDefini
 class ReserveDefinitionFileData(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_kebab_case, extra="forbid", populate_by_name=True)
 
-    name: str
     type: ReserveType
     failure_cost: float = 0.0
     spillage_cost: float = 0.0
@@ -29,16 +28,16 @@ class ReserveDefinitionFileData(AntaresBaseModel):
     power_activation_ratio: float = 0.0
     energy_activation_ratio: float = 1.0
 
-    def to_model(self) -> ReserveDefinition:
-        return ReserveDefinition.model_validate(self.model_dump())
+    def to_model(self, id_: str) -> ReserveDefinition:
+        return ReserveDefinition.model_validate({"id": id_, **self.model_dump()})
 
     @classmethod
     def from_model(cls, reserve: ReserveDefinition) -> "ReserveDefinitionFileData":
         return cls.model_validate(reserve.model_dump(exclude={"id"}))
 
 
-def parse_reserve_definition(data: dict[str, Any]) -> ReserveDefinition:
-    return ReserveDefinitionFileData.model_validate(data).to_model()
+def parse_reserve_definition(id_: str, data: dict[str, Any]) -> ReserveDefinition:
+    return ReserveDefinitionFileData.model_validate(data).to_model(id_)
 
 
 def serialize_reserve_definition(reserve: ReserveDefinition) -> dict[str, Any]:
