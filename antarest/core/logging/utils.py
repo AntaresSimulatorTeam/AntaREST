@@ -25,6 +25,7 @@ from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTUser
+from antarest.globals import ANTAREST_WORKER_ID
 from antarest.login.utils import current_user_context, get_current_user
 
 _request: ContextVar[Request | None] = ContextVar("_request", default=None)
@@ -96,6 +97,7 @@ def configure_logger(config: Config, handler_cls: str = "logging.FileHandler") -
                 "format": (
                     "%(asctime)s"
                     " - %(process)s"
+                    " - %(worker_id)s"
                     " - %(name)s"
                     " - %(trace_id)s"
                     " - %(task_id)s"
@@ -201,6 +203,7 @@ class ContextFilter(logging.Filter):
             record.task_id = task_id
         if current_user := get_current_user():
             record.user = current_user.id
+        record.worker_id = ANTAREST_WORKER_ID
         return True
 
 

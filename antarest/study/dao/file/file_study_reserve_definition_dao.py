@@ -65,7 +65,7 @@ def _sections_from_ini(data: dict[str, Any]) -> dict[str, dict[str, Any]]:
 
 
 def _parse_reserve_sections(sections: dict[str, dict[str, object]]) -> list[ReserveDefinition]:
-    return [parse_reserve_definition({"name": name, **data}) for name, data in sections.items()]
+    return [parse_reserve_definition(section_id, data) for section_id, data in sections.items()]
 
 
 class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
@@ -93,7 +93,7 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
         for area_id in file_study.config.areas:
             reserves = self.get_all_reserve_definitions_for_area(area_id)
             if reserves:
-                result[area_id] = {reserve.id: reserve for reserve in reserves}
+                result[area_id] = {ReserveDefinitionId(reserve.id): reserve for reserve in reserves}
         return result
 
     @override
@@ -105,7 +105,7 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
         sections = self._read_area_reserves(area_id)
         if reserve_id not in sections:
             raise ReserveDefinitionNotFound(area_id, reserve_id)
-        return parse_reserve_definition({"name": reserve_id, **sections[reserve_id]})
+        return parse_reserve_definition(reserve_id, sections[reserve_id])
 
     @override
     def reserve_definition_exists(self, area_id: str, reserve_id: str) -> bool:
