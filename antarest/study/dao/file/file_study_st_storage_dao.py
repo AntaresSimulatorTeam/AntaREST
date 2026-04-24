@@ -111,7 +111,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         storages_by_areas: dict[str, dict[str, STStorage]] = {}
         for area_id, cluster_obj in storages.items():
             for cluster_id, cluster in cluster_obj.items():
-                storage = parse_st_storage(study_data.config.version, cluster)
+                storage = parse_st_storage(study_data.config.version, cluster, cluster_id)
                 storages_by_areas.setdefault(area_id, {})[storage.id] = storage
 
         return storages_by_areas
@@ -128,12 +128,14 @@ class FileStudySTStorageDao(STStorageDao, ABC):
     @override
     def get_st_storage(self, area_id: str, storage_id: str) -> STStorage:
         study_data = self.get_file_study()
+        if area_id not in study_data.config.areas:
+            raise AreaNotFound(area_id)
         path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
         try:
             config = study_data.tree.get(path.split("/"), depth=1)
         except KeyError:
             raise STStorageNotFound(area_id, storage_id) from None
-        return parse_st_storage(study_data.config.version, config)
+        return parse_st_storage(study_data.config.version, config, storage_id)
 
     @override
     def st_storage_exists(self, area_id: str, storage_id: str) -> bool:
@@ -326,6 +328,10 @@ class FileStudySTStorageDao(STStorageDao, ABC):
     def delete_st_storage(self, area_id: str, storage: STStorage) -> None:
         study_data = self.get_file_study()
         storage_id = storage.id
+        if area_id not in study_data.config.areas:
+            raise AreaNotFound(area_id)
+        if not any(s.id == storage_id for s in study_data.config.areas[area_id].st_storages):
+            raise STStorageNotFound(area_id, storage_id)
         paths = [
             ["input", "st-storage", "clusters", area_id, "list", storage_id],
             ["input", "st-storage", "series", area_id, storage_id],
@@ -343,7 +349,8 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         self._remove_st_storage_from_scenario_builder(area_id, storage_id)
 
         # Deleting the short-term storage in the configuration must be done AFTER deleting the files and folders.
-        study_data.config.areas[area_id].st_storages.remove(storage)
+        st_storages = study_data.config.areas[area_id].st_storages
+        st_storages[:] = [s for s in st_storages if s.id != storage_id]
         if study_data.config.version >= STUDY_VERSION_9_2:
             study_data.config.areas[area_id].st_storages_additional_constraints.pop(storage_id, None)
 
@@ -441,6 +448,8 @@ class FileStudySTStorageDao(STStorageDao, ABC):
 
         for area_id, value in data.items():
             for storage_id, constraints in value.items():
+                if not self.st_storage_exists(area_id, storage_id):
+                    raise STStorageNotFound(area_id, storage_id)
                 existing_constraints = self.get_st_storage_additional_constraints(area_id, storage_id)
 
                 existing_map = {c.id: c for c in existing_constraints}
@@ -484,8 +493,8 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         try:
             config = file_study.tree.get(path.split("/"), depth=3)
             storages = {}
-            for sts in config.values():
-                storage = parse_st_storage(file_study.config.version, sts)
+            for sts_id, sts in config.items():
+                storage = parse_st_storage(file_study.config.version, sts, sts_id)
                 storages[storage.id] = storage
             return storages
         except ChildNotFoundError:

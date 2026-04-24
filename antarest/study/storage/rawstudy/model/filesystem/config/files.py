@@ -467,7 +467,7 @@ def _parse_st_storage(root: Path, area: str) -> list[STStorage]:
     config_list = []
     for section, values in config_dict.items():
         try:
-            config_list.append(parse_st_storage(version, values))
+            config_list.append(parse_st_storage(version, values, section))
         except ValueError as exc:
             config_path = root.joinpath(relpath)
             logger.warning(f"Invalid short-term storage configuration: '{section}' in '{config_path}'", exc_info=exc)

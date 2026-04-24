@@ -14,13 +14,17 @@
 Unit tests for DatabaseStStorageDao.
 """
 
+from typing import Callable
+
 import polars as pl
 import pytest
+from antares.study.version import StudyVersion
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound, STStorageAdditionalConstraintNotFound, STStorageNotFound
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.st_storage import (
     COST_INJECTION_TABLE,
@@ -37,18 +41,19 @@ from antarest.study.dao.database.models.st_storage import (
     ST_STORAGE_TABLE,
     UPPER_RULE_CURVE_TABLE,
 )
+from antarest.study.model import STUDY_VERSION_9_3
 from tests.study.dao.utils import save_area
 
 
-def test_save_st_storage(db_dao_930: DatabaseStudyDao) -> None:
-    dao = db_dao_930
+def test_save_st_storage(dao_builder: Callable[[StudyVersion], StudyDao]) -> None:
+    dao = dao_builder(STUDY_VERSION_9_3)
     save_area(dao, "area_1")
 
     dao.save_st_storages(
         {
             "area_1": [
                 STStorage(
-                    id="st_storage_id",
+                    id="idd",
                     name="st-storage",
                     group="battery",
                     injection_nominal_capacity=100.0,
@@ -67,8 +72,8 @@ def test_save_st_storage(db_dao_930: DatabaseStudyDao) -> None:
         }
     )
 
-    st_storage = dao.get_st_storage("area_1", "st_storage_id")
-    assert st_storage.id == "st_storage_id"
+    st_storage = dao.get_st_storage("area_1", "idd")
+    assert st_storage.id == "idd"
     assert st_storage.name == "st-storage"
     assert st_storage.group == "battery"
     assert st_storage.injection_nominal_capacity == 100.0
@@ -84,11 +89,10 @@ def test_save_st_storage(db_dao_930: DatabaseStudyDao) -> None:
     assert st_storage.allow_overflow is True
 
     with pytest.raises(AreaNotFound):
-        dao.save_st_storages({"nonexistent": [STStorage(id="st_storage_id", name="st-storage")]})
+        dao.save_st_storages({"nonexistent": [STStorage(id="st-storage", name="st-storage")]})
 
 
-def test_save_multiple_st_storages(db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def test_save_multiple_st_storages(dao: StudyDao) -> None:
     save_area(dao, "area_1")
 
     dao.save_st_storages(
@@ -117,8 +121,7 @@ def test_save_multiple_st_storages(db_dao: DatabaseStudyDao) -> None:
         dao.save_st_storages({"nonexistent": [STStorage(id="s1", name="s1"), STStorage(id="s2", name="s2")]})
 
 
-def test_get_all_st_storages(db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def test_get_all_st_storages(dao: StudyDao) -> None:
     save_area(dao, "area_1")
     save_area(dao, "area_2")
 
@@ -135,8 +138,7 @@ def test_get_all_st_storages(db_dao: DatabaseStudyDao) -> None:
     assert all_storages["area_2"]["st_storage_id_2"].id == "st_storage_id_2"
 
 
-def test_get_st_storage_raises_when_missing(db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def test_get_st_storage_raises_when_missing(dao: StudyDao) -> None:
     save_area(dao, "area_1")
     dao.save_st_storages({"area_1": [STStorage(id="st_storage_id_1", name="st-storage-1")]})
 
@@ -147,19 +149,17 @@ def test_get_st_storage_raises_when_missing(db_dao: DatabaseStudyDao) -> None:
         dao.get_st_storage("nonexistent", "st_storage_id_1")
 
 
-def test_st_storage_exists(db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def test_st_storage_exists(dao: StudyDao) -> None:
     save_area(dao, "area_1")
     dao.save_st_storages({"area_1": [STStorage(id="st_storage_id_1", name="st-storage-1", efficiency=0.8)]})
     assert dao.st_storage_exists("area_1", "st_storage_id_1")
 
 
-def test_st_storage_exists_returns_false_for_unknown(db_dao: DatabaseStudyDao) -> None:
-    assert not db_dao.st_storage_exists("nonexistent", "st_storage_id_1")
+def test_st_storage_exists_returns_false_for_unknown(dao: StudyDao) -> None:
+    assert not dao.st_storage_exists("nonexistent", "st_storage_id_1")
 
 
-def test_delete_st_storage(db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def test_delete_st_storage(dao: StudyDao) -> None:
     save_area(dao, "area_1")
 
     dao.save_st_storages({"area_1": [STStorage(id="st_storage_id_1", name="st-storage-1", efficiency=0.8)]})
@@ -177,8 +177,8 @@ def test_delete_st_storage(db_dao: DatabaseStudyDao) -> None:
         dao.get_st_storage("area_1", "st_storage_id_1")
 
 
-def test_save_additional_constraints(db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def test_save_additional_constraints(dao_builder: Callable[[StudyVersion], StudyDao]) -> None:
+    dao = dao_builder(STUDY_VERSION_9_3)
     save_area(dao, "area_1")
     dao.save_st_storages({"area_1": [STStorage(id="st_storage_id_1", name="st-storage-1", efficiency=0.8)]})
 
@@ -186,8 +186,8 @@ def test_save_additional_constraints(db_dao: DatabaseStudyDao) -> None:
         {
             "area_1": {
                 "st_storage_id_1": [
-                    STStorageAdditionalConstraint(id="constraint_id_1", name="constraint-1"),
-                    STStorageAdditionalConstraint(id="constraint_id_2", name="constraint-2"),
+                    STStorageAdditionalConstraint(name="constraint-1"),
+                    STStorageAdditionalConstraint(name="constraint-2"),
                 ]
             }
         }
@@ -195,8 +195,8 @@ def test_save_additional_constraints(db_dao: DatabaseStudyDao) -> None:
 
     constraints = dao.get_all_st_storage_additional_constraints()
     assert len(constraints["area_1"]["st_storage_id_1"]) == 2
-    assert constraints["area_1"]["st_storage_id_1"][0].id == "constraint_id_1"
-    assert constraints["area_1"]["st_storage_id_1"][1].id == "constraint_id_2"
+    assert constraints["area_1"]["st_storage_id_1"][0].id == "constraint-1"
+    assert constraints["area_1"]["st_storage_id_1"][1].id == "constraint-2"
 
     with pytest.raises(STStorageNotFound):
         dao.save_st_storage_additional_constraints(
@@ -204,8 +204,8 @@ def test_save_additional_constraints(db_dao: DatabaseStudyDao) -> None:
         )
 
 
-def test_delete_additional_constraints(db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def test_delete_additional_constraints(dao_builder: Callable[[StudyVersion], StudyDao]) -> None:
+    dao = dao_builder(STUDY_VERSION_9_3)
     save_area(dao, "area_1")
     dao.save_st_storages({"area_1": [STStorage(id="st_storage_id_1", name="st-storage-1", efficiency=0.8)]})
 
@@ -213,21 +213,21 @@ def test_delete_additional_constraints(db_dao: DatabaseStudyDao) -> None:
         {
             "area_1": {
                 "st_storage_id_1": [
-                    STStorageAdditionalConstraint(id="constraint_id_1", name="constraint-1"),
-                    STStorageAdditionalConstraint(id="constraint_id_2", name="constraint-2"),
-                    STStorageAdditionalConstraint(id="constraint_id_3", name="constraint-3"),
+                    STStorageAdditionalConstraint(name="constraint-1"),
+                    STStorageAdditionalConstraint(name="constraint-2"),
+                    STStorageAdditionalConstraint(name="constraint-3"),
                 ]
             }
         }
     )
 
     assert len(dao.get_all_st_storage_additional_constraints()["area_1"]["st_storage_id_1"]) == 3
-    dao.delete_st_storage_additional_constraints("area_1", "st_storage_id_1", ["constraint_id_2", "constraint_id_3"])
+    dao.delete_st_storage_additional_constraints("area_1", "st_storage_id_1", ["constraint-2", "constraint-3"])
     assert len(dao.get_all_st_storage_additional_constraints()["area_1"]["st_storage_id_1"]) == 1
 
 
-def test_get_all_additional_constraints(db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def test_get_all_additional_constraints(dao_builder: Callable[[StudyVersion], StudyDao]) -> None:
+    dao = dao_builder(STUDY_VERSION_9_3)
     save_area(dao, "area_1")
     dao.save_st_storages({"area_1": [STStorage(id="st_storage_id_1", name="st-storage-1")]})
 
@@ -247,8 +247,8 @@ def test_get_all_additional_constraints(db_dao: DatabaseStudyDao) -> None:
     assert dao.get_st_storage_additional_constraints("area_1", "st_storage_id_2") == []
 
 
-def test_st_storage_matrices_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def test_st_storage_matrices_lifecycle(db_session: Session, dao_builder: Callable[[StudyVersion], StudyDao]) -> None:
+    dao = dao_builder(STUDY_VERSION_9_3)
     save_area(dao, "area_1")
     dao.save_st_storages({"area_1": [STStorage(id="battery", name="Battery")]})
 
@@ -313,18 +313,19 @@ def test_st_storage_matrices_lifecycle(db_session: Session, db_dao: DatabaseStud
     # Cascade delete: deleting the storage should remove all matrix rows
     dao.delete_st_storage("area_1", STStorage(id="battery", name="Battery"))
 
-    with db_session:
-        assert db_session.execute(select(ST_STORAGE_TABLE)).fetchall() == []
-        assert db_session.execute(select(PMAX_INJECTION_TABLE)).fetchall() == []
-        assert db_session.execute(select(PMAX_WITHDRAWAL_TABLE)).fetchall() == []
-        assert db_session.execute(select(LOWER_RULE_CURVE_TABLE)).fetchall() == []
-        assert db_session.execute(select(UPPER_RULE_CURVE_TABLE)).fetchall() == []
-        assert db_session.execute(select(INFLOWS_TABLE)).fetchall() == []
-        assert db_session.execute(select(COST_INJECTION_TABLE)).fetchall() == []
-        assert db_session.execute(select(COST_WITHDRAWAL_TABLE)).fetchall() == []
-        assert db_session.execute(select(COST_LEVEL_TABLE)).fetchall() == []
-        assert db_session.execute(select(COST_VARIATION_INJECTION_TABLE)).fetchall() == []
-        assert db_session.execute(select(COST_VARIATION_WITHDRAWAL_TABLE)).fetchall() == []
+    if isinstance(dao, DatabaseStudyDao):
+        with db_session:
+            assert db_session.execute(select(ST_STORAGE_TABLE)).fetchall() == []
+            assert db_session.execute(select(PMAX_INJECTION_TABLE)).fetchall() == []
+            assert db_session.execute(select(PMAX_WITHDRAWAL_TABLE)).fetchall() == []
+            assert db_session.execute(select(LOWER_RULE_CURVE_TABLE)).fetchall() == []
+            assert db_session.execute(select(UPPER_RULE_CURVE_TABLE)).fetchall() == []
+            assert db_session.execute(select(INFLOWS_TABLE)).fetchall() == []
+            assert db_session.execute(select(COST_INJECTION_TABLE)).fetchall() == []
+            assert db_session.execute(select(COST_WITHDRAWAL_TABLE)).fetchall() == []
+            assert db_session.execute(select(COST_LEVEL_TABLE)).fetchall() == []
+            assert db_session.execute(select(COST_VARIATION_INJECTION_TABLE)).fetchall() == []
+            assert db_session.execute(select(COST_VARIATION_WITHDRAWAL_TABLE)).fetchall() == []
 
 
 def test_get_st_storage_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> None:
