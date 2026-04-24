@@ -55,7 +55,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import ICache, study_raw_cache_key, update_cache
+from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import JWTGroup
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
@@ -78,6 +78,7 @@ from antarest.study.business.allocation_management import AllocationManager
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.areas.hydro_management import HydroManager
 from antarest.study.business.areas.renewable_management import RenewableManager
+from antarest.study.business.areas.reserve_definitions_management import ReserveDefinitionsManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintFilters
@@ -105,6 +106,7 @@ from antarest.study.business.model.xpansion_model import (
 )
 from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
+from antarest.study.business.reserves_global_parameters_management import ReservesGlobalParametersManager
 from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.table_mode_management import TableModeManager
@@ -151,7 +153,6 @@ from antarest.study.repository import (
     StudySortBy,
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
@@ -168,6 +169,8 @@ from antarest.study.storage.utils import (
     assert_permission,
     assert_permission_on_studies,
     create_new_empty_study,
+    extract_simulation_range_from_model,
+    get_matrix_index,
     get_start_date,
     is_managed,
     is_study_folder,
@@ -201,7 +204,7 @@ MAX_MISSING_STUDY_TIMEOUT = 2  # days
 MAX_BATCH_DELETE_SIZE = 100
 
 
-def _get_matrix_from_path(study_interface: StudyInterface, matrix_path: Path) -> pl.DataFrame:
+def _get_matrix_from_path(study_interface: StudyInterface, matrix_path: PurePosixPath) -> pl.DataFrame:
     """We give a ReadOnlyStudyDao instead of a StudyDao, but it does not matter as we only use the getter methods."""
     mapper = RawPathToMatrixMapper(study_interface.get_study_dao())  # type: ignore
     return mapper.get_matrix_from_path(matrix_path)
@@ -344,7 +347,7 @@ class ThermalClusterTimeSeriesGeneratorTask:
                 # Therefore, we have to launch a variant generation task inside the timeseries generation one.
                 variant_service = self.storage_service.variant_study_service
                 task_service = variant_service.task_service
-                generation_task_id = variant_service.generate_task(study, True, False, listener)
+                generation_task_id = variant_service.generate_task(study, False, listener)
                 task_service.await_task(generation_task_id)
                 result = task_service.status_task(generation_task_id)
                 assert result.result is not None
@@ -421,7 +424,7 @@ class StudyUpgraderTask:
                 )
             finally:
                 if is_study_denormalized:
-                    self.storage_service.raw_study_service.normalize_study(study_to_upgrade)
+                    self.storage_service.get_storage(study_to_upgrade).normalize_study(study_to_upgrade)
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         """
@@ -481,8 +484,7 @@ class RawStudyInterface(StudyInterface):
     def version(self) -> StudyVersion:
         return self._version
 
-    @override
-    def get_files(self) -> FileStudy:
+    def _get_files(self) -> FileStudy:
         if not self._cached_file_study:
             self._cached_file_study = self._raw_study_service.get_raw(self._study)
         return self._cached_file_study
@@ -510,9 +512,8 @@ class RawStudyInterface(StudyInterface):
         # Handle cache invalidation
         if should_invalidate_cache:
             remove_from_cache(self._raw_study_service.cache, study.id)
-        elif study.storage_mode == StorageMode.FILESYSTEM:
-            data = FileStudyTreeConfigDTO.from_build_config(dao.get_file_study().config).model_dump()
-            update_cache(self._raw_study_service.cache, study.id, data)
+        else:
+            dao.update_cache()
 
         # Update editor metadata
         self._update_editor_and_lastsave(dao)
@@ -521,11 +522,18 @@ class RawStudyInterface(StudyInterface):
         self._variant_study_service.on_parent_change(study.id)
 
     def _get_dao(self) -> StudyDao:
-        command_context = self._variant_study_service.command_factory.command_context
-        matrix_constants = command_context.generator_matrix_constants
+        context = self._variant_study_service.command_factory.command_context
+        matrix_constants = context.generator_matrix_constants
         if self._study.storage_mode == StorageMode.DATABASE:
             return DatabaseStudyDao(self._study.id, db.session, self._matrix_service, matrix_constants)
-        return FileStudyTreeDao(self.get_files(), matrix_constants, command_context.blob_service)
+        return FileStudyTreeDao(
+            self._get_files(),
+            is_managed(self._study),
+            matrix_constants,
+            context.blob_service,
+            self._matrix_service,
+            self._raw_study_service.cache,
+        )
 
     @override
     def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
@@ -568,14 +576,15 @@ class VariantStudyInterface(StudyInterface):
         return self._version
 
     @override
-    def get_files(self) -> FileStudy:
-        return self._variant_service.get_raw(self._study)
-
-    @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        command_context = self._variant_service.command_factory.command_context
+        context = self._variant_service.command_factory.command_context
         return FileStudyTreeDao(
-            self.get_files(), command_context.generator_matrix_constants, command_context.blob_service
+            self._variant_service.get_raw(self._study),
+            True,
+            context.generator_matrix_constants,
+            context.blob_service,
+            context.matrix_service,
+            self._variant_service.cache,
         ).read_only()
 
     @override
@@ -667,6 +676,8 @@ class StudyService:
         self.adequacy_patch_manager = AdequacyPatchManager(command_context)
         self.advanced_parameters_manager = AdvancedParamsManager(command_context)
         self.compatibility_parameters_manager = CompatibilityParamsManager(command_context)
+        self.reserves_global_parameters_manager = ReservesGlobalParametersManager(command_context)
+        self.reserve_definitions_manager = ReserveDefinitionsManager(command_context)
         self.hydro_manager = HydroManager(command_context)
         self.allocation_manager = AllocationManager(command_context)
         self.renewable_manager = RenewableManager(command_context)
@@ -695,7 +706,9 @@ class StudyService:
         StudyDatabaseMatrixUsageProvider(matrix_service)
         self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
             StorageMode.DATABASE: DatabaseStudyDaoFactory(matrix_service, command_context.generator_matrix_constants),
-            StorageMode.FILESYSTEM: FileStudyDaoFactory(command_context, raw_study_service.study_factory),
+            StorageMode.FILESYSTEM: FileStudyDaoFactory(
+                command_context, raw_study_service.study_factory, cache_service
+            ),
         }
 
     def register_output_access(self, output_access: IOutputsAccess) -> None:
@@ -1060,13 +1073,23 @@ class StudyService:
         assert_permission(study, StudyPermissionType.READ)
         study.last_access = current_time()
         self.repository.save(study)
-        input_synthesis = self.storage_service.get_storage(study).get_synthesis(study)
+        input_synthesis = self.get_study_interface(study).get_study_dao().get_synthesis()
         outputs = self._get_outputs_access().get_outputs_details(study.id)
         return StudySynthesis.aggregate(input_synthesis, outputs)
 
-    def get_input_matrix_startdate(self, study_id: str, path: str | None) -> MatrixIndex:
+    def get_input_matrix_startdate(self, study_id: str, path: str) -> MatrixIndex:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
+
+        # We need to handle matrices index differently if our study is stored in DB
+        if study.storage_mode == StorageMode.DATABASE:
+            dao = self.get_study_interface(study).get_study_dao()
+            # We can give a readOnly Dao as we won't use the save methods
+            mapper = RawPathToMatrixMapper(dao)  # type: ignore
+            matrix_frequency = mapper.get_matrix_frequency_from_path(PurePosixPath(path))
+            simulation_range = extract_simulation_range_from_model(dao.get_general_config())
+            return get_matrix_index(simulation_range, False, matrix_frequency)
+
         file_study = self.get_file_study(study)
         output_id = None
         frequency = MatrixFrequency.HOURLY
@@ -1286,7 +1309,7 @@ class StudyService:
             study.directory_id = self.directory_service.get_directory_by_path(destination_folder.as_posix())
 
             self._save_study(study)
-            self.storage_service.raw_study_service.normalize_study(study)
+            self.storage_service.get_storage(study).normalize_study(study)
 
             match outputs_selection:
                 case "all":
@@ -1596,6 +1619,7 @@ class StudyService:
         self,
         stream: BinaryIO,
         group_ids: list[str],
+        directory: str = "",
     ) -> str:
         """
         Import a compressed study.
@@ -1603,6 +1627,7 @@ class StudyService:
         Args:
             stream: binary content of the study compressed in ZIP or 7z format.
             group_ids: group to attach to study
+            directory: Optional directory path where the study will be imported (e.g., 'project/subfolder').
 
         Returns:
             New study UUID.
@@ -1625,10 +1650,11 @@ class StudyService:
             groups=groups,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
+        study.directory_id = self.directory_service.get_directory_by_path(directory)
         study.updated_at = current_time()
 
         self._save_study(study)
-        self.storage_service.raw_study_service.normalize_study(study)
+        self.storage_service.get_storage(study).normalize_study(study)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -1782,10 +1808,20 @@ class StudyService:
 
         # We need to handle matrices differently if our study is stored in DB
         if study.storage_mode == StorageMode.DATABASE:
-            context = self.storage_service.variant_study_service.command_factory.command_context
-            command = ReplaceMatrix(
-                target=url, matrix=new, command_context=context, study_version=StudyVersion.parse(study.version)
-            )
+            # Different commands need to be applied according to the given path
+            study_version = StudyVersion.parse(study.version)
+            command: ICommand
+
+            try:
+                _get_path_inside_user_folder(url, ResourceCreationNotAllowed)
+                file_relpath = PurePosixPath(url.strip().strip("/"))
+                command = self._create_replace_user_resource_command(study_version, new, file_relpath)
+
+            except ResourceCreationNotAllowed:
+                # The url does not point towards a user resource, we use the `ReplaceMatrix` command
+                context = self.storage_service.variant_study_service.command_factory.command_context
+                command = ReplaceMatrix(target=url, matrix=new, command_context=context, study_version=study_version)
+
             self.get_study_interface(study).add_commands([command])
 
         else:
@@ -2683,7 +2719,7 @@ class StudyService:
             HTTPException: If the matrix does not exist or the user does not have the necessary permissions.
         """
 
-        matrix_path = Path(path)
+        matrix_path = PurePosixPath(path)
         study = self.get_study(study_id)
         study_interface = self.get_study_interface(study)
 
@@ -2806,16 +2842,10 @@ class StudyService:
             "command_context": self.storage_service.variant_study_service.command_factory.command_context,
         }
         command = command_class.model_validate(args)
-        file_study = self.get_file_study(study)
         try:
             self.get_study_interface(study).add_commands([command])
         except CommandApplicationError as e:
             raise exception_class(e.detail) from e
-
-        # update cache
-        cache_id = study_raw_cache_key(study.id)
-        updated_tree = file_study.tree.get()
-        self.storage_service.get_storage(study).cache.put(cache_id, updated_tree)  # type: ignore
 
     def normalize_study_by_id(self, study_id: str) -> None:
         """
@@ -2830,7 +2860,7 @@ class StudyService:
             raise UnsupportedOperationOnThisStudyType(study_id, "normalize", "raw")
         self.assert_study_unarchived(study)
 
-        self.storage_service.raw_study_service.normalize_study(study)
+        self.storage_service.get_storage(study).normalize_study(study)
 
     def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
         """
@@ -2849,7 +2879,7 @@ class StudyService:
 
         # We need to handle matrices differently if our study is stored in DB
         if study.storage_mode == StorageMode.DATABASE:
-            return _get_matrix_from_path(self.get_study_interface(study), Path(path))
+            return _get_matrix_from_path(self.get_study_interface(study), PurePosixPath(path))
 
         else:
             file_study = self.get_file_study(study)
@@ -3003,7 +3033,14 @@ class StudyService:
             path, with_matrix_normalization=normalize_matrices, study_id="", use_cache=False
         )
         context = self.storage_service.variant_study_service.command_factory.command_context
-        file_study_dao = FileStudyTreeDao(file_study, context.generator_matrix_constants, context.blob_service)
+        file_study_dao = FileStudyTreeDao(
+            file_study,
+            normalize_matrices,
+            context.generator_matrix_constants,
+            context.blob_service,
+            context.matrix_service,
+            self.cache_service,
+        )
         # Write the given study input in the filesystem
         converter = StudyConverter(source_dao, file_study_dao, study_version, context.matrix_service)
         converter.convert_study_inputs()

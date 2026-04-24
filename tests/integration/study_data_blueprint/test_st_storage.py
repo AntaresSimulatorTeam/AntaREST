@@ -383,7 +383,11 @@ class TestSTStorage:
         )
         assert res.status_code == 500
         obj = res.json()
-        assert f"The area '{bad_area_id}' does not exist" in obj["description"]
+        if study_type == "variant":
+            msg = f"The area '{bad_area_id}' does not exist"
+        else:
+            msg = f"Area is not found: '{bad_area_id}'"
+        assert msg in obj["description"]
         assert obj["exception"] == "CommandApplicationError"
 
         # Check POST with wrong `group`

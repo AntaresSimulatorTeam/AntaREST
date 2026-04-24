@@ -28,6 +28,7 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+from tests.helpers import build_dao_from_file_study
 
 GEN = np.random.default_rng(1000)
 
@@ -242,29 +243,27 @@ class TestCreateSTStorage:
     def test_apply__missing_area(self, empty_study_860: FileStudy, command_context: CommandContext) -> None:
         # Given a study without "unknown area" area
         # When we apply the config to add a new ST Storage
+        dao = build_dao_from_file_study(empty_study_860, command_context)
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id="unknown area",  # bad ID
             parameters=STStorageCreation(**PARAMETERS),
             study_version=empty_study_860.config.version,
         )
-        command_output = create_st_storage.apply(empty_study_860)
+        command_output = create_st_storage.apply(dao)
 
         # Then, the output should be an error
         assert command_output.status is False
-        assert re.search(
-            rf"'{re.escape(create_st_storage.area_id)}'.*does not exist",
-            command_output.message,
-            flags=re.IGNORECASE,
-        )
+        assert "Area is not found: 'unknown area'" in command_output.message
 
     def test_apply__duplicate_storage(self, empty_study_860: FileStudy, command_context: CommandContext) -> None:
         recent_study = empty_study_860
+        dao = build_dao_from_file_study(recent_study, command_context)
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR", command_context=command_context, study_version=recent_study.config.version
         )
-        create_area.apply(recent_study)
+        create_area.apply(dao)
 
         # Then, apply the config for a new ST Storage
         create_st_storage = CreateSTStorage(
@@ -273,7 +272,7 @@ class TestCreateSTStorage:
             parameters=STStorageCreation(**PARAMETERS),
             study_version=recent_study.config.version,
         )
-        command_output = create_st_storage.apply(recent_study)
+        command_output = create_st_storage.apply(dao)
         assert command_output.status is True
 
         # Then, apply the config a second time
@@ -284,7 +283,7 @@ class TestCreateSTStorage:
             parameters=STStorageCreation(**parameters),
             study_version=recent_study.config.version,
         )
-        command_output = create_st_storage.apply(recent_study)
+        command_output = create_st_storage.apply(dao)
 
         # Then, the output should be an error
         assert command_output.status is False
@@ -296,11 +295,12 @@ class TestCreateSTStorage:
 
     def test_apply_create__nominal_case(self, empty_study_860: FileStudy, command_context: CommandContext) -> None:
         recent_study = empty_study_860
+        dao = build_dao_from_file_study(recent_study, command_context)
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR", command_context=command_context, study_version=recent_study.config.version
         )
-        create_area.apply(recent_study)
+        create_area.apply(dao)
 
         # Then, apply the config for a new ST Storage
         create_st_storage = CreateSTStorage(
@@ -309,7 +309,7 @@ class TestCreateSTStorage:
             parameters=STStorageCreation(**PARAMETERS),
             study_version=recent_study.config.version,
         )
-        command_output = create_st_storage.apply(recent_study)
+        command_output = create_st_storage.apply(dao)
 
         # Check the command output and extra dict
         assert command_output.status is True
@@ -322,11 +322,12 @@ class TestCreateSTStorage:
     # noinspection SpellCheckingInspection
     def test_apply__nominal_case(self, empty_study_860: FileStudy, command_context: CommandContext) -> None:
         recent_study = empty_study_860
+        dao = build_dao_from_file_study(recent_study, command_context, True)
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR", command_context=command_context, study_version=recent_study.config.version
         )
-        create_area.apply(recent_study)
+        create_area.apply(dao)
 
         # Then, apply the command to create a new ST Storage
         pmax_injection = GEN.random((8760, 1))
@@ -339,7 +340,7 @@ class TestCreateSTStorage:
             inflows=inflows.tolist(),
             study_version=recent_study.config.version,
         )
-        command_output = cmd.apply(recent_study)
+        command_output = cmd.apply(dao)
         assert command_output.status
 
         # check the config
@@ -411,11 +412,12 @@ class TestCreateSTStorage:
 
     def test_version_9_2(self, command_context: CommandContext, empty_study_920: FileStudy) -> None:
         study = empty_study_920
+        dao = build_dao_from_file_study(study, command_context)
         study_version = study.config.version
         cmd = CreateArea(area_name="Area be", command_context=command_context, study_version=study_version)
-        cmd.apply(study)
+        cmd.apply(dao)
         cmd = CreateArea(area_name="Area FR", command_context=command_context, study_version=study_version)
-        cmd.apply(study)
+        cmd.apply(dao)
 
         # Create a basic storage
         cmd = CreateSTStorage(
@@ -424,7 +426,7 @@ class TestCreateSTStorage:
             parameters=STStorageCreation(**PARAMETERS),
             study_version=study_version,
         )
-        output = cmd.apply(study)
+        output = cmd.apply(dao)
         assert output.status is True
         assert output.message == "Short-term storage 'storage1' successfully added to area 'area fr'."
         # Checks ini content
@@ -464,7 +466,7 @@ class TestCreateSTStorage:
             cost_injection=cost_injection_matrix,
             study_version=study_version,
         )
-        output = cmd.apply(study)
+        output = cmd.apply(dao)
         assert output.status is True
         assert output.message == "Short-term storage 'storage1' successfully added to area 'area be'."
 

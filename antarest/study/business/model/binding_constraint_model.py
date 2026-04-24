@@ -14,12 +14,13 @@
 Object model used to read and update binding constraint configuration.
 """
 
-from typing import Any, TypeAlias
+from typing import Any, NewType, TypeAlias
 
 from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 
+from antarest.core.api_types import SanitizedStr
 from antarest.core.exceptions import InvalidConstraintTerm, InvalidFieldForVersionError
 from antarest.core.model import LowerCaseId, LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
@@ -231,7 +232,7 @@ class ConstraintTerm(AntaresBaseModel):
         return self.data.generate_id()
 
     def update_from(self, updated_term: ConstraintTermUpdate) -> "ConstraintTerm":
-        if updated_term.weight:
+        if updated_term.weight is not None:
             self.weight = updated_term.weight
 
         if updated_term.data:
@@ -246,6 +247,8 @@ class ConstraintTerm(AntaresBaseModel):
 # ==================================================
 # Binding constraint objects
 # ==================================================
+
+ConstraintId = NewType("ConstraintId", SanitizedStr)
 
 
 class BindingConstraint(AntaresBaseModel):
@@ -262,7 +265,7 @@ class BindingConstraint(AntaresBaseModel):
             data["id"] = transform_name_to_id(data["name"])
         return data
 
-    id: str
+    id: ConstraintId
     name: str
     enabled: bool = True
     time_step: BindingConstraintFrequency = DEFAULT_TIMESTEP
@@ -366,7 +369,7 @@ class BindingConstraintCreationWithMatrices(BindingConstraintCreation, BindingCo
         )
 
 
-BindingConstraintUpdates = dict[LowerCaseId, BindingConstraintUpdate]
+BindingConstraintUpdates = dict[ConstraintId, BindingConstraintUpdate]
 
 
 def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:

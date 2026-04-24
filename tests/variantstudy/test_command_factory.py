@@ -21,7 +21,13 @@ import pytest
 from antarest.blobstore.service import BlobService
 from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
+from antarest.study.model import (
+    STUDY_VERSION_8_6,
+    STUDY_VERSION_8_8,
+    STUDY_VERSION_9_2,
+    STUDY_VERSION_9_3,
+    STUDY_VERSION_10_0,
+)
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -1054,6 +1060,45 @@ COMMANDS = [
         ),
         None,
         id="convert_hydro_pmax_daily",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_RESERVES_ENABLED.value,
+            args={"reserves_enabled": True},
+            study_version=STUDY_VERSION_10_0,
+        ),
+        None,
+        id="update_reserves_enabled",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.CREATE_RESERVE_DEFINITION.value,
+            args={
+                "area_id": "paris",
+                "parameters": {"id": "Reserve 1", "type": "up"},
+            },
+            study_version=STUDY_VERSION_10_0,
+        ),
+        None,
+        id="create_reserve_definition",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_RESERVE_DEFINITIONS.value,
+            args={"reserve_properties": {"paris": {"Reserve 1": {"failureCost": 500.0}}}},
+            study_version=STUDY_VERSION_10_0,
+        ),
+        None,
+        id="update_reserve_definitions",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REMOVE_RESERVE_DEFINITIONS.value,
+            args={"area_id": "paris", "reserve_ids": ["Reserve 1"]},
+            study_version=STUDY_VERSION_10_0,
+        ),
+        None,
+        id="remove_reserve_definitions",
     ),
 ]
 

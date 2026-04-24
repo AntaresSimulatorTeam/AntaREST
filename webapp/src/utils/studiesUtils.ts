@@ -62,10 +62,9 @@ const folderPredicate = R.curry((filters: StudyFilters, study: StudyMetadata) =>
     return false;
   }
 
-  const workspacePath = `/${study.workspace}`;
-  const studyPath = study.folder
-    ? `${workspacePath}/${R.dropLast(1, study.folder.split("/")).join("/")}`
-    : workspacePath;
+  const workspace = `/${study.workspace}`;
+  const directory = study.folder ? study.folder.split("/").filter(Boolean).slice(0, -1) : [];
+  const studyPath = directory.length > 0 ? `${workspace}/${directory.join("/")}` : workspace;
 
   return external.path === ""
     ? true // home: show all external studies

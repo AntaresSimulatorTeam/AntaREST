@@ -33,7 +33,6 @@ from antarest.core.jwt import JWTUser
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     LOG_DIR_NAME,
-    WORKSPACE_LOCK_FILE_NAME,
     SlurmLauncher,
     VersionNotSupportedError,
 )
@@ -76,7 +75,9 @@ def test_init_slurm_launcher_arguments(tmp_path: Path) -> None:
         local_workspace=tmp_path,
     )
 
-    slurm_launcher = SlurmLauncher(config=config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
+    slurm_launcher = SlurmLauncher(
+        config=config, callbacks=Mock(), event_bus=Mock(), cache=Mock(), use_private_workspace=False
+    )
 
     arguments = slurm_launcher._init_launcher_arguments()
 
@@ -113,7 +114,9 @@ def test_init_slurm_launcher_parameters(tmp_path: Path) -> None:
         password="password",
     )
 
-    slurm_launcher = SlurmLauncher(config=config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
+    slurm_launcher = SlurmLauncher(
+        config=config, callbacks=Mock(), event_bus=Mock(), cache=Mock(), use_private_workspace=False
+    )
 
     main_parameters = slurm_launcher._init_launcher_parameters()
     assert config is not None
@@ -486,10 +489,11 @@ def test_launcher_workspace_init(run_with_mock: Any, tmp_path: Path, launcher_co
         event_bus=Mock(),
         retrieve_existing_jobs=True,
         cache=Mock(),
+        workspace_id="workspace-12",
     )
     workspaces = [p for p in tmp_path.iterdir() if p.is_dir() and p.name != LOG_DIR_NAME]
-    assert len(workspaces) == 1
-    assert (workspaces[0] / WORKSPACE_LOCK_FILE_NAME).exists()
+    assert workspaces[0] == tmp_path / "workspace-12"
+    assert workspaces[0].is_dir()
 
     slurm_launcher.data_repo_tinydb.save_study(StudyDTO(path="some_path"))
     run_with_mock.assert_not_called()
@@ -501,19 +505,8 @@ def test_launcher_workspace_init(run_with_mock: Any, tmp_path: Path, launcher_co
         event_bus=Mock(),
         retrieve_existing_jobs=True,
         cache=Mock(),
+        workspace_id="workspace-12",
     )
     workspaces = [p for p in tmp_path.iterdir() if p.is_dir() and p.name != LOG_DIR_NAME]
-    assert len(workspaces) == 2
-
-    run_with_mock.reset_mock()
-    # will create a new one since there is a lock on previous one
-    SlurmLauncher(
-        config=launcher_config,
-        callbacks=callbacks,
-        event_bus=Mock(),
-        retrieve_existing_jobs=True,
-        cache=Mock(),
-    )
-    workspaces = [p for p in tmp_path.iterdir() if p.is_dir() and p.name != LOG_DIR_NAME]
-    assert len(workspaces) == 3
-    run_with_mock.assert_not_called()
+    assert len(workspaces) == 1
+    assert workspaces[0] == tmp_path / "workspace-12"

@@ -35,7 +35,7 @@ from antarest.study.storage.variantstudy.model.command.create_cluster import Cre
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.conftest import empty_study_fixture
 from tests.db_statement_recorder import DBStatementRecorder
-from tests.helpers import create_raw_study, dirhash, with_db_context
+from tests.helpers import build_dao_from_file_study, create_raw_study, dirhash, with_db_context
 from tests.test_helpers.outputs import create_minimal_output_dir_from_name
 
 
@@ -81,11 +81,12 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
         generator_matrix_constants=matrix_constants, matrix_service=matrix_service, blob_service=blob_service
     )
     raw_study_service = RawStudyService(Mock(), Mock(), Mock(), matrix_service)
+    dao = build_dao_from_file_study(study, command_context, True)
 
     # Create an area and a thermal with specific matrices to have real DB matrices in our study
     version = study.config.version
     cmd = CreateArea(command_context=command_context, area_name="fr", study_version=version)
-    output = cmd.apply(study)
+    output = cmd.apply(dao)
     assert output.status
     cmd = CreateCluster(
         area_id="fr",
@@ -94,7 +95,7 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
         command_context=command_context,
         study_version=version,
     )
-    output = cmd.apply(study)
+    output = cmd.apply(dao)
     assert output.status
 
     # Ensures the matrix is normalized for now
@@ -107,7 +108,7 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
 
     # Normalize the study
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        raw_study_service.normalize_study(study)
+        raw_study_service.normalize_file_study(study)
         assert len(db_recorder.sql_statements) == 0  # no DB request as there is nothing to do
 
     assert normalized_path.read_text() == content
@@ -115,7 +116,7 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
 
     # Denormalize the study
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        raw_study_service.denormalize_study(study)
+        raw_study_service.denormalize_file_study(study)
         assert len(db_recorder.sql_statements) == 1  # 1 DB request for all matrices
 
     assert not normalized_path.exists()
@@ -124,7 +125,7 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
 
     # Denormalize again
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        raw_study_service.denormalize_study(study)
+        raw_study_service.denormalize_file_study(study)
         assert len(db_recorder.sql_statements) == 0  # no DB request as there is nothing to do
 
     assert not normalized_path.exists()
@@ -133,7 +134,7 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
 
     # Normalize the study to come back to the initial point
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        raw_study_service.normalize_study(study)
+        raw_study_service.normalize_file_study(study)
         assert len(db_recorder.sql_statements) == 1  # 1 DB request for all matrices
 
     assert normalized_path.exists()

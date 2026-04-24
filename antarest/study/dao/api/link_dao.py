@@ -16,6 +16,7 @@ from collections.abc import Sequence
 import polars as pl
 
 from antarest.study.business.model.link_model import Link
+from antarest.study.dao.common import LinkSeriesMapping
 
 
 class ReadOnlyLinkDao(ABC):
@@ -43,22 +44,34 @@ class ReadOnlyLinkDao(ABC):
     def get_link_series(self, area_from: str, area_to: str) -> pl.DataFrame:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_all_links_series(self) -> LinkSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_links_indirect_capacities(self) -> LinkSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_links_direct_capacities(self) -> LinkSeriesMapping:
+        raise NotImplementedError()
+
 
 class LinkDao(ReadOnlyLinkDao):
     @abstractmethod
-    def save_link(self, link: Link) -> None:
+    def save_links(self, links: Sequence[Link]) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_link_indirect_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
+    def save_link_indirect_capacities(self, series: LinkSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_link_direct_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
+    def save_link_direct_capacities(self, series: LinkSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_link_series(self, area_from: str, area_to: str, series_id: str) -> None:
+    def save_link_series(self, series: LinkSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod

@@ -75,8 +75,7 @@ class UpdateRenewablesClusters(ICommand):
 
             memory_mapping[area_id] = new_clusters
 
-        for area_id, new_clusters in memory_mapping.items():
-            study_data.save_renewables(area_id, new_clusters)
+        study_data.save_renewables(memory_mapping)
 
         return command_succeeded("The renewable clusters were successfully updated.", result=memory_mapping)
 

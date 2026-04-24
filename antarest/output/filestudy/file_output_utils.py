@@ -24,6 +24,7 @@ from antarest.output.filestudy.utils import (
     MCIndLinksQueryFile,
     MCRoot,
     QueryFileType,
+    get_output_object_type,
     get_start_column,
     normalize_df_column_names,
     parse_headers,
@@ -171,14 +172,6 @@ def extract_variables_list(output_path: Path) -> OutputVariablesList:
 
     variables: dict[str, Any] = {"mc_ind": {"areas": [], "links": []}, "mc_all": {"areas": [], "links": []}}
 
-    areas_mapping = {
-        "details": "thermal_clusters",
-        "details-res": "renewable_clusters",
-        "details-STstorage": "short_term_storages",
-        "values": "variables",
-        "id": "variables",
-    }
-
     existing_paths = []
     if mc_ind_path.exists():
         first_mc_year = sorted(mc_ind_path.iterdir())[0].name
@@ -199,7 +192,8 @@ def extract_variables_list(output_path: Path) -> OutputVariablesList:
                 parent_path = areas_folder / area.name
 
                 for col_headers, file_type in _get_all_headers_and_file_type(mc_root, parent_path, file_type_class):
-                    key = areas_mapping[file_type.value]
+                    object_type = get_output_object_type(file_type, is_link=False)
+                    key = "variables" if object_type == "areas" else object_type
                     if "details" in file_type.value:
                         areas_dict[key] = [{"name": c.name, "variables": c.sub_columns_names} for c in col_headers]
                     else:

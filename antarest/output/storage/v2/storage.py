@@ -20,7 +20,12 @@ from typing import BinaryIO
 import polars as pl
 from typing_extensions import override
 
-from antarest.core.exceptions import OutputAlreadyExists, OutputNotFound, ShouldNotHappenException
+from antarest.core.exceptions import (
+    OutputAggregationError,
+    OutputAlreadyExists,
+    OutputNotFound,
+    ShouldNotHappenException,
+)
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.utils.archives import (
     ArchiveFormat,
@@ -49,6 +54,11 @@ from antarest.output.storage.output_storage import (
 from antarest.output.storage.v2.repository import (
     DbOutputMetadataV2,
     OutputV2Repository,
+)
+from antarest.output.storage.v2.variables_storage import (
+    extract_output_to_parquet,
+    parquet_output_dir,
+    read_output_from_parquet,
 )
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency, MatrixIndex
@@ -148,10 +158,17 @@ class V2OutputStorage(IOutputStorage):
     The tmp directory will be used on import or unarchival to store uncompressed files.
     """
 
-    def __init__(self, tmp_dir: Path, repository: OutputV2Repository, archive_storage: ILargeFileStorage) -> None:
+    def __init__(
+        self,
+        tmp_dir: Path,
+        repository: OutputV2Repository,
+        archive_storage: ILargeFileStorage,
+        variables_dir: Path,
+    ) -> None:
         self._archive_storage = archive_storage
         self._repository = repository
         self._tmp_dir = tmp_dir
+        self._variables_dir = variables_dir
 
     def _get_metadata(self, study_id: str, output_name: str) -> DbOutputMetadataV2 | None:
         return self._repository.get_output_metadata(study_id, output_name)
@@ -195,7 +212,8 @@ class V2OutputStorage(IOutputStorage):
 
             simulation_range = _extract_simulation_range(dir_path)
 
-            # TODO here: extract variable data
+            variables_target = parquet_output_dir(self._variables_dir, study_id, output_name)
+            extract_output_to_parquet(dir_path, variables_target)
 
             self._repository.save_output_metadata(
                 DbOutputMetadataV2(
@@ -279,6 +297,11 @@ class V2OutputStorage(IOutputStorage):
             raise ShouldNotHappenException(f"Variables list not found for output {src_study_id}/{output_id}.")
         self._repository.save_output_variables_list(target_study_id, output_id, variables_list)
 
+        src_vars = parquet_output_dir(self._variables_dir, src_study_id, output_id)
+        dst_vars = parquet_output_dir(self._variables_dir, target_study_id, output_id)
+        if src_vars.exists():
+            shutil.copytree(src_vars, dst_vars)
+
     @override
     def delete_output(self, study_id: str, output_id: str) -> None:
         # TODO: we should have some sort of async behaviour so that
@@ -287,6 +310,7 @@ class V2OutputStorage(IOutputStorage):
         logger.info(f"Deleting output {study_id}/{output_id} from internal storage.")
         self._require_metadata(study_id, output_id)
         self._archive_storage.delete_file(_archive_id(study_id, output_id))
+        shutil.rmtree(parquet_output_dir(self._variables_dir, study_id, output_id), ignore_errors=True)
         self._repository.delete_output(study_id, output_id)
 
     @override
@@ -306,17 +330,30 @@ class V2OutputStorage(IOutputStorage):
 
     @override
     def archive_study_output(self, study_id: str, output_id: str) -> None:
-        # For now, only a logical operation
         logger.info(f"Archiving output {study_id}/{output_id} in internal storage.")
         metadata = self._require_metadata(study_id, output_id)
         metadata.archived = True
         self._repository.save_output_metadata(metadata)
 
+        # Delete the parquet directory to free disk space
+        variables_target = parquet_output_dir(self._variables_dir, study_id, output_id)
+        shutil.rmtree(variables_target, ignore_errors=True)
+
     @override
     def unarchive_study_output(self, study_id: str, output_id: str) -> None:
-        # For now, only a logical operation
         logger.info(f"Unarchiving output {study_id}/{output_id} in internal storage.")
         metadata = self._require_metadata(study_id, output_id)
+
+        # Rebuild parquet files from the archive BEFORE updating metadata,
+        # so that if reconstruction fails, the output stays marked as archived.
+        with tempfile.TemporaryDirectory(dir=self._tmp_dir) as tmp_dir:
+            tmp_archive_path = Path(tmp_dir) / "output.zip"
+            self._archive_storage.read_file(_archive_id(study_id, output_id), tmp_archive_path)
+            dir_path = Path(tmp_dir) / "output"
+            extract_archive_from_path(tmp_archive_path, dir_path)
+            variables_target = parquet_output_dir(self._variables_dir, study_id, output_id)
+            extract_output_to_parquet(dir_path, variables_target)
+
         metadata.archived = False
         self._repository.save_output_metadata(metadata)
 
@@ -364,5 +401,17 @@ class V2OutputStorage(IOutputStorage):
         transform_columns_headers: bool,
         mc_years: Sequence[int] | None = None,
     ) -> Iterator[pl.DataFrame]:
-        # TODO: at import time, extract to parquet files
-        raise NotImplementedError()
+        target_dir = parquet_output_dir(self._variables_dir, study_id, output_id)
+        has_data = False
+        for batch in read_output_from_parquet(
+            target_dir, query_file, frequency, ids_to_consider, columns_names, mc_years
+        ):
+            if batch.is_empty():
+                continue
+            has_data = True
+            if not transform_columns_headers:
+                batch = batch.drop("timeId", strict=False)
+            yield batch
+
+        if not has_data:
+            raise OutputAggregationError(output_id, "No output data matching the criteria were found")

@@ -17,9 +17,9 @@ import { useTranslation } from "react-i18next";
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
 
-interface ScanFolderDialogProps {
+interface ScanDirectoryDialogProps {
   open: boolean;
-  folderPath: string;
+  directoryPath: string;
   isRecursive: boolean;
   showRecursiveOption: boolean;
   onConfirm: () => void;
@@ -27,15 +27,15 @@ interface ScanFolderDialogProps {
   onToggleRecursive: () => void;
 }
 
-function ScanFolderDialog({
+function ScanDirectoryDialog({
   open,
-  folderPath,
+  directoryPath,
   isRecursive,
   showRecursiveOption,
   onConfirm,
   onCancel,
   onToggleRecursive,
-}: ScanFolderDialogProps) {
+}: ScanDirectoryDialogProps) {
   const { t } = useTranslation();
 
   return (
@@ -46,7 +46,7 @@ function ScanFolderDialog({
       alert="warning"
       open={open}
     >
-      {t("studies.scanFolder")} {folderPath}?
+      {t("studies.scanFolder")} {directoryPath}?
       {showRecursiveOption && (
         <CheckBoxFE
           label={t("studies.recursiveScan")}
@@ -58,4 +58,4 @@ function ScanFolderDialog({
   );
 }
 
-export default ScanFolderDialog;
+export default ScanDirectoryDialog;

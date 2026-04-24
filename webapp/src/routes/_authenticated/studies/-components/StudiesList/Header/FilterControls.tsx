@@ -17,6 +17,8 @@ import FolderIcon from "@mui/icons-material/Folder";
 import LayersIcon from "@mui/icons-material/Layers";
 import LayersClearIcon from "@mui/icons-material/LayersClear";
 import RadarIcon from "@mui/icons-material/Radar";
+import ViewListIcon from "@mui/icons-material/ViewList";
+import ViewModuleIcon from "@mui/icons-material/ViewModule";
 import { IconButton, ToggleButton, ToggleButtonGroup, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import SelectFE from "@/components/fieldEditors/SelectFE";
@@ -29,6 +31,7 @@ import {
   toStudySortConfig,
 } from "@/routes/_authenticated/studies/-components/StudiesList/Header/studySortUtils";
 import type { StudySortConfig } from "@/types/types";
+import type { ViewMode } from "../types";
 
 interface FilterControlsProps {
   activeTree: "managed" | "external";
@@ -36,10 +39,12 @@ interface FilterControlsProps {
   isReferenceTypeActive: boolean;
   canScan: boolean;
   sortConfig: StudySortConfig;
+  viewMode: ViewMode;
   onToggleShowDescendants: (value: boolean) => void;
   onToggleStudyType: () => void;
-  onScanFolder: () => void;
+  onScanDirectory: () => void;
   onSortChange: (sortConfig: StudySortConfig) => void;
+  onViewModeChange: (mode: ViewMode) => void;
 }
 
 function FilterControls({
@@ -48,10 +53,12 @@ function FilterControls({
   isReferenceTypeActive,
   canScan,
   sortConfig,
+  viewMode,
   onToggleShowDescendants,
   onToggleStudyType,
-  onScanFolder,
+  onScanDirectory,
   onSortChange,
+  onViewModeChange,
 }: FilterControlsProps) {
   const { t } = useTranslation();
 
@@ -61,7 +68,7 @@ function FilterControls({
 
   return (
     <>
-      {/* Folder hierarchy toggle - current dir only vs include descendants */}
+      {/* Directory hierarchy toggle - current dir only vs include descendants */}
       <ToggleButtonGroup
         value={showDescendants}
         exclusive
@@ -81,10 +88,10 @@ function FilterControls({
         </Tooltip>
       </ToggleButtonGroup>
 
-      {/* Folder scan button - only for desktop mode enabled */}
+      {/* Directory scan button - only for desktop mode enabled */}
       {canScan && (
         <Tooltip title={t("studies.scanFolder")}>
-          <IconButton onClick={onScanFolder}>
+          <IconButton onClick={onScanDirectory}>
             <RadarIcon />
           </IconButton>
         </Tooltip>
@@ -105,6 +112,26 @@ function FilterControls({
 
       {/* Refresh button */}
       <RefreshButton mini />
+
+      {/* View mode toggle */}
+      <ToggleButtonGroup
+        value={viewMode}
+        exclusive
+        onChange={(_e, v) => v !== null && onViewModeChange(v)}
+        size="extra-small"
+        color="primary"
+      >
+        <Tooltip title={t("studies.viewMode.grid")}>
+          <ToggleButton value="grid">
+            <ViewModuleIcon />
+          </ToggleButton>
+        </Tooltip>
+        <Tooltip title={t("studies.viewMode.list")}>
+          <ToggleButton value="list">
+            <ViewListIcon />
+          </ToggleButton>
+        </Tooltip>
+      </ToggleButtonGroup>
 
       {/* Sort selector */}
       <SelectFE

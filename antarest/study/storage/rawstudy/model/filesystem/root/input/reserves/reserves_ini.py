@@ -1,0 +1,27 @@
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
+
+
+class InputReservesIni(IniFileNode):
+    # Examples
+    # --------
+    #
+    # [globalparameters]
+    # reference-activation-duration-up = 1
+    # energy-activation-ratio-up = 1.0
+    # reference-activation-duration-down = 1
+    # energy-activation-ratio-down = 1.0
+    def __init__(self, config: FileStudyTreeConfig):
+        IniFileNode.__init__(self, config)

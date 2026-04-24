@@ -19,11 +19,15 @@ from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 def test_blob_usage_provider_returns_blob_ids(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_user_resource(
-        UserResourceDataCreation(path=PurePosixPath("file1.txt"), resource_type=ResourceType.FILE, blob_id="blob_aaa")
-    )
-    dao.save_user_resource(
-        UserResourceDataCreation(path=PurePosixPath("file2.txt"), resource_type=ResourceType.FILE, blob_id="blob_bbb")
+    dao.save_user_resources(
+        [
+            UserResourceDataCreation(
+                path=PurePosixPath("file1.txt"), resource_type=ResourceType.FILE, blob_id="blob_aaa"
+            ),
+            UserResourceDataCreation(
+                path=PurePosixPath("file2.txt"), resource_type=ResourceType.FILE, blob_id="blob_bbb"
+            ),
+        ]
     )
 
     provider = DatabaseBlobUsageProvider()
@@ -37,10 +41,14 @@ def test_blob_usage_provider_returns_blob_ids(db_dao: DatabaseStudyDao) -> None:
 
 def test_blob_usage_provider_ignores_folders(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
-    dao.save_user_resource(
-        UserResourceDataCreation(path=PurePosixPath("file.txt"), resource_type=ResourceType.FILE, blob_id="blob_aaa")
+    dao.save_user_resources(
+        [
+            UserResourceDataCreation(
+                path=PurePosixPath("file.txt"), resource_type=ResourceType.FILE, blob_id="blob_aaa"
+            ),
+            UserResourceDataCreation(path=PurePosixPath("my_folder"), resource_type=ResourceType.FOLDER),
+        ]
     )
-    dao.save_user_resource(UserResourceDataCreation(path=PurePosixPath("my_folder"), resource_type=ResourceType.FOLDER))
 
     provider = DatabaseBlobUsageProvider()
     used_blobs = list(provider.get_blob_usage())

@@ -142,6 +142,14 @@ class STStorageNotFound(ClusterNotFound):
     object_name = "Short-term storage"
 
 
+class ReserveDefinitionNotFound(HTTPException):
+    """Reserve definition is not found (404 Not Found)"""
+
+    def __init__(self, area_id: str, reserve_id: str):
+        msg = f"Reserve definition '{reserve_id}' not found in area '{area_id}'"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
 # ============================================================
 # Duplicate (409)
 # ============================================================
@@ -199,6 +207,16 @@ class DuplicateSTStorage(DuplicateConfigSection):
     object_name = SHORT_TERM_STORAGE
 
 
+class ReservedReserveDefinitionId(HTTPException):
+    """Reserve definition id is reserved (422 Unprocessable Entity)"""
+
+    def __init__(self, id_: str) -> None:
+        super().__init__(
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            f"Reserve definition id '{id_}' is reserved",
+        )
+
+
 class StudyNotFoundError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
@@ -252,6 +270,12 @@ class LinkValidationError(HTTPException):
 class LinkNotFound(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class LinksNotFound(HTTPException):
+    def __init__(self, *link_ids: str) -> None:
+        ids = ", ".join(f"'{link}'" for link in link_ids)
+        super().__init__(HTTPStatus.NOT_FOUND, f"Links are not found: {ids}")
 
 
 class VariantStudyParentNotValid(HTTPException):
@@ -450,6 +474,12 @@ class WritingInsideZippedFileException(HTTPException):
 class BindingConstraintNotFound(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class BindingConstraintsNotFound(HTTPException):
+    def __init__(self, *bc_ids: str) -> None:
+        ids = ", ".join(f"'{bc}'" for bc in bc_ids)
+        super().__init__(HTTPStatus.NOT_FOUND, f"Binding constraints are not found: {ids}")
 
 
 class DuplicateConstraintName(HTTPException):
@@ -802,4 +832,22 @@ class NotAMatrixError(ValueError):
 class OutputVariablesViewError(HTTPException):
     def __init__(self, output_id: str, message: str) -> None:
         msg = f"Could not retrieve variables view for output '{output_id}' : {message}."
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class ThermalClustersNotFound(HTTPException):
+    def __init__(self, invalid_thermal_ids: dict[str, set[str]]) -> None:
+        msg = f"Thermal clusters not found: {invalid_thermal_ids}"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class RenewableClustersNotFound(HTTPException):
+    def __init__(self, invalid_renewable_ids: dict[str, set[str]]) -> None:
+        msg = f"Renewable clusters not found: {invalid_renewable_ids}"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class STStoragesNotFound(HTTPException):
+    def __init__(self, invalid_sts_ids: dict[str, set[str]]) -> None:
+        msg = f"Short term storages not found: {invalid_sts_ids}"
         super().__init__(HTTPStatus.NOT_FOUND, msg)
