@@ -286,7 +286,6 @@ def parse_simulation_zip(path: Path) -> Simulation:
 
 @dataclass(frozen=True)
 class XpansionSimulation:
-    xpansion_simulation: bool
     version: str
     ended_in_error: bool
 
@@ -306,7 +305,7 @@ def _parse_xpansion(path: Path) -> XpansionSimulation | None:
         return None
 
     ended_in_error = "solution" not in obj
-    return XpansionSimulation(xpansion_simulation=True, version=version, ended_in_error=ended_in_error)
+    return XpansionSimulation(version=version, ended_in_error=ended_in_error)
 
 
 _regex_simulation_mode = re.compile(r"^(\d{8}-\d{4})(eco|adq|exp)-?(.*)")
