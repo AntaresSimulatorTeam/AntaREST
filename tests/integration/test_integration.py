@@ -36,15 +36,15 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     # TODO check for bad username or empty password
     client.post(
         "/v1/users",
-        json={"name": "George", "password": "mypass"},
+        json={"name": "George", "password": "Mypass1!"},
     )
     client.post(
         "/v1/users",
-        json={"name": "Fred", "password": "mypass"},
+        json={"name": "Fred", "password": "Mypass1!"},
     )
     client.post(
         "/v1/users",
-        json={"name": "Harry", "password": "mypass"},
+        json={"name": "Harry", "password": "Mypass1!"},
     )
     res = client.get("/v1/users")
     assert len(res.json()) == 4
@@ -52,29 +52,29 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     # reject user with existing name creation
     res = client.post(
         "/v1/users",
-        json={"name": "George", "password": "mypass"},
+        json={"name": "George", "password": "Mypass1!"},
     )
     assert res.status_code == 400
 
     # login with new user
     # TODO mock ldap connector and test user login
-    res = client.post("/v1/login", json={"username": "George", "password": "mypass"})
+    res = client.post("/v1/login", json={"username": "George", "password": "Mypass1!"})
     res.raise_for_status()
     george_credentials = res.json()
 
-    res = client.post("/v1/login", json={"username": "Fred", "password": "mypass"})
+    res = client.post("/v1/login", json={"username": "Fred", "password": "Mypass1!"})
     res.raise_for_status()
     fred_credentials = res.json()
     fred_id = fred_credentials["user"]
 
-    res = client.post("/v1/login", json={"username": "Harry", "password": "mypass"})
+    res = client.post("/v1/login", json={"username": "Harry", "password": "Mypass1!"})
     res.raise_for_status()
 
     # reject user creation from non admin
     res = client.post(
         "/v1/users",
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
-        json={"name": "Fred", "password": "mypass"},
+        json={"name": "Fred", "password": "Mypass1!"},
     )
     assert res.status_code == 403
 
@@ -1089,11 +1089,11 @@ def test_maintenance(client: TestClient, admin_access_token: str) -> None:
     # Create non admin user
     res = client.post(
         "/v1/users",
-        json={"name": "user", "password": "user"},
+        json={"name": "user", "password": "User1234!"},
     )
     assert res.status_code == 200
 
-    res = client.post("/v1/login", json={"username": "user", "password": "user"})
+    res = client.post("/v1/login", json={"username": "user", "password": "User1234!"})
     non_admin_credentials = res.json()
 
     # Test maintenance update utils function
@@ -1161,9 +1161,9 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
     # Create user George who belongs to no group
     client.post(
         "/v1/users",
-        json={"name": "George", "password": "mypass"},
+        json={"name": "George", "password": "Mypass1!"},
     )
-    res = client.post("/v1/login", json={"username": "George", "password": "mypass"})
+    res = client.post("/v1/login", json={"username": "George", "password": "Mypass1!"})
     george_credentials = res.json()
 
     # George imports a study
@@ -1298,17 +1298,17 @@ def test_import_with_editor(
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # 1. Create two users: 'creator' and 'importer'
-    client.post("/v1/users", json={"name": "creator", "password": "password123"})
-    client.post("/v1/users", json={"name": "importer", "password": "password456"})
+    client.post("/v1/users", json={"name": "creator", "password": "Password123!"})
+    client.post("/v1/users", json={"name": "importer", "password": "Password456!"})
 
     # Log in as 'creator'
-    res_creator = client.post("/v1/login", json={"username": "creator", "password": "password123"})
+    res_creator = client.post("/v1/login", json={"username": "creator", "password": "Password123!"})
     res_creator.raise_for_status()
     creator_creds = res_creator.json()
     creator_token = creator_creds["access_token"]
 
     # Log in as 'importer'
-    res_importer = client.post("/v1/login", json={"username": "importer", "password": "password456"})
+    res_importer = client.post("/v1/login", json={"username": "importer", "password": "Password456!"})
     res_importer.raise_for_status()
     importer_creds = res_importer.json()
     importer_token = importer_creds["access_token"]
@@ -1530,8 +1530,8 @@ def test_update_with_editor(client: TestClient, admin_access_token: str) -> None
     res = client.post("/v1/groups", json={"name": group_name})
     group_id = res.json()["id"]
 
-    client.post("/v1/users", json={"name": "creator_2", "password": "password123"})
-    client.post("/v1/users", json={"name": "editor_2", "password": "password456"})
+    client.post("/v1/users", json={"name": "creator_2", "password": "Password123!"})
+    client.post("/v1/users", json={"name": "editor_2", "password": "Password456!"})
 
     # creating a bot with the admin as an impersonator
     bots_res = client.post(
@@ -1542,13 +1542,13 @@ def test_update_with_editor(client: TestClient, admin_access_token: str) -> None
     header_bots = {"Authorization": f"Bearer {bots_res.json()}"}
 
     # Log in as 'creator' to get ID
-    res_creator = client.post("/v1/login", json={"username": "creator_2", "password": "password123"})
+    res_creator = client.post("/v1/login", json={"username": "creator_2", "password": "Password123!"})
     res_creator.raise_for_status()
     creator_creds = res_creator.json()
     creator_id = creator_creds["user"]
 
     # Log in as 'editor' to get ID
-    res_editor = client.post("/v1/login", json={"username": "editor_2", "password": "password456"})
+    res_editor = client.post("/v1/login", json={"username": "editor_2", "password": "Password456!"})
     res_editor.raise_for_status()
     editor_creds = res_editor.json()
     editor_id = editor_creds["user"]
@@ -1675,8 +1675,8 @@ def test_update_variant_with_editor(client: TestClient, admin_access_token: str)
     study_variant = proxy_variant.create_variant(study_id, name="test_variant_study")
     client.put(f"/v1/studies/{study_variant}/public_mode/FULL")
 
-    client.post("/v1/users", json={"name": "creator_2", "password": "password123"})
-    client.post("/v1/users", json={"name": "editor_2", "password": "password456"})
+    client.post("/v1/users", json={"name": "creator_2", "password": "Password123!"})
+    client.post("/v1/users", json={"name": "editor_2", "password": "Password456!"})
 
     bots_res = client.post(
         "/v1/bots",
@@ -1686,13 +1686,13 @@ def test_update_variant_with_editor(client: TestClient, admin_access_token: str)
     header_bots = {"Authorization": f"Bearer {bots_res.json()}"}
 
     # Log in as 'creator' to get ID
-    res_creator = client.post("/v1/login", json={"username": "creator_2", "password": "password123"})
+    res_creator = client.post("/v1/login", json={"username": "creator_2", "password": "Password123!"})
     res_creator.raise_for_status()
     creator_creds = res_creator.json()
     creator_id = creator_creds["user"]
 
     # Log in as 'editor' to get ID
-    res_editor = client.post("/v1/login", json={"username": "editor_2", "password": "password456"})
+    res_editor = client.post("/v1/login", json={"username": "editor_2", "password": "Password456!"})
     res_editor.raise_for_status()
     editor_creds = res_editor.json()
     editor_id = editor_creds["user"]

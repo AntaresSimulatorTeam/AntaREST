@@ -200,12 +200,12 @@ def user_access_token_fixture(
     res = client.post(
         "/v1/users",
         headers={"Authorization": f"Bearer {admin_access_token}"},
-        json={"name": "George", "password": "mypass"},
+        json={"name": "George", "password": "Mypass1!"},
     )
     res.raise_for_status()
     res = client.post(
         "/v1/login",
-        json={"username": "George", "password": "mypass"},
+        json={"username": "George", "password": "Mypass1!"},
     )
     res.raise_for_status()
     credentials = res.json()

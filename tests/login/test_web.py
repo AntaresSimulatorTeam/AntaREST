@@ -204,8 +204,8 @@ def test_user_id_with_details() -> None:
 
 
 def test_user_create() -> None:
-    user = UserCreateDTO(name="a", password="b")
-    user_id = User(id=0, name="a", password=Password("b"))
+    user = UserCreateDTO(name="a", password="Abcdef1!")
+    user_id = User(id=0, name="a", password=Password("Abcdef1!"))
     service = Mock()
     service.create_user.return_value = user_id
 

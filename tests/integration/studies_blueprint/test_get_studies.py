@@ -138,7 +138,7 @@ class TestStudiesListing:
             res = client.put(
                 f"/v1/studies/{non_managed_study}/public_mode/{no_access_code}",
                 headers={"Authorization": f"Bearer {admin_access_token}"},
-                json={"name": "James Bond", "password": "0007"},
+                json={"name": "James Bond", "password": "Agent007!"},
             )
             res.raise_for_status()
 
@@ -146,7 +146,7 @@ class TestStudiesListing:
         res = client.post(
             "/v1/users",
             headers={"Authorization": f"Bearer {admin_access_token}"},
-            json={"name": "James Bond", "password": "0007"},
+            json={"name": "James Bond", "password": "Agent007!"},
         )
         res.raise_for_status()
         james_bond_id = res.json().get("id")
@@ -155,7 +155,7 @@ class TestStudiesListing:
         res = client.post(
             "/v1/users",
             headers={"Authorization": f"Bearer {admin_access_token}"},
-            json={"name": "John Doe", "password": "0011"},
+            json={"name": "John Doe", "password": "Agent0011!"},
         )
         res.raise_for_status()
         john_doe_id = res.json().get("id")
@@ -183,7 +183,7 @@ class TestStudiesListing:
         # login 'James Bond'
         res = client.post(
             "/v1/login",
-            json={"username": "James Bond", "password": "0007"},
+            json={"username": "James Bond", "password": "Agent007!"},
         )
         res.raise_for_status()
         assert res.json().get("user") == james_bond_id
@@ -192,7 +192,7 @@ class TestStudiesListing:
         # login 'John Doe'
         res = client.post(
             "/v1/login",
-            json={"username": "John Doe", "password": "0011"},
+            json={"username": "John Doe", "password": "Agent0011!"},
         )
         res.raise_for_status()
         assert res.json().get("user") == john_doe_id
