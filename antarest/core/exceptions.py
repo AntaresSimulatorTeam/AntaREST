@@ -207,13 +207,13 @@ class DuplicateSTStorage(DuplicateConfigSection):
     object_name = SHORT_TERM_STORAGE
 
 
-class ReservedReserveDefinitionName(HTTPException):
-    """Reserve definition name is reserved (422 Unprocessable Entity)"""
+class ReservedReserveDefinitionId(HTTPException):
+    """Reserve definition id is reserved (422 Unprocessable Entity)"""
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, id_: str) -> None:
         super().__init__(
             HTTPStatus.UNPROCESSABLE_ENTITY,
-            f"Reserve definition name '{name}' is reserved",
+            f"Reserve definition id '{id_}' is reserved",
         )
 
 

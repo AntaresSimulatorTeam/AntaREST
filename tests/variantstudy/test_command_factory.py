@@ -1075,7 +1075,7 @@ COMMANDS = [
             action=CommandName.CREATE_RESERVE_DEFINITION.value,
             args={
                 "area_id": "paris",
-                "parameters": {"name": "Reserve 1", "type": "up"},
+                "parameters": {"id": "Reserve 1", "type": "up"},
             },
             study_version=STUDY_VERSION_10_0,
         ),
