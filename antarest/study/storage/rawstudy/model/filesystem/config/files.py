@@ -531,7 +531,7 @@ def _parse_reserves(root: Path, area: str) -> list[ReserveDefinition]:
         if section.lower() == GLOBAL_PARAMETERS_SECTION:
             continue
         try:
-            config_list.append(parse_reserve_definition({"name": section, **values}))
+            config_list.append(parse_reserve_definition(section, values))
         except ValueError as exc:
             config_path = root.joinpath(relpath)
             logger.warning(f"Invalid reserve configuration: '{section}' in '{config_path}'", exc_info=exc)
