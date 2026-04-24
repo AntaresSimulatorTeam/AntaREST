@@ -33,6 +33,7 @@ def test_optional_matrices(
 ) -> None:
     study = Mock(spec=RawStudy)
     study.path = empty_study_920.config.study_path
+    study.id = ""
     study.storage_mode = StorageMode.FILESYSTEM
     # Create an area containing 1 thermal cluster and 1 short-term storage
     file_study = empty_study_920
