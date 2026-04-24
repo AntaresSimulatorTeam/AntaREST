@@ -238,7 +238,6 @@ class TestRemoveReserveDefinitions:
             study_version=STUDY_VERSION_10_0,
         ).apply(dao_10_0)
 
-        # Matrix exists now (auto-created by CreateReserveDefinition — see task 7).
         reserve_id = ReserveDefinitionId("R1")
         assert dao_10_0.get_all_reserve_needs().get("paris", {}).get(reserve_id) is not None
 
@@ -251,5 +250,4 @@ class TestRemoveReserveDefinitions:
         output = command.apply(dao_10_0)
         assert output.status
 
-        # Matrix gone.
         assert reserve_id not in dao_10_0.get_all_reserve_needs().get("paris", {})

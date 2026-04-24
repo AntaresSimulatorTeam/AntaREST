@@ -600,7 +600,6 @@ def _build_reserve_definition(reserve_id: str) -> ReserveDefinition:
 
 
 def test_reserve_need_path_get_and_save(dao_10_0: StudyDao, matrix_service: ISimpleMatrixService) -> None:
-    """The `input/reserves/<area_id>/<reserve_id>` path routes to the reserve need getter/setter."""
     area_id = "paris"
     reserve_id = "R1"
 
@@ -609,16 +608,13 @@ def test_reserve_need_path_get_and_save(dao_10_0: StudyDao, matrix_service: ISim
 
     mapper = RawPathToMatrixMapper(dao_10_0)
 
-    # Save via path -> DAO round-trips through `save_reserve_need`
     generator = np.random.default_rng(42)
     matrix_df = pl.DataFrame(generator.integers(0, 10, size=(5, 3)), orient="row")
     series_id = matrix_service.create(matrix_df)
 
     mapper.save_matrix_from_path(Path(f"input/reserves/{area_id}/{reserve_id}"), series_id)
 
-    # Get via path -> DAO round-trips through `get_reserve_need`
     fetched = mapper.get_matrix_from_path(Path(f"input/reserves/{area_id}/{reserve_id}"))
     pl.testing.assert_frame_equal(fetched, matrix_df, check_dtypes=False)
 
-    # And the direct DAO method agrees
     pl.testing.assert_frame_equal(dao_10_0.get_reserve_need(area_id, reserve_id), matrix_df, check_dtypes=False)
