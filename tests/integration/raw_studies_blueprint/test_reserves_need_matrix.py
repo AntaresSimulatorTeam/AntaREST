@@ -48,17 +48,16 @@ class TestReserveNeedMatrix:
         preparer.create_area(study_id, name="paris")
 
         # Create a reserve definition. The POST returns the full ReserveDefinition payload,
-        # including the auto-assigned id (derived from the name, lowercased).
+        # with the id echoed back as-is.
         res = client.post(
             f"/v1/studies/{study_id}/areas/paris/reserves",
-            json={"name": "R1", "type": "up"},
+            json={"id": "R1", "type": "up"},
             headers=preparer.headers,
         )
         assert res.status_code == 200, res.json()
         reserve = res.json()
         reserve_id = reserve["id"]
-        assert reserve_id == "r1"
-        assert reserve["name"] == "R1"
+        assert reserve_id == "R1"
         assert reserve["type"] == "up"
 
         matrix_path = f"input/reserves/paris/{reserve_id}"

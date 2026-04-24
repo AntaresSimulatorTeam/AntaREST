@@ -29,7 +29,6 @@ from antarest.study.dao.database.common import area_exists, get_row_representati
 from antarest.study.dao.database.models.reserve_definition import RESERVE_DEFINITION_TABLE
 from antarest.study.dao.database.models.reserve_need import RESERVE_NEED_MATRIX_TABLE
 from antarest.study.dao.database.sql_utils import upsert_multiple
-from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import default_scenario_hourly
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -154,7 +153,9 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao):
         row = self._db_session.execute(stmt).fetchone()
         if not row:
             raise ReserveDefinitionNotFound(area_id, reserve_id)
-        return self.get_impl().get_matrix(str(row.matrix_id), default_empty_supplier=default_scenario_hourly)
+        # No default_empty_supplier: if the FK-referenced matrix is missing from the
+        # store, surface the inconsistency instead of silently returning zeros.
+        return self.get_impl().get_matrix(str(row.matrix_id), default_empty_supplier=None)
 
     @override
     def get_all_reserve_needs(self) -> ReserveNeedsMapping:

@@ -143,9 +143,9 @@ def test_save_and_retrieve_reserve_need(dao_10_0: StudyDao, matrix_service: ISim
 
     matrix_df = pl.DataFrame([[0.0]] * 8760, orient="row")
     matrix_id = matrix_service.create(matrix_df)
-    dao_10_0.save_reserve_need({"paris": {ReserveDefinitionId("r1"): matrix_id}})
+    dao_10_0.save_reserve_need({"paris": {ReserveDefinitionId("R1"): matrix_id}})
 
-    fetched = dao_10_0.get_reserve_need("paris", "r1")
+    fetched = dao_10_0.get_reserve_need("paris", "R1")
     assert fetched.shape == (8760, 1)
 
 
@@ -157,7 +157,7 @@ def test_get_all_reserve_needs_empty(dao_10_0: StudyDao) -> None:
 def test_delete_reserve_need(dao_10_0: StudyDao, matrix_service: ISimpleMatrixService) -> None:
     save_area(dao_10_0, "paris")
     dao_10_0.save_reserve_definitions({"paris": [_reserve("R1")]})
-    reserve_id = ReserveDefinitionId("r1")
+    reserve_id = ReserveDefinitionId("R1")
     matrix_id = matrix_service.create(pl.DataFrame([[0.0]] * 8760, orient="row"))
     dao_10_0.save_reserve_need({"paris": {reserve_id: matrix_id}})
 

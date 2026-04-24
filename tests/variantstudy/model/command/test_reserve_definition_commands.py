@@ -96,14 +96,14 @@ class TestCreateReserveDefinition:
 
         command = CreateReserveDefinition(
             area_id="paris",
-            parameters=ReserveDefinitionCreation(name="R1", type=ReserveType.UP),
+            parameters=ReserveDefinitionCreation(id="R1", type=ReserveType.UP),
             command_context=command_context,
             study_version=STUDY_VERSION_10_0,
         )
         output = command.apply(dao_10_0)
         assert output.status
 
-        matrix = dao_10_0.get_reserve_need("paris", "r1")
+        matrix = dao_10_0.get_reserve_need("paris", "R1")
         assert matrix.shape == (8760, 1)
         assert matrix.to_numpy().sum() == 0.0
 
@@ -233,13 +233,13 @@ class TestRemoveReserveDefinitions:
         save_area(dao_10_0, "paris")
         CreateReserveDefinition(
             area_id="paris",
-            parameters=ReserveDefinitionCreation(name="R1", type=ReserveType.UP),
+            parameters=ReserveDefinitionCreation(id="R1", type=ReserveType.UP),
             command_context=command_context,
             study_version=STUDY_VERSION_10_0,
         ).apply(dao_10_0)
 
         # Matrix exists now (auto-created by CreateReserveDefinition — see task 7).
-        reserve_id = ReserveDefinitionId("r1")
+        reserve_id = ReserveDefinitionId("R1")
         assert dao_10_0.get_all_reserve_needs().get("paris", {}).get(reserve_id) is not None
 
         command = RemoveReserveDefinitions(

@@ -526,6 +526,7 @@ def test_save_matrix_from_path(
         Path("input/solar/series/area"),  # Missing prefix
         Path("input/solar/series"),  # Folder containing matrices but not a matrix in itself
         Path("input/reserves/area/reserve/extra"),  # Too deep (4+ segments don't match any reserves pattern)
+        Path("input/reserves/area/reserves"),  # `reserves` is the definitions INI node, not a need-matrix
         Path("input/misc-gen/area"),  # Missing prefix
         Path("input/folder"),  # Folder does not exist
         Path("input/bindingconstraints"),  # Folder containing matrices but not a matrix in itself
@@ -586,9 +587,9 @@ def test_version_specifics(db_dao_930: DatabaseStudyDao) -> None:
         mapper_93._get_matcher(Path("input/bindingconstraints/bc1"))  # Missing suffix
 
 
-def _build_reserve_definition(reserve_name: str) -> ReserveDefinition:
+def _build_reserve_definition(reserve_id: str) -> ReserveDefinition:
     return ReserveDefinition(
-        name=reserve_name,
+        id=reserve_id,
         type=ReserveType.UP,
         failure_cost=10.0,
         spillage_cost=5.0,
@@ -601,11 +602,10 @@ def _build_reserve_definition(reserve_name: str) -> ReserveDefinition:
 def test_reserve_need_path_get_and_save(dao_10_0: StudyDao, matrix_service: ISimpleMatrixService) -> None:
     """The `input/reserves/<area_id>/<reserve_id>` path routes to the reserve need getter/setter."""
     area_id = "paris"
-    reserve_name = "R1"
-    reserve_id = "r1"  # canonical lowercase id derived from name
+    reserve_id = "R1"
 
     save_area(dao_10_0, area_id)
-    dao_10_0.save_reserve_definitions({area_id: [_build_reserve_definition(reserve_name)]})
+    dao_10_0.save_reserve_definitions({area_id: [_build_reserve_definition(reserve_id)]})
 
     mapper = RawPathToMatrixMapper(dao_10_0)
 

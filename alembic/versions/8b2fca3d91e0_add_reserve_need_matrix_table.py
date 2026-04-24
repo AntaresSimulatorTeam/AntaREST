@@ -1,7 +1,7 @@
 """add_reserve_need_matrix_table
 
 Revision ID: 8b2fca3d91e0
-Revises: 7a1e9c4d82f5
+Revises: b2f7e9a1c4d3
 Create Date: 2026-04-22 00:00:00.000000
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "8b2fca3d91e0"
-down_revision = "7a1e9c4d82f5"
+down_revision = "b2f7e9a1c4d3"
 branch_labels = None
 depends_on = None
 

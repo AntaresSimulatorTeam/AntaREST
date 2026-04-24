@@ -241,7 +241,9 @@ class RawPathToMatrixMapper:
                 frequency=_get_hourly_frequency,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/reserves/(?P<area_id>[^/]+)/(?P<reserve_id>[^/]+)"),
+                # Exclude `reserves` as a reserve_id: `input/reserves/<area>/reserves` is the
+                # reserve-definitions INI node, not a need-matrix.
+                pattern=re.compile(r"input/reserves/(?P<area_id>[^/]+)/(?P<reserve_id>(?!reserves$)[^/]+)"),
                 getter=dao.get_reserve_need,
                 setter=_save_reserve_need,
                 frequency=_get_hourly_frequency,
