@@ -1567,6 +1567,13 @@ def create_study_data_routes() -> APIRouter:
         uuid: UuidStr,
         area_id: SanitizedStr,
     ) -> Sequence[ReserveDefinition]:
+        """
+        List all reserve definitions of a given area.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+        """
         logger.info("Getting reserve definitions for study %s and area %s", uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -1631,7 +1638,7 @@ def create_study_data_routes() -> APIRouter:
         study_service: StudyServiceDep,
         uuid: UuidStr,
         area_id: SanitizedStr,
-        reserve_ids: Sequence[SanitizedStr],
+        reserve_ids: Annotated[Sequence[SanitizedStr], Body(examples=[["Reserve 1", "Reserve 2"]])],
     ) -> None:
         logger.info("Deleting reserve definitions %r for study '%s' and area '%s'", reserve_ids, uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)

@@ -38,8 +38,10 @@ def _convert_row_to_model(row: Row[Any]) -> ReserveDefinition:
 
 
 def _convert_model_to_row(study_id: str, area_id: str, reserve: ReserveDefinition) -> dict[str, Any]:
-    values = dict(study_id=study_id, area_id=area_id, **reserve.model_dump())
+    values = reserve.model_dump()
     values["reserve_id"] = values.pop("id")
+    values["study_id"] = study_id
+    values["area_id"] = area_id
     return values
 
 
@@ -62,7 +64,7 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao):
         result: ReserveDefinitionsMapping = {}
         for row in rows:
             reserve = _convert_row_to_model(row)
-            result.setdefault(row.area_id, {})[reserve.id] = reserve
+            result.setdefault(row.area_id, {})[ReserveDefinitionId(reserve.id)] = reserve
         return result
 
     @override
