@@ -236,9 +236,6 @@ class TestVariantStudy:
         assert obj.snapshot is None
         assert obj.commands == []
 
-        # check Variant-specific properties
-        assert obj.snapshot_dir == Path(variant_study_path).joinpath("snapshot")
-
     @pytest.mark.parametrize(
         "created_at, updated_at, study_antares_file, expected",
         [
@@ -304,14 +301,15 @@ class TestVariantStudy:
 
             # If the snapshot creation date is given, we create a snapshot
             # and a snapshot directory.
+            snapshot_dir = Path(variant.path) / "snapshot"
             if created_at:
                 variant.snapshot = VariantStudySnapshot(created_at=created_at)
-                variant.snapshot_dir.mkdir(parents=True, exist_ok=True)
+                snapshot_dir.mkdir(parents=True, exist_ok=True)
 
             # If the "study.antares" file is given, we create it in the snapshot directory.
             if study_antares_file:
-                variant.snapshot_dir.mkdir(parents=True, exist_ok=True)
-                (variant.snapshot_dir / study_antares_file).touch()
+                snapshot_dir.mkdir(parents=True, exist_ok=True)
+                (snapshot_dir / study_antares_file).touch()
 
             db_session.add(variant)
             db_session.commit()
