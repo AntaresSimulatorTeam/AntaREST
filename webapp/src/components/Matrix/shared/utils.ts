@@ -394,7 +394,20 @@ export function groupResultColumns(
   columns: Array<EnhancedGridColumn | ResultColumn>,
   isDarkMode: boolean,
 ): EnhancedGridColumn[] {
-  return columns.map((column): EnhancedGridColumn => {
+  // Glide Data Grid renders the group header width as the sum of its sub-column widths.
+  // Stat sub-columns (exp, std, min…) auto-size to ~40–50 px based on their short title.
+  // When only 1–2 stats are visible after filtering, the group header text gets cropped.
+  // Fix: ensure the total sub-column width is always ≥ the group header text width,
+  // regardless of how many sub-columns are shown.
+  const APPROX_CHAR_WIDTH = 8; // px per character at "bold 11px Inter" (headerFontStyle)
+  const GROUP_HEADER_PADDING = 16; // 2 × cellHorizontalPadding (8 px each side)
+  // Conservative lower bound for Glide auto-sized stat columns (short titles like "exp").
+  // We only override when the required per-column minimum exceeds this threshold, so
+  // short group headers with many sub-columns are left to Glide's auto-sizing.
+  const MIN_AUTO_COL_WIDTH = 50;
+
+  // First pass: build the grouped column array
+  const result: EnhancedGridColumn[] = columns.map((column): EnhancedGridColumn => {
     const titles = Array.isArray(column.title) ? column.title : [String(column.title)];
 
     // Extract and validate components
@@ -423,6 +436,35 @@ export function groupResultColumns(
       title: stat.toLowerCase(), // Sub columns title,
       themeOverride: isDarkMode ? groupHeaderTheme.dark : groupHeaderTheme.light,
     };
+  });
+
+  // Second pass: count sub-columns per group and compute the minimum total width
+  // derived from the group header text — not from the sub-column widths themselves.
+  const groupInfo = new Map<string, { count: number; minRequired: number }>();
+
+  for (const col of result) {
+    if (!col.group) continue;
+    const entry = groupInfo.get(col.group);
+    if (entry) {
+      entry.count += 1;
+    } else {
+      groupInfo.set(col.group, {
+        count: 1,
+        minRequired: col.group.length * APPROX_CHAR_WIDTH + GROUP_HEADER_PADDING,
+      });
+    }
+  }
+
+  // Third pass: apply the per-column minimum so the group total ≥ header text width.
+  return result.map((col) => {
+    if (!col.group) return col;
+    const { count, minRequired } = groupInfo.get(col.group)!;
+    const minColWidth = Math.ceil(minRequired / count);
+    // Skip when auto-sizing already covers it (short header, many sub-columns).
+    if (minColWidth <= MIN_AUTO_COL_WIDTH) return col;
+    const currentWidth = col.width ?? 0;
+    if (currentWidth >= minColWidth) return col;
+    return { ...col, width: minColWidth };
   });
 }
 
