@@ -22,10 +22,10 @@ class TestReserveNeedMatrix:
 
         study_id = preparer.create_study("reserve-need-test", version=1000, storage_mode="database")
 
-        preparer.create_area(study_id, name="paris")
+        preparer.create_area(study_id, name="fr")
 
         res = client.post(
-            f"/v1/studies/{study_id}/areas/paris/reserves",
+            f"/v1/studies/{study_id}/areas/fr/reserves",
             json={"id": "R1", "type": "up"},
             headers=preparer.headers,
         )
@@ -35,7 +35,7 @@ class TestReserveNeedMatrix:
         assert reserve_id == "R1"
         assert reserve["type"] == "up"
 
-        matrix_path = f"input/reserves/paris/{reserve_id}"
+        matrix_path = f"input/reserves/fr/{reserve_id}"
 
         res = client.get(
             f"/v1/studies/{study_id}/raw",
@@ -73,7 +73,7 @@ class TestReserveNeedMatrix:
 
         res = client.request(
             "DELETE",
-            f"/v1/studies/{study_id}/areas/paris/reserves",
+            f"/v1/studies/{study_id}/areas/fr/reserves",
             json=[reserve_id],
             headers=preparer.headers,
         )

@@ -153,8 +153,6 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao):
         row = self._db_session.execute(stmt).fetchone()
         if not row:
             raise ReserveDefinitionNotFound(area_id, reserve_id)
-        # No default_empty_supplier: if the FK-referenced matrix is missing from the
-        # store, surface the inconsistency instead of silently returning zeros.
         return self.get_impl().get_matrix(str(row.matrix_id), default_empty_supplier=None)
 
     @override
@@ -203,6 +201,4 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao):
             )
         )
         assert isinstance(result, CursorResult)
-        # Silent if nothing was deleted — matches the in-memory and file DAO semantics
-        # (matrix may never have been written, or was already removed).
         self._db_session.commit()
