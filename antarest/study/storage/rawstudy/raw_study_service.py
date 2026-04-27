@@ -26,6 +26,9 @@ from antarest.core.utils.archives import (
 )
 from antarest.core.utils.utils import StopWatch
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
+from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import RawStudy, StorageMode, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract.abstract_study_service import AbstractStudyService
@@ -66,6 +69,11 @@ class RawStudyService(AbstractStudyService):
             StorageMode.FILESYSTEM: self._file_study_storage,
             StorageMode.DATABASE: self._database_study_storage,
         }
+        ctx = command_context
+        self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
+            StorageMode.DATABASE: DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants),
+            StorageMode.FILESYSTEM: FileStudyDaoFactory(command_context, study_factory, cache),
+        }
         RawStudyMatrixUsageProvider(
             StudyMetadataRepository(cache_service=cache), self._matrix_service, self._storage_mapping
         )
@@ -89,6 +97,9 @@ class RawStudyService(AbstractStudyService):
     ##########################
     # Specific methods
     ##########################
+
+    def create_study_dao(self, study: RawStudy) -> None:
+        self._study_dao_factories[study.storage_mode].create_study_dao(study)
 
     def get_disk_usage(self, study: Study) -> int:
         if study.archived:

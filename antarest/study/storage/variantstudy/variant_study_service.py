@@ -123,6 +123,11 @@ class VariantStudyService(AbstractStudyService):
             StorageMode.FILESYSTEM: FileSnapshotManager(cache),
             StorageMode.DATABASE: DatabaseSnapshotManager(),
         }
+        ctx = command_factory.command_context
+        self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
+            StorageMode.DATABASE: DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants),
+            StorageMode.FILESYSTEM: FileStudyDaoFactory(ctx, study_factory, cache),
+        }
 
     @override
     def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> RawStudy:
@@ -646,16 +651,11 @@ class VariantStudyService(AbstractStudyService):
                 generator = SnapshotGenerator(variant_study_service=self)
 
                 # Build the Dao factory first
-                ctx = self.command_factory.command_context
-                factory: StudyFactoryDao
-                if metadata.storage_mode == StorageMode.FILESYSTEM:
-                    factory = FileStudyDaoFactory(ctx, self.study_factory, self.cache)
-                else:
-                    factory = DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants)
+                dao_factory = self._study_dao_factories[metadata.storage_mode]
                 # Then launch the generation
                 generate_result = generator.generate_snapshot(
                     study_id,
-                    dao_factory=factory,
+                    dao_factory=dao_factory,
                     from_scratch=from_scratch,
                     notifier=notifier,
                     listener=listener,

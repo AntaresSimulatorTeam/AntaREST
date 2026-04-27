@@ -115,11 +115,8 @@ from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
-from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
-from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.directory_service import DirectoryService
 from antarest.study.dtos import StudySynthesis
@@ -663,14 +660,7 @@ class StudyService:
         self.config = config
         self.on_deletion_callbacks: list[Callable[[str], None]] = []
         self._outputs_access: IOutputsAccess | None = None
-        matrix_service = command_context.matrix_service
-        StudyDatabaseMatrixUsageProvider(matrix_service)
-        self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
-            StorageMode.DATABASE: DatabaseStudyDaoFactory(matrix_service, command_context.generator_matrix_constants),
-            StorageMode.FILESYSTEM: FileStudyDaoFactory(
-                command_context, raw_study_service.study_factory, cache_service
-            ),
-        }
+        StudyDatabaseMatrixUsageProvider(command_context.matrix_service)
 
     def register_output_access(self, output_access: IOutputsAccess) -> None:
         """
@@ -1003,7 +993,7 @@ class StudyService:
 
         raw.content_status = StudyContentStatus.VALID
         self.repository.save(raw)
-        self._study_dao_factories[raw.storage_mode].create_study_dao(raw)
+        self.storage_service.raw_study_service.create_study_dao(raw)
 
         self.event_bus.push(
             Event(
