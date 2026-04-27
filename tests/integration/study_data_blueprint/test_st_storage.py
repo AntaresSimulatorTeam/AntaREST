@@ -405,8 +405,8 @@ class TestSTStorage:
         )
         assert res.status_code == 404
         obj = res.json()
-        assert obj["description"] == f"'{bad_area_id}' not a child of InputSTStorageClusters"
-        assert obj["exception"] == "ChildNotFoundError"
+        assert obj["description"] == f"Area is not found: '{bad_area_id}'"
+        assert obj["exception"] == "AreaNotFound"
 
         # Check PATCH with the wrong `storage_id`
         bad_storage_id = "bad_storage"
