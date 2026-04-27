@@ -25,6 +25,11 @@ class DatabaseSnapshotManager(ISnapshotManager):
         raise NotImplementedError()
 
     @override
+    def has_snapshot(self, study: VariantStudy) -> bool:
+        # TODO
+        raise NotImplementedError()
+
+    @override
     def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
         # TODO
         raise NotImplementedError()
