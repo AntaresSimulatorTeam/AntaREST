@@ -70,7 +70,9 @@ class FileStudyStorage(IStudyStorage):
 
     @override
     def write_study_for_archive(self, study: RawStudy, dst_path: Path) -> None:
-        self.export_study(study, dst_path)
+        shutil.copytree(src=Path(study.path), dst=dst_path)
+        file_study = self._get_file_study(dst_path, False)
+        self._denormalize_file_study(file_study)
 
     @override
     def export_study(self, study: Study, dst_path: Path) -> None:
