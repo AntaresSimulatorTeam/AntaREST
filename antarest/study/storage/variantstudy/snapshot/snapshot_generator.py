@@ -15,7 +15,6 @@ This module dedicated to variant snapshot generation.
 """
 
 import logging
-import shutil
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, NamedTuple
 
@@ -121,7 +120,7 @@ class SnapshotGenerator:
 
         except Exception:
             remove_from_cache(self.cache, variant_study_id)
-            shutil.rmtree(snapshot_dir, ignore_errors=True)
+            self.variant_study_service.clear_snapshot(variant_study)
             raise
 
         else:
