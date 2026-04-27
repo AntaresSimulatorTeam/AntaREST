@@ -66,7 +66,9 @@ class RawStudyService(AbstractStudyService):
             StorageMode.FILESYSTEM: self._file_study_storage,
             StorageMode.DATABASE: self._database_study_storage,
         }
-        RawStudyMatrixUsageProvider(StudyMetadataRepository(cache_service=cache), matrix_service=self._matrix_service)
+        RawStudyMatrixUsageProvider(
+            StudyMetadataRepository(cache_service=cache), self._matrix_service, self._storage_mapping
+        )
         self.cache = cache
 
     @override

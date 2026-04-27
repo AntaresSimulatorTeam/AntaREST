@@ -18,8 +18,9 @@ from antarest.core.interfaces.cache import ICache
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import RawStudy, Study
+from antarest.study.storage.file_study_utils import get_study_path, update_antares_info
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
-from antarest.study.storage.utils import create_new_empty_study, is_managed, update_antares_info
+from antarest.study.storage.utils import create_new_empty_study, is_managed
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -48,7 +49,7 @@ class FileStudyDaoFactory(StudyFactoryDao):
         else:
             output_path = Path(study.path) / "output"
 
-        study_path = study.get_path()
+        study_path = get_study_path(study)
         if create_study:
             create_new_empty_study(version=StudyVersion.parse(study.version), path_study=study_path)
 

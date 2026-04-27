@@ -10,23 +10,29 @@
 #
 # This file is part of the Antares project.
 import logging
-from pathlib import Path
 from typing import Iterable
 
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.model import StorageMode
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
+from antarest.study.storage.study_storage_interface import IStudyStorage
 
 logger = logging.getLogger(__name__)
 
 
 class RawStudyMatrixUsageProvider(IMatrixUsageProvider):
-    def __init__(self, study_metadata_repo: StudyMetadataRepository, matrix_service: ISimpleMatrixService):
+    def __init__(
+        self,
+        study_metadata_repo: StudyMetadataRepository,
+        matrix_service: ISimpleMatrixService,
+        storage_mapping: dict[StorageMode, IStudyStorage],
+    ):
         self.study_metadata_repo = study_metadata_repo
+        self.storage_mapping = storage_mapping
         matrix_service.register_usage_provider(self)
 
     @override
@@ -38,13 +44,4 @@ class RawStudyMatrixUsageProvider(IMatrixUsageProvider):
         )
 
         for study in self.study_metadata_repo.get_all(study_filter):
-            study_id = study.id
-            study_path = Path(study.path)
-            # Only check `input` and `user/expansion` path as they are the only folders capable of having `.link` files.
-            for path in [study_path / "input", study_path / "user" / "expansion"]:
-                for f in path.rglob("*.link"):
-                    matrix_id = extract_matrix_id(f.read_text())
-                    matrix_reference = MatrixReference(
-                        matrix_id=f"{matrix_id}", use_description=f"Used by raw study {study_id}"
-                    )
-                    yield matrix_reference
+            yield from self.storage_mapping[study.storage_mode].yield_matrix_references(study)

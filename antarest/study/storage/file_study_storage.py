@@ -13,7 +13,7 @@ import logging
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import BinaryIO
+from typing import BinaryIO, Iterator
 
 from typing_extensions import override
 
@@ -21,18 +21,15 @@ from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.utils import current_time
 from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
+from antarest.matrixstore.model import MatrixReference
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import RawStudy, Study
+from antarest.study.storage.file_study_utils import export_study_to_flat_directory, get_study_path, update_antares_info
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.study_storage_interface import IStudyStorage
-from antarest.study.storage.utils import (
-    export_study_to_flat_directory,
-    get_disk_usage,
-    is_managed,
-    update_antares_info,
-)
+from antarest.study.storage.utils import get_disk_usage, is_managed
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
@@ -53,7 +50,7 @@ class FileStudyStorage(IStudyStorage):
 
     @override
     def copy(self, src_study: Study, new_study: RawStudy) -> RawStudy:
-        src_path = src_study.get_path()
+        src_path = get_study_path(src_study)
         dest_path = Path(new_study.path)
 
         shutil.copytree(src_path, dest_path, ignore=shutil.ignore_patterns("output"))
@@ -74,9 +71,27 @@ class FileStudyStorage(IStudyStorage):
 
     @override
     def export_study(self, study: Study, dst_path: Path) -> None:
-        export_study_to_flat_directory(study.get_path(), dst_path)
+        export_study_to_flat_directory(get_study_path(study), dst_path)
         file_study = self._get_file_study(dst_path, False)
         self._denormalize_file_study(file_study)
+
+    @override
+    def yield_matrix_references(self, study: Study) -> Iterator[MatrixReference]:
+        study_path = get_study_path(study)
+        study_id = study.id
+        if study_path.exists():
+            description: str
+            if isinstance(study, RawStudy):
+                description = f"Used by raw study {study_id}"
+            else:
+                description = f"Used by variant study {study_id} snapshot"
+
+            # Only check `input` and `user/expansion` path as they are the only folders capable of having `.link` files.
+            for path in [study_path / "input", study_path / "user" / "expansion"]:
+                for f in path.rglob("*.link"):
+                    matrix_id = extract_matrix_id(f.read_text())
+                    matrix_reference = MatrixReference(matrix_id=matrix_id, use_description=description)
+                    yield matrix_reference
 
     @override
     def get_disk_usage(self, study: Study) -> int:

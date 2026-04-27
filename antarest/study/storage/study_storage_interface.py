@@ -12,8 +12,9 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import BinaryIO
+from typing import BinaryIO, Iterator
 
+from antarest.matrixstore.model import MatrixReference
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import RawStudy, Study
 
@@ -33,6 +34,10 @@ class IStudyStorage(ABC):
 
     @abstractmethod
     def export_study(self, study: Study, dst_path: Path) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def yield_matrix_references(self, study: Study) -> Iterator[MatrixReference]:
         raise NotImplementedError()
 
     @abstractmethod

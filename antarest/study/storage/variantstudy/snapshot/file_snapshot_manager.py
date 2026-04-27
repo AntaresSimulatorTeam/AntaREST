@@ -17,7 +17,8 @@ from typing_extensions import override
 
 from antarest.core.interfaces.cache import ICache
 from antarest.study.model import RawStudy, Study
-from antarest.study.storage.utils import export_study_to_flat_directory, remove_from_cache
+from antarest.study.storage.file_study_utils import export_study_to_flat_directory, get_snapshot_dir
+from antarest.study.storage.utils import remove_from_cache
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.snapshot.snapshot_manager_interface import ISnapshotManager
 
@@ -33,27 +34,27 @@ class FileSnapshotManager(ISnapshotManager):
         return (
             (study.snapshot is not None)
             and (study.snapshot.created_at >= study.updated_at)
-            and (study.snapshot_dir / "study.antares").is_file()
+            and (get_snapshot_dir(study) / "study.antares").is_file()
         )
 
     @override
     def has_snapshot(self, study: VariantStudy) -> bool:
-        return (study.snapshot is not None) and (study.snapshot_dir / "study.antares").is_file()
+        return (study.snapshot is not None) and (get_snapshot_dir(study) / "study.antares").is_file()
 
     @override
     def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
         remove_from_cache(self._cache, variant_study.id)
-        snapshot_dir = variant_study.snapshot_dir
+        snapshot_dir = get_snapshot_dir(variant_study)
         logger.info(f"Exporting the reference study '{ref_study.id}' to '{snapshot_dir.name}'...")
         shutil.rmtree(snapshot_dir, ignore_errors=True)
 
         if isinstance(ref_study, VariantStudy):
             snapshot_dir.parent.mkdir(parents=True, exist_ok=True)
-            export_study_to_flat_directory(ref_study.snapshot_dir, snapshot_dir)
+            export_study_to_flat_directory(get_snapshot_dir(ref_study), snapshot_dir)
         elif isinstance(ref_study, RawStudy):
             export_study_to_flat_directory(Path(ref_study.path), snapshot_dir)
 
     @override
     def clear_snapshot(self, variant_study: VariantStudy) -> None:
         logger.info(f"Clearing snapshot for study {variant_study.id}")
-        shutil.rmtree(variant_study.snapshot_dir, ignore_errors=True)
+        shutil.rmtree(get_snapshot_dir(variant_study), ignore_errors=True)

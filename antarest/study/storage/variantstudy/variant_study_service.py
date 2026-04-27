@@ -117,7 +117,7 @@ class VariantStudyService(AbstractStudyService):
         self.command_factory = command_factory
         self.study_factory = study_factory
         self._matrix_service = matrix_service
-        CommandMatrixUsageProvider(variant_study_repo=repository, command_factory=command_factory)
+        CommandMatrixUsageProvider(repository, command_factory, raw_study_service._storage_mapping)
         CommandBlobUsageProvider(variant_study_repo=repository, command_factory=command_factory)
         self._snapshot_manager_mapping: dict[StorageMode, ISnapshotManager] = {
             StorageMode.FILESYSTEM: FileSnapshotManager(cache),

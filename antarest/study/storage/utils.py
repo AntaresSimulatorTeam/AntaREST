@@ -17,7 +17,6 @@ import math
 import os
 import re
 import shutil
-import time
 from collections.abc import Sequence
 from datetime import datetime, timedelta
 from io import StringIO
@@ -66,7 +65,6 @@ from antarest.study.model import (
     StudyMetadataDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 
 logger = logging.getLogger(__name__)
@@ -74,34 +72,6 @@ logger = logging.getLogger(__name__)
 
 TS_GEN_PREFIX = "~"
 TS_GEN_SUFFIX = ".thermal_timeseries_gen.tmp"
-
-
-def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_author: bool) -> None:
-    """
-    Update antares study information in the study.antares file.
-
-    Args:
-        metadata: Study metadata containing name, dates, etc.
-        study_tree: File study tree to update
-        update_author: Whether to update the author field
-    """
-    study_data_info = study_tree.get(["study"])
-    antares_info = study_data_info["antares"]
-
-    author = metadata.author
-    editor = metadata.editor
-
-    # Update basic fields
-    antares_info["caption"] = metadata.name
-    antares_info["created"] = format_timestamp(metadata.created_at)
-    antares_info["lastsave"] = format_timestamp(metadata.updated_at)
-    antares_info["editor"] = editor
-
-    # Update author-related fields if additional_data exists
-    if update_author:
-        antares_info["author"] = author
-
-    study_tree.save(study_data_info, ["study"])
 
 
 def format_timestamp(dt: datetime | None) -> float:
@@ -623,19 +593,6 @@ def get_user_name_from_id(user_id: int) -> str:
 
 def get_current_user_name() -> str:
     return get_user_name_from_id(get_user_impersonator())
-
-
-def export_study_to_flat_directory(study_dir: Path, dest: Path) -> None:
-    start_time = time.time()
-
-    def ignore_outputs(directory: str, _: Sequence[str]) -> Sequence[str]:
-        return ["output"] if str(directory) == str(study_dir) else []
-
-    shutil.copytree(src=study_dir, dst=dest, ignore=ignore_outputs)
-
-    stop_time = time.time()
-    duration = f"{stop_time - start_time:.3f}"
-    logger.info(f"Study '{study_dir}' exported (flat mode) in {duration}s")
 
 
 def build_raw_study_from_source(

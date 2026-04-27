@@ -12,7 +12,6 @@
 
 import datetime
 import uuid
-from pathlib import Path
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -167,14 +166,3 @@ class VariantStudy(Study):
     @override
     def __str__(self) -> str:
         return super().__str__() + f", snapshot={self.snapshot}"
-
-    @override
-    def get_path(self) -> Path:
-        return self.snapshot_dir
-
-    @property
-    def snapshot_dir(self) -> Path:
-        """Get the path of the snapshot directory."""
-        if self.path is None:
-            raise ValueError("Study path is not set")
-        return Path(self.path) / "snapshot"

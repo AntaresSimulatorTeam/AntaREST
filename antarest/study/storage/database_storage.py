@@ -11,12 +11,13 @@
 # This file is part of the Antares project.
 import logging
 from pathlib import Path
-from typing import BinaryIO
+from typing import BinaryIO, Iterator
 
 from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.model import RawStudy, Study
@@ -56,6 +57,11 @@ class DatabaseStudyStorage(IStudyStorage):
     @override
     def get_disk_usage(self, study: Study) -> int:
         return 0
+
+    @override
+    def yield_matrix_references(self, study: Study) -> Iterator[MatrixReference]:
+        # Nothing to do
+        yield from ()
 
     @override
     def normalize_study(self, study: Study) -> None:
