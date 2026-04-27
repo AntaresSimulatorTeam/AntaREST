@@ -65,6 +65,8 @@ from antarest.study.service import StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
 from antarest.study.storage.rawstudy.watcher import Watcher
+from antarest.tablemode.repository import TablemodeRepository
+from antarest.tablemode.service import TablemodeService
 from antarest.worker.archive_worker import ArchiveWorker
 from antarest.worker.worker import AbstractWorker
 
@@ -165,6 +167,7 @@ class CoreServices:
     favorite_study_service: FavoriteStudyService
     favorite_directory_service: FavoriteDirectoryService
     study_disk_space_repository: StudyDiskSpaceRepository
+    tablemode_service: TablemodeService
 
 
 def build_favorite_service() -> tuple[FavoriteStudyService, FavoriteDirectoryService]:
@@ -175,6 +178,11 @@ def build_favorite_service() -> tuple[FavoriteStudyService, FavoriteDirectorySer
     favorite_directory_service = FavoriteDirectoryService(favorite_directory_repository=favorite_directory_repository)
 
     return favorite_study_service, favorite_directory_service
+
+
+def build_tablemode_service() -> TablemodeService:
+    tablemode_repository = TablemodeRepository()
+    return TablemodeService(tablemode_repository=tablemode_repository)
 
 
 def build_output_storage_list(config: Config, file_output_storage: InStudyFileOutputStorage) -> list[IOutputStorage]:
@@ -265,6 +273,7 @@ def create_core_services(config: Config) -> CoreServices:
     )
 
     favorite_study_service, favorite_directory_service = build_favorite_service()
+    tablemode_service = build_tablemode_service()
 
     study_disk_space_repository = StudyDiskSpaceRepository()
 
@@ -281,6 +290,7 @@ def create_core_services(config: Config) -> CoreServices:
         blob_service=blob_service,
         favorite_study_service=favorite_study_service,
         favorite_directory_service=favorite_directory_service,
+        tablemode_service=tablemode_service,
         study_disk_space_repository=study_disk_space_repository,
     )
 
@@ -356,6 +366,7 @@ class Services:
     matrix: MatrixService
     favorite_study: FavoriteStudyService
     favorite_directory: FavoriteDirectoryService
+    tablemode_service: TablemodeService
     user: LoginService
     cache: ICache
     maintenance: MaintenanceService
@@ -415,6 +426,7 @@ def create_services(config: Config, create_all: bool = False) -> Services:
         matrix=core_services.matrix_service,
         favorite_study=core_services.favorite_study_service,
         favorite_directory=core_services.favorite_directory_service,
+        tablemode_service=core_services.tablemode_service,
         user=core_services.login_service,
         cache=core_services.cache,
         maintenance=maintenance_service,

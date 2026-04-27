@@ -70,6 +70,7 @@ from antarest.study.web.study_data_blueprint import create_study_data_routes
 from antarest.study.web.variant_blueprint import create_study_variant_routes
 from antarest.study.web.watcher_blueprint import create_watcher_routes
 from antarest.study.web.xpansion_studies_blueprint import create_xpansion_routes
+from antarest.tablemode.web import create_table_routes
 from antarest.tools.admin_lib import clean_locks
 
 logger = logging.getLogger(__name__)
@@ -262,6 +263,7 @@ def create_routes(api_prefix: str) -> APIRouter:
     api_root.include_router(create_launcher_api())
     api_root.include_router(create_output_routes())
     api_root.include_router(create_favorite_routes())
+    api_root.include_router(create_table_routes())
 
     register_websocket_routes(api_root)
 
