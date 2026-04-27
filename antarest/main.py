@@ -72,7 +72,6 @@ from antarest.study.web.variant_blueprint import create_study_variant_routes
 from antarest.study.web.watcher_blueprint import create_watcher_routes
 from antarest.study.web.xpansion_studies_blueprint import create_xpansion_routes
 from antarest.tablemode.web import create_table_routes
-from antarest.tools.admin_lib import clean_locks
 
 logger = logging.getLogger(__name__)
 
