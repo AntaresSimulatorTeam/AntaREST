@@ -54,11 +54,18 @@ def test_file_study_dao(tmp_path: Path, empty_study_930: FileStudy, command_cont
 
     # Tests user resources
     user_resources = sorted(dao.get_all_user_resources(), key=lambda res: res.path)
-    assert len(user_resources) == 2
+    assert len(user_resources) == 3
     res1 = user_resources[0]
     assert res1.path.as_posix() == str(path1)  # Ensures the path is relative to the `user` folder
+    assert res1.resource_type == ResourceType.FILE
     assert res1.blob_id == blob_id1
 
     res2 = user_resources[1]
-    assert res2.path.as_posix() == str(path2)
-    assert res2.blob_id == blob_id2
+    assert res2.path.as_posix() == "folder_1"
+    assert res2.resource_type == ResourceType.FOLDER
+    assert res2.blob_id is None
+
+    res3 = user_resources[2]
+    assert res3.path.as_posix() == str(path2)
+    assert res3.resource_type == ResourceType.FILE
+    assert res3.blob_id == blob_id2

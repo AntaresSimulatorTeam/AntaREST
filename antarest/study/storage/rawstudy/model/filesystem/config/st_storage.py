@@ -25,6 +25,7 @@ from antarest.study.business.model.sts_model import (
     initialize_st_storage,
     validate_st_storage_against_version,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 
 class STStorageFileData(AntaresBaseModel):
@@ -66,7 +67,7 @@ def parse_st_storage(study_version: StudyVersion, data: Any, storage_id: str | N
     file_data = STStorageFileData.model_validate(data)
     model_data = file_data.model_dump(exclude_none=True)
     if storage_id is not None:
-        model_data["id"] = storage_id
+        model_data["id"] = transform_name_to_id(storage_id)
     storage = STStorage.model_validate(model_data)
     validate_st_storage_against_version(study_version, storage)
     initialize_st_storage(storage, study_version)
