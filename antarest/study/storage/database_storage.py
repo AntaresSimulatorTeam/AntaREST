@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import logging
+from pathlib import Path
 from typing import BinaryIO
 
 from typing_extensions import override
@@ -44,14 +45,14 @@ class DatabaseStudyStorage(IStudyStorage):
         raise NotImplementedError()
 
     @override
-    def write_study_to_filesytem(self, study: Study) -> None:
-        # TODO
-        raise NotImplementedError()
-
-    @override
-    def write_study_for_archive(self, study: RawStudy) -> None:
+    def write_study_for_archive(self, study: RawStudy, dst_path: Path) -> None:
         # Nothing to do
         pass
+
+    @override
+    def export_study(self, study: Study, dst_path: Path) -> None:
+        # TODO
+        raise NotImplementedError()
 
     @override
     def get_disk_usage(self, study: Study) -> int:

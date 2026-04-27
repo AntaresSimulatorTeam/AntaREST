@@ -58,7 +58,7 @@ from antarest.study.model import (
     StudyMetadataDTO,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter
-from antarest.study.storage.abstract.abstract_service import AbstractService
+from antarest.study.storage.abstract.abstract_study_service import AbstractStudyService
 from antarest.study.storage.database_storage import DatabaseStudyStorage
 from antarest.study.storage.file_study_storage import FileStudyStorage
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
@@ -66,7 +66,6 @@ from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.utils import (
     assert_permission,
-    export_study_to_flat_directory,
     get_current_user_name,
     get_user_name_from_id,
     is_managed,
@@ -95,7 +94,7 @@ def _cast_study_to_variant(study: Study) -> VariantStudy:
     return study
 
 
-class VariantStudyService(AbstractService):
+class VariantStudyService(AbstractStudyService):
     def __init__(
         self,
         task_service: ITaskService,
@@ -138,13 +137,13 @@ class VariantStudyService(AbstractService):
     def get_study_dao(self, study: Study) -> StudyDao:
         variant_study = _cast_study_to_variant(study)
         self.safe_generation(variant_study, 600)
-        return self._storage_mapping[study.storage_mode].get_dao(study)
+        return self.raw_study_service.get_study_dao(study)
 
     @override
     def export_study_flat(self, study: Study, dst_path: Path) -> None:
         variant = _cast_study_to_variant(study)
         self.safe_generation(variant)
-        export_study_to_flat_directory(variant.snapshot_dir, dst_path)
+        self.raw_study_service.export_study_flat(study, dst_path)
 
     ##########################
     # Specific methods

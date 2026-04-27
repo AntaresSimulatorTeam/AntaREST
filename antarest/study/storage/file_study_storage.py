@@ -69,12 +69,14 @@ class FileStudyStorage(IStudyStorage):
         return new_study
 
     @override
-    def write_study_to_filesytem(self, study: Study) -> None:
-        self.denormalize_study(study)
+    def write_study_for_archive(self, study: RawStudy, dst_path: Path) -> None:
+        self.export_study(study, dst_path)
 
     @override
-    def write_study_for_archive(self, study: RawStudy) -> None:
-        self.denormalize_study(study)
+    def export_study(self, study: Study, dst_path: Path) -> None:
+        export_study_to_flat_directory(study.get_path(), dst_path)
+        file_study = self._get_file_study(dst_path, False)
+        self._denormalize_file_study(file_study)
 
     @override
     def get_disk_usage(self, study: Study) -> int:

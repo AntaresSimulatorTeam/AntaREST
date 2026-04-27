@@ -34,7 +34,7 @@ from antarest.study.storage.utils import remove_from_cache
 logger = logging.getLogger(__name__)
 
 
-class AbstractService(IStudyService, ABC):
+class AbstractStudyService(IStudyService, ABC):
     def __init__(self, cache: ICache, config: Config):
         self._cache = cache
         self._config = config

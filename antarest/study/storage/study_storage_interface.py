@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import BinaryIO
 
 from antarest.study.dao.api.study_dao import StudyDao
@@ -28,11 +29,11 @@ class IStudyStorage(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def write_study_to_filesytem(self, study: Study) -> None:
+    def write_study_for_archive(self, study: RawStudy, dst_path: Path) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def write_study_for_archive(self, study: RawStudy) -> None:
+    def export_study(self, study: Study, dst_path: Path) -> None:
         raise NotImplementedError()
 
     @abstractmethod
