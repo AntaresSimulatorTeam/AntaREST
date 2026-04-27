@@ -16,7 +16,6 @@ from typing import BinaryIO
 
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import RawStudy, Study
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 
 class IStudyStorage(ABC):
@@ -46,16 +45,4 @@ class IStudyStorage(ABC):
 
     @abstractmethod
     def import_study(self, study: RawStudy, stream: BinaryIO) -> RawStudy:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def is_snapshot_up_to_date(self, study: VariantStudy) -> bool:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def clear_snapshot(self, variant_study: VariantStudy) -> None:
         raise NotImplementedError()

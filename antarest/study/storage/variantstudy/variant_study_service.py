@@ -74,6 +74,8 @@ from antarest.study.storage.variantstudy.business.utils import transform_command
 from antarest.study.storage.variantstudy.command_blob_usage_provider import CommandBlobUsageProvider
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.command_matrix_usage_provider import CommandMatrixUsageProvider
+from antarest.study.storage.variantstudy.database_snapshot_manager import DatabaseSnapshotManager
+from antarest.study.storage.variantstudy.file_snapshot_manager import FileSnapshotManager
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
@@ -84,6 +86,7 @@ from antarest.study.storage.variantstudy.model.model import (
 )
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator
+from antarest.study.storage.variantstudy.snapshot_manager_interface import ISnapshotManager
 
 logger = logging.getLogger(__name__)
 
@@ -126,6 +129,10 @@ class VariantStudyService(AbstractStudyService):
         }
         CommandMatrixUsageProvider(variant_study_repo=repository, command_factory=command_factory)
         CommandBlobUsageProvider(variant_study_repo=repository, command_factory=command_factory)
+        self._snapshot_manager_mapping: dict[StorageMode, ISnapshotManager] = {
+            StorageMode.FILESYSTEM: FileSnapshotManager(cache),
+            StorageMode.DATABASE: DatabaseSnapshotManager(),
+        }
 
     @override
     def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> RawStudy:
@@ -160,7 +167,7 @@ class VariantStudyService(AbstractStudyService):
         self.repository.save(metadata=variant_study)
 
     def clear_snapshot(self, variant_study: VariantStudy) -> None:
-        self._storage_mapping[variant_study.storage_mode].clear_snapshot(variant_study)
+        self._snapshot_manager_mapping[variant_study.storage_mode].clear_snapshot(variant_study)
         self.invalidate_snapshot(variant_study)
 
     def _update_editor(self, study: VariantStudy) -> None:
@@ -725,7 +732,7 @@ class VariantStudyService(AbstractStudyService):
         raise StudyValidationError(f"Variant study '{study_id}' has no generation task")
 
     def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
-        self._storage_mapping[ref_study.storage_mode].create_snapshot(ref_study, variant_study)
+        self._snapshot_manager_mapping[ref_study.storage_mode].create_snapshot(ref_study, variant_study)
 
     def clear_all_snapshots(self, retention_time: timedelta) -> str:
         """
@@ -758,7 +765,7 @@ class VariantStudyService(AbstractStudyService):
 
     def safe_generation(self, study: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
         try:
-            if self._storage_mapping[study.storage_mode].is_snapshot_up_to_date(study):
+            if self._snapshot_manager_mapping[study.storage_mode].is_snapshot_up_to_date(study):
                 # Nothing to do
                 return
 

@@ -22,7 +22,6 @@ from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)
 
@@ -65,20 +64,5 @@ class DatabaseStudyStorage(IStudyStorage):
 
     @override
     def import_study(self, study: RawStudy, stream: BinaryIO) -> RawStudy:
-        # TODO
-        raise NotImplementedError()
-
-    @override
-    def is_snapshot_up_to_date(self, study: VariantStudy) -> bool:
-        # TODO
-        raise NotImplementedError()
-
-    @override
-    def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
-        # TODO
-        raise NotImplementedError()
-
-    @override
-    def clear_snapshot(self, variant_study: VariantStudy) -> None:
         # TODO
         raise NotImplementedError()

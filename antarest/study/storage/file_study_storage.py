@@ -31,11 +31,9 @@ from antarest.study.storage.utils import (
     export_study_to_flat_directory,
     get_disk_usage,
     is_managed,
-    remove_from_cache,
     update_antares_info,
 )
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)
 
@@ -113,28 +111,6 @@ class FileStudyStorage(IStudyStorage):
     def import_study(self, study: RawStudy, stream: BinaryIO) -> RawStudy:
         self.normalize_study(study)
         return study
-
-    @override
-    def is_snapshot_up_to_date(self, study: VariantStudy) -> bool:
-        return study.is_snapshot_up_to_date()
-
-    @override
-    def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
-        remove_from_cache(self._cache, variant_study.id)
-        snapshot_dir = variant_study.snapshot_dir
-        logger.info(f"Exporting the reference study '{ref_study.id}' to '{snapshot_dir.name}'...")
-        shutil.rmtree(snapshot_dir, ignore_errors=True)
-
-        if isinstance(ref_study, VariantStudy):
-            snapshot_dir.parent.mkdir(parents=True, exist_ok=True)
-            export_study_to_flat_directory(ref_study.snapshot_dir, snapshot_dir)
-        elif isinstance(ref_study, RawStudy):
-            export_study_to_flat_directory(Path(ref_study.path), snapshot_dir)
-
-    @override
-    def clear_snapshot(self, variant_study: VariantStudy) -> None:
-        logger.info(f"Clearing snapshot for study {variant_study.id}")
-        shutil.rmtree(variant_study.snapshot_dir, ignore_errors=True)
 
     def update_from_raw_metadata(self, study: Study) -> None:
         """
