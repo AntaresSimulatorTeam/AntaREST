@@ -13,7 +13,6 @@ from antarest.output.model import (
     AreaAndLinkVariables,
     AreaVariables,
     McAllVar,
-    McIndVars,
     OutputVariablesList,
     to_str_variables_list,
 )
