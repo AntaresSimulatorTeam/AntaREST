@@ -24,13 +24,14 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.core.exceptions import ThermalClusterNotFound
+from antarest.core.exceptions import AreaNotFound, ThermalClusterNotFound, ThermalClustersNotFound
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     initialize_thermal_cluster,
     validate_thermal_cluster_against_version,
 )
 from antarest.study.dao.api.thermal_dao import ThermalDao
+from antarest.study.dao.common import AreaId, SeriesId, ThermalId, ThermalSeriesMapping
 from antarest.study.dao.database.common import get_row_representation_as_dict, validate_area_exists
 from antarest.study.dao.database.models.thermal import (
     THERMAL_CLUSTER_TABLE,
@@ -40,7 +41,12 @@ from antarest.study.dao.database.models.thermal import (
     THERMAL_PREPRO_TABLE,
     THERMAL_SERIES_TABLE,
 )
-from antarest.study.dao.database.sql_utils import upsert_multiple, upsert_one
+from antarest.study.dao.database.sql_utils import upsert_multiple
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import default_scenario_hourly
+from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.prepro.area.thermal.thermal import (
+    default_data_matrix,
+    default_modulation_matrix,
+)
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -93,80 +99,94 @@ class DatabaseThermalDao(ThermalDao):
         )
         return session.execute(stmt).fetchone()
 
-    def _get_thermal_matrix(self, area_id: str, thermal_id: str, table: Table) -> pl.DataFrame:
+    def _get_thermal_matrix(self, area_id: str, thermal_id: str, table: Table) -> SeriesId:
         row = self._get_thermal_matrix_row(area_id, thermal_id, table)
         if not row:
-            self._raise_the_right_exception(area_id, thermal_id)
-        return self.get_impl().get_matrix(row.matrix_id)
+            self._raise_the_right_exception({area_id: [thermal_id]})
+        return str(row.matrix_id)
 
-    def _save_thermal_matrix(self, area_id: str, thermal_id: str, table: Table, matrix_id: str) -> None:
+    def _save_thermal_matrix(self, series: ThermalSeriesMapping, table: Table) -> None:
         study_id = self._study_id
         session = self._db_session
 
         try:
-            values = {"study_id": study_id, "area_id": area_id, "thermal_id": thermal_id, "matrix_id": matrix_id}
-            upsert_one(session, table, values)
+            values = []
+            for area_id, value in series.items():
+                for thermal_id, matrix_id in value.items():
+                    data = {"study_id": study_id, "area_id": area_id, "thermal_id": thermal_id, "matrix_id": matrix_id}
+                    values.append(data)
+            upsert_multiple(session, table, values)
         except IntegrityError as e:
-            self._raise_the_right_exception(area_id, thermal_id, e)
+            invalid_data = {area_id: list(thermal_dict) for area_id, thermal_dict in series.items()}
+            self._raise_the_right_exception(invalid_data, e)
 
         session.commit()
 
-    def _raise_the_right_exception(self, area_id: str, thermal_id: str, exc: IntegrityError | None = None) -> NoReturn:
-        # Could be because area does not exist or the thermal does not exist
-        validate_area_exists(self._db_session, self._study_id, area_id)
-        raise ThermalClusterNotFound(area_id, thermal_id) from exc
+    def _raise_the_right_exception(
+        self, data: dict[AreaId, list[ThermalId]], exc: IntegrityError | None = None
+    ) -> NoReturn:
+        # Checks if some areas are missing
+        existing_ids = set(self.get_impl().get_all_area_ids())
+        if invalid_areas := set(data) - existing_ids:
+            raise AreaNotFound(*invalid_areas)
+
+        # Means the issue lies in the thermals
+        all_existing_thermals = self.get_all_thermals()
+        invalid_thermal_dict = {}
+        for area_id, value in data.items():
+            if invalid_thermals := set(data[area_id]) - set(all_existing_thermals.get(area_id, [])):
+                invalid_thermal_dict[area_id] = invalid_thermals
+
+        if len(invalid_thermal_dict) == 1:
+            area_id = next(iter(invalid_thermal_dict))
+            if len(invalid_thermal_dict[area_id]) == 1:
+                # Only one thermal is missing, keep the clearer exception
+                raise ThermalClusterNotFound(area_id, next(iter(invalid_thermal_dict[area_id]))) from exc
+
+        elif not invalid_thermal_dict:
+            # All thermals exist. It means that the DB table does not contain the information.
+            raise ValueError("One of the thermal clusters table is not filled as it should") from exc
+
+        raise ThermalClustersNotFound(invalid_thermal_dict) from exc
 
     @override
-    def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
-        session = self._db_session
-
-        values = self._convert_thermal_cluster_to_row(area_id, thermal)
-        try:
-            upsert_one(session, THERMAL_CLUSTER_TABLE, values)
-        except IntegrityError as e:
-            self._raise_the_right_exception(area_id, thermal.id, e)
-
-        session.commit()
-
-    @override
-    def save_thermals(self, area_id: str, thermals: Sequence[ThermalCluster]) -> None:
-        if not thermals:
+    def save_thermals(self, data: dict[AreaId, list[ThermalCluster]]) -> None:
+        if not data:
             return
 
         session = self._db_session
-        values = [self._convert_thermal_cluster_to_row(area_id, thermal) for thermal in thermals]
+        values = []
+        for area_id, thermals in data.items():
+            for thermal in thermals:
+                values.append(self._convert_thermal_cluster_to_row(area_id, thermal))
 
         try:
             upsert_multiple(session=session, table=THERMAL_CLUSTER_TABLE, values=values)
         except IntegrityError as e:
-            validate_area_exists(session, self._study_id, area_id)
-            # We have to find which thermal does not exist
-            existing_thermal_ids = {th.id for th in self.get_all_thermals_for_area(area_id)}
-            for thermal in thermals:
-                if thermal.id not in existing_thermal_ids:
-                    self._raise_the_right_exception(area_id, thermal.id, e)
+            invalid_data = {area_id: [thermal.id.lower() for thermal in thermals] for area_id, thermals in data.items()}
+            self._raise_the_right_exception(invalid_data, e)
 
         session.commit()
 
     @override
-    def save_thermal_prepro(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._save_thermal_matrix(area_id, thermal_id, THERMAL_PREPRO_TABLE, series_id)
+    def save_thermal_prepro(self, series: ThermalSeriesMapping) -> None:
+        self._save_thermal_matrix(series, THERMAL_PREPRO_TABLE)
 
     @override
-    def save_thermal_modulation(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._save_thermal_matrix(area_id, thermal_id, THERMAL_MODULATION_TABLE, series_id)
+    def save_thermal_modulation(self, series: ThermalSeriesMapping) -> None:
+        self._save_thermal_matrix(series, THERMAL_MODULATION_TABLE)
 
     @override
-    def save_thermal_series(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._save_thermal_matrix(area_id, thermal_id, THERMAL_SERIES_TABLE, series_id)
+    def save_thermal_series(self, series: ThermalSeriesMapping) -> None:
+        self._save_thermal_matrix(series, THERMAL_SERIES_TABLE)
 
     @override
-    def save_thermal_fuel_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._save_thermal_matrix(area_id, thermal_id, THERMAL_FUEL_COST_TABLE, series_id)
+    def save_thermal_fuel_cost(self, series: ThermalSeriesMapping) -> None:
+        self._save_thermal_matrix(series, THERMAL_FUEL_COST_TABLE)
 
     @override
-    def save_thermal_co2_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._save_thermal_matrix(area_id, thermal_id, THERMAL_CO2_COST_TABLE, series_id)
+    def save_thermal_co2_cost(self, series: ThermalSeriesMapping) -> None:
+        self._save_thermal_matrix(series, THERMAL_CO2_COST_TABLE)
 
     @override
     def delete_thermal(self, area_id: str, thermal_id: str) -> None:
@@ -183,7 +203,7 @@ class DatabaseThermalDao(ThermalDao):
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
             # Means the DELETE had no effect so the thermal did not exist
-            self._raise_the_right_exception(area_id, thermal_id)
+            self._raise_the_right_exception({area_id: [thermal_id]})
 
         session.commit()
 
@@ -231,7 +251,7 @@ class DatabaseThermalDao(ThermalDao):
         stmt = self._select_thermal_cluster(area_id, thermal_id)
         row = session.execute(stmt).fetchone()
         if not row:
-            self._raise_the_right_exception(area_id, thermal_id)
+            self._raise_the_right_exception({area_id: [thermal_id]})
 
         return self._convert_db_row_to_thermal(row)
 
@@ -243,20 +263,55 @@ class DatabaseThermalDao(ThermalDao):
 
     @override
     def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pl.DataFrame:
-        return self._get_thermal_matrix(area_id, thermal_id, THERMAL_PREPRO_TABLE)
+        matrix_id = self._get_thermal_matrix(area_id, thermal_id, THERMAL_PREPRO_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_data_matrix)
 
     @override
     def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pl.DataFrame:
-        return self._get_thermal_matrix(area_id, thermal_id, THERMAL_MODULATION_TABLE)
+        matrix_id = self._get_thermal_matrix(area_id, thermal_id, THERMAL_MODULATION_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_modulation_matrix)
 
     @override
     def get_thermal_series(self, area_id: str, thermal_id: str) -> pl.DataFrame:
-        return self._get_thermal_matrix(area_id, thermal_id, THERMAL_SERIES_TABLE)
+        matrix_id = self._get_thermal_matrix(area_id, thermal_id, THERMAL_SERIES_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
-        return self._get_thermal_matrix(area_id, thermal_id, THERMAL_FUEL_COST_TABLE)
+        matrix_id = self._get_thermal_matrix(area_id, thermal_id, THERMAL_FUEL_COST_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
-        return self._get_thermal_matrix(area_id, thermal_id, THERMAL_CO2_COST_TABLE)
+        matrix_id = self._get_thermal_matrix(area_id, thermal_id, THERMAL_CO2_COST_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
+
+    def _get_all_thermal_matrix(self, table: Table) -> ThermalSeriesMapping:
+        study_id = self._study_id
+        session = self._db_session
+        stmt = select(table).where(table.c.study_id == study_id)
+        rows = session.execute(stmt).fetchall()
+        result: ThermalSeriesMapping = {}
+        for row in rows:
+            result.setdefault(row.area_id, {})[row.thermal_id] = row.matrix_id
+        return result
+
+    @override
+    def get_all_thermals_co2_cost(self) -> ThermalSeriesMapping:
+        return self._get_all_thermal_matrix(THERMAL_CO2_COST_TABLE)
+
+    @override
+    def get_all_thermals_fuel_cost(self) -> ThermalSeriesMapping:
+        return self._get_all_thermal_matrix(THERMAL_FUEL_COST_TABLE)
+
+    @override
+    def get_all_thermals_series(self) -> ThermalSeriesMapping:
+        return self._get_all_thermal_matrix(THERMAL_SERIES_TABLE)
+
+    @override
+    def get_all_thermals_modulation(self) -> ThermalSeriesMapping:
+        return self._get_all_thermal_matrix(THERMAL_MODULATION_TABLE)
+
+    @override
+    def get_all_thermals_prepro(self) -> ThermalSeriesMapping:
+        return self._get_all_thermal_matrix(THERMAL_PREPRO_TABLE)

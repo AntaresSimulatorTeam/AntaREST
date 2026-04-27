@@ -13,6 +13,7 @@
  */
 
 import type { StudyMetadata } from "@/types/types";
+import type { ViewMode } from "../types";
 
 export interface BreadcrumbItem {
   label: string;
@@ -25,4 +26,6 @@ export interface HeaderProps {
   selectedStudyIds: Array<StudyMetadata["id"]>;
   setSelectedStudyIds: (ids: Array<StudyMetadata["id"]>) => void;
   setStudiesToLaunch: (ids: Array<StudyMetadata["id"]>) => void;
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
 }

@@ -151,7 +151,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
                                 resource_type=ResourceType.FILE,
                                 blob_id=blob_id,
                             )
-                            study_data.save_user_resource(resource_data)
+                            study_data.save_user_resources([resource_data])
 
                     generated_matrix = results.available_power
                     # 10- Write the matrix inside the matrix-store and store the id in memory
@@ -169,9 +169,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     return command_failed(f"Area {area_id}, cluster {thermal.id.lower()}: " + e.args[0])
 
         # 12- Once we've written all matrices inside the matrix-store, modify the input folder.
-        for area_id, values in series_mapping.items():
-            for thermal_id, series in values.items():
-                study_data.save_thermal_series(area_id, thermal_id, series)
+        study_data.save_thermal_series(series_mapping)
 
         return command_succeeded(message="All time series were generated successfully", result=None)
 

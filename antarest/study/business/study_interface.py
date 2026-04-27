@@ -29,6 +29,7 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 
 if TYPE_CHECKING:
     from antarest.blobstore.service import IBlobService
+    from antarest.core.interfaces.cache import ICache
     from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
@@ -46,18 +47,6 @@ class StudyInterface(ABC):
     @property
     @abstractmethod
     def version(self) -> StudyVersion:
-        raise NotImplementedError()
-
-    # TODO: in the end this should provide a read-only DAO which encapsulates
-    #       the actual storage implementation
-    @abstractmethod
-    def get_files(self) -> FileStudy:
-        """
-        Gets the file representation of the study.
-
-        This is meant to be a "read-only" access to the study,
-        modifications should be made through commands.
-        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -85,7 +74,7 @@ class InMemoryStudyInterface(StudyInterface):
 
     def __init__(self, id: str, version: StudyVersion, matrix_service: ISimpleMatrixService):
         self._id = id
-        self._study_dao = InMemoryStudyDao(version, matrix_service)
+        self._study_dao = InMemoryStudyDao(version, matrix_service, study_id=id)
 
     @override
     @property
@@ -96,10 +85,6 @@ class InMemoryStudyInterface(StudyInterface):
     @property
     def version(self) -> StudyVersion:
         return self._study_dao.get_version()
-
-    @override
-    def get_files(self) -> FileStudy:
-        raise NotImplementedError("In memory studies cannot be converted to file study.")
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
@@ -126,12 +111,18 @@ class FileStudyInterface(StudyInterface):
     def __init__(
         self,
         file_study: FileStudy,
+        is_study_managed: bool,
         generator_matrix_constants: "GeneratorMatrixConstants",
         blob_service: "IBlobService",
+        matrix_service: ISimpleMatrixService,
+        cache: "ICache",
     ):
         self.file_study = file_study
         self._generator_matrix_constants = generator_matrix_constants
         self._blob_service = blob_service
+        self._matrix_service = matrix_service
+        self._is_study_managed = is_study_managed
+        self._cache = cache
 
     @override
     @property
@@ -143,18 +134,14 @@ class FileStudyInterface(StudyInterface):
     def version(self) -> StudyVersion:
         return self.file_study.config.version
 
-    @override
     def get_files(self) -> FileStudy:
         return self.file_study
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
+        dao = self._get_dao()
         for command in commands:
-            context = command.command_context
-            result = command.apply(
-                FileStudyTreeDao(self.file_study, context.generator_matrix_constants, context.blob_service),
-                listener,
-            )
+            result = command.apply(dao, listener)
             if not result.status:
                 raise CommandApplicationError(result.message)
 
@@ -163,7 +150,14 @@ class FileStudyInterface(StudyInterface):
         return self._get_dao().read_only()
 
     def _get_dao(self) -> FileStudyTreeDao:
-        return FileStudyTreeDao(self.file_study, self._generator_matrix_constants, self._blob_service)
+        return FileStudyTreeDao(
+            self.file_study,
+            self._is_study_managed,
+            self._generator_matrix_constants,
+            self._blob_service,
+            self._matrix_service,
+            self._cache,
+        )
 
     @override
     def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:

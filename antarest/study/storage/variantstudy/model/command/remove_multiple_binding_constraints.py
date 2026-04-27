@@ -15,6 +15,7 @@ from typing import Any
 from pydantic import model_validator
 from typing_extensions import override
 
+from antarest.study.business.model.binding_constraint_model import ConstraintId
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -35,7 +36,7 @@ class RemoveMultipleBindingConstraints(ICommand):
     command_name: CommandName = CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS
 
     # Properties of the `REMOVE_MULTIPLE_BINDING_CONSTRAINTS` command:
-    ids: list[str]
+    ids: list[ConstraintId]
 
     @model_validator(mode="before")
     @classmethod

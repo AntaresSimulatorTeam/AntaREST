@@ -24,13 +24,11 @@ class ShortTermStorageTsNumbers(FolderNode):
         children: TREE = {}
         for folder in self.config.path.iterdir():
             if folder.is_dir():
-                children[folder.name] = ShortTermStorageSubFolder(
-                    self.matrix_mapper, self.config.next_file(folder.name)
-                )
+                children[folder.name] = GenericSubFolder(self.matrix_mapper, self.config.next_file(folder.name))
         return children
 
 
-class ShortTermStorageSubFolder(FolderNode):
+class GenericSubFolder(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {}

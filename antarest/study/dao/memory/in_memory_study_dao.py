@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import PurePosixPath
 
@@ -19,13 +19,23 @@ import polars as pl
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
-from antarest.core.exceptions import AreaNotFound, LinkNotFound, ReferencedObjectDeletionNotAllowed
+from antarest.core.exceptions import (
+    AreaNotFound,
+    LinkNotFound,
+    ReferencedObjectDeletionNotAllowed,
+    ReserveDefinitionNotFound,
+)
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.utils import remove_first_match
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
-from antarest.study.business.model.area_properties_model import AreaProperties
-from antarest.study.business.model.binding_constraint_model import BindingConstraint, ClusterTerm, LinkTerm
+from antarest.study.business.model.area_properties_model import AreaProperties, sort_filter_options
+from antarest.study.business.model.binding_constraint_model import (
+    BindingConstraint,
+    ClusterTerm,
+    ConstraintId,
+    LinkTerm,
+)
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters, HydroPmax
@@ -44,6 +54,8 @@ from antarest.study.business.model.hydro_model import (
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveDefinitionId
+from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.business.model.scenario_builder_model import (
     AnyScenarios,
     Ruleset,
@@ -65,9 +77,30 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettingsUpdate,
 )
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.common import (
+    AreaId,
+    AreaName,
+    AreaSeriesMapping,
+    AreaUiMapping,
+    BindingConstraintSeriesMapping,
+    LinkSeriesMapping,
+    RenewableSeriesMapping,
+    ReserveDefinitionsMapping,
+    ReservesGlobalParametersMapping,
+    StStorageConstraintSeriesMapping,
+    StStorageId,
+    StStorageSeriesMapping,
+    ThermalSeriesMapping,
+    XpansionCapacitiesMapping,
+    XpansionConstraintsMapping,
+    XpansionWeightsMapping,
+)
+from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, LinkConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
 @dataclass(frozen=True)
@@ -80,6 +113,12 @@ class LinkKey:
 class ClusterKey:
     area_id: str
     cluster_id: str
+
+
+@dataclass(frozen=True)
+class ReserveKey:
+    area_id: str
+    reserve_id: str
 
 
 @dataclass(frozen=True)
@@ -98,6 +137,10 @@ def cluster_key(area_id: str, cluster_id: str) -> ClusterKey:
     return ClusterKey(area_id, cluster_id)
 
 
+def reserve_key(area_id: str, reserve_id: str) -> ReserveKey:
+    return ReserveKey(area_id, reserve_id)
+
+
 def additional_constraint_key(area_id: str, storage_id: str, constraint_id: str) -> AdditionalConstraintKey:
     return AdditionalConstraintKey(area_id, storage_id, constraint_id)
 
@@ -108,7 +151,8 @@ class InMemoryStudyDao(StudyDao):
     TODO, warning: no version handling, no check on areas, no checks on matrices ...
     """
 
-    def __init__(self, version: StudyVersion, matrix_service: ISimpleMatrixService) -> None:
+    def __init__(self, version: StudyVersion, matrix_service: ISimpleMatrixService, study_id: str = "") -> None:
+        self._study_id = study_id
         self._version = version
         self._matrix_service = matrix_service
         # Links
@@ -160,11 +204,11 @@ class InMemoryStudyDao(StudyDao):
         self._st_storages_constraints_matrix: dict[AdditionalConstraintKey, str] = {}
         self._st_storages_constraints_terms: dict[str, dict[str, str]] = {}
         # Binding constraints
-        self._constraints: dict[str, BindingConstraint] = {}
-        self._constraints_values_matrix: dict[str, str] = {}
-        self._constraints_less_term_matrix: dict[str, str] = {}
-        self._constraints_greater_term_matrix: dict[str, str] = {}
-        self._constraints_equal_term_matrix: dict[str, str] = {}
+        self._constraints: dict[ConstraintId, BindingConstraint] = {}
+        self._constraints_values_matrix: BindingConstraintSeriesMapping = {}
+        self._constraints_less_term_matrix: BindingConstraintSeriesMapping = {}
+        self._constraints_greater_term_matrix: BindingConstraintSeriesMapping = {}
+        self._constraints_equal_term_matrix: BindingConstraintSeriesMapping = {}
         # General config
         self._general_config: GeneralConfig = GeneralConfig()
         # Optimization preferences config
@@ -209,12 +253,78 @@ class InMemoryStudyDao(StudyDao):
         self._load: dict[str, str] = {}
         # Reserves
         self._reserves: dict[str, str] = {}
+        # Reserves global parameters
+        self._reserves_global_parameters: dict[str, ReservesGlobalParameters] = {}
+        # Reserve definitions (per-reserve parameters)
+        self._reserve_definitions: dict[ReserveKey, ReserveDefinition] = {}
         # Misc-gen
         self._misc_gen: dict[str, str] = {}
         # Solar
         self._solar: dict[str, str] = {}
         # Wind
         self._wind: dict[str, str] = {}
+
+    @override
+    def get_study_id(self) -> str:
+        return self._study_id
+
+    @override
+    @property
+    def matrix_service(self) -> ISimpleMatrixService:
+        return self._matrix_service
+
+    @override
+    @property
+    def generator_matrix_constants(self) -> GeneratorMatrixConstants:
+        raise NotImplementedError()
+
+    @override
+    def get_synthesis(self) -> StudyDataSynthesis:
+        areas_info = self.get_all_areas_info()
+        area_names = {a.id: a.name for a in areas_info}
+        area_ids = list(area_names.keys())
+
+        links_by_area: dict[str, dict[str, LinkConfig]] = {aid: {} for aid in area_ids}
+        for link in self.get_links():
+            link_config = LinkConfig(
+                filters_synthesis=list(link.filter_synthesis),
+                filters_year=list(link.filter_year_by_year),
+            )
+            links_by_area[link.area1][link.area2] = link_config
+
+        thermals = self.get_all_thermals()
+        renewables = self.get_all_renewables()
+        st_storages = self.get_all_st_storages()
+        additional_constraints = self.get_all_st_storage_additional_constraints()
+        area_properties = self.get_all_area_properties()
+
+        areas: dict[str, AreaConfig] = {}
+        for area_id in area_ids:
+            props = area_properties.get(area_id, AreaProperties())
+            areas[area_id] = AreaConfig(
+                name=area_names[area_id],
+                links=links_by_area.get(area_id, {}),
+                thermals=list(thermals.get(area_id, {}).values()),
+                renewables=list(renewables.get(area_id, {}).values()),
+                filters_synthesis=sort_filter_options(props.filter_synthesis),
+                filters_year=sort_filter_options(props.filter_by_year),
+                st_storages=list(st_storages.get(area_id, {}).values()),
+                st_storages_additional_constraints=additional_constraints.get(area_id, {}),
+            )
+
+        districts = {d.id: d for d in self.get_districts()}
+        bindings = list(self.get_all_constraints().values())
+        advanced = self.get_advanced_parameters()
+        enr_modelling = EnrModelling(advanced.renewable_generation_modelling.value)
+
+        return StudyDataSynthesis.model_construct(
+            study_id=self._study_id,
+            version=self._version,
+            areas=areas,
+            districts=districts,
+            bindings=bindings,
+            enr_modelling=enr_modelling,
+        )
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -233,6 +343,10 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def update_antares_file(self, metadata: StudyMetadataUpdate) -> None:
+        pass
+
+    @override
+    def update_cache(self) -> None:
         pass
 
     @override
@@ -270,20 +384,45 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def save_link(self, link: Link) -> None:
-        self._links[link_key(link.area1, link.area2)] = link
+    def get_all_links_series(self) -> LinkSeriesMapping:
+        result: LinkSeriesMapping = {}
+        for link_key, series_id in self._link_capacities.items():
+            result[link_key.area1_id, link_key.area2_id] = series_id
+        return result
 
     @override
-    def save_link_series(self, area_from: str, area_to: str, series_id: str) -> None:
-        self._link_capacities[link_key(area_from, area_to)] = series_id
+    def get_all_links_indirect_capacities(self) -> LinkSeriesMapping:
+        result: LinkSeriesMapping = {}
+        for link_key, series_id in self._link_indirect_capacities.items():
+            result[link_key.area1_id, link_key.area2_id] = series_id
+        return result
 
     @override
-    def save_link_direct_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        self._link_direct_capacities[link_key(area_from, area_to)] = series_id
+    def get_all_links_direct_capacities(self) -> LinkSeriesMapping:
+        result: LinkSeriesMapping = {}
+        for link_key, series_id in self._link_direct_capacities.items():
+            result[link_key.area1_id, link_key.area2_id] = series_id
+        return result
 
     @override
-    def save_link_indirect_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        self._link_indirect_capacities[link_key(area_from, area_to)] = series_id
+    def save_links(self, links: Sequence[Link]) -> None:
+        for link in links:
+            self._links[link_key(link.area1, link.area2)] = link
+
+    @override
+    def save_link_series(self, series: LinkSeriesMapping) -> None:
+        for (area_from, area_to), series_id in series.items():
+            self._link_capacities[link_key(area_from, area_to)] = series_id
+
+    @override
+    def save_link_direct_capacities(self, series: LinkSeriesMapping) -> None:
+        for (area_from, area_to), series_id in series.items():
+            self._link_direct_capacities[link_key(area_from, area_to)] = series_id
+
+    @override
+    def save_link_indirect_capacities(self, series: LinkSeriesMapping) -> None:
+        for (area_from, area_to), series_id in series.items():
+            self._link_indirect_capacities[link_key(area_from, area_to)] = series_id
 
     @override
     def delete_link(self, link: Link) -> None:
@@ -334,33 +473,80 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
-        self._thermals[cluster_key(area_id, thermal.id)] = thermal
+    def get_all_thermals_co2_cost(self) -> ThermalSeriesMapping:
+        result: ThermalSeriesMapping = {}
+        for thermal_key, matrix_id in self._thermal_co2_cost.items():
+            area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
+            result.setdefault(area_id, {})[thermal_id] = matrix_id
+        return result
 
     @override
-    def save_thermals(self, area_id: str, thermals: Sequence[ThermalCluster]) -> None:
-        for thermal in thermals:
-            self.save_thermal(area_id, thermal)
+    def get_all_thermals_fuel_cost(self) -> ThermalSeriesMapping:
+        result: ThermalSeriesMapping = {}
+        for thermal_key, matrix_id in self._thermal_fuel_cost.items():
+            area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
+            result.setdefault(area_id, {})[thermal_id] = matrix_id
+        return result
 
     @override
-    def save_thermal_prepro(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._thermal_prepro[cluster_key(area_id, thermal_id)] = series_id
+    def get_all_thermals_series(self) -> ThermalSeriesMapping:
+        result: ThermalSeriesMapping = {}
+        for thermal_key, matrix_id in self._thermal_series.items():
+            area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
+            result.setdefault(area_id, {})[thermal_id] = matrix_id
+        return result
 
     @override
-    def save_thermal_modulation(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._thermal_modulation[cluster_key(area_id, thermal_id)] = series_id
+    def get_all_thermals_modulation(self) -> ThermalSeriesMapping:
+        result: ThermalSeriesMapping = {}
+        for thermal_key, matrix_id in self._thermal_modulation.items():
+            area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
+            result.setdefault(area_id, {})[thermal_id] = matrix_id
+        return result
 
     @override
-    def save_thermal_series(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._thermal_series[cluster_key(area_id, thermal_id)] = series_id
+    def get_all_thermals_prepro(self) -> ThermalSeriesMapping:
+        result: ThermalSeriesMapping = {}
+        for thermal_key, matrix_id in self._thermal_prepro.items():
+            area_id, thermal_id = thermal_key.area_id, thermal_key.cluster_id
+            result.setdefault(area_id, {})[thermal_id] = matrix_id
+        return result
 
     @override
-    def save_thermal_fuel_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._thermal_fuel_cost[cluster_key(area_id, thermal_id)] = series_id
+    def save_thermals(self, data: dict[AreaId, list[ThermalCluster]]) -> None:
+        for area_id, thermals in data.items():
+            for thermal in thermals:
+                self._thermals[cluster_key(area_id, thermal.id)] = thermal
 
     @override
-    def save_thermal_co2_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        self._thermal_co2_cost[cluster_key(area_id, thermal_id)] = series_id
+    def save_thermal_prepro(self, series: ThermalSeriesMapping) -> None:
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                self._thermal_prepro[cluster_key(area_id, thermal_id)] = series_id
+
+    @override
+    def save_thermal_modulation(self, series: ThermalSeriesMapping) -> None:
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                self._thermal_modulation[cluster_key(area_id, thermal_id)] = series_id
+
+    @override
+    def save_thermal_series(self, series: ThermalSeriesMapping) -> None:
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                self._thermal_series[cluster_key(area_id, thermal_id)] = series_id
+
+    @override
+    def save_thermal_fuel_cost(self, series: ThermalSeriesMapping) -> None:
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                self._thermal_fuel_cost[cluster_key(area_id, thermal_id)] = series_id
+
+    @override
+    def save_thermal_co2_cost(self, series: ThermalSeriesMapping) -> None:
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                self._thermal_co2_cost[cluster_key(area_id, thermal_id)] = series_id
 
     @override
     def delete_thermal(self, area_id: str, thermal_id: str) -> None:
@@ -415,36 +601,96 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def save_hydro_management(self, hydro_management: HydroManagement, area_id: str) -> None:
-        self._hydro_properties[area_id].management_options = hydro_management
+    def get_all_hydro_maxpower(self) -> AreaSeriesMapping:
+        return self._hydro_maxpower
 
     @override
-    def save_inflow_structure(self, inflow_structure: InflowStructure, area_id: str) -> None:
-        self._hydro_properties[area_id].inflow_structure = inflow_structure
+    def get_all_hydro_reservoir(self) -> AreaSeriesMapping:
+        return self._hydro_reservoir
 
     @override
-    def save_hydro_allocation(self, area_id: str, allocation: HydroAllocation) -> None:
-        self._hydro_allocation[area_id] = allocation
+    def get_all_hydro_energy(self) -> AreaSeriesMapping:
+        return self._hydro_energy
 
     @override
-    def save_hydro_correlation(self, area_id: str, correlation: HydroCorrelation) -> None:
-        self._hydro_correlation[area_id] = correlation
+    def get_all_hydro_run_of_river(self) -> AreaSeriesMapping:
+        return self._hydro_run_of_river
 
     @override
-    def save_hydro_max_hourly_gen_power(self, area_id: str, series_id: str) -> None:
-        self._hydro_max_hourly_gen_power[area_id] = series_id
+    def get_all_hydro_modulation(self) -> AreaSeriesMapping:
+        return self._hydro_modulation
 
     @override
-    def save_hydro_max_hourly_pump_power(self, area_id: str, series_id: str) -> None:
-        self._hydro_max_hourly_pump_power[area_id] = series_id
+    def get_all_hydro_credit_modulations(self) -> AreaSeriesMapping:
+        return self._hydro_credit_modulations
 
     @override
-    def save_hydro_max_daily_gen_energy(self, area_id: str, series_id: str) -> None:
-        self._hydro_max_daily_gen_energy[area_id] = series_id
+    def get_all_hydro_inflow_pattern(self) -> AreaSeriesMapping:
+        return self._hydro_inflow_pattern
 
     @override
-    def save_hydro_max_daily_pump_energy(self, area_id: str, series_id: str) -> None:
-        self._hydro_max_daily_pump_energy[area_id] = series_id
+    def get_all_hydro_water_values(self) -> AreaSeriesMapping:
+        return self._hydro_water_values
+
+    @override
+    def get_all_hydro_mingen(self) -> AreaSeriesMapping:
+        return self._hydro_mingen
+
+    @override
+    def get_all_hydro_max_hourly_gen_power(self) -> AreaSeriesMapping:
+        return self._hydro_max_hourly_gen_power
+
+    @override
+    def get_all_hydro_max_hourly_pump_power(self) -> AreaSeriesMapping:
+        return self._hydro_max_hourly_pump_power
+
+    @override
+    def get_all_hydro_max_daily_gen_energy(self) -> AreaSeriesMapping:
+        return self._hydro_max_daily_gen_energy
+
+    @override
+    def get_all_hydro_max_daily_pump_energy(self) -> AreaSeriesMapping:
+        return self._hydro_max_daily_pump_energy
+
+    @override
+    def save_hydro_management(self, hydro_management: dict[AreaId, HydroManagement]) -> None:
+        for area_id, management_options in hydro_management.items():
+            self._hydro_properties[area_id].management_options = management_options
+
+    @override
+    def save_inflow_structure(self, inflow_structure: dict[AreaId, InflowStructure]) -> None:
+        for area_id, inflow in inflow_structure.items():
+            self._hydro_properties[area_id].inflow_structure = inflow
+
+    @override
+    def save_hydro_allocation(self, allocation_dict: dict[AreaId, HydroAllocation]) -> None:
+        for area_id, allocation in allocation_dict.items():
+            self._hydro_allocation[area_id] = allocation
+
+    @override
+    def save_hydro_correlation(self, correlation_dict: dict[AreaId, HydroCorrelation]) -> None:
+        for area_id, correlation in correlation_dict.items():
+            self._hydro_correlation[area_id] = correlation
+
+    @override
+    def save_hydro_max_hourly_gen_power(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_max_hourly_gen_power[area_id] = series_id
+
+    @override
+    def save_hydro_max_hourly_pump_power(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_max_hourly_pump_power[area_id] = series_id
+
+    @override
+    def save_hydro_max_daily_gen_energy(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_max_daily_gen_energy[area_id] = series_id
+
+    @override
+    def save_hydro_max_daily_pump_energy(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_max_daily_pump_energy[area_id] = series_id
 
     @override
     def convert_hydro_pmax(
@@ -465,10 +711,10 @@ class InMemoryStudyDao(StudyDao):
         if hydro_pmax == HydroPmax.HOURLY:
             # When converting to hourly, create and save the matrices
             for area_id in areas:
-                self.save_hydro_max_hourly_gen_power(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly))
-                self.save_hydro_max_hourly_pump_power(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly))
-                self.save_hydro_max_daily_gen_energy(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily))
-                self.save_hydro_max_daily_pump_energy(area_id, MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily))
+                self.save_hydro_max_hourly_gen_power({area_id: MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly)})
+                self.save_hydro_max_hourly_pump_power({area_id: MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly)})
+                self.save_hydro_max_daily_gen_energy({area_id: MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily)})
+                self.save_hydro_max_daily_pump_energy({area_id: MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily)})
         else:
             # When converting away from hourly, remove the matrices from in-memory storage
             for area_id in areas:
@@ -505,49 +751,76 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
+    def get_all_renewables_series(self) -> RenewableSeriesMapping:
+        result: RenewableSeriesMapping = {}
+        for renewable_key, matrix_id in self._renewable_series.items():
+            area_id, renewable_id = renewable_key.area_id, renewable_key.cluster_id
+            result.setdefault(area_id, {})[renewable_id] = matrix_id
+        return result
+
+    @override
     def save_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
         self._renewables[cluster_key(area_id, renewable.id)] = renewable
 
     @override
-    def save_renewables(self, area_id: str, renewables: Sequence[RenewableCluster]) -> None:
-        for renewable in renewables:
-            self.save_renewable(area_id, renewable)
+    def save_renewables(self, data: dict[AreaId, list[RenewableCluster]]) -> None:
+        for area_id, renewables in data.items():
+            for renewable in renewables:
+                self._renewables[cluster_key(area_id, renewable.id)] = renewable
 
     @override
-    def save_renewable_series(self, area_id: str, renewable_id: str, series_id: str) -> None:
-        self._renewable_series[cluster_key(area_id, renewable_id)] = series_id
+    def save_renewable_series(self, series: RenewableSeriesMapping) -> None:
+        for area_id, value in series.items():
+            for renewable_id, series_id in value.items():
+                self._renewable_series[cluster_key(area_id, renewable_id)] = series_id
 
     @override
     def delete_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
         del self._renewables[cluster_key(area_id, renewable.id)]
 
     @override
-    def get_all_constraints(self) -> dict[str, BindingConstraint]:
+    def get_all_constraints(self) -> dict[ConstraintId, BindingConstraint]:
         return self._constraints
 
     @override
-    def get_constraint(self, constraint_id: str) -> BindingConstraint:
+    def get_constraint(self, constraint_id: ConstraintId) -> BindingConstraint:
         return self._constraints[constraint_id]
 
     @override
-    def get_constraint_values_matrix(self, constraint_id: str) -> pl.DataFrame:
+    def get_constraint_values_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         matrix_id = self._constraints_values_matrix[constraint_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_constraint_less_term_matrix(self, constraint_id: str) -> pl.DataFrame:
+    def get_constraint_less_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         matrix_id = self._constraints_less_term_matrix[constraint_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_constraint_greater_term_matrix(self, constraint_id: str) -> pl.DataFrame:
+    def get_constraint_greater_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         matrix_id = self._constraints_greater_term_matrix[constraint_id]
         return self._matrix_service.get(matrix_id)
 
     @override
-    def get_constraint_equal_term_matrix(self, constraint_id: str) -> pl.DataFrame:
+    def get_constraint_equal_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         matrix_id = self._constraints_equal_term_matrix[constraint_id]
         return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_all_constraint_values_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._constraints_values_matrix
+
+    @override
+    def get_all_constraint_less_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._constraints_less_term_matrix
+
+    @override
+    def get_all_constraint_greater_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._constraints_greater_term_matrix
+
+    @override
+    def get_all_constraint_equal_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._constraints_equal_term_matrix
 
     @override
     def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
@@ -555,20 +828,24 @@ class InMemoryStudyDao(StudyDao):
             self._constraints[constraint.id] = constraint
 
     @override
-    def save_constraint_values_matrix(self, constraint_id: str, series_id: str) -> None:
-        self._constraints_values_matrix[constraint_id] = series_id
+    def save_constraint_values_matrix(self, series: BindingConstraintSeriesMapping) -> None:
+        for constraint_id, series_id in series.items():
+            self._constraints_values_matrix[constraint_id] = series_id
 
     @override
-    def save_constraint_less_term_matrix(self, constraint_id: str, series_id: str) -> None:
-        self._constraints_less_term_matrix[constraint_id] = series_id
+    def save_constraint_less_term_matrix(self, series: BindingConstraintSeriesMapping) -> None:
+        for constraint_id, series_id in series.items():
+            self._constraints_less_term_matrix[constraint_id] = series_id
 
     @override
-    def save_constraint_greater_term_matrix(self, constraint_id: str, series_id: str) -> None:
-        self._constraints_greater_term_matrix[constraint_id] = series_id
+    def save_constraint_greater_term_matrix(self, series: BindingConstraintSeriesMapping) -> None:
+        for constraint_id, series_id in series.items():
+            self._constraints_greater_term_matrix[constraint_id] = series_id
 
     @override
-    def save_constraint_equal_term_matrix(self, constraint_id: str, series_id: str) -> None:
-        self._constraints_equal_term_matrix[constraint_id] = series_id
+    def save_constraint_equal_term_matrix(self, series: BindingConstraintSeriesMapping) -> None:
+        for constraint_id, series_id in series.items():
+            self._constraints_equal_term_matrix[constraint_id] = series_id
 
     @override
     def delete_constraints(self, constraints: list[BindingConstraint]) -> None:
@@ -644,6 +921,63 @@ class InMemoryStudyDao(StudyDao):
         matrix_id = self._storage_cost_variation_withdrawal[cluster_key(area_id, storage_id)]
         return self._matrix_service.get(matrix_id)
 
+    @staticmethod
+    def _get_all_sts_matrices(data: dict[ClusterKey, str]) -> StStorageSeriesMapping:
+        result: StStorageSeriesMapping = {}
+        for key, matrix_id in data.items():
+            result.setdefault(key.area_id, {})[key.cluster_id] = matrix_id
+        return result
+
+    @override
+    def get_all_st_storage_pmax_injection(self) -> StStorageSeriesMapping:
+        data = self._storage_pmax_injection
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_pmax_withdrawal(self) -> StStorageSeriesMapping:
+        data = self._storage_pmax_withdrawal
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_lower_rule_curve(self) -> StStorageSeriesMapping:
+        data = self._storage_lower_rule_curve
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_upper_rule_curve(self) -> StStorageSeriesMapping:
+        data = self._storage_upper_rule_curve
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_inflows(self) -> StStorageSeriesMapping:
+        data = self._storage_inflows
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_cost_injection(self) -> StStorageSeriesMapping:
+        data = self._storage_cost_injection
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_cost_withdrawal(self) -> StStorageSeriesMapping:
+        data = self._storage_cost_withdrawal
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_cost_level(self) -> StStorageSeriesMapping:
+        data = self._storage_cost_level
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_cost_variation_injection(self) -> StStorageSeriesMapping:
+        data = self._storage_cost_variation_injection
+        return self._get_all_sts_matrices(data)
+
+    @override
+    def get_all_st_storage_cost_variation_withdrawal(self) -> StStorageSeriesMapping:
+        data = self._storage_cost_variation_withdrawal
+        return self._get_all_sts_matrices(data)
+
     @override
     def get_st_storage_additional_constraint_matrix(
         self, area_id: str, storage_id: str, constraint_id: str
@@ -652,53 +986,64 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def save_st_storage(self, area_id: str, st_storage: STStorage) -> None:
-        self._st_storages[cluster_key(area_id, st_storage.id)] = st_storage
+    def get_all_st_storage_additional_constraint_matrices(self) -> StStorageConstraintSeriesMapping:
+        data = self._st_storages_constraints_matrix
+        result: StStorageConstraintSeriesMapping = {}
+        for key, matrix_id in data.items():
+            result.setdefault(key.area_id, {}).setdefault(key.storage_id, {})[key.constraint_id] = matrix_id
+        return result
 
     @override
-    def save_st_storages(self, area_id: str, storages: Sequence[STStorage]) -> None:
-        for storage in storages:
-            self.save_st_storage(area_id, storage)
+    def save_st_storages(self, data: dict[AreaId, list[STStorage]]) -> None:
+        for area_id, storages in data.items():
+            for storage in storages:
+                self._st_storages[cluster_key(area_id, storage.id)] = storage
+
+    @staticmethod
+    def _save_sts_matrices(series: StStorageSeriesMapping, data: dict[ClusterKey, str]) -> None:
+        for area_id, value in series.items():
+            for storage_id, series_id in value.items():
+                data[cluster_key(area_id, storage_id)] = series_id
 
     @override
-    def save_st_storage_pmax_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_pmax_injection[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_pmax_injection(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_pmax_injection)
 
     @override
-    def save_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_pmax_withdrawal[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_pmax_withdrawal(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_pmax_withdrawal)
 
     @override
-    def save_st_storage_lower_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_lower_rule_curve[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_lower_rule_curve(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_lower_rule_curve)
 
     @override
-    def save_st_storage_upper_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_upper_rule_curve[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_upper_rule_curve(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_upper_rule_curve)
 
     @override
-    def save_st_storage_inflows(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_inflows[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_inflows(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_inflows)
 
     @override
-    def save_st_storage_cost_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_cost_injection[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_cost_injection(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_cost_injection)
 
     @override
-    def save_st_storage_cost_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_cost_withdrawal[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_cost_withdrawal(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_cost_withdrawal)
 
     @override
-    def save_st_storage_cost_level(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_cost_level[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_cost_level(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_cost_level)
 
     @override
-    def save_st_storage_cost_variation_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_cost_variation_injection[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_cost_variation_injection(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_cost_variation_injection)
 
     @override
-    def save_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        self._storage_cost_variation_withdrawal[cluster_key(area_id, storage_id)] = series_id
+    def save_st_storage_cost_variation_withdrawal(self, series: StStorageSeriesMapping) -> None:
+        self._save_sts_matrices(series, self._storage_cost_variation_withdrawal)
 
     @override
     def delete_st_storage(self, area_id: str, storage: STStorage) -> None:
@@ -747,12 +1092,6 @@ class InMemoryStudyDao(StudyDao):
         return self._st_storages_constraints.get(area_id, {}).get(storage_id, [])
 
     @override
-    def save_st_storage_constraint_matrix(
-        self, area_id: str, storage_id: str, constraint_id: str, series_id: str
-    ) -> None:
-        self._st_storages_constraints_matrix[additional_constraint_key(area_id, storage_id, constraint_id)] = series_id
-
-    @override
     def delete_st_storage_additional_constraints(self, area_id: str, storage_id: str, constraints: list[str]) -> None:
         existing_constraints = self._st_storages_constraints[area_id][storage_id]
         constraints_to_remove = []
@@ -767,18 +1106,24 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def save_st_storage_additional_constraints(
-        self, area_id: str, storage_id: str, constraints: list[STStorageAdditionalConstraint]
+        self, data: dict[AreaId, dict[StStorageId, list[STStorageAdditionalConstraint]]]
     ) -> None:
-        existing_constraints = self._st_storages_constraints.get(area_id, {}).get(storage_id, [])
+        for area_id, value in data.items():
+            for storage_id, constraints in value.items():
+                existing_constraints = self._st_storages_constraints.get(area_id, {}).get(storage_id, [])
 
-        existing_map = {}
-        for constraint in existing_constraints:
-            existing_map[constraint.id] = constraint
+                existing_map = {constraint.id: constraint for constraint in existing_constraints}
+                existing_map.update({constraint.id: constraint for constraint in constraints})
 
-        for constraint in constraints:
-            existing_map[constraint.id] = constraint
+                self._st_storages_constraints.setdefault(area_id, {})[storage_id] = list(existing_map.values())
 
-        self._st_storages_constraints.setdefault(area_id, {})[storage_id] = list(existing_map.values())
+    @override
+    def save_st_storage_constraint_matrices(self, series: StStorageConstraintSeriesMapping) -> None:
+        for area_id, v in series.items():
+            for sts_id, value in v.items():
+                for constraint_id, matrix_id in value.items():
+                    constraint_key = additional_constraint_key(area_id, sts_id, constraint_id)
+                    self._st_storages_constraints_matrix[constraint_key] = matrix_id
 
     @override
     def get_all_xpansion_candidates(self) -> list[XpansionCandidate]:
@@ -793,6 +1138,11 @@ class InMemoryStudyDao(StudyDao):
         if old_id:
             del self._xpansion_candidates[old_id]
         self._xpansion_candidates[candidate.name] = candidate
+
+    @override
+    def save_xpansion_candidates(self, candidates: list[XpansionCandidate]) -> None:
+        for candidate in candidates:
+            self._xpansion_candidates[candidate.name] = candidate
 
     @override
     def delete_xpansion_candidate(self, candidate_name: str) -> None:
@@ -835,6 +1185,20 @@ class InMemoryStudyDao(StudyDao):
         return self._xpansion_security_criterion
 
     @override
+    def get_all_xpansion_weights(self) -> XpansionWeightsMapping:
+        weights = self._xpansion_resources.get(XpansionResourceFileType.WEIGHTS, {})
+        return {file_name: content.decode("utf-8") for file_name, content in weights.items()}
+
+    @override
+    def get_all_xpansion_capacities(self) -> XpansionCapacitiesMapping:
+        capacities = self._xpansion_resources.get(XpansionResourceFileType.CAPACITIES, {})
+        return {file_name: content.decode("utf-8") for file_name, content in capacities.items()}
+
+    @override
+    def get_all_xpansion_constraints(self) -> XpansionConstraintsMapping:
+        return self._xpansion_resources.get(XpansionResourceFileType.CONSTRAINTS, {})
+
+    @override
     def get_thematic_trimming(self) -> ThematicTrimming:
         return self._thematic_trimming
 
@@ -871,18 +1235,21 @@ class InMemoryStudyDao(StudyDao):
         del self._xpansion_resources[resource_type][filename]
 
     @override
-    def save_xpansion_constraint(self, filename: str, content: bytes) -> None:
-        self._xpansion_resources[XpansionResourceFileType.CONSTRAINTS][filename] = content
+    def save_xpansion_constraint(self, data: XpansionConstraintsMapping) -> None:
+        for filename, content in data.items():
+            self._xpansion_resources[XpansionResourceFileType.CONSTRAINTS][filename] = content
 
     @override
-    def save_xpansion_capacity(self, filename: str, series_id: str) -> None:
-        content = series_id.encode("utf-8")
-        self._xpansion_resources[XpansionResourceFileType.CAPACITIES][filename] = content
+    def save_xpansion_capacity(self, data: XpansionCapacitiesMapping) -> None:
+        for filename, series_id in data.items():
+            content = series_id.encode("utf-8")
+            self._xpansion_resources[XpansionResourceFileType.CAPACITIES][filename] = content
 
     @override
-    def save_xpansion_weight(self, filename: str, series_id: str) -> None:
-        content = series_id.encode("utf-8")
-        self._xpansion_resources[XpansionResourceFileType.WEIGHTS][filename] = content
+    def save_xpansion_weight(self, data: XpansionWeightsMapping) -> None:
+        for filename, series_id in data.items():
+            content = series_id.encode("utf-8")
+            self._xpansion_resources[XpansionResourceFileType.WEIGHTS][filename] = content
 
     @override
     def get_districts(self) -> Sequence[District]:
@@ -906,7 +1273,6 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def get_invalid_area_ids(self, areas: list[str]) -> list[str]:
-        # TODO make this actually work once we implement area DAO
         return list(set(areas) - set(self._area_names))
 
     @override
@@ -944,18 +1310,23 @@ class InMemoryStudyDao(StudyDao):
         self._playlist_config = playlist
 
     @override
-    def get_all_user_resources(self) -> Iterator[UserResourceDataCreation]:
+    def get_all_user_resources(self) -> list[UserResourceDataCreation]:
+        result = []
         for path, content in self._user_resources.items():
             resource_type = ResourceType.FOLDER if content is None else ResourceType.FILE
-            yield UserResourceDataCreation(
-                path=path,
-                resource_type=resource_type,
-                blob_id=content,
+            result.append(
+                UserResourceDataCreation(
+                    path=path,
+                    resource_type=resource_type,
+                    blob_id=content,
+                )
             )
+        return result
 
     @override
-    def save_user_resource(self, resource_data: UserResourceDataCreation) -> None:
-        self._user_resources[resource_data.path] = resource_data.blob_id
+    def save_user_resources(self, resource_data: list[UserResourceDataCreation]) -> None:
+        for resource in resource_data:
+            self._user_resources[resource.path] = resource.blob_id
 
     @override
     def delete_user_resource(self, resource_path: PurePosixPath) -> None:
@@ -1017,14 +1388,11 @@ class InMemoryStudyDao(StudyDao):
         return self._area_ui.get(area_id, AreaUI())
 
     @override
-    def save_area(self, area_name: str) -> None:
-        area_id = transform_name_to_id(area_name)
-        if area_id in self._area_names:
-            raise ValueError(f"Area '{area_name}' already exists and could not be created")
-        self._area_names.append(area_id)
-
-        # Initialize default UI for the new area
-        self._area_ui[area_id] = AreaUI()
+    def save_areas_with_properties(self, data: dict[AreaName, AreaProperties]) -> None:
+        for area_name, properties in data.items():
+            area_id = transform_name_to_id(area_name)
+            self._area_names.append(area_id)
+            self._area_properties[area_id] = properties
 
     @override
     def delete_area(self, area_id: str) -> None:
@@ -1051,11 +1419,13 @@ class InMemoryStudyDao(StudyDao):
         self._area_ui.pop(area_id, None)
 
     @override
-    def save_area_ui(self, area_id: str, layer: str, area_ui: AreaUI) -> None:
-        if area_id not in self._area_names:
-            raise AreaNotFound(area_id)
+    def save_area_ui(self, data: AreaUiMapping) -> None:
+        for area_id, value in data.items():
+            if area_id not in self._area_names:
+                raise AreaNotFound(area_id)
 
-        self._area_ui[area_id] = area_ui
+            # The memory dao ignores layers
+            self._area_ui[area_id] = next(iter(value.values()))
 
     @override
     def save_layer_areas(self, layer_id: str, area_ids: list[str]) -> None:
@@ -1112,40 +1482,49 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def save_hydro_maxpower(self, area_id: str, series_id: str) -> None:
-        self._hydro_maxpower[area_id] = series_id
+    def save_hydro_maxpower(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_maxpower[area_id] = series_id
 
     @override
-    def save_hydro_reservoir(self, area_id: str, series_id: str) -> None:
-        self._hydro_reservoir[area_id] = series_id
+    def save_hydro_reservoir(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_reservoir[area_id] = series_id
 
     @override
-    def save_hydro_energy(self, area_id: str, series_id: str) -> None:
-        self._hydro_energy[area_id] = series_id
+    def save_hydro_energy(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_energy[area_id] = series_id
 
     @override
-    def save_hydro_run_of_river(self, area_id: str, series_id: str) -> None:
-        self._hydro_run_of_river[area_id] = series_id
+    def save_hydro_run_of_river(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_run_of_river[area_id] = series_id
 
     @override
-    def save_hydro_modulation(self, area_id: str, series_id: str) -> None:
-        self._hydro_modulation[area_id] = series_id
+    def save_hydro_modulation(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_modulation[area_id] = series_id
 
     @override
-    def save_hydro_credit_modulations(self, area_id: str, series_id: str) -> None:
-        self._hydro_credit_modulations[area_id] = series_id
+    def save_hydro_credit_modulations(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_credit_modulations[area_id] = series_id
 
     @override
-    def save_hydro_inflow_pattern(self, area_id: str, series_id: str) -> None:
-        self._hydro_inflow_pattern[area_id] = series_id
+    def save_hydro_inflow_pattern(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_inflow_pattern[area_id] = series_id
 
     @override
-    def save_hydro_water_values(self, area_id: str, series_id: str) -> None:
-        self._hydro_water_values[area_id] = series_id
+    def save_hydro_water_values(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_water_values[area_id] = series_id
 
     @override
-    def save_hydro_mingen(self, area_id: str, series_id: str) -> None:
-        self._hydro_mingen[area_id] = series_id
+    def save_hydro_mingen(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._hydro_mingen[area_id] = series_id
 
     @override
     def get_load(self, area_id: str) -> pl.DataFrame:
@@ -1173,21 +1552,100 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def save_load(self, area_id: str, series_id: str) -> None:
-        self._load[area_id] = series_id
+    def get_all_load(self) -> AreaSeriesMapping:
+        return self._load
 
     @override
-    def save_misc_gen(self, area_id: str, series_id: str) -> None:
-        self._misc_gen[area_id] = series_id
+    def get_all_misc_gen(self) -> AreaSeriesMapping:
+        return self._misc_gen
 
     @override
-    def save_reserves(self, area_id: str, series_id: str) -> None:
-        self._reserves[area_id] = series_id
+    def get_all_reserves(self) -> AreaSeriesMapping:
+        return self._reserves
 
     @override
-    def save_solar(self, area_id: str, series_id: str) -> None:
-        self._solar[area_id] = series_id
+    def get_all_solar(self) -> AreaSeriesMapping:
+        return self._solar
 
     @override
-    def save_wind(self, area_id: str, series_id: str) -> None:
-        self._wind[area_id] = series_id
+    def get_all_wind(self) -> AreaSeriesMapping:
+        return self._wind
+
+    @override
+    def save_load(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._load[area_id] = series_id
+
+    @override
+    def save_misc_gen(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._misc_gen[area_id] = series_id
+
+    @override
+    def save_reserves(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._reserves[area_id] = series_id
+
+    @override
+    def get_reserves_global_parameters(self, area_id: str) -> ReservesGlobalParameters:
+        return self._reserves_global_parameters.get(area_id, ReservesGlobalParameters())
+
+    @override
+    def get_all_reserves_global_parameters(self) -> ReservesGlobalParametersMapping:
+        return dict(self._reserves_global_parameters)
+
+    @override
+    def save_reserves_global_parameters(self, mapping: ReservesGlobalParametersMapping) -> None:
+        self._reserves_global_parameters.update(mapping)
+
+    @override
+    def get_all_reserve_definitions(self) -> ReserveDefinitionsMapping:
+        result: ReserveDefinitionsMapping = {}
+        for key, reserve in self._reserve_definitions.items():
+            result.setdefault(key.area_id, {})[ReserveDefinitionId(key.reserve_id)] = reserve
+        return result
+
+    @override
+    def get_all_reserve_definitions_for_area(self, area_id: str) -> Sequence[ReserveDefinition]:
+        if area_id not in self.get_all_area_ids():
+            raise AreaNotFound(area_id)
+        return [reserve for key, reserve in self._reserve_definitions.items() if key.area_id == area_id]
+
+    @override
+    def get_reserve_definition(self, area_id: str, reserve_id: str) -> ReserveDefinition:
+        if area_id not in self.get_all_area_ids():
+            raise AreaNotFound(area_id)
+        try:
+            return self._reserve_definitions[reserve_key(area_id, reserve_id)]
+        except KeyError as exc:
+            raise ReserveDefinitionNotFound(area_id, reserve_id) from exc
+
+    @override
+    def reserve_definition_exists(self, area_id: str, reserve_id: str) -> bool:
+        if area_id not in self.get_all_area_ids():
+            return False
+        return reserve_key(area_id, reserve_id) in self._reserve_definitions
+
+    @override
+    def save_reserve_definitions(self, data: dict[AreaId, list[ReserveDefinition]]) -> None:
+        for area_id, reserves in data.items():
+            for reserve in reserves:
+                self._reserve_definitions[reserve_key(area_id, reserve.id)] = reserve
+
+    @override
+    def delete_reserve_definitions(self, area_id: AreaId, reserve_ids: Sequence[ReserveDefinitionId]) -> None:
+        for rid in reserve_ids:
+            try:
+                del self._reserve_definitions[reserve_key(area_id, rid)]
+            except KeyError as exc:
+                raise ReserveDefinitionNotFound(area_id, rid) from exc
+
+    @override
+    def save_solar(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._solar[area_id] = series_id
+
+    @override
+    def save_wind(self, series: AreaSeriesMapping) -> None:
+        for area_id, series_id in series.items():
+            self._wind[area_id] = series_id

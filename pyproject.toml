@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "AntaREST"
-version = "2.30.0"
+version = "2.31.0"
 authors = [{name="RTE, Antares Web Team", email="andrea.sgattoni@rte-france.com" }]
 description="Antares Server"
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -24,7 +24,7 @@ dependencies = [
     "uvicorn[standard]~=0.42.0",
     "pydantic~=2.12.5",
     "httpx~=0.28.1",
-    "python-multipart~=0.0.20",
+    "python-multipart~=0.0.26",
     "alembic~=1.18.4",
     "bcrypt~=5.0.0",
     "click~=8.3.0",
@@ -42,7 +42,7 @@ dependencies = [
     "plyer~=2.1.0",
     "polars~=1.35.2",
     "psycopg2-binary~=2.9.9",
-    "pyarrow~=21.0.0",
+    "pyarrow~=23.0.1",
     "py7zr~=0.22.0",
     "prometheus-client==0.24.1",
     "python-json-logger~=2.0.7",

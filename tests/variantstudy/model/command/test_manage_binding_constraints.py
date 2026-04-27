@@ -43,6 +43,7 @@ from antarest.study.storage.variantstudy.model.command.update_binding_constraint
 )
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 # noinspection SpellCheckingInspection
@@ -50,23 +51,22 @@ def test_manage_binding_constraint(
     empty_study_720: FileStudy, empty_study_870: FileStudy, command_context: CommandContext
 ) -> None:
     for empty_study in [empty_study_720, empty_study_870]:
+        dao = build_dao_from_file_study(empty_study, command_context, True)
         study_path = empty_study.config.study_path
         study_version = empty_study.config.version
 
         area1 = "area1"
         area2 = "area2"
         cluster = "cluster"
-        CreateArea(area_name=area1, command_context=command_context, study_version=study_version).apply(empty_study)
-        CreateArea(area_name=area2, command_context=command_context, study_version=study_version).apply(empty_study)
-        CreateLink(area1=area1, area2=area2, command_context=command_context, study_version=study_version).apply(
-            empty_study
-        )
+        CreateArea(area_name=area1, command_context=command_context, study_version=study_version).apply(dao)
+        CreateArea(area_name=area2, command_context=command_context, study_version=study_version).apply(dao)
+        CreateLink(area1=area1, area2=area2, command_context=command_context, study_version=study_version).apply(dao)
         CreateCluster(
             area_id=area1,
             parameters=ThermalClusterCreation(name=cluster),
             command_context=command_context,
             study_version=study_version,
-        ).apply(empty_study)
+        ).apply(dao)
 
         output = CreateBindingConstraint(
             **{
@@ -81,7 +81,7 @@ def test_manage_binding_constraint(
                 "command_context": command_context,
                 "study_version": study_version,
             }
-        ).apply(empty_study)
+        ).apply(dao)
         assert output.status, output.message
 
         output = CreateBindingConstraint(
@@ -97,7 +97,7 @@ def test_manage_binding_constraint(
                 "command_context": command_context,
                 "study_version": study_version,
             }
-        ).apply(empty_study)
+        ).apply(dao)
         assert output.status, output.message
 
         if empty_study.config.version < 870:
@@ -175,7 +175,7 @@ def test_manage_binding_constraint(
                 "command_context": command_context,
                 "study_version": study_version,
             }
-        ).apply(empty_study)
+        ).apply(dao)
         assert output.status, output.message
 
         bd_config = read_ini(cfg_path)
@@ -201,12 +201,12 @@ def test_manage_binding_constraint(
                 data=RulesetUpdate(binding_constraints={"default": {"0": 1}}),
                 command_context=command_context,
                 study_version=study_version,
-            ).apply(study_data=empty_study)
+            ).apply(dao)
             assert output.status, output.message
 
         output = RemoveMultipleBindingConstraints(
             id="bd 1", command_context=command_context, study_version=study_version
-        ).apply(empty_study)  # Ensures we're able to handle legacy command
+        ).apply(dao)  # Ensures we're able to handle legacy command
         assert output.status, output.message
 
         if study_version >= 870:
@@ -243,7 +243,7 @@ def test_manage_binding_constraint(
 
         output = RemoveMultipleBindingConstraints(
             id="bd 2", command_context=command_context, study_version=study_version
-        ).apply(empty_study)
+        ).apply(dao)
         assert output.status, output.message
 
         if study_version >= 870:
@@ -258,19 +258,18 @@ def test_scenario_builder(empty_study_870: FileStudy, command_context: CommandCo
     """
     # This test requires a study with version >= 870, which support "scenarised" binding constraints.
     empty_study = empty_study_870
+    dao = build_dao_from_file_study(empty_study, command_context)
     study_version = empty_study.config.version
     assert study_version >= 870
 
     # Create two areas and a link between them:
     areas = {name: transform_name_to_id(name) for name in ["Area X", "Area Y"]}
     for area in areas.values():
-        output = CreateArea(area_name=area, command_context=command_context, study_version=study_version).apply(
-            empty_study
-        )
+        output = CreateArea(area_name=area, command_context=command_context, study_version=study_version).apply(dao)
         assert output.status, output.message
     output = CreateLink(
         area1=areas["Area X"], area2=areas["Area Y"], command_context=command_context, study_version=study_version
-    ).apply(empty_study)
+    ).apply(dao)
     assert output.status, output.message
 
     # Create a binding constraint in a specific group:
@@ -289,7 +288,7 @@ def test_scenario_builder(empty_study_870: FileStudy, command_context: CommandCo
             "command_context": command_context,
             "study_version": study_version,
         }
-    ).apply(empty_study)
+    ).apply(dao)
     assert output.status, output.message
 
     # Create a rule in the scenario builder for the binding constraint group:
@@ -297,7 +296,7 @@ def test_scenario_builder(empty_study_870: FileStudy, command_context: CommandCo
         data=RulesetUpdate(binding_constraints={bc_group.lower(): {"0": 1}}),  # group name in lowercase
         command_context=command_context,
         study_version=study_version,
-    ).apply(study_data=empty_study)
+    ).apply(dao)
     assert output.status, output.message
 
     # Here, we have a binding constraint between "Area X" and "Area Y" in the group "Group 1"
@@ -311,7 +310,7 @@ def test_scenario_builder(empty_study_870: FileStudy, command_context: CommandCo
             "command_context": command_context,
             "study_version": study_version,
         }
-    ).apply(empty_study)
+    ).apply(dao)
     assert output.status, output.message
 
     # Check the BC rule is removed from the scenario builder
@@ -347,6 +346,7 @@ def test__update_matrices_names(
     new_operator: BindingConstraintOperator,
 ) -> None:
     empty_study = empty_study_870
+    dao = build_dao_from_file_study(empty_study, command_context, True)
     study_path = empty_study.config.study_path
     study_version = empty_study.config.version
 
@@ -362,17 +362,15 @@ def test__update_matrices_names(
     area1 = "area1"
     area2 = "area2"
     cluster = "cluster"
-    CreateArea(area_name=area1, command_context=command_context, study_version=study_version).apply(empty_study)
-    CreateArea(area_name=area2, command_context=command_context, study_version=study_version).apply(empty_study)
-    CreateLink(area1=area1, area2=area2, command_context=command_context, study_version=study_version).apply(
-        empty_study
-    )
+    CreateArea(area_name=area1, command_context=command_context, study_version=study_version).apply(dao)
+    CreateArea(area_name=area2, command_context=command_context, study_version=study_version).apply(dao)
+    CreateLink(area1=area1, area2=area2, command_context=command_context, study_version=study_version).apply(dao)
     CreateCluster(
         area_id=area1,
         parameters=ThermalClusterCreation(name=cluster),
         command_context=command_context,
         study_version=study_version,
-    ).apply(empty_study)
+    ).apply(dao)
 
     # create a binding constraint
     CreateBindingConstraint(
@@ -387,7 +385,7 @@ def test__update_matrices_names(
             "command_context": command_context,
             "study_version": study_version,
         }
-    ).apply(empty_study)
+    ).apply(dao)
 
     # check that the matrices are created
     file_templates = set(operator_matrix_file_map[existing_operator])
@@ -424,6 +422,7 @@ def test__update_matrices_names(
 
 def test_update_bc_with_an_integer_name(empty_study_870: FileStudy, command_context: CommandContext) -> None:
     study = empty_study_870
+    dao = build_dao_from_file_study(study, command_context)
     study_version = study.config.version
 
     output = CreateBindingConstraint(
@@ -433,7 +432,7 @@ def test_update_bc_with_an_integer_name(empty_study_870: FileStudy, command_cont
             "command_context": command_context,
             "study_version": study_version,
         }
-    ).apply(study)
+    ).apply(dao)
     assert output.status, output.message
 
     ini_content = study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
@@ -449,7 +448,7 @@ def test_update_bc_with_an_integer_name(empty_study_870: FileStudy, command_cont
             "command_context": command_context,
             "study_version": study_version,
         }
-    ).apply(study)
+    ).apply(dao)
 
     # Ensures the update succeeded
     assert output.status, output.message

@@ -21,13 +21,14 @@ from antarest.study.storage.variantstudy.model.command.create_renewables_cluster
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import dirhash
+from tests.helpers import build_dao_from_file_study, dirhash
 from tests.variantstudy.model.command.helpers import reset_line_separator
 
 
 class TestRemoveRenewablesCluster:
     def test_apply(self, empty_study_810: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_810
+        dao = build_dao_from_file_study(empty_study, command_context)
         empty_study.config.enr_modelling = str(EnrModelling.CLUSTERS)
         study_version = StudyVersion.parse(810)
         empty_study.config.version = study_version
@@ -37,7 +38,7 @@ class TestRemoveRenewablesCluster:
         cluster_id = transform_name_to_id(cluster_name, lower=False)
 
         output = CreateArea(area_name=area_name, command_context=command_context, study_version=study_version).apply(
-            empty_study
+            dao
         )
         assert output.status, output.message
 
@@ -54,19 +55,19 @@ class TestRemoveRenewablesCluster:
             ),
             command_context=command_context,
             study_version=study_version,
-        ).apply(empty_study)
+        ).apply(dao)
 
         # Add scenario builder data
         output = UpdateScenarioBuilder(
             data=RulesetUpdate(renewable={area_id: {cluster_name.lower(): {"0": 1}}}),
             command_context=command_context,
             study_version=study_version,
-        ).apply(study_data=empty_study)
+        ).apply(dao)
         assert output.status, output.message
 
         output = RemoveRenewablesCluster(
             area_id=area_id, cluster_id=cluster_id, command_context=command_context, study_version=study_version
-        ).apply(empty_study)
+        ).apply(dao)
 
         assert output.status, output.message
         assert dirhash(empty_study.config.study_path, "md5") == hash_before_removal
@@ -76,7 +77,7 @@ class TestRemoveRenewablesCluster:
             cluster_id=cluster_id,
             command_context=command_context,
             study_version=study_version,
-        ).apply(empty_study)
+        ).apply(dao)
         assert not output.status
 
         output = RemoveRenewablesCluster(
@@ -84,5 +85,5 @@ class TestRemoveRenewablesCluster:
             cluster_id="non_existent_cluster",
             command_context=command_context,
             study_version=study_version,
-        ).apply(empty_study)
+        ).apply(dao)
         assert not output.status

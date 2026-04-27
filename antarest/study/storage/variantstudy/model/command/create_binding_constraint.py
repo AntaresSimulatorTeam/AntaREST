@@ -310,24 +310,24 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         if self.study_version < STUDY_VERSION_8_7:
             matrix = default_matrix if not self.matrices.values else self.matrices.values
             assert isinstance(matrix, str)
-            study_data.save_constraint_values_matrix(constraint.id, matrix)
+            study_data.save_constraint_values_matrix({constraint.id: matrix})
 
         else:
             operator = constraint.operator
             if operator == BindingConstraintOperator.EQUAL:
                 matrix = default_matrix if not self.matrices.equal_term_matrix else self.matrices.equal_term_matrix
                 assert isinstance(matrix, str)
-                study_data.save_constraint_equal_term_matrix(constraint.id, matrix)
+                study_data.save_constraint_equal_term_matrix({constraint.id: matrix})
 
             if operator in {BindingConstraintOperator.GREATER, BindingConstraintOperator.BOTH}:
                 matrix = default_matrix if not self.matrices.greater_term_matrix else self.matrices.greater_term_matrix
                 assert isinstance(matrix, str)
-                study_data.save_constraint_greater_term_matrix(constraint.id, matrix)
+                study_data.save_constraint_greater_term_matrix({constraint.id: matrix})
 
             if operator in {BindingConstraintOperator.LESS, BindingConstraintOperator.BOTH}:
                 matrix = default_matrix if not self.matrices.less_term_matrix else self.matrices.less_term_matrix
                 assert isinstance(matrix, str)
-                study_data.save_constraint_less_term_matrix(constraint.id, matrix)
+                study_data.save_constraint_less_term_matrix({constraint.id: matrix})
 
         return command_succeeded(f"Binding constraint '{constraint.id}' created successfully.", result=constraint)
 

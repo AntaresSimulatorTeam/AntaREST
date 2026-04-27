@@ -35,6 +35,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettingsUpdate,
 )
 from antarest.study.dao.api.xpansion_dao import XpansionDao
+from antarest.study.dao.common import XpansionCapacitiesMapping, XpansionConstraintsMapping, XpansionWeightsMapping
 from antarest.study.storage.rawstudy.model.filesystem.config.xpansion import (
     parse_xpansion_adequacy_criterion,
     parse_xpansion_sensitivity_settings,
@@ -90,16 +91,28 @@ class FileStudyXpansionDao(XpansionDao, ABC):
 
     @override
     def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: str | None = None) -> None:
-        candidates = self._get_all_xpansion_candidates()
-        existing_ids = {value["name"]: key for key, value in candidates.items()}
+        self._save_xpansion_candidates([(candidate, old_id)])
 
-        if old_id:
-            # We should remove the candidate corresponding to the `old_id`
-            del candidates[existing_ids[old_id]]
+    def _save_xpansion_candidates(self, candidates: list[tuple[XpansionCandidate, str | None]]) -> None:
+        existing_candidates = self._get_all_xpansion_candidates()
+        existing_ids = {value["name"]: key for key, value in existing_candidates.items()}
 
-        new_key = existing_ids.get(candidate.name, str(len(candidates) + 1))  # The first candidate key is 1
-        candidates[new_key] = candidate.model_dump(mode="json", by_alias=True, exclude_none=True)
-        self._save_candidates(candidates)
+        for candidate, old_id in candidates:
+            if old_id:
+                # We should remove the candidate corresponding to the `old_id`
+                del existing_candidates[existing_ids[old_id]]
+
+            new_key = existing_ids.get(
+                candidate.name, str(len(existing_candidates) + 1)
+            )  # The first candidate key is 1
+
+            existing_candidates[new_key] = candidate.model_dump(mode="json", by_alias=True, exclude_none=True)
+
+        self._save_candidates(existing_candidates)
+
+    @override
+    def save_xpansion_candidates(self, candidates: list[XpansionCandidate]) -> None:
+        self._save_xpansion_candidates([(cdt, None) for cdt in candidates])
 
     @override
     def delete_xpansion_candidate(self, candidate_name: str) -> None:
@@ -226,16 +239,19 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         file_study.tree.delete(self.get_resource_dir(resource_type) + [filename])
 
     @override
-    def save_xpansion_constraint(self, filename: str, content: bytes) -> None:
-        self.save_resource(XpansionResourceFileType.CONSTRAINTS, filename, content)
+    def save_xpansion_constraint(self, data: XpansionConstraintsMapping) -> None:
+        for filename, content in data.items():
+            self.save_resource(XpansionResourceFileType.CONSTRAINTS, filename, content)
 
     @override
-    def save_xpansion_capacity(self, filename: str, series_id: str) -> None:
-        self.save_resource(XpansionResourceFileType.CAPACITIES, filename, series_id)
+    def save_xpansion_capacity(self, data: XpansionCapacitiesMapping) -> None:
+        for filename, series_id in data.items():
+            self.save_resource(XpansionResourceFileType.CAPACITIES, filename, series_id)
 
     @override
-    def save_xpansion_weight(self, filename: str, series_id: str) -> None:
-        self.save_resource(XpansionResourceFileType.WEIGHTS, filename, series_id)
+    def save_xpansion_weight(self, data: XpansionWeightsMapping) -> None:
+        for filename, series_id in data.items():
+            self.save_resource(XpansionResourceFileType.WEIGHTS, filename, series_id)
 
     @override
     def save_xpansion_adequacy_criterion(self, criterion: XpansionAdequacyCriterion) -> None:
@@ -250,6 +266,52 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         # Save the data inside the file
         content = serialize_xpansion_adequacy_criterion(criterion)
         file_study.tree.save(data=content, url=["user", "expansion", "adequacy_criterion", "adequacy_criterion"])
+
+    def _get_all_resources(self, url: list[str]) -> dict[str, str]:
+        file_study = self.get_file_study()
+        try:
+            folder_node = file_study.tree.get_node(url)
+        except ChildNotFoundError:
+            return {}
+        node_mapping = {}
+        for file_name in folder_node.get():
+            node = folder_node.get_node([file_name])
+            assert isinstance(node, MatrixNode)
+            node_mapping[node] = file_name
+
+        result = {}
+
+        matrices_mapping = self.get_impl().get_matrices_ids(list(node_mapping))
+        for node, matrix_id in matrices_mapping.items():
+            result[node_mapping[node]] = matrix_id
+
+        return result
+
+    @override
+    def get_all_xpansion_weights(self) -> XpansionWeightsMapping:
+        url = self.get_resource_dir(XpansionResourceFileType.WEIGHTS)
+        return self._get_all_resources(url)
+
+    @override
+    def get_all_xpansion_capacities(self) -> XpansionCapacitiesMapping:
+        url = self.get_resource_dir(XpansionResourceFileType.CAPACITIES)
+        return self._get_all_resources(url)
+
+    @override
+    def get_all_xpansion_constraints(self) -> XpansionConstraintsMapping:
+        file_study = self.get_file_study()
+        try:
+            folder_node = file_study.tree.get_node(self.get_resource_dir(XpansionResourceFileType.CONSTRAINTS))
+        except ChildNotFoundError:
+            return {}
+
+        result: XpansionConstraintsMapping = {}
+        for file_name in folder_node.get():
+            content = folder_node.get([file_name])
+            assert isinstance(content, bytes)
+            result[file_name] = content
+
+        return result
 
     def save_resource(self, resource_type: XpansionResourceFileType, filename: str, data: bytes | str) -> None:
         file_study = self.get_file_study()

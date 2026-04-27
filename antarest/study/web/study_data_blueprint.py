@@ -40,6 +40,7 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
     BindingConstraintUpdateWithMatrices,
+    ConstraintId,
     ConstraintTerm,
     ConstraintTermUpdate,
 )
@@ -93,6 +94,15 @@ from antarest.study.business.model.renewable_cluster_model import (
     RenewableCluster,
     RenewableClusterCreation,
     RenewableClusterUpdate,
+)
+from antarest.study.business.model.reserve_definition_model import (
+    ReserveDefinition,
+    ReserveDefinitionCreation,
+    ReserveDefinitionUpdate,
+)
+from antarest.study.business.model.reserves_global_parameters_model import (
+    ReservesGlobalParameters,
+    ReservesGlobalParametersUpdate,
 )
 from antarest.study.business.model.scenario_builder_model import AnyScenarios, ScenarioType
 from antarest.study.business.model.sts_model import (
@@ -939,7 +949,7 @@ def create_study_data_routes() -> APIRouter:
     def get_binding_constraint(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        binding_constraint_id: SanitizedStr,
+        binding_constraint_id: ConstraintId,
     ) -> BindingConstraint:
         logger.info(f"Fetching binding constraint {binding_constraint_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
@@ -953,7 +963,7 @@ def create_study_data_routes() -> APIRouter:
     def update_binding_constraint(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        binding_constraint_id: SanitizedStr,
+        binding_constraint_id: ConstraintId,
         data: BindingConstraintUpdateWithMatrices,
     ) -> BindingConstraint:
         logger.info(f"Update binding constraint {binding_constraint_id} for study {uuid}")
@@ -1090,8 +1100,8 @@ def create_study_data_routes() -> APIRouter:
     def duplicate_binding_constraint(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        binding_constraint_id: SanitizedStr,
-        new_constraint_name: SanitizedStr,
+        binding_constraint_id: ConstraintId,
+        new_constraint_name: ConstraintId,
     ) -> BindingConstraint:
         logger.info(f"Duplicates constraint {binding_constraint_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
@@ -1107,7 +1117,7 @@ def create_study_data_routes() -> APIRouter:
     def delete_binding_constraint(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        binding_constraint_id: SanitizedStr,
+        binding_constraint_id: ConstraintId,
     ) -> None:
         logger.info(f"Deleting the binding constraint {binding_constraint_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
@@ -1123,7 +1133,7 @@ def create_study_data_routes() -> APIRouter:
     def delete_multiple_binding_constraints(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        binding_constraints_ids: list[SanitizedStr],
+        binding_constraints_ids: list[ConstraintId],
     ) -> None:
         logger.info(f"Deleting the binding constraints {binding_constraints_ids!r} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
@@ -1140,7 +1150,7 @@ def create_study_data_routes() -> APIRouter:
     def add_constraint_term(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        binding_constraint_id: SanitizedStr,
+        binding_constraint_id: ConstraintId,
         term: ConstraintTerm,
     ) -> None:
         """
@@ -1166,7 +1176,7 @@ def create_study_data_routes() -> APIRouter:
     def add_constraint_terms(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        binding_constraint_id: SanitizedStr,
+        binding_constraint_id: ConstraintId,
         terms: Sequence[ConstraintTerm],
     ) -> None:
         """
@@ -1192,7 +1202,7 @@ def create_study_data_routes() -> APIRouter:
     def update_constraint_term(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        binding_constraint_id: SanitizedStr,
+        binding_constraint_id: ConstraintId,
         term: ConstraintTermUpdate,
     ) -> None:
         """
@@ -1218,7 +1228,7 @@ def create_study_data_routes() -> APIRouter:
     def update_constraint_terms(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        binding_constraint_id: SanitizedStr,
+        binding_constraint_id: ConstraintId,
         terms: Sequence[ConstraintTermUpdate],
     ) -> None:
         """
@@ -1244,7 +1254,7 @@ def create_study_data_routes() -> APIRouter:
     def remove_constraint_term(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        binding_constraint_id: SanitizedStr,
+        binding_constraint_id: ConstraintId,
         term_id: SanitizedStr,
     ) -> None:
         logger.info(f"Remove constraint term {term_id} from {binding_constraint_id} for study {uuid}")
@@ -1455,13 +1465,13 @@ def create_study_data_routes() -> APIRouter:
     def set_compatibility_parameters(
         study_service: StudyServiceDep,
         uuid: UuidStr,
-        field_values: CompatibilityParametersUpdate,
+        parameters: CompatibilityParametersUpdate,
     ) -> CompatibilityParameters:
         logger.info(f"Updating Compatibility parameters values for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         return study_service.compatibility_parameters_manager.update_compatibility_parameters(
-            study_interface, field_values
+            study_interface, parameters
         )
 
     @bp.put(
@@ -1516,6 +1526,124 @@ def create_study_data_routes() -> APIRouter:
             study_interface,
             {area_id: form_fields},
         )
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/reserves/global-parameters",
+        summary="Get reserves global parameters for a given area",
+    )
+    def get_reserves_global_parameters(
+        study_service: StudyServiceDep,
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+    ) -> ReservesGlobalParameters:
+        logger.info("Getting reserves global parameters for study %s and area %s", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserves_global_parameters_manager.get_reserves_global_parameters(study_interface, area_id)
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/reserves/global-parameters",
+        summary="Update reserves global parameters for a given area",
+    )
+    def set_reserves_global_parameters(
+        study_service: StudyServiceDep,
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        form_fields: ReservesGlobalParametersUpdate,
+    ) -> ReservesGlobalParameters:
+        logger.info("Setting reserves global parameters for study %s and area %s", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserves_global_parameters_manager.update_reserves_global_parameters(
+            study_interface, area_id, form_fields
+        )
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/reserves",
+        summary="Get all reserve definitions for a given area",
+    )
+    def get_reserve_definitions(
+        study_service: StudyServiceDep,
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+    ) -> Sequence[ReserveDefinition]:
+        """
+        List all reserve definitions of a given area.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+        """
+        logger.info("Getting reserve definitions for study %s and area %s", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserve_definitions_manager.get_reserve_definitions(study_interface, area_id)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/reserves/{reserve_id}",
+        summary="Get a reserve definition for a given area",
+    )
+    def get_reserve_definition(
+        study_service: StudyServiceDep,
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        reserve_id: SanitizedStr,
+    ) -> ReserveDefinition:
+        logger.info("Getting reserve definition %s for study %s and area %s", reserve_id, uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserve_definitions_manager.get_reserve_definition(study_interface, area_id, reserve_id)
+
+    @bp.post(
+        path="/studies/{uuid}/areas/{area_id}/reserves",
+        summary="Create a new reserve definition for a given area",
+    )
+    def create_reserve_definition(
+        study_service: StudyServiceDep,
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        reserve_data: ReserveDefinitionCreation,
+    ) -> ReserveDefinition:
+        logger.info("Creating reserve definition for study '%s' and area '%s'", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserve_definitions_manager.create_reserve_definition(
+            study_interface, area_id, reserve_data
+        )
+
+    @bp.patch(
+        path="/studies/{uuid}/areas/{area_id}/reserves/{reserve_id}",
+        summary="Update a reserve definition for a given area",
+    )
+    def update_reserve_definition(
+        study_service: StudyServiceDep,
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        reserve_id: SanitizedStr,
+        reserve_data: ReserveDefinitionUpdate,
+    ) -> ReserveDefinition:
+        logger.info("Updating reserve definition %s for study '%s' and area '%s'", reserve_id, uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserve_definitions_manager.update_reserve_definition(
+            study_interface, area_id, reserve_id, reserve_data
+        )
+
+    @bp.delete(
+        path="/studies/{uuid}/areas/{area_id}/reserves",
+        summary="Remove reserve definitions for a given area",
+        status_code=HTTPStatus.NO_CONTENT,
+    )
+    def delete_reserve_definitions(
+        study_service: StudyServiceDep,
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        reserve_ids: Annotated[Sequence[SanitizedStr], Body(examples=[["Reserve 1", "Reserve 2"]])],
+    ) -> None:
+        logger.info("Deleting reserve definitions %r for study '%s' and area '%s'", reserve_ids, uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        study_service.reserve_definitions_manager.delete_reserve_definitions(study_interface, area_id, reserve_ids)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",

@@ -86,7 +86,7 @@ class UpdateSTStorageAdditionalConstraints(ICommand):
 
         for area_id, data in memory_mapping.items():
             for storage_id, new_constraints in data.items():
-                study_data.save_st_storage_additional_constraints(area_id, storage_id, new_constraints)
+                study_data.save_st_storage_additional_constraints({area_id: {storage_id: new_constraints}})
 
         return command_succeeded(
             "The short-term storage additional constraints were successfully updated.", result=memory_mapping

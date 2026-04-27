@@ -10,8 +10,10 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
+from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
 
 from antarest.blobstore.in_memory import InMemoryBlobService
@@ -37,11 +39,10 @@ def blob_service() -> IBlobService:
     return InMemoryBlobService()
 
 
-@pytest.fixture
-def file_study(tmp_path: Path, matrix_service: ISimpleMatrixService) -> FileStudy:
+def build_file_study(tmp_path: Path, matrix_service: ISimpleMatrixService, version: StudyVersion) -> FileStudy:
     study_id = "5c22caca-b100-47e7-bbea-8b1b97aa26d9"
     study_path = tmp_path.joinpath(study_id)
-    app = CreateApp(study_dir=study_path, caption="filestudy", version=STUDY_VERSION_9_3, author="Joe")
+    app = CreateApp(study_dir=study_path, caption="filestudy", version=version, author="Joe")
     app()
     config = build(study_path, study_id)
     mapper_factory = MatrixUriMapperFactory(matrix_service=matrix_service)
@@ -50,7 +51,12 @@ def file_study(tmp_path: Path, matrix_service: ISimpleMatrixService) -> FileStud
 
 
 @pytest.fixture
+def file_study(tmp_path: Path, matrix_service: ISimpleMatrixService) -> FileStudy:
+    return build_file_study(tmp_path, matrix_service, STUDY_VERSION_9_3)
+
+
+@pytest.fixture
 def filestudy_dao(file_study: FileStudy, matrix_service, blob_service) -> FileStudyTreeDao:
     constants = GeneratorMatrixConstants(matrix_service)
     constants.init_constant_matrices()
-    return FileStudyTreeDao(file_study, constants, blob_service)
+    return FileStudyTreeDao(file_study, False, constants, blob_service, matrix_service, Mock())

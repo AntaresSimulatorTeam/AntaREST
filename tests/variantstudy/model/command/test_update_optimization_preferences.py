@@ -18,11 +18,13 @@ from antarest.study.storage.variantstudy.model.command.update_optimization_prefe
     UpdateOptimizationPreferences,
 )
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestUpdateOptimizationPreferences:
     def test_update_optimization_preferences(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         study = empty_study_880
+        dao = build_dao_from_file_study(study, command_context)
 
         default_values = study.tree.get(["settings", "generaldata", "optimization"])
 
@@ -37,7 +39,7 @@ class TestUpdateOptimizationPreferences:
         command = UpdateOptimizationPreferences(
             parameters=properties, command_context=command_context, study_version=study.config.version
         )
-        output = command.apply(study)
+        output = command.apply(dao)
         assert output.status
 
         default_values.update(

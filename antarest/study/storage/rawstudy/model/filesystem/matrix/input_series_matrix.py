@@ -96,12 +96,17 @@ class InputSeriesMatrix(MatrixNode):
 
     @override
     def write_dataframe(self, df: pl.DataFrame) -> None:
+        if not self.config.path.parent.exists():
+            # Can happen when creating a new object and the file structure is not yet fully created
+            self.config.path.parent.mkdir(parents=True)
+
         # If the DataFrame content corresponds to the `default_empty` attribute, we should just create an empty file.
         # This way, we can write the content quicker, and the file takes less place on the fs.
         if df.is_empty() or self.default_empty is not None and np.array_equal(df.to_numpy(), self.default_empty()):
             self.config.path.write_text("")
         else:
             write_dataframe_in_tsv_format(df, self.config.path)
+
         self.matrix_mapper.remove_link(self)
 
     def _infer_path(self) -> Path:
