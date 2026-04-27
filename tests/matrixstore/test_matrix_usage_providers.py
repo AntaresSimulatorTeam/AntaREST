@@ -37,10 +37,11 @@ from antarest.output.variable_view.db import OutputVariablesViewsModel
 from antarest.output.variable_view.matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
-from antarest.study.model import STUDY_VERSION_9_3, MatrixFrequency, RawStudy
+from antarest.study.model import STUDY_VERSION_9_3, MatrixFrequency, RawStudy, StorageMode
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.variantstudy.business.matrix_constants.matrix_constants_usage_provider import (
     ConstantsMatrixUsageProvider,
 )
@@ -64,16 +65,29 @@ from tests.helpers import build_dao_from_file_study, create_raw_study, with_admi
 @pytest.fixture
 @with_db_context
 def raw_studies_matrix_usage_provider(
-    raw_study_service: RawStudyService, matrix_service: ISimpleMatrixService
+    raw_study_service: RawStudyService,
+    matrix_service: ISimpleMatrixService,
+    storage_mapping: dict[StorageMode, IStudyStorage],
 ) -> RawStudyMatrixUsageProvider:
-    return RawStudyMatrixUsageProvider(StudyMetadataRepository(raw_study_service.cache), matrix_service)
+    return RawStudyMatrixUsageProvider(
+        StudyMetadataRepository(raw_study_service.cache), matrix_service, storage_mapping
+    )
+
+
+@pytest.fixture
+def storage_mapping(raw_study_service: RawStudyService) -> dict[StorageMode, IStudyStorage]:
+    return raw_study_service._storage_mapping
 
 
 @pytest.fixture
 def command_matrix_usage_provider(
-    variant_study_repository: VariantStudyRepository, command_factory: CommandFactory
+    variant_study_repository: VariantStudyRepository,
+    command_factory: CommandFactory,
+    storage_mapping: dict[StorageMode, IStudyStorage],
 ) -> CommandMatrixUsageProvider:
-    command_matrix_usage_provider = CommandMatrixUsageProvider(variant_study_repository, command_factory)
+    command_matrix_usage_provider = CommandMatrixUsageProvider(
+        variant_study_repository, command_factory, storage_mapping
+    )
 
     return command_matrix_usage_provider
 
@@ -276,7 +290,11 @@ def test_command_matrix_usage_provider_with_snapshot(
 
     # Ensures the provider sees matrices in the snapshot as the variant contains the command `GenerateThermalClusterTimeSeries`.
     # This way it won't be cleaned by the garbage collector.
-    provider = CommandMatrixUsageProvider(variant_study_service.repository, variant_study_service.command_factory)
+    provider = CommandMatrixUsageProvider(
+        variant_study_service.repository,
+        variant_study_service.command_factory,
+        variant_study_service.raw_study_service._storage_mapping,
+    )
     used_matrices = list(provider.get_matrix_usage())
     assert len(used_matrices) > 0
 
