@@ -15,7 +15,7 @@ from typing_extensions import override
 
 from antarest.study.model import Study
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
-from antarest.study.storage.variantstudy.snapshot_manager_interface import ISnapshotManager
+from antarest.study.storage.variantstudy.snapshot.snapshot_manager_interface import ISnapshotManager
 
 
 class DatabaseSnapshotManager(ISnapshotManager):

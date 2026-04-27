@@ -19,7 +19,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.utils import export_study_to_flat_directory, remove_from_cache
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
-from antarest.study.storage.variantstudy.snapshot_manager_interface import ISnapshotManager
+from antarest.study.storage.variantstudy.snapshot.snapshot_manager_interface import ISnapshotManager
 
 logger = logging.getLogger(__name__)
 

@@ -74,8 +74,6 @@ from antarest.study.storage.variantstudy.business.utils import transform_command
 from antarest.study.storage.variantstudy.command_blob_usage_provider import CommandBlobUsageProvider
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.command_matrix_usage_provider import CommandMatrixUsageProvider
-from antarest.study.storage.variantstudy.database_snapshot_manager import DatabaseSnapshotManager
-from antarest.study.storage.variantstudy.file_snapshot_manager import FileSnapshotManager
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
@@ -85,8 +83,10 @@ from antarest.study.storage.variantstudy.model.model import (
     VariantTreeDTO,
 )
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
-from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator
-from antarest.study.storage.variantstudy.snapshot_manager_interface import ISnapshotManager
+from antarest.study.storage.variantstudy.snapshot.database_snapshot_manager import DatabaseSnapshotManager
+from antarest.study.storage.variantstudy.snapshot.file_snapshot_manager import FileSnapshotManager
+from antarest.study.storage.variantstudy.snapshot.snapshot_generator import SnapshotGenerator
+from antarest.study.storage.variantstudy.snapshot.snapshot_manager_interface import ISnapshotManager
 
 logger = logging.getLogger(__name__)
 
