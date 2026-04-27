@@ -16,7 +16,7 @@ import textwrap
 import typing as t
 import uuid
 from configparser import MissingSectionHeaderError
-from datetime import datetime, timedelta
+from datetime import timedelta
 from functools import wraps
 from pathlib import Path
 from unittest.mock import ANY, Mock, patch, seal
@@ -52,6 +52,7 @@ from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import MatrixService
 from antarest.output.storage.output_storage import OutputMetadata
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -537,51 +538,24 @@ def test_remove_duplicate(db_session: Session) -> None:
 
 
 # noinspection PyArgumentList
-def test_create_study(tmp_path: Path) -> None:
-    # Mock
-    repository = Mock()
-
-    # Input
+def test_create_study(tmp_path: Path, raw_study_service: RawStudyService) -> None:
+    # User service
     user = User(id=0, name="user")
-    group = Group(id="my-group", name="group")
-
-    expected = create_raw_study(
-        id=str(uuid.uuid4()),
-        name="new-study",
-        version="700",
-        author="AUTHOR",
-        created_at=datetime.utcfromtimestamp(1234),
-        updated_at=datetime.utcfromtimestamp(9876),
-        content_status=StudyContentStatus.VALID,
-        workspace=DEFAULT_WORKSPACE_NAME,
-        owner=user,
-        groups=[group],
-    )
-
     user_service = Mock()
     user_service.get_user.return_value = user
 
-    study_service = Mock()
-    study_service.get_study_information.return_value = {
-        "antares": {
-            "caption": "CAPTION",
-            "version": "VERSION",
-            "author": "AUTHOR",
-            "created": 1234,
-            "lastsave": 9876,
-        }
-    }
-    study_service.create.return_value = expected
+    # Dao factory Mock
+    factory = Mock(spec=FileStudyDaoFactory)
+    factory.create_study_dao.return_value = Mock()
+    raw_study_service._study_dao_factories = {StorageMode.FILESYSTEM: factory}
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=tmp_path)}))
     service = build_study_service(
-        study_service, Mock(spec=DirectoryService), repository, config, user_service=user_service
+        raw_study_service, Mock(spec=DirectoryService), Mock(), config, user_service=user_service
     )
     service.storage_service.variant_study_service.command_factory = Mock()
     service.storage_service.variant_study_service.command_factory.command_context = Mock()
-    factory = Mock()
-    factory.create_study_dao.return_value = Mock()
-    service._study_dao_factories = {StorageMode.FILESYSTEM: factory}
 
+    # Fake user should fail and not call the DAO
     jwt_user = JWT_USER
     jwt_user.groups = []
     with pytest.raises(UserHasNotPermissionError):
@@ -589,6 +563,7 @@ def test_create_study(tmp_path: Path) -> None:
             service.create_study("new-study", STUDY_VERSION_7_2, ["my-group"], StorageMode.FILESYSTEM)
     factory.create_study_dao.assert_not_called()
 
+    # Real user should succeed and call the DAO once
     jwt_user.groups = [JWTGroup(id="my-group", name="group", role=RoleType.WRITER)]
     with current_user_context(jwt_user):
         service.create_study("new-study", STUDY_VERSION_7_2, ["my-group"], StorageMode.FILESYSTEM)
