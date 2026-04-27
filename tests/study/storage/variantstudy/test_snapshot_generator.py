@@ -37,6 +37,7 @@ from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import StorageMode
+from antarest.study.storage.file_study_utils import get_snapshot_dir
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
@@ -957,7 +958,7 @@ class TestSnapshotGenerator:
         # Check: the variant is correctly generated and all commands are applied.
         variant_study = variant_study_service.repository.get(variant_study_id)
         assert isinstance(variant_study, VariantStudy)
-        snapshot_dir = variant_study.snapshot_dir
+        snapshot_dir = get_snapshot_dir(variant_study)
         assert snapshot_dir.exists()
         assert (snapshot_dir / "study.antares").exists()
         assert (snapshot_dir / "input/areas/list.txt").read_text().splitlines(keepends=False) == ["North", "South"]
@@ -1100,7 +1101,7 @@ class TestSnapshotGenerator:
             generator.generate_snapshot(variant_study.id, from_scratch=False, dao_factory=factory)
 
         # Check: the snapshot directory is removed.
-        snapshot_dir = variant_study.snapshot_dir
+        snapshot_dir = get_snapshot_dir(variant_study)
         assert not snapshot_dir.exists()
 
         # Check: no temporary directory is left.
