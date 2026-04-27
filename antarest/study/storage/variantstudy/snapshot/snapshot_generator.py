@@ -91,10 +91,9 @@ class SnapshotGenerator:
 
         # Get snapshot directory
         variant_study = descendants[-1]
-        snapshot_dir = variant_study.snapshot_dir
 
         try:
-            if search_result.force_regenerate or not snapshot_dir.exists():
+            if search_result.force_regenerate or not self.variant_study_service.has_snapshot(variant_study):
                 self.variant_study_service.create_snapshot(ref_study, variant_study)
 
             # The snapshot is generated, we also need to de-normalize the matrices.
