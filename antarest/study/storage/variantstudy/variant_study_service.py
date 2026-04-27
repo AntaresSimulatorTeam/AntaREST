@@ -538,28 +538,12 @@ class VariantStudyService(AbstractStudyService):
         study = self._get_study_by_id(id)
         if study.parent_id is not None:
             parent = self._get_study_by_id(study.parent_id)
-            return (
-                self.get_study_information(
-                    parent,
-                )
-                if isinstance(parent, VariantStudy)
-                else self.raw_study_service.get_study_information(
-                    parent,
-                )
-            )
+            return self.get_study_information(parent)
         return None
 
     def _get_variants_parents(self, id: str) -> list[StudyMetadataDTO]:
         study = self._get_study_by_id(id)
-        metadata = (
-            self.get_study_information(
-                study,
-            )
-            if isinstance(study, VariantStudy)
-            else self.raw_study_service.get_study_information(
-                study,
-            )
-        )
+        metadata = self.get_study_information(study)
         output_list: list[StudyMetadataDTO] = [metadata]
         if study.parent_id is not None:
             output_list.extend(self._get_variants_parents(study.parent_id))
