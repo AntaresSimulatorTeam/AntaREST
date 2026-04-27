@@ -22,8 +22,6 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.utils import current_time
 from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.matrixstore.model import MatrixReference
-from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.file_study_utils import export_study_to_flat_directory, get_study_path, update_antares_info
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
@@ -42,11 +40,6 @@ class FileStudyStorage(IStudyStorage):
         self._config = config
         self._study_factory = study_factory
         self._matrix_service = command_context.matrix_service
-
-    @override
-    def get_dao(self, study: Study) -> FileStudyTreeDao:
-        factory = FileStudyDaoFactory(self._command_context, self._study_factory, self._cache)
-        return factory.get_study_dao(study)
 
     @override
     def copy(self, src_study: Study, new_study: RawStudy) -> RawStudy:

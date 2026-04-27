@@ -88,7 +88,7 @@ class RawStudyService(AbstractStudyService):
 
     @override
     def get_study_dao(self, study: Study) -> StudyDao:
-        return self._storage_mapping[study.storage_mode].get_dao(study)
+        return self._study_dao_factories[study.storage_mode].get_study_dao(study)
 
     @override
     def export_study_flat(self, study: Study, dst_path: Path) -> None:

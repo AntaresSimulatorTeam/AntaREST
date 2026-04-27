@@ -16,10 +16,8 @@ from typing import BinaryIO, Iterator
 from typing_extensions import override
 
 from antarest.core.config import Config
-from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -34,10 +32,6 @@ class DatabaseStudyStorage(IStudyStorage):
         self._matrix_service = matrix_service
         self._generator_matrix_constants = generator_matrix_constants
         self._config = config
-
-    @override
-    def get_dao(self, study: Study) -> DatabaseStudyDao:
-        return DatabaseStudyDao(study.id, db.session, self._matrix_service, self._generator_matrix_constants)
 
     @override
     def copy(self, src_study: Study, new_study: RawStudy) -> RawStudy:

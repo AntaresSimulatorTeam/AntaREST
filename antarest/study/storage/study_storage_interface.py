@@ -15,15 +15,10 @@ from pathlib import Path
 from typing import BinaryIO, Iterator
 
 from antarest.matrixstore.model import MatrixReference
-from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import RawStudy, Study
 
 
 class IStudyStorage(ABC):
-    @abstractmethod
-    def get_dao(self, study: Study) -> StudyDao:
-        raise NotImplementedError()
-
     @abstractmethod
     def copy(self, src_study: Study, new_study: RawStudy) -> RawStudy:
         raise NotImplementedError()
