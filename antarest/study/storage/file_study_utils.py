@@ -30,8 +30,6 @@ def get_study_path(study: Study) -> Path:
 
 
 def get_snapshot_dir(study: VariantStudy) -> Path:
-    if study.path is None:
-        raise ValueError("Study path is not set")
     return Path(study.path) / "snapshot"
 
 
