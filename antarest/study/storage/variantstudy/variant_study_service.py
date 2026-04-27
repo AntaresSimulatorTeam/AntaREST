@@ -59,11 +59,8 @@ from antarest.study.model import (
 )
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract.abstract_study_service import AbstractStudyService
-from antarest.study.storage.database_storage import DatabaseStudyStorage
-from antarest.study.storage.file_study_storage import FileStudyStorage
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.utils import (
     assert_permission,
     get_current_user_name,
@@ -120,13 +117,6 @@ class VariantStudyService(AbstractStudyService):
         self.command_factory = command_factory
         self.study_factory = study_factory
         self._matrix_service = matrix_service
-        ctx = command_factory.command_context
-        self._storage_mapping: dict[StorageMode, IStudyStorage] = {
-            StorageMode.FILESYSTEM: FileStudyStorage(cache, config, ctx, study_factory),
-            StorageMode.DATABASE: DatabaseStudyStorage(
-                config=config, matrix_service=matrix_service, generator_matrix_constants=ctx.generator_matrix_constants
-            ),
-        }
         CommandMatrixUsageProvider(variant_study_repo=repository, command_factory=command_factory)
         CommandBlobUsageProvider(variant_study_repo=repository, command_factory=command_factory)
         self._snapshot_manager_mapping: dict[StorageMode, ISnapshotManager] = {
