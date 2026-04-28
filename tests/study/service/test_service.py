@@ -613,13 +613,16 @@ def test_save_metadata() -> None:
     repository.save.assert_called_once_with(study)
 
 
+@with_db_context
 def test_change_owner(study_service: StudyService, empty_study_880: FileStudy) -> None:
     # First, Alice creates a study
     study_id = empty_study_880.config.study_id
     study_path = empty_study_880.config.study_path
     alice = User(id=2)
     alice_jwt = JWTUser(id=2, impersonator=2, type="users")
-    study = create_raw_study(id=study_id, owner=alice, path=str(study_path))
+    study = create_raw_study(id=study_id, owner=alice, path=str(study_path), groups=[], public_mode=PublicMode.NONE)
+    db.session.add(study)
+    db.session.commit()
 
     # Make the study_service returns the study
     study_service.repository.get.return_value = study
