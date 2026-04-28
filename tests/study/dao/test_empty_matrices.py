@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import polars as pl
 from polars.testing import assert_frame_equal
 
 from antarest.core.utils.polars import create_polars_dataframe
@@ -17,6 +18,7 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
     BindingConstraintFrequency,
 )
+from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
@@ -41,7 +43,8 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
     default_bc_hourly,
     default_bc_weekly_daily,
 )
-from tests.study.dao.conftest import build_real_case_study
+from tests.study.dao.conftest import build_real_case_study, build_reserve_definition
+from tests.study.dao.utils import save_area
 
 
 def test_empty_matrices(dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService]) -> None:
@@ -211,3 +214,17 @@ def test_empty_matrices(dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixSer
 
     bc_eq = dao.get_constraint_equal_term_matrix(bc_eq_id)
     assert_frame_equal(bc_eq, default_bc_daily_weekly_dataframe, check_dtypes=False)
+
+
+def test_empty_reserve_need_matrix(dao_10_0: StudyDao, matrix_service: ISimpleMatrixService) -> None:
+    """When a reserve_need matrix is empty, `get_reserve_need` returns the default matrix."""
+    area_id = "paris"
+    reserve_id = "R1"
+    save_area(dao_10_0, area_id)
+    dao_10_0.save_reserve_definitions({area_id: [build_reserve_definition(reserve_id)]})
+
+    null_matrix_id = matrix_service.create(pl.DataFrame(orient="row"))
+    dao_10_0.save_reserve_needs({area_id: {ReserveDefinitionId(reserve_id): null_matrix_id}})
+
+    result = dao_10_0.get_reserve_need(area_id, reserve_id)
+    assert_frame_equal(result, create_polars_dataframe(default_scenario_hourly()), check_dtypes=False)

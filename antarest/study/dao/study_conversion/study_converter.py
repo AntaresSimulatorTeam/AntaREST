@@ -174,17 +174,9 @@ class StudyConverter:
         self._new_dao.save_reserves(self._source_dao.get_all_reserves())
         self._new_dao.save_misc_gen(self._source_dao.get_all_misc_gen())
 
-        # Reserves global parameters (v10.0+)
+        # Reserves (v10.0+)
         if self._study_version >= STUDY_VERSION_10_0:
-            self._new_dao.save_reserves_global_parameters(self._source_dao.get_all_reserves_global_parameters())
-            # Reserve definitions parameters
-            reserve_definitions = self._source_dao.get_all_reserve_definitions()
-            if reserve_definitions:
-                self._new_dao.save_reserve_definitions(
-                    {area_id: list(reserves.values()) for area_id, reserves in reserve_definitions.items()}
-                )
-                # Reserve need chronicles — must be copied after the definitions (FK dependency in database backend).
-                self._new_dao.save_reserve_need(self._source_dao.get_all_reserve_needs())
+            self._convert_reserves()
 
         # Hydro
         self._convert_hydro()
@@ -236,6 +228,16 @@ class StudyConverter:
         # Matrices
         series_mapping = self._source_dao.get_all_renewables_series()
         self._new_dao.save_renewable_series(series_mapping)
+
+    def _convert_reserves(self) -> None:
+        self._new_dao.save_reserves_global_parameters(self._source_dao.get_all_reserves_global_parameters())
+        reserve_definitions = self._source_dao.get_all_reserve_definitions()
+        if reserve_definitions:
+            self._new_dao.save_reserve_definitions(
+                {area_id: list(reserves.values()) for area_id, reserves in reserve_definitions.items()}
+            )
+            # Reserve need chronicles — must be copied after the definitions (FK dependency in database backend).
+            self._new_dao.save_reserve_needs(self._source_dao.get_all_reserve_needs())
 
     def _convert_short_term_storages(
         self, storages: dict[str, dict[str, STStorage]], constraints: STStorageAdditionalConstraintsMap

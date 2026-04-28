@@ -139,21 +139,23 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
             if not self.reserve_definition_exists(area_id, reserve_id):
                 raise ReserveDefinitionNotFound(area_id, reserve_id)
         for reserve_id in reserve_ids:
+            # Remove the need matrix file (idempotent — it may have been already deleted).
+            try:
+                file_study.tree.delete(_reserve_need_matrix_path(area_id, reserve_id))
+            except (ChildNotFoundError, KeyError):
+                pass
             file_study.tree.delete(_reserve_section_path(area_id, reserve_id))
         # Keep config in sync — remove deleted reserves from the area's list.
         area_config = file_study.config.areas[area_id]
-        area_config.reserves = [r for r in area_config.reserves if r.id not in reserve_ids]
+        area_config.reserves = [rid for rid in area_config.reserves if rid not in reserve_ids]
 
     def _update_reserves_config(self, area_id: str, reserve: ReserveDefinition) -> None:
         study_data = self.get_file_study().config
         if area_id not in study_data.areas:
             raise ValueError(f"The area '{area_id}' does not exist")
 
-        for k, existing_reserve in enumerate(study_data.areas[area_id].reserves):
-            if existing_reserve.id == reserve.id:
-                study_data.areas[area_id].reserves[k] = reserve
-                return
-        study_data.areas[area_id].reserves.append(reserve)
+        if reserve.id not in study_data.areas[area_id].reserves:
+            study_data.areas[area_id].reserves.append(reserve.id)
 
     @override
     def get_reserve_need(self, area_id: str, reserve_id: str) -> pl.DataFrame:
@@ -166,15 +168,11 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
         study_data = self.get_file_study()
         matrix_nodes: dict[MatrixNode, tuple[str, ReserveDefinitionId]] = {}
         for area_id, area in study_data.config.areas.items():
-            for reserve in area.reserves:
-                url = _reserve_need_matrix_path(area_id, ReserveDefinitionId(reserve.id))
+            for reserve_id in area.reserves:
+                url = _reserve_need_matrix_path(area_id, ReserveDefinitionId(reserve_id))
                 node = study_data.tree.get_node(url)
                 assert isinstance(node, MatrixNode)
-                # Skip reserves whose matrix file was never saved (or has been deleted): neither
-                # the `.link` symlink nor the raw `.txt` file exists on disk.
-                if not node.is_normalized and not node.config.path.exists():
-                    continue
-                matrix_nodes[node] = (area_id, ReserveDefinitionId(reserve.id))
+                matrix_nodes[node] = (area_id, ReserveDefinitionId(reserve_id))
 
         result: ReserveNeedsMapping = {}
         matrices_mapping = self.get_impl().get_matrices_ids(list(matrix_nodes))
@@ -184,7 +182,7 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
         return result
 
     @override
-    def save_reserve_need(self, mapping: ReserveNeedsMapping) -> None:
+    def save_reserve_needs(self, mapping: ReserveNeedsMapping) -> None:
         study_data = self.get_file_study()
         matrices_mapping: dict[str, list[MatrixNode]] = {}
         for area_id, per_reserve in mapping.items():

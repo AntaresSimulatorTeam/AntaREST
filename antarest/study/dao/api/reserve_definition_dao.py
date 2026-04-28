@@ -54,7 +54,7 @@ class ReserveDefinitionDao(ReadOnlyReserveDefinitionDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_reserve_need(self, mapping: ReserveNeedsMapping) -> None:
+    def save_reserve_needs(self, mapping: ReserveNeedsMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod

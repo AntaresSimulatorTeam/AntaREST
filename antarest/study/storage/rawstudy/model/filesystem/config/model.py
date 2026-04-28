@@ -27,7 +27,6 @@ from antarest.study.business.model.binding_constraint_model import (
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.reserve_definition_model import ReserveDefinition
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.study_index import StudyIndex
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
@@ -93,7 +92,7 @@ class AreaConfig(AntaresBaseModel, extra="forbid"):
     # Since v9.2, dictionary storage ID -> constraints
     st_storages_additional_constraints: dict[str, list[STStorageAdditionalConstraint]] = {}
     # Since v10.0
-    reserves: list[ReserveDefinition] = []
+    reserves: list[str] = []
 
 
 class Simulation(AntaresBaseModel):

@@ -17,14 +17,13 @@ import pytest
 
 from antarest.core.exceptions import IncorrectPathError
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_8_1
 from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
-from tests.study.dao.conftest import build_db_dao, build_real_case_study
+from tests.study.dao.conftest import build_db_dao, build_real_case_study, build_reserve_definition
 from tests.study.dao.utils import save_area
 
 
@@ -587,24 +586,12 @@ def test_version_specifics(db_dao_930: DatabaseStudyDao) -> None:
         mapper_93._get_matcher(Path("input/bindingconstraints/bc1"))  # Missing suffix
 
 
-def _build_reserve_definition(reserve_id: str) -> ReserveDefinition:
-    return ReserveDefinition(
-        id=reserve_id,
-        type=ReserveType.UP,
-        failure_cost=10.0,
-        spillage_cost=5.0,
-        reference_activation_duration=3,
-        power_activation_ratio=0.4,
-        energy_activation_ratio=0.9,
-    )
-
-
 def test_reserve_need_path_get_and_save(dao_10_0: StudyDao, matrix_service: ISimpleMatrixService) -> None:
     area_id = "paris"
     reserve_id = "R1"
 
     save_area(dao_10_0, area_id)
-    dao_10_0.save_reserve_definitions({area_id: [_build_reserve_definition(reserve_id)]})
+    dao_10_0.save_reserve_definitions({area_id: [build_reserve_definition(reserve_id)]})
 
     mapper = RawPathToMatrixMapper(dao_10_0)
 

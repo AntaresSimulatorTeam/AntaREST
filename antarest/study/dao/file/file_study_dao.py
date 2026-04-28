@@ -175,7 +175,9 @@ class FileStudyTreeDao(
     def get_matrices_ids(self, nodes: list[MatrixNode]) -> dict[MatrixNode, str]:
         """
         Get multiple matrices ids efficiently.
-        It performs at most 1 DB query for the whole list
+        It performs at most 1 DB query for the whole list.
+        Nodes whose underlying matrix file is missing on disk (no `.link` symlink
+        and no raw `.txt`) are silently skipped — callers don't need to pre-filter.
         """
         result = {}
 
@@ -187,7 +189,7 @@ class FileStudyTreeDao(
                 matrix_id = matrix_node.matrix_mapper.get_link_content(matrix_node)
                 assert isinstance(matrix_id, str)
                 result[matrix_node] = matrix_id
-            else:
+            elif matrix_node.config.path.exists():
                 denormalized_nodes.append(matrix_node)
 
         ########## Denormalized nodes ##########

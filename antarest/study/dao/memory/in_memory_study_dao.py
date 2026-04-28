@@ -1642,6 +1642,7 @@ class InMemoryStudyDao(StudyDao):
                 del self._reserve_definitions[reserve_key(area_id, rid)]
             except KeyError as exc:
                 raise ReserveDefinitionNotFound(area_id, rid) from exc
+            self._reserve_needs.pop(reserve_key(area_id, rid), None)
 
     @override
     def get_reserve_need(self, area_id: str, reserve_id: str) -> pl.DataFrame:
@@ -1656,7 +1657,7 @@ class InMemoryStudyDao(StudyDao):
         return result
 
     @override
-    def save_reserve_need(self, mapping: ReserveNeedsMapping) -> None:
+    def save_reserve_needs(self, mapping: ReserveNeedsMapping) -> None:
         for area_id, per_reserve in mapping.items():
             for reserve_id, matrix_id in per_reserve.items():
                 self._reserve_needs[reserve_key(area_id, reserve_id)] = matrix_id

@@ -33,7 +33,7 @@ from antarest.study.business.model.binding_constraint_model import (
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.reserve_definition_model import GLOBAL_PARAMETERS_SECTION, ReserveDefinition
+from antarest.study.business.model.reserve_definition_model import GLOBAL_PARAMETERS_SECTION
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6, STUDY_VERSION_9_2, STUDY_VERSION_10_0
@@ -510,9 +510,11 @@ def _parse_st_storage_additional_constraints(
     return config
 
 
-def _parse_reserves(root: Path, area: str) -> list[ReserveDefinition]:
+def _parse_reserves(root: Path, area: str) -> list[str]:
     """
-    Parse the reserves INI file, return an empty list if missing.
+    Parse the reserves INI file and return the list of reserve ids — only the ids
+    are kept in the in-memory Config; full reserve definitions are loaded on demand.
+    Returns an empty list if missing.
     """
 
     # Reserve definitions exist only since v10.0
@@ -526,16 +528,18 @@ def _parse_reserves(root: Path, area: str) -> list[ReserveDefinition]:
         inside_root_path=relpath,
         file_type=FileType.SIMPLE_INI,
     )
-    config_list = []
+    reserve_ids = []
     for section, values in config_dict.items():
         if section.lower() == GLOBAL_PARAMETERS_SECTION:
             continue
         try:
-            config_list.append(parse_reserve_definition(section, values))
+            reserve = parse_reserve_definition(section, values)
         except ValueError as exc:
             config_path = root.joinpath(relpath)
             logger.warning(f"Invalid reserve configuration: '{section}' in '{config_path}'", exc_info=exc)
-    return config_list
+            continue
+        reserve_ids.append(reserve.id)
+    return reserve_ids
 
 
 def _parse_links_filtering(root: Path, area: str) -> dict[str, LinkConfig]:
