@@ -21,9 +21,8 @@ import pytest
 from typing_extensions import override
 
 from antarest.blobstore.in_memory import InMemoryBlobService
-from antarest.core.config import DEFAULT_WORKSPACE_NAME, InternalMatrixFormat
+from antarest.core.config import InternalMatrixFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import current_time
 from antarest.login.model import Group
 from antarest.login.repository import GroupRepository
 from antarest.login.service import LoginService
@@ -138,18 +137,8 @@ def test_raw_studies_matrix_usage_provider(
     matrix_name4 = "matrix_name4"
     matrices_name = ["matrix_name1", "matrix_name2", "matrix_name3"]
 
-    now = current_time()
-    metadata_raw_study = create_raw_study(
-        id="study1",
-        workspace=DEFAULT_WORKSPACE_NAME,
-        path=str(tmp_path / "my_study"),
-        version="720",
-        created_at=now,
-        updated_at=now,
-    )
-
     with db():
-        study_path = Path(metadata_raw_study.path)
+        study_path = tmp_path / "my_study"  # Created by the `fs_dao` fixture
         input_path = study_path / "input"
         expansion_path = study_path / "user" / "expansion"
         expansion_path.mkdir(parents=True, exist_ok=True)
@@ -162,8 +151,6 @@ def test_raw_studies_matrix_usage_provider(
         (input_path / f"{matrix_name4}.txt").write_text(f"matrix://{matrix_name4}")
         # Not in `input` or `expansion` folder -> Should not appear
         (study_path / f"{matrix_name4}.link").write_text(f"matrix://{matrix_name4}")
-
-        raw_studies_matrix_usage_provider.study_metadata_repo.save(metadata_raw_study)
 
         matrices_references = raw_studies_matrix_usage_provider.get_matrix_usage()
         matrices_references_id = [matrix_reference.matrix_id for matrix_reference in matrices_references]
