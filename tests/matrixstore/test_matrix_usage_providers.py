@@ -36,7 +36,7 @@ from antarest.output.model import OutputVariablesType
 from antarest.output.variable_view.db import OutputVariablesViewsModel
 from antarest.output.variable_view.matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
-from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_9_3, MatrixFrequency, RawStudy, StorageMode
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
@@ -130,6 +130,7 @@ def test_raw_studies_matrix_usage_provider(
     raw_study_service: RawStudyService,
     tmp_path: Path,
     command_context: CommandContext,
+    fs_dao: FileStudyTreeDao,
 ) -> None:
     matrix_name1 = "matrix_name1"
     matrix_name2 = "matrix_name2"
@@ -141,15 +142,13 @@ def test_raw_studies_matrix_usage_provider(
     metadata_raw_study = create_raw_study(
         id="study1",
         workspace=DEFAULT_WORKSPACE_NAME,
-        path=str(tmp_path / "studies"),
+        path=str(tmp_path / "my_study"),
         version="720",
         created_at=now,
         updated_at=now,
     )
 
     with db():
-        factory = FileStudyDaoFactory(command_context, raw_study_service.study_factory, Mock())
-        factory.create_study_dao(metadata_raw_study)
         study_path = Path(metadata_raw_study.path)
         input_path = study_path / "input"
         expansion_path = study_path / "user" / "expansion"
