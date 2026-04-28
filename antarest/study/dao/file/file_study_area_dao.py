@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any
 import polars as pl
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError, LayerNotFound, ReferencedObjectDeletionNotAllowed
+from antarest.core.exceptions import AreaNotFound, ChildNotFoundError, LayerNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.core.model import JSON
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
@@ -123,10 +123,13 @@ class FileStudyAreaDao(AreaDao):
             ui_info_map = {area_ids[0]: ui_info_map}
 
         # Convert to AreaUIFileData to ensure that the UI object is valid, then to Pydantic model
-        return {
-            area_id: AreaUIData.model_validate(AreaUIFileData(**ui_info).to_config())
-            for area_id, ui_info in ui_info_map.items()
-        }
+        result: dict[str, AreaUIData] = {}
+        for area_id, ui_info in ui_info_map.items():
+            ui_data = AreaUIData.model_validate(AreaUIFileData(**ui_info).to_config())
+            if ui_data.layer_x:
+                ui_data.ui["layers"] = " ".join(sorted(ui_data.layer_x, key=int))
+            result[area_id] = ui_data
+        return result
 
     @override
     def get_area_ui(self, area_id: str, layer: str = "0") -> AreaUI:
@@ -147,8 +150,6 @@ class FileStudyAreaDao(AreaDao):
 
         # Check if area exists in config
         if area_id not in file_study.config.areas:
-            from antarest.core.exceptions import AreaNotFound
-
             raise AreaNotFound(area_id)
 
         # Import AreaUIFileData here to avoid circular import
@@ -310,6 +311,9 @@ class FileStudyAreaDao(AreaDao):
         logger = logging.getLogger(__name__)
 
         study_data = self.get_file_study()
+
+        if area_id not in study_data.config.areas:
+            raise AreaNotFound(area_id)
 
         # Check that the area is not referenced in any binding constraint
         referencing_binding_constraints = []
@@ -507,7 +511,13 @@ class FileStudyAreaDao(AreaDao):
     @override
     def save_area_ui(self, data: AreaUiMapping) -> None:
         study_data = self.get_file_study()
+        existing_layers = {str(layer) for layer in study_data.tree.get(["layers", "layers", "layers"])}
         for area_id, value in data.items():
+            if area_id not in study_data.config.areas:
+                raise AreaNotFound(area_id)
+            for layer in value:
+                if layer not in existing_layers:
+                    raise LayerNotFound(layer)
             current_area = study_data.tree.get(["input", "areas", area_id, "ui"])
             for layer, area_ui in value.items():
                 current_area = self._fill_area_ui(current_area, layer, area_ui)
