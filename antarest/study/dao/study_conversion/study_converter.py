@@ -236,7 +236,6 @@ class StudyConverter:
             self._new_dao.save_reserve_definitions(
                 {area_id: list(reserves.values()) for area_id, reserves in reserve_definitions.items()}
             )
-            # Reserve need chronicles — must be copied after the definitions (FK dependency in database backend).
             self._new_dao.save_reserve_needs(self._source_dao.get_all_reserve_needs())
 
     def _convert_short_term_storages(
