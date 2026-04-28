@@ -29,6 +29,7 @@ from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import Study
 from antarest.study.service import StudyService
@@ -122,6 +123,7 @@ class TestVariantStudyService:
         simple_blob_service: IBlobService,
         generator_matrix_constants: GeneratorMatrixConstants,
         study_service: StudyService,
+        fs_dao: FileStudyTreeDao,
         # pytest parameter
         from_scratch: bool,
     ) -> None:
@@ -140,7 +142,7 @@ class TestVariantStudyService:
         db.session.commit()
 
         ## First create a raw study (root of the variant)
-        raw_study_path = tmp_path / "My RAW Study"
+        raw_study_path = tmp_path / "my_study"
         # noinspection PyArgumentList
         raw_study = create_raw_study(
             id="my_raw_study",
@@ -159,8 +161,6 @@ class TestVariantStudyService:
         db.session.commit()
 
         ## Prepare the RAW Study
-        context = variant_study_service.command_factory.command_context
-        FileStudyDaoFactory(context, raw_study_service.study_factory, Mock()).create_study_dao(raw_study)
         study_version = StudyVersion.parse(raw_study.version)
 
         with current_user_context(jwt_user):
