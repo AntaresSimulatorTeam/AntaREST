@@ -17,6 +17,7 @@ from unittest.mock import Mock
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
+from antares.study.version import StudyVersion
 
 from antarest.blobstore.service import BlobService
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
@@ -24,6 +25,7 @@ from antarest.core.exceptions import StudyDeletionNotAllowed
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import PublicMode
 from antarest.core.serde.ini_reader import read_ini
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.output.storage.file.storage import (
     FileStudyOutputs,
@@ -37,6 +39,7 @@ from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.utils import StudyMetadataCreation
 from tests.helpers import create_raw_study, create_variant_study, with_admin_user, with_db_context
 
 
@@ -53,7 +56,9 @@ def build_config(
     )
 
 
+@with_db_context
 def test_create_file_study_dao(tmp_path: Path, project_path: Path) -> None:
+    # Create the `Mock` objects
     study = Mock()
     data = {"antares": {"caption": None}}
     study.get.return_value = data
@@ -61,9 +66,10 @@ def test_create_file_study_dao(tmp_path: Path, project_path: Path) -> None:
     study_factory = Mock()
     study_factory.create_from_fs.return_value = FileStudy(Mock(), study)
     config = build_config(tmp_path)
-    study_service = RawStudyService(config=config, cache=Mock(), study_factory=study_factory, command_context=Mock())
+    raw_study_service = RawStudyService(config, Mock(), study_factory, Mock(), StudyMetadataRepository(Mock()))
 
-    metadata = create_raw_study(
+    # Add the `RawStudy` in the database
+    raw_study = create_raw_study(
         id="study1",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(config.get_workspace_path() / "study1"),
@@ -72,10 +78,25 @@ def test_create_file_study_dao(tmp_path: Path, project_path: Path) -> None:
         updated_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
         author="john.doe",
     )
-    FileStudyDaoFactory(Mock(), study_service.study_factory, Mock()).create_study_dao(metadata)
+    db.session.add(raw_study)
+    db.session.commit()
 
-    assert metadata.path == str(tmp_path / "study1")
-    path_study = tmp_path / metadata.id
+    # Tests the DAO creation method
+    factory = FileStudyDaoFactory(Mock(), raw_study_service.study_factory, Mock(), raw_study_service.get_study_paths)
+    metadata = StudyMetadataCreation(
+        id=raw_study.id,
+        version=StudyVersion.parse(raw_study.version),
+        managed=True,
+        name=raw_study.name,
+        author=raw_study.author,
+        editor=raw_study.editor,
+        created_at=raw_study.created_at,
+        updated_at=raw_study.updated_at,
+    )
+    factory.create_study_dao(metadata)
+
+    assert raw_study.path == str(tmp_path / "study1")
+    path_study = tmp_path / raw_study.id
     assert path_study.exists()
 
     path_study_antares_infos = path_study / "study.antares"
