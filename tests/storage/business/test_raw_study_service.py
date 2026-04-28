@@ -461,6 +461,7 @@ def test_update_name_and_version_from_raw(tmp_path: Path) -> None:
         cache=Mock(),
         study_factory=study_factory,
         command_context=Mock(),
+        repository=Mock(),
     )
 
     study_tree_mock.get.side_effect = [
