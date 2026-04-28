@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 import contextlib
-import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from unittest.mock import Mock
@@ -38,98 +37,19 @@ from antarest.study.business.model.sts_model import STStorage, STStorageAddition
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory, ResourcePaths
 from antarest.study.model import (
     STUDY_VERSION_8_6,
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_2,
     STUDY_VERSION_9_3,
     STUDY_VERSION_10_0,
-    StorageMode,
-    Study,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
-from antarest.study.storage.utils import StudyMetadataCreation, is_managed
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import create_raw_study, create_study
+from tests.conftest import build_db_dao, build_filesystem_dao
 from tests.study.dao.utils import save_area
-
-
-def build_db_dao(db_session: Session, matrix_service: ISimpleMatrixService, version: StudyVersion) -> DatabaseStudyDao:
-    """
-    Create a test study in database mode and create a DatabaseStudyDao instance for testing.
-    """
-    study_id = str(uuid.uuid4())
-    generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
-    generator_matrix_constants.init_constant_matrices()
-    with db_session:
-        study = create_study(id=study_id, name="Test Study", version=str(version))
-        study.storage_mode = StorageMode.DATABASE
-        db_session.add(study)
-        db_session.commit()
-        factory = DatabaseStudyDaoFactory(matrix_service, generator_matrix_constants, db_session)
-        metadata = StudyMetadataCreation(id=study_id, version=version, managed=True)
-        dao = factory.create_study_dao(metadata)
-    return dao
-
-
-def build_metadata_creation_object_from_study(study: Study) -> StudyMetadataCreation:
-    return StudyMetadataCreation(
-        id=study.id,
-        version=StudyVersion.parse(study.version),
-        managed=is_managed(study),
-        name=study.name,
-        author=study.author,
-        editor=study.editor,
-        created_at=study.created_at,
-        updated_at=study.updated_at,
-    )
-
-
-def build_filesystem_dao(
-    db_session: Session,
-    version: StudyVersion,
-    command_context: CommandContext,
-    study_factory: StudyFactory,
-    study_path: Path,
-) -> FileStudyTreeDao:
-    """
-    Create a test study in filesystem mode and create a FileStudyTreeDao instance for testing.
-    """
-    # Create the path getter method
-    study_folder = study_path / "my_study"
-
-    def get_study_path(study_id: str) -> ResourcePaths:
-        return ResourcePaths(study_path=study_folder, output_path=study_folder / "output")
-
-    # Create the study
-    study_id = str(uuid.uuid4())
-    study = create_raw_study(id=study_id, name="Test Study", version=str(version), path=str(study_folder))
-    study.storage_mode = StorageMode.FILESYSTEM
-    with db_session:
-        db_session.add(study)
-        db_session.commit()
-        factory = FileStudyDaoFactory(command_context, study_factory, Mock(), get_study_path)
-        metadata = build_metadata_creation_object_from_study(study)
-        dao = factory.create_study_dao(metadata)
-
-    return dao
-
-
-@pytest.fixture
-def db_dao(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
-    return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
-
-
-@pytest.fixture
-def fs_dao(
-    db_session: Session, command_context: CommandContext, tmp_path: Path, study_factory: StudyFactory
-) -> FileStudyTreeDao:
-    return build_filesystem_dao(db_session, STUDY_VERSION_8_8, command_context, study_factory, tmp_path)
 
 
 @pytest.fixture

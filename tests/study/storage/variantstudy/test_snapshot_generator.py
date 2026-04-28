@@ -35,6 +35,7 @@ from antarest.login.model import Group, Role, User
 from antarest.login.utils import current_user_context
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import StorageMode
 from antarest.study.storage.file_study_utils import get_snapshot_dir
@@ -101,7 +102,7 @@ def _get_dao_factory(variant_id: str, variant_study_service: VariantStudyService
     ctx = variant_study_service.command_factory.command_context
 
     if variant_study.storage_mode == StorageMode.FILESYSTEM:
-        return FileStudyDaoFactory(ctx, variant_study_service.study_factory, variant_study_service.cache)
+        return FileStudyDaoFactory(ctx, variant_study_service.study_factory, variant_study_service.cache, Mock())
 
     return DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants)
 
@@ -800,6 +801,7 @@ class TestSnapshotGenerator:
         tmp_path: Path,
         raw_study_service: RawStudyService,
         variant_study_service: VariantStudyService,
+        fs_dao: FileStudyTreeDao,
         jwt_user: JWTUser,
     ) -> str:
         # Prepare a RAW study in the temporary folder
@@ -815,10 +817,6 @@ class TestSnapshotGenerator:
             author="john.doe",
             owner_id=jwt_user.id,
         )
-
-        # Create the study in database
-        context = variant_study_service.command_factory.command_context
-        FileStudyDaoFactory(context, raw_study_service.study_factory, Mock()).create_study_dao(root_study)
 
         # Create some outputs with a "simulation.log" file
         for output_name in ["20230802-1425eco", "20230802-1628eco"]:
