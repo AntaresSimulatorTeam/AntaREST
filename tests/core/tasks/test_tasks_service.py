@@ -53,6 +53,7 @@ from antarest.study.service import ThermalClusterTimeSeriesGeneratorTask
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from tests.conftest import build_metadata_creation_object_from_study
 from tests.helpers import create_raw_study, with_admin_user, with_db_context
 from tests.study.service.test_service import build_study_service
 
@@ -432,8 +433,9 @@ def test_ts_generation_task(tmp_path: Path, variant_study_service: VariantStudyS
     cmd_ctx = variant_study_service.command_factory.command_context
     cache = variant_study_service.cache
     study_factory = variant_study_service.study_factory
-    dao_factory = FileStudyDaoFactory(cmd_ctx, study_factory, cache)
-    dao = dao_factory.create_study_dao(raw_study)
+    dao_factory = FileStudyDaoFactory(cmd_ctx, study_factory, cache, variant_study_service.get_study_paths)
+    metadata = build_metadata_creation_object_from_study(raw_study)
+    dao = dao_factory.create_study_dao(metadata)
 
     # Create an area
     study_version = StudyVersion.parse(raw_study.version)
