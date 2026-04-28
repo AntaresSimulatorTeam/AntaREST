@@ -215,6 +215,10 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
     def _get_all_constraints_from_tree(
         self, bc_id_to_bc_object: dict[str, BindingConstraint], study_data: FileStudy
     ) -> dict[str, dict[str, TREE]]:
+        """
+        Retrieve all constraints from the study tree and organize them by constraint ID.
+        For each constraint, it builds a dictionary mapping node IDs to their corresponding tree nodes.
+        """
         all_constraints_nodes_by_id = {}
         for constraint in bc_id_to_bc_object.values():
             parent_folder_node = study_data.tree.get_node(["input", "bindingconstraints"])
@@ -228,6 +232,10 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
     @staticmethod
     def build_nodes_ids_for_constraint(constraint: BindingConstraint, version: StudyVersion) -> list[str]:
+        """
+        Build a list of node IDs for a given binding constraint based on its ID and version.
+        If the study version is 8.7 or higher, it includes operator-specific node IDs.
+        """
         node_id = [constraint.id]
         if version >= STUDY_VERSION_8_7:
             node_id = [f"{constraint.id}_{operator}" for operator in OPERATOR_MATRICES_MAP[constraint.operator]]

@@ -14,7 +14,6 @@ from pathlib import Path
 
 import pytest
 
-from antarest.study.business.model.binding_constraint_model import BindingConstraint, BindingConstraintFrequency
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_7_0

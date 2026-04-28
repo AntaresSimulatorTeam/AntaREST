@@ -33,10 +33,10 @@ from antarest.study.model import (
     STUDY_VERSION_8_6,
     STUDY_VERSION_9_2,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.files import _parse_bindings
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.config.files import _parse_bindings
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao

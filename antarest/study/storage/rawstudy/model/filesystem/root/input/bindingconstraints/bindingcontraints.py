@@ -13,6 +13,7 @@ from typing_extensions import override
 
 from antarest.study.business.model.binding_constraint_model import OPERATOR_MATRICES_MAP, BindingConstraintFrequency
 from antarest.study.model import MatrixFrequency
+from antarest.study.storage.rawstudy.model.filesystem.config.files import _parse_bindings
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -31,7 +32,6 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
     default_bc_weekly_daily as default_bc_weekly_daily_86,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.files import _parse_bindings
 
 
 class BindingConstraints(FolderNode):

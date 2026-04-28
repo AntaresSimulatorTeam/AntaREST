@@ -43,6 +43,7 @@ from antarest.study.business.model.thermal_cluster_model import ThermalCluster, 
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_bindings,
+    _parse_bindings_groups,
     _parse_links_filtering,
     _parse_renewables,
     _parse_sets,
@@ -52,7 +53,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     build,
     parse_outputs,
     parse_simulation,
-    _parse_bindings_groups,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
