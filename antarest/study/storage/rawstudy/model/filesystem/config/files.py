@@ -214,6 +214,7 @@ def _parse_bindings(root: Path) -> list[BindingConstraint]:
     version = _parse_version(root)
     return [parse_binding_constraint(version, bc) for bc in bindings.values()]
 
+
 def _parse_bindings_groups(root: Path) -> set[str]:
     bindings = _parse_bindings(root)
     bindings_groups = {bc.group for bc in bindings if bc.group is not None}

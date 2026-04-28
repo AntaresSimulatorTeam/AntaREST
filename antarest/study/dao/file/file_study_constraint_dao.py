@@ -15,8 +15,6 @@ from typing import TYPE_CHECKING, Any, Sequence
 
 import polars as pl
 from antares.study.version import StudyVersion
-from study.business.model.binding_constraint_model import BindingConstraint, ConstraintId
-from study.storage.rawstudy.model.filesystem.factory import FileStudy
 from typing_extensions import override
 
 from antarest.core.exceptions import BindingConstraintNotFound
@@ -183,37 +181,36 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
     def _update_existing_constraint(
         self,
         bc_id_to_bc_object: dict[ConstraintId, BindingConstraint],
-        constraint: BindingConstraint,
+        new_constraint: BindingConstraint,
         node_id_to_old_constraints_node: dict[str, TREE],
         old_groups: dict[str, list[str]],
     ):
-
         study_data = self.get_file_study()
         study_version = study_data.config.version
-        bc_id = constraint.id
+        bc_id = new_constraint.id
         existing_constraint = bc_id_to_bc_object[bc_id]
 
-        if study_version >= STUDY_VERSION_8_7 and (constraint.operator != existing_constraint.operator):
+        if study_version >= STUDY_VERSION_8_7 and (new_constraint.operator != existing_constraint.operator):
             # The user changed the operator, we have to rename matrices accordingly
             update_matrices_names(
-                node_id_to_old_constraints_node, bc_id, existing_constraint.operator, constraint.operator
+                node_id_to_old_constraints_node, bc_id, existing_constraint.operator, new_constraint.operator
             )
 
         # Updates the config before as the tree is based on the config
-        if constraint.group:
-            study_data.config.bindings_groups.add(constraint.group)
+        if new_constraint.group:
+            study_data.config.bindings_groups.add(new_constraint.group)
 
-        if constraint.time_step != existing_constraint.time_step:
+        if new_constraint.time_step != existing_constraint.time_step:
             # The user changed the time step, we need to update the matrix accordingly
-            for [target, new_matrix] in generate_replacement_matrices(bc_id, study_version, constraint.operator):
+            for [target, new_matrix] in generate_replacement_matrices(bc_id, study_version, new_constraint.operator):
                 # prepare matrix as a dict to save it in the tree
                 matrix_url = target.split("/")
                 study_data.tree.save(data={"data": new_matrix}, url=matrix_url)
 
-        if constraint.group != existing_constraint.group:
+        if new_constraint.group != existing_constraint.group:
             assert isinstance(existing_constraint.group, str)
             # We keep track of the removed groups for the scenario builder
-            old_groups[existing_constraint.group].remove(constraint.id)
+            old_groups[existing_constraint.group].remove(new_constraint.id)
 
     def _get_all_constraints_from_tree(
         self, bc_id_to_bc_object: dict[str, BindingConstraint], study_data: FileStudy
@@ -222,7 +219,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         for constraint in bc_id_to_bc_object.values():
             parent_folder_node = study_data.tree.get_node(["input", "bindingconstraints"])
 
-            nodes_ids = self.build_node_ids_for_constraint(constraint, study_data.config.version)
+            nodes_ids = self.build_nodes_ids_for_constraint(constraint, study_data.config.version)
             nodes_ids_to_nodes = {node: parent_folder_node.get_node([node]) for node in nodes_ids}
 
             all_constraints_nodes_by_id[constraint.id] = nodes_ids_to_nodes
@@ -230,14 +227,13 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         return all_constraints_nodes_by_id
 
     @staticmethod
-    def build_node_ids_for_constraint(constraint: BindingConstraint, version: StudyVersion) -> list[str]:
+    def build_nodes_ids_for_constraint(constraint: BindingConstraint, version: StudyVersion) -> list[str]:
         node_id = [constraint.id]
         if version >= STUDY_VERSION_8_7:
             node_id = [f"{constraint.id}_{operator}" for operator in OPERATOR_MATRICES_MAP[constraint.operator]]
         return node_id
 
     def _update_ini_file(self, bc_id_to_key_in_ini: dict[str, str], constraints: Sequence[BindingConstraint]) -> None:
-
         study_data = self.get_file_study()
         study_version = study_data.config.version
         ini_content = _get_all_constraints_ini(study_data)
