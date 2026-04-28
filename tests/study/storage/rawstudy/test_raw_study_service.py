@@ -13,7 +13,6 @@
 import datetime
 import zipfile
 from pathlib import Path
-from unittest.mock import Mock
 
 import numpy as np
 
@@ -22,7 +21,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, User
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup
-from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -38,7 +37,9 @@ for each test method (the fixture has `autouse=True`).
 
 @with_db_context
 @with_admin_user
-def test_export_study_flat(tmp_path: Path, command_factory: CommandFactory, study_service: StudyService) -> None:
+def test_export_study_flat(
+    tmp_path: Path, command_factory: CommandFactory, study_service: StudyService, fs_dao: FileStudyTreeDao
+) -> None:
     # Prepare database objects
     # noinspection PyArgumentList
     user = User(id=0, name="admin")
@@ -50,7 +51,7 @@ def test_export_study_flat(tmp_path: Path, command_factory: CommandFactory, stud
     db.session.add(group)
     db.session.commit()
 
-    raw_study_path = tmp_path / "My RAW Study"
+    raw_study_path = tmp_path / "my_study"  # Path used inside the `fs_dao` fixture
     # noinspection PyArgumentList
     raw_study = create_raw_study(
         id="my_raw_study",
@@ -68,12 +69,8 @@ def test_export_study_flat(tmp_path: Path, command_factory: CommandFactory, stud
     db.session.add(raw_study)
     db.session.commit()
 
-    # Create the Study inside filesystem
-    command_context = command_factory.command_context
-    raw_study_service = study_service.storage_service.raw_study_service
-    FileStudyDaoFactory(command_context, raw_study_service.study_factory, Mock()).create_study_dao(raw_study)
-
     # Create some data inside the study
+    command_context = command_factory.command_context
     create_area_fr = CreateArea(command_context=command_context, area_name="fr", study_version=raw_study.version)
 
     # noinspection SpellCheckingInspection
@@ -131,7 +128,7 @@ def test_export_study_flat(tmp_path: Path, command_factory: CommandFactory, stud
 
     # Run the export
     target_path = tmp_path / raw_study_path.with_suffix(".exported").name
-    raw_study_service.export_study_flat(raw_study, target_path)
+    study_service.storage_service.raw_study_service.export_study_flat(raw_study, target_path)
 
     # We should not export outputs
     assert not (target_path / "output").exists()
