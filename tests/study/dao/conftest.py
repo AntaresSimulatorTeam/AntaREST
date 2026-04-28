@@ -191,7 +191,7 @@ def dao(
     tmp_path: Path,
     core_cache: "ICache",
 ) -> StudyDao:
-    """A binding-constraint DAO parameterized over both backends (v8.8+)."""
+    """A DAO parameterized over both backends (v8.8+)."""
     if request.param == "db":
         return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
     else:
