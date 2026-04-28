@@ -126,6 +126,13 @@ def db_dao(db_session: Session, matrix_service: ISimpleMatrixService) -> Databas
 
 
 @pytest.fixture
+def fs_dao(
+    db_session: Session, command_context: CommandContext, tmp_path: Path, study_factory: StudyFactory
+) -> FileStudyTreeDao:
+    return build_filesystem_dao(db_session, STUDY_VERSION_8_8, command_context, study_factory, tmp_path)
+
+
+@pytest.fixture
 def db_dao_930(db_dao_930_and_matrix_service) -> DatabaseStudyDao:
     return db_dao_930_and_matrix_service[0]
 
