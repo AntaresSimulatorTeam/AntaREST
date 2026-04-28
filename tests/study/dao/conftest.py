@@ -40,7 +40,7 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory, ResourcePaths
 from antarest.study.model import (
     STUDY_VERSION_8_6,
     STUDY_VERSION_8_8,
@@ -48,9 +48,10 @@ from antarest.study.model import (
     STUDY_VERSION_9_3,
     STUDY_VERSION_10_0,
     StorageMode,
+    Study,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
-from antarest.study.storage.utils import StudyMetadataCreation
+from antarest.study.storage.utils import StudyMetadataCreation, is_managed
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -76,6 +77,19 @@ def build_db_dao(db_session: Session, matrix_service: ISimpleMatrixService, vers
     return dao
 
 
+def build_metadata_creation_object_from_study(study: Study) -> StudyMetadataCreation:
+    return StudyMetadataCreation(
+        id=study.id,
+        version=StudyVersion.parse(study.version),
+        managed=is_managed(study),
+        name=study.name,
+        author=study.author,
+        editor=study.editor,
+        created_at=study.created_at,
+        updated_at=study.updated_at,
+    )
+
+
 def build_filesystem_dao(
     db_session: Session,
     version: StudyVersion,
@@ -86,15 +100,22 @@ def build_filesystem_dao(
     """
     Create a test study in filesystem mode and create a FileStudyTreeDao instance for testing.
     """
+    # Create the path getter method
+    study_folder = study_path / "my_study"
+
+    def get_study_path(study_id: str) -> ResourcePaths:
+        return ResourcePaths(study_path=study_folder, output_path=study_folder / "output")
+
     # Create the study
     study_id = str(uuid.uuid4())
-    study = create_raw_study(id=study_id, name="Test Study", version=str(version), path=str(study_path / "my_study"))
+    study = create_raw_study(id=study_id, name="Test Study", version=str(version), path=str(study_folder))
     study.storage_mode = StorageMode.FILESYSTEM
     with db_session:
         db_session.add(study)
         db_session.commit()
-        factory = FileStudyDaoFactory(command_context, study_factory, Mock())
-        dao = factory.create_study_dao(study)
+        factory = FileStudyDaoFactory(command_context, study_factory, Mock(), get_study_path)
+        metadata = build_metadata_creation_object_from_study(study)
+        dao = factory.create_study_dao(metadata)
 
     return dao
 
