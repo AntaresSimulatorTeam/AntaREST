@@ -141,7 +141,7 @@ class VariantStudyService(AbstractStudyService):
     def get_study_dao(self, study: Study) -> StudyDao:
         variant_study = _cast_study_to_variant(study)
         self.safe_generation(variant_study, 600)
-        return self.raw_study_service.get_study_dao(study)
+        return self._study_dao_factories[study.storage_mode].get_study_dao(study.id, True)
 
     @override
     def export_study_flat(self, study: Study, dst_path: Path) -> None:
