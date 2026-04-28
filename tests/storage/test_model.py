@@ -61,7 +61,7 @@ def config() -> FileStudyTreeConfig:
                 xpansion="",
             )
         },
-        bindings=[BindingConstraint(**{"name": "b1", "time_step": BindingConstraintFrequency.DAILY})],
+        bindings_groups=set(),
         store_new_set=False,
         archive_input_series=["?"],
         enr_modelling="aggregated",

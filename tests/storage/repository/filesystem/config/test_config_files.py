@@ -52,6 +52,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     build,
     parse_outputs,
     parse_simulation,
+    _parse_bindings_groups,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
@@ -151,6 +152,31 @@ def test_parse_bindings(study_path: Path) -> None:
             }
         ),
     ]
+    assert actual == expected
+
+
+def test_parse_bindings_groups(study_path: Path) -> None:
+    # Setup files
+    content = """\
+    [bindA]
+    id = bindA
+    name = bindA
+    filter-synthesis = hourly
+    area_1%area_2 = 4
+    area_3.thermal_1 = 5.3%2
+
+    [bindB]
+    id = bindB
+    name = bindB
+    type = weekly
+    group = My Group
+    filter-year-by-year = weekly, annual
+    """
+    (study_path / "input/bindingconstraints/bindingconstraints.ini").write_text(textwrap.dedent(content))
+    study_path.joinpath("study.antares").write_text("[antares] \n version = 870")
+
+    actual = _parse_bindings_groups(study_path)
+    expected = {"default", "my group"}
     assert actual == expected
 
 
@@ -843,7 +869,7 @@ def test_config_to_study_index_8_8() -> None:
                 st_storages_additional_constraints={},
             ),
         },
-        bindings=[BindingConstraint(name="Constraint", group="BCGroup")],
+        bindings_groups=["BCGroup"],
     )
 
     index = config.to_study_index()

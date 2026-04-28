@@ -129,7 +129,7 @@ class FileStudyTreeConfig(DTO):
         districts: dict[str, District] | None = None,
         areas: dict[str, AreaConfig] | None = None,
         outputs: dict[str, Simulation] | None = None,
-        bindings: list[BindingConstraint] | None = None,
+        bindings_groups: set[str] | None = None,
         store_new_set: bool = False,
         archive_input_series: list[str] | None = None,
         enr_modelling: str = str(EnrModelling.AGGREGATED),
@@ -143,7 +143,7 @@ class FileStudyTreeConfig(DTO):
         self.areas = areas or {}
         self.districts = districts or {}
         self.outputs = outputs or {}
-        self.bindings = bindings or []
+        self.bindings_groups = bindings_groups or set()
         self.store_new_set = store_new_set
         self.archive_input_series = archive_input_series or []
         self.enr_modelling = enr_modelling
@@ -164,7 +164,7 @@ class FileStudyTreeConfig(DTO):
             areas=self.areas,
             districts=self.districts,
             outputs=self.outputs,
-            bindings=self.bindings,
+            bindings_groups=self.bindings_groups,
             store_new_set=self.store_new_set,
             archive_input_series=self.archive_input_series,
             enr_modelling=self.enr_modelling,
@@ -181,7 +181,7 @@ class FileStudyTreeConfig(DTO):
             areas=self.areas,
             districts=self.districts,
             outputs=self.outputs,
-            bindings=self.bindings,
+            bindings_groups=self.bindings_groups,
             store_new_set=self.store_new_set,
             archive_input_series=self.archive_input_series,
             enr_modelling=self.enr_modelling,
@@ -217,8 +217,7 @@ class FileStudyTreeConfig(DTO):
         Note that groups are stored in lower case in the binding constraints file.
         """
 
-        lower_groups = {bc.group: bc.group for bc in self.bindings}
-        return [grp for _, grp in sorted(lower_groups.items())]  # type: ignore
+        return sorted(self.bindings_groups)
 
     def get_sts_constraint_ids(self, area: str, storage: str) -> list[str]:
         if self.version >= STUDY_VERSION_9_2:
@@ -253,7 +252,7 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
     districts: dict[str, District] = dict()
     areas: dict[str, AreaConfig] = dict()
     outputs: dict[str, Simulation] = dict()
-    bindings: list[BindingConstraint] = list()
+    bindings_groups: set[str] | None = None
     store_new_set: bool = False
     archive_input_series: list[str] = list()
     enr_modelling: str = str(EnrModelling.AGGREGATED)
@@ -272,7 +271,7 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
             areas=config.areas,
             districts=config.districts,
             outputs=config.outputs,
-            bindings=config.bindings,
+            bindings_groups=config.bindings_groups,
             store_new_set=config.store_new_set,
             archive_input_series=config.archive_input_series,
             enr_modelling=config.enr_modelling,
@@ -289,7 +288,7 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
             areas=self.areas,
             districts=self.districts,
             outputs=self.outputs,
-            bindings=self.bindings,
+            bindings_groups=self.bindings_groups,
             store_new_set=self.store_new_set,
             archive_input_series=self.archive_input_series,
             enr_modelling=self.enr_modelling,

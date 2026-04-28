@@ -154,7 +154,7 @@ class TestDatabaseSynthesisDao:
 
     def test_get_synthesis_bindings_empty_for_db(self, db_dao: DatabaseStudyDao) -> None:
         synthesis = db_dao.get_synthesis()
-        assert synthesis.bindings == []
+        assert synthesis.bindings_groups == set()
 
     def test_get_synthesis_via_read_only_adapter(self, db_dao: DatabaseStudyDao) -> None:
         dao = db_dao

@@ -114,7 +114,6 @@ class TestStudyMatrixIndex:
             f"/v1/studies/{internal_study_id}/bindingconstraints", json={"name": "bc_1", "timeStep": "weekly"}
         )
         res.raise_for_status()
-
         res = client.get(
             f"/v1/studies/{internal_study_id}/matrixindex", params={"path": "input/bindingconstraints/bc_1"}
         )

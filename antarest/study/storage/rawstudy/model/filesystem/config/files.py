@@ -120,7 +120,7 @@ def build(study_path: Path, study_id: str, output_path: Path | None = None) -> "
         areas=_parse_areas(study_path),
         districts=_parse_sets(study_path),
         outputs=parse_outputs(outputs_dir),
-        bindings=_parse_bindings(study_path),
+        bindings_groups=_parse_bindings_groups(study_path),
         store_new_set=sns,
         archive_input_series=asi,
         enr_modelling=enr_modelling,
@@ -213,6 +213,12 @@ def _parse_bindings(root: Path) -> list[BindingConstraint]:
     )
     version = _parse_version(root)
     return [parse_binding_constraint(version, bc) for bc in bindings.values()]
+
+def _parse_bindings_groups(root: Path) -> set[str]:
+    bindings = _parse_bindings(root)
+    bindings_groups = {bc.group for bc in bindings if bc.group is not None}
+
+    return bindings_groups
 
 
 def _parse_sets(root: Path) -> dict[str, District]:

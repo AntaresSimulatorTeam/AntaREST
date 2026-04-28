@@ -399,9 +399,13 @@ def test__update_matrices_names(
         link_path = study_path / f"input/bindingconstraints/{matrix_link}"
         assert not link_path.exists(), f"Superfluous matrix link: {matrix_link!r}"
 
+    parent_node = empty_study.tree.get_node(["input", "bindingconstraints"])
+    existing_nodes_ids = [matrix.split(".")[0] for matrix in existing_matrices]
+    constraints_by_id = {node_id: parent_node.get_node([node_id]) for node_id in existing_nodes_ids}
+
     # update matrices names
     update_matrices_names(
-        file_study=empty_study,
+        constraint_node=constraints_by_id,
         bc_id="bd_rename_matrices",
         existing_operator=existing_operator,
         new_operator=new_operator,

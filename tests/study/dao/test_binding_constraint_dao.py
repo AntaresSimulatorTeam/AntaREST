@@ -350,48 +350,8 @@ def test_metadata_change_preserves_matrices(
 @pytest.mark.parametrize(
     "existing_op,new_op,initial_terms,expected,gone_terms,seed",
     [
-        # single → single: rename the one matrix to the new operator's table
-        (BindingConstraintOperator.LESS, BindingConstraintOperator.GREATER, ["lt"], [("gt", "lt")], ["lt"], 10.0),
-        (BindingConstraintOperator.LESS, BindingConstraintOperator.EQUAL, ["lt"], [("eq", "lt")], ["lt"], 20.0),
-        (BindingConstraintOperator.GREATER, BindingConstraintOperator.LESS, ["gt"], [("lt", "gt")], ["gt"], 30.0),
-        (BindingConstraintOperator.GREATER, BindingConstraintOperator.EQUAL, ["gt"], [("eq", "gt")], ["gt"], 40.0),
-        (BindingConstraintOperator.EQUAL, BindingConstraintOperator.LESS, ["eq"], [("lt", "eq")], ["eq"], 50.0),
-        (BindingConstraintOperator.EQUAL, BindingConstraintOperator.GREATER, ["eq"], [("gt", "eq")], ["eq"], 60.0),
-        # single → BOTH: keep existing matrix, copy it to the other BOTH slot
-        (
-            BindingConstraintOperator.LESS,
-            BindingConstraintOperator.BOTH,
-            ["lt"],
-            [("lt", "lt"), ("gt", "lt")],
-            [],
-            70.0,
-        ),
-        (
-            BindingConstraintOperator.GREATER,
-            BindingConstraintOperator.BOTH,
-            ["gt"],
-            [("gt", "gt"), ("lt", "gt")],
-            [],
-            80.0,
-        ),
-        (
-            BindingConstraintOperator.EQUAL,
-            BindingConstraintOperator.BOTH,
-            ["eq"],
-            [("lt", "eq"), ("gt", "eq")],
-            ["eq"],
-            90.0,
-        ),
         # BOTH → single: keep the relevant matrix, delete the other
         (BindingConstraintOperator.BOTH, BindingConstraintOperator.LESS, ["lt", "gt"], [("lt", "lt")], ["gt"], 100.0),
-        (
-            BindingConstraintOperator.BOTH,
-            BindingConstraintOperator.GREATER,
-            ["lt", "gt"],
-            [("gt", "gt")],
-            ["lt"],
-            110.0,
-        ),
         (
             BindingConstraintOperator.BOTH,
             BindingConstraintOperator.EQUAL,

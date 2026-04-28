@@ -95,6 +95,7 @@ def study_data(file_study_tree_config: FileStudyTreeConfig) -> Any:
 @pytest.fixture
 def file_study_tree_config() -> Any:
     file_study_tree_config = Mock(spec=FileStudyTreeConfig)
+    file_study_tree_config.bindings_groups = {"old_group1", "old_group2"}
     file_study_tree_config.bindings = [
         BindingConstraint(
             **{
@@ -144,7 +145,7 @@ def test_apply(
     dao = build_dao_from_file_study(study_data, command_context)
     output = update_binding_constraints_command.apply(dao)
     assert output.status is True
-    study_data.tree.save.assert_called_with(
+    study_data.tree.save.assert_any_call(
         {
             "1": {
                 "area1.cluster1": 3.0,

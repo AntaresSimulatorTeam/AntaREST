@@ -64,7 +64,7 @@ class StudyDataSynthesis(AntaresBaseModel):
     version: StudyVersionInt
     districts: dict[str, District] = {}
     areas: dict[str, AreaConfig] = {}
-    bindings: list[BindingConstraint] = []
+    bindings_groups: set[str] = set()
     enr_modelling: EnrModelling = EnrModelling.AGGREGATED
 
     @classmethod
@@ -74,7 +74,7 @@ class StudyDataSynthesis(AntaresBaseModel):
             version=config.version,
             areas=config.areas,
             districts=config.districts,
-            bindings=config.bindings,
+            bindings_groups=config.bindings_groups,
             enr_modelling=EnrModelling(config.enr_modelling),
         )
 
@@ -97,7 +97,6 @@ class StudySynthesis(AntaresBaseModel):
     districts: dict[str, District] = {}
     areas: dict[str, AreaConfig] = {}
     outputs: dict[str, OutputSynthesis] = {}
-    bindings: list[BindingConstraint] = []
     enr_modelling: EnrModelling = EnrModelling.AGGREGATED
 
     @classmethod
@@ -107,7 +106,6 @@ class StudySynthesis(AntaresBaseModel):
             version=synthesis.version,
             areas=synthesis.areas,
             districts=synthesis.districts,
-            bindings=synthesis.bindings,
             enr_modelling=synthesis.enr_modelling,
             outputs={k: OutputSynthesis.from_output_details(v) for k, v in outputs.items()},
         )

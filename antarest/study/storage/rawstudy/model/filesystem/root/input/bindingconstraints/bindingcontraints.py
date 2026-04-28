@@ -31,6 +31,7 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
     default_bc_weekly_daily as default_bc_weekly_daily_86,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.files import _parse_bindings
 
 
 class BindingConstraints(FolderNode):
@@ -53,6 +54,8 @@ class BindingConstraints(FolderNode):
                 BindingConstraintFrequency.DAILY: default_bc_weekly_daily_86,
                 BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_86,
             }
+
+            bindings = _parse_bindings(self.config.study_path)
             children: TREE = {
                 binding.id: InputSeriesMatrix(
                     self.matrix_mapper,
@@ -61,7 +64,7 @@ class BindingConstraints(FolderNode):
                     nb_columns=3,
                     default_empty=default_matrices[binding.time_step],
                 )
-                for binding in self.config.bindings
+                for binding in bindings
             }
         else:
             default_matrices = {
@@ -70,7 +73,9 @@ class BindingConstraints(FolderNode):
                 BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_87,
             }
             children = {}
-            for binding in self.config.bindings:
+
+            bindings = _parse_bindings(self.config.study_path)
+            for binding in bindings:
                 terms = OPERATOR_MATRICES_MAP[binding.operator]
                 for term in terms:
                     matrix_id = f"{binding.id}_{term}"
