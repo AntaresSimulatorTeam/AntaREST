@@ -176,8 +176,6 @@ class FileStudyTreeDao(
         """
         Get multiple matrices ids efficiently.
         It performs at most 1 DB query for the whole list.
-        Nodes whose underlying matrix file is missing on disk (no `.link` symlink
-        and no raw `.txt`) are silently skipped — callers don't need to pre-filter.
         """
         result = {}
 

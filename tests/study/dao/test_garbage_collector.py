@@ -237,7 +237,6 @@ def test_garbage_collection(db_dao: DatabaseStudyDao, db_session: Session, tmp_p
 
 
 def test_provider_includes_reserve_need_matrix(db_session: Session, matrix_service: ISimpleMatrixService) -> None:
-    """The reserve_need matrix must be reported as in-use so the GC won't remove it."""
     dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_10_0)
     save_area(dao, "paris")
     dao.save_reserve_definitions({"paris": [build_reserve_definition("R1")]})

@@ -217,7 +217,6 @@ def test_empty_matrices(dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixSer
 
 
 def test_empty_reserve_need_matrix(dao_10_0: StudyDao, matrix_service: ISimpleMatrixService) -> None:
-    """When a reserve_need matrix is empty, `get_reserve_need` returns the default matrix."""
     area_id = "paris"
     reserve_id = "R1"
     save_area(dao_10_0, area_id)

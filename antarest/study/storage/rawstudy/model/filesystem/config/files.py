@@ -11,12 +11,12 @@
 # This file is part of the Antares project.
 
 import io
-import json
 import logging
 import re
 import tempfile
 import zipfile
 from collections.abc import Sequence
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Any, cast
@@ -41,10 +41,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     parse_binding_constraint,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.district import parse_district
-from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
-    SimulationParsingError,
-    XpansionParsingError,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import SimulationParsingError
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
@@ -289,18 +286,28 @@ def parse_simulation_zip(path: Path) -> Simulation:
         return simulation
 
 
-def _parse_xpansion_version(path: Path) -> str:
+@dataclass(frozen=True)
+class XpansionSimulation:
+    version: str
+    ended_in_error: bool
+
+
+def _parse_xpansion(path: Path) -> XpansionSimulation | None:
     xpansion_json = path / "expansion" / "out.json"
+
+    if not xpansion_json.exists():
+        return None
+
     try:
         content = xpansion_json.read_text(encoding="utf-8")
         obj = from_json(content)
-        return str(obj["antares_xpansion"]["version"])
-    except FileNotFoundError:
-        return ""
-    except json.JSONDecodeError as exc:
-        raise XpansionParsingError(xpansion_json, f"invalid JSON format: {exc}") from exc
-    except KeyError as exc:
-        raise XpansionParsingError(xpansion_json, f"key '{exc}' not found in JSON object") from exc
+        version = str(obj["antares_xpansion"]["version"])
+    except Exception as e:
+        logger.warning(f"Error parsing xpansion output json file: {e}")
+        return None
+
+    ended_in_error = "solution" not in obj
+    return XpansionSimulation(version=version, ended_in_error=ended_in_error)
 
 
 _regex_simulation_mode = re.compile(r"^(\d{8}-\d{4})(eco|adq|exp)-?(.*)")
@@ -315,13 +322,6 @@ def parse_simulation(path: Path, canonical_name: str) -> Simulation:
             reason=f"Filename '{canonical_name}' doesn't match {_regex_simulation_mode.pattern}",
         )
 
-    try:
-        xpansion = _parse_xpansion_version(path)
-    except XpansionParsingError as exc:
-        # There is something wrong with Xpansion, let's assume it is not used!
-        logger.warning(str(exc), exc_info=True)
-        xpansion = ""
-
     ini_path = path / "about-the-study" / "parameters.ini"
     reader = IniReader(DUPLICATE_KEYS)
     try:
@@ -332,7 +332,14 @@ def parse_simulation(path: Path, canonical_name: str) -> Simulation:
             f"Parameters file '{ini_path.relative_to(path)}' not found",
         ) from None
 
-    error = not (path / "checkIntegrity.txt").exists()
+    xpansion_simulation = _parse_xpansion(path)
+    if xpansion_simulation:
+        error = xpansion_simulation.ended_in_error
+        xpansion_version = xpansion_simulation.version
+    else:
+        error = not (path / "checkIntegrity.txt").exists()
+        xpansion_version = ""
+
     return Simulation(
         date=match.group(1),
         mode=Mode.from_output_suffix(match.group(2)),
@@ -343,7 +350,7 @@ def parse_simulation(path: Path, canonical_name: str) -> Simulation:
         error=error,
         playlist=list(get_playlist(obj) or {}),
         archived=False,
-        xpansion=xpansion,
+        xpansion=xpansion_version,
     )
 
 
@@ -512,9 +519,7 @@ def _parse_st_storage_additional_constraints(
 
 def _parse_reserves(root: Path, area: str) -> list[str]:
     """
-    Parse the reserves INI file and return the list of reserve ids — only the ids
-    are kept in the in-memory Config; full reserve definitions are loaded on demand.
-    Returns an empty list if missing.
+    Parse the reserves INI file and return the list of reserve ids
     """
 
     # Reserve definitions exist only since v10.0
