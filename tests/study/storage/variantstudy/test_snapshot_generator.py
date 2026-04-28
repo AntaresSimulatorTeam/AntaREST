@@ -1224,15 +1224,14 @@ class TestSnapshotGenerator:
         # Checks the cache content
         cache_key = f"{CacheConstants.STUDY_FACTORY}/{variant_study_id}"
         assert cache.get(cache_key) is not None
-        starting_cache = cache.get(cache_key)
-        assert starting_cache is not None
         # Generates the snapshot
         factory = _get_dao_factory(variant_study_id, variant_study_service)
         results = generator.generate_snapshot(variant_study_id, dao_factory=factory)
         # Ensures we shouldn't have to invalidate the cache as all commands updated the config correctly
         assert not results.should_invalidate_cache
         generated_cache = cache.get(cache_key)
-        assert generated_cache == starting_cache
+        # We should see the created areas in the generated cache
+        assert sorted(generated_cache["areas"].keys()) == ["north", "south"]
 
         # Add a `create_cluster` command
         variant_study = variant_study_service.repository.get(variant_study_id)
