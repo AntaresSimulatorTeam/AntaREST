@@ -40,6 +40,7 @@ from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import StudyMetadataCreation
+from tests.conftest import build_metadata_creation_object_from_study
 from tests.helpers import create_raw_study, create_variant_study, with_admin_user, with_db_context
 
 
@@ -103,6 +104,7 @@ def test_create_file_study_dao(tmp_path: Path, project_path: Path) -> None:
     assert path_study_antares_infos.is_file()
 
 
+@with_db_context
 def test_create_study_versions(tmp_path: str, project_path: Path) -> None:
     path_studies = Path(tmp_path)
 
@@ -113,10 +115,10 @@ def test_create_study_versions(tmp_path: str, project_path: Path) -> None:
     study_factory = Mock()
     study_factory.create_from_fs.return_value = FileStudy(Mock(), study)
     config = build_config(path_studies)
-    study_service = RawStudyService(config=config, cache=Mock(), study_factory=study_factory, command_context=Mock())
+    raw_study_service = RawStudyService(config, Mock(), study_factory, Mock(), StudyMetadataRepository(Mock()))
 
     def create_study(version: str) -> RawStudy:
-        metadata = create_raw_study(
+        raw_study = create_raw_study(
             id=f"study{version}",
             workspace=DEFAULT_WORKSPACE_NAME,
             path=str(config.get_workspace_path() / f"study{version}"),
@@ -125,8 +127,11 @@ def test_create_study_versions(tmp_path: str, project_path: Path) -> None:
             updated_at=datetime.datetime.now(),
             author="john.doe",
         )
-        FileStudyDaoFactory(Mock(), study_service.study_factory, Mock()).create_study_dao(metadata)
-        return metadata
+        db.session.add(raw_study)
+        db.session.commit()
+        metadata = build_metadata_creation_object_from_study(raw_study)
+        FileStudyDaoFactory(Mock(), study_factory, Mock(), raw_study_service.get_study_paths).create_study_dao(metadata)
+        return raw_study
 
     md700 = create_study("700")
     md710 = create_study("710")
