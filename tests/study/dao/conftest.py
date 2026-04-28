@@ -50,6 +50,7 @@ from antarest.study.model import (
     StorageMode,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
+from antarest.study.storage.utils import StudyMetadataCreation
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -70,7 +71,8 @@ def build_db_dao(db_session: Session, matrix_service: ISimpleMatrixService, vers
         db_session.add(study)
         db_session.commit()
         factory = DatabaseStudyDaoFactory(matrix_service, generator_matrix_constants, db_session)
-        dao = factory.create_study_dao(study)
+        metadata = StudyMetadataCreation(id=study_id, version=version, managed=True)
+        dao = factory.create_study_dao(metadata)
     return dao
 
 
