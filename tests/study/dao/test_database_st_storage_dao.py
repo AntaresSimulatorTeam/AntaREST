@@ -53,7 +53,7 @@ def test_save_st_storage(dao_builder: Callable[[StudyVersion], StudyDao]) -> Non
         {
             "area_1": [
                 STStorage(
-                    id="idd",
+                    id="st_storage_id",
                     name="st-storage",
                     group="battery",
                     injection_nominal_capacity=100.0,
@@ -72,8 +72,8 @@ def test_save_st_storage(dao_builder: Callable[[StudyVersion], StudyDao]) -> Non
         }
     )
 
-    st_storage = dao.get_st_storage("area_1", "idd")
-    assert st_storage.id == "idd"
+    st_storage = dao.get_st_storage("area_1", "st_storage_id")
+    assert st_storage.id == "st_storage_id"
     assert st_storage.name == "st-storage"
     assert st_storage.group == "battery"
     assert st_storage.injection_nominal_capacity == 100.0
@@ -89,7 +89,7 @@ def test_save_st_storage(dao_builder: Callable[[StudyVersion], StudyDao]) -> Non
     assert st_storage.allow_overflow is True
 
     with pytest.raises(AreaNotFound):
-        dao.save_st_storages({"nonexistent": [STStorage(id="st-storage", name="st-storage")]})
+        dao.save_st_storages({"nonexistent": [STStorage(id="st_storage_id_2", name="st-storage")]})
 
 
 def test_save_multiple_st_storages(dao: StudyDao) -> None:
