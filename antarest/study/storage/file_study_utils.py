@@ -17,7 +17,7 @@ from typing import Sequence
 
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from antarest.study.storage.utils import format_timestamp
+from antarest.study.storage.utils import StudyMetadataCreation, format_timestamp
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)
@@ -46,7 +46,9 @@ def export_study_to_flat_directory(study_dir: Path, dest: Path) -> None:
     logger.info(f"Study '{study_dir}' exported (flat mode) in {duration}s")
 
 
-def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_author: bool) -> None:
+def update_antares_info(
+    metadata: Study | StudyMetadataCreation, study_tree: FileStudyTree, update_author: bool
+) -> None:
     """
     Update antares study information in the study.antares file.
 

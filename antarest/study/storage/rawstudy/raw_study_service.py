@@ -14,9 +14,12 @@ import shutil
 from pathlib import Path, PurePosixPath
 from typing import BinaryIO
 
+from antares.study.version import StudyVersion
+from markupsafe import escape
 from typing_extensions import override
 
 from antarest.core.config import Config
+from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.archives import (
     ArchiveFormat,
@@ -28,7 +31,7 @@ from antarest.core.utils.utils import StopWatch
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
-from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory, ResourcePaths
 from antarest.study.model import RawStudy, StorageMode, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract.abstract_study_service import AbstractStudyService
@@ -38,9 +41,11 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactor
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.utils import (
+    StudyMetadataCreation,
     build_raw_study_from_source,
     fix_study_root,
     get_disk_usage,
+    is_managed,
     remove_from_cache,
 )
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -55,11 +60,19 @@ class RawStudyService(AbstractStudyService):
 
     """
 
-    def __init__(self, config: Config, study_factory: StudyFactory, cache: ICache, command_context: CommandContext):
+    def __init__(
+        self,
+        config: Config,
+        study_factory: StudyFactory,
+        cache: ICache,
+        command_context: CommandContext,
+        repository: StudyMetadataRepository,
+    ):
 
         super().__init__(cache, config)
 
         self.study_factory = study_factory
+        self.repository = repository
         self._matrix_service = command_context.matrix_service
         self._file_study_storage = FileStudyStorage(cache, config, command_context, study_factory)
         self._database_study_storage = DatabaseStudyStorage(
@@ -72,11 +85,9 @@ class RawStudyService(AbstractStudyService):
         ctx = command_context
         self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
             StorageMode.DATABASE: DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants),
-            StorageMode.FILESYSTEM: FileStudyDaoFactory(command_context, study_factory, cache),
+            StorageMode.FILESYSTEM: FileStudyDaoFactory(command_context, study_factory, cache, self.get_study_paths),
         }
-        RawStudyMatrixUsageProvider(
-            StudyMetadataRepository(cache_service=cache), self._matrix_service, self._storage_mapping
-        )
+        RawStudyMatrixUsageProvider(repository, self._matrix_service, self._storage_mapping)
         self.cache = cache
 
     @override
@@ -88,7 +99,7 @@ class RawStudyService(AbstractStudyService):
 
     @override
     def get_study_dao(self, study: Study) -> StudyDao:
-        return self._study_dao_factories[study.storage_mode].get_study_dao(study)
+        return self._study_dao_factories[study.storage_mode].get_study_dao(study.id, is_managed(study))
 
     @override
     def export_study_flat(self, study: Study, dst_path: Path) -> None:
@@ -98,8 +109,26 @@ class RawStudyService(AbstractStudyService):
     # Specific methods
     ##########################
 
+    def get_study_paths(self, study_id: str) -> ResourcePaths:
+        study = self.repository.get(study_id)
+        if not study:
+            sanitized = str(escape(study_id))
+            logger.warning("Study %s not found in metadata db", sanitized)
+            raise StudyNotFoundError(study_id)
+        return ResourcePaths(study_path=Path(study.path), output_path=None)
+
     def create_study_dao(self, study: RawStudy) -> None:
-        self._study_dao_factories[study.storage_mode].create_study_dao(study)
+        metadata = StudyMetadataCreation(
+            id=study.id,
+            version=StudyVersion.parse(study.version),
+            managed=is_managed(study),
+            name=study.name,
+            author=study.author,
+            editor=study.editor,
+            created_at=study.created_at,
+            updated_at=study.updated_at,
+        )
+        self._study_dao_factories[study.storage_mode].create_study_dao(metadata)
 
     def get_disk_usage(self, study: Study) -> int:
         if study.archived:

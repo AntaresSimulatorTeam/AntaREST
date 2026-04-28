@@ -21,6 +21,7 @@ from uuid import uuid4
 
 import humanize
 from filelock import FileLock
+from markupsafe import escape
 from typing_extensions import override
 
 from antarest.core.config import Config
@@ -50,7 +51,7 @@ from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
-from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory, ResourcePaths
 from antarest.study.model import (
     RawStudy,
     StorageMode,
@@ -59,6 +60,7 @@ from antarest.study.model import (
 )
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract.abstract_study_service import AbstractStudyService
+from antarest.study.storage.file_study_utils import get_study_path
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import (
@@ -126,7 +128,7 @@ class VariantStudyService(AbstractStudyService):
         ctx = command_factory.command_context
         self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
             StorageMode.DATABASE: DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants),
-            StorageMode.FILESYSTEM: FileStudyDaoFactory(ctx, study_factory, cache),
+            StorageMode.FILESYSTEM: FileStudyDaoFactory(ctx, study_factory, cache, self.get_study_paths),
         }
 
     @override
@@ -150,6 +152,14 @@ class VariantStudyService(AbstractStudyService):
     ##########################
     # Specific methods
     ##########################
+
+    def get_study_paths(self, study_id: str) -> ResourcePaths:
+        study = self.repository.get(study_id)
+        if not study:
+            sanitized = str(escape(study_id))
+            logger.warning("Study %s not found in metadata db", sanitized)
+            raise StudyNotFoundError(study_id)
+        return ResourcePaths(study_path=get_study_path(study), output_path=Path(study.path) / "output")
 
     def invalidate_snapshot(self, variant_study: VariantStudy) -> None:
         """

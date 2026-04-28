@@ -40,7 +40,7 @@ from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper, MatrixUriMap
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService, SimpleMatrixService
 from antarest.study.directory_service import DirectoryService
-from antarest.study.repository import DirectoryRepository
+from antarest.study.repository import DirectoryRepository, StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -391,6 +391,7 @@ def raw_study_service_fixture(
         study_factory=study_factory,
         cache=core_cache,
         command_context=command_factory.command_context,
+        repository=StudyMetadataRepository(cache_service=core_cache),
     )
 
 

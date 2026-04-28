@@ -905,7 +905,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
     study_uuid = str(uuid.uuid4())
 
     study_metadata_repository = Mock()
-    raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock())
+    raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock(), Mock())
     variant_study_repository = Mock()
     variant_study_service = VariantStudyService(
         Mock(), Mock(), raw_study_service, Mock(), Mock(), variant_study_repository, Mock(), Mock(), Mock()
@@ -990,7 +990,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
 @with_admin_user
 def test_delete_recursively(tmp_path: Path) -> None:
     study_metadata_repository = Mock()
-    raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock())
+    raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock(), Mock())
     variant_study_repository = Mock()
     variant_study_service = VariantStudyService(
         Mock(), Mock(), raw_study_service, Mock(), Mock(), variant_study_repository, Mock(), Mock(), Mock()

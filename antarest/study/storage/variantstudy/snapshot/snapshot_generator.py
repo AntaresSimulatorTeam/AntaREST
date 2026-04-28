@@ -97,7 +97,7 @@ class SnapshotGenerator:
                 self.variant_study_service.create_snapshot(ref_study, variant_study)
 
             # The snapshot is generated, we also need to de-normalize the matrices.
-            study_dao = dao_factory.get_study_dao(variant_study)
+            study_dao = dao_factory.get_study_dao(variant_study.id, True)
 
             logger.info(f"Applying commands to the reference study '{ref_study.id}'...")
             results = self._apply_commands(study_dao, variant_study, cmd_blocks, listener)
