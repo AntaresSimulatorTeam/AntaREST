@@ -294,6 +294,7 @@ def test_zipped_output(tmp_path: Path) -> None:
         cache=cache,
         study_factory=Mock(),
         command_context=Mock(),
+        repository=Mock(),
     )
 
     md = create_raw_study(id=name, workspace="foo", path=str(study_path))
