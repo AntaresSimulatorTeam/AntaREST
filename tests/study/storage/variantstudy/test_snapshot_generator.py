@@ -807,7 +807,7 @@ class TestSnapshotGenerator:
         jwt_user: JWTUser,
     ) -> str:
         # Prepare a RAW study in the temporary folder
-        study_dir = tmp_path / "my-study"
+        study_dir = tmp_path / "my_study"
         root_study_id = str(uuid.uuid4())
         root_study = create_raw_study(
             id=root_study_id,
