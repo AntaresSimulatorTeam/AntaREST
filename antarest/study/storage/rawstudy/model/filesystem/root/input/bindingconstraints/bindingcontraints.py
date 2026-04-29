@@ -13,7 +13,7 @@ from typing_extensions import override
 
 from antarest.study.business.model.binding_constraint_model import OPERATOR_MATRICES_MAP, BindingConstraintFrequency
 from antarest.study.model import MatrixFrequency
-from antarest.study.storage.rawstudy.model.filesystem.config.files import _parse_bindings
+from antarest.study.storage.rawstudy.model.filesystem.config.files import parse_bindings
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -55,7 +55,7 @@ class BindingConstraints(FolderNode):
                 BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_86,
             }
 
-            bindings = _parse_bindings(self.config.study_path)
+            bindings = parse_bindings(self.config.study_path)
             children: TREE = {
                 binding.id: InputSeriesMatrix(
                     self.matrix_mapper,
@@ -74,7 +74,7 @@ class BindingConstraints(FolderNode):
             }
             children = {}
 
-            bindings = _parse_bindings(self.config.study_path)
+            bindings = parse_bindings(self.config.study_path)
             for binding in bindings:
                 terms = OPERATOR_MATRICES_MAP[binding.operator]
                 for term in terms:

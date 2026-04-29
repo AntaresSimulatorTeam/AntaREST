@@ -205,7 +205,7 @@ def _parse_parameters(path: Path) -> tuple[bool, list[str], str]:
     return store_new_set, archive_input_series, enr_modelling
 
 
-def _parse_bindings(root: Path) -> list[BindingConstraint]:
+def parse_bindings(root: Path) -> list[BindingConstraint]:
     bindings = _extract_data_from_file(
         root=root,
         inside_root_path=Path("input/bindingconstraints/bindingconstraints.ini"),
@@ -216,7 +216,7 @@ def _parse_bindings(root: Path) -> list[BindingConstraint]:
 
 
 def _parse_bindings_groups(root: Path) -> set[str]:
-    bindings = _parse_bindings(root)
+    bindings = parse_bindings(root)
     bindings_groups = {bc.group for bc in bindings if bc.group is not None}
 
     return bindings_groups

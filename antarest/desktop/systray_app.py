@@ -133,7 +133,7 @@ def create_systray_app() -> AntaresSystrayApp:
         """
         Shows context menu also on left click
         """
-        if reason == QSystemTrayIcon.Trigger:  # type: ignore
+        if reason == QSystemTrayIcon.Trigger:
             menu = tray.contextMenu()
             assert menu is not None
             menu.popup(QCursor.pos())

@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -35,7 +35,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
-from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 
@@ -182,9 +182,9 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         self,
         bc_id_to_bc_object: dict[ConstraintId, BindingConstraint],
         new_constraint: BindingConstraint,
-        node_id_to_old_constraints_node: dict[str, TREE],
+        node_id_to_old_constraints_node: dict[ConstraintId, INode[Any, Any, Any]],
         old_groups: dict[str, list[str]],
-    ):
+    ) -> None:
         study_data = self.get_file_study()
         study_version = study_data.config.version
         bc_id = new_constraint.id
@@ -198,6 +198,8 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
         # Updates the config before as the tree is based on the config
         if new_constraint.group:
+            if existing_constraint.group is not None:
+                study_data.config.bindings_groups.discard(existing_constraint.group)
             study_data.config.bindings_groups.add(new_constraint.group)
 
         if new_constraint.time_step != existing_constraint.time_step:
@@ -213,8 +215,8 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
             old_groups[existing_constraint.group].remove(new_constraint.id)
 
     def _get_all_constraints_from_tree(
-        self, bc_id_to_bc_object: dict[str, BindingConstraint], study_data: FileStudy
-    ) -> dict[str, dict[str, TREE]]:
+        self, bc_id_to_bc_object: dict[ConstraintId, BindingConstraint], study_data: FileStudy
+    ) -> dict[ConstraintId, dict[ConstraintId, INode[Any, Any, Any]]]:
         """
         Retrieve all constraints from the study tree and organize them by constraint ID.
         For each constraint, it builds a dictionary mapping node IDs to their corresponding tree nodes.
@@ -223,7 +225,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         for constraint in bc_id_to_bc_object.values():
             parent_folder_node = study_data.tree.get_node(["input", "bindingconstraints"])
 
-            nodes_ids = self.build_nodes_ids_for_constraint(constraint, study_data.config.version)
+            nodes_ids = self.build_node_ids_for_constraint(constraint, study_data.config.version)
             nodes_ids_to_nodes = {node: parent_folder_node.get_node([node]) for node in nodes_ids}
 
             all_constraints_nodes_by_id[constraint.id] = nodes_ids_to_nodes
@@ -231,14 +233,16 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         return all_constraints_nodes_by_id
 
     @staticmethod
-    def build_nodes_ids_for_constraint(constraint: BindingConstraint, version: StudyVersion) -> list[str]:
+    def build_node_ids_for_constraint(constraint: BindingConstraint, version: StudyVersion) -> list[ConstraintId]:
         """
         Build a list of node IDs for a given binding constraint based on its ID and version.
         If the study version is 8.7 or higher, it includes operator-specific node IDs.
         """
         node_id = [constraint.id]
         if version >= STUDY_VERSION_8_7:
-            node_id = [f"{constraint.id}_{operator}" for operator in OPERATOR_MATRICES_MAP[constraint.operator]]
+            node_id = [
+                ConstraintId(f"{constraint.id}_{operator}") for operator in OPERATOR_MATRICES_MAP[constraint.operator]
+            ]
         return node_id
 
     def _update_ini_file(self, bc_id_to_key_in_ini: dict[str, str], constraints: Sequence[BindingConstraint]) -> None:
@@ -358,8 +362,8 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
             removed_groups = old_groups - new_groups
             _remove_groups_from_scenario_builder(study_data, removed_groups)
 
-        # Deleting the constraint in the configuration must be done AFTER deleting the files and folders.
-        study_data.config.bindings_groups = {bc for bc in study_data.config.bindings_groups if bc not in ids_to_delete}
+            # Updating the configuration with the new groups
+            study_data.config.bindings_groups = new_groups
 
 
 def _save_matrix(study_data: FileStudy, constraint_id: ConstraintId, term: str, series_id: str) -> None:
@@ -417,7 +421,7 @@ def generate_replacement_matrices(
 
 
 def update_matrices_names(
-    constraint_node: dict[str, TREE],
+    constraint_node: dict[ConstraintId, INode[Any, Any, Any]],
     bc_id: ConstraintId,
     existing_operator: BindingConstraintOperator,
     new_operator: BindingConstraintOperator,
@@ -453,11 +457,11 @@ def update_matrices_names(
 
     error_msg = "Unhandled node type, expected InputSeriesMatrix, got "
     if existing_operator != BindingConstraintOperator.BOTH and new_operator != BindingConstraintOperator.BOTH:
-        current_node = constraint_node[f"{bc_id}_{OPERATOR_MATRICES_MAP[existing_operator][0]}"]
+        current_node = constraint_node[ConstraintId(f"{bc_id}_{OPERATOR_MATRICES_MAP[existing_operator][0]}")]
         assert isinstance(current_node, InputSeriesMatrix), f"{error_msg}{type(current_node)}"
         current_node.rename_file(f"{bc_id}_{OPERATOR_MATRICES_MAP[new_operator][0]}")
     elif new_operator == BindingConstraintOperator.BOTH:
-        current_node = constraint_node[f"{bc_id}_{OPERATOR_MATRICES_MAP[existing_operator][0]}"]
+        current_node = constraint_node[ConstraintId(f"{bc_id}_{OPERATOR_MATRICES_MAP[existing_operator][0]}")]
         assert isinstance(current_node, InputSeriesMatrix), f"{error_msg}{type(current_node)}"
         if existing_operator == BindingConstraintOperator.EQUAL:
             current_node.copy_file(f"{bc_id}_gt")
@@ -466,12 +470,12 @@ def update_matrices_names(
             term = "lt" if existing_operator == BindingConstraintOperator.GREATER else "gt"
             current_node.copy_file(f"{bc_id}_{term}")
     else:
-        current_node = constraint_node[f"{bc_id}_lt"]
+        current_node = constraint_node[ConstraintId(f"{bc_id}_lt")]
         assert isinstance(current_node, InputSeriesMatrix), f"{error_msg}{type(current_node)}"
         if new_operator == BindingConstraintOperator.GREATER:
             current_node.delete()
         else:
-            greater_node = constraint_node[f"{bc_id}_gt"]
+            greater_node = constraint_node[ConstraintId(f"{bc_id}_gt")]
             assert isinstance(greater_node, InputSeriesMatrix), f"{error_msg}{type(greater_node)}"
             greater_node.delete()
             if new_operator == BindingConstraintOperator.EQUAL:

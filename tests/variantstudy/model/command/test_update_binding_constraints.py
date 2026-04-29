@@ -16,12 +16,9 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.study.business.model.binding_constraint_model import (
-    BindingConstraint,
     BindingConstraintFrequency,
     BindingConstraintOperator,
     BindingConstraintUpdate,
-    ClusterTerm,
-    ConstraintTerm,
 )
 from antarest.study.dao.file.file_study_constraint_dao import generate_replacement_matrices
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7
@@ -96,44 +93,6 @@ def study_data(file_study_tree_config: FileStudyTreeConfig) -> Any:
 def file_study_tree_config() -> Any:
     file_study_tree_config = Mock(spec=FileStudyTreeConfig)
     file_study_tree_config.bindings_groups = {"old_group1", "old_group2"}
-    file_study_tree_config.bindings = [
-        BindingConstraint(
-            **{
-                "name": "bc_0",
-                "group": "old_group1",
-                "terms": [ConstraintTerm(weight=4, data=ClusterTerm(area="area1", cluster="cluster1"))],
-                "operator": BindingConstraintOperator.GREATER,
-                "time_step": BindingConstraintFrequency.DAILY,
-            }
-        ),
-        BindingConstraint(
-            **{
-                "name": "bc_1",
-                "group": "old_group1",
-                "terms": [ConstraintTerm(weight=12, data=ClusterTerm(area="area1", cluster="cluster1"))],
-                "operator": BindingConstraintOperator.GREATER,
-                "time_step": BindingConstraintFrequency.DAILY,
-            }
-        ),
-        BindingConstraint(
-            **{
-                "name": "bc_2",
-                "group": "old_group2",
-                "terms": [ConstraintTerm(weight=2.1, offset=3, data=ClusterTerm(area="area2", cluster="cluster2"))],
-                "operator": BindingConstraintOperator.LESS,
-                "time_step": BindingConstraintFrequency.HOURLY,
-            }
-        ),
-        BindingConstraint(
-            **{
-                "name": "bc_3",
-                "group": "old_group2",
-                "terms": [ConstraintTerm(weight=1, data=ClusterTerm(area="area2", cluster="cluster2"))],
-                "operator": BindingConstraintOperator.LESS,
-                "time_step": BindingConstraintFrequency.HOURLY,
-            }
-        ),
-    ]
     file_study_tree_config.study_id = "1"
     file_study_tree_config.version = STUDY_VERSION_8_7
     return file_study_tree_config

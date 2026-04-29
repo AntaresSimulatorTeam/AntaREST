@@ -42,7 +42,6 @@ from antarest.study.business.model.sts_model import (
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, ThermalCostGeneration
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
-    _parse_bindings,
     _parse_bindings_groups,
     _parse_links_filtering,
     _parse_renewables,
@@ -51,6 +50,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_st_storage_additional_constraints,
     _parse_thermal,
     build,
+    parse_bindings,
     parse_outputs,
     parse_simulation,
 )
@@ -127,7 +127,7 @@ def test_parse_bindings(study_path: Path) -> None:
     (study_path / "input/bindingconstraints/bindingconstraints.ini").write_text(textwrap.dedent(content))
     study_path.joinpath("study.antares").write_text("[antares] \n version = 870")
 
-    actual = _parse_bindings(study_path)
+    actual = parse_bindings(study_path)
     expected = [
         BindingConstraint(
             **{

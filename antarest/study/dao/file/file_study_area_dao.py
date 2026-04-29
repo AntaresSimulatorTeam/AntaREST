@@ -33,7 +33,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_6,
     STUDY_VERSION_9_2,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.files import _parse_bindings
+from antarest.study.storage.rawstudy.model.filesystem.config.files import parse_bindings
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -314,7 +314,7 @@ class FileStudyAreaDao(AreaDao):
 
         # Check that the area is not referenced in any binding constraint
         referencing_binding_constraints = []
-        binding_constraints = _parse_bindings(study_data.config.study_path)
+        binding_constraints = parse_bindings(study_data.config.study_path)
         for bc in binding_constraints:
             for term in bc.terms:
                 data = term.data
