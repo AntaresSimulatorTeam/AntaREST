@@ -13,30 +13,30 @@
  */
 
 import usePromise from "@/hooks/usePromise";
+import { studyQueries } from "@/queries/studies/queries";
+import { getVariantParents } from "@/services/api/studies/variants";
 import { countDescendants, findNodeInTree } from "@/services/utils";
 import { WsEventType } from "@/services/webSocket/constants";
 import type { WsEvent } from "@/services/webSocket/types";
 import { addWsEventListener } from "@/services/webSocket/ws";
 import { Stack } from "@mui/material";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMatch } from "@tanstack/react-router";
 import { useEffect } from "react";
 import useStudy from "../../-hooks/useStudy";
 import Actions from "./Actions";
 import Breadcrumb from "./Breadcrumb";
 import Details from "./Details";
-import { getVariantParents, getVariantTree } from "@/services/api/studies/variants";
 
 function NavHeader() {
   const study = useStudy();
   const match = useMatch({ from: "/_authenticated/studies/$studyId/explore", shouldThrow: false });
+  const { data: variantTree } = useSuspenseQuery(studyQueries.variantTree(study.id));
   const isExplorer = !!match;
 
   const { data: studyMetadata, reload: reloadStudyMetadata } = usePromise(async () => {
     const parents = await getVariantParents({ studyId: study.id });
     const parentStudy = parents.length > 0 ? parents[0] : undefined;
-
-    const root = parents.length > 0 ? parents[parents.length - 1] : study;
-    const variantTree = await getVariantTree({ studyId: root.id });
 
     const tree = findNodeInTree(study.id, variantTree);
     const variantNb = tree ? countDescendants(tree) : 0;

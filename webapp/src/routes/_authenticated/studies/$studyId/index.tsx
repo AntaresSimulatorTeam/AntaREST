@@ -13,9 +13,8 @@
  */
 
 import SplitView from "@/components/page/SplitView";
-import UsePromiseCond from "@/components/utils/UsePromiseCond";
-import usePromise from "@/hooks/usePromise";
-import { getVariantLatestParent, getVariantTree } from "@/services/api/studies/variants";
+import { studyQueries } from "@/queries/studies/queries";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import InformationView from "./-components/InformationView";
 import VariantsTree from "./-components/VariantsTree";
@@ -28,32 +27,17 @@ export const Route = createFileRoute("/_authenticated/studies/$studyId/")({
 function StudyHome() {
   const study = useStudy();
   const navigate = useNavigate();
-
-  const variantTreeRes = usePromise(async () => {
-    const studyRoot =
-      study.type === "variantstudy"
-        ? (await getVariantLatestParent({ studyId: study.id })) || study
-        : study;
-
-    return getVariantTree({ studyId: studyRoot.id });
-  }, [study]);
+  const { data: variantTree } = useSuspenseQuery(studyQueries.variantTree(study.id));
 
   return (
-    <UsePromiseCond
-      response={variantTreeRes}
-      ifFulfilled={(variantTree) => (
-        <SplitView splitId="study-home" gutterSize={4} sizes={[30, 70]}>
-          {/* Left */}
-          <VariantsTree
-            variantTree={variantTree}
-            onClick={(studyId: string) =>
-              navigate({ to: "/studies/$studyId", params: { studyId } })
-            }
-          />
-          {/* Right */}
-          <InformationView variantTree={variantTree} />
-        </SplitView>
-      )}
-    />
+    <SplitView splitId="study-home" gutterSize={4} sizes={[30, 70]}>
+      {/* Left */}
+      <VariantsTree
+        variantTree={variantTree}
+        onClick={(studyId: string) => navigate({ to: "/studies/$studyId", params: { studyId } })}
+      />
+      {/* Right */}
+      <InformationView variantTree={variantTree} />
+    </SplitView>
   );
 }

@@ -18,4 +18,8 @@ export const studyKeys = {
   favorites: () => [...studyKeys.all(), "favoriteStudies"] as const,
   createFavorite: () => [...studyKeys.favorites(), "createFavoriteStudy"] as const,
   deleteFavorite: () => [...studyKeys.favorites(), "deleteFavoriteStudy"] as const,
+  // Variants
+  allVariants: () => [...studyKeys.all(), "variants"] as const,
+  variantTree: (studyId: string) =>
+    [...studyKeys.allVariants(), "variantTree", { studyId }] as const,
 };

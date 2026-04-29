@@ -13,6 +13,8 @@
  */
 
 import { getFavoriteStudies } from "@/services/api/favorites";
+import { getVariantTree } from "@/services/api/studies/variants";
+import { queryOptions } from "@tanstack/react-query";
 import { queryListOptions } from "../utils";
 import { studyKeys } from "./keys";
 
@@ -21,6 +23,13 @@ export const studyQueries = {
     return queryListOptions({
       queryKey: studyKeys.favorites(),
       queryFn: getFavoriteStudies,
+    });
+  },
+  // Variants
+  variantTree: (studyId: string) => {
+    return queryOptions({
+      queryKey: studyKeys.variantTree(studyId),
+      queryFn: () => getVariantTree({ studyId }),
     });
   },
 };

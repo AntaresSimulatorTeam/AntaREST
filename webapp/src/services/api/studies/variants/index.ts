@@ -17,10 +17,19 @@ import client from "../../client";
 import { studySchema } from "../schemas";
 import type { Study } from "../types";
 import { variantTreeSchema } from "./schemas";
-import type { CreateVariantParams } from "./types";
+import type { CreateVariantParams, GetVariantTreeParams } from "./types";
 
-export async function getVariantTree({ studyId }: { studyId: Study["id"] }) {
-  const { data } = await client.get(`/v1/studies/${studyId}/variants`);
+export async function getVariantTree({ studyId, includeParents = true }: GetVariantTreeParams) {
+  let rootStudyId = studyId;
+
+  if (includeParents) {
+    const parent = await getVariantLatestParent({ studyId });
+    if (parent) {
+      rootStudyId = parent.id;
+    }
+  }
+
+  const { data } = await client.get(`/v1/studies/${rootStudyId}/variants`);
   return variantTreeSchema.parse(data);
 }
 
@@ -39,9 +48,7 @@ export const getVariantDirectParent = async ({ studyId }: { studyId: Study["id"]
 
 export async function getVariantLatestParent({ studyId }: { studyId: Study["id"] }) {
   const parents = await getVariantParents({ studyId });
-  const latestVariant = parents.length > 0 ? parents[parents.length - 1] : null;
-
-  return latestVariant ? studySchema.parse(latestVariant) : null;
+  return parents.length > 0 ? parents[parents.length - 1] : null;
 }
 
 export const createVariant = async ({ studyId, name }: CreateVariantParams) => {

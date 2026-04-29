@@ -19,6 +19,11 @@ export interface VariantTree {
   children: VariantTree[];
 }
 
+export interface GetVariantTreeParams {
+  studyId: Study["id"];
+  includeParents?: boolean;
+}
+
 export interface CreateVariantParams {
   studyId: Study["id"];
   name: string;

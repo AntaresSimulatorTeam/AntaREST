@@ -14,6 +14,7 @@
 
 import SimpleLoader from "@/components/loaders/SimpleLoader";
 import { directoryQueries } from "@/queries/directories/queries";
+import { studyQueries } from "@/queries/studies/queries";
 import { setCurrentStudy } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
@@ -28,8 +29,9 @@ import NavHeader from "./-components/NavHeader";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId")({
   component: StudyHomeLayout,
-  loader: async ({ context }) => {
+  loader: async ({ context, params: { studyId } }) => {
     await context.queryClient.ensureQueryData(directoryQueries.list());
+    await context.queryClient.ensureQueryData(studyQueries.variantTree(studyId));
   },
 });
 
