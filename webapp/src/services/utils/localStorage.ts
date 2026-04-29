@@ -20,12 +20,14 @@ import type { StudySortConfig, UserInfo } from "@/types/types";
 import * as RA from "ramda-adjunct";
 import packages from "../../../package.json";
 import { TABLE_MODE_TYPES_ALIASES } from "../api/studies/tableMode/constants";
+import type { ViewMode } from "@/routes/_authenticated/studies/-components/StudiesList/types";
 
 export const StorageKey = {
   AuthUser: "authUser",
   // Studies
   StudiesSort: "studies.sort",
   StudiesFilters: "studies.filters",
+  StudiesViewMode: "studies.viewMode",
   StudiesModelTableModeTemplates: "studies.model.tableMode.templates",
   StudyTreeFolders: "studyTree.folders",
   // UI
@@ -43,6 +45,7 @@ interface TypeFromKey {
   [StorageKey.AuthUser]: UserInfo;
   [StorageKey.StudiesSort]: Partial<StudySortConfig>;
   [StorageKey.StudiesFilters]: Partial<StudyFilters>;
+  [StorageKey.StudiesViewMode]: ViewMode;
   [StorageKey.StudiesModelTableModeTemplates]: TableTemplate[];
   [StorageKey.StudyTreeFolders]: FolderDTO[];
   [StorageKey.TasksFilterUser]: string;
