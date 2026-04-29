@@ -125,7 +125,7 @@ class FileStudyLinkDao(LinkDao, ABC):
             area_links = file_study.tree.get(["input", "links", area_from, "properties", area_to])
             return parse_link(area_links, area_from, area_to)
         except (KeyError, ChildNotFoundError):
-            raise LinkNotFound(f"The link {area_from} -> {area_to} is not present in the study") from None
+            raise LinkNotFound(f"The link {area_from} -> {area_to} is not present in the study")
 
     @override
     def save_links(self, links: Sequence[Link]) -> None:
