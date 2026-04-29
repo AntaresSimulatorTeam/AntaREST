@@ -13,7 +13,7 @@
  */
 
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
-import type { VariantTree } from "@/types/types";
+import type { VariantTree } from "@/services/api/studies/variants/types";
 import { Box } from "@mui/material";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useStudy from "../../-hooks/useStudy";

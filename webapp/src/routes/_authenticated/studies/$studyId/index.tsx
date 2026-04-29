@@ -15,15 +15,11 @@
 import SplitView from "@/components/page/SplitView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
+import { getVariantLatestParent, getVariantTree } from "@/services/api/studies/variants";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import InformationView from "./-components/InformationView";
 import VariantsTree from "./-components/VariantsTree";
 import useStudy from "./-hooks/useStudy";
-import {
-  getVariantLatestParent,
-  getVariantParents,
-  getVariantTree,
-} from "@/services/api/studies/variants";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/")({
   component: StudyHome,
