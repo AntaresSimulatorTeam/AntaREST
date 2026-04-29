@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import DataGrid from "@/components/DataGrid";
+import DataGrid, { type DataGridHandle } from "@/components/DataGrid";
 import {
   CompactSelection,
   GridCellKind,
@@ -22,7 +22,7 @@ import {
   type GridSelection,
   type Item,
 } from "@glideapps/glide-data-grid";
-import { useCallback, useContext, useMemo, useState } from "react";
+import { useCallback, useContext, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MatrixContext } from "../../context/MatrixContext";
 import { useColumnMapping } from "../../hooks/useColumnMapping";
@@ -31,14 +31,104 @@ import { useMatrixPasteInterceptor } from "../../hooks/useMatrixPasteInterceptor
 import { useSelectionStats } from "../../hooks/useSelectionStats";
 import { Column } from "../../shared/constants";
 import type {
+  AggregateType,
   DateTimes,
   EnhancedGridColumn,
   GridUpdate,
   MatrixAggregates,
   NonEmptyMatrix,
 } from "../../shared/types";
-import { formatGridNumber } from "../../shared/utils";
+import { calculateMatrixAggregates, formatGridNumber } from "../../shared/utils";
 import MatrixStats from "../MatrixStats";
+
+// Fonts match baseFontStyle / headerFontStyle + fontFamily from Matrix/styles.ts.
+const CELL_FONT = "13px Inter, sans-serif";
+const HEADER_FONT = "bold 11px Inter, sans-serif";
+// 2 × cellHorizontalPadding (8 px each side) + 4 px safety margin.
+const CELL_CONTENT_PADDING = 20;
+
+let _canvas: HTMLCanvasElement | null = null;
+
+function measureTextWidth(text: string, font: string): number {
+  _canvas ??= document.createElement("canvas");
+  const ctx = _canvas.getContext("2d");
+
+  if (!ctx) {
+    return 0;
+  }
+
+  ctx.font = font;
+  return ctx.measureText(text).width;
+}
+
+// Computes which columns need to grow to fit the pasted content.
+// Handles both data (Column.Number) and aggregate (Column.Aggregate) columns.
+function computeColumnWidths(
+  newData: number[][],
+  columns: readonly EnhancedGridColumn[],
+  gridToData: (item: Item) => Item | null,
+): Map<string, number> {
+  const updates = new Map<string, number>();
+
+  const aggregateTypes = columns
+    .filter((col) => col.type === Column.Aggregate)
+    .map((col) => col.id as AggregateType);
+
+  const aggregates =
+    aggregateTypes.length > 0
+      ? calculateMatrixAggregates({ matrix: newData, types: aggregateTypes })
+      : null;
+
+  for (let colIdx = 0; colIdx < columns.length; colIdx++) {
+    const col = columns[colIdx];
+    let values: number[];
+    let maxDecimals: number;
+
+    if (col.type === Column.Number) {
+      const mapped = gridToData([colIdx, 0]);
+      if (mapped === null) {
+        continue;
+      }
+      const dataCol = mapped[0];
+      if (dataCol >= (newData[0]?.length ?? 0)) {
+        continue;
+      }
+      values = newData.map((row) => row[dataCol]);
+      maxDecimals = 6;
+    } else if (col.type === Column.Aggregate && aggregates) {
+      values = aggregates[col.id as keyof MatrixAggregates] ?? [];
+      maxDecimals = 3;
+    } else {
+      continue;
+    }
+
+    let maxContentWidth = 0;
+    for (const value of values) {
+      if (!Number.isFinite(value)) {
+        continue;
+      }
+
+      const display = formatGridNumber({ value, maxDecimals });
+      maxContentWidth = Math.max(maxContentWidth, measureTextWidth(display, CELL_FONT));
+    }
+
+    if (maxContentWidth === 0) {
+      continue;
+    }
+
+    const neededWidth = Math.ceil(maxContentWidth) + CELL_CONTENT_PADDING;
+    // For auto-sized columns use header text width as effective current width so we
+    // only grow, never shrink, a column whose header is already wider.
+    const effectiveCurrentWidth =
+      col.width ?? Math.ceil(measureTextWidth(col.title, HEADER_FONT)) + CELL_CONTENT_PADDING;
+
+    if (neededWidth > effectiveCurrentWidth) {
+      updates.set(col.id, neededWidth);
+    }
+  }
+
+  return updates;
+}
 
 export interface MatrixGridProps {
   data: NonEmptyMatrix;
@@ -202,6 +292,19 @@ function MatrixGrid({
     gridToData,
   });
 
+  const dataGridRef = useRef<DataGridHandle>(null);
+
+  const handleBulkPaste = useCallback(
+    (newData: number[][]) => {
+      onBulkPaste?.(newData);
+      const updates = computeColumnWidths(newData, columns, gridToData);
+      if (updates.size > 0) {
+        dataGridRef.current?.resizeColumns(updates);
+      }
+    },
+    [onBulkPaste, columns, gridToData],
+  );
+
   useMatrixPasteInterceptor({
     readOnly: !!readOnly,
     data,
@@ -212,7 +315,7 @@ function MatrixGrid({
     gridSelection,
     gridToData,
     getDataRowIndex,
-    onBulkPaste,
+    onBulkPaste: onBulkPaste ? handleBulkPaste : undefined,
   });
 
   ////////////////////////////////////////////////////////////////
@@ -408,6 +511,7 @@ function MatrixGrid({
   return (
     <>
       <DataGrid
+        ref={dataGridRef}
         key={`matrix-grid-${columns.length}-${data.length}`}
         width={width}
         height={height}

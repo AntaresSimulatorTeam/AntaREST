@@ -443,8 +443,12 @@ export function groupResultColumns(
   const groupInfo = new Map<string, { count: number; minRequired: number }>();
 
   for (const col of result) {
-    if (!col.group) continue;
+    if (!col.group) {
+      continue;
+    }
+
     const entry = groupInfo.get(col.group);
+
     if (entry) {
       entry.count += 1;
     } else {
@@ -457,13 +461,30 @@ export function groupResultColumns(
 
   // Third pass: apply the per-column minimum so the group total ≥ header text width.
   return result.map((col) => {
-    if (!col.group) return col;
-    const { count, minRequired } = groupInfo.get(col.group)!;
+    if (!col.group) {
+      return col;
+    }
+
+    const info = groupInfo.get(col.group);
+
+    if (!info) {
+      return col;
+    }
+
+    const { count, minRequired } = info;
     const minColWidth = Math.ceil(minRequired / count);
+
     // Skip when auto-sizing already covers it (short header, many sub-columns).
-    if (minColWidth <= MIN_AUTO_COL_WIDTH) return col;
+    if (minColWidth <= MIN_AUTO_COL_WIDTH) {
+      return col;
+    }
+
     const currentWidth = col.width ?? 0;
-    if (currentWidth >= minColWidth) return col;
+
+    if (currentWidth >= minColWidth) {
+      return col;
+    }
+
     return { ...col, width: minColWidth };
   });
 }

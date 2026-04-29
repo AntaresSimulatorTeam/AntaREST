@@ -24,7 +24,7 @@ import {
   type GridSelection,
 } from "@glideapps/glide-data-grid";
 import "@glideapps/glide-data-grid/dist/index.css";
-import { useCallback, useMemo, useState } from "react";
+import { forwardRef, useCallback, useImperativeHandle, useMemo, useState } from "react";
 import { useUpdateEffect } from "react-use";
 import { darkTheme, lightTheme, readOnlyDarkTheme, readOnlyLightTheme } from "./Matrix/styles";
 
@@ -41,6 +41,10 @@ export type RowMarkers =
 
 type RowMarkersOptions = Exclude<RowMarkers, string>;
 
+export interface DataGridHandle {
+  resizeColumns: (updates: Map<string, number>) => void;
+}
+
 export interface DataGridProps
   extends Omit<DataEditorProps, "rowMarkers" | "gridSelection" | "theme"> {
   rowMarkers?: RowMarkers;
@@ -54,22 +58,25 @@ function isStringRowMarkerOptions(
   return rowMarkerOptions.kind === "string" || rowMarkerOptions.kind === "clickable-string";
 }
 
-function DataGrid({
-  rowMarkers = { kind: "none" },
-  getCellContent,
-  columns: columnsFromProps,
-  onCellEdited,
-  onCellsEdited,
-  onColumnResize,
-  onColumnResizeStart,
-  onColumnResizeEnd,
-  onGridSelectionChange,
-  enableColumnResize = true,
-  readOnly = false,
-  freezeColumns,
-  rows,
-  ...rest
-}: DataGridProps) {
+const DataGrid = forwardRef<DataGridHandle, DataGridProps>(function DataGrid(
+  {
+    rowMarkers = { kind: "none" },
+    getCellContent,
+    columns: columnsFromProps,
+    onCellEdited,
+    onCellsEdited,
+    onColumnResize,
+    onColumnResizeStart,
+    onColumnResizeEnd,
+    onGridSelectionChange,
+    enableColumnResize = true,
+    readOnly = false,
+    freezeColumns,
+    rows,
+    ...rest
+  }: DataGridProps,
+  ref,
+) {
   const rowMarkersOptions: RowMarkersOptions =
     typeof rowMarkers === "string" ? { kind: rowMarkers } : rowMarkers;
 
@@ -81,6 +88,35 @@ function DataGrid({
     rows: CompactSelection.empty(),
     columns: CompactSelection.empty(),
   });
+
+  // Expose an imperative resize method so callers (e.g. paste handler) can grow columns
+  // without triggering a full columnsFromProps reset that would discard user resizes.
+  useImperativeHandle(ref, () => ({
+    resizeColumns(updates: Map<string, number>) {
+      setColumns((prev) =>
+        prev.map((col) => {
+          const colId = col.id;
+          if (!colId) {
+            return col;
+          }
+
+          const newWidth = updates.get(colId);
+
+          if (newWidth === undefined) {
+            return col;
+          }
+
+          const currentWidth = "width" in col ? (col.width ?? 0) : 0;
+
+          if (newWidth <= currentWidth) {
+            return col;
+          }
+
+          return { ...col, width: newWidth };
+        }),
+      );
+    },
+  }));
 
   const { isDarkMode } = useThemeColorScheme();
 
@@ -307,6 +343,6 @@ function DataGrid({
       {...rest}
     />
   );
-}
+});
 
 export default DataGrid;
