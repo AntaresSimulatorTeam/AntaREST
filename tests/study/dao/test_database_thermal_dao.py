@@ -12,7 +12,6 @@
 
 """
 Thermal DAO tests, parameterized across both database and filesystem backends.
-Database-only tests (those that inspect raw SQL tables) are kept in a dedicated section.
 """
 
 import polars as pl

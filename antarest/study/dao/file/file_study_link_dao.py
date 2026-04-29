@@ -149,7 +149,13 @@ class FileStudyLinkDao(LinkDao, ABC):
         for (area_from, area_to), series_id in series.items():
             area_from, area_to = sorted((area_from, area_to))
             url = url_getter(area_from, area_to)
-            node = study_data.tree.get_node(url)
+            try:
+                node = study_data.tree.get_node(url)
+            except ChildNotFoundError:
+                for area in (area_from, area_to):
+                    if area not in study_data.config.areas:
+                        raise AreaNotFound(area) from None
+                raise
             assert isinstance(node, MatrixNode)
             matrix_id = extract_matrix_id(series_id)
             matrices_mapping.setdefault(matrix_id, []).append(node)
