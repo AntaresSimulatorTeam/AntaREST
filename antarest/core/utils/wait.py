@@ -37,7 +37,5 @@ def wait_for(fn: Callable[[], T | None], polling_interval: float, timeout: float
             return result
         time.sleep(polling_interval)
 
-    result = fn()
-    if result is not None:
-        return result
-    return None
+    # one last try
+    return fn()
