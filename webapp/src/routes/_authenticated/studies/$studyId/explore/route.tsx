@@ -12,7 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import EmptyView from "@/components/page/EmptyView";
 import TabsView from "@/components/page/TabsView";
+import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -37,6 +39,10 @@ function StudyExploreLayout() {
       });
     }
   }, [navigate, study]);
+
+  if (study.archived) {
+    return <EmptyView icon={ArchiveOutlinedIcon} title={t("study.archived")} />;
+  }
 
   return (
     <TabsView
