@@ -29,22 +29,22 @@ def create_db_event_counter(session_factory: sessionmaker[Session]) -> DbEventCo
 
     @listens_for(session_factory, "after_begin")
     def after_begin(session, transaction, connection):
-        counter.begin = counter.begin + 1
+        counter.begin += 1
 
     @listens_for(session_factory, "after_rollback")
     def after_rollback(session):
-        counter.rollback = counter.rollback + 1
+        counter.rollback += 1
 
     @listens_for(session_factory, "after_commit")
     def after_commit(session):
-        counter.commit = counter.commit + 1
+        counter.commit += 1
 
     @listens_for(session_factory, "after_transaction_create")
     def on_transaction_start(session, transaction):
-        counter.transaction_start = counter.transaction_start + 1
+        counter.transaction_start += 1
 
     @listens_for(session_factory, "after_transaction_end")
     def on_transaction_end(session, transaction):
-        counter.transaction_end = counter.transaction_end + 1
+        counter.transaction_end += 1
 
     return counter
