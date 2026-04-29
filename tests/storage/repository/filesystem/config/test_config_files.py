@@ -718,24 +718,37 @@ def test_parse_links(study_path: Path) -> None:
     assert _parse_links_filtering(study_path, "fr") == {"l1": link}
 
 
-def test_parse_expansion_output(empty_study_880: FileStudy) -> None:
-    """
-    Ensures we're able to parse an `expansion` simulation
-    """
-    study_path = empty_study_880.config.path
+def _set_up_output(study_path: Path, output_id: str) -> None:
     output_path = study_path / "output"
-    output_id = "20250521-1009exp-fake_output"
-    expansion_output = output_path / output_id
-    expansion_output.mkdir(parents=True)
-    for file in ["file_1.txt", "file_2.txt", "file_3.mps", "checkIntegrity.txt"]:
-        (expansion_output / file).touch()
+    output = output_path / output_id
+    output.mkdir(parents=True)
 
-    ini_path = expansion_output / "about-the-study" / "parameters.ini"
+    ini_path = output / "about-the-study" / "parameters.ini"
     ini_path.parent.mkdir(parents=True)
 
     write_ini_file(ini_path, {"general": {"nbyears": "1", "year-by-year": False}, "output": {"synthesis": True}})
-    simulation = parse_simulation(expansion_output, output_id)
 
+
+def test_parse_simulation(empty_study_880: FileStudy) -> None:
+    """
+    Ensures we're able to parse a simulation
+    """
+    output_id = "20250521-1009eco-fake_output"
+    study_path = empty_study_880.config.path
+    _set_up_output(study_path, output_id)
+
+    output = study_path / "output" / output_id
+    for file in ["file_1.txt", "file_2.txt", "file_3.mps", "checkIntegrity.txt"]:
+        (output / file).touch()
+
+    simulation = parse_simulation(output, output_id)
+
+    # Check the simulation object
+    assert not simulation.error
+    assert simulation.mode == Mode.ECONOMY
+    assert simulation.date == "20250521-1009"
+
+    # Check the FileStudyTree object
     empty_study_880.config.outputs = {output_id: simulation}
     tree = empty_study_880.tree.build()
     output_tree = tree["output"].get()
@@ -747,6 +760,50 @@ def test_parse_expansion_output(empty_study_880: FileStudy) -> None:
     assert "file_3" not in output_tree[output_id]
     # Asserts the `economy` folder is scanned
     assert "economy" in output_tree[output_id]
+
+
+def test_parse_xpansion_simulation(empty_study_880: FileStudy) -> None:
+    """
+    Ensures we're able to parse an Xpansion simulation
+    """
+    output_id = "20250521-1009exp-fake_output"
+    study_path = empty_study_880.config.path
+    _set_up_output(study_path, output_id)
+
+    output = study_path / "output" / output_id
+
+    # 1st case: no `out.json` file, no `checkIntegrity.txt` files -> Simulation in error
+    simulation = parse_simulation(output, output_id)
+
+    assert simulation.error
+    assert simulation.mode == Mode.EXPANSION
+    assert not simulation.xpansion
+
+    # 2nd case: a wrongly formatted `out.json` file -> Simulation in error
+    (output / "expansion").mkdir()
+    json_path = output / "expansion" / "out.json"
+    json_path.write_text("This is not a valid JSON file")
+    simulation = parse_simulation(output, output_id)
+    assert simulation.error
+    assert not simulation.xpansion
+
+    # 3rd case: a correctly formatted `out.json` file but the `version` key is missing -> Simulation in error
+    json_path.write_text('{"antares_xpansion": {"wrong_key": "1.0.0"}}')
+    simulation = parse_simulation(output, output_id)
+    assert simulation.error
+    assert not simulation.xpansion
+
+    # 4th case: The `version` key is present, but the `solution` one is missing -> Simulation in error
+    json_path.write_text('{"antares_xpansion": {"version": "1.0.0"}}')
+    simulation = parse_simulation(output, output_id)
+    assert simulation.error
+    assert simulation.xpansion == "1.0.0"
+
+    # 5th case: Everything is present -> Simulation should be a success even if the `checkIntegrity` file is missing
+    json_path.write_text('{"antares_xpansion": {"version": "1.0.0"}, "solution": ""}')
+    simulation = parse_simulation(output, output_id)
+    assert not simulation.error
+    assert simulation.xpansion == "1.0.0"
 
 
 def _assert_mapping_equals(left: Mapping[str, Iterable[str]], right: Mapping[str, Iterable[str]]) -> None:
