@@ -13,7 +13,6 @@
  */
 
 import usePromise from "@/hooks/usePromise";
-import { getVariantParents, getVariantTree } from "@/services/api/variant";
 import { countDescendants, findNodeInTree } from "@/services/utils";
 import { WsEventType } from "@/services/webSocket/constants";
 import type { WsEvent } from "@/services/webSocket/types";
@@ -25,6 +24,7 @@ import useStudy from "../../-hooks/useStudy";
 import Actions from "./Actions";
 import Breadcrumb from "./Breadcrumb";
 import Details from "./Details";
+import { getVariantParents, getVariantTree } from "@/services/api/studies/variants";
 
 function NavHeader() {
   const study = useStudy();
@@ -32,11 +32,11 @@ function NavHeader() {
   const isExplorer = !!match;
 
   const { data: studyMetadata, reload: reloadStudyMetadata } = usePromise(async () => {
-    const parents = await getVariantParents(study.id);
+    const parents = await getVariantParents({ studyId: study.id });
     const parentStudy = parents.length > 0 ? parents[0] : undefined;
 
     const root = parents.length > 0 ? parents[parents.length - 1] : study;
-    const variantTree = await getVariantTree(root.id);
+    const variantTree = await getVariantTree({ studyId: root.id });
 
     const tree = findNodeInTree(study.id, variantTree);
     const variantNb = tree ? countDescendants(tree) : 0;
@@ -73,7 +73,7 @@ function NavHeader() {
     >
       <Breadcrumb />
       <Details parentStudy={parentStudy} variantNb={variantNb} />
-      <Actions isExplorer={isExplorer} parentStudy={parentStudy} variantNb={variantNb} />
+      <Actions parentStudy={parentStudy} variantNb={variantNb} isExplorer={isExplorer} />
     </Stack>
   );
 }

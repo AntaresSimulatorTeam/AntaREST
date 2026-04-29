@@ -12,14 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import { toSemanticVersion } from "@/utils/versionUtils";
 import snakeCase from "lodash/snakeCase";
 import * as RA from "ramda-adjunct";
+import z from "zod";
 import client from "../client";
+import { studyVersionsSchema } from "./schemas";
 import type { CopyStudyParams } from "./types";
 
 export async function copyStudy({ studyId, ...params }: CopyStudyParams) {
-  const { data } = await client.post<string>(`/v1/studies/${studyId}/copy`, null, {
+  const { data } = await client.post(`/v1/studies/${studyId}/copy`, null, {
     params: RA.renameKeysWith(snakeCase, params),
     paramsSerializer: {
       // Allow to have '&output_ids=output1&output_ids=output2' instead of
@@ -27,10 +28,11 @@ export async function copyStudy({ studyId, ...params }: CopyStudyParams) {
       indexes: null,
     },
   });
-  return data;
+
+  return z.string().parse(data);
 }
 
 export async function getStudyVersions() {
-  const { data } = await client.get<string[]>("/v1/studies/_versions");
-  return data.map(toSemanticVersion);
+  const { data } = await client.get("/v1/studies/_versions");
+  return studyVersionsSchema.parse(data);
 }

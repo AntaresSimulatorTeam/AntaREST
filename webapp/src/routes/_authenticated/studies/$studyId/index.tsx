@@ -15,11 +15,15 @@
 import SplitView from "@/components/page/SplitView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
-import { getVariantParents, getVariantTree } from "@/services/api/variant";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import InformationView from "./-components/InformationView";
 import VariantsTree from "./-components/VariantsTree";
 import useStudy from "./-hooks/useStudy";
+import {
+  getVariantLatestParent,
+  getVariantParents,
+  getVariantTree,
+} from "@/services/api/studies/variants";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/")({
   component: StudyHome,
@@ -30,11 +34,12 @@ function StudyHome() {
   const navigate = useNavigate();
 
   const variantTreeRes = usePromise(async () => {
-    const parents = await getVariantParents(study.id);
-    const root = parents.length > 0 ? parents[parents.length - 1] : study;
-    const variantTree = await getVariantTree(root.id);
+    const studyRoot =
+      study.type === "variantstudy"
+        ? (await getVariantLatestParent({ studyId: study.id })) || study
+        : study;
 
-    return variantTree;
+    return getVariantTree({ studyId: studyRoot.id });
   }, [study]);
 
   return (
@@ -44,14 +49,13 @@ function StudyHome() {
         <SplitView splitId="study-home" gutterSize={4} sizes={[30, 70]}>
           {/* Left */}
           <VariantsTree
-            study={study}
             variantTree={variantTree}
             onClick={(studyId: string) =>
               navigate({ to: "/studies/$studyId", params: { studyId } })
             }
           />
           {/* Right */}
-          <InformationView study={study} variantTree={variantTree} />
+          <InformationView variantTree={variantTree} />
         </SplitView>
       )}
     />

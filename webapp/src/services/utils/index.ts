@@ -24,9 +24,8 @@ import {
   type StudyMetadata,
   type StudyMetadataDTO,
   type UserInfo,
-  type VariantTree,
-  type VariantTreeDTO,
 } from "../../types/types";
+import type { VariantTree } from "../api/studies/variants/types";
 
 export const convertStudyDtoToMetadata = (
   sid: string,
@@ -54,13 +53,6 @@ export const convertStudyDtoToMetadata = (
     directoryId: metadata.directory_id,
   };
 };
-
-export const convertVariantTreeDTO = (variantTree: VariantTreeDTO): VariantTree => ({
-  node: convertStudyDtoToMetadata(variantTree.node.id, variantTree.node),
-  children: (variantTree.children || []).map((child: VariantTreeDTO) =>
-    convertVariantTreeDTO(child),
-  ),
-});
 
 export const isUserAdmin = (user?: UserInfo): boolean => {
   if (user) {
