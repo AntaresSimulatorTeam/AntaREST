@@ -11,8 +11,10 @@
 # This file is part of the Antares project.
 import logging
 from pathlib import Path
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
+from fastapi.params import Query
 from starlette.responses import FileResponse
 
 from antarest.core.api_types import UuidStr
@@ -53,7 +55,9 @@ def create_file_transfer_api() -> APIRouter:
     def get_download_metadata(
         filetransfer_manager: FileTransferManagerDep,
         download_id: UuidStr,
-        wait_for_availability: bool = False,
+        wait_for_availability: Annotated[
+            bool, Query(description="If true, will wait for the download to be either ready or failed (max 1h).")
+        ] = False,
     ) -> FileDownloadDTO:
         logger.info(f"Retrieving metadata for download {download_id} (waiting: {wait_for_availability}).")
         return filetransfer_manager.get_download_metadata(download_id, wait_for_availability)
