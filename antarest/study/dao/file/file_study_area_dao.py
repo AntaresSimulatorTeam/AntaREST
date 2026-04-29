@@ -511,13 +511,9 @@ class FileStudyAreaDao(AreaDao):
     @override
     def save_area_ui(self, data: AreaUiMapping) -> None:
         study_data = self.get_file_study()
-        existing_layers = {str(layer) for layer in study_data.tree.get(["layers", "layers", "layers"])}
         for area_id, value in data.items():
             if area_id not in study_data.config.areas:
                 raise AreaNotFound(area_id)
-            for layer in value:
-                if layer not in existing_layers:
-                    raise LayerNotFound(layer)
             current_area = study_data.tree.get(["input", "areas", area_id, "ui"])
             for layer, area_ui in value.items():
                 current_area = self._fill_area_ui(current_area, layer, area_ui)

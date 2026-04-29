@@ -21,6 +21,7 @@ from antarest.study.business.model.area_model import AreaUI
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from tests.study.dao.conftest import create_area
 from tests.study.dao.utils import save_area
 
@@ -179,14 +180,15 @@ def test_save_area_ui_raises_error_if_area_not_exists(dao: StudyDao) -> None:
         dao.save_area_ui({"nonexistent": {"0": new_ui}})
 
 
-def test_save_area_ui_raises_error_if_layer_not_exists(dao: StudyDao) -> None:
+def test_save_area_ui_raises_error_if_layer_not_exists(db_dao: DatabaseStudyDao) -> None:
     """
     Test that save_area_ui raises LayerNotFound if layer doesn't exist.
+    DB-only: FS writes layer that don't exist and changing that woule be a breaking change.
     """
-    save_area(dao, "Paris")
+    save_area(db_dao, "Paris")
     new_ui = AreaUI(x=100, y=200, color_rgb=(255, 0, 0))
     with pytest.raises(LayerNotFound):
-        dao.save_area_ui({"paris": {"999": new_ui}})
+        db_dao.save_area_ui({"paris": {"999": new_ui}})
 
 
 def test_get_all_areas_ui_info_returns_all_layers(dao: StudyDao) -> None:
