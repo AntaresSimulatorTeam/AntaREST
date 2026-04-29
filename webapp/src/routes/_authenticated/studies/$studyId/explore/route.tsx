@@ -14,7 +14,9 @@
 
 import TabsView from "@/components/page/TabsView";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import useStudy from "../-hooks/useStudy";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore")({
   component: StudyExploreLayout,
@@ -23,6 +25,18 @@ export const Route = createFileRoute("/_authenticated/studies/$studyId/explore")
 function StudyExploreLayout() {
   const { t } = useTranslation();
   const params = Route.useParams();
+  const study = useStudy();
+  const navigate = Route.useNavigate();
+
+  // TODO: move this redirect to the route loader once TanStack Query replaces Redux for fetching study
+  useEffect(() => {
+    if (study.archived) {
+      navigate({
+        to: "/studies/$studyId",
+        params: { studyId: study.id },
+      });
+    }
+  }, [navigate, study]);
 
   return (
     <TabsView
