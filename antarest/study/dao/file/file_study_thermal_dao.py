@@ -87,7 +87,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
             # may raise KeyError if "list" is missing
             clusters = {area_id: cluster_list["list"] for area_id, cluster_list in clusters.items()}
         except KeyError:
-            raise ThermalClusterConfigNotFound(path)
+            raise ThermalClusterConfigNotFound(path) from None
 
         thermals_by_areas: dict[str, dict[str, ThermalCluster]] = {}
         for area_id, cluster_obj in clusters.items():
@@ -114,7 +114,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
         except ChildNotFoundError:
             raise AreaNotFound(area_id)
         except KeyError:
-            raise ThermalClusterNotFound(area_id, thermal_id)
+            raise ThermalClusterNotFound(area_id, thermal_id) from None
         return parse_thermal_cluster(file_study.config.version, cluster_data)
 
     @override
@@ -270,7 +270,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
         try:
             clusters_data = file_study.tree.get(path.split("/"), depth=3)
         except KeyError:
-            raise ThermalClusterConfigNotFound(path, area_id)
+            raise ThermalClusterConfigNotFound(path, area_id) from None
         return clusters_data
 
     @staticmethod
