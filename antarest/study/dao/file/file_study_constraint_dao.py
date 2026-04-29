@@ -358,7 +358,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         study_data.tree.save(new_binding_constraints, ["input", "bindingconstraints", "bindingconstraints"])
 
         if study_version >= STUDY_VERSION_8_7:
-            new_groups = {bc.group for bc in kept_binding_constraints}
+            new_groups = {bc.group if bc.group else "" for bc in kept_binding_constraints}
             removed_groups = old_groups - new_groups
             _remove_groups_from_scenario_builder(study_data, removed_groups)
 
