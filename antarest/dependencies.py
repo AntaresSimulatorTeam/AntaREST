@@ -57,7 +57,7 @@ from antarest.study.directory_service import DirectoryService
 from antarest.study.service import StudyService
 from antarest.study.storage.explorer_service import Explorer
 from antarest.study.storage.rawstudy.watcher import Watcher
-from antarest.tablemode.service import TablemodeService
+from antarest.tablemode.service import TableModeService
 
 
 @dataclass(frozen=True)
@@ -126,7 +126,7 @@ def get_favorite_directory_service(request: Request) -> FavoriteDirectoryService
     return get_app_state(request).services.favorite_directory
 
 
-def get_tablemode_service(request: Request) -> TablemodeService:
+def get_tablemode_service(request: Request) -> TableModeService:
     return get_app_state(request).services.tablemode_service
 
 
@@ -204,7 +204,7 @@ FileTransferManagerDep: TypeAlias = Annotated[FileTransferManager, Depends(get_f
 OutputServiceDep: TypeAlias = Annotated[OutputService, Depends(get_output_service)]
 FavoriteStudyServiceDep: TypeAlias = Annotated[FavoriteStudyService, Depends(get_favorite_study_service)]
 FavoriteDirectoryServiceDep: TypeAlias = Annotated[FavoriteDirectoryService, Depends(get_favorite_directory_service)]
-TablemodeServiceDep: TypeAlias = Annotated[TablemodeService, Depends(get_tablemode_service)]
+TablemodeServiceDep: TypeAlias = Annotated[TableModeService, Depends(get_tablemode_service)]
 TaskServiceDep: TypeAlias = Annotated[ITaskService, Depends(get_task_service)]
 MaintenanceServiceDep: TypeAlias = Annotated[MaintenanceService, Depends(get_maintenance_service)]
 TmpExportFileDep: TypeAlias = Annotated[Path, Depends(get_tmp_export_file)]

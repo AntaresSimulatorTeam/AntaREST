@@ -66,7 +66,7 @@ from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
 from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.tablemode.repository import TablemodeRepository
-from antarest.tablemode.service import TablemodeService
+from antarest.tablemode.service import TableModeService
 from antarest.worker.archive_worker import ArchiveWorker
 from antarest.worker.worker import AbstractWorker
 
@@ -167,7 +167,7 @@ class CoreServices:
     favorite_study_service: FavoriteStudyService
     favorite_directory_service: FavoriteDirectoryService
     study_disk_space_repository: StudyDiskSpaceRepository
-    tablemode_service: TablemodeService
+    tablemode_service: TableModeService
 
 
 def build_favorite_service() -> tuple[FavoriteStudyService, FavoriteDirectoryService]:
@@ -180,9 +180,9 @@ def build_favorite_service() -> tuple[FavoriteStudyService, FavoriteDirectorySer
     return favorite_study_service, favorite_directory_service
 
 
-def build_tablemode_service() -> TablemodeService:
+def build_tablemode_service() -> TableModeService:
     tablemode_repository = TablemodeRepository()
-    return TablemodeService(tablemode_repository=tablemode_repository)
+    return TableModeService(tablemode_repository=tablemode_repository)
 
 
 def build_output_storage_list(config: Config, file_output_storage: InStudyFileOutputStorage) -> list[IOutputStorage]:
@@ -366,7 +366,7 @@ class Services:
     matrix: MatrixService
     favorite_study: FavoriteStudyService
     favorite_directory: FavoriteDirectoryService
-    tablemode_service: TablemodeService
+    tablemode_service: TableModeService
     user: LoginService
     cache: ICache
     maintenance: MaintenanceService

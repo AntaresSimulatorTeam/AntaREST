@@ -14,7 +14,7 @@ import uuid
 
 from starlette.testclient import TestClient
 
-from antarest.tablemode.model import TableColumn, TableType
+from antarest.tablemode.model import AreaColumn, STStorageColumn, TableType
 
 
 def test_tablemode_success(client: TestClient, admin_access_token: str) -> None:
@@ -26,41 +26,41 @@ def test_tablemode_success(client: TestClient, admin_access_token: str) -> None:
         json={
             "table_name": "my_table",
             "table_type": TableType.AREA,
-            "table_columns": [TableColumn.DISPATCHABLE_HYDRO_POWER],
+            "table_columns": [AreaColumn.DISPATCHABLE_HYDRO_POWER],
         },
     )
     json_post = res_post.json()
     table_id = json_post["table_id"]
 
-    assert res_post.status_code == 200
+    assert res_post.status_code == 201
     assert json_post["table_name"] == "my_table"
     assert json_post["table_type"] == TableType.AREA
-    assert json_post["table_columns"] == [TableColumn.DISPATCHABLE_HYDRO_POWER]
+    assert json_post["table_columns"] == [AreaColumn.DISPATCHABLE_HYDRO_POWER]
 
     # success : updating a tablemode's table_type
     res_put = client.put(
         f"/v1/tablemode/{str(table_id)}",
-        json={"table_type": TableType.ST_STORAGE, "table_columns": [TableColumn.DISPATCHABLE_HYDRO_POWER]},
+        json={"table_type": TableType.AREA, "table_columns": [AreaColumn.DISPATCHABLE_HYDRO_POWER]},
     )
     assert res_put.status_code == 200
     assert res_put.json()["table_id"] == table_id
     assert res_put.json()["table_name"] == "my_table"
-    assert res_put.json()["table_type"] == TableType.ST_STORAGE
-    assert res_put.json()["table_columns"] == [TableColumn.DISPATCHABLE_HYDRO_POWER]
+    assert res_put.json()["table_type"] == TableType.AREA
+    assert res_put.json()["table_columns"] == [AreaColumn.DISPATCHABLE_HYDRO_POWER]
 
     # success : updating a tablemode's table_columns
     res_put = client.put(
         f"/v1/tablemode/{str(table_id)}",
         json={
-            "table_type": TableType.ST_STORAGE,
-            "table_columns": [TableColumn.NON_DISPATCHABLE_POWER, TableColumn.DISPATCHABLE_HYDRO_POWER],
+            "table_type": TableType.AREA,
+            "table_columns": [AreaColumn.NON_DISPATCHABLE_POWER, AreaColumn.DISPATCHABLE_HYDRO_POWER],
         },
     )
     assert res_put.status_code == 200
     assert res_put.json()["table_id"] == table_id
     assert res_put.json()["table_name"] == "my_table"
-    assert res_put.json()["table_type"] == TableType.ST_STORAGE
-    assert res_put.json()["table_columns"] == [TableColumn.NON_DISPATCHABLE_POWER, TableColumn.DISPATCHABLE_HYDRO_POWER]
+    assert res_put.json()["table_type"] == TableType.AREA
+    assert res_put.json()["table_columns"] == [AreaColumn.NON_DISPATCHABLE_POWER, AreaColumn.DISPATCHABLE_HYDRO_POWER]
 
     # success : deleting a tablemode and checking it doesn't exist anymore
     res_delete = client.delete(f"/v1/tablemode/{str(table_id)}")
@@ -80,7 +80,7 @@ def test_tablemode_fail(client: TestClient, admin_access_token: str) -> None:
         f"/v1/tablemode/{str(my_uuid)}",
         json={
             "table_type": TableType.ST_STORAGE,
-            "table_columns": [TableColumn.NON_DISPATCHABLE_POWER, TableColumn.DISPATCHABLE_HYDRO_POWER],
+            "table_columns": [STStorageColumn.ENABLED, STStorageColumn.EFFICIENCY],
         },
     )
     assert res_update_fail.status_code == 404
@@ -97,7 +97,7 @@ def test_tablemode_fail(client: TestClient, admin_access_token: str) -> None:
         json={
             "table_name": "my_table",
             "table_type": "non_existing_type",
-            "table_columns": [TableColumn.DISPATCHABLE_HYDRO_POWER],
+            "table_columns": [AreaColumn.DISPATCHABLE_HYDRO_POWER],
         },
     )
     assert res_post_non_existing_type.status_code == 422
@@ -111,12 +111,12 @@ def test_tablemode_fail(client: TestClient, admin_access_token: str) -> None:
     )
     assert res_post_non_existing_columns.status_code == 422
     assert res_post_non_existing_columns.json()["description"] == (
-        "Input should be 'averageUnsuppliedEnergyCost', 'spreadUnsuppliedEnergyCost', 'averageSpilledEnergyCost', 'spreadSpilledEnergyCost', 'nonDispatchablePower', 'dispatchableHydroPower' or 'otherDispatchablePower'"
+        "Input should be 'nonDispatchPower', 'dispatchHydroPower', 'otherDispatchPower', 'energyCostUnsupplied', 'spreadUnsuppliedEnergyCost', 'energyCostSpilled', 'spreadSpilledEnergyCost', 'filterSynthesis', 'filterByYear' or 'adequacyPatchMode'"
     )
 
     res_update_existing_tablemode_but_non_existing_table_type = client.put(
         f"/v1/tablemode/{str(my_uuid)}",
-        json={"table_type": "non_existing_type", "table_columns": [TableColumn.DISPATCHABLE_HYDRO_POWER]},
+        json={"table_type": "non_existing_type", "table_columns": [AreaColumn.DISPATCHABLE_HYDRO_POWER]},
     )
     assert res_update_existing_tablemode_but_non_existing_table_type.status_code == 422
     assert res_update_existing_tablemode_but_non_existing_table_type.json()["description"] == (
@@ -128,5 +128,5 @@ def test_tablemode_fail(client: TestClient, admin_access_token: str) -> None:
     )
     assert res_update_existing_tablemode_but_non_existing_table_columns.status_code == 422
     assert res_update_existing_tablemode_but_non_existing_table_columns.json()["description"] == (
-        "Input should be 'averageUnsuppliedEnergyCost', 'spreadUnsuppliedEnergyCost', 'averageSpilledEnergyCost', 'spreadSpilledEnergyCost', 'nonDispatchablePower', 'dispatchableHydroPower' or 'otherDispatchablePower'"
+        "Input should be 'nonDispatchPower', 'dispatchHydroPower', 'otherDispatchPower', 'energyCostUnsupplied', 'spreadUnsuppliedEnergyCost', 'energyCostSpilled', 'spreadSpilledEnergyCost', 'filterSynthesis', 'filterByYear' or 'adequacyPatchMode'"
     )

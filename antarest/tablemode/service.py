@@ -16,11 +16,11 @@ from uuid import UUID, uuid4
 from fastapi import HTTPException
 
 from antarest.login.utils import get_user_impersonator
-from antarest.tablemode.model import TableColumn, TableMode, TableModeDTO, TableType
+from antarest.tablemode.model import TABLE_TYPE_COLUMN_MAPPING, TableColumn, TableMode, TableModeDTO, TableType
 from antarest.tablemode.repository import TablemodeRepository
 
 
-def _check_valid_data(table_columns: list[TableColumn], table_type: str) -> None:
+def _check_valid_data(table_columns: list[TableColumn], table_type: TableType) -> None:
     """
     Check the imput datas entered. Raise an exception if they don't match the values of the enums
     Args:
@@ -28,29 +28,28 @@ def _check_valid_data(table_columns: list[TableColumn], table_type: str) -> None
         table_type: type of the table to check
 
     """
-    type_list = [e.value for e in TableType]
-    columns = [e.value for e in TableColumn]
 
-    # check if table_type or table columns are not in the enums
-    if table_type not in type_list:
-        raise HTTPException(status_code=http.HTTPStatus.BAD_REQUEST, detail=f"Invalid table type: {table_type}")
+    column_enum = TABLE_TYPE_COLUMN_MAPPING[table_type]
+    valid_values = {col.value for col in column_enum}
 
-    if not all(col in columns for col in table_columns):
+    invalid_columns = [col for col in table_columns if col not in valid_values]
+    if invalid_columns:
         raise HTTPException(
-            status_code=http.HTTPStatus.BAD_REQUEST, detail="Invalid table columns: " + ", ".join(table_columns)
+            status_code=http.HTTPStatus.BAD_REQUEST,
+            detail=f"Invalid columns for table type {table_type}: {', '.join(invalid_columns)}",
         )
 
 
-class TablemodeService:
+class TableModeService:
     def __init__(self, tablemode_repository: TablemodeRepository):
         self.tablemode_repository = tablemode_repository
 
-    def get_tablemodes(self) -> list[TableModeDTO]:
+    def get_tables(self) -> list[TableModeDTO]:
         tablemodes = self.tablemode_repository.get_all()
         tablemode_dtos = [tablemode.to_dto() for tablemode in tablemodes]
         return tablemode_dtos
 
-    def add_tablemode(self, table_name: str, table_type: str, table_columns: list[TableColumn]) -> TableModeDTO:
+    def add_table(self, table_name: str, table_type: TableType, table_columns: list[TableColumn]) -> TableModeDTO:
         str_table_columns = ",".join(table_columns)
         _check_valid_data(table_columns, table_type)
         tablemode = TableMode(
@@ -65,7 +64,7 @@ class TablemodeService:
 
         return tablemode_dto
 
-    def update_tablemode(self, table_id: UUID, table_type: TableType, table_columns: list[TableColumn]) -> TableModeDTO:
+    def update_table(self, table_id: UUID, table_type: TableType, table_columns: list[TableColumn]) -> TableModeDTO:
         """
         Update a selected tablemode's type and columns
         Args:
@@ -93,7 +92,7 @@ class TablemodeService:
         updated_tablemode = self.tablemode_repository.save(tablemode)
         return updated_tablemode.to_dto()
 
-    def delete_tablemode(self, table_id: UUID) -> None:
+    def delete_table(self, table_id: UUID) -> None:
         tablemode = self.tablemode_repository.get(table_id)
 
         if tablemode:
