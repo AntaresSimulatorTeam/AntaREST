@@ -11,7 +11,9 @@
 # This file is part of the Antares project.
 
 import datetime
+import time
 from pathlib import Path
+from threading import Thread
 from unittest.mock import Mock
 
 import pytest
@@ -25,8 +27,10 @@ from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import MustBeAuthenticatedError
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.fastapi_sqlalchemy.middleware import get_session_factory
 from antarest.login.utils import current_user_context
 from tests.helpers import with_admin_user
+from tests.test_helpers.db import create_db_event_counter
 
 
 def test_file_request() -> None:
@@ -85,3 +89,40 @@ def test_lifecycle(tmp_path: Path) -> None:
         ftm.repository.save(filedownload)
         downloads = ftm.list_downloads()
         assert len(downloads) == 0
+
+
+@with_admin_user
+def test_wait_for_download_metadata(tmp_path: Path) -> None:
+
+    with db():
+        ftm = FileTransferManager(
+            repository=FileDownloadRepository(),
+            event_bus=Mock(),
+            config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
+        )
+        download = ftm.request_download("some file", "some name")
+        assert download.id is not None
+
+        def set_ready_after_1s() -> None:
+            time.sleep(1)
+            with db():
+                ftm.set_ready(download.id)
+
+        thread = Thread(target=set_ready_after_1s)
+        thread.start()
+
+        events_counter = create_db_event_counter(get_session_factory())
+        download_dto = ftm.get_download_metadata(
+            download.id, wait_for_availability=True, polling_interval=0.1, timeout=10
+        )
+
+        assert download_dto.id == download.id
+        assert download_dto.ready
+
+        # We check there's been only 1 commit (set ready)
+        # and that the polling used short transactions (begin/rollback each time)
+        assert events_counter.commit == 1
+        assert events_counter.begin >= 8
+        assert events_counter.rollback >= 8
+
+        thread.join()
