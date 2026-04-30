@@ -17,6 +17,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import NotAMatrixError
 from antarest.core.interfaces.cache import ICache, update_cache
+from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_adequacy_patch_parameters_dao import FileStudyAdequacyPatchParametersDao
 from antarest.study.dao.file.file_study_advanced_parameters import FileStudyAdvancedParametersDao
@@ -186,7 +187,7 @@ class FileStudyTreeDao(
                 # For the normalized nodes, we simply get the matrix id from the matrix mapper.
                 matrix_id = matrix_node.matrix_mapper.get_link_content(matrix_node)
                 assert isinstance(matrix_id, str)
-                result[matrix_node] = matrix_id
+                result[matrix_node] = extract_matrix_id(matrix_id)
             else:
                 denormalized_nodes.append(matrix_node)
 
