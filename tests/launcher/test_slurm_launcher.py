@@ -97,6 +97,38 @@ def test_init_slurm_launcher_arguments(tmp_path: Path) -> None:
     assert Path(arguments.log_dir) == config.local_workspace / "LOGS"
 
 
+def test_init_slurm_launcher_arguments_multi_worker(tmp_path: Path) -> None:
+    config = SlurmConfig(
+        id="slurm_id",
+        name="slurm",
+        default_wait_time=42,
+        time_limit=TimeLimitConfig(),
+        nb_cores=NbCoresConfig(min=1, default=30, max=36),
+        local_workspace=tmp_path,
+    )
+
+    slurm_launcher = SlurmLauncher(
+        config=config, callbacks=Mock(), event_bus=Mock(), cache=Mock(), workspace_id="workspace-5"
+    )
+
+    arguments = slurm_launcher._init_launcher_arguments()
+
+    assert not arguments.wait_mode
+    assert not arguments.check_queue
+    assert not arguments.wait_mode
+    assert not arguments.check_queue
+    assert arguments.json_ssh_config is None
+    assert arguments.job_id_to_kill is None
+    assert not arguments.xpansion_mode
+    assert not arguments.version
+    assert not arguments.post_processing
+
+    assert config is not None
+    assert Path(arguments.studies_in) == config.local_workspace / "workspace-5" / "STUDIES_IN"
+    assert Path(arguments.output_dir) == config.local_workspace / "workspace-5" / "OUTPUT"
+    assert Path(arguments.log_dir) == config.local_workspace / "LOGS"  # Log dir is shared between workers
+
+
 def test_init_slurm_launcher_parameters(tmp_path: Path) -> None:
     config = SlurmConfig(
         id="slurm_id",
@@ -121,6 +153,45 @@ def test_init_slurm_launcher_parameters(tmp_path: Path) -> None:
     main_parameters = slurm_launcher._init_launcher_parameters()
     assert config is not None
     assert main_parameters.json_dir == config.local_workspace
+    assert main_parameters.default_json_db_name == config.default_json_db_name
+    assert main_parameters.slurm_script_path == config.slurm_script_path
+    assert main_parameters.partition == config.partition
+    assert main_parameters.antares_versions_on_remote_server == config.antares_versions_on_remote_server
+    assert main_parameters.default_ssh_dict == {
+        "username": config.username,
+        "hostname": config.hostname,
+        "port": config.port,
+        "private_key_file": config.private_key_file,
+        "key_password": config.key_password,
+        "password": config.password,
+    }
+    assert main_parameters.db_primary_key == "name"
+
+
+def test_init_slurm_launcher_parameters_multi_worker(tmp_path: Path) -> None:
+    config = SlurmConfig(
+        id="slurm_id",
+        name="slurm",
+        local_workspace=tmp_path,
+        default_json_db_name="default_json_db_name",
+        slurm_script_path="slurm_script_path",
+        partition="fake_partition",
+        antares_versions_on_remote_server=[SolverVersion.parse(840), SolverVersion.parse("10.0")],
+        username="username",
+        hostname="hostname",
+        port=42,
+        private_key_file=Path("private_key_file"),
+        key_password="key_password",
+        password="password",
+    )
+
+    slurm_launcher = SlurmLauncher(
+        config=config, callbacks=Mock(), event_bus=Mock(), cache=Mock(), workspace_id="workspace-5"
+    )
+
+    main_parameters = slurm_launcher._init_launcher_parameters()
+    assert config is not None
+    assert main_parameters.json_dir == config.local_workspace / "workspace-5"
     assert main_parameters.default_json_db_name == config.default_json_db_name
     assert main_parameters.slurm_script_path == config.slurm_script_path
     assert main_parameters.partition == config.partition
@@ -481,7 +552,6 @@ def test_kill_job(
 @patch("antarest.launcher.adapters.slurm_launcher.slurm_launcher.run_with")
 def test_launcher_workspace_init(run_with_mock: Any, tmp_path: Path, launcher_config: SlurmConfig) -> None:
     callbacks = Mock()
-    (tmp_path / LOG_DIR_NAME).mkdir()
 
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
