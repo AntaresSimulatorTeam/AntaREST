@@ -49,7 +49,6 @@ from antarest.login.utils import current_user_context, require_current_user
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
 
-LOCK_FILE_NAME = "slurm_launcher_init.lock"
 LOG_DIR_NAME = "LOGS"
 STUDIES_INPUT_DIR_NAME = "STUDIES_IN"
 STUDIES_OUTPUT_DIR_NAME = "OUTPUT"
@@ -184,6 +183,10 @@ class SlurmLauncher(AbstractLauncher):
 
         self.local_workspace = self._init_workspace(use_private_workspace, workspace_id)
 
+        # Important: in a multi-process environment, the log directory must be shared between workers,
+        # so that all workers can expose logs of any simulation in the API
+        self.log_dir = config.local_workspace / LOG_DIR_NAME
+
         self.log_tail_manager = LogTailManager()
 
         self.launcher_args = self._init_launcher_arguments()
@@ -257,7 +260,7 @@ class SlurmLauncher(AbstractLauncher):
             default_time_limit=self.slurm_config.time_limit.default * 3600,
             default_n_cpu=self.slurm_config.nb_cores.default,
             studies_in_dir=str(self.local_workspace / STUDIES_INPUT_DIR_NAME),
-            log_dir=str(self.local_workspace / LOG_DIR_NAME),
+            log_dir=str(self.log_dir),
             finished_dir=str(self.local_workspace / STUDIES_OUTPUT_DIR_NAME),
             ssh_config_file_is_required=False,
             ssh_configfile_path_alternate1=None,
