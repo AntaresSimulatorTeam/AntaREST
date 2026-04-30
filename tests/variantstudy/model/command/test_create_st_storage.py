@@ -368,9 +368,9 @@ class TestCreateSTStorage:
         expected = {
             "storage1": {
                 "pmax_injection": f"matrix://{pmax_injection_id}",
-                "pmax_withdrawal": constants.get_st_storage_pmax_withdrawal(),
-                "lower_rule_curve": constants.get_st_storage_lower_rule_curve(),
-                "upper_rule_curve": constants.get_st_storage_upper_rule_curve(),
+                "pmax_withdrawal": f"matrix://{constants.get_st_storage_pmax_withdrawal()}",
+                "lower_rule_curve": f"matrix://{constants.get_st_storage_lower_rule_curve()}",
+                "upper_rule_curve": f"matrix://{constants.get_st_storage_upper_rule_curve()}",
                 "inflows": f"matrix://{inflows_id}",
             }
         }

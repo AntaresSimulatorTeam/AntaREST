@@ -14,7 +14,7 @@
 import polars as pl
 from antares.study.version import StudyVersion
 
-from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_2
 from antarest.study.storage.variantstudy.business import matrix_constants
 from antarest.study.storage.variantstudy.business.matrix_constants.common import (
@@ -140,97 +140,97 @@ class GeneratorMatrixConstants:
 
     def get_hydro_max_power(self, version: StudyVersion) -> str:
         if version > STUDY_VERSION_6_5:
-            return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7]
+            return self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7]
         else:
-            return MATRIX_PROTOCOL_PREFIX + self.hashes[NULL_MATRIX_NAME]
+            return self.hashes[NULL_MATRIX_NAME]
 
     def get_hydro_reservoir(self, version: StudyVersion) -> str:
         if version > STUDY_VERSION_6_5:
-            return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V7]
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V6]
+            return self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V7]
+        return self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V6]
 
     def get_hydro_credit_modulations(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_CREDIT_MODULATION]
+        return self.hashes[HYDRO_COMMON_CAPACITY_CREDIT_MODULATION]
 
     def get_hydro_inflow_pattern(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_INFLOW_PATTERN]
+        return self.hashes[HYDRO_COMMON_CAPACITY_INFLOW_PATTERN]
 
     def get_prepro_conversion(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[PREPRO_CONVERSION]
+        return self.hashes[PREPRO_CONVERSION]
 
     def get_prepro_data(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[PREPRO_DATA]
+        return self.hashes[PREPRO_DATA]
 
     def get_thermal_prepro_data(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[THERMAL_PREPRO_DATA]
+        return self.hashes[THERMAL_PREPRO_DATA]
 
     def get_thermal_prepro_modulation(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[THERMAL_PREPRO_MODULATION]
+        return self.hashes[THERMAL_PREPRO_MODULATION]
 
     def get_link(self, version: StudyVersion) -> str:
         if version < STUDY_VERSION_8_2:
-            return MATRIX_PROTOCOL_PREFIX + self.hashes[LINK_V7]
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[LINK_V8]
+            return self.hashes[LINK_V7]
+        return self.hashes[LINK_V8]
 
     def get_link_direct(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[LINK_DIRECT]
+        return self.hashes[LINK_DIRECT]
 
     def get_link_indirect(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[LINK_INDIRECT]
+        return self.hashes[LINK_INDIRECT]
 
     def get_null_matrix(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[NULL_MATRIX_NAME]
+        return self.hashes[NULL_MATRIX_NAME]
 
     def get_default_reserves(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[RESERVES_TS]
+        return self.hashes[RESERVES_TS]
 
     def get_default_miscgen(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[MISCGEN_TS]
+        return self.hashes[MISCGEN_TS]
 
     def get_binding_constraint_hourly_86(self) -> str:
         """2D-matrix of shape (8784, 3), filled-in with zeros."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[BINDING_CONSTRAINT_HOURLY_v86]
+        return self.hashes[BINDING_CONSTRAINT_HOURLY_v86]
 
     def get_binding_constraint_daily_weekly_86(self) -> str:
         """2D-matrix of shape (366, 3), filled-in with zeros."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[BINDING_CONSTRAINT_DAILY_WEEKLY_v86]
+        return self.hashes[BINDING_CONSTRAINT_DAILY_WEEKLY_v86]
 
     def get_binding_constraint_hourly_87(self) -> str:
         """2D-matrix of shape (8784, 1), filled-in with zeros."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[BINDING_CONSTRAINT_HOURLY_v87]
+        return self.hashes[BINDING_CONSTRAINT_HOURLY_v87]
 
     def get_binding_constraint_daily_weekly_87(self) -> str:
         """2D-matrix of shape (8784, 1), filled-in with zeros."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[BINDING_CONSTRAINT_DAILY_WEEKLY_v87]
+        return self.hashes[BINDING_CONSTRAINT_DAILY_WEEKLY_v87]
 
     def get_st_storage_pmax_injection(self) -> str:
         """2D-matrix of shape (8760, 1), filled-in with ones."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_PMAX_INJECTION]
+        return self.hashes[ST_STORAGE_PMAX_INJECTION]
 
     def get_st_storage_pmax_withdrawal(self) -> str:
         """2D-matrix of shape (8760, 1), filled-in with ones."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_PMAX_WITHDRAWAL]
+        return self.hashes[ST_STORAGE_PMAX_WITHDRAWAL]
 
     def get_st_storage_lower_rule_curve(self) -> str:
         """2D-matrix of shape (8760, 1), filled-in with zeros."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_LOWER_RULE_CURVE]
+        return self.hashes[ST_STORAGE_LOWER_RULE_CURVE]
 
     def get_st_storage_upper_rule_curve(self) -> str:
         """2D-matrix of shape (8760, 1), filled-in with ones."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_UPPER_RULE_CURVE]
+        return self.hashes[ST_STORAGE_UPPER_RULE_CURVE]
 
     def get_st_storage_inflows(self) -> str:
         """2D-matrix of shape (8760, 1), filled-in with zeros."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_INFLOWS]
+        return self.hashes[ST_STORAGE_INFLOWS]
 
     def get_hydro_max_hourly_gen_power(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_SERIES_MAX_HOURLY_GEN_POWER]
+        return self.hashes[HYDRO_SERIES_MAX_HOURLY_GEN_POWER]
 
     def get_hydro_max_hourly_pump_power(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_SERIES_MAX_HOURLY_PUMP_POWER]
+        return self.hashes[HYDRO_SERIES_MAX_HOURLY_PUMP_POWER]
 
     def get_hydro_max_daily_gen_energy(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_MAX_DAILY_GEN_ENERGY]
+        return self.hashes[HYDRO_COMMON_CAPACITY_MAX_DAILY_GEN_ENERGY]
 
     def get_hydro_max_daily_pump_energy(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_MAX_DAILY_PUMP_ENERGY]
+        return self.hashes[HYDRO_COMMON_CAPACITY_MAX_DAILY_PUMP_ENERGY]
