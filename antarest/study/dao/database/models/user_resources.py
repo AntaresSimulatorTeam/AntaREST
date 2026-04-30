@@ -14,14 +14,15 @@
 SQLAlchemy Core table definitions for user resources storage.
 """
 
-from sqlalchemy import Column, Enum, ForeignKeyConstraint, String, Table
+from sqlalchemy import Column, ForeignKeyConstraint, String, Table
 
 from antarest.dbmodel import Base
 from antarest.study.business.model.user_model import ResourceType
+from antarest.study.dao.database.sql_utils import enum_col
 
 metadata = Base.metadata
 
-_RESOURCE_TYPE_ENUM = Enum(ResourceType, name="resourcetype")
+_RESOURCE_TYPE_ENUM = enum_col(ResourceType, name="resourcetype")
 
 USER_RESOURCES_TABLE = Table(
     "user_resources",

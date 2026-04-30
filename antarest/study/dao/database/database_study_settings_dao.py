@@ -80,7 +80,7 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_general_config(self, config: GeneralConfig) -> None:
-        values = dict(study_id=self.get_study_id(), **config.model_dump())
+        values = dict(study_id=self.get_study_id(), **config.model_dump(mode="json"))
         session = self.get_session()
         upsert_one(session, GENERAL_CONFIG_TABLE, values)
         session.commit()
