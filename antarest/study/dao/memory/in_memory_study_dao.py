@@ -27,7 +27,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.utils import remove_first_match
-from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties, sort_filter_options
 from antarest.study.business.model.binding_constraint_model import (
@@ -711,10 +711,10 @@ class InMemoryStudyDao(StudyDao):
         if hydro_pmax == HydroPmax.HOURLY:
             # When converting to hourly, create and save the matrices
             for area_id in areas:
-                self.save_hydro_max_hourly_gen_power({area_id: MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly)})
-                self.save_hydro_max_hourly_pump_power({area_id: MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly)})
-                self.save_hydro_max_daily_gen_energy({area_id: MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily)})
-                self.save_hydro_max_daily_pump_energy({area_id: MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily)})
+                self.save_hydro_max_hourly_gen_power({area_id: matrix_service.create(hourly)})
+                self.save_hydro_max_hourly_pump_power({area_id: matrix_service.create(hourly)})
+                self.save_hydro_max_daily_gen_energy({area_id: matrix_service.create(daily)})
+                self.save_hydro_max_daily_pump_energy({area_id: matrix_service.create(daily)})
         else:
             # When converting away from hourly, remove the matrices from in-memory storage
             for area_id in areas:

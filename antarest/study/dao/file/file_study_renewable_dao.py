@@ -17,7 +17,6 @@ import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, RenewableClusterConfigNotFound, RenewableClusterNotFound
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.dao.api.renewable_dao import RenewableDao
 from antarest.study.dao.common import AreaId, RenewableSeriesMapping
@@ -160,7 +159,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
                 url = _get_renewable_series_path(area_id, renewable_id)
                 node = study_data.tree.get_node(url)
                 assert isinstance(node, MatrixNode)
-                matrix_id = extract_matrix_id(series_id)
+                matrix_id = series_id
                 matrices_mapping.setdefault(matrix_id, []).append(node)
         self.get_impl().save_matrices(matrices_mapping)
 

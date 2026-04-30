@@ -65,7 +65,7 @@ class TestCreateXpansionResource:
             assert output.status, output.message
             resource_path = empty_study.config.study_path / "user" / "expansion" / "weights" / f"{file_name}.link"
             assert resource_path.exists()
-            assert resource_path.read_text().startswith("matrix://")
+            assert resource_path.read_text() and not resource_path.read_text().startswith("matrix://")
             matrix_node = empty_study.tree.get_node(["user", "expansion", "weights", file_name])
             assert isinstance(matrix_node, MatrixNode)
             matrix = matrix_node.parse_as_dataframe()
@@ -85,7 +85,7 @@ class TestCreateXpansionResource:
             assert output.status, output.message
             resource_path = empty_study.config.study_path / "user" / "expansion" / "capa" / f"{file_name}.link"
             assert resource_path.exists()
-            assert resource_path.read_text().startswith("matrix://")
+            assert resource_path.read_text() and not resource_path.read_text().startswith("matrix://")
             matrix_node = empty_study.tree.get_node(["user", "expansion", "capa", file_name])
             assert isinstance(matrix_node, MatrixNode)
             matrix = matrix_node.parse_as_dataframe()

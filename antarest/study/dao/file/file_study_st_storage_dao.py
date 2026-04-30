@@ -18,7 +18,6 @@ import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, ChildNotFoundError, STStorageConfigNotFound, STStorageNotFound
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
@@ -278,7 +277,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
                 url = url_getter(area_id, storage_id)
                 node = study_data.tree.get_node(url)
                 assert isinstance(node, MatrixNode)
-                matrix_id = extract_matrix_id(series_id)
+                matrix_id = series_id
                 matrices_mapping.setdefault(matrix_id, []).append(node)
         self.get_impl().save_matrices(matrices_mapping)
 
@@ -474,7 +473,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
                     url = _get_constraint_matrix_path(area_id, storage_id, constraint_id)
                     node = study_data.tree.get_node(url)
                     assert isinstance(node, MatrixNode)
-                    matrix_id = extract_matrix_id(series_id)
+                    matrix_id = series_id
                     matrices_mapping.setdefault(matrix_id, []).append(node)
         self.get_impl().save_matrices(matrices_mapping)
 

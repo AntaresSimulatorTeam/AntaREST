@@ -17,7 +17,6 @@ import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import LinkNotFound
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.business.model.link_model import (
     Link,
 )
@@ -151,7 +150,7 @@ class FileStudyLinkDao(LinkDao, ABC):
             url = url_getter(area_from, area_to)
             node = study_data.tree.get_node(url)
             assert isinstance(node, MatrixNode)
-            matrix_id = extract_matrix_id(series_id)
+            matrix_id = series_id
             matrices_mapping.setdefault(matrix_id, []).append(node)
         self.get_impl().save_matrices(matrices_mapping)
 

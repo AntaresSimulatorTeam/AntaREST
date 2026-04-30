@@ -40,7 +40,7 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import parse_binding_constraint
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
+from antarest.study.storage.variantstudy.business.utils import validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
@@ -137,7 +137,7 @@ class AbstractBindingConstraintCommand(ICommand, metaclass=ABCMeta):
             return None
         if isinstance(v, str):
             # Check the matrix link
-            return validate_matrix(strip_matrix_protocol(v), {"command_context": self.command_context})
+            return validate_matrix(v, {"command_context": self.command_context})
         if isinstance(v, list):
             check_matrix_values(time_step, v, self.study_version)
             return validate_matrix(v, {"command_context": self.command_context})

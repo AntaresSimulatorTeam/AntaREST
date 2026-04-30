@@ -16,7 +16,6 @@ import numpy as np
 import polars as pl
 
 from antarest.core.exceptions import AreaNotFound, ChildNotFoundError
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_correlation_model import (
     HydroCorrelation,
@@ -34,7 +33,6 @@ if TYPE_CHECKING:
 from typing_extensions import override
 
 from antarest.core.utils.polars import create_polars_dataframe
-from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX
 from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.dao.api.hydro_dao import HydroDao
@@ -428,7 +426,7 @@ class FileStudyHydroDao(HydroDao):
             if area_id in series:
                 # We only want to save the series for given area and the method returned them all
                 series_id = series[area_id]
-                matrix_id = extract_matrix_id(series_id)
+                matrix_id = series_id
                 matrices_mapping.setdefault(matrix_id, []).append(node)
 
         # Validate that all the area ids are present in the study
@@ -511,7 +509,7 @@ class FileStudyHydroDao(HydroDao):
         areas = file_study.config.areas.keys()
 
         hourly_matrix_id = self.get_impl().generator_matrix_constants.get_null_matrix()
-        daily_matrix_id = MATRIX_PROTOCOL_PREFIX + matrix_service.create(create_polars_dataframe(np.full((365, 1), 24)))
+        daily_matrix_id = matrix_service.create(create_polars_dataframe(np.full((365, 1), 24)))
 
         if hydro_pmax == HydroPmax.HOURLY:
             max_hourly_gen_power = {}

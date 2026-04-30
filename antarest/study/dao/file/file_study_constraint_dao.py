@@ -18,7 +18,6 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.exceptions import BindingConstraintNotFound
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.business.model.binding_constraint_model import (
     OPERATOR_MATRICES_MAP,
     OPERATOR_MATRIX_FILE_MAP,
@@ -233,7 +232,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
             if constraint_id in series:
                 # We only want to save the series for given constraints and the method returned them all
                 series_id = series[constraint_id]
-                matrix_id = extract_matrix_id(series_id)
+                matrix_id = series_id
                 matrices_mapping.setdefault(matrix_id, []).append(node)
 
         # Validate that all the binding constraint ids are present in the study
