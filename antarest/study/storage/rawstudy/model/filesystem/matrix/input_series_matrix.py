@@ -54,7 +54,7 @@ def extract_matrix_id(uri: str) -> str:
     have been written in link files with that prefix, we still
     need to be able to parse them.
     """
-    return uri.removeprefix(MATRIX_PROTOCOL_PREFIX)
+    return uri.removeprefix(MATRIX_PROTOCOL_PREFIX).strip()
 
 
 def _dump_dataframe(df: pl.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
