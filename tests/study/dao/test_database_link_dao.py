@@ -133,6 +133,28 @@ def test_save_link(dao: StudyDao) -> None:
         dao.save_links([Link(area1="paris", area2="fake_area")])
 
 
+def test_save_link_filters_propagate_to_synthesis(dao: StudyDao) -> None:
+    """`save_links` must propagate filters into the in-memory link config exposed by
+    `get_synthesis`"""
+    save_area(dao, "Paris")
+    save_area(dao, "London")
+
+    dao.save_links(
+        [
+            Link(
+                area1="paris",
+                area2="london",
+                filter_synthesis=[FilterOption.DAILY, FilterOption.WEEKLY],
+                filter_year_by_year=[FilterOption.HOURLY],
+            )
+        ]
+    )
+
+    link_config = dao.get_synthesis().areas["london"].links["paris"]
+    assert link_config.filters_synthesis == ["daily", "weekly"]
+    assert link_config.filters_year == ["hourly"]
+
+
 def test_delete_area(dao: StudyDao) -> None:
     _create_default_link(dao)
     save_area(dao, "Toulouse")

@@ -16,6 +16,7 @@ from typing_extensions import override
 from antarest.core.exceptions import AreaNotFound, ConfigFileNotFound
 from antarest.study.business.model.area_properties_model import (
     AreaProperties,
+    sort_filter_options,
 )
 from antarest.study.dao.api.area_properties_dao import AreaPropertiesDao
 from antarest.study.model import STUDY_VERSION_8_3
@@ -157,3 +158,9 @@ class FileStudyAreaPropertiesDao(AreaPropertiesDao, ABC):
             properties.thermal_properties.model_dump(mode="json", by_alias=True),
             get_thermal_path(),
         )
+
+        # Sync the in-memory config so consumers reading from `file_study.config`
+        # (e.g. `get_synthesis`) see the freshly persisted filter values.
+        area_config = file_study.config.areas[area_id]
+        area_config.filters_synthesis = [str(f) for f in sort_filter_options(area_properties.filter_synthesis)]
+        area_config.filters_year = [str(f) for f in sort_filter_options(area_properties.filter_by_year)]

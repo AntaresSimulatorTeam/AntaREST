@@ -69,8 +69,12 @@ class LinkConfig(AntaresBaseModel, extra="ignore"):
     @model_validator(mode="before")
     def validation(cls, values: MutableMapping[str, Any]) -> MutableMapping[str, Any]:
         # note: field names are in kebab-case in the INI file
-        filters_synthesis = values.pop("filter-synthesis", values.pop("filters_synthesis", ""))
-        filters_year = values.pop("filter-year-by-year", values.pop("filters_year", ""))
+        filters_synthesis = values.pop(
+            "filter-synthesis", values.pop("filter_synthesis", values.pop("filters_synthesis", ""))
+        )
+        filters_year = values.pop(
+            "filter-year-by-year", values.pop("filter_year_by_year", values.pop("filters_year", ""))
+        )
         values["filters_synthesis"] = extract_filtering(filters_synthesis)
         values["filters_year"] = extract_filtering(filters_year)
         return values

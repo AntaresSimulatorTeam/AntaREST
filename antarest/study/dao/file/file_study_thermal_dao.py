@@ -24,7 +24,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.utils.utils import remove_first_match
 from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
-from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
 from antarest.study.dao.api.thermal_dao import ThermalDao
 from antarest.study.dao.common import AreaId, ThermalId, ThermalSeriesMapping
 from antarest.study.dao.file.common import check_area_exists
@@ -276,6 +276,11 @@ class FileStudyThermalDao(ThermalDao, ABC):
     @staticmethod
     def _update_thermal_config(study_data: FileStudyTreeConfig, area_id: str, thermal: ThermalCluster) -> None:
         check_area_exists(study_data, area_id)
+
+        # Mirror the DB read path which initializes version-specific defaults
+        # (nh3, so2, cost_generation, ...) so consumers reading from `config`
+        # see the same fully-populated cluster as the DB DAO returns.
+        initialize_thermal_cluster(thermal, study_data.version)
 
         for k, existing_cluster in enumerate(study_data.areas[area_id].thermals):
             if existing_cluster.id == thermal.id:
