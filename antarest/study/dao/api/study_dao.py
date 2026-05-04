@@ -44,6 +44,9 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.thermal_cluster_reserve_participation_model import (
+    ThermalClusterReserveParticipation,
+)
 from antarest.study.business.model.user_model import UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
@@ -86,6 +89,10 @@ from antarest.study.dao.api.reserves_global_parameters_dao import (
 from antarest.study.dao.api.scenario_builder_dao import ReadOnlyScenarioBuilderDao, ScenarioBuilderDao
 from antarest.study.dao.api.st_storage_dao import ReadOnlySTStorageDao, STStorageDao
 from antarest.study.dao.api.thematic_trimming_dao import ReadOnlyThematicTrimmingDao, ThematicTrimmingDao
+from antarest.study.dao.api.thermal_cluster_reserve_participation_dao import (
+    ReadOnlyThermalClusterReserveParticipationDao,
+    ThermalClusterReserveParticipationDao,
+)
 from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
 from antarest.study.dao.api.timeseries_config_dao import ReadOnlyTimeSeriesConfigDao, TimeSeriesConfigDao
 from antarest.study.dao.api.user_resources_dao import ReadOnlyUserResourcesDao, UserResourcesDao
@@ -99,6 +106,7 @@ from antarest.study.dao.common import (
     ReserveNeedsMapping,
     StStorageConstraintSeriesMapping,
     StStorageSeriesMapping,
+    ThermalClusterReserveParticipationsMapping,
     ThermalSeriesMapping,
     XpansionCapacitiesMapping,
     XpansionConstraintsMapping,
@@ -137,6 +145,7 @@ class ReadOnlyStudyDao(
     ReadOnlyAreaDao,
     ReadOnlyReservesGlobalParametersDao,
     ReadOnlyReserveDefinitionDao,
+    ReadOnlyThermalClusterReserveParticipationDao,
 ):
     @abstractmethod
     def get_study_id(self) -> str:
@@ -188,6 +197,7 @@ class StudyDao(
     AreaDao,
     ReservesGlobalParametersDao,
     ReserveDefinitionDao,
+    ThermalClusterReserveParticipationDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -883,3 +893,23 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_all_reserve_needs(self) -> ReserveNeedsMapping:
         return self._adaptee.get_all_reserve_needs()
+
+    @override
+    def get_all_thermal_cluster_reserve_participations(self) -> ThermalClusterReserveParticipationsMapping:
+        return self._adaptee.get_all_thermal_cluster_reserve_participations()
+
+    @override
+    def get_all_thermal_cluster_reserve_participations_for_cluster(
+        self, area_id: str, thermal_id: str
+    ) -> Sequence[ThermalClusterReserveParticipation]:
+        return self._adaptee.get_all_thermal_cluster_reserve_participations_for_cluster(area_id, thermal_id)
+
+    @override
+    def get_thermal_cluster_reserve_participation(
+        self, area_id: str, thermal_id: str, reserve_id: str
+    ) -> ThermalClusterReserveParticipation:
+        return self._adaptee.get_thermal_cluster_reserve_participation(area_id, thermal_id, reserve_id)
+
+    @override
+    def thermal_cluster_reserve_participation_exists(self, area_id: str, thermal_id: str, reserve_id: str) -> bool:
+        return self._adaptee.thermal_cluster_reserve_participation_exists(area_id, thermal_id, reserve_id)

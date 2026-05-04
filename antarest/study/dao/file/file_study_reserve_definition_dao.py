@@ -148,6 +148,40 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
         # Keep config in sync — remove deleted reserves from the area's list.
         area_config = file_study.config.areas[area_id]
         area_config.reserves = [rid for rid in area_config.reserves if rid not in reserve_ids]
+        # Cascade: drop thermal cluster participations that referenced the deleted reserves
+        # (across all clusters of the area). Mirrors the DB FK cascade.
+        self._remove_thermal_participations_for_reserves(area_id, set(reserve_ids))
+
+    def _remove_thermal_participations_for_reserves(self, area_id: str, reserve_ids: set[str]) -> None:
+        from antarest.study.dao.file.file_study_thermal_cluster_reserve_participation_dao import (
+            _reserves_path,
+        )
+        from antarest.study.storage.rawstudy.model.filesystem.config.thermal_cluster_reserve_participation import (
+            extract_reserve_id,
+        )
+
+        file_study = self.get_file_study()
+        try:
+            sections = file_study.tree.get(_reserves_path(area_id))
+        except (ChildNotFoundError, KeyError):
+            return
+        if not isinstance(sections, dict):
+            return
+        cleaned = {}
+        for key, value in sections.items():
+            if not isinstance(value, dict):
+                cleaned[key] = value
+                continue
+            cluster_name = value.get("cluster-name")
+            if not isinstance(cluster_name, str):
+                cleaned[key] = value
+                continue
+            derived = extract_reserve_id(key, cluster_name)
+            if derived in reserve_ids:
+                continue
+            cleaned[key] = value
+        if cleaned != sections:
+            file_study.tree.save(cleaned, _reserves_path(area_id))
 
     def _update_reserves_config(self, area_id: str, reserve: ReserveDefinition) -> None:
         study_data = self.get_file_study().config

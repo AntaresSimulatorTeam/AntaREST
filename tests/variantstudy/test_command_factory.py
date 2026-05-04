@@ -1100,6 +1100,45 @@ COMMANDS = [
         None,
         id="remove_reserve_definitions",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.CREATE_THERMAL_CLUSTER_RESERVE_PARTICIPATION.value,
+            args={
+                "area_id": "paris",
+                "thermal_id": "gas_cluster",
+                "parameters": {"id": "Reserve 1", "maxPower": 20.0},
+            },
+            study_version=STUDY_VERSION_10_0,
+        ),
+        None,
+        id="create_thermal_cluster_reserve_participation",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_THERMAL_CLUSTER_RESERVE_PARTICIPATIONS.value,
+            args={
+                "participation_properties": {
+                    "paris": {"gas_cluster": {"Reserve 1": {"maxPower": 30.0}}}
+                }
+            },
+            study_version=STUDY_VERSION_10_0,
+        ),
+        None,
+        id="update_thermal_cluster_reserve_participations",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REMOVE_THERMAL_CLUSTER_RESERVE_PARTICIPATIONS.value,
+            args={
+                "area_id": "paris",
+                "thermal_id": "gas_cluster",
+                "reserve_ids": ["Reserve 1"],
+            },
+            study_version=STUDY_VERSION_10_0,
+        ),
+        None,
+        id="remove_thermal_cluster_reserve_participations",
+    ),
 ]
 
 

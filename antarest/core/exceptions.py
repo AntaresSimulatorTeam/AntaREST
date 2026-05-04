@@ -150,6 +150,17 @@ class ReserveDefinitionNotFound(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
+class ThermalClusterReserveParticipationNotFound(HTTPException):
+    """Thermal cluster reserve participation is not found (404 Not Found)"""
+
+    def __init__(self, area_id: str, thermal_id: str, reserve_id: str):
+        msg = (
+            f"Reserve participation for reserve '{reserve_id}' "
+            f"on thermal cluster '{thermal_id}' not found in area '{area_id}'"
+        )
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
 # ============================================================
 # Duplicate (409)
 # ============================================================

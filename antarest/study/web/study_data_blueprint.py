@@ -120,6 +120,11 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterCreation,
     ThermalClusterUpdate,
 )
+from antarest.study.business.model.thermal_cluster_reserve_participation_model import (
+    ThermalClusterReserveParticipation,
+    ThermalClusterReserveParticipationCreation,
+    ThermalClusterReserveParticipationUpdate,
+)
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
 from antarest.study.model import CommentsDto
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -1644,6 +1649,133 @@ def create_study_data_routes() -> APIRouter:
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         study_service.reserve_definitions_manager.delete_reserve_definitions(study_interface, area_id, reserve_ids)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/reserves",
+        summary="Get reserve participations for a given thermal cluster",
+    )
+    def get_thermal_cluster_reserve_participations(
+        study_service: StudyServiceDep,
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        cluster_id: SanitizedStr,
+    ) -> Sequence[ThermalClusterReserveParticipation]:
+        """
+        List all reserve participations of a given thermal cluster.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+        - `cluster_id`: the thermal cluster ID.
+        """
+        logger.info(
+            "Getting reserve participations for study %s, area %s and thermal cluster %s",
+            uuid,
+            area_id,
+            cluster_id,
+        )
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.thermal_cluster_reserve_participations_manager.get_participations(
+            study_interface, area_id, cluster_id
+        )
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/reserves/{reserve_id}",
+        summary="Get a single reserve participation for a given thermal cluster",
+    )
+    def get_thermal_cluster_reserve_participation(
+        study_service: StudyServiceDep,
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        cluster_id: SanitizedStr,
+        reserve_id: SanitizedStr,
+    ) -> ThermalClusterReserveParticipation:
+        logger.info(
+            "Getting reserve participation %s for study %s, area %s and thermal cluster %s",
+            reserve_id,
+            uuid,
+            area_id,
+            cluster_id,
+        )
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.thermal_cluster_reserve_participations_manager.get_participation(
+            study_interface, area_id, cluster_id, reserve_id
+        )
+
+    @bp.post(
+        path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/reserves",
+        summary="Create a new reserve participation for a given thermal cluster",
+    )
+    def create_thermal_cluster_reserve_participation(
+        study_service: StudyServiceDep,
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        cluster_id: SanitizedStr,
+        participation_data: ThermalClusterReserveParticipationCreation,
+    ) -> ThermalClusterReserveParticipation:
+        logger.info(
+            "Creating reserve participation for study '%s', area '%s' and thermal cluster '%s'",
+            uuid,
+            area_id,
+            cluster_id,
+        )
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.thermal_cluster_reserve_participations_manager.create_participation(
+            study_interface, area_id, cluster_id, participation_data
+        )
+
+    @bp.patch(
+        path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/reserves/{reserve_id}",
+        summary="Update a reserve participation for a given thermal cluster",
+    )
+    def update_thermal_cluster_reserve_participation(
+        study_service: StudyServiceDep,
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        cluster_id: SanitizedStr,
+        reserve_id: SanitizedStr,
+        participation_data: ThermalClusterReserveParticipationUpdate,
+    ) -> ThermalClusterReserveParticipation:
+        logger.info(
+            "Updating reserve participation %s for study '%s', area '%s' and thermal cluster '%s'",
+            reserve_id,
+            uuid,
+            area_id,
+            cluster_id,
+        )
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.thermal_cluster_reserve_participations_manager.update_participation(
+            study_interface, area_id, cluster_id, reserve_id, participation_data
+        )
+
+    @bp.delete(
+        path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/reserves",
+        summary="Remove reserve participations for a given thermal cluster",
+        status_code=HTTPStatus.NO_CONTENT,
+    )
+    def delete_thermal_cluster_reserve_participations(
+        study_service: StudyServiceDep,
+        uuid: UuidStr,
+        area_id: SanitizedStr,
+        cluster_id: SanitizedStr,
+        reserve_ids: Annotated[Sequence[SanitizedStr], Body(examples=[["Reserve 1", "Reserve 2"]])],
+    ) -> None:
+        logger.info(
+            "Deleting reserve participations %r for study '%s', area '%s' and thermal cluster '%s'",
+            reserve_ids,
+            uuid,
+            area_id,
+            cluster_id,
+        )
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        study_service.thermal_cluster_reserve_participations_manager.delete_participations(
+            study_interface, area_id, cluster_id, reserve_ids
+        )
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",

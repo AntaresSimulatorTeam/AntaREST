@@ -43,6 +43,9 @@ from antarest.study.dao.database.database_scenario_builder_dao import DatabaseSc
 from antarest.study.dao.database.database_st_storage_dao import DatabaseStStorageDao
 from antarest.study.dao.database.database_study_settings_dao import DatabaseStudySettingsDao
 from antarest.study.dao.database.database_thematic_trimming_dao import DatabaseThematicTrimmingDao
+from antarest.study.dao.database.database_thermal_cluster_reserve_participation_dao import (
+    DatabaseThermalClusterReserveParticipationDao,
+)
 from antarest.study.dao.database.database_thermal_dao import DatabaseThermalDao
 from antarest.study.dao.database.database_user_resources import DatabaseUserResourcesDao
 from antarest.study.dao.database.database_xpansion_dao import DatabaseXpansionDao
@@ -79,6 +82,7 @@ class DatabaseStudyDao(
     DatabaseBindingConstraintDao,
     DatabaseReservesGlobalParametersDao,
     DatabaseReserveDefinitionDao,
+    DatabaseThermalClusterReserveParticipationDao,
 ):
     """
     Database implementation of StudyDao.
@@ -117,6 +121,7 @@ class DatabaseStudyDao(
         DatabaseBindingConstraintDao.__init__(self, study_id, db_session)
         DatabaseReservesGlobalParametersDao.__init__(self, study_id, db_session)
         DatabaseReserveDefinitionDao.__init__(self, study_id, db_session)
+        DatabaseThermalClusterReserveParticipationDao.__init__(self, study_id, db_session)
         self._matrix_service = matrix_service
         self._generator_matrix_constants = generator_matrix_constants
 

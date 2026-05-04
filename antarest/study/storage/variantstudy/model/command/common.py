@@ -109,6 +109,9 @@ class CommandName(Enum):
     CREATE_RESERVE_DEFINITION = "create_reserve_definition"
     UPDATE_RESERVE_DEFINITIONS = "update_reserve_definitions"
     REMOVE_RESERVE_DEFINITIONS = "remove_reserve_definitions"
+    CREATE_THERMAL_CLUSTER_RESERVE_PARTICIPATION = "create_thermal_cluster_reserve_participation"
+    UPDATE_THERMAL_CLUSTER_RESERVE_PARTICIPATIONS = "update_thermal_cluster_reserve_participations"
+    REMOVE_THERMAL_CLUSTER_RESERVE_PARTICIPATIONS = "remove_thermal_cluster_reserve_participations"
 
 
 @dataclass(frozen=True)

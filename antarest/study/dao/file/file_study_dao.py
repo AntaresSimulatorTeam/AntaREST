@@ -37,6 +37,9 @@ from antarest.study.dao.file.file_study_reserves_global_parameters_dao import Fi
 from antarest.study.dao.file.file_study_scenario_builder_dao import FileStudyScenarioBuilderDao
 from antarest.study.dao.file.file_study_st_storage_dao import FileStudySTStorageDao
 from antarest.study.dao.file.file_study_thematic_trimming_dao import FileStudyThematicTrimmingDao
+from antarest.study.dao.file.file_study_thermal_cluster_reserve_participation_dao import (
+    FileStudyThermalClusterReserveParticipationDao,
+)
 from antarest.study.dao.file.file_study_thermal_dao import FileStudyThermalDao
 from antarest.study.dao.file.file_study_timseries_config_dao import FileStudyTimeSeriesConfigDao
 from antarest.study.dao.file.file_study_user_resources_dao import FileStudyUserResourceDao
@@ -79,6 +82,7 @@ class FileStudyTreeDao(
     FileStudyAreaDao,
     FileStudyReservesGlobalParametersDao,
     FileStudyReserveDefinitionDao,
+    FileStudyThermalClusterReserveParticipationDao,
 ):
     """
     Implementation of study DAO over the simulator input format.

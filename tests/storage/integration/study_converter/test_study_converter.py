@@ -431,3 +431,51 @@ def test_convert_short_term_storages_also_converts_additional_constraint_matrix(
 
     source_dao.get_all_st_storage_additional_constraint_matrices.assert_called_once()
     new_dao.save_st_storage_constraint_matrices.assert_called_once()
+
+
+def test_convert_reserves_propagates_thermal_cluster_participations() -> None:
+    """Ensure ``_convert_reserves`` carries thermal cluster participations across DAOs."""
+    from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
+    from antarest.study.business.model.thermal_cluster_reserve_participation_model import (
+        ThermalClusterReserveParticipation,
+    )
+    from antarest.study.model import STUDY_VERSION_10_0
+
+    source_dao = MagicMock()
+    new_dao = MagicMock()
+
+    source_dao.get_all_reserves_global_parameters.return_value = {}
+    source_dao.get_all_reserve_definitions.return_value = {}
+    source_dao.get_all_reserve_needs.return_value = {}
+
+    participation = ThermalClusterReserveParticipation(id="Reserve 1", max_power=20.0, participation_cost=1.0)
+    source_dao.get_all_thermal_cluster_reserve_participations.return_value = {
+        "fr": {"gas_cluster": {ReserveDefinitionId("Reserve 1"): participation}},
+    }
+
+    converter = StudyConverter(
+        source_dao=source_dao, new_dao=new_dao, study_version=STUDY_VERSION_10_0, matrix_service=MagicMock()
+    )
+    converter._convert_reserves()
+
+    new_dao.save_thermal_cluster_reserve_participations.assert_called_once_with(
+        {"fr": {"gas_cluster": [participation]}}
+    )
+
+
+def test_convert_reserves_no_op_when_no_participations() -> None:
+    """No write call should happen when the source has no participations."""
+    from antarest.study.model import STUDY_VERSION_10_0
+
+    source_dao = MagicMock()
+    new_dao = MagicMock()
+    source_dao.get_all_reserves_global_parameters.return_value = {}
+    source_dao.get_all_reserve_definitions.return_value = {}
+    source_dao.get_all_thermal_cluster_reserve_participations.return_value = {}
+
+    converter = StudyConverter(
+        source_dao=source_dao, new_dao=new_dao, study_version=STUDY_VERSION_10_0, matrix_service=MagicMock()
+    )
+    converter._convert_reserves()
+
+    new_dao.save_thermal_cluster_reserve_participations.assert_not_called()

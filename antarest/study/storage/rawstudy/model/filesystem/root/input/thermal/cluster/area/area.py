@@ -12,11 +12,15 @@
 from typing_extensions import override
 
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.study.model import STUDY_VERSION_10_0
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.cluster.area.list import (
     InputThermalClustersAreaList,
+)
+from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.cluster.area.reserves_ini import (
+    InputThermalClustersAreaReservesIni,
 )
 
 
@@ -33,4 +37,6 @@ class InputThermalClustersArea(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {"list": InputThermalClustersAreaList(self.config.next_file("list.ini"))}
+        if self.config.version >= STUDY_VERSION_10_0:
+            children["reserves"] = InputThermalClustersAreaReservesIni(self.config.next_file("reserves.ini"))
         return children

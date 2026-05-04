@@ -213,9 +213,40 @@ class FileStudyThermalDao(ThermalDao, ABC):
         for path in paths:
             study_data.tree.delete(path)
 
+        # Cascade: remove any reserve participations attached to the deleted cluster.
+        # Avoids leaving orphan sections in `input/thermal/clusters/<area>/reserves.ini`.
+        self._remove_thermal_reserve_participations(study_data, area_id, cluster_id)
+
         self._remove_cluster_from_scenario_builder(study_data, area_id, cluster_id)
         # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
         remove_first_match(study_data.config.areas[area_id].thermals, lambda c: c.id.lower() == cluster_id)
+
+    @staticmethod
+    def _remove_thermal_reserve_participations(study_data: FileStudy, area_id: str, thermal_id: str) -> None:
+        from antarest.study.dao.file.file_study_thermal_cluster_reserve_participation_dao import (
+            _reserves_path,
+        )
+        from antarest.study.storage.rawstudy.model.filesystem.config.thermal_cluster_reserve_participation import (
+            extract_reserve_id,
+        )
+
+        try:
+            sections = study_data.tree.get(_reserves_path(area_id))
+        except (ChildNotFoundError, KeyError):
+            return
+        if not isinstance(sections, dict):
+            return
+        cleaned = {
+            key: value
+            for key, value in sections.items()
+            if not (
+                isinstance(value, dict)
+                and value.get("cluster-name") == thermal_id
+                and extract_reserve_id(key, thermal_id) is not None
+            )
+        }
+        if cleaned != sections:
+            study_data.tree.save(cleaned, _reserves_path(area_id))
 
     def _get_thermal_matrices(self, url_getter: Callable[[AreaId, ThermalId], list[str]]) -> ThermalSeriesMapping:
         study_data = self.get_file_study()

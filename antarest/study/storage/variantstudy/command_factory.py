@@ -33,6 +33,9 @@ from antarest.study.storage.variantstudy.model.command.create_st_storage import 
 from antarest.study.storage.variantstudy.model.command.create_st_storage_constraints import (
     CreateSTStorageAdditionalConstraints,
 )
+from antarest.study.storage.variantstudy.model.command.create_thermal_cluster_reserve_participation import (
+    CreateThermalClusterReserveParticipation,
+)
 from antarest.study.storage.variantstudy.model.command.create_xpansion_candidate import CreateXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.create_xpansion_configuration import CreateXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.create_xpansion_constraint import CreateXpansionConstraint
@@ -58,6 +61,9 @@ from antarest.study.storage.variantstudy.model.command.remove_multiple_storage_c
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_reserve_definitions import RemoveReserveDefinitions
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
+from antarest.study.storage.variantstudy.model.command.remove_thermal_cluster_reserve_participations import (
+    RemoveThermalClusterReserveParticipations,
+)
 from antarest.study.storage.variantstudy.model.command.remove_user_resource import RemoveUserResource
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate import RemoveXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
@@ -106,6 +112,9 @@ from antarest.study.storage.variantstudy.model.command.update_st_storage_additio
 )
 from antarest.study.storage.variantstudy.model.command.update_st_storages import UpdateSTStorages
 from antarest.study.storage.variantstudy.model.command.update_thematic_trimming import UpdateThematicTrimming
+from antarest.study.storage.variantstudy.model.command.update_thermal_cluster_reserve_participations import (
+    UpdateThermalClusterReserveParticipations,
+)
 from antarest.study.storage.variantstudy.model.command.update_thermal_clusters import UpdateThermalClusters
 from antarest.study.storage.variantstudy.model.command.update_timeseries_config import UpdateTimeSeriesConfig
 from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
@@ -182,6 +191,9 @@ COMMAND_MAPPING: dict[str, type[ICommand]] = {
     CommandName.CREATE_RESERVE_DEFINITION.value: CreateReserveDefinition,
     CommandName.UPDATE_RESERVE_DEFINITIONS.value: UpdateReserveDefinitions,
     CommandName.REMOVE_RESERVE_DEFINITIONS.value: RemoveReserveDefinitions,
+    CommandName.CREATE_THERMAL_CLUSTER_RESERVE_PARTICIPATION.value: CreateThermalClusterReserveParticipation,
+    CommandName.UPDATE_THERMAL_CLUSTER_RESERVE_PARTICIPATIONS.value: UpdateThermalClusterReserveParticipations,
+    CommandName.REMOVE_THERMAL_CLUSTER_RESERVE_PARTICIPATIONS.value: RemoveThermalClusterReserveParticipations,
 }
 
 

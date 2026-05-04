@@ -24,6 +24,7 @@ from antarest.core.exceptions import (
     LinkNotFound,
     ReferencedObjectDeletionNotAllowed,
     ReserveDefinitionNotFound,
+    ThermalClusterReserveParticipationNotFound,
 )
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.utils import remove_first_match
@@ -68,6 +69,9 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.thermal_cluster_reserve_participation_model import (
+    ThermalClusterReserveParticipation,
+)
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
@@ -91,6 +95,7 @@ from antarest.study.dao.common import (
     StStorageConstraintSeriesMapping,
     StStorageId,
     StStorageSeriesMapping,
+    ThermalClusterReserveParticipationsMapping,
     ThermalSeriesMapping,
     XpansionCapacitiesMapping,
     XpansionConstraintsMapping,
@@ -129,6 +134,13 @@ class AdditionalConstraintKey:
     constraint_id: str
 
 
+@dataclass(frozen=True)
+class ThermalReserveParticipationKey:
+    area_id: str
+    thermal_id: str
+    reserve_id: str
+
+
 def link_key(area1_id: str, area2_id: str) -> LinkKey:
     area1_id, area2_id = sorted((area1_id, area2_id))
     return LinkKey(area1_id, area2_id)
@@ -144,6 +156,10 @@ def reserve_key(area_id: str, reserve_id: str) -> ReserveKey:
 
 def additional_constraint_key(area_id: str, storage_id: str, constraint_id: str) -> AdditionalConstraintKey:
     return AdditionalConstraintKey(area_id, storage_id, constraint_id)
+
+
+def thermal_reserve_participation_key(area_id: str, thermal_id: str, reserve_id: str) -> ThermalReserveParticipationKey:
+    return ThermalReserveParticipationKey(area_id, thermal_id, reserve_id)
 
 
 class InMemoryStudyDao(StudyDao):
@@ -260,6 +276,10 @@ class InMemoryStudyDao(StudyDao):
         self._reserve_definitions: dict[ReserveKey, ReserveDefinition] = {}
         # Reserve needs chronicles (per-reserve time series), value = matrix_id
         self._reserve_needs: dict[ReserveKey, str] = {}
+        # Thermal cluster reserve participations
+        self._thermal_cluster_reserve_participations: dict[
+            ThermalReserveParticipationKey, ThermalClusterReserveParticipation
+        ] = {}
         # Misc-gen
         self._misc_gen: dict[str, str] = {}
         # Solar
@@ -554,6 +574,13 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_thermal(self, area_id: str, thermal_id: str) -> None:
         del self._thermals[cluster_key(area_id, thermal_id)]
+        # Cascade: drop any reserve participations that referenced this thermal cluster.
+        for key in [
+            k
+            for k in self._thermal_cluster_reserve_participations
+            if k.area_id == area_id and k.thermal_id == thermal_id
+        ]:
+            del self._thermal_cluster_reserve_participations[key]
 
     @override
     def get_all_hydro_properties(self) -> dict[str, HydroProperties]:
@@ -1643,6 +1670,13 @@ class InMemoryStudyDao(StudyDao):
             except KeyError as exc:
                 raise ReserveDefinitionNotFound(area_id, rid) from exc
             self._reserve_needs.pop(reserve_key(area_id, rid), None)
+            # Cascade: remove orphan thermal cluster participations across all clusters.
+            for participation_key in [
+                k
+                for k in self._thermal_cluster_reserve_participations
+                if k.area_id == area_id and k.reserve_id == rid
+            ]:
+                del self._thermal_cluster_reserve_participations[participation_key]
 
     @override
     def get_reserve_need(self, area_id: str, reserve_id: str) -> pl.DataFrame:
@@ -1665,6 +1699,77 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_reserve_need(self, area_id: AreaId, reserve_id: ReserveDefinitionId) -> None:
         self._reserve_needs.pop(reserve_key(area_id, reserve_id), None)
+
+    @override
+    def get_all_thermal_cluster_reserve_participations(self) -> ThermalClusterReserveParticipationsMapping:
+        result: ThermalClusterReserveParticipationsMapping = {}
+        for key, participation in self._thermal_cluster_reserve_participations.items():
+            result.setdefault(key.area_id, {}).setdefault(key.thermal_id, {})[ReserveDefinitionId(key.reserve_id)] = (
+                participation
+            )
+        return result
+
+    @override
+    def get_all_thermal_cluster_reserve_participations_for_cluster(
+        self, area_id: str, thermal_id: str
+    ) -> Sequence[ThermalClusterReserveParticipation]:
+        if area_id not in self.get_all_area_ids():
+            raise AreaNotFound(area_id)
+        return [
+            participation
+            for key, participation in self._thermal_cluster_reserve_participations.items()
+            if key.area_id == area_id and key.thermal_id == thermal_id
+        ]
+
+    @override
+    def get_thermal_cluster_reserve_participation(
+        self, area_id: str, thermal_id: str, reserve_id: str
+    ) -> ThermalClusterReserveParticipation:
+        if area_id not in self.get_all_area_ids():
+            raise AreaNotFound(area_id)
+        try:
+            return self._thermal_cluster_reserve_participations[
+                thermal_reserve_participation_key(area_id, thermal_id, reserve_id)
+            ]
+        except KeyError as exc:
+            raise ThermalClusterReserveParticipationNotFound(area_id, thermal_id, reserve_id) from exc
+
+    @override
+    def thermal_cluster_reserve_participation_exists(self, area_id: str, thermal_id: str, reserve_id: str) -> bool:
+        if area_id not in self.get_all_area_ids():
+            return False
+        return (
+            thermal_reserve_participation_key(area_id, thermal_id, reserve_id)
+            in self._thermal_cluster_reserve_participations
+        )
+
+    @override
+    def save_thermal_cluster_reserve_participations(
+        self,
+        data: dict[AreaId, dict[str, list[ThermalClusterReserveParticipation]]],
+    ) -> None:
+        for area_id, by_cluster in data.items():
+            if area_id not in self.get_all_area_ids():
+                raise AreaNotFound(area_id)
+            for thermal_id, participations in by_cluster.items():
+                for participation in participations:
+                    key = thermal_reserve_participation_key(area_id, thermal_id, participation.id)
+                    self._thermal_cluster_reserve_participations[key] = participation
+
+    @override
+    def delete_thermal_cluster_reserve_participations(
+        self,
+        area_id: AreaId,
+        thermal_id: str,
+        reserve_ids: Sequence[ReserveDefinitionId],
+    ) -> None:
+        for rid in reserve_ids:
+            try:
+                del self._thermal_cluster_reserve_participations[
+                    thermal_reserve_participation_key(area_id, thermal_id, rid)
+                ]
+            except KeyError as exc:
+                raise ThermalClusterReserveParticipationNotFound(area_id, thermal_id, rid) from exc
 
     @override
     def save_solar(self, series: AreaSeriesMapping) -> None:

@@ -237,6 +237,14 @@ class StudyConverter:
                 {area_id: list(reserves.values()) for area_id, reserves in reserve_definitions.items()}
             )
             self._new_dao.save_reserve_needs(self._source_dao.get_all_reserve_needs())
+        thermal_cluster_participations = self._source_dao.get_all_thermal_cluster_reserve_participations()
+        if thermal_cluster_participations:
+            self._new_dao.save_thermal_cluster_reserve_participations(
+                {
+                    area_id: {thermal_id: list(by_reserve.values()) for thermal_id, by_reserve in by_cluster.items()}
+                    for area_id, by_cluster in thermal_cluster_participations.items()
+                }
+            )
 
     def _convert_short_term_storages(
         self, storages: dict[str, dict[str, STStorage]], constraints: STStorageAdditionalConstraintsMap
