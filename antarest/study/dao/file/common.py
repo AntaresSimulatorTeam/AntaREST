@@ -60,6 +60,5 @@ def save_area_matrices(
         url = url_getter(area_id)
         node = study_data.tree.get_node(url)
         assert isinstance(node, MatrixNode)
-        matrix_id = series_id
-        matrices_mapping.setdefault(matrix_id, []).append(node)
+        matrices_mapping.setdefault(series_id, []).append(node)
     file_study_dao.save_matrices(matrices_mapping)

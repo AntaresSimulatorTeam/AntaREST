@@ -60,13 +60,6 @@ def validate_matrix(matrix: list[list[MatrixData]] | str, values: dict[str, Any]
         raise TypeError(f"The data '{matrix}' is neither a matrix nor a link to a matrix")
 
 
-def strip_matrix_protocol(matrix_uri: list[list[float]] | str | None) -> str:
-    assert isinstance(matrix_uri, str)
-    if matrix_uri.startswith(MATRIX_PROTOCOL_PREFIX):
-        return matrix_uri[len(MATRIX_PROTOCOL_PREFIX) :]
-    return matrix_uri
-
-
 class AliasDecoder:
     @staticmethod
     def links_series(alias: str, study_version: StudyVersion) -> str:

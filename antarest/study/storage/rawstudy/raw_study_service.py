@@ -32,7 +32,6 @@ from antarest.core.utils.archives import (
     extract_archive_from_stream,
 )
 from antarest.core.utils.utils import StopWatch, current_time
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StorageMode, Study
 from antarest.study.repository import StudyMetadataRepository
@@ -429,7 +428,7 @@ class RawStudyService(AbstractStorageService):
         for node in matrix_nodes:
             link_content = node.matrix_mapper.get_link_content(node)
             assert link_content is not None
-            matrices_mapping.setdefault(extract_matrix_id(link_content), []).append(node)
+            matrices_mapping.setdefault(link_content, []).append(node)
 
         for matrix_content in self._matrix_service.yield_matrices(list(matrices_mapping)):
             for node in matrices_mapping[matrix_content.id]:

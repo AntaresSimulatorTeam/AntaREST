@@ -426,8 +426,7 @@ class FileStudyHydroDao(HydroDao):
             if area_id in series:
                 # We only want to save the series for given area and the method returned them all
                 series_id = series[area_id]
-                matrix_id = series_id
-                matrices_mapping.setdefault(matrix_id, []).append(node)
+                matrices_mapping.setdefault(series_id, []).append(node)
 
         # Validate that all the area ids are present in the study
         invalids_ids = set(series) - set(nodes_and_area_ids.values())

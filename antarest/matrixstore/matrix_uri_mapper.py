@@ -32,15 +32,6 @@ def extract_matrix_id(uri: str) -> str:
     return uri.removeprefix(MATRIX_PROTOCOL_PREFIX)
 
 
-def add_matrix_id_prefix(uri: str) -> str:
-    """
-    Add prefix `matrix://` to matrix id for form URL matrix://<id>
-    """
-    if uri.startswith(MATRIX_PROTOCOL_PREFIX):
-        return uri
-    return f"{MATRIX_PROTOCOL_PREFIX}{uri}"
-
-
 class NormalizedMatrixUriMapper(StrEnum):
     NORMALIZED = "normalized"
     DENORMALIZED = "denormalized"
@@ -120,11 +111,11 @@ class BaseMatrixUriMapper(MatrixUriMapper):
 
     @override
     def get_matrix(self, uri: str) -> pl.DataFrame:
-        return self._matrix_service.get(extract_matrix_id(uri))
+        return self._matrix_service.get(uri)
 
     @override
     def matrix_exists(self, uri: str) -> bool:
-        return self._matrix_service.exists(extract_matrix_id(uri))
+        return self._matrix_service.exists(uri)
 
     @override
     def delete(self, node: MatrixNode, url: list[str] | None = None) -> None:
@@ -144,7 +135,10 @@ class BaseMatrixUriMapper(MatrixUriMapper):
     def get_link_content(self, node: MatrixNode) -> str | None:
         link_path = self.get_link_path(node)
         if link_path.exists():
-            return link_path.read_text()
+            # Important:
+            # in the past, some matrix IDs may have been stored with the "matrix://" prefix,
+            # we need to keep that extraction for backwards compat.
+            return extract_matrix_id(link_path.read_text())
         return None
 
     @override

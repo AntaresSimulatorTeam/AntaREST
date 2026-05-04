@@ -15,7 +15,6 @@ from collections.abc import Callable, Iterator, Sequence
 import polars as pl
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_uri_mapper import add_matrix_id_prefix
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixContent, MatrixMetadataDTO, MatrixMismatchDTO, MatrixReferencesDTO
 from antarest.matrixstore.repository import compute_hash
@@ -36,8 +35,6 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
     def add_predefined_matrix(self, matrix_factory: Callable[[], pl.DataFrame]) -> str:
         matrix_id = compute_hash(matrix_factory())
         self._predefined_matrices[matrix_id] = matrix_factory
-        # DAO methods support prefixed IDs, so we register the prefixed ID as well
-        self._predefined_matrices[add_matrix_id_prefix(matrix_id)] = matrix_factory
         return matrix_id
 
     @override

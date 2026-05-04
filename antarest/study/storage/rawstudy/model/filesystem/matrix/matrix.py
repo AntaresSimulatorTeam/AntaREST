@@ -23,7 +23,7 @@ from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.core.serde.np_array import NpArray
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper, add_matrix_id_prefix
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
@@ -67,7 +67,7 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
     def get_lazy_content(self, url: list[str] | None = None, depth: int = -1, expanded: bool = False) -> str:
         link_content = self.matrix_mapper.get_link_content(self)
         matrix_id = link_content or self.config.path.name
-        return add_matrix_id_prefix(matrix_id)
+        return f"matrix://{matrix_id}"
 
     @override
     def get_matrix_nodes_to_normalize(self) -> list[Self]:
