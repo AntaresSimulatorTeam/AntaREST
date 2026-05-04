@@ -245,7 +245,7 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
                         return create_polars_dataframe(self.default_empty())
                     return pl.DataFrame()
                 # Otherwise, we raise a 404 'Not Found' exception.
-                logger.warning(f"Matrix file'{file_path}' not found")
+                logger.warning(f"Matrix file '{file_path}' not found")
                 study_id = self.config.study_id
                 relpath = file_path.relative_to(self.config.study_path).as_posix()
                 raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
