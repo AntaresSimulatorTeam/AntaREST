@@ -19,12 +19,12 @@ from antares.study.version.create_app import CreateApp
 from antarest.blobstore.in_memory import InMemoryBlobService
 from antarest.blobstore.service import IBlobService
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
-from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_9_3
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 

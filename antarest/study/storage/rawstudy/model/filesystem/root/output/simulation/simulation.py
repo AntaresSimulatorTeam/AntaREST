@@ -11,12 +11,12 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Simulation
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.about.about import OutputSimulationAbout
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.info_antares_output import (

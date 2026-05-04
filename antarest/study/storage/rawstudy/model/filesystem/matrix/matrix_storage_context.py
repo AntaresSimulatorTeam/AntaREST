@@ -13,18 +13,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
-
-
-def extract_matrix_id(uri: str) -> str:
-    """Extract matrix ID from URL matrix://<id>"""
-    return uri.removeprefix(MATRIX_PROTOCOL_PREFIX)
+from antarest.matrixstore.service import ISimpleMatrixService
 
 
 @dataclass(frozen=True)
 class MatrixStorageContext:
     """
-    Holds the matrix service and managed/unmanaged storage mode for a study.
+    Necessary context to decide how to read & write input timeseries to file study.
 
     Attributes:
         matrix_service: Service to store and retrieve matrices.

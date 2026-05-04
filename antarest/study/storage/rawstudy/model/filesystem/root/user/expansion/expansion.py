@@ -9,9 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode, RegisteredFile
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.adequacy_criterion import (
     ExpansionAdequacyCriterion,
 )

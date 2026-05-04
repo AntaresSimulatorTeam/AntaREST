@@ -21,7 +21,6 @@ import filelock
 from antares.study.version import StudyVersion
 
 from antarest.core.interfaces.cache import ICache, study_config_cache_key
-from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build, parse_outputs
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -29,6 +28,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfigDTO,
     validate_config,
 )
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 
 logger = logging.getLogger(__name__)

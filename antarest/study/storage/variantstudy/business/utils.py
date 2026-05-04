@@ -17,10 +17,14 @@ from antares.study.version import StudyVersion
 
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.model import MatrixData
-from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+# Legacy prefix: historically, matrix IDs were written in commands
+# with that prefix. We still need to handle those existing commands.
+MATRIX_PROTOCOL_PREFIX = "matrix://"
 
 
 def validate_matrix(matrix: list[list[MatrixData]] | str, values: dict[str, Any]) -> str:

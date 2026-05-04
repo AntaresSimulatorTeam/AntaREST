@@ -17,7 +17,6 @@ import pytest
 import antarest.study.storage.rawstudy.model.filesystem.config.files
 from antarest.blobstore.in_memory import InMemoryBlobService
 from antarest.core.exceptions import CommandApplicationError
-from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.model.thermal_cluster_model import (
@@ -29,6 +28,7 @@ from antarest.study.business.model.thermal_cluster_model import (
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext

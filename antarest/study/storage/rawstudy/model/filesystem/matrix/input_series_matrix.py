@@ -27,11 +27,11 @@ from antarest.core.serde.matrix_export import write_dataframe_in_tsv_format
 from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.core.utils.polars import create_polars_dataframe, read_input_dataframe
 from antarest.core.utils.utils import StopWatch
-from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext, extract_matrix_id
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +39,22 @@ logger = logging.getLogger(__name__)
 MatrixSupplier: TypeAlias = Callable[[], npt.NDArray[np.float64]]
 MatrixId: TypeAlias = str
 MatrixContent: TypeAlias = bytes | JSON | pl.DataFrame
+
+
+# Legacy prefix: historically, matrix IDs were written in link files
+# with that prefix. We still need to handle those existing files.
+MATRIX_PROTOCOL_PREFIX = "matrix://"
+
+
+def extract_matrix_id(uri: str) -> str:
+    """
+    Extract matrix ID from URL matrix://<id>.
+
+    Exists for backward compatibility reason, historically matrix IDs
+    have been written in link files with that prefix, we still
+    need to be able to parse them.
+    """
+    return uri.removeprefix(MATRIX_PROTOCOL_PREFIX)
 
 
 def _dump_dataframe(df: pl.DataFrame, path_or_buf: Path | io.BytesIO) -> None:

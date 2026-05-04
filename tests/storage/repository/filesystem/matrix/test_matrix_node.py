@@ -17,10 +17,10 @@ import polars as pl
 from typing_extensions import override
 
 from antarest.core.utils.polars import create_polars_dataframe
-from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.study.model import STUDY_VERSION_8_8, MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 
 MOCK_MATRIX = create_polars_dataframe([[1, 2], [3, 4]])
 

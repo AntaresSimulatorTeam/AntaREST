@@ -15,9 +15,9 @@ import logging
 from typing_extensions import override
 
 from antarest.core.model import JSON
-from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 
 logger = logging.getLogger(__name__)
 

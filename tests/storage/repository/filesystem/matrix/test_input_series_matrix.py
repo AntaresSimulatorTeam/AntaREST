@@ -22,10 +22,10 @@ from polars.testing import assert_frame_equal
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.utils.polars import create_polars_dataframe
-from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.study.model import STUDY_VERSION_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 
 
 class TestInputSeriesMatrix:

@@ -36,13 +36,13 @@ from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import current_time
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
-from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService, SimpleMatrixService
 from antarest.study.directory_service import DirectoryService
 from antarest.study.repository import DirectoryRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants

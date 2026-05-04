@@ -15,7 +15,6 @@ import pytest
 from antares.study.version.create_app import CreateApp
 
 from antarest.blobstore.service import IBlobService
-from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.link_management import LinkManager
@@ -24,6 +23,7 @@ from antarest.study.business.xpansion_management import XpansionManager
 from antarest.study.model import STUDY_VERSION_8_1
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext

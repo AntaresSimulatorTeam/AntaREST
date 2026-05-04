@@ -31,7 +31,6 @@ from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.dependencies import AppState
 from antarest.main import add_exception_handlers
-from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.output.model import OutputVariablesInformation
 from antarest.output.routes import create_output_routes
@@ -39,6 +38,7 @@ from antarest.output.storage.file.repository import DbOutputVariables
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.common.prepro import default_k
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.prepro.area.area import default_energy
 from antarest.study.storage.variantstudy.business.matrix_constants.common import fixed_4_columns

@@ -178,20 +178,19 @@ class AbstractBindingConstraintCommand(ICommand, metaclass=ABCMeta):
                 raise NotImplementedError(f"Invalid link or thermal ID: {link_or_cluster}")
         return terms
 
-    def command_get_inner_matrices(self, matrices: BindingConstraintMatrices) -> InnerMatrices:
-        matrix_service = self.command_context.matrix_service
-        return InnerMatrices(
-            matrices=[
-                matrix_service.get_matrix_id(matrix)
-                for matrix in [
-                    matrices.values,
-                    matrices.less_term_matrix,
-                    matrices.greater_term_matrix,
-                    matrices.equal_term_matrix,
-                ]
-                if matrix is not None
+    def _command_get_inner_matrices(self, matrices: BindingConstraintMatrices) -> InnerMatrices:
+        # Safely assumes that matrices are IDs, since it has passed pydantic validators.
+        matrix_ids = [
+            matrix
+            for matrix in [
+                matrices.values,
+                matrices.less_term_matrix,
+                matrices.greater_term_matrix,
+                matrices.equal_term_matrix,
             ]
-        )
+            if isinstance(matrix, str)
+        ]
+        return InnerMatrices(matrices=matrix_ids)
 
     def command_to_dto(
         self, parameters: BindingConstraintCreation | BindingConstraintUpdate, matrices: BindingConstraintMatrices
@@ -337,7 +336,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
 
     @override
     def get_inner_matrices(self) -> InnerMatrices:
-        return super().command_get_inner_matrices(self.matrices)
+        return super()._command_get_inner_matrices(self.matrices)
 
     def _create_default_matrix(self, time_step: BindingConstraintFrequency) -> str:
         constants = self.command_context.generator_matrix_constants

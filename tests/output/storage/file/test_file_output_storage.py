@@ -32,7 +32,6 @@ from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
-from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.output.storage.file.storage import (
     FileStudyOutputs,
@@ -50,6 +49,7 @@ from antarest.output.storage.output_storage import (
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from tests.test_helpers.dates import utc_to_local
 
