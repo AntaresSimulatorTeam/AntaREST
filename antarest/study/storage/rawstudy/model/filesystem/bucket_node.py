@@ -46,11 +46,11 @@ class BucketNode(FolderNode):
         matrix_storage_context: MatrixStorageContext,
         config: FileStudyTreeConfig,
         registered_files: list[RegisteredFile] | None = None,
-        use_matrix_mapper: bool = False,
+        use_matrix_nodes: bool = False,
     ):
         super().__init__(matrix_storage_context, config)
         self.registered_files: list[RegisteredFile] = registered_files or []
-        self.use_matrix_mapper = use_matrix_mapper
+        self.use_matrix_nodes = use_matrix_nodes
 
     def _get_registered_file_by_key(self, key: str) -> RegisteredFile | None:
         return next((rf for rf in self.registered_files if rf.key == key), None)
@@ -90,7 +90,7 @@ class BucketNode(FolderNode):
         elif isinstance(data, dict):
             node = BucketNode(self.matrix_storage_context, self.config.next_file(key))
         elif isinstance(data, (str, bytes)):
-            if self.use_matrix_mapper:
+            if self.use_matrix_nodes:
                 node = InputSeriesMatrix(self.matrix_storage_context, self.config.next_file(key))
             else:
                 node = RawFileNode(self.config.next_file(key))
@@ -110,7 +110,7 @@ class BucketNode(FolderNode):
                 node = registered_file.node
                 children[registered_file.key] = node(self.matrix_storage_context, self.config.next_file(item.name))
             elif item.is_file():
-                if self.use_matrix_mapper:
+                if self.use_matrix_nodes:
                     children[item.name] = InputSeriesMatrix(
                         self.matrix_storage_context, self.config.next_file(item.name)
                     )
