@@ -33,6 +33,7 @@ from antarest.study.business.model.binding_constraint_model import (
 )
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import StudyDao
@@ -217,6 +218,18 @@ def dao_860_and_matrix_service(
         return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_6), matrix_service
     else:
         return _build_fs_dao(db_session, STUDY_VERSION_8_6, command_context, core_cache, tmp_path)
+
+
+def build_reserve_definition(reserve_id: str) -> ReserveDefinition:
+    return ReserveDefinition(
+        id=reserve_id,
+        type=ReserveType.UP,
+        failure_cost=10.0,
+        spillage_cost=5.0,
+        reference_activation_duration=3,
+        power_activation_ratio=0.4,
+        energy_activation_ratio=0.9,
+    )
 
 
 @dataclass

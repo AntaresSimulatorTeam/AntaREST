@@ -387,7 +387,8 @@
         "annual"
       ],
       "st_storages": [],
-      "st_storages_additional_constraints": {}
+      "st_storages_additional_constraints": {},
+      "reserves": []
     },
     "es": {
       "name": "ES",
@@ -763,7 +764,8 @@
         "annual"
       ],
       "st_storages": [],
-      "st_storages_additional_constraints": {}
+      "st_storages_additional_constraints": {},
+      "reserves": []
     },
     "fr": {
       "name": "FR",
@@ -1134,7 +1136,8 @@
         "hourly"
       ],
       "st_storages": [],
-      "st_storages_additional_constraints": {}
+      "st_storages_additional_constraints": {},
+      "reserves": []
     },
     "it": {
       "name": "IT",
@@ -1498,7 +1501,8 @@
         "hourly"
       ],
       "st_storages": [],
-      "st_storages_additional_constraints": {}
+      "st_storages_additional_constraints": {},
+      "reserves": []
     }
   },
   "outputs": {},
