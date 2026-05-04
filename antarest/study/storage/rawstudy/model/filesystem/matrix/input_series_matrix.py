@@ -50,7 +50,23 @@ def _dump_dataframe(df: pl.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
 
 class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
     """
-    Generic node to handle input matrix behavior
+    Generic node to represents input timeseries matrices.
+
+    The underlying data may be stored in one of 2 forms:
+     - normalized: we only store a matrix ID in a "link" file, the matrix being actually stored in the matrix service.
+     - denormalized: we store the matrix as a plain TSV file, respecting antares-solver input format.
+
+    The normalized form is always preferred for internal, "managed" studies.
+    The denormalized form is used for external, "unmanaged" studies, or to export a study
+    for the simulation.
+
+    Attributes:
+        matrix_storage_context: Context for matrix storage operations. Used to decided how
+                                matrices should be written to disk (id in "link" file or actual TSV file).
+        freq: Frequency of the matrix data.
+        nb_columns: Number of columns in the matrix.
+        default_empty: Supplier for default empty matrix content.
+        should_exist: Flag indicating if the matrix is expected to exist.
     """
 
     def __init__(
@@ -78,6 +94,9 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
         return self._get_link_path().exists()
 
     def get_matrix_id(self) -> str | None:
+        """
+        Return the matrix ID if in normalized form, else None.
+        """
         link_path = self._get_link_path()
         if link_path.exists():
             return extract_matrix_id(link_path.read_text())
@@ -90,7 +109,7 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
 
     def save_matrix(self, matrix_id: str) -> None:
         """
-        Saves the matrix to underlying file.
+        Saves the matrix corresponding to the specified ID to underlying file.
         Assumes that it's already present in the matrix service.
 
         Implementation:
@@ -221,6 +240,9 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
         return matrix
 
     def write_dataframe(self, df: pl.DataFrame) -> None:
+        """
+        Writes the provided dataframe in denormalized form.
+        """
         if not self.config.path.parent.exists():
             # Can happen when creating a new object and the file structure is not yet fully created
             self.config.path.parent.mkdir(parents=True)
@@ -243,17 +265,32 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
         raise ChildNotFoundError(f"Neither link file {link_path} nor matrix file {self.config.path} exists")
 
     def rename_file(self, target: str) -> None:
+        """
+        Moves the current matrix to the sibling target path.
+
+        Conserves normalized status.
+        """
         target_path = self.config.path.parent.joinpath(f"{target}{''.join(self._infer_path().suffixes)}")
         target_path.unlink(missing_ok=True)
         self._infer_path().rename(target_path)
 
     def copy_file(self, target: str) -> None:
+        """
+        Copies the current matrix to the sibling target path.
+
+        Conserves normalized status.
+        """
         target_path = self.config.path.parent.joinpath(f"{target}{''.join(self._infer_path().suffixes)}")
         target_path.unlink(missing_ok=True)
         shutil.copy(self._infer_path(), target_path)
 
     @override
     def get_file_content(self) -> OriginalFile:
+        """
+        Retrieves the content of the file, trying to re-construct it when necessary:
+        - When the matrix is in normalized form, we load and serialize the matrix.
+        - When the matrix is in denormalized form and empty, we load the default matrix and serialize it.
+        """
         suffix = self.config.path.suffix
         filename = self.config.path.name
         if self.config.archive_path:
