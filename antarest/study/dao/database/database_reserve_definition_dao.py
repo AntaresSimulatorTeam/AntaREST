@@ -195,14 +195,11 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao):
 
     @override
     def delete_reserve_need(self, area_id: AreaId, reserve_id: ReserveDefinitionId) -> None:
-        result = self._db_session.execute(
+        self._db_session.execute(
             delete(_NEED_TABLE).where(
                 (_NEED_TABLE.c.study_id == self._study_id)
                 & (_NEED_TABLE.c.area_id == area_id)
                 & (_NEED_TABLE.c.reserve_id == reserve_id)
             )
         )
-        assert isinstance(result, CursorResult)
-        if result.rowcount == 0:
-            raise ReserveDefinitionNotFound(area_id, reserve_id)
         self._db_session.commit()

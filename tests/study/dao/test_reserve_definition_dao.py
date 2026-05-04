@@ -163,3 +163,13 @@ def test_delete_reserve_need(dao_10_0: StudyDao, matrix_service: ISimpleMatrixSe
 
     dao_10_0.delete_reserve_need("paris", reserve_id)
     assert dao_10_0.get_all_reserve_needs().get("paris", {}).get(reserve_id) is None
+
+
+def test_delete_reserve_need_is_idempotent(dao_10_0: StudyDao) -> None:
+    save_area(dao_10_0, "paris")
+    dao_10_0.save_reserve_definitions({"paris": [_reserve("R1")]})
+
+    dao_10_0.delete_reserve_need("paris", ReserveDefinitionId("R1"))
+
+    dao_10_0.delete_reserve_need("paris", ReserveDefinitionId("R1"))
+    dao_10_0.delete_reserve_need("paris", ReserveDefinitionId("unknown"))
