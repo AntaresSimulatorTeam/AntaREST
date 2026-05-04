@@ -183,7 +183,7 @@ class FileStudyTreeDao(
         for matrix_node in nodes:
             if matrix_node.is_normalized:
                 # For the normalized nodes, we simply get the matrix id from the matrix mapper.
-                matrix_id = matrix_node.get_link_content()
+                matrix_id = matrix_node.get_matrix_id()
                 assert isinstance(matrix_id, str)
                 result[matrix_node] = matrix_id
             else:

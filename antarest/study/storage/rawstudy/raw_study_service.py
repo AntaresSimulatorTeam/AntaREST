@@ -426,7 +426,7 @@ class RawStudyService(AbstractStorageService):
 
         matrices_mapping: dict[str, list[InputSeriesMatrix]] = {}
         for node in matrix_nodes:
-            link_content = node.get_link_content()
+            link_content = node.get_matrix_id()
             assert link_content is not None
             matrices_mapping.setdefault(link_content, []).append(node)
 

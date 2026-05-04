@@ -77,7 +77,7 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
     def _has_link(self) -> bool:
         return self._get_link_path().exists()
 
-    def get_link_content(self) -> str | None:
+    def get_matrix_id(self) -> str | None:
         link_path = self._get_link_path()
         if link_path.exists():
             return extract_matrix_id(link_path.read_text())
@@ -88,21 +88,21 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
         if link_path.exists():
             link_path.unlink()
 
-    def save_matrix(self, matrix_uri: str) -> None:
+    def save_matrix(self, matrix_id: str) -> None:
         if self._matrix_storage_context.is_managed:
             link_path = self._get_link_path()
             if not link_path.parent.exists():
                 link_path.parent.mkdir(parents=True)
-            link_path.write_text(matrix_uri)
+            link_path.write_text(matrix_id)
             if self.config.path.exists():
                 self.config.path.unlink()
         else:
-            matrix = self._matrix_storage_context.matrix_service.get(matrix_uri)
+            matrix = self._matrix_storage_context.matrix_service.get(matrix_id)
             self.dump(matrix)
 
     @override
     def get_lazy_content(self, url: list[str] | None = None, depth: int = -1, expanded: bool = False) -> str:
-        link_content = self.get_link_content()
+        link_content = self.get_matrix_id()
         matrix_id = link_content or self.config.path.name
         return f"matrix://{matrix_id}"
 
@@ -177,7 +177,7 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
     def _parse_dataframe(self, use_default_empty: bool) -> pl.DataFrame:
         file_path = self.config.path
         stopwatch = StopWatch()
-        link_content = self.get_link_content()
+        link_content = self.get_matrix_id()
         if link_content:
             matrix = self._matrix_storage_context.matrix_service.get(link_content)
         else:
