@@ -73,10 +73,10 @@ def test_save_uri(tmp_path: Path) -> None:
     matrix_service = Mock()
     matrix_service.exists.return_value = True
 
-    matrix_mapper = MatrixStorageContext(matrix_service=matrix_service, is_managed=True)
+    matrix_storage_context = MatrixStorageContext(matrix_service=matrix_service, is_managed=True)
 
     config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="")
-    node = MockInputSeriesMatrix(matrix_storage_context=matrix_mapper, config=config)
+    node = MockInputSeriesMatrix(matrix_storage_context=matrix_storage_context, config=config)
     uri = "matrix://id"
     node.save(uri)
     assert (file.parent / f"{file.name}.link").read_text() == uri
@@ -94,10 +94,10 @@ def test_save_txt(tmp_path: Path) -> None:
     matrix_service = Mock()
     matrix_service.exists.return_value = True
 
-    matrix_mapper = MatrixStorageContext(matrix_service=matrix_service, is_managed=True)
+    matrix_storage_context = MatrixStorageContext(matrix_service=matrix_service, is_managed=True)
 
     config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="")
-    node = MockInputSeriesMatrix(matrix_storage_context=matrix_mapper, config=config)
+    node = MockInputSeriesMatrix(matrix_storage_context=matrix_storage_context, config=config)
 
     content = "Mock File Content"
     node.save(content)

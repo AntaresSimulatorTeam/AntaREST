@@ -182,7 +182,7 @@ class FileStudyTreeDao(
 
         for matrix_node in nodes:
             if matrix_node.is_normalized:
-                # For the normalized nodes, we simply get the matrix id from the matrix mapper.
+                # For the normalized nodes, we simply get the matrix id.
                 matrix_id = matrix_node.get_matrix_id()
                 assert isinstance(matrix_id, str)
                 result[matrix_node] = matrix_id
@@ -219,7 +219,7 @@ class FileStudyTreeDao(
                 if not self._matrix_service.exists(matrix_id):
                     raise ValueError(f"Matrix {matrix_id} does not exist")
 
-        # We simply save the matrix in the matrix mapper of each node.
+        # We simply save the matrix in each node.
         for matrix_id, matrix_nodes in matrices_mapping.items():
             for matrix_node in matrix_nodes:
                 matrix_node.save_matrix(matrix_id)
