@@ -14,7 +14,7 @@ import logging
 import shutil
 from collections.abc import Callable
 from pathlib import Path
-from typing import TypeAlias
+from typing import Self, TypeAlias
 
 import numpy as np
 import numpy.typing as npt
@@ -22,6 +22,7 @@ import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
+from antarest.core.model import JSON
 from antarest.core.serde.matrix_export import write_dataframe_in_tsv_format
 from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.core.utils.polars import create_polars_dataframe, read_input_dataframe
@@ -30,15 +31,24 @@ from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode, dump_dataframe
+from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
 logger = logging.getLogger(__name__)
 
 
 MatrixSupplier: TypeAlias = Callable[[], npt.NDArray[np.float64]]
+MatrixId: TypeAlias = str
+MatrixContent: TypeAlias = bytes | JSON | pl.DataFrame
 
 
-class InputSeriesMatrix(MatrixNode):
+def dump_dataframe(df: pl.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
+    if df.is_empty() and isinstance(path_or_buf, Path):
+        path_or_buf.write_bytes(b"")
+    else:
+        df.write_csv(path_or_buf, separator="\t", include_header=False)
+
+
+class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
     """
     Generic node to handle input matrix behavior
     """
@@ -52,7 +62,9 @@ class InputSeriesMatrix(MatrixNode):
         default_empty: MatrixSupplier | None = None,  # optional only for the capacity matrix in Xpansion
         should_exist: bool = True,
     ):
-        super().__init__(matrix_mapper=matrix_mapper, config=config, freq=freq)
+        LazyNode.__init__(self, config)
+        self.matrix_mapper = matrix_mapper
+        self.freq = freq
         self.nb_columns = nb_columns
         self.default_empty = default_empty
         # Removes the .link suffix if the matrix is normalized
@@ -60,10 +72,76 @@ class InputSeriesMatrix(MatrixNode):
         self.should_exist = should_exist
 
     @override
+    def get_lazy_content(self, url: list[str] | None = None, depth: int = -1, expanded: bool = False) -> str:
+        link_content = self.matrix_mapper.get_link_content(self)
+        matrix_id = link_content or self.config.path.name
+        return f"matrix://{matrix_id}"
+
+    @override
+    def get_matrix_nodes_to_normalize(self) -> list[Self]:
+        """
+        Return a list of itself if the node is not in the matrix-store. Else, return an empty list.
+        """
+        return [] if self.is_normalized else [self]
+
+    @override
+    def get_matrix_nodes_to_denormalize(self) -> list[Self]:
+        """
+        Return a list of itself if the node is in the matrix-store. Else, return an empty list.
+        """
+        return [self] if self.is_normalized else []
+
+    @property
+    def is_normalized(self) -> bool:
+        return self.matrix_mapper.has_link(self)
+
+    @override
+    def load(
+        self, url: list[str] | None = None, depth: int = -1, expanded: bool = False, formatted: bool = True
+    ) -> JSON:
+        raise NotImplementedError("Legacy method. We should use `parse_as_dataframe` from now on.")
+
+    @override
+    def delete(self, url: list[str] | None = None) -> None:
+        self._assert_url_end(url)
+        self.matrix_mapper.delete(self)
+        super().delete(url)
+
+    @override
+    def dump(self, data: MatrixId | MatrixContent, url: list[str] | None = None) -> None:
+        """
+        Write matrix data to file.
+
+        If the input data is of type bytes, write the data to file as is.
+        Otherwise, convert the data to a Pandas DataFrame and write it to file as a tab-separated CSV.
+        If the resulting DataFrame is empty, write an empty bytes object to file.
+
+        Args:
+            data: The data to write to file. If data is bytes, it will be written directly to file,
+                otherwise it will be converted to a Pandas DataFrame and then written to file.
+            url: node URL (not used here).
+        """
+        if isinstance(data, str):
+            if not self.matrix_mapper.matrix_exists(data):
+                raise ValueError(f"Matrix {data} does not exist")
+            self.matrix_mapper.save_matrix(self, data)
+            return
+
+        self.config.path.parent.mkdir(exist_ok=True, parents=True)
+        if isinstance(data, bytes):
+            self.config.path.write_bytes(data)
+            self.matrix_mapper.remove_link(self)
+        else:
+            if isinstance(data, dict):
+                df = pl.DataFrame(np.array(data["data"]))
+            else:
+                df = data
+            self.write_dataframe(df)
+            self.matrix_mapper.remove_link(self)
+
     def parse_as_dataframe(self) -> pl.DataFrame:
         return self._parse_dataframe(use_default_empty=True)
 
-    @override
     def parse_content(self) -> pl.DataFrame:
         return self._parse_dataframe(use_default_empty=False)
 
@@ -94,7 +172,6 @@ class InputSeriesMatrix(MatrixNode):
         logger.debug(f"Matrix parsed in {stopwatch}s")
         return matrix
 
-    @override
     def write_dataframe(self, df: pl.DataFrame) -> None:
         if not self.config.path.parent.exists():
             # Can happen when creating a new object and the file structure is not yet fully created

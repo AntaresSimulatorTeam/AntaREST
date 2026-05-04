@@ -11,31 +11,22 @@
 # This file is part of the Antares project.
 import contextlib
 import io
-import logging
-from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Self, TypeAlias
 
 import numpy as np
 import pandas as pd
-import polars as pl
-from typing_extensions import override
 
-from antarest.core.model import JSON
 from antarest.core.serde.np_array import NpArray
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
-from antarest.study.model import MatrixFrequency
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
-logger = logging.getLogger(__name__)
+# InputSeriesMatrix is the single concrete matrix node class.
+# MatrixNode is kept as an alias for backward compatibility.
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
+    InputSeriesMatrix,
+    dump_dataframe,
+)
 
+MatrixNode = InputSeriesMatrix
 
-def dump_dataframe(df: pl.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
-    if df.is_empty() and isinstance(path_or_buf, Path):
-        path_or_buf.write_bytes(b"")
-    else:
-        df.write_csv(path_or_buf, separator="\t", include_header=False)
+__all__ = ["MatrixNode", "InputSeriesMatrix", "dump_dataframe", "imports_matrix_from_bytes"]
 
 
 def imports_matrix_from_bytes(data: bytes) -> NpArray | None:
@@ -50,101 +41,3 @@ def imports_matrix_from_bytes(data: bytes) -> NpArray | None:
             matrix = df.to_numpy(dtype=np.float64)
             return matrix
     return None
-
-
-MatrixId: TypeAlias = str
-# Either raw content, or dictionary representation, or dataframe.
-MatrixContent: TypeAlias = bytes | JSON | pl.DataFrame
-
-
-class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
-    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig, freq: MatrixFrequency) -> None:
-        LazyNode.__init__(self, config)
-        self.matrix_mapper = matrix_mapper
-        self.freq = freq
-
-    @override
-    def get_lazy_content(self, url: list[str] | None = None, depth: int = -1, expanded: bool = False) -> str:
-        link_content = self.matrix_mapper.get_link_content(self)
-        matrix_id = link_content or self.config.path.name
-        return f"matrix://{matrix_id}"
-
-    @override
-    def get_matrix_nodes_to_normalize(self) -> list[Self]:
-        """
-        Return a list of itself if the node is not in the matrix-store. Else, return an empty list.
-        """
-        return [] if self.is_normalized else [self]
-
-    @override
-    def get_matrix_nodes_to_denormalize(self) -> list[Self]:
-        """
-        Return a list of itself if the node is in the matrix-store. Else, return an empty list.
-        """
-        return [self] if self.is_normalized else []
-
-    @property
-    def is_normalized(self) -> bool:
-        return self.matrix_mapper.has_link(self)
-
-    @override
-    def load(
-        self, url: list[str] | None = None, depth: int = -1, expanded: bool = False, formatted: bool = True
-    ) -> JSON:
-        raise NotImplementedError("Legacy method. We should use `parse_as_dataframe` from now on.")
-
-    @override
-    def delete(self, url: list[str] | None = None) -> None:
-        self._assert_url_end(url)
-        self.matrix_mapper.delete(self)
-        super().delete(url)
-
-    @override
-    def dump(self, data: MatrixId | MatrixContent, url: list[str] | None = None) -> None:
-        """
-        Write matrix data to file.
-
-        If the input data is of type bytes, write the data to file as is.
-        Otherwise, convert the data to a Pandas DataFrame and write it to file as a tab-separated CSV.
-        If the resulting DataFrame is empty, write an empty bytes object to file.
-
-        Args:
-            data: The data to write to file. If data is bytes, it will be written directly to file,
-                otherwise it will be converted to a Pandas DataFrame and then written to file.
-            url: node URL (not used here).
-        """
-        if isinstance(data, MatrixId):
-            if not self.matrix_mapper.matrix_exists(data):
-                raise ValueError(f"Matrix {data} does not exist")
-            self.matrix_mapper.save_matrix(self, data)
-            return
-
-        self.config.path.parent.mkdir(exist_ok=True, parents=True)
-        if isinstance(data, bytes):
-            self.config.path.write_bytes(data)
-            self.matrix_mapper.remove_link(self)
-        else:
-            if isinstance(data, dict):
-                df = pl.DataFrame(np.array(data["data"]))
-            else:
-                df = data
-            self.write_dataframe(df)
-            self.matrix_mapper.remove_link(self)
-
-    @abstractmethod
-    def parse_as_dataframe(self) -> pl.DataFrame:
-        """
-        Parse the matrix content and return it as a DataFrame object.
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def parse_content(self) -> pl.DataFrame:
-        """
-        Same behavior as `parse_as_dataframe` but does not return the Simulator default matrix if the file is empty.
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def write_dataframe(self, df: pl.DataFrame) -> None:
-        raise NotImplementedError()
