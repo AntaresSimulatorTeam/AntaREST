@@ -31,7 +31,9 @@ import { Decimal } from "decimal.js-light";
 import { UTCDate } from "@date-fns/utc";
 import type { Locale } from "date-fns";
 import { enUS, fr } from "date-fns/locale";
+import type { Item } from "@glideapps/glide-data-grid";
 import { getCurrentLanguage } from "@/utils/i18nUtils";
+import { measureTextWidth } from "@/utils/domUtils";
 import { groupHeaderTheme } from "../styles";
 import { Aggregate, Column, TIME_FREQUENCY_CONFIG } from "./constants";
 import type {
@@ -50,6 +52,12 @@ import type {
   ResultColumnsOptions,
   TimeSeriesColumnOptions,
 } from "./types";
+
+// Fonts match baseFontStyle / headerFontStyle + fontFamily from Matrix/styles.ts.
+const CELL_FONT = "13px Inter, sans-serif";
+const HEADER_FONT = "bold 11px Inter, sans-serif";
+// 2 × cellHorizontalPadding (8 px each side) + 4 px safety margin.
+const CELL_CONTENT_PADDING = 20;
 
 /**
  * Parses a numeric string using US/International conventions:
@@ -543,4 +551,84 @@ export function resizeMatrix({ matrix, newColumnCount, fillValue = 0 }: ResizeMa
 
     return row;
   });
+}
+
+/**
+ * Computes which columns need to grow to fit pasted content.
+ * Handles both data (Column.Number) and aggregate (Column.Aggregate) columns.
+ *
+ * @param newData - The updated matrix data after a paste operation.
+ * @param columns - The list of grid columns to evaluate for width updates.
+ * @param gridToData - A function that maps a grid cell position to its corresponding data position.
+ * @returns A map of column id → required width for columns that need to grow.
+ */
+export function computeColumnWidths(
+  newData: number[][],
+  columns: readonly EnhancedGridColumn[],
+  gridToData: (item: Item) => Item | null,
+): Map<string, number> {
+  const updates = new Map<string, number>();
+
+  const aggregateTypes = columns
+    .filter(
+      (col): col is EnhancedGridColumn & { id: AggregateType } => col.type === Column.Aggregate,
+    )
+    .map((col) => col.id);
+
+  const aggregates =
+    aggregateTypes.length > 0
+      ? calculateMatrixAggregates({ matrix: newData, types: aggregateTypes })
+      : null;
+
+  for (let colIdx = 0; colIdx < columns.length; colIdx++) {
+    const col = columns[colIdx];
+    let values: number[];
+    let maxDecimals: number;
+
+    if (col.type === Column.Number) {
+      const mapped = gridToData([colIdx, 0]);
+      if (mapped === null) {
+        continue;
+      }
+
+      const dataCol = mapped[0];
+      if (dataCol >= (newData[0]?.length ?? 0)) {
+        continue;
+      }
+
+      values = newData.map((row) => row[dataCol]);
+      maxDecimals = 6;
+    } else if (col.type === Column.Aggregate && aggregates) {
+      values = aggregates[col.id as keyof MatrixAggregates] ?? [];
+      maxDecimals = 3;
+    } else {
+      continue;
+    }
+
+    let maxContentWidth = 0;
+    for (const value of values) {
+      if (!Number.isFinite(value)) {
+        continue;
+      }
+
+      const display = formatGridNumber({ value, maxDecimals });
+      maxContentWidth = Math.max(maxContentWidth, measureTextWidth(display, CELL_FONT));
+    }
+
+    if (maxContentWidth === 0) {
+      continue;
+    }
+
+    const neededWidth = Math.ceil(maxContentWidth) + CELL_CONTENT_PADDING;
+    // For auto-sized columns use header text width as effective current width so we
+    // only grow, never shrink, a column whose header is already wider.
+    const effectiveCurrentWidth =
+      col.width ?? Math.ceil(measureTextWidth(col.title, HEADER_FONT)) + CELL_CONTENT_PADDING;
+
+    if (neededWidth > effectiveCurrentWidth) {
+      updates.set(col.id, neededWidth);
+    }
+  }
+
+  return updates;
 }
