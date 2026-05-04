@@ -45,7 +45,7 @@ def test_get_bucket(tmp_path: Path) -> None:
 
     node = BucketNode(
         config=FileStudyTreeConfig(study_path=file, path=file, study_id="id", version=-1),
-        matrix_mapper=Mock(),
+        matrix_storage_context=Mock(),
         registered_files=registered_files,
     )
 
@@ -63,7 +63,7 @@ def test_save_bucket(tmp_path: Path) -> None:
 
     node = BucketNode(
         config=FileStudyTreeConfig(study_path=file, path=file, study_id="id", version=-1),
-        matrix_mapper=Mock(),
+        matrix_storage_context=Mock(),
     )
     node.save(data={"fileA.txt": b"Hello, World"})
 

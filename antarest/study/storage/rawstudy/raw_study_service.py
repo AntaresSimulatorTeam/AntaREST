@@ -417,7 +417,7 @@ class RawStudyService(AbstractStorageService):
 
         matrix_ids = self._matrix_service.create_batch(node.parse_content() for node in matrix_nodes)
         for k, node in enumerate(matrix_nodes):
-            node.matrix_mapper.save_matrix(node, matrix_ids[k])
+            node.save_matrix(matrix_ids[k])
 
     def denormalize_file_study(self, file_study: FileStudy) -> None:
         matrix_nodes = file_study.tree.get_matrix_nodes_to_denormalize()
@@ -426,7 +426,7 @@ class RawStudyService(AbstractStorageService):
 
         matrices_mapping: dict[str, list[InputSeriesMatrix]] = {}
         for node in matrix_nodes:
-            link_content = node.matrix_mapper.get_link_content(node)
+            link_content = node.get_link_content()
             assert link_content is not None
             matrices_mapping.setdefault(link_content, []).append(node)
 

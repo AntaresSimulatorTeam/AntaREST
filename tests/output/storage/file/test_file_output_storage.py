@@ -32,7 +32,7 @@ from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.output.storage.file.storage import (
     FileStudyOutputs,
@@ -83,9 +83,8 @@ class SimpleFileOutputsProvider(IFileOutputsProvider):
         if not study_dir.is_dir():
             raise StudyNotFoundError(f"Study {study_id} not found.")
         config = build(study_dir, study_id)
-        mapper_factory = MatrixUriMapperFactory(matrix_service=self._matrix_service)
-        matrix_mapper = mapper_factory.create(NormalizedMatrixUriMapper.NORMALIZED)
-        return FileStudy(config, FileStudyTree(matrix_mapper, config))
+        matrix_storage_context = MatrixStorageContext(matrix_service=self._matrix_service, is_managed=True)
+        return FileStudy(config, FileStudyTree(matrix_storage_context, config))
 
 
 @pytest.fixture

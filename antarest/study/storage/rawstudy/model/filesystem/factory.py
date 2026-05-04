@@ -21,10 +21,8 @@ import filelock
 from antares.study.version import StudyVersion
 
 from antarest.core.interfaces.cache import ICache, study_config_cache_key
-from antarest.matrixstore.matrix_uri_mapper import (
-    MatrixUriMapperFactory,
-    get_mapper_type,
-)
+from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build, parse_outputs
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -56,10 +54,10 @@ class StudyFactory:
 
     def __init__(
         self,
-        matrix_mapper_factory: MatrixUriMapperFactory,
+        matrix_service: ISimpleMatrixService,
         cache: ICache,
     ) -> None:
-        self._matrix_mapper_factory = matrix_mapper_factory
+        self._matrix_service = matrix_service
         self._cache = cache
         # It is better to store lock files in the temporary directory,
         # because it is possible that there not deleted when the web application is stopped.
@@ -107,9 +105,11 @@ class StudyFactory:
         output_path: Path | None = None,
         use_cache: bool = True,
     ) -> FileStudy:
-        mapper_type = get_mapper_type(with_matrix_normalization)
+        matrix_storage_context = MatrixStorageContext(
+            matrix_service=self._matrix_service,
+            is_managed=with_matrix_normalization,
+        )
         cache_id = study_config_cache_key(study_id)
-        matrix_mapper = self._matrix_mapper_factory.create(mapper_type)
         if study_id and use_cache:
             from_cache = self._cache.get(cache_id)
             if from_cache is not None:
@@ -119,12 +119,12 @@ class StudyFactory:
                 if output_path:
                     config.output_path = output_path
                     config.outputs = parse_outputs(output_path)
-                return FileStudy(config, FileStudyTree(matrix_mapper, config))
+                return FileStudy(config, FileStudyTree(matrix_storage_context, config))
         start_time = time.time()
         config = build(path, study_id, output_path)
         duration = f"{time.time() - start_time:.3f}"
         logger.info(f"Study {study_id} config built in {duration}s")
-        result = FileStudy(config, FileStudyTree(matrix_mapper, config))
+        result = FileStudy(config, FileStudyTree(matrix_storage_context, config))
         if study_id and use_cache:
             logger.info(f"Cache new entry from StudyFactory (studyID: {study_id})")
             self._cache.put(

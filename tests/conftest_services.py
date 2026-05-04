@@ -36,7 +36,7 @@ from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import current_time
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper, MatrixUriMapperFactory, NormalizedMatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService, SimpleMatrixService
 from antarest.study.directory_service import DirectoryService
@@ -213,7 +213,7 @@ def generator_matrix_constants_fixture(
 @pytest.fixture(name="uri_resolver_service", scope="session")
 def uri_resolver_service_fixture(
     simple_matrix_service: SimpleMatrixService,
-) -> MatrixUriMapper:
+) -> MatrixStorageContext:
     """
     Fixture that creates an UriResolverService instance with a session-level scope.
 
@@ -221,10 +221,9 @@ def uri_resolver_service_fixture(
         simple_matrix_service: An instance of the SimpleMatrixService class.
 
     Returns:
-        An instance of the UriResolverService class representing the URI resolver service.
+        An instance of the MatrixStorageContext class representing the URI resolver service.
     """
-    factory = MatrixUriMapperFactory(matrix_service=simple_matrix_service)
-    return factory.create(NormalizedMatrixUriMapper.NORMALIZED)
+    return MatrixStorageContext(matrix_service=simple_matrix_service, is_managed=True)
 
 
 @pytest.fixture(name="core_cache", scope="session")
@@ -244,7 +243,7 @@ def core_cache_fixture() -> ICache:
 @pytest.fixture(name="study_factory", scope="session")
 def study_factory_fixture(
     simple_matrix_service: SimpleMatrixService,
-    uri_resolver_service: MatrixUriMapper,
+    uri_resolver_service: MatrixStorageContext,
     core_cache: ICache,
 ) -> StudyFactory:
     """
@@ -252,15 +251,14 @@ def study_factory_fixture(
 
     Args:
         simple_matrix_service: An instance of the SimpleMatrixService class.
-        uri_resolver_service: An instance of the UriResolverService class.
+        uri_resolver_service: An instance of the MatrixStorageContext class.
         core_cache: An instance of the ICache class.
 
     Returns:
         An instance of the StudyFactory class representing the study factory used for all tests.
     """
-    factory = MatrixUriMapperFactory(matrix_service=simple_matrix_service)
     return StudyFactory(
-        matrix_mapper_factory=factory,
+        matrix_service=simple_matrix_service,
         cache=core_cache,
     )
 

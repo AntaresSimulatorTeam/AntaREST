@@ -23,7 +23,7 @@ class Output(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
             str(s.get_file()): OutputSimulation(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file(s.get_file(), is_output=True),
                 s,
             )

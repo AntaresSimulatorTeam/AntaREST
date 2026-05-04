@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.common.area_matrix_list import AreaMatrixList
 from antarest.study.storage.rawstudy.model.filesystem.common.prepro import InputPrepro
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -21,7 +21,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default i
 
 
 class InputPreproSeries(FolderNode):
-    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig, prefix: str):
+    def __init__(self, matrix_storage_context: MatrixStorageContext, config: FileStudyTreeConfig, prefix: str):
         """
         Represents a folder structure, which contains a "prepro" and a time series structure.
 
@@ -49,15 +49,15 @@ class InputPreproSeries(FolderNode):
                └── load_store_out.txt
         """
 
-        super().__init__(matrix_mapper, config)
+        super().__init__(matrix_storage_context, config)
         self.prefix = prefix
 
     @override
     def build(self) -> TREE:
         children: TREE = {
-            "prepro": InputPrepro(self.matrix_mapper, self.config.next_file("prepro")),
+            "prepro": InputPrepro(self.matrix_storage_context, self.config.next_file("prepro")),
             "series": AreaMatrixList(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file("series"),
                 prefix=self.prefix,
                 additional_matrix_params={"default_empty": default_scenario_hourly},

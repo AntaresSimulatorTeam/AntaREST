@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
@@ -19,15 +19,15 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 
 
 class ExpansionMatrixResources(BucketNode):
-    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
-        super().__init__(matrix_mapper, config, None, use_matrix_mapper=True)
+    def __init__(self, matrix_storage_context: MatrixStorageContext, config: FileStudyTreeConfig):
+        super().__init__(matrix_storage_context, config, None, use_matrix_mapper=True)
 
     @override
     def build(self) -> TREE:
         children: TREE = {}
         for resource in self.config.path.iterdir():
             if resource.is_file():
-                node = InputSeriesMatrix(self.matrix_mapper, self.config.next_file(resource.name))
+                node = InputSeriesMatrix(self.matrix_storage_context, self.config.next_file(resource.name))
                 children[node.config.path.name] = node
 
         return children

@@ -27,7 +27,7 @@ from antarest.core.serde.matrix_export import write_dataframe_in_tsv_format
 from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.core.utils.polars import create_polars_dataframe, read_input_dataframe
 from antarest.core.utils.utils import StopWatch
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext, extract_matrix_id
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
@@ -55,7 +55,7 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
 
     def __init__(
         self,
-        matrix_mapper: MatrixUriMapper,
+        matrix_storage_context: MatrixStorageContext,
         config: FileStudyTreeConfig,
         freq: MatrixFrequency = MatrixFrequency.HOURLY,
         nb_columns: int | None = None,
@@ -63,7 +63,7 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
         should_exist: bool = True,
     ):
         LazyNode.__init__(self, config)
-        self.matrix_mapper = matrix_mapper
+        self._matrix_storage_context = matrix_storage_context
         self.freq = freq
         self.nb_columns = nb_columns
         self.default_empty = default_empty
@@ -71,9 +71,38 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
         self.config.path = self.config.path.parent / self.config.path.name.removesuffix(".link")
         self.should_exist = should_exist
 
+    def _get_link_path(self) -> Path:
+        return self.config.path.parent / (self.config.path.name + ".link")
+
+    def _has_link(self) -> bool:
+        return self._get_link_path().exists()
+
+    def get_link_content(self) -> str | None:
+        link_path = self._get_link_path()
+        if link_path.exists():
+            return extract_matrix_id(link_path.read_text())
+        return None
+
+    def _remove_link(self) -> None:
+        link_path = self._get_link_path()
+        if link_path.exists():
+            link_path.unlink()
+
+    def save_matrix(self, matrix_uri: str) -> None:
+        if self._matrix_storage_context.is_managed:
+            link_path = self._get_link_path()
+            if not link_path.parent.exists():
+                link_path.parent.mkdir(parents=True)
+            link_path.write_text(matrix_uri)
+            if self.config.path.exists():
+                self.config.path.unlink()
+        else:
+            matrix = self._matrix_storage_context.matrix_service.get(matrix_uri)
+            self.dump(matrix)
+
     @override
     def get_lazy_content(self, url: list[str] | None = None, depth: int = -1, expanded: bool = False) -> str:
-        link_content = self.matrix_mapper.get_link_content(self)
+        link_content = self.get_link_content()
         matrix_id = link_content or self.config.path.name
         return f"matrix://{matrix_id}"
 
@@ -93,7 +122,7 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
 
     @property
     def is_normalized(self) -> bool:
-        return self.matrix_mapper.has_link(self)
+        return self._has_link()
 
     @override
     def load(
@@ -104,7 +133,7 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
     @override
     def delete(self, url: list[str] | None = None) -> None:
         self._assert_url_end(url)
-        self.matrix_mapper.delete(self)
+        self._remove_link()
         super().delete(url)
 
     @override
@@ -122,22 +151,22 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
             url: node URL (not used here).
         """
         if isinstance(data, str):
-            if not self.matrix_mapper.matrix_exists(data):
+            if not self._matrix_storage_context.matrix_service.exists(data):
                 raise ValueError(f"Matrix {data} does not exist")
-            self.matrix_mapper.save_matrix(self, data)
+            self.save_matrix(data)
             return
 
         self.config.path.parent.mkdir(exist_ok=True, parents=True)
         if isinstance(data, bytes):
             self.config.path.write_bytes(data)
-            self.matrix_mapper.remove_link(self)
+            self._remove_link()
         else:
             if isinstance(data, dict):
                 df = pl.DataFrame(np.array(data["data"]))
             else:
                 df = data
             self.write_dataframe(df)
-            self.matrix_mapper.remove_link(self)
+            self._remove_link()
 
     def parse_as_dataframe(self) -> pl.DataFrame:
         return self._parse_dataframe(use_default_empty=True)
@@ -148,9 +177,9 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
     def _parse_dataframe(self, use_default_empty: bool) -> pl.DataFrame:
         file_path = self.config.path
         stopwatch = StopWatch()
-        link_content = self.matrix_mapper.get_link_content(self)
+        link_content = self.get_link_content()
         if link_content:
-            matrix = self.matrix_mapper.get_matrix(link_content)
+            matrix = self._matrix_storage_context.matrix_service.get(link_content)
         else:
             try:
                 matrix = read_input_dataframe(file_path, has_headers=False)
@@ -184,10 +213,10 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
         else:
             write_dataframe_in_tsv_format(df, self.config.path)
 
-        self.matrix_mapper.remove_link(self)
+        self._remove_link()
 
     def _infer_path(self) -> Path:
-        link_path = self.matrix_mapper.get_link_path(self)
+        link_path = self._get_link_path()
         if link_path.exists():
             return link_path
         elif self.config.path.exists():
@@ -212,7 +241,7 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
             content = read_original_file_in_archive(
                 self.config.archive_path, self.get_relative_path_inside_archive(self.config.archive_path)
             )
-        elif self.matrix_mapper.has_link(self):
+        elif self._has_link():
             target_path = self.config.path.with_suffix(".txt")
             buffer = io.BytesIO()
             df = self.parse_as_dataframe()

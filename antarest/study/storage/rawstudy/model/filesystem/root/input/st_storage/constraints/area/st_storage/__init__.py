@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -21,8 +21,10 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default i
 
 
 class InputSTStorageConstraintsSTStorage(FolderNode):
-    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig, area: str, storage: str):
-        super().__init__(matrix_mapper, config)
+    def __init__(
+        self, matrix_storage_context: MatrixStorageContext, config: FileStudyTreeConfig, area: str, storage: str
+    ):
+        super().__init__(matrix_storage_context, config)
         self.area = area
         self.storage = storage
 
@@ -31,7 +33,7 @@ class InputSTStorageConstraintsSTStorage(FolderNode):
         children: TREE = {"additional_constraints": IniFileNode(self.config.next_file("additional-constraints.ini"))}
         for constraint in self.config.areas[self.area].st_storages_additional_constraints.get(self.storage, []):
             children[f"rhs_{constraint.id}"] = InputSeriesMatrix(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file(f"rhs_{constraint.id}.txt"),
                 default_empty=default_scenario_hourly,
                 should_exist=False,

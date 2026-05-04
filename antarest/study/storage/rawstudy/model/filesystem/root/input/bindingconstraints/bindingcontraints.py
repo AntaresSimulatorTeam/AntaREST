@@ -55,7 +55,7 @@ class BindingConstraints(FolderNode):
             }
             children: TREE = {
                 binding.id: InputSeriesMatrix(
-                    self.matrix_mapper,
+                    self.matrix_storage_context,
                     self.config.next_file(f"{binding.id}.txt"),
                     freq=frequency_mapping[binding.time_step],
                     nb_columns=3,
@@ -75,7 +75,7 @@ class BindingConstraints(FolderNode):
                 for term in terms:
                     matrix_id = f"{binding.id}_{term}"
                     children[matrix_id] = InputSeriesMatrix(
-                        self.matrix_mapper,
+                        self.matrix_storage_context,
                         self.config.next_file(f"{matrix_id}.txt"),
                         freq=frequency_mapping[binding.time_step],
                         nb_columns=1 if term in ["lt", "gt"] else None,

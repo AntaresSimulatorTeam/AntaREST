@@ -19,7 +19,7 @@ from antares.study.version.create_app import CreateApp
 from antarest.blobstore.in_memory import InMemoryBlobService
 from antarest.blobstore.service import IBlobService
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_9_3
@@ -45,9 +45,8 @@ def build_file_study(tmp_path: Path, matrix_service: ISimpleMatrixService, versi
     app = CreateApp(study_dir=study_path, caption="filestudy", version=version, author="Joe")
     app()
     config = build(study_path, study_id)
-    mapper_factory = MatrixUriMapperFactory(matrix_service=matrix_service)
-    matrix_mapper = mapper_factory.create(NormalizedMatrixUriMapper.NORMALIZED)
-    return FileStudy(config, FileStudyTree(matrix_mapper, config))
+    matrix_storage_context = MatrixStorageContext(matrix_service=matrix_service, is_managed=True)
+    return FileStudy(config, FileStudyTree(matrix_storage_context, config))
 
 
 @pytest.fixture

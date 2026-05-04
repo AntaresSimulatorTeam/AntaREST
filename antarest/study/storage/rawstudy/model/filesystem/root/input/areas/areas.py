@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
@@ -21,14 +21,14 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.sets impo
 
 
 class InputAreas(FolderNode):
-    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
-        super().__init__(matrix_mapper, config, ["list", "sets"])
+    def __init__(self, matrix_storage_context: MatrixStorageContext, config: FileStudyTreeConfig):
+        super().__init__(matrix_storage_context, config, ["list", "sets"])
 
     @override
     def build(self) -> TREE:
         children: TREE = {
-            a: InputAreasItem(self.matrix_mapper, self.config.next_file(a)) for a in self.config.area_names()
+            a: InputAreasItem(self.matrix_storage_context, self.config.next_file(a)) for a in self.config.area_names()
         }
-        children["list"] = InputAreasList(self.matrix_mapper, self.config.next_file("list.txt"))
+        children["list"] = InputAreasList(self.matrix_storage_context, self.config.next_file("list.txt"))
         children["sets"] = InputAreasSets(self.config.next_file("sets.ini"))
         return children

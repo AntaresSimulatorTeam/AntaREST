@@ -22,7 +22,7 @@ from polars.testing import assert_frame_equal
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.utils.polars import create_polars_dataframe
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.study.model import STUDY_VERSION_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -51,10 +51,8 @@ class TestInputSeriesMatrix:
         )
         file.write_text(content)
 
-        mapper = Mock(spec=MatrixUriMapper)
-        mapper.get_link_content.return_value = None
-
-        node = InputSeriesMatrix(matrix_mapper=mapper, config=my_study_config, nb_columns=8)
+        matrix_storage_context = MatrixStorageContext(matrix_service=Mock(), is_managed=True)
+        node = InputSeriesMatrix(matrix_storage_context=matrix_storage_context, config=my_study_config, nb_columns=8)
 
         # checks formatted response
         actual = node.parse_as_dataframe()
@@ -76,16 +74,19 @@ class TestInputSeriesMatrix:
 
         if not link:
             file_path.touch()
-            node = InputSeriesMatrix(matrix_mapper=Mock(), config=my_study_config, default_empty=default_matrix)
+            matrix_storage_context = MatrixStorageContext(matrix_service=Mock(), is_managed=True)
+            node = InputSeriesMatrix(
+                matrix_storage_context=matrix_storage_context, config=my_study_config, default_empty=default_matrix
+            )
         else:
             link_path = file_path.parent / f"{file_path.name}.link"
-            link_path.touch()
-            resolver = Mock(spec=MatrixUriMapper)
-            resolver.get_matrix.return_value = pl.DataFrame()
+            link_path.write_text("matrix://my-id")
             matrix_service = Mock()
-            matrix_service.create.return_value = "matrix://my-id"
-            resolver.matrix_service = matrix_service
-            node = InputSeriesMatrix(matrix_mapper=resolver, config=my_study_config, default_empty=default_matrix)
+            matrix_service.get.return_value = pl.DataFrame()
+            matrix_storage_context = MatrixStorageContext(matrix_service=matrix_service, is_managed=True)
+            node = InputSeriesMatrix(
+                matrix_storage_context=matrix_storage_context, config=my_study_config, default_empty=default_matrix
+            )
 
         # checks formatted response
         actual = node.parse_as_dataframe()
@@ -93,10 +94,8 @@ class TestInputSeriesMatrix:
         assert_frame_equal(actual, expected, check_dtypes=False)
 
     def test_parse_file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
-        mapper = Mock(spec=MatrixUriMapper)
-        mapper.get_link_content.return_value = None
-
-        node = InputSeriesMatrix(matrix_mapper=mapper, config=my_study_config, nb_columns=8)
+        matrix_storage_context = MatrixStorageContext(matrix_service=Mock(), is_managed=True)
+        node = InputSeriesMatrix(matrix_storage_context=matrix_storage_context, config=my_study_config, nb_columns=8)
         with pytest.raises(ChildNotFoundError) as ctx:
             node.parse_as_dataframe()
         err_msg = str(ctx.value)
@@ -107,25 +106,26 @@ class TestInputSeriesMatrix:
     def test_parse_link_to_matrix(self, my_study_config: FileStudyTreeConfig) -> None:
         link = my_study_config.path.with_suffix(".txt.link")
         matrix_uri = "matrix://54e252eb14c0440055c82520c338376ff436e1d7ed6cb7283084c89e2e472c42"
+        matrix_id = "54e252eb14c0440055c82520c338376ff436e1d7ed6cb7283084c89e2e472c42"
         link.write_text(matrix_uri)
 
         matrix = pl.DataFrame(np.array([[1, 2], [3, 4]]))
 
         def get_matrix(uri: str) -> pl.DataFrame:
-            assert uri == matrix_uri
+            assert uri == matrix_id
             return matrix
 
-        mapper = Mock(spec=MatrixUriMapper)
-        mapper.get_matrix = get_matrix
-        mapper.get_link_content.return_value = matrix_uri
-        mapper.has_link.return_value = True
+        matrix_service = Mock()
+        matrix_service.get = get_matrix
+        matrix_storage_context = MatrixStorageContext(matrix_service=matrix_service, is_managed=True)
 
-        node = InputSeriesMatrix(matrix_mapper=mapper, config=my_study_config)
+        node = InputSeriesMatrix(matrix_storage_context=matrix_storage_context, config=my_study_config)
         actual = node.parse_as_dataframe()
         assert_frame_equal(actual, matrix, check_dtypes=False)
 
     def test_save(self, my_study_config: FileStudyTreeConfig) -> None:
-        node = InputSeriesMatrix(matrix_mapper=Mock(), config=my_study_config)
+        matrix_storage_context = MatrixStorageContext(matrix_service=Mock(), is_managed=True)
+        node = InputSeriesMatrix(matrix_storage_context=matrix_storage_context, config=my_study_config)
         node.dump({"columns": [0, 1], "data": [[1, 2], [3, 4]], "index": [0, 1]})
         actual = my_study_config.path.read_text()
         expected = textwrap.dedent(
@@ -142,7 +142,11 @@ class TestInputSeriesMatrix:
         def default_matrix():
             return np.array([[1.0, 2.0], [3.0, 4.0]])
 
-        node = InputSeriesMatrix(matrix_mapper=Mock(), config=my_study_config, default_empty=default_matrix)
+        node = InputSeriesMatrix(
+            matrix_storage_context=MatrixStorageContext(matrix_service=Mock(), is_managed=True),
+            config=my_study_config,
+            default_empty=default_matrix,
+        )
 
         # Save different data than default
         node.dump({"columns": ["0", "1"], "data": [[5.0, 6.0], [7.0, 8.0]], "index": [0, 1]})
@@ -176,7 +180,11 @@ class TestInputSeriesMatrix:
             return np.array([[1, 2], [3, 4]])
 
         file_path.touch()
-        node = InputSeriesMatrix(matrix_mapper=Mock(), config=my_study_config, default_empty=default_matrix)
+        node = InputSeriesMatrix(
+            matrix_storage_context=MatrixStorageContext(matrix_service=Mock(), is_managed=True),
+            config=my_study_config,
+            default_empty=default_matrix,
+        )
 
         # Ensures `parse_as_dataframe` returns the default matrix
         result = node.parse_as_dataframe()
@@ -203,30 +211,18 @@ class TestCopyAndRenameFile:
         self.link = self.file.parent / f"{self.file.name}.link"
         self.link.write_text("Link: Mock File Content")
 
-        from typing import Any
-
-        main_mapper = Mock(spec=MatrixUriMapper)
-        main_mapper.get_link_path.return_value = self.link
-        main_mapper.has_link.return_value = True
-
-        def mock_remove_link(node: Any) -> None:
-            if self.link.exists():
-                self.link.unlink()
-
-        main_mapper.remove_link = mock_remove_link
-
         config = FileStudyTreeConfig(study_path=self.file.parent, path=self.file, version=-1, study_id="")
-        self.node = InputSeriesMatrix(matrix_mapper=main_mapper, config=config)
+        self.node = InputSeriesMatrix(
+            matrix_storage_context=MatrixStorageContext(matrix_service=Mock(), is_managed=True), config=config
+        )
 
         self.modified_file = self.file.parent / "lazy_modified.txt"
         self.modified_link = self.file.parent / f"{self.modified_file.name}.link"
 
-        fake_mapper = Mock(spec=MatrixUriMapper)
-        fake_mapper.get_link_path.return_value = self.modified_link
-        fake_mapper.has_link.return_value = False
-
         config2 = FileStudyTreeConfig(study_path=self.file.parent, path=self.modified_file, version=-1, study_id="")
-        self.fake_node = InputSeriesMatrix(matrix_mapper=fake_mapper, config=config2)
+        self.fake_node = InputSeriesMatrix(
+            matrix_storage_context=MatrixStorageContext(matrix_service=Mock(), is_managed=True), config=config2
+        )
         self.target = self.modified_file.stem
 
     def _checks_behavior(self, rename: bool, target_is_link: bool) -> None:

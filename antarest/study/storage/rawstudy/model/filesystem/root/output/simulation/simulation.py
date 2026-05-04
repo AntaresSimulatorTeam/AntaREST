@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Simulation
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
@@ -37,17 +37,19 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.xpa
 class OutputSimulation(FolderNode):
     def __init__(
         self,
-        matrix_mapper: MatrixUriMapper,
+        matrix_storage_context: MatrixStorageContext,
         config: FileStudyTreeConfig,
         simulation: Simulation,
     ):
-        super().__init__(matrix_mapper, config)
+        super().__init__(matrix_storage_context, config)
         self.simulation = simulation
 
     @override
     def build(self) -> TREE:
         children: TREE = {
-            "about-the-study": OutputSimulationAbout(self.matrix_mapper, self.config.next_file("about-the-study")),
+            "about-the-study": OutputSimulationAbout(
+                self.matrix_storage_context, self.config.next_file("about-the-study")
+            ),
             "simulation": RawFileNode(self.config.next_file("simulation.log")),
             "info": OutputSimulationInfoAntaresOutput(self.config.next_file("info.antares-output")),
             "antares-out": RawFileNode(self.config.next_file("antares-out.log")),
@@ -66,23 +68,23 @@ class OutputSimulation(FolderNode):
 
             if (self.config.path / "ts-numbers").exists():
                 children["ts-numbers"] = OutputSimulationTsNumbers(
-                    self.matrix_mapper, self.config.next_file("ts-numbers")
+                    self.matrix_storage_context, self.config.next_file("ts-numbers")
                 )
 
             if (self.config.path / "ts-generator").exists():
                 children["ts-generator"] = OutputSimulationTsGenerator(
-                    self.matrix_mapper, self.config.next_file("ts-generator")
+                    self.matrix_storage_context, self.config.next_file("ts-generator")
                 )
 
             if self.simulation.mode in {Mode.ECONOMY, Mode.EXPANSION}:
                 children["economy"] = OutputSimulationMode(
-                    self.matrix_mapper,
+                    self.matrix_storage_context,
                     self.config.next_file("economy"),
                     self.simulation,
                 )
             elif self.simulation.mode == Mode.ADEQUACY:
                 children["adequacy"] = OutputSimulationMode(
-                    self.matrix_mapper,
+                    self.matrix_storage_context,
                     self.config.next_file("adequacy"),
                     self.simulation,
                 )
@@ -90,8 +92,8 @@ class OutputSimulation(FolderNode):
                 raise NotImplementedError(f"Unknown mode {self.simulation.mode}")
 
             if self.simulation.xpansion:
-                children["lp"] = Lp(self.matrix_mapper, self.config.next_file("lp"))
-                children["expansion"] = Xpansion(self.matrix_mapper, self.config.next_file("expansion"))
-                children["sensitivity"] = Sensitivity(self.matrix_mapper, self.config.next_file("sensitivity"))
+                children["lp"] = Lp(self.matrix_storage_context, self.config.next_file("lp"))
+                children["expansion"] = Xpansion(self.matrix_storage_context, self.config.next_file("expansion"))
+                children["sensitivity"] = Sensitivity(self.matrix_storage_context, self.config.next_file("sensitivity"))
 
         return children

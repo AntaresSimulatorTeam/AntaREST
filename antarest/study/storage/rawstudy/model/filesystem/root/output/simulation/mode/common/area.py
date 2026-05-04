@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
@@ -20,8 +20,8 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matri
 
 
 class OutputSimulationAreaItem(FolderNode):
-    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig, area: str):
-        super().__init__(matrix_mapper, config)
+    def __init__(self, matrix_storage_context: MatrixStorageContext, config: FileStudyTreeConfig, area: str):
+        super().__init__(matrix_storage_context, config)
         self.area = area
 
     @override

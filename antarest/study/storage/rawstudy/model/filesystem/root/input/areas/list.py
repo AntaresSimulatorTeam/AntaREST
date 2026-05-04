@@ -14,7 +14,7 @@
 from typing_extensions import override
 
 from antarest.core.utils.archives import extract_lines_from_archive
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 
@@ -22,9 +22,9 @@ AREAS_LIST_RELATIVE_PATH = "input/areas/list.txt"
 
 
 class InputAreasList(INode[list[str], list[str], list[str]]):
-    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
+    def __init__(self, matrix_storage_context: MatrixStorageContext, config: FileStudyTreeConfig):
         super().__init__(config)
-        self.matrix_mapper = matrix_mapper
+        self.matrix_storage_context = matrix_storage_context
 
     @override
     def get_node_and_remainder(

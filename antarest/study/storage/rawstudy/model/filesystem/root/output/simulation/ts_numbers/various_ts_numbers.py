@@ -24,7 +24,9 @@ class ShortTermStorageTsNumbers(FolderNode):
         children: TREE = {}
         for folder in self.config.path.iterdir():
             if folder.is_dir():
-                children[folder.name] = GenericSubFolder(self.matrix_mapper, self.config.next_file(folder.name))
+                children[folder.name] = GenericSubFolder(
+                    self.matrix_storage_context, self.config.next_file(folder.name)
+                )
         return children
 
 
@@ -34,7 +36,7 @@ class GenericSubFolder(FolderNode):
         children: TREE = {}
         for folder in self.config.path.iterdir():
             if folder.is_dir():
-                children[folder.name] = SubFolder(self.matrix_mapper, self.config.next_file(folder.name))
+                children[folder.name] = SubFolder(self.matrix_storage_context, self.config.next_file(folder.name))
         return children
 
 
@@ -43,5 +45,5 @@ class SubFolder(FolderNode):
     def build(self) -> TREE:
         children: TREE = {}
         for file in self.config.path.iterdir():
-            children[file.stem] = TsNumbersVector(self.matrix_mapper, self.config.next_file(file.name))
+            children[file.stem] = TsNumbersVector(self.matrix_storage_context, self.config.next_file(file.name))
         return children

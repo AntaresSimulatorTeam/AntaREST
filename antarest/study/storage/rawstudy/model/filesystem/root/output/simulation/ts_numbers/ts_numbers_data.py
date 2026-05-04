@@ -15,7 +15,7 @@ import logging
 from typing_extensions import override
 
 from antarest.core.model import JSON
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class TsNumbersVector(LazyNode[list[int], list[int], JSON]):
-    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
+    def __init__(self, matrix_storage_context: MatrixStorageContext, config: FileStudyTreeConfig):
         super().__init__(config)
 
     @override
