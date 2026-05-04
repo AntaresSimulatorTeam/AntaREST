@@ -22,7 +22,7 @@ from antarest.study.business.model.sts_model import STStorageCreation, STStorage
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, InnerMatrices
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -496,6 +496,6 @@ class TestCreateSTStorage:
         ]
         # Checks more specifically the cost_injection matrix as it was given inside the command
         cost_injection_node = study.tree.get_node(series_path + ["cost_injection"])
-        assert isinstance(cost_injection_node, MatrixNode)
+        assert isinstance(cost_injection_node, InputSeriesMatrix)
         matrix = cost_injection_node.parse_as_dataframe()
         assert matrix.to_numpy().tolist() == cost_injection_matrix

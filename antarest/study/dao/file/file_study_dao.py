@@ -46,7 +46,6 @@ from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 
 if TYPE_CHECKING:
     from antarest.blobstore.service import IBlobService
@@ -172,7 +171,7 @@ class FileStudyTreeDao(
             return node.parse_as_dataframe()
         raise NotAMatrixError(url)
 
-    def get_matrices_ids(self, nodes: list[MatrixNode]) -> dict[MatrixNode, str]:
+    def get_matrices_ids(self, nodes: list[InputSeriesMatrix]) -> dict[InputSeriesMatrix, str]:
         """
         Get multiple matrices ids efficiently.
         It performs at most 1 DB query for the whole list
@@ -199,7 +198,7 @@ class FileStudyTreeDao(
 
         return result
 
-    def save_matrices(self, matrices_mapping: dict[str, list[MatrixNode]]) -> None:
+    def save_matrices(self, matrices_mapping: dict[str, list[InputSeriesMatrix]]) -> None:
         """
         Saves multiple matrices in their corresponding nodes efficiently.
         It performs 1 DB query for the whole list

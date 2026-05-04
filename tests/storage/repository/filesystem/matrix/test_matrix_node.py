@@ -20,12 +20,12 @@ from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper, MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.study.model import STUDY_VERSION_8_8, MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 MOCK_MATRIX = create_polars_dataframe([[1, 2], [3, 4]])
 
 
-class MockMatrixNode(MatrixNode):
+class MockInputSeriesMatrix(InputSeriesMatrix):
     def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig) -> None:
         super().__init__(config=config, matrix_mapper=matrix_mapper, freq=MatrixFrequency.ANNUAL)
 
@@ -51,14 +51,14 @@ def test_normalize_denormalize_methods(tmp_path: Path) -> None:
     matrix_mapper = MatrixUriMapperFactory(matrix_service=Mock()).create(NormalizedMatrixUriMapper.NORMALIZED)
     config = FileStudyTreeConfig(study_path=file, path=file, study_id="mi-id", version=STUDY_VERSION_8_8)
 
-    node = MockMatrixNode(matrix_mapper=matrix_mapper, config=config)
+    node = MockInputSeriesMatrix(matrix_mapper=matrix_mapper, config=config)
 
     assert node.get_matrix_nodes_to_normalize() == [node]
     assert node.get_matrix_nodes_to_denormalize() == []
 
     link = file.parent / f"{file.name}.link"
     link.write_text("my-id")
-    node = MockMatrixNode(matrix_mapper=matrix_mapper, config=config)
+    node = MockInputSeriesMatrix(matrix_mapper=matrix_mapper, config=config)
 
     assert node.get_matrix_nodes_to_normalize() == []
     assert node.get_matrix_nodes_to_denormalize() == [node]

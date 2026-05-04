@@ -18,7 +18,7 @@ from typing_extensions import override
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperManaged
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
-from tests.storage.repository.filesystem.matrix.test_matrix_node import MockMatrixNode
+from tests.storage.repository.filesystem.matrix.test_matrix_node import MockInputSeriesMatrix
 
 
 class MockLazyNode(LazyNode[str, str, str]):
@@ -76,7 +76,7 @@ def test_save_uri(tmp_path: Path) -> None:
     matrix_mapper = MatrixUriMapperManaged(matrix_service)
 
     config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="")
-    node = MockMatrixNode(matrix_mapper=matrix_mapper, config=config)
+    node = MockInputSeriesMatrix(matrix_mapper=matrix_mapper, config=config)
 
     uri = "matrix://id"
     node.save(uri)
@@ -98,7 +98,7 @@ def test_save_txt(tmp_path: Path) -> None:
     matrix_mapper = MatrixUriMapperManaged(matrix_service)
 
     config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="")
-    node = MockMatrixNode(matrix_mapper=matrix_mapper, config=config)
+    node = MockInputSeriesMatrix(matrix_mapper=matrix_mapper, config=config)
 
     content = "Mock File Content"
     node.save(content)

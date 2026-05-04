@@ -37,7 +37,7 @@ from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StorageMode, 
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.utils import (
     fix_study_root,
@@ -424,7 +424,7 @@ class RawStudyService(AbstractStorageService):
         if not matrix_nodes:
             return
 
-        matrices_mapping: dict[str, list[MatrixNode]] = {}
+        matrices_mapping: dict[str, list[InputSeriesMatrix]] = {}
         for node in matrix_nodes:
             link_content = node.matrix_mapper.get_link_content(node)
             assert link_content is not None

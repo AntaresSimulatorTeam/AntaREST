@@ -22,7 +22,7 @@ from typing_extensions import override
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
 
 if TYPE_CHECKING:
-    from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+    from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 
 def extract_matrix_id(uri: str) -> str:
@@ -44,7 +44,7 @@ def get_mapper_type(with_matrix_normalization: bool) -> NormalizedMatrixUriMappe
         return NormalizedMatrixUriMapper.DENORMALIZED
 
 
-def get_path(node: MatrixNode) -> Path:
+def get_path(node: InputSeriesMatrix) -> Path:
     return node.config.path.parent / node.config.path.name
 
 
@@ -66,30 +66,30 @@ class MatrixUriMapper(ABC):
         pass
 
     @abstractmethod
-    def save_matrix(self, node: MatrixNode, matrix_uri: str) -> None:
+    def save_matrix(self, node: InputSeriesMatrix, matrix_uri: str) -> None:
         pass
 
     @abstractmethod
-    def delete(self, node: MatrixNode) -> None:
+    def delete(self, node: InputSeriesMatrix) -> None:
         pass
 
     @abstractmethod
-    def get_link_path(self, node: MatrixNode) -> Path:
+    def get_link_path(self, node: InputSeriesMatrix) -> Path:
         """Returns the path of the .link file associated with the matrix"""
         pass
 
     @abstractmethod
-    def has_link(self, node: MatrixNode) -> bool:
+    def has_link(self, node: InputSeriesMatrix) -> bool:
         """Checks if a .link file exists for this matrix"""
         pass
 
     @abstractmethod
-    def get_link_content(self, node: MatrixNode) -> str | None:
+    def get_link_content(self, node: InputSeriesMatrix) -> str | None:
         """Returns the content of the .link file if it exists, otherwise None"""
         pass
 
     @abstractmethod
-    def remove_link(self, node: MatrixNode) -> None:
+    def remove_link(self, node: InputSeriesMatrix) -> None:
         """Deletes the .link file if it exists"""
         pass
 
@@ -118,21 +118,21 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         return self._matrix_service.exists(uri)
 
     @override
-    def delete(self, node: MatrixNode, url: list[str] | None = None) -> None:
+    def delete(self, node: InputSeriesMatrix, url: list[str] | None = None) -> None:
         link_path = Path(f"{get_path(node)}.link")
         if link_path.exists():
             link_path.unlink()
 
     @override
-    def get_link_path(self, node: MatrixNode) -> Path:
+    def get_link_path(self, node: InputSeriesMatrix) -> Path:
         return node.config.path.parent / (node.config.path.name + ".link")
 
     @override
-    def has_link(self, node: MatrixNode) -> bool:
+    def has_link(self, node: InputSeriesMatrix) -> bool:
         return self.get_link_path(node).exists()
 
     @override
-    def get_link_content(self, node: MatrixNode) -> str | None:
+    def get_link_content(self, node: InputSeriesMatrix) -> str | None:
         link_path = self.get_link_path(node)
         if link_path.exists():
             # Important:
@@ -142,7 +142,7 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         return None
 
     @override
-    def remove_link(self, node: MatrixNode) -> None:
+    def remove_link(self, node: InputSeriesMatrix) -> None:
         link_path = self.get_link_path(node)
         if link_path.exists():
             link_path.unlink()
@@ -155,7 +155,7 @@ class MatrixUriMapperManaged(BaseMatrixUriMapper):
     """
 
     @override
-    def save_matrix(self, node: MatrixNode, matrix_uri: str) -> None:
+    def save_matrix(self, node: InputSeriesMatrix, matrix_uri: str) -> None:
         link_path = self.get_link_path(node)
 
         if not link_path.parent.exists():
@@ -175,7 +175,7 @@ class MatrixUriMapperUnmanaged(BaseMatrixUriMapper):
     """
 
     @override
-    def save_matrix(self, node: MatrixNode, matrix_uri: str) -> None:
+    def save_matrix(self, node: InputSeriesMatrix, matrix_uri: str) -> None:
         matrix = self.get_matrix(matrix_uri)
         node.dump(matrix)
 

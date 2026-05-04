@@ -33,7 +33,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     serialize_st_storage_additional_constraint,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -194,7 +194,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
                 sts_id = st_storage.id
                 url = url_getter(area_id, sts_id)
                 node = study_data.tree.get_node(url)
-                assert isinstance(node, MatrixNode)
+                assert isinstance(node, InputSeriesMatrix)
                 matrix_nodes[node] = (area_id, sts_id)
 
         result: StStorageSeriesMapping = {}
@@ -270,13 +270,13 @@ class FileStudySTStorageDao(STStorageDao, ABC):
     def _save_sts_matrices(
         self, series: StStorageSeriesMapping, url_getter: Callable[[AreaId, StStorageId], list[str]]
     ) -> None:
-        matrices_mapping: dict[str, list[MatrixNode]] = {}
+        matrices_mapping: dict[str, list[InputSeriesMatrix]] = {}
         study_data = self.get_file_study()
         for area_id, value in series.items():
             for storage_id, series_id in value.items():
                 url = url_getter(area_id, storage_id)
                 node = study_data.tree.get_node(url)
-                assert isinstance(node, MatrixNode)
+                assert isinstance(node, InputSeriesMatrix)
                 matrix_id = series_id
                 matrices_mapping.setdefault(matrix_id, []).append(node)
         self.get_impl().save_matrices(matrices_mapping)
@@ -394,7 +394,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
                 for constraint in constraints:
                     url = _get_constraint_matrix_path(area_id, storage_id, constraint.id)
                     node = study_data.tree.get_node(url)
-                    assert isinstance(node, MatrixNode)
+                    assert isinstance(node, InputSeriesMatrix)
                     matrix_nodes[node] = (area_id, storage_id, constraint.id)
 
         result: StStorageConstraintSeriesMapping = {}
@@ -465,14 +465,14 @@ class FileStudySTStorageDao(STStorageDao, ABC):
 
     @override
     def save_st_storage_constraint_matrices(self, series: StStorageConstraintSeriesMapping) -> None:
-        matrices_mapping: dict[str, list[MatrixNode]] = {}
+        matrices_mapping: dict[str, list[InputSeriesMatrix]] = {}
         study_data = self.get_file_study()
         for area_id, value in series.items():
             for storage_id, v in value.items():
                 for constraint_id, series_id in v.items():
                     url = _get_constraint_matrix_path(area_id, storage_id, constraint_id)
                     node = study_data.tree.get_node(url)
-                    assert isinstance(node, MatrixNode)
+                    assert isinstance(node, InputSeriesMatrix)
                     matrices_mapping.setdefault(series_id, []).append(node)
         self.get_impl().save_matrices(matrices_mapping)
 

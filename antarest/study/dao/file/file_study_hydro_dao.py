@@ -25,7 +25,7 @@ from antarest.study.dao.common import AreaId, AreaSeriesMapping
 from antarest.study.dao.file.common import get_all_area_matrices, save_area_matrices
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -403,7 +403,7 @@ class FileStudyHydroDao(HydroDao):
 
         return result
 
-    def _get_nodes_with_their_area_id(self, prefix: str) -> dict[MatrixNode, AreaId]:
+    def _get_nodes_with_their_area_id(self, prefix: str) -> dict[InputSeriesMatrix, AreaId]:
         study_data = self.get_file_study()
         result = {}
 
@@ -411,14 +411,14 @@ class FileStudyHydroDao(HydroDao):
         assert isinstance(folder_node, FolderNode)
         tree = folder_node.build()
         for node_id, node in tree.items():
-            assert isinstance(node, MatrixNode)
+            assert isinstance(node, InputSeriesMatrix)
             if node_id.startswith(prefix):
                 # We only keep the matrices with the rigth prefix
                 result[node] = node_id.removeprefix(f"{prefix}_")
         return result
 
     def _save_all_capacity_matrices(self, series: AreaSeriesMapping, prefix: str) -> None:
-        matrices_mapping: dict[str, list[MatrixNode]] = {}
+        matrices_mapping: dict[str, list[InputSeriesMatrix]] = {}
 
         nodes_and_area_ids = self._get_nodes_with_their_area_id(prefix)
 

@@ -20,7 +20,7 @@ from antarest.core.model import JSON, SUB_JSON
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode, OriginalFile
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 
 class FilterError(Exception):
@@ -146,16 +146,16 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
             shutil.rmtree(self.config.path)
 
     @override
-    def get_matrix_nodes_to_normalize(self) -> list[MatrixNode]:
-        nodes: list[MatrixNode] = []
+    def get_matrix_nodes_to_normalize(self) -> list[InputSeriesMatrix]:
+        nodes: list[InputSeriesMatrix] = []
         for child in self.build().values():
             node = child.get_matrix_nodes_to_normalize()
             nodes.extend(node)
         return nodes
 
     @override
-    def get_matrix_nodes_to_denormalize(self) -> list[MatrixNode]:
-        nodes: list[MatrixNode] = []
+    def get_matrix_nodes_to_denormalize(self) -> list[InputSeriesMatrix]:
+        nodes: list[InputSeriesMatrix] = []
         for child in self.build().values():
             node = child.get_matrix_nodes_to_denormalize()
             nodes.extend(node)
