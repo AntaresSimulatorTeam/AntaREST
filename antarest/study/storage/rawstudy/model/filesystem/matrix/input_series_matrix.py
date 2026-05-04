@@ -41,7 +41,7 @@ MatrixId: TypeAlias = str
 MatrixContent: TypeAlias = bytes | JSON | pl.DataFrame
 
 
-def dump_dataframe(df: pl.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
+def _dump_dataframe(df: pl.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
     if df.is_empty() and isinstance(path_or_buf, Path):
         path_or_buf.write_bytes(b"")
     else:
@@ -89,6 +89,14 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
             link_path.unlink()
 
     def save_matrix(self, matrix_id: str) -> None:
+        """
+        Saves the matrix to underlying file.
+        Assumes that it's already present in the matrix service.
+
+        Implementation:
+        - managed case: only writes the ID to "link" file
+        - unmanaged case: writes the matrix content to the file
+        """
         if self._matrix_storage_context.is_managed:
             link_path = self._get_link_path()
             if not link_path.parent.exists():
@@ -102,6 +110,10 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
 
     @override
     def get_lazy_content(self, url: list[str] | None = None, depth: int = -1, expanded: bool = False) -> str:
+        """
+        A matrix node will be represented either as matrix://<matrix-id>, if normalized,
+        or matrix://<path>, if not normalized (previously was matrixfile:// in that case).
+        """
         link_content = self.get_matrix_id()
         matrix_id = link_content or self.config.path.name
         return f"matrix://{matrix_id}"
@@ -141,6 +153,7 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
         """
         Write matrix data to file.
 
+        If the input data is a matrix ID, same as save_matrix.
         If the input data is of type bytes, write the data to file as is.
         Otherwise, convert the data to a Pandas DataFrame and write it to file as a tab-separated CSV.
         If the resulting DataFrame is empty, write an empty bytes object to file.
@@ -169,9 +182,15 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
             self._remove_link()
 
     def parse_as_dataframe(self) -> pl.DataFrame:
+        """
+        Loads underlying matrix to an actual dataframe, returning relevant default value if absent.
+        """
         return self._parse_dataframe(use_default_empty=True)
 
     def parse_content(self) -> pl.DataFrame:
+        """
+        Loads underlying matrix to an actual dataframe.
+        """
         return self._parse_dataframe(use_default_empty=False)
 
     def _parse_dataframe(self, use_default_empty: bool) -> pl.DataFrame:
@@ -245,7 +264,7 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
             target_path = self.config.path.with_suffix(".txt")
             buffer = io.BytesIO()
             df = self.parse_as_dataframe()
-            dump_dataframe(df, buffer)
+            _dump_dataframe(df, buffer)
             content = buffer.getvalue()
             suffix = target_path.suffix
             filename = target_path.name
@@ -255,7 +274,7 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
         if content == b"" and self.default_empty is not None:
             # The file is empty, we should return the `default_empty` value
             buffer = io.BytesIO()
-            dump_dataframe(pl.DataFrame(self.default_empty()), buffer)
+            _dump_dataframe(pl.DataFrame(self.default_empty()), buffer)
             content = buffer.getvalue()
 
         return OriginalFile(content=content, suffix=suffix, filename=filename)
