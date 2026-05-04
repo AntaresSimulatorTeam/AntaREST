@@ -29,7 +29,8 @@ GLOBAL_PARAMETERS_SECTION = "globalparameters"
 # Reserved reserve ids:
 # - "global-parameters": collides with the /areas/{id}/reserves/global-parameters route.
 # - GLOBAL_PARAMETERS_SECTION: collides with the [globalparameters] INI section.
-_RESERVED_RESERVE_IDS = frozenset({"global-parameters", GLOBAL_PARAMETERS_SECTION})
+# - "reserves": collides with the `reserves.ini` file at `input/reserves/<area>/reserves`.
+_RESERVED_RESERVE_IDS = frozenset({"global-parameters", GLOBAL_PARAMETERS_SECTION, "reserves"})
 
 
 class ReserveType(EnumIgnoreCase):

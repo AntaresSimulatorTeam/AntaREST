@@ -86,6 +86,7 @@ from antarest.study.dao.common import (
     LinkSeriesMapping,
     RenewableSeriesMapping,
     ReserveDefinitionsMapping,
+    ReserveNeedsMapping,
     ReservesGlobalParametersMapping,
     StStorageConstraintSeriesMapping,
     StStorageId,
@@ -257,6 +258,8 @@ class InMemoryStudyDao(StudyDao):
         self._reserves_global_parameters: dict[str, ReservesGlobalParameters] = {}
         # Reserve definitions (per-reserve parameters)
         self._reserve_definitions: dict[ReserveKey, ReserveDefinition] = {}
+        # Reserve needs chronicles (per-reserve time series), value = matrix_id
+        self._reserve_needs: dict[ReserveKey, str] = {}
         # Misc-gen
         self._misc_gen: dict[str, str] = {}
         # Solar
@@ -1639,6 +1642,29 @@ class InMemoryStudyDao(StudyDao):
                 del self._reserve_definitions[reserve_key(area_id, rid)]
             except KeyError as exc:
                 raise ReserveDefinitionNotFound(area_id, rid) from exc
+            self._reserve_needs.pop(reserve_key(area_id, rid), None)
+
+    @override
+    def get_reserve_need(self, area_id: str, reserve_id: str) -> pl.DataFrame:
+        matrix_id = self._reserve_needs[reserve_key(area_id, reserve_id)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_all_reserve_needs(self) -> ReserveNeedsMapping:
+        result: ReserveNeedsMapping = {}
+        for key, matrix_id in self._reserve_needs.items():
+            result.setdefault(key.area_id, {})[ReserveDefinitionId(key.reserve_id)] = matrix_id
+        return result
+
+    @override
+    def save_reserve_needs(self, mapping: ReserveNeedsMapping) -> None:
+        for area_id, per_reserve in mapping.items():
+            for reserve_id, matrix_id in per_reserve.items():
+                self._reserve_needs[reserve_key(area_id, reserve_id)] = matrix_id
+
+    @override
+    def delete_reserve_need(self, area_id: AreaId, reserve_id: ReserveDefinitionId) -> None:
+        self._reserve_needs.pop(reserve_key(area_id, reserve_id), None)
 
     @override
     def save_solar(self, series: AreaSeriesMapping) -> None:
