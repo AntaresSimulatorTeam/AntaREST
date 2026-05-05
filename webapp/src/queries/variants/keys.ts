@@ -12,15 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { getFavoriteStudies } from "@/services/api/favorites";
-import { queryListOptions } from "../utils";
-import { studyKeys } from "./keys";
+import { studyKeys } from "../studies/keys";
 
-export const studyQueries = {
-  favorites: () => {
-    return queryListOptions({
-      queryKey: studyKeys.favorites(),
-      queryFn: getFavoriteStudies,
-    });
-  },
+export const variantKeys = {
+  all: () => [...studyKeys.all(), "variants"] as const,
+  allTree: () => [...variantKeys.all(), "variantTrees"] as const,
+  treeDetails: () => [...variantKeys.allTree(), "treeDetail"] as const,
+  treeDetail: (studyId: string) => [...variantKeys.treeDetails(), { studyId }] as const,
 };

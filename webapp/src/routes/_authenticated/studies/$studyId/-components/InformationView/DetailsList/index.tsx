@@ -12,22 +12,21 @@
  * This file is part of the Antares project.
  */
 
-import HubIcon from "@mui/icons-material/Hub";
-import LinearScaleIcon from "@mui/icons-material/LinearScale";
-import StorageIcon from "@mui/icons-material/Storage";
-import { Avatar, List, ListItem, ListItemAvatar, ListItemText, Skeleton } from "@mui/material";
-
 import { PromiseStatus } from "@/hooks/usePromise";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
 import { getAreas, getLinks } from "@/redux/selectors";
 import { getStudyDiskUsage } from "@/services/api/study";
+import HubIcon from "@mui/icons-material/Hub";
+import LinearScaleIcon from "@mui/icons-material/LinearScale";
+import StorageIcon from "@mui/icons-material/Storage";
+import { Avatar, List, ListItem, ListItemAvatar, ListItemText, Skeleton } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import useStudy from "../../../-hooks/useStudy";
 import { convertSize, getColorForSize } from "./utils";
 
-interface ListItem {
+interface DetailsListItem {
   content: React.ReactNode;
   label: string;
   icon: React.ReactNode;
@@ -68,7 +67,7 @@ function DetailsList() {
       label: t("study.links"),
       icon: <LinearScaleIcon />,
     },
-  ] satisfies ListItem[];
+  ] satisfies DetailsListItem[];
 
   ////////////////////////////////////////////////////////////////
   // JSX

@@ -14,7 +14,7 @@
 
 import SimpleLoader from "@/components/loaders/SimpleLoader";
 import SplitView from "@/components/page/SplitView";
-import { studyQueries } from "@/queries/studies/queries";
+import { variantQueries } from "@/queries/variants/queries";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import InformationView from "./-components/InformationView";
@@ -29,7 +29,7 @@ function StudyHome() {
   const study = useStudy();
   const navigate = useNavigate();
   // `isFetching` prevents rendering an outdated tree during background refetches
-  const { data: variantTree, isFetching } = useSuspenseQuery(studyQueries.variantTree(study.id));
+  const { data: variantTree, isFetching } = useSuspenseQuery(variantQueries.variantTree(study.id));
 
   return (
     <SplitView splitId="study-home" gutterSize={4} sizes={[30, 70]}>

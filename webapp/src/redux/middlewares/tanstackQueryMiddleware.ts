@@ -15,6 +15,7 @@
 import { queryClient } from "@/queries/queryClient";
 import { studyKeys } from "@/queries/studies/keys";
 import { studyQueries } from "@/queries/studies/queries";
+import { variantKeys } from "@/queries/variants/keys";
 import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
 import type { AppState } from "../ducks";
 import { createStudy, deleteStudy, setStudy, updateStudy } from "../ducks/studies";
@@ -40,7 +41,7 @@ tanstackQueryMiddleware.startListening({
       });
 
       // Invalidate variant tree queries to keep the study name up to date in the trees
-      queryClient.invalidateQueries({ queryKey: studyKeys.allVariantTree() });
+      queryClient.invalidateQueries({ queryKey: variantKeys.allTree() });
     }
   },
 });
@@ -49,7 +50,7 @@ tanstackQueryMiddleware.startListening({
   matcher: isAnyOf(createStudy.fulfilled, setStudy.fulfilled),
   effect: () => {
     // Invalidate variant tree queries to include the new study in the trees
-    queryClient.invalidateQueries({ queryKey: studyKeys.allVariantTree() });
+    queryClient.invalidateQueries({ queryKey: variantKeys.allTree() });
   },
 });
 
@@ -60,7 +61,7 @@ tanstackQueryMiddleware.startListening({
     queryClient.invalidateQueries({ queryKey: studyKeys.favorites() });
 
     // Invalidate variant tree queries to remove the deleted study from the trees
-    queryClient.invalidateQueries({ queryKey: studyKeys.allVariantTree() });
+    queryClient.invalidateQueries({ queryKey: variantKeys.allTree() });
   },
 });
 

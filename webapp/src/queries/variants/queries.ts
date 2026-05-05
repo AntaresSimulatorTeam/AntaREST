@@ -12,15 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import { getFavoriteStudies } from "@/services/api/favorites";
-import { queryListOptions } from "../utils";
-import { studyKeys } from "./keys";
+import { getVariantTree } from "@/services/api/studies/variants";
+import { queryOptions } from "@tanstack/react-query";
+import { variantKeys } from "./keys";
 
-export const studyQueries = {
-  favorites: () => {
-    return queryListOptions({
-      queryKey: studyKeys.favorites(),
-      queryFn: getFavoriteStudies,
+export const variantQueries = {
+  variantTree: (studyId: string) => {
+    return queryOptions({
+      queryKey: variantKeys.treeDetail(studyId),
+      queryFn: () => getVariantTree({ studyId }),
     });
   },
 };

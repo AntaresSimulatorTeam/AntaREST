@@ -119,7 +119,7 @@ function GridStudyCard({
                 <Chip label={study.workspace} size="small" sx={chipSx} />
               )}
               {study.archived && (
-                <Chip label={t("studies.archived")} size="small" color="warning" sx={chipSx} />
+                <Chip label={t("study.archived")} size="small" color="warning" sx={chipSx} />
               )}
               {isVariant && (
                 <Chip

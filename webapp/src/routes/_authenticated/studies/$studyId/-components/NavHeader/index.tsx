@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { studyQueries } from "@/queries/studies/queries";
+import { variantQueries } from "@/queries/variants/queries";
 import type { VariantTree } from "@/services/api/studies/variants/types";
 import { countDescendants, getParentNode } from "@/services/utils";
 import { Stack } from "@mui/material";
@@ -27,6 +27,7 @@ import Details from "./Details";
 function NavHeader() {
   const study = useStudy();
   const match = useMatch({ from: "/_authenticated/studies/$studyId/explore", shouldThrow: false });
+  const isExplorer = !!match;
 
   const selectStudyDetails = useCallback(
     (tree: VariantTree) => ({
@@ -37,11 +38,9 @@ function NavHeader() {
   );
 
   const { data: studyDetails } = useSuspenseQuery({
-    ...studyQueries.variantTree(study.id),
+    ...variantQueries.variantTree(study.id),
     select: selectStudyDetails,
   });
-
-  const isExplorer = !!match;
 
   return (
     <Stack
