@@ -19,14 +19,16 @@ from sqlalchemy.orm import Session
 from antarest.blobstore.service import IBlobService
 from antarest.core.config import InternalMatrixFormat
 from antarest.core.interfaces.cache import ICache
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
 from antarest.maintenance.tasks.gc_matrix import clean_matrices
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
-from antarest.matrixstore.service import MatrixService
+from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
+from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
-from antarest.study.model import STUDY_VERSION_9_3
+from antarest.study.model import STUDY_VERSION_9_3, STUDY_VERSION_10_0
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.variantstudy.business.matrix_constants.matrix_constants_usage_provider import (
@@ -34,7 +36,8 @@ from antarest.study.storage.variantstudy.business.matrix_constants.matrix_consta
 )
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.study.dao.conftest import _build_fs_dao, build_db_dao, build_real_case_study
+from tests.study.dao.conftest import _build_fs_dao, build_db_dao, build_real_case_study, build_reserve_definition
+from tests.study.dao.utils import save_area
 
 
 def _build_dao(
@@ -271,3 +274,16 @@ def test_garbage_collection(
 
     bc_eq = dao.get_constraint_equal_term_matrix(bc_eq_id)
     pl.testing.assert_frame_equal(bc_eq, bc_eq_df, check_dtypes=False)
+
+
+def test_provider_includes_reserve_need_matrix(db_session: Session, matrix_service: ISimpleMatrixService) -> None:
+    dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_10_0)
+    save_area(dao, "paris")
+    dao.save_reserve_definitions({"paris": [build_reserve_definition("R1")]})
+    matrix_id = matrix_service.create(pl.DataFrame([[0.0]] * 8760, orient="row"))
+    dao.save_reserve_needs({"paris": {ReserveDefinitionId("R1"): matrix_id}})
+
+    with db():
+        provider = StudyDatabaseMatrixUsageProvider(matrix_service)
+        used_ids = {ref.matrix_id for ref in provider.get_matrix_usage()}
+    assert matrix_id in used_ids

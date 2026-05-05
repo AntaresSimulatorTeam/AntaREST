@@ -14,14 +14,15 @@
 SQLAlchemy Core table definitions for renewable cluster storage.
 """
 
-from sqlalchemy import Boolean, Column, Enum, Float, ForeignKeyConstraint, Integer, String, Table
+from sqlalchemy import Boolean, Column, Float, ForeignKeyConstraint, Integer, String, Table
 
 from antarest.dbmodel import Base
 from antarest.study.business.model.renewable_cluster_model import TimeSeriesInterpretation
+from antarest.study.dao.database.sql_utils import enum_col
 
 metadata = Base.metadata
 
-_TS_INTERPRETATION_ENUM = Enum(TimeSeriesInterpretation, name="renewabletsinterpretation")
+_TS_INTERPRETATION_ENUM = enum_col(TimeSeriesInterpretation, name="renewabletsinterpretation")
 
 RENEWABLE_CLUSTER_TABLE = Table(
     "renewable_cluster",
