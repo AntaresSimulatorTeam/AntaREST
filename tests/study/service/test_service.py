@@ -64,7 +64,7 @@ from antarest.study.model import (
     StudyContentStatus,
     StudyFolder,
     StudyMetadataDTO,
-    StudyType
+    StudyType,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
 from antarest.study.service import (

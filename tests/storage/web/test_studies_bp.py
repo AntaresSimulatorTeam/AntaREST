@@ -43,7 +43,8 @@ from antarest.study.model import (
     STUDY_VERSION_8_8,
     OwnerInfo,
     StorageMode,
-    StudyMetadataDTO, StudyType,
+    StudyMetadataDTO,
+    StudyType,
 )
 from antarest.study.service import StudyService
 from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
