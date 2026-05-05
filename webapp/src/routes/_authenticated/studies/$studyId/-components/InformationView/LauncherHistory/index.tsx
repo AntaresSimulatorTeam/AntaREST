@@ -20,25 +20,22 @@ import type { Job } from "@/services/api/launcher/jobs/types";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 import type { WsEvent } from "@/services/webSocket/types";
 import { addWsEventListener, subscribeWsChannels } from "@/services/webSocket/ws";
-import type { LaunchJobsProgress, StudyMetadata } from "@/types/types";
+import type { LaunchJobsProgress } from "@/types/types";
 import HistoryIcon from "@mui/icons-material/History";
-import { Paper, Typography } from "@mui/material";
+import { Paper, Stack, Typography } from "@mui/material";
 import type { AxiosError } from "axios";
 import moment from "moment";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import useStudy from "../../../-hooks/useStudy";
 import JobStepper from "./JobStepper";
 
-interface Props {
-  study: StudyMetadata | undefined;
-}
-
-function LauncherHistory(props: Props) {
-  const { study } = props;
+function LauncherHistory() {
   const [t] = useTranslation();
   const [studyJobs, setStudyJobs] = useState<Job[]>([]);
   const [studyJobsProgress, setStudyJobsProgress] = useState<LaunchJobsProgress>({});
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const study = useStudy();
 
   const handleEvents = useCallback(
     (event: WsEvent): void => {
@@ -135,21 +132,15 @@ function LauncherHistory(props: Props) {
   }, [studyJobs]);
 
   return (
-    <Paper
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 1,
-        p: 2,
-        flex: 1,
-      }}
-      elevation={2}
-    >
-      <Typography color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+    <Stack component={Paper} direction="column" sx={{ height: 1, p: 1, flex: 1.5 }} elevation={2}>
+      <Typography
+        color="text.secondary"
+        sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}
+      >
         <HistoryIcon /> {t("global.jobs")}
       </Typography>
-      {study && <JobStepper studyId={study.id} jobs={studyJobs} jobsProgress={studyJobsProgress} />}
-    </Paper>
+      {study && <JobStepper jobs={studyJobs} jobsProgress={studyJobsProgress} />}
+    </Stack>
   );
 }
 

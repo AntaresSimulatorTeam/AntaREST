@@ -12,19 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import type z from "zod";
-import type { studySchema } from "./schemas";
+import { getVariantTree } from "@/services/api/studies/variants";
+import { queryOptions } from "@tanstack/react-query";
+import { variantKeys } from "./keys";
 
-export type StudyDTO = z.input<typeof studySchema>;
-
-export type Study = z.output<typeof studySchema>;
-
-export interface CopyStudyParams {
-  studyId: Study["id"];
-  studyName: string;
-  outputIds?: string[];
-  withOutputs?: boolean;
-  groups?: string;
-  useTask?: boolean;
-  destinationFolder?: string;
-}
+export const variantQueries = {
+  variantTree: (studyId: string) => {
+    return queryOptions({
+      queryKey: variantKeys.treeDetail(studyId),
+      queryFn: () => getVariantTree({ studyId }),
+    });
+  },
+};

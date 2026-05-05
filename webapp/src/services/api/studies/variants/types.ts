@@ -12,19 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import type z from "zod";
-import type { studySchema } from "./schemas";
+import type { Study } from "../types";
 
-export type StudyDTO = z.input<typeof studySchema>;
+export interface VariantTree {
+  node: Study;
+  children: VariantTree[];
+}
 
-export type Study = z.output<typeof studySchema>;
-
-export interface CopyStudyParams {
+export interface GetVariantTreeParams {
   studyId: Study["id"];
-  studyName: string;
-  outputIds?: string[];
-  withOutputs?: boolean;
-  groups?: string;
-  useTask?: boolean;
-  destinationFolder?: string;
+  includeParents?: boolean;
+}
+
+export interface CreateVariantParams {
+  studyId: Study["id"];
+  name: string;
 }
