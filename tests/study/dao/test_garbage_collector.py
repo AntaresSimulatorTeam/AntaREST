@@ -23,12 +23,12 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
 from antarest.maintenance.tasks.gc_matrix import clean_matrices
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
-from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
+from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
-from antarest.study.model import STUDY_VERSION_9_3, STUDY_VERSION_10_0
+from antarest.study.model import STUDY_VERSION_9_3
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.variantstudy.business.matrix_constants.matrix_constants_usage_provider import (
@@ -276,14 +276,21 @@ def test_garbage_collection(
     pl.testing.assert_frame_equal(bc_eq, bc_eq_df, check_dtypes=False)
 
 
-def test_provider_includes_reserve_need_matrix(db_session: Session, matrix_service: ISimpleMatrixService) -> None:
-    dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_10_0)
+def test_provider_includes_reserve_need_matrix(dao_10_0: StudyDao, core_cache: ICache) -> None:
+    from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+
+    dao = dao_10_0
+    matrix_service = dao._matrix_service
+
     save_area(dao, "paris")
     dao.save_reserve_definitions({"paris": [build_reserve_definition("R1")]})
     matrix_id = matrix_service.create(pl.DataFrame([[0.0]] * 8760, orient="row"))
     dao.save_reserve_needs({"paris": {ReserveDefinitionId("R1"): matrix_id}})
 
     with db():
-        provider = StudyDatabaseMatrixUsageProvider(matrix_service)
+        if isinstance(dao, FileStudyTreeDao):
+            provider = RawStudyMatrixUsageProvider(StudyMetadataRepository(core_cache), matrix_service)
+        else:
+            provider = StudyDatabaseMatrixUsageProvider(matrix_service)
         used_ids = {ref.matrix_id for ref in provider.get_matrix_usage()}
     assert matrix_id in used_ids

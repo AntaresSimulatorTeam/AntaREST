@@ -50,6 +50,7 @@ from antarest.study.model import (
     STUDY_VERSION_9_3,
     STUDY_VERSION_10_0,
     StorageMode,
+    Study,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -217,10 +218,14 @@ def dao_10_0(
     core_cache: "ICache",
 ) -> StudyDao:
     """A DAO parameterized over both backends (v10.0)."""
+    # v10.0 has no study template on disk — create a v9.3 study and force its version to 10.0.
     if request.param == "db":
-        return build_db_dao(db_session, matrix_service, STUDY_VERSION_10_0)
+        dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
+        study = db_session.get(Study, dao.get_study_id())
+        study.version = str(STUDY_VERSION_10_0)
+        db_session.commit()
+        return dao
     else:
-        # v10.0 has no study template on disk — create a v9.3 study and force its config version to 10.0.
         dao, _ = _build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
         dao.get_file_study().config.version = STUDY_VERSION_10_0
         return dao

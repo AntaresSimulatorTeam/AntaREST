@@ -13,6 +13,7 @@ from antares.study.version import StudyVersion
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
+from antarest.core.exceptions import UnsupportedStudyVersion
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, DEFAULT_LAYER_NAME
@@ -44,6 +45,7 @@ from antarest.study.business.model.thematic_trimming_model import (
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.model import (
+    STUDY_REFERENCE_TEMPLATES,
     STUDY_VERSION_7_2,
     STUDY_VERSION_8_3,
     STUDY_VERSION_8_4,
@@ -117,6 +119,11 @@ class DatabaseStudyDaoFactory(StudyFactoryDao):
 
     @override
     def create_study_dao(self, study: Study) -> DatabaseStudyDao:
+        version = StudyVersion.parse(study.version)
+        if version not in STUDY_REFERENCE_TEMPLATES:
+            raise UnsupportedStudyVersion(
+                f"{version} is not a supported version, supported versions are: {STUDY_REFERENCE_TEMPLATES}"
+            )
         dao = DatabaseStudyDao(study.id, self.session, self._matrix_service, self._generator_matrix_constants)
         dao.save_layer(Layer(id=DEFAULT_LAYER_ID, name=DEFAULT_LAYER_NAME))
         _create_default_settings(dao, study)
