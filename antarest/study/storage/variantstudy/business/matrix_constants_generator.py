@@ -227,7 +227,7 @@ class GeneratorMatrixConstants:
 
     def get_reserve_need(self) -> str:
         """2D-matrix of shape (8760, 1), filled-in with zeros."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[RESERVE_NEED]
+        return self.hashes[RESERVE_NEED]
 
     def get_hydro_max_hourly_gen_power(self) -> str:
         return self.hashes[HYDRO_SERIES_MAX_HOURLY_GEN_POWER]

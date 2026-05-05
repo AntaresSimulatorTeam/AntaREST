@@ -27,7 +27,7 @@ class InputReservesAreaFolder(FolderNode):
         }
         for reserve_id in self.config.areas[area_id].reserves:
             tree[reserve_id] = InputSeriesMatrix(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file(f"{reserve_id}.txt"),
                 default_empty=default_scenario_hourly,
                 should_exist=False,
