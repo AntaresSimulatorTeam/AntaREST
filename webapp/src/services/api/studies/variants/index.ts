@@ -33,28 +33,28 @@ export async function getVariantTree({ studyId, includeParents = true }: GetVari
   return variantTreeSchema.parse(data);
 }
 
-export const getVariantParents = async ({ studyId }: { studyId: Study["id"] }) => {
+export async function getVariantParents({ studyId }: { studyId: Study["id"] }) {
   const { data } = await client.get(`/v1/studies/${studyId}/parents`);
   return z.array(studySchema).parse(data);
-};
+}
 
-export const getVariantDirectParent = async ({ studyId }: { studyId: Study["id"] }) => {
+export async function getVariantDirectParent({ studyId }: { studyId: Study["id"] }) {
   const { data } = await client.get(`/v1/studies/${studyId}/parents`, {
     params: { direct: true },
   });
 
   return data ? studySchema.parse(data) : null;
-};
+}
 
 export async function getVariantLatestParent({ studyId }: { studyId: Study["id"] }) {
   const parents = await getVariantParents({ studyId });
   return parents.length > 0 ? parents[parents.length - 1] : null;
 }
 
-export const createVariant = async ({ studyId, name }: CreateVariantParams) => {
+export async function createVariant({ studyId, name }: CreateVariantParams) {
   const { data } = await client.post(`/v1/studies/${studyId}/variants`, null, {
     params: { name },
   });
 
   return z.string().parse(data);
-};
+}
