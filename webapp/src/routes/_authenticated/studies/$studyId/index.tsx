@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import SimpleLoader from "@/components/loaders/SimpleLoader";
 import SplitView from "@/components/page/SplitView";
 import { studyQueries } from "@/queries/studies/queries";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -27,15 +28,20 @@ export const Route = createFileRoute("/_authenticated/studies/$studyId/")({
 function StudyHome() {
   const study = useStudy();
   const navigate = useNavigate();
-  const { data: variantTree } = useSuspenseQuery(studyQueries.variantTree(study.id));
+  // `isFetching` prevents rendering an outdated tree during background refetches
+  const { data: variantTree, isFetching } = useSuspenseQuery(studyQueries.variantTree(study.id));
 
   return (
     <SplitView splitId="study-home" gutterSize={4} sizes={[30, 70]}>
       {/* Left */}
-      <VariantsTree
-        variantTree={variantTree}
-        onClick={(studyId: string) => navigate({ to: "/studies/$studyId", params: { studyId } })}
-      />
+      {isFetching ? (
+        <SimpleLoader />
+      ) : (
+        <VariantsTree
+          variantTree={variantTree}
+          onClick={(studyId: string) => navigate({ to: "/studies/$studyId", params: { studyId } })}
+        />
+      )}
       {/* Right */}
       <InformationView variantTree={variantTree} />
     </SplitView>
