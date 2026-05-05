@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import SimpleLoader from "@/components/loaders/SimpleLoader";
 import SplitView from "@/components/page/SplitView";
-import UsePromiseCond from "@/components/utils/UsePromiseCond";
-import usePromise from "@/hooks/usePromise";
-import { getVariantParents, getVariantTree } from "@/services/api/variant";
+import { variantQueries } from "@/queries/variants/queries";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import InformationView from "./-components/InformationView";
 import VariantsTree from "./-components/VariantsTree";
@@ -28,32 +28,22 @@ export const Route = createFileRoute("/_authenticated/studies/$studyId/")({
 function StudyHome() {
   const study = useStudy();
   const navigate = useNavigate();
-
-  const variantTreeRes = usePromise(async () => {
-    const parents = await getVariantParents(study.id);
-    const root = parents.length > 0 ? parents[parents.length - 1] : study;
-    const variantTree = await getVariantTree(root.id);
-
-    return variantTree;
-  }, [study]);
+  // `isFetching` prevents rendering an outdated tree during background refetches
+  const { data: variantTree, isFetching } = useSuspenseQuery(variantQueries.variantTree(study.id));
 
   return (
-    <UsePromiseCond
-      response={variantTreeRes}
-      ifFulfilled={(variantTree) => (
-        <SplitView splitId="study-home" gutterSize={4} sizes={[30, 70]}>
-          {/* Left */}
-          <VariantsTree
-            study={study}
-            variantTree={variantTree}
-            onClick={(studyId: string) =>
-              navigate({ to: "/studies/$studyId", params: { studyId } })
-            }
-          />
-          {/* Right */}
-          <InformationView study={study} variantTree={variantTree} />
-        </SplitView>
+    <SplitView splitId="study-home" gutterSize={4} sizes={[30, 70]}>
+      {/* Left */}
+      {isFetching ? (
+        <SimpleLoader />
+      ) : (
+        <VariantsTree
+          variantTree={variantTree}
+          onClick={(studyId: string) => navigate({ to: "/studies/$studyId", params: { studyId } })}
+        />
       )}
-    />
+      {/* Right */}
+      <InformationView variantTree={variantTree} />
+    </SplitView>
   );
 }

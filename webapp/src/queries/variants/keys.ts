@@ -12,19 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import type z from "zod";
-import type { studySchema } from "./schemas";
+import { studyKeys } from "../studies/keys";
 
-export type StudyDTO = z.input<typeof studySchema>;
-
-export type Study = z.output<typeof studySchema>;
-
-export interface CopyStudyParams {
-  studyId: Study["id"];
-  studyName: string;
-  outputIds?: string[];
-  withOutputs?: boolean;
-  groups?: string;
-  useTask?: boolean;
-  destinationFolder?: string;
-}
+export const variantKeys = {
+  all: () => [...studyKeys.all(), "variants"] as const,
+  allTree: () => [...variantKeys.all(), "variantTrees"] as const,
+  treeDetails: () => [...variantKeys.allTree(), "treeDetail"] as const,
+  treeDetail: (studyId: string) => [...variantKeys.treeDetails(), { studyId }] as const,
+};

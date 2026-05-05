@@ -26,7 +26,7 @@ from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import User
 from antarest.login.utils import current_user_context
-from antarest.study.model import DEFAULT_WORKSPACE_NAME
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyType
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
@@ -292,7 +292,7 @@ def test_get_variant_children(tmp_path: Path, admin_user: Any) -> None:
     parent = create_variant_study(
         id="parent",
         name="parent",
-        type="variant",
+        type=StudyType.VARIANT,
         archived=False,
         path=str(study_path),
         version="700",
@@ -304,7 +304,7 @@ def test_get_variant_children(tmp_path: Path, admin_user: Any) -> None:
         create_variant_study(
             id="child1",
             name="child1",
-            type="variant",
+            type=StudyType.VARIANT,
             archived=False,
             path=str(study_path),
             version="700",
@@ -315,7 +315,7 @@ def test_get_variant_children(tmp_path: Path, admin_user: Any) -> None:
         create_variant_study(
             id="child2",
             name="child2",
-            type="variant",
+            type=StudyType.VARIANT,
             archived=False,
             path=str(study_path),
             version="700",

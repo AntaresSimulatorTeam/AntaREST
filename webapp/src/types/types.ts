@@ -44,6 +44,9 @@ export enum StudyType {
   RAW = "rawstudy",
 }
 
+/**
+ * @deprecated Use StudyDTO type instead
+ */
 export interface StudyMetadataDTO extends IdentityDTO {
   owner: StudyMetadataOwner;
   editor: string;
@@ -64,6 +67,9 @@ export interface StudyMetadataDTO extends IdentityDTO {
   directory_id?: string | null;
 }
 
+/**
+ * @deprecated Use Study type instead
+ */
 export interface StudyMetadata {
   id: string;
   name: string;
@@ -109,16 +115,6 @@ export interface StudyLayer {
 }
 
 export type StudySortConfig = z.infer<typeof StudySortConfigSchema>;
-
-export interface VariantTreeDTO {
-  node: StudyMetadataDTO;
-  children: VariantTreeDTO[];
-}
-
-export interface VariantTree {
-  node: StudyMetadata;
-  children: VariantTree[];
-}
 
 export interface LaunchJobProgressDTO {
   id: string;
