@@ -15,11 +15,11 @@ from typing import Iterable
 
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import extract_matrix_id
 
 logger = logging.getLogger(__name__)
 

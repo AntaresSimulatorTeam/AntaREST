@@ -242,13 +242,18 @@ class StudyContentStatus(enum.Enum):
     ERROR = "ERROR"
 
 
-class StorageMode(enum.StrEnum):
+class StorageMode(StrEnum):
     """
     Storage mode for study data.
     """
 
     FILESYSTEM = "filesystem"
     DATABASE = "database"
+
+
+class StudyType(StrEnum):
+    VARIANT = "variantstudy"
+    RAW = "rawstudy"
 
 
 class CommentsDto(AntaresBaseModel):
@@ -534,7 +539,7 @@ class StudyMetadataDTO(AntaresBaseModel):
     editor: str | None = None
     created: str
     updated: str
-    type: str
+    type: StudyType
     owner: OwnerInfo
     groups: list[GroupDTO]
     public_mode: PublicMode
@@ -627,7 +632,7 @@ class DeleteManyStudies(AntaresBaseModel):
     with_variants: bool = Field(default=False, description="Whether to delete variant studies as well")
 
 
-class StudyDownloadType(enum.StrEnum):
+class StudyDownloadType(StrEnum):
     LINK = "LINK"
     DISTRICT = "DISTRICT"
     AREA = "AREA"

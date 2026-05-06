@@ -22,7 +22,6 @@ from antarest.core.exceptions import (
     RenewableClusterConfigNotFound,
     RenewableClusterNotFound,
 )
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.dao.api.renewable_dao import RenewableDao
 from antarest.study.dao.common import AreaId, RenewableSeriesMapping
@@ -33,7 +32,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     serialize_renewable_cluster,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -129,7 +128,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
                 renewable_id = renewable.id.lower()
                 url = _get_renewable_series_path(area_id, renewable_id)
                 node = study_data.tree.get_node(url)
-                assert isinstance(node, MatrixNode)
+                assert isinstance(node, InputSeriesMatrix)
                 matrix_nodes[node] = (area_id, renewable_id)
 
         result: RenewableSeriesMapping = {}
@@ -167,7 +166,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
 
     @override
     def save_renewable_series(self, series: RenewableSeriesMapping) -> None:
-        matrices_mapping: dict[str, list[MatrixNode]] = {}
+        matrices_mapping: dict[str, list[InputSeriesMatrix]] = {}
         study_data = self.get_file_study()
         for area_id, value in series.items():
             if area_id not in study_data.config.areas:
@@ -178,8 +177,8 @@ class FileStudyRenewableDao(RenewableDao, ABC):
                     node = study_data.tree.get_node(url)
                 except ChildNotFoundError:
                     raise RenewableClusterNotFound(area_id, renewable_id)
-                assert isinstance(node, MatrixNode)
-                matrix_id = extract_matrix_id(series_id)
+                assert isinstance(node, InputSeriesMatrix)
+                matrix_id = series_id
                 matrices_mapping.setdefault(matrix_id, []).append(node)
         self.get_impl().save_matrices(matrices_mapping)
 

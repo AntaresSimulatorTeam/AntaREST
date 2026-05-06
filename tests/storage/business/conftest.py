@@ -15,7 +15,6 @@ import pytest
 from antares.study.version.create_app import CreateApp
 
 from antarest.blobstore.service import IBlobService
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.link_management import LinkManager
@@ -24,6 +23,7 @@ from antarest.study.business.xpansion_management import XpansionManager
 from antarest.study.model import STUDY_VERSION_8_1
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -61,7 +61,6 @@ def study(tmp_path: Path, matrix_service: ISimpleMatrixService) -> StudyInterfac
     app = CreateApp(study_dir=study_path, caption="empty_study_810", version=STUDY_VERSION_8_1, author="Unknown")
     app()
     config = build(study_path, study_id)
-    mapper_factory = MatrixUriMapperFactory(matrix_service=matrix_service)
-    matrix_mapper = mapper_factory.create(NormalizedMatrixUriMapper.NORMALIZED)
-    empty_study_810 = FileStudy(config, FileStudyTree(matrix_mapper, config))
+    matrix_storage_context = MatrixStorageContext(matrix_service=matrix_service, is_managed=True)
+    empty_study_810 = FileStudy(config, FileStudyTree(matrix_storage_context, config))
     return file_study_interface(empty_study_810, matrix_service)

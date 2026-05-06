@@ -45,7 +45,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.xpansion import (
     serialize_xpansion_settings,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -173,7 +173,7 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         except ChildNotFoundError:
             raise XpansionFileNotFoundError(f"The '{resource_type.value}' file '{filename}' does not exist") from None
 
-        if isinstance(node, MatrixNode):
+        if isinstance(node, InputSeriesMatrix):
             return node.parse_as_dataframe()
 
         content = node.get()
@@ -288,7 +288,7 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         node_mapping = {}
         for file_name in folder_node.get():
             node = folder_node.get_node([file_name])
-            assert isinstance(node, MatrixNode)
+            assert isinstance(node, InputSeriesMatrix)
             node_mapping[node] = file_name
 
         result = {}

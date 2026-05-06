@@ -17,7 +17,6 @@ import pytest
 import antarest.study.storage.rawstudy.model.filesystem.config.files
 from antarest.blobstore.in_memory import InMemoryBlobService
 from antarest.core.exceptions import CommandApplicationError
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.model.thermal_cluster_model import (
@@ -29,6 +28,7 @@ from antarest.study.business.model.thermal_cluster_model import (
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -77,10 +77,8 @@ def study_path(tmp_path: Path) -> Path:
 def create_file_study(matrix_service: ISimpleMatrixService, study_id: str, path: Path) -> FileStudy:
     config = antarest.study.storage.rawstudy.model.filesystem.config.files.build(study_id=study_id, study_path=path)
 
-    mapper_factory = MatrixUriMapperFactory(matrix_service=matrix_service)
-    matrix_mapper = mapper_factory.create(NormalizedMatrixUriMapper.NORMALIZED)
-
-    tree = FileStudyTree(matrix_mapper, config)
+    matrix_storage_context = MatrixStorageContext(matrix_service=matrix_service, is_managed=True)
+    tree = FileStudyTree(matrix_storage_context, config)
     return FileStudy(config, tree)
 
 

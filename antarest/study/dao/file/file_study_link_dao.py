@@ -17,7 +17,6 @@ import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, ChildNotFoundError, LinkNotFound
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.business.model.link_model import (
     Link,
 )
@@ -26,7 +25,7 @@ from antarest.study.dao.common import AreaId, LinkSeriesMapping
 from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.config.link import parse_link, serialize_link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -144,7 +143,7 @@ class FileStudyLinkDao(LinkDao, ABC):
         study_data.areas[area_from].links[area_to] = link.to_config()
 
     def _save_link_matrices(self, series: LinkSeriesMapping, url_getter: Callable[[AreaId, AreaId], list[str]]) -> None:
-        matrices_mapping: dict[str, list[MatrixNode]] = {}
+        matrices_mapping: dict[str, list[InputSeriesMatrix]] = {}
         study_data = self.get_file_study()
         for (area_from, area_to), series_id in series.items():
             area_from, area_to = sorted((area_from, area_to))
@@ -156,9 +155,8 @@ class FileStudyLinkDao(LinkDao, ABC):
                     if area not in study_data.config.areas:
                         raise AreaNotFound(area) from None
                 raise
-            assert isinstance(node, MatrixNode)
-            matrix_id = extract_matrix_id(series_id)
-            matrices_mapping.setdefault(matrix_id, []).append(node)
+            assert isinstance(node, InputSeriesMatrix)
+            matrices_mapping.setdefault(series_id, []).append(node)
         self.get_impl().save_matrices(matrices_mapping)
 
     @override
@@ -222,7 +220,7 @@ class FileStudyLinkDao(LinkDao, ABC):
             for area_to in value.links:
                 url = url_getter(area_from, area_to)
                 node = study_data.tree.get_node(url)
-                assert isinstance(node, MatrixNode)
+                assert isinstance(node, InputSeriesMatrix)
                 matrix_nodes[node] = (area_from, area_to)
 
         result: LinkSeriesMapping = {}

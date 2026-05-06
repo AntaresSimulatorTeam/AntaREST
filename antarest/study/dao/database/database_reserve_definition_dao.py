@@ -21,7 +21,6 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveDefinitionId
 from antarest.study.dao.api.reserve_definition_dao import ReserveDefinitionDao
 from antarest.study.dao.common import AreaId, ReserveDefinitionsMapping, ReserveNeedsMapping
@@ -177,7 +176,7 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao):
                         "study_id": self._study_id,
                         "area_id": area_id,
                         "reserve_id": reserve_id,
-                        "matrix_id": extract_matrix_id(matrix_id),
+                        "matrix_id": matrix_id,
                     }
                 )
         try:
