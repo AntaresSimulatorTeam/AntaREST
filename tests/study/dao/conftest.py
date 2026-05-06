@@ -25,7 +25,6 @@ from antarest.blobstore.service import IBlobService
 from antarest.core.interfaces.cache import ICache
 from antarest.dbmodel import Base
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
@@ -149,7 +148,7 @@ def _build_fs_dao(
     tmp_path: Path,
 ) -> tuple[FileStudyTreeDao, ISimpleMatrixService]:
     matrix_service = command_context.matrix_service
-    study_factory = StudyFactory(matrix_mapper_factory=MatrixUriMapperFactory(matrix_service), cache=core_cache)
+    study_factory = StudyFactory(matrix_service=matrix_service, cache=core_cache)
     return build_filesystem_dao(db_session, version, command_context, study_factory, tmp_path), matrix_service
 
 

@@ -29,7 +29,6 @@ from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.core.utils.polars import create_polars_dataframe
-from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX
 from antarest.study.business.model.config.compatibility_parameters_model import (
     HydroPmax,
 )
@@ -701,7 +700,7 @@ class DatabaseHydroDao(HydroDao):
         if hydro_pmax == HydroPmax.HOURLY:
             area_ids = self.get_impl().get_all_area_ids()
             generator = self.get_impl().generator_matrix_constants
-            hourly_matrix_id = generator.get_null_matrix().removeprefix(MATRIX_PROTOCOL_PREFIX)
+            hourly_matrix_id = generator.get_null_matrix()
             daily_matrix_id = generator.matrix_service.create(create_polars_dataframe(np.full((365, 1), 24)))
 
             hourly_rows = [

@@ -19,7 +19,6 @@ from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
 from antarest.core.tasks.service import ITaskService
 from antarest.launcher.repository import JobResultRepository
 from antarest.login.service import LoginService
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.directory_service import DirectoryService
 from antarest.study.repository import DirectoryRepository, StudyMetadataRepository
@@ -68,8 +67,7 @@ def build_study_service(
         A tuple of (StudyService, DirectoryService).
     """
 
-    mapper_factory = MatrixUriMapperFactory(matrix_service=matrix_service)
-    study_factory = StudyFactory(matrix_mapper_factory=mapper_factory, cache=cache)
+    study_factory = StudyFactory(matrix_service=matrix_service, cache=cache)
     metadata_repository = metadata_repository or StudyMetadataRepository(cache)
     variant_repository = variant_repository or VariantStudyRepository(cache)
     job_result_repository = job_result_repository or JobResultRepository()

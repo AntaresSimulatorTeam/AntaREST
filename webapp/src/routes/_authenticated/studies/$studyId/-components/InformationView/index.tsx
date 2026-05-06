@@ -12,114 +12,128 @@
  * This file is part of the Antares project.
  */
 
+import CustomScrollbar from "@/components/CustomScrollbar";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import RouterButton from "@/components/router/RouterButton";
+import useDialog from "@/hooks/useDialog";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { copyStudy } from "@/services/api/studies";
-import { unarchiveStudy as callUnarchiveStudy } from "@/services/api/study";
-import type { StudyMetadata, VariantTree } from "@/types/types";
-import { Box, Button, Divider } from "@mui/material";
-import type { AxiosError } from "axios";
-import { useState } from "react";
+import type { VariantTree } from "@/services/api/studies/variants/types";
+import { unarchiveStudy } from "@/services/api/study";
+import { toError } from "@/utils/fnUtils";
+import BoltIcon from "@mui/icons-material/Bolt";
+import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
+import { Box, Button, Divider, Stack } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import useStudy from "../../-hooks/useStudy";
 import StudyLaunchDialog from "../../../../../-shared/components/studies/dialogs/StudyLaunchDialog";
 import CreateVariantDialog from "./CreateVariantDialog";
+import DetailsList from "./DetailsList";
 import LauncherHistory from "./LauncherHistory";
 import Notes from "./Notes";
 
 interface Props {
-  study: StudyMetadata;
   variantTree: VariantTree;
 }
 
-function InformationView({ study, variantTree }: Props) {
+function InformationView({ variantTree }: Props) {
   const [t] = useTranslation();
-  const [openVariantModal, setOpenVariantModal] = useState<boolean>(false);
-  const [openLauncherModal, setOpenLauncherModal] = useState<boolean>(false);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const { openDialog } = useDialog();
+  const study = useStudy();
 
-  const importStudy = async (study: StudyMetadata) => {
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleCopyStudy = async () => {
     try {
       await copyStudy({
         studyId: study.id,
         studyName: `${study.name} (${t("studies.copySuffix")})`,
         withOutputs: false,
       });
-    } catch (e) {
-      enqueueErrorSnackbar(t("studies.error.copyStudy"), e as AxiosError);
+    } catch (err) {
+      enqueueErrorSnackbar(t("studies.error.copyStudy"), toError(err));
     }
   };
 
-  const unarchiveStudy = async (study: StudyMetadata) => {
+  const handleUnarchiveStudy = async () => {
     try {
-      await callUnarchiveStudy(study.id);
-    } catch (e) {
-      enqueueErrorSnackbar(
-        t("studies.error.unarchive", { studyname: study.name }),
-        e as AxiosError,
-      );
+      await unarchiveStudy(study.id);
+    } catch (err) {
+      enqueueErrorSnackbar(t("studies.error.unarchive", { studyname: study.name }), toError(err));
     }
   };
+
+  const handleCreateVariant = () => {
+    openDialog(({ onClose }) => (
+      <CreateVariantDialog parentId={study.id} variantTree={variantTree} onClose={onClose} />
+    ));
+  };
+
+  const handleLaunchStudy = () => {
+    openDialog(({ onClose }) => <StudyLaunchDialog open studyIds={[study.id]} onClose={onClose} />);
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <ViewWrapper flex={{ gap: 2 }}>
-      <Box
-        sx={{
-          display: "flex",
-          overflow: "auto",
-          flex: 1,
-        }}
-      >
-        <LauncherHistory study={study} />
-        <Notes study={study} />
+      <Stack flex={1} gap={1} sx={{ overflow: "auto" }}>
+        <LauncherHistory />
+        {!study.archived && (
+          <Stack direction="column" sx={{ height: 1, flex: 1, overflow: "hidden" }}>
+            <Notes />
+            <Divider flexItem variant="middle" />
+            <DetailsList />
+          </Stack>
+        )}
+      </Stack>
+
+      <Divider flexItem />
+
+      <Box>
+        <CustomScrollbar>
+          <Stack gap={1} justifyContent="space-between">
+            <Stack gap={1}>
+              {!study.archived && (
+                <RouterButton
+                  variant="contained"
+                  to="/studies/$studyId/explore"
+                  params={{ studyId: study.id }}
+                >
+                  {t("button.explore")}
+                </RouterButton>
+              )}
+              {study.managed ? (
+                <Button variant="outlined" onClick={handleCreateVariant}>
+                  {t("variants.createNewVariant")}
+                </Button>
+              ) : (
+                <Button variant="outlined" onClick={handleCopyStudy} disabled={study.archived}>
+                  {t("studies.importcopy")}
+                </Button>
+              )}
+            </Stack>
+            {study.archived ? (
+              <Button
+                variant="contained"
+                onClick={handleUnarchiveStudy}
+                startIcon={<UnarchiveOutlinedIcon />}
+              >
+                {t("global.unarchive")}
+              </Button>
+            ) : (
+              <Button variant="contained" onClick={handleLaunchStudy} startIcon={<BoltIcon />}>
+                {t("global.launch")}
+              </Button>
+            )}
+          </Stack>
+        </CustomScrollbar>
       </Box>
-      <Divider />
-      <Box sx={{ display: "flex", gap: 2 }}>
-        <Box sx={{ display: "flex", gap: 2, flex: 1 }}>
-          <RouterButton
-            variant="contained"
-            to="/studies/$studyId/explore"
-            params={{ studyId: study.id }}
-          >
-            {t("button.explore")}
-          </RouterButton>
-          {!study.archived && (
-            <Button
-              variant="outlined"
-              onClick={() => (study.managed ? setOpenVariantModal(true) : importStudy(study))}
-            >
-              {study.managed ? t("variants.createNewVariant") : t("studies.importcopy")}
-            </Button>
-          )}
-        </Box>
-        <Button
-          variant="contained"
-          onClick={
-            study.archived
-              ? () => {
-                  unarchiveStudy(study);
-                }
-              : () => setOpenLauncherModal(true)
-          }
-        >
-          {study.archived ? t("global.unarchive") : t("global.launch")}
-        </Button>
-      </Box>
-      {openVariantModal && (
-        <CreateVariantDialog
-          parentId={study.id}
-          open={openVariantModal}
-          onClose={() => setOpenVariantModal(false)}
-          variantTree={variantTree}
-        />
-      )}
-      {openLauncherModal && (
-        <StudyLaunchDialog
-          open={openLauncherModal}
-          studyIds={[study.id]}
-          onClose={() => setOpenLauncherModal(false)}
-        />
-      )}
     </ViewWrapper>
   );
 }

@@ -261,7 +261,17 @@ COMMANDS = [
             study_version=STUDY_VERSION_8_8,
             version=2,
         ),
-        None,
+        {
+            "matrices": {"greaterTermMatrix": "fake_matrix"},
+            "parameters": {
+                "enabled": False,
+                "filterSynthesis": "weekly",
+                "group": "group 1",
+                "name": "name",
+                "operator": "equal",
+                "timeStep": "hourly",
+            },
+        },
         id="create_binding_constraint",
     ),
     pytest.param(
@@ -278,7 +288,7 @@ COMMANDS = [
             study_version=STUDY_VERSION_8_8,
             version=2,
         ),
-        None,
+        [{"matrices": {"equalTermMatrix": "fake_matrix"}, "parameters": {"name": "name"}}],
         id="create_binding_constraint_list",
     ),
     pytest.param(
@@ -650,8 +660,8 @@ COMMANDS = [
         ),
         {
             "area_id": "area 1",
-            "inflows": "matrix://df9b25e1-e3f7-4a57-8182-0ff9791439e5",
-            "lower_rule_curve": "matrix://8ce4fcea-cc97-4d2c-b641-a27a53454612",
+            "inflows": "df9b25e1-e3f7-4a57-8182-0ff9791439e5",
+            "lower_rule_curve": "8ce4fcea-cc97-4d2c-b641-a27a53454612",
             "parameters": {
                 "efficiency": 1.0,
                 "enabled": True,
@@ -663,9 +673,9 @@ COMMANDS = [
                 "reservoirCapacity": 0.0,
                 "withdrawalNominalCapacity": 0.0,
             },
-            "pmax_injection": "matrix://59ea6c83-6348-466d-9530-c35c51ca4c37",
-            "pmax_withdrawal": "matrix://5f988548-dadc-4bbb-8ce8-87a544dbf756",
-            "upper_rule_curve": "matrix://8ce614c8-c687-41af-8b24-df8a49cc52af",
+            "pmax_injection": "59ea6c83-6348-466d-9530-c35c51ca4c37",
+            "pmax_withdrawal": "5f988548-dadc-4bbb-8ce8-87a544dbf756",
+            "upper_rule_curve": "8ce614c8-c687-41af-8b24-df8a49cc52af",
         },
         id="create_st_storage",
     ),
@@ -718,8 +728,8 @@ COMMANDS = [
         [
             {
                 "area_id": "area 1",
-                "inflows": "matrix://df9b25e1-e3f7-4a57-8182-0ff9791439e5",
-                "lower_rule_curve": "matrix://8ce4fcea-cc97-4d2c-b641-a27a53454612",
+                "inflows": "df9b25e1-e3f7-4a57-8182-0ff9791439e5",
+                "lower_rule_curve": "8ce4fcea-cc97-4d2c-b641-a27a53454612",
                 "parameters": {
                     "efficiency": 1.0,
                     "enabled": True,
@@ -731,14 +741,14 @@ COMMANDS = [
                     "reservoirCapacity": 0.0,
                     "withdrawalNominalCapacity": 0.0,
                 },
-                "pmax_injection": "matrix://59ea6c83-6348-466d-9530-c35c51ca4c37",
-                "pmax_withdrawal": "matrix://5f988548-dadc-4bbb-8ce8-87a544dbf756",
-                "upper_rule_curve": "matrix://8ce614c8-c687-41af-8b24-df8a49cc52af",
+                "pmax_injection": "59ea6c83-6348-466d-9530-c35c51ca4c37",
+                "pmax_withdrawal": "5f988548-dadc-4bbb-8ce8-87a544dbf756",
+                "upper_rule_curve": "8ce614c8-c687-41af-8b24-df8a49cc52af",
             },
             {
                 "area_id": "area 1",
-                "inflows": "matrix://e8923768-9bdd-40c2-a6ea-2da2523be727",
-                "lower_rule_curve": "matrix://16c7c3ae-9824-4ef2-aa68-51145884b025",
+                "inflows": "e8923768-9bdd-40c2-a6ea-2da2523be727",
+                "lower_rule_curve": "16c7c3ae-9824-4ef2-aa68-51145884b025",
                 "parameters": {
                     "efficiency": 0.94,
                     "enabled": True,
@@ -750,9 +760,9 @@ COMMANDS = [
                     "reservoirCapacity": 0.0,
                     "withdrawalNominalCapacity": 0.0,
                 },
-                "pmax_injection": "matrix://3f5b3746-3995-49b7-a6da-622633472e05",
-                "pmax_withdrawal": "matrix://4b64a31f-927b-4887-b4cd-adcddd39bdcd",
-                "upper_rule_curve": "matrix://9a6104e9-990a-415f-a6e2-57507e13b58c",
+                "pmax_injection": "3f5b3746-3995-49b7-a6da-622633472e05",
+                "pmax_withdrawal": "4b64a31f-927b-4887-b4cd-adcddd39bdcd",
+                "upper_rule_curve": "9a6104e9-990a-415f-a6e2-57507e13b58c",
             },
         ],
         id="create_st_storage_list",
@@ -1389,7 +1399,7 @@ def test_parse_create_binding_constraint_dto_v1(command_factory: CommandFactory)
     assert dto.version == 2
     assert dto.args == {
         "matrices": {
-            "lessTermMatrix": "matrix://matrix",
+            "lessTermMatrix": "matrix",
         },
         "parameters": {
             "comments": "",

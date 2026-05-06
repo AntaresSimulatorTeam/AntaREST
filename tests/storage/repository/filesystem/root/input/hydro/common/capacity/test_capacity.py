@@ -17,10 +17,10 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.common.capacity import capacity
 
 # noinspection SpellCheckingInspection
@@ -59,7 +59,7 @@ class TestInputHydroCommonCapacity:
         version: str,
         expected: dict[str, Any],
     ) -> None:
-        resolver = Mock(spec=MatrixUriMapper)
+        resolver = Mock(spec=MatrixStorageContext)
         context = resolver
         study_id = str(uuid.uuid4())
         config = FileStudyTreeConfig(
@@ -81,7 +81,7 @@ class TestInputHydroCommonCapacity:
         )
 
         node = capacity.InputHydroCommonCapacity(
-            matrix_mapper=context,
+            matrix_storage_context=context,
             config=config,
             children_glob_exceptions=None,
         )

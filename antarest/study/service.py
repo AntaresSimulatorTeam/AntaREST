@@ -61,6 +61,7 @@ from antarest.core.jwt import JWTGroup
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.ini_reader import IniReader
+from antarest.core.serde.np_array import imports_matrix_from_bytes
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, is_archive_format
@@ -160,7 +161,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode, imports_matrix_from_bytes
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.synthesis import OutputSynthesis
@@ -2746,7 +2746,7 @@ class StudyService:
         else:
             # Checks that the provided path refers to a matrix
             node = self.get_file_study(study).tree.get_node(list(url))
-            if isinstance(node, MatrixNode):
+            if isinstance(node, InputSeriesMatrix):
                 pandas_df = node.parse_as_dataframe().to_pandas()
             elif isinstance(node, OutputSeriesMatrix):
                 pandas_df = node.parse_dataframe()
@@ -2893,7 +2893,7 @@ class StudyService:
             node, relative_url = file_study.tree.get_node_and_remainder(url)
 
             # Return a dataframe when possible instead of less memory & computation - efficient python objects
-            if isinstance(node, MatrixNode):
+            if isinstance(node, InputSeriesMatrix):
                 return node.parse_as_dataframe()
 
             return node.get(url=relative_url, depth=depth, formatted=formatted)

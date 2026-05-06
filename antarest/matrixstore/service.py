@@ -81,8 +81,6 @@ EXCLUDED_FILES = {
 
 logger = logging.getLogger(__name__)
 
-MATRIX_PROTOCOL_PREFIX = "matrix://"
-
 
 class ISimpleMatrixService(ABC):
     @abstractmethod
@@ -140,27 +138,6 @@ class ISimpleMatrixService(ABC):
     @abstractmethod
     def register_usage_provider(self, usage_provider: "IMatrixUsageProvider") -> None:
         raise NotImplementedError()
-
-    def get_matrix_id(self, matrix: list[list[float]] | str) -> str:
-        """
-        Get the matrix ID from a matrix or a matrix link.
-
-        Args:
-            matrix: The matrix or matrix link to get the ID from.
-
-        Returns:
-            The matrix ID.
-
-        Raises:
-            TypeError: If the provided matrix is neither a matrix nor a link to a matrix.
-        """
-        # noinspection SpellCheckingInspection
-        if isinstance(matrix, str):
-            return matrix.removeprefix(MATRIX_PROTOCOL_PREFIX)
-        elif isinstance(matrix, list):
-            return self.create(create_polars_dataframe(matrix))
-        else:
-            raise TypeError(f"Invalid type for matrix: {type(matrix)}")
 
     @abstractmethod
     def get_matrices_references(self, disk_usage: bool) -> dict[str, MatrixReferencesDTO]:

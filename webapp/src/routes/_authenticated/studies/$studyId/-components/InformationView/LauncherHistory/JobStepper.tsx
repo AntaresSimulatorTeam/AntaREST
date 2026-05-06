@@ -32,10 +32,10 @@ import moment from "moment";
 import { useSnackbar } from "notistack";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import useStudy from "../../../-hooks/useStudy";
 import LaunchJobLogView from "../../../../../tasks/-components/LaunchJobLogView";
 import {
   CancelContainer,
-  JobRoot,
   QontoConnector,
   QontoStepIconRoot,
   StepLabelRoot,
@@ -53,9 +53,6 @@ const iconStyle = {
   m: 0.5,
   height: 22,
   cursor: "pointer",
-  "&:hover": {
-    color: "action.hover",
-  },
 };
 
 function QontoStepIcon(props: { className: string | undefined; status: JobStatus }) {
@@ -81,22 +78,23 @@ type DialogState =
   | EmptyObject;
 
 interface Props {
-  studyId: string;
   jobs: Job[];
   jobsProgress: LaunchJobsProgress;
 }
 
-function JobStepper({ studyId, jobs, jobsProgress }: Props) {
+function JobStepper({ jobs, jobsProgress }: Props) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [dialogState, setDialogState] = useState<DialogState>({});
+  const study = useStudy();
 
   const { data: outputs, isLoading: outputsLoading } = usePromiseWithSnackbarError(
-    () => getStudyOutputs(studyId),
+    () => getStudyOutputs(study.id),
     {
+      disabled: study.archived,
       errorMessage: t("results.error.outputs"),
-      deps: [studyId],
+      deps: [study.id],
     },
   );
 
@@ -146,12 +144,12 @@ function JobStepper({ studyId, jobs, jobsProgress }: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <JobRoot jobLength={jobs.length}>
+    <>
       <Stepper
         activeStep={-1}
         orientation="vertical"
         connector={<QontoConnector />}
-        sx={{ width: "100%", px: 2, boxSizing: "border-box" }}
+        sx={{ pr: 1, overflow: "auto" }}
       >
         {jobs.map((job) => (
           <Step key={job.id}>
@@ -161,12 +159,12 @@ function JobStepper({ studyId, jobs, jobsProgress }: Props) {
                 display: "flex",
                 justifyContent: "flex-start",
                 alignItems: "flex-start",
-                mt: 1,
               }}
             >
               <StepLabelRoot>
                 <StepLabelRow>
                   <Typography
+                    variant="body2"
                     sx={{
                       height: "auto",
                       mx: 0,
@@ -182,8 +180,8 @@ function JobStepper({ studyId, jobs, jobsProgress }: Props) {
                       )}`}
                   </Typography>
                 </StepLabelRow>
-                <StepLabelRow mt={0.5}>{job.outputId}</StepLabelRow>
-                <StepLabelRow py={1}>
+                {job.outputId && <StepLabelRow mt={0.5}>{job.outputId}</StepLabelRow>}
+                <StepLabelRow mt={1}>
                   <Tooltip title={t("study.copyJobId")}>
                     <ContentCopyIcon onClick={() => copyId(job.id)} sx={iconStyle} />
                   </Tooltip>
@@ -239,7 +237,7 @@ function JobStepper({ studyId, jobs, jobsProgress }: Props) {
           onOk={closeDialog}
         />
       )}
-    </JobRoot>
+    </>
   );
 }
 

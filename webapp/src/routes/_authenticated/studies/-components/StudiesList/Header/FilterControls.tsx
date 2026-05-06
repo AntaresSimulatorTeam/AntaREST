@@ -88,6 +88,26 @@ function FilterControls({
         </Tooltip>
       </ToggleButtonGroup>
 
+      {/* View mode toggle */}
+      <ToggleButtonGroup
+        value={viewMode}
+        exclusive
+        onChange={(_e, v) => v !== null && onViewModeChange(v)}
+        size="extra-small"
+        color="primary"
+      >
+        <Tooltip title={t("studies.viewMode.grid")}>
+          <ToggleButton value="grid">
+            <ViewModuleIcon />
+          </ToggleButton>
+        </Tooltip>
+        <Tooltip title={t("studies.viewMode.list")}>
+          <ToggleButton value="list">
+            <ViewListIcon />
+          </ToggleButton>
+        </Tooltip>
+      </ToggleButtonGroup>
+
       {/* Directory scan button - only for desktop mode enabled */}
       {canScan && (
         <Tooltip title={t("studies.scanFolder")}>
@@ -112,26 +132,6 @@ function FilterControls({
 
       {/* Refresh button */}
       <RefreshButton mini />
-
-      {/* View mode toggle */}
-      <ToggleButtonGroup
-        value={viewMode}
-        exclusive
-        onChange={(_e, v) => v !== null && onViewModeChange(v)}
-        size="extra-small"
-        color="primary"
-      >
-        <Tooltip title={t("studies.viewMode.grid")}>
-          <ToggleButton value="grid">
-            <ViewModuleIcon />
-          </ToggleButton>
-        </Tooltip>
-        <Tooltip title={t("studies.viewMode.list")}>
-          <ToggleButton value="list">
-            <ViewListIcon />
-          </ToggleButton>
-        </Tooltip>
-      </ToggleButtonGroup>
 
       {/* Sort selector */}
       <SelectFE

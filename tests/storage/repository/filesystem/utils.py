@@ -15,10 +15,10 @@ from zipfile import ZipFile
 
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 
 
 class CheckSubNode(INode[int, int, int]):
@@ -61,11 +61,11 @@ class CheckSubNode(INode[int, int, int]):
 class MiddleNode(FolderNode):
     def __init__(
         self,
-        matrix_mapper: MatrixUriMapper,
+        matrix_storage_context: MatrixStorageContext,
         config: FileStudyTreeConfig,
         children: TREE,
     ):
-        super().__init__(matrix_mapper, config)
+        super().__init__(matrix_storage_context, config)
         self.children = children
 
     @override

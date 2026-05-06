@@ -39,14 +39,18 @@ class PreproArea(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
             "conversion": InputSeriesMatrix(
-                self.matrix_mapper, self.config.next_file("conversion.txt"), default_empty=default_conversion
+                self.matrix_storage_context, self.config.next_file("conversion.txt"), default_empty=default_conversion
             ),
             "data": InputSeriesMatrix(
-                self.matrix_mapper, self.config.next_file("data.txt"), default_empty=default_data
+                self.matrix_storage_context, self.config.next_file("data.txt"), default_empty=default_data
             ),
-            "k": InputSeriesMatrix(self.matrix_mapper, self.config.next_file("k.txt"), default_empty=default_k),
+            "k": InputSeriesMatrix(
+                self.matrix_storage_context, self.config.next_file("k.txt"), default_empty=default_k
+            ),
             "translation": InputSeriesMatrix(
-                self.matrix_mapper, self.config.next_file("translation.txt"), default_empty=default_scenario_hourly
+                self.matrix_storage_context,
+                self.config.next_file("translation.txt"),
+                default_empty=default_scenario_hourly,
             ),
             "settings": PreproAreaSettings(self.config.next_file("settings.ini")),
         }
@@ -56,6 +60,8 @@ class PreproArea(FolderNode):
 class InputPrepro(FolderNode):
     @override
     def build(self) -> TREE:
-        children: TREE = {a: PreproArea(self.matrix_mapper, self.config.next_file(a)) for a in self.config.area_names()}
+        children: TREE = {
+            a: PreproArea(self.matrix_storage_context, self.config.next_file(a)) for a in self.config.area_names()
+        }
         children["correlation"] = PreproCorrelation(self.config.next_file("correlation.ini"))
         return children

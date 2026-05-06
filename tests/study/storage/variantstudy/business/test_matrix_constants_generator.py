@@ -15,7 +15,7 @@ import numpy as np
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.matrixstore.repository import MatrixContentRepository
-from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, SimpleMatrixService
+from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
     default_scenario_hourly,
     default_scenario_hourly_ones,
@@ -37,29 +37,24 @@ class TestGeneratorMatrixConstants:
         generator.init_constant_matrices()
 
         ref1 = generator.get_st_storage_pmax_injection()
-        matrix_id1 = ref1.split(MATRIX_PROTOCOL_PREFIX)[1]
-        matrix_dto1 = generator.matrix_service.get(matrix_id1)
+        matrix_dto1 = generator.matrix_service.get(ref1)
 
         assert np.array_equal(matrix_dto1.to_numpy(), default_scenario_hourly_ones())
 
         ref2 = generator.get_st_storage_pmax_withdrawal()
-        matrix_id2 = ref2.split(MATRIX_PROTOCOL_PREFIX)[1]
-        matrix_dto2 = generator.matrix_service.get(matrix_id2)
+        matrix_dto2 = generator.matrix_service.get(ref2)
         assert np.array_equal(matrix_dto2.to_numpy(), default_scenario_hourly_ones())
 
         ref3 = generator.get_st_storage_lower_rule_curve()
-        matrix_id3 = ref3.split(MATRIX_PROTOCOL_PREFIX)[1]
-        matrix_dto3 = generator.matrix_service.get(matrix_id3)
+        matrix_dto3 = generator.matrix_service.get(ref3)
         assert np.array_equal(matrix_dto3.to_numpy(), default_scenario_hourly())
 
         ref4 = generator.get_st_storage_upper_rule_curve()
-        matrix_id4 = ref4.split(MATRIX_PROTOCOL_PREFIX)[1]
-        matrix_dto4 = generator.matrix_service.get(matrix_id4)
+        matrix_dto4 = generator.matrix_service.get(ref4)
         assert np.array_equal(matrix_dto4.to_numpy(), default_scenario_hourly_ones())
 
         ref5 = generator.get_st_storage_inflows()
-        matrix_id5 = ref5.split(MATRIX_PROTOCOL_PREFIX)[1]
-        matrix_dto5 = generator.matrix_service.get(matrix_id5)
+        matrix_dto5 = generator.matrix_service.get(ref5)
         assert np.array_equal(matrix_dto5.to_numpy(), default_scenario_hourly())
 
     def test_get_binding_constraint_before_v87(self, tmp_path: Path) -> None:
@@ -73,11 +68,9 @@ class TestGeneratorMatrixConstants:
         series = matrix_constants.binding_constraint.series_before_v87
 
         hourly = generator.get_binding_constraint_hourly_86()
-        hourly_matrix_id = hourly.split(MATRIX_PROTOCOL_PREFIX)[1]
-        hourly_matrix_dto = generator.matrix_service.get(hourly_matrix_id)
+        hourly_matrix_dto = generator.matrix_service.get(hourly)
         assert hourly_matrix_dto.to_numpy().all() == series.default_bc_hourly().all()
 
         daily_weekly = generator.get_binding_constraint_daily_weekly_86()
-        matrix_id = daily_weekly.split(MATRIX_PROTOCOL_PREFIX)[1]
-        matrix_dto = generator.matrix_service.get(matrix_id)
+        matrix_dto = generator.matrix_service.get(daily_weekly)
         assert matrix_dto.to_numpy().all() == series.default_bc_weekly_daily().all()

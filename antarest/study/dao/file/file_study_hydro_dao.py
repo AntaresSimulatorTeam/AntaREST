@@ -16,7 +16,6 @@ import numpy as np
 import polars as pl
 
 from antarest.core.exceptions import AreaNotFound, ChildNotFoundError
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_correlation_model import (
     HydroCorrelation,
@@ -26,7 +25,7 @@ from antarest.study.dao.common import AreaId, AreaSeriesMapping
 from antarest.study.dao.file.common import get_all_area_matrices, save_area_matrices
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -34,7 +33,6 @@ if TYPE_CHECKING:
 from typing_extensions import override
 
 from antarest.core.utils.polars import create_polars_dataframe
-from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX
 from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.dao.api.hydro_dao import HydroDao
@@ -405,7 +403,7 @@ class FileStudyHydroDao(HydroDao):
 
         return result
 
-    def _get_nodes_with_their_area_id(self, prefix: str) -> dict[MatrixNode, AreaId]:
+    def _get_nodes_with_their_area_id(self, prefix: str) -> dict[InputSeriesMatrix, AreaId]:
         study_data = self.get_file_study()
         result = {}
 
@@ -413,14 +411,14 @@ class FileStudyHydroDao(HydroDao):
         assert isinstance(folder_node, FolderNode)
         tree = folder_node.build()
         for node_id, node in tree.items():
-            assert isinstance(node, MatrixNode)
+            assert isinstance(node, InputSeriesMatrix)
             if node_id.startswith(prefix):
                 # We only keep the matrices with the rigth prefix
                 result[node] = node_id.removeprefix(f"{prefix}_")
         return result
 
     def _save_all_capacity_matrices(self, series: AreaSeriesMapping, prefix: str) -> None:
-        matrices_mapping: dict[str, list[MatrixNode]] = {}
+        matrices_mapping: dict[str, list[InputSeriesMatrix]] = {}
 
         nodes_and_area_ids = self._get_nodes_with_their_area_id(prefix)
 
@@ -428,8 +426,7 @@ class FileStudyHydroDao(HydroDao):
             if area_id in series:
                 # We only want to save the series for given area and the method returned them all
                 series_id = series[area_id]
-                matrix_id = extract_matrix_id(series_id)
-                matrices_mapping.setdefault(matrix_id, []).append(node)
+                matrices_mapping.setdefault(series_id, []).append(node)
 
         # Validate that all the area ids are present in the study
         invalids_ids = set(series) - set(nodes_and_area_ids.values())
@@ -511,7 +508,7 @@ class FileStudyHydroDao(HydroDao):
         areas = file_study.config.areas.keys()
 
         hourly_matrix_id = self.get_impl().generator_matrix_constants.get_null_matrix()
-        daily_matrix_id = MATRIX_PROTOCOL_PREFIX + matrix_service.create(create_polars_dataframe(np.full((365, 1), 24)))
+        daily_matrix_id = matrix_service.create(create_polars_dataframe(np.full((365, 1), 24)))
 
         if hydro_pmax == HydroPmax.HOURLY:
             max_hourly_gen_power = {}

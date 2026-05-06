@@ -17,10 +17,14 @@ from antares.study.version import StudyVersion
 
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.model import MatrixData
-from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+# Legacy prefix: historically, matrix IDs were written in commands
+# with that prefix. We still need to handle those existing commands.
+MATRIX_PROTOCOL_PREFIX = "matrix://"
 
 
 def validate_matrix(matrix: list[list[MatrixData]] | str, values: dict[str, Any]) -> str:
@@ -37,7 +41,7 @@ def validate_matrix(matrix: list[list[MatrixData]] | str, values: dict[str, Any]
               and checking the existence of matrices.
 
     Returns:
-        The ID of the validated matrix prefixed by "matrix://".
+        The plain SHA256 hash ID of the validated matrix (no prefix).
 
     Raises:
         TypeError: If the provided matrix is neither a matrix nor a link to a matrix.
@@ -46,23 +50,18 @@ def validate_matrix(matrix: list[list[MatrixData]] | str, values: dict[str, Any]
 
     matrix_service: ISimpleMatrixService = values["command_context"].matrix_service
     if isinstance(matrix, list):
-        return MATRIX_PROTOCOL_PREFIX + matrix_service.create(create_polars_dataframe(matrix))
+        return matrix_service.create(create_polars_dataframe(matrix))
     elif isinstance(matrix, str):
+        # Strip any legacy "matrix://" prefix that may have been stored in older DTOs.
+        matrix = matrix.removeprefix(MATRIX_PROTOCOL_PREFIX)
         if not matrix:
             raise ValueError("The matrix ID cannot be empty")
         elif matrix_service.exists(matrix):
-            return MATRIX_PROTOCOL_PREFIX + matrix
+            return matrix
         else:
             raise ValueError(f"Matrix with id '{matrix}' does not exist")
     else:
         raise TypeError(f"The data '{matrix}' is neither a matrix nor a link to a matrix")
-
-
-def strip_matrix_protocol(matrix_uri: list[list[float]] | str | None) -> str:
-    assert isinstance(matrix_uri, str)
-    if matrix_uri.startswith(MATRIX_PROTOCOL_PREFIX):
-        return matrix_uri[len(MATRIX_PROTOCOL_PREFIX) :]
-    return matrix_uri
 
 
 class AliasDecoder:

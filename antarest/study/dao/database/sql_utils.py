@@ -14,14 +14,26 @@ Collection of SQL related utilities
 
 """
 
-from typing import Any
+from enum import Enum as PyEnum
+from typing import Any, Type
 
-from sqlalchemy import Column, Table
+from sqlalchemy import Column, Enum, Table
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.postgresql.dml import Insert as PgInsert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.dialects.sqlite.dml import Insert as SqliteInsert
 from sqlalchemy.orm import Session
+
+
+def enum_col(enum_class: Type[PyEnum], **kwargs: Any) -> Enum:
+    """
+    Create a SQLAlchemy Enum type that uses enum values (not names).
+
+    PostgreSQL enums are case-sensitive. Since our Python enums use values
+    (e.g. "Economy") that differ from names (e.g. "ECONOMY"), this helper
+    ensures the DB enum type is built from values, matching the migration.
+    """
+    return Enum(enum_class, values_callable=lambda x: [e.value for e in x], **kwargs)
 
 
 def _key_columns(table: Table) -> list[Column[Any]]:

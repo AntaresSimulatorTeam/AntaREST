@@ -20,7 +20,6 @@ from antarest.core.exceptions import (
     ChildNotFoundError,
     ReserveDefinitionNotFound,
 )
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.business.model.reserve_definition_model import (
     GLOBAL_PARAMETERS_SECTION,
     ReserveDefinition,
@@ -34,7 +33,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.reserve_definition 
     serialize_reserve_definition,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -200,12 +199,12 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
     @override
     def get_all_reserve_needs(self) -> ReserveNeedsMapping:
         study_data = self.get_file_study()
-        matrix_nodes: dict[MatrixNode, tuple[str, ReserveDefinitionId]] = {}
+        matrix_nodes: dict[InputSeriesMatrix, tuple[str, ReserveDefinitionId]] = {}
         for area_id, area in study_data.config.areas.items():
             for reserve_id in area.reserves:
                 url = _reserve_need_matrix_path(area_id, ReserveDefinitionId(reserve_id))
                 node = study_data.tree.get_node(url)
-                assert isinstance(node, MatrixNode)
+                assert isinstance(node, InputSeriesMatrix)
                 matrix_nodes[node] = (area_id, ReserveDefinitionId(reserve_id))
 
         result: ReserveNeedsMapping = {}
@@ -218,14 +217,13 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
     @override
     def save_reserve_needs(self, mapping: ReserveNeedsMapping) -> None:
         study_data = self.get_file_study()
-        matrices_mapping: dict[str, list[MatrixNode]] = {}
+        matrices_mapping: dict[str, list[InputSeriesMatrix]] = {}
         for area_id, per_reserve in mapping.items():
             for reserve_id, series_id in per_reserve.items():
                 url = _reserve_need_matrix_path(area_id, reserve_id)
                 node = study_data.tree.get_node(url)
-                assert isinstance(node, MatrixNode)
-                matrix_id = extract_matrix_id(series_id)
-                matrices_mapping.setdefault(matrix_id, []).append(node)
+                assert isinstance(node, InputSeriesMatrix)
+                matrices_mapping.setdefault(series_id, []).append(node)
         self.get_impl().save_matrices(matrices_mapping)
 
     @override

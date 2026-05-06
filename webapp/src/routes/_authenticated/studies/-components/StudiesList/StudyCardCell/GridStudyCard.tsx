@@ -16,7 +16,11 @@ import { StudyType } from "@/types/types";
 import CallSplitIcon from "@mui/icons-material/CallSplit";
 import { Box, Card, CardContent, Chip, Divider, Tooltip, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { StudyCardLayoutProps } from "./types";
+import DirectoryLink from "./DirectoryLink";
+import StudyCardActions from "./StudyCardActions";
+import StudyMetadataRow from "./StudyMetadataRow";
+import StudyOwnerTag from "./StudyOwnerTag";
+import StudyTypeIcon from "./StudyTypeIcon";
 import {
   cardContentBaseSx,
   cardSx,
@@ -28,11 +32,7 @@ import {
   studyTitleBaseSx,
   variantChipSx,
 } from "./styles";
-import StudyCardActions from "./StudyCardActions";
-import StudyMetadataRow from "./StudyMetadataRow";
-import StudyOwnerTag from "./StudyOwnerTag";
-import StudyTypeIcon from "./StudyTypeIcon";
-import DirectoryLink from "./DirectoryLink";
+import type { StudyCardLayoutProps } from "./types";
 
 function GridStudyCard({
   study,
@@ -119,7 +119,7 @@ function GridStudyCard({
                 <Chip label={study.workspace} size="small" sx={chipSx} />
               )}
               {study.archived && (
-                <Chip label={t("studies.archivedStudy")} size="small" color="warning" sx={chipSx} />
+                <Chip label={t("study.archived")} size="small" color="warning" sx={chipSx} />
               )}
               {isVariant && (
                 <Chip
