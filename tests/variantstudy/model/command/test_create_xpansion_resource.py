@@ -15,7 +15,7 @@ from polars.testing import assert_frame_equal
 
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.variantstudy.model.command.create_xpansion_constraint import CreateXpansionConstraint
 from antarest.study.storage.variantstudy.model.command.create_xpansion_matrix import (
     CreateXpansionCapacity,
@@ -65,9 +65,9 @@ class TestCreateXpansionResource:
             assert output.status, output.message
             resource_path = empty_study.config.study_path / "user" / "expansion" / "weights" / f"{file_name}.link"
             assert resource_path.exists()
-            assert resource_path.read_text().startswith("matrix://")
+            assert resource_path.read_text() and not resource_path.read_text().startswith("matrix://")
             matrix_node = empty_study.tree.get_node(["user", "expansion", "weights", file_name])
-            assert isinstance(matrix_node, MatrixNode)
+            assert isinstance(matrix_node, InputSeriesMatrix)
             matrix = matrix_node.parse_as_dataframe()
             expected_matrix = pl.DataFrame(data=np.array(data), schema=["0", "1"])
             assert_frame_equal(matrix, expected_matrix)
@@ -85,9 +85,9 @@ class TestCreateXpansionResource:
             assert output.status, output.message
             resource_path = empty_study.config.study_path / "user" / "expansion" / "capa" / f"{file_name}.link"
             assert resource_path.exists()
-            assert resource_path.read_text().startswith("matrix://")
+            assert resource_path.read_text() and not resource_path.read_text().startswith("matrix://")
             matrix_node = empty_study.tree.get_node(["user", "expansion", "capa", file_name])
-            assert isinstance(matrix_node, MatrixNode)
+            assert isinstance(matrix_node, InputSeriesMatrix)
             matrix = matrix_node.parse_as_dataframe()
             expected_matrix = pl.DataFrame(data=np.array(data), schema=["0", "1"])
             assert_frame_equal(matrix, expected_matrix)

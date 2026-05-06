@@ -169,4 +169,4 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
 
     @override
     def get_inner_matrices(self) -> InnerMatrices:
-        return super().command_get_inner_matrices(self.matrices)
+        return super()._command_get_inner_matrices(self.matrices)

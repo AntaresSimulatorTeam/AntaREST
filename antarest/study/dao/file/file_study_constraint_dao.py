@@ -18,7 +18,6 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.exceptions import BindingConstraintNotFound
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.business.model.binding_constraint_model import (
     OPERATOR_MATRICES_MAP,
     OPERATOR_MATRIX_FILE_MAP,
@@ -36,7 +35,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -209,7 +207,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
         return result
 
-    def _get_nodes_with_their_bc_id(self, term: str | None = None) -> dict[MatrixNode, ConstraintId]:
+    def _get_nodes_with_their_bc_id(self, term: str | None = None) -> dict[InputSeriesMatrix, ConstraintId]:
         study_data = self.get_file_study()
         result = {}
 
@@ -218,14 +216,14 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         tree = folder_node.build()
         del tree["bindingconstraints"]  # We only care about matrices
         for node_id, node in tree.items():
-            assert isinstance(node, MatrixNode)
+            assert isinstance(node, InputSeriesMatrix)
             if constraint_id := _get_constraint_id_from_matrix_file_name(node_id, term):
                 # We only keep the constraints with the right terms
                 result[node] = ConstraintId(constraint_id)
         return result
 
     def _save_all_bc_matrices(self, series: BindingConstraintSeriesMapping, term: str | None = None) -> None:
-        matrices_mapping: dict[str, list[MatrixNode]] = {}
+        matrices_mapping: dict[str, list[InputSeriesMatrix]] = {}
 
         nodes_and_bc_ids = self._get_nodes_with_their_bc_id(term)
 
@@ -233,8 +231,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
             if constraint_id in series:
                 # We only want to save the series for given constraints and the method returned them all
                 series_id = series[constraint_id]
-                matrix_id = extract_matrix_id(series_id)
-                matrices_mapping.setdefault(matrix_id, []).append(node)
+                matrices_mapping.setdefault(series_id, []).append(node)
 
         # Validate that all the binding constraint ids are present in the study
         invalids_ids = set(series) - set(nodes_and_bc_ids.values())

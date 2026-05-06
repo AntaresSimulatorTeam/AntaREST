@@ -12,11 +12,10 @@
 from typing import TYPE_CHECKING, Callable
 
 from antarest.core.exceptions import AreaNotFound
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.study.dao.common import AreaId, AreaSeriesMapping
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -36,7 +35,7 @@ def get_all_area_matrices(
     for area_id in areas:
         url = url_getter(area_id)
         node = study_data.tree.get_node(url)
-        assert isinstance(node, MatrixNode)
+        assert isinstance(node, InputSeriesMatrix)
         matrix_nodes[node] = area_id
 
     result: AreaSeriesMapping = {}
@@ -56,11 +55,10 @@ def save_area_matrices(
     series: AreaSeriesMapping,
     url_getter: Callable[[AreaId], list[str]],
 ) -> None:
-    matrices_mapping: dict[str, list[MatrixNode]] = {}
+    matrices_mapping: dict[str, list[InputSeriesMatrix]] = {}
     for area_id, series_id in series.items():
         url = url_getter(area_id)
         node = study_data.tree.get_node(url)
-        assert isinstance(node, MatrixNode)
-        matrix_id = extract_matrix_id(series_id)
-        matrices_mapping.setdefault(matrix_id, []).append(node)
+        assert isinstance(node, InputSeriesMatrix)
+        matrices_mapping.setdefault(series_id, []).append(node)
     file_study_dao.save_matrices(matrices_mapping)
