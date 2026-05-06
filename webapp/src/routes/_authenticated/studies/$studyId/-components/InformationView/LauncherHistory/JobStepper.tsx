@@ -20,7 +20,7 @@ import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import type { Job, JobStatus } from "@/services/api/launcher/jobs/types";
 import { getStudyOutputs, killStudy } from "@/services/api/study";
 import { convertUTCToLocalTime } from "@/services/utils";
-import type { LaunchJobsProgress } from "@/types/types";
+import type { JobsProgressById } from "@/types/types";
 import type { EmptyObject } from "@/utils/tsUtils";
 import BlockIcon from "@mui/icons-material/Block";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
@@ -79,10 +79,10 @@ type DialogState =
 
 interface Props {
   jobs: Job[];
-  jobsProgress: LaunchJobsProgress;
+  jobsProgressById: JobsProgressById;
 }
 
-function JobStepper({ jobs, jobsProgress }: Props) {
+function JobStepper({ jobs, jobsProgressById }: Props) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -181,39 +181,41 @@ function JobStepper({ jobs, jobsProgress }: Props) {
                   </Typography>
                 </StepLabelRow>
                 {job.outputId && <StepLabelRow mt={0.5}>{job.outputId}</StepLabelRow>}
-                <StepLabelRow mt={1}>
-                  <Tooltip title={t("study.copyJobId")}>
-                    <ContentCopyIcon onClick={() => copyId(job.id)} sx={iconStyle} />
-                  </Tooltip>
-                  <LaunchJobLogView job={job} logButton logErrorButton />
-                  {!outputsLoading && canDisplayDigest(job) && (
-                    <Tooltip title="Digest">
-                      <EqualizerIcon
-                        onClick={() => setDialogState({ type: "digest", job })}
-                        sx={iconStyle}
-                      />
+                {!study.archived && (
+                  <StepLabelRow mt={1}>
+                    <Tooltip title={t("study.copyJobId")}>
+                      <ContentCopyIcon onClick={() => copyId(job.id)} sx={iconStyle} />
                     </Tooltip>
-                  )}
-                  {job.status === "running" && (
-                    <CancelContainer>
-                      <LinearProgressWithLabel
-                        value={jobsProgress[job.id]}
-                        tooltip="Progression"
-                        sx={{ width: "30%" }}
-                      />
-                      <Tooltip title={t("study.killStudy")}>
-                        <BlockIcon
-                          onClick={() => setDialogState({ type: "killJob", job })}
-                          sx={{
-                            ...iconStyle,
-                            color: "error.light",
-                            "&:hover": { color: "error.dark" },
-                          }}
+                    <LaunchJobLogView job={job} logButton logErrorButton />
+                    {!outputsLoading && canDisplayDigest(job) && (
+                      <Tooltip title="Digest">
+                        <EqualizerIcon
+                          onClick={() => setDialogState({ type: "digest", job })}
+                          sx={iconStyle}
                         />
                       </Tooltip>
-                    </CancelContainer>
-                  )}
-                </StepLabelRow>
+                    )}
+                    {job.status === "running" && (
+                      <CancelContainer>
+                        <LinearProgressWithLabel
+                          value={jobsProgressById[job.id]}
+                          tooltip="Progression"
+                          sx={{ width: "30%" }}
+                        />
+                        <Tooltip title={t("study.killStudy")}>
+                          <BlockIcon
+                            onClick={() => setDialogState({ type: "killJob", job })}
+                            sx={{
+                              ...iconStyle,
+                              color: "error.light",
+                              "&:hover": { color: "error.dark" },
+                            }}
+                          />
+                        </Tooltip>
+                      </CancelContainer>
+                    )}
+                  </StepLabelRow>
+                )}
               </StepLabelRoot>
             </StepLabel>
           </Step>
