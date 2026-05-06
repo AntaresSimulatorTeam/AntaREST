@@ -18,7 +18,7 @@ import type { JobsProgressById } from "@/types/types";
 import moment from "moment";
 
 export function sortJobs(jobs: Job[]) {
-  return jobs.sort((j1, j2) => {
+  return [...jobs].sort((j1, j2) => {
     const defaultCompletionDate = moment();
     const j1CompletionDate = j1.completionDate || defaultCompletionDate;
     const j2CompletionDate = j2.completionDate || defaultCompletionDate;
