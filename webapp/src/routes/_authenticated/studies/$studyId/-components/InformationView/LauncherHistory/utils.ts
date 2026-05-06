@@ -15,17 +15,17 @@
 import { getJobProgress } from "@/services/api/launcher";
 import type { Job } from "@/services/api/launcher/jobs/types";
 import type { JobsProgressById } from "@/types/types";
-import moment from "moment";
+import { isAfter, isEqual } from "date-fns";
 
 export function sortJobs(jobs: Job[]) {
   return [...jobs].sort((j1, j2) => {
-    const defaultCompletionDate = moment();
+    const defaultCompletionDate = new Date();
     const j1CompletionDate = j1.completionDate || defaultCompletionDate;
     const j2CompletionDate = j2.completionDate || defaultCompletionDate;
-    if (j1CompletionDate === j2CompletionDate) {
-      return moment(j1.creationDate).isAfter(moment(j2.creationDate)) ? -1 : 1;
+    if (isEqual(j1CompletionDate, j2CompletionDate)) {
+      return isAfter(j1.creationDate, j2.creationDate) ? -1 : 1;
     }
-    return moment(j1CompletionDate).isAfter(moment(j2CompletionDate)) ? -1 : 1;
+    return isAfter(j1CompletionDate, j2CompletionDate) ? -1 : 1;
   });
 }
 
