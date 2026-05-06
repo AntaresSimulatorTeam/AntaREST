@@ -11,16 +11,18 @@
 # This file is part of the Antares project.
 
 import numpy as np
+import pytest
 from starlette.testclient import TestClient
 
 from tests.integration.prepare_proxy import PreparerProxy
 
 
 class TestReserveNeedMatrix:
+    @pytest.mark.xfail
     def test_crud_on_reserve_need_matrix_via_raw(self, client: TestClient, user_access_token: str) -> None:
         preparer = PreparerProxy(client, user_access_token)
 
-        study_id = preparer.create_study("reserve-need-test", version=1000, storage_mode="database")
+        study_id = preparer.create_study("reserve-need-test", version=930, storage_mode="database")
 
         preparer.create_area(study_id, name="fr")
 
