@@ -13,11 +13,17 @@ import pytest
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound
-from antarest.study.business.model.area_properties_model import AreaProperties
+from antarest.study.business.model.area_properties_model import AreaProperties, initialize_area_properties
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from tests.db_statement_recorder import DBStatementRecorder
 from tests.study.dao.utils import save_area
+
+
+def _default_props(dao: StudyDao) -> AreaProperties:
+    props = AreaProperties()
+    initialize_area_properties(props, dao.get_version())
+    return props
 
 
 def test_save_area_creates_area_with_default_properties(dao: StudyDao) -> None:
@@ -25,7 +31,7 @@ def test_save_area_creates_area_with_default_properties(dao: StudyDao) -> None:
 
     # Ensures we're able to read the data
     properties = dao.get_area_properties(area_id="paris")
-    assert properties == AreaProperties()
+    assert properties == _default_props(dao)
 
     # Delete the area to ensure it cascades to properties
     dao.delete_area("paris")
@@ -41,13 +47,14 @@ def test_multiple_areas(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     save_area(dao, "Paris")
     save_area(dao, "London")
 
+    default_props = _default_props(dao)
+
     # Ensures we do not perform N+1 requests
     with DBStatementRecorder(db_session.bind) as db_recorder:
         all_properties = dao.get_all_area_properties()
-        default_props = AreaProperties()
         assert all_properties == {"paris": default_props, "london": default_props}
 
-    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+    assert len(db_recorder.sql_statements) == 2, str(db_recorder)
 
 
 def test_error_cases(dao: StudyDao) -> None:
@@ -64,10 +71,12 @@ def test_modify_properties(dao: StudyDao) -> None:
     area_id = "paris"
     save_area(dao, area_id)
 
-    assert dao.get_area_properties(area_id) == AreaProperties()
+    assert dao.get_area_properties(area_id) == _default_props(dao)
 
     new_properties = AreaProperties(energy_cost_unsupplied=4.5, non_dispatch_power=False, filter_synthesis={"daily"})
     dao.save_area_properties(area_id, new_properties)
 
     # Ensures we modified the properties accordingly
-    assert dao.get_area_properties(area_id) == new_properties
+    expected = new_properties.model_copy()
+    initialize_area_properties(expected, dao.get_version())
+    assert dao.get_area_properties(area_id) == expected
