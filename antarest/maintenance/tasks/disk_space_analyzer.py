@@ -43,7 +43,7 @@ def disk_space_analysis(service: StudyService, disk_repo: StudyDiskSpaceReposito
         with db():
             with create_lock(db.session, lock_id=LockId.STUDY_DISK_SPACE):
                 # we're giving admin access to the disk space analyzer due to the search_studies method
-                studies = service.repository.get_all(StudyFilter(access_permissions=AccessPermissions(is_admin=True)))
+                studies = service.repository.get_all(StudyFilter(access_permissions=AccessPermissions(is_admin=True), managed=True))
                 disk_analysis = disk_repo.get_all()
 
                 dict_analysis = {element.study_id: element for element in disk_analysis}
