@@ -200,9 +200,6 @@ def test_get_all_areas_ui_info_returns_all_layers(dao: StudyDao) -> None:
     dao.save_layer(Layer(id="1", name="Layer 1"))
     dao.save_layer(Layer(id="2", name="Layer 2"))
 
-    dao.save_layer_areas("1", ["paris", "london"])
-    dao.save_layer_areas("2", ["paris"])
-
     # Add UI for different layers
     dao.save_area_ui(
         {
