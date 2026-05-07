@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from antarest.study.business.model.binding_constraint_model import BindingConstraintFrequency
+from antarest.study.business.model.binding_constraint_model import BindingConstraintFrequency, BindingConstraintOperator
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_7_0
@@ -62,7 +62,13 @@ def config() -> FileStudyTreeConfig:
                 xpansion="",
             )
         },
-        bindings=[BindingConstraintConfig(**{"name": "b1", "time_step": BindingConstraintFrequency.DAILY})],
+        bindings=[BindingConstraintConfig(**{
+            "name": "b1",
+            "id": "b1_id",
+            "enabled": True,
+            "operator": BindingConstraintOperator.EQUAL,
+            "time_step": BindingConstraintFrequency.DAILY
+        })],
         store_new_set=False,
         archive_input_series=["?"],
         enr_modelling="aggregated",

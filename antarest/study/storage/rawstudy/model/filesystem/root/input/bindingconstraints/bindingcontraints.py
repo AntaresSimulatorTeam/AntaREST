@@ -12,7 +12,6 @@
 from typing_extensions import override
 
 from antarest.study.business.model.binding_constraint_model import (
-    DEFAULT_TIMESTEP,
     OPERATOR_MATRICES_MAP,
     BindingConstraintFrequency,
 )
@@ -58,12 +57,12 @@ class BindingConstraints(FolderNode):
                 BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_86,
             }
             children: TREE = {
-                str(binding.id): InputSeriesMatrix(
+                binding.id: InputSeriesMatrix(
                     self.matrix_storage_context,
                     self.config.next_file(f"{binding.id}.txt"),
-                    freq=frequency_mapping[binding.time_step if binding.time_step else DEFAULT_TIMESTEP],
+                    freq=frequency_mapping[binding.time_step],
                     nb_columns=3,
-                    default_empty=default_matrices[binding.time_step if binding.time_step else DEFAULT_TIMESTEP],
+                    default_empty=default_matrices[binding.time_step],
                 )
                 for binding in self.config.bindings
             }
@@ -82,11 +81,9 @@ class BindingConstraints(FolderNode):
                         children[matrix_id] = InputSeriesMatrix(
                             self.matrix_storage_context,
                             self.config.next_file(f"{matrix_id}.txt"),
-                            freq=frequency_mapping[binding.time_step if binding.time_step else DEFAULT_TIMESTEP],
+                            freq=frequency_mapping[binding.time_step],
                             nb_columns=1 if term in ["lt", "gt"] else None,
-                            default_empty=default_matrices[
-                                binding.time_step if binding.time_step else DEFAULT_TIMESTEP
-                            ],
+                            default_empty=default_matrices[binding.time_step],
                         )
         children["bindingconstraints"] = BindingConstraintsIni(self.config.next_file("bindingconstraints.ini"))
 

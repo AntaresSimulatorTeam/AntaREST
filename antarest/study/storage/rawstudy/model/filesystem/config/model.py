@@ -132,11 +132,11 @@ class BindingConstraintConfig(AntaresBaseModel):
 
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
-    id: ConstraintId | None = None
-    name: str | None = None
-    enabled: bool | None = None
-    time_step: BindingConstraintFrequency | None = None
-    operator: BindingConstraintOperator | None = None
+    id: ConstraintId
+    name: str
+    enabled: bool
+    time_step: BindingConstraintFrequency
+    operator: BindingConstraintOperator
 
     # Added in 8.3
     filter_year_by_year: CommaSeparatedFilterOptions | None = None
