@@ -9,10 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import http
 from enum import StrEnum
+from typing import TypeAlias
 from uuid import UUID
 
+from fastapi import HTTPException
 from pydantic import model_validator
 from sqlalchemy import ForeignKey, Integer, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
@@ -157,7 +159,15 @@ class STStorageAdditionalConstraintsColumn(StrEnum):
     ENABLED = "enabled"
 
 
-TableColumn = AreaColumn | LinkColumn | ThermalColumn | RenewableColumn | STStorageColumn | BindingConstraintColumn
+TableColumn: TypeAlias = (
+    AreaColumn
+    | LinkColumn
+    | ThermalColumn
+    | RenewableColumn
+    | STStorageColumn
+    | BindingConstraintColumn
+    | STStorageAdditionalConstraintsColumn
+)
 
 
 # Mapping of TableType to their corresponding column enums
@@ -172,10 +182,15 @@ TABLE_TYPE_COLUMN_MAPPING: dict[TableType, type[StrEnum]] = {
 }
 
 
-class StorageAdditionalConstraintColumn(StrEnum):
-    VARIABLE = "variable"
-    OPERATOR = "operator"
-    ENABLED = "enabled"
+def check_invalid_columns(table_type: TableType, table_columns: list[TableColumn]) -> None:
+    columns_enum = TABLE_TYPE_COLUMN_MAPPING[table_type]
+    columns_value = {col.value for col in table_columns}
+    invalid_columns = columns_value - set(columns_enum)
+    if invalid_columns:
+        raise HTTPException(
+            status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
+            detail=f"Invalid columns {', '.join(sorted(invalid_columns))} for table type {table_type}",
+        )
 
 
 class TableMode(Base):
@@ -208,9 +223,5 @@ class TableModeDTO(AntaresBaseModel, extra="forbid"):
     def check_coherence(self) -> "TableModeDTO":
         # checking the table columns match the table_type
         if self.table_type in TABLE_TYPE_COLUMN_MAPPING:
-            columns = TABLE_TYPE_COLUMN_MAPPING[self.table_type]
-            valid_values = [column.value for column in columns]
-            for column in self.table_columns:
-                if column not in valid_values:
-                    raise ValueError(f"Invalid column {column} for table type {self.table_type}")
+            check_invalid_columns(self.table_type, self.table_columns)
         return self

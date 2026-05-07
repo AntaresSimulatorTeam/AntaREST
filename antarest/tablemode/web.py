@@ -26,7 +26,7 @@ def create_table_routes() -> APIRouter:
     bp = APIRouter(prefix="/v1", tags=[APITag.table_mode], dependencies=[Depends(auth_required)])
 
     @bp.post("/tablemode", summary="Define a new table the user wants to view", status_code=HTTPStatus.CREATED)
-    def add_tablemode(
+    def add_table(
         tablemode_service: TablemodeServiceDep,
         table_name: Annotated[str, Body(), Field(min_length=1, description="Table name cannot be empty")],
         table_type: Annotated[TableType, Body(), Field(description="Table type cannot be empty")],
@@ -37,12 +37,12 @@ def create_table_routes() -> APIRouter:
 
         return tablemode_service.add_table(table_name=table_name, table_type=table_type, table_columns=table_columns)
 
-    @bp.get("/tablemode", summary="Get Tablemodes")
-    def get_tablemodes(tablemode_service: TablemodeServiceDep) -> List[TableModeDTO]:
+    @bp.get("/tablemode", summary="Get Tables")
+    def get_tables(tablemode_service: TablemodeServiceDep) -> List[TableModeDTO]:
         return tablemode_service.get_tables()
 
     @bp.put("/tablemode/{uuid}", summary="Update Tablemode")
-    def update_tablemode(
+    def update_table(
         tablemode_service: TablemodeServiceDep,
         uuid: UUID,
         table_type: Annotated[TableType, Body(), Field(description="Table type cannot be empty")],
@@ -53,7 +53,7 @@ def create_table_routes() -> APIRouter:
         return tablemode_service.update_table(table_id=uuid, table_type=table_type, table_columns=table_columns)
 
     @bp.delete("/tablemode/{uuid}", summary="Delete Tablemode")
-    def delete_tablemode(tablemode_service: TablemodeServiceDep, uuid: UUID) -> None:
+    def delete_table(tablemode_service: TablemodeServiceDep, uuid: UUID) -> None:
         tablemode_service.delete_table(table_id=uuid)
 
     return bp

@@ -16,28 +16,14 @@ from uuid import UUID, uuid4
 from fastapi import HTTPException
 
 from antarest.login.utils import get_user_impersonator
-from antarest.tablemode.model import TABLE_TYPE_COLUMN_MAPPING, TableColumn, TableMode, TableModeDTO, TableType
+from antarest.tablemode.model import (
+    TableColumn,
+    TableMode,
+    TableModeDTO,
+    TableType,
+    check_invalid_columns,
+)
 from antarest.tablemode.repository import TablemodeRepository
-
-
-def _check_valid_data(table_columns: list[TableColumn], table_type: TableType) -> None:
-    """
-    Check the imput datas entered. Raise an exception if they don't match the values of the enums
-    Args:
-        table_columns: the input columns to check
-        table_type: type of the table to check
-
-    """
-
-    column_enum = TABLE_TYPE_COLUMN_MAPPING[table_type]
-    valid_values = {col.value for col in column_enum}
-
-    invalid_columns = [col for col in table_columns if col not in valid_values]
-    if invalid_columns:
-        raise HTTPException(
-            status_code=http.HTTPStatus.BAD_REQUEST,
-            detail=f"Invalid columns for table type {table_type}: {', '.join(invalid_columns)}",
-        )
 
 
 class TableModeService:
@@ -51,7 +37,7 @@ class TableModeService:
 
     def add_table(self, table_name: str, table_type: TableType, table_columns: list[TableColumn]) -> TableModeDTO:
         str_table_columns = ",".join(table_columns)
-        _check_valid_data(table_columns, table_type)
+        check_invalid_columns(table_type, table_columns)
         tablemode = TableMode(
             table_id=uuid4(),
             table_name=table_name,
@@ -75,7 +61,7 @@ class TableModeService:
         Returns:
             None
         """
-        _check_valid_data(table_columns, table_type)
+        check_invalid_columns(table_type, table_columns)
 
         tablemode = self.tablemode_repository.get(table_id)
 
