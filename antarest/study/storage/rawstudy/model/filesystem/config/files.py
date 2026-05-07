@@ -27,9 +27,7 @@ from antarest.core.model import JSON
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import extract_lines_from_archive, is_archive_format, read_file_from_archive
-from antarest.study.business.model.binding_constraint_model import (
-    BindingConstraint,
-)
+from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -45,6 +43,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import S
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
+    BindingConstraintConfig,
     FileStudyTreeConfig,
     LinkConfig,
     Simulation,
@@ -122,7 +121,7 @@ def build(study_path: Path, study_id: str, output_path: Path | None = None) -> "
         areas=_parse_areas(study_path),
         districts=_parse_sets(study_path),
         outputs=parse_outputs(outputs_dir),
-        bindings=_parse_bindings(study_path),
+        bindings=[BindingConstraintConfig.from_constraint(bc) for bc in _parse_bindings(study_path)],
         store_new_set=sns,
         archive_input_series=asi,
         enr_modelling=enr_modelling,

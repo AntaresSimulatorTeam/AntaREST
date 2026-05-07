@@ -11,7 +11,10 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
-from antarest.study.business.model.binding_constraint_model import OPERATOR_MATRICES_MAP, BindingConstraintFrequency
+from antarest.study.business.model.binding_constraint_model import (
+    OPERATOR_MATRICES_MAP,
+    BindingConstraintFrequency,
+)
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
@@ -71,16 +74,17 @@ class BindingConstraints(FolderNode):
             }
             children = {}
             for binding in self.config.bindings:
-                terms = OPERATOR_MATRICES_MAP[binding.operator]
-                for term in terms:
-                    matrix_id = f"{binding.id}_{term}"
-                    children[matrix_id] = InputSeriesMatrix(
-                        self.matrix_storage_context,
-                        self.config.next_file(f"{matrix_id}.txt"),
-                        freq=frequency_mapping[binding.time_step],
-                        nb_columns=1 if term in ["lt", "gt"] else None,
-                        default_empty=default_matrices[binding.time_step],
-                    )
+                if binding.operator:
+                    terms = OPERATOR_MATRICES_MAP[binding.operator]
+                    for term in terms:
+                        matrix_id = f"{binding.id}_{term}"
+                        children[matrix_id] = InputSeriesMatrix(
+                            self.matrix_storage_context,
+                            self.config.next_file(f"{matrix_id}.txt"),
+                            freq=frequency_mapping[binding.time_step],
+                            nb_columns=1 if term in ["lt", "gt"] else None,
+                            default_empty=default_matrices[binding.time_step],
+                        )
         children["bindingconstraints"] = BindingConstraintsIni(self.config.next_file("bindingconstraints.ini"))
 
         return children

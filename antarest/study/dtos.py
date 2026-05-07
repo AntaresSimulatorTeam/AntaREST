@@ -16,12 +16,12 @@ from pydantic import ConfigDict
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
-from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
 from antarest.study.model import StudyVersionInt
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
+    BindingConstraintConfig,
     EnrModelling,
     FileStudyTreeConfig,
 )
@@ -64,7 +64,7 @@ class StudyDataSynthesis(AntaresBaseModel):
     version: StudyVersionInt
     districts: dict[str, District] = {}
     areas: dict[str, AreaConfig] = {}
-    bindings: list[BindingConstraint] = []
+    bindings: list[BindingConstraintConfig] = []
     enr_modelling: EnrModelling = EnrModelling.AGGREGATED
 
     @classmethod
@@ -97,7 +97,6 @@ class StudySynthesis(AntaresBaseModel):
     districts: dict[str, District] = {}
     areas: dict[str, AreaConfig] = {}
     outputs: dict[str, OutputSynthesis] = {}
-    bindings: list[BindingConstraint] = []
     enr_modelling: EnrModelling = EnrModelling.AGGREGATED
 
     @classmethod
@@ -107,7 +106,6 @@ class StudySynthesis(AntaresBaseModel):
             version=synthesis.version,
             areas=synthesis.areas,
             districts=synthesis.districts,
-            bindings=synthesis.bindings,
             enr_modelling=synthesis.enr_modelling,
             outputs={k: OutputSynthesis.from_output_details(v) for k, v in outputs.items()},
         )

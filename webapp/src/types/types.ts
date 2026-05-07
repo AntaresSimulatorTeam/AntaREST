@@ -313,7 +313,6 @@ export interface StudySynthesis {
   areas: Record<string, Area>;
   districts: Record<string, District>;
   outputs: Record<string, OutputDetails>;
-  bindings: string[];
   store_new_set: boolean;
   archive_input_series: string[];
   enr_modelling: "aggregated" | "clusters";

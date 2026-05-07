@@ -312,8 +312,9 @@ class FileStudyAreaDao(AreaDao):
         study_data = self.get_file_study()
 
         # Check that the area is not referenced in any binding constraint
+        constraints = self.get_impl().get_all_constraints()
         referencing_binding_constraints = []
-        for bc in study_data.config.bindings:
+        for bc in constraints.values():
             for term in bc.terms:
                 data = term.data
                 if (isinstance(data, ClusterTerm) and data.area == area_id) or (
