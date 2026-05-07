@@ -62,13 +62,17 @@ def config() -> FileStudyTreeConfig:
                 xpansion="",
             )
         },
-        bindings=[BindingConstraintConfig(**{
-            "name": "b1",
-            "id": "b1_id",
-            "enabled": True,
-            "operator": BindingConstraintOperator.EQUAL,
-            "time_step": BindingConstraintFrequency.DAILY
-        })],
+        bindings=[
+            BindingConstraintConfig(
+                **{
+                    "name": "b1",
+                    "id": "b1_id",
+                    "enabled": True,
+                    "operator": BindingConstraintOperator.EQUAL,
+                    "time_step": BindingConstraintFrequency.DAILY,
+                }
+            )
+        ],
         store_new_set=False,
         archive_input_series=["?"],
         enr_modelling="aggregated",
