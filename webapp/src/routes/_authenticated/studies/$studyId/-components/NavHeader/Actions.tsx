@@ -15,8 +15,8 @@
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import FavoriteStudyToggle from "@/routes/-shared/components/studies/FavoriteToggle/FavoriteStudyToggle";
 import StudyActionsMenu from "@/routes/-shared/components/studies/StudyActionsMenu";
+import type { Study } from "@/services/api/studies/types";
 import { unarchiveStudy } from "@/services/api/study";
-import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
@@ -32,7 +32,7 @@ import CommandsDrawer from "./CommandsDrawer";
 export type DialogType = "commands";
 
 interface Props {
-  parentStudy?: StudyMetadata;
+  parentStudy?: Study;
   variantNb?: number;
   isExplorer?: boolean;
 }

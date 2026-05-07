@@ -14,11 +14,10 @@ from pathlib import PurePosixPath
 from pydantic import Field, ValidationInfo, field_validator
 from typing_extensions import override
 
-from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
-from antarest.study.storage.variantstudy.business.utils import AliasDecoder, strip_matrix_protocol, validate_matrix
+from antarest.study.storage.variantstudy.business.utils import AliasDecoder, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
@@ -64,11 +63,11 @@ class ReplaceMatrix(ICommand):
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.REPLACE_MATRIX.value,
-            args={"target": self.target, "matrix": strip_matrix_protocol(self.matrix)},
+            args={"target": self.target, "matrix": self.matrix},
             study_version=self.study_version,
         )
 
     @override
     def get_inner_matrices(self) -> InnerMatrices:
-        assert_this(isinstance(self.matrix, str))
-        return InnerMatrices(matrices=[strip_matrix_protocol(self.matrix)])
+        assert isinstance(self.matrix, str)
+        return InnerMatrices(matrices=[self.matrix])

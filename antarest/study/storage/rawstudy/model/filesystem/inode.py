@@ -20,7 +20,7 @@ from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 
 if TYPE_CHECKING:
-    from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+    from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 G = TypeVar("G")
 S = TypeVar("S")
@@ -110,13 +110,13 @@ class INode(ABC, Generic[G, S, V]):
         """
         raise NotImplementedError()
 
-    def get_matrix_nodes_to_normalize(self) -> list["MatrixNode"]:
+    def get_matrix_nodes_to_normalize(self) -> list["InputSeriesMatrix"]:
         """
         Scan tree to return matrix nodes to store in matrix store and replace by its links
         """
         return []
 
-    def get_matrix_nodes_to_denormalize(self) -> list["MatrixNode"]:
+    def get_matrix_nodes_to_denormalize(self) -> list["InputSeriesMatrix"]:
         """
         Scan tree to return matrix nodes to replace its links by its data from the matrix store.
         """

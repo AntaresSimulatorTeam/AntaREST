@@ -18,11 +18,13 @@ import pytest
 from antarest.core.exceptions import IncorrectPathError
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_8_1
 from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
-from tests.study.dao.conftest import build_db_dao, build_real_case_study
+from tests.study.dao.conftest import build_db_dao, build_real_case_study, build_reserve_definition
+from tests.study.dao.utils import save_area
 
 
 def test_get_matrix_from_path(
@@ -522,7 +524,8 @@ def test_save_matrix_from_path(
         Path("input/load/series"),  # Folder containing matrices but not a matrix in itself
         Path("input/solar/series/area"),  # Missing prefix
         Path("input/solar/series"),  # Folder containing matrices but not a matrix in itself
-        Path("input/reserves/area/area"),  # Unexisting folder even if it starts well
+        Path("input/reserves/area/reserve/extra"),  # Too deep (4+ segments don't match any reserves pattern)
+        Path("input/reserves/area/reserves"),  # `reserves` is the definitions INI node, not a need-matrix
         Path("input/misc-gen/area"),  # Missing prefix
         Path("input/folder"),  # Folder does not exist
         Path("input/bindingconstraints"),  # Folder containing matrices but not a matrix in itself
@@ -581,3 +584,24 @@ def test_version_specifics(db_dao_930: DatabaseStudyDao) -> None:
     assert mapper_93._get_matcher(Path("input/bindingconstraints/bc1_lt"))[1].groups() == ("bc1",)
     with pytest.raises(IncorrectPathError, match="The provided path does not point to a valid matrix"):
         mapper_93._get_matcher(Path("input/bindingconstraints/bc1"))  # Missing suffix
+
+
+def test_reserve_need_path_get_and_save(dao_10_0: StudyDao, matrix_service: ISimpleMatrixService) -> None:
+    area_id = "paris"
+    reserve_id = "R1"
+
+    save_area(dao_10_0, area_id)
+    dao_10_0.save_reserve_definitions({area_id: [build_reserve_definition(reserve_id)]})
+
+    mapper = RawPathToMatrixMapper(dao_10_0)
+
+    generator = np.random.default_rng(42)
+    matrix_df = pl.DataFrame(generator.integers(0, 10, size=(5, 3)), orient="row")
+    series_id = matrix_service.create(matrix_df)
+
+    mapper.save_matrix_from_path(Path(f"input/reserves/{area_id}/{reserve_id}"), series_id)
+
+    fetched = mapper.get_matrix_from_path(Path(f"input/reserves/{area_id}/{reserve_id}"))
+    pl.testing.assert_frame_equal(fetched, matrix_df, check_dtypes=False)
+
+    pl.testing.assert_frame_equal(dao_10_0.get_reserve_need(area_id, reserve_id), matrix_df, check_dtypes=False)

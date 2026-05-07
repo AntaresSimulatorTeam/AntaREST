@@ -12,10 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
+import type { VariantTree } from "@/services/api/studies/variants/types";
 import { Box } from "@mui/material";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import useThemeColorScheme from "@/hooks/useThemeColorScheme";
-import type { StudyMetadata, VariantTree } from "@/types/types";
+import useStudy from "../../-hooks/useStudy";
 import {
   DEPTH_OFFSET,
   MIN_WIDTH,
@@ -30,18 +31,18 @@ import TreeNode from "./TreeNode";
 import { buildLayoutTree } from "./utils";
 
 interface VariantsTreeProps {
-  study: StudyMetadata;
   variantTree: VariantTree;
   onClick: (studyId: string) => void;
 }
 
-function VariantsTree({ study, variantTree, onClick }: VariantsTreeProps) {
+function VariantsTree({ variantTree, onClick }: VariantsTreeProps) {
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const { isDarkMode } = useThemeColorScheme();
   const layoutTree = useMemo(() => buildLayoutTree(variantTree), [variantTree]);
   const { depth, totalDescendants } = layoutTree.drawOptions;
+  const study = useStudy();
 
   // Track the container's pixel width so the SVG viewBox can expand
   // to fill all available horizontal space.

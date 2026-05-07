@@ -16,8 +16,8 @@ import CustomScrollbar from "@/components/CustomScrollbar";
 import EditorIcon from "@/components/icons/EditorIcon";
 import RouterLink from "@/components/router/RouterLink";
 import { PUBLIC_MODE_LIST } from "@/components/utils/constants";
+import type { Study } from "@/services/api/studies/types";
 import { buildModificationDate, convertUTCToLocalTime } from "@/services/utils";
-import type { StudyMetadata } from "@/types/types";
 import { truncateTextSx } from "@/utils/muiUtils";
 import { compactSemanticVersion } from "@/utils/versionUtils";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
@@ -36,7 +36,7 @@ const TinyText = styled(Typography)(({ theme }) => ({
 }));
 
 interface Props {
-  parentStudy?: StudyMetadata;
+  parentStudy?: Study;
   variantNb?: number;
 }
 

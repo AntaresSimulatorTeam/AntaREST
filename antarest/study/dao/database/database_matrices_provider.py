@@ -46,6 +46,7 @@ from antarest.study.dao.database.models.link import (
     LINK_SERIES_TABLE,
 )
 from antarest.study.dao.database.models.renewable import RENEWABLE_SERIES_TABLE
+from antarest.study.dao.database.models.reserve_need import RESERVE_NEED_MATRIX_TABLE
 from antarest.study.dao.database.models.st_storage import (
     COST_INJECTION_TABLE,
     COST_LEVEL_TABLE,
@@ -83,6 +84,7 @@ MATRIX_TABLES = [
     THERMAL_FUEL_COST_TABLE,
     THERMAL_CO2_COST_TABLE,
     RENEWABLE_SERIES_TABLE,
+    RESERVE_NEED_MATRIX_TABLE,
     PMAX_INJECTION_TABLE,
     PMAX_WITHDRAWAL_TABLE,
     LOWER_RULE_CURVE_TABLE,

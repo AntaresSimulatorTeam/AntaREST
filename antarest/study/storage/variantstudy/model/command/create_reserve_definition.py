@@ -18,6 +18,7 @@ from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.model.reserve_definition_model import (
     ReserveDefinition,
     ReserveDefinitionCreation,
+    ReserveDefinitionId,
     create_reserve_definition,
 )
 from antarest.study.dao.api.study_dao import StudyDao
@@ -59,6 +60,9 @@ class CreateReserveDefinition(ICommand):
             return command_failed(f"Reserve definition '{reserve.id}' already exists in area '{self.area_id}'")
 
         study_data.save_reserve_definitions({self.area_id: [reserve]})
+
+        default_matrix_id = self.command_context.generator_matrix_constants.get_reserve_need()
+        study_data.save_reserve_needs({self.area_id: {ReserveDefinitionId(reserve.id): default_matrix_id}})
 
         return command_succeeded(
             f"Reserve definition '{reserve.id}' added to area '{self.area_id}'.",

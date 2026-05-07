@@ -25,7 +25,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.identifier import t
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import parse_st_storage
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
-from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
+from antarest.study.storage.variantstudy.business.utils import validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
@@ -228,13 +228,13 @@ class CreateSTStorage(ICommand):
         Returns:
             The DTO object representing the current command.
         """
-        args = {
+        args: dict[str, Any] = {
             "area_id": self.area_id,
             "parameters": self.parameters.model_dump(mode="json", by_alias=True, exclude_none=True),
         }
         for matrix_name, matrix_data in self._get_matrices().items():
             if matrix_data is not None:
-                args[matrix_name] = strip_matrix_protocol(matrix_data)
+                args[matrix_name] = matrix_data
         return CommandDTO(
             action=self.command_name.value,
             version=self._SERIALIZATION_VERSION,
@@ -250,7 +250,8 @@ class CreateSTStorage(ICommand):
         matrices: list[str] = []
         for matrix_name, matrix_data in self._get_matrices().items():
             if matrix_data is not None:
-                matrices.append(strip_matrix_protocol(matrix_data))
+                assert isinstance(matrix_data, str)
+                matrices.append(matrix_data)
         return InnerMatrices(matrices=matrices)
 
     def _fill_none_matrices(self) -> dict[str, str]:

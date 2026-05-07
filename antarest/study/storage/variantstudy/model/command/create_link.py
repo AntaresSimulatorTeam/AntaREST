@@ -22,7 +22,7 @@ from antarest.study.business.model.link_model import Link, LinkCreation, LinkUpd
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_2, StudyVersionStr
 from antarest.study.storage.rawstudy.model.filesystem.config.link import parse_link
-from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
+from antarest.study.storage.variantstudy.business.utils import validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
@@ -78,7 +78,7 @@ class AbstractLinkCommand(AntaresBaseModel, extra="forbid"):
         }
         for attr in MATRIX_ATTRIBUTES:
             if value := getattr(self, attr, None):
-                args[attr] = strip_matrix_protocol(value)
+                args[attr] = value
         return CommandDTO(
             version=self._SERIALIZATION_VERSION,
             action=command_name.value,
@@ -91,7 +91,7 @@ class AbstractLinkCommand(AntaresBaseModel, extra="forbid"):
         for attr in MATRIX_ATTRIBUTES:
             if value := getattr(self, attr, None):
                 assert_this(isinstance(value, str))
-                list_matrices.append(strip_matrix_protocol(value))
+                list_matrices.append(value)
         return InnerMatrices(matrices=list_matrices)
 
 
