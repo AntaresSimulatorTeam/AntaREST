@@ -14,7 +14,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 revision = 'rp986cf862cy'
-down_revision = 'b2f7e9a1c4d3'
+down_revision = '8b2fca3d91e0'
 branch_labels = None
 depends_on = None
 
