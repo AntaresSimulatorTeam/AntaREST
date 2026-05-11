@@ -32,6 +32,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     parse_binding_constraint,
     serialize_binding_constraint,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.model import BindingConstraintConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -165,7 +166,9 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
                     update_matrices_names(study_data, bc_id, existing_constraint.operator, constraint.operator)
 
                 # Updates the config before as the tree is based on the config
-                study_data.config.bindings[existing_bindings[bc_id]] = constraint
+                study_data.config.bindings[existing_bindings[bc_id]] = BindingConstraintConfig.from_constraint(
+                    constraint
+                )
 
                 if constraint.time_step != existing_constraint.time_step:
                     # The user changed the time step, we need to update the matrix accordingly
@@ -183,7 +186,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
             else:
                 # We're creating a new constraint
-                study_data.config.bindings.append(constraint)
+                study_data.config.bindings.append(BindingConstraintConfig.from_constraint(constraint))
 
             ini_key = bc_id_to_key_in_ini.get(constraint.id, get_next_available_key(ini_content))
             ini_content[ini_key] = serialize_binding_constraint(study_version, constraint)

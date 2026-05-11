@@ -99,7 +99,12 @@ from antarest.study.dao.common import (
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, LinkConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    AreaConfig,
+    BindingConstraintConfig,
+    EnrModelling,
+    LinkConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
@@ -316,7 +321,7 @@ class InMemoryStudyDao(StudyDao):
             )
 
         districts = {d.id: d for d in self.get_districts()}
-        bindings = list(self.get_all_constraints().values())
+        bindings_configs = [BindingConstraintConfig.from_constraint(bc) for bc in self.get_all_constraints().values()]
         advanced = self.get_advanced_parameters()
         enr_modelling = EnrModelling(advanced.renewable_generation_modelling.value)
 
@@ -325,7 +330,7 @@ class InMemoryStudyDao(StudyDao):
             version=self._version,
             areas=areas,
             districts=districts,
-            bindings=bindings,
+            bindings=bindings_configs,
             enr_modelling=enr_modelling,
         )
 
