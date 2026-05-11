@@ -126,7 +126,7 @@ class TestUpdateRenewableCluster:
         )
         output = cmd.apply(dao)
         assert output.status is False
-        assert "'fake_area' is not found" in output.message
+        assert output.message == "Area is not found: 'fake_area'"
 
         # Ensures updating an unexisting renewable cluster raises an Exception.
         # Also ensures the study wasn't partially modified.

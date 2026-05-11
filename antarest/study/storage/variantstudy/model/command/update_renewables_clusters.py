@@ -59,8 +59,8 @@ class UpdateRenewablesClusters(ICommand):
         for area_id, value in self.cluster_properties.items():
             try:
                 all_renewables_per_area = study_data.get_all_renewables_for_area(area_id)
-            except AreaNotFound:
-                return command_failed(f"The area '{area_id}' is not found.")
+            except AreaNotFound as e:
+                return command_failed(e.detail)
 
             existing_ids = {renewable.id.lower(): renewable for renewable in all_renewables_per_area}
 

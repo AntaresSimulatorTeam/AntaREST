@@ -68,8 +68,8 @@ class UpdateThermalClusters(ICommand):
         for area_id, value in self.cluster_properties.items():
             try:
                 all_thermals_per_area = study_data.get_all_thermals_for_area(area_id)
-            except AreaNotFound:
-                return command_failed(f"Area '{area_id}' does not exist")
+            except AreaNotFound as e:
+                return command_failed(e.detail)
 
             existing_ids = {th.id.lower(): th for th in all_thermals_per_area}
 
