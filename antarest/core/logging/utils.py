@@ -35,6 +35,9 @@ _task_id: ContextVar[str | None] = ContextVar("_task_id", default=None)
 
 logger = logging.getLogger(__name__)
 
+# Those endpoints may expose secrets, we restrict what we log for them
+SENSITIVE_ENDPOINTS = ("/v1/login", "/v1/ws")
+
 
 class CustomDefaultFormatter(logging.Formatter):
     """
@@ -196,6 +199,8 @@ class ContextFilter(logging.Filter):
     @override
     def filter(self, record: logging.LogRecord) -> bool:
         if request := _request.get():
+            is_sensitive = any(endpoint in request.url.path for endpoint in SENSITIVE_ENDPOINTS)
+
             # Client information
             if client := request.client:
                 setattr(record, "client.ip", client.host)
@@ -209,8 +214,9 @@ class ContextFilter(logging.Filter):
             if http_version := request.scope.get("http_version", None):
                 setattr(record, "http.version", http_version)
             setattr(record, "http.request.method", request.method)
-            if referrer := request.headers.get("referer", None):
-                setattr(record, "http.request.referrer", referrer)
+            if not is_sensitive:
+                if referrer := request.headers.get("referer", None):
+                    setattr(record, "http.request.referrer", referrer)
             # Note: route is not part of ECS format, but is part of OTel
             if route := request.scope.get("route", None):
                 endpoint = request.scope["root_path"] + route.path
@@ -218,12 +224,13 @@ class ContextFilter(logging.Filter):
 
             # Basic URL information
             url = request.url
-            setattr(record, "url.original", str(url))
             setattr(record, "url.path", url.path)
-            setattr(record, "url.query", url.query)
             setattr(record, "url.scheme", url.scheme)
             setattr(record, "url.port", url.port)
             setattr(record, "url.fragment", url.fragment)
+            if not is_sensitive:
+                setattr(record, "url.original", str(url))
+                setattr(record, "url.query", url.query)
 
         if request_id := _request_id.get():
             record.trace_id = request_id
