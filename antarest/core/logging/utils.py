@@ -85,16 +85,7 @@ def configure_logger(config: Config, handler_cls: str = "logging.FileHandler") -
         "formatters": {
             "console": {
                 "class": "antarest.core.logging.utils.CustomDefaultFormatter",
-                "format": (
-                    "[%(asctime)s] [%(process)s] [%(name)s]"
-                    " - %(trace_id)s"
-                    " - %(task_id)s"
-                    " - %(threadName)s"
-                    " - %(ip)s"
-                    " - %(user)s"
-                    " - %(levelname)s"
-                    " - %(message)s"
-                ),
+                "format": "[%(asctime)s] [%(name)s] - %(threadName)s - %(levelname)s - %(message)s",
             },
             "json": {
                 "()": ecs_logging.StdlibFormatter,
