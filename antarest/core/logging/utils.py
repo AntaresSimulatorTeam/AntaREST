@@ -96,6 +96,7 @@ def configure_logger(config: Config, handler_cls: str = "logging.FileHandler") -
             "json": {
                 "()": ecs_logging.StdlibFormatter,
                 "exclude_fields": ["log.original"],
+                "ensure_ascii": False,
             },
         },
         "handlers": {
