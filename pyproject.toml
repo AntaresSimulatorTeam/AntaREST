@@ -53,7 +53,7 @@ dependencies = [
     "tables==3.10.2",
     "typing_extensions~=4.15.0",
     "xlsxwriter~=3.2.0",
-    "ecs-logging>=2.3.0",
+    "ecs-logging~=2.3.0",
 ]
 
 [dependency-groups]
