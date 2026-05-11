@@ -1,0 +1,89 @@
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
+import http
+from uuid import UUID, uuid4
+
+from fastapi import HTTPException
+
+from antarest.login.utils import get_user_impersonator
+from antarest.tablemode.model import (
+    TableColumn,
+    TableMode,
+    TableModeDTO,
+    TableType,
+    check_invalid_columns,
+)
+from antarest.tablemode.repository import TablemodeRepository
+
+
+class TableModeService:
+    def __init__(self, tablemode_repository: TablemodeRepository):
+        self.tablemode_repository = tablemode_repository
+
+    def get_tables(self) -> list[TableModeDTO]:
+        tablemodes = self.tablemode_repository.get_all()
+        tablemode_dtos = [tablemode.to_dto() for tablemode in tablemodes]
+        return tablemode_dtos
+
+    def add_table(self, table_name: str, table_type: TableType, table_columns: list[TableColumn]) -> TableModeDTO:
+        str_table_columns = ",".join(table_columns)
+        check_invalid_columns(table_type, table_columns)
+        tablemode = TableMode(
+            table_id=uuid4(),
+            table_name=table_name,
+            table_type=table_type,
+            table_columns=str_table_columns,
+            user_id=get_user_impersonator(),
+        )
+
+        tablemode_dto = self.tablemode_repository.save(tablemode).to_dto()
+
+        return tablemode_dto
+
+    def update_table(self, table_id: UUID, table_type: TableType, table_columns: list[TableColumn]) -> TableModeDTO:
+        """
+        Update a selected tablemode's type and columns
+        Args:
+            table_id:
+            table_type:
+            table_columns:
+
+        Returns:
+            None
+        """
+        check_invalid_columns(table_type, table_columns)
+
+        tablemode = self.tablemode_repository.get(table_id)
+
+        if not tablemode:
+            raise HTTPException(
+                status_code=http.HTTPStatus.NOT_FOUND, detail=f"Tablemode with id {table_id} not found"
+            ) from None
+
+        str_table_columns = ",".join(table_columns)
+
+        tablemode.table_type = table_type
+        tablemode.table_columns = str_table_columns
+
+        updated_tablemode = self.tablemode_repository.save(tablemode)
+        return updated_tablemode.to_dto()
+
+    def delete_table(self, table_id: UUID) -> None:
+        tablemode = self.tablemode_repository.get(table_id)
+
+        if tablemode:
+            self.tablemode_repository.delete(table_id)
+        else:
+            raise HTTPException(
+                status_code=http.HTTPStatus.NOT_FOUND, detail=f"tablemode with id {table_id} not found"
+            ) from None

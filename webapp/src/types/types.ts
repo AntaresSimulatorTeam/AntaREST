@@ -13,6 +13,7 @@
  */
 
 import type { StudySortConfigSchema } from "@/routes/_authenticated/studies/-components/StudiesList/Header/studySortUtils";
+import type { Job } from "@/services/api/launcher/jobs/types";
 import type z from "zod";
 import type { TaskTypeValue } from "../services/api/tasks/types";
 
@@ -122,7 +123,7 @@ export interface LaunchJobProgressDTO {
   message: string;
 }
 
-export type LaunchJobsProgress = Record<string, number>;
+export type JobsProgressById = Record<Job["id"], number>;
 
 export enum RoleType {
   ADMIN = 40,
@@ -312,7 +313,6 @@ export interface StudySynthesis {
   areas: Record<string, Area>;
   districts: Record<string, District>;
   outputs: Record<string, OutputDetails>;
-  bindings: string[];
   store_new_set: boolean;
   archive_input_series: string[];
   enr_modelling: "aggregated" | "clusters";

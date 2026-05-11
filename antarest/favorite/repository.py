@@ -45,7 +45,7 @@ class FavoriteStudyRepository:
 
     def get_all(self) -> list[FavoriteStudy]:
         """
-        List all the favorite studies belonging to the current user
+        List of all the favorite studies belonging to the current user
         Returns: The list of all the favorite studies belonging to the current user
         """
         stmt = (
