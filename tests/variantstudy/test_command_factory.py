@@ -1126,11 +1126,7 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_THERMAL_CLUSTER_RESERVE_PARTICIPATIONS.value,
-            args={
-                "participation_properties": {
-                    "paris": {"gas_cluster": {"Reserve 1": {"maxPower": 30.0}}}
-                }
-            },
+            args={"participation_properties": {"paris": {"gas_cluster": {"Reserve 1": {"maxPower": 30.0}}}}},
             study_version=STUDY_VERSION_10_0,
         ),
         None,

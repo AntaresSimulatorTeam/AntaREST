@@ -60,14 +60,10 @@ class CreateThermalClusterReserveParticipation(ICommand):
         # Defensive checks: surface a clear command_failed message rather than letting a
         # DB FK violation bubble up as a 500.
         if not study_data.thermal_exists(self.area_id, self.thermal_id):
-            return command_failed(
-                f"Thermal cluster '{self.thermal_id}' does not exist in area '{self.area_id}'"
-            )
+            return command_failed(f"Thermal cluster '{self.thermal_id}' does not exist in area '{self.area_id}'")
         participation = create_thermal_cluster_reserve_participation(self.parameters)
         if not study_data.reserve_definition_exists(self.area_id, participation.id):
-            return command_failed(
-                f"Reserve definition '{participation.id}' does not exist in area '{self.area_id}'"
-            )
+            return command_failed(f"Reserve definition '{participation.id}' does not exist in area '{self.area_id}'")
         if study_data.thermal_cluster_reserve_participation_exists(self.area_id, self.thermal_id, participation.id):
             return command_failed(
                 f"Reserve participation '{participation.id}' already exists for thermal cluster "

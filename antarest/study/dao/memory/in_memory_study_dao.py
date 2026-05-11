@@ -1672,9 +1672,7 @@ class InMemoryStudyDao(StudyDao):
             self._reserve_needs.pop(reserve_key(area_id, rid), None)
             # Cascade: remove orphan thermal cluster participations across all clusters.
             for participation_key in [
-                k
-                for k in self._thermal_cluster_reserve_participations
-                if k.area_id == area_id and k.reserve_id == rid
+                k for k in self._thermal_cluster_reserve_participations if k.area_id == area_id and k.reserve_id == rid
             ]:
                 del self._thermal_cluster_reserve_participations[participation_key]
 

@@ -49,9 +49,7 @@ def _setup_prereqs(
     constraints of ``thermal_cluster_reserve_participation``."""
     save_area(dao, area_id)
     dao.save_thermals({area_id: [ThermalCluster(id=cid, name=cid) for cid in thermal_ids]})
-    dao.save_reserve_definitions(
-        {area_id: [ReserveDefinition(id=rid, type=ReserveType.UP) for rid in reserve_ids]}
-    )
+    dao.save_reserve_definitions({area_id: [ReserveDefinition(id=rid, type=ReserveType.UP) for rid in reserve_ids]})
 
 
 class TestCreateThermalClusterReserveParticipation:
@@ -61,9 +59,7 @@ class TestCreateThermalClusterReserveParticipation:
         command = CreateThermalClusterReserveParticipation(
             area_id="paris",
             thermal_id="gas_cluster",
-            parameters=ThermalClusterReserveParticipationCreation(
-                id="Reserve 1", max_power=20.0
-            ),
+            parameters=ThermalClusterReserveParticipationCreation(id="Reserve 1", max_power=20.0),
             command_context=command_context,
             study_version=STUDY_VERSION_10_0,
         )
@@ -78,9 +74,7 @@ class TestCreateThermalClusterReserveParticipation:
     def test_apply_unknown_cluster_fails(self, dao_10_0: StudyDao, command_context: CommandContext) -> None:
         # Area + reserve definition exist, but the thermal cluster does not.
         save_area(dao_10_0, "paris")
-        dao_10_0.save_reserve_definitions(
-            {"paris": [ReserveDefinition(id="Reserve 1", type=ReserveType.UP)]}
-        )
+        dao_10_0.save_reserve_definitions({"paris": [ReserveDefinition(id="Reserve 1", type=ReserveType.UP)]})
         command = CreateThermalClusterReserveParticipation(
             area_id="paris",
             thermal_id="ghost",

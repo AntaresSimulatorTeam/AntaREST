@@ -48,12 +48,8 @@ def _setup(
     insert error first.
     """
     save_area(dao, area_id)
-    dao.save_thermals(
-        {area_id: [ThermalCluster(id=cid, name=cid) for cid in clusters]}
-    )
-    dao.save_reserve_definitions(
-        {area_id: [ReserveDefinition(id=rid, type=ReserveType.UP) for rid in reserves]}
-    )
+    dao.save_thermals({area_id: [ThermalCluster(id=cid, name=cid) for cid in clusters]})
+    dao.save_reserve_definitions({area_id: [ReserveDefinition(id=rid, type=ReserveType.UP) for rid in reserves]})
 
 
 def test_save_and_retrieve(dao_10_0: StudyDao) -> None:
@@ -172,9 +168,7 @@ def test_delete_not_found_raises(dao_10_0: StudyDao) -> None:
     _setup(dao_10_0, "paris")
     dao_10_0.save_thermal_cluster_reserve_participations({"paris": {"gas_cluster": [_participation("R1")]}})
     with pytest.raises(ThermalClusterReserveParticipationNotFound):
-        dao_10_0.delete_thermal_cluster_reserve_participations(
-            "paris", "gas_cluster", [ReserveDefinitionId("unknown")]
-        )
+        dao_10_0.delete_thermal_cluster_reserve_participations("paris", "gas_cluster", [ReserveDefinitionId("unknown")])
 
 
 def test_cascade_on_thermal_cluster_delete(dao_10_0: StudyDao) -> None:
