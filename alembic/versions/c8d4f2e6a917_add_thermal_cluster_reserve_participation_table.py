@@ -1,7 +1,7 @@
 """add_thermal_cluster_reserve_participation_table
 
 Revision ID: c8d4f2e6a917
-Revises: 8b2fca3d91e0
+Revises: rp986cf862cy
 Create Date: 2026-05-04 12:00:00.000000
 
 """
@@ -12,7 +12,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "c8d4f2e6a917"
-down_revision = "8b2fca3d91e0"
+down_revision = "rp986cf862cy"
 branch_labels = None
 depends_on = None
 
