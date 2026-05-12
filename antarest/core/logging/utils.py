@@ -18,6 +18,7 @@ from collections.abc import Iterator
 from contextvars import ContextVar, Token
 from typing import Any
 
+import ecs_logging
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
@@ -33,6 +34,9 @@ _request_id: ContextVar[str | None] = ContextVar("_request_id", default=None)
 _task_id: ContextVar[str | None] = ContextVar("_task_id", default=None)
 
 logger = logging.getLogger(__name__)
+
+# Those endpoints may expose secrets, we restrict what we log for them
+SENSITIVE_ENDPOINTS = ("/v1/login", "/v1/ws")
 
 
 class CustomDefaultFormatter(logging.Formatter):
@@ -81,32 +85,12 @@ def configure_logger(config: Config, handler_cls: str = "logging.FileHandler") -
         "formatters": {
             "console": {
                 "class": "antarest.core.logging.utils.CustomDefaultFormatter",
-                "format": (
-                    "[%(asctime)s] [%(process)s] [%(name)s]"
-                    " - %(trace_id)s"
-                    " - %(task_id)s"
-                    " - %(threadName)s"
-                    " - %(ip)s"
-                    " - %(user)s"
-                    " - %(levelname)s"
-                    " - %(message)s"
-                ),
+                "format": "[%(asctime)s] [%(name)s] - %(threadName)s - %(levelname)s - %(message)s",
             },
             "json": {
-                "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
-                "format": (
-                    "%(asctime)s"
-                    " - %(process)s"
-                    " - %(worker_id)s"
-                    " - %(name)s"
-                    " - %(trace_id)s"
-                    " - %(task_id)s"
-                    " - %(threadName)s"
-                    " - %(ip)s"
-                    " - %(user)s"
-                    " - %(levelname)s"
-                    " - %(message)s"
-                ),
+                "()": ecs_logging.StdlibFormatter,
+                "exclude_fields": ["log.original"],
+                "ensure_ascii": False,
             },
         },
         "handlers": {
@@ -136,6 +120,7 @@ def configure_logger(config: Config, handler_cls: str = "logging.FileHandler") -
             },
         },
     }
+
     if config.logging.logfile is not None:
         if handler_cls == "logging.FileHandler":
             logging_config["handlers"]["default"] = {
@@ -179,6 +164,11 @@ def configure_logger(config: Config, handler_cls: str = "logging.FileHandler") -
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):
+    """
+    This actually only sets the current request as a global context variable,
+    so that it's accessible at log time.
+    """
+
     @override
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         with RequestContext(request):
@@ -193,16 +183,52 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 
 
 class ContextFilter(logging.Filter):
+    """
+    Enriches logs with more context, trying to respect ECS format where relevant.
+    """
+
     @override
     def filter(self, record: logging.LogRecord) -> bool:
         if request := _request.get():
-            record.ip = request.scope.get("client", "undefined")[0]
+            is_sensitive = any(endpoint in request.url.path for endpoint in SENSITIVE_ENDPOINTS)
+
+            # Client information
+            if client := request.client:
+                setattr(record, "client.ip", client.host)
+                setattr(record, "client.port", client.port)
+
+            # User agent
+            if user_agent := request.headers.get("user-agent", None):
+                setattr(record, "user_agent.original", user_agent)
+
+            # HTTP information
+            if http_version := request.scope.get("http_version", None):
+                setattr(record, "http.version", http_version)
+            setattr(record, "http.request.method", request.method)
+            if not is_sensitive:
+                if referrer := request.headers.get("referer", None):
+                    setattr(record, "http.request.referrer", referrer)
+            # Note: route is not part of ECS format, but is part of OTel
+            if route := request.scope.get("route", None):
+                endpoint = request.scope["root_path"] + route.path
+                setattr(record, "http.route", endpoint)
+
+            # Basic URL information
+            url = request.url
+            setattr(record, "url.path", url.path)
+            setattr(record, "url.scheme", url.scheme)
+            setattr(record, "url.port", url.port)
+            setattr(record, "url.fragment", url.fragment)
+            if not is_sensitive:
+                setattr(record, "url.original", str(url))
+                setattr(record, "url.query", url.query)
+
         if request_id := _request_id.get():
             record.trace_id = request_id
         if task_id := _task_id.get():
             record.task_id = task_id
         if current_user := get_current_user():
-            record.user = current_user.id
+            setattr(record, "user.id", current_user.id)
         record.worker_id = ANTAREST_WORKER_ID
         return True
 
