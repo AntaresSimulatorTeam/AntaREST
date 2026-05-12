@@ -12,15 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import usePromise from "@/hooks/usePromise";
-import { getVariantParents, getVariantTree } from "@/services/api/variant";
-import { countDescendants, findNodeInTree } from "@/services/utils";
-import { WsEventType } from "@/services/webSocket/constants";
-import type { WsEvent } from "@/services/webSocket/types";
-import { addWsEventListener } from "@/services/webSocket/ws";
+import { variantQueries } from "@/queries/variants/queries";
+import type { VariantTree } from "@/services/api/studies/variants/types";
+import { countDescendants, getParentNode } from "@/services/utils";
 import { Stack } from "@mui/material";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMatch } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useCallback } from "react";
 import useStudy from "../../-hooks/useStudy";
 import Actions from "./Actions";
 import Breadcrumb from "./Breadcrumb";
@@ -31,37 +29,18 @@ function NavHeader() {
   const match = useMatch({ from: "/_authenticated/studies/$studyId/explore", shouldThrow: false });
   const isExplorer = !!match;
 
-  const { data: studyMetadata, reload: reloadStudyMetadata } = usePromise(async () => {
-    const parents = await getVariantParents(study.id);
-    const parentStudy = parents.length > 0 ? parents[0] : undefined;
+  const selectStudyDetails = useCallback(
+    (tree: VariantTree) => ({
+      parentStudy: getParentNode(tree, study.id),
+      variantNb: countDescendants(tree, study.id),
+    }),
+    [study.id],
+  );
 
-    const root = parents.length > 0 ? parents[parents.length - 1] : study;
-    const variantTree = await getVariantTree(root.id);
-
-    const tree = findNodeInTree(study.id, variantTree);
-    const variantNb = tree ? countDescendants(tree) : 0;
-
-    return { parentStudy, variantNb };
-  }, [study]);
-
-  // Reload the promise when the study is edited
-  useEffect(() => {
-    const listener = (event: WsEvent) => {
-      if (event.type === WsEventType.StudyEdited || event.type === WsEventType.StudyDataEdited) {
-        if (event.payload.id === study.id) {
-          reloadStudyMetadata();
-        }
-      }
-    };
-
-    return addWsEventListener(listener);
-  }, [study.id, reloadStudyMetadata]);
-
-  const { parentStudy, variantNb } = studyMetadata || {};
-
-  ////////////////////////////////////////////////////////////////
-  // JSX
-  ////////////////////////////////////////////////////////////////
+  const { data: studyDetails } = useSuspenseQuery({
+    ...variantQueries.variantTree(study.id),
+    select: selectStudyDetails,
+  });
 
   return (
     <Stack
@@ -72,8 +51,8 @@ function NavHeader() {
       ]}
     >
       <Breadcrumb />
-      <Details parentStudy={parentStudy} variantNb={variantNb} />
-      <Actions isExplorer={isExplorer} parentStudy={parentStudy} variantNb={variantNb} />
+      <Details {...studyDetails} />
+      <Actions {...studyDetails} isExplorer={isExplorer} />
     </Stack>
   );
 }

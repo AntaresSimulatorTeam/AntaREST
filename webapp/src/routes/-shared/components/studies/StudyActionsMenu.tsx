@@ -12,6 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getLatestStudyVersion } from "@/redux/selectors";
+import type { Study } from "@/services/api/studies/types";
+import { archiveStudy, unarchiveStudy } from "@/services/api/study";
+import type { StudyMetadata } from "@/types/types";
+import { toError } from "@/utils/fnUtils";
 import type { SvgIconComponent } from "@mui/icons-material";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import BoltIcon from "@mui/icons-material/Bolt";
@@ -26,12 +33,6 @@ import UpgradeIcon from "@mui/icons-material/Upgrade";
 import { ListItemIcon, ListItemText, Menu, MenuItem, type MenuProps } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getLatestStudyVersion } from "@/redux/selectors";
-import { archiveStudy, unarchiveStudy } from "@/services/api/study";
-import type { StudyMetadata } from "@/types/types";
-import { toError } from "@/utils/fnUtils";
 import CopyStudyDialog from "./dialogs/CopyStudyDialog";
 import DeleteStudyDialog from "./dialogs/DeleteStudyDialog";
 import ExportModal from "./dialogs/ExportModal";
@@ -54,7 +55,7 @@ interface Props {
   anchorEl: MenuProps["anchorEl"];
   onClose: VoidFunction;
   study: StudyMetadata;
-  parentStudy?: StudyMetadata;
+  parentStudy?: Study;
   variantNb?: number;
 }
 

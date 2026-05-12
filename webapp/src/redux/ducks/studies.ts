@@ -12,8 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import { queryClient } from "@/queries/queryClient";
-import { studyQueries } from "@/queries/studies/queries";
 import { DEFAULT_STUDY_SORT_CONFIG } from "@/routes/_authenticated/studies/-components/StudiesList/Header/studySortUtils";
 import { getStudyVersions } from "@/services/api/studies";
 import * as api from "@/services/api/study";
@@ -161,23 +159,7 @@ export const updateStudiesFromLocalStorage = createAction<
   }>
 >(n("UPDATE_FROM_LOCAL_STORAGE"));
 
-export const updateStudy = createThunk<StudyUpdate, StudyUpdate>(
-  n("UPDATE_STUDY"),
-  (studyUpdate) => {
-    const newName = studyUpdate.changes.name;
-
-    // If the study name was updated, also update it in the favorites query data to keep it in sync
-    if (newName) {
-      queryClient.setQueryData(studyQueries.favorites().queryKey, (old) => {
-        return old?.map((fav) =>
-          fav.studyId === studyUpdate.id ? { ...fav, studyName: newName } : fav,
-        );
-      });
-    }
-
-    return studyUpdate;
-  },
-);
+export const updateStudy = createAction<StudyUpdate>(n("UPDATE_STUDY"));
 
 ////////////////////////////////////////////////////////////////
 // Thunks
@@ -249,9 +231,6 @@ export const deleteStudy = createAsyncThunk<
       return rejectWithValue(err);
     }
   }
-
-  // Invalidate favorites in case the deleted study or related studies were favorites
-  queryClient.invalidateQueries({ queryKey: studyQueries.favorites().queryKey });
 
   return studyId;
 });

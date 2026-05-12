@@ -21,7 +21,8 @@ class InputHydroPrepro(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            a: InputHydroPreproArea(self.matrix_mapper, self.config.next_file(a)) for a in self.config.area_names()
+            a: InputHydroPreproArea(self.matrix_storage_context, self.config.next_file(a))
+            for a in self.config.area_names()
         }
         children["correlation"] = PreproCorrelation(self.config.next_file("correlation.ini"))
         return children

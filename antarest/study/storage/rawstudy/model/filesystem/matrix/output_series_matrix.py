@@ -18,7 +18,6 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, MustNotModifyOutputException
 from antarest.core.model import JSON
-from antarest.matrixstore.matrix_uri_mapper import add_matrix_id_prefix
 from antarest.output.filestudy.utils import get_start_column, parse_output_file
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -39,8 +38,7 @@ class OutputSeriesMatrix(LazyNode[bytes | JSON, bytes | JSON, JSON]):
 
     @override
     def get_lazy_content(self, url: list[str] | None = None, depth: int = -1, expanded: bool = False) -> str:
-        # noinspection SpellCheckingInspection
-        return add_matrix_id_prefix(self.config.path.name)
+        return f"matrix://{self.config.path.name}"
 
     def parse_dataframe(self) -> pd.DataFrame:
         output_first_column = get_start_column(self.freq)

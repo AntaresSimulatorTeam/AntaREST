@@ -14,10 +14,10 @@ from collections.abc import Iterable
 
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixReference
 from antarest.study.repository import AccessPermissions, StudyFilter
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import extract_matrix_id
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy

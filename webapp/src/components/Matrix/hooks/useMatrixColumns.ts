@@ -39,12 +39,18 @@ export function useMatrixColumns({
   aggregateTypes,
 }: UseMatrixColumnsProps) {
   const { isDarkMode } = useThemeColorScheme();
+
+  // Use scalar counts instead of the data reference so pasting (which changes
+  // data values but not shape) does not invalidate the memo and produce a new
+  // columns array reference. A new reference would trigger DataGrid's
+  // useUpdateEffect reset, undoing any column-width adjustments made after paste.
+  const rowCount = data.length;
+  const columnCount = data[0]?.length ?? 0;
+
   return useMemo(() => {
-    if (!data || data.length === 0) {
+    if (rowCount === 0 || columnCount === 0) {
       return [];
     }
-
-    const columnCount = data[0].length;
 
     const baseColumns: EnhancedGridColumn[] = [];
 
@@ -91,7 +97,8 @@ export function useMatrixColumns({
 
     return [...baseColumns, ...dataColumns, ...aggregatesColumns];
   }, [
-    data,
+    rowCount,
+    columnCount,
     dateTimeColumn,
     enableRowHeaders,
     isTimeSeries,

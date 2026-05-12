@@ -47,7 +47,7 @@ from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from tests.helpers import file_study_interface
 
 
@@ -533,7 +533,7 @@ def test_add_resources(xpansion_manager: XpansionManager, study: StudyInterface)
 
     assert filename3 in study.get_files().tree.get(["user", "expansion", "weights"])
     matrix_node = study.get_files().tree.get_node(["user", "expansion", "weights", filename3])
-    assert isinstance(matrix_node, MatrixNode)
+    assert isinstance(matrix_node, InputSeriesMatrix)
     matrix = matrix_node.parse_as_dataframe()
     expected_matrix = pl.DataFrame(np.array([[2.0]]), schema=["0"])
     assert_frame_equal(matrix, expected_matrix)
@@ -617,14 +617,14 @@ def test_add_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> N
 
     assert filename1 in study.get_files().tree.get(["user", "expansion", "capa"])
     matrix_node = study.get_files().tree.get_node(["user", "expansion", "capa", filename1])
-    assert isinstance(matrix_node, MatrixNode)
+    assert isinstance(matrix_node, InputSeriesMatrix)
     matrix = matrix_node.parse_as_dataframe()
     expected_matrix = pl.DataFrame(np.array([[0.0]]), schema=["0"])
     assert_frame_equal(matrix, expected_matrix)
 
     assert filename2 in study.get_files().tree.get(["user", "expansion", "capa"])
     matrix_node = study.get_files().tree.get_node(["user", "expansion", "capa", filename2])
-    assert isinstance(matrix_node, MatrixNode)
+    assert isinstance(matrix_node, InputSeriesMatrix)
     matrix = matrix_node.parse_as_dataframe()
     expected_matrix = pl.DataFrame(np.array([[1.0]]), schema=["0"])
     assert_frame_equal(matrix, expected_matrix)

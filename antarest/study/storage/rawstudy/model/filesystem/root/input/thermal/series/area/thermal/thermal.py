@@ -23,21 +23,21 @@ class InputThermalSeriesAreaThermal(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
             "series": InputSeriesMatrix(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file("series.txt"),
                 default_empty=default_scenario_hourly,
             ),
         }
         if self.config.version >= 870:
             children["CO2Cost"] = InputSeriesMatrix(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file("CO2Cost.txt"),
                 freq=MatrixFrequency.HOURLY,
                 default_empty=default_scenario_hourly,
                 should_exist=False,
             )
             children["fuelCost"] = InputSeriesMatrix(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file("fuelCost.txt"),
                 freq=MatrixFrequency.HOURLY,
                 default_empty=default_scenario_hourly,

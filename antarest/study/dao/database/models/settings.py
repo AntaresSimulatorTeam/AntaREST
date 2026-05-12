@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from sqlalchemy import Boolean, Column, Enum, Float, ForeignKeyConstraint, Integer, String, Table
+from sqlalchemy import Boolean, Column, Float, ForeignKeyConstraint, Integer, String, Table
 
 from antarest.dbmodel import Base
 from antarest.study.business.model.config.adequacy_patch_model import PriceTakingOrder
@@ -31,6 +31,7 @@ from antarest.study.business.model.config.optimization_config_model import (
     SimplexOptimizationRange,
     UnfeasibleProblemBehavior,
 )
+from antarest.study.dao.database.sql_utils import enum_col
 
 metadata = Base.metadata
 
@@ -45,16 +46,16 @@ GENERAL_CONFIG_TABLE = Table(
     "general_config",
     metadata,
     get_study_id_col(),
-    Column("mode", Enum(Mode), nullable=False),
+    Column("mode", enum_col(Mode), nullable=False),
     Column("first_day", Integer(), nullable=False),
     Column("last_day", Integer(), nullable=False),
     Column("horizon", String(), nullable=False),
-    Column("first_month", Enum(Month), nullable=False),
-    Column("first_week_day", Enum(WeekDay), nullable=False),
-    Column("first_january", Enum(WeekDay), nullable=False),
+    Column("first_month", enum_col(Month), nullable=False),
+    Column("first_week_day", enum_col(WeekDay), nullable=False),
+    Column("first_january", enum_col(WeekDay), nullable=False),
     Column("leap_year", Boolean(), nullable=False),
     Column("nb_years", Integer(), nullable=False),
-    Column("building_mode", Enum(BuildingMode), nullable=False),
+    Column("building_mode", enum_col(BuildingMode), nullable=False),
     Column("selection_mode", Boolean(), nullable=False),
     Column("year_by_year", Boolean(), nullable=False),
     Column("simulation_synthesis", Boolean(), nullable=False),
@@ -70,14 +71,14 @@ ADVANCED_PARAMETERS_TABLE = Table(
     metadata,
     get_study_id_col(),
     Column("accuracy_on_correlation", String(), nullable=False),
-    Column("power_fluctuations", Enum(PowerFluctuation), nullable=False),
-    Column("shedding_policy", Enum(SheddingPolicy), nullable=False),
-    Column("hydro_pricing_mode", Enum(HydroPricingMode), nullable=False),
-    Column("hydro_heuristic_policy", Enum(HydroHeuristicPolicy), nullable=False),
-    Column("unit_commitment_mode", Enum(UnitCommitmentMode), nullable=False),
-    Column("number_of_cores_mode", Enum(SimulationCore), nullable=False),
-    Column("day_ahead_reserve_management", Enum(ReserveManagement), nullable=False),
-    Column("renewable_generation_modelling", Enum(RenewableGenerationModeling), nullable=False),
+    Column("power_fluctuations", enum_col(PowerFluctuation), nullable=False),
+    Column("shedding_policy", enum_col(SheddingPolicy), nullable=False),
+    Column("hydro_pricing_mode", enum_col(HydroPricingMode), nullable=False),
+    Column("hydro_heuristic_policy", enum_col(HydroHeuristicPolicy), nullable=False),
+    Column("unit_commitment_mode", enum_col(UnitCommitmentMode), nullable=False),
+    Column("number_of_cores_mode", enum_col(SimulationCore), nullable=False),
+    Column("day_ahead_reserve_management", enum_col(ReserveManagement), nullable=False),
+    Column("renewable_generation_modelling", enum_col(RenewableGenerationModeling), nullable=False),
     Column("seed_tsgen_wind", Integer(), nullable=False),
     Column("seed_tsgen_load", Integer(), nullable=False),
     Column("seed_tsgen_hydro", Integer(), nullable=False),
@@ -89,7 +90,7 @@ ADVANCED_PARAMETERS_TABLE = Table(
     Column("seed_thermal_costs", Integer(), nullable=False),
     Column("seed_hydro_costs", Integer(), nullable=False),
     Column("seed_initial_reservoir_levels", Integer(), nullable=False),
-    Column("initial_reservoir_levels", Enum(InitialReservoirLevel), nullable=True),
+    Column("initial_reservoir_levels", enum_col(InitialReservoirLevel), nullable=True),
     Column("accurate_shave_peaks_include_short_term_storage", Boolean(), nullable=True),
     ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_advanced_parameters_study_id", ondelete="CASCADE"),
 )
@@ -100,7 +101,7 @@ ADEQUACY_PATCH_PARAMETERS_TABLE = Table(
     get_study_id_col(),
     Column("enable_adequacy_patch", Boolean(), nullable=False),
     Column("ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch", Boolean(), nullable=False),
-    Column("price_taking_order", Enum(PriceTakingOrder), nullable=True),
+    Column("price_taking_order", enum_col(PriceTakingOrder), nullable=True),
     Column("include_hurdle_cost_csr", Boolean(), nullable=True),
     Column("check_csr_cost_function", Boolean(), nullable=True),
     Column("threshold_initiate_curtailment_sharing_rule", Float(), nullable=True),
@@ -116,7 +117,7 @@ COMPATIBILITY_PARAMETERS_TABLE = Table(
     "compatibility_parameters",
     metadata,
     get_study_id_col(),
-    Column("hydro_pmax", Enum(HydroPmax), nullable=True),
+    Column("hydro_pmax", enum_col(HydroPmax), nullable=True),
     Column("reserves_enabled", Boolean(), nullable=True),
     ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_compatibility_parameters_study_id", ondelete="CASCADE"),
 )
@@ -135,8 +136,8 @@ OPTIMIZATION_PREFERENCES_TABLE = Table(
     Column("strategic_reserve", Boolean(), nullable=False),
     Column("spinning_reserve", Boolean(), nullable=False),
     Column("export_mps", String(), nullable=False),
-    Column("unfeasible_problem_behavior", Enum(UnfeasibleProblemBehavior), nullable=False),
-    Column("simplex_optimization_range", Enum(SimplexOptimizationRange), nullable=False),
+    Column("unfeasible_problem_behavior", enum_col(UnfeasibleProblemBehavior), nullable=False),
+    Column("simplex_optimization_range", enum_col(SimplexOptimizationRange), nullable=False),
     ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_optimization_preferences_study_id", ondelete="CASCADE"),
 )
 

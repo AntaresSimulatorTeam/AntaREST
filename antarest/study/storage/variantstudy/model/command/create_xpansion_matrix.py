@@ -14,10 +14,9 @@
 from pydantic import Field, ValidationInfo, field_validator
 from typing_extensions import override
 
-from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
+from antarest.study.storage.variantstudy.business.utils import validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
@@ -42,16 +41,17 @@ class AbstractCreateXpansionMatrix(ICommand):
 
     @override
     def to_dto(self) -> CommandDTO:
+        assert isinstance(self.matrix, str)
         return CommandDTO(
             action=self.command_name.value,
-            args={"filename": self.filename, "matrix": strip_matrix_protocol(self.matrix)},
+            args={"filename": self.filename, "matrix": self.matrix},
             study_version=self.study_version,
         )
 
     @override
     def get_inner_matrices(self) -> InnerMatrices:
-        assert_this(isinstance(self.matrix, str))
-        return InnerMatrices(matrices=[strip_matrix_protocol(self.matrix)])
+        assert isinstance(self.matrix, str)
+        return InnerMatrices(matrices=[self.matrix])
 
 
 class CreateXpansionWeight(AbstractCreateXpansionMatrix):

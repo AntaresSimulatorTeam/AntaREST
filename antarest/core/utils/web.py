@@ -29,6 +29,7 @@ class APITag:
     misc = "Miscellaneous"
     filesystem = "Filesystem Management"
     explorer = "Explore external disks"
+    table_mode = "Table mode"
 
 
 tags_metadata = [
