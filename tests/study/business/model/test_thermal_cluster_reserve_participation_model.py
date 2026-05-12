@@ -37,7 +37,6 @@ class TestThermalClusterReserveParticipation:
         assert participation.participation_cost_off == 0.0
 
     def test_cluster_name_rejected_in_model(self) -> None:
-        """``cluster_name`` is denormalized to the file format only."""
         with pytest.raises(ValidationError):
             ThermalClusterReserveParticipation.model_validate({"id": "R1", "clusterName": "c1"})
 
@@ -109,8 +108,6 @@ class TestCreateAndUpdateHelpers:
 
 class TestFileDataRoundTrip:
     def test_serialize_injects_cluster_name(self) -> None:
-        """The INI representation always carries ``cluster-name`` derived from the
-        ``thermal_id`` passed at serialization time."""
         participation = ThermalClusterReserveParticipation(
             id="Reserve 1",
             max_power=20.0,
@@ -154,8 +151,6 @@ class TestSectionNaming:
         assert extract_reserve_id(name, "gas_cluster") == "Reserve 1"
 
     def test_extract_reserve_id_handles_separator_in_cluster(self) -> None:
-        """Cluster ids may legally contain ``__`` — the cluster name from the section
-        content is the canonical anchor, so extraction stays unambiguous."""
         name = section_name("gas__1", "Reserve 1")
         assert extract_reserve_id(name, "gas__1") == "Reserve 1"
         assert extract_reserve_id(name, "gas") == "1__Reserve 1"

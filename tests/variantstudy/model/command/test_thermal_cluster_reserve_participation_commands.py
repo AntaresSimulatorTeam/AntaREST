@@ -45,8 +45,6 @@ def _setup_prereqs(
     thermal_ids: tuple[str, ...] = ("gas_cluster",),
     reserve_ids: tuple[str, ...] = ("R1", "R2", "R3", "Reserve 1"),
 ) -> None:
-    """Create the area, thermal clusters and reserve definitions required by the FK
-    constraints of ``thermal_cluster_reserve_participation``."""
     save_area(dao, area_id)
     dao.save_thermals({area_id: [ThermalCluster(id=cid, name=cid) for cid in thermal_ids]})
     dao.save_reserve_definitions({area_id: [ReserveDefinition(id=rid, type=ReserveType.UP) for rid in reserve_ids]})
@@ -72,7 +70,6 @@ class TestCreateThermalClusterReserveParticipation:
         assert dao_10_0.thermal_cluster_reserve_participation_exists("paris", "gas_cluster", "Reserve 1")
 
     def test_apply_unknown_cluster_fails(self, dao_10_0: StudyDao, command_context: CommandContext) -> None:
-        # Area + reserve definition exist, but the thermal cluster does not.
         save_area(dao_10_0, "paris")
         dao_10_0.save_reserve_definitions({"paris": [ReserveDefinition(id="Reserve 1", type=ReserveType.UP)]})
         command = CreateThermalClusterReserveParticipation(
@@ -87,7 +84,6 @@ class TestCreateThermalClusterReserveParticipation:
         assert "Thermal cluster 'ghost' does not exist" in output.message
 
     def test_apply_unknown_reserve_fails(self, dao_10_0: StudyDao, command_context: CommandContext) -> None:
-        # Area + cluster exist, but no reserve definition.
         save_area(dao_10_0, "paris")
         dao_10_0.save_thermals({"paris": [ThermalCluster(id="gas_cluster", name="gas_cluster")]})
         command = CreateThermalClusterReserveParticipation(
@@ -193,7 +189,6 @@ class TestUpdateThermalClusterReserveParticipations:
 
         updated = dao_10_0.get_thermal_cluster_reserve_participation("paris", "gas_cluster", "R1")
         assert updated.max_power == 99.0
-        # other participation untouched
         other = dao_10_0.get_thermal_cluster_reserve_participation("paris", "gas_cluster", "R2")
         assert other.max_power == 15.0
 

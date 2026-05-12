@@ -40,13 +40,6 @@ def _setup(
     clusters: Iterable[str] = ("gas_cluster",),
     reserves: Iterable[str] = ("R1", "R2", "Reserve 1", "unknown"),
 ) -> None:
-    """Create the area, thermal clusters and reserve definitions required by the FK
-    constraints of ``thermal_cluster_reserve_participation``.
-
-    The ``reserves`` set deliberately includes the IDs the tests query against (even
-    the ``unknown``-looking ones) so that "not found" lookups can happen without an FK
-    insert error first.
-    """
     save_area(dao, area_id)
     dao.save_thermals({area_id: [ThermalCluster(id=cid, name=cid) for cid in clusters]})
     dao.save_reserve_definitions({area_id: [ReserveDefinition(id=rid, type=ReserveType.UP) for rid in reserves]})
@@ -172,7 +165,6 @@ def test_delete_not_found_raises(dao_10_0: StudyDao) -> None:
 
 
 def test_cascade_on_thermal_cluster_delete(dao_10_0: StudyDao) -> None:
-    """C2: deleting a thermal cluster removes its reserve participations."""
     _setup(dao_10_0, "paris", clusters=("gas_cluster", "coal_cluster"))
     dao_10_0.save_thermal_cluster_reserve_participations(
         {
@@ -186,12 +178,10 @@ def test_cascade_on_thermal_cluster_delete(dao_10_0: StudyDao) -> None:
     dao_10_0.delete_thermal("paris", "gas_cluster")
 
     assert not dao_10_0.thermal_cluster_reserve_participation_exists("paris", "gas_cluster", "R1")
-    # Sibling cluster's participation untouched.
     assert dao_10_0.thermal_cluster_reserve_participation_exists("paris", "coal_cluster", "R1")
 
 
 def test_cascade_on_reserve_definition_delete(dao_10_0: StudyDao) -> None:
-    """C3: deleting a reserve definition removes participations referencing it across clusters."""
     _setup(dao_10_0, "paris", clusters=("gas_cluster", "coal_cluster"))
     dao_10_0.save_thermal_cluster_reserve_participations(
         {
@@ -204,8 +194,6 @@ def test_cascade_on_reserve_definition_delete(dao_10_0: StudyDao) -> None:
 
     dao_10_0.delete_reserve_definitions("paris", [ReserveDefinitionId("R1")])
 
-    # R1 participations are gone everywhere.
     assert not dao_10_0.thermal_cluster_reserve_participation_exists("paris", "gas_cluster", "R1")
     assert not dao_10_0.thermal_cluster_reserve_participation_exists("paris", "coal_cluster", "R1")
-    # R2 participation untouched.
     assert dao_10_0.thermal_cluster_reserve_participation_exists("paris", "gas_cluster", "R2")

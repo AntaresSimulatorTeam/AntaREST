@@ -434,7 +434,6 @@ def test_convert_short_term_storages_also_converts_additional_constraint_matrix(
 
 
 def test_convert_reserves_propagates_thermal_cluster_participations() -> None:
-    """Ensure ``_convert_reserves`` carries thermal cluster participations across DAOs."""
     from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
     from antarest.study.business.model.thermal_cluster_reserve_participation_model import (
         ThermalClusterReserveParticipation,
@@ -464,7 +463,6 @@ def test_convert_reserves_propagates_thermal_cluster_participations() -> None:
 
 
 def test_convert_reserves_no_op_when_no_participations() -> None:
-    """No write call should happen when the source has no participations."""
     from antarest.study.model import STUDY_VERSION_10_0
 
     source_dao = MagicMock()
