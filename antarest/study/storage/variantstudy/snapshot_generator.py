@@ -20,7 +20,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import NamedTuple
 
-from antarest.core.exceptions import VariantGenerationError
+from antarest.core.exceptions import UnsupportedOperationOnArchivedStudy, VariantGenerationError
 from antarest.core.interfaces.cache import (
     ICache,
 )
@@ -87,6 +87,8 @@ class SnapshotGenerator:
 
         root_study, descendants = self._retrieve_descendants(variant_study_id)
         assert_permission_on_studies([root_study, *descendants], StudyPermissionType.READ)
+        if root_study.archived:
+            raise UnsupportedOperationOnArchivedStudy(root_study.id)
         search_result = search_ref_study(root_study, descendants, from_scratch=from_scratch)
 
         ref_study = search_result.ref_study

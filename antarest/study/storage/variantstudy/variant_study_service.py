@@ -32,6 +32,7 @@ from antarest.core.exceptions import (
     NoParentStudyError,
     StudyNotFoundError,
     StudyValidationError,
+    UnsupportedOperationOnArchivedStudy,
     VariantGenerationError,
     VariantGenerationTimeoutError,
     VariantStudyParentNotValid,
@@ -622,6 +623,9 @@ class VariantStudyService(AbstractStorageService):
             )
 
         assert_permission(study, StudyPermissionType.READ)
+
+        if study.archived:
+            raise UnsupportedOperationOnArchivedStudy(study.id)
         new_id = str(uuid4())
         study_path = str(self.config.get_workspace_path() / new_id)
         user_name = self._get_current_user_name()
@@ -666,6 +670,23 @@ class VariantStudyService(AbstractStorageService):
         from_scratch: bool = False,
         listener: ICommandListener | None = None,
     ) -> str:
+        """
+        Schedule a snapshot generation task for the given variant study.
+
+        A variant is a parent reference + commands, not a file tree. Replaying
+        commands to materialize a snapshot can be slow, so it runs as an async
+        task. The per-study `FileLock` and `generation_task` reuse prevent
+        concurrent callers from generating the same snapshot twice.
+
+        Args:
+            metadata: The variant study to generate.
+            from_scratch: If True, regenerate from the root study, ignoring cached
+                ancestor snapshots.
+            listener: Optional listener notified as commands are applied.
+
+        Returns:
+            The ID of the (new or in-progress) generation task.
+        """
         study_id = metadata.id
         with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study_id}.lock")):
             logger.info(f"Starting variant study {study_id} generation")
@@ -813,6 +834,23 @@ class VariantStudyService(AbstractStorageService):
         return dest_study
 
     def _safe_generation(self, metadata: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
+        """
+        Ensure the variant snapshot exists on disk, generating it synchronously if needed.
+
+        Read-side entry points (`get`, `get_file`, `get_raw`, `export_study_flat`)
+        need a materialized study tree. This helper hides the async generation
+        machinery from them: it short-circuits when the snapshot is fresh,
+        otherwise blocks on `generate_task` and normalizes task failures into
+        HTTP-shaped exceptions (408 timeout / 417 generation error).
+
+        Args:
+            metadata: The variant study whose snapshot must be available.
+            timeout: Max seconds to wait for the generation task to finish.
+
+        Raises:
+            VariantGenerationTimeoutError: Wait exceeded `timeout` (HTTP 408).
+            VariantGenerationError: Underlying generation task failed (HTTP 417).
+        """
         try:
             if self.exists(metadata):
                 # The study is already present on disk => nothing to do
