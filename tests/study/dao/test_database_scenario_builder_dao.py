@@ -14,6 +14,8 @@
 Unit tests for ScenarioBuilderDao — run on both database and filesystem backends.
 """
 
+from typing import Any
+
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -23,14 +25,16 @@ from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import StudyDao
 from tests.study.dao.utils import save_area
 
-# FS get_scenario_by_type leaves empty area dicts after all clusters are deleted (gap: #TODO)
-# DB prunes them; FS does not.
-AnyScenarios = dict
 
+def _prune_empty(result: dict[str, Any]) -> dict[str, Any]:
+    """
+    Recursively remove keys whose value is an empty dict.
 
-def _prune_empty(result: AnyScenarios) -> AnyScenarios:
-    """Recursively remove keys whose value is an empty dict (normalizes FS vs DB output, gap: #TODO)."""
-    pruned = {}
+    Normalizes FS vs DB scenario-builder output: the FS backend leaves empty
+    area dicts after all clusters are deleted, while the DB backend prunes
+    them. This helper makes assertions backend-agnostic.
+    """
+    pruned: dict[str, Any] = {}
     for k, v in result.items():
         if isinstance(v, dict):
             v = _prune_empty(v)

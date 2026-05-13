@@ -18,7 +18,9 @@ from tests.integration.prepare_proxy import PreparerProxy
 
 
 class TestReserveNeedMatrix:
-    @pytest.mark.xfail
+    @pytest.mark.xfail(
+        reason="Reserve-need matrices require study version 10.0+, which is not yet a supported version."
+    )
     def test_crud_on_reserve_need_matrix_via_raw(self, client: TestClient, user_access_token: str) -> None:
         preparer = PreparerProxy(client, user_access_token)
 
