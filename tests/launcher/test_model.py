@@ -12,11 +12,13 @@
 
 import re
 import typing as t
+import unittest
 import uuid
 
+from pydantic import ValidationError
 from sqlalchemy.orm.session import Session
 
-from antarest.launcher.model import JobLog, JobLogType, JobResult, JobStatus, LogType
+from antarest.launcher.model import JobLog, JobLogType, JobResult, JobStatus, LauncherParametersDTO, LogType
 from antarest.login.model import Identity
 
 
@@ -228,3 +230,25 @@ class TestJobLog:
             # check `cascade="all, delete, delete-orphan"`
             jl: t.Optional[JobLog] = db.get(JobLog, job_log_id)
             assert jl is None
+
+
+class TestLaunchersParametersDTO(unittest.TestCase):
+    def test_none_output_suffix_should_be_valid(self) -> None:
+        params = LauncherParametersDTO()
+        self.assertIsNone(params.output_suffix)
+
+    def test_with_valid_output_suffix(self) -> None:
+        params = LauncherParametersDTO(output_suffix="qwertyQWERTY09&_-.")
+        self.assertEqual(params.output_suffix, "qwertyQWERTY09&_-.")
+
+    def test_output_suffix_should_should_not_contain_equals_char(self) -> None:
+        self.assertRaises(ValidationError, LauncherParametersDTO, output_suffix="test=foo")
+
+    def test_output_suffix_should_should_not_contain_slash_char(self) -> None:
+        self.assertRaises(ValidationError, LauncherParametersDTO, output_suffix="test/foo")
+
+    def test_output_suffix_should_should_not_contain_backslash_char(self) -> None:
+        self.assertRaises(ValidationError, LauncherParametersDTO, output_suffix=r"test\foo")
+
+    def test_output_suffix_should_should_not_contain_escaped_char(self) -> None:
+        self.assertRaises(ValidationError, LauncherParametersDTO, output_suffix=r"test\tfoo")
