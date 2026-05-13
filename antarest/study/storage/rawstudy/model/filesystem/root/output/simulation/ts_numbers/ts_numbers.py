@@ -88,21 +88,23 @@ class OutputSimulationTsNumbers(FolderNode):
         for output_type in ["hydro", "load", "solar", "wind"]:
             if (self.config.path / output_type).exists():
                 children[output_type] = AreaMatrixList(
-                    self.matrix_mapper,
+                    self.matrix_storage_context,
                     self.config.next_file(output_type),
                     matrix_class=TsNumbersVector,
                 )
         if (self.config.path / "bindingconstraints").exists():
             children["bindingconstraints"] = BindingConstraintMatrixList(
-                self.matrix_mapper, self.config.next_file("bindingconstraints")
+                self.matrix_storage_context, self.config.next_file("bindingconstraints")
             )
         if (self.config.path / "thermal").exists():
             children["thermal"] = AreaMultipleMatrixList(
-                self.matrix_mapper, self.config.next_file("thermal"), ThermalMatrixList, TsNumbersVector
+                self.matrix_storage_context, self.config.next_file("thermal"), ThermalMatrixList, TsNumbersVector
             )
         if (self.config.path / "st-storage").exists():
-            children["st-storage"] = ShortTermStorageTsNumbers(self.matrix_mapper, self.config.next_file("st-storage"))
+            children["st-storage"] = ShortTermStorageTsNumbers(
+                self.matrix_storage_context, self.config.next_file("st-storage")
+            )
         if (self.config.path / "ntc").exists():
-            children["ntc"] = GenericSubFolder(self.matrix_mapper, self.config.next_file("ntc"))
+            children["ntc"] = GenericSubFolder(self.matrix_storage_context, self.config.next_file("ntc"))
 
         return children

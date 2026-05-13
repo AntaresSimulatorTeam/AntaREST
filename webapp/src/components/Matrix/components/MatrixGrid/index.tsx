@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import DataGrid from "@/components/DataGrid";
+import DataGrid, { type DataGridHandle } from "@/components/DataGrid";
 import {
   CompactSelection,
   GridCellKind,
@@ -22,7 +22,7 @@ import {
   type GridSelection,
   type Item,
 } from "@glideapps/glide-data-grid";
-import { useCallback, useContext, useMemo, useState } from "react";
+import { useCallback, useContext, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MatrixContext } from "../../context/MatrixContext";
 import { useColumnMapping } from "../../hooks/useColumnMapping";
@@ -37,7 +37,7 @@ import type {
   MatrixAggregates,
   NonEmptyMatrix,
 } from "../../shared/types";
-import { formatGridNumber } from "../../shared/utils";
+import { computeColumnWidths, formatGridNumber } from "../../shared/utils";
 import MatrixStats from "../MatrixStats";
 
 export interface MatrixGridProps {
@@ -202,6 +202,19 @@ function MatrixGrid({
     gridToData,
   });
 
+  const dataGridRef = useRef<DataGridHandle>(null);
+
+  const handleBulkPaste = useCallback(
+    (newData: number[][]) => {
+      onBulkPaste?.(newData);
+      const updates = computeColumnWidths(newData, columns, gridToData);
+      if (updates.size > 0) {
+        dataGridRef.current?.resizeColumns(updates);
+      }
+    },
+    [onBulkPaste, columns, gridToData],
+  );
+
   useMatrixPasteInterceptor({
     readOnly: !!readOnly,
     data,
@@ -212,7 +225,7 @@ function MatrixGrid({
     gridSelection,
     gridToData,
     getDataRowIndex,
-    onBulkPaste,
+    onBulkPaste: onBulkPaste ? handleBulkPaste : undefined,
   });
 
   ////////////////////////////////////////////////////////////////
@@ -408,6 +421,7 @@ function MatrixGrid({
   return (
     <>
       <DataGrid
+        ref={dataGridRef}
         key={`matrix-grid-${columns.length}-${data.length}`}
         width={width}
         height={height}

@@ -99,6 +99,16 @@ def _default_create_session() -> Session:
     raise SessionNotInitialisedError()
 
 
+def get_session_factory() -> sessionmaker[Session]:
+    """
+    Returns the global sessionmaker singleton.
+    Should not be used in prod code but only for testing purposes.
+    """
+    if isinstance(_Session, sessionmaker):
+        return _Session
+    raise SessionNotInitialisedError()
+
+
 class DBSession(metaclass=DBSessionMeta):
     def __init__(
         self,

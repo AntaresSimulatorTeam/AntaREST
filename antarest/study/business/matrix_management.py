@@ -23,7 +23,6 @@ from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction, MatrixSlice, Operation
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
-from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -286,7 +285,7 @@ class MatrixManager:
         command = [
             ReplaceMatrix(
                 target=path,
-                matrix=strip_matrix_protocol(new_matrix_id),
+                matrix=new_matrix_id,
                 command_context=self._command_context,
                 study_version=study.version,
             )

@@ -11,12 +11,12 @@
 # This file is part of the Antares project.
 
 import io
-import json
 import logging
 import re
 import tempfile
 import zipfile
 from collections.abc import Sequence
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Any, cast
@@ -27,31 +27,29 @@ from antarest.core.model import JSON
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import extract_lines_from_archive, is_archive_format, read_file_from_archive
-from antarest.study.business.model.binding_constraint_model import (
-    BindingConstraint,
-)
+from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.reserve_definition_model import GLOBAL_PARAMETERS_SECTION
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6, STUDY_VERSION_9_2
+from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6, STUDY_VERSION_9_2, STUDY_VERSION_10_0
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     parse_binding_constraint,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.district import parse_district
-from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
-    SimulationParsingError,
-    XpansionParsingError,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import SimulationParsingError
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
+    BindingConstraintConfig,
     FileStudyTreeConfig,
     LinkConfig,
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import parse_renewable_cluster
+from antarest.study.storage.rawstudy.model.filesystem.config.reserve_definition import parse_reserve_definition
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     parse_st_storage,
     parse_st_storage_additional_constraint,
@@ -123,7 +121,7 @@ def build(study_path: Path, study_id: str, output_path: Path | None = None) -> "
         areas=_parse_areas(study_path),
         districts=_parse_sets(study_path),
         outputs=parse_outputs(outputs_dir),
-        bindings=_parse_bindings(study_path),
+        bindings=[BindingConstraintConfig.from_constraint(bc) for bc in _parse_bindings(study_path)],
         store_new_set=sns,
         archive_input_series=asi,
         enr_modelling=enr_modelling,
@@ -287,18 +285,28 @@ def parse_simulation_zip(path: Path) -> Simulation:
         return simulation
 
 
-def _parse_xpansion_version(path: Path) -> str:
+@dataclass(frozen=True)
+class XpansionSimulation:
+    version: str
+    ended_in_error: bool
+
+
+def _parse_xpansion(path: Path) -> XpansionSimulation | None:
     xpansion_json = path / "expansion" / "out.json"
+
+    if not xpansion_json.exists():
+        return None
+
     try:
         content = xpansion_json.read_text(encoding="utf-8")
         obj = from_json(content)
-        return str(obj["antares_xpansion"]["version"])
-    except FileNotFoundError:
-        return ""
-    except json.JSONDecodeError as exc:
-        raise XpansionParsingError(xpansion_json, f"invalid JSON format: {exc}") from exc
-    except KeyError as exc:
-        raise XpansionParsingError(xpansion_json, f"key '{exc}' not found in JSON object") from exc
+        version = str(obj["antares_xpansion"]["version"])
+    except Exception as e:
+        logger.warning(f"Error parsing xpansion output json file: {e}")
+        return None
+
+    ended_in_error = "solution" not in obj
+    return XpansionSimulation(version=version, ended_in_error=ended_in_error)
 
 
 _regex_simulation_mode = re.compile(r"^(\d{8}-\d{4})(eco|adq|exp)-?(.*)")
@@ -313,13 +321,6 @@ def parse_simulation(path: Path, canonical_name: str) -> Simulation:
             reason=f"Filename '{canonical_name}' doesn't match {_regex_simulation_mode.pattern}",
         )
 
-    try:
-        xpansion = _parse_xpansion_version(path)
-    except XpansionParsingError as exc:
-        # There is something wrong with Xpansion, let's assume it is not used!
-        logger.warning(str(exc), exc_info=True)
-        xpansion = ""
-
     ini_path = path / "about-the-study" / "parameters.ini"
     reader = IniReader(DUPLICATE_KEYS)
     try:
@@ -330,7 +331,14 @@ def parse_simulation(path: Path, canonical_name: str) -> Simulation:
             f"Parameters file '{ini_path.relative_to(path)}' not found",
         ) from None
 
-    error = not (path / "checkIntegrity.txt").exists()
+    xpansion_simulation = _parse_xpansion(path)
+    if xpansion_simulation:
+        error = xpansion_simulation.ended_in_error
+        xpansion_version = xpansion_simulation.version
+    else:
+        error = not (path / "checkIntegrity.txt").exists()
+        xpansion_version = ""
+
     return Simulation(
         date=match.group(1),
         mode=Mode.from_output_suffix(match.group(2)),
@@ -341,7 +349,7 @@ def parse_simulation(path: Path, canonical_name: str) -> Simulation:
         error=error,
         playlist=list(get_playlist(obj) or {}),
         archived=False,
-        xpansion=xpansion,
+        xpansion=xpansion_version,
     )
 
 
@@ -398,6 +406,7 @@ def parse_area(root: Path, area: str) -> "AreaConfig":
         filters_year=filter_year_by_year,
         st_storages=st_storages,
         st_storages_additional_constraints=_parse_st_storage_additional_constraints(root, area_id, st_storages),
+        reserves=_parse_reserves(root, area_id),
     )
 
 
@@ -505,6 +514,36 @@ def _parse_st_storage_additional_constraints(
                 )
         config[storage.id] = config_list
     return config
+
+
+def _parse_reserves(root: Path, area: str) -> list[str]:
+    """
+    Parse the reserves INI file and return the list of reserve ids
+    """
+
+    # Reserve definitions exist only since v10.0
+    version = _parse_version(root)
+    if version < STUDY_VERSION_10_0:
+        return []
+
+    relpath = Path(f"input/reserves/{area}/reserves.ini")
+    config_dict: dict[str, Any] = _extract_data_from_file(
+        root=root,
+        inside_root_path=relpath,
+        file_type=FileType.SIMPLE_INI,
+    )
+    reserve_ids = []
+    for section, values in config_dict.items():
+        if section.lower() == GLOBAL_PARAMETERS_SECTION:
+            continue
+        try:
+            reserve = parse_reserve_definition(section, values)
+        except ValueError as exc:
+            config_path = root.joinpath(relpath)
+            logger.warning(f"Invalid reserve configuration: '{section}' in '{config_path}'", exc_info=exc)
+            continue
+        reserve_ids.append(reserve.id)
+    return reserve_ids
 
 
 def _parse_links_filtering(root: Path, area: str) -> dict[str, LinkConfig]:

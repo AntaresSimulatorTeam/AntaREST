@@ -27,14 +27,14 @@ class InputReserves(FolderNode):
         if self.config.version >= STUDY_VERSION_10_0:
             return {
                 a: InputReservesAreaFolder(
-                    self.matrix_mapper,
+                    self.matrix_storage_context,
                     self.config.next_file(a),
                 )
                 for a in self.config.area_names()
             }
         return {
             a: InputSeriesMatrix(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file(f"{a}.txt"),
                 default_empty=default_4_fixed_hourly,
             )

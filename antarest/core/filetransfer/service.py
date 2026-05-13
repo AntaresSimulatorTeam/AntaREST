@@ -15,7 +15,6 @@ import http
 import logging
 import os
 import tempfile
-import time
 import uuid
 from pathlib import Path
 
@@ -33,11 +32,16 @@ from antarest.core.filetransfer.repository import FileDownloadRepository
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
-from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
+from antarest.core.utils.wait import wait_for
 from antarest.login.utils import get_current_user, require_current_user
 
 logger = logging.getLogger(__name__)
+
+
+DEFAULT_DOWNLOAD_POLLING_INTERVAL = 2.0
+DEFAULT_DOWNLOAD_WAIT_TIMEOUT = 3600
 
 
 class FileTransferManager:
@@ -203,28 +207,40 @@ class FileTransferManager:
 
         return download
 
-    def get_download_metadata(self, download_id: str, wait_for_availability: bool) -> FileDownloadDTO:
-        download = self.repository.get(download_id)
-        if not download:
-            raise FileDownloadNotFound()
+    def get_download_metadata(
+        self,
+        download_id: str,
+        wait_for_availability: bool,
+        polling_interval: float = DEFAULT_DOWNLOAD_POLLING_INTERVAL,
+        timeout: float = DEFAULT_DOWNLOAD_WAIT_TIMEOUT,
+    ) -> FileDownloadDTO:
+        """
+        Important:
+        we use short scoped sessions here to guarantee that sessions are not held for a long time.
+        """
+
+        def get_download_if_completed() -> FileDownloadDTO | None:
+            with db():
+                download = self.repository.get(download_id)
+                if not download:
+                    raise FileDownloadNotFound()
+                if download.ready or download.failed:
+                    return download.to_dto()
+                return None
+
+        download_dto = get_download_if_completed()
 
         # the user wants to wait for the download to be available
-        if wait_for_availability:
-            end = time.time() + DEFAULT_AWAIT_MAX_TIMEOUT
+        if not download_dto and wait_for_availability:
+            download_dto = wait_for(get_download_if_completed, polling_interval=polling_interval, timeout=timeout)
 
-            # disable download variable typing since it will always be defined
-            while time.time() < end and not download.ready and not download.failed:
-                download = self.repository.get(download_id)
-                assert download is not None
-                time.sleep(2)
-
-        if download.failed:
-            raise HTTPException(
-                status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
-                detail=f"File was not successfully processed: {download.error_message}.",
-            )
-
-        if not download.ready:
+        if not download_dto:
             raise HTTPException(status_code=http.HTTPStatus.EXPECTATION_FAILED, detail="File is still in process.")
 
-        return download.to_dto()
+        if download_dto.failed:
+            raise HTTPException(
+                status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail=f"File was not successfully processed: {download_dto.error_message}.",
+            )
+
+        return download_dto
