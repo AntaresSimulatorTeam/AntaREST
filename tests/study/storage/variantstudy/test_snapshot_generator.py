@@ -24,7 +24,7 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.cache.business.local_chache import LocalCache
-from antarest.core.exceptions import VariantGenerationError
+from antarest.core.exceptions import UnsupportedOperationOnArchivedStudy, VariantGenerationError
 from antarest.core.interfaces.cache import CacheConstants, update_cache
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
@@ -1046,6 +1046,64 @@ class TestSnapshotGenerator:
 
         # Check: the simulation outputs are not copied.
         assert not (snapshot_dir / "output").exists()
+
+    @with_admin_user
+    @with_db_context
+    def test_generate__archived_root_study(
+        self,
+        root_study_id: str,
+        variant_study_id: str,
+        variant_study_service: VariantStudyService,
+    ) -> None:
+        """
+        Generating a variant whose root study is archived must raise
+        UnsupportedOperationOnArchivedStudy (no snapshot produced).
+        """
+        root_study = variant_study_service.repository.get(root_study_id)
+        assert root_study is not None
+        root_study.archived = True
+        variant_study_service.repository.save(root_study)
+
+        generator = _build_generator(variant_study_service)
+        factory = _get_dao_factory(variant_study_id, variant_study_service)
+
+        with pytest.raises(UnsupportedOperationOnArchivedStudy, match=root_study_id):
+            generator.generate_snapshot(variant_study_id, from_scratch=False, dao_factory=factory)
+
+        variant_study = variant_study_service.repository.get(variant_study_id)
+        assert variant_study is not None
+        assert variant_study.snapshot is None
+        assert not variant_study.snapshot_dir.exists()
+
+    @with_admin_user
+    @with_db_context
+    def test_generate__archived_intermediate_variant(
+        self,
+        variant_study_id: str,
+        variant_study_service: VariantStudyService,
+    ) -> None:
+        """
+        Generating a variant whose intermediate ancestor (a parent variant) is
+        archived must also be forbidden, not just the root raw study case.
+        """
+        # Build a chain: root -> variant_study_id -> child_variant
+        child_variant = variant_study_service.create_variant_study(variant_study_id, "child-variant")
+        study_version = StudyVersion.parse(child_variant.version)
+        variant_study_service.append_commands(
+            child_variant.id,
+            [CommandDTO(action="create_area", args={"area_name": "East"}, study_version=study_version)],
+        )
+
+        # Mark the intermediate parent variant as archived.
+        parent_variant = variant_study_service.repository.get(variant_study_id)
+        parent_variant.archived = True
+        variant_study_service.repository.save(parent_variant)
+
+        generator = _build_generator(variant_study_service)
+        factory = _get_dao_factory(child_variant.id, variant_study_service)
+
+        with pytest.raises(UnsupportedOperationOnArchivedStudy, match=variant_study_id):
+            generator.generate_snapshot(child_variant.id, from_scratch=False, dao_factory=factory)
 
     @with_admin_user
     @with_db_context
