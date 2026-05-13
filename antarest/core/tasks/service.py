@@ -373,12 +373,13 @@ class TaskJobService(ITaskService):
             logger.warning(f"Task '{task_id}' not handled by this worker, will poll for task completion from db")
             end = time.time() + timeout_sec
             while time.time() < end:
-                task_status = db.session.execute(select(TaskJob.status).where(TaskJob.id == task_id)).scalar()
-                if task_status is None:
-                    logger.error(f"Awaited task '{task_id}' was not found")
-                    return
-                if TaskStatus(task_status).is_final():
-                    return
+                with db():
+                    task_status = db.session.execute(select(TaskJob.status).where(TaskJob.id == task_id)).scalar()
+                    if task_status is None:
+                        logger.error(f"Awaited task '{task_id}' was not found")
+                        return
+                    if TaskStatus(task_status).is_final():
+                        return
                 logger.info("💤 Sleeping 2 seconds...")
                 time.sleep(2)
             error_msg = f"Timeout while awaiting task '{task_id}'"
