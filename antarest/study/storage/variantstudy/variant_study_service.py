@@ -622,10 +622,10 @@ class VariantStudyService(AbstractStorageService):
                 f"The study {study.name} is not managed. Cannot create a variant from it. It must be imported first."
             )
 
+        assert_permission(study, StudyPermissionType.READ)
+
         if study.archived:
             raise UnsupportedOperationOnArchivedStudy(study.id)
-
-        assert_permission(study, StudyPermissionType.READ)
         new_id = str(uuid4())
         study_path = str(self.config.get_workspace_path() / new_id)
         user_name = self._get_current_user_name()

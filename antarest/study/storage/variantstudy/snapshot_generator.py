@@ -86,9 +86,9 @@ class SnapshotGenerator:
         logger.info(f"Generating variant study snapshot for '{variant_study_id}'")
 
         root_study, descendants = self._retrieve_descendants(variant_study_id)
+        assert_permission_on_studies([root_study, *descendants], StudyPermissionType.READ)
         if root_study.archived:
             raise UnsupportedOperationOnArchivedStudy(root_study.id)
-        assert_permission_on_studies([root_study, *descendants], StudyPermissionType.READ)
         search_result = search_ref_study(root_study, descendants, from_scratch=from_scratch)
 
         ref_study = search_result.ref_study
