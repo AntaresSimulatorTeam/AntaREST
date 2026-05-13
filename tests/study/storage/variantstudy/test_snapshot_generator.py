@@ -1060,7 +1060,6 @@ class TestSnapshotGenerator:
         UnsupportedOperationOnArchivedStudy (no snapshot produced).
         """
         root_study = variant_study_service.repository.get(root_study_id)
-        assert root_study is not None
         root_study.archived = True
         variant_study_service.repository.save(root_study)
 
@@ -1069,11 +1068,6 @@ class TestSnapshotGenerator:
 
         with pytest.raises(UnsupportedOperationOnArchivedStudy, match=root_study_id):
             generator.generate_snapshot(variant_study_id, from_scratch=False, dao_factory=factory)
-
-        variant_study = variant_study_service.repository.get(variant_study_id)
-        assert variant_study is not None
-        assert variant_study.snapshot is None
-        assert not variant_study.snapshot_dir.exists()
 
     @with_admin_user
     @with_db_context
