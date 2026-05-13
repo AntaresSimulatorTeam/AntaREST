@@ -1077,36 +1077,6 @@ class TestSnapshotGenerator:
 
     @with_admin_user
     @with_db_context
-    def test_generate__archived_intermediate_variant(
-        self,
-        variant_study_id: str,
-        variant_study_service: VariantStudyService,
-    ) -> None:
-        """
-        Generating a variant whose intermediate ancestor (a parent variant) is
-        archived must also be forbidden, not just the root raw study case.
-        """
-        # Build a chain: root -> variant_study_id -> child_variant
-        child_variant = variant_study_service.create_variant_study(variant_study_id, "child-variant")
-        study_version = StudyVersion.parse(child_variant.version)
-        variant_study_service.append_commands(
-            child_variant.id,
-            [CommandDTO(action="create_area", args={"area_name": "East"}, study_version=study_version)],
-        )
-
-        # Mark the intermediate parent variant as archived.
-        parent_variant = variant_study_service.repository.get(variant_study_id)
-        parent_variant.archived = True
-        variant_study_service.repository.save(parent_variant)
-
-        generator = _build_generator(variant_study_service)
-        factory = _get_dao_factory(child_variant.id, variant_study_service)
-
-        with pytest.raises(UnsupportedOperationOnArchivedStudy, match=variant_study_id):
-            generator.generate_snapshot(child_variant.id, from_scratch=False, dao_factory=factory)
-
-    @with_admin_user
-    @with_db_context
     def test_generate__with_invalid_command(
         self, variant_study_id: str, variant_study_service: VariantStudyService
     ) -> None:

@@ -673,11 +673,10 @@ class VariantStudyService(AbstractStorageService):
         """
         Schedule a snapshot generation task for the given variant study.
 
-        Why this exists:
-            A variant is a parent reference + commands, not a file tree. Replaying
-            commands to materialize a snapshot can be slow, so it runs as an async
-            task. The per-study `FileLock` and `generation_task` reuse prevent
-            concurrent callers from generating the same snapshot twice.
+        A variant is a parent reference + commands, not a file tree. Replaying
+        commands to materialize a snapshot can be slow, so it runs as an async
+        task. The per-study `FileLock` and `generation_task` reuse prevent
+        concurrent callers from generating the same snapshot twice.
 
         Args:
             metadata: The variant study to generate.
@@ -838,12 +837,11 @@ class VariantStudyService(AbstractStorageService):
         """
         Ensure the variant snapshot exists on disk, generating it synchronously if needed.
 
-        Why this exists:
-            Read-side entry points (`get`, `get_file`, `get_raw`, `export_study_flat`)
-            need a materialized study tree. This helper hides the async generation
-            machinery from them: it short-circuits when the snapshot is fresh,
-            otherwise blocks on `generate_task` and normalizes task failures into
-            HTTP-shaped exceptions (408 timeout / 417 generation error).
+        Read-side entry points (`get`, `get_file`, `get_raw`, `export_study_flat`)
+        need a materialized study tree. This helper hides the async generation
+        machinery from them: it short-circuits when the snapshot is fresh,
+        otherwise blocks on `generate_task` and normalizes task failures into
+        HTTP-shaped exceptions (408 timeout / 417 generation error).
 
         Args:
             metadata: The variant study whose snapshot must be available.
