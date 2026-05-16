@@ -137,6 +137,15 @@ def test_delete_not_found_raises(dao_10_0: StudyDao) -> None:
         dao_10_0.delete_reserve_definitions("paris", ["unknown"])
 
 
+def test_delete_mix_of_existing_and_unknown_raises_without_deleting(dao_10_0: StudyDao) -> None:
+    save_area(dao_10_0, "paris")
+    dao_10_0.save_reserve_definitions({"paris": [_reserve("R1"), _reserve("R2")]})
+    with pytest.raises(ReserveDefinitionNotFound):
+        dao_10_0.delete_reserve_definitions("paris", [ReserveDefinitionId("R1"), ReserveDefinitionId("unknown")])
+    assert dao_10_0.reserve_definition_exists("paris", "R1") is True
+    assert dao_10_0.reserve_definition_exists("paris", "R2") is True
+
+
 def test_save_and_retrieve_reserve_need(dao_10_0: StudyDao, matrix_service: ISimpleMatrixService) -> None:
     save_area(dao_10_0, "paris")
     dao_10_0.save_reserve_definitions({"paris": [_reserve("R1")]})

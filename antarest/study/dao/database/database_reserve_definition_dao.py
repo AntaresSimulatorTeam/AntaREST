@@ -15,7 +15,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 import polars as pl
-from sqlalchemy import CursorResult, Row, Select, delete, select
+from sqlalchemy import Row, Select, delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
@@ -121,26 +121,26 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao):
     def delete_reserve_definitions(self, area_id: AreaId, reserve_ids: Sequence[ReserveDefinitionId]) -> None:
         if not reserve_ids:
             return
-        result = self._db_session.execute(
+        existing = {
+            row.reserve_id
+            for row in self._db_session.execute(
+                select(_TABLE.c.reserve_id).where(
+                    (_TABLE.c.study_id == self._study_id)
+                    & (_TABLE.c.area_id == area_id)
+                    & (_TABLE.c.reserve_id.in_(reserve_ids))
+                )
+            ).fetchall()
+        }
+        for rid in reserve_ids:
+            if rid not in existing:
+                raise ReserveDefinitionNotFound(area_id, rid)
+        self._db_session.execute(
             delete(_TABLE).where(
                 (_TABLE.c.study_id == self._study_id)
                 & (_TABLE.c.area_id == area_id)
                 & (_TABLE.c.reserve_id.in_(reserve_ids))
             )
         )
-        assert isinstance(result, CursorResult)
-        if result.rowcount < len(reserve_ids):
-            existing = {
-                row.reserve_id
-                for row in self._db_session.execute(
-                    select(_TABLE.c.reserve_id).where(
-                        (_TABLE.c.study_id == self._study_id) & (_TABLE.c.area_id == area_id)
-                    )
-                ).fetchall()
-            }
-            for rid in reserve_ids:
-                if rid not in existing:
-                    raise ReserveDefinitionNotFound(area_id, rid)
         self._db_session.commit()
 
     @override

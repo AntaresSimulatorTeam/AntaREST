@@ -164,6 +164,21 @@ def test_delete_not_found_raises(dao_10_0: StudyDao) -> None:
         dao_10_0.delete_thermal_cluster_reserve_participations("paris", "gas_cluster", [ReserveDefinitionId("unknown")])
 
 
+def test_delete_mix_of_existing_and_unknown_raises_without_deleting(dao_10_0: StudyDao) -> None:
+    _setup(dao_10_0, "paris")
+    dao_10_0.save_thermal_cluster_reserve_participations(
+        {"paris": {"gas_cluster": [_participation("R1"), _participation("R2")]}}
+    )
+    with pytest.raises(ThermalClusterReserveParticipationNotFound):
+        dao_10_0.delete_thermal_cluster_reserve_participations(
+            "paris",
+            "gas_cluster",
+            [ReserveDefinitionId("R1"), ReserveDefinitionId("unknown")],
+        )
+    assert dao_10_0.thermal_cluster_reserve_participation_exists("paris", "gas_cluster", "R1") is True
+    assert dao_10_0.thermal_cluster_reserve_participation_exists("paris", "gas_cluster", "R2") is True
+
+
 def test_cascade_on_thermal_cluster_delete(dao_10_0: StudyDao) -> None:
     _setup(dao_10_0, "paris", clusters=("gas_cluster", "coal_cluster"))
     dao_10_0.save_thermal_cluster_reserve_participations(
