@@ -381,6 +381,140 @@ class TestIniReader:
         assert actual == expected
 
 
+class TestReadRepeatingSections:
+    def test_read_repeating_sections__nominal_case(self, tmp_path: Path) -> None:
+        # sample matching the spec for `input/thermal/clusters/<area>/reserves.ini`
+        path = Path(tmp_path) / "reserves.ini"
+        path.write_text(
+            textwrap.dedent(
+                """
+                [Reserve 1]
+                cluster-name = cluster1
+                max-power = 20
+                max-power-off = 10
+                participation-cost = 1
+                participation-cost-off = 2
+
+                [Reserve 1]
+                cluster-name = cluster2
+                max-power = 20
+                max-power-off = 10
+                participation-cost = 1
+                participation-cost-off = 2
+
+                [Reserve 2]
+                cluster-name = cluster1
+                max-power = 30
+                """
+            )
+        )
+
+        actual = IniReader().read_repeating_sections(path)
+
+        assert actual == [
+            (
+                "Reserve 1",
+                {
+                    "cluster-name": "cluster1",
+                    "max-power": 20,
+                    "max-power-off": 10,
+                    "participation-cost": 1,
+                    "participation-cost-off": 2,
+                },
+            ),
+            (
+                "Reserve 1",
+                {
+                    "cluster-name": "cluster2",
+                    "max-power": 20,
+                    "max-power-off": 10,
+                    "participation-cost": 1,
+                    "participation-cost-off": 2,
+                },
+            ),
+            (
+                "Reserve 2",
+                {
+                    "cluster-name": "cluster1",
+                    "max-power": 30,
+                },
+            ),
+        ]
+
+    def test_read_repeating_sections__missing_file_returns_empty_list(self, tmp_path: Path) -> None:
+        path = Path(tmp_path) / "does_not_exist.ini"
+
+        assert IniReader().read_repeating_sections(path) == []
+
+    def test_read_repeating_sections__from_text_io(self) -> None:
+        content = textwrap.dedent(
+            """
+            [section]
+            key = 42
+
+            [section]
+            key = 43
+            """
+        )
+
+        actual = IniReader().read_repeating_sections(io.StringIO(content))
+
+        assert actual == [("section", {"key": 42}), ("section", {"key": 43})]
+
+    def test_read_repeating_sections__without_duplicates_behaves_like_read(self) -> None:
+        content = textwrap.dedent(
+            """
+            [a]
+            x = 1
+
+            [b]
+            y = 2
+            """
+        )
+
+        actual = IniReader().read_repeating_sections(io.StringIO(content))
+
+        assert actual == [("a", {"x": 1}), ("b", {"y": 2})]
+
+    def test_read_repeating_sections__preserves_unrelated_sections(self) -> None:
+        # the [symmetries] section coexists with repeated [Reserve N] sections
+        content = textwrap.dedent(
+            """
+            [symmetries]
+            cluster1 = something
+
+            [Reserve 1]
+            cluster-name = cluster1
+
+            [Reserve 1]
+            cluster-name = cluster2
+            """
+        )
+
+        actual = IniReader().read_repeating_sections(io.StringIO(content))
+
+        assert actual == [
+            ("symmetries", {"cluster1": "something"}),
+            ("Reserve 1", {"cluster-name": "cluster1"}),
+            ("Reserve 1", {"cluster-name": "cluster2"}),
+        ]
+
+    def test_read_repeating_sections__section_filter(self) -> None:
+        content = textwrap.dedent(
+            """
+            [Reserve 1]
+            cluster-name = cluster1
+
+            [Reserve 2]
+            cluster-name = cluster1
+            """
+        )
+
+        actual = IniReader().read_repeating_sections(io.StringIO(content), section="Reserve 1")
+
+        assert actual == [("Reserve 1", {"cluster-name": "cluster1"})]
+
+
 class TestSimpleKeyValueReader:
     def test_read(self) -> None:
         # sample extracted from `user/expansion/settings.ini`

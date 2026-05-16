@@ -14,7 +14,7 @@ import ast
 import configparser
 from collections.abc import Callable
 from pathlib import Path
-from typing import TypeAlias
+from typing import Any, TextIO, TypeAlias
 
 from typing_extensions import override
 
@@ -126,6 +126,26 @@ class IniWriter:
         config_parser.read_dict(data)
         with path.open("w") as fp:
             config_parser.write(fp)
+
+    def write_repeating_sections(self, data: list[tuple[str, JSON]], path: Path) -> None:
+        delimiter = " = "
+        with path.open("w") as fp:
+            for section_name, section_items in data:
+                fp.write(f"[{section_name}]\n")
+                for key, value in section_items.items():
+                    if self.special_keys and key in self.special_keys and isinstance(value, list):
+                        for sub_value in value:
+                            self._write_repeating_option(fp, delimiter, section_name, key, sub_value)
+                    else:
+                        self._write_repeating_option(fp, delimiter, section_name, key, value)
+                fp.write("\n")
+
+    def _write_repeating_option(self, fp: TextIO, delimiter: str, section_name: str, key: str, value: Any) -> None:
+        serializer = self._value_serializers.find_serializer(section_name, key)
+        if serializer is not None:
+            value = serializer(value)
+        formatted = str(value).replace("\n", "\n\t")
+        fp.write(f"{key}{delimiter}{formatted}\n")
 
 
 class SimpleKeyValueWriter(IniWriter):

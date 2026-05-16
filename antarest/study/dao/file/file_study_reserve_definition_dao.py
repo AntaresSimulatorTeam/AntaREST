@@ -155,30 +155,19 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
         from antarest.study.dao.file.file_study_thermal_cluster_reserve_participation_dao import (
             _reserves_path,
         )
-        from antarest.study.storage.rawstudy.model.filesystem.config.thermal_cluster_reserve_participation import (
-            extract_reserve_id,
-        )
 
         file_study = self.get_file_study()
         try:
             sections = file_study.tree.get(_reserves_path(area_id))
         except (ChildNotFoundError, KeyError):
             return
-        if not isinstance(sections, dict):
+        if not isinstance(sections, list):
             return
-        cleaned = {}
-        for key, value in sections.items():
-            if not isinstance(value, dict):
-                cleaned[key] = value
+        cleaned: list[tuple[str, dict[str, Any]]] = []
+        for section_name, content in sections:
+            if section_name in reserve_ids and isinstance(content, dict) and "cluster-name" in content:
                 continue
-            cluster_name = value.get("cluster-name")
-            if not isinstance(cluster_name, str):
-                cleaned[key] = value
-                continue
-            derived = extract_reserve_id(key, cluster_name)
-            if derived in reserve_ids:
-                continue
-            cleaned[key] = value
+            cleaned.append((section_name, content))
         if cleaned != sections:
             file_study.tree.save(cleaned, _reserves_path(area_id))
 

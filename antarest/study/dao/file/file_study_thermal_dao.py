@@ -225,25 +225,18 @@ class FileStudyThermalDao(ThermalDao, ABC):
         from antarest.study.dao.file.file_study_thermal_cluster_reserve_participation_dao import (
             _reserves_path,
         )
-        from antarest.study.storage.rawstudy.model.filesystem.config.thermal_cluster_reserve_participation import (
-            extract_reserve_id,
-        )
 
         try:
             sections = study_data.tree.get(_reserves_path(area_id))
         except (ChildNotFoundError, KeyError):
             return
-        if not isinstance(sections, dict):
+        if not isinstance(sections, list):
             return
-        cleaned = {
-            key: value
-            for key, value in sections.items()
-            if not (
-                isinstance(value, dict)
-                and value.get("cluster-name") == thermal_id
-                and extract_reserve_id(key, thermal_id) is not None
-            )
-        }
+        cleaned = [
+            (section_name, content)
+            for section_name, content in sections
+            if not (isinstance(content, dict) and content.get("cluster-name") == thermal_id)
+        ]
         if cleaned != sections:
             study_data.tree.save(cleaned, _reserves_path(area_id))
 

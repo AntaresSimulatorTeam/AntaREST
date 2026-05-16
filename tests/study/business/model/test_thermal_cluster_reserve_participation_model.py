@@ -20,9 +20,7 @@ from antarest.study.business.model.thermal_cluster_reserve_participation_model i
     update_thermal_cluster_reserve_participation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal_cluster_reserve_participation import (
-    extract_reserve_id,
     parse_thermal_cluster_reserve_participation,
-    section_name,
     serialize_thermal_cluster_reserve_participation,
 )
 
@@ -143,24 +141,3 @@ class TestFileDataRoundTrip:
         data = serialize_thermal_cluster_reserve_participation("gas_cluster", original)
         restored = parse_thermal_cluster_reserve_participation(original.id, data)
         assert restored == original
-
-
-class TestSectionNaming:
-    def test_section_name_round_trip(self) -> None:
-        name = section_name("gas_cluster", "Reserve 1")
-        assert extract_reserve_id(name, "gas_cluster") == "Reserve 1"
-
-    def test_extract_reserve_id_handles_separator_in_cluster(self) -> None:
-        name = section_name("gas__1", "Reserve 1")
-        assert extract_reserve_id(name, "gas__1") == "Reserve 1"
-        assert extract_reserve_id(name, "gas") == "1__Reserve 1"
-
-    def test_extract_reserve_id_handles_separator_in_reserve(self) -> None:
-        name = section_name("gas", "Reserve__1")
-        assert extract_reserve_id(name, "gas") == "Reserve__1"
-
-    def test_extract_reserve_id_invalid(self) -> None:
-        assert extract_reserve_id("globalparameters", "any") is None
-        assert extract_reserve_id("", "any") is None
-        assert extract_reserve_id("gas__", "gas") is None  # empty reserve_id
-        assert extract_reserve_id("other__r1", "gas") is None  # cluster mismatch

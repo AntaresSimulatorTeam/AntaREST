@@ -14,6 +14,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from antarest.core.serde.ini_common import any_section_option_matcher
+from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import LOWER_CASE_SERIALIZER, IniWriter
 
 
@@ -91,3 +92,78 @@ def test_write_with_custom_serializer(tmp_path: str, ini_cleaner: Callable[[str]
     writer.write(json_data, path)
 
     assert ini_cleaner(path.read_text()) == ini_cleaner(expected)
+
+
+def test_write_repeating_sections__nominal_case(tmp_path: str, ini_cleaner: Callable[[str], str]) -> None:
+    path = Path(tmp_path) / "reserves.ini"
+
+    expected = """
+        [Reserve 1]
+        cluster-name = cluster1
+        max-power = 20
+        max-power-off = 10
+        participation-cost = 1
+        participation-cost-off = 2
+
+        [Reserve 1]
+        cluster-name = cluster2
+        max-power = 20
+        max-power-off = 10
+        participation-cost = 1
+        participation-cost-off = 2
+
+        [Reserve 2]
+        cluster-name = cluster1
+        max-power = 30
+    """
+
+    data = [
+        (
+            "Reserve 1",
+            {
+                "cluster-name": "cluster1",
+                "max-power": 20,
+                "max-power-off": 10,
+                "participation-cost": 1,
+                "participation-cost-off": 2,
+            },
+        ),
+        (
+            "Reserve 1",
+            {
+                "cluster-name": "cluster2",
+                "max-power": 20,
+                "max-power-off": 10,
+                "participation-cost": 1,
+                "participation-cost-off": 2,
+            },
+        ),
+        (
+            "Reserve 2",
+            {"cluster-name": "cluster1", "max-power": 30},
+        ),
+    ]
+    IniWriter().write_repeating_sections(data, path)
+
+    assert ini_cleaner(path.read_text()) == ini_cleaner(expected)
+
+
+def test_write_repeating_sections__round_trip(tmp_path: str) -> None:
+    path = Path(tmp_path) / "reserves.ini"
+    data: list[tuple[str, dict]] = [
+        ("Reserve 1", {"cluster-name": "cluster1", "max-power": 20}),
+        ("Reserve 1", {"cluster-name": "cluster2", "max-power": 30}),
+        ("symmetries", {"cluster1": "[Reserve1, Reserve2]"}),
+    ]
+
+    IniWriter().write_repeating_sections(data, path)
+    actual = IniReader().read_repeating_sections(path)
+
+    assert actual == data
+
+
+def test_write_repeating_sections__empty_list_writes_empty_file(tmp_path: str) -> None:
+    path = Path(tmp_path) / "reserves.ini"
+    IniWriter().write_repeating_sections([], path)
+
+    assert path.read_text() == ""

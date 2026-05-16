@@ -165,3 +165,45 @@ class TestThermalClusterReserveParticipations:
         assert res.status_code == 200
         listing = res.json()
         assert {p["id"] for p in listing} == {"Reserve 2"}
+
+    def test_two_clusters_share_same_reserve(self, client: TestClient, user_access_token: str) -> None:
+        preparer = PreparerProxy(client, user_access_token)
+        study_id, thermal_id_1, area_id = _seed(client, preparer)
+        cluster_2 = preparer.create_thermal(study_id, area_id, name="coal_cluster")
+        thermal_id_2 = cluster_2["id"]
+
+        base_1 = f"/v1/studies/{study_id}/areas/{area_id}/clusters/thermal/{thermal_id_1}/reserves"
+        base_2 = f"/v1/studies/{study_id}/areas/{area_id}/clusters/thermal/{thermal_id_2}/reserves"
+
+        res = client.post(
+            base_1,
+            json={"id": "Reserve 1", "maxPower": 20.0, "participationCost": 1.0},
+            headers=preparer.headers,
+        )
+        assert res.status_code == 200, res.json()
+        res = client.post(
+            base_2,
+            json={"id": "Reserve 1", "maxPower": 30.0, "participationCost": 2.0},
+            headers=preparer.headers,
+        )
+        assert res.status_code == 200, res.json()
+
+        body_1 = client.get(f"{base_1}/Reserve 1", headers=preparer.headers).json()
+        body_2 = client.get(f"{base_2}/Reserve 1", headers=preparer.headers).json()
+        assert body_1["maxPower"] == 20.0
+        assert body_1["participationCost"] == 1.0
+        assert body_2["maxPower"] == 30.0
+        assert body_2["participationCost"] == 2.0
+
+        res = client.patch(
+            f"{base_1}/Reserve 1",
+            json={"maxPower": 99.0},
+            headers=preparer.headers,
+        )
+        assert res.status_code == 200, res.json()
+        body_2_again = client.get(f"{base_2}/Reserve 1", headers=preparer.headers).json()
+        assert body_2_again["maxPower"] == 30.0
+
+        client.request("DELETE", base_1, json=["Reserve 1"], headers=preparer.headers).raise_for_status()
+        assert client.get(f"{base_1}/Reserve 1", headers=preparer.headers).status_code == 404
+        assert client.get(f"{base_2}/Reserve 1", headers=preparer.headers).status_code == 200

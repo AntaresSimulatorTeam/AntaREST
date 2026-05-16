@@ -19,23 +19,8 @@ from antarest.study.business.model.thermal_cluster_reserve_participation_model i
     ThermalClusterReserveParticipation,
 )
 
-# Separator used in the INI section name to combine the cluster and reserve identifiers.
-# A standard INI parser merges duplicate sections, so a unique composite key is used to
-# address each (cluster, reserve) participation independently. Because cluster and reserve
-# IDs may legally contain the separator string itself, the section name is *not* trusted
-# for parsing: the canonical source of truth is the ``cluster-name`` field stored in the
-# section content (auto-populated from the ``thermal_id``).
-SECTION_SEPARATOR = "__"
-
 
 class ThermalClusterReserveParticipationFileData(AntaresBaseModel):
-    """INI-shaped representation of a participation.
-
-    The ``cluster_name`` field is a denormalization of the cluster identity needed by the
-    Antares simulator on disk; it is auto-filled from the ``thermal_id`` at serialization
-    time and is not part of the canonical business model.
-    """
-
     model_config = ConfigDict(alias_generator=to_kebab_case, extra="forbid", populate_by_name=True)
 
     cluster_name: str
@@ -56,31 +41,6 @@ class ThermalClusterReserveParticipationFileData(AntaresBaseModel):
         payload = participation.model_dump(exclude={"id"})
         payload["cluster_name"] = thermal_id
         return cls.model_validate(payload)
-
-
-def section_name(cluster_id: str, reserve_id: str) -> str:
-    return f"{cluster_id}{SECTION_SEPARATOR}{reserve_id}"
-
-
-def extract_reserve_id(section: str, cluster_name: str) -> str | None:
-    """Extract the ``reserve_id`` part from a section name, given the ``cluster_name``
-    read from the section content.
-
-    The composite section name follows the convention ``<cluster_name><sep><reserve_id>``.
-    Splitting blindly on the separator would be ambiguous because both cluster and reserve
-    IDs may contain it; the cluster name from the content is therefore used as the
-    canonical anchor.
-
-    Returns ``None`` if the section name does not start with ``<cluster_name><sep>`` (which
-    happens for unrelated sections like ``[symmetries]``).
-    """
-    prefix = f"{cluster_name}{SECTION_SEPARATOR}"
-    if not section.startswith(prefix):
-        return None
-    reserve_id = section[len(prefix) :]
-    if not reserve_id:
-        return None
-    return reserve_id
 
 
 def parse_thermal_cluster_reserve_participation(

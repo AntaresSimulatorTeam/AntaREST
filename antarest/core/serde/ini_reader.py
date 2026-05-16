@@ -361,6 +361,64 @@ class IniReader(IReader):
             values[key] = parsed
         self._curr_option = key
 
+    def read_repeating_sections(self, path: Any, **kwargs: Any) -> list[tuple[str, JSON]]:
+        if isinstance(path, (Path, str)):
+            try:
+                with Path(path).open(encoding="utf-8") as f:
+                    return self._parse_ini_repeating(f, **kwargs)
+            except UnicodeDecodeError:
+                with Path(path).open(encoding="cp1252") as f:
+                    return self._parse_ini_repeating(f, **kwargs)
+            except FileNotFoundError:
+                return []
+        elif hasattr(path, "read"):
+            with path:
+                return self._parse_ini_repeating(path, **kwargs)
+        else:  # pragma: no cover
+            raise TypeError(repr(type(path)))
+
+    def _parse_ini_repeating(self, ini_file: TextIO, **kwargs: Any) -> list[tuple[str, JSON]]:
+        ini_filter = IniFilter.from_kwargs(**kwargs)
+        sections: list[tuple[str, JSON]] = []
+        current_section: str | None = None
+        current_data: dict[str, Any] | None = None
+        section_matched = False
+
+        for line in ini_file:
+            line = line.strip()
+            if not line or line.startswith(";") or line.startswith("#"):
+                continue
+            if line.startswith("["):
+                current_section = line[1:-1]
+                section_matched = ini_filter.select_section_option(current_section)
+                if section_matched:
+                    current_data = {}
+                    sections.append((current_section, current_data))
+                else:
+                    current_data = None
+                continue
+            if "=" in line:
+                if current_section is None or not section_matched or current_data is None:
+                    continue
+                key, raw_value = map(str.strip, line.split("=", 1))
+                if not ini_filter.select_section_option(current_section, key):
+                    continue
+                parser = self._value_parsers.find_parser(current_section, key)
+                parsed = parser(raw_value)
+                if key in self._special_keys:
+                    existing = current_data.get(key)
+                    if isinstance(existing, list):
+                        existing.append(parsed)
+                    elif existing is None:
+                        current_data[key] = [parsed]
+                    else:
+                        current_data[key] = [existing, parsed]
+                else:
+                    current_data[key] = parsed
+                continue
+            raise ValueError(f"☠☠☠ Invalid line: {line!r}")
+        return sections
+
 
 class SimpleKeyValueReader(IniReader):
     """
