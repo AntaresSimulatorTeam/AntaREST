@@ -32,6 +32,7 @@ from antarest.core.utils.polars import create_polars_dataframe
 from antarest.dependencies import AppState
 from antarest.main import add_exception_handlers
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.output.filestudy.utils import RAW_OUTPUT_MATRIX_HEADER_SEPARATOR
 from antarest.output.model import OutputVariablesInformation
 from antarest.output.routes import create_output_routes
 from antarest.output.storage.file.repository import DbOutputVariables
@@ -81,6 +82,14 @@ def assert_with_errors(storage_service: StudyService, url: str, expected_output:
     uuid, url = url.split("/raw?path=")
     # We use the `get_raw_content` method as it's the one called by the GET /raw endpoint.
     output = storage_service.get_raw_content(uuid=uuid, path=url, depth=3, formatted=True)
+    # The service now returns a pl.DataFrame for output matrices (the web layer handles formatting).
+    # Convert back to the legacy dict format so these existing tests remain valid.
+    # Only applies to output matrices (columns contain the " % " multi-header separator).
+    if isinstance(output, pl.DataFrame) and all(RAW_OUTPUT_MATRIX_HEADER_SEPARATOR in col for col in output.columns):
+        output = {
+            "columns": [tuple(col.split(RAW_OUTPUT_MATRIX_HEADER_SEPARATOR)) for col in output.columns],
+            "data": output.to_numpy(),
+        }
     assert_study(
         output,
         expected_output,
@@ -384,6 +393,27 @@ def test_sta_mini_input_for_R_scripts(client: TestClient, url: str, expected_out
 )
 def test_sta_mini_output(storage_service: StudyService, url: str, expected_output: Any) -> None:
     assert_with_errors(storage_service=storage_service, url=url, expected_output=expected_output)
+
+
+@with_admin_user
+def test_sta_mini_output_matrix_formats(client: TestClient) -> None:
+    """Tests that matrix_format and formatted are applied when the service returns a pl.DataFrame."""
+    path = "output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr/values-hourly"
+    base_url = f"/v1/studies/{UUID}/raw?path={path}"
+
+    # JSON: columns carry the " % " multi-header separator
+    body = client.get(base_url).json()
+    assert len(body["columns"]) == 10 and all(" % " in c for c in body["columns"])
+    assert len(body["data"]) == 168
+
+    # plain TSV and formatted=False both produce a 168×10 headerless TSV
+    for suffix in ("&matrix_format=plain", "&formatted=False"):
+        df = pd.read_csv(io.BytesIO(client.get(base_url + suffix).content), sep="\t", header=None)
+        assert df.shape == (168, 10)
+
+    # Arrow compressed
+    df_arrow = pl.read_ipc(io.BytesIO(client.get(base_url + "&matrix_format=arrow+compressed").content))
+    assert df_arrow.shape == (168, 10)
 
 
 @with_admin_user

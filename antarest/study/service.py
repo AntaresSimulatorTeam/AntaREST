@@ -72,6 +72,10 @@ from antarest.login.model import Group
 from antarest.login.service import LoginService, UserNotFoundError
 from antarest.login.utils import get_current_user, get_user_id, get_user_impersonator
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
+from antarest.output.filestudy.utils import (
+    QueryFileType,
+    parse_raw_output_matrix_path,
+)
 from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
@@ -635,6 +639,18 @@ class IOutputsAccess(ABC):
 
     @abstractmethod
     def write_output_to_dir(self, study_id: str, output_id: str, parent_dir: Path) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_item_output_data(
+        self,
+        study_id: str,
+        output_id: str,
+        query_file: "QueryFileType",
+        frequency: MatrixFrequency,
+        item_id: str,
+        mc_year: int | None = None,
+    ) -> pl.DataFrame:
         raise NotImplementedError()
 
 
@@ -2862,6 +2878,20 @@ class StudyService:
 
         self.storage_service.get_storage(study).normalize_study(study)
 
+    # def _read_raw_output_matrix(
+    #     self,
+    #     uuid: str,
+    #     parsed: RawOutputMatrixQuery,
+    # ) -> pl.DataFrame:
+    #     return self._get_outputs_access().get_item_output_data(
+    #         study_id=uuid,
+    #         output_id=parsed.output_id,
+    #         query_file=parsed.query_file,
+    #         frequency=parsed.frequency,
+    #         item_id=parsed.ids_to_consider,
+    #         mc_year=parsed.mc_year,
+    #     )
+
     def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
         """
         Returns the content of a node based on the provided arguments.
@@ -2877,13 +2907,26 @@ class StudyService:
         assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
 
+        url = [item for item in path.split("/") if item]
+
+        # Try to route output matrix requests
+        parsed = parse_raw_output_matrix_path(url)
+        if parsed is not None:
+            return self._get_outputs_access().get_item_output_data(
+                study_id=uuid,
+                output_id=parsed.output_id,
+                query_file=parsed.query_file,
+                frequency=parsed.frequency,
+                item_id=parsed.ids_to_consider,
+                mc_year=parsed.mc_year,
+            )
+
         # We need to handle matrices differently if our study is stored in DB
         if study.storage_mode == StorageMode.DATABASE:
             return _get_matrix_from_path(self.get_study_interface(study), PurePosixPath(path))
 
         else:
             file_study = self.get_file_study(study)
-            url = [item for item in path.split("/") if item]
             node, relative_url = file_study.tree.get_node_and_remainder(url)
 
             # Return a dataframe when possible instead of less memory & computation - efficient python objects

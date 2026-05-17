@@ -24,6 +24,9 @@ from antarest.study.model import MatrixFrequency, MatrixIndex, TimeSerie
 """Column name for the Monte Carlo year."""
 MCYEAR_COL = "mcYear"
 
+RAW_OUTPUT_MATRIX_METADATA_COLUMNS = ("area", "link", "timeId", "mcYear", "cluster")
+RAW_OUTPUT_MATRIX_HEADER_SEPARATOR = " % "
+
 """Column name for the time index."""
 TIME_ID_COL = "timeId"
 
@@ -58,6 +61,99 @@ class MCAllLinksQueryFile(StrEnum):
 
 
 QueryFileType: TypeAlias = MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile
+
+
+@dataclass(frozen=True)
+class RawOutputMatrixQuery:
+    """Parsed parameters from the /raw output matrix path"""
+
+    output_id: str
+    query_file: QueryFileType
+    frequency: MatrixFrequency
+    ids_to_consider: str
+    mc_year: int | None
+
+
+_QUERY_FILE_MAP: dict[tuple[str, str], dict[str, QueryFileType]] = {
+    ("mc-all", "areas"): {e.value: e for e in MCAllAreasQueryFile},
+    ("mc-all", "links"): {e.value: e for e in MCAllLinksQueryFile},
+    ("mc-ind", "areas"): {e.value: e for e in MCIndAreasQueryFile},
+    ("mc-ind", "links"): {e.value: e for e in MCIndLinksQueryFile},
+}
+
+
+def parse_raw_output_matrix_path(path_parts: list[str]) -> RawOutputMatrixQuery | None:
+    """
+    Parses a legacy /raw path targeting an output matrix into aggregation parameters.
+
+    Expected path structures:
+        output/{output_id}/{mode}/mc-all/{areas_or_links}/{id}/{query_file}-{frequency}
+        output/{output_id}/{mode}/mc-all/links/{upstream}/{downstream}/{query_file}-{frequency}
+        output/{output_id}/{mode}/mc-ind/{mc_year}/{areas_or_links}/{id}/{query_file}-{frequency}
+        output/{output_id}/{mode}/mc-ind/{mc_year}/links/{upstream}/{downstream}/{query_file}-{frequency}
+
+    Returns None if the path does not match an output matrix pattern.
+    """
+    if len(path_parts) < 7 or path_parts[0] != "output":
+        return None
+
+    mc_root = path_parts[3]
+
+    if mc_root == "mc-ind":
+        if len(path_parts) < 8:
+            return None
+        try:
+            mc_year = int(path_parts[4])
+        except ValueError:
+            return None
+        area_or_link = path_parts[5]
+        path_offset = 6
+    elif mc_root == "mc-all":
+        area_or_link = path_parts[4]
+        path_offset = 5
+        mc_year = None
+    else:
+        return None
+
+    if area_or_link == "areas":
+        if len(path_parts) != path_offset + 2:
+            return None
+        item_id = path_parts[path_offset]
+        file_segment = path_parts[path_offset + 1]
+    elif area_or_link == "links":
+        if len(path_parts) != path_offset + 3:
+            return None
+        item_id = f"{path_parts[path_offset]} - {path_parts[path_offset + 1]}"
+        file_segment = path_parts[path_offset + 2]
+    else:
+        return None
+
+    query_file_options = _QUERY_FILE_MAP.get((mc_root, area_or_link))
+    if query_file_options is None:
+        return None
+
+    frequency = None
+    query_file = None
+    for freq in MatrixFrequency:
+        suffix = f"-{freq.value}"
+        if file_segment.endswith(suffix):
+            candidate = query_file_options.get(file_segment[: -len(suffix)])
+            if candidate is not None:
+                frequency = freq
+                query_file = candidate
+                break
+
+    if frequency is None or query_file is None:
+        return None
+
+    return RawOutputMatrixQuery(
+        output_id=path_parts[1],
+        query_file=query_file,
+        frequency=frequency,
+        ids_to_consider=item_id,
+        mc_year=mc_year,
+    )
+
 
 SingleOutputHeaders: TypeAlias = list[str]
 MultipleOutputHeaders: TypeAlias = list[list[str]]

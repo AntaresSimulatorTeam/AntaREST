@@ -22,6 +22,7 @@ from functools import wraps
 from pathlib import Path
 from unittest.mock import ANY, Mock, patch, seal
 
+import polars as pl
 import pytest
 from _pytest.logging import LogCaptureFixture
 from antares.study.version import StudyVersion
@@ -177,6 +178,9 @@ def build_study_service(
 
         def write_output_to_dir(self, study_id: str, output_id: str, parent_dir: Path) -> None:
             pass
+
+        def get_item_output_data(self, *args: t.Any, **kwargs: t.Any) -> "pl.DataFrame":
+            return pl.DataFrame()
 
     service.register_output_access(OutputsAccessMock())
     return service

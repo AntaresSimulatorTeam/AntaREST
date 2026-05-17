@@ -11,10 +11,13 @@
 # This file is part of the Antares project.
 from pathlib import Path
 
+import polars as pl
 from typing_extensions import override
 
+from antarest.output.filestudy.utils import QueryFileType
 from antarest.output.service import OutputService
 from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
+from antarest.study.model import MatrixFrequency
 from antarest.study.service import IOutputsAccess
 
 
@@ -47,5 +50,24 @@ def adapt_output_service_to_study_service(output_service: OutputService) -> IOut
         @override
         def archive_output(self, study_id: str, output_id: str) -> None:
             output_service.archive_output(study_id, output_id)
+
+        @override
+        def get_item_output_data(
+            self,
+            study_id: str,
+            output_id: str,
+            query_file: QueryFileType,
+            frequency: MatrixFrequency,
+            item_id: str,
+            mc_year: int | None = None,
+        ) -> pl.DataFrame:
+            return output_service.get_item_output_data(
+                uuid=study_id,
+                output_id=output_id,
+                query_file=query_file,
+                frequency=frequency,
+                item_id=item_id,
+                mc_year=mc_year,
+            )
 
     return OutputServiceAdapter()
