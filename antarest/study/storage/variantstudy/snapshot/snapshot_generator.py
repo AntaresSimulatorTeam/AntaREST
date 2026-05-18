@@ -18,7 +18,7 @@ import logging
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, NamedTuple
 
-from antarest.core.exceptions import VariantGenerationError
+from antarest.core.exceptions import UnsupportedOperationOnArchivedStudy, VariantGenerationError
 from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
 from antarest.core.utils.utils import current_time
@@ -84,6 +84,8 @@ class SnapshotGenerator:
 
         root_study, descendants = self._retrieve_descendants(variant_study_id)
         assert_permission_on_studies([root_study, *descendants], StudyPermissionType.READ)
+        if root_study.archived:
+            raise UnsupportedOperationOnArchivedStudy(root_study.id)
         search_result = self.search_ref_study(root_study, descendants, from_scratch=from_scratch)
 
         ref_study = search_result.ref_study
