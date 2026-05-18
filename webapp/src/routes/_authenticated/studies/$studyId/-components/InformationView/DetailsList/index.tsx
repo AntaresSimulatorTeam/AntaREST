@@ -45,16 +45,21 @@ function DetailsList() {
     {
       errorMessage: t("studies.error.retrieveData"),
       deps: [study.id],
+      disabled: !study.managed,
     },
   );
 
   const items = [
-    {
-      content: isDiskUsageLoading ? <Skeleton width={100} /> : convertSize(diskUsage || 0),
-      label: t("study.diskUsage"),
-      icon: <StorageIcon />,
-      iconColor: getColorForSize(diskUsage || 0),
-    },
+    ...(study.managed
+      ? [
+          {
+            content: isDiskUsageLoading ? <Skeleton width={100} /> : convertSize(diskUsage || 0),
+            label: t("study.diskUsage"),
+            icon: <StorageIcon />,
+            iconColor: getColorForSize(diskUsage || 0),
+          },
+        ]
+      : []),
     {
       content:
         synthesisStatus === PromiseStatus.Fulfilled ? areas.length : <Skeleton width={100} />,
