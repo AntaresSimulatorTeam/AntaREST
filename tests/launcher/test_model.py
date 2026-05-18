@@ -12,9 +12,9 @@
 
 import re
 import typing as t
-import unittest
 import uuid
 
+import pytest
 from pydantic import ValidationError
 from sqlalchemy.orm.session import Session
 
@@ -232,23 +232,21 @@ class TestJobLog:
             assert jl is None
 
 
-class TestLaunchersParametersDTO(unittest.TestCase):
+class TestLaunchersParametersDTO:
     def test_none_output_suffix_should_be_valid(self) -> None:
         params = LauncherParametersDTO()
-        self.assertIsNone(params.output_suffix)
+        assert params.output_suffix is None
 
-    def test_with_valid_output_suffix(self) -> None:
-        params = LauncherParametersDTO(output_suffix="qwertyQWERTY09&_-.")
-        self.assertEqual(params.output_suffix, "qwertyQWERTY09&_-.")
+    valid_output_suffixes = ["", "qwertyQWERTY09&_-.<>?!*", "test=foo", r"test\foo", r"test\tfoo"]
 
-    def test_output_suffix_should_should_not_contain_equals_char(self) -> None:
-        self.assertRaises(ValidationError, LauncherParametersDTO, output_suffix="test=foo")
+    @pytest.mark.parametrize("valid_output_suffix", valid_output_suffixes)
+    def test_with_valid_output_suffixes(self, valid_output_suffix) -> None:
+        params = LauncherParametersDTO(output_suffix=valid_output_suffix)
+        assert params.output_suffix == valid_output_suffix
 
-    def test_output_suffix_should_should_not_contain_slash_char(self) -> None:
-        self.assertRaises(ValidationError, LauncherParametersDTO, output_suffix="test/foo")
+    invalid_output_suffixes = ["/test", "test/foo"]
 
-    def test_output_suffix_should_should_not_contain_backslash_char(self) -> None:
-        self.assertRaises(ValidationError, LauncherParametersDTO, output_suffix=r"test\foo")
-
-    def test_output_suffix_should_should_not_contain_escaped_char(self) -> None:
-        self.assertRaises(ValidationError, LauncherParametersDTO, output_suffix=r"test\tfoo")
+    @pytest.mark.parametrize("invalid_output_suffix", invalid_output_suffixes)
+    def test_output_suffix_should_not_contain_slash_char(self, invalid_output_suffix) -> None:
+        with pytest.raises(ValidationError):
+            LauncherParametersDTO(output_suffix=invalid_output_suffix)
