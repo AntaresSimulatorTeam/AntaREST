@@ -16,33 +16,50 @@ import { Breadcrumbs, Link, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import type { BreadcrumbItem } from "./types";
 import { buildKey } from "@/utils/reactUtils";
+import BreadcrumbRootChip from "../../breadcrumb/BreadcrumbRootChip";
+import { separatorSx, variantColor, type TreeVariant } from "../../breadcrumb/treeVariant";
 
 interface NavigationBreadcrumbsProps {
   items: BreadcrumbItem[];
   studyCount: number;
+  activeTree: TreeVariant;
   onNavigate: (item: BreadcrumbItem) => void;
 }
 
-function NavigationBreadcrumbs({ items, studyCount, onNavigate }: NavigationBreadcrumbsProps) {
+function NavigationBreadcrumbs({
+  items,
+  studyCount,
+  activeTree,
+  onNavigate,
+}: NavigationBreadcrumbsProps) {
   const { t } = useTranslation();
+  const [rootItem, ...trailingItems] = items;
+  const isRootActive = items.length === 1;
 
   return (
     <>
-      <Breadcrumbs maxItems={3}>
-        {items.map((item, index) => {
-          const isLast = index === items.length - 1;
+      <Breadcrumbs maxItems={3} sx={separatorSx(activeTree)}>
+        <BreadcrumbRootChip
+          key={buildKey("__root__", 0)}
+          variant={activeTree}
+          onClick={isRootActive ? undefined : () => onNavigate(rootItem)}
+        />
+
+        {trailingItems.map((item, index) => {
+          const isLast = index === trailingItems.length - 1;
 
           return (
             <Link
-              key={buildKey(item.label, index)}
+              key={buildKey(item.label, index + 1)}
               underline="hover"
-              color="inherit"
+              color={isLast ? "text.primary" : variantColor(activeTree)}
               onClick={() => !isLast && onNavigate(item)}
               sx={{
                 display: "flex",
                 alignItems: "center",
                 cursor: isLast ? "default" : "pointer",
-                fontWeight: isLast ? 600 : 400,
+                fontWeight: isLast ? 600 : 500,
+                transition: "color 200ms ease",
               }}
             >
               {item.label}
