@@ -20,12 +20,14 @@ from typing_extensions import override
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.utils import current_time
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.matrixstore.model import MatrixReference
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.file_study_utils import export_study_to_flat_directory, get_study_path, update_antares_info
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
+    InputSeriesMatrix,
+    extract_matrix_id,
+)
 from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.utils import get_disk_usage, is_managed
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -113,7 +115,7 @@ class FileStudyStorage(IStudyStorage):
 
         matrix_ids = self._matrix_service.create_batch(node.parse_content() for node in matrix_nodes)
         for k, node in enumerate(matrix_nodes):
-            node.matrix_mapper.save_matrix(node, matrix_ids[k])
+            node.save_matrix(matrix_ids[k])
 
     @override
     def import_study(self, study: RawStudy, stream: BinaryIO) -> RawStudy:
@@ -190,11 +192,11 @@ class FileStudyStorage(IStudyStorage):
         if not matrix_nodes:
             return
 
-        matrices_mapping: dict[str, list[MatrixNode]] = {}
+        matrices_mapping: dict[str, list[InputSeriesMatrix]] = {}
         for node in matrix_nodes:
-            link_content = node.matrix_mapper.get_link_content(node)
+            link_content = node.get_matrix_id()
             assert link_content is not None
-            matrices_mapping.setdefault(extract_matrix_id(link_content), []).append(node)
+            matrices_mapping.setdefault(link_content, []).append(node)
 
         for matrix_content in self._matrix_service.yield_matrices(list(matrices_mapping)):
             for node in matrices_mapping[matrix_content.id]:
