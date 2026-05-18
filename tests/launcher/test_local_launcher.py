@@ -87,7 +87,7 @@ def test_compute(tmp_path: Path, launcher_config: LocalConfig) -> None:
         xpansion_r_version=False,
         archive_output=False,
         auto_unzip=True,
-        output_suffix=None,
+        output_suffix="",
         other_options="",
     )
     local_launcher.submitted_jobs = {job_id: launcher_parameters}
