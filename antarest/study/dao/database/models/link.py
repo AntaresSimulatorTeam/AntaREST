@@ -10,10 +10,11 @@
 #
 # This file is part of the Antares project.
 
-from sqlalchemy import Boolean, Column, Enum, Float, ForeignKeyConstraint, Integer, String, Table
+from sqlalchemy import Boolean, Column, Float, ForeignKeyConstraint, Integer, String, Table
 
 from antarest.dbmodel import Base
 from antarest.study.business.model.link_model import AssetType, LinkStyle, TransmissionCapacity
+from antarest.study.dao.database.sql_utils import enum_col
 
 metadata = Base.metadata
 
@@ -27,15 +28,15 @@ LINK_TABLE = Table(
     Column("hurdles_cost", Boolean(), nullable=False),
     Column("loop_flow", Boolean(), nullable=False),
     Column("use_phase_shifter", Boolean(), nullable=False),
-    Column("transmission_capacities", Enum(TransmissionCapacity), nullable=False),
-    Column("asset_type", Enum(AssetType), nullable=False),
+    Column("transmission_capacities", enum_col(TransmissionCapacity), nullable=False),
+    Column("asset_type", enum_col(AssetType), nullable=False),
     Column("display_comments", Boolean(), nullable=False),
     Column("comments", String(), nullable=False),
     Column("colorr", Integer(), nullable=False),
     Column("colorb", Integer(), nullable=False),
     Column("colorg", Integer(), nullable=False),
     Column("link_width", Float(), nullable=False),
-    Column("link_style", Enum(LinkStyle), nullable=False),
+    Column("link_style", enum_col(LinkStyle), nullable=False),
     Column("filter_synthesis", String(), nullable=False),
     Column("filter_year_by_year", String(), nullable=False),
     ForeignKeyConstraint(

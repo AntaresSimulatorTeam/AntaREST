@@ -24,7 +24,7 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.cache.business.local_chache import LocalCache
-from antarest.core.exceptions import VariantGenerationError
+from antarest.core.exceptions import UnsupportedOperationOnArchivedStudy, VariantGenerationError
 from antarest.core.interfaces.cache import CacheConstants, update_cache
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
@@ -1066,6 +1066,28 @@ class TestSnapshotGenerator:
 
         # Check: the simulation outputs are not copied.
         assert not (snapshot_dir / "output").exists()
+
+    @with_admin_user
+    @with_db_context
+    def test_generate__archived_root_study(
+        self,
+        root_study_id: str,
+        variant_study_id: str,
+        variant_study_service: VariantStudyService,
+    ) -> None:
+        """
+        Generating a variant whose root study is archived must raise
+        UnsupportedOperationOnArchivedStudy (no snapshot produced).
+        """
+        root_study = variant_study_service.repository.get(root_study_id)
+        root_study.archived = True
+        variant_study_service.repository.save(root_study)
+
+        generator = _build_generator(variant_study_service)
+        factory = _get_dao_factory(variant_study_id, variant_study_service)
+
+        with pytest.raises(UnsupportedOperationOnArchivedStudy, match=root_study_id):
+            generator.generate_snapshot(variant_study_id, from_scratch=False, dao_factory=factory)
 
     @with_admin_user
     @with_db_context

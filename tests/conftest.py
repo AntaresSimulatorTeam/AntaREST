@@ -23,7 +23,6 @@ from antarest.blobstore.in_memory import InMemoryBlobService
 from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteStudyRepository
 from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
@@ -43,6 +42,7 @@ from antarest.study.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.utils import StudyMetadataCreation, is_managed
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -118,13 +118,12 @@ def empty_study_fixture(study_version: StudyVersion, matrix_service: MatrixServi
         districts={},
     )
     # sourcery skip: inline-immediately-returned-variable
-    mapper_factory = MatrixUriMapperFactory(matrix_service=matrix_service)
-    matrix_mapper = mapper_factory.create(NormalizedMatrixUriMapper.NORMALIZED)
+    matrix_storage_context = MatrixStorageContext(matrix_service=matrix_service, is_managed=True)
 
     file_study = FileStudy(
         config=config,
         tree=FileStudyTree(
-            matrix_mapper=matrix_mapper,
+            matrix_storage_context=matrix_storage_context,
             config=config,
         ),
     )

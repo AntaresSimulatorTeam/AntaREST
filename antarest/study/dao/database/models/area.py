@@ -17,10 +17,11 @@ This module defines the database tables used when a study has storage_mode=DATAB
 These tables store study data (areas, UI positions, etc.) in the database instead of the filesystem.
 """
 
-from sqlalchemy import Boolean, Column, Enum, Float, ForeignKey, ForeignKeyConstraint, Integer, String, Table
+from sqlalchemy import Boolean, Column, Float, ForeignKey, ForeignKeyConstraint, Integer, String, Table
 
 from antarest.dbmodel import Base
 from antarest.study.business.model.area_properties_model import AdequacyPatchMode
+from antarest.study.dao.database.sql_utils import enum_col
 
 metadata = Base.metadata
 
@@ -39,7 +40,7 @@ AREA_TABLE = Table(
     Column("spread_spilled_energy_cost", Float, nullable=False),
     Column("filter_synthesis", String(), nullable=False),
     Column("filter_by_year", String(), nullable=False),
-    Column("adequacy_patch_mode", Enum(AdequacyPatchMode), nullable=True),  # Since v8.3
+    Column("adequacy_patch_mode", enum_col(AdequacyPatchMode), nullable=True),  # Since v8.3
 )
 
 # Relation: One area can have multiple UI configurations (one per layer)

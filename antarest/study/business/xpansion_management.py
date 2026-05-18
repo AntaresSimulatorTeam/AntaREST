@@ -20,6 +20,7 @@ from antarest.core.exceptions import (
     MatrixImportFailed,
     XpansionFileAlreadyExistsError,
 )
+from antarest.core.serde.np_array import imports_matrix_from_bytes
 from antarest.core.utils.string import sanitize_for_log
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
@@ -31,7 +32,6 @@ from antarest.study.business.model.xpansion_model import (
     create_xpansion_candidate,
 )
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import imports_matrix_from_bytes
 from antarest.study.storage.variantstudy.model.command.create_xpansion_candidate import CreateXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.create_xpansion_configuration import CreateXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.create_xpansion_constraint import CreateXpansionConstraint

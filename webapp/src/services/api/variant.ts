@@ -12,40 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import type {
-  CommandDTO,
-  StudyMetadata,
-  StudyMetadataDTO,
-  StudySynthesis,
-  VariantTree,
-} from "../../types/types";
-import { convertStudyDtoToMetadata, convertVariantTreeDTO } from "../utils";
+import type { CommandDTO, StudySynthesis } from "../../types/types";
 import client from "./client";
 import type { FileDownloadTask } from "./downloads";
 import { taskSchema } from "./tasks/schemas";
-
-export const getVariantTree = async (id: string): Promise<VariantTree> => {
-  const res = await client.get(`/v1/studies/${id}/variants`);
-  return convertVariantTreeDTO(res.data);
-};
-
-export const getVariantParents = async (id: string): Promise<StudyMetadata[]> => {
-  const res = await client.get(`/v1/studies/${id}/parents`);
-  return res.data.map((elm: StudyMetadataDTO) => convertStudyDtoToMetadata(elm.id, elm));
-};
-
-export const getDirectParent = async (id: string): Promise<StudyMetadata | undefined> => {
-  const res = await client.get(`/v1/studies/${id}/parents?direct=true`);
-  if (res.data) {
-    return convertStudyDtoToMetadata(res.data.id, res.data);
-  }
-  return undefined;
-};
-
-export const createVariant = async (id: string, name: string): Promise<string> => {
-  const res = await client.post(`/v1/studies/${id}/variants?name=${encodeURIComponent(name)}`);
-  return res.data;
-};
 
 export const appendCommands = async (studyId: string, commands: CommandDTO[]): Promise<string> => {
   const res = await client.post(`/v1/studies/${studyId}/commands`, commands);

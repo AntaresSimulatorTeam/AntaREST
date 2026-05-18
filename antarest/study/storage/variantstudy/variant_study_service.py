@@ -32,6 +32,7 @@ from antarest.core.exceptions import (
     NoParentStudyError,
     StudyNotFoundError,
     StudyValidationError,
+    UnsupportedOperationOnArchivedStudy,
     VariantGenerationError,
     VariantGenerationTimeoutError,
     VariantStudyParentNotValid,
@@ -593,6 +594,9 @@ class VariantStudyService(AbstractStudyService):
             )
 
         assert_permission(study, StudyPermissionType.READ)
+
+        if study.archived:
+            raise UnsupportedOperationOnArchivedStudy(study.id)
         new_id = str(uuid4())
         study_path = str(self.config.get_workspace_path() / new_id)
         user_name = get_current_user_name()
@@ -637,6 +641,23 @@ class VariantStudyService(AbstractStudyService):
         from_scratch: bool = False,
         listener: ICommandListener | None = None,
     ) -> str:
+        """
+        Schedule a snapshot generation task for the given variant study.
+
+        A variant is a parent reference + commands, not a file tree. Replaying
+        commands to materialize a snapshot can be slow, so it runs as an async
+        task. The per-study `FileLock` and `generation_task` reuse prevent
+        concurrent callers from generating the same snapshot twice.
+
+        Args:
+            metadata: The variant study to generate.
+            from_scratch: If True, regenerate from the root study, ignoring cached
+                ancestor snapshots.
+            listener: Optional listener notified as commands are applied.
+
+        Returns:
+            The ID of the (new or in-progress) generation task.
+        """
         study_id = metadata.id
         with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study_id}.lock")):
             logger.info(f"Starting variant study {study_id} generation")

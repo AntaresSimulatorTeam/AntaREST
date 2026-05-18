@@ -13,6 +13,7 @@
  */
 
 import type { StudySortConfigSchema } from "@/routes/_authenticated/studies/-components/StudiesList/Header/studySortUtils";
+import type { Job } from "@/services/api/launcher/jobs/types";
 import type z from "zod";
 import type { TaskTypeValue } from "../services/api/tasks/types";
 
@@ -44,6 +45,9 @@ export enum StudyType {
   RAW = "rawstudy",
 }
 
+/**
+ * @deprecated Use StudyDTO type instead
+ */
 export interface StudyMetadataDTO extends IdentityDTO {
   owner: StudyMetadataOwner;
   editor: string;
@@ -64,6 +68,9 @@ export interface StudyMetadataDTO extends IdentityDTO {
   directory_id?: string | null;
 }
 
+/**
+ * @deprecated Use Study type instead
+ */
 export interface StudyMetadata {
   id: string;
   name: string;
@@ -110,23 +117,13 @@ export interface StudyLayer {
 
 export type StudySortConfig = z.infer<typeof StudySortConfigSchema>;
 
-export interface VariantTreeDTO {
-  node: StudyMetadataDTO;
-  children: VariantTreeDTO[];
-}
-
-export interface VariantTree {
-  node: StudyMetadata;
-  children: VariantTree[];
-}
-
 export interface LaunchJobProgressDTO {
   id: string;
   progress: number;
   message: string;
 }
 
-export type LaunchJobsProgress = Record<string, number>;
+export type JobsProgressById = Record<Job["id"], number>;
 
 export enum RoleType {
   ADMIN = 40,
@@ -316,7 +313,6 @@ export interface StudySynthesis {
   areas: Record<string, Area>;
   districts: Record<string, District>;
   outputs: Record<string, OutputDetails>;
-  bindings: string[];
   store_new_set: boolean;
   archive_input_series: string[];
   enr_modelling: "aggregated" | "clusters";

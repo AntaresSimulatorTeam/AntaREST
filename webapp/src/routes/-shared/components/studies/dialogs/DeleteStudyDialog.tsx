@@ -16,6 +16,7 @@ import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { deleteStudy } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import type { Study } from "@/services/api/studies/types";
 import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
@@ -25,7 +26,7 @@ import { Trans, useTranslation } from "react-i18next";
 
 interface Props {
   study: StudyMetadata;
-  parentStudy?: StudyMetadata;
+  parentStudy?: Study;
   variantNb?: number;
   open: boolean;
   onClose: VoidFunction;

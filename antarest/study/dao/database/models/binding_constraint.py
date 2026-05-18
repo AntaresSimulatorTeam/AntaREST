@@ -17,10 +17,11 @@ This module defines the database tables used for storing binding constraint data
 when a study has storage_mode=DATABASE.
 """
 
-from sqlalchemy import Boolean, Column, Enum, Float, ForeignKeyConstraint, Integer, String, Table
+from sqlalchemy import Boolean, Column, Float, ForeignKeyConstraint, Integer, String, Table
 
 from antarest.dbmodel import Base
 from antarest.study.business.model.binding_constraint_model import BindingConstraintFrequency, BindingConstraintOperator
+from antarest.study.dao.database.sql_utils import enum_col
 
 metadata = Base.metadata
 
@@ -31,8 +32,8 @@ BINDING_CONSTRAINT_TABLE = Table(
     Column("constraint_id", String(255), nullable=False, primary_key=True),
     Column("name", String(255), nullable=False),
     Column("enabled", Boolean, nullable=False),
-    Column("time_step", Enum(BindingConstraintFrequency, name="bc_frequency"), nullable=False),
-    Column("operator", Enum(BindingConstraintOperator, name="bc_operator"), nullable=False),
+    Column("time_step", enum_col(BindingConstraintFrequency, name="bc_frequency"), nullable=False),
+    Column("operator", enum_col(BindingConstraintOperator, name="bc_operator"), nullable=False),
     Column("comments", String, nullable=False),
     # Nullable: only present for study versions >= 8.3
     Column("filter_year_by_year", String, nullable=True),

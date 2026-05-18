@@ -64,6 +64,7 @@ from antarest.study.model import (
     StudyContentStatus,
     StudyFolder,
     StudyMetadataDTO,
+    StudyType,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
 from antarest.study.service import (
@@ -232,7 +233,7 @@ def test_study_listing(db_session: Session) -> None:
     a = create_raw_study(
         id="A",
         owner=bob,
-        type="rawstudy",
+        type=StudyType.RAW,
         name="A",
         version=study_version,
         created_at=current_time(),
@@ -243,7 +244,7 @@ def test_study_listing(db_session: Session) -> None:
     b = create_raw_study(
         id="B",
         owner=alice,
-        type="rawstudy",
+        type=StudyType.RAW,
         name="B",
         version=study_version,
         created_at=current_time(),
@@ -254,7 +255,7 @@ def test_study_listing(db_session: Session) -> None:
     c = create_raw_study(
         id="C",
         owner=bob,
-        type="rawstudy",
+        type=StudyType.RAW,
         name="C",
         version=study_version,
         created_at=current_time(),

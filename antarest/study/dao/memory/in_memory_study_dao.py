@@ -27,7 +27,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.utils import remove_first_match
-from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties, sort_filter_options
 from antarest.study.business.model.binding_constraint_model import (
@@ -86,6 +86,7 @@ from antarest.study.dao.common import (
     LinkSeriesMapping,
     RenewableSeriesMapping,
     ReserveDefinitionsMapping,
+    ReserveNeedsMapping,
     ReservesGlobalParametersMapping,
     StStorageConstraintSeriesMapping,
     StStorageId,
@@ -98,7 +99,12 @@ from antarest.study.dao.common import (
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, LinkConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    AreaConfig,
+    BindingConstraintConfig,
+    EnrModelling,
+    LinkConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
@@ -257,6 +263,8 @@ class InMemoryStudyDao(StudyDao):
         self._reserves_global_parameters: dict[str, ReservesGlobalParameters] = {}
         # Reserve definitions (per-reserve parameters)
         self._reserve_definitions: dict[ReserveKey, ReserveDefinition] = {}
+        # Reserve needs chronicles (per-reserve time series), value = matrix_id
+        self._reserve_needs: dict[ReserveKey, str] = {}
         # Misc-gen
         self._misc_gen: dict[str, str] = {}
         # Solar
@@ -313,7 +321,7 @@ class InMemoryStudyDao(StudyDao):
             )
 
         districts = {d.id: d for d in self.get_districts()}
-        bindings = list(self.get_all_constraints().values())
+        bindings_configs = [BindingConstraintConfig.from_constraint(bc) for bc in self.get_all_constraints().values()]
         advanced = self.get_advanced_parameters()
         enr_modelling = EnrModelling(advanced.renewable_generation_modelling.value)
 
@@ -322,7 +330,7 @@ class InMemoryStudyDao(StudyDao):
             version=self._version,
             areas=areas,
             districts=districts,
-            bindings=bindings,
+            bindings=bindings_configs,
             enr_modelling=enr_modelling,
         )
 
@@ -711,10 +719,10 @@ class InMemoryStudyDao(StudyDao):
         if hydro_pmax == HydroPmax.HOURLY:
             # When converting to hourly, create and save the matrices
             for area_id in areas:
-                self.save_hydro_max_hourly_gen_power({area_id: MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly)})
-                self.save_hydro_max_hourly_pump_power({area_id: MATRIX_PROTOCOL_PREFIX + matrix_service.create(hourly)})
-                self.save_hydro_max_daily_gen_energy({area_id: MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily)})
-                self.save_hydro_max_daily_pump_energy({area_id: MATRIX_PROTOCOL_PREFIX + matrix_service.create(daily)})
+                self.save_hydro_max_hourly_gen_power({area_id: matrix_service.create(hourly)})
+                self.save_hydro_max_hourly_pump_power({area_id: matrix_service.create(hourly)})
+                self.save_hydro_max_daily_gen_energy({area_id: matrix_service.create(daily)})
+                self.save_hydro_max_daily_pump_energy({area_id: matrix_service.create(daily)})
         else:
             # When converting away from hourly, remove the matrices from in-memory storage
             for area_id in areas:
@@ -1639,6 +1647,29 @@ class InMemoryStudyDao(StudyDao):
                 del self._reserve_definitions[reserve_key(area_id, rid)]
             except KeyError as exc:
                 raise ReserveDefinitionNotFound(area_id, rid) from exc
+            self._reserve_needs.pop(reserve_key(area_id, rid), None)
+
+    @override
+    def get_reserve_need(self, area_id: str, reserve_id: str) -> pl.DataFrame:
+        matrix_id = self._reserve_needs[reserve_key(area_id, reserve_id)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_all_reserve_needs(self) -> ReserveNeedsMapping:
+        result: ReserveNeedsMapping = {}
+        for key, matrix_id in self._reserve_needs.items():
+            result.setdefault(key.area_id, {})[ReserveDefinitionId(key.reserve_id)] = matrix_id
+        return result
+
+    @override
+    def save_reserve_needs(self, mapping: ReserveNeedsMapping) -> None:
+        for area_id, per_reserve in mapping.items():
+            for reserve_id, matrix_id in per_reserve.items():
+                self._reserve_needs[reserve_key(area_id, reserve_id)] = matrix_id
+
+    @override
+    def delete_reserve_need(self, area_id: AreaId, reserve_id: ReserveDefinitionId) -> None:
+        self._reserve_needs.pop(reserve_key(area_id, reserve_id), None)
 
     @override
     def save_solar(self, series: AreaSeriesMapping) -> None:

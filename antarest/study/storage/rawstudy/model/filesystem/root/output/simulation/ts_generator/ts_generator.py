@@ -15,7 +15,6 @@ from typing import Any
 
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.common.area_matrix_list import (
     AreaMatrixList,
     AreaMultipleMatrixList,
@@ -26,13 +25,14 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 
 
 class OutputSimulationTsGeneratorSimpleMatrixList(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            "mc-0": AreaMatrixList(self.matrix_mapper, self.config.next_file("mc-0")),
+            "mc-0": AreaMatrixList(self.matrix_storage_context, self.config.next_file("mc-0")),
         }
         return children
 
@@ -40,29 +40,29 @@ class OutputSimulationTsGeneratorSimpleMatrixList(FolderNode):
 class OutputSimulationTsGeneratorCustomMatrixList(FolderNode):
     def __init__(
         self,
-        matrix_mapper: MatrixUriMapper,
+        matrix_storage_context: MatrixStorageContext,
         config: FileStudyTreeConfig,
         klass: Callable[
             [
-                MatrixUriMapper,
+                MatrixStorageContext,
                 FileStudyTreeConfig,
                 str,
                 Callable[
-                    [MatrixUriMapper, FileStudyTreeConfig],
+                    [MatrixStorageContext, FileStudyTreeConfig],
                     INode[Any, Any, Any],
                 ],
             ],
             INode[Any, Any, Any],
         ],
     ):
-        super().__init__(matrix_mapper, config)
+        super().__init__(matrix_storage_context, config)
         self.klass = klass
 
     @override
     def build(self) -> TREE:
         children: TREE = {
             "mc-0": AreaMultipleMatrixList(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file("mc-0"),
                 self.klass,
                 InputSeriesMatrix,
@@ -78,14 +78,14 @@ class OutputSimulationTsGenerator(FolderNode):
         for output_type in ["load", "solar", "wind"]:
             if (self.config.path / output_type).exists():
                 children[output_type] = OutputSimulationTsGeneratorSimpleMatrixList(
-                    self.matrix_mapper, self.config.next_file(output_type)
+                    self.matrix_storage_context, self.config.next_file(output_type)
                 )
         if (self.config.path / "hydro").exists():
             children["hydro"] = OutputSimulationTsGeneratorCustomMatrixList(
-                self.matrix_mapper, self.config.next_file("hydro"), HydroMatrixList
+                self.matrix_storage_context, self.config.next_file("hydro"), HydroMatrixList
             )
         if (self.config.path / "thermal").exists():
             children["thermal"] = OutputSimulationTsGeneratorCustomMatrixList(
-                self.matrix_mapper, self.config.next_file("thermal"), ThermalMatrixList
+                self.matrix_storage_context, self.config.next_file("thermal"), ThermalMatrixList
             )
         return children

@@ -17,7 +17,6 @@ from pydantic import Field, model_validator
 from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
-from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
@@ -31,7 +30,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     parse_thermal_cluster,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
-from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
+from antarest.study.storage.variantstudy.business.utils import validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
@@ -134,8 +133,8 @@ class CreateCluster(ICommand):
             args={
                 "area_id": self.area_id,
                 "parameters": self.parameters.model_dump(mode="json", by_alias=True, exclude_none=True),
-                "prepro": strip_matrix_protocol(self.prepro),
-                "modulation": strip_matrix_protocol(self.modulation),
+                "prepro": self.prepro,
+                "modulation": self.modulation,
             },
             study_version=self.study_version,
         )
@@ -144,9 +143,9 @@ class CreateCluster(ICommand):
     def get_inner_matrices(self) -> InnerMatrices:
         matrices: list[str] = []
         if self.prepro:
-            assert_this(isinstance(self.prepro, str))
-            matrices.append(strip_matrix_protocol(self.prepro))
+            assert isinstance(self.prepro, str)
+            matrices.append(self.prepro)
         if self.modulation:
-            assert_this(isinstance(self.modulation, str))
-            matrices.append(strip_matrix_protocol(self.modulation))
+            assert isinstance(self.modulation, str)
+            matrices.append(self.modulation)
         return InnerMatrices(matrices=matrices)

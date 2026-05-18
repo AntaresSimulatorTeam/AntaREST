@@ -20,7 +20,7 @@ from antarest.study.business.model.thermal_cluster_model import ThermalClusterCr
 from antarest.study.model import RawStudy, StorageMode
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -73,7 +73,7 @@ def test_optional_matrices(
 
         # Ensures we can still fetch its content without raising an issue as these files are optional for the Simulator.
         matrix_node = file_study.tree.get_node(url)
-        assert isinstance(matrix_node, MatrixNode)
+        assert isinstance(matrix_node, InputSeriesMatrix)
         matrix = matrix_node.parse_as_dataframe()
         assert matrix.to_numpy().tolist() == expected_content
 
@@ -82,7 +82,7 @@ def test_optional_matrices(
     expected_cost_level_content = np.full((8760, 1), -1e-6).tolist()
     file_study.tree.get_node(url).delete()
     matrix_node = file_study.tree.get_node(url)
-    assert isinstance(matrix_node, MatrixNode)
+    assert isinstance(matrix_node, InputSeriesMatrix)
     matrix = matrix_node.parse_as_dataframe()
     assert matrix.to_numpy().tolist() == expected_cost_level_content
 
@@ -92,7 +92,7 @@ def test_optional_matrices(
     # Removes a file that's not optional for the Simulator
     url = ["input", "thermal", "series", "fr", "thermal_cluster", "series"]
     matrix_node = file_study.tree.get_node(url)
-    assert isinstance(matrix_node, MatrixNode)
+    assert isinstance(matrix_node, InputSeriesMatrix)
     matrix_node.delete()
 
     # Ensures retrieving its content raises an Exception

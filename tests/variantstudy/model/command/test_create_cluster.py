@@ -58,8 +58,8 @@ class TestCreateCluster:
         assert cl.parameters == ThermalClusterCreation(
             name="Cluster1", group=ThermalClusterGroup.NUCLEAR, unit_count=2, nominal_capacity=2400
         )
-        assert cl.prepro == f"matrix://{prepro_id}"
-        assert cl.modulation == f"matrix://{modulation_id}"
+        assert cl.prepro == prepro_id
+        assert cl.modulation == modulation_id
 
     def test_validate_cluster_name(self, command_context: CommandContext) -> None:
         with pytest.raises(ValidationError, match="name"):
