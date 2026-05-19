@@ -237,16 +237,16 @@ class TestLaunchersParametersDTO:
         params = LauncherParametersDTO()
         assert params.output_suffix is None
 
-    valid_output_suffixes = ["", "qwertyQWERTY09&_-.<>?!*", "test=foo", r"test\foo", r"test\tfoo"]
+    valid_output_suffixes = ["", "qwertyQWERTY09&_-.<>?!*"]
 
     @pytest.mark.parametrize("valid_output_suffix", valid_output_suffixes)
     def test_with_valid_output_suffixes(self, valid_output_suffix) -> None:
         params = LauncherParametersDTO(output_suffix=valid_output_suffix)
         assert params.output_suffix == valid_output_suffix
 
-    invalid_output_suffixes = ["/test", "test/foo"]
+    invalid_output_suffixes = ["/test", "test/foo", "test=foo", r"test\foo", r"test\tfoo"]
 
     @pytest.mark.parametrize("invalid_output_suffix", invalid_output_suffixes)
-    def test_output_suffix_should_not_contain_slash_char(self, invalid_output_suffix) -> None:
+    def test_output_suffix_should_not_contain_slash_or_backslash_or_equals_char(self, invalid_output_suffix) -> None:
         with pytest.raises(ValidationError):
             LauncherParametersDTO(output_suffix=invalid_output_suffix)
