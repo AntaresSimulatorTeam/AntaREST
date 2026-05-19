@@ -24,22 +24,19 @@ import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { TREE_ROOT_NAME } from "@/components/utils/constants";
 import { directoryQueries } from "@/queries/directories/queries";
-import { updateStudyFilters } from "@/redux/ducks/studies";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import { getDescendantIds } from "@/routes/_authenticated/studies/-components/StudyTree/ManagedTree/utils";
 import type { Directory } from "@/services/api/directories/types";
 import { moveStudy } from "@/services/api/study";
 import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import StudyDestinationFE from "../../StudyDestinationFE";
 import type { DirectoryDestination } from "../../StudyDestinationFE/types";
+import { useRedirectToDestination } from "../../StudyDestinationFE/useRedirectToDestination";
 import {
   computeAllowSubmitOnPristine,
   formSchema,
   getInitialDirectoryId,
   resolveRedirectDirectoryId,
   toDirectoryPath,
-  type FormValues,
 } from "./utils";
 
 export interface MoveResult {
@@ -60,8 +57,7 @@ function MoveStudyDialog({ open, studies, onClose, onRun }: Props) {
   const { t } = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
-  const dispatch = useAppDispatch();
-  const navigate = useNavigate();
+  const redirectToDestination = useRedirectToDestination();
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
   const initialDirectoryId = getInitialDirectoryId(studies);
@@ -156,19 +152,7 @@ function MoveStudyDialog({ open, studies, onClose, onRun }: Props) {
     }
 
     if (redirect) {
-      const directoryId = resolveRedirectDirectoryId(destination, updatedDirectories);
-
-      dispatch(
-        updateStudyFilters({
-          activeTree: "managed",
-          managed: {
-            directoryId,
-            directoryIds: directoryId ? getDescendantIds(directoryId, updatedDirectories) : null,
-          },
-        }),
-      );
-
-      navigate({ to: "/studies" });
+      redirectToDestination(destination, updatedDirectories);
     }
   };
 

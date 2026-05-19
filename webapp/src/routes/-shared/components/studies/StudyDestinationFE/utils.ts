@@ -17,6 +17,14 @@ import { sortByName } from "@/services/utils";
 import type { DirectoryDestination } from "./types";
 
 /**
+ * Strips leading/trailing whitespace and collapses repeated/leading/trailing slashes
+ * into a clean slash-separated path (e.g. `" /a//b/ "` → `"a/b"`).
+ */
+function normalizeSubdirectoriesPath(path: string): string {
+  return path.trim().split("/").filter(Boolean).join("/");
+}
+
+/**
  * Creates a `Map` from a flat directory list for O(1) id-based lookups.
  *
  * @param directories - Flat array of {@link Directory} objects.
@@ -81,5 +89,43 @@ export function toDirectoryPath(directory: DirectoryDestination, directories: Di
         .join("/")
     : "";
 
-  return [base, directory.newSubdirectoriesPath].filter(Boolean).join("/");
+  return [base, normalizeSubdirectoriesPath(directory.newSubdirectoriesPath)]
+    .filter(Boolean)
+    .join("/");
+}
+
+/**
+ * Resolves the final directory ID after a successful operation that may have
+ * created new sub-directories. Walks the freshly-fetched directory tree to find
+ * the deepest directory created from `destination.newSubdirectoriesPath`.
+ *
+ * @param destination - Destination value from the form.
+ * @param directories - Freshly-fetched directory list (must include newly created dirs).
+ * @returns The directory ID to redirect to, or `null` for root.
+ */
+export function resolveRedirectDirectoryId(
+  destination: DirectoryDestination,
+  directories: Directory[],
+): string | null {
+  const path = normalizeSubdirectoriesPath(destination.newSubdirectoriesPath);
+
+  if (!path) {
+    return destination.directoryId;
+  }
+
+  let currentId = destination.directoryId;
+
+  for (const segment of path.split("/")) {
+    const child = directories.find(
+      (directory) => directory.parentId === currentId && directory.name === segment,
+    );
+
+    if (!child) {
+      break;
+    }
+
+    currentId = child.id;
+  }
+
+  return currentId;
 }
