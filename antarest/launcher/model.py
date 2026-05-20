@@ -33,6 +33,7 @@ from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, Sequence, S
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
 
+from antarest.core.api_types import FileNameStr
 from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.json import from_json
@@ -82,7 +83,7 @@ class LauncherParametersDTO(AntaresBaseModel, extra="forbid"):
     xpansion_r_version: bool = False
     archive_output: bool = True
     auto_unzip: bool = True
-    output_suffix: str | None = None
+    output_suffix: FileNameStr | None = None
     other_options: str | None = None
 
     # add extensions field here
