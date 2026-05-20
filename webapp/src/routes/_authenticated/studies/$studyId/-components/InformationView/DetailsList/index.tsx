@@ -45,12 +45,11 @@ function DetailsList() {
     {
       errorMessage: t("studies.error.retrieveData"),
       deps: [study.id],
-      disabled: !study.managed,
     },
   );
 
   const items = [
-    study.managed && {
+    {
       content: isDiskUsageLoading ? <Skeleton width={100} /> : convertSize(diskUsage || 0),
       label: t("study.diskUsage"),
       icon: <StorageIcon />,
@@ -68,7 +67,7 @@ function DetailsList() {
       label: t("study.links"),
       icon: <LinearScaleIcon />,
     },
-  ].filter(Boolean) satisfies DetailsListItem[];
+  ] satisfies DetailsListItem[];
 
   ////////////////////////////////////////////////////////////////
   // JSX
