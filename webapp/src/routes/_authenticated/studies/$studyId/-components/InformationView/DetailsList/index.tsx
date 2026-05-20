@@ -50,16 +50,12 @@ function DetailsList() {
   );
 
   const items = [
-    ...(study.managed
-      ? [
-          {
-            content: isDiskUsageLoading ? <Skeleton width={100} /> : convertSize(diskUsage || 0),
-            label: t("study.diskUsage"),
-            icon: <StorageIcon />,
-            iconColor: getColorForSize(diskUsage || 0),
-          },
-        ]
-      : []),
+    study.managed && {
+      content: isDiskUsageLoading ? <Skeleton width={100} /> : convertSize(diskUsage || 0),
+      label: t("study.diskUsage"),
+      icon: <StorageIcon />,
+      iconColor: getColorForSize(diskUsage || 0),
+    },
     {
       content:
         synthesisStatus === PromiseStatus.Fulfilled ? areas.length : <Skeleton width={100} />,
@@ -72,7 +68,7 @@ function DetailsList() {
       label: t("study.links"),
       icon: <LinearScaleIcon />,
     },
-  ] satisfies DetailsListItem[];
+  ].filter(Boolean) satisfies DetailsListItem[];
 
   ////////////////////////////////////////////////////////////////
   // JSX
