@@ -1073,15 +1073,6 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.UPDATE_RESERVES_ENABLED.value,
-            args={"reserves_enabled": True},
-            study_version=STUDY_VERSION_10_0,
-        ),
-        None,
-        id="update_reserves_enabled",
-    ),
-    pytest.param(
-        CommandDTO(
             action=CommandName.CREATE_RESERVE_DEFINITION.value,
             args={
                 "area_id": "paris",

@@ -96,7 +96,6 @@ from antarest.study.storage.variantstudy.model.command.update_playlist import Up
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
 from antarest.study.storage.variantstudy.model.command.update_renewables_clusters import UpdateRenewablesClusters
 from antarest.study.storage.variantstudy.model.command.update_reserve_definitions import UpdateReserveDefinitions
-from antarest.study.storage.variantstudy.model.command.update_reserves_enabled import UpdateReservesEnabled
 from antarest.study.storage.variantstudy.model.command.update_reserves_global_parameters import (
     UpdateReservesGlobalParameters,
 )
@@ -177,7 +176,6 @@ COMMAND_MAPPING: dict[str, type[ICommand]] = {
     CommandName.CONVERT_HYDRO_PMAX.value: ConvertHydroPmax,
     CommandName.CREATE_USER_RESOURCE.value: ReplaceUserResource,
     CommandName.REPLACE_USER_RESOURCE.value: ReplaceUserResource,
-    CommandName.UPDATE_RESERVES_ENABLED.value: UpdateReservesEnabled,
     CommandName.UPDATE_RESERVES_GLOBAL_PARAMETERS.value: UpdateReservesGlobalParameters,
     CommandName.CREATE_RESERVE_DEFINITION.value: CreateReserveDefinition,
     CommandName.UPDATE_RESERVE_DEFINITIONS.value: UpdateReserveDefinitions,

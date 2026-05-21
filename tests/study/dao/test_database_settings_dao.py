@@ -132,6 +132,7 @@ def test_nominal_case(db_dao: DatabaseStudyDao) -> None:
         export_mps="optim-1",
         unfeasible_problem_behavior=UnfeasibleProblemBehavior.ERROR_DRY,
         simplex_optimization_range=SimplexOptimizationRange.DAY,
+        include_reserves=True,
     )
     dao.save_optimization_preferences(preferences)
     assert dao.get_optimization_preferences() == preferences
@@ -141,7 +142,7 @@ def test_compatibility_parameters(db_session: Session, matrix_service: ISimpleMa
     # Create a study in version 9.3 to test the compatibility parameters
     dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
     assert dao.get_compatibility_parameters() == CompatibilityParameters()
-    new_parameters = CompatibilityParameters(hydro_pmax=HydroPmax.HOURLY, reserves_enabled=True)
+    new_parameters = CompatibilityParameters(hydro_pmax=HydroPmax.HOURLY)
     dao.save_compatibility_parameters(new_parameters)
     assert dao.get_compatibility_parameters() == new_parameters
 

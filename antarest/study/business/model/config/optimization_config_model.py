@@ -99,7 +99,7 @@ def initialize_optimization_preferences_against_version(
         parameters.include_reserves = False
 
 
-def validate_compatibility_parameters_against_version(
+def validate_optimization_preferences_against_version(
     version: StudyVersion, parameters: OptimizationPreferences | OptimizationPreferencesUpdate
 ) -> None:
     if version < STUDY_VERSION_10_0 and parameters.include_reserves is not None:
