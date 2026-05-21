@@ -1251,21 +1251,13 @@ class StudyService:
         self.assert_study_unarchived(src_study)
 
         owner, groups = self._validate_and_prepare_permissions(group_ids)
+        directory_id = self.directory_service.get_directory_by_path(destination_folder.as_posix())
 
         def copy_task(notifier: ITaskNotifier) -> TaskResult:
             origin_study = self.get_study(src_uuid)
             study = self.storage_service.get_storage(origin_study).copy(
-                origin_study,
-                dest_study_name,
-                group_ids,
-                destination_folder,
+                origin_study, dest_study_name, destination_folder, owner, groups, directory_id
             )
-
-            study.owner = owner
-            study.groups = groups
-            study.directory_id = self.directory_service.get_directory_by_path(destination_folder.as_posix())
-
-            self._save_study(study)
 
             match outputs_selection:
                 case "all":

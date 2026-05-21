@@ -47,6 +47,7 @@ from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResu
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService, TaskNotFoundError
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, current_time, suppress_exception
+from antarest.login.model import Group, Identity
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.dao.api.study_dao import StudyDao
@@ -133,10 +134,18 @@ class VariantStudyService(AbstractStudyService):
         }
 
     @override
-    def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> RawStudy:
+    def copy(
+        self,
+        src_study: Study,
+        dest_name: str,
+        destination_folder: PurePosixPath,
+        owner: Identity,
+        groups: list[Group],
+        directory_id: str | None,
+    ) -> RawStudy:
         variant_study = _cast_study_to_variant(src_study)
         self.safe_generation(variant_study, 600)
-        return self.raw_study_service.copy(src_study, dest_name, groups, destination_folder)
+        return self.raw_study_service.copy(src_study, dest_name, destination_folder, owner, groups, directory_id)
 
     @override
     def get_study_dao(self, study: Study) -> StudyDao:

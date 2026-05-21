@@ -17,6 +17,7 @@ from typing import Iterator
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
@@ -94,10 +95,16 @@ class DatabaseStudyStorage(IStudyStorage):
         pass
 
     @override
-    def import_study(self, study_path: Path, study_id: str) -> None:
+    def import_study(self, study: RawStudy) -> None:
         # Build the 2 DAOs
+        study_id = study.id
         source_dao = self._dao_factories[StorageMode.FILESYSTEM].get_study_dao(study_id=study_id, is_study_managed=True)
         new_dao = self._dao_factories[StorageMode.DATABASE].get_study_dao(study_id=study_id, is_study_managed=True)
+
+        # Create the new study inside DB to avoid ForeignKey errors
+        session = db.session
+        session.add(study)
+        session.commit()
 
         # Convert the FS DAO into a DB one
         converter = StudyConverter(
@@ -109,4 +116,4 @@ class DatabaseStudyStorage(IStudyStorage):
         converter.convert_study_inputs()
 
         # Delete the source study path once the conversion is done
-        shutil.rmtree(study_path)
+        shutil.rmtree(Path(study.path))

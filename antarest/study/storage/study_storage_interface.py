@@ -48,5 +48,5 @@ class IStudyStorage(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def import_study(self, study_path: Path, study_id: str) -> None:
+    def import_study(self, study: RawStudy) -> None:
         raise NotImplementedError()

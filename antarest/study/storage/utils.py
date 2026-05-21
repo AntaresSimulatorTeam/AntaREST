@@ -62,6 +62,7 @@ from antarest.study.model import (
     MatrixIndex,
     RawStudy,
     Study,
+    StudyContentStatus,
     StudyFolder,
     StudyMetadataDTO,
 )
@@ -597,7 +598,13 @@ def get_current_user_name() -> str:
 
 
 def build_raw_study_from_source(
-    name: str, path: Path, groups: list[str], src_study: Study, destination_folder: PurePosixPath
+    src_study: Study,
+    name: str,
+    path: Path,
+    groups: list[Group],
+    owner: Identity,
+    directory_id: str | None,
+    destination_folder: PurePosixPath,
 ) -> RawStudy:
     dest_id = str(uuid4())
     now_utc = current_time()
@@ -614,8 +621,11 @@ def build_raw_study_from_source(
         horizon=src_study.horizon,
         public_mode=PublicMode.NONE if groups else PublicMode.READ,
         groups=groups,
+        owner=owner,
+        directory_id=directory_id,
         folder=str(destination_folder / dest_id),
         storage_mode=src_study.storage_mode,
+        content_status=StudyContentStatus.VALID,
     )
     return dest_study
 

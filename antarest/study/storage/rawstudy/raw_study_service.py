@@ -28,6 +28,7 @@ from antarest.core.utils.archives import (
     extract_archive_from_stream,
 )
 from antarest.core.utils.utils import StopWatch
+from antarest.login.model import Group, Identity
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
@@ -89,10 +90,19 @@ class RawStudyService(AbstractStudyService):
         self.cache = cache
 
     @override
-    def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> RawStudy:
+    def copy(
+        self,
+        src_study: Study,
+        dest_name: str,
+        destination_folder: PurePosixPath,
+        owner: Identity,
+        groups: list[Group],
+        directory_id: str | None,
+    ) -> RawStudy:
         new_study = build_raw_study_from_source(
-            dest_name, self._config.get_workspace_path(), groups, src_study, destination_folder
+            src_study, dest_name, self._config.get_workspace_path(), groups, owner, directory_id, destination_folder
         )
+        self.repository.save(new_study)
         return self._storage_mapping[src_study.storage_mode].copy(src_study, new_study)
 
     @override
@@ -186,7 +196,7 @@ class RawStudyService(AbstractStudyService):
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
         self._extract_and_setup(study, stream)
-        self._storage_mapping[study.storage_mode].import_study(Path(study.path), study.id)
+        self._storage_mapping[study.storage_mode].import_study(study)
         return study
 
     def _extract_and_setup(self, study: RawStudy, source: Path | BinaryIO) -> None:

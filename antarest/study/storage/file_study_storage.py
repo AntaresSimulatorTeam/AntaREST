@@ -113,9 +113,8 @@ class FileStudyStorage(IStudyStorage):
             node.save_matrix(matrix_ids[k])
 
     @override
-    def import_study(self, study_path: Path, study_id: str) -> None:
-        file_study = self._get_file_study(study_path, True, study_id)
-        self.normalize_file_study(file_study)
+    def import_study(self, study: RawStudy) -> None:
+        self.normalize_study(study)
 
     def update_from_raw_metadata(self, study: Study) -> None:
         """
