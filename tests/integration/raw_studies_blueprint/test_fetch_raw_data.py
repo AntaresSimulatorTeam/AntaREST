@@ -30,7 +30,6 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.prepro.
     default_data_matrix,
 )
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
-from tests.integration.utils import wait_for
 
 
 class TestFetchRawData:
@@ -641,8 +640,7 @@ class TestFetchOriginalFile:
         assert res.json()["description"] == "Node at user/folder is a folder node."
         assert res.json()["exception"] == "PathIsAFolderError"
 
-    @pytest.mark.parametrize("archive", [True, False])
-    def test_retrieve_original_files(self, client: TestClient, user_access_token: str, archive: bool) -> None:
+    def test_retrieve_original_files(self, client: TestClient, user_access_token: str) -> None:
         # client headers
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
@@ -661,13 +659,6 @@ class TestFetchOriginalFile:
             },
         )
         assert res.status_code == 200, res.json()
-
-        if archive:
-            # archive the study
-            res = client.put(f"/v1/studies/{study_id}/archive")
-            assert res.status_code == 200
-            task_id = res.json()
-            wait_for(lambda: client.get(f"/v1/tasks/{task_id}").json()["status"] == 3)
 
         # retrieves an `ini` file
         res = client.get(

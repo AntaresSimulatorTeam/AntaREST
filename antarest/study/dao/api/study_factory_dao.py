@@ -13,10 +13,14 @@
 from abc import ABC, abstractmethod
 
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.model import Study
+from antarest.study.storage.utils import StudyMetadataCreation
 
 
 class StudyFactoryDao(ABC):
     @abstractmethod
-    def create_study_dao(self, study: Study) -> StudyDao:
+    def create_study_dao(self, metadata: StudyMetadataCreation) -> StudyDao:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_study_dao(self, study_id: str, is_study_managed: bool) -> StudyDao:
         raise NotImplementedError()

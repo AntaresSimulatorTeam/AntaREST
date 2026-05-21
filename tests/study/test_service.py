@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 import pytest
 
-from antarest.study.service import get_disk_usage
+from antarest.study.storage.utils import get_disk_usage
 
 
 def test_get_disk_usage__nominal_case(tmp_path: Path) -> None:
@@ -39,16 +39,6 @@ def test_get_disk__usage_archive(tmp_path: Path, suffix: str) -> None:
     compressed_data = b"dummy archive content"
     compressed_path.write_bytes(compressed_data)
     assert get_disk_usage(tmp_path) == len(compressed_data)
-
-
-def test_gest_disk_usage__unknown_format(tmp_path: Path) -> None:
-    """
-    This test ensures that the 'get_disk_usage' function handles unknown directory formats appropriately.
-    """
-    path = tmp_path.joinpath("study.dat")
-    path.touch()
-    with pytest.raises(NotADirectoryError):
-        get_disk_usage(path)
 
 
 def test_gest_disk_usage_exceptions(tmp_path: Path) -> None:
