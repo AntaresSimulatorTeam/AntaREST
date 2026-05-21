@@ -13,14 +13,13 @@ import logging
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import BinaryIO, Iterator
+from typing import Iterator
 
 from typing_extensions import override
 
-from antarest.core.config import Config
-from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.utils import current_time
 from antarest.matrixstore.model import MatrixReference
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.file_study_utils import export_study_to_flat_directory, get_study_path, update_antares_info
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
@@ -30,18 +29,14 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 )
 from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.utils import get_disk_usage, is_managed
-from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
 
 
 class FileStudyStorage(IStudyStorage):
-    def __init__(self, cache: ICache, config: Config, command_context: CommandContext, study_factory: StudyFactory):
-        self._command_context = command_context
-        self._cache = cache
-        self._config = config
+    def __init__(self, matrix_service: ISimpleMatrixService, study_factory: StudyFactory):
         self._study_factory = study_factory
-        self._matrix_service = command_context.matrix_service
+        self._matrix_service = matrix_service
 
     @override
     def copy(self, src_study: Study, new_study: RawStudy) -> RawStudy:
@@ -118,9 +113,9 @@ class FileStudyStorage(IStudyStorage):
             node.save_matrix(matrix_ids[k])
 
     @override
-    def import_study(self, study: RawStudy, stream: BinaryIO) -> RawStudy:
-        self.normalize_study(study)
-        return study
+    def import_study(self, study_path: Path, study_id: str) -> None:
+        file_study = self._get_file_study(study_path, True, study_id)
+        self.normalize_file_study(file_study)
 
     def update_from_raw_metadata(self, study: Study) -> None:
         """

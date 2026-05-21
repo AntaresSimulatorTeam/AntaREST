@@ -74,18 +74,16 @@ class RawStudyService(AbstractStudyService):
         self.study_factory = study_factory
         self.repository = repository
         self._matrix_service = command_context.matrix_service
-        self._file_study_storage = FileStudyStorage(cache, config, command_context, study_factory)
-        self._database_study_storage = DatabaseStudyStorage(
-            config, self._matrix_service, command_context.generator_matrix_constants
-        )
-        self._storage_mapping: dict[StorageMode, IStudyStorage] = {
-            StorageMode.FILESYSTEM: self._file_study_storage,
-            StorageMode.DATABASE: self._database_study_storage,
-        }
         ctx = command_context
         self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
             StorageMode.DATABASE: DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants),
             StorageMode.FILESYSTEM: FileStudyDaoFactory(command_context, study_factory, cache, self.get_study_paths),
+        }
+        self._file_study_storage = FileStudyStorage(self._matrix_service, study_factory)
+        self._database_study_storage = DatabaseStudyStorage(self._matrix_service, self._study_dao_factories)
+        self._storage_mapping: dict[StorageMode, IStudyStorage] = {
+            StorageMode.FILESYSTEM: self._file_study_storage,
+            StorageMode.DATABASE: self._database_study_storage,
         }
         RawStudyMatrixUsageProvider(repository, self._matrix_service, self._storage_mapping)
         self.cache = cache
@@ -188,9 +186,13 @@ class RawStudyService(AbstractStudyService):
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
         self._extract_and_setup(study, stream)
-        return self._storage_mapping[study.storage_mode].import_study(study, stream)
+        self._storage_mapping[study.storage_mode].import_study(Path(study.path), study.id)
+        return study
 
     def _extract_and_setup(self, study: RawStudy, source: Path | BinaryIO) -> None:
+        """
+        The source is extracted to the filesystem inside the study `path` attribute.
+        """
         study_path = Path(study.path)
         try:
             if isinstance(source, Path):

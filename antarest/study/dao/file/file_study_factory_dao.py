@@ -63,7 +63,7 @@ class FileStudyDaoFactory(StudyFactoryDao):
         study_id = metadata.id
         paths = self._paths_getter(study_id)
         output_path = paths.output_path
-        study_path = paths.study_path
+        study_path = metadata.path or paths.study_path
 
         create_new_empty_study(version=metadata.version, path_study=study_path)
 

@@ -12,7 +12,7 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import BinaryIO, Iterator
+from typing import Iterator
 
 from antarest.matrixstore.model import MatrixReference
 from antarest.study.model import RawStudy, Study
@@ -21,6 +21,10 @@ from antarest.study.model import RawStudy, Study
 class IStudyStorage(ABC):
     @abstractmethod
     def copy(self, src_study: Study, new_study: RawStudy) -> RawStudy:
+        """
+        Copies information from src_study to new_study.
+        The 2 studies must have the same storage mode.
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -44,5 +48,5 @@ class IStudyStorage(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def import_study(self, study: RawStudy, stream: BinaryIO) -> RawStudy:
+    def import_study(self, study_path: Path, study_id: str) -> None:
         raise NotImplementedError()
