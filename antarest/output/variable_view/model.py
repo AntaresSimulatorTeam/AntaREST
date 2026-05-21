@@ -9,11 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import itertools
 from typing import Annotated, Literal, TypeAlias
 
 from pydantic import BaseModel, Field
 
 from antarest.core.exceptions import OutputVariablesViewError
+from antarest.core.utils.collection_utils import find_if
 from antarest.output.filestudy.utils import MCIndAreasQueryFile, MCIndLinksQueryFile, QueryFileType
 from antarest.output.model import OutputVariablesList
 
@@ -112,12 +114,12 @@ def _checks_links_variables_view_coherence(
     area_to_id = output_identifier.area_to_id
     error_msg = f"The variable '{variable_name}' does not exist for link '{area_from_id} - {area_to_id}'"
     link_variables = available_variables.mc_ind.links
-    for link_variable in link_variables:
-        if link_variable.area_1_name == area_from_id and link_variable.area_2_name == area_to_id:
-            if variable_name in link_variable.variables:
-                return
-            raise OutputVariablesViewError(output_id, error_msg)
 
+    link_variable = find_if(link_variables, lambda lv: lv.area_1_name == area_from_id and lv.area_2_name == area_to_id)
+    if not link_variable:
+        raise OutputVariablesViewError(output_id, error_msg)
+    if variable_name in map(lambda v: v.name, link_variable.variables):
+        return
     raise OutputVariablesViewError(output_id, error_msg)
 
 

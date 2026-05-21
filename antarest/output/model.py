@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from enum import StrEnum
-from typing import Annotated, Any, Callable, Generic, TypeAlias, TypeVar
+from typing import Annotated, Any, Callable, Generic, Protocol, TypeAlias, TypeVar, cast
 
 from pydantic import BeforeValidator
 from pydantic.alias_generators import to_camel
@@ -46,6 +46,19 @@ class McAllVar(_BaseModel):
     stat: str
 
 
+class SupportsLessThan(Protocol):
+    def __lt__(self, other: Any) -> bool: ...
+
+
+def _var_sort_key(var: McIndVar | McAllVar) -> SupportsLessThan:
+    match var:
+        case McIndVar():
+            return var.name, var.unit
+        case McAllVar():
+            return var.name, var.unit, var.stat
+    return None
+
+
 class AreaClusterVariables(_BaseModel, Generic[Vars]):
     name: str
     variables: Vars
@@ -55,8 +68,10 @@ def _name_key(x: Any) -> str:
     if isinstance(x, str):
         return x
     if isinstance(x, dict):
-        return x["name"]
-    return getattr(x, "name")
+        if "stat" in x:
+            return f"{x['name']} {x['stat']}"
+        return cast(str, x["name"])
+    return cast(str, getattr(x, "name"))
 
 
 ClusterVariables: TypeAlias = Annotated[
@@ -164,13 +179,13 @@ class OutputVariablesInformation(AntaresBaseModel, extra="forbid"):
         all_area_variables = set()
         for area in variables_list.mc_ind.areas:
             all_area_variables.update(area.variables)
-        args["area"] = sorted(all_area_variables)
+        args["area"] = sorted(all_area_variables, key=_var_sort_key)
 
         # Links
         all_link_variables = set()
         for link in variables_list.mc_ind.links:
             all_link_variables.update(link.variables)
-        args["link"] = sorted(all_link_variables)
+        args["link"] = sorted(all_link_variables, key=_var_sort_key)
 
         return OutputVariablesInformation.model_validate(args)
 

@@ -10,13 +10,21 @@
 #
 # This file is part of the Antares project.
 from collections.abc import Iterable
-from typing import TypeVar
+from itertools import groupby
+from typing import Callable, Iterable, TypeVar
+
+from antarest.output.storage.v2.variables_metadata import T, V
 
 T = TypeVar("T")
 U = TypeVar("U")
 V = TypeVar("V")
 W = TypeVar("W")
 X = TypeVar("X")
+
+
+K = TypeVar("K")
+K1 = TypeVar("K1")
+K2 = TypeVar("K2")
 
 
 def remove_nones(data: dict[T, V]) -> dict[T, V]:
@@ -51,3 +59,19 @@ def iter_nested_3(data: dict[T, dict[U, dict[V, dict[W, X]]]]) -> Iterable[tuple
             for k3, v3 in v2.items():
                 for k4, v4 in v3.items():
                     yield k1, k2, k3, k4, v4
+
+
+def _group_by(data: Iterable[T], key: Callable[[T], K], value: Callable[[T], V]) -> dict[K, list[V]]:
+    res = {}
+    for k, items in groupby(data, key=key):
+        res[k] = [value(i) for i in items]
+    return res
+
+
+def _group_by_2(
+    data: Iterable[T], key1: Callable[[T], K1], key2: Callable[[T], K2], value: Callable[[T], V]
+) -> dict[K1, dict[K2, list[V]]]:
+    res = {}
+    for k, items in groupby(data, key=key1):
+        res[k] = _group_by(items, key=key2, value=value)
+    return res
