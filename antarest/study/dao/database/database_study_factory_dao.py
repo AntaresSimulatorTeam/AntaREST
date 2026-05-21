@@ -24,12 +24,12 @@ from antarest.study.business.model.config.advanced_parameters_model import (
     AdvancedParameters,
     initialize_advanced_parameters_against_version,
 )
-from antarest.study.business.model.config.compatibility_parameters_model import (
-    CompatibilityParameters,
-    initialize_compatibility_parameters_against_version,
-)
+from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
 from antarest.study.business.model.config.general_model import GeneralConfig, initialize_general_config_against_version
-from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
+from antarest.study.business.model.config.optimization_config_model import (
+    OptimizationPreferences,
+    initialize_optimization_preferences_against_version,
+)
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.layer_model import Layer
@@ -59,7 +59,9 @@ def _create_default_settings(dao: DatabaseStudyDao, study: Study) -> None:
     initialize_advanced_parameters_against_version(advanced_parameters, study_version)
     dao.save_advanced_parameters(advanced_parameters)
 
-    dao.save_optimization_preferences(OptimizationPreferences())
+    optimization_preferences = OptimizationPreferences()
+    initialize_optimization_preferences_against_version(optimization_preferences, study_version)
+    dao.save_optimization_preferences(optimization_preferences)
 
     thematic_trimming = ThematicTrimming()
     initialize_thematic_trimming_against_version(thematic_trimming, study_version)
@@ -71,9 +73,7 @@ def _create_default_settings(dao: DatabaseStudyDao, study: Study) -> None:
         dao.save_adequacy_patch_parameters(adequacy_patch_parameters)
 
     if study_version >= STUDY_VERSION_9_2:
-        compatibility_parameters = CompatibilityParameters()
-        initialize_compatibility_parameters_against_version(compatibility_parameters, study_version)
-        dao.save_compatibility_parameters(compatibility_parameters)
+        dao.save_compatibility_parameters(CompatibilityParameters())
 
 
 class DatabaseStudyDaoFactory(StudyFactoryDao):
