@@ -268,13 +268,17 @@ def test_copy_study(empty_study_930: FileStudy, study_service: StudyService) -> 
 
     study = create_raw_study(id=study_id, path=str(study_path), public_mode=PublicMode.NONE, groups=[])
 
+    # Initialize arguments for the copy method
     destination = PurePosixPath("myfolder/subfolder")
     groups = [Group(id="my_grp", name="my_grp")]
     admin = Identity(id=1, name="admin", type="users")
+
+    # Copy the study
     new_study = study_service.storage_service.raw_study_service.copy(
         study, "new_name", destination, admin, groups, None
     )
 
+    # Check the new study attributes
     assert new_study.path == str(study_path.parent / "internal_studies" / new_study.id)
     assert new_study.public_mode == PublicMode.NONE
     assert len(new_study.groups) == 1
