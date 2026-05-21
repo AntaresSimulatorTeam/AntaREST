@@ -108,6 +108,5 @@ class DatabaseStudyStorage(IStudyStorage):
         )
         converter.convert_study_inputs()
 
-        # Delete the FS DAO once the conversion is done
-        source_path = source_dao.get_file_study().config.study_path
-        shutil.rmtree(source_path)
+        # Delete the source study path once the conversion is done
+        shutil.rmtree(study_path)
