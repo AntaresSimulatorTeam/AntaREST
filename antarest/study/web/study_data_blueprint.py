@@ -726,6 +726,7 @@ def create_study_data_routes() -> APIRouter:
     @bp.get(
         path="/studies/{uuid}/config/optimization/form",
         summary="Get optimization config values for form",
+        response_model_exclude_none=True,
     )
     def get_optimization_form_values(
         study_service: StudyServiceDep,
