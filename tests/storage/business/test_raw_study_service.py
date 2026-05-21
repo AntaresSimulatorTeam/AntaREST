@@ -26,6 +26,7 @@ from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import PublicMode
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.login.model import Group, Identity
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.output.storage.file.storage import (
     FileStudyOutputs,
@@ -267,19 +268,20 @@ def test_copy_study(empty_study_930: FileStudy, study_service: StudyService) -> 
 
     study = create_raw_study(id=study_id, path=str(study_path), public_mode=PublicMode.NONE, groups=[])
 
-    repo = Mock()
-    study_service.repository = repo
-    repo.get.return_value = study
-
     destination = PurePosixPath("myfolder/subfolder")
-    groups = ["admin"]  # Only existing group
-    new_study = study_service.storage_service.raw_study_service.copy(study, "new_name", groups, destination)
+    groups = [Group(id="my_grp", name="my_grp")]
+    admin = Identity(id=1, name="admin", type="users")
+    new_study = study_service.storage_service.raw_study_service.copy(
+        study, "new_name", destination, admin, groups, None
+    )
 
     assert new_study.path == str(study_path.parent / "internal_studies" / new_study.id)
     assert new_study.public_mode == PublicMode.NONE
-    assert new_study.groups == groups
+    assert len(new_study.groups) == 1
+    assert new_study.groups[0].id == "my_grp"
     assert new_study.folder == f"{destination.as_posix()}/{new_study.id}"
     assert new_study.name == "new_name"
+    assert new_study.owner.name == "admin"
 
     # Checks study.antares is correctly updated
     study_path = study_path.parent / "internal_studies" / new_study.id
