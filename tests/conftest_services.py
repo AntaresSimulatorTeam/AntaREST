@@ -39,7 +39,7 @@ from antarest.eventbus.service import EventBusService
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService, SimpleMatrixService
 from antarest.study.directory_service import DirectoryService
-from antarest.study.repository import DirectoryRepository
+from antarest.study.repository import DirectoryRepository, StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
@@ -371,7 +371,7 @@ def raw_study_service_fixture(
     core_config: Config,
     study_factory: StudyFactory,
     core_cache: ICache,
-    simple_matrix_service: ISimpleMatrixService,
+    command_factory: CommandFactory,
 ) -> RawStudyService:
     """
     Fixture that creates a RawStudyService instance.
@@ -385,7 +385,11 @@ def raw_study_service_fixture(
         An instance of the RawStudyService class with the provided dependencies.
     """
     return RawStudyService(
-        config=core_config, study_factory=study_factory, cache=core_cache, matrix_service=simple_matrix_service
+        config=core_config,
+        study_factory=study_factory,
+        cache=core_cache,
+        command_context=command_factory.command_context,
+        repository=StudyMetadataRepository(cache_service=core_cache),
     )
 
 

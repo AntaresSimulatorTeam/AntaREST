@@ -210,7 +210,7 @@ def test_scan_recursive_false(study_tree: Path, db_session: Session) -> None:
         study.version = "860"
         return study
 
-    raw_study_service.update_from_raw_meta.side_effect = update_meta
+    raw_study_service.update_from_raw_metadata.side_effect = update_meta
 
     def get_info(path: Path) -> StudyMetadataDTO:
         return study_to_dto(

@@ -70,6 +70,7 @@ from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import (
     extract_output_name,
     fix_study_root,
+    get_disk_usage,
     get_start_date,
     remove_from_cache,
 )
@@ -555,3 +556,9 @@ class InStudyFileOutputStorage(IOutputStorage):
         if empty_log:
             return ""
         raise ChildNotFoundError(f"Logs for {output_id} of study {study_id} were not found")
+
+    @override
+    def get_disk_usage(self, study_id: str, output_id: str) -> int:
+        study_outputs = self._outputs_provider.get_outputs(study_id)
+        output_dir = _output_path(study_outputs.outputs_path, output_id)
+        return get_disk_usage(output_dir)

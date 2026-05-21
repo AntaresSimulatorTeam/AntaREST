@@ -890,6 +890,9 @@ class OutputService:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
         return self._find_output_storage(study_id, output_id).get_logs(study_id, output_id, log_type)
 
+    def get_disk_usage(self, study_id: str, output_id: str) -> int:
+        return self._find_output_storage(study_id, output_id).get_disk_usage(study_id, output_id)
+
     def convert_output(self, study_id: str, output_id: str, storage_type: OutputStorageType) -> None:
         """
         Converts an output to a different storage.

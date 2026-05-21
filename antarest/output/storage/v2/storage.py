@@ -67,6 +67,7 @@ from antarest.study.storage.utils import (
     SimulationRangeDefinition,
     extract_output_name,
     fix_study_root,
+    get_disk_usage,
     get_matrix_index,
     parse_simulation_range,
 )
@@ -415,3 +416,8 @@ class V2OutputStorage(IOutputStorage):
 
         if not has_data:
             raise OutputAggregationError(output_id, "No output data matching the criteria were found")
+
+    @override
+    def get_disk_usage(self, study_id: str, output_id: str) -> int:
+        output_dir = parquet_output_dir(self._variables_dir, study_id, output_id)
+        return get_disk_usage(output_dir)
