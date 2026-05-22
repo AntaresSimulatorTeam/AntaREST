@@ -72,16 +72,22 @@ def build_study_service(
     variant_repository = variant_repository or VariantStudyRepository(cache)
     job_result_repository = job_result_repository or JobResultRepository()
 
-    raw_study_service = RawStudyService(
-        config=config, study_factory=study_factory, cache=cache, matrix_service=matrix_service
-    )
-
     if not generator_matrix_constants:
         generator_matrix_constants = GeneratorMatrixConstants(matrix_service=matrix_service)
         generator_matrix_constants.init_constant_matrices()
     command_factory = CommandFactory(
         generator_matrix_constants=generator_matrix_constants, matrix_service=matrix_service, blob_service=blob_service
     )
+
+    raw_study_service = RawStudyService(
+        config=config,
+        study_factory=study_factory,
+        cache=cache,
+        command_context=command_factory.command_context,
+        repository=metadata_repository,
+    )
+
+    # Variant study service
     variant_study_service = VariantStudyService(
         task_service=task_service,
         cache=cache,

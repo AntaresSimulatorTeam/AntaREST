@@ -16,11 +16,12 @@ from typing_extensions import override
 
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixReference
+from antarest.study.model import StorageMode
 from antarest.study.repository import AccessPermissions, StudyFilter
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import extract_matrix_id
+from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
+from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 
@@ -32,11 +33,13 @@ class CommandMatrixUsageProvider(IMatrixUsageProvider):
         self,
         variant_study_repo: VariantStudyRepository,
         command_factory: CommandFactory,
+        storage_mapping: dict[StorageMode, IStudyStorage],
     ):
         self.variant_study_repo = variant_study_repo
         self.command_factory = command_factory
         self.matrix_service = command_factory.command_context.matrix_service
         self.matrix_service.register_usage_provider(self)
+        self.storage_mapping = storage_mapping
 
     @override
     def get_matrix_usage(self) -> Iterable[MatrixReference]:
@@ -74,13 +77,4 @@ class CommandMatrixUsageProvider(IMatrixUsageProvider):
             study_ids=list(snapshots_to_check), access_permissions=AccessPermissions(is_admin=True)
         )
         for study in self.variant_study_repo.get_all(study_filter):
-            study_id = study.id
-            assert isinstance(study, VariantStudy)
-            snapshot_path = study.snapshot_dir
-            if snapshot_path.exists():
-                for f in snapshot_path.rglob("*.link"):
-                    matrix_id = extract_matrix_id(f.read_text())
-                    matrix_reference = MatrixReference(
-                        matrix_id=f"{matrix_id}", use_description=f"Used by variant study {study_id} snapshot"
-                    )
-                    yield matrix_reference
+            yield from self.storage_mapping[study.storage_mode].yield_matrix_references(study)
