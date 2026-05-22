@@ -415,8 +415,8 @@ class TaskJobService(ITaskService):
                 raise
         else:
             logger.warning(f"Task '{task_id}' not handled by this worker, will poll for task completion from db")
-            end = asyncio.get_event_loop().time() + timeout_sec
-            while asyncio.get_event_loop().time() < end:
+            end = time.time() + timeout_sec
+            while time.time() < end:
 
                 def _check_status() -> int | None:
                     with db():
