@@ -137,8 +137,9 @@ def _db_metadata_to_simulation_range(metadata: DbOutputMetadataV2) -> Simulation
     )
 
 
-def _db_metadata_to_details(metadata: DbOutputMetadataV2) -> OutputDetails:
+def _db_metadata_to_details(metadata: DbOutputMetadataV2, output_id: str) -> OutputDetails:
     return OutputDetails(
+        id=output_id,
         name=metadata.output_name,
         mode=Mode(metadata.mode),
         synthesis=metadata.synthesis,
@@ -269,7 +270,7 @@ class V2OutputStorage(IOutputStorage):
         metadata = self._repository.get_output_metadata(study_id, output_id)
         if metadata is None:
             raise OutputNotFound(output_id)
-        return _db_metadata_to_details(metadata)
+        return _db_metadata_to_details(metadata, output_id)
 
     @override
     def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:
