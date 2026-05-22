@@ -18,6 +18,7 @@ from starlette.testclient import TestClient
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
 from antarest.study.model import STUDY_VERSION_9_3
+from tests.integration.studies_blueprint.utils import create_minimal_study
 from tests.integration.utils import wait_task_completion
 from tests.test_helpers.outputs import create_minimal_output_zip_from_name
 
@@ -463,23 +464,7 @@ def test_copy_with_both_storage_modes(client: TestClient, user_access_token: str
     assert res.status_code == 201
     study_id = res.json()
 
-    for name in ["fr", "be", "ch"]:
-        res = client.post(f"/v1/studies/{study_id}/areas", json={"name": name})
-        res.raise_for_status()
-
-    for name in ["be", "ch"]:
-        res = client.post(f"/v1/studies/{study_id}/links", json={"area1": "fr", "area2": name})
-        res.raise_for_status()
-
-    for thermal_name in ["lignite plant", "nuclear cluster"]:
-        res = client.post(f"/v1/studies/{study_id}/areas/fr/clusters/thermal", json={"name": thermal_name})
-        res.raise_for_status()
-
-    res = client.post(
-        f"/v1/studies/{study_id}/bindingconstraints",
-        json={"name": "Constraint1", "terms": [{"weight": 4, "data": {"area1": "be", "area2": "ch"}}]},
-    )
-    res.raise_for_status()
+    create_minimal_study(client, study_id)
 
     # Copy the study
     res = client.post(f"/v1/studies/{study_id}/copy?study_name=MyStudyCopy")
