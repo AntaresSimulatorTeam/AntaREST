@@ -12,8 +12,12 @@
 from io import BytesIO
 from pathlib import Path
 
+import pytest
 from starlette.testclient import TestClient
 
+from antarest.study.business.model.link_model import Link
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
+from antarest.study.model import STUDY_VERSION_9_3
 from tests.integration.utils import wait_task_completion
 from tests.test_helpers.outputs import create_minimal_output_zip_from_name
 
@@ -448,3 +452,94 @@ def copy_with_output_test(client: TestClient, study_id: str) -> None:
     res = client.get(f"/v1/studies/{res.json()}/outputs")
     assert res.status_code == 200
     assert [d["name"] for d in res.json()] == ["20231002-1023eco"]
+
+
+@pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
+def test_copy_with_both_storage_modes(client: TestClient, user_access_token: str, storage_mode: str) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    # Create a Raw study with several areas, links, constraints, thermals ...
+    res = client.post(f"/v1/studies?name=MyStudy&storage_mode={storage_mode}")
+    assert res.status_code == 201
+    study_id = res.json()
+
+    for name in ["fr", "be", "ch"]:
+        res = client.post(f"/v1/studies/{study_id}/areas", json={"name": name})
+        res.raise_for_status()
+
+    for name in ["be", "ch"]:
+        res = client.post(f"/v1/studies/{study_id}/links", json={"area1": "fr", "area2": name})
+        res.raise_for_status()
+
+    for thermal_name in ["lignite plant", "nuclear cluster"]:
+        res = client.post(f"/v1/studies/{study_id}/areas/fr/clusters/thermal", json={"name": thermal_name})
+        res.raise_for_status()
+
+    res = client.post(
+        f"/v1/studies/{study_id}/bindingconstraints",
+        json={"name": "Constraint1", "terms": [{"weight": 4, "data": {"area1": "be", "area2": "ch"}}]},
+    )
+    res.raise_for_status()
+
+    # Copy the study
+    res = client.post(f"/v1/studies/{study_id}/copy?study_name=MyStudyCopy")
+    assert res.status_code == 201
+    task_id = res.json()
+
+    client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
+
+    copied_study = client.get("/v1/studies?name=MyStudyCopy").json()
+    copied_study_id = next(iter(copied_study))
+
+    ############## Ensures the data was copied correctly ##############
+
+    # Areas + Thermals
+    res = client.get(f"/v1/studies/{copied_study_id}/areas")
+    result = res.json()
+    sorted_result = sorted(result, key=lambda a: a["id"])  # For testing purposes
+
+    default_thermal = ThermalCluster(name="fake")  # Just to have a readable test
+    initialize_thermal_cluster(default_thermal, STUDY_VERSION_9_3)
+    default_thermal_params = default_thermal.model_dump(mode="json", exclude={"name", "id"}, by_alias=True)
+
+    assert sorted_result == [
+        {"id": "be", "name": "be", "thermals": [], "type": "AREA"},
+        {"id": "ch", "name": "ch", "thermals": [], "type": "AREA"},
+        {
+            "id": "fr",
+            "name": "fr",
+            "thermals": [
+                {"id": "lignite plant", "name": "lignite plant", **default_thermal_params},
+                {"id": "nuclear cluster", "name": "nuclear cluster", **default_thermal_params},
+            ],
+            "type": "AREA",
+        },
+    ]
+
+    # Links
+    res = client.get(f"/v1/studies/{copied_study_id}/links")
+
+    sorted_result = sorted(res.json(), key=lambda a: a["area1"])  # For testing purposes
+    default_link_params = Link(area1="a", area2="b").model_dump(mode="json", exclude={"area1", "area2"}, by_alias=True)
+
+    assert sorted_result == [
+        {"area1": "be", "area2": "fr", **default_link_params},
+        {"area1": "ch", "area2": "fr", **default_link_params},
+    ]
+
+    # Binding constraints
+    res = client.get(f"/v1/studies/{copied_study_id}/bindingconstraints")
+    assert res.json() == [
+        {
+            "comments": "",
+            "enabled": True,
+            "filterSynthesis": "",
+            "filterYearByYear": "",
+            "group": "default",
+            "id": "constraint1",
+            "name": "Constraint1",
+            "operator": "equal",
+            "terms": [{"data": {"area1": "be", "area2": "ch"}, "offset": None, "weight": 4.0}],
+            "timeStep": "hourly",
+        }
+    ]
