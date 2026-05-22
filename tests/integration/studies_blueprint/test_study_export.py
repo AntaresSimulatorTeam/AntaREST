@@ -12,9 +12,12 @@
 import zipfile
 from io import BytesIO
 from pathlib import Path
+from unittest.mock import ANY
 
+import pytest
 from starlette.testclient import TestClient
 
+from antarest.core.serde.ini_reader import read_ini
 from tests.integration.utils import wait_task_completion
 from tests.test_helpers.download import download_to_file
 from tests.test_helpers.outputs import create_minimal_output_zip_from_name
@@ -112,3 +115,93 @@ def export_with_output_test(client: TestClient, study_id: str, tmp_path: Path) -
     assert "output/20201002-1023eco-output1/info.antares-output" in namelist
     assert "output/20210716-1815adq-output2/info.antares-output" in namelist
     assert "output/20231002-1023eco/info.antares-output" in namelist
+
+
+@pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
+def test_export_with_both_storage_modes(
+    client: TestClient, user_access_token: str, storage_mode: str, tmp_path: Path
+) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    # Create a Raw study with several areas, links, constraints, thermals ...
+    res = client.post(f"/v1/studies?name=MyStudy&storage_mode={storage_mode}")
+    assert res.status_code == 201
+    study_id = res.json()
+
+    for name in ["fr", "be", "ch"]:
+        res = client.post(f"/v1/studies/{study_id}/areas", json={"name": name})
+        res.raise_for_status()
+
+    for name in ["be", "ch"]:
+        res = client.post(f"/v1/studies/{study_id}/links", json={"area1": "fr", "area2": name})
+        res.raise_for_status()
+
+    for thermal_name in ["lignite plant", "nuclear cluster"]:
+        res = client.post(f"/v1/studies/{study_id}/areas/fr/clusters/thermal", json={"name": thermal_name})
+        res.raise_for_status()
+
+    res = client.post(
+        f"/v1/studies/{study_id}/bindingconstraints",
+        json={"name": "Constraint1", "terms": [{"weight": 4, "data": {"area1": "be", "area2": "ch"}}]},
+    )
+    res.raise_for_status()
+
+    # Export the study
+    res = client.get(f"/v1/studies/{study_id}/export")
+    assert res.status_code == 200
+    download_id = res.json()["file"]["id"]
+
+    zip_path = tmp_path / "export.zip"
+    download_to_file(client, download_id, tmp_path / zip_path)
+    assert zip_path.exists()
+
+    study_path = tmp_path / "exported_study"
+    with zipfile.ZipFile(zip_path) as zip_output:
+        zip_output.extractall(path=study_path)
+
+    assert study_path.exists()
+
+    # Check the path content to be sure the study was correctly exported
+    study_antares = read_ini(study_path / "study.antares")
+    assert study_antares == {
+        "antares": {
+            "version": 9.3,
+            "caption": "MyStudy",
+            "author": "George",
+            "editor": "George",
+            "created": ANY,
+            "lastsave": ANY,
+        }
+    }
+
+    # Areas
+    assert sorted([f.name for f in (study_path / "input" / "areas").iterdir()]) == [
+        "be",
+        "ch",
+        "fr",
+        "list.txt",
+        "sets.ini",
+    ]
+    # Links
+    assert sorted([f.name for f in (study_path / "input" / "links").iterdir()]) == ["be", "ch", "fr"]
+    # Thermals
+    ini_path = study_path / "input" / "thermal" / "clusters" / "fr" / "list.ini"
+    ini_content = read_ini(ini_path)
+    assert sorted(ini_content) == ["lignite plant", "nuclear cluster"]
+    # Binding constraints
+    ini_path = study_path / "input" / "bindingconstraints" / "bindingconstraints.ini"
+    ini_content = read_ini(ini_path)
+    assert ini_content == {
+        "0": {
+            "id": "constraint1",
+            "name": "Constraint1",
+            "enabled": True,
+            "type": "hourly",
+            "operator": "equal",
+            "comments": "",
+            "filter-year-by-year": "",
+            "filter-synthesis": "",
+            "group": "default",
+            "be%ch": 4.0,
+        }
+    }
