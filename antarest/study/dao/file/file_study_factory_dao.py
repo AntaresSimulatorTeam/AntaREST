@@ -68,7 +68,10 @@ class FileStudyDaoFactory(StudyFactoryDao):
         create_new_empty_study(version=metadata.version, path_study=study_path)
 
         is_study_managed = metadata.managed
-        file_study = self._study_factory.create_from_fs(study_path, is_study_managed, study_id, output_path)
+
+        # We don't want to use the cache as we're creating a new study.
+        # In particular, when launching a simulation for a DB study, the cache is filled with the old JOB path so we don't want to use it.
+        file_study = self._study_factory.create_from_fs(study_path, is_study_managed, study_id, output_path, False)
 
         update_antares_info(metadata, file_study.tree, update_author=True)
 
