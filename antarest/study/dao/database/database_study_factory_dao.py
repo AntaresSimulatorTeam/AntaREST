@@ -51,15 +51,13 @@ from antarest.study.model import (
     STUDY_VERSION_8_3,
     STUDY_VERSION_8_4,
     STUDY_VERSION_9_2,
-    Study,
 )
+from antarest.study.storage.utils import StudyMetadataCreation
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
-def _create_default_settings(dao: DatabaseStudyDao, study: Study) -> None:
+def _create_default_settings(dao: DatabaseStudyDao, study_version: StudyVersion) -> None:
     """Saves default settings at study creation. Modifies the `dao` parameter in place"""
-    study_version = StudyVersion.parse(study.version)
-
     general_config = GeneralConfig()
     initialize_general_config_against_version(general_config, study_version)
     if study_version == STUDY_VERSION_7_2:
@@ -119,13 +117,13 @@ class DatabaseStudyDaoFactory(StudyFactoryDao):
         return self._session
 
     @override
-    def create_study_dao(self, study: Study) -> DatabaseStudyDao:
-        version = StudyVersion.parse(study.version)
+    def create_study_dao(self, metadata: StudyMetadataCreation) -> DatabaseStudyDao:
+        version = StudyVersion.parse(metadata.version)
         if version not in STUDY_REFERENCE_TEMPLATES:
             raise UnsupportedStudyVersion(
                 f"{version} is not a supported version, supported versions are: {STUDY_REFERENCE_TEMPLATES}"
             )
-        dao = DatabaseStudyDao(study.id, self.session, self._matrix_service, self._generator_matrix_constants)
+        dao = self.get_study_dao(metadata.id, metadata.managed)
         dao.save_layer(Layer(id=DEFAULT_LAYER_ID, name=DEFAULT_LAYER_NAME))
         dao.save_district(
             District(
@@ -136,5 +134,9 @@ class DatabaseStudyDaoFactory(StudyFactoryDao):
                 apply_filter=DistrictApplyFilter.add_all,
             )
         )
-        _create_default_settings(dao, study)
+        _create_default_settings(dao, metadata.version)
         return dao
+
+    @override
+    def get_study_dao(self, study_id: str, is_study_managed: bool) -> DatabaseStudyDao:
+        return DatabaseStudyDao(study_id, self.session, self._matrix_service, self._generator_matrix_constants)

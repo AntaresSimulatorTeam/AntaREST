@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 import contextlib
-import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -39,64 +38,20 @@ from antarest.study.business.model.sts_model import STStorage, STStorageAddition
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import (
     STUDY_VERSION_8_6,
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_2,
     STUDY_VERSION_9_3,
     STUDY_VERSION_10_0,
-    StorageMode,
     Study,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import create_raw_study, create_study
+from tests.conftest import build_db_dao, build_filesystem_dao
 from tests.study.dao.utils import save_area
-
-
-def build_db_dao(db_session: Session, matrix_service: ISimpleMatrixService, version: StudyVersion) -> DatabaseStudyDao:
-    """
-    Create a test study in database mode and create a DatabaseStudyDao instance for testing.
-    """
-    study_id = str(uuid.uuid4())
-    generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
-    generator_matrix_constants.init_constant_matrices()
-    with db_session:
-        study = create_study(id=study_id, name="Test Study", version=str(version))
-        study.storage_mode = StorageMode.DATABASE
-        db_session.add(study)
-        db_session.commit()
-        factory = DatabaseStudyDaoFactory(matrix_service, generator_matrix_constants, db_session)
-        dao = factory.create_study_dao(study)
-    return dao
-
-
-def build_filesystem_dao(
-    db_session: Session,
-    version: StudyVersion,
-    command_context: CommandContext,
-    study_factory: StudyFactory,
-    study_path: Path,
-) -> FileStudyTreeDao:
-    """
-    Create a test study in filesystem mode and create a FileStudyTreeDao instance for testing.
-    """
-    # Create the study
-    study_id = str(uuid.uuid4())
-    study = create_raw_study(id=study_id, name="Test Study", version=str(version), path=str(study_path / "my_study"))
-    study.storage_mode = StorageMode.FILESYSTEM
-    with db_session:
-        db_session.add(study)
-        db_session.commit()
-        factory = FileStudyDaoFactory(command_context, study_factory, Mock())
-        dao = factory.create_study_dao(study)
-
-    return dao
 
 
 @pytest.fixture
@@ -163,7 +118,7 @@ def dao(
     tmp_path: Path,
     core_cache: "ICache",
 ) -> StudyDao:
-    """A binding-constraint DAO parameterized over both backends (v8.8+)."""
+    """A DAO parameterized over both backends (v8.8+)."""
     if request.param == "db":
         return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
     else:

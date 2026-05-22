@@ -34,7 +34,7 @@ from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.model import RawStudy, Study
+from antarest.study.model import RawStudy, StorageMode, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
@@ -230,26 +230,15 @@ def create_raw_study(
     name: str | None = None,
     path: str | None = None,
     version: str = "880",
+    storage_mode: StorageMode = StorageMode.FILESYSTEM,
     **kwargs: Any,
 ) -> RawStudy:
-    """
-    Factory to create a new RawStudy object for testing purposes.
-
-    Args:
-        id: The study ID. If not provided, a new UUID is generated.
-        name: The study name. If not provided, it will be "My Study".
-        path: The study path. If not provided, a temporary path is created.
-        version: The study version. Default is "860".
-        **kwargs: Additional keyword arguments to pass to the RawStudy constructor.
-
-    Returns:
-        A new RawStudy object.
-    """
     return RawStudy(
         id=id or str(uuid.uuid4()),
         name=name or "My Study",
         path=str(path or Path("path/to/raw_study")),
         version=version,
+        storage_mode=storage_mode,
         **kwargs,
     )
 

@@ -489,7 +489,7 @@ def test_sta_mini_list_studies(client: TestClient) -> None:
 
 @with_admin_user
 def test_sta_mini_import(tmp_path: Path, storage_service: StudyService, client: TestClient) -> None:
-    path_study = storage_service.get_study_path(UUID)
+    path_study = Path(storage_service.get_study(UUID).path)
     sta_mini_zip_filepath = shutil.make_archive(str(tmp_path), "zip", path_study)
     sta_mini_zip_path = Path(sta_mini_zip_filepath)
 
@@ -501,7 +501,7 @@ def test_sta_mini_import(tmp_path: Path, storage_service: StudyService, client: 
 
 @with_admin_user
 def test_sta_mini_import_output(tmp_path: Path, storage_service: StudyService, client: TestClient) -> None:
-    path_study_output = storage_service.get_study_path(UUID) / "output" / "20201014-1422eco-hello"
+    path_study_output = Path(storage_service.get_study(UUID).path) / "output" / "20201014-1422eco-hello"
     sta_mini_output_zip_filepath = shutil.make_archive(str(tmp_path), "zip", path_study_output)
 
     sta_mini_output_zip_path = Path(sta_mini_output_zip_filepath)
