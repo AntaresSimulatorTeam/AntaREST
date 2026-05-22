@@ -21,7 +21,7 @@ import type {
   VariablesListDTO,
   VariableViewParams,
 } from "@/services/api/studies/outputs/variableViews/types";
-import type { AreaWithId, District, LinkElement, OutputDetails } from "@/types/types";
+import type { AreaWithId, District, LinkElement, OutputSynthesis } from "@/types/types";
 
 export type ListType = "areas" | "links" | "synthesis";
 export type DataType = "values" | "details" | "details-res" | "id" | "details-STstorage";
@@ -31,7 +31,7 @@ export type MonteCarloMode = "mc-ind" | "mc-all" | "variable-per-variable";
 export type Item = AreaWithId | District | LinkElement;
 
 interface Params {
-  output: Partial<OutputDetails> & { id: string; name: string };
+  output: Partial<OutputSynthesis> & { id: string; name: string };
   item: Item;
   dataType: DataType;
   frequency: Frequency;

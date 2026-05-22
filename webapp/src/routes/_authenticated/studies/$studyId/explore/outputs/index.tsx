@@ -12,38 +12,32 @@
  * This file is part of the Antares project.
  */
 
-import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import DigestDialog from "@/components/dialogs/DigestDialog";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import RouterLink from "@/components/router/RouterLink";
+import useDialog from "@/hooks/useDialog";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import { jobQueries } from "@/queries/jobs/queries";
+import { outputQueries } from "@/queries/outputs/queries";
+import { isQueryListItemOptimistic } from "@/queries/utils";
 import LaunchJobLogView from "@/routes/_authenticated/tasks/-components/LaunchJobLogView";
-import { getJobs } from "@/services/api/launcher/jobs";
 import type { Job } from "@/services/api/launcher/jobs/types";
-import {
-  archiveOutput,
-  deleteOutput,
-  downloadJobOutput,
-  getStudyOutputs,
-  unarchiveOutput,
-} from "@/services/api/study";
+import type { Output } from "@/services/api/studies/outputs/types";
+import { downloadJobOutput } from "@/services/api/study";
 import { convertUTCToLocalTime } from "@/services/utils";
-import type { OutputDetails } from "@/types/types";
-import { toError } from "@/utils/fnUtils";
-import type { EmptyObject } from "@/utils/tsUtils";
 import ArchiveIcon from "@mui/icons-material/Archive";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
+import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
 import EqualizerIcon from "@mui/icons-material/Equalizer";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import UnarchiveIcon from "@mui/icons-material/Unarchive";
 import {
-  Box,
+  Chip,
   CircularProgress,
+  IconButton,
   Paper,
-  Skeleton,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -53,282 +47,167 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { compareDesc, parseISO } from "date-fns";
-import { useMemo, useState } from "react";
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import useArchiveOutput from "./-hooks/useArchiveOutput";
+import useDeleteOutput from "./-hooks/useDeleteOutput";
+import useUnarchiveOutput from "./-hooks/useUnarchiveOutput";
+import { selectJobsData, sortOutputsByCompletionDate, type OutputWithJob } from "./-utils";
+
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/outputs/")({
+  loader: async ({ context, params: { studyId } }) => {
+    await context.queryClient.ensureQueryData(jobQueries.list(studyId));
+  },
   component: Outputs,
 });
 
-interface OutputDetail {
-  name: string;
-  creationDate?: string;
-  completionDate?: string;
-  job?: Job;
-  output?: OutputDetails;
-  archived?: boolean;
-  isRunning: boolean;
-}
-
-interface ShowConfirmDeleteDialog {
-  type: "confirmDelete";
-  data: string;
-}
-
-interface ShowDigestDialog {
-  type: "digest";
-  data: Job;
-}
-
-type DialogState = ShowConfirmDeleteDialog | ShowDigestDialog | EmptyObject;
-
-const iconStyle = {
-  fontSize: 22,
-  color: "action.active",
-  cursor: "pointer",
-};
-
 function Outputs() {
   const { studyId } = Route.useParams();
+  const queryClient = useQueryClient();
   const { t } = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const [dialogState, setDialogState] = useState<DialogState>({});
-
-  const { data: studyJobs, isLoading: studyJobsLoading } = usePromiseWithSnackbarError(
-    () => getJobs({ studyId }),
-    {
-      errorMessage: t("results.error.jobs"),
-      deps: [studyId],
-    },
-  );
+  const { confirm, openDialog } = useDialog();
+  const archiveOutput = useArchiveOutput();
+  const unarchiveOutput = useUnarchiveOutput();
+  const deleteOutput = useDeleteOutput();
 
   const {
-    data: studyOutputs,
-    isLoading: studyOutputsLoading,
-    reload: reloadOutputs,
-  } = usePromiseWithSnackbarError(() => getStudyOutputs(studyId), {
-    errorMessage: t("results.error.outputs"),
-    deps: [studyId],
+    data: { jobsByOutputId, runningJobs },
+  } = useSuspenseQuery({
+    ...jobQueries.list(studyId),
+    select: selectJobsData,
   });
 
-  const isLoading = studyJobsLoading || studyOutputsLoading;
+  const selectOutputsWithJob = useCallback(
+    (outputs: Output[]) => {
+      return sortOutputsByCompletionDate(
+        outputs.map((output) => ({
+          ...output,
+          job: jobsByOutputId[output.id] as Job | undefined,
+        })),
+      );
+    },
+    [jobsByOutputId],
+  );
 
-  const outputs = useMemo(() => {
-    if (!studyJobs || !studyOutputs) {
-      return [];
-    }
-
-    const outputMap = new Map<string, OutputDetail>();
-    const jobsByOutputId = new Map<string, Job>();
-
-    studyJobs.forEach((job) => {
-      if (job.outputId) {
-        jobsByOutputId.set(job.outputId, job);
-      }
-    });
-
-    // Process completed outputs
-    studyOutputs.forEach((output) => {
-      const relatedJob = jobsByOutputId.get(output.name);
-
-      const outputDetail: OutputDetail = {
-        name: output.name,
-        archived: output.archived,
-        output,
-        isRunning: false,
-        completionDate: relatedJob?.completionDate,
-        creationDate: relatedJob?.creationDate,
-        job: relatedJob,
-      };
-
-      // If no related job, try to parse date from output name
-      if (!relatedJob && !outputDetail.completionDate) {
-        const dateMatch = output.name.match(/(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})/);
-
-        if (dateMatch) {
-          const [, year, month, day, hour, minute] = dateMatch;
-          outputDetail.completionDate = `${year}-${month}-${day} ${hour}:${minute}`;
-        }
-      }
-
-      outputMap.set(output.name, outputDetail);
-    });
-
-    // Process running jobs
-    studyJobs.forEach((job) => {
-      if (!job.completionDate) {
-        outputMap.set(job.id, {
-          name: job.id,
-          creationDate: job.creationDate,
-          job,
-          isRunning: true,
-        });
-      }
-    });
-
-    // Sort by date (most recent first)
-    return Array.from(outputMap.values()).sort((a, b) => {
-      const dateA = a.completionDate || a.creationDate;
-      const dateB = b.completionDate || b.creationDate;
-
-      if (!dateA || !dateB) {
-        return a.isRunning ? -1 : b.isRunning ? 1 : 0;
-      }
-
-      return compareDesc(parseISO(dateA), parseISO(dateB));
-    });
-  }, [studyJobs, studyOutputs]);
+  const { data: outputsWithJob } = useSuspenseQuery({
+    ...outputQueries.list(studyId),
+    select: selectOutputsWithJob,
+  });
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleArchiveToggle = async (output: OutputDetail) => {
-    if (output.archived === undefined) {
-      return;
-    }
-
-    const handler = output.archived
-      ? () => unarchiveOutput(studyId, output.name)
-      : () => archiveOutput(studyId, output.name);
-
-    const errorMessage = output.archived
-      ? "studies.error.unarchiveOutput"
-      : "studies.error.archiveOutput";
-
-    try {
-      await handler();
-      reloadOutputs();
-    } catch (error) {
-      enqueueErrorSnackbar(t(errorMessage, { outputname: output.name }), toError(error));
-    }
+  const handleArchive = (output: Output) => {
+    archiveOutput.mutate({ studyId, outputId: output.id });
   };
 
-  const handleDeleteOutput = async (outputName: string) => {
-    setDialogState({});
-    await deleteOutput(studyId, outputName);
-    reloadOutputs();
+  const handleUnarchive = (output: Output) => {
+    unarchiveOutput.mutate({ studyId, outputId: output.id });
   };
 
-  const handleDownload = (job?: Job) => {
-    if (job) {
-      downloadJobOutput(job.id);
+  const handleDelete = async (output: Output) => {
+    const isConfirmed = await confirm({
+      content: t("results.question.deleteOutput", { outputName: output.name }),
+      alert: "error",
+      titleIcon: DeleteIcon,
+    });
+
+    if (isConfirmed) {
+      deleteOutput.mutate({ studyId, outputId: output.id });
     }
   };
 
-  const openDigestDialog = (job: Job) => {
-    setDialogState({ type: "digest", data: job });
+  const handleDownload = (job: Job) => {
+    // TODO: check if download work
+    downloadJobOutput(job.id);
   };
 
-  const openDeleteDialog = (outputName: string) => {
-    setDialogState({ type: "confirmDelete", data: outputName });
+  const handleOpenDigest = (job: Job) => {
+    openDialog(({ onClose }) => (
+      <DigestDialog open studyId={job.studyId} outputId={job.outputId} onOk={onClose} />
+    ));
   };
-
-  const closeDialog = () => setDialogState({});
 
   ////////////////////////////////////////////////////////////////
   // Render helpers
   ////////////////////////////////////////////////////////////////
 
-  const renderDateCell = (output: OutputDetail) => (
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "flex-end",
-        justifyContent: "center",
-        flexDirection: "column",
-        fontSize: "0.85rem",
-      }}
-    >
-      {output.creationDate && (
-        <Box width="168px" display="flex" justifyContent="space-between" alignItems="center">
-          <CalendarTodayIcon sx={{ fontSize: 16, mr: 0.5 }} />
-          {convertUTCToLocalTime(output.creationDate)}
-        </Box>
-      )}
-      {output.completionDate && (
-        <Box width="168px" display="flex" justifyContent="space-between" alignItems="center">
-          <EventAvailableIcon sx={{ fontSize: 16, mr: 0.5 }} />
-          {convertUTCToLocalTime(output.completionDate)}
-        </Box>
-      )}
-    </Box>
-  );
+  const renderCreationDate = (job: Job) => {
+    return (
+      <Stack gap={1}>
+        <CalendarTodayIcon fontSize="extra-small" />
+        {convertUTCToLocalTime(job.creationDate)}
+      </Stack>
+    );
+  };
 
-  const renderActions = (output: OutputDetail) => (
-    <Box display="flex" alignItems="center" justifyContent="flex-end">
-      {/* Archive/Unarchive button */}
-      {output.archived !== undefined && (
-        <Box sx={{ height: "24px", margin: 0.5 }}>
-          <Tooltip title={t(output.archived ? "global.unarchive" : "global.archive") as string}>
-            {output.archived ? (
-              <UnarchiveIcon sx={iconStyle} onClick={() => handleArchiveToggle(output)} />
-            ) : (
-              <ArchiveIcon sx={iconStyle} onClick={() => handleArchiveToggle(output)} />
-            )}
-          </Tooltip>
-        </Box>
-      )}
+  const renderCompletionDate = (output: OutputWithJob) => {
+    let completionDate: string | undefined;
 
-      {/* Download button */}
-      {output.completionDate && output.job && (
-        <Box sx={{ height: "24px", margin: 0.5 }}>
-          <Tooltip title={t("global.download") as string}>
-            <DownloadIcon sx={iconStyle} onClick={() => handleDownload(output.job)} />
-          </Tooltip>
-        </Box>
-      )}
+    if (output.job?.completionDate) {
+      completionDate = convertUTCToLocalTime(output.job.completionDate);
+    }
+    // If no related job or completion date is not available, try to parse date from output name
+    else {
+      const dateMatch = output.name.match(/(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})/);
 
-      {/* Log viewer */}
-      {output.job && <LaunchJobLogView job={output.job} logButton logErrorButton />}
-
-      {/* Digest button */}
-      {output.job?.status === "success" && output.output?.synthesis && (
-        <Box sx={{ height: "24px", margin: 0.5 }}>
-          <Tooltip title="Digest">
-            <EqualizerIcon
-              sx={iconStyle}
-              onClick={() => output.job && openDigestDialog(output.job)}
-            />
-          </Tooltip>
-        </Box>
-      )}
-
-      {/* Delete button */}
-      <Box sx={{ height: "24px", margin: 0.5 }}>
-        <Tooltip title={t("global.delete") as string}>
-          <DeleteForeverIcon
-            sx={{
-              ...iconStyle,
-              "&:hover": { color: "error.light" },
-            }}
-            onClick={() => openDeleteDialog(output.name)}
-          />
-        </Tooltip>
-      </Box>
-    </Box>
-  );
-
-  const renderNameCell = (output: OutputDetail) => {
-    if (output.isRunning) {
-      return (
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <CircularProgress size="1rem" color="inherit" sx={{ mr: 1 }} />
-          <Typography>{output.name}</Typography>
-        </Box>
-      );
+      if (dateMatch) {
+        const [, year, month, day, hour, minute] = dateMatch;
+        completionDate = `${year}-${month}-${day} ${hour}:${minute}:00`;
+      }
     }
 
     return (
-      <RouterLink
-        color="inherit"
-        underline="hover"
-        to="/studies/$studyId/explore/outputs/$outputId"
-        params={{ studyId, outputId: output.name }}
-      >
-        {output.name}
-      </RouterLink>
+      <Stack gap={1}>
+        <EventAvailableIcon fontSize="extra-small" />
+        {completionDate || t("global.unknown")}
+      </Stack>
+    );
+  };
+
+  const renderOutputNameColumn = (output: Output) => {
+    const isOutputOptimistic = isQueryListItemOptimistic(output);
+    const isDisabled = output.archived || isOutputOptimistic;
+
+    return (
+      <Stack gap={2}>
+        {isOutputOptimistic && <CircularProgress size="1rem" color="inherit" />}
+        <RouterLink
+          color="inherit"
+          underline={isDisabled ? "none" : "hover"}
+          to="/studies/$studyId/explore/outputs/$outputId"
+          params={{ studyId, outputId: output.id }}
+          disabled={isDisabled}
+        >
+          {output.name}
+        </RouterLink>
+        {output.archived && <Chip label={t("study.archived")} size="small" color="warning" />}
+      </Stack>
+    );
+  };
+
+  const renderOutputActionButton = <T extends Output>(params: {
+    output: T;
+    tooltip: string;
+    icon: React.ReactNode;
+    onClick: (output: T) => void;
+  }) => {
+    return (
+      <Tooltip title={params.tooltip}>
+        <span>
+          <IconButton
+            onClick={() => params.onClick(params.output)}
+            size="small"
+            disabled={isQueryListItemOptimistic(params.output)}
+          >
+            {params.icon}
+          </IconButton>
+        </span>
+      </Tooltip>
     );
   };
 
@@ -343,33 +222,113 @@ function Outputs() {
           <TableHead>
             <TableRow>
               <TableCell>{t("global.name")}</TableCell>
+              <TableCell align="right">{t("global.user")}</TableCell>
               <TableCell align="right">{t("global.date")}</TableCell>
               <TableCell align="right">{t("tasks.action")}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {isLoading ? (
-              Array.from({ length: 3 }).map((_, index) => (
-                <TableRow key={`loading-row-${Date.now()}-${index}`}>
-                  <TableCell colSpan={3}>
-                    <Skeleton sx={{ width: 1, height: 50 }} />
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : outputs.length > 0 ? (
-              outputs.map((output) => (
-                <TableRow key={output.name}>
+            {/* Running jobs */}
+            {runningJobs.length > 0 &&
+              runningJobs.map((job) => (
+                <TableRow key={job.id}>
                   <TableCell component="th" scope="row">
-                    {renderNameCell(output)}
+                    <Stack gap={2}>
+                      <CircularProgress size="1rem" color="inherit" />
+                      <Typography>{job.id}</Typography>
+                    </Stack>
                   </TableCell>
-                  <TableCell align="right">{renderDateCell(output)}</TableCell>
-                  <TableCell align="right">{renderActions(output)}</TableCell>
+                  <TableCell align="right">{job.owner?.name}</TableCell>
+                  <TableCell align="right">
+                    <Stack gap={2} justifyContent="flex-end">
+                      {renderCreationDate(job)}
+                    </Stack>
+                  </TableCell>
+                  <TableCell align="right">
+                    <Stack justifyContent="flex-end">
+                      <LaunchJobLogView job={job} logButton logErrorButton />
+                    </Stack>
+                  </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              // Empty state
+              ))}
+
+            {/* Outputs  */}
+            {outputsWithJob.length > 0 &&
+              outputsWithJob.map((output) => (
+                <TableRow key={output.id}>
+                  <TableCell component="th" scope="row">
+                    {renderOutputNameColumn(output)}
+                  </TableCell>
+                  <TableCell align="right">{output.job?.owner?.name}</TableCell>
+                  <TableCell align="right">
+                    <Stack gap={2} justifyContent="flex-end">
+                      {output.job && renderCreationDate(output.job)}
+                      {renderCompletionDate(output)}
+                    </Stack>
+                  </TableCell>
+                  <TableCell align="right">
+                    <Stack justifyContent="flex-end">
+                      {/* Archive button */}
+                      {output.archived === false &&
+                        renderOutputActionButton({
+                          output,
+                          tooltip: t("global.archive"),
+                          icon: <ArchiveIcon />,
+                          onClick: handleArchive,
+                        })}
+
+                      {/* Unarchive button */}
+                      {output.archived === true &&
+                        renderOutputActionButton({
+                          output,
+                          tooltip: t("global.unarchive"),
+                          icon: <UnarchiveIcon />,
+                          onClick: handleUnarchive,
+                        })}
+
+                      {/* Download button (job) */}
+                      {output.job && (
+                        <Tooltip title={t("global.download")}>
+                          <IconButton
+                            onClick={() => output.job && handleDownload(output.job)}
+                            size="small"
+                          >
+                            <DownloadIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+
+                      {/* Log viewer (job) */}
+                      {output.job && <LaunchJobLogView job={output.job} logButton logErrorButton />}
+
+                      {/* Digest button (job) */}
+                      {output.synthesis && output.job && (
+                        <Tooltip title="Digest">
+                          <IconButton
+                            onClick={() => output.job && handleOpenDigest(output.job)}
+                            size="small"
+                          >
+                            <EqualizerIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+
+                      {/* Delete button */}
+                      {renderOutputActionButton({
+                        output,
+                        tooltip: t("global.delete"),
+                        icon: <DeleteIcon />,
+                        onClick: handleDelete,
+                      })}
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              ))}
+
+            {/* No running jobs and no outputs */}
+            {runningJobs.length === 0 && outputsWithJob.length === 0 && (
               <TableRow>
-                <TableCell colSpan={3}>
+                <TableCell colSpan={4}>
                   <Typography sx={{ m: 2 }} align="center">
                     {t("results.noOutputs")}
                   </Typography>
@@ -379,24 +338,6 @@ function Outputs() {
           </TableBody>
         </Table>
       </TableContainer>
-      {/* Dialogs */}
-      {dialogState.type === "confirmDelete" && (
-        <ConfirmationDialog
-          open
-          onConfirm={() => handleDeleteOutput(dialogState.data)}
-          onCancel={closeDialog}
-        >
-          {t("results.question.deleteOutput", { outputname: dialogState.data })}
-        </ConfirmationDialog>
-      )}
-      {dialogState.type === "digest" && (
-        <DigestDialog
-          open
-          studyId={dialogState.data.studyId}
-          outputId={dialogState.data.outputId}
-          onOk={closeDialog}
-        />
-      )}
     </ViewWrapper>
   );
 }

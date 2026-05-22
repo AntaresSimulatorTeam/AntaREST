@@ -12,12 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import { outputQueries } from "@/queries/outputs/queries";
+import { queryClient } from "@/queries/queryClient";
 import { getStudiesById } from "@/redux/selectors";
 import store from "@/redux/store";
 import { getLaunchersConfig } from "@/services/api/launcher/index";
 import { getSolverPresets } from "@/services/api/launcher/solverPresets";
 import type { LauncherDTO } from "@/services/api/launcher/types";
-import { getStudyOutputs } from "@/services/api/study";
 import type { StudyMetadata } from "@/types/types";
 import {
   getHighestVersion,
@@ -88,8 +89,10 @@ export async function getDefaultValues(studyIds: Array<StudyMetadata["id"]>) {
   /* Output field */
 
   const isSingleStudy = studyIds.length === 1;
-  const studyOutputs = isSingleStudy ? await getStudyOutputs(studyIds[0]) : [];
-  const outputOptions = studyOutputs.map(({ name }) => name);
+  const outputs = isSingleStudy
+    ? await queryClient.ensureQueryData(outputQueries.list(studyIds[0]))
+    : [];
+  const outputOptions = outputs.map((output) => ({ value: output.id, label: output.name }));
 
   return {
     name: "",

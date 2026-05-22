@@ -106,13 +106,14 @@ export interface StudyMetadataPatchDTO {
   tags?: string[];
 }
 
-export interface OutputDetails {
+export interface OutputSynthesis {
   name: string;
-  mode: string;
+  mode: "Economy" | "Adequacy" | "Expansion";
   synthesis: boolean;
   byYear: boolean;
   nbYears: number;
   archived: boolean;
+  storageType: "IN_STUDY_FILE_TREE" | "EXTERNAL";
 }
 
 export interface StudyLayer {
@@ -318,7 +319,7 @@ export interface StudySynthesis {
   version: number;
   areas: Record<string, Area>;
   districts: Record<string, District>;
-  outputs: Record<string, OutputDetails>;
+  outputs: Record<string, OutputSynthesis>;
   store_new_set: boolean;
   archive_input_series: string[];
   enr_modelling: "aggregated" | "clusters";
