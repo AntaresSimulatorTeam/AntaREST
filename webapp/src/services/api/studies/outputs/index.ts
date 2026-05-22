@@ -23,17 +23,19 @@ export async function getOutputs({ studyId }: GetOutputsParams): Promise<Output[
 }
 
 export async function deleteOutput({ studyId, outputId }: OutputParams) {
-  await client.delete(`/v1/studies/${studyId}/outputs/${outputId}`);
+  await client.delete(`/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}`);
 }
 
 export async function archiveOutput({ studyId, outputId }: OutputParams) {
-  const { data: taskId } = await client.post(`/v1/studies/${studyId}/outputs/${outputId}/_archive`);
+  const { data: taskId } = await client.post(
+    `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}/_archive`,
+  );
   return z.string().parse(taskId);
 }
 
 export async function unarchiveOutput({ studyId, outputId }: OutputParams) {
   const { data: taskId } = await client.post(
-    `/v1/studies/${studyId}/outputs/${outputId}/_unarchive`,
+    `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}/_unarchive`,
   );
   return z.string().parse(taskId);
 }

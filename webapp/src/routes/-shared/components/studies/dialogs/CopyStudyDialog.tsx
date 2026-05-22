@@ -24,7 +24,7 @@ import { outputQueries } from "@/queries/outputs/queries";
 import { copyStudy } from "@/services/api/studies";
 import type { Output } from "@/services/api/studies/outputs/types";
 import { getTask } from "@/services/api/tasks";
-import type { OutputDetails, StudyMetadata } from "@/types/types";
+import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import { validateStudyName } from "@/utils/studiesUtils";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
@@ -44,7 +44,7 @@ interface Props {
 interface DefaultValues {
   studyName: string;
   destination: DirectoryDestination;
-  outputIds?: Array<OutputDetails["name"]>;
+  outputIds?: Array<Output["id"]>;
 }
 
 function selectOutputsData(outputs: Output[]) {

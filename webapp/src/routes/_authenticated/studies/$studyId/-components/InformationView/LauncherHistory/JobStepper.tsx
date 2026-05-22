@@ -50,12 +50,6 @@ export const ColorStatus = {
   failed: "error.main",
 } as const;
 
-const iconStyle = {
-  m: 0.5,
-  height: 22,
-  cursor: "pointer",
-};
-
 function QontoStepIcon(props: { className: string | undefined; status: JobStatus }) {
   const { className, status } = props;
   return (

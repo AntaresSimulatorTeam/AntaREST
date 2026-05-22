@@ -16,7 +16,6 @@ import DigestDialog from "@/components/dialogs/DigestDialog";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import RouterLink from "@/components/router/RouterLink";
 import useDialog from "@/hooks/useDialog";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { jobQueries } from "@/queries/jobs/queries";
 import { outputQueries } from "@/queries/outputs/queries";
 import { isQueryListItemOptimistic } from "@/queries/utils";
@@ -47,7 +46,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
@@ -65,9 +64,7 @@ export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/o
 
 function Outputs() {
   const { studyId } = Route.useParams();
-  const queryClient = useQueryClient();
   const { t } = useTranslation();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { confirm, openDialog } = useDialog();
   const archiveOutput = useArchiveOutput();
   const unarchiveOutput = useUnarchiveOutput();

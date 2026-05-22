@@ -136,7 +136,7 @@ class JobResultDTO(AntaresBaseModel):
     """
     A data transfer object (DTO) representing the job result.
 
-    - id: The unique identifier outputs/for the task (UUID).
+    - id: The unique identifier for the task (UUID).
     - study_id: The unique identifier for the Antares study (UUID).
     - launcher: The name of the launcher for a simulation task, with possible values "local", "slurm" or `None`.
     - launcher_params: Parameters related to the launcher.
