@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+import asyncio
 import http
 import logging
 from http import HTTPStatus
@@ -48,6 +49,9 @@ def create_tasks_api() -> APIRouter:
         """
         Retrieve information about a specific task.
 
+        Important: this endpoint is one of the few ASYNC endpoint, because it performs polling.
+                   this avoid to block other sync endpoints while we are just waiting for the task to complete.
+
         Args:
         - `task_id`: Unique identifier of the task.
         - `wait_for_completion`: Set to `True` to wait for task completion.
@@ -60,7 +64,7 @@ def create_tasks_api() -> APIRouter:
         Returns:
             TaskDTO: Information about the specified task.
         """
-        task_status = service.status_task(task_id, with_logs)
+        task_status = await asyncio.to_thread(service.status_task, task_id, with_logs)
 
         if wait_for_completion and not task_status.status.is_final():
             # Ensure 0 <= timeout <= 48 h
@@ -77,7 +81,7 @@ def create_tasks_api() -> APIRouter:
                     detail="The request timed out while waiting for task completion.",
                 ) from exc
 
-        return service.status_task(task_id, with_logs)
+        return await asyncio.to_thread(service.status_task, task_id, with_logs)
 
     @bp.put("/tasks/{task_id}/cancel", status_code=HTTPStatus.ACCEPTED)
     def cancel_task(service: TaskServiceDep, task_id: UuidStr) -> None:
