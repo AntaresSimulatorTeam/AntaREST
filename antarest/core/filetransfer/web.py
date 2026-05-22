@@ -52,7 +52,7 @@ def create_file_transfer_api() -> APIRouter:
         "/downloads/{download_id}/metadata",
         summary="Retrieve information on a file's state of preparation",
     )
-    def get_download_metadata(
+    async def get_download_metadata(
         filetransfer_manager: FileTransferManagerDep,
         download_id: UuidStr,
         wait_for_availability: Annotated[
@@ -60,6 +60,6 @@ def create_file_transfer_api() -> APIRouter:
         ] = False,
     ) -> FileDownloadDTO:
         logger.info(f"Retrieving metadata for download {download_id} (waiting: {wait_for_availability}).")
-        return filetransfer_manager.get_download_metadata(download_id, wait_for_availability)
+        return await filetransfer_manager.get_download_metadata_async(download_id, wait_for_availability)
 
     return bp

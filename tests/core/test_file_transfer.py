@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+import asyncio
 import datetime
 import time
 from pathlib import Path
@@ -112,8 +113,8 @@ def test_wait_for_download_metadata(tmp_path: Path) -> None:
         thread.start()
 
         events_counter = create_db_event_counter(get_session_factory())
-        download_dto = ftm.get_download_metadata(
-            download.id, wait_for_availability=True, polling_interval=0.1, timeout=10
+        download_dto = asyncio.run(
+            ftm.get_download_metadata_async(download.id, wait_for_availability=True, polling_interval=0.1, timeout=10)
         )
 
         assert download_dto.id == download.id

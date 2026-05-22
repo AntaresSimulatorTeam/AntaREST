@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import asyncio
 import logging
 import time
 from abc import ABC, abstractmethod
@@ -103,6 +104,17 @@ class ITaskService(ABC):
     def await_task(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
         """
         Waits for the completion of task for the specified time.
+
+        Raises:
+            TimeoutError: if the task is not completed before the timeout
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    async def await_task_async(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
+        """
+        Asynchronously waits for the completion of a task for the specified time.
+        Prefer this over `await_task` when calling from an async context.
 
         Raises:
             TimeoutError: if the task is not completed before the timeout
@@ -382,6 +394,42 @@ class TaskJobService(ITaskService):
                         return
                 logger.info("💤 Sleeping 2 seconds...")
                 time.sleep(2)
+            error_msg = f"Timeout while awaiting task '{task_id}'"
+            logger.warning(error_msg)
+            raise TimeoutError(error_msg)
+
+    @override
+    async def await_task_async(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
+        if task_id in self.tasks:
+            try:
+                logger.info(f"🤔 Awaiting task '{task_id}' {timeout_sec}s...")
+                future: Future[None] = self.tasks[task_id]
+                await asyncio.wait_for(asyncio.wrap_future(future), timeout=timeout_sec)
+                logger.info(f"📌 Task '{task_id}' done.")
+            except TimeoutError as timeout_exc:
+                error_msg = f"Timeout while awaiting task '{task_id}'"
+                logger.warning(error_msg)
+                raise TimeoutError(error_msg) from timeout_exc
+            except Exception as exc:
+                logger.critical(f"🤕 Task '{task_id}' failed: {exc}.")
+                raise
+        else:
+            logger.warning(f"Task '{task_id}' not handled by this worker, will poll for task completion from db")
+            end = asyncio.get_event_loop().time() + timeout_sec
+            while asyncio.get_event_loop().time() < end:
+
+                def _check_status() -> int | None:
+                    with db():
+                        return db.session.execute(select(TaskJob.status).where(TaskJob.id == task_id)).scalar()
+
+                task_status = await asyncio.to_thread(_check_status)
+                if task_status is None:
+                    logger.error(f"Awaited task '{task_id}' was not found")
+                    return
+                if TaskStatus(task_status).is_final():
+                    return
+                logger.info("💤 Sleeping 2 seconds...")
+                await asyncio.sleep(2)
             error_msg = f"Timeout while awaiting task '{task_id}'"
             logger.warning(error_msg)
             raise TimeoutError(error_msg)

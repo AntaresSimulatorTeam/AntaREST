@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+import asyncio
 import datetime
 import http
 import logging
@@ -34,7 +35,7 @@ from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
-from antarest.core.utils.wait import wait_for
+from antarest.core.utils.wait import async_wait_for
 from antarest.login.utils import get_current_user, require_current_user
 
 logger = logging.getLogger(__name__)
@@ -207,7 +208,7 @@ class FileTransferManager:
 
         return download
 
-    def get_download_metadata(
+    async def get_download_metadata_async(
         self,
         download_id: str,
         wait_for_availability: bool,
@@ -215,6 +216,8 @@ class FileTransferManager:
         timeout: float = DEFAULT_DOWNLOAD_WAIT_TIMEOUT,
     ) -> FileDownloadDTO:
         """
+        Retrieve metadata for a download, optionally waiting for it to be ready or failed.
+
         Important:
         we use short scoped sessions here to guarantee that sessions are not held for a long time.
         """
@@ -228,11 +231,13 @@ class FileTransferManager:
                     return download.to_dto()
                 return None
 
-        download_dto = get_download_if_completed()
+        download_dto = await asyncio.to_thread(get_download_if_completed)
 
         # the user wants to wait for the download to be available
         if not download_dto and wait_for_availability:
-            download_dto = wait_for(get_download_if_completed, polling_interval=polling_interval, timeout=timeout)
+            download_dto = await async_wait_for(
+                get_download_if_completed, polling_interval=polling_interval, timeout=timeout
+            )
 
         if not download_dto:
             raise HTTPException(status_code=http.HTTPStatus.EXPECTATION_FAILED, detail="File is still in process.")

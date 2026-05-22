@@ -38,7 +38,7 @@ def create_tasks_api() -> APIRouter:
         return service.list_tasks(task_filter)
 
     @bp.get("/tasks/{task_id}")
-    def get_task(
+    async def get_task(
         service: TaskServiceDep,
         task_id: UuidStr,
         wait_for_completion: bool = False,
@@ -66,7 +66,8 @@ def create_tasks_api() -> APIRouter:
             # Ensure 0 <= timeout <= 48 h
             timeout = min(max(0, timeout), DEFAULT_AWAIT_MAX_TIMEOUT)
             try:
-                service.await_task(task_id, timeout_sec=timeout)
+                # Prefer the async implementation to avoid blocking the event loop.
+                await service.await_task_async(task_id, timeout_sec=timeout)
             except TimeoutError as exc:  # pragma: no cover
                 # Note that if the task does not complete within the specified time,
                 # the task will continue running but the user will receive a timeout.
