@@ -14,7 +14,6 @@ import os
 import zipfile
 from pathlib import Path
 
-import pytest
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
 from starlette.testclient import TestClient
@@ -22,7 +21,7 @@ from starlette.testclient import TestClient
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
 from tests.integration.assets import ASSETS_DIR
-from tests.integration.studies_blueprint.utils import create_minimal_study
+from tests.integration.studies_blueprint.utils import check_minimal_study_integrity, create_minimal_study
 
 
 def zip_study(src_path: Path, dest_path: Path) -> None:
@@ -241,13 +240,31 @@ def test_import_with_editor(
     assert imported_antares_data["editor"] == "importer"
 
 
-@pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
-def test_import_with_both_storage_modes(client: TestClient, user_access_token: str, storage_mode: str) -> None:
+def test_import_with_both_storage_modes(client: TestClient, user_access_token: str, tmp_path: Path) -> None:
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
-    # Create a Raw study with several areas, links, constraints, thermals ...
-    res = client.post(f"/v1/studies?name=MyStudy&storage_mode={storage_mode}")
+    # Create a Raw FS study with several areas, links, constraints, thermals ...
+    study_name = "MyStudy"
+    res = client.post(f"/v1/studies?name={study_name}")
     assert res.status_code == 201
     study_id = res.json()
 
     create_minimal_study(client, study_id)
+
+    # Zip the study directory manually
+    study_path = tmp_path / "internal_workspace" / study_id
+    archive_path = tmp_path / f"{study_name}.zip"
+
+    zip_study(study_path, archive_path)
+    study_zip_data = archive_path.read_bytes()
+
+    # Imports the study with both storage modes
+    for storage_mode in ["filesystem", "database"]:
+        content = {"study": (f"{study_name}.zip", study_zip_data, "application/zip")}
+
+        res_import = client.post(f"/v1/studies/_import?storage_mode={storage_mode}", files=content)
+        res_import.raise_for_status()
+        imported_study_id = res_import.json()
+
+        # Ensures the data was imported correctly
+        check_minimal_study_integrity(client, imported_study_id)
