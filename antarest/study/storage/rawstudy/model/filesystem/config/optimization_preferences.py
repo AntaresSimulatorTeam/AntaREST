@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from typing import Any
 
+from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field
 
 from antarest.core.serde import AntaresBaseModel
@@ -20,6 +21,7 @@ from antarest.study.business.model.config.optimization_config_model import (
     SimplexOptimizationRange,
     TransmissionCapacities,
     UnfeasibleProblemBehavior,
+    initialize_optimization_preferences_against_version,
 )
 
 
@@ -42,6 +44,7 @@ class OptimizationPreferencesFileData(AntaresBaseModel):
         default=None, alias="include-unfeasible-problem-behavior"
     )
     simplex_optimization_range: SimplexOptimizationRange | None = Field(default=None, alias="simplex-range")
+    include_reserves: bool | None = Field(default=None, alias="include-reserves")
 
     def to_model(self) -> OptimizationPreferences:
         return OptimizationPreferences.model_validate(self.model_dump(exclude_none=True))
@@ -51,8 +54,10 @@ class OptimizationPreferencesFileData(AntaresBaseModel):
         return cls.model_validate(config.model_dump())
 
 
-def parse_optimization_preferences(data: dict[str, Any]) -> OptimizationPreferences:
-    return OptimizationPreferencesFileData.model_validate(data).to_model()
+def parse_optimization_preferences(data: dict[str, Any], version: StudyVersion) -> OptimizationPreferences:
+    preferences = OptimizationPreferencesFileData.model_validate(data).to_model()
+    initialize_optimization_preferences_against_version(preferences, version)
+    return preferences
 
 
 def serialize_optimization_preferences(config: OptimizationPreferences) -> dict[str, Any]:

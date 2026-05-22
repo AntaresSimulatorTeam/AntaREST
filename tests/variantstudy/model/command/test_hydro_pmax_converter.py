@@ -9,8 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pytest
 
 from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
+from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.convert_hydro_pmax import ConvertHydroPmax
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -68,3 +70,8 @@ def test_hydro_pmax_converter_creates_and_cleans_matrices(
     assert not daily_pump.exists()
     assert not hourly_gen.exists()
     assert not hourly_pump.exists()
+
+
+def test_command_with_wrong_version(command_context: CommandContext) -> None:
+    with pytest.raises(ValueError, match="Hydro pmax cannot be set to hourly before study version 9.2"):
+        ConvertHydroPmax(hydro_pmax=HydroPmax.HOURLY, command_context=command_context, study_version=STUDY_VERSION_8_8)

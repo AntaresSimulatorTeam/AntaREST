@@ -118,7 +118,6 @@ COMPATIBILITY_PARAMETERS_TABLE = Table(
     metadata,
     get_study_id_col(),
     Column("hydro_pmax", enum_col(HydroPmax), nullable=True),
-    Column("reserves_enabled", Boolean(), nullable=True),
     ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_compatibility_parameters_study_id", ondelete="CASCADE"),
 )
 
@@ -138,6 +137,7 @@ OPTIMIZATION_PREFERENCES_TABLE = Table(
     Column("export_mps", String(), nullable=False),
     Column("unfeasible_problem_behavior", enum_col(UnfeasibleProblemBehavior), nullable=False),
     Column("simplex_optimization_range", enum_col(SimplexOptimizationRange), nullable=False),
+    Column("include_reserves", Boolean(), nullable=True),
     ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_optimization_preferences_study_id", ondelete="CASCADE"),
 )
 

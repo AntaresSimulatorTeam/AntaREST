@@ -50,7 +50,7 @@ class FileStudyOptimizationPreferencesDao(OptimizationPreferencesDao, ABC):
         file_study = self.get_file_study()
         tree_data = _get_optimization_preferences(file_study)
 
-        return parse_optimization_preferences(tree_data)
+        return parse_optimization_preferences(tree_data, file_study.config.version)
 
     @override
     def save_optimization_preferences(self, config: OptimizationPreferences) -> None:
