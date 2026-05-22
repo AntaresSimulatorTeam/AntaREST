@@ -96,15 +96,15 @@ class DatabaseStudyStorage(IStudyStorage):
 
     @override
     def import_study(self, study: RawStudy) -> None:
+        # First, create the new study inside DB to avoid ForeignKey and StudyNotFound errors
+        session = db.session
+        session.add(study)
+        session.commit()
+
         # Build the 2 DAOs
         study_id = study.id
         source_dao = self._dao_factories[StorageMode.FILESYSTEM].get_study_dao(study_id=study_id, is_study_managed=True)
         new_dao = self._dao_factories[StorageMode.DATABASE].get_study_dao(study_id=study_id, is_study_managed=True)
-
-        # Create the new study inside DB to avoid ForeignKey errors
-        session = db.session
-        session.add(study)
-        session.commit()
 
         # Convert the FS DAO into a DB one
         converter = StudyConverter(
