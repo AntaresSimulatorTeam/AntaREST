@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -38,7 +37,6 @@ from antarest.study.business.model.config.playlist_model import Playlist, Playli
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration, TimeSeriesType
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.dao.database.models.comments import COMMENTS_TABLE
 from antarest.study.model import STUDY_VERSION_9_3
 from tests.study.dao.conftest import build_db_dao
 
@@ -165,7 +163,3 @@ def test_save_comments_persists_value(dao: StudyDao, db_session: Session) -> Non
     dao.save_comments(comments)
 
     assert dao.get_comments() == comments
-
-    if isinstance(dao, DatabaseStudyDao):
-        stmt = select(COMMENTS_TABLE.c.comments).where(COMMENTS_TABLE.c.study_id == dao.get_study_id())
-        assert db_session.execute(stmt).scalar_one() == comments

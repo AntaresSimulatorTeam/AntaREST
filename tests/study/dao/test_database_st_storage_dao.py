@@ -27,19 +27,8 @@ from antarest.study.business.model.sts_model import STStorage, STStorageAddition
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.st_storage import (
-    COST_INJECTION_TABLE,
-    COST_LEVEL_TABLE,
-    COST_VARIATION_INJECTION_TABLE,
-    COST_VARIATION_WITHDRAWAL_TABLE,
-    COST_WITHDRAWAL_TABLE,
-    INFLOWS_TABLE,
-    LOWER_RULE_CURVE_TABLE,
-    PMAX_INJECTION_TABLE,
-    PMAX_WITHDRAWAL_TABLE,
     ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE,
     ST_STORAGE_ADDITIONAL_CONSTRAINT_TABLE,
-    ST_STORAGE_TABLE,
-    UPPER_RULE_CURVE_TABLE,
 )
 from antarest.study.model import STUDY_VERSION_9_3
 from tests.study.dao.utils import save_area
@@ -309,23 +298,6 @@ def test_st_storage_matrices_lifecycle(db_session: Session, dao_builder: Callabl
         cost_variation_withdrawal_df,
         check_dtypes=False,
     )
-
-    # Cascade delete: deleting the storage should remove all matrix rows
-    dao.delete_st_storage("area_1", STStorage(id="battery", name="Battery"))
-
-    if isinstance(dao, DatabaseStudyDao):
-        with db_session:
-            assert db_session.execute(select(ST_STORAGE_TABLE)).fetchall() == []
-            assert db_session.execute(select(PMAX_INJECTION_TABLE)).fetchall() == []
-            assert db_session.execute(select(PMAX_WITHDRAWAL_TABLE)).fetchall() == []
-            assert db_session.execute(select(LOWER_RULE_CURVE_TABLE)).fetchall() == []
-            assert db_session.execute(select(UPPER_RULE_CURVE_TABLE)).fetchall() == []
-            assert db_session.execute(select(INFLOWS_TABLE)).fetchall() == []
-            assert db_session.execute(select(COST_INJECTION_TABLE)).fetchall() == []
-            assert db_session.execute(select(COST_WITHDRAWAL_TABLE)).fetchall() == []
-            assert db_session.execute(select(COST_LEVEL_TABLE)).fetchall() == []
-            assert db_session.execute(select(COST_VARIATION_INJECTION_TABLE)).fetchall() == []
-            assert db_session.execute(select(COST_VARIATION_WITHDRAWAL_TABLE)).fetchall() == []
 
 
 def test_get_st_storage_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> None:

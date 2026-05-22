@@ -44,7 +44,6 @@ from antarest.study.model import (
     STUDY_VERSION_8_4,
     STUDY_VERSION_9_2,
 )
-from tests.helpers import explain_model_diff
 
 
 @pytest.mark.parametrize("version", STUDY_REFERENCE_TEMPLATES)
@@ -68,37 +67,34 @@ def test_initialize_study(dao_builder: Callable[[StudyVersion], StudyDao], versi
     initialize_thematic_trimming_against_version(expected_thematic_trimming, study_version)
 
     actual_general = dao.get_general_config()
-    assert actual_general == expected_general_config, explain_model_diff(actual_general, expected_general_config)
+    assert actual_general == expected_general_config
 
     actual_opt = dao.get_optimization_preferences()
     expected_opt = OptimizationPreferences()
     if study_version >= STUDY_VERSION_8_4:
         expected_opt.transmission_capacities = TransmissionCapacities.LOCAL_VALUES
-    assert actual_opt == expected_opt, explain_model_diff(actual_opt, expected_opt)
+    assert actual_opt == expected_opt
 
     actual_adv = dao.get_advanced_parameters()
-    assert actual_adv == expected_advanced_parameters, explain_model_diff(actual_adv, expected_advanced_parameters)
-
+    assert actual_adv == expected_advanced_parameters
     actual_playlist = dao.get_playlist_config()
     expected_playlist = Playlist(years={1: PlaylistValues()})
-    assert actual_playlist == expected_playlist, explain_model_diff(actual_playlist, expected_playlist)
+    assert actual_playlist == expected_playlist
 
     actual_ts = dao.get_timeseries_config()
     expected_ts = TimeSeriesConfiguration()
-    assert actual_ts == expected_ts, explain_model_diff(actual_ts, expected_ts)
+    assert actual_ts == expected_ts
 
     actual_tt = dao.get_thematic_trimming()
-    assert actual_tt == expected_thematic_trimming, explain_model_diff(actual_tt, expected_thematic_trimming)
+    assert actual_tt == expected_thematic_trimming
 
     if study_version >= STUDY_VERSION_8_3:
         expected_adequacy_patch_parameters = AdequacyPatchParameters()
         initialize_adequacy_patch_parameters(expected_adequacy_patch_parameters, study_version)
         actual_ap = dao.get_adequacy_patch_parameters()
-        assert actual_ap == expected_adequacy_patch_parameters, explain_model_diff(
-            actual_ap, expected_adequacy_patch_parameters
-        )
+        assert actual_ap == expected_adequacy_patch_parameters
 
     if study_version >= STUDY_VERSION_9_2:
         actual_cp = dao.get_compatibility_parameters()
         expected_cp = CompatibilityParameters()
-        assert actual_cp == expected_cp, explain_model_diff(actual_cp, expected_cp)
+        assert actual_cp == expected_cp

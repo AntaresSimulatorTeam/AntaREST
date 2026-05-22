@@ -28,8 +28,7 @@ from tests.study.dao.utils import save_area
 
 ALL_FILTERS = list(FILTER_OPTIONS)
 
-# FS template (`empty_study_*.zip`) ships with this default district. Mirror it on DB
-# DAO so synthesis assertions are backend-agnostic.
+# Default district shipped by both FS templates and the DB factory.
 DEFAULT_DISTRICT = District(
     id="all areas",
     name="All areas",
@@ -39,15 +38,8 @@ DEFAULT_DISTRICT = District(
 )
 
 
-def _init_default_district(dao: StudyDao) -> None:
-    if "all areas" not in dao.get_synthesis().districts:
-        dao.save_district(DEFAULT_DISTRICT)
-
-
 class TestDatabaseSynthesisDao:
     def test_get_synthesis_empty_study(self, dao: StudyDao) -> None:
-        _init_default_district(dao)
-
         synthesis = dao.get_synthesis()
 
         expected = StudyDataSynthesis.model_construct(
@@ -127,8 +119,6 @@ class TestDatabaseSynthesisDao:
         }
 
     def test_get_synthesis_with_districts(self, dao: StudyDao) -> None:
-        _init_default_district(dao)
-
         save_area(dao, "France")
         dao.save_district(District(id="north", name="North", add_areas=["france"]))
         dao.save_district(District(id="south", name="South"))

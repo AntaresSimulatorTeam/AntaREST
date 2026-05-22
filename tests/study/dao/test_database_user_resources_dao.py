@@ -75,7 +75,7 @@ def test_save_user_resources_folder_with_file(dao: StudyDao, blob_service: InMem
     blob_id = blob_service.save(b"inside content")
     dao.save_user_resources(
         [
-            UserResourceDataCreation(path=PurePosixPath("folder_path"), resource_type=ResourceType.FOLDER),
+            UserResourceDataCreation(path=PurePosixPath("empty_folder_path"), resource_type=ResourceType.FOLDER),
             UserResourceDataCreation(
                 path=PurePosixPath("folder_path/inside.txt"), resource_type=ResourceType.FILE, blob_id=blob_id
             ),
@@ -83,7 +83,7 @@ def test_save_user_resources_folder_with_file(dao: StudyDao, blob_service: InMem
     )
     result = sorted(dao.get_all_user_resources(), key=lambda r: str(r.path))
     assert len(result) == 2
-    assert result[0].path == PurePosixPath("folder_path")
+    assert result[0].path == PurePosixPath("empty_folder_path")
     assert result[0].resource_type == ResourceType.FOLDER
     assert result[0].blob_id is None
     assert result[1].path == PurePosixPath("folder_path/inside.txt")

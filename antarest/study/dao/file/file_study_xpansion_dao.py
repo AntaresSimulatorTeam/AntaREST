@@ -97,11 +97,14 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         existing_candidates = self._get_all_xpansion_candidates()
         existing_ids = {value["name"]: key for key, value in existing_candidates.items()}
 
+        renames: dict[str, str] = {}
         for candidate, old_id in candidates:
             if old_id:
                 if old_id not in existing_ids:
                     raise CandidateNotFoundError(f"The candidate '{old_id}' does not exist")
                 del existing_candidates[existing_ids[old_id]]
+                if old_id != candidate.name:
+                    renames[old_id] = candidate.name
 
             new_key = existing_ids.get(
                 candidate.name, str(len(existing_candidates) + 1)
@@ -110,6 +113,38 @@ class FileStudyXpansionDao(XpansionDao, ABC):
             existing_candidates[new_key] = candidate.model_dump(mode="json", by_alias=True, exclude_none=True)
 
         self._save_candidates(existing_candidates)
+
+        if renames:
+            self._apply_projection_renames(renames)
+
+    def _apply_projection_renames(self, renames: dict[str, str]) -> None:
+        """
+        Propagate candidate renames into the sensitivity projection list.
+
+        Candidates and projection live in separate files (``candidates.ini``
+        and ``sensitivity_in.ini``), so renames must be mirrored explicitly
+        to avoid dangling references.
+
+        :param renames: mapping ``old_name -> new_name`` for each renamed candidate.
+        """
+        file_study = self.get_file_study()
+        sensitivity_settings = self._get_sensitivity_settings(file_study)
+
+        # Early return if empty projection
+        if not sensitivity_settings.projection:
+            return
+
+        # Compute updated projection, deduplicating
+        updated = list(dict.fromkeys(renames.get(name, name) for name in sensitivity_settings.projection))
+
+        # Early return if nothing changed (no renamed candidate was referenced in projections)
+        if updated == sensitivity_settings.projection:
+            return
+
+        # Persist
+        sensitivity_settings.projection = updated
+        content = serialize_xpansion_sensitivity_settings(sensitivity_settings)
+        file_study.tree.save(content, ["user", "expansion", "sensitivity", "sensitivity_in"])
 
     @override
     def save_xpansion_candidates(self, candidates: list[XpansionCandidate]) -> None:
@@ -140,6 +175,13 @@ class FileStudyXpansionDao(XpansionDao, ABC):
     @override
     def save_xpansion_settings(self, settings: XpansionSettings) -> None:
         file_study = self.get_file_study()
+
+        projection = settings.sensitivity_config.projection if settings.sensitivity_config else []
+        if projection:
+            existing_names = {c["name"] for c in self._get_all_xpansion_candidates().values()}
+            missing = [name for name in projection if name not in existing_names]
+            if missing:
+                raise CandidateNotFoundError("One or more candidates in the projection do not exist")
 
         sensitivity_content = serialize_xpansion_sensitivity_settings(settings.sensitivity_config)
         file_study.tree.save(sensitivity_content, ["user", "expansion", "sensitivity", "sensitivity_in"])

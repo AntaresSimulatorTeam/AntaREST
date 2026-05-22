@@ -14,8 +14,6 @@
 Unit tests for ScenarioBuilderDao — run on both database and filesystem backends.
 """
 
-from typing import Any
-
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -24,23 +22,6 @@ from antarest.study.business.model.sts_model import STStorage, STStorageAddition
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import StudyDao
 from tests.study.dao.utils import save_area
-
-
-def _prune_empty(result: dict[str, Any]) -> dict[str, Any]:
-    """
-    Recursively remove keys whose value is an empty dict.
-
-    Normalizes FS vs DB scenario-builder output: the FS backend leaves empty
-    area dicts after all clusters are deleted, while the DB backend prunes
-    them. This helper makes assertions backend-agnostic.
-    """
-    pruned: dict[str, Any] = {}
-    for k, v in result.items():
-        if isinstance(v, dict):
-            v = _prune_empty(v)
-        if v:
-            pruned[k] = v
-    return pruned
 
 
 def _setup_areas(dao: StudyDao, *area_names: str) -> None:
@@ -238,7 +219,7 @@ def test_scenario_builder_thermal_deleted(dao: StudyDao) -> None:
     dao.delete_thermal("fr", "gas")
 
     result = dao.get_scenario_by_type(ScenarioType.THERMAL)
-    assert _prune_empty(result) == {}
+    assert result == {"fr": {}}
 
 
 def test_scenario_builder_renewable_deleted(dao: StudyDao) -> None:
@@ -253,7 +234,7 @@ def test_scenario_builder_renewable_deleted(dao: StudyDao) -> None:
     dao.delete_renewable("de", RenewableCluster(id="wind_farm", name="Wind Farm"))
 
     result = dao.get_scenario_by_type(ScenarioType.RENEWABLE)
-    assert _prune_empty(result) == {}
+    assert result == {"de": {}}
 
 
 def test_scenario_builder_link_deleted(dao: StudyDao) -> None:
@@ -287,7 +268,7 @@ def test_scenario_builder_st_storage_deleted(
     dao.delete_st_storage("fr", STStorage(id="battery_1", name="Battery 1"))
 
     result = dao.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_INFLOWS)
-    assert _prune_empty(result) == {}
+    assert result == {"fr": {}}
 
 
 def test_scenario_builder_st_storage_constraint_deleted(
@@ -309,7 +290,7 @@ def test_scenario_builder_st_storage_constraint_deleted(
     dao.delete_st_storage_additional_constraints("fr", "battery", ["constraint_a"])
 
     result = dao.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS)
-    assert _prune_empty(result) == {}
+    assert result == {"fr": {"battery": {}}}
 
 
 def test_scenario_builder_st_storage_deleted_cascades_to_constraints(
@@ -335,8 +316,8 @@ def test_scenario_builder_st_storage_deleted_cascades_to_constraints(
 
     dao.delete_st_storage("fr", STStorage(id="battery", name="Battery"))
 
-    assert _prune_empty(dao.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_INFLOWS)) == {}
-    assert _prune_empty(dao.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS)) == {}
+    assert dao.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_INFLOWS) == {"fr": {}}
+    assert dao.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS) == {"fr": {}}
 
 
 def test_scenario_builder_area_deleted_cascades(dao: StudyDao) -> None:
@@ -356,8 +337,8 @@ def test_scenario_builder_area_deleted_cascades(dao: StudyDao) -> None:
 
     dao.delete_area("fr")
 
-    assert _prune_empty(dao.get_scenario_by_type(ScenarioType.THERMAL)) == {}
-    assert _prune_empty(dao.get_scenario_by_type(ScenarioType.RENEWABLE)) == {}
+    assert dao.get_scenario_by_type(ScenarioType.THERMAL) == {}
+    assert dao.get_scenario_by_type(ScenarioType.RENEWABLE) == {}
 
 
 def test_scenario_builder_area_deleted_cascades_load(dao: StudyDao) -> None:

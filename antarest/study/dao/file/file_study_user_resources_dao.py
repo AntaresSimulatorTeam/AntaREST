@@ -54,7 +54,7 @@ class FileStudyUserResourceDao(UserResourcesDao, ABC):
                     result.append(
                         UserResourceDataCreation(path=rel_path, resource_type=ResourceType.FILE, blob_id=blob_id)
                     )
-                elif item.is_dir():
+                elif item.is_dir() and not any(item.iterdir()):
                     result.append(
                         UserResourceDataCreation(path=rel_path, resource_type=ResourceType.FOLDER, blob_id=None)
                     )

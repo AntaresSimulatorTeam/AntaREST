@@ -31,12 +31,9 @@ from antarest.study.dao.database.database_matrices_provider import StudyDatabase
 from antarest.study.model import STUDY_VERSION_9_3
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
-from antarest.study.storage.variantstudy.business.matrix_constants.matrix_constants_usage_provider import (
-    ConstantsMatrixUsageProvider,
-)
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.study.dao.conftest import _build_fs_dao, build_db_dao, build_real_case_study, build_reserve_definition
+from tests.study.dao.conftest import build_db_dao, build_fs_dao, build_real_case_study, build_reserve_definition
 from tests.study.dao.utils import save_area
 
 
@@ -50,7 +47,6 @@ def _build_dao(
 ) -> StudyDao:
     if backend == "database":
         dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
-        ConstantsMatrixUsageProvider(dao.generator_matrix_constants, matrix_service)
         StudyDatabaseMatrixUsageProvider(matrix_service)
         return dao
 
@@ -62,8 +58,7 @@ def _build_dao(
         matrix_service=matrix_service,
         blob_service=blob_service,
     )
-    dao, _ = _build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
-    ConstantsMatrixUsageProvider(generator, matrix_service)
+    dao, _ = build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
     RawStudyMatrixUsageProvider(StudyMetadataRepository(core_cache), matrix_service)
     return dao
 
@@ -277,6 +272,7 @@ def test_garbage_collection(
 
 
 def test_provider_includes_reserve_need_matrix(dao_10_0: StudyDao, core_cache: ICache) -> None:
+    # TODO: adapt this test once v10.0 is fully supported
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
     dao = dao_10_0

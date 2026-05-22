@@ -188,13 +188,10 @@ class TestXpansionSettings:
         result = dao.get_xpansion_settings()
         assert result.optimality_gap == 10.0
 
-        # --- invalid projection: DB validates candidates exist; FS does not (gap: #TODO) ---
-        if isinstance(dao, DatabaseStudyDao):
-            settings = XpansionSettings(
-                sensitivity_config=XpansionSensitivitySettings(projection=["cand_a", "ghost_cand"])
-            )
-            with pytest.raises(CandidateNotFoundError):
-                dao.save_xpansion_settings(settings)
+        # --- invalid projection: validate candidates exist ---
+        settings = XpansionSettings(sensitivity_config=XpansionSensitivitySettings(projection=["cand_a", "ghost_cand"]))
+        with pytest.raises(CandidateNotFoundError):
+            dao.save_xpansion_settings(settings)
 
     def test_checks_xpansion_settings_correct(
         self, dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService]
@@ -283,21 +280,14 @@ class TestXpansionCandidates:
         with pytest.raises(CandidateNotFoundError):
             dao.get_xpansion_candidate("alice")
         assert dao.get_xpansion_candidate("charlie").annual_cost_per_mw == 500.0
-        # DB carries the rename over to the projection; FS does not (gap: #TODO)
+        # Rename carries over to the projection (DB via cascade, FS via explicit rewrite)
         proj = dao.get_xpansion_settings().sensitivity_config.projection
-        if isinstance(dao, DatabaseStudyDao):
-            assert "charlie" in proj and "alice" not in proj
-        else:
-            assert "alice" in proj  # old name still present — projection not updated on rename
+        assert "charlie" in proj and "alice" not in proj
 
-        # --- rename to existing target overwrites it ---
         dao.save_xpansion_candidate(_make_candidate("bob", "bordeaux", "paris", cost=999.0), old_id="charlie")
         assert len(dao.get_all_xpansion_candidates()) == 1
         assert dao.get_xpansion_candidate("bob").annual_cost_per_mw == 999.0
-        # DB deduplicates the projection; FS does not update it on rename (gap: #TODO)
-        proj = dao.get_xpansion_settings().sensitivity_config.projection
-        if isinstance(dao, DatabaseStudyDao):
-            assert proj == ["bob"]
+        assert dao.get_xpansion_settings().sensitivity_config.projection == ["bob"]
 
         # --- checks_candidate_can_be_deleted ---
         with pytest.raises(XpansionCandidateDeletionError):

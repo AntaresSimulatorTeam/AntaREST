@@ -37,6 +37,7 @@ from antarest.study.business.model.config.optimization_config_model import (
 )
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
+from antarest.study.business.model.district_model import District, DistrictApplyFilter
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.thematic_trimming_model import (
     ThematicTrimming,
@@ -126,5 +127,14 @@ class DatabaseStudyDaoFactory(StudyFactoryDao):
             )
         dao = DatabaseStudyDao(study.id, self.session, self._matrix_service, self._generator_matrix_constants)
         dao.save_layer(Layer(id=DEFAULT_LAYER_ID, name=DEFAULT_LAYER_NAME))
+        dao.save_district(
+            District(
+                id="all areas",
+                name="All areas",
+                output=False,
+                comments="Spatial aggregates on all areas",
+                apply_filter=DistrictApplyFilter.add_all,
+            )
+        )
         _create_default_settings(dao, study)
         return dao

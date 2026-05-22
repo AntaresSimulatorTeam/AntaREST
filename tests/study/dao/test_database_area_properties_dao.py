@@ -54,7 +54,7 @@ def test_multiple_areas(db_session: Session, db_dao: DatabaseStudyDao) -> None:
         all_properties = dao.get_all_area_properties()
         assert all_properties == {"paris": default_props, "london": default_props}
 
-    assert len(db_recorder.sql_statements) == 2, str(db_recorder)
+    assert len(db_recorder.sql_statements) == 2, str(db_recorder)  # second query is to get the study version
 
 
 def test_error_cases(dao: StudyDao) -> None:
@@ -77,6 +77,5 @@ def test_modify_properties(dao: StudyDao) -> None:
     dao.save_area_properties(area_id, new_properties)
 
     # Ensures we modified the properties accordingly
-    expected = new_properties.model_copy()
-    initialize_area_properties(expected, dao.get_version())
-    assert dao.get_area_properties(area_id) == expected
+    initialize_area_properties(new_properties, dao.get_version())
+    assert dao.get_area_properties(area_id) == new_properties

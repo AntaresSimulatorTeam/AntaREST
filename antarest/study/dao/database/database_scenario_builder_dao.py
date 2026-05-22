@@ -9,7 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any
+from abc import abstractmethod
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import delete, insert, select
 from sqlalchemy.orm import Session
@@ -33,6 +34,9 @@ from antarest.study.dao.database.models.ruleset import (
     SCENARIO_THERMAL_TABLE,
     SCENARIO_WIND_TABLE,
 )
+
+if TYPE_CHECKING:
+    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 _LINK_SEPARATOR = " / "
 
@@ -71,6 +75,10 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
     def __init__(self, study_id: str, db_session: Session) -> None:
         self._study_id = study_id
         self._db_session = db_session
+
+    @abstractmethod
+    def get_impl(self) -> "DatabaseStudyDao":
+        pass
 
     @override
     def save_scenario_builder(self, ruleset: Ruleset) -> None:
@@ -212,7 +220,7 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
         if scenario_type in _AREA_ITEM_TABLE_MAP:
             table, id_col = _AREA_ITEM_TABLE_MAP[scenario_type]
             stmt = select(table).where(table.c.study_id == study_id)
-            result: dict[str, Any] = {}
+            result: dict[str, Any] = {area_id: {} for area_id in self.get_impl().get_all_area_ids()}
             for row in session.execute(stmt):
                 result.setdefault(row.area_id, {})[getattr(row, id_col)] = row.value
             return result
@@ -221,7 +229,12 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
             stmt = select(SCENARIO_STORAGE_CONSTRAINTS_TABLE).where(
                 SCENARIO_STORAGE_CONSTRAINTS_TABLE.c.study_id == study_id
             )
-            constraints_result: dict[str, Any] = {}
+            constraints_result: dict[str, Any] = {
+                area_id: {storage_id: {} for storage_id in storages}
+                for area_id, storages in self.get_impl().get_all_st_storages().items()
+            }
+            for area_id in self.get_impl().get_all_area_ids():
+                constraints_result.setdefault(area_id, {})
             for row in session.execute(stmt):
                 constraints_result.setdefault(row.area_id, {}).setdefault(row.st_storage_id, {})[row.constraint_id] = (
                     row.value

@@ -120,7 +120,7 @@ def db_dao_930_and_matrix_service(
 def fs_dao_930_and_matrix_service(
     db_session: Session, command_context: CommandContext, tmp_path: Path, core_cache: ICache
 ) -> tuple[FileStudyTreeDao, ISimpleMatrixService]:
-    return _build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
+    return build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
 
 
 @pytest.fixture(scope="session")
@@ -142,7 +142,7 @@ def db_dao_920(db_session: Session, matrix_service: ISimpleMatrixService) -> Dat
     return build_db_dao(db_session, matrix_service, STUDY_VERSION_9_2)
 
 
-def _build_fs_dao(
+def build_fs_dao(
     db_session: Session,
     version: StudyVersion,
     command_context: "CommandContext",
@@ -167,7 +167,7 @@ def dao(
     if request.param == "db":
         return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
     else:
-        dao, _ = _build_fs_dao(db_session, STUDY_VERSION_8_8, command_context, core_cache, tmp_path)
+        dao, _ = build_fs_dao(db_session, STUDY_VERSION_8_8, command_context, core_cache, tmp_path)
         return dao
 
 
@@ -185,7 +185,7 @@ def dao_builder(
     def _build(version: StudyVersion) -> StudyDao:
         if request.param == "db":
             return build_db_dao(db_session, matrix_service, version)
-        dao, _ = _build_fs_dao(db_session, version, command_context, core_cache, tmp_path)
+        dao, _ = build_fs_dao(db_session, version, command_context, core_cache, tmp_path)
         return dao
 
     return _build
@@ -204,7 +204,7 @@ def dao_and_matrix_service(
     if request.param == "db":
         return build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3), matrix_service
     else:
-        return _build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
+        return build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
 
 
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
@@ -225,7 +225,7 @@ def dao_10_0(
         db_session.commit()
         return dao
     else:
-        dao, _ = _build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
+        dao, _ = build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
         dao.get_file_study().config.version = STUDY_VERSION_10_0
         return dao
 
@@ -243,7 +243,7 @@ def dao_860_and_matrix_service(
     if request.param == "db":
         return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_6), matrix_service
     else:
-        return _build_fs_dao(db_session, STUDY_VERSION_8_6, command_context, core_cache, tmp_path)
+        return build_fs_dao(db_session, STUDY_VERSION_8_6, command_context, core_cache, tmp_path)
 
 
 def build_reserve_definition(reserve_id: str) -> ReserveDefinition:
