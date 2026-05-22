@@ -1560,19 +1560,15 @@ class StudyService:
             self.storage_service.get_storage(study).delete_from_filesystem(study)
             self._notify_study_deleted(study, study_infos[study.id])
 
-    def import_study(
-        self,
-        stream: BinaryIO,
-        group_ids: list[str],
-        directory: str = "",
-    ) -> str:
+    def import_study(self, stream: BinaryIO, group_ids: list[str], directory: str, storage_mode: StorageMode) -> str:
         """
         Import a compressed study.
 
         Args:
             stream: binary content of the study compressed in ZIP or 7z format.
             group_ids: group to attach to study
-            directory: Optional directory path where the study will be imported (e.g., 'project/subfolder').
+            directory: Directory path where the study will be imported (e.g., 'project/subfolder').
+            storage_mode: How the study will be stored inside the app ('filesystem' or 'database').
 
         Returns:
             New study UUID.
@@ -1593,7 +1589,7 @@ class StudyService:
             public_mode=PublicMode.NONE if group_ids else PublicMode.READ,
             owner=owner,
             groups=groups,
-            storage_mode=StorageMode.FILESYSTEM,
+            storage_mode=storage_mode,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
         study.directory_id = self.directory_service.get_directory_by_path(directory)
