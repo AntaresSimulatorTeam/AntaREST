@@ -27,17 +27,17 @@ def test_copy_with_editor_preservation(client: TestClient, admin_access_token: s
     res.raise_for_status()
     group_id = res.json()["id"]
 
-    client.post("/v1/users", json={"name": "creator_2", "password": "password123"})
-    client.post("/v1/users", json={"name": "copier_2", "password": "password456"})
+    client.post("/v1/users", json={"name": "creator_2", "password": "Password123!"})
+    client.post("/v1/users", json={"name": "copier_2", "password": "Password456!"})
 
     # Log in as 'creator' to get ID
-    res_creator = client.post("/v1/login", json={"username": "creator_2", "password": "password123"})
+    res_creator = client.post("/v1/login", json={"username": "creator_2", "password": "Password123!"})
     res_creator.raise_for_status()
     creator_creds = res_creator.json()
     creator_id = creator_creds["user"]
 
     # Log in as 'copier' to get ID
-    res_copier = client.post("/v1/login", json={"username": "copier_2", "password": "password456"})
+    res_copier = client.post("/v1/login", json={"username": "copier_2", "password": "Password456!"})
     res_copier.raise_for_status()
     copier_creds = res_copier.json()
     copier_id = copier_creds["user"]
@@ -109,7 +109,7 @@ def test_copy(client: TestClient, admin_access_token: str, internal_study_id: st
     assert res["public_mode"] == "NONE"
 
     # Connect with user George who belongs to no group
-    res = client.post("/v1/login", json={"username": "George", "password": "mypass"})
+    res = client.post("/v1/login", json={"username": "George", "password": "Mypass1!"})
     george_credentials = res.json()
 
     # George copies a study

@@ -148,7 +148,7 @@ class TestLoginService:
         # Site admin can create a user
         user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
         with current_user_context(user):
-            login_service.create_user(UserCreateDTO(name="Laurent", password="S3cr3t"))
+            login_service.create_user(UserCreateDTO(name="Laurent", password="S3cr3tPass!"))
         actual = login_service.users.get_by_name("Laurent")
         assert actual is not None
         assert actual.name == "Laurent"
@@ -157,7 +157,7 @@ class TestLoginService:
         user = get_user(login_service, user_id=2, group_id="superman")
         with pytest.raises(UserHasNotPermissionError):
             with current_user_context(user):
-                login_service.create_user(UserCreateDTO(name="Alexandre", password="S3cr3t"))
+                login_service.create_user(UserCreateDTO(name="Alexandre", password="S3cr3tPass!"))
         actual = login_service.users.get_by_name("Alexandre")
         assert actual is None
 
@@ -166,7 +166,7 @@ class TestLoginService:
         # Prepare a new user
         admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
         with current_user_context(admin_user):
-            user = login_service.create_user(UserCreateDTO(name="Laurentius", password="S3cr3t"))
+            user = login_service.create_user(UserCreateDTO(name="Laurentius", password="S3cr3tPass!"))
 
         # Only site admin can update a user
         with current_user_context(admin_user):
@@ -605,10 +605,10 @@ class TestLoginService:
     def test_authenticate(self, login_service: LoginService) -> None:
         # Update the password of "Lois Lane"
         lois_id = 3
-        login_service.users.save(User(id=lois_id, name="Lois Lane", password=Password("S3cr3t")))
+        login_service.users.save(User(id=lois_id, name="Lois Lane", password=Password("S3cr3tPass!")))
 
         # A known user can log in
-        jwt_user = login_service.authenticate(name="Lois Lane", pwd="S3cr3t")
+        jwt_user = login_service.authenticate(name="Lois Lane", pwd="S3cr3tPass!")
         assert jwt_user is not None
         assert jwt_user.id == lois_id
         assert jwt_user.impersonator == lois_id
@@ -618,7 +618,7 @@ class TestLoginService:
         ]
 
         # An unknown user cannot log in
-        user = login_service.authenticate(name="unknown", pwd="S3cr3t")
+        user = login_service.authenticate(name="unknown", pwd="S3cr3tPass!")
         assert user is None
 
         # Update the user "Jane DOE" which is an LDAP user
@@ -637,7 +637,7 @@ class TestLoginService:
             mock_login.return_value = user_ldap
             with patch("antarest.login.ldap.LdapService.login") as mock_get:
                 mock_get.return_value = user_ldap
-                jwt_user = login_service.authenticate(name="Jane DOE", pwd="S3cr3t")
+                jwt_user = login_service.authenticate(name="Jane DOE", pwd="S3cr3tPass!")
 
         assert jwt_user is not None
         assert jwt_user.id == user_ldap.id

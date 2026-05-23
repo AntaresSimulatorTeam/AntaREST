@@ -129,9 +129,9 @@ def test_variant_manager(
         client.post(
             "/v1/users",
             headers=admin_headers,
-            json={"name": "George", "password": "mypass"},
+            json={"name": "George", "password": "Mypass1!"},
         )
-        res = client.post("/v1/login", json={"username": "George", "password": "mypass"})
+        res = client.post("/v1/login", json={"username": "George", "password": "Mypass1!"})
         george_credentials = res.json()
         base_study_res = client.post(
             "/v1/studies?name=foo",

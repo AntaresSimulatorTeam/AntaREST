@@ -10,6 +10,8 @@
 #
 # This file is part of the Antares project.
 
+import pytest
+from pydantic import ValidationError
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import sessionmaker
 
@@ -22,6 +24,7 @@ from antarest.login.model import (
     Password,
     Role,
     User,
+    UserCreateDTO,
     init_admin_user,
 )
 from antarest.service_creator import SESSION_ARGS
@@ -31,6 +34,38 @@ TEST_ADMIN_PASS_WORD = "test"
 
 def test_password() -> None:
     assert Password("pwd").check("pwd")
+
+
+class TestPasswordValidation:
+    VALID_PASSWORD = "Abcdef1!"
+
+    def test_valid_password_is_accepted(self) -> None:
+        dto = UserCreateDTO(name="alice", password=self.VALID_PASSWORD)
+        assert dto.password == self.VALID_PASSWORD
+
+    @pytest.mark.parametrize(
+        "password, expected_message",
+        [
+            ("Ab1!xyz", "between 8 and 50 characters"),
+            ("A" + "b1!" + "x" * 48, "between 8 and 50 characters"),
+            ("ABCDEF1!", "lowercase letter"),
+            ("abcdef1!", "uppercase letter"),
+            ("Abcdefg!", "digit"),
+            ("Abcdefg1", "special character"),
+        ],
+    )
+    def test_invalid_password_is_rejected(self, password: str, expected_message: str) -> None:
+        with pytest.raises(ValidationError) as exc_info:
+            UserCreateDTO(name="alice", password=password)
+        assert expected_message in str(exc_info.value)
+
+    def test_password_exceeding_bcrypt_byte_limit_is_rejected(self) -> None:
+        password = "Aa1!" + "🦀" * 20
+        assert len(password) <= 50
+        assert len(password.encode("utf-8")) > 72
+        with pytest.raises(ValidationError) as exc_info:
+            UserCreateDTO(name="alice", password=password)
+        assert "72 bytes" in str(exc_info.value)
 
 
 class TestInitAdminUser:
