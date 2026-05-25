@@ -440,7 +440,8 @@ class TestCascadeDelete:
 
     def test_deleting_link_cascades_to_candidates(self, dao: StudyDao) -> None:
         """Deleting a link should cascade-delete all candidates referencing it.
-        DB enforces this via FK cascade; FS does not (gap: #TODO)."""
+        DB enforces this via FK cascade; FS does not. Intentional permanent divergence:
+        FS will not get a cascade implementation."""
         dao.create_xpansion_configuration()
         save_area(dao, "Paris")
         save_area(dao, "Lyon")

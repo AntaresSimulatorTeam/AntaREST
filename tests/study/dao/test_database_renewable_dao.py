@@ -50,7 +50,9 @@ def test_save_renewable_creates_cluster(dao: StudyDao) -> None:
     if isinstance(dao, DatabaseStudyDao):
         assert result == renewable
     else:
-        # FS does not normalize the cluster id to lowercase (gap: #TODO)
+        # Intentional divergence: FS keeps the original case to stay backward-compatible
+        # with existing studies on disk (see backward-compat note in renewable_cluster_model.py:90-96);
+        # DB normalizes to lowercase since it only stores new studies.
         assert result.name == renewable.name
         assert result.unit_count == renewable.unit_count
         assert result.nominal_capacity == renewable.nominal_capacity
@@ -124,7 +126,9 @@ def test_get_one_renewable_cluster(dao: StudyDao) -> None:
     dao.save_renewable("paris", RenewableCluster(id="battery", name="Battery"))
 
     cluster = dao.get_renewable("paris", "battery")
-    # FS does not lowercase the cluster id (gap: #TODO)
+    # Intentional divergence: FS keeps the original case for backward compatibility
+    # with existing studies on disk; DB normalizes to lowercase.
+    # Compare case-insensitively to assert both backends.
     assert cluster.id.lower() == "battery"
     assert cluster.name == "Battery"
 

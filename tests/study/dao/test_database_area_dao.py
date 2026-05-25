@@ -183,7 +183,7 @@ def test_save_area_ui_raises_error_if_area_not_exists(dao: StudyDao) -> None:
 def test_save_area_ui_raises_error_if_layer_not_exists(db_dao: DatabaseStudyDao) -> None:
     """
     Test that save_area_ui raises LayerNotFound if layer doesn't exist.
-    DB-only: FS writes layer that don't exist and changing that woule be a breaking change.
+    DB-only: FS writes layers that don't exist and changing that would be a breaking change.
     """
     save_area(db_dao, "Paris")
     new_ui = AreaUI(x=100, y=200, color_rgb=(255, 0, 0))

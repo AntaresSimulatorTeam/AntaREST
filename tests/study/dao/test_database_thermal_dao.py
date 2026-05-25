@@ -108,7 +108,9 @@ def test_save_thermal_creates_cluster(dao: StudyDao) -> None:
     if isinstance(dao, DatabaseStudyDao):
         assert result == expected
     else:
-        # FS does not normalize the cluster id to lowercase (gap: #TODO)
+        # Intentional divergence: FS keeps the original case to stay backward-compatible
+        # with existing studies on disk (see backward-compat note in thermal_cluster_model.py:154-160);
+        # DB normalizes to lowercase since it only stores new studies.
         assert result.name == expected.name
         assert result.unit_count == expected.unit_count
         assert result.nominal_capacity == expected.nominal_capacity
@@ -176,7 +178,9 @@ def test_get_one_thermal_cluster(dao: StudyDao) -> None:
     dao.save_thermals({"paris": [ThermalCluster(name="Gas")]})
 
     cluster = dao.get_thermal("paris", "gas")
-    # FS does not lowercase the cluster id (gap: #TODO)
+    # Intentional divergence: FS keeps the original case (e.g. "Gas") for backward
+    # compatibility with existing studies on disk; DB normalizes to lowercase.
+    # Compare case-insensitively to assert both backends.
     assert cluster.id.lower() == "gas"
     assert cluster.name == "Gas"
 
