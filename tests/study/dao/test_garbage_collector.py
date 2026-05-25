@@ -28,13 +28,26 @@ from antarest.study.business.model.reserve_definition_model import ReserveDefini
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
-from antarest.study.model import STUDY_VERSION_9_3
+from antarest.study.model import STUDY_VERSION_9_3, StorageMode
 from antarest.study.repository import StudyMetadataRepository
+from antarest.study.storage.database_storage import DatabaseStudyStorage
+from antarest.study.storage.file_study_storage import FileStudyStorage
+from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.study.dao.conftest import build_db_dao, build_fs_dao, build_real_case_study, build_reserve_definition
 from tests.study.dao.utils import save_area
+
+
+def _build_storage_mapping(
+    cache: ICache, command_context: CommandContext, matrix_service: MatrixService
+) -> dict[StorageMode, object]:
+    study_factory = StudyFactory(matrix_service=matrix_service, cache=cache)
+    return {
+        StorageMode.FILESYSTEM: FileStudyStorage(cache, Mock(), command_context, study_factory),
+        StorageMode.DATABASE: DatabaseStudyStorage(Mock(), matrix_service, command_context.generator_matrix_constants),
+    }
 
 
 def _build_dao(
@@ -59,7 +72,11 @@ def _build_dao(
         blob_service=blob_service,
     )
     dao, _ = build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
-    RawStudyMatrixUsageProvider(StudyMetadataRepository(core_cache), matrix_service)
+    RawStudyMatrixUsageProvider(
+        StudyMetadataRepository(core_cache),
+        matrix_service,
+        _build_storage_mapping(core_cache, command_context, matrix_service),
+    )
     return dao
 
 
@@ -285,7 +302,12 @@ def test_provider_includes_reserve_need_matrix(dao_10_0: StudyDao, core_cache: I
 
     with db():
         if isinstance(dao, FileStudyTreeDao):
-            provider = RawStudyMatrixUsageProvider(StudyMetadataRepository(core_cache), matrix_service)
+            study_factory = StudyFactory(matrix_service=matrix_service, cache=core_cache)
+            storage_mapping = {
+                StorageMode.FILESYSTEM: FileStudyStorage(core_cache, Mock(), Mock(), study_factory),
+                StorageMode.DATABASE: DatabaseStudyStorage(Mock(), matrix_service, Mock()),
+            }
+            provider = RawStudyMatrixUsageProvider(StudyMetadataRepository(core_cache), matrix_service, storage_mapping)
         else:
             provider = StudyDatabaseMatrixUsageProvider(matrix_service)
         used_ids = {ref.matrix_id for ref in provider.get_matrix_usage()}
