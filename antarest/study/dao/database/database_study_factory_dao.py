@@ -26,14 +26,11 @@ from antarest.study.business.model.config.advanced_parameters_model import (
     SheddingPolicy,
     initialize_advanced_parameters_against_version,
 )
-from antarest.study.business.model.config.compatibility_parameters_model import (
-    CompatibilityParameters,
-    initialize_compatibility_parameters_against_version,
-)
+from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
 from antarest.study.business.model.config.general_model import GeneralConfig, initialize_general_config_against_version
 from antarest.study.business.model.config.optimization_config_model import (
     OptimizationPreferences,
-    TransmissionCapacities,
+    initialize_optimization_preferences_against_version,
 )
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
@@ -49,7 +46,6 @@ from antarest.study.model import (
     STUDY_REFERENCE_TEMPLATES,
     STUDY_VERSION_7_2,
     STUDY_VERSION_8_3,
-    STUDY_VERSION_8_4,
     STUDY_VERSION_9_2,
 )
 from antarest.study.storage.utils import StudyMetadataCreation
@@ -74,10 +70,9 @@ def _create_default_settings(dao: DatabaseStudyDao, study_version: StudyVersion)
         advanced_parameters.shedding_policy = SheddingPolicy.ACCURATE_SHAVE_PEAKS
     dao.save_advanced_parameters(advanced_parameters)
 
-    op = OptimizationPreferences()
-    if study_version >= STUDY_VERSION_8_4:
-        op.transmission_capacities = TransmissionCapacities.LOCAL_VALUES
-    dao.save_optimization_preferences(op)
+    optimization_preferences = OptimizationPreferences()
+    initialize_optimization_preferences_against_version(optimization_preferences, study_version)
+    dao.save_optimization_preferences(optimization_preferences)
 
     thematic_trimming = ThematicTrimming()
     initialize_thematic_trimming_against_version(thematic_trimming, study_version)
@@ -89,9 +84,7 @@ def _create_default_settings(dao: DatabaseStudyDao, study_version: StudyVersion)
         dao.save_adequacy_patch_parameters(adequacy_patch_parameters)
 
     if study_version >= STUDY_VERSION_9_2:
-        compatibility_parameters = CompatibilityParameters()
-        initialize_compatibility_parameters_against_version(compatibility_parameters, study_version)
-        dao.save_compatibility_parameters(compatibility_parameters)
+        dao.save_compatibility_parameters(CompatibilityParameters())
 
 
 class DatabaseStudyDaoFactory(StudyFactoryDao):

@@ -22,7 +22,6 @@ from antarest.study.business.model.config.adequacy_patch_model import AdequacyPa
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.compatibility_parameters_model import (
     CompatibilityParameters,
-    initialize_compatibility_parameters_against_version,
 )
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
@@ -176,16 +175,11 @@ class DatabaseStudySettingsDao(
         row = self.get_session().execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
-        parameters = CompatibilityParameters(hydro_pmax=row.hydro_pmax, reserves_enabled=row.reserves_enabled)
-        version = self.get_impl().get_version()
-        initialize_compatibility_parameters_against_version(parameters, version)
-        return parameters
+        return CompatibilityParameters(hydro_pmax=row.hydro_pmax)
 
     @override
     def save_compatibility_parameters(self, parameters: CompatibilityParameters) -> None:
-        values = dict(
-            study_id=self.get_study_id(), hydro_pmax=parameters.hydro_pmax, reserves_enabled=parameters.reserves_enabled
-        )
+        values = dict(study_id=self.get_study_id(), hydro_pmax=parameters.hydro_pmax)
         session = self.get_session()
         upsert_one(session, COMPATIBILITY_PARAMETERS_TABLE, values)
         session.commit()

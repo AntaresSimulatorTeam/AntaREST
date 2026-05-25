@@ -30,7 +30,8 @@ def test_missing_section(empty_study_880: FileStudy, command_context: CommandCon
     # Ensures we're still able to read the data.
     manager = OptimizationManager(command_context)
     params = manager.get_optimization_preferences(file_study_interface(study))
-    assert params == OptimizationPreferences()
+    # v8.8 study: helper initializes v8.4+ default transmission_capacities to LOCAL_VALUES.
+    assert params == OptimizationPreferences(transmission_capacities=TransmissionCapacities.LOCAL_VALUES)
 
 
 def test_section_not_in_lowercase(empty_study_880: FileStudy, command_context: CommandContext) -> None:

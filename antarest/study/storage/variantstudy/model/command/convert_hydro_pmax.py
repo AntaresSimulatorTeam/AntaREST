@@ -9,10 +9,15 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing import Self
 
+from pydantic import model_validator
 from typing_extensions import override
 
-from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
+from antarest.study.business.model.config.compatibility_parameters_model import (
+    HydroPmax,
+    validate_compatibility_parameters_against_version,
+)
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -32,6 +37,11 @@ class ConvertHydroPmax(ICommand):
     command_name: CommandName = CommandName.CONVERT_HYDRO_PMAX
 
     hydro_pmax: HydroPmax
+
+    @model_validator(mode="after")
+    def _validate_against_version(self) -> Self:
+        validate_compatibility_parameters_against_version(self.study_version)
+        return self
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[HydroPmax]:

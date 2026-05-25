@@ -104,7 +104,6 @@ class CommandName(Enum):
     REPLACE_HYDRO_ALLOCATION = "replace_hydro_allocation"
     REPLACE_HYDRO_CORRELATION = "replace_hydro_correlation"
     CONVERT_HYDRO_PMAX = "convert_hydro_pmax"
-    UPDATE_RESERVES_ENABLED = "update_reserves_enabled"
     UPDATE_RESERVES_GLOBAL_PARAMETERS = "update_reserves_global_parameters"
     CREATE_RESERVE_DEFINITION = "create_reserve_definition"
     UPDATE_RESERVE_DEFINITIONS = "update_reserve_definitions"

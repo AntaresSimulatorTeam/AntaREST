@@ -31,6 +31,9 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintOperator,
     ConstraintId,
 )
+from antarest.study.business.model.config.optimization_config_model import (
+    initialize_optimization_preferences_against_version,
+)
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
@@ -178,6 +181,10 @@ def dao_10_0(
         study = db_session.get(Study, dao.get_study_id())
         study.version = str(STUDY_VERSION_10_0)
         db_session.commit()
+        # Settings were saved at v9.3; replay v10 init so v10-specific defaults stick.
+        prefs = dao.get_optimization_preferences()
+        initialize_optimization_preferences_against_version(prefs, STUDY_VERSION_10_0)
+        dao.save_optimization_preferences(prefs)
         return dao
     else:
         dao, _ = build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
