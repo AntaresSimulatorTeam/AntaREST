@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "AntaREST"
-version = "2.31.0"
+version = "2.32.0"
 authors = [{name="RTE, Antares Web Team", email="andrea.sgattoni@rte-france.com" }]
 description="Antares Server"
 readme = {file = "README.md", content-type = "text/markdown"}
