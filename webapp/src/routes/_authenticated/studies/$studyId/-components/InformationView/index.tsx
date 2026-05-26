@@ -113,7 +113,7 @@ function InformationView({ variantTree }: Props) {
                       {t("variants.createNewVariant")}
                     </Button>
                   ) : (
-                    <Button variant="outlined" onClick={handleCopyStudy} disabled={study.archived}>
+                    <Button variant="outlined" onClick={handleCopyStudy}>
                       {t("studies.importcopy")}
                     </Button>
                   )}
