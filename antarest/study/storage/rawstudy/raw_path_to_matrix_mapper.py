@@ -22,9 +22,10 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintFrequency,
     ConstraintId,
 )
+from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.model import STUDY_VERSION_8_2, STUDY_VERSION_8_7, MatrixFrequency
+from antarest.study.model import STUDY_VERSION_8_2, STUDY_VERSION_8_7, STUDY_VERSION_10_0, MatrixFrequency
 
 
 @dataclass(frozen=True)
@@ -84,6 +85,9 @@ class RawPathToMatrixMapper:
 
         def _save_reserves(area_id: str, series_id: str) -> None:
             dao.save_reserves({area_id: series_id})
+
+        def _save_reserve_needs(area_id: str, reserve_id: str, series_id: str) -> None:
+            dao.save_reserve_needs({area_id: {ReserveDefinitionId(reserve_id): series_id}})
 
         def _save_misc_gen(area_id: str, series_id: str) -> None:
             dao.save_misc_gen({area_id: series_id})
@@ -496,6 +500,17 @@ class RawPathToMatrixMapper:
                         frequency=_get_binding_constraint_matrix_frequency,
                     ),
                 ]
+            )
+        if study_version >= STUDY_VERSION_10_0:
+            self._path_matchers.append(
+                RegexMatcher(
+                    # Exclude `reserves` as a reserve_id: `input/reserves/<area>/reserves` is the
+                    # reserve-definitions INI node, not a need-matrix.
+                    pattern=re.compile(r"input/reserves/(?P<area_id>[^/]+)/(?P<reserve_id>(?!reserves$)[^/]+)"),
+                    getter=dao.get_reserve_need,
+                    setter=_save_reserve_needs,
+                    frequency=_get_hourly_frequency,
+                )
             )
 
     def _get_matcher(self, path: PurePosixPath) -> tuple[RegexMatcher, re.Match[str]]:

@@ -26,6 +26,7 @@ from antarest.study.business.model.area_model import AreaCreation
 from antarest.study.business.model.link_model import Link
 from antarest.study.repository import StudyDiskSpaceRepository
 from antarest.study.service import StudyService
+from antarest.study.storage.utils import is_managed
 
 
 @pytest.fixture
@@ -43,8 +44,10 @@ class TestDiskSpaceAnalyzerIntegration:
             result = disk_space_analysis(service=study_service, disk_repo=study_disk_repo)
             assert result.status == BackGroundTaskStatus.SUCCESS
             assert (
-                result.updated_studies == 3
-            )  # there are 3 studies because one was created inside the study_service fixture before the test
+                result.updated_studies == 2
+            )  # there are 2 managed studies because one was created inside the study_service fixture before the test
+            assert is_managed(study_1)
+            assert is_managed(study_2)
 
             with db():
                 past_analysis_date_1 = study_disk_repo.get(study_1).last_analysis_date

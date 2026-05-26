@@ -10,10 +10,11 @@
 #
 # This file is part of the Antares project.
 
-from sqlalchemy import Column, Enum, Float, ForeignKeyConstraint, Integer, String, Table
+from sqlalchemy import Column, Float, ForeignKeyConstraint, Integer, String, Table
 
 from antarest.dbmodel import Base
 from antarest.study.business.model.reserve_definition_model import ReserveType
+from antarest.study.dao.database.sql_utils import enum_col
 
 metadata = Base.metadata
 
@@ -23,8 +24,7 @@ RESERVE_DEFINITION_TABLE = Table(
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("reserve_id", String(255), nullable=False, primary_key=True),
-    Column("name", String(255), nullable=False),
-    Column("type", Enum(ReserveType), nullable=False),
+    Column("type", enum_col(ReserveType), nullable=False),
     Column("failure_cost", Float, nullable=False),
     Column("spillage_cost", Float, nullable=False),
     Column("reference_activation_duration", Integer, nullable=False),

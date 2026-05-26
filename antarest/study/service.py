@@ -55,12 +55,13 @@ from antarest.core.exceptions import (
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import ICache, study_raw_cache_key
+from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import JWTGroup
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.ini_reader import IniReader
+from antarest.core.serde.np_array import imports_matrix_from_bytes
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, is_archive_format
@@ -157,7 +158,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode, imports_matrix_from_bytes
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.synthesis import OutputSynthesis
@@ -1619,6 +1619,7 @@ class StudyService:
         self,
         stream: BinaryIO,
         group_ids: list[str],
+        directory: str = "",
     ) -> str:
         """
         Import a compressed study.
@@ -1626,6 +1627,7 @@ class StudyService:
         Args:
             stream: binary content of the study compressed in ZIP or 7z format.
             group_ids: group to attach to study
+            directory: Optional directory path where the study will be imported (e.g., 'project/subfolder').
 
         Returns:
             New study UUID.
@@ -1648,6 +1650,7 @@ class StudyService:
             groups=groups,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
+        study.directory_id = self.directory_service.get_directory_by_path(directory)
         study.updated_at = current_time()
 
         self._save_study(study)
@@ -1805,10 +1808,20 @@ class StudyService:
 
         # We need to handle matrices differently if our study is stored in DB
         if study.storage_mode == StorageMode.DATABASE:
-            context = self.storage_service.variant_study_service.command_factory.command_context
-            command = ReplaceMatrix(
-                target=url, matrix=new, command_context=context, study_version=StudyVersion.parse(study.version)
-            )
+            # Different commands need to be applied according to the given path
+            study_version = StudyVersion.parse(study.version)
+            command: ICommand
+
+            try:
+                _get_path_inside_user_folder(url, ResourceCreationNotAllowed)
+                file_relpath = PurePosixPath(url.strip().strip("/"))
+                command = self._create_replace_user_resource_command(study_version, new, file_relpath)
+
+            except ResourceCreationNotAllowed:
+                # The url does not point towards a user resource, we use the `ReplaceMatrix` command
+                context = self.storage_service.variant_study_service.command_factory.command_context
+                command = ReplaceMatrix(target=url, matrix=new, command_context=context, study_version=study_version)
+
             self.get_study_interface(study).add_commands([command])
 
         else:
@@ -2727,7 +2740,7 @@ class StudyService:
         else:
             # Checks that the provided path refers to a matrix
             node = self.get_file_study(study).tree.get_node(list(url))
-            if isinstance(node, MatrixNode):
+            if isinstance(node, InputSeriesMatrix):
                 pandas_df = node.parse_as_dataframe().to_pandas()
             elif isinstance(node, OutputSeriesMatrix):
                 pandas_df = node.parse_dataframe()
@@ -2829,16 +2842,10 @@ class StudyService:
             "command_context": self.storage_service.variant_study_service.command_factory.command_context,
         }
         command = command_class.model_validate(args)
-        file_study = self.get_file_study(study)
         try:
             self.get_study_interface(study).add_commands([command])
         except CommandApplicationError as e:
             raise exception_class(e.detail) from e
-
-        # update cache
-        cache_id = study_raw_cache_key(study.id)
-        updated_tree = file_study.tree.get()
-        self.storage_service.get_storage(study).cache.put(cache_id, updated_tree)  # type: ignore
 
     def normalize_study_by_id(self, study_id: str) -> None:
         """
@@ -2880,7 +2887,7 @@ class StudyService:
             node, relative_url = file_study.tree.get_node_and_remainder(url)
 
             # Return a dataframe when possible instead of less memory & computation - efficient python objects
-            if isinstance(node, MatrixNode):
+            if isinstance(node, InputSeriesMatrix):
                 return node.parse_as_dataframe()
 
             return node.get(url=relative_url, depth=depth, formatted=formatted)

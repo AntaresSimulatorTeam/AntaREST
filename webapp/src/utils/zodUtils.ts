@@ -31,6 +31,9 @@ import { z } from "zod";
  * schema.parse({ progress: null })      // => { progress: undefined }
  * schema.parse({ progress: 42 })        // => { progress: 42 }
  * schema.parse({})                      // => { progress: undefined }
+ *
+ * @param schema - The Zod schema to wrap, which defines the expected type of the field.
+ * @returns A new Zod schema that accepts `null` or `undefined` and transforms them to `undefined`.
  */
 export function nullishToOptional<T extends z.ZodTypeAny>(schema: T) {
   return schema.nullish().transform((v) => v ?? undefined);

@@ -21,7 +21,6 @@ from antarest.blobstore.in_memory import InMemoryBlobService
 from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteStudyRepository
 from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
     STUDY_VERSION_7_2,
@@ -35,6 +34,7 @@ from antarest.study.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from tests.conftest_db import db_engine_fixture, db_middleware_fixture, db_session_fixture  # noqa: F401
 from tests.conftest_instances import admin_user  # noqa: F401
@@ -106,13 +106,12 @@ def empty_study_fixture(study_version: StudyVersion, matrix_service: MatrixServi
         districts={},
     )
     # sourcery skip: inline-immediately-returned-variable
-    mapper_factory = MatrixUriMapperFactory(matrix_service=matrix_service)
-    matrix_mapper = mapper_factory.create(NormalizedMatrixUriMapper.NORMALIZED)
+    matrix_storage_context = MatrixStorageContext(matrix_service=matrix_service, is_managed=True)
 
     file_study = FileStudy(
         config=config,
         tree=FileStudyTree(
-            matrix_mapper=matrix_mapper,
+            matrix_storage_context=matrix_storage_context,
             config=config,
         ),
     )

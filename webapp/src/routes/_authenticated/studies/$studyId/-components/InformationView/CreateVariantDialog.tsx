@@ -19,9 +19,9 @@ import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { setStudy } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import { createVariant } from "@/services/api/variant";
+import { createVariant } from "@/services/api/studies/variants";
+import type { VariantTree } from "@/services/api/studies/variants/types";
 import { createListFromTree } from "@/services/utils";
-import type { VariantTree } from "@/types/types";
 import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { useNavigate } from "@tanstack/react-router";
@@ -30,12 +30,11 @@ import { useTranslation } from "react-i18next";
 
 interface Props {
   parentId: string;
-  open: boolean;
   variantTree: VariantTree;
   onClose: () => void;
 }
 
-function CreateVariantDialog({ parentId, open, variantTree, onClose }: Props) {
+function CreateVariantDialog({ parentId, variantTree, onClose }: Props) {
   const [t] = useTranslation();
   const navigate = useNavigate();
   const defaultValues = { name: "", sourceId: parentId };
@@ -56,7 +55,7 @@ function CreateVariantDialog({ parentId, open, variantTree, onClose }: Props) {
 
   const handleSubmit = async (data: SubmitHandlerPlus<typeof defaultValues>) => {
     const { sourceId, name } = data.values;
-    const variantId = await createVariant(sourceId, name);
+    const variantId = await createVariant({ studyId: sourceId, name });
     await dispatch(setStudy(variantId)).unwrap();
     return variantId;
   };
@@ -75,10 +74,10 @@ function CreateVariantDialog({ parentId, open, variantTree, onClose }: Props) {
 
   return (
     <FormDialog
+      open
       maxWidth="sm" // Study name source can be long
       title={t("studies.createNewStudy")}
       titleIcon={AddCircleIcon}
-      open={open}
       onCancel={onClose}
       onSubmit={handleSubmit}
       onSubmitSuccessful={handleSubmitSuccessful}

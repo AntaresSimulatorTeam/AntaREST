@@ -11,8 +11,9 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import (
@@ -25,13 +26,17 @@ from antarest.study.business.model.reserve_definition_model import (
     ReserveDefinitionId,
 )
 from antarest.study.dao.api.reserve_definition_dao import ReserveDefinitionDao
-from antarest.study.dao.common import AreaId, ReserveDefinitionsMapping
+from antarest.study.dao.common import AreaId, ReserveDefinitionsMapping, ReserveNeedsMapping
 from antarest.study.dao.file.common import check_area_exists
 from antarest.study.storage.rawstudy.model.filesystem.config.reserve_definition import (
     parse_reserve_definition,
     serialize_reserve_definition,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+
+if TYPE_CHECKING:
+    from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
 
 def _area_reserves_path(area_id: str) -> list[str]:
@@ -40,6 +45,10 @@ def _area_reserves_path(area_id: str) -> list[str]:
 
 def _reserve_section_path(area_id: str, reserve_id: str) -> list[str]:
     return ["input", "reserves", area_id, "reserves", reserve_id]
+
+
+def _reserve_need_matrix_path(area_id: AreaId, reserve_id: ReserveDefinitionId) -> list[str]:
+    return ["input", "reserves", area_id, reserve_id]
 
 
 def _is_global_parameters_key(key: str) -> bool:
@@ -55,12 +64,16 @@ def _sections_from_ini(data: dict[str, Any]) -> dict[str, dict[str, Any]]:
 
 
 def _parse_reserve_sections(sections: dict[str, dict[str, object]]) -> list[ReserveDefinition]:
-    return [parse_reserve_definition({"name": name, **data}) for name, data in sections.items()]
+    return [parse_reserve_definition(section_id, data) for section_id, data in sections.items()]
 
 
 class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
+        pass
+
+    @abstractmethod
+    def get_impl(self) -> "FileStudyTreeDao":
         pass
 
     def _read_area_reserves(self, area_id: str) -> dict[str, dict[str, object]]:
@@ -79,7 +92,7 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
         for area_id in file_study.config.areas:
             reserves = self.get_all_reserve_definitions_for_area(area_id)
             if reserves:
-                result[area_id] = {reserve.id: reserve for reserve in reserves}
+                result[area_id] = {ReserveDefinitionId(reserve.id): reserve for reserve in reserves}
         return result
 
     @override
@@ -91,7 +104,7 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
         sections = self._read_area_reserves(area_id)
         if reserve_id not in sections:
             raise ReserveDefinitionNotFound(area_id, reserve_id)
-        return parse_reserve_definition({"name": reserve_id, **sections[reserve_id]})
+        return parse_reserve_definition(reserve_id, sections[reserve_id])
 
     @override
     def reserve_definition_exists(self, area_id: str, reserve_id: str) -> bool:
@@ -115,6 +128,8 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
                 existing = {}
             existing.update({reserve.id: serialize_reserve_definition(reserve) for reserve in reserves})
             file_study.tree.save(existing, _area_reserves_path(area_id))
+            for reserve in reserves:
+                self._update_reserves_config(area_id, reserve)
 
     @override
     def delete_reserve_definitions(self, area_id: AreaId, reserve_ids: Sequence[ReserveDefinitionId]) -> None:
@@ -123,4 +138,65 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
             if not self.reserve_definition_exists(area_id, reserve_id):
                 raise ReserveDefinitionNotFound(area_id, reserve_id)
         for reserve_id in reserve_ids:
+            # Remove the need matrix file (idempotent — it may have been already deleted).
+            try:
+                file_study.tree.delete(_reserve_need_matrix_path(area_id, reserve_id))
+            except (ChildNotFoundError, KeyError):
+                pass
             file_study.tree.delete(_reserve_section_path(area_id, reserve_id))
+        # Keep config in sync — remove deleted reserves from the area's list.
+        area_config = file_study.config.areas[area_id]
+        area_config.reserves = [rid for rid in area_config.reserves if rid not in reserve_ids]
+
+    def _update_reserves_config(self, area_id: str, reserve: ReserveDefinition) -> None:
+        study_data = self.get_file_study().config
+        if area_id not in study_data.areas:
+            raise ValueError(f"The area '{area_id}' does not exist")
+
+        if reserve.id not in study_data.areas[area_id].reserves:
+            study_data.areas[area_id].reserves.append(reserve.id)
+
+    @override
+    def get_reserve_need(self, area_id: str, reserve_id: str) -> pl.DataFrame:
+        if not self.reserve_definition_exists(area_id, reserve_id):
+            raise ReserveDefinitionNotFound(area_id, reserve_id)
+        return self.get_impl().get_matrix(_reserve_need_matrix_path(area_id, ReserveDefinitionId(reserve_id)))
+
+    @override
+    def get_all_reserve_needs(self) -> ReserveNeedsMapping:
+        study_data = self.get_file_study()
+        matrix_nodes: dict[InputSeriesMatrix, tuple[str, ReserveDefinitionId]] = {}
+        for area_id, area in study_data.config.areas.items():
+            for reserve_id in area.reserves:
+                url = _reserve_need_matrix_path(area_id, ReserveDefinitionId(reserve_id))
+                node = study_data.tree.get_node(url)
+                assert isinstance(node, InputSeriesMatrix)
+                matrix_nodes[node] = (area_id, ReserveDefinitionId(reserve_id))
+
+        result: ReserveNeedsMapping = {}
+        matrices_mapping = self.get_impl().get_matrices_ids(list(matrix_nodes))
+        for node, matrix_id in matrices_mapping.items():
+            area_id, reserve_id = matrix_nodes[node]
+            result.setdefault(area_id, {})[reserve_id] = matrix_id
+        return result
+
+    @override
+    def save_reserve_needs(self, mapping: ReserveNeedsMapping) -> None:
+        study_data = self.get_file_study()
+        matrices_mapping: dict[str, list[InputSeriesMatrix]] = {}
+        for area_id, per_reserve in mapping.items():
+            for reserve_id, series_id in per_reserve.items():
+                url = _reserve_need_matrix_path(area_id, reserve_id)
+                node = study_data.tree.get_node(url)
+                assert isinstance(node, InputSeriesMatrix)
+                matrices_mapping.setdefault(series_id, []).append(node)
+        self.get_impl().save_matrices(matrices_mapping)
+
+    @override
+    def delete_reserve_need(self, area_id: AreaId, reserve_id: ReserveDefinitionId) -> None:
+        study_data = self.get_file_study()
+        path = _reserve_need_matrix_path(area_id, reserve_id)
+        try:
+            study_data.tree.delete(path)
+        except (ChildNotFoundError, KeyError):
+            pass

@@ -27,27 +27,27 @@ class InputSTStorageAreaStorage(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
             "pmax_injection": InputSeriesMatrix(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file("PMAX-injection.txt"),
                 default_empty=default_scenario_hourly_ones,
             ),
             "pmax_withdrawal": InputSeriesMatrix(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file("PMAX-withdrawal.txt"),
                 default_empty=default_scenario_hourly_ones,
             ),
             "inflows": InputSeriesMatrix(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file("inflows.txt"),
                 default_empty=default_scenario_hourly,
             ),
             "lower_rule_curve": InputSeriesMatrix(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file("lower-rule-curve.txt"),
                 default_empty=default_scenario_hourly,
             ),
             "upper_rule_curve": InputSeriesMatrix(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file("upper-rule-curve.txt"),
                 default_empty=default_scenario_hourly_ones,
             ),
@@ -55,31 +55,31 @@ class InputSTStorageAreaStorage(FolderNode):
 
         if self.config.version >= STUDY_VERSION_9_2:
             children["cost_injection"] = InputSeriesMatrix(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file("cost-injection.txt"),
                 default_empty=default_scenario_hourly,
                 should_exist=False,
             )
             children["cost_withdrawal"] = InputSeriesMatrix(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file("cost-withdrawal.txt"),
                 default_empty=default_scenario_hourly,
                 should_exist=False,
             )
             children["cost_level"] = InputSeriesMatrix(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file("cost-level.txt"),
                 default_empty=default_cost_level,
                 should_exist=False,
             )
             children["cost_variation_injection"] = InputSeriesMatrix(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file("cost-variation-injection.txt"),
                 default_empty=default_scenario_hourly,
                 should_exist=False,
             )
             children["cost_variation_withdrawal"] = InputSeriesMatrix(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file("cost-variation-withdrawal.txt"),
                 default_empty=default_scenario_hourly,
                 should_exist=False,

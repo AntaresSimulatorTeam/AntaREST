@@ -17,6 +17,7 @@ import { setStudyScrollPosition } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudiesScrollPosition } from "@/redux/selectors";
+import ls, { StorageKey } from "@/services/utils/localStorage";
 import type { StudyMetadata } from "@/types/types";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Box } from "@mui/material";
@@ -43,7 +44,10 @@ function StudiesList({ studyIds }: StudiesListProps) {
   const scrollPosition = useAppSelector(getStudiesScrollPosition);
   const [studiesToLaunch, setStudiesToLaunch] = useState<Array<StudyMetadata["id"]>>([]);
   const [selectedStudyIds, setSelectedStudyIds] = useState<Array<StudyMetadata["id"]>>([]);
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const saved = ls.getItem(StorageKey.StudiesViewMode);
+    return saved ?? "list";
+  });
   const dispatch = useAppDispatch();
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
@@ -68,6 +72,11 @@ function StudiesList({ studyIds }: StudiesListProps) {
     { wait: 400, trailing: true },
   );
 
+  const handleViewModeChange = (mode: ViewMode) => {
+    ls.setItem(StorageKey.StudiesViewMode, mode);
+    setViewMode(mode);
+  };
+
   const handleLauncherClose = () => {
     setStudiesToLaunch([]);
     setSelectedStudyIds([]);
@@ -85,7 +94,7 @@ function StudiesList({ studyIds }: StudiesListProps) {
         setSelectedStudyIds={setSelectedStudyIds}
         setStudiesToLaunch={setStudiesToLaunch}
         viewMode={viewMode}
-        onViewModeChange={setViewMode}
+        onViewModeChange={handleViewModeChange}
       />
       <Box sx={{ flex: 1, pl: 1, pb: 1, overflowX: "hidden" }}>
         <AutoSizer>

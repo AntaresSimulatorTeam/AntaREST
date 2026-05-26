@@ -22,7 +22,7 @@ class InputMiscGen(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
             f"miscgen-{a}": InputSeriesMatrix(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file(f"miscgen-{a}.txt"),
                 default_empty=default_8_fixed_hourly,
             )

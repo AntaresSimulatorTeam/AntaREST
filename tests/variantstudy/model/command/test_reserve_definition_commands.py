@@ -16,6 +16,7 @@ from pydantic import ValidationError
 from antarest.study.business.model.reserve_definition_model import (
     ReserveDefinition,
     ReserveDefinitionCreation,
+    ReserveDefinitionId,
     ReserveDefinitionUpdate,
     ReserveType,
 )
@@ -34,24 +35,24 @@ class TestCreateReserveDefinition:
 
         command = CreateReserveDefinition(
             area_id="paris",
-            parameters=ReserveDefinitionCreation(name="Reserve 1", type=ReserveType.UP),
+            parameters=ReserveDefinitionCreation(id="Reserve 1", type=ReserveType.UP),
             command_context=command_context,
             study_version=STUDY_VERSION_10_0,
         )
         output = command.apply(dao_10_0)
         assert output.status
         assert isinstance(output.result, ReserveDefinition)
-        assert output.result.id == "reserve 1"
+        assert output.result.id == "Reserve 1"
         assert output.result.type == ReserveType.UP
 
-        assert dao_10_0.reserve_definition_exists("paris", "reserve 1")
+        assert dao_10_0.reserve_definition_exists("paris", "Reserve 1")
 
     def test_apply_duplicate_fails(self, dao_10_0: StudyDao, command_context: CommandContext) -> None:
         save_area(dao_10_0, "paris")
 
         first = CreateReserveDefinition(
             area_id="paris",
-            parameters=ReserveDefinitionCreation(name="Reserve 1", type=ReserveType.UP),
+            parameters=ReserveDefinitionCreation(id="Reserve 1", type=ReserveType.UP),
             command_context=command_context,
             study_version=STUDY_VERSION_10_0,
         )
@@ -59,7 +60,7 @@ class TestCreateReserveDefinition:
 
         second = CreateReserveDefinition(
             area_id="paris",
-            parameters=ReserveDefinitionCreation(name="Reserve 1", type=ReserveType.DOWN),
+            parameters=ReserveDefinitionCreation(id="Reserve 1", type=ReserveType.DOWN),
             command_context=command_context,
             study_version=STUDY_VERSION_10_0,
         )
@@ -71,7 +72,7 @@ class TestCreateReserveDefinition:
         with pytest.raises(ValidationError, match="study version before 10.0"):
             CreateReserveDefinition(
                 area_id="paris",
-                parameters=ReserveDefinitionCreation(name="Reserve 1", type=ReserveType.UP),
+                parameters=ReserveDefinitionCreation(id="Reserve 1", type=ReserveType.UP),
                 command_context=command_context,
                 study_version=StudyVersion.parse("9.2"),
             )
@@ -79,29 +80,45 @@ class TestCreateReserveDefinition:
     def test_to_dto(self, command_context: CommandContext) -> None:
         command = CreateReserveDefinition(
             area_id="paris",
-            parameters=ReserveDefinitionCreation(name="Reserve 1", type=ReserveType.UP, failure_cost=500.0),
+            parameters=ReserveDefinitionCreation(id="Reserve 1", type=ReserveType.UP, failure_cost=500.0),
             command_context=command_context,
             study_version=STUDY_VERSION_10_0,
         )
         dto = command.to_dto()
         assert dto.action == "create_reserve_definition"
         assert dto.args["area_id"] == "paris"
-        assert dto.args["parameters"]["name"] == "Reserve 1"
+        assert dto.args["parameters"]["id"] == "Reserve 1"
         assert dto.args["parameters"]["type"] == "up"
         assert dto.args["parameters"]["failureCost"] == 500.0
+
+    def test_apply_creates_default_need_matrix(self, dao_10_0: StudyDao, command_context: CommandContext) -> None:
+        save_area(dao_10_0, "paris")
+
+        command = CreateReserveDefinition(
+            area_id="paris",
+            parameters=ReserveDefinitionCreation(id="R1", type=ReserveType.UP),
+            command_context=command_context,
+            study_version=STUDY_VERSION_10_0,
+        )
+        output = command.apply(dao_10_0)
+        assert output.status
+
+        matrix = dao_10_0.get_reserve_need("paris", "R1")
+        assert matrix.shape == (8760, 1)
+        assert matrix.to_numpy().sum() == 0.0
 
 
 def _seed_two_reserves(dao: StudyDao, command_context: CommandContext) -> None:
     save_area(dao, "paris")
     CreateReserveDefinition(
         area_id="paris",
-        parameters=ReserveDefinitionCreation(name="R1", type=ReserveType.UP, failure_cost=10.0),
+        parameters=ReserveDefinitionCreation(id="R1", type=ReserveType.UP, failure_cost=10.0),
         command_context=command_context,
         study_version=STUDY_VERSION_10_0,
     ).apply(dao)
     CreateReserveDefinition(
         area_id="paris",
-        parameters=ReserveDefinitionCreation(name="R2", type=ReserveType.DOWN),
+        parameters=ReserveDefinitionCreation(id="R2", type=ReserveType.DOWN),
         command_context=command_context,
         study_version=STUDY_VERSION_10_0,
     ).apply(dao)
@@ -114,8 +131,8 @@ class TestUpdateReserveDefinitions:
         command = UpdateReserveDefinitions(
             reserve_properties={
                 "paris": {
-                    "r1": ReserveDefinitionUpdate(failure_cost=999.0),
-                    "r2": ReserveDefinitionUpdate(spillage_cost=5.0),
+                    "R1": ReserveDefinitionUpdate(failure_cost=999.0),
+                    "R2": ReserveDefinitionUpdate(spillage_cost=5.0),
                 }
             },
             command_context=command_context,
@@ -124,8 +141,8 @@ class TestUpdateReserveDefinitions:
         output = command.apply(dao_10_0)
         assert output.status
 
-        assert dao_10_0.get_reserve_definition("paris", "r1").failure_cost == 999.0
-        assert dao_10_0.get_reserve_definition("paris", "r2").spillage_cost == 5.0
+        assert dao_10_0.get_reserve_definition("paris", "R1").failure_cost == 999.0
+        assert dao_10_0.get_reserve_definition("paris", "R2").spillage_cost == 5.0
 
     def test_apply_not_found(self, dao_10_0: StudyDao, command_context: CommandContext) -> None:
         _seed_two_reserves(dao_10_0, command_context)
@@ -163,20 +180,20 @@ class TestRemoveReserveDefinitions:
         save_area(dao_10_0, "paris")
         CreateReserveDefinition(
             area_id="paris",
-            parameters=ReserveDefinitionCreation(name="R1", type=ReserveType.UP),
+            parameters=ReserveDefinitionCreation(id="R1", type=ReserveType.UP),
             command_context=command_context,
             study_version=STUDY_VERSION_10_0,
         ).apply(dao_10_0)
 
         command = RemoveReserveDefinitions(
             area_id="paris",
-            reserve_ids=["r1"],
+            reserve_ids=["R1"],
             command_context=command_context,
             study_version=STUDY_VERSION_10_0,
         )
         output = command.apply(dao_10_0)
         assert output.status
-        assert not dao_10_0.reserve_definition_exists("paris", "r1")
+        assert not dao_10_0.reserve_definition_exists("paris", "R1")
 
     def test_not_found(self, dao_10_0: StudyDao, command_context: CommandContext) -> None:
         save_area(dao_10_0, "paris")
@@ -203,11 +220,34 @@ class TestRemoveReserveDefinitions:
     def test_to_dto(self, command_context: CommandContext) -> None:
         command = RemoveReserveDefinitions(
             area_id="paris",
-            reserve_ids=["r1", "r2"],
+            reserve_ids=["R1", "R2"],
             command_context=command_context,
             study_version=STUDY_VERSION_10_0,
         )
         dto = command.to_dto()
         assert dto.action == "remove_reserve_definitions"
         assert dto.args["area_id"] == "paris"
-        assert dto.args["reserve_ids"] == ["r1", "r2"]
+        assert dto.args["reserve_ids"] == ["R1", "R2"]
+
+    def test_apply_removes_need_matrix(self, dao_10_0: StudyDao, command_context: CommandContext) -> None:
+        save_area(dao_10_0, "paris")
+        CreateReserveDefinition(
+            area_id="paris",
+            parameters=ReserveDefinitionCreation(id="R1", type=ReserveType.UP),
+            command_context=command_context,
+            study_version=STUDY_VERSION_10_0,
+        ).apply(dao_10_0)
+
+        reserve_id = ReserveDefinitionId("R1")
+        assert dao_10_0.get_all_reserve_needs().get("paris", {}).get(reserve_id) is not None
+
+        command = RemoveReserveDefinitions(
+            area_id="paris",
+            reserve_ids=[reserve_id],
+            command_context=command_context,
+            study_version=STUDY_VERSION_10_0,
+        )
+        output = command.apply(dao_10_0)
+        assert output.status
+
+        assert reserve_id not in dao_10_0.get_all_reserve_needs().get("paris", {})

@@ -24,7 +24,8 @@ class FileDownloadRepository:
 
     def get(self, download_id: str) -> FileDownload | None:
         download = db.session.get(FileDownload, download_id)
-        db.session.refresh(download)
+        if download:
+            db.session.refresh(download)
         return download
 
     def save(self, download: FileDownload) -> None:

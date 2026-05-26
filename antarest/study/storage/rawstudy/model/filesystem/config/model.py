@@ -15,15 +15,21 @@ from pathlib import Path
 from typing import Any
 
 from antares.study.version import StudyVersion
-from pydantic import Field, model_validator
+from pydantic import ConfigDict, Field, model_validator
+from pydantic.alias_generators import to_camel
 from typing_extensions import override
 
+from antarest.core.model import LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
+    ConstraintId,
 )
+from antarest.study.business.model.common import CommaSeparatedFilterOptions
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -91,6 +97,8 @@ class AreaConfig(AntaresBaseModel, extra="forbid"):
     st_storages: list[STStorage] = []
     # Since v9.2, dictionary storage ID -> constraints
     st_storages_additional_constraints: dict[str, list[STStorageAdditionalConstraint]] = {}
+    # Since v10.0
+    reserves: list[str] = []
 
 
 class Simulation(AntaresBaseModel):
@@ -114,6 +122,34 @@ class Simulation(AntaresBaseModel):
         return f"{self.date}{self.mode.get_output_suffix()}{dash}{self.name}"
 
 
+class BindingConstraintConfig(AntaresBaseModel):
+    """
+    Object representing a binding constraint configuration.
+
+    Compared to the BindingConstraint class, this model does not have
+    the terms and comments fields to be lighter
+    """
+
+    model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
+
+    id: ConstraintId
+    name: str
+    enabled: bool
+    time_step: BindingConstraintFrequency
+    operator: BindingConstraintOperator
+
+    # Added in 8.3
+    filter_year_by_year: CommaSeparatedFilterOptions | None = None
+    filter_synthesis: CommaSeparatedFilterOptions | None = None
+
+    # Added in 8.7
+    group: LowerCaseStr | None = None
+
+    @classmethod
+    def from_constraint(cls, constraint: BindingConstraint) -> "BindingConstraintConfig":
+        return cls.model_validate(constraint.model_dump(mode="json", include=set(BindingConstraintConfig.model_fields)))
+
+
 class FileStudyTreeConfig(DTO):
     """
     Root object to handle all study parameters which impact tree structure
@@ -129,7 +165,7 @@ class FileStudyTreeConfig(DTO):
         districts: dict[str, District] | None = None,
         areas: dict[str, AreaConfig] | None = None,
         outputs: dict[str, Simulation] | None = None,
-        bindings: list[BindingConstraint] | None = None,
+        bindings: list[BindingConstraintConfig] | None = None,
         store_new_set: bool = False,
         archive_input_series: list[str] | None = None,
         enr_modelling: str = str(EnrModelling.AGGREGATED),
@@ -253,7 +289,7 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
     districts: dict[str, District] = dict()
     areas: dict[str, AreaConfig] = dict()
     outputs: dict[str, Simulation] = dict()
-    bindings: list[BindingConstraint] = list()
+    bindings: list[BindingConstraintConfig] = list()
     store_new_set: bool = False
     archive_input_series: list[str] = list()
     enr_modelling: str = str(EnrModelling.AGGREGATED)

@@ -42,7 +42,7 @@ import { convertUTCToLocalTime } from "@/services/utils/index";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 import type { WsEvent } from "@/services/webSocket/types";
 import { addWsEventListener, subscribeWsChannels } from "@/services/webSocket/ws";
-import type { LaunchJobsProgress, TaskView } from "@/types/types";
+import type { JobsProgressById, TaskView } from "@/types/types";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import BlockIcon from "@mui/icons-material/Block";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
@@ -82,7 +82,7 @@ function Tasks() {
   const studies = useAppSelector(getStudies);
   const usersByID = useAppSelector(getUsersById);
   const dispatch = useAppDispatch();
-  const [studyJobsProgress, setStudyJobsProgress] = useState<LaunchJobsProgress>({});
+  const [studyJobsProgress, setStudyJobsProgress] = useState<JobsProgressById>({});
 
   useMount(() => {
     dispatch(resetTaskNotifications());
