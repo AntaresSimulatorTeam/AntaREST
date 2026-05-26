@@ -20,16 +20,9 @@ import { variantTreeSchema } from "./schemas";
 import type { CreateVariantParams, GetVariantTreeParams } from "./types";
 
 export async function getVariantTree({ studyId, includeParents = true }: GetVariantTreeParams) {
-  let rootStudyId = studyId;
-
-  if (includeParents) {
-    const parent = await getVariantLatestParent({ studyId });
-    if (parent) {
-      rootStudyId = parent.id;
-    }
-  }
-
-  const { data } = await client.get(`/v1/studies/${rootStudyId}/variants`);
+  const { data } = await client.get(`/v1/studies/${studyId}/variants`, {
+    params: { from_root: includeParents },
+  });
   return variantTreeSchema.parse(data);
 }
 

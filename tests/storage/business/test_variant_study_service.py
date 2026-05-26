@@ -17,6 +17,7 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
+from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import UserHasNotPermissionError
@@ -113,3 +114,73 @@ def test_get_variant_children(tmp_path: Path, admin_user: Any) -> None:
             else:
                 with pytest.raises(UserHasNotPermissionError):
                     study_service.get_all_variants_children("parent")
+
+
+def test_get_root_study_id(tmp_path: Path) -> None:
+    repo_mock = Mock(spec=VariantStudyRepository)
+    study_service = VariantStudyService(
+        raw_study_service=Mock(),
+        cache=Mock(),
+        task_service=Mock(),
+        command_factory=Mock(),
+        study_factory=Mock(),
+        config=build_config(tmp_path),
+        repository=repo_mock,
+        event_bus=Mock(),
+        matrix_service=Mock(),
+    )
+
+    repo_mock.get_root_ancestor_id.return_value = "root"
+    assert study_service.get_root_study_id("leaf") == "root"
+    repo_mock.get_root_ancestor_id.assert_called_once_with("leaf")
+
+    repo_mock.get_root_ancestor_id.return_value = None
+    with pytest.raises(StudyNotFoundError):
+        study_service.get_root_study_id("missing")
+
+
+def test_get_all_variants_children_from_root(tmp_path: Path, admin_user: Any) -> None:
+    """When `from_root=True`, the tree is rebuilt starting at the topmost ancestor."""
+    study_path = tmp_path / "s"
+    study_path.mkdir()
+    (study_path / "study.antares").touch()
+
+    repo_mock = Mock(spec=VariantStudyRepository)
+    study_service = VariantStudyService(
+        raw_study_service=Mock(),
+        cache=Mock(),
+        task_service=Mock(),
+        command_factory=Mock(),
+        study_factory=Mock(),
+        config=build_config(tmp_path),
+        repository=repo_mock,
+        event_bus=Mock(),
+        matrix_service=Mock(),
+    )
+
+    def _study(study_id: str) -> Any:
+        return create_variant_study(
+            id=study_id,
+            name=study_id,
+            type=StudyType.VARIANT,
+            archived=False,
+            path=str(study_path),
+            version="700",
+            owner=User(id=1, name="admin"),
+            groups=[],
+            public_mode=PublicMode.NONE,
+        )
+
+    root = _study("root")
+    leaf = _study("leaf")
+
+    repo_mock.get_root_ancestor_id.return_value = "root"
+    repo_mock.get.side_effect = [root, leaf]
+    repo_mock.get_children.side_effect = [[leaf], []]
+
+    with current_user_context(admin_user):
+        tree = study_service.get_all_variants_children("leaf", from_root=True)
+
+    repo_mock.get_root_ancestor_id.assert_called_once_with("leaf")
+    assert tree.node.id == "root"
+    assert [c.node.id for c in tree.children] == ["leaf"]

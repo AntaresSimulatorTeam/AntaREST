@@ -14,6 +14,7 @@ from collections.abc import Sequence
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.sql.selectable import CTE
 from typing_extensions import override
 
 from antarest.core.interfaces.cache import ICache
@@ -69,6 +70,15 @@ class VariantStudyRepository(StudyMetadataRepository):
         studies = list(result.scalars().all())
         return studies
 
+    def _ancestor_or_self_cte(self, variant_id: str) -> CTE:
+        """
+        Build a recursive CTE yielding (id, parent_id) for `variant_id` and every ancestor.
+        See: https://www.postgresql.org/docs/current/queries-with.html#QUERIES-WITH-RECURSIVE
+        """
+        top_q = select(Study.id, Study.parent_id).where(Study.id == variant_id).cte("study_cte", recursive=True)
+        bot_q = select(Study.id, Study.parent_id).join(top_q, Study.id == top_q.c.parent_id)
+        return top_q.union_all(bot_q)
+
     def get_ancestor_or_self_ids(self, variant_id: str) -> Sequence[str]:
         """
         Retrieve the list of ancestor variant identifiers, including the `variant_id`,
@@ -81,15 +91,18 @@ class VariantStudyRepository(StudyMetadataRepository):
         Returns:
             Ordered list of study identifiers.
         """
-        # see: [Recursive Queries](https://www.postgresql.org/docs/current/queries-with.html#QUERIES-WITH-RECURSIVE)
-        top_query = select(Study.id, Study.parent_id).where(Study.id == variant_id)
-        top_q = top_query.cte("study_cte", recursive=True)
-
-        bot_q = select(Study.id, Study.parent_id).join(top_q, Study.id == top_q.c.parent_id)
-
-        recursive_q = top_q.union_all(bot_q)
-        result = self.session.execute(select(recursive_q.c.id))
+        cte = self._ancestor_or_self_cte(variant_id)
+        result = self.session.execute(select(cte.c.id))
         return [r[0] for r in result]
+
+    def get_root_ancestor_id(self, variant_id: str) -> str | None:
+        """
+        Return the id of the topmost ancestor of `variant_id`, or `variant_id` itself if
+        it has no parent. Returns None if `variant_id` does not exist.
+        """
+        cte = self._ancestor_or_self_cte(variant_id)
+        row = self.session.execute(select(cte.c.id).where(cte.c.parent_id.is_(None))).first()
+        return row[0] if row else None
 
     def get_all_descendants(self, parent_id: str) -> list[VariantStudy]:
         """

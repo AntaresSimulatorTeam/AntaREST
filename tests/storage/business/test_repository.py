@@ -115,3 +115,29 @@ class TestVariantStudyRepository:
 
         descendants = repository.get_all_descendants(parent_id=v1.id)
         assert {d.id for d in descendants} == {v1a.id, v1a1.id}
+
+    def test_get_root_ancestor_id(self, db_session: Session) -> None:
+        repository = VariantStudyRepository(cache_service=Mock(spec=ICache), session=db_session)
+
+        # Unknown id
+        assert repository.get_root_ancestor_id("nope") is None
+
+        # Standalone raw study: root is itself
+        raw_study = create_raw_study(name="Root")
+        db_session.add(raw_study)
+        db_session.commit()
+        assert repository.get_root_ancestor_id(raw_study.id) == raw_study.id
+
+        # Deep chain: root -> v1 -> v1a -> v1a1
+        v1 = create_variant_study(name="v1", parent_id=raw_study.id)
+        db_session.add(v1)
+        db_session.commit()
+        v1a = create_variant_study(name="v1a", parent_id=v1.id)
+        db_session.add(v1a)
+        db_session.commit()
+        v1a1 = create_variant_study(name="v1a1", parent_id=v1a.id)
+        db_session.add(v1a1)
+        db_session.commit()
+
+        for study in (v1, v1a, v1a1):
+            assert repository.get_root_ancestor_id(study.id) == raw_study.id

@@ -510,7 +510,18 @@ class VariantStudyService(AbstractStudyService):
     def has_children(self, study: Study) -> bool:
         return self.repository.has_children(study.id)
 
-    def get_all_variants_children(self, parent_id: str) -> VariantTreeDTO:
+    def get_root_study_id(self, study_id: str) -> str:
+        """
+        Return the id of the topmost ancestor, or `study_id` itself if it has no parent.
+        """
+        root_id = self.repository.get_root_ancestor_id(study_id)
+        if root_id is None:
+            raise StudyNotFoundError(study_id)
+        return root_id
+
+    def get_all_variants_children(self, parent_id: str, from_root: bool = False) -> VariantTreeDTO:
+        if from_root:
+            parent_id = self.get_root_study_id(parent_id)
         study = self._get_study_by_id(parent_id)
         children_tree = VariantTreeDTO(
             node=self.get_study_information(study),
