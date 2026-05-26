@@ -100,22 +100,24 @@ function InformationView({ variantTree }: Props) {
           <Stack gap={1} justifyContent="space-between">
             <Stack gap={1}>
               {!study.archived && (
-                <RouterButton
-                  variant="contained"
-                  to="/studies/$studyId/explore"
-                  params={{ studyId: study.id }}
-                >
-                  {t("button.explore")}
-                </RouterButton>
-              )}
-              {study.managed ? (
-                <Button variant="outlined" onClick={handleCreateVariant}>
-                  {t("variants.createNewVariant")}
-                </Button>
-              ) : (
-                <Button variant="outlined" onClick={handleCopyStudy} disabled={study.archived}>
-                  {t("studies.importcopy")}
-                </Button>
+                <>
+                  <RouterButton
+                    variant="contained"
+                    to="/studies/$studyId/explore"
+                    params={{ studyId: study.id }}
+                  >
+                    {t("button.explore")}
+                  </RouterButton>
+                  {study.managed ? (
+                    <Button variant="outlined" onClick={handleCreateVariant}>
+                      {t("variants.createNewVariant")}
+                    </Button>
+                  ) : (
+                    <Button variant="outlined" onClick={handleCopyStudy} disabled={study.archived}>
+                      {t("studies.importcopy")}
+                    </Button>
+                  )}
+                </>
               )}
             </Stack>
             {study.archived ? (

@@ -12,24 +12,24 @@
  * This file is part of the Antares project.
  */
 
+import CustomScrollbar from "@/components/CustomScrollbar";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { directoryQueries } from "@/queries/directories/queries";
+import { updateStudyFilters, updateStudySortConfig } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudiesById, getStudyFilters, getStudySortConfig } from "@/redux/selectors";
+import MoveStudyDialog from "@/routes/-shared/components/studies/dialogs/MoveStudyDialog";
+import { getDescendantIds } from "@/routes/_authenticated/studies/-components/StudyTree/ManagedTree/utils";
+import { scanFolder } from "@/services/api/study";
+import type { StudySortConfig } from "@/types/types";
+import { toError } from "@/utils/fnUtils";
 import { Box } from "@mui/material";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import CustomScrollbar from "@/components/CustomScrollbar";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import { updateStudyFilters, updateStudySortConfig } from "@/redux/ducks/studies";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getStudyFilters, getStudySortConfig, getStudiesById } from "@/redux/selectors";
-import { directoryQueries } from "@/queries/directories/queries";
-import { scanFolder } from "@/services/api/study";
-import type { StudySortConfig } from "@/types/types";
-import { toError } from "@/utils/fnUtils";
-import { getDescendantIds } from "@/routes/_authenticated/studies/-components/StudyTree/ManagedTree/utils";
 import BatchActions from "./BatchActions";
 import DeleteStudiesDialog from "./DeleteStudiesDialog";
-import MoveStudyDialog from "@/routes/-shared/components/studies/dialogs/MoveStudyDialog";
 import FilterControls from "./FilterControls";
 import { useBreadcrumbs } from "./hooks/useBreadcrumbs";
 import NavigationBreadcrumbs from "./NavigationBreadcrumbs";
@@ -63,6 +63,7 @@ function Header({
   const studiesById = useAppSelector(getStudiesById);
   const selectedStudies = selectedStudyIds.map((id) => studiesById[id]).filter(Boolean);
   const selectedManagedStudies = selectedStudies.filter((s) => s.managed);
+  const selectedUnarchivedStudies = selectedStudies.filter((s) => !s.archived);
 
   const isDesktopMode = import.meta.env.MODE === "desktop";
   const isReferenceStudyTypeActive = filters.type === "references";
@@ -122,7 +123,7 @@ function Header({
   };
 
   const handleLaunchStudies = () => {
-    setStudiesToLaunch(selectedStudyIds);
+    setStudiesToLaunch(selectedUnarchivedStudies.map((s) => s.id));
   };
 
   const handleDeleteStudies = () => {
@@ -200,7 +201,8 @@ function Header({
           <BatchActions
             selectedCount={selectedStudyIds.length}
             managedCount={selectedManagedStudies.length}
-            onLaunch={handleLaunchStudies}
+            unarchivedCount={selectedUnarchivedStudies.length}
+            onLaunch={selectedUnarchivedStudies.length > 0 ? handleLaunchStudies : undefined}
             onMove={selectedManagedStudies.length > 0 ? handleMoveStudies : undefined}
             onDelete={selectedManagedStudies.length > 0 ? handleDeleteStudies : undefined}
             onDeselectAll={handleDeselectAll}

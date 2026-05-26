@@ -21,10 +21,13 @@ import { useTranslation } from "react-i18next";
 
 interface BatchActionsProps {
   selectedCount: number;
+  /** Number of selected studies that are unarchived (and therefore launchable). */
+  unarchivedCount: number;
   /** Number of selected studies that are managed (and therefore movable/deletable). */
-  managedCount?: number;
-  onLaunch: () => void;
-  /** If not provided, the Delete button is not rendered. */
+  managedCount: number;
+  /** If not provided, the Launch button is not rendered (only unarchived studies can be launched). */
+  onLaunch?: () => void;
+  /** If not provided, the Delete button is not rendered (only managed studies can be deleted). */
   onDelete?: () => void;
   onDeselectAll: () => void;
   /** If not provided, the Move button is not rendered (only managed studies can be moved). */
@@ -33,6 +36,7 @@ interface BatchActionsProps {
 
 function BatchActions({
   selectedCount,
+  unarchivedCount,
   managedCount,
   onLaunch,
   onDelete,
@@ -45,28 +49,40 @@ function BatchActions({
     return null;
   }
 
-  const isMixed = managedCount !== undefined && managedCount < selectedCount;
+  const isMixedArchiveState = unarchivedCount < selectedCount;
+  const isMixedType = managedCount < selectedCount;
 
-  const moveTooltip = isMixed
+  const launchTooltip = isMixedArchiveState
+    ? t("studies.launchOnlyUnarchivedStudies", { count: unarchivedCount, total: selectedCount })
+    : t("global.launch");
+
+  const moveTooltip = isMixedType
     ? t("studies.moveOnlyManagedStudies", { count: managedCount, total: selectedCount })
     : t("global.move");
 
-  const deleteTooltip = isMixed
+  const deleteTooltip = isMixedType
     ? t("studies.deleteOnlyManagedStudies", { count: managedCount, total: selectedCount })
     : t("global.delete");
 
   return (
     <>
-      <Tooltip title={t("studies.batchMode")}>
-        <Button onClick={onLaunch} color="primary" startIcon={<BoltIcon />}>
-          {t("global.launch")}
-        </Button>
-      </Tooltip>
+      {onLaunch && (
+        <Tooltip title={launchTooltip}>
+          <Button onClick={onLaunch} color="primary" startIcon={<BoltIcon />}>
+            {t("global.launch")}
+            {isMixedArchiveState && (
+              <Typography component="span" variant="caption" sx={{ ml: 0.5, opacity: 0.7 }}>
+                ({unarchivedCount}/{selectedCount})
+              </Typography>
+            )}
+          </Button>
+        </Tooltip>
+      )}
       {onMove && (
         <Tooltip title={moveTooltip}>
           <Button onClick={onMove} color="inherit" startIcon={<DriveFileMoveIcon />}>
             {t("global.move")}
-            {isMixed && (
+            {isMixedType && (
               <Typography component="span" variant="caption" sx={{ ml: 0.5, opacity: 0.7 }}>
                 ({managedCount}/{selectedCount})
               </Typography>
@@ -78,7 +94,7 @@ function BatchActions({
         <Tooltip title={deleteTooltip}>
           <Button onClick={onDelete} color="error" startIcon={<DeleteIcon />}>
             {t("global.delete")}
-            {isMixed && (
+            {isMixedType && (
               <Typography component="span" variant="caption" sx={{ ml: 0.5, opacity: 0.7 }}>
                 ({managedCount}/{selectedCount})
               </Typography>
