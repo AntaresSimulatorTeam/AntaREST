@@ -121,7 +121,17 @@ export async function getDefaultValues(studyIds: Array<StudyMetadata["id"]>) {
 export type FormValues = Awaited<ReturnType<typeof getDefaultValues>>;
 
 export function otherOptionsToArray(otherOptions: string): string[] {
-  return otherOptions.trim() === "" ? [] : otherOptions.split(/\s+/);
+  if (otherOptions.trim() === "") {
+    return [];
+  }
+
+  // Match either:
+  // - key=value where value can be quoted ("..." or '...') or unquoted
+  // - standalone key (no value)
+  return [...otherOptions.matchAll(/[\w-]+=(?:"[^"]*"|'[^']*'|\S+)|[\w-]+/g)].map(
+    // Extract only the key part (before "=" if present).
+    ([match]) => match.split("=")[0],
+  );
 }
 
 export function isXpressAvailableForVersion(version: FormValues["version"]) {
