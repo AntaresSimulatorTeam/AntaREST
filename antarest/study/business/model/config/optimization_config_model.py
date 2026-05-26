@@ -16,7 +16,7 @@ from pydantic.alias_generators import to_camel
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.model import STUDY_VERSION_8_4, STUDY_VERSION_10_0
+from antarest.study.model import STUDY_VERSION_10_0
 
 
 class LegacyTransmissionCapacities(EnumIgnoreCase):
@@ -95,9 +95,6 @@ def update_optimization_preferences(
 def initialize_optimization_preferences_against_version(
     parameters: OptimizationPreferences, version: StudyVersion
 ) -> None:
-    if version >= STUDY_VERSION_8_4 and parameters.transmission_capacities is True:
-        # Model default is the legacy boolean True; v8.4+ studies use LOCAL_VALUES.
-        parameters.transmission_capacities = TransmissionCapacities.LOCAL_VALUES
     if version >= STUDY_VERSION_10_0 and parameters.include_reserves is None:
         parameters.include_reserves = False
 

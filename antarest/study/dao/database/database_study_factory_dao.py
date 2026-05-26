@@ -30,6 +30,7 @@ from antarest.study.business.model.config.compatibility_parameters_model import 
 from antarest.study.business.model.config.general_model import GeneralConfig, initialize_general_config_against_version
 from antarest.study.business.model.config.optimization_config_model import (
     OptimizationPreferences,
+    TransmissionCapacities,
     initialize_optimization_preferences_against_version,
 )
 from antarest.study.business.model.config.playlist_model import Playlist
@@ -46,6 +47,7 @@ from antarest.study.model import (
     STUDY_REFERENCE_TEMPLATES,
     STUDY_VERSION_7_2,
     STUDY_VERSION_8_3,
+    STUDY_VERSION_8_4,
     STUDY_VERSION_9_2,
 )
 from antarest.study.storage.utils import StudyMetadataCreation
@@ -71,6 +73,9 @@ def _create_default_settings(dao: DatabaseStudyDao, study_version: StudyVersion)
     dao.save_advanced_parameters(advanced_parameters)
 
     optimization_preferences = OptimizationPreferences()
+    if study_version >= STUDY_VERSION_8_4:
+        # FS gets this via the empty_study template's generaldata.ini; DB has no template.
+        optimization_preferences.transmission_capacities = TransmissionCapacities.LOCAL_VALUES
     initialize_optimization_preferences_against_version(optimization_preferences, study_version)
     dao.save_optimization_preferences(optimization_preferences)
 

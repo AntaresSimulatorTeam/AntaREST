@@ -28,7 +28,7 @@ from tests.study.dao.utils import save_area
 
 ALL_FILTERS = list(FILTER_OPTIONS)
 
-# Default district shipped by both FS templates and the DB factory.
+# Default district.
 DEFAULT_DISTRICT = District(
     id="all areas",
     name="All areas",
