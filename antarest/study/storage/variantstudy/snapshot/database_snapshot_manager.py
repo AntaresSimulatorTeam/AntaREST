@@ -29,8 +29,8 @@ class DatabaseSnapshotManager(ISnapshotManager):
 
     @override
     def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
-        # TODO
-        raise NotImplementedError()
+        self.clear_snapshot(variant_study)
+        # TODO: We need to copy the reference study data into the variant study
 
     @override
     def clear_snapshot(self, variant_study: VariantStudy) -> None:
