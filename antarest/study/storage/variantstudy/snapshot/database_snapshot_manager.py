@@ -14,11 +14,15 @@ from typing_extensions import override
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import Study
+from antarest.study.storage.database_storage import DatabaseStudyStorage
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.snapshot.snapshot_manager_interface import ISnapshotManager
 
 
 class DatabaseSnapshotManager(ISnapshotManager):
+    def __init__(self, database_study_storage: DatabaseStudyStorage) -> None:
+        self._database_study_storage = database_study_storage
+
     @override
     def is_snapshot_up_to_date(self, study: VariantStudy) -> bool:
         return self.has_snapshot(study) and (study.snapshot.created_at >= study.updated_at)
@@ -30,7 +34,7 @@ class DatabaseSnapshotManager(ISnapshotManager):
     @override
     def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
         self.clear_snapshot(variant_study)
-        # TODO: We need to copy the reference study data into the variant study
+        self._database_study_storage.copy_study(ref_study, variant_study.id)
 
     @override
     def clear_snapshot(self, variant_study: VariantStudy) -> None:

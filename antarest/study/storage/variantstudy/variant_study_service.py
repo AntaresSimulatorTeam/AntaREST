@@ -62,6 +62,7 @@ from antarest.study.model import (
 )
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract.abstract_study_service import AbstractStudyService
+from antarest.study.storage.database_storage import DatabaseStudyStorage
 from antarest.study.storage.file_study_utils import get_study_path
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -124,14 +125,15 @@ class VariantStudyService(AbstractStudyService):
         self._matrix_service = matrix_service
         CommandMatrixUsageProvider(repository, command_factory, raw_study_service._storage_mapping)
         CommandBlobUsageProvider(variant_study_repo=repository, command_factory=command_factory)
-        self._snapshot_manager_mapping: dict[StorageMode, ISnapshotManager] = {
-            StorageMode.FILESYSTEM: FileSnapshotManager(),
-            StorageMode.DATABASE: DatabaseSnapshotManager(),
-        }
         ctx = command_factory.command_context
         self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
             StorageMode.DATABASE: DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants),
             StorageMode.FILESYSTEM: FileStudyDaoFactory(ctx, study_factory, cache, self.get_study_paths),
+        }
+        database_study_storage = DatabaseStudyStorage(self._matrix_service, self._study_dao_factories)
+        self._snapshot_manager_mapping: dict[StorageMode, ISnapshotManager] = {
+            StorageMode.FILESYSTEM: FileSnapshotManager(),
+            StorageMode.DATABASE: DatabaseSnapshotManager(database_study_storage),
         }
 
     @override
