@@ -29,6 +29,20 @@ from antarest.study.storage.utils import StudyMetadataCreation
 logger = logging.getLogger(__name__)
 
 
+def _build_metadata(study: Study, managed: bool, path: Path | None) -> StudyMetadataCreation:
+    return StudyMetadataCreation(
+        id=study.id,
+        version=StudyVersion.parse(study.version),
+        managed=managed,
+        name=study.name,
+        author=study.author,
+        editor=study.editor,
+        created_at=study.created_at,
+        updated_at=study.updated_at,
+        path=path,
+    )
+
+
 class DatabaseStudyStorage(IStudyStorage):
     def __init__(self, matrix_service: ISimpleMatrixService, study_dao_factories: dict[StorageMode, StudyFactoryDao]):
         self._matrix_service = matrix_service
@@ -36,15 +50,16 @@ class DatabaseStudyStorage(IStudyStorage):
 
     @override
     def copy(self, src_study: Study, new_study: RawStudy) -> RawStudy:
-        self.copy_study(src_study, new_study.id)
+        self.copy_study(src_study, new_study)
         return new_study
 
-    def copy_study(self, src_study: Study, new_study_id: str) -> None:
+    def copy_study(self, src_study: Study, new_study: Study) -> None:
         source_dao = self._dao_factories[StorageMode.DATABASE].get_study_dao(src_study.id, True)
         study_version = StudyVersion.parse(src_study.version)
 
         # Build the new DB DAO
-        new_dao = self._dao_factories[StorageMode.DATABASE].get_study_dao(study_id=new_study_id, is_study_managed=True)
+        metadata = _build_metadata(new_study, True, None)
+        new_dao = self._dao_factories[StorageMode.DATABASE].create_study_dao(metadata)
 
         # Copies the inputs
         converter = StudyConverter(
@@ -63,17 +78,7 @@ class DatabaseStudyStorage(IStudyStorage):
         study_version = StudyVersion.parse(study.version)
 
         # Create the new FS DAO
-        metadata = StudyMetadataCreation(
-            id=study.id,
-            version=study_version,
-            managed=False,  # Means the matrices will be denormalized
-            name=study.name,
-            author=study.author,
-            editor=study.editor,
-            created_at=study.created_at,
-            updated_at=study.updated_at,
-            path=dst_path,
-        )
+        metadata = _build_metadata(study, False, dst_path)
         new_dao = self._dao_factories[StorageMode.FILESYSTEM].create_study_dao(metadata)
 
         # Convert the DB DAO into an FS DAO

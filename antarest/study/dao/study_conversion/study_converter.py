@@ -118,6 +118,11 @@ class StudyConverter:
 
     def _convert_binding_constraints(self) -> None:
         constraints = list(self._source_dao.get_all_constraints().values())
+
+        # If the source study does not contain any binding constraint, we should stop here
+        if not constraints:
+            return
+
         self._new_dao.save_constraints(constraints)
 
         if self._study_version < STUDY_VERSION_8_7:
@@ -131,6 +136,11 @@ class StudyConverter:
 
     def _convert_links(self) -> None:
         links = self._source_dao.get_links()
+
+        # If the source study does not contain any link, we should stop here
+        if not links:
+            return
+
         self._new_dao.save_links(links)
 
         # Link matrices
@@ -141,6 +151,11 @@ class StudyConverter:
 
     def _convert_areas(self) -> None:
         area_properties = self._source_dao.get_all_area_properties()
+
+        # If the source study does not contain any area, we should stop here
+        if not area_properties:
+            return
+
         areas_ui = self._source_dao.get_all_areas_ui_info()
         area_names_and_thermals = {a.id: a for a in self._source_dao.get_all_areas_info()}
         try:
