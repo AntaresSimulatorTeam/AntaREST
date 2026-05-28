@@ -36,19 +36,21 @@ class DatabaseStudyStorage(IStudyStorage):
 
     @override
     def copy(self, src_study: Study, new_study: RawStudy) -> RawStudy:
+        self.copy_study(src_study, new_study.id)
+        return new_study
+
+    def copy_study(self, src_study: Study, new_study_id: str) -> None:
         source_dao = self._dao_factories[StorageMode.DATABASE].get_study_dao(src_study.id, True)
         study_version = StudyVersion.parse(src_study.version)
 
         # Build the new DB DAO
-        new_dao = self._dao_factories[StorageMode.DATABASE].get_study_dao(study_id=new_study.id, is_study_managed=True)
+        new_dao = self._dao_factories[StorageMode.DATABASE].get_study_dao(study_id=new_study_id, is_study_managed=True)
 
         # Copies the inputs
         converter = StudyConverter(
             source_dao=source_dao, new_dao=new_dao, study_version=study_version, matrix_service=self._matrix_service
         )
         converter.convert_study_inputs()
-
-        return new_study
 
     @override
     def write_study_for_archive(self, study: RawStudy, dst_path: Path) -> None:
