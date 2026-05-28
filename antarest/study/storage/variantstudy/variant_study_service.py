@@ -70,6 +70,7 @@ from antarest.study.storage.utils import (
     get_current_user_name,
     get_user_name_from_id,
     is_managed,
+    remove_from_cache,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_blob_usage_provider import CommandBlobUsageProvider
@@ -124,7 +125,7 @@ class VariantStudyService(AbstractStudyService):
         CommandMatrixUsageProvider(repository, command_factory, raw_study_service._storage_mapping)
         CommandBlobUsageProvider(variant_study_repo=repository, command_factory=command_factory)
         self._snapshot_manager_mapping: dict[StorageMode, ISnapshotManager] = {
-            StorageMode.FILESYSTEM: FileSnapshotManager(cache),
+            StorageMode.FILESYSTEM: FileSnapshotManager(),
             StorageMode.DATABASE: DatabaseSnapshotManager(),
         }
         ctx = command_factory.command_context
@@ -752,6 +753,7 @@ class VariantStudyService(AbstractStudyService):
         raise StudyValidationError(f"Variant study '{study_id}' has no generation task")
 
     def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
+        remove_from_cache(self._cache, variant_study.id)
         self._snapshot_manager_mapping[ref_study.storage_mode].create_snapshot(ref_study, variant_study)
 
     def clear_all_snapshots(self, retention_time: timedelta) -> str:

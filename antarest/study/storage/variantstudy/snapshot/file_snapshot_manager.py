@@ -15,10 +15,8 @@ from pathlib import Path
 
 from typing_extensions import override
 
-from antarest.core.interfaces.cache import ICache
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.file_study_utils import export_study_to_flat_directory, get_snapshot_dir
-from antarest.study.storage.utils import remove_from_cache
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.snapshot.snapshot_manager_interface import ISnapshotManager
 
@@ -26,9 +24,6 @@ logger = logging.getLogger(__name__)
 
 
 class FileSnapshotManager(ISnapshotManager):
-    def __init__(self, cache: ICache):
-        self._cache = cache
-
     @override
     def is_snapshot_up_to_date(self, study: VariantStudy) -> bool:
         return self.has_snapshot(study) and (study.snapshot.created_at >= study.updated_at)
@@ -39,7 +34,6 @@ class FileSnapshotManager(ISnapshotManager):
 
     @override
     def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
-        remove_from_cache(self._cache, variant_study.id)
         snapshot_dir = get_snapshot_dir(variant_study)
         logger.info(f"Exporting the reference study '{ref_study.id}' to '{snapshot_dir.name}'...")
         shutil.rmtree(snapshot_dir, ignore_errors=True)
