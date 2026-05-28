@@ -177,7 +177,7 @@ class VariantStudyService(AbstractStudyService):
         next time the study is accessed.
         """
         if variant_study.snapshot:
-            variant_study.snapshot.last_executed_command = None
+            variant_study.snapshot = None
         variant_study.updated_at = current_time()
         self.repository.save(metadata=variant_study)
 

@@ -9,10 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-
+from sqlalchemy.orm import Session
 from typing_extensions import override
 
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import Study
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.snapshot.snapshot_manager_interface import ISnapshotManager
@@ -21,13 +21,11 @@ from antarest.study.storage.variantstudy.snapshot.snapshot_manager_interface imp
 class DatabaseSnapshotManager(ISnapshotManager):
     @override
     def is_snapshot_up_to_date(self, study: VariantStudy) -> bool:
-        # TODO
-        raise NotImplementedError()
+        return self.has_snapshot(study) and (study.snapshot.created_at >= study.updated_at)
 
     @override
     def has_snapshot(self, study: VariantStudy) -> bool:
-        # TODO
-        raise NotImplementedError()
+        return study.snapshot is not None
 
     @override
     def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
@@ -36,5 +34,10 @@ class DatabaseSnapshotManager(ISnapshotManager):
 
     @override
     def clear_snapshot(self, variant_study: VariantStudy) -> None:
-        # TODO
-        raise NotImplementedError()
+        session: Session = db.session
+        # First, remove the VariantStudy from the DB to remove all associated data via cascade deletion.
+        session.delete(variant_study)
+        session.commit()
+        # Then, re-insert the VariantStudy. This time, it will be empty.
+        session.add(variant_study)
+        session.commit()
