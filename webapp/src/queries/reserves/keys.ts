@@ -13,30 +13,31 @@
  */
 
 import type { Reserve } from "@/services/api/studies/areas/reserves/types";
-import type { AreaWithId, StudyMetadata } from "@/types/types";
+import type { AreaWithId } from "@/types/types";
 import { areaKeys } from "../areas/keys";
+import type { Study } from "@/services/api/studies/types";
 
 export const reserveKeys = {
   all: () => [...areaKeys.all(), "reserves"],
-  list: (studyId: StudyMetadata["id"], areaId: AreaWithId["id"]) => {
+  list: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return [...reserveKeys.all(), { studyId, areaId }];
   },
-  detail: (studyId: StudyMetadata["id"], areaId: AreaWithId["id"], reserveId: Reserve["id"]) => {
+  detail: (studyId: Study["id"], areaId: AreaWithId["id"], reserveId: Reserve["id"]) => {
     return [...reserveKeys.list(studyId, areaId), reserveId];
   },
-  globalParameters: (studyId: StudyMetadata["id"], areaId: AreaWithId["id"]) => {
+  globalParameters: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return [...reserveKeys.all(), "globalParameters", { studyId, areaId }];
   },
-  create: (studyId: StudyMetadata["id"], areaId: AreaWithId["id"]) => {
+  create: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return [...reserveKeys.list(studyId, areaId), "createReserve"];
   },
-  update: (studyId: StudyMetadata["id"], areaId: AreaWithId["id"]) => {
+  update: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return [...reserveKeys.list(studyId, areaId), "updateReserve"];
   },
-  delete: (studyId: StudyMetadata["id"], areaId: AreaWithId["id"]) => {
+  delete: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return [...reserveKeys.list(studyId, areaId), "deleteReserves"];
   },
-  updateGlobalParameters: (studyId: StudyMetadata["id"], areaId: AreaWithId["id"]) => {
+  updateGlobalParameters: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return [...reserveKeys.globalParameters(studyId, areaId), "updateReserveGlobalParameters"];
   },
 };

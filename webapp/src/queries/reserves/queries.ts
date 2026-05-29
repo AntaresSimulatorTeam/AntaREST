@@ -18,25 +18,26 @@ import {
   getReserves,
 } from "@/services/api/studies/areas/reserves";
 import type { Reserve } from "@/services/api/studies/areas/reserves/types";
-import type { AreaWithId, StudyMetadata } from "@/types/types";
+import type { AreaWithId } from "@/types/types";
 import { queryOptions } from "@tanstack/react-query";
 import { queryListOptions } from "../utils";
 import { reserveKeys } from "./keys";
+import type { Study } from "@/services/api/studies/types";
 
 export const reserveQueries = {
-  list: (studyId: StudyMetadata["id"], areaId: AreaWithId["id"]) => {
+  list: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return queryListOptions({
       queryKey: reserveKeys.list(studyId, areaId),
       queryFn: () => getReserves({ studyId, areaId }),
     });
   },
-  detail: (studyId: StudyMetadata["id"], areaId: AreaWithId["id"], reserveId: Reserve["id"]) => {
+  detail: (studyId: Study["id"], areaId: AreaWithId["id"], reserveId: Reserve["id"]) => {
     return queryOptions({
       queryKey: reserveKeys.detail(studyId, areaId, reserveId),
       queryFn: () => getReserve({ studyId, areaId, reserveId }),
     });
   },
-  globalParameters: (studyId: StudyMetadata["id"], areaId: AreaWithId["id"]) => {
+  globalParameters: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return queryOptions({
       queryKey: reserveKeys.globalParameters(studyId, areaId),
       queryFn: () => getReserveGlobalParameters({ studyId, areaId }),

@@ -30,7 +30,7 @@ export const reserveSchema = z.object({
   energyActivationRatio: z.number(),
 });
 
-export const reservesResponseSchema = z.array(reserveSchema);
+export const reservesSchema = z.array(reserveSchema);
 
 export const reserveGlobalParametersSchema = z.object({
   referenceActivationDurationUp: z.number(),
@@ -43,7 +43,7 @@ export const reserveGlobalParametersSchema = z.object({
 // Input Schemas
 ////////////////////////////////////////////////////////////////
 
-export const createReserveParamsSchema = reserveSchema;
+export const createReserveParamsSchema = reserveSchema.partial().required({ id: true, type: true });
 
 export const updateReserveParamsSchema = reserveSchema.omit({ id: true }).partial();
 

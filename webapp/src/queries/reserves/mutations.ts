@@ -18,30 +18,31 @@ import {
   updateReserve,
   updateReserveGlobalParameters,
 } from "@/services/api/studies/areas/reserves";
-import type { AreaWithId, StudyMetadata } from "@/types/types";
+import type { AreaWithId } from "@/types/types";
 import { mutationOptions } from "@tanstack/react-query";
 import { reserveKeys } from "./keys";
+import type { Study } from "@/services/api/studies/types";
 
 export const reserveMutations = {
-  create: (studyId: StudyMetadata["id"], areaId: AreaWithId["id"]) => {
+  create: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: reserveKeys.create(studyId, areaId),
       mutationFn: createReserve,
     });
   },
-  update: (studyId: StudyMetadata["id"], areaId: AreaWithId["id"]) => {
+  update: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: reserveKeys.update(studyId, areaId),
       mutationFn: updateReserve,
     });
   },
-  delete: (studyId: StudyMetadata["id"], areaId: AreaWithId["id"]) => {
+  delete: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: reserveKeys.delete(studyId, areaId),
       mutationFn: deleteReserves,
     });
   },
-  updateGlobalParameters: (studyId: StudyMetadata["id"], areaId: AreaWithId["id"]) => {
+  updateGlobalParameters: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: reserveKeys.updateGlobalParameters(studyId, areaId),
       mutationFn: updateReserveGlobalParameters,

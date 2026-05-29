@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { AreaWithId, StudyMetadata } from "@/types/types";
+import type { AreaWithId } from "@/types/types";
 import type { z } from "zod";
 import type {
   createReserveParamsSchema,
@@ -22,6 +22,7 @@ import type {
   updateReserveGlobalParametersSchema,
   updateReserveParamsSchema,
 } from "./schemas";
+import type { Study } from "../../types";
 
 export type ReserveType = z.infer<typeof reserveTypeSchema>;
 export type Reserve = z.infer<typeof reserveSchema>;
@@ -32,7 +33,7 @@ export type UpdateReserveData = z.infer<typeof updateReserveParamsSchema>;
 export type UpdateReserveGlobalParametersData = z.infer<typeof updateReserveGlobalParametersSchema>;
 
 export interface ReservesAreaParams {
-  studyId: StudyMetadata["id"];
+  studyId: Study["id"];
   areaId: AreaWithId["id"];
 }
 
