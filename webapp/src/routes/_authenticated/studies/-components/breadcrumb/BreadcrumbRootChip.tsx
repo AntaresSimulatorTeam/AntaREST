@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Typography } from "@mui/material";
+import { Box, Divider, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { TREE_ROOT_NAME } from "@/components/utils/constants";
-import { chipSx, variantColor, variantLabel, type TreeVariant } from "./treeVariant";
+import { chipSx, variantColor, variantLabel, type TreeVariant } from "./treeVariantUtils";
 
 interface Props {
   variant: TreeVariant;
@@ -35,8 +35,8 @@ function BreadcrumbRootChip({ variant, onClick }: Props) {
     >
       <Typography
         component="span"
+        fontSize="small"
         sx={{
-          fontSize: "0.65rem",
           fontWeight: 700,
           color: variantColor(variant),
           textTransform: "lowercase",
@@ -46,7 +46,7 @@ function BreadcrumbRootChip({ variant, onClick }: Props) {
       >
         {variantLabel(variant, t)}
       </Typography>
-      <Box component="span" sx={{ width: "1px", height: 11, bgcolor: "divider", opacity: 0.7 }} />
+      <Divider orientation="vertical" sx={{ height: 11, alignSelf: "center", opacity: 0.7 }} />
       <Typography variant="caption" sx={{ lineHeight: 1.6, fontWeight: 500 }}>
         {TREE_ROOT_NAME}
       </Typography>

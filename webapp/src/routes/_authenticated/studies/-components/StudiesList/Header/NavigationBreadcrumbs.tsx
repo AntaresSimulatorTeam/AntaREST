@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next";
 import type { BreadcrumbItem } from "./types";
 import { buildKey } from "@/utils/reactUtils";
 import BreadcrumbRootChip from "../../breadcrumb/BreadcrumbRootChip";
-import { separatorSx, variantColor, type TreeVariant } from "../../breadcrumb/treeVariant";
+import { separatorSx, variantColor, type TreeVariant } from "../../breadcrumb/treeVariantUtils";
 
 interface NavigationBreadcrumbsProps {
   items: BreadcrumbItem[];
@@ -40,7 +40,6 @@ function NavigationBreadcrumbs({
     <>
       <Breadcrumbs maxItems={3} sx={separatorSx(activeTree)}>
         <BreadcrumbRootChip
-          key={buildKey("__root__", 0)}
           variant={activeTree}
           onClick={isRootActive ? undefined : () => onNavigate(rootItem)}
         />
@@ -50,7 +49,7 @@ function NavigationBreadcrumbs({
 
           return (
             <Link
-              key={buildKey(item.label, index + 1)}
+              key={buildKey(item.label, index)}
               underline="hover"
               color={isLast ? "text.primary" : variantColor(activeTree)}
               onClick={() => !isLast && onNavigate(item)}
