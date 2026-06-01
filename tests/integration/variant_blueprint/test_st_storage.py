@@ -74,6 +74,7 @@ class TestSTStorage:
             "horizon": "2030",
             "folder": "STA-mini",
             "tags": [],
+            "storage_mode": "filesystem",
             "directory_id": None,
             "parent_id": None,
         }

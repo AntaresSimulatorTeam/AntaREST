@@ -67,7 +67,15 @@ from antarest.launcher.service import (
 from antarest.login.model import Identity
 from antarest.login.utils import current_user_context, get_current_user
 from antarest.output.service import OutputService
-from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, OwnerInfo, Study, StudyMetadataDTO, StudyType
+from antarest.study.model import (
+    STUDY_VERSION_8_8,
+    STUDY_VERSION_9_2,
+    OwnerInfo,
+    StorageMode,
+    Study,
+    StudyMetadataDTO,
+    StudyType,
+)
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
@@ -94,6 +102,7 @@ class TestLauncherService:
             workspace="default",
             managed=True,
             archived=False,
+            storage_mode=StorageMode.FILESYSTEM,
         )
         storage_service_mock.get_study_path.return_value = Path("path/to/study")
 
@@ -1058,6 +1067,7 @@ class TestLauncherService:
             workspace="default",
             managed=True,
             archived=False,
+            storage_mode=StorageMode.FILESYSTEM,
         )
         storage_service_mock.get_study_path.return_value = Path("path/to/study")
         launcher_mock = Mock()
@@ -1130,6 +1140,7 @@ class TestLauncherService:
                 workspace="default",
                 managed=True,
                 archived=False,
+                storage_mode=StorageMode.FILESYSTEM,
             )
             launcher_service.run_study("study_uuid", "local", params, "config-1")
 

@@ -481,6 +481,7 @@ def test_sta_mini_list_studies(client: TestClient) -> None:
             "tags": [],
             "directory_id": None,
             "parent_id": None,
+            "storage_mode": "filesystem",
         }
     }
     url = "/v1/studies"
