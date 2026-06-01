@@ -42,7 +42,7 @@ BINDING_CONSTRAINT_TABLE = Table(
     Column("group", String(255), nullable=True),
     ForeignKeyConstraint(
         ["study_id"],
-        ["study.id"],
+        ["study_data_container.study_id"],
         name="fk_binding_constraint_study_id",
         ondelete="CASCADE",
     ),

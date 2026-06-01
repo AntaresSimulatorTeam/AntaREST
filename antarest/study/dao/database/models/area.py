@@ -28,7 +28,13 @@ metadata = Base.metadata
 AREA_TABLE = Table(
     "area",
     metadata,
-    Column("study_id", String(36), ForeignKey("study.id", ondelete="CASCADE"), nullable=False, primary_key=True),
+    Column(
+        "study_id",
+        String(36),
+        ForeignKey("study_data_container.study_id", ondelete="CASCADE"),
+        nullable=False,
+        primary_key=True,
+    ),
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("area_name", String(255), nullable=False),
     Column("energy_cost_unsupplied", Float, nullable=False),

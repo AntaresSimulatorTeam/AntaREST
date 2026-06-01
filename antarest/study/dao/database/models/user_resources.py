@@ -31,5 +31,5 @@ USER_RESOURCES_TABLE = Table(
     Column("path", String(255), nullable=False, primary_key=True),
     Column("resource_type", _RESOURCE_TYPE_ENUM, nullable=False),
     Column("blob_id", String(64), nullable=True),
-    ForeignKeyConstraint(["study_id"], ["study.id"], ondelete="CASCADE"),
+    ForeignKeyConstraint(["study_id"], ["study_data_container.study_id"], ondelete="CASCADE"),
 )
