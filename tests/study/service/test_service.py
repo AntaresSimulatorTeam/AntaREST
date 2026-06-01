@@ -215,6 +215,7 @@ def study_to_dto(study: Study, folder_path: t.Optional[str] = None) -> StudyMeta
         status=None,
         doc=None,
         folder=folder_path,
+        storage_mode=study.storage_mode,
     )
 
 
