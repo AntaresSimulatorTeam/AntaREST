@@ -546,6 +546,7 @@ class StudyMetadataDTO(AntaresBaseModel):
     workspace: str
     managed: bool
     archived: bool
+    storage_mode: StorageMode
     horizon: str | None = None
     folder: str | None = None
     tags: list[str] = []
