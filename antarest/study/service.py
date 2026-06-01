@@ -51,6 +51,7 @@ from antarest.core.exceptions import (
     TaskAlreadyRunning,
     UnsupportedOperationOnArchivedStudy,
     UnsupportedOperationOnThisStudyType,
+    XpansionConfigurationDoesNotExist,
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -2960,7 +2961,7 @@ class StudyService:
                 "constraints": constraints,
             }
 
-        except ChildNotFoundError:
+        except (ChildNotFoundError, XpansionConfigurationDoesNotExist):
             xpansion = None
 
         obj["xpansion"] = xpansion
