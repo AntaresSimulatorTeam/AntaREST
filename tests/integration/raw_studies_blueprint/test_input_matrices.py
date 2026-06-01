@@ -47,4 +47,4 @@ def test_input_matrices(client: TestClient, user_access_token: str, storage_mode
     res = client.get(f"/v1/studies/{study_id}/raw?path={load_path}")
     res.raise_for_status()
     data = res.json()["data"]
-    print(data)
+    assert data == [[1, 1, 0, 1, 1, 1], [1, 1, 0, 1, 1, 1]]
