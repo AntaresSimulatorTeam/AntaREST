@@ -14,10 +14,13 @@
 Unit tests for ScenarioBuilderDao — run on both database and filesystem backends.
 """
 
+import pytest
+
+from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.scenario_builder_model import Ruleset, ScenarioType
+from antarest.study.business.model.scenario_builder_model import RANDOM, Ruleset, ScenarioType
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import StudyDao
@@ -27,6 +30,12 @@ from tests.study.dao.utils import save_area
 def _setup_areas(dao: StudyDao, *area_names: str) -> None:
     for name in area_names:
         save_area(dao, name)
+
+
+def _set_nb_years(dao: StudyDao, nb_years: int) -> None:
+    cfg = dao.get_general_config()
+    cfg.nb_years = nb_years
+    dao.save_general_config(cfg)
 
 
 def test_save_empty_ruleset(dao: StudyDao) -> None:
@@ -207,6 +216,123 @@ def test_get_scenario_by_type_does_not_mix_scenario_types(dao: StudyDao) -> None
     assert dao.get_scenario_by_type(ScenarioType.WIND) == {"fr": {"0": 99}}
 
 
+def test_get_scenario_by_type_pads_unsaved_years(dao: StudyDao) -> None:
+    """nb_years=3 + value saved only for year 0 → response must pad years 1 and 2 with RANDOM."""
+    _setup_areas(dao, "fr")
+    _set_nb_years(dao, 3)
+    dao.save_scenario_builder(Ruleset(load={"fr": {"0": 1}}))
+
+    assert dao.get_scenario_by_type(ScenarioType.LOAD) == {"fr": {"0": 1, "1": RANDOM, "2": RANDOM}}
+
+
+def test_get_scenario_by_type_includes_unsaved_areas(dao: StudyDao) -> None:
+    """Areas declared but with no saved value must appear in the result, filled with RANDOM."""
+    _setup_areas(dao, "fr", "de")
+    dao.save_scenario_builder(Ruleset(load={"fr": {"0": 1}}))
+
+    assert dao.get_scenario_by_type(ScenarioType.LOAD) == {"fr": {"0": 1}, "de": {"0": RANDOM}}
+
+
+def test_get_scenario_by_type_includes_unsaved_thermal_clusters(dao: StudyDao) -> None:
+    """Thermal clusters declared but with no saved value must appear in the result."""
+    _setup_areas(dao, "fr")
+    dao.save_thermals({"fr": [ThermalCluster(name="Gas"), ThermalCluster(name="Nuc")]})
+    dao.save_scenario_builder(Ruleset(thermal={"fr": {"gas": {"0": 1}}}))
+
+    assert dao.get_scenario_by_type(ScenarioType.THERMAL) == {"fr": {"gas": {"0": 1}, "nuc": {"0": RANDOM}}}
+
+
+def test_get_scenario_by_type_includes_unsaved_renewable_clusters(dao: StudyDao) -> None:
+    """Renewable clusters declared but with no saved value must appear in the result."""
+    _setup_areas(dao, "fr")
+    dao.save_renewable("fr", RenewableCluster(id="wind_farm", name="Wind Farm"))
+    dao.save_renewable("fr", RenewableCluster(id="solar_farm", name="Solar Farm"))
+    dao.save_scenario_builder(Ruleset(renewable={"fr": {"wind_farm": {"0": 3}}}))
+
+    assert dao.get_scenario_by_type(ScenarioType.RENEWABLE) == {
+        "fr": {"wind_farm": {"0": 3}, "solar_farm": {"0": RANDOM}}
+    }
+
+
+def test_get_scenario_by_type_includes_unsaved_links(dao: StudyDao) -> None:
+    """Links declared but with no saved NTC value must appear in the result."""
+    _setup_areas(dao, "fr", "de", "be")
+    dao.save_links([Link(area1="de", area2="fr"), Link(area1="be", area2="fr")])
+    dao.save_scenario_builder(Ruleset(ntc={"de / fr": {"0": 7}}))
+
+    assert dao.get_scenario_by_type(ScenarioType.LINK) == {
+        "de / fr": {"0": 7},
+        "be / fr": {"0": RANDOM},
+    }
+
+
+def test_get_scenario_by_type_includes_unsaved_binding_constraints(dao: StudyDao) -> None:
+    """Binding-constraint groups declared but with no saved value must appear in the result."""
+    from antarest.study.business.model.binding_constraint_model import (
+        BindingConstraint,
+        BindingConstraintFrequency,
+    )
+
+    dao.save_constraints(
+        [
+            BindingConstraint(name="bc1", group="group1", time_step=BindingConstraintFrequency.HOURLY),
+            BindingConstraint(name="bc2", group="group2", time_step=BindingConstraintFrequency.HOURLY),
+        ]
+    )
+    dao.save_scenario_builder(Ruleset(binding_constraints={"group1": {"0": 5}}))
+
+    assert dao.get_scenario_by_type(ScenarioType.BINDING_CONSTRAINTS) == {
+        "group1": {"0": 5},
+        "group2": {"0": RANDOM},
+    }
+
+
+def test_get_scenario_by_type_includes_unsaved_storage_constraints(
+    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
+) -> None:
+    """This test cover all possible gaps for sts additional constraints :
+    * populated constraint with missing year
+    * unsaved sibling constraint on same storage
+    * unsaved sibling storage on same area
+    * unsaved sibling area entirely
+    """
+    dao, _ = dao_and_matrix_service
+    _setup_areas(dao, "fr", "de")
+    _set_nb_years(dao, 2)
+    dao.save_st_storages(
+        {
+            "fr": [STStorage(id="battery", name="Battery"), STStorage(id="battery2", name="Battery 2")],
+            "de": [STStorage(id="battery_d", name="Battery DE")],
+        }
+    )
+    dao.save_st_storage_additional_constraints(
+        {
+            "fr": {
+                "battery": [
+                    STStorageAdditionalConstraint(id="c1", name="C1"),
+                    STStorageAdditionalConstraint(id="c2", name="C2"),
+                ],
+                "battery2": [STStorageAdditionalConstraint(id="c3", name="C3")],
+            },
+            "de": {"battery_d": [STStorageAdditionalConstraint(id="c4", name="C4")]},
+        }
+    )
+    dao.save_scenario_builder(Ruleset(storage_constraints={"fr": {"battery": {"c1": {"0": 10}}}}))
+
+    assert dao.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS) == {
+        "fr": {
+            "battery": {
+                "c1": {"0": 10, "1": RANDOM},
+                "c2": {"0": RANDOM, "1": RANDOM},
+            },
+            "battery2": {"c3": {"0": RANDOM, "1": RANDOM}},
+        },
+        "de": {
+            "battery_d": {"c4": {"0": RANDOM, "1": RANDOM}},
+        },
+    }
+
+
 def test_scenario_builder_thermal_deleted(dao: StudyDao) -> None:
     _setup_areas(dao, "fr")
 
@@ -351,3 +477,13 @@ def test_scenario_builder_area_deleted_cascades_load(dao: StudyDao) -> None:
     dao.delete_area("fr")
 
     assert dao.get_scenario_by_type(ScenarioType.LOAD) == {}
+
+
+def test_get_scenario_by_type_raises_for_version_incompatible_type(
+    dao_860_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
+) -> None:
+    """v8.6 has no binding-constraint scenarios → query must raise InvalidFieldForVersionError."""
+    dao, _ = dao_860_and_matrix_service
+
+    with pytest.raises(InvalidFieldForVersionError):
+        dao.get_scenario_by_type(ScenarioType.BINDING_CONSTRAINTS)
