@@ -19,7 +19,7 @@ from pathlib import Path
 
 from antarest.core.config import Config
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.lock import LockNotAcquired, create_lock
+from antarest.core.utils.lock import LockNotAcquired, create_file_lock
 from antarest.login.model import Group
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, LockId, WatcherScanTaskResult
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyFolder
@@ -71,7 +71,7 @@ def scan_workspaces(
 
     try:
         with db():
-            with create_lock(db.session, lock_id=LockId.WATCHER_SCAN):
+            with create_file_lock(lock_id=LockId.WATCHER_SCAN):
                 studies = _collect_studies(config)
                 studies_found = len(studies)
                 logger.info(f"Found {studies_found} studies across all workspaces")

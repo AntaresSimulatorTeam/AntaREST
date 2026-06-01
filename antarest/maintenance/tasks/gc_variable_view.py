@@ -20,7 +20,7 @@ import time
 from datetime import timedelta
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.lock import LockNotAcquired, create_lock
+from antarest.core.utils.lock import LockNotAcquired, create_file_lock
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, GarbageCollectorTaskResult, LockId
 from antarest.output.variable_view.db import OutputVariablesViewsModel
@@ -53,7 +53,7 @@ def clean_variable_views(
     deleted_count = 0
     try:
         with db():
-            with create_lock(db.session, lock_id=LockId.VARIABLE_VIEW_GC):
+            with create_file_lock(lock_id=LockId.VARIABLE_VIEW_GC):
                 cutoff = current_time() - timedelta(days=retention_time)
 
                 query = db.session.query(OutputVariablesViewsModel).filter(OutputVariablesViewsModel.last_read < cutoff)

@@ -17,7 +17,7 @@ from antares.study.version import StudyVersion
 
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.lock import create_lock
+from antarest.core.utils.lock import create_file_lock
 from antarest.core.utils.utils import current_time
 from antarest.login.utils import current_user_context
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, LockId
@@ -94,7 +94,7 @@ class TestDiskSpaceAnalyzerIntegration:
         self, study_service: StudyService, study_disk_repo: StudyDiskSpaceRepository
     ):
         with db():
-            with create_lock(db.session, lock_id=LockId.STUDY_DISK_SPACE):
+            with create_file_lock(lock_id=LockId.STUDY_DISK_SPACE):
                 result = disk_space_analysis(service=study_service, disk_repo=study_disk_repo)
 
             assert result.status == BackGroundTaskStatus.SKIPPED

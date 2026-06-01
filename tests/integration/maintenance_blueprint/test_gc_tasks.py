@@ -19,7 +19,7 @@ from antarest.core.tasks.model import TaskDTO, TaskJob, TaskListFilter, TaskStat
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.lock import create_lock
+from antarest.core.utils.lock import create_file_lock
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, LockId
 from antarest.maintenance.tasks.gc_tasks import clean_tasks
 from tests.helpers import with_admin_user
@@ -68,7 +68,7 @@ class TestTasksGCIntegration:
 
     def test_returns_skipped_when_lock_held(self, task_service: ITaskService):
         with db():
-            with create_lock(db.session, lock_id=LockId.TASKS_GC):
+            with create_file_lock(lock_id=LockId.TASKS_GC):
                 result = clean_tasks(task_service=task_service, dry_run=False, task_retention_duration=60)
 
             assert result.status == BackGroundTaskStatus.SKIPPED

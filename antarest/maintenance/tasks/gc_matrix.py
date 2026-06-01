@@ -20,7 +20,7 @@ import logging
 import time
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.lock import LockNotAcquired, create_lock
+from antarest.core.utils.lock import LockNotAcquired, create_file_lock
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, GarbageCollectorTaskResult, LockId
 from antarest.matrixstore.service import MatrixService
@@ -58,7 +58,7 @@ def clean_matrices(matrix_service: MatrixService, dry_run: bool, retention_time:
 
     try:
         with db():
-            with create_lock(db.session, lock_id=LockId.MATRIX_GC):
+            with create_file_lock(lock_id=LockId.MATRIX_GC):
                 used_matrices = {m.matrix_id for m in matrix_service.get_used_matrices()}
                 matrices = matrix_service.get_matrices()
                 saved = {m.id: m.created_at for m in matrices}

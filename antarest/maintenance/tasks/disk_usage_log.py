@@ -21,7 +21,7 @@ from pydantic import BaseModel
 from antarest.core.config import Config
 from antarest.core.metrics import WORKER_ID
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.lock import LockNotAcquired, create_lock
+from antarest.core.utils.lock import LockNotAcquired, create_file_lock
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, LockId
 
 logger = logging.getLogger(__name__)
@@ -85,7 +85,7 @@ def check_disk_usage(config: Config) -> None:
 def disk_usage_logging(config: Config) -> DiskUsageTaskResult:
     try:
         with db():
-            with create_lock(db.session, LockId.DISK_USAGE):
+            with create_file_lock(LockId.DISK_USAGE):
                 logger.info("Starting disk usage logging")
                 check_disk_usage(config)
                 logger.info("Disk usage logging finished")

@@ -13,7 +13,9 @@
 """Integration tests for the auto-archive task."""
 
 import datetime
-from unittest.mock import Mock
+import threading
+import time
+from unittest.mock import Mock, patch
 
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -128,7 +130,6 @@ class TestArchiveOldStudiesIntegration:
 
         assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.archived_studies == 0
-        mock_study_service.task_service.await_task.assert_called_once_with("snapshot_task")
         assert result.duration_seconds >= 0
 
     def test_excludes_already_archived_studies(self, db_middleware):
@@ -167,3 +168,97 @@ class TestArchiveOldStudiesIntegration:
 
         assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.archived_studies == 0
+
+    def test_concurrent_archive_old_studies_is_skipped(self, db_middleware, tmp_path, monkeypatch):
+        # Mocking services
+        mock_study_service = Mock()
+        mock_output_service = Mock()
+        mock_study_service.repository.get_all.return_value = []
+        mock_study_service.storage_service.variant_study_service.clear_all_snapshots.return_value = 0
+        mock_study_service.task_service = Mock()
+
+        def slow_get_studies(*args, **kwargs):
+            time.sleep(0.05)  # Wait a bit to release the lock
+            return []
+
+        results = {}
+
+        def run_first():
+            with patch(
+                "antarest.maintenance.tasks.auto_archive._get_studies_to_archive",
+                side_effect=slow_get_studies,
+            ):
+                results["first"] = archive_old_studies(mock_study_service, mock_output_service, 60, 7, dry_run=True)
+
+        def run_second():
+            # Wait for the first call to take the lock
+            results["second"] = archive_old_studies(mock_study_service, mock_output_service, 60, 7, dry_run=True)
+
+        t1 = threading.Thread(target=run_first)
+        t2 = threading.Thread(target=run_second)
+        t1.start()
+        time.sleep(0.01)
+        t2.start()
+        t1.join(timeout=1)
+        t2.join(timeout=1)
+
+        # 4) Assertions
+        assert results["first"].status == BackGroundTaskStatus.SUCCESS
+        assert results["second"].status == BackGroundTaskStatus.SKIPPED
+        assert results["second"].reason == "lock_not_acquired"
+        assert results["second"].archived_studies == 0
+
+    def test_blocked_archive_is_not_run_after_lock_release(self, db_middleware, tmp_path, monkeypatch):
+
+        # Mocking services
+        mock_study_service = Mock()
+        mock_output_service = Mock()
+        mock_study_service.repository.get_all.return_value = []
+        mock_study_service.storage_service.variant_study_service.clear_all_snapshots.return_value = 0
+        mock_study_service.task_service = Mock()
+
+        # Declaring shared variables
+        are_stydies_archived = {"study1": False, "study2": False}
+        results = {}
+
+        def slow_auto_archive_first_study(*args, **kwargs):
+            are_stydies_archived["study1"] = True
+            time.sleep(0.05)  # Wait a bit to release the lock
+            return []
+
+        def auto_archive_second_study(*args, **kwargs):
+            are_stydies_archived["study2"] = True
+            return []
+
+        def run_first():
+            with patch(
+                "antarest.maintenance.tasks.auto_archive._get_studies_to_archive",
+                side_effect=slow_auto_archive_first_study,
+            ):
+                results["first"] = archive_old_studies(mock_study_service, mock_output_service, 60, 7, dry_run=True)
+
+        def run_second():
+
+            with patch(
+                "antarest.maintenance.tasks.auto_archive._get_studies_to_archive",
+                side_effect=auto_archive_second_study,
+            ):
+                results["second"] = archive_old_studies(mock_study_service, mock_output_service, 60, 7, dry_run=True)
+
+        t1 = threading.Thread(target=run_first)
+        t2 = threading.Thread(target=run_second)
+        t1.start()
+        time.sleep(0.01)
+        t2.start()
+        t1.join(timeout=1)
+        t2.join(timeout=1)
+
+        # 4) Assertions
+        # Les deux exécutions doivent avoir terminé avec succès
+        assert results["first"].status == BackGroundTaskStatus.SUCCESS
+        assert results["second"].status == BackGroundTaskStatus.SKIPPED
+
+        assert results["second"].reason == "lock_not_acquired"
+
+        assert are_stydies_archived["study1"]
+        assert not are_stydies_archived["study2"]

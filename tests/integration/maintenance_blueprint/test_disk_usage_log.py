@@ -14,7 +14,7 @@
 
 from antarest.core.config import Config
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.lock import create_lock
+from antarest.core.utils.lock import create_file_lock
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, LockId
 from antarest.maintenance.tasks.disk_usage_log import disk_usage_logging
 
@@ -27,7 +27,7 @@ class TestDiskUsageLogIntegration:
 
     def test_returns_skipped_when_lock_held(self):
         with db():
-            with create_lock(db.session, lock_id=LockId.DISK_USAGE):
+            with create_file_lock(lock_id=LockId.DISK_USAGE):
                 result = disk_usage_logging(Config())
 
             assert result.status == BackGroundTaskStatus.SKIPPED

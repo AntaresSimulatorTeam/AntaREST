@@ -16,7 +16,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.lock import LockNotAcquired, create_lock
+from antarest.core.utils.lock import LockNotAcquired, create_file_lock
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, LockId
 from antarest.study.model import StudyDiskSpaceAnalysis
@@ -41,7 +41,7 @@ def disk_space_analysis(service: StudyService, disk_repo: StudyDiskSpaceReposito
 
     try:
         with db():
-            with create_lock(db.session, lock_id=LockId.STUDY_DISK_SPACE):
+            with create_file_lock(lock_id=LockId.STUDY_DISK_SPACE):
                 # we're giving admin access to the disk space analyzer due to the search_studies method
                 studies = service.repository.get_all(
                     StudyFilter(access_permissions=AccessPermissions(is_admin=True), managed=True)

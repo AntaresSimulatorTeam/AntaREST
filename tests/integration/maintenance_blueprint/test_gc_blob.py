@@ -16,7 +16,7 @@ import uuid
 
 from antarest.blobstore.service import BlobService
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.lock import create_lock
+from antarest.core.utils.lock import create_file_lock
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, GarbageCollectorTaskResult, LockId
 from antarest.maintenance.tasks.gc_blob import clean_blobs
 from antarest.study.business.model.user_model import ResourceType
@@ -95,7 +95,7 @@ class TestCleanBlobsIntegration:
 
     def test_returns_skipped_when_lock_held(self, simple_blob_service: BlobService):
         with db():
-            with create_lock(db.session, lock_id=LockId.BLOB_GC):
+            with create_file_lock(lock_id=LockId.BLOB_GC):
                 result = clean_blobs(blob_service=simple_blob_service, dry_run=False)
 
         assert result.status == BackGroundTaskStatus.SKIPPED

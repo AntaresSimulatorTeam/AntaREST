@@ -14,7 +14,7 @@ import time
 
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.lock import LockNotAcquired, create_lock
+from antarest.core.utils.lock import LockNotAcquired, create_file_lock
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, GarbageCollectorTaskResult, LockId
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ def clean_tasks(task_service: ITaskService, dry_run: bool, task_retention_durati
     deleted_count = 0
     try:
         with db():
-            with create_lock(db.session, lock_id=LockId.TASKS_GC):
+            with create_file_lock(lock_id=LockId.TASKS_GC):
                 logger.info(f"Deleting tasks older than {task_retention_duration} days from the database")
                 if not dry_run:
                     deleted_count = task_service.delete_task_by_creation_date(task_retention_duration)

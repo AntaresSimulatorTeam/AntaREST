@@ -17,7 +17,7 @@ import time
 
 from antarest.blobstore.service import BlobService
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.lock import LockNotAcquired, create_lock
+from antarest.core.utils.lock import LockNotAcquired, create_file_lock
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, GarbageCollectorTaskResult, LockId
 
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ def clean_blobs(blob_service: BlobService, dry_run: bool) -> GarbageCollectorTas
 
     try:
         with db():
-            with create_lock(db.session, lock_id=LockId.BLOB_GC):
+            with create_file_lock(lock_id=LockId.BLOB_GC):
                 used_blobs = {blob.blob_id for blob in blob_service.get_used_blobs()}
                 saved_blobs = blob_service.get_saved_blobs()
                 unused_blobs = set(saved_blobs) - used_blobs
