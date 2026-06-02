@@ -19,5 +19,5 @@ STUDY_DATA_CONTAINER_TABLE = Table(
     "study_data_container",
     metadata,
     Column("study_id", String(36), ForeignKey("study.id", ondelete="CASCADE"), nullable=False, primary_key=True),
-    Column("study_data_id", String(36), nullable=False),
+    Column("study_data_id", String(36), nullable=False, unique=True),
 )
