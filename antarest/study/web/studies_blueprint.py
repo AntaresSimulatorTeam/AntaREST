@@ -57,6 +57,14 @@ def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) ->
     return list(collections.OrderedDict.fromkeys(values))
 
 
+def _validate_storage_mode_against_config(storage_mode: StorageMode, config: ConfigDep) -> None:
+    if storage_mode == StorageMode.DATABASE and not config.storage.study_storage.database_mode_enabled:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_IMPLEMENTED,
+            detail="Database storage mode is not enabled on this server",
+        )
+
+
 def create_study_routes() -> APIRouter:
     """
     Endpoint implementation for studies management
@@ -239,6 +247,7 @@ def create_study_routes() -> APIRouter:
     )
     def import_study(
         study_service: StudyServiceDep,
+        config: ConfigDep,
         study: UploadFile,
         groups: SanitizedStr = "",
         directory: Annotated[
@@ -263,6 +272,7 @@ def create_study_routes() -> APIRouter:
         - 415 error if the archive is corrupted or in an unknown format.
         """
         logger.info("Importing new study")
+        _validate_storage_mode_against_config(storage_mode, config)
 
         user = require_current_user()
         group_ids_raw = _split_comma_separated_values(groups, default=[group.id for group in user.groups])
@@ -419,11 +429,8 @@ def create_study_routes() -> APIRouter:
         Returns:
         - The ID of the newly created study.
         """
-        if storage_mode == StorageMode.DATABASE and not config.storage.study_storage.database_mode_enabled:
-            raise HTTPException(
-                status_code=HTTPStatus.NOT_IMPLEMENTED,
-                detail="Database storage mode is not enabled on this server",
-            )
+        _validate_storage_mode_against_config(storage_mode, config)
+
         study_version = StudyVersion.parse(version) if version else None
         logger.info(f"Creating new study '{name}' with storage_mode={storage_mode}")
         name_sanitized = validate_study_name(escape(name))

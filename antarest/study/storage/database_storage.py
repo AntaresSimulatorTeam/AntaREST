@@ -32,15 +32,16 @@ logger = logging.getLogger(__name__)
 class DatabaseStudyStorage(IStudyStorage):
     def __init__(self, matrix_service: ISimpleMatrixService, study_dao_factories: dict[StorageMode, StudyFactoryDao]):
         self._matrix_service = matrix_service
-        self._dao_factories = study_dao_factories
+        self._db_dao_factory = study_dao_factories[StorageMode.DATABASE]
+        self._fs_dao_factory = study_dao_factories[StorageMode.FILESYSTEM]
 
     @override
     def copy(self, src_study: Study, new_study: RawStudy) -> RawStudy:
-        source_dao = self._dao_factories[StorageMode.DATABASE].get_study_dao(src_study.id, True)
+        source_dao = self._db_dao_factory.get_study_dao(src_study.id, True)
         study_version = StudyVersion.parse(src_study.version)
 
         # Build the new DB DAO
-        new_dao = self._dao_factories[StorageMode.DATABASE].get_study_dao(study_id=new_study.id, is_study_managed=True)
+        new_dao = self._db_dao_factory.get_study_dao(study_id=new_study.id, is_study_managed=True)
 
         # Copies the inputs
         converter = StudyConverter(
@@ -57,7 +58,7 @@ class DatabaseStudyStorage(IStudyStorage):
 
     @override
     def export_study(self, study: Study, dst_path: Path) -> None:
-        source_dao = self._dao_factories[StorageMode.DATABASE].get_study_dao(study_id=study.id, is_study_managed=True)
+        source_dao = self._db_dao_factory.get_study_dao(study_id=study.id, is_study_managed=True)
         study_version = StudyVersion.parse(study.version)
 
         # Create the new FS DAO
@@ -72,7 +73,7 @@ class DatabaseStudyStorage(IStudyStorage):
             updated_at=study.updated_at,
             path=dst_path,
         )
-        new_dao = self._dao_factories[StorageMode.FILESYSTEM].create_study_dao(metadata)
+        new_dao = self._fs_dao_factory.create_study_dao(metadata)
 
         # Convert the DB DAO into an FS DAO
         converter = StudyConverter(
@@ -103,8 +104,8 @@ class DatabaseStudyStorage(IStudyStorage):
 
         # Build the 2 DAOs
         study_id = study.id
-        source_dao = self._dao_factories[StorageMode.FILESYSTEM].get_study_dao(study_id=study_id, is_study_managed=True)
-        new_dao = self._dao_factories[StorageMode.DATABASE].get_study_dao(study_id=study_id, is_study_managed=True)
+        source_dao = self._fs_dao_factory.get_study_dao(study_id=study_id, is_study_managed=True)
+        new_dao = self._db_dao_factory.get_study_dao(study_id=study_id, is_study_managed=True)
 
         # Convert the FS DAO into a DB one
         converter = StudyConverter(

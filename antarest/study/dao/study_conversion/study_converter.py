@@ -185,12 +185,12 @@ class StudyConverter:
         new_ui: AreaUiMapping = {}
         for area_id, source_ui in areas_ui.items():
             new_ui[area_id] = {}
-            for layer_number, x in source_ui.layer_x.items():
-                y = source_ui.layer_y[layer_number]
-                color = source_ui.layer_color[layer_number]
+            for layer_id, x in source_ui.layer_x.items():
+                y = source_ui.layer_y[layer_id]
+                color = source_ui.layer_color[layer_id]
                 r, g, b = (int(c) for c in color.strip(" ").split(","))
                 area_ui = AreaUI(x=x, y=y, color_rgb=(r, g, b))
-                new_ui[area_id][layer_number] = area_ui
+                new_ui[area_id][layer_id] = area_ui
         self._new_dao.save_area_ui(new_ui)
 
         # Short-term storages
