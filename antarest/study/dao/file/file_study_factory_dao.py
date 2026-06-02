@@ -61,9 +61,12 @@ class FileStudyDaoFactory(StudyFactoryDao):
         return self._build_dao(is_study_managed, file_study)
 
     def export_study(self, metadata: StudyMetadataCreation, dst_path: Path) -> FileStudyTreeDao:
-        return self._create_dao(metadata, dst_path)
+        # When exporting a study we don't want to use the cache
+        return self._create_dao(metadata, dst_path, use_cache=False)
 
-    def _create_dao(self, metadata: StudyMetadataCreation, study_path: Path | None = None) -> FileStudyTreeDao:
+    def _create_dao(
+        self, metadata: StudyMetadataCreation, study_path: Path | None = None, use_cache: bool = True
+    ) -> FileStudyTreeDao:
         study_id = metadata.id
         paths = self._paths_getter(study_id)
         output_path = paths.output_path
@@ -73,9 +76,7 @@ class FileStudyDaoFactory(StudyFactoryDao):
 
         is_study_managed = metadata.managed
 
-        # We don't want to use the cache as we're creating a new study.
-        # In particular, when launching a simulation for a DB study, the cache is filled with the old JOB path so we don't want to use it.
-        file_study = self._study_factory.create_from_fs(study_path, is_study_managed, study_id, output_path, False)
+        file_study = self._study_factory.create_from_fs(study_path, is_study_managed, study_id, output_path, use_cache)
 
         update_antares_info(metadata, file_study.tree, update_author=True)
 
