@@ -35,12 +35,11 @@ from antarest.output.storage.file.storage import (
 )
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.main import build_study_service
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyMetadataCopy
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyMetadataCopy, StudyMetadataCreation
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.utils import StudyMetadataCreation
 from tests.conftest import build_metadata_creation_object_from_study
 from tests.helpers import create_raw_study, create_variant_study, with_admin_user, with_db_context
 
