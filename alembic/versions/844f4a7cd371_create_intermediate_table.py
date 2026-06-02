@@ -143,7 +143,7 @@ def upgrade():
     # Create the new intermediate table
     op.create_table(
         INTERMEDIATE_TABLE,
-        sa.Column('study_id', sa.String(length=36), sa.ForeignKey('study.id'), nullable=False)
+        sa.Column('study_id', sa.String(length=36), sa.ForeignKey('study.id', ondelete='CASCADE'), nullable=False, primary_key=True),
     )
 
     # For each DAO table that previously referenced study.id, we'll now use the intermediate table
