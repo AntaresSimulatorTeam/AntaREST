@@ -115,7 +115,9 @@ class TestCleanBlobsIntegration:
         with db():
             db.session.add(create_study(id=study_id, name="Test Study", version="880"))
             db.session.flush()
-            db.session.execute(STUDY_DATA_CONTAINER_TABLE.insert().values(study_id=study_id))
+            db.session.execute(
+                STUDY_DATA_CONTAINER_TABLE.insert().values({"study_id": study_id, "study_data_id": study_id})
+            )
             db.session.execute(
                 USER_RESOURCES_TABLE.insert().values(
                     study_id=study_id,
