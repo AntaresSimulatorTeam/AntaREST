@@ -123,13 +123,10 @@ class FileStudyAreaDao(AreaDao):
             ui_info_map = {area_ids[0]: ui_info_map}
 
         # Convert to AreaUIFileData to ensure that the UI object is valid, then to Pydantic model
-        result: dict[str, AreaUIData] = {}
-        for area_id, ui_info in ui_info_map.items():
-            ui_data = AreaUIData.model_validate(AreaUIFileData(**ui_info).to_config())
-            if ui_data.layer_x:
-                ui_data.ui["layers"] = " ".join(sorted(ui_data.layer_x, key=int))
-            result[area_id] = ui_data
-        return result
+        return {
+            area_id: AreaUIData.model_validate(AreaUIFileData(**ui_info).to_config())
+            for area_id, ui_info in ui_info_map.items()
+        }
 
     @override
     def get_area_ui(self, area_id: str, layer: str = "0") -> AreaUI:
@@ -530,6 +527,7 @@ class FileStudyAreaDao(AreaDao):
 
     @staticmethod
     def _fill_area_ui(current_area: dict[str, Any], layer: str, area_ui: AreaUI) -> dict[str, Any]:
+        """Merge a per-layer UI update into the area-ui's dict."""
         layer_int = int(layer)
 
         # Initialize sections if missing (happens when creating the area)
@@ -553,6 +551,8 @@ class FileStudyAreaDao(AreaDao):
             current_area["ui"]["color_r"] = r
             current_area["ui"]["color_g"] = g
             current_area["ui"]["color_b"] = b
+
+        current_area["ui"]["layers"] = " ".join(sorted(current_area["layerX"], key=int))
 
         return current_area
 
