@@ -60,7 +60,7 @@ SCENARIO_BINDING_CONSTRAINTS_TABLE = Table(
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("bc_group_id", String(255), nullable=False, primary_key=True),
     Column("value", JSON, nullable=False),
-    ForeignKeyConstraint(["study_id"], ["study_data_container.study_id"], ondelete="CASCADE"),
+    ForeignKeyConstraint(["study_id"], ["study_data_container.study_data_id"], ondelete="CASCADE"),
 )
 
 SCENARIO_THERMAL_TABLE = Table(

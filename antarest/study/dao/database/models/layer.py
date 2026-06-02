@@ -26,5 +26,5 @@ LAYER_TABLE = Table(
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("layer_id", String(10), nullable=False, primary_key=True),
     Column("name", String(255), nullable=False),
-    ForeignKeyConstraint(["study_id"], ["study_data_container.study_id"], ondelete="CASCADE"),
+    ForeignKeyConstraint(["study_id"], ["study_data_container.study_data_id"], ondelete="CASCADE"),
 )

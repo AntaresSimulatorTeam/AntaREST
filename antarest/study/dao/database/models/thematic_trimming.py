@@ -24,6 +24,9 @@ THEMATIC_TRIMMING_TABLE = Table(
     Column("study_id", String(length=36), nullable=False, primary_key=True),
     Column("thematic_trimming", JSON(), nullable=False),
     ForeignKeyConstraint(
-        ["study_id"], ["study_data_container.study_id"], name="fk_thematic_trimming_study_id_study", ondelete="CASCADE"
+        ["study_id"],
+        ["study_data_container.study_data_id"],
+        name="fk_thematic_trimming_study_id_study",
+        ondelete="CASCADE",
     ),
 )

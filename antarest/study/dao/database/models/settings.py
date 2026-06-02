@@ -64,7 +64,7 @@ GENERAL_CONFIG_TABLE = Table(
     Column("geographic_trimming", Boolean(), nullable=True),
     Column("thematic_trimming", Boolean(), nullable=True),
     ForeignKeyConstraint(
-        ["study_id"], ["study_data_container.study_id"], name="fk_general_config_study_id", ondelete="CASCADE"
+        ["study_id"], ["study_data_container.study_data_id"], name="fk_general_config_study_id", ondelete="CASCADE"
     ),
 )
 
@@ -95,7 +95,7 @@ ADVANCED_PARAMETERS_TABLE = Table(
     Column("initial_reservoir_levels", enum_col(InitialReservoirLevel), nullable=True),
     Column("accurate_shave_peaks_include_short_term_storage", Boolean(), nullable=True),
     ForeignKeyConstraint(
-        ["study_id"], ["study_data_container.study_id"], name="fk_advanced_parameters_study_id", ondelete="CASCADE"
+        ["study_id"], ["study_data_container.study_data_id"], name="fk_advanced_parameters_study_id", ondelete="CASCADE"
     ),
 )
 
@@ -115,7 +115,7 @@ ADEQUACY_PATCH_PARAMETERS_TABLE = Table(
     Column("redispatch", Boolean(), nullable=True),
     ForeignKeyConstraint(
         ["study_id"],
-        ["study_data_container.study_id"],
+        ["study_data_container.study_data_id"],
         name="fk_adequacy_patch_parameters_study_id",
         ondelete="CASCADE",
     ),
@@ -128,7 +128,10 @@ COMPATIBILITY_PARAMETERS_TABLE = Table(
     get_study_id_col(),
     Column("hydro_pmax", enum_col(HydroPmax), nullable=True),
     ForeignKeyConstraint(
-        ["study_id"], ["study_data_container.study_id"], name="fk_compatibility_parameters_study_id", ondelete="CASCADE"
+        ["study_id"],
+        ["study_data_container.study_data_id"],
+        name="fk_compatibility_parameters_study_id",
+        ondelete="CASCADE",
     ),
 )
 
@@ -150,7 +153,10 @@ OPTIMIZATION_PREFERENCES_TABLE = Table(
     Column("simplex_optimization_range", enum_col(SimplexOptimizationRange), nullable=False),
     Column("include_reserves", Boolean(), nullable=True),
     ForeignKeyConstraint(
-        ["study_id"], ["study_data_container.study_id"], name="fk_optimization_preferences_study_id", ondelete="CASCADE"
+        ["study_id"],
+        ["study_data_container.study_data_id"],
+        name="fk_optimization_preferences_study_id",
+        ondelete="CASCADE",
     ),
 )
 
@@ -160,7 +166,7 @@ TIMESERIES_CONFIG_TABLE = Table(
     get_study_id_col(),
     Column("thermal_number", Integer(), nullable=False),
     ForeignKeyConstraint(
-        ["study_id"], ["study_data_container.study_id"], name="fk_timeseries_config_study_id", ondelete="CASCADE"
+        ["study_id"], ["study_data_container.study_data_id"], name="fk_timeseries_config_study_id", ondelete="CASCADE"
     ),
 )
 
@@ -170,6 +176,6 @@ PLAYLIST_TABLE = Table(
     get_study_id_col(),
     Column("years", String(), nullable=False),
     ForeignKeyConstraint(
-        ["study_id"], ["study_data_container.study_id"], name="fk_playlist_study_id", ondelete="CASCADE"
+        ["study_id"], ["study_data_container.study_data_id"], name="fk_playlist_study_id", ondelete="CASCADE"
     ),
 )
