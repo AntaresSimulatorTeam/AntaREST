@@ -84,7 +84,7 @@ def test_create_file_study_dao(tmp_path: Path, project_path: Path) -> None:
     db.session.commit()
 
     # Tests the DAO creation method
-    factory = FileStudyDaoFactory(Mock(), study_factory, Mock(), raw_study_service.get_study_paths)
+    factory = FileStudyDaoFactory(Mock(), Mock(), Mock(), study_factory, Mock(), raw_study_service.get_study_paths)
     metadata = StudyMetadataCreation(
         id=raw_study.id,
         version=StudyVersion.parse(raw_study.version),
@@ -131,7 +131,9 @@ def test_create_study_versions(tmp_path: str, project_path: Path) -> None:
         db.session.add(raw_study)
         db.session.commit()
         metadata = build_metadata_creation_object_from_study(raw_study)
-        FileStudyDaoFactory(Mock(), study_factory, Mock(), raw_study_service.get_study_paths).create_study_dao(metadata)
+        FileStudyDaoFactory(
+            Mock(), Mock(), Mock(), study_factory, Mock(), raw_study_service.get_study_paths
+        ).create_study_dao(metadata)
         return raw_study
 
     md700 = create_study("700")

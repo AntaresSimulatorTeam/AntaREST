@@ -128,9 +128,12 @@ class VariantStudyService(AbstractStudyService):
             StorageMode.DATABASE: DatabaseSnapshotManager(),
         }
         ctx = command_factory.command_context
+        generator_matrix_constants = ctx.generator_matrix_constants
         self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
-            StorageMode.DATABASE: DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants),
-            StorageMode.FILESYSTEM: FileStudyDaoFactory(ctx, study_factory, cache, self.get_study_paths),
+            StorageMode.DATABASE: DatabaseStudyDaoFactory(matrix_service, generator_matrix_constants),
+            StorageMode.FILESYSTEM: FileStudyDaoFactory(
+                matrix_service, ctx.blob_service, generator_matrix_constants, study_factory, cache, self.get_study_paths
+            ),
         }
 
     @override

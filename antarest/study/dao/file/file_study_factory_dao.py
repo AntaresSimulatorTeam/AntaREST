@@ -15,14 +15,16 @@ from typing import Callable
 
 from typing_extensions import override
 
+from antarest.blobstore.service import IBlobService
 from antarest.core.interfaces.cache import ICache
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import StudyMetadataCreation
 from antarest.study.storage.file_study_utils import update_antares_info
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.utils import create_new_empty_study
-from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
 @dataclass(frozen=True)
@@ -38,12 +40,16 @@ class FileStudyDaoFactory(StudyFactoryDao):
 
     def __init__(
         self,
-        command_context: CommandContext,
+        matrix_service: ISimpleMatrixService,
+        blob_service: IBlobService,
+        generator_matrix_constants: GeneratorMatrixConstants,
         study_factory: StudyFactory,
         cache: ICache,
         paths_getter: Callable[[str], ResourcePaths],
     ) -> None:
-        self._command_context = command_context
+        self._matrix_service = matrix_service
+        self._blob_service = blob_service
+        self._generator_matrix_constants = generator_matrix_constants
         self._study_factory = study_factory
         self._cache = cache
         self._paths_getter = paths_getter
@@ -83,12 +89,11 @@ class FileStudyDaoFactory(StudyFactoryDao):
         return self._build_dao(is_study_managed, file_study)
 
     def _build_dao(self, is_study_managed: bool, file_study: FileStudy) -> FileStudyTreeDao:
-        context = self._command_context
         return FileStudyTreeDao(
             file_study,
             is_study_managed,
-            context.generator_matrix_constants,
-            context.blob_service,
-            context.matrix_service,
+            self._generator_matrix_constants,
+            self._blob_service,
+            self._matrix_service,
             self._cache,
         )

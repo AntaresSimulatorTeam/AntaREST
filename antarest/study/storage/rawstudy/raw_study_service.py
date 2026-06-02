@@ -73,9 +73,16 @@ class RawStudyService(AbstractStudyService):
         self.study_factory = study_factory
         self.repository = repository
         self._matrix_service = command_context.matrix_service
-        ctx = command_context
-        db_dao_factory = DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants)
-        fs_dao_factory = FileStudyDaoFactory(command_context, study_factory, cache, self.get_study_paths)
+        generator_matrix_constants = command_context.generator_matrix_constants
+        db_dao_factory = DatabaseStudyDaoFactory(self._matrix_service, generator_matrix_constants)
+        fs_dao_factory = FileStudyDaoFactory(
+            self._matrix_service,
+            command_context.blob_service,
+            generator_matrix_constants,
+            study_factory,
+            cache,
+            self.get_study_paths,
+        )
         self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
             StorageMode.DATABASE: db_dao_factory,
             StorageMode.FILESYSTEM: fs_dao_factory,

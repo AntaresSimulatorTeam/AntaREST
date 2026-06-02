@@ -229,7 +229,14 @@ def build_filesystem_dao(
     with db_session:
         db_session.add(study)
         db_session.commit()
-        factory = FileStudyDaoFactory(command_context, study_factory, Mock(), get_study_path)
+        factory = FileStudyDaoFactory(
+            command_context.matrix_service,
+            command_context.blob_service,
+            command_context.generator_matrix_constants,
+            study_factory,
+            Mock(),
+            get_study_path,
+        )
         metadata = build_metadata_creation_object_from_study(study)
         dao = factory.create_study_dao(metadata)
 
