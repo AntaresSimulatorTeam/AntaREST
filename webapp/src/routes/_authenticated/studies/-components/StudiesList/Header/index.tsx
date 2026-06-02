@@ -192,6 +192,7 @@ function Header({
             <NavigationBreadcrumbs
               items={breadcrumbItems}
               studyCount={studyIds.length}
+              activeTree={activeTree}
               onNavigate={handleNavigate}
             />
           </Box>

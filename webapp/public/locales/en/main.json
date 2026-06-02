@@ -867,6 +867,8 @@
   "studies.unarchived": "Unarchived",
   "studies.tree.managed": "Managed Studies",
   "studies.tree.external": "Disk Studies",
+  "studies.tree.managed.short": "managed",
+  "studies.tree.external.short": "disk",
   "studies.tree.error.failToFetchWorkspace": "Failed to load workspaces",
   "studies.tree.error.failToFetchFolder": "Failed to load subfolders for {{path}}",
   "studies.tree.unscannedStudyFolder": "Unscanned study",

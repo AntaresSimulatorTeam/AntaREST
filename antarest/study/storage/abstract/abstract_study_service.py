@@ -66,6 +66,7 @@ class AbstractStudyService(IStudyService, ABC):
             managed=study_workspace == DEFAULT_WORKSPACE_NAME,
             type=study.type,
             archived=study.archived if study.archived is not None else False,
+            storage_mode=study.storage_mode,
             owner=owner_info,
             groups=[GroupDTO(id=group.id, name=group.name) for group in study.groups],
             public_mode=study.public_mode or PublicMode.NONE,
