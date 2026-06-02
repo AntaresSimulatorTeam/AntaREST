@@ -61,4 +61,7 @@ def create_favorite_routes() -> APIRouter:
         logger.info(f"Deleting directory {uuid} from favorites.")
         favorite_directory_service.delete_favorite(uuid)
 
+    # @bp.get()
+    # def list_all_favorites():
+
     return bp
