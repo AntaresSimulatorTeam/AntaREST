@@ -60,11 +60,14 @@ class FileStudyDaoFactory(StudyFactoryDao):
 
         return self._build_dao(is_study_managed, file_study)
 
-    def _create_dao(self, metadata: StudyMetadataCreation) -> FileStudyTreeDao:
+    def export_study(self, metadata: StudyMetadataCreation, dst_path: Path) -> FileStudyTreeDao:
+        return self._create_dao(metadata, dst_path)
+
+    def _create_dao(self, metadata: StudyMetadataCreation, study_path: Path | None = None) -> FileStudyTreeDao:
         study_id = metadata.id
         paths = self._paths_getter(study_id)
         output_path = paths.output_path
-        study_path = metadata.path or paths.study_path
+        study_path = study_path or paths.study_path
 
         create_new_empty_study(version=metadata.version, path_study=study_path)
 

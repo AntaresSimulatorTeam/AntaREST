@@ -789,4 +789,3 @@ class StudyMetadataCreation:
     editor: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
-    path: Path | None = None

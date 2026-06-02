@@ -20,19 +20,25 @@ from typing_extensions import override
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
+from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
-from antarest.study.model import RawStudy, StorageMode, Study, StudyMetadataCreation
+from antarest.study.model import RawStudy, Study, StudyMetadataCreation
 from antarest.study.storage.study_storage_interface import IStudyStorage
 
 logger = logging.getLogger(__name__)
 
 
 class DatabaseStudyStorage(IStudyStorage):
-    def __init__(self, matrix_service: ISimpleMatrixService, study_dao_factories: dict[StorageMode, StudyFactoryDao]):
+    def __init__(
+        self,
+        matrix_service: ISimpleMatrixService,
+        db_dao_factory: DatabaseStudyDaoFactory,
+        fs_dao_factory: FileStudyDaoFactory,
+    ):
         self._matrix_service = matrix_service
-        self._db_dao_factory = study_dao_factories[StorageMode.DATABASE]
-        self._fs_dao_factory = study_dao_factories[StorageMode.FILESYSTEM]
+        self._db_dao_factory = db_dao_factory
+        self._fs_dao_factory = fs_dao_factory
 
     @override
     def copy(self, src_study: Study, new_study: RawStudy) -> RawStudy:
@@ -70,9 +76,8 @@ class DatabaseStudyStorage(IStudyStorage):
             editor=study.editor,
             created_at=study.created_at,
             updated_at=study.updated_at,
-            path=dst_path,
         )
-        new_dao = self._fs_dao_factory.create_study_dao(metadata)
+        new_dao = self._fs_dao_factory.export_study(metadata, dst_path)
 
         # Convert the DB DAO into an FS DAO
         converter = StudyConverter(
