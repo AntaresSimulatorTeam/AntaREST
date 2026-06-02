@@ -768,3 +768,12 @@ class StudyMetadataUpdate:
     editor: str | None = None
     last_save: float | None = None
     created_at: float | None = None
+
+
+@dataclasses.dataclass(frozen=True)
+class StudyMetadataCopy:
+    name: str
+    folder: PurePosixPath
+    owner: Identity
+    groups: list[Group]
+    directory_id: str | None

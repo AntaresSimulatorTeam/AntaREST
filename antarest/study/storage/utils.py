@@ -21,7 +21,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from io import StringIO
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import Any, cast
 from uuid import uuid4
 from zipfile import ZipFile
@@ -64,6 +64,7 @@ from antarest.study.model import (
     Study,
     StudyContentStatus,
     StudyFolder,
+    StudyMetadataCopy,
     StudyMetadataDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -597,20 +598,12 @@ def get_current_user_name() -> str:
     return get_user_name_from_id(get_user_impersonator())
 
 
-def build_raw_study_from_source(
-    src_study: Study,
-    name: str,
-    path: Path,
-    groups: list[Group],
-    owner: Identity,
-    directory_id: str | None,
-    destination_folder: PurePosixPath,
-) -> RawStudy:
+def build_raw_study_from_source(src_study: Study, path: Path, metadata: StudyMetadataCopy) -> RawStudy:
     dest_id = str(uuid4())
     now_utc = current_time()
     dest_study = RawStudy(
         id=dest_id,
-        name=name,
+        name=metadata.name,
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(path / dest_id),
         created_at=now_utc,
@@ -619,11 +612,11 @@ def build_raw_study_from_source(
         author=src_study.author,
         editor=get_current_user_name(),
         horizon=src_study.horizon,
-        public_mode=PublicMode.NONE if groups else PublicMode.READ,
-        groups=groups,
-        owner=owner,
-        directory_id=directory_id,
-        folder=str(destination_folder / dest_id),
+        public_mode=PublicMode.NONE if metadata.groups else PublicMode.READ,
+        groups=metadata.groups,
+        owner=metadata.owner,
+        directory_id=metadata.directory_id,
+        folder=str(metadata.folder / dest_id),
         storage_mode=src_study.storage_mode,
         content_status=StudyContentStatus.VALID,
     )

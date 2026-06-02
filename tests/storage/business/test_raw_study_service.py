@@ -35,7 +35,7 @@ from antarest.output.storage.file.storage import (
 )
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.main import build_study_service
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyMetadataCopy
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -274,9 +274,8 @@ def test_copy_study(empty_study_930: FileStudy, study_service: StudyService) -> 
     admin = Identity(id=1, name="admin", type="users")
 
     # Copy the study
-    new_study = study_service.storage_service.raw_study_service.copy(
-        study, "new_name", destination, admin, groups, None
-    )
+    metadata = StudyMetadataCopy(name="new_name", groups=groups, owner=admin, directory_id=None, folder=destination)
+    new_study = study_service.storage_service.raw_study_service.copy(study, metadata)
 
     # Check the new study attributes
     assert new_study.path == str(study_path.parent / "internal_studies" / new_study.id)

@@ -133,6 +133,7 @@ from antarest.study.model import (
     Study,
     StudyContentStatus,
     StudyFolder,
+    StudyMetadataCopy,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
     StudyMetadataUpdate,
@@ -1270,9 +1271,10 @@ class StudyService:
 
         def copy_task(notifier: ITaskNotifier) -> TaskResult:
             origin_study = self.get_study(src_uuid)
-            study = self.storage_service.get_storage(origin_study).copy(
-                origin_study, dest_study_name, destination_folder, owner, groups, directory_id
+            metadata = StudyMetadataCopy(
+                name=dest_study_name, folder=destination_folder, owner=owner, groups=groups, directory_id=directory_id
             )
+            study = self.storage_service.get_storage(origin_study).copy(origin_study, metadata)
 
             match outputs_selection:
                 case "all":

@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import logging
 import shutil
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import BinaryIO
 
 from antares.study.version import StudyVersion
@@ -28,12 +28,11 @@ from antarest.core.utils.archives import (
     extract_archive_from_stream,
 )
 from antarest.core.utils.utils import StopWatch
-from antarest.login.model import Group, Identity
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory, ResourcePaths
-from antarest.study.model import RawStudy, StorageMode, Study
+from antarest.study.model import RawStudy, StorageMode, Study, StudyMetadataCopy
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract.abstract_study_service import AbstractStudyService
 from antarest.study.storage.database_storage import DatabaseStudyStorage
@@ -90,18 +89,8 @@ class RawStudyService(AbstractStudyService):
         self.cache = cache
 
     @override
-    def copy(
-        self,
-        src_study: Study,
-        dest_name: str,
-        destination_folder: PurePosixPath,
-        owner: Identity,
-        groups: list[Group],
-        directory_id: str | None,
-    ) -> RawStudy:
-        new_study = build_raw_study_from_source(
-            src_study, dest_name, self._config.get_workspace_path(), groups, owner, directory_id, destination_folder
-        )
+    def copy(self, src_study: Study, metadata: StudyMetadataCopy) -> RawStudy:
+        new_study = build_raw_study_from_source(src_study, self._config.get_workspace_path(), metadata)
         self.repository.save(new_study)
         return self._storage_mapping[src_study.storage_mode].copy(src_study, new_study)
 
