@@ -442,13 +442,18 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         self, data: dict[AreaId, dict[StStorageId, list[STStorageAdditionalConstraint]]]
     ) -> None:
         study_data = self.get_file_study()
+        areas_config = study_data.config.areas
 
         # Hold everything in memory to validate the data before saving it.
         url_content_pairs = []
 
         for area_id, value in data.items():
+            # Resolve storage ids for this area once from the in-memory config to avoid
+            # an I/O lookup per (area, storage) pair.
+            area_cfg = areas_config.get(area_id)
+            valid_storage_ids = {s.id for s in area_cfg.st_storages} if area_cfg else set()
             for storage_id, constraints in value.items():
-                if not self.st_storage_exists(area_id, storage_id):
+                if storage_id not in valid_storage_ids:
                     raise STStorageNotFound(area_id, storage_id)
                 existing_constraints = self.get_st_storage_additional_constraints(area_id, storage_id)
 
