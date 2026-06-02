@@ -15,7 +15,7 @@ from antarest.dbmodel import Base
 
 metadata = Base.metadata
 
-STUDY_DATA_CONTAINER_TABLE = Table(
+STUDY_DATA_TABLE = Table(
     "study_data_container",
     metadata,
     Column("study_id", String(36), ForeignKey("study.id", ondelete="CASCADE"), nullable=False, primary_key=True),
