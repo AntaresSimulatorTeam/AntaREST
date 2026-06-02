@@ -868,6 +868,8 @@
   "studies.unarchived": "Non archivées",
   "studies.tree.managed": "Études managées",
   "studies.tree.external": "Études sur disque",
+  "studies.tree.managed.short": "managées",
+  "studies.tree.external.short": "disque",
   "studies.tree.error.failToFetchWorkspace": "Échec lors de la récupération de l'espace de travail",
   "studies.tree.error.failToFetchFolder": "Échec lors de la récupération des sous dossiers de {{path}}",
   "studies.tree.unscannedStudyFolder": "Étude non scannée",

@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import type { StudyMetadata } from "@/types/types";
 import type { ViewMode } from "../types";
+import type { Study } from "@/services/api/studies/types";
 
 export interface BreadcrumbItem {
   label: string;
@@ -22,10 +22,10 @@ export interface BreadcrumbItem {
 }
 
 export interface HeaderProps {
-  studyIds: Array<StudyMetadata["id"]>;
-  selectedStudyIds: Array<StudyMetadata["id"]>;
-  setSelectedStudyIds: (ids: Array<StudyMetadata["id"]>) => void;
-  setStudiesToLaunch: (ids: Array<StudyMetadata["id"]>) => void;
+  studyIds: Array<Study["id"]>;
+  selectedStudyIds: Array<Study["id"]>;
+  setSelectedStudyIds: (ids: Array<Study["id"]>) => void;
+  setStudiesToLaunch: (ids: Array<Study["id"]>) => void;
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
 }
