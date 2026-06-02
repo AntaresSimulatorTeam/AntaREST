@@ -42,19 +42,28 @@ class DatabaseStudyStorage(IStudyStorage):
 
     @override
     def copy(self, src_study: Study, new_study: RawStudy) -> RawStudy:
-        source_dao = self._db_dao_factory.get_study_dao(src_study.id, True)
-        study_version = StudyVersion.parse(src_study.version)
+        try:
+            source_dao = self._db_dao_factory.get_study_dao(src_study.id, True)
+            study_version = StudyVersion.parse(src_study.version)
 
-        # Build the new DB DAO
-        new_dao = self._db_dao_factory.get_study_dao(study_id=new_study.id, is_study_managed=True)
+            # Build the new DB DAO
+            new_dao = self._db_dao_factory.get_study_dao(study_id=new_study.id, is_study_managed=True)
 
-        # Copies the inputs
-        converter = StudyConverter(
-            source_dao=source_dao, new_dao=new_dao, study_version=study_version, matrix_service=self._matrix_service
-        )
-        converter.convert_study_inputs()
+            # Copies the inputs
+            converter = StudyConverter(
+                source_dao=source_dao, new_dao=new_dao, study_version=study_version, matrix_service=self._matrix_service
+            )
+            converter.convert_study_inputs()
 
-        return new_study
+            return new_study
+
+        except Exception as e:
+            logger.error("Failed to copy study %s to %s", src_study.id, new_study.id, exc_info=e)
+            # Clean up the database if something went wrong.
+            session = db.session
+            session.delete(new_study)
+            session.commit()
+            raise e
 
     @override
     def write_study_for_archive(self, study: RawStudy, dst_path: Path) -> None:
@@ -101,24 +110,33 @@ class DatabaseStudyStorage(IStudyStorage):
 
     @override
     def import_study(self, study: RawStudy) -> None:
-        # First, create the new study inside DB to avoid ForeignKey and StudyNotFound errors
         session = db.session
-        session.add(study)
-        session.commit()
 
-        # Build the 2 DAOs
-        study_id = study.id
-        source_dao = self._fs_dao_factory.get_study_dao(study_id=study_id, is_study_managed=True)
-        new_dao = self._db_dao_factory.get_study_dao(study_id=study_id, is_study_managed=True)
+        try:
+            # First, create the new study inside DB to avoid ForeignKey and StudyNotFound errors
+            session.add(study)
+            session.commit()
 
-        # Convert the FS DAO into a DB one
-        converter = StudyConverter(
-            source_dao=source_dao,
-            new_dao=new_dao,
-            study_version=source_dao.get_version(),
-            matrix_service=self._matrix_service,
-        )
-        converter.convert_study_inputs()
+            # Build the 2 DAOs
+            study_id = study.id
+            source_dao = self._fs_dao_factory.get_study_dao(study_id=study_id, is_study_managed=True)
+            new_dao = self._db_dao_factory.get_study_dao(study_id=study_id, is_study_managed=True)
 
-        # Delete the source study path once the conversion is done
-        shutil.rmtree(Path(study.path))
+            # Convert the FS DAO into a DB one
+            converter = StudyConverter(
+                source_dao=source_dao,
+                new_dao=new_dao,
+                study_version=source_dao.get_version(),
+                matrix_service=self._matrix_service,
+            )
+            converter.convert_study_inputs()
+
+            # Delete the source study path once the conversion is done
+            shutil.rmtree(Path(study.path))
+
+        except Exception as e:
+            logger.error("Failed to import study %s", str(study.path), exc_info=e)
+            # Clean up the database if something went wrong.
+            session.delete(study)
+            session.commit()
+            raise e
