@@ -122,7 +122,7 @@ def _transform_tables(new_foreign_key: str):
         table = metadata.tables[table_name]
 
         # Generate the new foreign key constraint
-        new_fk_constraint = sa.ForeignKeyConstraint(['study_id'],[new_foreign_key], name=f'fk_{table_name}_study_id')
+        new_fk_constraint = sa.ForeignKeyConstraint(['study_id'],[new_foreign_key], name=f'fk_{table_name}_study_id', ondelete='CASCADE')
 
         # Create a new table with the new foreign key constraint
         cols = [sa.Column(col.name, col.type, nullable=col.nullable, primary_key=col.primary_key) for col in table.columns]
