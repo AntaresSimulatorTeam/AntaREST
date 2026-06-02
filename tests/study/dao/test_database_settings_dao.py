@@ -37,6 +37,7 @@ from antarest.study.business.model.config.playlist_model import Playlist, Playli
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration, TimeSeriesType
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_9_3
 from tests.study.dao.conftest import build_db_dao
 
@@ -52,7 +53,7 @@ def test_nominal_case(dao: StudyDao) -> None:
         first_week_day=WeekDay.TUESDAY,
         first_january=WeekDay.SUNDAY,
         leap_year=True,
-        nb_years=4,
+        nb_years=5,
         building_mode=BuildingMode.CUSTOM,
         selection_mode=True,
         year_by_year=True,
@@ -112,15 +113,21 @@ def test_nominal_case(dao: StudyDao) -> None:
     assert dao.get_timeseries_config() == timeseries
 
     # Playlist Config
-    playlist = Playlist(years={4: PlaylistValues(status=False, weight=0.2), 7: PlaylistValues(weight=1.1)})
+    playlist = Playlist(
+        years={
+            2: PlaylistValues(status=False, weight=0.2),
+            3: PlaylistValues(weight=1.1),
+            5: PlaylistValues(weight=1.2),
+        }
+    )
     dao.save_playlist_config(playlist)
     expected_playlist = Playlist(
         years={
-            1: PlaylistValues(status=False),
-            2: PlaylistValues(status=False),
-            3: PlaylistValues(status=False),
-            4: PlaylistValues(status=False, weight=0.2),
-            7: PlaylistValues(weight=1.1),
+            1: PlaylistValues(status=True),
+            2: PlaylistValues(status=False, weight=0.2),
+            3: PlaylistValues(status=True, weight=1.1),
+            4: PlaylistValues(status=True),
+            5: PlaylistValues(status=True, weight=1.2),
         }
     )
     assert dao.get_playlist_config() == expected_playlist
@@ -164,3 +171,85 @@ def test_save_comments_persists_value(dao: StudyDao, db_session: Session) -> Non
     dao.save_comments(comments)
 
     assert dao.get_comments() == comments
+
+
+# ---------------------------------------------------------------------------
+# Playlist edge cases — divergent behaviour between DB and FS for years > nb_years.
+# ---------------------------------------------------------------------------
+
+
+def _set_nb_years(dao: StudyDao, nb_years: int) -> None:
+    cfg = dao.get_general_config()
+    cfg.nb_years = nb_years
+    dao.save_general_config(cfg)
+
+
+def test_playlist_empty_round_trip_db_defaults_true(db_dao: DatabaseStudyDao) -> None:
+    """DB: empty input → unsaved years filled with status=True (via _expand_playlist default)."""
+    _set_nb_years(db_dao, 3)
+    db_dao.save_playlist_config(Playlist(years={}))
+
+    result = db_dao.get_playlist_config()
+    assert result.years == {
+        1: PlaylistValues(status=True),
+        2: PlaylistValues(status=True),
+        3: PlaylistValues(status=True),
+    }
+
+
+def test_playlist_empty_round_trip_fs_defaults_false(fs_dao: FileStudyTreeDao) -> None:
+    """FS: empty input → save branch picks `playlist_reset=False` (since 0 > 0 is False),
+    so the read fills every year with status=False. Divergent from DB."""
+    _set_nb_years(fs_dao, 3)
+    fs_dao.save_playlist_config(Playlist(years={}))
+
+    result = fs_dao.get_playlist_config()
+    assert result.years == {
+        1: PlaylistValues(status=False),
+        2: PlaylistValues(status=False),
+        3: PlaylistValues(status=False),
+    }
+
+
+# ---- Out-of-range years are dropped on save by both backends ----
+
+
+def test_playlist_year_above_nb_years_status_true_dropped(dao: StudyDao) -> None:
+    """Activated year > nb_years is dropped at save on both backends."""
+    _set_nb_years(dao, 5)
+    dao.save_playlist_config(Playlist(years={10: PlaylistValues(status=True, weight=1.5)}))
+
+    result = dao.get_playlist_config()
+    assert 10 not in result.years
+    assert set(result.years.keys()) == {1, 2, 3, 4, 5}
+
+
+def test_playlist_year_above_nb_years_status_false_dropped(dao: StudyDao) -> None:
+    """Deactivated year > nb_years is dropped at save on both backends."""
+    _set_nb_years(dao, 5)
+    dao.save_playlist_config(Playlist(years={10: PlaylistValues(status=False, weight=0.3)}))
+
+    result = dao.get_playlist_config()
+    assert 10 not in result.years
+    assert set(result.years.keys()) == {1, 2, 3, 4, 5}
+
+
+# ---- nb_years shrunk after save → orphan rows clipped on read by both backends ----
+
+
+def test_playlist_nb_years_shrunk_drops_orphan_years(dao: StudyDao) -> None:
+    """nb_years shrunk after save → both backends clip out-of-range years on read."""
+    _set_nb_years(dao, 5)
+    dao.save_playlist_config(
+        Playlist(
+            years={
+                1: PlaylistValues(status=False),
+                4: PlaylistValues(status=False),
+                5: PlaylistValues(status=False),
+            }
+        )
+    )
+
+    _set_nb_years(dao, 3)
+    result = dao.get_playlist_config()
+    assert set(result.years.keys()) == {1, 2, 3}

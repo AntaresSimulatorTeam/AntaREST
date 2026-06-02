@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import logging
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
@@ -50,21 +51,14 @@ if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
+logger = logging.getLogger(__name__)
+
+
 def _expand_playlist(playlist: Playlist, nb_years: int) -> Playlist:
-    """
-    Expand sparse playlist to cover years 1..nb_years, mimicking filesystem DAO semantic.
-    Missing year default status follows majority rule of saved entries (matches fs `playlist_reset`).
-    Empty playlist defaults to status=True (matches fs default when no `[playlist]` INI section).
-    """
-    if not playlist.years:
-        default_status = True
-    else:
-        activated = sum(1 for v in playlist.years.values() if v.status)
-        default_status = activated > len(playlist.years) // 2
-    expanded = dict(playlist.years)
+    """Expand sparse playlist to cover years 1..nb_years; unsaved years default to status=True."""
+    expanded = {y: v for y, v in playlist.years.items() if 1 <= y <= nb_years}
     for year in range(1, nb_years + 1):
-        if year not in expanded:
-            expanded[year] = PlaylistValues(status=default_status)
+        expanded.setdefault(year, PlaylistValues(status=True))
     return Playlist(years=expanded)
 
 
@@ -221,7 +215,17 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_playlist_config(self, playlist: Playlist) -> None:
-        values = dict(study_id=self.get_study_id(), years=to_json_string(playlist.years))
+        nb_years = self.get_general_config().nb_years
+        out_of_range = {y: v for y, v in playlist.years.items() if y < 1 or y > nb_years}
+        if out_of_range:
+            logger.warning(
+                "Dropping playlist entries for years outside [1, %d] on study %s: %s",
+                nb_years,
+                self.get_study_id(),
+                sorted(out_of_range),
+            )
+        years = {y: v for y, v in playlist.years.items() if 1 <= y <= nb_years}
+        values = dict(study_id=self.get_study_id(), years=to_json_string(years))
         session = self.get_session()
         upsert_one(session, PLAYLIST_TABLE, values)
         session.commit()
