@@ -51,6 +51,7 @@ from antarest.core.exceptions import (
     TaskAlreadyRunning,
     UnsupportedOperationOnArchivedStudy,
     UnsupportedOperationOnThisStudyType,
+    XpansionConfigurationDoesNotExist,
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -203,6 +204,20 @@ def _get_matrix_from_path(study_interface: StudyInterface, matrix_path: PurePosi
     """We give a ReadOnlyStudyDao instead of a StudyDao, but it does not matter as we only use the getter methods."""
     mapper = RawPathToMatrixMapper(study_interface.get_study_dao())  # type: ignore
     return mapper.get_matrix_from_path(matrix_path)
+
+
+def build_replace_matrix_command(
+    data: SUB_JSON, url: str, context: CommandContext, study_version: StudyVersion
+) -> ReplaceMatrix:
+    if isinstance(data, bytes):
+        # noinspection PyTypeChecker
+        matrix = imports_matrix_from_bytes(data)
+        if matrix is None:
+            raise MatrixImportFailed("Could not parse the given matrix")
+        matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
+        return ReplaceMatrix(target=url, matrix=matrix.tolist(), command_context=context, study_version=study_version)
+    assert isinstance(data, (list, str))
+    return ReplaceMatrix(target=url, matrix=data, command_context=context, study_version=study_version)
 
 
 OutputSelection: TypeAlias = Literal["all"] | list[str]
@@ -1627,17 +1642,7 @@ class StudyService:
             assert not isinstance(data, (bytes, list))
             return UpdateConfig(target=url, data=data, command_context=context, study_version=study_version)
         elif isinstance(tree_node, InputSeriesMatrix):
-            if isinstance(data, bytes):
-                # noinspection PyTypeChecker
-                matrix = imports_matrix_from_bytes(data)
-                if matrix is None:
-                    raise MatrixImportFailed("Could not parse the given matrix")
-                matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
-                return ReplaceMatrix(
-                    target=url, matrix=matrix.tolist(), command_context=context, study_version=study_version
-                )
-            assert isinstance(data, (list, str))
-            return ReplaceMatrix(target=url, matrix=data, command_context=context, study_version=study_version)
+            return build_replace_matrix_command(data, url, context, study_version)
         elif isinstance(tree_node, RawFileNode):
             if url.split("/")[-1] == "comments":
                 if isinstance(data, bytes):
@@ -1760,7 +1765,7 @@ class StudyService:
             except ResourceCreationNotAllowed:
                 # The url does not point towards a user resource, we use the `ReplaceMatrix` command
                 context = self.storage_service.variant_study_service.command_factory.command_context
-                command = ReplaceMatrix(target=url, matrix=new, command_context=context, study_version=study_version)
+                command = build_replace_matrix_command(new, url, context, study_version)
 
             self.get_study_interface(study).add_commands([command])
 
@@ -2944,7 +2949,7 @@ class StudyService:
                 "constraints": constraints,
             }
 
-        except ChildNotFoundError:
+        except (ChildNotFoundError, XpansionConfigurationDoesNotExist):
             xpansion = None
 
         obj["xpansion"] = xpansion
