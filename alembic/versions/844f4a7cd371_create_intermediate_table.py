@@ -121,12 +121,20 @@ def _transform_tables(new_foreign_key: str):
         metadata.reflect(bind=op.get_bind(), only=[table_name])
         table = metadata.tables[table_name]
 
+        # Collect all existing foreign key constraints
+        existing_fk_constraints = []
+        for fk in table.foreign_key_constraints:
+            if fk.referred_table.name != "study":
+                # Skip the foreign key we want to replace
+                existing_fk_constraints.append(fk)
+
         # Generate the new foreign key constraint
         new_fk_constraint = sa.ForeignKeyConstraint(['study_id'],[new_foreign_key], name=f'fk_{table_name}_study_id', ondelete='CASCADE')
+        existing_fk_constraints.append(new_fk_constraint)
 
         # Create a new table with the new foreign key constraint
-        cols = [sa.Column(col.name, col.type, nullable=col.nullable, primary_key=col.primary_key) for col in table.columns]
-        op.create_table(f"{table_name}_new", *cols, new_fk_constraint)
+        cols = [sa.Column(col.name, col.type, nullable=col.nullable, primary_key=col.primary_key, unique=col.unique) for col in table.columns]
+        op.create_table(f"{table_name}_new", *cols, *existing_fk_constraints)
 
         # Drop the old table
         op.drop_table(table_name)
