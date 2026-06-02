@@ -18,7 +18,6 @@ import os
 import re
 import shutil
 from collections.abc import Sequence
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 from io import StringIO
 from pathlib import Path
@@ -621,16 +620,3 @@ def build_raw_study_from_source(src_study: Study, path: Path, metadata: StudyMet
         content_status=StudyContentStatus.VALID,
     )
     return dest_study
-
-
-@dataclass(frozen=True)
-class StudyMetadataCreation:
-    id: str
-    version: StudyVersion
-    managed: bool
-    name: str | None = None
-    author: str | None = None
-    editor: str | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-    path: Path | None = None

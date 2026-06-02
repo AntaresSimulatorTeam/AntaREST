@@ -32,7 +32,7 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory, ResourcePaths
-from antarest.study.model import RawStudy, StorageMode, Study, StudyMetadataCopy
+from antarest.study.model import RawStudy, StorageMode, Study, StudyMetadataCopy, StudyMetadataCreation
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract.abstract_study_service import AbstractStudyService
 from antarest.study.storage.database_storage import DatabaseStudyStorage
@@ -41,7 +41,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactor
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.utils import (
-    StudyMetadataCreation,
     build_raw_study_from_source,
     fix_study_root,
     get_disk_usage,

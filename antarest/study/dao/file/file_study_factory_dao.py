@@ -18,9 +18,10 @@ from typing_extensions import override
 from antarest.core.interfaces.cache import ICache
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from antarest.study.model import StudyMetadataCreation
 from antarest.study.storage.file_study_utils import update_antares_info
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
-from antarest.study.storage.utils import StudyMetadataCreation, create_new_empty_study
+from antarest.study.storage.utils import create_new_empty_study
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 

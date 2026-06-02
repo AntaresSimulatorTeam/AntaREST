@@ -22,9 +22,8 @@ from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
-from antarest.study.model import RawStudy, StorageMode, Study
+from antarest.study.model import RawStudy, StorageMode, Study, StudyMetadataCreation
 from antarest.study.storage.study_storage_interface import IStudyStorage
-from antarest.study.storage.utils import StudyMetadataCreation
 
 logger = logging.getLogger(__name__)
 
