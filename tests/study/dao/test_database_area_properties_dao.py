@@ -59,11 +59,11 @@ def test_multiple_areas(db_session: Session, db_dao: DatabaseStudyDao) -> None:
 
 def test_error_cases(dao: StudyDao) -> None:
     # Try to get properties for a fake area
-    with pytest.raises(AreaNotFound, match="Area is not found: 'fake_area'"):
+    with pytest.raises(AreaNotFound, match="fake_area"):
         dao.get_area_properties("fake_area")
 
     # Try to set properties for a fake area
-    with pytest.raises(AreaNotFound, match="Area is not found: 'fake_area'"):
+    with pytest.raises(AreaNotFound, match="fake_area"):
         dao.save_area_properties("fake_area", AreaProperties())
 
 

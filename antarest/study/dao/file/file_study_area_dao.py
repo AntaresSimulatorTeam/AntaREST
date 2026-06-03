@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any, Callable
 import polars as pl
 from typing_extensions import override
 
-from antarest.core.exceptions import AreaNotFound, ChildNotFoundError, LayerNotFound, ReferencedObjectDeletionNotAllowed
+from antarest.core.exceptions import ChildNotFoundError, LayerNotFound, ReferencedObjectDeletionNotAllowed
 from antarest.core.model import JSON
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
@@ -144,10 +144,7 @@ class FileStudyAreaDao(AreaDao):
             ChildNotFoundError: If the area does not exist.
         """
         file_study = self.get_file_study()
-
-        # Check if area exists in config
-        if area_id not in file_study.config.areas:
-            raise AreaNotFound(area_id)
+        check_area_exists(file_study.config, area_id)
 
         # Import AreaUIFileData here to avoid circular import
         from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUIFileData
@@ -316,8 +313,7 @@ class FileStudyAreaDao(AreaDao):
 
         study_data = self.get_file_study()
 
-        if area_id not in study_data.config.areas:
-            raise AreaNotFound(area_id)
+        check_area_exists(study_data.config, area_id)
 
         # Check that the area is not referenced in any binding constraint
         constraints = self.get_impl().get_all_constraints()
@@ -517,8 +513,7 @@ class FileStudyAreaDao(AreaDao):
     def save_area_ui(self, data: AreaUiMapping) -> None:
         study_data = self.get_file_study()
         for area_id, value in data.items():
-            if area_id not in study_data.config.areas:
-                raise AreaNotFound(area_id)
+            check_area_exists(study_data.config, area_id)
             current_area = study_data.tree.get(["input", "areas", area_id, "ui"])
             for layer, area_ui in value.items():
                 current_area = self._fill_area_ui(current_area, layer, area_ui)

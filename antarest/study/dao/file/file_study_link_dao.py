@@ -16,12 +16,13 @@ from typing import TYPE_CHECKING, Callable
 import polars as pl
 from typing_extensions import override
 
-from antarest.core.exceptions import AreaNotFound, ChildNotFoundError, LinkNotFound
+from antarest.core.exceptions import ChildNotFoundError, LinkNotFound
 from antarest.study.business.model.link_model import (
     Link,
 )
 from antarest.study.dao.api.link_dao import LinkDao
 from antarest.study.dao.common import AreaId, LinkSeriesMapping
+from antarest.study.dao.file.common import check_area_exists
 from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.config.link import parse_link, serialize_link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -135,9 +136,8 @@ class FileStudyLinkDao(LinkDao, ABC):
 
     def _update_link_config(self, area1_id: str, area2_id: str, link: Link) -> None:
         study_data = self.get_file_study().config
-        for area in [area1_id, area2_id]:
-            if area not in study_data.areas:
-                raise AreaNotFound(area)
+        for area in (area1_id, area2_id):
+            check_area_exists(study_data, area)
 
         area_from, area_to = sorted([area1_id, area2_id])
         study_data.areas[area_from].links[area_to] = link.to_config()
@@ -152,8 +152,7 @@ class FileStudyLinkDao(LinkDao, ABC):
                 node = study_data.tree.get_node(url)
             except ChildNotFoundError:
                 for area in (area_from, area_to):
-                    if area not in study_data.config.areas:
-                        raise AreaNotFound(area) from None
+                    check_area_exists(study_data.config, area)
                 raise
             assert isinstance(node, InputSeriesMatrix)
             matrices_mapping.setdefault(series_id, []).append(node)

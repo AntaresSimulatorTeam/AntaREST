@@ -202,8 +202,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
     @override
     def delete_thermal(self, area_id: str, thermal_id: str) -> None:
         study_data = self.get_file_study()
-        if area_id not in study_data.config.areas:
-            raise AreaNotFound(area_id)
+        check_area_exists(study_data.config, area_id)
         cluster_id = thermal_id.lower()
         if not any(c.id.lower() == cluster_id for c in study_data.config.areas[area_id].thermals):
             raise ThermalClusterNotFound(area_id, thermal_id)

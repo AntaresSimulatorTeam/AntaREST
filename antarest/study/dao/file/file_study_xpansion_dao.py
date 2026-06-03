@@ -36,6 +36,7 @@ from antarest.study.business.model.xpansion_model import (
 )
 from antarest.study.dao.api.xpansion_dao import XpansionDao
 from antarest.study.dao.common import XpansionCapacitiesMapping, XpansionConstraintsMapping, XpansionWeightsMapping
+from antarest.study.dao.file.common import check_area_exists
 from antarest.study.storage.rawstudy.model.filesystem.config.xpansion import (
     parse_xpansion_adequacy_criterion,
     parse_xpansion_sensitivity_settings,
@@ -411,8 +412,7 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         file_study = self.get_file_study()
         area_from = xpansion_candidate_dto.link.area_from
         area_to = xpansion_candidate_dto.link.area_to
-        if area_from not in file_study.config.areas:
-            raise AreaNotFound(area_from)
+        check_area_exists(file_study.config, area_from)
         if area_to not in file_study.config.get_links(area_from):
             raise LinkNotFound(f"The link from '{area_from}' to '{area_to}' not found")
 

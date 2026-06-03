@@ -26,6 +26,7 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.dao.api.st_storage_dao import STStorageDao
 from antarest.study.dao.common import AreaId, StStorageConstraintSeriesMapping, StStorageId, StStorageSeriesMapping
+from antarest.study.dao.file.common import check_area_exists
 from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     parse_st_storage,
@@ -128,8 +129,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
     @override
     def get_st_storage(self, area_id: str, storage_id: str) -> STStorage:
         study_data = self.get_file_study()
-        if area_id not in study_data.config.areas:
-            raise AreaNotFound(area_id)
+        check_area_exists(study_data.config, area_id)
         path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
         try:
             config = study_data.tree.get(path.split("/"), depth=1)
@@ -328,8 +328,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
     def delete_st_storage(self, area_id: str, storage: STStorage) -> None:
         study_data = self.get_file_study()
         storage_id = storage.id
-        if area_id not in study_data.config.areas:
-            raise AreaNotFound(area_id)
+        check_area_exists(study_data.config, area_id)
         if not any(s.id == storage_id for s in study_data.config.areas[area_id].st_storages):
             raise STStorageNotFound(area_id, storage_id)
         paths = [
@@ -508,8 +507,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
 
     def _update_st_storage_config(self, area_id: str, storage: STStorage) -> None:
         study_data = self.get_file_study().config
-        if area_id not in study_data.areas:
-            raise ValueError(f"The area '{area_id}' does not exist")
+        check_area_exists(study_data, area_id)
 
         # Mirror the DB read path which initializes version-specific defaults
         # (enabled, ...) so consumers reading from `config` see the same

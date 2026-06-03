@@ -19,6 +19,7 @@ from antarest.study.business.model.area_properties_model import (
     sort_filter_options,
 )
 from antarest.study.dao.api.area_properties_dao import AreaPropertiesDao
+from antarest.study.dao.file.common import check_area_exists
 from antarest.study.model import STUDY_VERSION_8_3
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     AdequacyPatchFileData,
@@ -54,9 +55,7 @@ class FileStudyAreaPropertiesDao(AreaPropertiesDao, ABC):
     @override
     def get_area_properties(self, area_id: str) -> AreaProperties:
         file_study = self.get_file_study()
-
-        if area_id not in file_study.config.areas:
-            raise AreaNotFound(area_id)
+        check_area_exists(file_study.config, area_id)
 
         current_thermal_props = file_study.tree.get(get_thermal_path())
         current_optim_properties = file_study.tree.get(get_optimization_path(area_id))
