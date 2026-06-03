@@ -28,14 +28,14 @@ theme:
 
 nav:
   - Home: index.md
-  - Build from source: developer-guide/install/0-INSTALL.md
-  - Configuration: developer-guide/install/1-CONFIG.md
-  - Deployment: developer-guide/install/2-DEPLOY.md
-  - Architecture: developer-guide/architecture/0-introduction.md
-  - Database management: developer-guide/architecture/1-database.md
-  - Add a new study version: developer-guide/1-add-new-antares-version.md
+  - Build from source: installation.md
+  - Configuration: configuration.md
+  - Deployment: deploy.md
+  - Architecture: architecture.md
+  - Database management: database.md
+  - Add a new study version: add-new-antares-version.md
   - Changelog: CHANGELOG.md
-  - Contributing: developer-guide/0-developer-tools.md
+  - Contributing: contributing.md
   
 extra:
   generator: false

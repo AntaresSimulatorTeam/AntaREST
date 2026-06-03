@@ -55,7 +55,7 @@ The front end is a [React](https://reactjs.org/) web application.
 
 Antares Web is currently under development. Feel free to 
 [submit any issue](https://github.com/AntaresSimulatorTeam/AntaREST/issues).
-You can also contribute to the code (see [contribution guide](./developer-guide/0-developer-tools.md)).
+You can also contribute to the code (see [contribution guide](./contributing.md)).
 
 
 [ci_result]: https://github.com/AntaresSimulatorTeam/AntaREST/actions/workflows/main.yml/badge.svg
