@@ -30,7 +30,7 @@ interface Props {
   studyIds: Array<StudyMetadata["id"]>;
 }
 
-function StudyLaunchDialog({ open, onClose, studyIds }: Props) {
+function LaunchStudiesDialog({ open, onClose, studyIds }: Props) {
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -96,4 +96,4 @@ function StudyLaunchDialog({ open, onClose, studyIds }: Props) {
   );
 }
 
-export default StudyLaunchDialog;
+export default LaunchStudiesDialog;

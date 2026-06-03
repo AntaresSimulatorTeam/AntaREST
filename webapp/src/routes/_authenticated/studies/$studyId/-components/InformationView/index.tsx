@@ -26,7 +26,7 @@ import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
 import { Box, Button, Divider, Stack } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import useStudy from "../../-hooks/useStudy";
-import StudyLaunchDialog from "../../../../../-shared/components/studies/dialogs/StudyLaunchDialog";
+import LaunchStudiesDialog from "../../../../../-shared/components/studies/dialogs/LaunchStudiesDialog";
 import CreateVariantDialog from "./CreateVariantDialog";
 import DetailsList from "./DetailsList";
 import LauncherHistory from "./LauncherHistory";
@@ -73,7 +73,9 @@ function InformationView({ variantTree }: Props) {
   };
 
   const handleLaunchStudy = () => {
-    openDialog(({ onClose }) => <StudyLaunchDialog open studyIds={[study.id]} onClose={onClose} />);
+    openDialog(({ onClose }) => (
+      <LaunchStudiesDialog open studyIds={[study.id]} onClose={onClose} />
+    ));
   };
 
   ////////////////////////////////////////////////////////////////
