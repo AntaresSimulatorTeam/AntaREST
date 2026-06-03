@@ -28,8 +28,8 @@ def test_study_data_cleaning(db_dao_920: DatabaseStudyDao, db_session: Session) 
 
     # Check the content of the different tables
     with db_session:
-        data_container_rows = db_session.execute(select(STUDY_DATA_TABLE)).fetchall()
-        assert data_container_rows == [(dao.get_study_id(), dao.get_study_id())]
+        study_data_rows = db_session.execute(select(STUDY_DATA_TABLE)).fetchall()
+        assert study_data_rows == [(dao.get_study_id(),)]
 
         area_properties_rows = db_session.execute(select(AREA_TABLE)).fetchall()
         assert area_properties_rows == []

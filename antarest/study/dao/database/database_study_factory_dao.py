@@ -104,7 +104,7 @@ class DatabaseStudyDaoFactory(StudyFactoryDao):
         Initialize the study data table as every DB DAO table is linked to it via foreign keys.
         """
         session = self.session
-        upsert_one(session, STUDY_DATA_TABLE, {"study_id": study_id, "study_data_id": study_id})
+        upsert_one(session, STUDY_DATA_TABLE, {"study_id": study_id})
         session.commit()
 
     @override

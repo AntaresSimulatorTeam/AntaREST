@@ -42,7 +42,7 @@ XPANSION_SETTINGS_TABLE = Table(
     Column("sensitivity_capex", Boolean(), nullable=False),
     ForeignKeyConstraint(
         ["study_id"],
-        ["study_data_container.study_data_id"],
+        ["study_data.study_id"],
         name="fk_xpansion_settings_study_id",
         ondelete="CASCADE",
     ),

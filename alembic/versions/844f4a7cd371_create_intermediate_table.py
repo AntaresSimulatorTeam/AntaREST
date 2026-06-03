@@ -16,7 +16,7 @@ branch_labels = None
 depends_on = None
 
 
-INTERMEDIATE_TABLE = 'study_data_container'
+INTERMEDIATE_TABLE = 'study_data'
 
 DAO_TABLES = [
     "area",
@@ -152,11 +152,10 @@ def upgrade():
     op.create_table(
         INTERMEDIATE_TABLE,
         sa.Column('study_id', sa.String(length=36), sa.ForeignKey('study.id', ondelete='CASCADE'), nullable=False, primary_key=True),
-        sa.Column('study_data_id', sa.String(length=36), nullable=False, unique=True),
     )
 
     # For each DAO table that previously referenced study.id, we'll now use the intermediate table
-    _transform_tables(f"{INTERMEDIATE_TABLE}.study_data_id")
+    _transform_tables(f"{INTERMEDIATE_TABLE}.study_id")
 
 def downgrade():
     _transform_tables("study.id")

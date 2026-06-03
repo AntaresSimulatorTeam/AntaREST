@@ -31,7 +31,7 @@ AREA_TABLE = Table(
     Column(
         "study_id",
         String(36),
-        ForeignKey("study_data_container.study_data_id", ondelete="CASCADE"),
+        ForeignKey("study_data.study_id", ondelete="CASCADE"),
         nullable=False,
         primary_key=True,
     ),

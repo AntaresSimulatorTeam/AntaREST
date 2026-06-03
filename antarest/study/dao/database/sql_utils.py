@@ -106,9 +106,11 @@ def upsert_multiple(
         else:
             stmt = sqlite_insert(table).values(batch)
 
-        stmt = stmt.on_conflict_do_update(
-            index_elements=key_columns,
-            set_={column: getattr(stmt.excluded, column.name) for column in update_columns} or None,
-        )
+        if update_columns:
+            # `on_conflict_do_update` needs a non-empty set_ clause
+            stmt = stmt.on_conflict_do_update(
+                index_elements=key_columns,
+                set_={column: getattr(stmt.excluded, column.name) for column in update_columns},
+            )
 
         session.execute(stmt)

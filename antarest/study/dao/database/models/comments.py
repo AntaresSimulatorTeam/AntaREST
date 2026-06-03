@@ -25,5 +25,5 @@ COMMENTS_TABLE = Table(
     metadata,
     Column("study_id", String(36), nullable=False, primary_key=True),
     Column("comments", Text(), nullable=False, server_default=""),
-    ForeignKeyConstraint(["study_id"], ["study_data_container.study_data_id"], ondelete="CASCADE"),
+    ForeignKeyConstraint(["study_id"], ["study_data.study_id"], ondelete="CASCADE"),
 )
