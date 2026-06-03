@@ -4,7 +4,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-00599c?style=for-the-badge&logo=TypeScript&logoColor=61DAFB)
 ![React](https://img.shields.io/badge/React-00599c?style=for-the-badge&logo=react&logoColor=61DAFB)
 
-![](assets/antares.png "Antares Web Logo")
+![](assets/antares.svg "Antares Web Logo")
 > Web API and UI for [Antares Simulator][antares-simulator-website]
 
 Please see the [Antares Web Documentation][antares-web-readthedocs] for an introductory tutorial,
