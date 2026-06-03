@@ -20,9 +20,15 @@
 
 ## About
 
-**Antares Web** is a web platform developed by RTE to manage, configure, and interact with Antares Simulator, RTE’s adequacy simulation software for power system studies, [Antares Simulator](https://antares-simulator.org). Antares Simulator is an open-source power system simulator that enables detailed modeling of energy consumption, generation, and transportation, performing probabilistic simulations across year-long scenarios with 8760 hourly time-frames.
+**Antares Web** is a web platform developed by RTE to manage, configure, 
+and interact with Antares Simulator which is part of 
+[Antares](https://antares-doc.readthedocs.io/en/latest/), RTE backed adequacy simulation software 
+for power system studies. Antares Simulator is an open-source power system simulator 
+that enables detailed modeling of energy consumption, generation, and transportation, 
+performing probabilistic simulations across year-long scenarios with 8760 hourly time-frames.
 
-Antares Web provides a modern REST API and web interface for managing Antares Simulator studies, adding powerful features for collaboration, storage optimization, and advanced editing capabilities.
+Antares Web provides a modern REST API and web interface for managing Antares Simulator studies, 
+adding powerful features for collaboration, storage optimization, and advanced editing capabilities.
 
 ### Key Features
 
@@ -115,7 +121,8 @@ Run with default configuration:
 docker run -p 8080:5000 -e GUNICORN_WORKERS=1 antarest
 ```
 
-For production deployment with external database and Redis, see the [deployment documentation](https://antares-web.readthedocs.io/en/latest/developer-guide/install/2-DEPLOY.html).
+For production deployment with external database and Redis, see the 
+[deployment documentation](https://antares-web.readthedocs.io/en/latest/developer-guide/install/2-DEPLOY.html).
 
 ## Usage
 
@@ -143,7 +150,9 @@ export GUNICORN_WORKERS=4
 uv run gunicorn --config conf/gunicorn.py --worker-class=uvicorn.workers.UvicornWorker antarest.wsgi:app
 ```
 
-**Note**: In production, we now use an alternative deployment mode where Gunicorn is not used for load balancing. Instead, we start multiple independent workers on different ports, allowing upstream load balancing to be handled by tools like nginx.
+**Note**: In production, we now use an alternative deployment mode where Gunicorn is not used 
+for load balancing. Instead, we start multiple independent workers on different ports, 
+allowing upstream load balancing to be handled by tools like nginx.
 
 ### API Documentation
 
@@ -200,14 +209,15 @@ mypy
 
 ## Documentation
 
-- **Full Documentation**: [antares-web.readthedocs.io](https://antares-web.readthedocs.io/)
-- **Antares Simulator**: [antares-simulator.readthedocs.io](https://antares-simulator.readthedocs.io/)
+- **Antares user documentation including on using Antares Web**: [antares-doc.readthedocs.io](https://antares-doc.readthedocs.io/en/latest/)
+- **Antares Web technical documentation**: [antares-web.readthedocs.io](https://antares-web.readthedocs.io/en/latest/)
 
 ---
 
 ## Contributing
 
-We welcome contributions from the community! Whether you're fixing bugs, adding features, or improving documentation, your help is appreciated.
+We welcome contributions from the community! Whether you're fixing bugs, 
+adding features, or improving documentation, your help is appreciated.
 
 Please read our [Contributing Guide](./CONTRIBUTING.md) to learn about:
 - Setting up your development environment
@@ -221,7 +231,7 @@ Please read our [Contributing Guide](./CONTRIBUTING.md) to learn about:
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
-Copyright © 2007-2025 RTE (https://www.rte-france.com)
+Copyright © 2007-2026 RTE (https://www.rte-france.com)
 
 ---
 

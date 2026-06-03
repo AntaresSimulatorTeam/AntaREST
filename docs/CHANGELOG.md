@@ -1,6 +1,46 @@
 Antares Web Changelog
 =====================
 
+v2.32.0 (2026-05-26)
+--------------------
+
+### Features
+* **study**: import study in given directory [`#3182`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3182)
+* **reserves**: implement need matrix [`#3191`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3191)
+* **ui-studies**: persist list view mode in localStorage [`#3198`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3198)
+* **ui-study**: specific home view for archived study [`#3195`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3195)
+* **ui-study**: hide job actions when study is archived [`#3204`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3204)
+* **study**: forbid invalid characters in output_suffix [`#3210`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3210)
+* **ui-study**: hide disk usage for external study [`#3213`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3213)
+* **variant**: block snapshot generation when parent is archived [`#3211`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3211)
+* **logging**: use ECS formatter, add more context fields [`#3206`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3206)
+* **backend_tablemode**: finished implementing tablemode and testing [`#3193`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3193)
+* **feat(binding-constraints)!**: alleviate binding constraints in config by using BindingConstraintConfig by @olivierPigeon-RTE in https://github.com/AntaresSimulatorTeam/AntaREST/pull/3203
+
+
+### Bug Fixes
+
+* **ui-api**: pass target_version as query parameter instead of json to upgrade studies [`#3142`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3142)
+* **raw**: allow user resource modification on db studies [`#3179`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3179)
+* **reserves**: remove name field [`#3188`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3188)
+* **xpansion**: allow tree build for in-memory jobs [`#3192`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3192)
+* **logs**: logs dir must be shared between workers [`#3197`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3197)
+* **ui-matrix**: fix column header visibility on grouped matrix columns [`#3200`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3200)
+* **db-dao**: fix enum types definition [`#3199`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3199)
+* **tablemode_backend**: replaced uuid name by 'table_id' [`#3209`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3209)
+* **task**: use short transaction when polling for task status [`#3212`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3212)
+* **ui-studies**: otherOptions validation issue in launch dialog [`#3223`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3223)
+
+### Performances
+* **download**: use short transactions when polling for download readiness [`#3196`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3196)
+
+### Refactorings
+* **disk_space_analyzer**: reinforcing disk space analysis function [`#3208`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3208)
+* **matrix**: remove matrix prefixes and "URI mapper" [`#3202`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3202)
+
+### Miscellaneous
+* **release**: include uv.lock file in update_version script [`#3190`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3190)
+
 v2.31.0 (2026-04-23)
 --------------------
 

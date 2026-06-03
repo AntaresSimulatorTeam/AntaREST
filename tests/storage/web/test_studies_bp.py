@@ -234,6 +234,7 @@ def test_list_studies(tmp_path: str) -> None:
             workspace="default",
             managed=True,
             archived=False,
+            storage_mode=StorageMode.DATABASE,
         ),
         "study2": StudyMetadataDTO(
             id="b",
@@ -248,6 +249,7 @@ def test_list_studies(tmp_path: str) -> None:
             workspace="default",
             managed=True,
             archived=False,
+            storage_mode=StorageMode.FILESYSTEM,
         ),
     }
 
@@ -274,6 +276,7 @@ def test_study_metadata(tmp_path: str) -> None:
         workspace="default",
         managed=True,
         archived=False,
+        storage_mode=StorageMode.FILESYSTEM,
     )
     storage_service = Mock()
     storage_service.get_study_information.return_value = study
