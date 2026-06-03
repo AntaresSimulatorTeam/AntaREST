@@ -43,23 +43,12 @@ class FileStudyReservesGlobalParametersDao(ReservesGlobalParametersDao, ABC):
             data = file_study.tree.get(_get_reserves_ini_path(area_id))
         except (ChildNotFoundError, KeyError):
             data = {}
-        if GLOBAL_PARAMETERS_SECTION not in data:
-            raise ValueError(f"Reserves global parameters not found for area '{area_id}'")
         return parse_reserves_global_parameters(data)
 
     @override
     def get_all_reserves_global_parameters(self) -> ReservesGlobalParametersMapping:
         file_study = self.get_file_study()
-        result: ReservesGlobalParametersMapping = {}
-        for area_id in file_study.config.areas:
-            try:
-                data = file_study.tree.get(_get_reserves_ini_path(area_id))
-            except (ChildNotFoundError, KeyError):
-                continue
-            if GLOBAL_PARAMETERS_SECTION not in data:
-                continue
-            result[area_id] = parse_reserves_global_parameters(data)
-        return result
+        return {area_id: self.get_reserves_global_parameters(area_id) for area_id in file_study.config.areas}
 
     @override
     def save_reserves_global_parameters(self, mapping: ReservesGlobalParametersMapping) -> None:

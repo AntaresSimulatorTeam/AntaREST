@@ -15,16 +15,20 @@ import pytest
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from tests.study.dao.utils import save_area
 
 
-def test_get_raises_when_no_row_for_existing_area(dao_10_0: StudyDao) -> None:
+def test_get_when_no_row_for_existing_area(dao_10_0: StudyDao) -> None:
     dao = dao_10_0
     area_id = "paris"
     save_area(dao, area_id)
 
-    with pytest.raises(ValueError):
-        dao.get_reserves_global_parameters(area_id)
+    if isinstance(dao, DatabaseStudyDao):
+        with pytest.raises(ValueError):
+            dao.get_reserves_global_parameters(area_id)
+    else:
+        assert dao.get_reserves_global_parameters(area_id) == ReservesGlobalParameters()
 
 
 def test_get_raises_when_area_does_not_exist(dao_10_0: StudyDao) -> None:

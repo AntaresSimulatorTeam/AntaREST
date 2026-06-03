@@ -74,12 +74,6 @@ _AREA_ITEM_TABLE_MAP: dict[ScenarioType, tuple[Table, str]] = {
     ScenarioType.SHORT_TERM_STORAGE_INFLOWS: (SCENARIO_STORAGE_INFLOWS_TABLE, "st_storage_id"),
 }
 
-_AREA_ITEM_GETTER: dict[ScenarioType, str] = {
-    ScenarioType.THERMAL: "get_all_thermals",
-    ScenarioType.RENEWABLE: "get_all_renewables",
-    ScenarioType.SHORT_TERM_STORAGE_INFLOWS: "get_all_st_storages",
-}
-
 
 class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
     """
