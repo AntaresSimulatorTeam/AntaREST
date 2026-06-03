@@ -21,7 +21,7 @@ from typing_extensions import override
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.study.business.model.thematic_trimming_model import (
     ThematicTrimming,
-    initialize_thematic_trimming_against_version,
+    check_thematic_trimming_complete,
 )
 from antarest.study.dao.api.thematic_trimming_dao import ThematicTrimmingDao
 from antarest.study.dao.database.models.thematic_trimming import THEMATIC_TRIMMING_TABLE
@@ -51,12 +51,11 @@ class DatabaseThematicTrimmingDao(ThematicTrimmingDao):
         row = self._db_session.execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
-        trimming = ThematicTrimming()
-        initialize_thematic_trimming_against_version(trimming, self.get_impl().get_version())
-        return trimming.model_copy(update=row.thematic_trimming)
+        return ThematicTrimming.model_validate(row.thematic_trimming)
 
     @override
     def save_thematic_trimming(self, trimming: ThematicTrimming) -> None:
+        check_thematic_trimming_complete(trimming, self.get_impl().get_version())
         session = self._db_session
         study_id = self._study_id
         values = {"study_id": study_id, "thematic_trimming": trimming.model_dump(exclude_none=True)}

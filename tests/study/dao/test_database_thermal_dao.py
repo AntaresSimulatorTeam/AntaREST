@@ -27,6 +27,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterCreation,
     ThermalClusterGroup,
     ThermalCostGeneration,
+    initialize_thermal_cluster,
 )
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -43,10 +44,18 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 from tests.study.dao.utils import save_area
 
 
+def _make_thermal(dao: StudyDao, **kwargs) -> ThermalCluster:
+    """Build a fully-initialized ThermalCluster so DAO write-side validation passes."""
+    cluster = ThermalCluster(**kwargs)
+    initialize_thermal_cluster(cluster, dao.get_version())
+    return cluster
+
+
 def test_save_thermal_creates_cluster(dao: StudyDao) -> None:
     save_area(dao, "Paris")
 
-    thermal = ThermalCluster(
+    thermal = _make_thermal(
+        dao,
         id="gas_cluster",
         name="Gas Cluster",
         unit_count=2,
@@ -123,8 +132,8 @@ def test_save_thermal_creates_cluster(dao: StudyDao) -> None:
 def test_save_thermal_overwrites_existing(dao: StudyDao) -> None:
     save_area(dao, "Paris")
 
-    dao.save_thermals({"paris": [ThermalCluster(name="Gas", nominal_capacity=100.0)]})
-    dao.save_thermals({"paris": [ThermalCluster(name="Gas", nominal_capacity=200.0)]})
+    dao.save_thermals({"paris": [_make_thermal(dao, name="Gas", nominal_capacity=100.0)]})
+    dao.save_thermals({"paris": [_make_thermal(dao, name="Gas", nominal_capacity=200.0)]})
 
     result = dao.get_thermal("paris", "gas")
     assert result.nominal_capacity == 200.0
@@ -136,8 +145,8 @@ def test_save_multiple_thermal_clusters(dao: StudyDao) -> None:
     dao.save_thermals(
         {
             "paris": [
-                ThermalCluster(name="Gas", nominal_capacity=200.0),
-                ThermalCluster(name="Nuclear", nominal_capacity=500.0),
+                _make_thermal(dao, name="Gas", nominal_capacity=200.0),
+                _make_thermal(dao, name="Nuclear", nominal_capacity=500.0),
             ]
         }
     )
@@ -151,8 +160,8 @@ def test_save_multiple_thermal_clusters(dao: StudyDao) -> None:
     dao.save_thermals(
         {
             "paris": [
-                ThermalCluster(name="Nuclear", nominal_capacity=1000.0),
-                ThermalCluster(name="Fuel", nominal_capacity=100.0),
+                _make_thermal(dao, name="Nuclear", nominal_capacity=1000.0),
+                _make_thermal(dao, name="Fuel", nominal_capacity=100.0),
             ]
         }
     )
@@ -166,8 +175,8 @@ def test_save_multiple_thermal_clusters(dao: StudyDao) -> None:
         dao.save_thermals(
             {
                 "nonexistent": [
-                    ThermalCluster(name="Nuclear", nominal_capacity=1000.0),
-                    ThermalCluster(name="Fuel", nominal_capacity=100.0),
+                    _make_thermal(dao, name="Nuclear", nominal_capacity=1000.0),
+                    _make_thermal(dao, name="Fuel", nominal_capacity=100.0),
                 ]
             }
         )
@@ -175,7 +184,7 @@ def test_save_multiple_thermal_clusters(dao: StudyDao) -> None:
 
 def test_get_one_thermal_cluster(dao: StudyDao) -> None:
     save_area(dao, "Paris")
-    dao.save_thermals({"paris": [ThermalCluster(name="Gas")]})
+    dao.save_thermals({"paris": [_make_thermal(dao, name="Gas")]})
 
     cluster = dao.get_thermal("paris", "gas")
     # Intentional divergence: FS keeps the original case (e.g. "Gas") for backward
@@ -195,7 +204,7 @@ def test_get_all_thermals(dao: StudyDao) -> None:
     save_area(dao, "Paris")
     save_area(dao, "London")
 
-    dao.save_thermals({"paris": [ThermalCluster(name="Gas")], "london": [ThermalCluster(name="Coal")]})
+    dao.save_thermals({"paris": [_make_thermal(dao, name="Gas")], "london": [_make_thermal(dao, name="Coal")]})
 
     all_thermals = dao.get_all_thermals()
     assert set(all_thermals.keys()) == {"paris", "london"}
@@ -208,7 +217,7 @@ def test_get_all_thermals(dao: StudyDao) -> None:
 
 def test_delete_thermal(dao: StudyDao) -> None:
     save_area(dao, "Paris")
-    thermal = ThermalCluster(id="gas", name="Gas")
+    thermal = _make_thermal(dao, id="gas", name="Gas")
     dao.save_thermals({"paris": [thermal]})
 
     assert dao.thermal_exists("paris", "gas")
@@ -235,7 +244,7 @@ def test_thermal_exists_returns_false_for_unknown_area(dao: StudyDao) -> None:
 def test_thermal_matrix_round_trip(dao: StudyDao, matrix_service) -> None:
     """Matrices survive a save/get round-trip on both backends."""
     save_area(dao, "Paris")
-    dao.save_thermals({"paris": [ThermalCluster(name="Gas")]})
+    dao.save_thermals({"paris": [_make_thermal(dao, name="Gas")]})
 
     dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
     series_id = matrix_service.create(dataframe)
@@ -257,7 +266,7 @@ def test_area_with_no_clusters_are_absent_from_clusters_dict(dao: StudyDao) -> N
     save_area(dao, "germany")
     save_area(dao, "italy")
 
-    dao.save_thermals({"germany": [ThermalCluster(name="Gas")]})
+    dao.save_thermals({"germany": [_make_thermal(dao, name="Gas")]})
 
     clusters = dao.get_all_thermals()
 
@@ -286,7 +295,7 @@ def test_save_thermal_and_upper_case_name(dao: StudyDao, command_context: Comman
 def test_thermal_matrices_cascade_delete(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     """Deleting a thermal cluster cascades to all matrix tables (DB-level FK cascade)."""
     save_area(db_dao, "Paris")
-    db_dao.save_thermals({"paris": [ThermalCluster(name="Gas")]})
+    db_dao.save_thermals({"paris": [_make_thermal(db_dao, name="Gas")]})
 
     matrix_service = db_dao._matrix_service
     dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
@@ -312,7 +321,7 @@ def test_thermal_matrices_cascade_delete(db_session: Session, db_dao: DatabaseSt
 def test_get_thermal_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> None:
     """DB raises ValueError with a specific message when a matrix row is absent."""
     save_area(db_dao, "Paris")
-    db_dao.save_thermals({"paris": [ThermalCluster(name="Gas")]})
+    db_dao.save_thermals({"paris": [_make_thermal(db_dao, name="Gas")]})
 
     getters = [
         db_dao.get_thermal_prepro,

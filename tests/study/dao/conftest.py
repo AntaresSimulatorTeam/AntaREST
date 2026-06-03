@@ -38,7 +38,7 @@ from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint, initialize_st_storage
-from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -352,7 +352,9 @@ def build_real_case_study(
 
     # Create thermal cluster matrices
     thermal_id = "gas_cluster"
-    dao.save_thermals({area_id: [ThermalCluster(id=thermal_id, name="Gas Cluster")]})
+    thermal = ThermalCluster(id=thermal_id, name="Gas Cluster")
+    initialize_thermal_cluster(thermal, dao.get_version())
+    dao.save_thermals({area_id: [thermal]})
     dao.save_thermal_prepro({area_id: {thermal_id: thermal_prepro_id}})
     dao.save_thermal_modulation({area_id: {thermal_id: thermal_modulation_id}})
     dao.save_thermal_series({area_id: {thermal_id: thermal_series_id}})

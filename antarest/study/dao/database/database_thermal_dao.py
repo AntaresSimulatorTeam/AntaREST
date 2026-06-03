@@ -27,8 +27,7 @@ from typing_extensions import override
 from antarest.core.exceptions import AreaNotFound, ThermalClusterNotFound, ThermalClustersNotFound
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
-    initialize_thermal_cluster,
-    validate_thermal_cluster_against_version,
+    check_thermal_cluster_complete,
 )
 from antarest.study.dao.api.thermal_dao import ThermalDao
 from antarest.study.dao.common import AreaId, SeriesId, ThermalId, ThermalSeriesMapping
@@ -80,11 +79,7 @@ class DatabaseThermalDao(ThermalDao):
         del data["study_id"]
         del data["area_id"]
         data["id"] = data.pop("thermal_id")
-        cluster = ThermalCluster(**data)
-        version = self.get_impl().get_version()
-        validate_thermal_cluster_against_version(version, cluster)
-        initialize_thermal_cluster(cluster, version)
-        return cluster
+        return ThermalCluster(**data)
 
     def _convert_thermal_cluster_to_row(self, area_id: str, cluster: ThermalCluster) -> dict[str, Any]:
         values = dict(study_id=self._study_id, area_id=area_id, **cluster.model_dump())
@@ -155,9 +150,11 @@ class DatabaseThermalDao(ThermalDao):
             return
 
         session = self._db_session
+        version = self.get_impl().get_version()
         values = []
         for area_id, thermals in data.items():
             for thermal in thermals:
+                check_thermal_cluster_complete(thermal, version)
                 values.append(self._convert_thermal_cluster_to_row(area_id, thermal))
 
         try:

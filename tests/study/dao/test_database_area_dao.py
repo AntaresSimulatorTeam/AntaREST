@@ -19,7 +19,7 @@ import pytest
 from antarest.core.exceptions import AreaNotFound, LayerNotFound
 from antarest.study.business.model.area_model import AreaUI
 from antarest.study.business.model.layer_model import Layer
-from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from tests.study.dao.conftest import create_area
@@ -81,7 +81,12 @@ def test_get_all_areas_info_returns_areas(dao: StudyDao) -> None:
     save_area(dao, "Paris")
     save_area(dao, "London")
     save_area(dao, "Berlin")
-    dao.save_thermals({"paris": [ThermalCluster(name="gas")], "berlin": [ThermalCluster(name="coal")]})
+    gas = ThermalCluster(name="gas")
+    coal = ThermalCluster(name="coal")
+    version = dao.get_version()
+    initialize_thermal_cluster(gas, version)
+    initialize_thermal_cluster(coal, version)
+    dao.save_thermals({"paris": [gas], "berlin": [coal]})
 
     areas = dao.get_all_areas_info()
     assert len(areas) == 3

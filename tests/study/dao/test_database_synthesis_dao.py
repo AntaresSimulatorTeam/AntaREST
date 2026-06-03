@@ -58,7 +58,9 @@ class TestDatabaseSynthesisDao:
         save_area(dao, "France")
         save_area(dao, "Germany")
 
-        dao.save_thermals({"france": [ThermalCluster(id="coal_plant", name="Coal Plant")]})
+        coal = ThermalCluster(id="coal_plant", name="Coal Plant")
+        initialize_thermal_cluster(coal, version)
+        dao.save_thermals({"france": [coal]})
         dao.save_renewable("france", RenewableCluster(id="wind_farm", name="Wind Farm"))
         battery = STStorage(id="battery", name="Battery")
         initialize_st_storage(battery, version)
