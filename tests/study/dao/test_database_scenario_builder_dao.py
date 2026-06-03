@@ -21,7 +21,7 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.scenario_builder_model import RANDOM, Ruleset, ScenarioType
-from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
+from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint, initialize_st_storage
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import StudyDao
 from tests.study.dao.utils import save_area
@@ -30,6 +30,13 @@ from tests.study.dao.utils import save_area
 def _setup_areas(dao: StudyDao, *area_names: str) -> None:
     for name in area_names:
         save_area(dao, name)
+
+
+def _make_storage(dao: StudyDao, **kwargs) -> STStorage:
+    """Build a fully-initialized STStorage so DAO write-side validation passes."""
+    storage = STStorage(**kwargs)
+    initialize_st_storage(storage, dao.get_version())
+    return storage
 
 
 def _set_nb_years(dao: StudyDao, nb_years: int) -> None:
@@ -125,7 +132,7 @@ def test_save_ruleset_with_storage_inflows(dao_and_matrix_service) -> None:
     # storage_inflows requires v9.3+
     dao, _ = dao_and_matrix_service
     _setup_areas(dao, "fr")
-    dao.save_st_storages({"fr": [STStorage(id="battery_1", name="Battery 1")]})
+    dao.save_st_storages({"fr": [_make_storage(dao, id="battery_1", name="Battery 1")]})
     ruleset = Ruleset(storage_inflows={"fr": {"battery_1": {"0": 4, "1": 5}}})
     dao.save_scenario_builder(ruleset)
     result = dao.get_ruleset()
@@ -137,7 +144,7 @@ def test_save_ruleset_with_storage_constraints(dao_and_matrix_service) -> None:
     # storage_constraints requires v9.3+
     dao, _ = dao_and_matrix_service
     _setup_areas(dao, "fr")
-    dao.save_st_storages({"fr": [STStorage(id="battery", name="Battery")]})
+    dao.save_st_storages({"fr": [_make_storage(dao, id="battery", name="Battery")]})
     dao.save_st_storage_additional_constraints(
         {"fr": {"battery": [STStorageAdditionalConstraint(name="Constraint_A")]}}
     )
@@ -188,7 +195,7 @@ def test_get_scenario_by_type_storage_constraints(
     # storage_constraints requires v9.3+
     dao, _ = dao_and_matrix_service
     _setup_areas(dao, "fr")
-    dao.save_st_storages({"fr": [STStorage(id="battery", name="Battery")]})
+    dao.save_st_storages({"fr": [_make_storage(dao, id="battery", name="Battery")]})
     dao.save_st_storage_additional_constraints({"fr": {"battery": [STStorageAdditionalConstraint(id="c1", name="C1")]}})
     dao.save_scenario_builder(Ruleset(storage_constraints={"fr": {"battery": {"c1": {"0": 10}}}}))
 
@@ -301,8 +308,11 @@ def test_get_scenario_by_type_includes_unsaved_storage_constraints(
     _set_nb_years(dao, 2)
     dao.save_st_storages(
         {
-            "fr": [STStorage(id="battery", name="Battery"), STStorage(id="battery2", name="Battery 2")],
-            "de": [STStorage(id="battery_d", name="Battery DE")],
+            "fr": [
+                _make_storage(dao, id="battery", name="Battery"),
+                _make_storage(dao, id="battery2", name="Battery 2"),
+            ],
+            "de": [_make_storage(dao, id="battery_d", name="Battery DE")],
         }
     )
     dao.save_st_storage_additional_constraints(
@@ -385,7 +395,7 @@ def test_scenario_builder_st_storage_deleted(
     dao, _ = dao_and_matrix_service
     _setup_areas(dao, "fr")
 
-    dao.save_st_storages({"fr": [STStorage(id="battery_1", name="Battery 1")]})
+    dao.save_st_storages({"fr": [_make_storage(dao, id="battery_1", name="Battery 1")]})
     dao.save_scenario_builder(Ruleset(storage_inflows={"fr": {"battery_1": {"0": 4}}}))
 
     result = dao.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_INFLOWS)
@@ -404,7 +414,7 @@ def test_scenario_builder_st_storage_constraint_deleted(
     dao, _ = dao_and_matrix_service
     _setup_areas(dao, "fr")
 
-    dao.save_st_storages({"fr": [STStorage(id="battery", name="Battery")]})
+    dao.save_st_storages({"fr": [_make_storage(dao, id="battery", name="Battery")]})
     dao.save_st_storage_additional_constraints(
         {"fr": {"battery": [STStorageAdditionalConstraint(name="Constraint_A")]}}
     )
@@ -426,7 +436,7 @@ def test_scenario_builder_st_storage_deleted_cascades_to_constraints(
     dao, _ = dao_and_matrix_service
     _setup_areas(dao, "fr")
 
-    dao.save_st_storages({"fr": [STStorage(id="battery", name="Battery")]})
+    dao.save_st_storages({"fr": [_make_storage(dao, id="battery", name="Battery")]})
     dao.save_st_storage_additional_constraints({"fr": {"battery": [STStorageAdditionalConstraint(name="C1")]}})
     dao.save_scenario_builder(
         Ruleset(

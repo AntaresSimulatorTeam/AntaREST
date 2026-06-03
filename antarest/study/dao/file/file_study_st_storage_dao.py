@@ -22,7 +22,6 @@ from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
     STStorageAdditionalConstraintsMap,
-    initialize_st_storage,
 )
 from antarest.study.dao.api.st_storage_dao import STStorageDao
 from antarest.study.dao.common import AreaId, StStorageConstraintSeriesMapping, StStorageId, StStorageSeriesMapping
@@ -508,11 +507,6 @@ class FileStudySTStorageDao(STStorageDao, ABC):
     def _update_st_storage_config(self, area_id: str, storage: STStorage) -> None:
         study_data = self.get_file_study().config
         check_area_exists(study_data, area_id)
-
-        # Mirror the DB read path which initializes version-specific defaults
-        # (enabled, ...) so consumers reading from `config` see the same
-        # fully-populated storage as the DB DAO returns.
-        initialize_st_storage(storage, study_data.version)
 
         for k, existing_storage in enumerate(study_data.areas[area_id].st_storages):
             if existing_storage.id == storage.id:

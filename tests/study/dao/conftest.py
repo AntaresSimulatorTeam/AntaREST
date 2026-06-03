@@ -37,7 +37,7 @@ from antarest.study.business.model.config.optimization_config_model import (
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
-from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
+from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint, initialize_st_storage
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -366,7 +366,9 @@ def build_real_case_study(
 
     # Create ST Storage matrices
     st_storage_id = "battery_storage"
-    dao.save_st_storages({area_id: [STStorage(id=st_storage_id, name="Battery Storage")]})
+    storage = STStorage(id=st_storage_id, name="Battery Storage")
+    initialize_st_storage(storage, dao.get_version())
+    dao.save_st_storages({area_id: [storage]})
     dao.save_st_storage_pmax_injection({area_id: {st_storage_id: sts_pmax_injection_id}})
     dao.save_st_storage_pmax_withdrawal({area_id: {st_storage_id: sts_pmax_withdrawal_id}})
     dao.save_st_storage_lower_rule_curve({area_id: {st_storage_id: sts_lower_rule_curve_id}})

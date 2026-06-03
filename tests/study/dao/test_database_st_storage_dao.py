@@ -23,7 +23,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound, STStorageAdditionalConstraintNotFound, STStorageNotFound
-from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
+from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint, initialize_st_storage
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.st_storage import (
@@ -32,6 +32,13 @@ from antarest.study.dao.database.models.st_storage import (
 )
 from antarest.study.model import STUDY_VERSION_9_3
 from tests.study.dao.utils import save_area
+
+
+def _make_storage(dao: StudyDao, **kwargs) -> STStorage:
+    """Build a fully-initialized STStorage so DAO write-side validation passes."""
+    storage = STStorage(**kwargs)
+    initialize_st_storage(storage, dao.get_version())
+    return storage
 
 
 def test_save_st_storage(dao_builder: Callable[[StudyVersion], StudyDao]) -> None:
@@ -78,7 +85,7 @@ def test_save_st_storage(dao_builder: Callable[[StudyVersion], StudyDao]) -> Non
     assert st_storage.allow_overflow is True
 
     with pytest.raises(AreaNotFound):
-        dao.save_st_storages({"nonexistent": [STStorage(id="st_storage_id_2", name="st-storage")]})
+        dao.save_st_storages({"nonexistent": [_make_storage(dao, id="st_storage_id_2", name="st-storage")]})
 
 
 def test_save_multiple_st_storages(dao: StudyDao) -> None:
@@ -87,8 +94,8 @@ def test_save_multiple_st_storages(dao: StudyDao) -> None:
     dao.save_st_storages(
         {
             "area_1": [
-                STStorage(id="st_storage_id_1", name="st-storage-1", efficiency=0.8),
-                STStorage(id="st_storage_id_2", name="st-storage-2", efficiency=0.9),
+                _make_storage(dao, id="st_storage_id_1", name="st-storage-1", efficiency=0.8),
+                _make_storage(dao, id="st_storage_id_2", name="st-storage-2", efficiency=0.9),
             ]
         }
     )
@@ -107,7 +114,9 @@ def test_save_multiple_st_storages(dao: StudyDao) -> None:
     assert len(all_storages) == 2
 
     with pytest.raises(AreaNotFound):
-        dao.save_st_storages({"nonexistent": [STStorage(id="s1", name="s1"), STStorage(id="s2", name="s2")]})
+        dao.save_st_storages(
+            {"nonexistent": [_make_storage(dao, id="s1", name="s1"), _make_storage(dao, id="s2", name="s2")]}
+        )
 
 
 def test_get_all_st_storages(dao: StudyDao) -> None:
@@ -116,8 +125,8 @@ def test_get_all_st_storages(dao: StudyDao) -> None:
 
     dao.save_st_storages(
         {
-            "area_1": [STStorage(id="st_storage_id_1", name="st-storage-1", efficiency=0.8)],
-            "area_2": [STStorage(id="st_storage_id_2", name="st-storage-2", efficiency=0.9)],
+            "area_1": [_make_storage(dao, id="st_storage_id_1", name="st-storage-1", efficiency=0.8)],
+            "area_2": [_make_storage(dao, id="st_storage_id_2", name="st-storage-2", efficiency=0.9)],
         }
     )
 
@@ -129,7 +138,7 @@ def test_get_all_st_storages(dao: StudyDao) -> None:
 
 def test_get_st_storage_raises_when_missing(dao: StudyDao) -> None:
     save_area(dao, "area_1")
-    dao.save_st_storages({"area_1": [STStorage(id="st_storage_id_1", name="st-storage-1")]})
+    dao.save_st_storages({"area_1": [_make_storage(dao, id="st_storage_id_1", name="st-storage-1")]})
 
     with pytest.raises(STStorageNotFound):
         dao.get_st_storage("area_1", "nonexistent")
@@ -140,7 +149,7 @@ def test_get_st_storage_raises_when_missing(dao: StudyDao) -> None:
 
 def test_st_storage_exists(dao: StudyDao) -> None:
     save_area(dao, "area_1")
-    dao.save_st_storages({"area_1": [STStorage(id="st_storage_id_1", name="st-storage-1", efficiency=0.8)]})
+    dao.save_st_storages({"area_1": [_make_storage(dao, id="st_storage_id_1", name="st-storage-1", efficiency=0.8)]})
     assert dao.st_storage_exists("area_1", "st_storage_id_1")
 
 
@@ -151,7 +160,7 @@ def test_st_storage_exists_returns_false_for_unknown(dao: StudyDao) -> None:
 def test_delete_st_storage(dao: StudyDao) -> None:
     save_area(dao, "area_1")
 
-    dao.save_st_storages({"area_1": [STStorage(id="st_storage_id_1", name="st-storage-1", efficiency=0.8)]})
+    dao.save_st_storages({"area_1": [_make_storage(dao, id="st_storage_id_1", name="st-storage-1", efficiency=0.8)]})
     assert dao.st_storage_exists("area_1", "st_storage_id_1")
 
     with pytest.raises(STStorageNotFound):
@@ -169,7 +178,7 @@ def test_delete_st_storage(dao: StudyDao) -> None:
 def test_save_additional_constraints(dao_builder: Callable[[StudyVersion], StudyDao]) -> None:
     dao = dao_builder(STUDY_VERSION_9_3)
     save_area(dao, "area_1")
-    dao.save_st_storages({"area_1": [STStorage(id="st_storage_id_1", name="st-storage-1", efficiency=0.8)]})
+    dao.save_st_storages({"area_1": [_make_storage(dao, id="st_storage_id_1", name="st-storage-1", efficiency=0.8)]})
 
     dao.save_st_storage_additional_constraints(
         {
@@ -196,7 +205,7 @@ def test_save_additional_constraints(dao_builder: Callable[[StudyVersion], Study
 def test_delete_additional_constraints(dao_builder: Callable[[StudyVersion], StudyDao]) -> None:
     dao = dao_builder(STUDY_VERSION_9_3)
     save_area(dao, "area_1")
-    dao.save_st_storages({"area_1": [STStorage(id="st_storage_id_1", name="st-storage-1", efficiency=0.8)]})
+    dao.save_st_storages({"area_1": [_make_storage(dao, id="st_storage_id_1", name="st-storage-1", efficiency=0.8)]})
 
     dao.save_st_storage_additional_constraints(
         {
@@ -218,7 +227,7 @@ def test_delete_additional_constraints(dao_builder: Callable[[StudyVersion], Stu
 def test_get_all_additional_constraints(dao_builder: Callable[[StudyVersion], StudyDao]) -> None:
     dao = dao_builder(STUDY_VERSION_9_3)
     save_area(dao, "area_1")
-    dao.save_st_storages({"area_1": [STStorage(id="st_storage_id_1", name="st-storage-1")]})
+    dao.save_st_storages({"area_1": [_make_storage(dao, id="st_storage_id_1", name="st-storage-1")]})
 
     dao.save_st_storage_additional_constraints(
         {
@@ -239,7 +248,7 @@ def test_get_all_additional_constraints(dao_builder: Callable[[StudyVersion], St
 def test_st_storage_matrices_lifecycle(db_session: Session, dao_builder: Callable[[StudyVersion], StudyDao]) -> None:
     dao = dao_builder(STUDY_VERSION_9_3)
     save_area(dao, "area_1")
-    dao.save_st_storages({"area_1": [STStorage(id="battery", name="Battery")]})
+    dao.save_st_storages({"area_1": [_make_storage(dao, id="battery", name="Battery")]})
 
     matrix_service = dao._matrix_service
     pmax_injection_df = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
@@ -303,7 +312,7 @@ def test_st_storage_matrices_lifecycle(db_session: Session, dao_builder: Callabl
 def test_get_st_storage_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     save_area(dao, "area_1")
-    dao.save_st_storages({"area_1": [STStorage(id="battery", name="Battery")]})
+    dao.save_st_storages({"area_1": [_make_storage(dao, id="battery", name="Battery")]})
 
     getters = [
         dao.get_st_storage_pmax_injection,
@@ -350,7 +359,7 @@ def test_save_st_storage_matrix_raises_when_missing(db_dao: DatabaseStudyDao) ->
 def test_constraint_matrix_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     dao = db_dao
     save_area(dao, "area_1")
-    dao.save_st_storages({"area_1": [STStorage(id="battery", name="Battery")]})
+    dao.save_st_storages({"area_1": [_make_storage(dao, id="battery", name="Battery")]})
     dao.save_st_storage_additional_constraints(
         {"area_1": {"battery": [STStorageAdditionalConstraint(id="c1", name="constraint-1")]}}
     )
@@ -383,7 +392,7 @@ def test_area_with_no_storages_absent_from_dict(db_dao: DatabaseStudyDao) -> Non
     save_area(dao, "area_1")
     save_area(dao, "area_2")
 
-    dao.save_st_storages({"area_1": [STStorage(id="battery", name="Battery")]})
+    dao.save_st_storages({"area_1": [_make_storage(dao, id="battery", name="Battery")]})
 
     all_storages = dao.get_all_st_storages()
     assert "area_2" not in all_storages
