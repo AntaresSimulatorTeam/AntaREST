@@ -54,8 +54,6 @@ class TestTasksGCIntegration:
 
             # deleting tasks
             with patch("antarest.core.tasks.repository.current_time", return_value=datetime(2026, 2, 20, 0, 0, 0)):
-                import tempfile
-
                 task_result = clean_tasks(
                     task_service=task_service,
                     dry_run=False,

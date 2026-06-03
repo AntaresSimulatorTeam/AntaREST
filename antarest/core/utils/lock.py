@@ -56,7 +56,7 @@ class AntarestFileLock(FileLock):
             )
         except Timeout:
             raise LockNotAcquired(
-                f"Could not acquire file lock '{self.lock_file}'. Another thread is probably holding it."
+                f"Could not acquire file lock '{self.lock_file}'. Another process is probably holding it."
             )
 
 
@@ -67,7 +67,7 @@ def create_file_lock(lock_id: int, lock_folder: Path, timeout: float = -1, block
 
     Usage:
         with db():
-            with create_file_lock(file_lock="my_file.lock", timeout=10, locking=True):
+            with create_file_lock(lock_id=my_lock, lock_folder=my_lock_folder, timeout=10, blocking=True):
                 do_something()
 
     Args:

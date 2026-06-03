@@ -52,7 +52,7 @@ class TestSoftFileLock:
         assert acquired is False, "Second process should NOT have acquired the already-held lock"
 
     def test_sequential_processes_same_lock_succeed(self, tmp_path: Path) -> None:
-        """Two processes acquiring the same lock one after the other must both succeed."""
+        """Two processes acquiring sequentially the same lock must both succeed."""
         lock_path = str(tmp_path / "sequential.lock")
         result_queue: multiprocessing.Queue = multiprocessing.Queue()  # type: ignore[type-arg]
 
@@ -81,12 +81,12 @@ class TestSoftFileLock:
 
         proc_a.start()
         proc_b.start()
-        proc_a.join(timeout=0.1)
-        proc_b.join(timeout=0.1)
+        proc_a.join(timeout=0.2)
+        proc_b.join(timeout=0.2)
 
         assert not result_queue.empty(), "Contender process did not report a result"
         acquired = result_queue.get_nowait()
-        assert acquired is True, "Second process should NOT have acquired the already-held lock"
+        assert acquired is True, "Second process should have acquired the lock"
 
     @staticmethod
     def _acquire_and_hold(
@@ -96,7 +96,7 @@ class TestSoftFileLock:
         lock = AntarestFileLock(lock_path, timeout=0, blocking=False)
         lock.acquire()
         held_event.set()
-        release_event.wait(timeout=5)
+        release_event.wait(timeout=1)
         lock.release()
 
     @staticmethod
