@@ -20,61 +20,11 @@ INTERMEDIATE_TABLE = 'study_data'
 
 DAO_TABLES = [
     "area",
-    "area_ui",
-    "load",
-    "solar",
-    "wind",
-    "reserves",
-    "misc_gen",
-    "reserves_global_parameters",
     "binding_constraint",
-    "binding_constraint_link_term",
-    "binding_constraint_cluster_term",
-    "binding_constraint_values_matrix",
-    "binding_constraint_lt_matrix",
-    "binding_constraint_gt_matrix",
-    "binding_constraint_eq_matrix",
     "comments",
     "district",
-    "hydro_management",
-    "hydro_inflow_structure",
-    "hydro_allocation",
-    "hydro_correlation",
-    "hydro_maxpower",
-    "hydro_reservoir",
-    "hydro_energy",
-    "hydro_run_of_river",
-    "hydro_modulation",
-    "hydro_credit_modulations",
-    "hydro_inflow_pattern",
-    "hydro_water_values",
-    "hydro_mingen",
-    "hydro_max_hourly_gen_power",
-    "hydro_max_hourly_pump_power",
-    "hydro_max_daily_gen_energy",
-    "hydro_max_daily_pump_energy",
     "layer",
-    "link",
-    "link_series",
-    "link_direct_capacity",
-    "link_indirect_capacity",
-    "renewable_cluster",
-    "renewable_series",
-    "reserve_definition",
-    "reserve_need_matrix",
-    "scenario_load",
-    "scenario_hydro",
-    "scenario_wind",
-    "scenario_solar",
-    "scenario_hydro_initial_level",
-    "scenario_hydro_final_level",
-    "scenario_hydro_generation_power",
-    "scenario_ntc",
     "scenario_binding_constraints",
-    "scenario_thermal",
-    "scenario_renewable",
-    "scenario_storage_inflows",
-    "scenario_storage_constraints",
     "general_config",
     "advanced_parameters",
     "adequacy_patch_parameters",
@@ -82,37 +32,12 @@ DAO_TABLES = [
     "optimization_preferences",
     "timeseries_config",
     "playlist",
-    "st_storage",
-    "st_storage_pmax_injection",
-    "st_storage_pmax_withdrawal",
-    "st_storage_lower_rule_curve",
-    "st_storage_upper_rule_curve",
-    "st_storage_inflows",
-    "st_storage_cost_injection",
-    "st_storage_cost_withdrawal",
-    "st_storage_cost_level",
-    "st_storage_cost_variation_injection",
-    "st_storage_cost_variation_withdrawal",
-    "st_storage_additional_constraint",
-    "st_storage_additional_constraint_matrix",
     "thematic_trimming",
-    "thermal_cluster",
-    "thermal_prepro",
-    "thermal_modulation",
-    "thermal_series",
-    "thermal_fuel_cost",
-    "thermal_co2_cost",
     "user_resources",
     "xpansion_settings",
-    "xpansion_sensitivity_projection",
-    "xpansion_adequacy_criterion",
-    "xpansion_adequacy_pattern",
-    "xpansion_constraint",
-    "xpansion_capacity",
-    "xpansion_weight",
 ]
 
-def _transform_tables(new_foreign_key: str):
+def _transform_tables(new_foreign_key: str, reference_table_name: str):
     """    
     SQLITE doesn't support dropping foreign key constraints, so we have to manually alter the tables
     """
@@ -124,7 +49,7 @@ def _transform_tables(new_foreign_key: str):
         # Collect all existing foreign key constraints
         existing_fk_constraints = []
         for fk in table.foreign_key_constraints:
-            if fk.referred_table.name != "study":
+            if fk.referred_table.name != reference_table_name:
                 # Skip the foreign key we want to replace
                 existing_fk_constraints.append(fk)
 
@@ -155,9 +80,9 @@ def upgrade():
     )
 
     # For each DAO table that previously referenced study.id, we'll now use the intermediate table
-    _transform_tables(f"{INTERMEDIATE_TABLE}.study_id")
+    _transform_tables(f"{INTERMEDIATE_TABLE}.study_id", reference_table_name="study")
 
 def downgrade():
-    _transform_tables("study.id")
+    _transform_tables("study.id", reference_table_name=INTERMEDIATE_TABLE)
 
     op.drop_table(INTERMEDIATE_TABLE)
