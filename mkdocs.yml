@@ -35,7 +35,7 @@ nav:
   - Database management: database.md
   - Add a new study version: add-new-antares-version.md
   - Changelog: CHANGELOG.md
-  - Contributing: contributing.md
+  - Contributing: CONTRIBUTING.md
   
 extra:
   generator: false
