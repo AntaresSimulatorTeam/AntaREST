@@ -1,6 +1,7 @@
 # Database Management
 
 We support two types of databases:
+
 - PostgreSQL (for production deployment)
 - SQLite (for the local desktop application)
 
