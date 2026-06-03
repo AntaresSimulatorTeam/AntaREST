@@ -71,7 +71,7 @@ def scan_workspaces(
 
     try:
         with db():
-            with create_file_lock(lock_id=LockId.WATCHER_SCAN):
+            with create_file_lock(lock_id=LockId.WATCHER_SCAN, lock_folder=config.storage.tmp_dir):
                 studies = _collect_studies(config)
                 studies_found = len(studies)
                 logger.info(f"Found {studies_found} studies across all workspaces")

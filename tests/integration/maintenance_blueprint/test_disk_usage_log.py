@@ -12,6 +12,9 @@
 
 """Integration tests for the disk usage log."""
 
+import tempfile
+from pathlib import Path
+
 from antarest.core.config import Config
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import create_file_lock
@@ -26,8 +29,9 @@ class TestDiskUsageLogIntegration:
         assert result.status == BackGroundTaskStatus.SUCCESS
 
     def test_returns_skipped_when_lock_held(self):
+        config = Config.from_dict({"storage": {"tmp_dir": Path(tempfile.gettempdir())}})
         with db():
-            with create_file_lock(lock_id=LockId.DISK_USAGE):
-                result = disk_usage_logging(Config())
+            with create_file_lock(lock_id=LockId.DISK_USAGE, lock_folder=Path(config.storage.tmp_dir)):
+                result = disk_usage_logging(config)
 
             assert result.status == BackGroundTaskStatus.SKIPPED

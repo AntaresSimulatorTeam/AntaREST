@@ -18,6 +18,7 @@ This task deletes unused matrices from the matrix store based on retention time.
 
 import logging
 import time
+from pathlib import Path
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_file_lock
@@ -44,7 +45,9 @@ def _delete_matrices(matrix_service: MatrixService, matrices: set[str], dry_run:
     return failures
 
 
-def clean_matrices(matrix_service: MatrixService, dry_run: bool, retention_time: int) -> GarbageCollectorTaskResult:
+def clean_matrices(
+    matrix_service: MatrixService, dry_run: bool, retention_time: int, lock_folder: Path
+) -> GarbageCollectorTaskResult:
     """
     Run matrix garbage collection.
 
@@ -58,7 +61,7 @@ def clean_matrices(matrix_service: MatrixService, dry_run: bool, retention_time:
 
     try:
         with db():
-            with create_file_lock(lock_id=LockId.MATRIX_GC):
+            with create_file_lock(lock_id=LockId.MATRIX_GC, lock_folder=lock_folder):
                 used_matrices = {m.matrix_id for m in matrix_service.get_used_matrices()}
                 matrices = matrix_service.get_matrices()
                 saved = {m.id: m.created_at for m in matrices}

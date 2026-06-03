@@ -18,13 +18,12 @@ It defines an abstract interface and concrete implementations for different back
 """
 
 import logging
+import os
 from pathlib import Path
 from typing import Callable
 
 from filelock import AcquireReturnProxy, BaseFileLock, FileLock, Timeout
 from typing_extensions import override
-
-from antarest.maintenance.config import get_config, load_config
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +60,7 @@ class AntarestFileLock(FileLock):
             )
 
 
-def create_file_lock(lock_id: int, timeout: float = -1, blocking: bool = False) -> BaseFileLock:
+def create_file_lock(lock_id: int, lock_folder: Path, timeout: float = -1, blocking: bool = False) -> BaseFileLock:
     """
     Factory function to create a FileLock instance.
     This locks makes sure that the given file will not be opened by another process.
@@ -73,6 +72,7 @@ def create_file_lock(lock_id: int, timeout: float = -1, blocking: bool = False) 
 
     Args:
         lock_id: Unique integer identifier for this lock
+        lock_folder: Folder where the lock file will be created
         timeout: the maximum time to wait for the lock, in seconds. -1 means infinite wait
         blocking: If True, wait for lock. If False (default), fail immediately if lock is held.
 
@@ -80,8 +80,5 @@ def create_file_lock(lock_id: int, timeout: float = -1, blocking: bool = False) 
         A FileLock instance appropriate for the current database.
     """
 
-    load_config()
-    config = get_config()
-    tmp_folder = config.storage.tmp_dir
-    lock_file_path = Path(f"{tmp_folder}/{lock_id}.lock")
+    lock_file_path = os.path.join(lock_folder, f"{lock_id}.lock")
     return AntarestFileLock(lock_file=lock_file_path, timeout=timeout, blocking=blocking)

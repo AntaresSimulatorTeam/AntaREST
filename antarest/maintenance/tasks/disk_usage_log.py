@@ -85,7 +85,7 @@ def check_disk_usage(config: Config) -> None:
 def disk_usage_logging(config: Config) -> DiskUsageTaskResult:
     try:
         with db():
-            with create_file_lock(LockId.DISK_USAGE):
+            with create_file_lock(LockId.DISK_USAGE, lock_folder=config.storage.tmp_dir):
                 logger.info("Starting disk usage logging")
                 check_disk_usage(config)
                 logger.info("Disk usage logging finished")

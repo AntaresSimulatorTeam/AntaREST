@@ -13,8 +13,10 @@
 """Integration tests for the auto-archive task."""
 
 import datetime
+import tempfile
 import threading
 import time
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 from antarest.core.interfaces.cache import ICache
@@ -74,6 +76,7 @@ class TestArchiveOldStudiesIntegration:
             threshold_days=60,
             snapshot_retention_days=7,
             dry_run=True,
+            lock_folder=Path(tempfile.gettempdir()),
         )
 
         assert result.status == BackGroundTaskStatus.SUCCESS
@@ -126,6 +129,7 @@ class TestArchiveOldStudiesIntegration:
             threshold_days=60,
             snapshot_retention_days=7,
             dry_run=False,
+            lock_folder=Path(tempfile.gettempdir()),
         )
 
         assert result.status == BackGroundTaskStatus.SUCCESS
@@ -164,6 +168,7 @@ class TestArchiveOldStudiesIntegration:
             threshold_days=60,
             snapshot_retention_days=7,
             dry_run=True,
+            lock_folder=Path(tempfile.gettempdir()),
         )
 
         assert result.status == BackGroundTaskStatus.SUCCESS
@@ -188,11 +193,25 @@ class TestArchiveOldStudiesIntegration:
                 "antarest.maintenance.tasks.auto_archive._get_studies_to_archive",
                 side_effect=slow_get_studies,
             ):
-                results["first"] = archive_old_studies(mock_study_service, mock_output_service, 60, 7, dry_run=True)
+                results["first"] = archive_old_studies(
+                    mock_study_service,
+                    mock_output_service,
+                    60,
+                    7,
+                    dry_run=True,
+                    lock_folder=Path(tempfile.gettempdir()),
+                )
 
         def run_second():
             # Wait for the first call to take the lock
-            results["second"] = archive_old_studies(mock_study_service, mock_output_service, 60, 7, dry_run=True)
+            results["second"] = archive_old_studies(
+                mock_study_service,
+                mock_output_service,
+                60,
+                7,
+                dry_run=True,
+                lock_folder=Path(tempfile.gettempdir()),
+            )
 
         t1 = threading.Thread(target=run_first)
         t2 = threading.Thread(target=run_second)
@@ -235,7 +254,14 @@ class TestArchiveOldStudiesIntegration:
                 "antarest.maintenance.tasks.auto_archive._get_studies_to_archive",
                 side_effect=slow_auto_archive_first_study,
             ):
-                results["first"] = archive_old_studies(mock_study_service, mock_output_service, 60, 7, dry_run=True)
+                results["first"] = archive_old_studies(
+                    mock_study_service,
+                    mock_output_service,
+                    60,
+                    7,
+                    dry_run=True,
+                    lock_folder=Path(tempfile.gettempdir()),
+                )
 
         def run_second():
 
@@ -243,7 +269,14 @@ class TestArchiveOldStudiesIntegration:
                 "antarest.maintenance.tasks.auto_archive._get_studies_to_archive",
                 side_effect=auto_archive_second_study,
             ):
-                results["second"] = archive_old_studies(mock_study_service, mock_output_service, 60, 7, dry_run=True)
+                results["second"] = archive_old_studies(
+                    mock_study_service,
+                    mock_output_service,
+                    60,
+                    7,
+                    dry_run=True,
+                    lock_folder=Path(tempfile.gettempdir()),
+                )
 
         t1 = threading.Thread(target=run_first)
         t2 = threading.Thread(target=run_second)

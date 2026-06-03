@@ -12,7 +12,9 @@
 
 """Integration tests for the blob garbage collection task."""
 
+import tempfile
 import uuid
+from pathlib import Path
 
 from antarest.blobstore.service import BlobService
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -34,6 +36,7 @@ class TestCleanBlobsIntegration:
             result = clean_blobs(
                 blob_service=simple_blob_service,
                 dry_run=False,
+                lock_folder=Path(tempfile.gettempdir()),
             )
 
         assert isinstance(result, GarbageCollectorTaskResult)
@@ -51,6 +54,7 @@ class TestCleanBlobsIntegration:
             result = clean_blobs(
                 blob_service=simple_blob_service,
                 dry_run=True,
+                lock_folder=Path(tempfile.gettempdir()),
             )
 
         assert result.status == BackGroundTaskStatus.SUCCESS
@@ -65,6 +69,7 @@ class TestCleanBlobsIntegration:
             result = clean_blobs(
                 blob_service=simple_blob_service,
                 dry_run=False,
+                lock_folder=Path(tempfile.gettempdir()),
             )
 
         assert result.status == BackGroundTaskStatus.SUCCESS
@@ -85,6 +90,7 @@ class TestCleanBlobsIntegration:
             result = clean_blobs(
                 blob_service=simple_blob_service,
                 dry_run=False,
+                lock_folder=Path(tempfile.gettempdir()),
             )
 
         assert result.status == BackGroundTaskStatus.SUCCESS
@@ -94,9 +100,10 @@ class TestCleanBlobsIntegration:
             assert blob_id not in simple_blob_service.get_saved_blobs()
 
     def test_returns_skipped_when_lock_held(self, simple_blob_service: BlobService):
+        lock_folder = Path(tempfile.gettempdir())
         with db():
-            with create_file_lock(lock_id=LockId.BLOB_GC):
-                result = clean_blobs(blob_service=simple_blob_service, dry_run=False)
+            with create_file_lock(lock_id=LockId.BLOB_GC, lock_folder=lock_folder):
+                result = clean_blobs(blob_service=simple_blob_service, dry_run=False, lock_folder=lock_folder)
 
         assert result.status == BackGroundTaskStatus.SKIPPED
         assert result.reason == "lock_not_acquired"
@@ -126,7 +133,11 @@ class TestCleanBlobsIntegration:
 
         # Run GC
         with db():
-            result = clean_blobs(blob_service=simple_blob_service, dry_run=False)
+            result = clean_blobs(
+                blob_service=simple_blob_service,
+                dry_run=False,
+                lock_folder=Path(tempfile.gettempdir()),
+            )
 
         assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.deleted_count == 1

@@ -15,6 +15,7 @@
 import datetime
 import logging
 import time
+from pathlib import Path
 from typing import NamedTuple
 
 from pydantic import BaseModel
@@ -114,6 +115,7 @@ def archive_old_studies(
     threshold_days: int,
     snapshot_retention_days: int,
     dry_run: bool,
+    lock_folder: Path,
 ) -> AutoArchiveTaskResult:
     """
     Archive studies inactive for more than threshold_days and clean old snapshots.
@@ -126,7 +128,7 @@ def archive_old_studies(
 
     try:
         with db():
-            with create_file_lock(lock_id=LockId.AUTO_ARCHIVE):
+            with create_file_lock(lock_id=LockId.AUTO_ARCHIVE, lock_folder=lock_folder):
                 to_archive = _get_studies_to_archive(study_service, threshold_days)
                 logger.info(f"Found {len(to_archive)} studies to archive")
 

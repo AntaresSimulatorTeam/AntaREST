@@ -12,6 +12,9 @@
 
 """Integration tests for the disk space analyzer."""
 
+import tempfile
+from pathlib import Path
+
 import pytest
 from antares.study.version import StudyVersion
 
@@ -41,7 +44,11 @@ class TestDiskSpaceAnalyzerIntegration:
                 study_1 = study_service.create_study("my_study_1", version=StudyVersion(8, 8, 0), group_ids=[])
                 study_2 = study_service.create_study("my_study_2", version=StudyVersion(8, 8, 0), group_ids=[])
 
-            result = disk_space_analysis(service=study_service, disk_repo=study_disk_repo)
+            result = disk_space_analysis(
+                service=study_service,
+                disk_repo=study_disk_repo,
+                lock_folder=Path(tempfile.gettempdir()),
+            )
             assert result.status == BackGroundTaskStatus.SUCCESS
             assert (
                 result.updated_studies == 2
@@ -56,7 +63,11 @@ class TestDiskSpaceAnalyzerIntegration:
                 assert study_disk_repo.get(study_1).disk_space_bytes > 0
                 assert study_disk_repo.get(study_2).disk_space_bytes > 0
 
-            result = disk_space_analysis(service=study_service, disk_repo=study_disk_repo)
+            result = disk_space_analysis(
+                service=study_service,
+                disk_repo=study_disk_repo,
+                lock_folder=Path(tempfile.gettempdir()),
+            )
 
             assert result.updated_studies == 0
 
@@ -79,7 +90,11 @@ class TestDiskSpaceAnalyzerIntegration:
 
                 study_service.create_link(study_1, Link(area1=area_1.id, area2=area_2.id))
 
-            result = disk_space_analysis(service=study_service, disk_repo=study_disk_repo)
+            result = disk_space_analysis(
+                service=study_service,
+                disk_repo=study_disk_repo,
+                lock_folder=Path(tempfile.gettempdir()),
+            )
 
             with db():
                 current_disk_space = study_disk_repo.get(study_1).disk_space_bytes
@@ -93,9 +108,14 @@ class TestDiskSpaceAnalyzerIntegration:
     def test_returns_skipped_when_lock_held(
         self, study_service: StudyService, study_disk_repo: StudyDiskSpaceRepository
     ):
+        lock_folder = Path(tempfile.gettempdir())
         with db():
-            with create_file_lock(lock_id=LockId.STUDY_DISK_SPACE):
-                result = disk_space_analysis(service=study_service, disk_repo=study_disk_repo)
+            with create_file_lock(lock_id=LockId.STUDY_DISK_SPACE, lock_folder=lock_folder):
+                result = disk_space_analysis(
+                    service=study_service,
+                    disk_repo=study_disk_repo,
+                    lock_folder=lock_folder,
+                )
 
             assert result.status == BackGroundTaskStatus.SKIPPED
             assert result.reason == "lock_not_acquired"

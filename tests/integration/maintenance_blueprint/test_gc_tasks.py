@@ -12,7 +12,9 @@
 
 """Integration tests for the tasks cleaning garbage collection task."""
 
+import tempfile
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import patch
 
 from antarest.core.tasks.model import TaskDTO, TaskJob, TaskListFilter, TaskStatus
@@ -52,7 +54,14 @@ class TestTasksGCIntegration:
 
             # deleting tasks
             with patch("antarest.core.tasks.repository.current_time", return_value=datetime(2026, 2, 20, 0, 0, 0)):
-                task_result = clean_tasks(task_service=task_service, dry_run=False, task_retention_duration=17)
+                import tempfile
+
+                task_result = clean_tasks(
+                    task_service=task_service,
+                    dry_run=False,
+                    task_retention_duration=17,
+                    lock_folder=Path(tempfile.gettempdir()),
+                )
 
             expected_task = TaskDTO(
                 id="4",
@@ -67,9 +76,12 @@ class TestTasksGCIntegration:
             assert task_list == [expected_task]
 
     def test_returns_skipped_when_lock_held(self, task_service: ITaskService):
+        lock_folder = Path(tempfile.gettempdir())
         with db():
-            with create_file_lock(lock_id=LockId.TASKS_GC):
-                result = clean_tasks(task_service=task_service, dry_run=False, task_retention_duration=60)
+            with create_file_lock(lock_id=LockId.TASKS_GC, lock_folder=lock_folder):
+                result = clean_tasks(
+                    task_service=task_service, dry_run=False, task_retention_duration=60, lock_folder=lock_folder
+                )
 
             assert result.status == BackGroundTaskStatus.SKIPPED
             assert result.reason == "lock_not_acquired"
