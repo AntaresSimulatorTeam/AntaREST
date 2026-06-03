@@ -40,7 +40,6 @@ from antarest.study.business.model.thematic_trimming_model import (
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models import STUDY_DATA_TABLE
-from antarest.study.dao.database.sql_utils import upsert_one
 from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_9_2
 from antarest.study.storage.utils import StudyMetadataCreation
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -104,7 +103,7 @@ class DatabaseStudyDaoFactory(StudyFactoryDao):
         Initialize the study data table as every DB DAO table is linked to it via foreign keys.
         """
         session = self.session
-        upsert_one(session, STUDY_DATA_TABLE, {"study_id": study_id})
+        session.execute(STUDY_DATA_TABLE.insert().values({"study_id": study_id}))
         session.commit()
 
     @override
