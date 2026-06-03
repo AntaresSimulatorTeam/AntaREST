@@ -1,7 +1,5 @@
-# Introduction
+# Build from source
 
-Antares Web is developed mainly in **Python** and uses [FastAPI](https://fastapi.tiangolo.com/) web framework.
-The front end is a [React](https://reactjs.org/) web application.
 A local build allows using Antares Web as a desktop application.
 
 ## Quick start
@@ -48,7 +46,3 @@ Then perform the following steps:
    ```shell
    uv run python antarest/main.py -c resources/application.yaml --auto-upgrade-db --no-front
    ```
-
-## Deploy
-
-See [server application](./2-DEPLOY.md#production-server-deployment):

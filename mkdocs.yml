@@ -1,16 +1,19 @@
 docs_dir: docs
 site_name: Antares Web Documentation
+repo_name: AntaREST
 repo_url: https://github.com/AntaresSimulatorTeam/AntaREST
-edit_uri: edit/doc/docs/
+edit_uri: edit/dev/docs
 
 theme:
   name: material
   logo: assets/logo.png
-  favicon: assets/Icone.png
+  favicon: assets/icone.png
   prev_next_buttons_location: none
   features:
     - navigation.instant
     - navigation.top
+    - content.action.edit
+    - content.action.view
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: antares
@@ -43,10 +46,6 @@ plugins:
 
 extra_css:
   - stylesheets/extra.css
-
-extra_javascript:
-  - https://code.jquery.com/jquery-3.6.0.min.js
-  - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML
 
 markdown_extensions:
   - attr_list

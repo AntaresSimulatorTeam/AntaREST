@@ -20,22 +20,25 @@
 ![React](https://img.shields.io/badge/React-00599c?style=for-the-badge&logo=react&logoColor=61DAFB)
 
 
-This site is dedicated for some **technical documentation on Antares Web.**
+This site is dedicated to the **technical documentation of Antares Web.**
 If you want a user guide on using Antares Web, please see the 
 [centralized documentation for Antares](https://antares-doc.readthedocs.io/en/latest/).
 It provides a first approach on the software and some tutorials.
 
-## Introduction
+## Antares Web in Antares
 
-Welcome to `antares-web`, a comprehensive web application designed to interface with RTE’s adequacy software,
-the [Antares Simulator][antares-simulator-website], also [hosted on GitHub][antares-simulator-github].
-The Antares Simulator is an open-source power system simulator for anyone valuing the quantification of adequacy or the
+Welcome to Antares Web, a comprehensive web application designed to interface with 
+[RTE](https://www.rte-france.com/en/home)’s adequacy software,
+[Antares Simulator][antares-simulator-github].
+Together, they are part of a comprehensive open-source power system simulation solution 
+for anyone valuing the quantification of adequacy or the
 economic performance of interconnected energy systems over short or distant time horizons.
 It enables detailed modeling of energy consumption, generation, and transportation, performing probabilistic simulations
 across numerous year-long scenarios, each consisting of 8760 hourly time-frames.
 
-`antares-web` serves as a server API interfacing with Antares Simulator studies, providing a web application to manage
-studies while adding features for enhanced edition capabilities.
+Antares Web serves as a server API interfacing with Antares Simulator studies,
+providing a web application to manage studies while adding features 
+for enhanced edition capabilities.
 
 This integration brings:
 
@@ -45,10 +48,14 @@ This integration brings:
 - **Variant Management**: Introduce a new editing description language and generation tool.
 - **User Accounts**: Implement user management and permission systems.
 
+Antares Web is developed mainly in **Python** and uses [FastAPI](https://fastapi.tiangolo.com/) web framework.
+The front end is a [React](https://reactjs.org/) web application.
+
 ## Contributing
 
-`Antares-Web` is currently under development. Feel free to 
+Antares Web is currently under development. Feel free to 
 [submit any issue](https://github.com/AntaresSimulatorTeam/AntaREST/issues).
+You can also contribute to the code (see [contribution guide](./developer-guide/0-developer-tools.md)).
 
 
 [ci_result]: https://github.com/AntaresSimulatorTeam/AntaREST/actions/workflows/main.yml/badge.svg
@@ -62,8 +69,6 @@ This integration brings:
 [license_badge]: https://img.shields.io/github/license/AntaresSimulatorTeam/AntaREST
 
 [license_link]: https://www.apache.org/licenses/LICENSE-2.0
-
-[antares-web-readthedocs]: https://antares-web.readthedocs.io/
 
 [antares-simulator-readthedocs]: https://antares-simulator.readthedocs.io/
 
