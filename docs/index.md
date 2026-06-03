@@ -1,15 +1,29 @@
+<div style="display: flex; align-items: center; margin-bottom: 30px; justify-content: center;">
+  <img
+    src="assets/antares.svg"
+    alt="Antares Logo"
+    style="height: 150px; width: 150px; margin-right: 30px;"
+  />
+  <div>
+    <h1 style="margin: 0;">Antares Web</h1>
+    <p style="margin: 5px 0 0 0; font-size: 1.2em; color: #666;">
+      REST API and web interface for Antares
+    </p>
+  </div>
+</div>
+
+
 [![Status][ci_result]][ci_result_link] [![Quality Gate Status][coverage_result]][coverage_result_link] [![License][license_badge]][license_link]
 
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 ![TypeScript](https://img.shields.io/badge/TypeScript-00599c?style=for-the-badge&logo=TypeScript&logoColor=61DAFB)
 ![React](https://img.shields.io/badge/React-00599c?style=for-the-badge&logo=react&logoColor=61DAFB)
 
-![](assets/antares.svg "Antares Web Logo")
-> Web API and UI for [Antares Simulator][antares-simulator-website]
 
-Please see the [Antares Web Documentation][antares-web-readthedocs] for an introductory tutorial,
-and a full user guide. Visit the [Antares-Simulator Documentation][antares-simulator-readthedocs] for more insights on
-ANTARES.
+This site is dedicated for some **technical documentation on Antares Web.**
+If you want a user guide on using Antares Web, please see the 
+[centralized documentation for Antares](https://antares-doc.readthedocs.io/en/latest/).
+It provides a first approach on the software and some tutorials.
 
 ## Introduction
 
@@ -31,13 +45,11 @@ This integration brings:
 - **Variant Management**: Introduce a new editing description language and generation tool.
 - **User Accounts**: Implement user management and permission systems.
 
-## Documentation
+## Contributing
 
-- [Building the application](./developer-guide/install/0-INSTALL.md)
-- [Using the application](./user-guide/0-introduction.md)
-- [Contributing to the application code](./developer-guide/architecture/0-introduction.md)
+`Antares-Web` is currently under development. Feel free to 
+[submit any issue](https://github.com/AntaresSimulatorTeam/AntaREST/issues).
 
-`Antares-Web` is currently under development. Feel free to submit any issue.
 
 [ci_result]: https://github.com/AntaresSimulatorTeam/AntaREST/actions/workflows/main.yml/badge.svg
 
