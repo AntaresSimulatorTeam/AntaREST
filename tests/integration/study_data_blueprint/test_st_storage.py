@@ -383,10 +383,7 @@ class TestSTStorage:
         )
         assert res.status_code == 500
         obj = res.json()
-        if study_type == "variant":
-            msg = f"The area '{bad_area_id}' does not exist"
-        else:
-            msg = f"Area is not found: '{bad_area_id}'"
+        msg = f"Area is not found: '{bad_area_id}'"
         assert msg in obj["description"]
         assert obj["exception"] == "CommandApplicationError"
 

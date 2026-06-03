@@ -22,7 +22,7 @@ from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.scenario_builder_model import RANDOM, Ruleset, ScenarioType
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint, initialize_st_storage
-from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
 from antarest.study.dao.api.study_dao import StudyDao
 from tests.study.dao.utils import save_area
 
@@ -37,6 +37,13 @@ def _make_storage(dao: StudyDao, **kwargs) -> STStorage:
     storage = STStorage(**kwargs)
     initialize_st_storage(storage, dao.get_version())
     return storage
+
+
+def _make_thermal(dao: StudyDao, **kwargs) -> ThermalCluster:
+    """Build a fully-initialized ThermalCluster so DAO write-side validation passes."""
+    cluster = ThermalCluster(**kwargs)
+    initialize_thermal_cluster(cluster, dao.get_version())
+    return cluster
 
 
 def _set_nb_years(dao: StudyDao, nb_years: int) -> None:
@@ -110,7 +117,7 @@ def test_save_ruleset_with_binding_constraints(dao: StudyDao) -> None:
 
 def test_save_ruleset_with_thermal_scenarios(dao: StudyDao) -> None:
     _setup_areas(dao, "fr")
-    dao.save_thermals({"fr": [ThermalCluster(name="Gas_Cluster")]})
+    dao.save_thermals({"fr": [_make_thermal(dao, name="Gas_Cluster")]})
     ruleset = Ruleset(thermal={"fr": {"gas_cluster": {"0": 1, "1": 2}}})
     dao.save_scenario_builder(ruleset)
     result = dao.get_ruleset()
@@ -182,7 +189,7 @@ def test_get_scenario_by_type_binding_constraints(dao: StudyDao) -> None:
 
 def test_get_scenario_by_type_thermal(dao: StudyDao) -> None:
     _setup_areas(dao, "fr")
-    dao.save_thermals({"fr": [ThermalCluster(name="Gas"), ThermalCluster(name="Nuc")]})
+    dao.save_thermals({"fr": [_make_thermal(dao, name="Gas"), _make_thermal(dao, name="Nuc")]})
     dao.save_scenario_builder(Ruleset(thermal={"fr": {"gas": {"0": 1}, "nuc": {"0": 2}}}))
 
     result = dao.get_scenario_by_type(ScenarioType.THERMAL)
@@ -243,7 +250,7 @@ def test_get_scenario_by_type_includes_unsaved_areas(dao: StudyDao) -> None:
 def test_get_scenario_by_type_includes_unsaved_thermal_clusters(dao: StudyDao) -> None:
     """Thermal clusters declared but with no saved value must appear in the result."""
     _setup_areas(dao, "fr")
-    dao.save_thermals({"fr": [ThermalCluster(name="Gas"), ThermalCluster(name="Nuc")]})
+    dao.save_thermals({"fr": [_make_thermal(dao, name="Gas"), _make_thermal(dao, name="Nuc")]})
     dao.save_scenario_builder(Ruleset(thermal={"fr": {"gas": {"0": 1}}}))
 
     assert dao.get_scenario_by_type(ScenarioType.THERMAL) == {"fr": {"gas": {"0": 1}, "nuc": {"0": RANDOM}}}
@@ -346,7 +353,7 @@ def test_get_scenario_by_type_includes_unsaved_storage_constraints(
 def test_scenario_builder_thermal_deleted(dao: StudyDao) -> None:
     _setup_areas(dao, "fr")
 
-    dao.save_thermals({"fr": [ThermalCluster(name="Gas")]})
+    dao.save_thermals({"fr": [_make_thermal(dao, name="Gas")]})
     dao.save_scenario_builder(Ruleset(thermal={"fr": {"gas": {"0": 1}}}))
 
     result = dao.get_scenario_by_type(ScenarioType.THERMAL)
@@ -459,7 +466,7 @@ def test_scenario_builder_st_storage_deleted_cascades_to_constraints(
 def test_scenario_builder_area_deleted_cascades(dao: StudyDao) -> None:
     _setup_areas(dao, "fr")
 
-    dao.save_thermals({"fr": [ThermalCluster(name="Gas")]})
+    dao.save_thermals({"fr": [_make_thermal(dao, name="Gas")]})
     dao.save_renewable("fr", RenewableCluster(id="wind", name="Wind"))
     dao.save_scenario_builder(
         Ruleset(
