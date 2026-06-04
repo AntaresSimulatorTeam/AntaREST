@@ -10,12 +10,11 @@
 #
 # This file is part of the Antares project.
 
-from collections.abc import MutableMapping
 from pathlib import Path
 from typing import Any
 
 from antares.study.version import StudyVersion
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import ConfigDict, Field
 from pydantic.alias_generators import to_camel
 from typing_extensions import override
 
@@ -38,7 +37,7 @@ from antarest.study.business.model.study_index import StudyIndex
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_9_2, StudyVersionInt
 
-from .validation import extract_filtering, study_version_context
+from .validation import study_version_context
 
 
 class EnrModelling(EnumIgnoreCase):
@@ -71,19 +70,6 @@ class LinkConfig(AntaresBaseModel, extra="ignore"):
 
     filters_synthesis: list[str] = Field(default_factory=list)
     filters_year: list[str] = Field(default_factory=list)
-
-    @model_validator(mode="before")
-    def validation(cls, values: MutableMapping[str, Any]) -> MutableMapping[str, Any]:
-        # note: field names are in kebab-case in the INI file
-        filters_synthesis = values.pop(
-            "filter-synthesis", values.pop("filter_synthesis", values.pop("filters_synthesis", ""))
-        )
-        filters_year = values.pop(
-            "filter-year-by-year", values.pop("filter_year_by_year", values.pop("filters_year", ""))
-        )
-        values["filters_synthesis"] = extract_filtering(filters_synthesis)
-        values["filters_year"] = extract_filtering(filters_year)
-        return values
 
 
 class AreaConfig(AntaresBaseModel, extra="forbid"):

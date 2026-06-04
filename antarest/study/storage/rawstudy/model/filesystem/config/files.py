@@ -41,6 +41,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 from antarest.study.storage.rawstudy.model.filesystem.config.district import parse_district
 from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import SimulationParsingError
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.link import parse_link
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
     BindingConstraintConfig,
@@ -552,8 +553,7 @@ def _parse_links_filtering(root: Path, area: str) -> dict[str, LinkConfig]:
         inside_root_path=Path(f"input/links/{area}/properties.ini"),
         file_type=FileType.SIMPLE_INI,
     )
-    links_by_ids = {link_id: LinkConfig(**obj) for link_id, obj in properties_ini.items()}
-    return links_by_ids
+    return {link_id: parse_link(obj, area, link_id).to_config() for link_id, obj in properties_ini.items()}
 
 
 def _check_build_on_solver_tests(test_dir: Path) -> None:
