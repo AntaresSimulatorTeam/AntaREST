@@ -15,18 +15,118 @@ from pathlib import Path
 from typing import Iterator
 
 from antares.study.version import StudyVersion
+from sqlalchemy import select
 from typing_extensions import override
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
+from antarest.study.dao.database.models.area import LOAD_TABLE, MISC_GEN_TABLE, RESERVES_TABLE, SOLAR_TABLE, WIND_TABLE
+from antarest.study.dao.database.models.binding_constraint import (
+    BINDING_CONSTRAINT_EQ_MATRIX_TABLE,
+    BINDING_CONSTRAINT_GT_MATRIX_TABLE,
+    BINDING_CONSTRAINT_LT_MATRIX_TABLE,
+    BINDING_CONSTRAINT_VALUES_MATRIX_TABLE,
+)
+from antarest.study.dao.database.models.hydro import (
+    HYDRO_CREDIT_MODULATIONS_TABLE,
+    HYDRO_ENERGY_TABLE,
+    HYDRO_INFLOW_PATTERN_TABLE,
+    HYDRO_MAX_DAILY_GEN_ENERGY_TABLE,
+    HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE,
+    HYDRO_MAX_HOURLY_GEN_POWER_TABLE,
+    HYDRO_MAX_HOURLY_PUMP_POWER_TABLE,
+    HYDRO_MAXPOWER_TABLE,
+    HYDRO_MINGEN_TABLE,
+    HYDRO_MODULATION_TABLE,
+    HYDRO_RESERVOIR_TABLE,
+    HYDRO_RUN_OF_RIVER_TABLE,
+    HYDRO_WATER_VALUES_TABLE,
+)
+from antarest.study.dao.database.models.link import (
+    LINK_DIRECT_CAPACITY_TABLE,
+    LINK_INDIRECT_CAPACITY_TABLE,
+    LINK_SERIES_TABLE,
+)
+from antarest.study.dao.database.models.renewable import RENEWABLE_SERIES_TABLE
+from antarest.study.dao.database.models.reserve_need import RESERVE_NEED_MATRIX_TABLE
+from antarest.study.dao.database.models.st_storage import (
+    COST_INJECTION_TABLE,
+    COST_LEVEL_TABLE,
+    COST_VARIATION_INJECTION_TABLE,
+    COST_VARIATION_WITHDRAWAL_TABLE,
+    COST_WITHDRAWAL_TABLE,
+    INFLOWS_TABLE,
+    LOWER_RULE_CURVE_TABLE,
+    PMAX_INJECTION_TABLE,
+    PMAX_WITHDRAWAL_TABLE,
+    ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE,
+    UPPER_RULE_CURVE_TABLE,
+)
+from antarest.study.dao.database.models.thermal import (
+    THERMAL_CO2_COST_TABLE,
+    THERMAL_FUEL_COST_TABLE,
+    THERMAL_MODULATION_TABLE,
+    THERMAL_PREPRO_TABLE,
+    THERMAL_SERIES_TABLE,
+)
+from antarest.study.dao.database.models.xpansion import XPANSION_CAPACITY_TABLE, XPANSION_WEIGHT_TABLE
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.model import RawStudy, Study, StudyMetadataCreation
 from antarest.study.storage.study_storage_interface import IStudyStorage
 
 logger = logging.getLogger(__name__)
+
+
+MATRIX_TABLES = [
+    LOAD_TABLE,
+    SOLAR_TABLE,
+    WIND_TABLE,
+    RESERVES_TABLE,
+    MISC_GEN_TABLE,
+    LINK_SERIES_TABLE,
+    LINK_DIRECT_CAPACITY_TABLE,
+    LINK_INDIRECT_CAPACITY_TABLE,
+    THERMAL_PREPRO_TABLE,
+    THERMAL_MODULATION_TABLE,
+    THERMAL_SERIES_TABLE,
+    THERMAL_FUEL_COST_TABLE,
+    THERMAL_CO2_COST_TABLE,
+    RENEWABLE_SERIES_TABLE,
+    RESERVE_NEED_MATRIX_TABLE,
+    PMAX_INJECTION_TABLE,
+    PMAX_WITHDRAWAL_TABLE,
+    LOWER_RULE_CURVE_TABLE,
+    UPPER_RULE_CURVE_TABLE,
+    INFLOWS_TABLE,
+    COST_INJECTION_TABLE,
+    COST_WITHDRAWAL_TABLE,
+    COST_LEVEL_TABLE,
+    COST_VARIATION_INJECTION_TABLE,
+    COST_VARIATION_WITHDRAWAL_TABLE,
+    ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE,
+    HYDRO_MAXPOWER_TABLE,
+    HYDRO_RESERVOIR_TABLE,
+    HYDRO_ENERGY_TABLE,
+    HYDRO_RUN_OF_RIVER_TABLE,
+    HYDRO_MODULATION_TABLE,
+    HYDRO_CREDIT_MODULATIONS_TABLE,
+    HYDRO_INFLOW_PATTERN_TABLE,
+    HYDRO_WATER_VALUES_TABLE,
+    HYDRO_MINGEN_TABLE,
+    HYDRO_MAX_HOURLY_GEN_POWER_TABLE,
+    HYDRO_MAX_HOURLY_PUMP_POWER_TABLE,
+    HYDRO_MAX_DAILY_GEN_ENERGY_TABLE,
+    HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE,
+    XPANSION_CAPACITY_TABLE,
+    XPANSION_WEIGHT_TABLE,
+    BINDING_CONSTRAINT_VALUES_MATRIX_TABLE,
+    BINDING_CONSTRAINT_LT_MATRIX_TABLE,
+    BINDING_CONSTRAINT_GT_MATRIX_TABLE,
+    BINDING_CONSTRAINT_EQ_MATRIX_TABLE,
+]
 
 
 class DatabaseStudyStorage(IStudyStorage):
@@ -100,8 +200,13 @@ class DatabaseStudyStorage(IStudyStorage):
 
     @override
     def yield_matrix_references(self, study: Study) -> Iterator[MatrixReference]:
-        # Nothing to do
-        yield from ()
+        with db():
+            for table in MATRIX_TABLES:
+                stmt = select(table.c.matrix_id).where(table.c.study_id == study.id)
+                rows = db.session.execute(stmt).fetchall()
+                for row in rows:
+                    description = f"Matrix used inside table {table.name}, for study {study.id}"
+                    yield MatrixReference(matrix_id=row.matrix_id, use_description=description)
 
     @override
     def normalize_study(self, study: Study) -> None:
