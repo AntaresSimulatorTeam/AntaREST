@@ -718,6 +718,79 @@ def test_parse_links(study_path: Path) -> None:
     assert _parse_links_filtering(study_path, "fr") == {"l1": link}
 
 
+def test_parse_links_multiple_filters(study_path: Path) -> None:
+    (study_path / "input/links/fr").mkdir(parents=True)
+    content = """
+    [l1]
+    filter-synthesis = hourly, daily, weekly
+    filter-year-by-year = monthly, annual
+    """
+    (study_path / "input/links/fr/properties.ini").write_text(content)
+
+    result = _parse_links_filtering(study_path, "fr")
+    assert set(result["l1"].filters_synthesis) == {"hourly", "daily", "weekly"}
+    assert set(result["l1"].filters_year) == {"monthly", "annual"}
+
+
+def test_parse_links_missing_filter_keys_default_to_all_filters(study_path: Path) -> None:
+    (study_path / "input/links/fr").mkdir(parents=True)
+    (study_path / "input/links/fr/properties.ini").write_text("[l1]\nhurdles-cost = true\n")
+
+    result = _parse_links_filtering(study_path, "fr")
+    all_filters = {"hourly", "daily", "weekly", "monthly", "annual"}
+    assert set(result["l1"].filters_synthesis) == all_filters
+    assert set(result["l1"].filters_year) == all_filters
+
+
+def test_parse_links_multiple_destinations(study_path: Path) -> None:
+    (study_path / "input/links/fr").mkdir(parents=True)
+    content = """
+    [de]
+    filter-synthesis = annual
+
+    [be]
+    filter-year-by-year = hourly
+    """
+    (study_path / "input/links/fr/properties.ini").write_text(content)
+
+    result = _parse_links_filtering(study_path, "fr")
+    all_filters = {"hourly", "daily", "weekly", "monthly", "annual"}
+    assert result["de"].filters_synthesis == ["annual"]
+    assert set(result["de"].filters_year) == all_filters
+    assert set(result["be"].filters_synthesis) == all_filters
+    assert result["be"].filters_year == ["hourly"]
+
+
+def test_parse_links_whitespace_tolerance(study_path: Path) -> None:
+    (study_path / "input/links/fr").mkdir(parents=True)
+    content = """
+    [l1]
+    filter-synthesis =   hourly  ,  daily
+    filter-year-by-year = annual
+    """
+    (study_path / "input/links/fr/properties.ini").write_text(content)
+
+    result = _parse_links_filtering(study_path, "fr")
+    assert set(result["l1"].filters_synthesis) == {"hourly", "daily"}
+    assert result["l1"].filters_year == ["annual"]
+
+
+def test_link_to_config_round_trip() -> None:
+    from antarest.study.business.model.common import FilterOption
+    from antarest.study.business.model.link_model import Link
+
+    link = Link(
+        area1="de",
+        area2="fr",
+        filter_synthesis=[FilterOption.HOURLY, FilterOption.DAILY],
+        filter_year_by_year=[FilterOption.ANNUAL],
+    )
+
+    config = link.to_config()
+    assert config.filters_synthesis == ["hourly", "daily"]
+    assert config.filters_year == ["annual"]
+
+
 def _set_up_output(study_path: Path, output_id: str) -> None:
     output_path = study_path / "output"
     output = output_path / output_id
