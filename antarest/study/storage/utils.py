@@ -615,7 +615,6 @@ def build_raw_study_from_source(src_study: Study, path: Path, metadata: StudyMet
         groups=metadata.groups,
         owner=metadata.owner,
         directory_id=metadata.directory_id,
-        folder=str(metadata.folder / dest_id),
         storage_mode=src_study.storage_mode,
         content_status=StudyContentStatus.VALID,
     )

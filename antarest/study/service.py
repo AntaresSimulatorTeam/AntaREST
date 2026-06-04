@@ -1271,9 +1271,7 @@ class StudyService:
 
         def copy_task(notifier: ITaskNotifier) -> TaskResult:
             origin_study = self.get_study(src_uuid)
-            metadata = StudyMetadataCopy(
-                name=dest_study_name, folder=destination_folder, owner=owner, groups=groups, directory_id=directory_id
-            )
+            metadata = StudyMetadataCopy(name=dest_study_name, owner=owner, groups=groups, directory_id=directory_id)
             study = self.storage_service.get_storage(origin_study).copy(origin_study, metadata)
 
             match outputs_selection:

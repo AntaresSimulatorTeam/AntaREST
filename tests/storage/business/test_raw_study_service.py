@@ -12,7 +12,8 @@
 
 import datetime
 import re
-from pathlib import Path, PurePosixPath
+import uuid
+from pathlib import Path
 from unittest.mock import Mock
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -35,7 +36,7 @@ from antarest.output.storage.file.storage import (
 )
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.main import build_study_service
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyMetadataCopy, StudyMetadataCreation
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, Directory, RawStudy, StudyMetadataCopy, StudyMetadataCreation
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -269,13 +270,17 @@ def test_copy_study(empty_study_930: FileStudy, study_service: StudyService) -> 
 
     study = create_raw_study(id=study_id, path=str(study_path), public_mode=PublicMode.NONE, groups=[])
 
+    # Create a directory to copy the study inside it
+    directory_id = str(uuid.uuid4())
+    db.session.add(Directory(id=directory_id, name="my_folder", parent_id=None))
+    db.session.commit()
+
     # Initialize arguments for the copy method
-    destination = PurePosixPath("myfolder/subfolder")
     groups = [Group(id="my_grp", name="my_grp")]
     admin = Identity(id=1, name="admin", type="users")
 
     # Copy the study
-    metadata = StudyMetadataCopy(name="new_name", groups=groups, owner=admin, directory_id=None, folder=destination)
+    metadata = StudyMetadataCopy(name="new_name", groups=groups, owner=admin, directory_id=directory_id)
     new_study = study_service.storage_service.raw_study_service.copy(study, metadata)
 
     # Check the new study attributes
@@ -283,7 +288,7 @@ def test_copy_study(empty_study_930: FileStudy, study_service: StudyService) -> 
     assert new_study.public_mode == PublicMode.NONE
     assert len(new_study.groups) == 1
     assert new_study.groups[0].id == "my_grp"
-    assert new_study.folder == f"{destination.as_posix()}/{new_study.id}"
+    assert new_study.directory_id == directory_id
     assert new_study.name == "new_name"
     assert new_study.owner.name == "admin"
 

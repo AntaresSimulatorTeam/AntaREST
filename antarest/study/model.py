@@ -773,7 +773,6 @@ class StudyMetadataUpdate:
 @dataclasses.dataclass(frozen=True)
 class StudyMetadataCopy:
     name: str
-    folder: PurePosixPath
     owner: Identity
     groups: list[Group]
     directory_id: str | None
