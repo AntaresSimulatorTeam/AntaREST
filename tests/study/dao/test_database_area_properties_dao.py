@@ -54,7 +54,8 @@ def test_multiple_areas(db_session: Session, db_dao: DatabaseStudyDao) -> None:
         all_properties = dao.get_all_area_properties()
         assert all_properties == {"paris": default_props, "london": default_props}
 
-    assert len(db_recorder.sql_statements) == 2, str(db_recorder)  # second query is to get the study version
+    # Single SELECT — read no longer needs the study version (no back-fill of defaults).
+    assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
 def test_error_cases(dao: StudyDao) -> None:
@@ -74,8 +75,9 @@ def test_modify_properties(dao: StudyDao) -> None:
     assert dao.get_area_properties(area_id) == _default_props(dao)
 
     new_properties = AreaProperties(energy_cost_unsupplied=4.5, non_dispatch_power=False, filter_synthesis={"daily"})
+    # Caller is responsible for handing a fully-initialized object to the DAO.
+    initialize_area_properties(new_properties, dao.get_version())
     dao.save_area_properties(area_id, new_properties)
 
     # Ensures we modified the properties accordingly
-    initialize_area_properties(new_properties, dao.get_version())
     assert dao.get_area_properties(area_id) == new_properties

@@ -19,13 +19,12 @@ This module provides database-backed storage for areas when storage_mode=DATABAS
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any
 
-from antares.study.version import StudyVersion
 from sqlalchemy import CursorResult, select, update
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound
-from antarest.study.business.model.area_properties_model import AreaProperties, initialize_area_properties
+from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_properties_dao import AreaPropertiesDao
 from antarest.study.dao.database.common import (
     parse_frequency_filters,
@@ -37,8 +36,8 @@ if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
-def _convert_db_properties_to_model(db_row: Any, study_version: StudyVersion) -> AreaProperties:
-    props = AreaProperties(
+def _convert_db_properties_to_model(db_row: Any) -> AreaProperties:
+    return AreaProperties(
         energy_cost_unsupplied=db_row.energy_cost_unsupplied,
         energy_cost_spilled=db_row.energy_cost_spilled,
         non_dispatch_power=db_row.non_dispatch_power,
@@ -50,8 +49,6 @@ def _convert_db_properties_to_model(db_row: Any, study_version: StudyVersion) ->
         filter_by_year=parse_frequency_filters(db_row.filter_by_year),
         adequacy_patch_mode=db_row.adequacy_patch_mode,
     )
-    initialize_area_properties(props, study_version)
-    return props
 
 
 class DatabaseAreaPropertiesDao(AreaPropertiesDao):
@@ -83,7 +80,7 @@ class DatabaseAreaPropertiesDao(AreaPropertiesDao):
         row = session.execute(stmt).fetchone()
         if not row:
             raise AreaNotFound(area_id)
-        return _convert_db_properties_to_model(row, self.get_impl().get_version())
+        return _convert_db_properties_to_model(row)
 
     @override
     def get_all_area_properties(self) -> dict[str, AreaProperties]:
@@ -93,8 +90,7 @@ class DatabaseAreaPropertiesDao(AreaPropertiesDao):
         # Single query to get all areas and their properties
         stmt = select(AREA_TABLE).where(AREA_TABLE.c.study_id == study_id)
         rows = session.execute(stmt)
-        version = self.get_impl().get_version()
-        return {row.area_id: _convert_db_properties_to_model(row, version) for row in rows}
+        return {row.area_id: _convert_db_properties_to_model(row) for row in rows}
 
     @override
     def save_area_properties(self, area_id: str, area_properties: AreaProperties) -> None:
