@@ -18,6 +18,7 @@ import { getStudiesById } from "@/redux/selectors";
 import LaunchStudiesDialog from "@/routes/-shared/components/studies/dialogs/LaunchStudiesDialog";
 import MoveStudyDialog from "@/routes/-shared/components/studies/dialogs/MoveStudyDialog";
 import type { Study } from "@/services/api/studies/types";
+import type { StudyMetadata } from "@/types/types";
 import BoltIcon from "@mui/icons-material/Bolt";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -55,33 +56,28 @@ function BatchActions({ selectedStudyIds, setSelectedStudyIds }: Props) {
     setSelectedStudyIds([]);
   };
 
-  const handleLaunchStudies = () => {
+  const handleLaunchStudies = (studies: StudyMetadata[]) => {
     openDialog(({ onClose }) => (
       <LaunchStudiesDialog
         open
-        studyIds={selection.unarchived.map((s) => s.id)}
+        studyIds={studies.map((s) => s.id)}
         onClose={onClose}
         onRun={handleDeselectAll}
       />
     ));
   };
 
-  const handleMoveStudies = () => {
+  const handleMoveStudies = (studies: StudyMetadata[]) => {
     openDialog(({ onClose }) => (
-      <MoveStudyDialog
-        open
-        studies={selection.managed}
-        onClose={onClose}
-        onRun={handleDeselectAll}
-      />
+      <MoveStudyDialog open studies={studies} onClose={onClose} onRun={handleDeselectAll} />
     ));
   };
 
-  const handleDeleteStudies = () => {
+  const handleDeleteStudies = (studies: StudyMetadata[]) => {
     openDialog(({ onClose }) => (
       <DeleteStudiesDialog
         open
-        studyIds={selection.managed.map((s) => s.id)}
+        studyIds={studies.map((s) => s.id)}
         onClose={onClose}
         onRun={handleDeselectAll}
       />
@@ -95,31 +91,35 @@ function BatchActions({ selectedStudyIds, setSelectedStudyIds }: Props) {
   const renderActionButton = (params: {
     defaultTooltip: string;
     partialSelectionTooltip: (options: { count: number; total: number }) => string;
-    onClick: VoidFunction;
+    onClick: (studies: StudyMetadata[]) => void;
     color: ButtonProps["color"];
     icon: React.ReactNode;
     label: string;
-    selectionCount: number;
+    selection: StudyMetadata[];
   }) => {
-    if (params.selectionCount === 0) {
+    if (params.selection.length === 0) {
       return null;
     }
 
-    const isPartialSelection = params.selectionCount < selection.all.length;
+    const isPartialSelection = params.selection.length < selection.all.length;
     const tooltip = isPartialSelection
       ? params.partialSelectionTooltip({
-          count: params.selectionCount,
+          count: params.selection.length,
           total: selection.all.length,
         })
       : params.defaultTooltip;
 
     return (
       <Tooltip title={tooltip}>
-        <Button onClick={params.onClick} color={params.color} startIcon={params.icon}>
+        <Button
+          onClick={() => params.onClick(params.selection)}
+          color={params.color}
+          startIcon={params.icon}
+        >
           {params.label}
           {isPartialSelection && (
             <Typography component="span" variant="caption" sx={{ ml: 0.5, opacity: 0.7 }}>
-              ({params.selectionCount}/{selection.all.length})
+              ({params.selection.length}/{selection.all.length})
             </Typography>
           )}
         </Button>
@@ -144,7 +144,7 @@ function BatchActions({ selectedStudyIds, setSelectedStudyIds }: Props) {
         color: "primary",
         icon: <BoltIcon />,
         label: t("global.launch"),
-        selectionCount: selection.unarchived.length,
+        selection: selection.unarchived,
       })}
       {renderActionButton({
         defaultTooltip: t("global.move"),
@@ -153,7 +153,7 @@ function BatchActions({ selectedStudyIds, setSelectedStudyIds }: Props) {
         color: "inherit",
         icon: <DriveFileMoveIcon />,
         label: t("global.move"),
-        selectionCount: selection.managed.length,
+        selection: selection.managed,
       })}
       {renderActionButton({
         defaultTooltip: t("global.delete"),
@@ -162,7 +162,7 @@ function BatchActions({ selectedStudyIds, setSelectedStudyIds }: Props) {
         color: "error",
         icon: <DeleteIcon />,
         label: t("global.delete"),
-        selectionCount: selection.managed.length,
+        selection: selection.managed,
       })}
       <Tooltip title={t("studies.deselectAll")}>
         <Stack>
