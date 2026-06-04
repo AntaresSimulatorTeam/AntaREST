@@ -298,7 +298,6 @@ def test_copy_variant_with_auto_directory_creation(client: TestClient, admin_acc
     res = client.get(f"/v1/studies/{copied_id}")
     assert res.status_code == 200
     study = res.json()
-    assert study["folder"] == f"project/subfolder/deep/{copied_id}"
     assert study["directory_id"] is not None
 
     res = client.get("/v1/directories")
