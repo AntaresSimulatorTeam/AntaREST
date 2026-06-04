@@ -807,34 +807,12 @@ class StudyService:
         Returns: List of study information
         """
         logger.info("Retrieving matching studies")
-        studies: dict[str, StudyMetadataDTO] = {}
-        matching_studies = self.repository.get_all(
-            study_filter=study_filter,
-            sort_by=sort_by,
-            pagination=pagination,
-        )
+        matching_studies = self.repository.get_all(study_filter=study_filter, sort_by=sort_by, pagination=pagination)
         logger.info("Studies retrieved")
 
-        # Bulk optimization: pre-calculate all directory paths in one query
-        directory_ids = [study.directory_id for study in matching_studies if study.directory_id is not None]
-        directory_paths = self.directory_service.get_directory_paths_bulk(directory_ids)
+        return self._build_studies_information(matching_studies, should_raise=False)
 
-        # Build study metadata with pre-calculated paths
-        for study in matching_studies:
-            folder_path = None
-            if study.directory_id:
-                dir_path = directory_paths.get(study.directory_id, "")
-                folder_path = f"{dir_path}/{study.id}" if dir_path else study.id
-
-            study_metadata = self._try_get_studies_information(study, folder_path)
-            if study_metadata is not None:
-                studies[study_metadata.id] = study_metadata
-        return studies
-
-    def count_studies(
-        self,
-        study_filter: StudyFilter,
-    ) -> int:
+    def count_studies(self, study_filter: StudyFilter) -> int:
         """
         Get number of matching studies.
         Args:
@@ -842,22 +820,30 @@ class StudyService:
 
         Returns: total number of studies matching the filtering criteria
         """
-        total: int = self.repository.count_studies(
-            study_filter=study_filter,
-        )
-        return total
+        return self.repository.count_studies(study_filter=study_filter)
 
-    def _try_get_studies_information(self, study: Study, folder_path: str | None = None) -> StudyMetadataDTO | None:
-        try:
-            return self.storage_service.get_storage(study).get_study_information(study, folder_path)
-        except Exception as e:
-            logger.warning(
-                "Failed to build study %s (%s) metadata",
-                study.id,
-                study.path,
-                exc_info=e,
-            )
-        return None
+    def _build_studies_information(self, studies: Sequence[Study], should_raise: bool) -> dict[str, StudyMetadataDTO]:
+        # Bulk optimization: pre-calculate all directory paths in one query
+        directory_ids = [study.directory_id for study in studies if study.directory_id is not None]
+        directory_paths = self.directory_service.get_directory_paths_bulk(directory_ids)
+
+        result = {}
+        # Build study metadata with pre-calculated paths
+        for study in studies:
+            folder_path = None
+            if study.directory_id:
+                dir_path = directory_paths.get(study.directory_id, "")
+                folder_path = f"{dir_path}/{study.id}" if dir_path else study.id
+
+            try:
+                study_metadata = self.storage_service.get_storage(study).get_study_information(study, folder_path)
+                result[study_metadata.id] = study_metadata
+            except Exception as e:
+                logger.warning("Failed to build study %s (%s) metadata", study.id, study.path, exc_info=e)
+                if should_raise:
+                    raise
+
+        return result
 
     def get_study_information(self, uuid: str) -> StudyMetadataDTO:
         """
@@ -875,7 +861,8 @@ class StudyService:
         # TODO: Debounce this with an "update_study_last_access" method updating only every few seconds.
         study.last_access = current_time()
         self.repository.save(study)
-        return self.storage_service.get_storage(study).get_study_information(study)
+
+        return self._build_studies_information([study], should_raise=True)[study.id]
 
     def update_study_information(self, uuid: str, metadata_patch: StudyMetadataPatchDTO) -> StudyMetadataDTO:
         """
