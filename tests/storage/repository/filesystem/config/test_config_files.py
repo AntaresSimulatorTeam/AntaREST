@@ -50,6 +50,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_st_storage_additional_constraints,
     _parse_thermal,
     build,
+    parse_area,
     parse_outputs,
     parse_simulation,
 )
@@ -389,6 +390,75 @@ def test_parse_area__extra_area(study_path: Path) -> None:
         },
     )
     assert build(study_path, "id") == config
+
+
+_ALL_FILTERS = ["hourly", "daily", "weekly", "monthly", "annual"]
+
+
+def test_parse_area_no_optimization_ini_defaults_to_all_filters(study_path: Path) -> None:
+    """Area folder exists but no optimization.ini → both filters default to all 5
+    (simulator convention: absent = all frequencies enabled)."""
+    (study_path / "input/areas/fr").mkdir(parents=True)
+
+    area = parse_area(study_path, "FR")
+    assert area.filters_synthesis == _ALL_FILTERS
+    assert area.filters_year == _ALL_FILTERS
+
+
+def test_parse_area_optimization_ini_missing_filtering_section(study_path: Path) -> None:
+    """optimization.ini exists but lacks [filtering] section → both filters default to all 5."""
+    (study_path / "input/areas/fr").mkdir(parents=True)
+    (study_path / "input/areas/fr/optimization.ini").write_text("[nodal optimization]\nnon-dispatchable-power = true\n")
+
+    area = parse_area(study_path, "FR")
+    assert area.filters_synthesis == _ALL_FILTERS
+    assert area.filters_year == _ALL_FILTERS
+
+
+def test_parse_area_only_one_filter_key_present(study_path: Path) -> None:
+    """[filtering] has one key but not the other → present one parsed, missing one defaults to all 5."""
+    (study_path / "input/areas/fr").mkdir(parents=True)
+    content = """
+    [filtering]
+    filter-synthesis = daily, monthly
+    """
+    (study_path / "input/areas/fr/optimization.ini").write_text(content)
+
+    area = parse_area(study_path, "FR")
+    assert area.filters_synthesis == ["daily", "monthly"]
+    assert area.filters_year == _ALL_FILTERS
+
+
+def test_parse_area_explicit_empty_filter_preserved(study_path: Path) -> None:
+    """`filter-synthesis = ` (key present, no value) is preserved as `[]` — user intent
+    distinct from "key absent" which defaults to all filters."""
+    (study_path / "input/areas/fr").mkdir(parents=True)
+    content = """
+    [filtering]
+    filter-synthesis =
+    filter-year-by-year = annual
+    """
+    (study_path / "input/areas/fr/optimization.ini").write_text(content)
+
+    area = parse_area(study_path, "FR")
+    assert area.filters_synthesis == []
+    assert area.filters_year == ["annual"]
+
+
+def test_parse_area_filters_normalized_to_canonical_order(study_path: Path) -> None:
+    """Comma-separated filters are normalized to canonical (HOURLY → ANNUAL) order
+    regardless of input order, and lowercased."""
+    (study_path / "input/areas/fr").mkdir(parents=True)
+    content = """
+    [filtering]
+    filter-synthesis = ANNUAL, HOURLY, monthly
+    filter-year-by-year = weekly
+    """
+    (study_path / "input/areas/fr/optimization.ini").write_text(content)
+
+    area = parse_area(study_path, "FR")
+    assert area.filters_synthesis == ["hourly", "monthly", "annual"]
+    assert area.filters_year == ["weekly"]
 
 
 # noinspection SpellCheckingInspection
