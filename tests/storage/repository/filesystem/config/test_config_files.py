@@ -360,6 +360,7 @@ def test_parse_area__extra_area(study_path: Path) -> None:
     """
     (study_path / "input/areas/fr/optimization.ini").write_text(content)
 
+    all_filters = ["hourly", "daily", "weekly", "monthly", "annual"]
     config = FileStudyTreeConfig(
         study_path=study_path,
         path=study_path,
@@ -380,8 +381,9 @@ def test_parse_area__extra_area(study_path: Path) -> None:
                 links={},
                 thermals=[],
                 renewables=[],
-                filters_synthesis=[],
-                filters_year=[],
+                # No optimization.ini → simulator default = all filters enabled.
+                filters_synthesis=all_filters,
+                filters_year=all_filters,
                 st_storages=[],
             ),
         },
