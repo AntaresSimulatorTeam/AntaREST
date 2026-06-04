@@ -12,102 +12,164 @@
  * This file is part of the Antares project.
  */
 
+import useDialog from "@/hooks/useDialog";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudiesById } from "@/redux/selectors";
+import LaunchStudiesDialog from "@/routes/-shared/components/studies/dialogs/LaunchStudiesDialog";
+import MoveStudyDialog from "@/routes/-shared/components/studies/dialogs/MoveStudyDialog";
+import type { Study } from "@/services/api/studies/types";
 import BoltIcon from "@mui/icons-material/Bolt";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
-import { Button, IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import { Button, IconButton, Stack, Tooltip, Typography, type ButtonProps } from "@mui/material";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import DeleteStudiesDialog from "./DeleteStudiesDialog";
 
-interface BatchActionsProps {
-  selectedCount: number;
-  /** Number of selected studies that are unarchived (and therefore launchable). */
-  unarchivedCount: number;
-  /** Number of selected studies that are managed (and therefore movable/deletable). */
-  managedCount: number;
-  /** If not provided, the Launch button is not rendered (only unarchived studies can be launched). */
-  onLaunch?: () => void;
-  /** If not provided, the Delete button is not rendered (only managed studies can be deleted). */
-  onDelete?: () => void;
-  onDeselectAll: () => void;
-  /** If not provided, the Move button is not rendered (only managed studies can be moved). */
-  onMove?: () => void;
+interface Props {
+  selectedStudyIds: Array<Study["id"]>;
+  setSelectedStudyIds: (ids: Array<Study["id"]>) => void;
 }
 
-function BatchActions({
-  selectedCount,
-  unarchivedCount,
-  managedCount,
-  onLaunch,
-  onDelete,
-  onDeselectAll,
-  onMove,
-}: BatchActionsProps) {
+function BatchActions({ selectedStudyIds, setSelectedStudyIds }: Props) {
   const { t } = useTranslation();
+  const { openDialog } = useDialog();
+  const studiesById = useAppSelector(getStudiesById);
 
-  if (selectedCount === 0) {
+  const selection = useMemo(() => {
+    const studies = selectedStudyIds.map((id) => studiesById[id]).filter(Boolean);
+
+    return {
+      all: studies,
+      managed: studies.filter((s) => s.managed),
+      unarchived: studies.filter((s) => !s.archived),
+    };
+  }, [selectedStudyIds, studiesById]);
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleDeselectAll = () => {
+    setSelectedStudyIds([]);
+  };
+
+  const handleLaunchStudies = () => {
+    openDialog(({ onClose }) => (
+      <LaunchStudiesDialog
+        open
+        studyIds={selection.unarchived.map((s) => s.id)}
+        onClose={onClose}
+        onRun={handleDeselectAll}
+      />
+    ));
+  };
+
+  const handleMoveStudies = () => {
+    openDialog(({ onClose }) => (
+      <MoveStudyDialog
+        open
+        studies={selection.managed}
+        onClose={onClose}
+        onRun={handleDeselectAll}
+      />
+    ));
+  };
+
+  const handleDeleteStudies = () => {
+    openDialog(({ onClose }) => (
+      <DeleteStudiesDialog
+        open
+        studyIds={selection.managed.map((s) => s.id)}
+        onClose={onClose}
+        onRun={handleDeselectAll}
+      />
+    ));
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const renderActionButton = (params: {
+    defaultTooltip: string;
+    partialSelectionTooltip: (options: { count: number; total: number }) => string;
+    onClick: VoidFunction;
+    color: ButtonProps["color"];
+    icon: React.ReactNode;
+    label: string;
+    selectionCount: number;
+  }) => {
+    if (params.selectionCount === 0) {
+      return null;
+    }
+
+    const isPartialSelection = params.selectionCount < selection.all.length;
+    const tooltip = isPartialSelection
+      ? params.partialSelectionTooltip({
+          count: params.selectionCount,
+          total: selection.all.length,
+        })
+      : params.defaultTooltip;
+
+    return (
+      <Tooltip title={tooltip}>
+        <Button onClick={params.onClick} color={params.color} startIcon={params.icon}>
+          {params.label}
+          {isPartialSelection && (
+            <Typography component="span" variant="caption" sx={{ ml: 0.5, opacity: 0.7 }}>
+              ({params.selectionCount}/{selection.all.length})
+            </Typography>
+          )}
+        </Button>
+      </Tooltip>
+    );
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
+  if (selection.all.length === 0) {
     return null;
   }
 
-  const isMixedArchiveState = unarchivedCount < selectedCount;
-  const isMixedType = managedCount < selectedCount;
-
-  const launchTooltip = isMixedArchiveState
-    ? t("studies.launchOnlyUnarchivedStudies", { count: unarchivedCount, total: selectedCount })
-    : t("global.launch");
-
-  const moveTooltip = isMixedType
-    ? t("studies.moveOnlyManagedStudies", { count: managedCount, total: selectedCount })
-    : t("global.move");
-
-  const deleteTooltip = isMixedType
-    ? t("studies.deleteOnlyManagedStudies", { count: managedCount, total: selectedCount })
-    : t("global.delete");
-
   return (
     <>
-      {onLaunch && (
-        <Tooltip title={launchTooltip}>
-          <Button onClick={onLaunch} color="primary" startIcon={<BoltIcon />}>
-            {t("global.launch")}
-            {isMixedArchiveState && (
-              <Typography component="span" variant="caption" sx={{ ml: 0.5, opacity: 0.7 }}>
-                ({unarchivedCount}/{selectedCount})
-              </Typography>
-            )}
-          </Button>
-        </Tooltip>
-      )}
-      {onMove && (
-        <Tooltip title={moveTooltip}>
-          <Button onClick={onMove} color="inherit" startIcon={<DriveFileMoveIcon />}>
-            {t("global.move")}
-            {isMixedType && (
-              <Typography component="span" variant="caption" sx={{ ml: 0.5, opacity: 0.7 }}>
-                ({managedCount}/{selectedCount})
-              </Typography>
-            )}
-          </Button>
-        </Tooltip>
-      )}
-      {onDelete && (
-        <Tooltip title={deleteTooltip}>
-          <Button onClick={onDelete} color="error" startIcon={<DeleteIcon />}>
-            {t("global.delete")}
-            {isMixedType && (
-              <Typography component="span" variant="caption" sx={{ ml: 0.5, opacity: 0.7 }}>
-                ({managedCount}/{selectedCount})
-              </Typography>
-            )}
-          </Button>
-        </Tooltip>
-      )}
+      {renderActionButton({
+        defaultTooltip: t("global.launch"),
+        partialSelectionTooltip: (options) => t("studies.launchOnlyUnarchivedStudies", options),
+        onClick: handleLaunchStudies,
+        color: "primary",
+        icon: <BoltIcon />,
+        label: t("global.launch"),
+        selectionCount: selection.unarchived.length,
+      })}
+      {renderActionButton({
+        defaultTooltip: t("global.move"),
+        partialSelectionTooltip: (options) => t("studies.moveOnlyManagedStudies", options),
+        onClick: handleMoveStudies,
+        color: "inherit",
+        icon: <DriveFileMoveIcon />,
+        label: t("global.move"),
+        selectionCount: selection.managed.length,
+      })}
+      {renderActionButton({
+        defaultTooltip: t("global.delete"),
+        partialSelectionTooltip: (options) => t("studies.deleteOnlyManagedStudies", options),
+        onClick: handleDeleteStudies,
+        color: "error",
+        icon: <DeleteIcon />,
+        label: t("global.delete"),
+        selectionCount: selection.managed.length,
+      })}
       <Tooltip title={t("studies.deselectAll")}>
         <Stack>
-          <IconButton color="primary" onClick={onDeselectAll}>
+          <IconButton color="primary" onClick={handleDeselectAll}>
             <CheckBoxIcon />
           </IconButton>
-          <Typography variant="body2">({selectedCount})</Typography>
+          <Typography variant="body2">({selection.all.length})</Typography>
         </Stack>
       </Tooltip>
     </>

@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import useDebounce from "@/hooks/useDebounce";
 import { directoryQueries } from "@/queries/directories/queries";
 import { setStudyScrollPosition } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
@@ -19,14 +20,12 @@ import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudiesScrollPosition } from "@/redux/selectors";
 import ls, { StorageKey } from "@/services/utils/localStorage";
 import type { StudyMetadata } from "@/types/types";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { buildKey } from "@/utils/reactUtils";
 import { Box } from "@mui/material";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeGrid, type GridOnScrollProps } from "react-window";
-import useDebounce from "@/hooks/useDebounce";
-import { buildKey } from "@/utils/reactUtils";
-import StudyLaunchDialog from "../../../../-shared/components/studies/dialogs/StudyLaunchDialog";
 import Header from "./Header";
 import StudyCardCell from "./StudyCardCell";
 import type { StudyCellData } from "./StudyCardCell/types";
@@ -42,7 +41,6 @@ export interface StudiesListProps {
 
 function StudiesList({ studyIds }: StudiesListProps) {
   const scrollPosition = useAppSelector(getStudiesScrollPosition);
-  const [studiesToLaunch, setStudiesToLaunch] = useState<Array<StudyMetadata["id"]>>([]);
   const [selectedStudyIds, setSelectedStudyIds] = useState<Array<StudyMetadata["id"]>>([]);
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const saved = ls.getItem(StorageKey.StudiesViewMode);
@@ -77,11 +75,6 @@ function StudiesList({ studyIds }: StudiesListProps) {
     setViewMode(mode);
   };
 
-  const handleLauncherClose = () => {
-    setStudiesToLaunch([]);
-    setSelectedStudyIds([]);
-  };
-
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -92,7 +85,6 @@ function StudiesList({ studyIds }: StudiesListProps) {
         studyIds={studyIds}
         selectedStudyIds={selectedStudyIds}
         setSelectedStudyIds={setSelectedStudyIds}
-        setStudiesToLaunch={setStudiesToLaunch}
         viewMode={viewMode}
         onViewModeChange={handleViewModeChange}
       />
@@ -136,9 +128,6 @@ function StudiesList({ studyIds }: StudiesListProps) {
           }}
         </AutoSizer>
       </Box>
-      {studiesToLaunch.length > 0 && (
-        <StudyLaunchDialog open studyIds={studiesToLaunch} onClose={handleLauncherClose} />
-      )}
     </>
   );
 }

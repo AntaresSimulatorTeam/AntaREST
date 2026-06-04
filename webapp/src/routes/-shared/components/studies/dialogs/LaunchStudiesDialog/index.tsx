@@ -26,11 +26,12 @@ import { getDefaultValues, type FormValues } from "./utils";
 
 interface Props {
   open: boolean;
-  onClose: VoidFunction;
   studyIds: Array<StudyMetadata["id"]>;
+  onClose: VoidFunction;
+  onRun?: VoidFunction;
 }
 
-function LaunchStudiesDialog({ open, onClose, studyIds }: Props) {
+function LaunchStudiesDialog({ open, studyIds, onClose, onRun }: Props) {
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -38,6 +39,8 @@ function LaunchStudiesDialog({ open, onClose, studyIds }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ values }: SubmitHandlerPlus<FormValues>) => {
+    onRun?.();
+
     const hasConfig = values.configuration !== "";
 
     const launcherParams: LauncherParams = {
