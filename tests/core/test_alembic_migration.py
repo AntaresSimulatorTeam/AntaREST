@@ -19,12 +19,7 @@ from testcontainers.postgres import PostgresContainer
 from antarest.core.persistence import upgrade_db
 
 
-def test_alembic_migration(tmp_path: Path) -> None:
-    # Create a fake config file pointing towards the DB in memory
-
-    db_file = tmp_path / "db.sqlite"
-    db_url = f"sqlite:///{db_file}"
-
+def _checks_migration(tmp_path: Path, db_url: str) -> None:
     config_file = tmp_path / "config.yaml"
     with open(config_file, "w") as f:
         yaml.safe_dump({"db": {"url": db_url}}, f)
@@ -38,27 +33,17 @@ def test_alembic_migration(tmp_path: Path) -> None:
         connection.execute(text("SELECT * FROM study"))
 
 
+def test_alembic_migration(tmp_path: Path) -> None:
+    # Create a fake config file pointing towards the DB in memory
+    db_file = tmp_path / "db.sqlite"
+    db_url = f"sqlite:///{db_file}"
+
+    _checks_migration(tmp_path, db_url)
+
+
 def test_alembic_migration_postgresql(tmp_path: Path) -> None:
     # Start a PostgreSQL container
     with PostgresContainer("postgres:15") as postgres:
         db_url = postgres.get_connection_url()
 
-        # Create a temporary config file
-        config_file = tmp_path / "config.yaml"
-        with open(config_file, "w") as f:
-            yaml.safe_dump({"db": {"url": db_url}}, f)
-
-        # Run the migration
-        upgrade_db(config_file)
-
-        # Verify the migration
-        engine = create_engine(db_url)
-        with engine.connect() as connection:
-            result = connection.execute(text("""
-                                             SELECT EXISTS (SELECT
-                                                            FROM information_schema.tables
-                                                            WHERE table_name = 'study');
-                                             """))
-            assert result.scalar(), "Table 'study' was not created"
-
-            connection.execute(text("SELECT * FROM study"))
+        _checks_migration(tmp_path, db_url)
