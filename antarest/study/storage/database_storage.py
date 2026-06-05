@@ -79,7 +79,7 @@ from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.model import RawStudy, Study, StudyMetadataCreation
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.study_storage_interface import IStudyStorage
-from antarest.study.storage.utils import extract_data_to_dir
+from antarest.study.storage.utils import extract_data_to_dir, update_study_from_raw_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -155,8 +155,8 @@ class DatabaseStudyStorage(IStudyStorage):
             study_version = StudyVersion.parse(src_study.version)
 
             # Build the new DB DAO
-            new_dao = self._db_dao_factory.get_study_dao(study_id=new_study.id, is_study_managed=True)
-            self._db_dao_factory.initialize_study_data_table(new_study.id)
+            metadata = StudyMetadataCreation(id=new_study.id, version=study_version, managed=True)
+            new_dao = self._db_dao_factory.create_study_dao(metadata)
 
             # Copies the inputs
             converter = StudyConverter(
@@ -230,12 +230,18 @@ class DatabaseStudyStorage(IStudyStorage):
             # First, extract the stream inside a temporary directory
             extract_data_to_dir(dst_path, stream, self._config.storage.tmp_dir)
 
-            # Then, create the new study inside DB to avoid ForeignKey and StudyNotFound errors
+            # Build the FS DAO from the extracted data
+            source_dao = self._fs_dao_factory.get_dao_from_path(dst_path, study_id=study.id, is_study_managed=True)
+
+            # Update the `Study` object based on the FS DAO
+            update_study_from_raw_metadata(study, source_dao.get_file_study())
+
+            # Create the new study inside DB to avoid ForeignKey and StudyNotFound errors
             self._repository.save(study)
 
-            # Build the 2 DAOs
-            source_dao = self._fs_dao_factory.get_dao_from_path(dst_path, study_id=study.id, is_study_managed=True)
-            new_dao = self._db_dao_factory.get_study_dao(study_id=study.id, is_study_managed=True)
+            # Build the DB DAO
+            metadata = StudyMetadataCreation(id=study.id, version=source_dao.get_version(), managed=True)
+            new_dao = self._db_dao_factory.create_study_dao(metadata)
 
             # Convert the FS DAO into a DB one
             converter = StudyConverter(
@@ -249,6 +255,7 @@ class DatabaseStudyStorage(IStudyStorage):
         except Exception as e:
             logger.error("Failed to import study %s", str(study.path), exc_info=e)
             # Clean up the database
+            db.session.rollback()
             self._repository.delete(study.id)
             raise e
 

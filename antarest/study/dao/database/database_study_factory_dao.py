@@ -97,7 +97,7 @@ class DatabaseStudyDaoFactory(StudyFactoryDao):
             return db.session
         return self._session
 
-    def initialize_study_data_table(self, study_id: str) -> None:
+    def _initialize_study_data_table(self, study_id: str) -> None:
         """
         Initialize the study data table as every DB DAO table is linked to it via foreign keys.
         """
@@ -108,7 +108,7 @@ class DatabaseStudyDaoFactory(StudyFactoryDao):
     @override
     def create_study_dao(self, metadata: StudyMetadataCreation) -> DatabaseStudyDao:
         dao = self.get_study_dao(metadata.id, metadata.managed)
-        self.initialize_study_data_table(dao.get_study_id())
+        self._initialize_study_data_table(dao.get_study_id())
         dao.save_layer(Layer(id=DEFAULT_LAYER_ID, name=DEFAULT_LAYER_NAME))
         _create_default_settings(dao, metadata.version)
         return dao

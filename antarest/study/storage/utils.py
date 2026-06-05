@@ -635,3 +635,40 @@ def extract_data_to_dir(dst_path: Path, source: Path | BinaryIO, tmp_dir: Path) 
     except Exception:
         shutil.rmtree(dst_path, ignore_errors=True)
         raise
+
+
+def update_study_from_raw_metadata(study: Study, file_study: FileStudy) -> None:
+    """
+    The given `study` object needs to be updated according to the real filesystem data inside `FileStudy`
+    """
+    try:
+        raw_meta = file_study.tree.get(["study", "antares"])
+
+        if study.editor:
+            raw_meta["editor"] = study.editor
+            file_study.tree.save(raw_meta, ["study", "antares"])
+
+        study.name = raw_meta["caption"]
+        study.version = str(raw_meta["version"])
+        study.created_at = datetime.utcfromtimestamp(raw_meta["created"])
+        study.updated_at = datetime.utcfromtimestamp(raw_meta["lastsave"])
+
+        logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
+        horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
+        study_antares = file_study.tree.get(url=["study", "antares"])
+        author = study_antares.get("author")
+        editor = study_antares.get("editor", author)
+        assert isinstance(author, str)
+        assert isinstance(editor, str)
+        assert isinstance(horizon, (str, int))
+        study.horizon = horizon
+        study.author = author
+        study.editor = editor
+
+    except Exception as e:
+        logger.error("Failed to fetch study %s raw study!", str(study.path), exc_info=e)
+        study.name = study.name or "unnamed"
+        study.created_at = study.created_at or current_time()
+        study.updated_at = study.updated_at or current_time()
+        study.author = study.author or "Unknown"
+        study.editor = study.editor or "Unknown"
