@@ -129,8 +129,10 @@ class Link(AntaresBaseModel):
         return self
 
     def to_config(self) -> LinkConfig:
-        data = self.model_dump(mode="json", include={"filter_synthesis", "filter_year_by_year"})
-        return LinkConfig(**data)
+        return LinkConfig(
+            filters_synthesis=list(self.filter_synthesis),
+            filters_year=list(self.filter_year_by_year),
+        )
 
 
 class LinkCreation(AntaresBaseModel):
