@@ -27,6 +27,7 @@ from antarest.tablemode.model import (
 
 
 def test_tablemode_success(admin_client: TestClient, admin_access_token: str) -> None:
+
     # success : creating a tablemode
     res_post = admin_client.post(
         "/v1/tablemode",
@@ -89,6 +90,7 @@ def test_tablemode_success(admin_client: TestClient, admin_access_token: str) ->
 
 
 def test_tablemode_fail(admin_client: TestClient, admin_access_token: str) -> None:
+
     # non_existing_table_id = "non-existing-id"
     my_uuid = uuid.uuid4()
     # fail : trying to delete a non-existing tablemode

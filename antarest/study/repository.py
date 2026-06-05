@@ -640,6 +640,7 @@ class StudyDiskSpaceRepository:
         return list(result.unique().scalars().all())
 
     def save(self, disk_analysis: StudyDiskSpaceAnalysis) -> StudyDiskSpaceAnalysis:
+
         session = self.session
         session.add(disk_analysis)
         session.commit()
