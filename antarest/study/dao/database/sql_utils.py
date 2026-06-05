@@ -105,8 +105,10 @@ def upsert_multiple(
             stmt = pg_insert(table).values(batch)
         else:
             stmt = sqlite_insert(table).values(batch)
+
         stmt = stmt.on_conflict_do_update(
             index_elements=key_columns,
             set_={column: getattr(stmt.excluded, column.name) for column in update_columns},
         )
+
         session.execute(stmt)
