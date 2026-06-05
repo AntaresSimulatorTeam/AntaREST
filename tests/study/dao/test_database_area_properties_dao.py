@@ -54,7 +54,6 @@ def test_multiple_areas(db_session: Session, db_dao: DatabaseStudyDao) -> None:
         all_properties = dao.get_all_area_properties()
         assert all_properties == {"paris": default_props, "london": default_props}
 
-    # Single SELECT — read no longer needs the study version (no back-fill of defaults).
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 

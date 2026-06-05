@@ -107,10 +107,9 @@ class DatabaseLayerDao(LayerDao):
     @override
     def save_layer(self, layer: Layer) -> None:
         """
-        Save a layer to a study.
+        Save a layer name to a study.
 
-        If the layer already exists, it will be updated.
-        If areas are provided, the area associations will be updated.
+        Does not persist area associations, use save_layer_areas() for that.
         """
         study_id = self.get_study_id()
         session = self.get_session()
