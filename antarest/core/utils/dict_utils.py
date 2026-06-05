@@ -11,9 +11,7 @@
 # This file is part of the Antares project.
 from collections.abc import Iterable
 from itertools import groupby
-from typing import Callable, Iterable, TypeVar
-
-from antarest.output.storage.v2.variables_metadata import T, V
+from typing import Callable, TypeVar
 
 T = TypeVar("T")
 U = TypeVar("U")

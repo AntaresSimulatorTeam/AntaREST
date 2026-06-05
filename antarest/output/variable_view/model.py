@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import itertools
 from typing import Annotated, Literal, TypeAlias
 
 from pydantic import BaseModel, Field
@@ -17,7 +16,7 @@ from pydantic import BaseModel, Field
 from antarest.core.exceptions import OutputVariablesViewError
 from antarest.core.utils.collection_utils import find_if
 from antarest.output.filestudy.utils import MCIndAreasQueryFile, MCIndLinksQueryFile, QueryFileType
-from antarest.output.model import OutputVariablesList
+from antarest.output.model import McIndVar, OutputVariablesList
 
 
 class ThermalClusterOutputId(BaseModel, extra="forbid"):
@@ -123,6 +122,10 @@ def _checks_links_variables_view_coherence(
     raise OutputVariablesViewError(output_id, error_msg)
 
 
+def _variable_exists(variables: list[McIndVar], variable_name: str) -> bool:
+    return find_if(variables, lambda v: v.name == variable_name) is not None
+
+
 def _checks_areas_variables_view_coherence(
     output_id: str,
     available_variables: OutputVariablesList,
@@ -133,29 +136,29 @@ def _checks_areas_variables_view_coherence(
         f"The variable '{variable_name}' does not exist for area '{output_identifier.area_id}' and type "
         f"'{output_identifier.type}'"
     )
-    area_variables = available_variables.mc_ind.areas
-    for area_variable in area_variables:
-        if area_variable.name == output_identifier.area_id:
-            match output_identifier:
-                case AreaOutputId():
-                    if variable_name in area_variable.variables:
-                        return
-                    raise OutputVariablesViewError(output_id, error_msg)
-                case ThermalClusterOutputId():
-                    item_id = output_identifier.thermal_id
-                    variables = area_variable.thermal_clusters
-                case RenewableClusterOutputId():
-                    item_id = output_identifier.renewable_id
-                    variables = area_variable.renewable_clusters
-                case ShortTermStorageOutputId():
-                    item_id = output_identifier.st_storage_id
-                    variables = area_variable.short_term_storages
-                case _:
-                    raise OutputVariablesViewError(output_id, error_msg)
-            for item_vars in variables:
-                if item_vars.name == item_id:
-                    if variable_name in item_vars.variables:
-                        return
-                    raise OutputVariablesViewError(output_id, error_msg)
+    area_variables = find_if(available_variables.mc_ind.areas, lambda a: a.area_name == output_identifier.area_id)
+    if not area_variables:
+        raise OutputVariablesViewError(output_id, error_msg)
+
+    match output_identifier:
+        case AreaOutputId():
+            if _variable_exists(area_variables.variables, variable_name):
+                return
+            raise OutputVariablesViewError(output_id, error_msg)
+        case ThermalClusterOutputId():
+            component_name = output_identifier.thermal_id
+            variables = area_variables.thermal_clusters
+        case RenewableClusterOutputId():
+            component_name = output_identifier.renewable_id
+            variables = area_variables.renewable_clusters
+        case ShortTermStorageOutputId():
+            component_name = output_identifier.st_storage_id
+            variables = area_variables.short_term_storages
+        case _:
+            raise OutputVariablesViewError(output_id, error_msg)
+
+    if comp_vars := find_if(variables, lambda v: v.component_name == component_name):
+        if _variable_exists(comp_vars.variables, variable_name):
+            return
 
     raise OutputVariablesViewError(output_id, error_msg)

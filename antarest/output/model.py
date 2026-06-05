@@ -10,9 +10,8 @@
 #
 # This file is part of the Antares project.
 from enum import StrEnum
-from typing import Annotated, Any, Callable, Generic, Protocol, TypeAlias, TypeVar, cast
+from typing import Any, Callable, TypeVar
 
-from pydantic import BeforeValidator
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
@@ -46,78 +45,132 @@ class McAllVar(_BaseModel):
     stat: str
 
 
-class SupportsLessThan(Protocol):
-    def __lt__(self, other: Any) -> bool: ...
+class ComponentMcIndVariables(_BaseModel):
+    """
+    Mc-ind variables for one component (a thermal cluster, a renewable cluster, etc).
+    """
+
+    component_name: str
+    variables: list[McIndVar]
 
 
-def _var_sort_key(var: McIndVar | McAllVar) -> SupportsLessThan:
-    match var:
-        case McIndVar():
-            return var.name, var.unit
-        case McAllVar():
-            return var.name, var.unit, var.stat
-    return None
+class ComponentMcAllVariables(_BaseModel):
+    """
+    Mc-all (aggregated) variables for one component (a thermal cluster, a renewable cluster, etc).
+    """
+
+    component_name: str
+    variables: list[McAllVar]
 
 
-class AreaClusterVariables(_BaseModel, Generic[Vars]):
+class ComponentVariableNames(_BaseModel):
+    """
+    Mc-ind variables for one component (a thermal cluster, a renewable cluster, etc).
+    """
+
     name: str
-    variables: Vars
+    variables: list[str]
 
 
-def _name_key(x: Any) -> str:
-    if isinstance(x, str):
-        return x
-    if isinstance(x, dict):
-        if "stat" in x:
-            return f"{x['name']} {x['stat']}"
-        return cast(str, x["name"])
-    return cast(str, getattr(x, "name"))
+class AreaMcIndVariables(_BaseModel):
+    """
+    Mc-ind variables for one area, including variables of the components it contains.
+    """
+
+    area_name: str
+    variables: list[McIndVar]
+    thermal_clusters: list[ComponentMcIndVariables]
+    renewable_clusters: list[ComponentMcIndVariables]
+    short_term_storages: list[ComponentMcIndVariables]
 
 
-ClusterVariables: TypeAlias = Annotated[
-    list[AreaClusterVariables[Vars]], BeforeValidator(lambda x: sorted(x, key=_name_key))
-]
+class AreaMcAllVariables(_BaseModel):
+    """
+    Mc-all (aggregated) variables for one area, including variables of the components it contains.
+    """
 
-SortedList: TypeAlias = Annotated[list[T], BeforeValidator(lambda x: sorted(x, key=_name_key))]
-
-
-class AreaVariables(_BaseModel, Generic[Vars]):
-    name: str
-    variables: Vars
-    thermal_clusters: SortedList[AreaClusterVariables[Vars]]
-    renewable_clusters: SortedList[AreaClusterVariables[Vars]]
-    short_term_storages: SortedList[AreaClusterVariables[Vars]]
+    area_name: str
+    variables: list[McAllVar]
+    thermal_clusters: list[ComponentMcAllVariables]
+    renewable_clusters: list[ComponentMcAllVariables]
+    short_term_storages: list[ComponentMcAllVariables]
 
 
-class LinkVariables(_BaseModel, Generic[Vars]):
+class AreaVariableNames(_BaseModel):
+    """
+    Variable names for one area, including variables of the components it contains.
+    """
+
+    area_name: str
+    variables: list[str]
+    thermal_clusters: list[ComponentVariableNames]
+    renewable_clusters: list[ComponentVariableNames]
+    short_term_storages: list[ComponentVariableNames]
+
+
+class LinkMcIndVariables(_BaseModel):
     area_1_name: str
     area_2_name: str
-    variables: Vars
+    variables: list[McIndVar]
 
 
-class AreaAndLinkVariables(_BaseModel, Generic[Vars]):
-    areas: list[AreaVariables[Vars]]
-    links: list[LinkVariables[Vars]]
+class LinkMcAllVariables(_BaseModel):
+    area_1_name: str
+    area_2_name: str
+    variables: list[McAllVar]
 
 
-class GenericOutputVariablesList(_BaseModel, Generic[McIndVars, McAllVars]):
+class LinkVariableNames(_BaseModel):
+    area_1_name: str
+    area_2_name: str
+    variables: list[str]
+
+
+class SystemMcIndVariables(_BaseModel):
+    """
+    mc-ind variables for the system as a whole
+    """
+
+    areas: list[AreaMcIndVariables]
+    links: list[LinkMcIndVariables]
+
+
+class SystemMcAllVariables(_BaseModel):
+    """
+    mc-all (aggregated) variables for the system as a whole
+    """
+
+    areas: list[AreaMcAllVariables]
+    links: list[LinkMcAllVariables]
+
+
+class SystemVariableNames(_BaseModel):
+    areas: list[AreaVariableNames]
+    links: list[LinkVariableNames]
+
+
+class OutputVariablesList(_BaseModel):
     """
     Object representing the list of variables available for each item in the study.
 
     Since 8.6 and the introduction of free "groups" (of thermal clusters, for ex), the list
     of variables for an area can vary from one are to another.
-
-    The class is generic over the type of variables, to make the structure re-usable with
-    less detailed information (just str, basically).
     """
 
-    mc_ind: AreaAndLinkVariables[McIndVars]
-    mc_all: AreaAndLinkVariables[McAllVars]
+    mc_ind: SystemMcIndVariables
+    mc_all: SystemMcAllVariables
 
 
-OutputVariablesList: TypeAlias = GenericOutputVariablesList[SortedList[McIndVar], SortedList[McAllVar]]
+class OutputVariableNames(_BaseModel):
+    """
+    Object representing the list of variables available for each item in the study.
 
-StrOutputVariablesList: TypeAlias = GenericOutputVariablesList[SortedList[str], SortedList[str]]
+    Since 8.6 and the introduction of free "groups" (of thermal clusters, for ex), the list
+    of variables for an area can vary from one are to another.
+    """
+
+    mc_ind: SystemVariableNames
+    mc_all: SystemVariableNames
 
 
 def _convert_nested_dict(input: Any, mapper: Callable[[Any], Any]) -> Any:
@@ -134,7 +187,7 @@ def _convert_nested_dict(input: Any, mapper: Callable[[Any], Any]) -> Any:
             return input
 
 
-def to_str_variables_list(variables_list: OutputVariablesList) -> StrOutputVariablesList:
+def to_str_variables_list(variables_list: OutputVariablesList) -> OutputVariableNames:
 
     def mapper(obj: Any) -> Any:
         match obj:
@@ -148,7 +201,7 @@ def to_str_variables_list(variables_list: OutputVariablesList) -> StrOutputVaria
                 return name
         return obj
 
-    return StrOutputVariablesList.model_validate(_convert_nested_dict(variables_list.model_dump(mode="python"), mapper))
+    return OutputVariableNames.model_validate(_convert_nested_dict(variables_list.model_dump(mode="python"), mapper))
 
 
 class OutputVariablesInformation(AntaresBaseModel, extra="forbid"):
@@ -167,7 +220,7 @@ class OutputVariablesInformation(AntaresBaseModel, extra="forbid"):
     link: list[str]
 
     @staticmethod
-    def from_variables_list(variables_list: OutputVariablesList) -> "OutputVariablesInformation":
+    def from_variables_list(variables_list: OutputVariableNames) -> "OutputVariablesInformation":
         """
         Builds an OutputVariablesInformation by simply aggregating all variables of all areas and links.
 
@@ -179,13 +232,13 @@ class OutputVariablesInformation(AntaresBaseModel, extra="forbid"):
         all_area_variables = set()
         for area in variables_list.mc_ind.areas:
             all_area_variables.update(area.variables)
-        args["area"] = sorted(all_area_variables, key=_var_sort_key)
+        args["area"] = sorted(all_area_variables)
 
         # Links
         all_link_variables = set()
         for link in variables_list.mc_ind.links:
             all_link_variables.update(link.variables)
-        args["link"] = sorted(all_link_variables, key=_var_sort_key)
+        args["link"] = sorted(all_link_variables)
 
         return OutputVariablesInformation.model_validate(args)
 
