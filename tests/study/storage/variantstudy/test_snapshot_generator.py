@@ -970,6 +970,8 @@ class TestSnapshotGenerator:
         assert list(cluster_props.keys()) == ["gas_cluster"]
         assert cluster_props["gas_cluster"] == {
             "co2": 0.0,
+            "costgeneration": "SetManually",
+            "efficiency": 100.0,
             "enabled": True,
             "fixed-cost": 0.0,
             "gen-ts": "use global",
@@ -1000,6 +1002,7 @@ class TestSnapshotGenerator:
             "spread-cost": 0.0,
             "startup-cost": 0.0,
             "unitcount": 1,
+            "variableomcost": 0.0,
             "volatility.forced": 0.0,
             "volatility.planned": 0.0,
         }

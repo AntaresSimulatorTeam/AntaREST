@@ -38,6 +38,7 @@ class FileStudyReservesGlobalParametersDao(ReservesGlobalParametersDao, ABC):
     @override
     def get_reserves_global_parameters(self, area_id: str) -> ReservesGlobalParameters:
         file_study = self.get_file_study()
+        check_area_exists(file_study.config, area_id)
         try:
             data = file_study.tree.get(_get_reserves_ini_path(area_id))
         except (ChildNotFoundError, KeyError):

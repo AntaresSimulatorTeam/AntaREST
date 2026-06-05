@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 def check_area_exists(study_data: FileStudyTreeConfig, area_id: str) -> None:
     if area_id not in study_data.areas:
-        raise AreaNotFound(f"The area '{area_id}' does not exist")
+        raise AreaNotFound(area_id)
 
 
 def get_all_area_matrices(

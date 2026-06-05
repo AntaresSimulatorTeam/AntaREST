@@ -506,6 +506,19 @@ def initialize_thematic_trimming_against_version(thematic_trimming: ThematicTrim
         setattr(thematic_trimming, field, True)
 
 
+def check_thematic_trimming_complete(thematic_trimming: ThematicTrimming, version: StudyVersion) -> None:
+    """
+    Raise ValueError if any version-relevant field on `thematic_trimming` is None.
+
+    DAOs assume the caller hands them a fully populated object.
+    """
+    missing = [
+        f for f in get_thematic_trimming_fields_according_to_version(version) if getattr(thematic_trimming, f) is None
+    ]
+    if missing:
+        raise ValueError(f"Thematic trimming is missing required field(s) for version {version}: {missing}")
+
+
 def update_thematic_trimming(trimming: ThematicTrimming, data: ThematicTrimmingUpdate) -> ThematicTrimming:
     """
     Updates the thematic trimming according to the provided update data.
