@@ -35,7 +35,7 @@ def disk_space_analyzer_task(self: MaintenanceTask) -> DiskSpaceAnalyzerTaskResu
     ctx = self.context
 
     with current_user_context(DEFAULT_ADMIN_USER):
-        return disk_space_analysis(ctx.study_service, ctx.study_disk_space_repository)
+        return disk_space_analysis(ctx.study_service, ctx.study_disk_space_repository, ctx.config.storage.tmp_dir)
 
 
 def setup_disk_space_analyzer_task(sender: Celery, storage: "StorageConfig") -> None:

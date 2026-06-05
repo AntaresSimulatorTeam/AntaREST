@@ -89,7 +89,7 @@ class GarbageCollectorTaskResult(AntaresBaseModel):
 
 
 class LockId(IntEnum):
-    """PostgreSQL advisory lock IDs to prevent concurrent runs."""
+    """Used as lock IDs to prevent concurrent runs."""
 
     MATRIX_GC = 1001
     BLOB_GC = 1002

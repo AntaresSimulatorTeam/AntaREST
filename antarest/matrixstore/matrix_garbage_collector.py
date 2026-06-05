@@ -46,7 +46,9 @@ class MatrixGarbageCollector(IService):
     def _loop(self) -> None:
         while True:
             try:
-                clean_matrices(self.matrix_service, self.dry_run, self.retention_time)
+                clean_matrices(
+                    self.matrix_service, self.dry_run, self.retention_time, self.matrix_service.config.storage.tmp_dir
+                )
             except Exception as e:
                 logger.error("Error while cleaning matrices", exc_info=e)
             logger.info(f"Sleeping for {self.sleeping_time}s")

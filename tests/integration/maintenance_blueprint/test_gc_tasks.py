@@ -12,14 +12,16 @@
 
 """Integration tests for the tasks cleaning garbage collection task."""
 
+import tempfile
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import patch
 
 from antarest.core.tasks.model import TaskDTO, TaskJob, TaskListFilter, TaskStatus
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.lock import create_lock
+from antarest.core.utils.lock import create_file_lock
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, LockId
 from antarest.maintenance.tasks.gc_tasks import clean_tasks
 from tests.helpers import with_admin_user
@@ -52,7 +54,12 @@ class TestTasksGCIntegration:
 
             # deleting tasks
             with patch("antarest.core.tasks.repository.current_time", return_value=datetime(2026, 2, 20, 0, 0, 0)):
-                task_result = clean_tasks(task_service=task_service, dry_run=False, task_retention_duration=17)
+                task_result = clean_tasks(
+                    task_service=task_service,
+                    dry_run=False,
+                    task_retention_duration=17,
+                    lock_folder=Path(tempfile.gettempdir()),
+                )
 
             expected_task = TaskDTO(
                 id="4",
@@ -67,9 +74,12 @@ class TestTasksGCIntegration:
             assert task_list == [expected_task]
 
     def test_returns_skipped_when_lock_held(self, task_service: ITaskService):
+        lock_folder = Path(tempfile.gettempdir())
         with db():
-            with create_lock(db.session, lock_id=LockId.TASKS_GC):
-                result = clean_tasks(task_service=task_service, dry_run=False, task_retention_duration=60)
+            with create_file_lock(lock_id=LockId.TASKS_GC, lock_folder=lock_folder):
+                result = clean_tasks(
+                    task_service=task_service, dry_run=False, task_retention_duration=60, lock_folder=lock_folder
+                )
 
             assert result.status == BackGroundTaskStatus.SKIPPED
             assert result.reason == "lock_not_acquired"

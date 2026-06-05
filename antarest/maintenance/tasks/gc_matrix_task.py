@@ -25,4 +25,5 @@ def clean_matrices_task(self: MaintenanceTask) -> GarbageCollectorTaskResult:
         ctx.matrix_service,
         ctx.config.storage.matrix_gc_dry_run,
         ctx.config.storage.matrix_gc_retention_time,
+        lock_folder=self.context.config.storage.tmp_dir,
     )

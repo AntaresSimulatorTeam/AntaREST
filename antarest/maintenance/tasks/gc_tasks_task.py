@@ -22,5 +22,8 @@ def gc_tasks_task(self: MaintenanceTask) -> GarbageCollectorTaskResult:
     ctx = self.context
 
     return clean_tasks(
-        ctx.task_service, ctx.config.storage.tasks_gc_dry_run, ctx.config.storage.tasks_gc_retention_days
+        ctx.task_service,
+        ctx.config.storage.tasks_gc_dry_run,
+        ctx.config.storage.tasks_gc_retention_days,
+        lock_folder=self.context.config.storage.tmp_dir,
     )

@@ -18,9 +18,10 @@ This task deletes unused variable views from the variable view store based on re
 import logging
 import time
 from datetime import timedelta
+from pathlib import Path
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.lock import LockNotAcquired, create_lock
+from antarest.core.utils.lock import LockNotAcquired, create_file_lock
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, GarbageCollectorTaskResult, LockId
 from antarest.output.variable_view.db import OutputVariablesViewsModel
@@ -28,10 +29,7 @@ from antarest.output.variable_view.db import OutputVariablesViewsModel
 logger = logging.getLogger(__name__)
 
 
-def clean_variable_views(
-    dry_run: bool,
-    retention_time: int,
-) -> GarbageCollectorTaskResult:
+def clean_variable_views(dry_run: bool, retention_time: int, lock_folder: Path) -> GarbageCollectorTaskResult:
     """
     Delete variable views if their last_read is older than retention_time.
 
@@ -42,6 +40,7 @@ def clean_variable_views(
     Args:
         dry_run: If True, don't actually delete variable views rows
         retention_time: Time in days before unused variable views can be deleted
+        lock_folder: The folder where the lock file will be created
     Returns:
         GarbageCollectorTaskResult with execution stats (deleted count, duration, status)
     """
@@ -53,7 +52,7 @@ def clean_variable_views(
     deleted_count = 0
     try:
         with db():
-            with create_lock(db.session, lock_id=LockId.VARIABLE_VIEW_GC):
+            with create_file_lock(lock_id=LockId.VARIABLE_VIEW_GC, lock_folder=lock_folder):
                 cutoff = current_time() - timedelta(days=retention_time)
 
                 query = db.session.query(OutputVariablesViewsModel).filter(OutputVariablesViewsModel.last_read < cutoff)

@@ -68,6 +68,7 @@ def auto_archive_task(self: MaintenanceTask) -> AutoArchiveTaskResult:
             ctx.config.storage.auto_archive_threshold_days,
             ctx.config.storage.snapshot_retention_days,
             ctx.config.storage.auto_archive_dry_run,
+            lock_folder=self.context.config.storage.tmp_dir,
         )
 
 

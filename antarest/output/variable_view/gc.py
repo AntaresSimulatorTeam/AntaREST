@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import logging
 import time
+from pathlib import Path
 
 from typing_extensions import override
 
@@ -27,16 +28,17 @@ class VariableViewGarbageCollector(IService):
     we can't rely on Celery.
     """
 
-    def __init__(self, sleeping_time: float, dry_run: bool, retention_time: int):
+    def __init__(self, sleeping_time: float, dry_run: bool, retention_time: int, lock_folder: Path):
         self.sleeping_time = sleeping_time
         self.dry_run = dry_run
         self.retention_time = retention_time
+        self.lock_folder = lock_folder
 
     @override
     def _loop(self) -> None:
         while True:
             try:
-                clean_variable_views(self.dry_run, self.retention_time)
+                clean_variable_views(self.dry_run, self.retention_time, self.lock_folder)
             except Exception as e:
                 logger.error("Error while cleaning variable views", exc_info=e)
             logger.info(f"Sleeping for {self.sleeping_time}s")
