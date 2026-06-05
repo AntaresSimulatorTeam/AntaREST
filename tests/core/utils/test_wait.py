@@ -57,7 +57,6 @@ def test_wait_returns_when_fn_returns_not_none():
 
 
 def test_wait_raises():
-
     def raising_function():
         raise ValueError("Failed")
 

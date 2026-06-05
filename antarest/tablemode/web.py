@@ -34,7 +34,6 @@ def create_table_routes() -> APIRouter:
             list[TableColumn], Body(), Field(min_length=1, description="At least one column is required")
         ],
     ) -> TableModeDTO:
-
         return tablemode_service.add_table(table_name=table_name, table_type=table_type, table_columns=table_columns)
 
     @bp.get("/tablemode", summary="Get Tables")

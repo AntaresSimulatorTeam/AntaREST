@@ -20,7 +20,6 @@ from tests.integration.utils import wait_for
 
 
 def wait_download_ready(client: TestClient, download_id: str) -> Response:
-
     # Wait download
     def is_ready() -> bool:
         res = client.get(f"/v1/downloads/{download_id}/metadata")
@@ -31,7 +30,6 @@ def wait_download_ready(client: TestClient, download_id: str) -> Response:
 
 
 def wait_download_error(client: TestClient, download_id: str) -> Response:
-
     # Wait download
     def is_complete() -> bool:
         res = client.get(f"/v1/downloads/{download_id}/metadata")
@@ -42,7 +40,6 @@ def wait_download_error(client: TestClient, download_id: str) -> Response:
 
 
 def download_to_io(client: TestClient, download_id: str, target: BinaryIO) -> None:
-
     # Wait download
     def is_ready() -> bool:
         res = client.get(f"/v1/downloads/{download_id}/metadata")

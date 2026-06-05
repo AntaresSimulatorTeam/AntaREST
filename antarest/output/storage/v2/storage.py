@@ -273,7 +273,6 @@ class V2OutputStorage(IOutputStorage):
 
     @override
     def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:
-
         if self._get_metadata(target_study_id, output_id) is not None:
             raise OutputAlreadyExists(output_id)
 

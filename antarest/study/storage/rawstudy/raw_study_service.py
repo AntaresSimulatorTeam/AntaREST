@@ -68,7 +68,6 @@ class RawStudyService(AbstractStudyService):
         command_context: CommandContext,
         repository: StudyMetadataRepository,
     ):
-
         super().__init__(cache, config)
 
         self.study_factory = study_factory

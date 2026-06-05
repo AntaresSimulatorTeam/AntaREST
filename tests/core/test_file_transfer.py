@@ -93,7 +93,6 @@ def test_lifecycle(tmp_path: Path) -> None:
 
 @with_admin_user
 def test_wait_for_download_metadata(tmp_path: Path) -> None:
-
     with db():
         ftm = FileTransferManager(
             repository=FileDownloadRepository(),
