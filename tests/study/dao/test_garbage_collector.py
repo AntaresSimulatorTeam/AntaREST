@@ -27,7 +27,6 @@ from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_9_3, StorageMode, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.database_storage import DatabaseStudyStorage
@@ -40,23 +39,6 @@ from tests.study.dao.conftest import build_db_dao, build_fs_dao, build_real_case
 from tests.study.dao.utils import save_area
 
 
-def _register_provider(
-    dao: StudyDao, db_session: Session, matrix_service: MatrixService, core_cache: ICache
-) -> RawStudyMatrixUsageProvider:
-
-    if isinstance(dao, FileStudyTreeDao):
-        study_factory = StudyFactory(matrix_service=matrix_service, cache=core_cache)
-        storage_mapping = {
-            StorageMode.FILESYSTEM: FileStudyStorage(core_cache, Mock(), Mock(), study_factory),
-        }
-        repository = StudyMetadataRepository(core_cache)
-    else:
-        storage_mapping = {StorageMode.DATABASE: DatabaseStudyStorage(Mock(), matrix_service, Mock())}
-        repository = Mock()
-        repository.get_all.return_value = [db_session.get(Study, dao.get_study_id())]
-    return RawStudyMatrixUsageProvider(repository, matrix_service, storage_mapping)
-
-
 def _build_storage_mapping(
     cache: ICache, command_context: CommandContext, matrix_service: MatrixService
 ) -> dict[StorageMode, object]:
@@ -67,6 +49,19 @@ def _build_storage_mapping(
     }
 
 
+def _register_provider(
+    dao: StudyDao,
+    db_session: Session,
+    matrix_service: MatrixService,
+    core_cache: ICache,
+    command_context: CommandContext,
+) -> RawStudyMatrixUsageProvider:
+    storage_mapping = _build_storage_mapping(core_cache, command_context, matrix_service)
+    repository = Mock()
+    repository.get_all.return_value = [db_session.get(Study, dao.get_study_id())]
+    return RawStudyMatrixUsageProvider(repository, matrix_service, storage_mapping)
+
+
 def _build_dao(
     backend: str,
     matrix_service: MatrixService,
@@ -75,12 +70,6 @@ def _build_dao(
     core_cache: ICache,
     tmp_path: Path,
 ) -> StudyDao:
-    if backend == "database":
-        dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
-        _register_provider(dao, db_session, matrix_service, core_cache)
-        return dao
-
-    # filesystem
     generator = GeneratorMatrixConstants(matrix_service)
     generator.init_constant_matrices()
     command_context = CommandContext(
@@ -88,6 +77,12 @@ def _build_dao(
         matrix_service=matrix_service,
         blob_service=blob_service,
     )
+
+    if backend == "database":
+        dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
+        _register_provider(dao, db_session, matrix_service, core_cache, command_context)
+        return dao
+
     dao, _ = build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
     RawStudyMatrixUsageProvider(
         StudyMetadataRepository(core_cache),
@@ -315,7 +310,9 @@ def test_garbage_collection(
     assert task.deleted_count == 43
 
 
-def test_provider_includes_reserve_need_matrix(dao_10_0: StudyDao, core_cache: ICache) -> None:
+def test_provider_includes_reserve_need_matrix(
+    dao_10_0: StudyDao, core_cache: ICache, command_context: CommandContext
+) -> None:
     # TODO: adapt this test once v10.0 is fully supported
     dao = dao_10_0
     matrix_service = dao._matrix_service
@@ -326,6 +323,6 @@ def test_provider_includes_reserve_need_matrix(dao_10_0: StudyDao, core_cache: I
     dao.save_reserve_needs({"paris": {ReserveDefinitionId("R1"): matrix_id}})
 
     with db():
-        provider = _register_provider(dao, db.session, matrix_service, core_cache)
+        provider = _register_provider(dao, db.session, matrix_service, core_cache, command_context)
         used_ids = {ref.matrix_id for ref in provider.get_matrix_usage()}
     assert matrix_id in used_ids
