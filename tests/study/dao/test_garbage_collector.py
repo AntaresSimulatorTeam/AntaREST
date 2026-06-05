@@ -42,12 +42,12 @@ from tests.study.dao.utils import save_area
 def _register_provider(
     dao: StudyDao, db_session: Session, matrix_service: MatrixService
 ) -> RawStudyMatrixUsageProvider:
-    # DB-mode studies aren't RawStudy rows, so the real repo's `managed` filter skips them:
-    # feed the study to the provider through a stub repository.
+    database_study_storage = DatabaseStudyStorage(Mock(), matrix_service, Mock())
+    storage_mapping = {StorageMode.DATABASE: database_study_storage}
     repository = Mock()
     repository.get_all.return_value = [db_session.get(Study, dao.get_study_id())]
-    storage_mapping = {StorageMode.DATABASE: DatabaseStudyStorage(Mock(), matrix_service, Mock())}
-    return RawStudyMatrixUsageProvider(repository, matrix_service, storage_mapping)
+    provider = RawStudyMatrixUsageProvider(repository, matrix_service, storage_mapping)
+    return provider
 
 
 def _build_storage_mapping(
