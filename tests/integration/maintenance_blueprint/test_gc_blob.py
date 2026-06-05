@@ -23,6 +23,7 @@ from antarest.maintenance.tasks.common import BackGroundTaskStatus, GarbageColle
 from antarest.maintenance.tasks.gc_blob import clean_blobs
 from antarest.study.business.model.user_model import ResourceType
 from antarest.study.dao.database.database_blob_usage_provider import DatabaseBlobUsageProvider
+from antarest.study.dao.database.models import STUDY_DATA_TABLE
 from antarest.study.dao.database.models.user_resources import USER_RESOURCES_TABLE
 from tests.helpers import create_study
 
@@ -121,6 +122,7 @@ class TestCleanBlobsIntegration:
         with db():
             db.session.add(create_study(id=study_id, name="Test Study", version="880"))
             db.session.flush()
+            db.session.execute(STUDY_DATA_TABLE.insert().values({"study_id": study_id}))
             db.session.execute(
                 USER_RESOURCES_TABLE.insert().values(
                     study_id=study_id,
