@@ -11,10 +11,7 @@
 # This file is part of the Antares project.
 
 """
-Distributed lock implementations.
-
-This module provides lock mechanisms for coordinating between multiple processes or workers.
-It defines an abstract interface and concrete implementations for different backends.
+Distributed lock implementation, used for coordination between workers or possibly threads.
 """
 
 import logging
