@@ -11,6 +11,8 @@
 # This file is part of the Antares project.
 
 import datetime
+import tempfile
+from pathlib import Path
 from unittest.mock import Mock
 
 from antarest.core.exceptions import TaskAlreadyRunning
@@ -87,6 +89,7 @@ def test_auto_archival() -> None:
         threshold_days=60,
         snapshot_retention_days=7,
         dry_run=False,
+        lock_folder=Path(tempfile.gettempdir()),
     )
 
     assert result.status == BackGroundTaskStatus.SUCCESS

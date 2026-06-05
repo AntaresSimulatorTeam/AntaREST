@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import tempfile
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -112,7 +113,12 @@ def test_garbage_collection(db_dao: DatabaseStudyDao, db_session: Session, tmp_p
     bc_both_id, bc_eq_id = result.bc_both_id, result.bc_eq_id
 
     # Launch the Garbage collection
-    task = clean_matrices(matrix_service=matrix_service, dry_run=False, retention_time=0)
+    task = clean_matrices(
+        matrix_service=matrix_service,
+        dry_run=False,
+        retention_time=0,
+        lock_folder=Path(tempfile.gettempdir()),
+    )
     assert task.status == BackGroundTaskStatus.SUCCESS
     assert task.deleted_count == 0
 
@@ -252,7 +258,12 @@ def test_garbage_collection(db_dao: DatabaseStudyDao, db_session: Session, tmp_p
     db_session.commit()
 
     # Launch the Garbage collection
-    task = clean_matrices(matrix_service=matrix_service, dry_run=False, retention_time=0)
+    task = clean_matrices(
+        matrix_service=matrix_service,
+        dry_run=False,
+        retention_time=0,
+        lock_folder=Path(tempfile.gettempdir()),
+    )
     assert task.status == BackGroundTaskStatus.SUCCESS
     assert task.deleted_count == 43
 
