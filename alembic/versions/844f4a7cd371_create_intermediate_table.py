@@ -54,15 +54,6 @@ def _find_study_id_fk(table_name: str, reference_table_name: str) -> dict[str, o
     return matching_fks[0]
 
 
-def _get_ondelete(fk: dict[str, object]) -> str | None:
-    options = fk.get("options") or {}
-    assert isinstance(options, dict)
-    ondelete = options.get("ondelete")
-    if isinstance(ondelete, str):
-        return ondelete
-    return None
-
-
 def _transform_tables_postgresql(new_reference_table: str, old_reference_table: str) -> None:
     """
     PostgreSQL can drop and recreate foreign key constraints directly, so keep existing tables in place.
@@ -73,10 +64,6 @@ def _transform_tables_postgresql(new_reference_table: str, old_reference_table: 
         if not isinstance(fk_name, str) or not fk_name:
             raise RuntimeError(f"Foreign key from {table_name}.study_id to {old_reference_table} has no name")
 
-        ondelete = _get_ondelete(fk)
-        if ondelete != "CASCADE":
-            print(f"Foreign key {fk_name} on {table_name}.study_id has ondelete={ondelete!r}")
-
         new_fk_name = f"fk_{table_name}_study_id"
         with op.batch_alter_table(table_name, schema=None) as batch_op:
             batch_op.drop_constraint(fk_name, type_="foreignkey")
@@ -85,7 +72,7 @@ def _transform_tables_postgresql(new_reference_table: str, old_reference_table: 
                 new_reference_table,
                 ["study_id"],
                 ["study_id" if new_reference_table == INTERMEDIATE_TABLE else "id"],
-                ondelete=ondelete,
+                ondelete="CASCADE",
             )
 
 
