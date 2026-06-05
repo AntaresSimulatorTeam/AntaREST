@@ -48,6 +48,7 @@ class AutoArchiveService(IService):
         self.output_service = output_service
         self.config = config
         self.sleep_cycle = self.config.storage.auto_archive_sleeping_time
+        self.lock_folder = self.config.storage.tmp_dir
 
     @override
     def _loop(self) -> None:
@@ -60,6 +61,7 @@ class AutoArchiveService(IService):
                         threshold_days=self.config.storage.auto_archive_threshold_days,
                         snapshot_retention_days=self.config.storage.snapshot_retention_days,
                         dry_run=self.config.storage.auto_archive_dry_run,
+                        lock_folder=self.lock_folder,
                     )
                     logger.info(
                         f"Auto-archive completed: status={result.status}, archived_studies={result.archived_studies}"
