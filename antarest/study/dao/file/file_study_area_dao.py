@@ -13,7 +13,7 @@ import contextlib
 import logging
 import re
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable
 
 import polars as pl
 from typing_extensions import override
@@ -25,7 +25,7 @@ from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
 from antarest.study.dao.api.area_dao import AreaDao
 from antarest.study.dao.common import AreaId, AreaName, AreaSeriesMapping, AreaUiMapping
-from antarest.study.dao.file.common import get_all_area_matrices, save_area_matrices
+from antarest.study.dao.file.common import check_area_exists, get_all_area_matrices, save_area_matrices
 from antarest.study.model import (
     STUDY_VERSION_6_5,
     STUDY_VERSION_8_1,
@@ -144,12 +144,7 @@ class FileStudyAreaDao(AreaDao):
             ChildNotFoundError: If the area does not exist.
         """
         file_study = self.get_file_study()
-
-        # Check if area exists in config
-        if area_id not in file_study.config.areas:
-            from antarest.core.exceptions import AreaNotFound
-
-            raise AreaNotFound(area_id)
+        check_area_exists(file_study.config, area_id)
 
         # Import AreaUIFileData here to avoid circular import
         from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUIFileData
@@ -186,25 +181,32 @@ class FileStudyAreaDao(AreaDao):
         invalid_areas = areas_set - all_areas
         return list(invalid_areas)
 
+    def _get_area_matrix(self, area_id: str, path_getter: Callable[[AreaId], list[str]]) -> pl.DataFrame:
+        try:
+            return self.get_impl().get_matrix(path_getter(area_id))
+        except ChildNotFoundError:
+            check_area_exists(self.get_file_study().config, area_id)
+            raise
+
     @override
     def get_load(self, area_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(_get_load_matrix_path(area_id))
+        return self._get_area_matrix(area_id, _get_load_matrix_path)
 
     @override
     def get_misc_gen(self, area_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(_get_misc_gen_matrix_path(area_id))
+        return self._get_area_matrix(area_id, _get_misc_gen_matrix_path)
 
     @override
     def get_reserves(self, area_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(_get_reserves_matrix_path(area_id))
+        return self._get_area_matrix(area_id, _get_reserves_matrix_path)
 
     @override
     def get_solar(self, area_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(_get_solar_matrix_path(area_id))
+        return self._get_area_matrix(area_id, _get_solar_matrix_path)
 
     @override
     def get_wind(self, area_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(_get_wind_matrix_path(area_id))
+        return self._get_area_matrix(area_id, _get_wind_matrix_path)
 
     @override
     def get_all_load(self) -> AreaSeriesMapping:
@@ -310,6 +312,8 @@ class FileStudyAreaDao(AreaDao):
         logger = logging.getLogger(__name__)
 
         study_data = self.get_file_study()
+
+        check_area_exists(study_data.config, area_id)
 
         # Check that the area is not referenced in any binding constraint
         constraints = self.get_impl().get_all_constraints()
@@ -509,6 +513,7 @@ class FileStudyAreaDao(AreaDao):
     def save_area_ui(self, data: AreaUiMapping) -> None:
         study_data = self.get_file_study()
         for area_id, value in data.items():
+            check_area_exists(study_data.config, area_id)
             current_area = study_data.tree.get(["input", "areas", area_id, "ui"])
             for layer, area_ui in value.items():
                 current_area = self._fill_area_ui(current_area, layer, area_ui)
@@ -517,6 +522,7 @@ class FileStudyAreaDao(AreaDao):
 
     @staticmethod
     def _fill_area_ui(current_area: dict[str, Any], layer: str, area_ui: AreaUI) -> dict[str, Any]:
+        """Merge a per-layer UI update into the area-ui's dict."""
         layer_int = int(layer)
 
         # Initialize sections if missing (happens when creating the area)
@@ -540,6 +546,8 @@ class FileStudyAreaDao(AreaDao):
             current_area["ui"]["color_r"] = r
             current_area["ui"]["color_g"] = g
             current_area["ui"]["color_b"] = b
+
+        current_area["ui"]["layers"] = " ".join(sorted(current_area["layerX"], key=int))
 
         return current_area
 
@@ -601,22 +609,30 @@ class FileStudyAreaDao(AreaDao):
         for area in to_remove_areas + to_add_areas:
             study_data.tree.save(areas_ui[area], ["input", "areas", area, "ui"])
 
+    def _save_area_matrices(self, series: AreaSeriesMapping, path_getter: Callable[[AreaId], list[str]]) -> None:
+        try:
+            save_area_matrices(self.get_impl(), self.get_file_study(), series, path_getter)
+        except ChildNotFoundError:
+            for area_id in series:
+                check_area_exists(self.get_file_study().config, area_id)
+            raise
+
     @override
     def save_load(self, series: AreaSeriesMapping) -> None:
-        save_area_matrices(self.get_impl(), self.get_file_study(), series, _get_load_matrix_path)
+        self._save_area_matrices(series, _get_load_matrix_path)
 
     @override
     def save_misc_gen(self, series: AreaSeriesMapping) -> None:
-        save_area_matrices(self.get_impl(), self.get_file_study(), series, _get_misc_gen_matrix_path)
+        self._save_area_matrices(series, _get_misc_gen_matrix_path)
 
     @override
     def save_reserves(self, series: AreaSeriesMapping) -> None:
-        save_area_matrices(self.get_impl(), self.get_file_study(), series, _get_reserves_matrix_path)
+        self._save_area_matrices(series, _get_reserves_matrix_path)
 
     @override
     def save_solar(self, series: AreaSeriesMapping) -> None:
-        save_area_matrices(self.get_impl(), self.get_file_study(), series, _get_solar_matrix_path)
+        self._save_area_matrices(series, _get_solar_matrix_path)
 
     @override
     def save_wind(self, series: AreaSeriesMapping) -> None:
-        save_area_matrices(self.get_impl(), self.get_file_study(), series, _get_wind_matrix_path)
+        self._save_area_matrices(series, _get_wind_matrix_path)

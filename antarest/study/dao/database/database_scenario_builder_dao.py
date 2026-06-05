@@ -9,14 +9,23 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any
+from abc import abstractmethod
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import delete, insert, select
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.schema import Table
 from typing_extensions import override
 
-from antarest.study.business.model.scenario_builder_model import AnyScenarios, Ruleset, ScenarioType
+from antarest.study.business.model.scenario_builder_model import (
+    AnyScenarios,
+    Ruleset,
+    RulesetUpdate,
+    ScenarioType,
+    initialize_ruleset_with_version,
+    update_ruleset,
+)
+from antarest.study.business.model.study_index import StudyIndex
 from antarest.study.dao.api.scenario_builder_dao import ScenarioBuilderDao
 from antarest.study.dao.database.models.ruleset import (
     SCENARIO_BINDING_CONSTRAINTS_TABLE,
@@ -33,6 +42,9 @@ from antarest.study.dao.database.models.ruleset import (
     SCENARIO_THERMAL_TABLE,
     SCENARIO_WIND_TABLE,
 )
+
+if TYPE_CHECKING:
+    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 _LINK_SEPARATOR = " / "
 
@@ -71,6 +83,10 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
     def __init__(self, study_id: str, db_session: Session) -> None:
         self._study_id = study_id
         self._db_session = db_session
+
+    @abstractmethod
+    def get_impl(self) -> "DatabaseStudyDao":
+        pass
 
     @override
     def save_scenario_builder(self, ruleset: Ruleset) -> None:
@@ -192,40 +208,33 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
 
     @override
     def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
-        study_id, session = self._study_id, self._db_session
+        impl = self.get_impl()
+        version = impl.get_version()
+        nb_years = impl.get_general_config().nb_years
+        years = [str(y) for y in range(nb_years)]
+        index = self._build_study_index()
 
-        if scenario_type in _AREA_SCENARIO_TYPE_TO_TABLE:
-            table = _AREA_SCENARIO_TYPE_TO_TABLE[scenario_type]
-            stmt = select(table).where(table.c.study_id == study_id)
-            return {row.area_id: row.value for row in session.execute(stmt)}
+        dense = initialize_ruleset_with_version(years, index, version, {scenario_type})
+        sparse = self.get_ruleset()
+        update_ruleset(dense, RulesetUpdate(**sparse.model_dump()), version)
+        return dense.get(scenario_type)
 
-        if scenario_type == ScenarioType.LINK:
-            stmt = select(SCENARIO_NTC_TABLE).where(SCENARIO_NTC_TABLE.c.study_id == study_id)
-            return {f"{row.area1}{_LINK_SEPARATOR}{row.area2}": row.value for row in session.execute(stmt)}
-
-        if scenario_type == ScenarioType.BINDING_CONSTRAINTS:
-            stmt = select(SCENARIO_BINDING_CONSTRAINTS_TABLE).where(
-                SCENARIO_BINDING_CONSTRAINTS_TABLE.c.study_id == study_id
-            )
-            return {row.bc_group_id: row.value for row in session.execute(stmt)}
-
-        if scenario_type in _AREA_ITEM_TABLE_MAP:
-            table, id_col = _AREA_ITEM_TABLE_MAP[scenario_type]
-            stmt = select(table).where(table.c.study_id == study_id)
-            result: dict[str, Any] = {}
-            for row in session.execute(stmt):
-                result.setdefault(row.area_id, {})[getattr(row, id_col)] = row.value
-            return result
-
-        if scenario_type == ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS:
-            stmt = select(SCENARIO_STORAGE_CONSTRAINTS_TABLE).where(
-                SCENARIO_STORAGE_CONSTRAINTS_TABLE.c.study_id == study_id
-            )
-            constraints_result: dict[str, Any] = {}
-            for row in session.execute(stmt):
-                constraints_result.setdefault(row.area_id, {}).setdefault(row.st_storage_id, {})[row.constraint_id] = (
-                    row.value
-                )
-            return constraints_result
-
-        raise ValueError(f"Unknown scenario type {scenario_type}")
+    def _build_study_index(self) -> StudyIndex:
+        impl = self.get_impl()
+        areas = list(impl.get_all_area_ids())
+        thermals = impl.get_all_thermals()
+        renewables = impl.get_all_renewables()
+        storages = impl.get_all_st_storages()
+        sts_constraints = impl.get_all_st_storage_additional_constraints()
+        return StudyIndex(
+            areas=areas,
+            links=[(link.area1, link.area2) for link in impl.get_links()],
+            thermals={a: list(thermals.get(a, {})) for a in areas},
+            renewables={a: list(renewables.get(a, {})) for a in areas},
+            storages={a: list(storages.get(a, {})) for a in areas},
+            bc_groups={c.group for c in impl.get_all_constraints().values() if c.group},
+            sts_additional_constraints={
+                a: {s: [c.id for c in sts_constraints.get(a, {}).get(s, [])] for s in storages.get(a, {})}
+                for a in areas
+            },
+        )

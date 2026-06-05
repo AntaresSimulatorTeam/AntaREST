@@ -13,11 +13,13 @@ from abc import ABC, abstractmethod
 
 from typing_extensions import override
 
-from antarest.core.exceptions import ConfigFileNotFound
+from antarest.core.exceptions import AreaNotFound, ConfigFileNotFound
 from antarest.study.business.model.area_properties_model import (
     AreaProperties,
+    sort_filter_options,
 )
 from antarest.study.dao.api.area_properties_dao import AreaPropertiesDao
+from antarest.study.dao.file.common import check_area_exists
 from antarest.study.model import STUDY_VERSION_8_3
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     AdequacyPatchFileData,
@@ -53,6 +55,7 @@ class FileStudyAreaPropertiesDao(AreaPropertiesDao, ABC):
     @override
     def get_area_properties(self, area_id: str) -> AreaProperties:
         file_study = self.get_file_study()
+        check_area_exists(file_study.config, area_id)
 
         current_thermal_props = file_study.tree.get(get_thermal_path())
         current_optim_properties = file_study.tree.get(get_optimization_path(area_id))
@@ -122,6 +125,9 @@ class FileStudyAreaPropertiesDao(AreaPropertiesDao, ABC):
     def save_area_properties(self, area_id: str, area_properties: AreaProperties) -> None:
         file_study = self.get_file_study()
 
+        if area_id not in file_study.config.areas:
+            raise AreaNotFound(area_id)
+
         thermal_props = ThermalAreasFileData.model_validate(file_study.tree.get(get_thermal_path()))
         optimization_props = OptimizationFileData.model_validate(file_study.tree.get(get_optimization_path(area_id)))
         adequacy_patch_props = (
@@ -144,10 +150,16 @@ class FileStudyAreaPropertiesDao(AreaPropertiesDao, ABC):
         )
         if file_study.config.version >= STUDY_VERSION_8_3:
             file_study.tree.save(
-                properties.adequacy_patch_properties.model_dump(mode="json", by_alias=True),
+                properties.adequacy_patch_properties.model_dump(mode="json", by_alias=True, exclude_none=True),
                 get_adequacy_patch_path(area_id),
             )
         file_study.tree.save(
             properties.thermal_properties.model_dump(mode="json", by_alias=True),
             get_thermal_path(),
         )
+
+        # Sync the in-memory config so consumers reading from `file_study.config`
+        # (e.g. `get_synthesis`) see the freshly persisted filter values.
+        area_config = file_study.config.areas[area_id]
+        area_config.filters_synthesis = [str(f) for f in sort_filter_options(area_properties.filter_synthesis)]
+        area_config.filters_year = [str(f) for f in sort_filter_options(area_properties.filter_by_year)]

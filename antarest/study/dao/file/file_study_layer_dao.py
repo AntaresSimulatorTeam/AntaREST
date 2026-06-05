@@ -16,6 +16,7 @@ from typing import Any
 
 from typing_extensions import override
 
+from antarest.core.exceptions import LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, DEFAULT_LAYER_NAME
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.dao.api.layer_dao import LayerDao
@@ -59,9 +60,15 @@ class FileStudyLayerDao(LayerDao, ABC):
 
     @override
     def delete_layer(self, layer_id: str) -> None:
+        if layer_id == DEFAULT_LAYER_ID:
+            raise LayerNotAllowedToBeDeleted()
+
         file_study = self.get_file_study()
 
         layers = file_study.tree.get(["layers", "layers", "layers"])
+
+        if layer_id not in layers:
+            raise LayerNotFound(layer_id)
 
         del layers[layer_id]
 

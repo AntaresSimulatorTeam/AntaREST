@@ -725,7 +725,7 @@ class TestThermal:
             },
         )
         assert res.status_code == 500, res.json()
-        assert f"The area '{bad_area_id}' does not exist" in res.json()["description"]
+        assert f"Area is not found: '{bad_area_id}'" in res.json()["description"]
 
         # Check POST with wrong `group`
         res = client.post(

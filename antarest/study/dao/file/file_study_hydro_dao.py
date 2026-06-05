@@ -22,7 +22,7 @@ from antarest.study.business.model.hydro_correlation_model import (
     HydroCorrelationMatrix,
 )
 from antarest.study.dao.common import AreaId, AreaSeriesMapping
-from antarest.study.dao.file.common import get_all_area_matrices, save_area_matrices
+from antarest.study.dao.file.common import check_area_exists, get_all_area_matrices, save_area_matrices
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -158,8 +158,7 @@ class FileStudyHydroDao(HydroDao):
         for area_name, coefficient in allocation_data.items():
             # Checks the written area exists in the study
             area_id = transform_name_to_id(area_name)
-            if area_id not in file_study.config.areas:
-                raise AreaNotFound(area_id)
+            check_area_exists(file_study.config, area_id)
             allocations.append(HydroAllocationArea(area_id=area_id, coefficient=coefficient))
         return HydroAllocation(allocation=allocations)
 

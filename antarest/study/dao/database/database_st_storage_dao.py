@@ -34,7 +34,7 @@ from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
     STStorageAdditionalConstraintsMap,
-    initialize_st_storage,
+    check_st_storage_complete,
     validate_st_storage_against_version,
 )
 from antarest.study.dao.api.st_storage_dao import STStorageDao
@@ -105,7 +105,6 @@ class DatabaseStStorageDao(STStorageDao):
         storage = STStorage(**data)
         version = self.get_impl().get_version()
         validate_st_storage_against_version(version, storage)
-        initialize_st_storage(storage, version)
         return storage
 
     def _convert_constraint_to_row(
@@ -175,9 +174,11 @@ class DatabaseStStorageDao(STStorageDao):
         if not data:
             return
 
+        version = self.get_impl().get_version()
         values = []
         for area_id, storages in data.items():
             for storage in storages:
+                check_st_storage_complete(storage, version)
                 values.append(self._convert_st_storage_to_row(area_id, storage))
 
         session = self._db_session

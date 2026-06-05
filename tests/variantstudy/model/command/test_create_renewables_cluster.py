@@ -130,7 +130,7 @@ class TestCreateRenewablesCluster:
             study_version=study_version,
         ).apply(dao)
         assert output.status is False
-        assert f"The area '{fake_area}' does not exist" in output.message
+        assert f"Area is not found: '{fake_area}'" in output.message
 
     # noinspection SpellCheckingInspection
     def test_to_dto(self, command_context: CommandContext) -> None:

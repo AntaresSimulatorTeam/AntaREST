@@ -392,6 +392,25 @@ def initialize_thermal_cluster(cluster: ThermalCluster, version: StudyVersion) -
         _initialize_field_default(cluster, "variable_o_m_cost", 0.0)
 
 
+def check_thermal_cluster_complete(cluster: ThermalCluster, version: StudyVersion) -> None:
+    """
+    Raise ValueError if any version-required field on `cluster` is None.
+
+    DAOs assume the caller hands them a fully populated object.
+    """
+    required: list[str] = []
+    if version >= STUDY_VERSION_8_6:
+        required.extend(["nh3", "so2", "nox", "pm2_5", "pm5", "pm10", "nmvoc", "op1", "op2", "op3", "op4", "op5"])
+    if version >= STUDY_VERSION_8_7:
+        required.extend(["cost_generation", "efficiency", "variable_o_m_cost"])
+
+    missing = [f for f in required if getattr(cluster, f) is None]
+    if missing:
+        raise ValueError(
+            f"Thermal cluster '{cluster.id}' is missing required field(s) for version {version}: {missing}"
+        )
+
+
 def create_thermal_cluster(cluster_data: ThermalClusterCreation, version: StudyVersion) -> ThermalCluster:
     """
     Creates a thermal cluster from a creation request, checking and initializing it against the specified study version.

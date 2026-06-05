@@ -15,42 +15,56 @@ from antarest.study.business.model.config.advanced_parameters_model import (
     AdvancedParameters,
     RenewableGenerationModeling,
 )
-from antarest.study.business.model.district_model import District
+from antarest.study.business.model.district_model import District, DistrictApplyFilter
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, initialize_st_storage
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
-from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, LinkConfig
+from tests.helpers import explain_model_diff
 from tests.study.dao.utils import save_area
 
 ALL_FILTERS = list(FILTER_OPTIONS)
 
+# Default district.
+DEFAULT_DISTRICT = District(
+    id="all areas",
+    name="All areas",
+    output=False,
+    comments="Spatial aggregates on all areas",
+    apply_filter=DistrictApplyFilter.add_all,
+)
+
 
 class TestDatabaseSynthesisDao:
-    def test_get_synthesis_empty_study(self, db_dao: DatabaseStudyDao) -> None:
-        synthesis = db_dao.get_synthesis()
+    def test_get_synthesis_empty_study(self, dao: StudyDao) -> None:
+        synthesis = dao.get_synthesis()
 
-        assert synthesis == StudyDataSynthesis.model_construct(
-            study_id=db_dao.get_study_id(),
-            version=db_dao.get_version(),
+        expected = StudyDataSynthesis.model_construct(
+            study_id=dao.get_study_id(),
+            version=dao.get_version(),
             areas={},
-            districts={},
+            districts={"all areas": DEFAULT_DISTRICT},
             bindings=[],
             enr_modelling=EnrModelling.CLUSTERS,
         )
+        assert synthesis == expected, explain_model_diff(synthesis, expected)
 
-    def test_get_synthesis_with_areas_and_clusters(self, db_dao: DatabaseStudyDao) -> None:
-        dao = db_dao
+    def test_get_synthesis_with_areas_and_clusters(self, dao: StudyDao) -> None:
         version = dao.get_version()
 
         save_area(dao, "France")
         save_area(dao, "Germany")
 
-        dao.save_thermals({"france": [ThermalCluster(id="coal_plant", name="Coal Plant")]})
+        coal = ThermalCluster(id="coal_plant", name="Coal Plant")
+        initialize_thermal_cluster(coal, version)
+        dao.save_thermals({"france": [coal]})
         dao.save_renewable("france", RenewableCluster(id="wind_farm", name="Wind Farm"))
-        dao.save_st_storages({"germany": [STStorage(id="battery", name="Battery")]})
+        battery = STStorage(id="battery", name="Battery")
+        initialize_st_storage(battery, version)
+        dao.save_st_storages({"germany": [battery]})
 
         synthesis = dao.get_synthesis()
 
@@ -79,8 +93,7 @@ class TestDatabaseSynthesisDao:
             ),
         }
 
-    def test_get_synthesis_with_links(self, db_dao: DatabaseStudyDao) -> None:
-        dao = db_dao
+    def test_get_synthesis_with_links(self, dao: StudyDao) -> None:
 
         save_area(dao, "France")
         save_area(dao, "Germany")
@@ -109,9 +122,7 @@ class TestDatabaseSynthesisDao:
             ),
         }
 
-    def test_get_synthesis_with_districts(self, db_dao: DatabaseStudyDao) -> None:
-        dao = db_dao
-
+    def test_get_synthesis_with_districts(self, dao: StudyDao) -> None:
         save_area(dao, "France")
         dao.save_district(District(id="north", name="North", add_areas=["france"]))
         dao.save_district(District(id="south", name="South"))
@@ -119,12 +130,12 @@ class TestDatabaseSynthesisDao:
         synthesis = dao.get_synthesis()
 
         assert synthesis.districts == {
+            "all areas": DEFAULT_DISTRICT,
             "north": District(id="north", name="North", add_areas=["france"]),
             "south": District(id="south", name="South"),
         }
 
-    def test_get_synthesis_with_area_filters(self, db_dao: DatabaseStudyDao) -> None:
-        dao = db_dao
+    def test_get_synthesis_with_area_filters(self, dao: StudyDao) -> None:
 
         save_area(dao, "France")
         dao.save_area_properties("france", AreaProperties(filter_synthesis={"hourly", "daily"}))
@@ -142,8 +153,7 @@ class TestDatabaseSynthesisDao:
             ),
         }
 
-    def test_get_synthesis_enr_modelling(self, db_dao: DatabaseStudyDao) -> None:
-        dao = db_dao
+    def test_get_synthesis_enr_modelling(self, dao: StudyDao) -> None:
 
         dao.save_advanced_parameters(
             AdvancedParameters(renewable_generation_modelling=RenewableGenerationModeling.AGGREGATED)
@@ -152,12 +162,11 @@ class TestDatabaseSynthesisDao:
         synthesis = dao.get_synthesis()
         assert synthesis.enr_modelling == EnrModelling.AGGREGATED
 
-    def test_get_synthesis_bindings_empty_for_db(self, db_dao: DatabaseStudyDao) -> None:
-        synthesis = db_dao.get_synthesis()
+    def test_get_synthesis_bindings_empty_for_db(self, dao: StudyDao) -> None:
+        synthesis = dao.get_synthesis()
         assert synthesis.bindings == []
 
-    def test_get_synthesis_via_read_only_adapter(self, db_dao: DatabaseStudyDao) -> None:
-        dao = db_dao
+    def test_get_synthesis_via_read_only_adapter(self, dao: StudyDao) -> None:
         save_area(dao, "Spain")
 
         read_only = dao.read_only()

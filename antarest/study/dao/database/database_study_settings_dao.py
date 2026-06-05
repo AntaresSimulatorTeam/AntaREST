@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import logging
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
@@ -25,7 +26,7 @@ from antarest.study.business.model.config.compatibility_parameters_model import 
 )
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
-from antarest.study.business.model.config.playlist_model import Playlist
+from antarest.study.business.model.config.playlist_model import Playlist, PlaylistValues
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration, TimeSeriesType
 from antarest.study.dao.api.adequacy_patch_parameters_dao import AdequacyPatchParametersDao
 from antarest.study.dao.api.advanced_parameters_dao import AdvancedParametersDao
@@ -48,6 +49,17 @@ from antarest.study.dao.database.sql_utils import upsert_one
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+
+
+logger = logging.getLogger(__name__)
+
+
+def _expand_playlist(playlist: Playlist, nb_years: int) -> Playlist:
+    """Expand sparse playlist to cover years 1..nb_years; unsaved years default to status=True."""
+    expanded = {y: v for y, v in playlist.years.items() if 1 <= y <= nb_years}
+    for year in range(1, nb_years + 1):
+        expanded.setdefault(year, PlaylistValues(status=True))
+    return Playlist(years=expanded)
 
 
 class DatabaseStudySettingsDao(
@@ -203,7 +215,17 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_playlist_config(self, playlist: Playlist) -> None:
-        values = dict(study_id=self.get_study_id(), years=to_json_string(playlist.years))
+        nb_years = self.get_general_config().nb_years
+        out_of_range = {y: v for y, v in playlist.years.items() if y < 1 or y > nb_years}
+        if out_of_range:
+            logger.warning(
+                "Dropping playlist entries for years outside [1, %d] on study %s: %s",
+                nb_years,
+                self.get_study_id(),
+                sorted(out_of_range),
+            )
+        years = {y: v for y, v in playlist.years.items() if 1 <= y <= nb_years}
+        values = dict(study_id=self.get_study_id(), years=to_json_string(years))
         session = self.get_session()
         upsert_one(session, PLAYLIST_TABLE, values)
         session.commit()
@@ -215,4 +237,6 @@ class DatabaseStudySettingsDao(
         row = self.get_session().execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
-        return Playlist(years=from_json(row.years))
+        sparse = Playlist(years=from_json(row.years))
+        nb_years = self.get_general_config().nb_years
+        return _expand_playlist(sparse, nb_years)

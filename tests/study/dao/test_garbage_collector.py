@@ -14,38 +14,93 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import polars as pl
+import pytest
 from sqlalchemy.orm import Session
 
+from antarest.blobstore.service import IBlobService
 from antarest.core.config import InternalMatrixFormat
+from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
 from antarest.maintenance.tasks.gc_matrix import clean_matrices
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
-from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
+from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
-from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.model import STUDY_VERSION_10_0, StorageMode, Study
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.model import STUDY_VERSION_9_3, StorageMode, Study
+from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.database_storage import DatabaseStudyStorage
+from antarest.study.storage.file_study_storage import FileStudyStorage
+from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
-from tests.study.dao.conftest import build_db_dao, build_real_case_study, build_reserve_definition
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.study.dao.conftest import build_db_dao, build_fs_dao, build_real_case_study, build_reserve_definition
 from tests.study.dao.utils import save_area
 
 
+def _build_storage_mapping(
+    cache: ICache, command_context: CommandContext, matrix_service: MatrixService
+) -> dict[StorageMode, object]:
+    study_factory = StudyFactory(matrix_service=matrix_service, cache=cache)
+    return {
+        StorageMode.FILESYSTEM: FileStudyStorage(cache, Mock(), command_context, study_factory),
+        StorageMode.DATABASE: DatabaseStudyStorage(Mock(), matrix_service, command_context.generator_matrix_constants),
+    }
+
+
 def _register_provider(
-    dao: DatabaseStudyDao, db_session: Session, matrix_service: ISimpleMatrixService
+    dao: StudyDao,
+    db_session: Session,
+    matrix_service: MatrixService,
+    core_cache: ICache,
+    command_context: CommandContext,
 ) -> RawStudyMatrixUsageProvider:
-    database_study_storage = DatabaseStudyStorage(Mock(), matrix_service, Mock())
-    storage_mapping = {StorageMode.DATABASE: database_study_storage}
+    storage_mapping = _build_storage_mapping(core_cache, command_context, matrix_service)
     repository = Mock()
     repository.get_all.return_value = [db_session.get(Study, dao.get_study_id())]
-    provider = RawStudyMatrixUsageProvider(repository, matrix_service, storage_mapping)
-    return provider
+    return RawStudyMatrixUsageProvider(repository, matrix_service, storage_mapping)
 
 
-def test_garbage_collection(db_dao: DatabaseStudyDao, db_session: Session, tmp_path: Path) -> None:
-    dao = db_dao
-    # Create a real matrix_service
+def _build_dao(
+    backend: str,
+    matrix_service: MatrixService,
+    db_session: Session,
+    blob_service: IBlobService,
+    core_cache: ICache,
+    tmp_path: Path,
+) -> StudyDao:
+    generator = GeneratorMatrixConstants(matrix_service)
+    generator.init_constant_matrices()
+    command_context = CommandContext(
+        generator_matrix_constants=generator,
+        matrix_service=matrix_service,
+        blob_service=blob_service,
+    )
+
+    if backend == "database":
+        dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
+        _register_provider(dao, db_session, matrix_service, core_cache, command_context)
+        return dao
+
+    dao, _ = build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
+    RawStudyMatrixUsageProvider(
+        StudyMetadataRepository(core_cache),
+        matrix_service,
+        _build_storage_mapping(core_cache, command_context, matrix_service),
+    )
+    return dao
+
+
+@pytest.mark.parametrize("backend", ["database", "filesystem"])
+def test_garbage_collection(
+    backend: str,
+    db_session: Session,
+    blob_service: IBlobService,
+    core_cache: ICache,
+    tmp_path: Path,
+) -> None:
     bucket_dir = tmp_path / "matrix_store"
     matrix_service = MatrixService(
         repo=MatrixRepository(db_session),
@@ -56,10 +111,8 @@ def test_garbage_collection(db_dao: DatabaseStudyDao, db_session: Session, tmp_p
         config=Mock(),
         user_service=Mock(),
     )
-    dao._matrix_service = matrix_service
 
-    # Register the DB provider
-    _register_provider(dao, db_session, matrix_service)
+    dao = _build_dao(backend, matrix_service, db_session, blob_service, core_cache, tmp_path)
 
     result = build_real_case_study(dao, matrix_service)
     (
@@ -268,17 +321,19 @@ def test_garbage_collection(db_dao: DatabaseStudyDao, db_session: Session, tmp_p
     assert task.deleted_count == 43
 
 
-def test_provider_includes_reserve_need_matrix(db_session: Session, matrix_service: ISimpleMatrixService) -> None:
-    # TODO: Merge this test in the main one once we support the v10.0
-    dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_10_0)
+def test_provider_includes_reserve_need_matrix(
+    dao_10_0: StudyDao, core_cache: ICache, command_context: CommandContext
+) -> None:
+    # TODO: adapt this test once v10.0 is fully supported
+    dao = dao_10_0
+    matrix_service = dao._matrix_service
+
     save_area(dao, "paris")
     dao.save_reserve_definitions({"paris": [build_reserve_definition("R1")]})
     matrix_id = matrix_service.create(pl.DataFrame([[0.0]] * 8760, orient="row"))
     dao.save_reserve_needs({"paris": {ReserveDefinitionId("R1"): matrix_id}})
 
     with db():
-        # Register the DB provider
-        provider = _register_provider(dao, db_session, matrix_service)
-
+        provider = _register_provider(dao, db.session, matrix_service, core_cache, command_context)
         used_ids = {ref.matrix_id for ref in provider.get_matrix_usage()}
     assert matrix_id in used_ids

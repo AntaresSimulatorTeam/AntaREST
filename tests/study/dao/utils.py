@@ -11,9 +11,11 @@
 # This file is part of the Antares project.
 
 
-from antarest.study.business.model.area_properties_model import AreaProperties
+from antarest.study.business.model.area_properties_model import AreaProperties, initialize_area_properties
 from antarest.study.dao.api.study_dao import StudyDao
 
 
 def save_area(dao: StudyDao, area_name: str) -> None:
-    dao.save_areas_with_properties({area_name: AreaProperties()})
+    props = AreaProperties()
+    initialize_area_properties(props, dao.get_version())
+    dao.save_areas_with_properties({area_name: props})

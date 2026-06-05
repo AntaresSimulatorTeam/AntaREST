@@ -13,7 +13,7 @@
 
 import pytest
 
-from antarest.core.exceptions import ChildNotFoundError, STStorageNotFound
+from antarest.core.exceptions import AreaNotFound, STStorageNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.model.sts_model import (
@@ -220,7 +220,7 @@ class TestSTStorageManager:
 
         # Test behavior for area not in study
         # noinspection PyTypeChecker
-        with pytest.raises(ChildNotFoundError) as ctx:
+        with pytest.raises(AreaNotFound) as ctx:
             manager.update_storage(
                 study_interface, area_id="unknown_area", storage_id="storage1", cluster_data=edit_form
             )

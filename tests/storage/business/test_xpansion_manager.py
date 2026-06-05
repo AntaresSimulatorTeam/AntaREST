@@ -156,12 +156,28 @@ def test_get_xpansion_settings(xpansion_manager: XpansionManager, empty_study_81
     }
 
 
-def test_update_xpansion_settings(xpansion_manager: XpansionManager, empty_study_810: FileStudy) -> None:
+def test_update_xpansion_settings(
+    link_manager: LinkManager,
+    area_manager: AreaManager,
+    xpansion_manager: XpansionManager,
+    empty_study_810: FileStudy,
+) -> None:
     """
     Test the retrieval of the xpansion settings.
     """
-    study = file_study_interface(empty_study_810)
+    matrix_service = xpansion_manager._command_context.matrix_service
+    study = file_study_interface(empty_study_810, matrix_service)
     xpansion_manager.create_xpansion_configuration(study)
+
+    # Projection references candidate "foo", which must exist beforehand.
+    make_areas(area_manager, study)
+    make_link(link_manager, study)
+    xpansion_manager.add_candidate(
+        study,
+        XpansionCandidateCreation.model_validate(
+            {"name": "foo", "link": "area1 - area2", "annual-cost-per-mw": 1, "max-investment": 1}
+        ),
+    )
 
     new_settings_obj = {
         "optimality_gap": 4.0,

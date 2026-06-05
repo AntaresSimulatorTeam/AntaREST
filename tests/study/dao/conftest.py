@@ -12,6 +12,7 @@
 import contextlib
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 from unittest.mock import Mock
 
 import polars as pl
@@ -30,11 +31,14 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintOperator,
     ConstraintId,
 )
+from antarest.study.business.model.config.optimization_config_model import (
+    initialize_optimization_preferences_against_version,
+)
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
-from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
-from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint, initialize_st_storage
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -44,12 +48,18 @@ from antarest.study.model import (
     STUDY_VERSION_9_2,
     STUDY_VERSION_9_3,
     STUDY_VERSION_10_0,
+    Study,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.conftest import build_db_dao, build_filesystem_dao
 from tests.study.dao.utils import save_area
+
+
+@pytest.fixture
+def db_dao(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
+    return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
 
 
 @pytest.fixture
@@ -68,7 +78,7 @@ def db_dao_930_and_matrix_service(
 def fs_dao_930_and_matrix_service(
     db_session: Session, command_context: CommandContext, tmp_path: Path, core_cache: ICache
 ) -> tuple[FileStudyTreeDao, ISimpleMatrixService]:
-    return _build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
+    return build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
 
 
 @pytest.fixture(scope="session")
@@ -90,7 +100,7 @@ def db_dao_920(db_session: Session, matrix_service: ISimpleMatrixService) -> Dat
     return build_db_dao(db_session, matrix_service, STUDY_VERSION_9_2)
 
 
-def _build_fs_dao(
+def build_fs_dao(
     db_session: Session,
     version: StudyVersion,
     command_context: "CommandContext",
@@ -115,8 +125,28 @@ def dao(
     if request.param == "db":
         return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
     else:
-        dao, _ = _build_fs_dao(db_session, STUDY_VERSION_8_8, command_context, core_cache, tmp_path)
+        dao, _ = build_fs_dao(db_session, STUDY_VERSION_8_8, command_context, core_cache, tmp_path)
         return dao
+
+
+@pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
+def dao_builder(
+    request,
+    db_session: Session,
+    matrix_service: ISimpleMatrixService,
+    command_context: "CommandContext",
+    tmp_path: Path,
+    core_cache: "ICache",
+) -> Callable[[StudyVersion], StudyDao]:
+    """A DAO factory parameterized over both backends, accepting the study version as argument."""
+
+    def _build(version: StudyVersion) -> StudyDao:
+        if request.param == "db":
+            return build_db_dao(db_session, matrix_service, version)
+        dao, _ = build_fs_dao(db_session, version, command_context, core_cache, tmp_path)
+        return dao
+
+    return _build
 
 
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
@@ -132,7 +162,7 @@ def dao_and_matrix_service(
     if request.param == "db":
         return build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3), matrix_service
     else:
-        return _build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
+        return build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
 
 
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
@@ -145,11 +175,19 @@ def dao_10_0(
     core_cache: "ICache",
 ) -> StudyDao:
     """A DAO parameterized over both backends (v10.0)."""
+    # v10.0 has no study template on disk — create a v9.3 study and force its version to 10.0.
     if request.param == "db":
-        return build_db_dao(db_session, matrix_service, STUDY_VERSION_10_0)
+        dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
+        study = db_session.get(Study, dao.get_study_id())
+        study.version = str(STUDY_VERSION_10_0)
+        db_session.commit()
+        # Settings were saved at v9.3; replay v10 init so v10-specific defaults stick.
+        prefs = dao.get_optimization_preferences()
+        initialize_optimization_preferences_against_version(prefs, STUDY_VERSION_10_0)
+        dao.save_optimization_preferences(prefs)
+        return dao
     else:
-        # v10.0 has no study template on disk — create a v9.3 study and force its config version to 10.0.
-        dao, _ = _build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
+        dao, _ = build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
         dao.get_file_study().config.version = STUDY_VERSION_10_0
         return dao
 
@@ -167,7 +205,7 @@ def dao_860_and_matrix_service(
     if request.param == "db":
         return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_6), matrix_service
     else:
-        return _build_fs_dao(db_session, STUDY_VERSION_8_6, command_context, core_cache, tmp_path)
+        return build_fs_dao(db_session, STUDY_VERSION_8_6, command_context, core_cache, tmp_path)
 
 
 def build_reserve_definition(reserve_id: str) -> ReserveDefinition:
@@ -314,7 +352,9 @@ def build_real_case_study(
 
     # Create thermal cluster matrices
     thermal_id = "gas_cluster"
-    dao.save_thermals({area_id: [ThermalCluster(id=thermal_id, name="Gas Cluster")]})
+    thermal = ThermalCluster(id=thermal_id, name="Gas Cluster")
+    initialize_thermal_cluster(thermal, dao.get_version())
+    dao.save_thermals({area_id: [thermal]})
     dao.save_thermal_prepro({area_id: {thermal_id: thermal_prepro_id}})
     dao.save_thermal_modulation({area_id: {thermal_id: thermal_modulation_id}})
     dao.save_thermal_series({area_id: {thermal_id: thermal_series_id}})
@@ -328,7 +368,9 @@ def build_real_case_study(
 
     # Create ST Storage matrices
     st_storage_id = "battery_storage"
-    dao.save_st_storages({area_id: [STStorage(id=st_storage_id, name="Battery Storage")]})
+    storage = STStorage(id=st_storage_id, name="Battery Storage")
+    initialize_st_storage(storage, dao.get_version())
+    dao.save_st_storages({area_id: [storage]})
     dao.save_st_storage_pmax_injection({area_id: {st_storage_id: sts_pmax_injection_id}})
     dao.save_st_storage_pmax_withdrawal({area_id: {st_storage_id: sts_pmax_withdrawal_id}})
     dao.save_st_storage_lower_rule_curve({area_id: {st_storage_id: sts_lower_rule_curve_id}})
