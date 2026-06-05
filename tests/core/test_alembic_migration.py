@@ -14,6 +14,7 @@ from pathlib import Path
 
 import yaml
 from sqlalchemy import create_engine, text
+from testcontainers.postgres import PostgresContainer
 
 from antarest.core.persistence import upgrade_db
 
@@ -35,3 +36,22 @@ def test_alembic_migration(tmp_path: Path) -> None:
     with engine.connect() as connection:
         # this would throw if the migration is not executed
         connection.execute(text("SELECT * FROM study"))
+
+
+def test_alembic_migration_postgresql(tmp_path: Path) -> None:
+    # Start a PostgreSQL container
+    with PostgresContainer("postgres:15") as postgres:
+        db_url = postgres.get_connection_url()
+
+        # Create a temporary config file
+        config_file = tmp_path / "config.yaml"
+        with open(config_file, "w") as f:
+            yaml.safe_dump({"db": {"url": db_url}}, f)
+
+        # Run the migration
+        upgrade_db(config_file)
+
+        # Verify the migration
+        engine = create_engine(db_url)
+        with engine.connect() as connection:
+            connection.execute(text("SELECT * FROM study"))
