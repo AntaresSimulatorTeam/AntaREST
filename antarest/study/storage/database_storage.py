@@ -156,6 +156,7 @@ class DatabaseStudyStorage(IStudyStorage):
 
             # Build the new DB DAO
             new_dao = self._db_dao_factory.get_study_dao(study_id=new_study.id, is_study_managed=True)
+            self._db_dao_factory.initialize_study_data_table(new_study.id)
 
             # Copies the inputs
             converter = StudyConverter(
