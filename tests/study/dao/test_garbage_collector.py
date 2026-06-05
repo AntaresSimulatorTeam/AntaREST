@@ -258,7 +258,12 @@ def test_garbage_collection(db_dao: DatabaseStudyDao, db_session: Session, tmp_p
     db_session.commit()
 
     # Launch the Garbage collection
-    task = clean_matrices(matrix_service=matrix_service, dry_run=False, retention_time=0)
+    task = clean_matrices(
+        matrix_service=matrix_service,
+        dry_run=False,
+        retention_time=0,
+        lock_folder=Path(tempfile.gettempdir()),
+    )
     assert task.status == BackGroundTaskStatus.SUCCESS
     assert task.deleted_count == 43
 
