@@ -35,7 +35,7 @@ from tests.study.dao.utils import save_area
 def _register_provider(
     dao: DatabaseStudyDao, db_session: Session, matrix_service: ISimpleMatrixService
 ) -> RawStudyMatrixUsageProvider:
-    database_study_storage = DatabaseStudyStorage(Mock(), matrix_service, Mock())
+    database_study_storage = DatabaseStudyStorage(Mock(), Mock(), Mock(), matrix_service, Mock())
     storage_mapping = {StorageMode.DATABASE: database_study_storage}
     repository = Mock()
     repository.get_all.return_value = [db_session.get(Study, dao.get_study_id())]
