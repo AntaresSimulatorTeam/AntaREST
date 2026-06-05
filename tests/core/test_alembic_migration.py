@@ -12,11 +12,13 @@
 
 from pathlib import Path
 
+import pytest
 import yaml
 from sqlalchemy import create_engine, text
 from testcontainers.postgres import PostgresContainer
 
 from antarest.core.persistence import upgrade_db
+from tests.integration.conftest import RUN_ON_WINDOWS
 
 
 def _checks_migration(tmp_path: Path, db_url: str) -> None:
@@ -41,9 +43,10 @@ def test_alembic_migration(tmp_path: Path) -> None:
     _checks_migration(tmp_path, db_url)
 
 
+@pytest.mark.skipif(RUN_ON_WINDOWS, reason="Docker fails on Windows")
 def test_alembic_migration_postgresql(tmp_path: Path) -> None:
     # Start a PostgreSQL container
-    with PostgresContainer("postgres:15") as postgres:
+    with PostgresContainer("postgres:14") as postgres:
         db_url = postgres.get_connection_url()
 
         _checks_migration(tmp_path, db_url)
