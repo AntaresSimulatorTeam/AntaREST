@@ -11,12 +11,13 @@
 # This file is part of the Antares project.
 import logging
 import time
+from pathlib import Path
 from typing import Optional
 
 from pydantic import BaseModel
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.lock import LockNotAcquired, create_lock
+from antarest.core.utils.lock import LockNotAcquired, create_file_lock
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, LockId
 from antarest.study.model import StudyDiskSpaceAnalysis
@@ -34,14 +35,16 @@ class DiskSpaceAnalyzerTaskResult(BaseModel):
     error: Optional[str] = None
 
 
-def disk_space_analysis(service: StudyService, disk_repo: StudyDiskSpaceRepository) -> DiskSpaceAnalyzerTaskResult:
+def disk_space_analysis(
+    service: StudyService, disk_repo: StudyDiskSpaceRepository, lock_folder: Path
+) -> DiskSpaceAnalyzerTaskResult:
     start_time = time.time()
 
     updated_studies = 0
 
     try:
         with db():
-            with create_lock(db.session, lock_id=LockId.STUDY_DISK_SPACE):
+            with create_file_lock(lock_id=LockId.STUDY_DISK_SPACE, lock_folder=lock_folder):
                 # we're giving admin access to the disk space analyzer due to the search_studies method
                 studies = service.repository.get_all(
                     StudyFilter(access_permissions=AccessPermissions(is_admin=True), managed=True)

@@ -39,6 +39,7 @@ from antarest.study.business.model.thematic_trimming_model import (
 )
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.dao.database.models import STUDY_DATA_TABLE
 from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_9_2, StudyMetadataCreation
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
@@ -96,9 +97,18 @@ class DatabaseStudyDaoFactory(StudyFactoryDao):
             return db.session
         return self._session
 
+    def _initialize_study_data_table(self, study_id: str) -> None:
+        """
+        Initialize the study data table as every DB DAO table is linked to it via foreign keys.
+        """
+        session = self.session
+        session.execute(STUDY_DATA_TABLE.insert().values({"study_id": study_id}))
+        session.commit()
+
     @override
     def create_study_dao(self, metadata: StudyMetadataCreation) -> DatabaseStudyDao:
         dao = self.get_study_dao(metadata.id, metadata.managed)
+        self._initialize_study_data_table(dao.get_study_id())
         dao.save_layer(Layer(id=DEFAULT_LAYER_ID, name=DEFAULT_LAYER_NAME))
         _create_default_settings(dao, metadata.version)
         return dao
