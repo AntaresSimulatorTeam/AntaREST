@@ -168,10 +168,9 @@ class DatabaseStudyStorage(IStudyStorage):
 
         except Exception as e:
             logger.error("Failed to copy study %s to %s", src_study.id, new_study.id, exc_info=e)
-            # Clean up the database if something went wrong.
-            session = db.session
-            session.delete(new_study)
-            session.commit()
+            # Clean up the database
+            db.session.rollback()
+            self._repository.delete(new_study.id)
             raise e
 
     @override
