@@ -24,11 +24,23 @@ from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataS
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
-from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.model import STUDY_VERSION_10_0
+from antarest.study.model import STUDY_VERSION_10_0, StorageMode, Study
+from antarest.study.storage.database_storage import DatabaseStudyStorage
+from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from tests.study.dao.conftest import build_db_dao, build_real_case_study, build_reserve_definition
 from tests.study.dao.utils import save_area
+
+
+def _register_provider(
+    dao: DatabaseStudyDao, db_session: Session, matrix_service: ISimpleMatrixService
+) -> RawStudyMatrixUsageProvider:
+    database_study_storage = DatabaseStudyStorage(Mock(), matrix_service, Mock())
+    storage_mapping = {StorageMode.DATABASE: database_study_storage}
+    repository = Mock()
+    repository.get_all.return_value = [db_session.get(Study, dao.get_study_id())]
+    provider = RawStudyMatrixUsageProvider(repository, matrix_service, storage_mapping)
+    return provider
 
 
 def test_garbage_collection(db_dao: DatabaseStudyDao, db_session: Session, tmp_path: Path) -> None:
@@ -47,8 +59,7 @@ def test_garbage_collection(db_dao: DatabaseStudyDao, db_session: Session, tmp_p
     dao._matrix_service = matrix_service
 
     # Register the DB provider
-    provider = StudyDatabaseMatrixUsageProvider(matrix_service)
-    matrix_service.register_usage_provider(provider)
+    _register_provider(dao, db_session, matrix_service)
 
     result = build_real_case_study(dao, matrix_service)
     (
@@ -241,8 +252,19 @@ def test_garbage_collection(db_dao: DatabaseStudyDao, db_session: Session, tmp_p
     bc_eq = dao.get_constraint_equal_term_matrix(bc_eq_id)
     pl.testing.assert_frame_equal(bc_eq, bc_eq_df, check_dtypes=False)
 
+    # Remove the study from the DB -> This should lead the GC to empty the matrix-store
+    study = db_session.get(Study, dao.get_study_id())
+    db_session.delete(study)
+    db_session.commit()
+
+    # Launch the Garbage collection
+    task = clean_matrices(matrix_service=matrix_service, dry_run=False, retention_time=0)
+    assert task.status == BackGroundTaskStatus.SUCCESS
+    assert task.deleted_count == 43
+
 
 def test_provider_includes_reserve_need_matrix(db_session: Session, matrix_service: ISimpleMatrixService) -> None:
+    # TODO: Merge this test in the main one once we support the v10.0
     dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_10_0)
     save_area(dao, "paris")
     dao.save_reserve_definitions({"paris": [build_reserve_definition("R1")]})
@@ -250,6 +272,8 @@ def test_provider_includes_reserve_need_matrix(db_session: Session, matrix_servi
     dao.save_reserve_needs({"paris": {ReserveDefinitionId("R1"): matrix_id}})
 
     with db():
-        provider = StudyDatabaseMatrixUsageProvider(matrix_service)
+        # Register the DB provider
+        provider = _register_provider(dao, db_session, matrix_service)
+
         used_ids = {ref.matrix_id for ref in provider.get_matrix_usage()}
     assert matrix_id in used_ids

@@ -117,7 +117,6 @@ from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
-from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.directory_service import DirectoryService
@@ -675,7 +674,6 @@ class StudyService:
         self.config = config
         self.on_deletion_callbacks: list[Callable[[str], None]] = []
         self._outputs_access: IOutputsAccess | None = None
-        StudyDatabaseMatrixUsageProvider(command_context.matrix_service)
 
     def register_output_access(self, output_access: IOutputsAccess) -> None:
         """
