@@ -1,16 +1,7 @@
 # Contributing to Antares Web
 
-Thank you for your interest in contributing to Antares Web! This document provides guidelines and instructions for contributing to the project.
-
-## Table of Contents
-
-- [Code of Conduct](#code-of-conduct)
-- [Getting Started](#getting-started)
-- [Development Workflow](#development-workflow)
-- [Coding Standards](#coding-standards)
-- [Testing](#testing)
-- [Submitting Changes](#submitting-changes)
-- [Reporting Issues](#reporting-issues)
+Thank you for your interest in contributing to Antares Web! 
+This document provides guidelines and instructions for contributing to the project.
 
 ## Getting Started
 
