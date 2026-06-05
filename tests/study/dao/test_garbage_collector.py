@@ -27,6 +27,7 @@ from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_9_3, StorageMode, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.database_storage import DatabaseStudyStorage
@@ -40,14 +41,20 @@ from tests.study.dao.utils import save_area
 
 
 def _register_provider(
-    dao: StudyDao, db_session: Session, matrix_service: MatrixService
+    dao: StudyDao, db_session: Session, matrix_service: MatrixService, core_cache: ICache
 ) -> RawStudyMatrixUsageProvider:
-    database_study_storage = DatabaseStudyStorage(Mock(), matrix_service, Mock())
-    storage_mapping = {StorageMode.DATABASE: database_study_storage}
-    repository = Mock()
-    repository.get_all.return_value = [db_session.get(Study, dao.get_study_id())]
-    provider = RawStudyMatrixUsageProvider(repository, matrix_service, storage_mapping)
-    return provider
+
+    if isinstance(dao, FileStudyTreeDao):
+        study_factory = StudyFactory(matrix_service=matrix_service, cache=core_cache)
+        storage_mapping = {
+            StorageMode.FILESYSTEM: FileStudyStorage(core_cache, Mock(), Mock(), study_factory),
+        }
+        repository = StudyMetadataRepository(core_cache)
+    else:
+        storage_mapping = {StorageMode.DATABASE: DatabaseStudyStorage(Mock(), matrix_service, Mock())}
+        repository = Mock()
+        repository.get_all.return_value = [db_session.get(Study, dao.get_study_id())]
+    return RawStudyMatrixUsageProvider(repository, matrix_service, storage_mapping)
 
 
 def _build_storage_mapping(
@@ -70,7 +77,7 @@ def _build_dao(
 ) -> StudyDao:
     if backend == "database":
         dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
-        _register_provider(dao, db_session, matrix_service)
+        _register_provider(dao, db_session, matrix_service, core_cache)
         return dao
 
     # filesystem
@@ -310,8 +317,6 @@ def test_garbage_collection(
 
 def test_provider_includes_reserve_need_matrix(dao_10_0: StudyDao, core_cache: ICache) -> None:
     # TODO: adapt this test once v10.0 is fully supported
-    from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-
     dao = dao_10_0
     matrix_service = dao._matrix_service
 
@@ -321,14 +326,6 @@ def test_provider_includes_reserve_need_matrix(dao_10_0: StudyDao, core_cache: I
     dao.save_reserve_needs({"paris": {ReserveDefinitionId("R1"): matrix_id}})
 
     with db():
-        if isinstance(dao, FileStudyTreeDao):
-            study_factory = StudyFactory(matrix_service=matrix_service, cache=core_cache)
-            storage_mapping = {
-                StorageMode.FILESYSTEM: FileStudyStorage(core_cache, Mock(), Mock(), study_factory),
-                StorageMode.DATABASE: DatabaseStudyStorage(Mock(), matrix_service, Mock()),
-            }
-            provider = RawStudyMatrixUsageProvider(StudyMetadataRepository(core_cache), matrix_service, storage_mapping)
-        else:
-            provider = _register_provider(dao, db.session, matrix_service)
+        provider = _register_provider(dao, db.session, matrix_service, core_cache)
         used_ids = {ref.matrix_id for ref in provider.get_matrix_usage()}
     assert matrix_id in used_ids
