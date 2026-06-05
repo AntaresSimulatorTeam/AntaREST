@@ -34,6 +34,7 @@ from antarest.study.storage.database_storage import DatabaseStudyStorage
 from antarest.study.storage.file_study_storage import FileStudyStorage
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
+from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.study.dao.conftest import build_db_dao, build_fs_dao, build_real_case_study, build_reserve_definition
@@ -41,25 +42,19 @@ from tests.study.dao.utils import save_area
 
 
 def _build_storage_mapping(
-    cache: ICache, command_context: CommandContext, matrix_service: MatrixService
-) -> dict[StorageMode, object]:
-    study_factory = StudyFactory(matrix_service=matrix_service, cache=cache)
+    command_context: CommandContext, matrix_service: MatrixService
+) -> dict[StorageMode, IStudyStorage]:
+    study_factory = StudyFactory(matrix_service=matrix_service, cache=Mock())
     return {
-        StorageMode.FILESYSTEM: FileStudyStorage(cache, Mock(), command_context, study_factory),
-        StorageMode.DATABASE: DatabaseStudyStorage(Mock(), matrix_service, command_context.generator_matrix_constants),
+        StorageMode.FILESYSTEM: FileStudyStorage(Mock(), command_context, study_factory),
+        StorageMode.DATABASE: DatabaseStudyStorage(Mock(), Mock(), matrix_service, Mock(), Mock()),
     }
 
 
 def _register_provider(
-    dao: StudyDao,
-    db_session: Session,
-    matrix_service: MatrixService,
-    core_cache: ICache,
-    command_context: CommandContext,
+    dao: StudyDao, db_session: Session, matrix_service: MatrixService, command_context: CommandContext
 ) -> RawStudyMatrixUsageProvider:
-    database_study_storage = DatabaseStudyStorage(Mock(), Mock(), Mock(), matrix_service, Mock())
-    storage_mapping = {StorageMode.DATABASE: database_study_storage}
-    storage_mapping = _build_storage_mapping(core_cache, command_context, matrix_service)
+    storage_mapping = _build_storage_mapping(command_context, matrix_service)
     repository = Mock()
     repository.get_all.return_value = [db_session.get(Study, dao.get_study_id())]
     return RawStudyMatrixUsageProvider(repository, matrix_service, storage_mapping)
@@ -83,14 +78,14 @@ def _build_dao(
 
     if backend == "database":
         dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
-        _register_provider(dao, db_session, matrix_service, core_cache, command_context)
+        _register_provider(dao, db_session, matrix_service, command_context)
         return dao
 
     dao, _ = build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
     RawStudyMatrixUsageProvider(
         StudyMetadataRepository(core_cache),
         matrix_service,
-        _build_storage_mapping(core_cache, command_context, matrix_service),
+        _build_storage_mapping(command_context, matrix_service),
     )
     return dao
 
@@ -323,9 +318,7 @@ def test_garbage_collection(
     assert task.deleted_count == 43
 
 
-def test_provider_includes_reserve_need_matrix(
-    dao_10_0: StudyDao, core_cache: ICache, command_context: CommandContext
-) -> None:
+def test_provider_includes_reserve_need_matrix(dao_10_0: StudyDao, command_context: CommandContext) -> None:
     # TODO: adapt this test once v10.0 is fully supported
     dao = dao_10_0
     matrix_service = dao._matrix_service
@@ -336,6 +329,6 @@ def test_provider_includes_reserve_need_matrix(
     dao.save_reserve_needs({"paris": {ReserveDefinitionId("R1"): matrix_id}})
 
     with db():
-        provider = _register_provider(dao, db.session, matrix_service, core_cache, command_context)
+        provider = _register_provider(dao, db.session, matrix_service, command_context)
         used_ids = {ref.matrix_id for ref in provider.get_matrix_usage()}
     assert matrix_id in used_ids
