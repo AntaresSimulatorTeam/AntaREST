@@ -28,7 +28,7 @@ Requirements:
 
 These steps should work on any linux system with docker and docker-compose installed.
 
-1. First, the steps 1 and 3 of the [quick start build](0-INSTALL.md#quick-start) must have been done. So this guide will assume that you have previously cloned the [code repository](https://github.com/AntaresSimulatorTeam/AntaREST),
+1. First, the steps 1 and 3 of the [quick start build](./installation.md#quick-start) must have been done. So this guide will assume that you have previously cloned the [code repository](https://github.com/AntaresSimulatorTeam/AntaREST),
    the frontend built and that your working directory is at the root of the project.
 
 2. Then download and unzip AntaresSimulator binaries:
@@ -66,4 +66,5 @@ These steps should work on any linux system with docker and docker-compose insta
 7. To stop the application you can juste hit "CTRL-C" to end the containers.
    
 This is an example of a deployment.
-You'll have to edit your own `docker-compose.yml` file and [`application.yaml` configuration](./1-CONFIG.md) to customize it to your needs.
+You'll have to edit your own `docker-compose.yml` file and 
+[`application.yaml` configuration](./configuration.md) to customize it to your needs.
