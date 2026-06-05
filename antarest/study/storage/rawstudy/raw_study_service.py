@@ -24,8 +24,6 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.archives import (
     ArchiveFormat,
     archive_dir,
-    extract_archive_from_path,
-    extract_archive_from_stream,
 )
 from antarest.core.utils.utils import StopWatch
 from antarest.study.dao.api.study_dao import StudyDao
@@ -42,7 +40,7 @@ from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawS
 from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.utils import (
     build_raw_study_from_source,
-    fix_study_root,
+    extract_data_to_dir,
     get_disk_usage,
     is_managed,
     remove_from_cache,
@@ -87,8 +85,10 @@ class RawStudyService(AbstractStudyService):
             StorageMode.DATABASE: db_dao_factory,
             StorageMode.FILESYSTEM: fs_dao_factory,
         }
-        self._file_study_storage = FileStudyStorage(self._matrix_service, study_factory)
-        self._database_study_storage = DatabaseStudyStorage(self._matrix_service, db_dao_factory, fs_dao_factory)
+        self._file_study_storage = FileStudyStorage(config, self._matrix_service, study_factory)
+        self._database_study_storage = DatabaseStudyStorage(
+            config, repository, self._matrix_service, db_dao_factory, fs_dao_factory
+        )
         self._storage_mapping: dict[StorageMode, IStudyStorage] = {
             StorageMode.FILESYSTEM: self._file_study_storage,
             StorageMode.DATABASE: self._database_study_storage,
@@ -166,7 +166,9 @@ class RawStudyService(AbstractStudyService):
 
     def unarchive(self, study: RawStudy) -> None:
         archive_path = self.find_archive_path(study)
-        self._extract_and_setup(study, archive_path)
+        extract_data_to_dir(Path(study.path), archive_path, self._config.storage.tmp_dir)
+        self.update_from_raw_metadata(study)
+
         archive_path.unlink()
 
     def normalize_study(self, study: Study) -> None:
@@ -192,25 +194,8 @@ class RawStudyService(AbstractStudyService):
         Raises:
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
-        self._extract_and_setup(study, stream)
-        self._storage_mapping[study.storage_mode].import_study(study)
+        self._storage_mapping[study.storage_mode].import_study(study, stream)
         return study
-
-    def _extract_and_setup(self, study: RawStudy, source: Path | BinaryIO) -> None:
-        """
-        The source is extracted to the filesystem inside the study `path` attribute.
-        """
-        study_path = Path(study.path)
-        try:
-            if isinstance(source, Path):
-                extract_archive_from_path(source, study_path)
-            else:
-                extract_archive_from_stream(source, study_path, tmp_dir=self._config.storage.tmp_dir)
-            fix_study_root(study_path)
-            self.update_from_raw_metadata(study)
-        except Exception:
-            shutil.rmtree(study_path, ignore_errors=True)
-            raise
 
     def denormalize_study(self, study: Study) -> None:
         self._file_study_storage.denormalize_study(study)

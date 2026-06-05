@@ -13,10 +13,11 @@ import logging
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Iterator
+from typing import BinaryIO, Iterator
 
 from typing_extensions import override
 
+from antarest.core.config import Config
 from antarest.core.utils.utils import current_time
 from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -28,13 +29,14 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
     extract_matrix_id,
 )
 from antarest.study.storage.study_storage_interface import IStudyStorage
-from antarest.study.storage.utils import get_disk_usage, is_managed
+from antarest.study.storage.utils import extract_data_to_dir, get_disk_usage, is_managed
 
 logger = logging.getLogger(__name__)
 
 
 class FileStudyStorage(IStudyStorage):
-    def __init__(self, matrix_service: ISimpleMatrixService, study_factory: StudyFactory):
+    def __init__(self, config: Config, matrix_service: ISimpleMatrixService, study_factory: StudyFactory):
+        self._config = config
         self._study_factory = study_factory
         self._matrix_service = matrix_service
 
@@ -113,7 +115,9 @@ class FileStudyStorage(IStudyStorage):
             node.save_matrix(matrix_ids[k])
 
     @override
-    def import_study(self, study: RawStudy) -> None:
+    def import_study(self, study: RawStudy, stream: BinaryIO) -> None:
+        extract_data_to_dir(Path(study.path), stream, self._config.storage.tmp_dir)
+        self.update_from_raw_metadata(study)
         self.normalize_study(study)
 
     def update_from_raw_metadata(self, study: Study) -> None:

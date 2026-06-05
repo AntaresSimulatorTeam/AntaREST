@@ -11,13 +11,15 @@
 # This file is part of the Antares project.
 import logging
 import shutil
+import uuid
 from pathlib import Path
-from typing import Iterator
+from typing import BinaryIO, Iterator
 
 from antares.study.version import StudyVersion
 from sqlalchemy import select
 from typing_extensions import override
 
+from antarest.core.config import Config
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -75,7 +77,9 @@ from antarest.study.dao.database.models.xpansion import XPANSION_CAPACITY_TABLE,
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.model import RawStudy, Study, StudyMetadataCreation
+from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.study_storage_interface import IStudyStorage
+from antarest.study.storage.utils import extract_data_to_dir
 
 logger = logging.getLogger(__name__)
 
@@ -132,10 +136,14 @@ MATRIX_TABLES = [
 class DatabaseStudyStorage(IStudyStorage):
     def __init__(
         self,
+        config: Config,
+        repository: StudyMetadataRepository,
         matrix_service: ISimpleMatrixService,
         db_dao_factory: DatabaseStudyDaoFactory,
         fs_dao_factory: FileStudyDaoFactory,
     ):
+        self._config = config
+        self._repository = repository
         self._matrix_service = matrix_service
         self._db_dao_factory = db_dao_factory
         self._fs_dao_factory = fs_dao_factory
@@ -214,18 +222,19 @@ class DatabaseStudyStorage(IStudyStorage):
         pass
 
     @override
-    def import_study(self, study: RawStudy) -> None:
-        session = db.session
+    def import_study(self, study: RawStudy, stream: BinaryIO) -> None:
+        dst_path = self._config.storage.tmp_dir / str(uuid.uuid4())
 
         try:
-            # First, create the new study inside DB to avoid ForeignKey and StudyNotFound errors
-            session.add(study)
-            session.commit()
+            # First, extract the stream inside a temporary directory
+            extract_data_to_dir(dst_path, stream, self._config.storage.tmp_dir)
+
+            # Then, create the new study inside DB to avoid ForeignKey and StudyNotFound errors
+            self._repository.save(study)
 
             # Build the 2 DAOs
-            study_id = study.id
-            source_dao = self._fs_dao_factory.get_study_dao(study_id=study_id, is_study_managed=True)
-            new_dao = self._db_dao_factory.get_study_dao(study_id=study_id, is_study_managed=True)
+            source_dao = self._fs_dao_factory.get_dao_from_path(dst_path, study_id=study.id, is_study_managed=True)
+            new_dao = self._db_dao_factory.get_study_dao(study_id=study.id, is_study_managed=True)
 
             # Convert the FS DAO into a DB one
             converter = StudyConverter(
@@ -236,12 +245,11 @@ class DatabaseStudyStorage(IStudyStorage):
             )
             converter.convert_study_inputs()
 
-            # Delete the source study path once the conversion is done
-            shutil.rmtree(Path(study.path))
-
         except Exception as e:
             logger.error("Failed to import study %s", str(study.path), exc_info=e)
-            # Clean up the database if something went wrong.
-            session.delete(study)
-            session.commit()
+            # Clean up the database
+            self._repository.delete(study.id)
             raise e
+
+        finally:
+            shutil.rmtree(dst_path, ignore_errors=True)

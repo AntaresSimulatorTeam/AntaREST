@@ -66,6 +66,11 @@ class FileStudyDaoFactory(StudyFactoryDao):
 
         return self._build_dao(is_study_managed, file_study)
 
+    def get_dao_from_path(self, study_path: Path, study_id: str, is_study_managed: bool) -> FileStudyTreeDao:
+        file_study = self._study_factory.create_from_fs(study_path, is_study_managed, study_id, None)
+
+        return self._build_dao(is_study_managed, file_study)
+
     def export_study(self, metadata: StudyMetadataCreation, dst_path: Path) -> FileStudyTreeDao:
         # When exporting a study we don't want to use the cache
         return self._create_dao(metadata, dst_path, use_cache=False)

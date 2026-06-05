@@ -21,7 +21,7 @@ from collections.abc import Sequence
 from datetime import datetime, timedelta
 from io import StringIO
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, BinaryIO, cast
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -49,6 +49,7 @@ from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
+from antarest.core.utils.archives import extract_archive_from_path, extract_archive_from_stream
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Identity
@@ -619,3 +620,18 @@ def build_raw_study_from_source(src_study: Study, path: Path, metadata: StudyMet
         content_status=StudyContentStatus.VALID,
     )
     return dest_study
+
+
+def extract_data_to_dir(dst_path: Path, source: Path | BinaryIO, tmp_dir: Path) -> None:
+    """
+    The source is extracted to the filesystem inside the `dst_path` attribute.
+    """
+    try:
+        if isinstance(source, Path):
+            extract_archive_from_path(source, dst_path)
+        else:
+            extract_archive_from_stream(source, dst_path, tmp_dir=tmp_dir)
+        fix_study_root(dst_path)
+    except Exception:
+        shutil.rmtree(dst_path, ignore_errors=True)
+        raise
