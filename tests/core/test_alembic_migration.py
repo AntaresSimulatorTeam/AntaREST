@@ -54,4 +54,11 @@ def test_alembic_migration_postgresql(tmp_path: Path) -> None:
         # Verify the migration
         engine = create_engine(db_url)
         with engine.connect() as connection:
+            result = connection.execute(text("""
+                                             SELECT EXISTS (SELECT
+                                                            FROM information_schema.tables
+                                                            WHERE table_name = 'study');
+                                             """))
+            assert result.scalar(), "Table 'study' was not created"
+
             connection.execute(text("SELECT * FROM study"))
