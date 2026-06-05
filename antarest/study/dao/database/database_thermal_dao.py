@@ -28,6 +28,7 @@ from antarest.core.exceptions import AreaNotFound, ThermalClusterNotFound, Therm
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     check_thermal_cluster_complete,
+    validate_thermal_cluster_against_version,
 )
 from antarest.study.dao.api.thermal_dao import ThermalDao
 from antarest.study.dao.common import AreaId, SeriesId, ThermalId, ThermalSeriesMapping
@@ -79,7 +80,10 @@ class DatabaseThermalDao(ThermalDao):
         del data["study_id"]
         del data["area_id"]
         data["id"] = data.pop("thermal_id")
-        return ThermalCluster(**data)
+        cluster = ThermalCluster(**data)
+        version = self.get_impl().get_version()
+        validate_thermal_cluster_against_version(version, cluster)
+        return cluster
 
     def _convert_thermal_cluster_to_row(self, area_id: str, cluster: ThermalCluster) -> dict[str, Any]:
         values = dict(study_id=self._study_id, area_id=area_id, **cluster.model_dump())
