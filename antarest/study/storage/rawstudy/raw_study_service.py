@@ -39,7 +39,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactor
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.utils import (
-    extract_data_to_dir,
     get_disk_usage,
     is_managed,
     remove_from_cache,
@@ -163,9 +162,7 @@ class RawStudyService(AbstractStudyService):
 
     def unarchive(self, study: RawStudy) -> None:
         archive_path = self.find_archive_path(study)
-        extract_data_to_dir(Path(study.path), archive_path, self._config.storage.tmp_dir)
-        self.update_from_raw_metadata(study)
-
+        self._storage_mapping[study.storage_mode].unarchive(study, archive_path)
         archive_path.unlink()
 
     def normalize_study(self, study: Study) -> None:
