@@ -13,8 +13,11 @@ import zipfile
 from pathlib import Path
 
 import pytest
+from sqlalchemy import select
 from starlette.testclient import TestClient
 
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.study.dao.database.models import STUDY_DATA_TABLE
 from tests.integration.studies_blueprint.utils import check_minimal_study_integrity, create_minimal_study
 from tests.integration.utils import wait_for
 
@@ -132,7 +135,9 @@ def test_archive_with_both_storage_modes(
 
     # Ensures the DB / FS was cleaned
     assert not (tmp_path / "internal_workspace" / study_id).exists()
-    # todo for the BD check
+    with db():
+        stmt = select(STUDY_DATA_TABLE).where((STUDY_DATA_TABLE.c.study_id == study_id))
+        assert db.session.execute(stmt).fetchall() == []
 
     # Unarchive the study
     res = client.put(f"/v1/studies/{study_id}/unarchive")
