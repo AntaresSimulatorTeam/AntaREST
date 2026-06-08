@@ -9,10 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import Study
 from antarest.study.storage.database_storage import DatabaseStudyStorage
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
@@ -33,16 +31,10 @@ class DatabaseSnapshotManager(ISnapshotManager):
 
     @override
     def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
-        # TODO: Uncomment the first line
-        # self.clear_snapshot(variant_study)
+        self.clear_snapshot(variant_study)
         self._database_study_storage.copy_study(ref_study, variant_study)
 
     @override
     def clear_snapshot(self, variant_study: VariantStudy) -> None:
-        session: Session = db.session
-        # First, remove the VariantStudy from the DB to remove all associated data via cascade deletion.
-        session.delete(variant_study)
-        session.commit()
-        # Then, re-insert the VariantStudy. This time, it will be empty.
-        session.add(variant_study)
-        session.commit()
+        # todo: Use the clean db method introduced inside the archive PR
+        raise NotImplementedError()

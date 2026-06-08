@@ -11,16 +11,16 @@
 # This file is part of the Antares project.
 import logging
 import shutil
-from datetime import datetime
 from pathlib import Path
-from typing import Iterator
+from typing import BinaryIO, Iterator
 
 from typing_extensions import override
 
-from antarest.core.utils.utils import current_time
+from antarest.core.config import Config
 from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.model import RawStudy, Study
+from antarest.study.model import RawStudy, Study, StudyMetadataCopy
+from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.file_study_utils import export_study_to_flat_directory, get_study_path, update_antares_info
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
@@ -28,18 +28,34 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
     extract_matrix_id,
 )
 from antarest.study.storage.study_storage_interface import IStudyStorage
-from antarest.study.storage.utils import get_disk_usage, is_managed
+from antarest.study.storage.utils import (
+    build_raw_study_from_source,
+    extract_data_to_dir,
+    get_disk_usage,
+    is_managed,
+    update_study_from_raw_metadata,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class FileStudyStorage(IStudyStorage):
-    def __init__(self, matrix_service: ISimpleMatrixService, study_factory: StudyFactory):
+    def __init__(
+        self,
+        config: Config,
+        repository: StudyMetadataRepository,
+        matrix_service: ISimpleMatrixService,
+        study_factory: StudyFactory,
+    ):
+        self._config = config
+        self._repository = repository
         self._study_factory = study_factory
         self._matrix_service = matrix_service
 
     @override
-    def copy(self, src_study: Study, new_study: RawStudy) -> RawStudy:
+    def copy(self, src_study: Study, metadata: StudyMetadataCopy) -> RawStudy:
+        new_study = build_raw_study_from_source(src_study, self._config.get_workspace_path(), metadata)
+
         src_path = get_study_path(src_study)
         dest_path = Path(new_study.path)
 
@@ -50,6 +66,8 @@ class FileStudyStorage(IStudyStorage):
         update_antares_info(new_study, file_study.tree, update_author=False)
 
         self.normalize_file_study(file_study)
+
+        self._repository.save(new_study)
 
         return new_study
 
@@ -113,7 +131,9 @@ class FileStudyStorage(IStudyStorage):
             node.save_matrix(matrix_ids[k])
 
     @override
-    def import_study(self, study: RawStudy) -> None:
+    def import_study(self, study: RawStudy, stream: BinaryIO) -> None:
+        extract_data_to_dir(Path(study.path), stream, self._config.storage.tmp_dir)
+        self.update_from_raw_metadata(study)
         self.normalize_study(study)
 
     def update_from_raw_metadata(self, study: Study) -> None:
@@ -121,27 +141,7 @@ class FileStudyStorage(IStudyStorage):
         The given `study` object needs to be updated according to the real filesystem data
         """
         file_study = self._get_file_study(Path(study.path), is_managed(study))
-        try:
-            raw_meta = file_study.tree.get(["study", "antares"])
-
-            if study.editor:
-                raw_meta["editor"] = study.editor
-                file_study.tree.save(raw_meta, ["study", "antares"])
-
-            study.name = raw_meta["caption"]
-            study.version = str(raw_meta["version"])
-            study.created_at = datetime.utcfromtimestamp(raw_meta["created"])
-            study.updated_at = datetime.utcfromtimestamp(raw_meta["lastsave"])
-
-            self._update_study_data_from_files(file_study, study)
-
-        except Exception as e:
-            logger.error("Failed to fetch study %s raw study!", str(study.path), exc_info=e)
-            study.name = study.name or "unnamed"
-            study.created_at = study.created_at or current_time()
-            study.updated_at = study.updated_at or current_time()
-            study.author = study.author or "Unknown"
-            study.editor = study.editor or "Unknown"
+        update_study_from_raw_metadata(study, file_study)
 
     def update_name_and_version_from_raw_meta(self, study: RawStudy) -> bool:
         path = Path(study.path)
@@ -160,19 +160,6 @@ class FileStudyStorage(IStudyStorage):
         except Exception as e:
             logger.error("Failed to update study %s name and version from raw metadata!", str(study.path), exc_info=e)
             return False
-
-    def _update_study_data_from_files(self, file_study: FileStudy, study: Study) -> None:
-        logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
-        horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
-        study_antares = file_study.tree.get(url=["study", "antares"])
-        author = study_antares.get("author")
-        editor = study_antares.get("editor", author)
-        assert isinstance(author, str)
-        assert isinstance(editor, str)
-        assert isinstance(horizon, (str, int))
-        study.horizon = horizon
-        study.author = author
-        study.editor = editor
 
     def _get_file_study(self, study_path: Path, managed: bool, study_id: str = "") -> FileStudy:
         return self._study_factory.create_from_fs(study_path, managed, study_id=study_id)

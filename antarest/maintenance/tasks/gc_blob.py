@@ -14,10 +14,11 @@
 
 import logging
 import time
+from pathlib import Path
 
 from antarest.blobstore.service import BlobService
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.lock import LockNotAcquired, create_lock
+from antarest.core.utils.lock import LockNotAcquired, create_file_lock
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, GarbageCollectorTaskResult, LockId
 
 logger = logging.getLogger(__name__)
@@ -39,7 +40,7 @@ def _delete_blobs(blob_service: BlobService, blob_ids: set[str], dry_run: bool) 
     return failures
 
 
-def clean_blobs(blob_service: BlobService, dry_run: bool) -> GarbageCollectorTaskResult:
+def clean_blobs(blob_service: BlobService, dry_run: bool, lock_folder: Path) -> GarbageCollectorTaskResult:
     """Run blob garbage collection. Deletes blobs not referenced by any study."""
     start_time = time.time()
     deleted_count = 0
@@ -49,7 +50,7 @@ def clean_blobs(blob_service: BlobService, dry_run: bool) -> GarbageCollectorTas
 
     try:
         with db():
-            with create_lock(db.session, lock_id=LockId.BLOB_GC):
+            with create_file_lock(lock_id=LockId.BLOB_GC, lock_folder=lock_folder):
                 used_blobs = {blob.blob_id for blob in blob_service.get_used_blobs()}
                 saved_blobs = blob_service.get_saved_blobs()
                 unused_blobs = set(saved_blobs) - used_blobs

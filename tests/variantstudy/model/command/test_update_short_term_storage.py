@@ -185,7 +185,7 @@ class TestUpdateShortTermSorage:
         )
         output = cmd.apply(dao)
         assert output.status is False
-        assert output.message == "The area 'fake_area' is not found."
+        assert output.message == "Area is not found: 'fake_area'"
 
         # Ensures updating an unexisting short-term storage raises an Exception.
         # Also ensures the study wasn't partially modified.

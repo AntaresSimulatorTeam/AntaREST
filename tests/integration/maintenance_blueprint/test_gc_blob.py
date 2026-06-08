@@ -12,15 +12,18 @@
 
 """Integration tests for the blob garbage collection task."""
 
+import tempfile
 import uuid
+from pathlib import Path
 
 from antarest.blobstore.service import BlobService
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.lock import create_lock
+from antarest.core.utils.lock import create_file_lock
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, GarbageCollectorTaskResult, LockId
 from antarest.maintenance.tasks.gc_blob import clean_blobs
 from antarest.study.business.model.user_model import ResourceType
 from antarest.study.dao.database.database_blob_usage_provider import DatabaseBlobUsageProvider
+from antarest.study.dao.database.models import STUDY_DATA_TABLE
 from antarest.study.dao.database.models.user_resources import USER_RESOURCES_TABLE
 from tests.helpers import create_study
 
@@ -34,6 +37,7 @@ class TestCleanBlobsIntegration:
             result = clean_blobs(
                 blob_service=simple_blob_service,
                 dry_run=False,
+                lock_folder=Path(tempfile.gettempdir()),
             )
 
         assert isinstance(result, GarbageCollectorTaskResult)
@@ -51,6 +55,7 @@ class TestCleanBlobsIntegration:
             result = clean_blobs(
                 blob_service=simple_blob_service,
                 dry_run=True,
+                lock_folder=Path(tempfile.gettempdir()),
             )
 
         assert result.status == BackGroundTaskStatus.SUCCESS
@@ -65,6 +70,7 @@ class TestCleanBlobsIntegration:
             result = clean_blobs(
                 blob_service=simple_blob_service,
                 dry_run=False,
+                lock_folder=Path(tempfile.gettempdir()),
             )
 
         assert result.status == BackGroundTaskStatus.SUCCESS
@@ -85,6 +91,7 @@ class TestCleanBlobsIntegration:
             result = clean_blobs(
                 blob_service=simple_blob_service,
                 dry_run=False,
+                lock_folder=Path(tempfile.gettempdir()),
             )
 
         assert result.status == BackGroundTaskStatus.SUCCESS
@@ -94,9 +101,10 @@ class TestCleanBlobsIntegration:
             assert blob_id not in simple_blob_service.get_saved_blobs()
 
     def test_returns_skipped_when_lock_held(self, simple_blob_service: BlobService):
+        lock_folder = Path(tempfile.gettempdir())
         with db():
-            with create_lock(db.session, lock_id=LockId.BLOB_GC):
-                result = clean_blobs(blob_service=simple_blob_service, dry_run=False)
+            with create_file_lock(lock_id=LockId.BLOB_GC, lock_folder=lock_folder):
+                result = clean_blobs(blob_service=simple_blob_service, dry_run=False, lock_folder=lock_folder)
 
         assert result.status == BackGroundTaskStatus.SKIPPED
         assert result.reason == "lock_not_acquired"
@@ -114,6 +122,7 @@ class TestCleanBlobsIntegration:
         with db():
             db.session.add(create_study(id=study_id, name="Test Study", version="880"))
             db.session.flush()
+            db.session.execute(STUDY_DATA_TABLE.insert().values({"study_id": study_id}))
             db.session.execute(
                 USER_RESOURCES_TABLE.insert().values(
                     study_id=study_id,
@@ -126,7 +135,11 @@ class TestCleanBlobsIntegration:
 
         # Run GC
         with db():
-            result = clean_blobs(blob_service=simple_blob_service, dry_run=False)
+            result = clean_blobs(
+                blob_service=simple_blob_service,
+                dry_run=False,
+                lock_folder=Path(tempfile.gettempdir()),
+            )
 
         assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.deleted_count == 1

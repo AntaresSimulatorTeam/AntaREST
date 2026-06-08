@@ -45,6 +45,11 @@ export enum StudyType {
   RAW = "rawstudy",
 }
 
+export enum StorageMode {
+  FILESYSTEM = "filesystem",
+  DATABASE = "database",
+}
+
 /**
  * @deprecated Use StudyDTO type instead
  */
@@ -59,6 +64,7 @@ export interface StudyMetadataDTO extends IdentityDTO {
   workspace: string;
   managed: boolean;
   archived: boolean;
+  storage_mode: StorageMode;
   groups: IdentityDTO[];
   public_mode: StudyPublicMode;
   folder?: string;

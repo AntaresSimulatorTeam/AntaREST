@@ -15,7 +15,7 @@ import re
 from collections.abc import Callable
 from datetime import timedelta
 from functools import reduce
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import cast
 from uuid import uuid4
 
@@ -47,17 +47,16 @@ from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResu
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService, TaskNotFoundError
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, current_time, suppress_exception
-from antarest.login.model import Group, Identity
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory, ResourcePaths
 from antarest.study.model import (
     RawStudy,
     StorageMode,
     Study,
+    StudyMetadataCopy,
     StudyMetadataDTO,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter
@@ -71,7 +70,6 @@ from antarest.study.storage.utils import (
     get_current_user_name,
     get_user_name_from_id,
     is_managed,
-    remove_from_cache,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_blob_usage_provider import CommandBlobUsageProvider
@@ -89,7 +87,6 @@ from antarest.study.storage.variantstudy.repository import VariantStudyRepositor
 from antarest.study.storage.variantstudy.snapshot.database_snapshot_manager import DatabaseSnapshotManager
 from antarest.study.storage.variantstudy.snapshot.file_snapshot_manager import FileSnapshotManager
 from antarest.study.storage.variantstudy.snapshot.snapshot_generator import SnapshotGenerator
-from antarest.study.storage.variantstudy.snapshot.snapshot_manager_interface import ISnapshotManager
 
 logger = logging.getLogger(__name__)
 
@@ -126,29 +123,25 @@ class VariantStudyService(AbstractStudyService):
         CommandMatrixUsageProvider(repository, command_factory, raw_study_service._storage_mapping)
         CommandBlobUsageProvider(variant_study_repo=repository, command_factory=command_factory)
         ctx = command_factory.command_context
-        self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
-            StorageMode.DATABASE: DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants),
-            StorageMode.FILESYSTEM: FileStudyDaoFactory(ctx, study_factory, cache, self.get_study_paths),
-        }
-        database_study_storage = DatabaseStudyStorage(self._matrix_service, self._study_dao_factories)
-        self._snapshot_manager_mapping: dict[StorageMode, ISnapshotManager] = {
+        generator_matrix_constants = ctx.generator_matrix_constants
+        db_dao_factory = DatabaseStudyDaoFactory(matrix_service, generator_matrix_constants)
+        fs_dao_factory = FileStudyDaoFactory(
+            matrix_service, ctx.blob_service, generator_matrix_constants, study_factory, cache, self.get_study_paths
+        )
+        self._study_dao_factories = {StorageMode.DATABASE: db_dao_factory, StorageMode.FILESYSTEM: fs_dao_factory}
+        database_study_storage = DatabaseStudyStorage(
+            config, repository, matrix_service, db_dao_factory, fs_dao_factory
+        )
+        self._snapshot_manager_mapping = {
             StorageMode.FILESYSTEM: FileSnapshotManager(),
             StorageMode.DATABASE: DatabaseSnapshotManager(database_study_storage),
         }
 
     @override
-    def copy(
-        self,
-        src_study: Study,
-        dest_name: str,
-        destination_folder: PurePosixPath,
-        owner: Identity,
-        groups: list[Group],
-        directory_id: str | None,
-    ) -> RawStudy:
+    def copy(self, src_study: Study, metadata: StudyMetadataCopy) -> RawStudy:
         variant_study = _cast_study_to_variant(src_study)
         self.safe_generation(variant_study, 600)
-        return self.raw_study_service.copy(src_study, dest_name, destination_folder, owner, groups, directory_id)
+        return self.raw_study_service.copy(src_study, metadata)
 
     @override
     def get_study_dao(self, study: Study) -> StudyDao:
@@ -180,7 +173,7 @@ class VariantStudyService(AbstractStudyService):
         next time the study is accessed.
         """
         if variant_study.snapshot:
-            variant_study.snapshot = None
+            variant_study.snapshot.last_executed_command = None
         variant_study.updated_at = current_time()
         self.repository.save(metadata=variant_study)
 
@@ -631,7 +624,6 @@ class VariantStudyService(AbstractStudyService):
             groups=study.groups,  # Create inherit_group boolean
             owner_id=require_current_user().impersonator,
             snapshot=None,
-            storage_mode=study.storage_mode,
         )
         self.repository.save(variant_study)
         self.event_bus.push(
@@ -756,7 +748,6 @@ class VariantStudyService(AbstractStudyService):
         raise StudyValidationError(f"Variant study '{study_id}' has no generation task")
 
     def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
-        remove_from_cache(self._cache, variant_study.id)
         self._snapshot_manager_mapping[ref_study.storage_mode].create_snapshot(ref_study, variant_study)
 
     def clear_all_snapshots(self, retention_time: timedelta) -> str:

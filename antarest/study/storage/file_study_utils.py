@@ -15,9 +15,9 @@ import time
 from pathlib import Path
 from typing import Sequence
 
-from antarest.study.model import Study
+from antarest.study.model import Study, StudyMetadataCreation
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from antarest.study.storage.utils import StudyMetadataCreation, format_timestamp
+from antarest.study.storage.utils import format_timestamp
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)

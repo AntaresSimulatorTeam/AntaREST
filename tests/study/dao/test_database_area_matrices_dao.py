@@ -12,23 +12,13 @@
 
 import polars as pl
 import pytest
-from sqlalchemy import select
-from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound
-from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.dao.database.models.area import (
-    LOAD_TABLE,
-    MISC_GEN_TABLE,
-    RESERVES_TABLE,
-    SOLAR_TABLE,
-    WIND_TABLE,
-)
+from antarest.study.dao.api.study_dao import StudyDao
 from tests.study.dao.utils import save_area
 
 
-def test_load_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def test_load_lifecycle(dao: StudyDao) -> None:
     matrix_service = dao._matrix_service
     dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
     series_id = matrix_service.create(dataframe)
@@ -45,16 +35,13 @@ def test_load_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     with pytest.raises(AreaNotFound):
         dao.save_load({"fake_area_id": series_id})
 
-    # Ensures deleting the area deletes the row from `Load` table
-    with db_session:
-        dao.delete_area(area_id)
-
-        load_rows = db_session.execute(select(LOAD_TABLE)).fetchall()
-        assert load_rows == []
+    # Ensures deleting the area deletes the load
+    dao.delete_area(area_id)
+    with pytest.raises(AreaNotFound):
+        dao.get_load(area_id)
 
 
-def test_solar_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def test_solar_lifecycle(dao: StudyDao) -> None:
     matrix_service = dao._matrix_service
     dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
     series_id = matrix_service.create(dataframe)
@@ -71,16 +58,13 @@ def test_solar_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     with pytest.raises(AreaNotFound):
         dao.save_solar({"fake_area_id": series_id})
 
-    # Ensures deleting the area deletes the row from `Solar` table
-    with db_session:
-        dao.delete_area(area_id)
-
-        solar_rows = db_session.execute(select(SOLAR_TABLE)).fetchall()
-        assert solar_rows == []
+    # Ensures deleting the area deletes the solar matrix
+    dao.delete_area(area_id)
+    with pytest.raises(AreaNotFound):
+        dao.get_solar(area_id)
 
 
-def test_wind_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def test_wind_lifecycle(dao: StudyDao) -> None:
     matrix_service = dao._matrix_service
     dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
     series_id = matrix_service.create(dataframe)
@@ -97,16 +81,13 @@ def test_wind_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     with pytest.raises(AreaNotFound):
         dao.save_wind({"fake_area_id": series_id})
 
-    # Ensures deleting the area deletes the row from `Wind` table
-    with db_session:
-        dao.delete_area(area_id)
-
-        wind_rows = db_session.execute(select(WIND_TABLE)).fetchall()
-        assert wind_rows == []
+    # Ensures deleting the area deletes the wind matrix
+    dao.delete_area(area_id)
+    with pytest.raises(AreaNotFound):
+        dao.get_wind(area_id)
 
 
-def test_reserves_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def test_reserves_lifecycle(dao: StudyDao) -> None:
     matrix_service = dao._matrix_service
     dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
     series_id = matrix_service.create(dataframe)
@@ -123,16 +104,13 @@ def test_reserves_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> No
     with pytest.raises(AreaNotFound):
         dao.save_reserves({"fake_area_id": series_id})
 
-    # Ensures deleting the area deletes the row from `Reserves` table
-    with db_session:
-        dao.delete_area(area_id)
-
-        reserves_rows = db_session.execute(select(RESERVES_TABLE)).fetchall()
-        assert reserves_rows == []
+    # Ensures deleting the area deletes the reserves matrix
+    dao.delete_area(area_id)
+    with pytest.raises(AreaNotFound):
+        dao.get_reserves(area_id)
 
 
-def test_misc_gen_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def test_misc_gen_lifecycle(dao: StudyDao) -> None:
     matrix_service = dao._matrix_service
     dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
     series_id = matrix_service.create(dataframe)
@@ -149,9 +127,7 @@ def test_misc_gen_lifecycle(db_session: Session, db_dao: DatabaseStudyDao) -> No
     with pytest.raises(AreaNotFound):
         dao.save_misc_gen({"fake_area_id": series_id})
 
-    # Ensures deleting the area deletes the row from `misc-gen` table
-    with db_session:
-        dao.delete_area(area_id)
-
-        misc_gen_rows = db_session.execute(select(MISC_GEN_TABLE)).fetchall()
-        assert misc_gen_rows == []
+    # Ensures deleting the area deletes the misc-gen matrix
+    dao.delete_area(area_id)
+    with pytest.raises(AreaNotFound):
+        dao.get_misc_gen(area_id)

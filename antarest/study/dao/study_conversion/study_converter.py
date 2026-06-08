@@ -118,11 +118,6 @@ class StudyConverter:
 
     def _convert_binding_constraints(self) -> None:
         constraints = list(self._source_dao.get_all_constraints().values())
-
-        # If the source study does not contain any binding constraint, we should stop here
-        if not constraints:
-            return
-
         self._new_dao.save_constraints(constraints)
 
         if self._study_version < STUDY_VERSION_8_7:
@@ -136,11 +131,6 @@ class StudyConverter:
 
     def _convert_links(self) -> None:
         links = self._source_dao.get_links()
-
-        # If the source study does not contain any link, we should stop here
-        if not links:
-            return
-
         self._new_dao.save_links(links)
 
         # Link matrices
@@ -151,11 +141,6 @@ class StudyConverter:
 
     def _convert_areas(self) -> None:
         area_properties = self._source_dao.get_all_area_properties()
-
-        # If the source study does not contain any area, we should stop here
-        if not area_properties:
-            return
-
         areas_ui = self._source_dao.get_all_areas_ui_info()
         area_names_and_thermals = {a.id: a for a in self._source_dao.get_all_areas_info()}
         try:
@@ -200,12 +185,12 @@ class StudyConverter:
         new_ui: AreaUiMapping = {}
         for area_id, source_ui in areas_ui.items():
             new_ui[area_id] = {}
-            for layer_number, x in source_ui.layer_x.items():
-                y = source_ui.layer_y[layer_number]
-                color = source_ui.layer_color[layer_number]
+            for layer_id, x in source_ui.layer_x.items():
+                y = source_ui.layer_y[layer_id]
+                color = source_ui.layer_color[layer_id]
                 r, g, b = (int(c) for c in color.strip(" ").split(","))
                 area_ui = AreaUI(x=x, y=y, color_rgb=(r, g, b))
-                new_ui[area_id][layer_number] = area_ui
+                new_ui[area_id][layer_id] = area_ui
         self._new_dao.save_area_ui(new_ui)
 
         # Short-term storages
