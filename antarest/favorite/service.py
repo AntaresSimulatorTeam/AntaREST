@@ -10,11 +10,23 @@
 #
 # This file is part of the Antares project.
 import http
+from pathlib import Path
 
 from fastapi import HTTPException
 
-from antarest.favorite.model import FavoriteDirectory, FavoriteDirectoryDTO, FavoriteStudy, FavoriteStudyDTO
-from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteStudyRepository
+from antarest.favorite.model import (
+    FavoriteDirectory,
+    FavoriteDirectoryDTO,
+    FavoriteExternalDirectory,
+    FavoriteExternalDirectoryDTO,
+    FavoriteStudy,
+    FavoriteStudyDTO,
+)
+from antarest.favorite.repository import (
+    FavoriteDirectoryRepository,
+    FavoriteExternalDirectoryRepository,
+    FavoriteStudyRepository,
+)
 from antarest.login.utils import get_user_impersonator
 
 
@@ -110,3 +122,35 @@ class FavoriteDirectoryService:
             raise HTTPException(
                 status_code=http.HTTPStatus.NOT_FOUND, detail=f"Directory with id {directory_uuid} not found"
             ) from None
+
+
+class FavoriteExternalDirectoryService:
+    def __init__(self, favorite_external_directory_repository: FavoriteExternalDirectoryRepository):
+        self._favorite_external_directory_repository = favorite_external_directory_repository
+
+    def add_favorite(self, path: str, workspace: str) -> FavoriteExternalDirectoryDTO:
+        if (Path(workspace) / path).exists():
+            favorite_external_directory = FavoriteExternalDirectory(path=path, workspace=workspace, user_id=get_user_impersonator())
+            favorite_dto = self._favorite_external_directory_repository.save(favorite_external_directory).to_dto()
+            return favorite_dto
+        else:
+            if not workspace:
+                raise HTTPException(
+                    status_code=http.HTTPStatus.NOT_FOUND, detail=f"Workspace {workspace} does not exist."
+                )
+            else:
+                raise HTTPException(status_code=http.HTTPStatus.NOT_FOUND, detail=f"Path {path} does not exist.")
+
+    def list_favorites(self) -> list[FavoriteExternalDirectoryDTO]:
+        favorite_dtos = [favorite.to_dto() for favorite in self._favorite_external_directory_repository.get_all()]
+        return favorite_dtos
+
+    def delete_favorite(self, workspace: str, path: str) -> None:
+        favorite_external_directory = self._favorite_external_directory_repository.get(workspace=workspace, path=path)
+        if favorite_external_directory:
+            self._favorite_external_directory_repository.delete(workspace=workspace, path=path)
+        else:
+            raise HTTPException(
+                status_code=http.HTTPStatus.NOT_FOUND,
+                detail=f"404: Favorite external directory with path {path} and workspace {workspace} not found.",
+            )

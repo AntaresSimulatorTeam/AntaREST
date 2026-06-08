@@ -38,8 +38,9 @@ from antarest.core.remote.remote_executor import RemoteWorkerExecutor
 from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.tasks.service import ITaskService
 from antarest.eventbus.main import build_eventbus
-from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteStudyRepository
-from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
+from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteStudyRepository, \
+    FavoriteExternalDirectoryRepository
+from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService, FavoriteExternalDirectoryService
 from antarest.launcher.main import build_launcher
 from antarest.launcher.service import LauncherService
 from antarest.lfs.dir_lfs import DirLargeFileStorage
@@ -154,6 +155,7 @@ def create_event_bus(config: Config) -> tuple[IEventBus, redis.Redis | None]:  #
 
 @dataclass
 class CoreServices:
+    favorite_external_directory_service: FavoriteExternalDirectoryService
     cache: ICache
     event_bus: IEventBus
     task_service: ITaskService
@@ -170,14 +172,17 @@ class CoreServices:
     tablemode_service: TableModeService
 
 
-def build_favorite_service() -> tuple[FavoriteStudyService, FavoriteDirectoryService]:
+def build_favorite_service() -> tuple[FavoriteStudyService, FavoriteDirectoryService, FavoriteExternalDirectoryService]:
     favorite_repository = FavoriteStudyRepository()
     favorite_study_service = FavoriteStudyService(favorite_study_repository=favorite_repository)
 
     favorite_directory_repository = FavoriteDirectoryRepository()
     favorite_directory_service = FavoriteDirectoryService(favorite_directory_repository=favorite_directory_repository)
 
-    return favorite_study_service, favorite_directory_service
+    favorite_external_directory_repository = FavoriteExternalDirectoryRepository()
+    favorite_external_directory_service = FavoriteExternalDirectoryService(favorite_external_directory_repository=favorite_external_directory_repository)
+
+    return favorite_study_service, favorite_directory_service, favorite_external_directory_service
 
 
 def build_tablemode_service() -> TableModeService:
@@ -272,7 +277,7 @@ def create_core_services(config: Config) -> CoreServices:
         matrix_service=matrix_service,
     )
 
-    favorite_study_service, favorite_directory_service = build_favorite_service()
+    favorite_study_service, favorite_directory_service, favorite_external_directory_service = build_favorite_service()
     tablemode_service = build_tablemode_service()
 
     study_disk_space_repository = StudyDiskSpaceRepository()
@@ -290,6 +295,7 @@ def create_core_services(config: Config) -> CoreServices:
         blob_service=blob_service,
         favorite_study_service=favorite_study_service,
         favorite_directory_service=favorite_directory_service,
+        favorite_external_directory_service=favorite_external_directory_service,
         tablemode_service=tablemode_service,
         study_disk_space_repository=study_disk_space_repository,
     )
@@ -366,6 +372,7 @@ class Services:
     matrix: MatrixService
     favorite_study: FavoriteStudyService
     favorite_directory: FavoriteDirectoryService
+    favorite_external_directory: FavoriteExternalDirectoryService
     tablemode_service: TableModeService
     user: LoginService
     cache: ICache
@@ -426,6 +433,7 @@ def create_services(config: Config, create_all: bool = False) -> Services:
         matrix=core_services.matrix_service,
         favorite_study=core_services.favorite_study_service,
         favorite_directory=core_services.favorite_directory_service,
+        favorite_external_directory=core_services.favorite_external_directory_service,
         tablemode_service=core_services.tablemode_service,
         user=core_services.login_service,
         cache=core_services.cache,

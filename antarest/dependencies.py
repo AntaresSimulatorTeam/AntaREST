@@ -45,7 +45,7 @@ from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.eventbus.connections import ConnectionManager
 from antarest.fastapi_jwt_auth import AuthJWT
-from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
+from antarest.favorite.service import FavoriteDirectoryService, FavoriteExternalDirectoryService, FavoriteStudyService
 from antarest.launcher.service import LauncherService
 from antarest.login.auth import JwtSettings
 from antarest.login.service import LoginService
@@ -125,6 +125,8 @@ def get_favorite_study_service(request: Request) -> FavoriteStudyService:
 def get_favorite_directory_service(request: Request) -> FavoriteDirectoryService:
     return get_app_state(request).services.favorite_directory
 
+def get_favorite_external_directory_service(request: Request) -> FavoriteExternalDirectoryService:
+    return get_app_state(request).services.favorite_external_directory
 
 def get_tablemode_service(request: Request) -> TableModeService:
     return get_app_state(request).services.tablemode_service
@@ -204,6 +206,9 @@ FileTransferManagerDep: TypeAlias = Annotated[FileTransferManager, Depends(get_f
 OutputServiceDep: TypeAlias = Annotated[OutputService, Depends(get_output_service)]
 FavoriteStudyServiceDep: TypeAlias = Annotated[FavoriteStudyService, Depends(get_favorite_study_service)]
 FavoriteDirectoryServiceDep: TypeAlias = Annotated[FavoriteDirectoryService, Depends(get_favorite_directory_service)]
+FavoriteExternalDirectoryServiceDep: TypeAlias = Annotated[
+    FavoriteExternalDirectoryService, Depends(get_favorite_external_directory_service)
+]
 TablemodeServiceDep: TypeAlias = Annotated[TableModeService, Depends(get_tablemode_service)]
 TaskServiceDep: TypeAlias = Annotated[ITaskService, Depends(get_task_service)]
 MaintenanceServiceDep: TypeAlias = Annotated[MaintenanceService, Depends(get_maintenance_service)]

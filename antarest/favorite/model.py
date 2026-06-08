@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import logging
+from pathlib import PosixPath
 
 from pydantic.alias_generators import to_camel
 from sqlalchemy import ForeignKey, Integer, String
@@ -80,3 +81,19 @@ class FavoriteDirectory(Base):
 
     def to_dto(self) -> FavoriteDirectoryDTO:
         return FavoriteDirectoryDTO(directory_id=self.directory_id, directory_name=self.directory.name)
+
+
+class FavoriteExternalDirectoryDTO(AntaresBaseModel, extra="forbid"):
+    path: PosixPath
+    workspace: str
+
+
+class FavoriteExternalDirectory(Base):
+    __tablename__ = "favorite_external_directory"
+
+    path: Mapped[str] = mapped_column(String, primary_key=True)
+    workspace: Mapped[str] = mapped_column(String, primary_key=True)
+    user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    def to_dto(self) -> "FavoriteExternalDirectoryDTO":
+        return FavoriteExternalDirectoryDTO(path=PosixPath(self.path), workspace=self.workspace)
