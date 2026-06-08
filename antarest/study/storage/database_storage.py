@@ -198,6 +198,7 @@ class DatabaseStudyStorage(IStudyStorage):
         except Exception as e:
             logger.error(f"Failed to unarchive study {study.id}", exc_info=e)
             # Clean up the database
+            db.session.rollback()
             self.remove_study_data(study)
             raise e
 
