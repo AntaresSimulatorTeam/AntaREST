@@ -152,7 +152,7 @@ class RawStudyService(AbstractStudyService):
 
         else:
             # Remove the source study folder if everything went well
-            shutil.rmtree(Path(study.path))
+            shutil.rmtree(Path(study.path), ignore_errors=True)
             remove_from_cache(cache=self.cache, root_id=study.id)
             self.cache.invalidate(study.id)
 
