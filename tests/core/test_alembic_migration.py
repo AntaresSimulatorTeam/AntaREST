@@ -12,18 +12,16 @@
 
 from pathlib import Path
 
+import pytest
 import yaml
 from sqlalchemy import create_engine, text
+from testcontainers.postgres import PostgresContainer
 
 from antarest.core.persistence import upgrade_db
+from tests.integration.conftest import RUN_ON_WINDOWS
 
 
-def test_alembic_migration(tmp_path: Path) -> None:
-    # Create a fake config file pointing towards the DB in memory
-
-    db_file = tmp_path / "db.sqlite"
-    db_url = f"sqlite:///{db_file}"
-
+def _checks_migration(tmp_path: Path, db_url: str) -> None:
     config_file = tmp_path / "config.yaml"
     with open(config_file, "w") as f:
         yaml.safe_dump({"db": {"url": db_url}}, f)
@@ -35,3 +33,20 @@ def test_alembic_migration(tmp_path: Path) -> None:
     with engine.connect() as connection:
         # this would throw if the migration is not executed
         connection.execute(text("SELECT * FROM study"))
+
+
+def test_alembic_migration(tmp_path: Path) -> None:
+    # Create a fake config file pointing towards the DB in memory
+    db_file = tmp_path / "db.sqlite"
+    db_url = f"sqlite:///{db_file}"
+
+    _checks_migration(tmp_path, db_url)
+
+
+@pytest.mark.skipif(RUN_ON_WINDOWS, reason="Docker fails on Windows")
+def test_alembic_migration_postgresql(tmp_path: Path) -> None:
+    # Start a PostgreSQL container
+    with PostgresContainer("postgres:14") as postgres:
+        db_url = postgres.get_connection_url()
+
+        _checks_migration(tmp_path, db_url)

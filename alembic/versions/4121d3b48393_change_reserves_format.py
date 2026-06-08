@@ -5,13 +5,14 @@ Revises: rp986cf862cy
 Create Date: 2026-05-21 10:36:43.512270
 
 """
-from alembic import op
+
 import sqlalchemy as sa
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = '4121d3b48393'
-down_revision = 'rp986cf862cy'
+revision = "4121d3b48393"
+down_revision = "rp986cf862cy"
 branch_labels = None
 depends_on = None
 

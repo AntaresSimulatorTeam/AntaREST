@@ -224,6 +224,36 @@ def initialize_st_storage(storage: STStorage, version: StudyVersion) -> None:
         _initialize_field_default(storage, "allow_overflow", False)
 
 
+def check_st_storage_complete(storage: STStorage, version: StudyVersion) -> None:
+    """
+    Raise ValueError if any version-required field on `storage` is None.
+    """
+    required: list[str] = []
+    if version >= STUDY_VERSION_8_6:
+        required.extend(
+            [
+                "injection_nominal_capacity",
+                "withdrawal_nominal_capacity",
+                "reservoir_capacity",
+                "efficiency",
+                "initial_level",
+                "initial_level_optim",
+            ]
+        )
+    if version >= STUDY_VERSION_8_8:
+        required.append("enabled")
+    if version >= STUDY_VERSION_9_2:
+        required.extend(["efficiency_withdrawal", "penalize_variation_injection", "penalize_variation_withdrawal"])
+    if version >= STUDY_VERSION_9_3:
+        required.append("allow_overflow")
+
+    missing = [f for f in required if getattr(storage, f) is None]
+    if missing:
+        raise ValueError(
+            f"Short-term storage '{storage.id}' is missing required field(s) for version {version}: {missing}"
+        )
+
+
 def check_attributes_coherence(storage: STStorage, version: StudyVersion) -> None:
     """
     The Simulator performs this business logic before running the simulation.
