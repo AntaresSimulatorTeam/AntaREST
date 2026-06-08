@@ -21,7 +21,7 @@ and so that we know for each object of the study what were the output variables 
 """
 
 from dataclasses import dataclass
-from typing import Any, NewType, TypeAlias, TypeVar
+from typing import Any, NewType, TypeAlias, overload
 
 from sqlalchemy import Column, Enum, ForeignKeyConstraint, Integer, String, Table, UniqueConstraint, select
 from sqlalchemy.orm import Session
@@ -30,13 +30,13 @@ from antarest.core.utils.dict_utils import _group_by, _group_by_2
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.dbmodel import Base
 from antarest.output.model import (
-    AreaAndLinkVariables,
-    AreaClusterVariables,
-    AreaVariables,
+    ComponentMcAllVariables,
+    ComponentMcIndVariables,
     McAllVar,
     McIndVar,
     OutputVariablesList,
 )
+from antarest.output.variable_view.model import OutputItemId
 
 metadata = Base.metadata
 
@@ -148,9 +148,47 @@ AreaId = NewType("AreaId", str)
 ClusterId = NewType("ClusterId", str)
 VariableId = NewType("VariableId", int)
 
-T = TypeVar("T")
-U = TypeVar("U")
-V = TypeVar("V")
+
+@dataclass(frozen=True)
+class VariableColumn:
+    column_index: int
+    variable: McIndVar | McAllVar
+
+
+@dataclass(frozen=True)
+class AreaVariablesColumns:
+    area_name: str
+    variables: list[VariableColumn]
+    thermal_clusters_columns: list[VariableColumn]
+    renewable_clusters_columns: list[VariableColumn]
+    short_term_storages_columns: list[VariableColumn]
+
+
+@dataclass(frozen=True)
+class LinkVariablesColumns:
+    area_1_name: str
+    area_2_name: str
+    variables: list[VariableColumn]
+
+
+@dataclass(frozen=True)
+class SystemVariablesColumns:
+    """
+    Mimics the structure of the storage:
+    for each type of item (area, thermal clusters, ...) we have a list of variables defined.
+    Then for each item of the system (area "DE", thermal cluster "FR-1", ...), we have the list of
+    variables that actually have values (as a list of indices into the aforementioned variables definitions).
+    """
+
+    # The definition of variables for each type of item in the system
+    area_variables: list[VariableColumn]
+    link_variables: list[VariableColumn]
+    thermal_cluster_variables: list[VariableColumn]
+    renewable_cluster_variables: list[VariableColumn]
+    short_term_storage_variables: list[VariableColumn]
+
+    # the list of variables for each item of the system
+    variable_assignments: dict[OutputItemId, list[int]]
 
 
 def _get_variables(study_id: str, output_id: str) -> dict[VariableId, McIndVar | McAllVar]:
@@ -209,13 +247,27 @@ def _get_cluster_variables(
     )
 
 
+@overload
 def _build_cluster_variables_list(
-    cluster_map: dict[ClusterId, list[McIndVar | McAllVar]],
+    cluster_map: dict[ClusterId, list[McIndVar]],
     var_type: type,
-) -> list[AreaClusterVariables[list[McIndVar | McAllVar]]]:
+) -> list[ComponentMcIndVariables]: ...
+
+
+@overload
+def _build_cluster_variables_list(
+    cluster_map: dict[ClusterId, list[McAllVar]],
+    var_type: type,
+) -> list[ComponentMcAllVariables]: ...
+
+
+def _build_cluster_variables_list(
+    cluster_map,
+    var_type,
+):
     """Builds a list of AreaClusterVariables, keeping only variables of the given type."""
     return [
-        AreaClusterVariables(
+        Componen(
             name=cluster_id,
             variables=[v for v in cluster_vars if isinstance(v, var_type)],
         )

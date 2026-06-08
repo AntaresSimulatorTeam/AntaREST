@@ -17,4 +17,7 @@ T = TypeVar("T")
 
 
 def find_if(iterable: Iterable[T], predicate: Predicate[T]) -> T | None:
+    """
+    Returns the first element matching the predicate, or None.
+    """
     return next(filter(predicate, iterable), None)
