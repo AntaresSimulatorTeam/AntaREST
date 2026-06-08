@@ -12,8 +12,10 @@
 import zipfile
 from pathlib import Path
 
+import pytest
 from starlette.testclient import TestClient
 
+from tests.integration.studies_blueprint.utils import check_minimal_study_integrity, create_minimal_study
 from tests.integration.utils import wait_for
 
 
@@ -104,3 +106,39 @@ def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, in
     assert fake_zipped_output.is_file()
     with zipfile.ZipFile(fake_zipped_output) as zf:
         assert zf.read("simulation.log").decode() == "Zipped simulation done"
+
+
+@pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
+def test_archive_with_both_storage_modes(
+    client: TestClient, user_access_token: str, storage_mode: str, tmp_path: Path
+) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    # Create a Raw study with several areas, links, constraints, thermals ...
+    res = client.post(f"/v1/studies?name=MyStudy&storage_mode={storage_mode}")
+    assert res.status_code == 201
+    study_id = res.json()
+
+    create_minimal_study(client, study_id)
+
+    # Archive the study
+    res = client.put(f"/v1/studies/{study_id}/archive")
+    assert res.status_code == 200
+    task_id = res.json()
+    client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
+
+    # Ensures that the archive exists
+    assert (tmp_path / "archive_dir" / f"{study_id}.7z").exists()
+
+    # Ensures the DB / FS was cleaned
+    assert not (tmp_path / "internal_workspace" / study_id).exists()
+    # todo for the BD check
+
+    # Unarchive the study
+    res = client.put(f"/v1/studies/{study_id}/unarchive")
+    assert res.status_code == 200
+    task_id = res.json()
+    client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
+
+    # Ensures we can fetch the data correctly
+    check_minimal_study_integrity(client, study_id)
