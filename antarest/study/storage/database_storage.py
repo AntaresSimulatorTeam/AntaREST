@@ -161,6 +161,7 @@ class DatabaseStudyStorage(IStudyStorage):
             study_version = StudyVersion.parse(src_study.version)
 
             # Build the new DB DAO
+            self._repository.save(new_study)
             creation_metadata = StudyMetadataCreation(id=new_study.id, version=study_version, managed=True)
             new_dao = self._db_dao_factory.create_study_dao(creation_metadata)
 
