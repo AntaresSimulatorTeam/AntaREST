@@ -132,6 +132,7 @@ from antarest.study.model import (
     Study,
     StudyContentStatus,
     StudyFolder,
+    StudyMetadataCopy,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
     StudyMetadataUpdate,
@@ -806,34 +807,12 @@ class StudyService:
         Returns: List of study information
         """
         logger.info("Retrieving matching studies")
-        studies: dict[str, StudyMetadataDTO] = {}
-        matching_studies = self.repository.get_all(
-            study_filter=study_filter,
-            sort_by=sort_by,
-            pagination=pagination,
-        )
+        matching_studies = self.repository.get_all(study_filter=study_filter, sort_by=sort_by, pagination=pagination)
         logger.info("Studies retrieved")
 
-        # Bulk optimization: pre-calculate all directory paths in one query
-        directory_ids = [study.directory_id for study in matching_studies if study.directory_id is not None]
-        directory_paths = self.directory_service.get_directory_paths_bulk(directory_ids)
+        return self._build_studies_information(matching_studies, should_raise=False)
 
-        # Build study metadata with pre-calculated paths
-        for study in matching_studies:
-            folder_path = None
-            if study.directory_id:
-                dir_path = directory_paths.get(study.directory_id, "")
-                folder_path = f"{dir_path}/{study.id}" if dir_path else study.id
-
-            study_metadata = self._try_get_studies_information(study, folder_path)
-            if study_metadata is not None:
-                studies[study_metadata.id] = study_metadata
-        return studies
-
-    def count_studies(
-        self,
-        study_filter: StudyFilter,
-    ) -> int:
+    def count_studies(self, study_filter: StudyFilter) -> int:
         """
         Get number of matching studies.
         Args:
@@ -841,22 +820,30 @@ class StudyService:
 
         Returns: total number of studies matching the filtering criteria
         """
-        total: int = self.repository.count_studies(
-            study_filter=study_filter,
-        )
-        return total
+        return self.repository.count_studies(study_filter=study_filter)
 
-    def _try_get_studies_information(self, study: Study, folder_path: str | None = None) -> StudyMetadataDTO | None:
-        try:
-            return self.storage_service.get_storage(study).get_study_information(study, folder_path)
-        except Exception as e:
-            logger.warning(
-                "Failed to build study %s (%s) metadata",
-                study.id,
-                study.path,
-                exc_info=e,
-            )
-        return None
+    def _build_studies_information(self, studies: Sequence[Study], should_raise: bool) -> dict[str, StudyMetadataDTO]:
+        # Bulk optimization: pre-calculate all directory paths in one query
+        directory_ids = [study.directory_id for study in studies if study.directory_id is not None]
+        directory_paths = self.directory_service.get_directory_paths_bulk(directory_ids)
+
+        result = {}
+        # Build study metadata with pre-calculated paths
+        for study in studies:
+            folder_path = None
+            if study.directory_id:
+                dir_path = directory_paths.get(study.directory_id, "")
+                folder_path = f"{dir_path}/{study.id}" if dir_path else study.id
+
+            try:
+                study_metadata = self.storage_service.get_storage(study).get_study_information(study, folder_path)
+                result[study_metadata.id] = study_metadata
+            except Exception as e:
+                logger.warning("Failed to build study %s (%s) metadata", study.id, study.path, exc_info=e)
+                if should_raise:
+                    raise
+
+        return result
 
     def get_study_information(self, uuid: str) -> StudyMetadataDTO:
         """
@@ -874,7 +861,8 @@ class StudyService:
         # TODO: Debounce this with an "update_study_last_access" method updating only every few seconds.
         study.last_access = current_time()
         self.repository.save(study)
-        return self.storage_service.get_storage(study).get_study_information(study)
+
+        return self._build_studies_information([study], should_raise=True)[study.id]
 
     def update_study_information(self, uuid: str, metadata_patch: StudyMetadataPatchDTO) -> StudyMetadataDTO:
         """
@@ -1264,21 +1252,12 @@ class StudyService:
         self.assert_study_unarchived(src_study)
 
         owner, groups = self._validate_and_prepare_permissions(group_ids)
+        directory_id = self.directory_service.get_directory_by_path(destination_folder.as_posix())
 
         def copy_task(notifier: ITaskNotifier) -> TaskResult:
             origin_study = self.get_study(src_uuid)
-            study = self.storage_service.get_storage(origin_study).copy(
-                origin_study,
-                dest_study_name,
-                group_ids,
-                destination_folder,
-            )
-
-            study.owner = owner
-            study.groups = groups
-            study.directory_id = self.directory_service.get_directory_by_path(destination_folder.as_posix())
-
-            self._save_study(study)
+            metadata = StudyMetadataCopy(name=dest_study_name, owner=owner, groups=groups, directory_id=directory_id)
+            study = self.storage_service.get_storage(origin_study).copy(origin_study, metadata)
 
             match outputs_selection:
                 case "all":
@@ -1581,19 +1560,15 @@ class StudyService:
             self.storage_service.get_storage(study).delete_from_filesystem(study)
             self._notify_study_deleted(study, study_infos[study.id])
 
-    def import_study(
-        self,
-        stream: BinaryIO,
-        group_ids: list[str],
-        directory: str = "",
-    ) -> str:
+    def import_study(self, stream: BinaryIO, group_ids: list[str], directory: str, storage_mode: StorageMode) -> str:
         """
         Import a compressed study.
 
         Args:
             stream: binary content of the study compressed in ZIP or 7z format.
             group_ids: group to attach to study
-            directory: Optional directory path where the study will be imported (e.g., 'project/subfolder').
+            directory: Directory path where the study will be imported (e.g., 'project/subfolder').
+            storage_mode: How the study will be stored inside the app ('filesystem' or 'database').
 
         Returns:
             New study UUID.
@@ -1614,7 +1589,7 @@ class StudyService:
             public_mode=PublicMode.NONE if group_ids else PublicMode.READ,
             owner=owner,
             groups=groups,
-            storage_mode=StorageMode.FILESYSTEM,
+            storage_mode=storage_mode,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
         study.directory_id = self.directory_service.get_directory_by_path(directory)
