@@ -12,20 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import type { ViewMode } from "../types";
-import type { Study } from "@/services/api/studies/types";
-
 export interface BreadcrumbItem {
   label: string;
   id: string | null;
   path: string | null;
-}
-
-export interface HeaderProps {
-  studyIds: Array<Study["id"]>;
-  selectedStudyIds: Array<Study["id"]>;
-  setSelectedStudyIds: (ids: Array<Study["id"]>) => void;
-  setStudiesToLaunch: (ids: Array<Study["id"]>) => void;
-  viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
 }
