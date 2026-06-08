@@ -79,6 +79,9 @@ def test_nominal_case(storage_service, tmp_path: Path, command_context: CommandC
     # Version
     assert file_study_dao.get_version() == STUDY_VERSION_7_0
 
+    # Comments (only check the length as the content is long and badly formatted)
+    assert len(file_study_dao.get_comments()) == 8542
+
     # Links
     assert file_study_dao.get_links() == [
         Link(

@@ -29,6 +29,14 @@ class IStudyStorage(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def remove_study_data(self, study: Study) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def unarchive(self, study: RawStudy, archive_path: Path) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
     def export_study(self, study: Study, dst_path: Path) -> None:
         raise NotImplementedError()
 

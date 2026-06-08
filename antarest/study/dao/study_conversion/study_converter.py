@@ -75,6 +75,9 @@ class StudyConverter:
         for district in self._source_dao.get_districts():
             self._new_dao.save_district(district)
 
+        # Comments
+        self._new_dao.save_comments(self._source_dao.get_comments())
+
     def _convert_settings(self) -> None:
         self._new_dao.save_general_config(self._source_dao.get_general_config())
         self._new_dao.save_playlist_config(self._source_dao.get_playlist_config())
