@@ -36,5 +36,4 @@ class DatabaseSnapshotManager(ISnapshotManager):
 
     @override
     def clear_snapshot(self, variant_study: VariantStudy) -> None:
-        # todo: Use the clean db method introduced inside the archive PR
-        raise NotImplementedError()
+        self._database_study_storage.remove_study_data(variant_study)
