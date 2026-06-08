@@ -164,7 +164,9 @@ class TestVariantStudyService:
 
         if variant_study.storage_mode == StorageMode.FILESYSTEM:
             factory = FileStudyDaoFactory(
-                ctx,
+                ctx.matrix_service,
+                ctx.blob_service,
+                ctx.generator_matrix_constants,
                 variant_study_service.study_factory,
                 variant_study_service.cache,
                 variant_study_service.get_study_paths,

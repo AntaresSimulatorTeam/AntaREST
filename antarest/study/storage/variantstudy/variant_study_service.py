@@ -15,7 +15,7 @@ import re
 from collections.abc import Callable
 from datetime import timedelta
 from functools import reduce
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import cast
 from uuid import uuid4
 
@@ -57,6 +57,7 @@ from antarest.study.model import (
     RawStudy,
     StorageMode,
     Study,
+    StudyMetadataCopy,
     StudyMetadataDTO,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter
@@ -127,16 +128,19 @@ class VariantStudyService(AbstractStudyService):
             StorageMode.DATABASE: DatabaseSnapshotManager(),
         }
         ctx = command_factory.command_context
+        generator_matrix_constants = ctx.generator_matrix_constants
         self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
-            StorageMode.DATABASE: DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants),
-            StorageMode.FILESYSTEM: FileStudyDaoFactory(ctx, study_factory, cache, self.get_study_paths),
+            StorageMode.DATABASE: DatabaseStudyDaoFactory(matrix_service, generator_matrix_constants),
+            StorageMode.FILESYSTEM: FileStudyDaoFactory(
+                matrix_service, ctx.blob_service, generator_matrix_constants, study_factory, cache, self.get_study_paths
+            ),
         }
 
     @override
-    def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> RawStudy:
+    def copy(self, src_study: Study, metadata: StudyMetadataCopy) -> RawStudy:
         variant_study = _cast_study_to_variant(src_study)
         self.safe_generation(variant_study, 600)
-        return self.raw_study_service.copy(src_study, dest_name, groups, destination_folder)
+        return self.raw_study_service.copy(src_study, metadata)
 
     @override
     def get_study_dao(self, study: Study) -> StudyDao:

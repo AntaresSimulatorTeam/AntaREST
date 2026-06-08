@@ -433,7 +433,14 @@ def test_ts_generation_task(tmp_path: Path, variant_study_service: VariantStudyS
     cmd_ctx = variant_study_service.command_factory.command_context
     cache = variant_study_service.cache
     study_factory = variant_study_service.study_factory
-    dao_factory = FileStudyDaoFactory(cmd_ctx, study_factory, cache, variant_study_service.get_study_paths)
+    dao_factory = FileStudyDaoFactory(
+        cmd_ctx.matrix_service,
+        cmd_ctx.blob_service,
+        cmd_ctx.generator_matrix_constants,
+        study_factory,
+        cache,
+        variant_study_service.get_study_paths,
+    )
     metadata = build_metadata_creation_object_from_study(raw_study)
     dao = dao_factory.create_study_dao(metadata)
 

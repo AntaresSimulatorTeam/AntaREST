@@ -12,8 +12,10 @@
 from io import BytesIO
 from pathlib import Path
 
+import pytest
 from starlette.testclient import TestClient
 
+from tests.integration.studies_blueprint.utils import check_minimal_study_integrity, create_minimal_study
 from tests.integration.utils import wait_task_completion
 from tests.test_helpers.outputs import create_minimal_output_zip_from_name
 
@@ -448,3 +450,28 @@ def copy_with_output_test(client: TestClient, study_id: str) -> None:
     res = client.get(f"/v1/studies/{res.json()}/outputs")
     assert res.status_code == 200
     assert [d["name"] for d in res.json()] == ["20231002-1023eco"]
+
+
+@pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
+def test_copy_with_both_storage_modes(client: TestClient, user_access_token: str, storage_mode: str) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    # Create a Raw study with several areas, links, constraints, thermals ...
+    res = client.post(f"/v1/studies?name=MyStudy&storage_mode={storage_mode}")
+    assert res.status_code == 201
+    study_id = res.json()
+
+    create_minimal_study(client, study_id)
+
+    # Copy the study
+    res = client.post(f"/v1/studies/{study_id}/copy?study_name=MyStudyCopy")
+    assert res.status_code == 201
+    task_id = res.json()
+
+    client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
+
+    copied_study = client.get("/v1/studies?name=MyStudyCopy").json()
+    copied_study_id = next(iter(copied_study))
+
+    # Ensures the data was copied correctly
+    check_minimal_study_integrity(client, copied_study_id)

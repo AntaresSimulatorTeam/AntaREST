@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import logging
 import shutil
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import BinaryIO
 
 from antares.study.version import StudyVersion
@@ -24,15 +24,13 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.archives import (
     ArchiveFormat,
     archive_dir,
-    extract_archive_from_path,
-    extract_archive_from_stream,
 )
 from antarest.core.utils.utils import StopWatch
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory, ResourcePaths
-from antarest.study.model import RawStudy, StorageMode, Study
+from antarest.study.model import RawStudy, StorageMode, Study, StudyMetadataCopy, StudyMetadataCreation
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract.abstract_study_service import AbstractStudyService
 from antarest.study.storage.database_storage import DatabaseStudyStorage
@@ -41,9 +39,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactor
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.utils import (
-    StudyMetadataCreation,
-    build_raw_study_from_source,
-    fix_study_root,
+    extract_data_to_dir,
     get_disk_usage,
     is_managed,
     remove_from_cache,
@@ -74,28 +70,34 @@ class RawStudyService(AbstractStudyService):
         self.study_factory = study_factory
         self.repository = repository
         self._matrix_service = command_context.matrix_service
-        self._file_study_storage = FileStudyStorage(cache, config, command_context, study_factory)
+        generator_matrix_constants = command_context.generator_matrix_constants
+        db_dao_factory = DatabaseStudyDaoFactory(self._matrix_service, generator_matrix_constants)
+        fs_dao_factory = FileStudyDaoFactory(
+            self._matrix_service,
+            command_context.blob_service,
+            generator_matrix_constants,
+            study_factory,
+            cache,
+            self.get_study_paths,
+        )
+        self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
+            StorageMode.DATABASE: db_dao_factory,
+            StorageMode.FILESYSTEM: fs_dao_factory,
+        }
+        self._file_study_storage = FileStudyStorage(config, repository, self._matrix_service, study_factory)
         self._database_study_storage = DatabaseStudyStorage(
-            config, self._matrix_service, command_context.generator_matrix_constants
+            config, repository, self._matrix_service, db_dao_factory, fs_dao_factory
         )
         self._storage_mapping: dict[StorageMode, IStudyStorage] = {
             StorageMode.FILESYSTEM: self._file_study_storage,
             StorageMode.DATABASE: self._database_study_storage,
         }
-        ctx = command_context
-        self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
-            StorageMode.DATABASE: DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants),
-            StorageMode.FILESYSTEM: FileStudyDaoFactory(command_context, study_factory, cache, self.get_study_paths),
-        }
         RawStudyMatrixUsageProvider(repository, self._matrix_service, self._storage_mapping)
         self.cache = cache
 
     @override
-    def copy(self, src_study: Study, dest_name: str, groups: list[str], destination_folder: PurePosixPath) -> RawStudy:
-        new_study = build_raw_study_from_source(
-            dest_name, self._config.get_workspace_path(), groups, src_study, destination_folder
-        )
-        return self._storage_mapping[src_study.storage_mode].copy(src_study, new_study)
+    def copy(self, src_study: Study, metadata: StudyMetadataCopy) -> RawStudy:
+        return self._storage_mapping[src_study.storage_mode].copy(src_study, metadata)
 
     @override
     def get_study_dao(self, study: Study) -> StudyDao:
@@ -161,7 +163,9 @@ class RawStudyService(AbstractStudyService):
 
     def unarchive(self, study: RawStudy) -> None:
         archive_path = self.find_archive_path(study)
-        self._extract_and_setup(study, archive_path)
+        extract_data_to_dir(Path(study.path), archive_path, self._config.storage.tmp_dir)
+        self.update_from_raw_metadata(study)
+
         archive_path.unlink()
 
     def normalize_study(self, study: Study) -> None:
@@ -187,21 +191,8 @@ class RawStudyService(AbstractStudyService):
         Raises:
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
-        self._extract_and_setup(study, stream)
-        return self._storage_mapping[study.storage_mode].import_study(study, stream)
-
-    def _extract_and_setup(self, study: RawStudy, source: Path | BinaryIO) -> None:
-        study_path = Path(study.path)
-        try:
-            if isinstance(source, Path):
-                extract_archive_from_path(source, study_path)
-            else:
-                extract_archive_from_stream(source, study_path, tmp_dir=self._config.storage.tmp_dir)
-            fix_study_root(study_path)
-            self.update_from_raw_metadata(study)
-        except Exception:
-            shutil.rmtree(study_path, ignore_errors=True)
-            raise
+        self._storage_mapping[study.storage_mode].import_study(study, stream)
+        return study
 
     def denormalize_study(self, study: Study) -> None:
         self._file_study_storage.denormalize_study(study)

@@ -103,7 +103,12 @@ def _get_dao_factory(variant_id: str, variant_study_service: VariantStudyService
 
     if variant_study.storage_mode == StorageMode.FILESYSTEM:
         return FileStudyDaoFactory(
-            ctx, variant_study_service.study_factory, variant_study_service.cache, variant_study_service.get_study_paths
+            ctx.matrix_service,
+            ctx.blob_service,
+            ctx.generator_matrix_constants,
+            variant_study_service.study_factory,
+            variant_study_service.cache,
+            variant_study_service.get_study_paths,
         )
 
     return DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants)

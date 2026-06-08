@@ -50,8 +50,8 @@ from antarest.study.model import (
     STUDY_VERSION_8_3,
     STUDY_VERSION_8_4,
     STUDY_VERSION_9_2,
+    StudyMetadataCreation,
 )
-from antarest.study.storage.utils import StudyMetadataCreation
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 

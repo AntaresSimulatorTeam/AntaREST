@@ -13,7 +13,7 @@
 from abc import ABC, abstractmethod
 
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.storage.utils import StudyMetadataCreation
+from antarest.study.model import StudyMetadataCreation
 
 
 class StudyFactoryDao(ABC):

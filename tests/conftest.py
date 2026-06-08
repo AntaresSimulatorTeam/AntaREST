@@ -39,12 +39,13 @@ from antarest.study.model import (
     STUDY_VERSION_9_3,
     StorageMode,
     Study,
+    StudyMetadataCreation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from antarest.study.storage.utils import StudyMetadataCreation, is_managed
+from antarest.study.storage.utils import is_managed
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.conftest_db import db_engine_fixture, db_middleware_fixture, db_session_fixture  # noqa: F401
@@ -229,7 +230,14 @@ def build_filesystem_dao(
     with db_session:
         db_session.add(study)
         db_session.commit()
-        factory = FileStudyDaoFactory(command_context, study_factory, Mock(), get_study_path)
+        factory = FileStudyDaoFactory(
+            command_context.matrix_service,
+            command_context.blob_service,
+            command_context.generator_matrix_constants,
+            study_factory,
+            Mock(),
+            get_study_path,
+        )
         metadata = build_metadata_creation_object_from_study(study)
         dao = factory.create_study_dao(metadata)
 
