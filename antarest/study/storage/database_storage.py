@@ -76,10 +76,14 @@ from antarest.study.dao.database.models.thermal import (
 from antarest.study.dao.database.models.xpansion import XPANSION_CAPACITY_TABLE, XPANSION_WEIGHT_TABLE
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
-from antarest.study.model import RawStudy, Study, StudyMetadataCreation
+from antarest.study.model import RawStudy, Study, StudyMetadataCopy, StudyMetadataCreation
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.study_storage_interface import IStudyStorage
-from antarest.study.storage.utils import extract_data_to_dir, update_study_from_raw_metadata
+from antarest.study.storage.utils import (
+    build_raw_study_from_source,
+    extract_data_to_dir,
+    update_study_from_raw_metadata,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -149,14 +153,16 @@ class DatabaseStudyStorage(IStudyStorage):
         self._fs_dao_factory = fs_dao_factory
 
     @override
-    def copy(self, src_study: Study, new_study: RawStudy) -> RawStudy:
+    def copy(self, src_study: Study, metadata: StudyMetadataCopy) -> RawStudy:
+        new_study = build_raw_study_from_source(src_study, self._config.get_workspace_path(), metadata)
+
         try:
             source_dao = self._db_dao_factory.get_study_dao(src_study.id, True)
             study_version = StudyVersion.parse(src_study.version)
 
             # Build the new DB DAO
-            metadata = StudyMetadataCreation(id=new_study.id, version=study_version, managed=True)
-            new_dao = self._db_dao_factory.create_study_dao(metadata)
+            creation_metadata = StudyMetadataCreation(id=new_study.id, version=study_version, managed=True)
+            new_dao = self._db_dao_factory.create_study_dao(creation_metadata)
 
             # Copies the inputs
             converter = StudyConverter(

@@ -44,7 +44,7 @@ from tests.study.dao.utils import save_area
 def _build_storage_mapping(matrix_service: MatrixService) -> dict[StorageMode, IStudyStorage]:
     study_factory = StudyFactory(matrix_service=matrix_service, cache=Mock())
     return {
-        StorageMode.FILESYSTEM: FileStudyStorage(Mock(), matrix_service, study_factory),
+        StorageMode.FILESYSTEM: FileStudyStorage(Mock(), Mock(), matrix_service, study_factory),
         StorageMode.DATABASE: DatabaseStudyStorage(Mock(), Mock(), matrix_service, Mock(), Mock()),
     }
 

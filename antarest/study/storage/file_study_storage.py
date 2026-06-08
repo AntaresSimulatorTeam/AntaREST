@@ -19,7 +19,8 @@ from typing_extensions import override
 from antarest.core.config import Config
 from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.model import RawStudy, Study
+from antarest.study.model import RawStudy, Study, StudyMetadataCopy
+from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.file_study_utils import export_study_to_flat_directory, get_study_path, update_antares_info
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
@@ -27,19 +28,34 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
     extract_matrix_id,
 )
 from antarest.study.storage.study_storage_interface import IStudyStorage
-from antarest.study.storage.utils import extract_data_to_dir, get_disk_usage, is_managed, update_study_from_raw_metadata
+from antarest.study.storage.utils import (
+    build_raw_study_from_source,
+    extract_data_to_dir,
+    get_disk_usage,
+    is_managed,
+    update_study_from_raw_metadata,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class FileStudyStorage(IStudyStorage):
-    def __init__(self, config: Config, matrix_service: ISimpleMatrixService, study_factory: StudyFactory):
+    def __init__(
+        self,
+        config: Config,
+        repository: StudyMetadataRepository,
+        matrix_service: ISimpleMatrixService,
+        study_factory: StudyFactory,
+    ):
         self._config = config
+        self._repository = repository
         self._study_factory = study_factory
         self._matrix_service = matrix_service
 
     @override
-    def copy(self, src_study: Study, new_study: RawStudy) -> RawStudy:
+    def copy(self, src_study: Study, metadata: StudyMetadataCopy) -> RawStudy:
+        new_study = build_raw_study_from_source(src_study, self._config.get_workspace_path(), metadata)
+
         src_path = get_study_path(src_study)
         dest_path = Path(new_study.path)
 
@@ -50,6 +66,8 @@ class FileStudyStorage(IStudyStorage):
         update_antares_info(new_study, file_study.tree, update_author=False)
 
         self.normalize_file_study(file_study)
+
+        self._repository.save(new_study)
 
         return new_study
 

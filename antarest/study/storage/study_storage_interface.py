@@ -15,16 +15,13 @@ from pathlib import Path
 from typing import BinaryIO, Iterator
 
 from antarest.matrixstore.model import MatrixReference
-from antarest.study.model import RawStudy, Study
+from antarest.study.model import RawStudy, Study, StudyMetadataCopy
 
 
 class IStudyStorage(ABC):
     @abstractmethod
-    def copy(self, src_study: Study, new_study: RawStudy) -> RawStudy:
-        """
-        Copies information from src_study to new_study.
-        The 2 studies must have the same storage mode.
-        """
+    def copy(self, src_study: Study, metadata: StudyMetadataCopy) -> RawStudy:
+        """Copies information from src_study to a new study according to `metadata`."""
         raise NotImplementedError()
 
     @abstractmethod

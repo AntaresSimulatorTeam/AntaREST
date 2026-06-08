@@ -39,7 +39,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactor
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.utils import (
-    build_raw_study_from_source,
     extract_data_to_dir,
     get_disk_usage,
     is_managed,
@@ -85,7 +84,7 @@ class RawStudyService(AbstractStudyService):
             StorageMode.DATABASE: db_dao_factory,
             StorageMode.FILESYSTEM: fs_dao_factory,
         }
-        self._file_study_storage = FileStudyStorage(config, self._matrix_service, study_factory)
+        self._file_study_storage = FileStudyStorage(config, repository, self._matrix_service, study_factory)
         self._database_study_storage = DatabaseStudyStorage(
             config, repository, self._matrix_service, db_dao_factory, fs_dao_factory
         )
@@ -98,9 +97,7 @@ class RawStudyService(AbstractStudyService):
 
     @override
     def copy(self, src_study: Study, metadata: StudyMetadataCopy) -> RawStudy:
-        new_study = build_raw_study_from_source(src_study, self._config.get_workspace_path(), metadata)
-        self.repository.save(new_study)
-        return self._storage_mapping[src_study.storage_mode].copy(src_study, new_study)
+        return self._storage_mapping[src_study.storage_mode].copy(src_study, metadata)
 
     @override
     def get_study_dao(self, study: Study) -> StudyDao:
