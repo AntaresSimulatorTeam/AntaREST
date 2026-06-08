@@ -184,17 +184,22 @@ class DatabaseStudyStorage(IStudyStorage):
     @override
     def write_study_for_archive(self, study: RawStudy, dst_path: Path) -> None:
         self.export_study(study, dst_path)
-        self.clean_study_data_table(study.id)
+
+    @override
+    def remove_study_data(self, study: Study) -> None:
+        session = db.session
+        session.execute(delete(STUDY_DATA_TABLE).where(STUDY_DATA_TABLE.c.study_id == study.id))
+        session.commit()
 
     @override
     def unarchive(self, study: RawStudy, archive_path: Path) -> None:
-        self.extract_study(study, archive_path, create_study_in_db=False)
-
-    @staticmethod
-    def clean_study_data_table(study_id: str) -> None:
-        session = db.session
-        session.execute(delete(STUDY_DATA_TABLE).where(STUDY_DATA_TABLE.c.study_id == study_id))
-        session.commit()
+        try:
+            self._extract_study(study, archive_path, create_study_in_db=False)
+        except Exception as e:
+            logger.error(f"Failed to unarchive study {study.id}", exc_info=e)
+            # Clean up the database
+            self.remove_study_data(study)
+            raise e
 
     @override
     def export_study(self, study: Study, dst_path: Path) -> None:
@@ -242,16 +247,16 @@ class DatabaseStudyStorage(IStudyStorage):
     @override
     def import_study(self, study: RawStudy, stream: BinaryIO) -> None:
         try:
-            self.extract_study(study, stream, create_study_in_db=True)
+            self._extract_study(study, stream, create_study_in_db=True)
 
         except Exception as e:
-            logger.error("Failed to import study %s", str(study.path), exc_info=e)
+            logger.error(f"Failed to import study {study.path}", exc_info=e)
             # Clean up the database
             db.session.rollback()
             self._repository.delete(study.id)
             raise e
 
-    def extract_study(self, study: RawStudy, source: Path | BinaryIO, create_study_in_db: bool) -> None:
+    def _extract_study(self, study: RawStudy, source: Path | BinaryIO, create_study_in_db: bool) -> None:
         dst_path = self._config.storage.tmp_dir / str(uuid.uuid4())
 
         try:

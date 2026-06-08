@@ -151,8 +151,8 @@ class RawStudyService(AbstractStudyService):
             archive_path.unlink(missing_ok=True)
 
         else:
-            # Remove the source study folder if everything went well
-            shutil.rmtree(Path(study.path), ignore_errors=True)
+            # Remove the source study data if everything went well
+            self._storage_mapping[study.storage_mode].remove_study_data(study)
             remove_from_cache(cache=self.cache, root_id=study.id)
             self.cache.invalidate(study.id)
 
