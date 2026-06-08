@@ -490,6 +490,9 @@ class OutputService:
 
         file_paths = []
         try:
+            # TODO: target process is:
+            #       1. for each item (area, link),
+            #          get the list of variables
             # Launch all aggregation tasks
             for query_file in query_files:
                 file_name = str(uuid.uuid4())
