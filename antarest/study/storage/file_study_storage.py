@@ -78,6 +78,15 @@ class FileStudyStorage(IStudyStorage):
         self._denormalize_file_study(file_study)
 
     @override
+    def remove_study_data(self, study: Study) -> None:
+        shutil.rmtree(Path(study.path), ignore_errors=True)
+
+    @override
+    def unarchive(self, study: RawStudy, archive_path: Path) -> None:
+        extract_data_to_dir(Path(study.path), archive_path, self._config.storage.tmp_dir)
+        self.update_from_raw_metadata(study)
+
+    @override
     def export_study(self, study: Study, dst_path: Path) -> None:
         export_study_to_flat_directory(get_study_path(study), dst_path)
         file_study = self._get_file_study(dst_path, False)

@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import BinaryIO, Iterator
 
 from antares.study.version import StudyVersion
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from typing_extensions import override
 
 from antarest.core.config import Config
@@ -24,6 +24,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
+from antarest.study.dao.database.models import STUDY_DATA_TABLE
 from antarest.study.dao.database.models.area import LOAD_TABLE, MISC_GEN_TABLE, RESERVES_TABLE, SOLAR_TABLE, WIND_TABLE
 from antarest.study.dao.database.models.binding_constraint import (
     BINDING_CONSTRAINT_EQ_MATRIX_TABLE,
@@ -182,8 +183,24 @@ class DatabaseStudyStorage(IStudyStorage):
 
     @override
     def write_study_for_archive(self, study: RawStudy, dst_path: Path) -> None:
-        # Nothing to do
-        pass
+        self.export_study(study, dst_path)
+
+    @override
+    def remove_study_data(self, study: Study) -> None:
+        session = db.session
+        session.execute(delete(STUDY_DATA_TABLE).where(STUDY_DATA_TABLE.c.study_id == study.id))
+        session.commit()
+
+    @override
+    def unarchive(self, study: RawStudy, archive_path: Path) -> None:
+        try:
+            self._extract_study(study, archive_path, create_study_in_db=False)
+        except Exception as e:
+            logger.error(f"Failed to unarchive study {study.id}", exc_info=e)
+            # Clean up the database
+            db.session.rollback()
+            self.remove_study_data(study)
+            raise e
 
     @override
     def export_study(self, study: Study, dst_path: Path) -> None:
@@ -230,20 +247,32 @@ class DatabaseStudyStorage(IStudyStorage):
 
     @override
     def import_study(self, study: RawStudy, stream: BinaryIO) -> None:
+        try:
+            self._extract_study(study, stream, create_study_in_db=True)
+
+        except Exception as e:
+            logger.error(f"Failed to import study {study.path}", exc_info=e)
+            # Clean up the database
+            db.session.rollback()
+            self._repository.delete(study.id)
+            raise e
+
+    def _extract_study(self, study: RawStudy, source: Path | BinaryIO, create_study_in_db: bool) -> None:
         dst_path = self._config.storage.tmp_dir / str(uuid.uuid4())
 
         try:
-            # First, extract the stream inside a temporary directory
-            extract_data_to_dir(dst_path, stream, self._config.storage.tmp_dir)
+            # First, extract the source inside a temporary directory
+            extract_data_to_dir(dst_path, source, self._config.storage.tmp_dir)
 
             # Build the FS DAO from the extracted data
             source_dao = self._fs_dao_factory.get_dao_from_path(dst_path, study_id=study.id, is_study_managed=True)
 
-            # Update the `Study` object based on the FS DAO
-            update_study_from_raw_metadata(study, source_dao.get_file_study())
+            if create_study_in_db:
+                # Update the `Study` object based on the FS DAO
+                update_study_from_raw_metadata(study, source_dao.get_file_study())
 
-            # Create the new study inside DB to avoid ForeignKey and StudyNotFound errors
-            self._repository.save(study)
+                # Create the new study inside DB to avoid ForeignKey and StudyNotFound errors
+                self._repository.save(study)
 
             # Build the DB DAO
             metadata = StudyMetadataCreation(id=study.id, version=source_dao.get_version(), managed=True)
@@ -257,13 +286,6 @@ class DatabaseStudyStorage(IStudyStorage):
                 matrix_service=self._matrix_service,
             )
             converter.convert_study_inputs()
-
-        except Exception as e:
-            logger.error("Failed to import study %s", str(study.path), exc_info=e)
-            # Clean up the database
-            db.session.rollback()
-            self._repository.delete(study.id)
-            raise e
 
         finally:
             shutil.rmtree(dst_path, ignore_errors=True)
