@@ -12,20 +12,21 @@
  * This file is part of the Antares project.
  */
 
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import type { StudyMetadata } from "@/types/types";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import { Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
-import type { StudyMetadata } from "@/types/types";
 import { useDeleteStudies } from "./hooks/useDeleteStudies";
 
 interface Props {
   studyIds: Array<StudyMetadata["id"]>;
   open: boolean;
   onClose: VoidFunction;
+  onRun?: VoidFunction;
 }
 
-function DeleteStudiesDialog({ studyIds, open, onClose }: Props) {
+function DeleteStudiesDialog({ studyIds, open, onClose, onRun }: Props) {
   const { t } = useTranslation();
   const deleteStudies = useDeleteStudies({ onSuccess: onClose });
 
@@ -35,6 +36,7 @@ function DeleteStudiesDialog({ studyIds, open, onClose }: Props) {
 
   const handleConfirm = () => {
     deleteStudies.mutate({ studyIds });
+    onRun?.();
   };
 
   ////////////////////////////////////////////////////////////////
