@@ -111,12 +111,13 @@ class DigestSynthesis(OutputSynthesis):
         df = _parse_digest_file(self.config.path)
         return df.to_pandas().to_dict(orient="split", index=False)
 
-    def get_ui(self) -> DigestUI:
+    @staticmethod
+    def get_ui(file_path: Path) -> DigestUI:
         """
         Parse a digest file and returns it as 4 separated matrices.
         One for areas, one for the districts, one for linear flow and the last one for quadratic flow.
         """
-        df = _parse_digest_file(self.config.path)
+        df = _parse_digest_file(file_path)
         flow_linear = _get_flow_linear(df)
         flow_quadratic = _get_flow_quadratic(df)
         area = _get_area(df)

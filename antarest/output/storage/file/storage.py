@@ -455,11 +455,9 @@ class InStudyFileOutputStorage(IOutputStorage):
         """
         Digest of the output.
         """
-        study_outputs = self._outputs_provider.get_outputs(study_id)
-        file_study = study_outputs.get_file_study()
-        digest_node = file_study.tree.get_node(url=["output", output_id, "economy", "mc-all", "grid", "digest"])
-        assert isinstance(digest_node, DigestSynthesis)
-        return digest_node.get_ui()
+        output_path = self._outputs_provider.get_outputs(study_id).outputs_path
+        file_path = output_path / output_id / "economy" / "mc-all" / "grid" / "digest" / "digest.txt"
+        return DigestSynthesis.get_ui(file_path)
 
     @override
     def get_output_time_index(self, study_id: str, output_id: str, frequency: MatrixFrequency) -> MatrixIndex:

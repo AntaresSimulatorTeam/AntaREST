@@ -34,7 +34,6 @@ def study_service_as_file_outputs_provider(study_service: StudyService) -> IFile
         def get_outputs(self, study_id: str) -> FileStudyOutputs:
             metadata = study_service.get_study(study_id)
             return FileStudyOutputs(
-                get_file_study=lambda: study_service.get_file_study(metadata),
                 outputs_path=Path(metadata.path) / "output",
                 is_managed=is_managed(metadata),
             )
