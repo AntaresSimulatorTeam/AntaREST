@@ -158,19 +158,9 @@ class DatabaseStudyStorage(IStudyStorage):
         new_study = build_raw_study_from_source(src_study, self._config.get_workspace_path(), metadata)
 
         try:
-            source_dao = self._db_dao_factory.get_study_dao(src_study.id, True)
-            study_version = StudyVersion.parse(src_study.version)
-
-            # Build the new DB DAO
             self._repository.save(new_study)
-            creation_metadata = StudyMetadataCreation(id=new_study.id, version=study_version, managed=True)
-            new_dao = self._db_dao_factory.create_study_dao(creation_metadata)
 
-            # Copies the inputs
-            converter = StudyConverter(
-                source_dao=source_dao, new_dao=new_dao, study_version=study_version, matrix_service=self._matrix_service
-            )
-            converter.convert_study_inputs()
+            self.copy_study_data(src_study, new_study.id)
 
             return new_study
 
@@ -180,6 +170,20 @@ class DatabaseStudyStorage(IStudyStorage):
             db.session.rollback()
             self._repository.delete(new_study.id)
             raise e
+
+    def copy_study_data(self, src_study: Study, new_study_id: str) -> None:
+        source_dao = self._db_dao_factory.get_study_dao(src_study.id, True)
+        study_version = StudyVersion.parse(src_study.version)
+
+        # Build the new DB DAO
+        creation_metadata = StudyMetadataCreation(id=new_study_id, version=study_version, managed=True)
+        new_dao = self._db_dao_factory.create_study_dao(creation_metadata)
+
+        # Copies the inputs
+        converter = StudyConverter(
+            source_dao=source_dao, new_dao=new_dao, study_version=study_version, matrix_service=self._matrix_service
+        )
+        converter.convert_study_inputs()
 
     @override
     def write_study_for_archive(self, study: RawStudy, dst_path: Path) -> None:

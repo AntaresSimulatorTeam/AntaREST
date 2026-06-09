@@ -32,7 +32,7 @@ class DatabaseSnapshotManager(ISnapshotManager):
     @override
     def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
         self.clear_snapshot(variant_study)
-        self._database_study_storage.copy_study(ref_study, variant_study)
+        self._database_study_storage.copy_study_data(ref_study, variant_study.id)
 
     @override
     def clear_snapshot(self, variant_study: VariantStudy) -> None:
