@@ -13,6 +13,7 @@
  */
 
 import GroupedDataTable from "@/components/GroupedDataTable";
+import EmptyView from "@/components/page/EmptyView";
 import TabsView from "@/components/page/TabsView";
 import { reserveQueries } from "@/queries/reserves/queries";
 import type { Reserve } from "@/services/api/studies/areas/reserves/types";
@@ -84,7 +85,12 @@ function Reserves() {
         {
           id: "general",
           label: t("global.general"),
-          content: <GroupedDataTable data={rows} columns={columns} />,
+          content:
+            rows.length === 0 ? (
+              <EmptyView title={t("study.modeling.reserves.empty")} />
+            ) : (
+              <GroupedDataTable data={rows} columns={columns} />
+            ),
         },
       ]}
     />

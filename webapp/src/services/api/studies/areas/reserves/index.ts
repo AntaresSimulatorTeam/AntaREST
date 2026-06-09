@@ -32,48 +32,6 @@ import type {
   UpdateReserveParams,
 } from "./types";
 
-// TODO: remove this fake data scaffolding once the backend `reserves` endpoint is available.
-const USE_FAKE_RESERVES = true;
-
-const FAKE_RESERVES = [
-  {
-    id: "primary",
-    type: "up",
-    failureCost: 1000,
-    spillageCost: 50,
-    referenceActivationDuration: 15,
-    powerActivationRatio: 0.8,
-    energyActivationRatio: 0.6,
-  },
-  {
-    id: "secondary",
-    type: "up",
-    failureCost: 800,
-    spillageCost: 40,
-    referenceActivationDuration: 30,
-    powerActivationRatio: 0.7,
-    energyActivationRatio: 0.5,
-  },
-  {
-    id: "tertiary",
-    type: "down",
-    failureCost: 500,
-    spillageCost: 25,
-    referenceActivationDuration: 60,
-    powerActivationRatio: 0.6,
-    energyActivationRatio: 0.4,
-  },
-  {
-    id: "strategic",
-    type: "down",
-    failureCost: 1200,
-    spillageCost: 75,
-    referenceActivationDuration: 120,
-    powerActivationRatio: 0.9,
-    energyActivationRatio: 0.7,
-  },
-] satisfies Reserve[];
-
 /**
  * GET /v1/studies/{studyId}/areas/{areaId}/reserves - Lists all reserves of an area.
  *
@@ -82,11 +40,6 @@ const FAKE_RESERVES = [
  * @throws If the response doesn't match the expected schema.
  */
 export async function getReserves(params: ReservesAreaParams): Promise<Reserve[]> {
-  // TODO: remove this fake data block once the backend endpoint is available.
-  if (USE_FAKE_RESERVES) {
-    return reservesSchema.parse(FAKE_RESERVES);
-  }
-
   const { studyId, areaId } = params;
   const res = await client.get(`/v1/studies/${studyId}/areas/${areaId}/reserves`);
   return reservesSchema.parse(res.data);
