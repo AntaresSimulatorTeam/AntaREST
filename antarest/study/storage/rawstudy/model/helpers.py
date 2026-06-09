@@ -17,11 +17,9 @@ from antarest.core.serde.ini_reader import IniReader
 
 class FileStudyHelpers:
     @staticmethod
-    def get_config(study_path: Path | None = None, output_path: Path | None = None) -> JSON:
-        if output_path:
-            return IniReader().read(output_path / "about-the-study" / "parameters.ini")
+    def get_input_config(study_path: Path) -> JSON:
         return IniReader().read(study_path / "settings" / "generaldata.ini")
 
     @staticmethod
-    def get_input_config(study_path: Path) -> JSON:
-        return IniReader().read(study_path / "settings" / "generaldata.ini")
+    def get_output_config(output_path: Path) -> JSON:
+        return IniReader().read(output_path / "about-the-study" / "parameters.ini")

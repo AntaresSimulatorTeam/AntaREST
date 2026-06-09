@@ -30,7 +30,6 @@ from antarest.core.exceptions import (
 )
 from antarest.core.interfaces.cache import ICache
 from antarest.core.remote.remote_executor import IRemoteExecutor
-from antarest.core.serde.ini_reader import IniReader
 from antarest.core.utils.archives import (
     ArchiveFormat,
     archive_dir,
@@ -63,6 +62,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
     DigestSynthesis,
     DigestUI,
 )
+from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import (
     extract_output_name,
     fix_study_root,
@@ -283,7 +283,7 @@ class InStudyFileOutputStorage(IOutputStorage):
             raise OutputNotFound(output_id)
         output_data = simulations[output_id]
 
-        file_metadata = IniReader().read(outputs_path / output_id / "about-the-study" / "parameters.ini")
+        file_metadata = FileStudyHelpers.get_output_config(outputs_path / output_id)
         settings = OutputSettings(
             general=file_metadata["general"],
             optimization=file_metadata["optimization"],
@@ -472,9 +472,8 @@ class InStudyFileOutputStorage(IOutputStorage):
         Returns:
             MatrixIndex with start_date, steps, first_week_size and level
         """
-        study_outputs = self._outputs_provider.get_outputs(study_id)
-        file_study = study_outputs.get_file_study()
-        return get_start_date(file_study, output_id, frequency)
+        outputs_path = self._outputs_provider.get_outputs(study_id).outputs_path
+        return get_start_date(None, outputs_path / output_id, frequency)
 
     @override
     def aggregate_output_data(

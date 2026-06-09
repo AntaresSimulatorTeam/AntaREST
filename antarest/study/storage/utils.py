@@ -409,22 +409,30 @@ def get_matrix_index(
 
 
 def get_start_date(
-    file_study: FileStudy,
-    output_id: str | None = None,
+    study_path: Path | None = None,
+    output_path: Path | None = None,
     level: MatrixFrequency = MatrixFrequency.HOURLY,
 ) -> MatrixIndex:
     """
     Retrieve the index (start date and step count) for output or input matrices
 
     Args:
-        file_study: Study data
-        output_id: id of the output, if None, then it's the start date of the input matrices
+        study_path: If provided, we'll retrieve the start date of the input matrices
+        output_path: If provided, we'll retrieve the start date of the output matrices
         level: granularity of the steps
 
     """
-    config = FileStudyHelpers.get_config(file_study, output_id)["general"]
+
+    if study_path:
+        data = FileStudyHelpers.get_input_config(study_path)
+    elif output_path:
+        data = FileStudyHelpers.get_output_config(output_path)
+    else:
+        raise ValueError("Either study_path or output_path must be provided")
+
+    config = data["general"]
     simulation_range = parse_simulation_range(config)
-    return get_matrix_index(simulation_range, output_id is not None, level)
+    return get_matrix_index(simulation_range, is_output=output_path is not None, level=level)
 
 
 def is_folder_safe(workspace: WorkspaceConfig, folder: str) -> bool:
