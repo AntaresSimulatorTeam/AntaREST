@@ -16,7 +16,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import BinaryIO, cast
+from typing import BinaryIO
 from uuid import uuid4
 
 import polars as pl
@@ -524,24 +524,19 @@ class InStudyFileOutputStorage(IOutputStorage):
 
     @override
     def get_logs(self, study_id: str, output_id: str, log_type: LogType) -> str:
-        study_outputs = self._outputs_provider.get_outputs(study_id)
-        file_study = study_outputs.get_file_study()
+        output_path = self._outputs_provider.get_outputs(study_id).outputs_path
 
         log_locations = {
-            LogType.STDOUT: [
-                ["output", output_id, "antares-out"],
-                ["output", output_id, "simulation"],
-            ],
-            LogType.STDERR: [
-                ["output", output_id, "antares-err"],
-            ],
+            LogType.STDOUT: [Path(output_id) / "antares-out.log", Path(output_id) / "simulation.log"],
+            LogType.STDERR: [Path(output_id) / "antares-err.log"],
         }
         empty_log = False
         for log_location in log_locations[log_type]:
             try:
                 # Assume UTF-8 but ignore errors, it's difficult to be sure of log encoding
                 # especially because of windows error messages
-                log = cast(bytes, file_study.tree.get(log_location, depth=1)).decode(encoding="utf-8", errors="replace")
+                file_path = output_path / log_location
+                log = file_path.read_text(encoding="utf-8", errors="replace")
                 # when missing file, RawFileNode return empty bytes
                 if log:
                     return log
