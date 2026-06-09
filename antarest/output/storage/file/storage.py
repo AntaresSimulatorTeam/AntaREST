@@ -536,15 +536,9 @@ class InStudyFileOutputStorage(IOutputStorage):
                 # Assume UTF-8 but ignore errors, it's difficult to be sure of log encoding
                 # especially because of windows error messages
                 file_path = output_path / log_location
-                log = file_path.read_text(encoding="utf-8", errors="replace")
-                # when missing file, RawFileNode return empty bytes
-                if log:
-                    return log
-                else:
-                    empty_log = True
-            except ChildNotFoundError:
-                pass
-            except KeyError:
+                return file_path.read_text(encoding="utf-8", errors="replace")
+            except FileNotFoundError:
+                empty_log = True
                 pass
         if empty_log:
             return ""
