@@ -9,9 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from dataclasses import dataclass
 from enum import StrEnum
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, Sequence, TypeVar
 
+import polars as pl
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
@@ -259,3 +261,18 @@ class OutputVariablesViewStatus(StrEnum):
 class OutputVariablesViewResponse(AntaresBaseModel, extra="forbid", alias_generator=to_camel, populate_by_name=True):
     status: OutputVariablesViewStatus
     task_id: str | None
+
+
+@dataclass(frozen=True)
+class OutputTable:
+    """
+    Adds columns metadata to a polars dataframe, to better represent them.
+
+    Polars only supports strings as column headers, and does not allow to associate metadata objects to them.
+    This class works around that limitation.
+
+    A few operations are available to guarantee consistency between the columns and the data.
+    """
+
+    columns: Sequence[C]
+    dataframe: pl.DataFrame

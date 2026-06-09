@@ -491,8 +491,9 @@ class OutputService:
         file_paths = []
         try:
             # TODO: target process is:
-            #       1. for each item (area, link),
-            #          get the list of variables
+            #       1. get list of all data
+            #       2. identify matching areas and links
+            #       3. for each one, call unitary function get_item_output_data ...
             # Launch all aggregation tasks
             for query_file in query_files:
                 file_name = str(uuid.uuid4())
