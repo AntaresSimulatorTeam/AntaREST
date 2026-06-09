@@ -14,7 +14,6 @@ import datetime
 import uuid
 from pathlib import Path
 from typing import Any
-from unittest.mock import Mock
 
 import pytest
 
@@ -318,11 +317,15 @@ def test_create_matrix_index_output(
         ),
     ],
 )
-def test_create_matrix_index_input(config: dict[str, Any], level: MatrixFrequency, expected: MatrixIndex) -> None:
-    file_study = Mock()
-    file_study.tree.get.return_value = {"general": config}
+def test_create_matrix_index_input(
+    config: dict[str, Any], level: MatrixFrequency, expected: MatrixIndex, tmp_path: Path
+) -> None:
+    study_path = tmp_path / str(uuid.uuid4())
+    (study_path / "settings").mkdir(parents=True)
+    write_ini_file(study_path / "settings" / "generaldata.ini", {"general": config})
+
     # Asserts the content are the same
-    actual = get_start_date(file_study, None, level)
+    actual = get_start_date(study_path, None, level)
     assert actual == expected
     # Asserts the returned 1st January corresponds to the chosen one
     actual_datetime = datetime.datetime.strptime(actual.start_date, "%Y-%m-%d %H:%M:%S")
