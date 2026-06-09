@@ -98,7 +98,7 @@ def check_minimal_study_integrity(client: TestClient, study_id: str) -> None:
     ]
 
 
-def check_exported_study_integrity(client: TestClient, export_path: Path, download_id: str) -> None:
+def check_exported_study_integrity(client: TestClient, export_path: Path, download_id: str, study_name: str) -> None:
     zip_path = export_path / "export.zip"
     download_to_file(client, download_id, export_path / zip_path)
     assert zip_path.exists()
@@ -114,7 +114,7 @@ def check_exported_study_integrity(client: TestClient, export_path: Path, downlo
     assert study_antares == {
         "antares": {
             "version": 9.3,
-            "caption": "MyStudy",
+            "caption": study_name,
             "author": "George",
             "editor": "George",
             "created": ANY,

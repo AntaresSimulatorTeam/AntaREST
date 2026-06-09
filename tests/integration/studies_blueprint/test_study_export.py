@@ -134,4 +134,4 @@ def test_export_with_both_storage_modes(
     assert res.status_code == 200
     download_id = res.json()["file"]["id"]
 
-    check_exported_study_integrity(client, tmp_path, download_id)
+    check_exported_study_integrity(client, tmp_path, download_id, "MyStudy")
