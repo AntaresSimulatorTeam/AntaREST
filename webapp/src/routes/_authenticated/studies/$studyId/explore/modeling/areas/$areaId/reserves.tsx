@@ -12,34 +12,81 @@
  * This file is part of the Antares project.
  */
 
-import Matrix from "@/components/Matrix";
+import GroupedDataTable from "@/components/GroupedDataTable";
+import TabsView from "@/components/page/TabsView";
+import { reserveQueries } from "@/queries/reserves/queries";
+import type { Reserve } from "@/services/api/studies/areas/reserves/types";
+import { Chip } from "@mui/material";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { createMRTColumnHelper } from "material-react-table";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves",
 )({
+  loader: ({ context, params: { studyId, areaId } }) => {
+    return context.queryClient.ensureQueryData(reserveQueries.list(studyId, areaId));
+  },
   component: Reserves,
 });
 
-const COLUMNS = ["Primary Res. (draft)", "Strategic Res. (draft)", "DSM", "Day Ahead"] as const;
+interface ReserveRow extends Reserve {
+  name: string;
+}
+
+const columnHelper = createMRTColumnHelper<ReserveRow>();
 
 function Reserves() {
+  const { t } = useTranslation();
   const { studyId, areaId } = Route.useParams();
-  const url = `input/reserves/${areaId}`;
+
+  const { data: reserves } = useSuspenseQuery(reserveQueries.list(studyId, areaId));
+
+  const rows = useMemo<ReserveRow[]>(
+    () => reserves.map((reserve) => ({ ...reserve, name: reserve.id })),
+    [reserves],
+  );
+
+  const columns = useMemo(
+    () => [
+      columnHelper.accessor("type", {
+        header: "Type",
+        Cell: ({ cell }) => (
+          <Chip
+            label={cell.getValue()}
+            size="small"
+            color={cell.getValue() === "up" ? "success" : "warning"}
+            variant="outlined"
+            sx={{ borderRadius: 1, textTransform: "uppercase" }}
+          />
+        ),
+      }),
+      columnHelper.accessor("failureCost", { header: "Failure Cost" }),
+      columnHelper.accessor("spillageCost", { header: "Spillage Cost" }),
+      columnHelper.accessor("referenceActivationDuration", {
+        header: "Ref. Activation Duration",
+      }),
+      columnHelper.accessor("powerActivationRatio", { header: "Power Activation Ratio" }),
+      columnHelper.accessor("energyActivationRatio", { header: "Energy Activation Ratio" }),
+    ],
+    [],
+  );
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Matrix
-      key={areaId}
-      studyId={studyId}
-      url={url}
-      customColumns={COLUMNS}
-      aggregateColumns={["total"]}
-      isTimeSeries={false}
-      enableFilters
+    <TabsView
+      tabs={[
+        {
+          id: "general",
+          label: t("global.general"),
+          content: <GroupedDataTable data={rows} columns={columns} />,
+        },
+      ]}
     />
   );
 }

@@ -109,6 +109,10 @@ function AreaLayout() {
               params,
             }),
           },
+          // TODO: re-enable the version gate once reserve creation lands and v10
+          // studies can be tested. Reserves is a v10+ feature, so the tab must be
+          // hidden for studies under version 10.0.0.
+          // semver.gte(study.version, "10.0.0") && {
           {
             id: "reserves",
             label: t("study.modeling.reserves"),
