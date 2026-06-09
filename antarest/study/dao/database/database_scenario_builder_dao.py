@@ -212,29 +212,74 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
         version = impl.get_version()
         nb_years = impl.get_general_config().nb_years
         years = [str(y) for y in range(nb_years)]
-        index = self._build_study_index()
+        index = self._build_study_index(scenario_type)
 
         dense = initialize_ruleset_with_version(years, index, version, {scenario_type})
         sparse = self.get_ruleset()
         update_ruleset(dense, RulesetUpdate(**sparse.model_dump()), version)
         return dense.get(scenario_type)
 
-    def _build_study_index(self) -> StudyIndex:
+    def _build_study_index(self, scenario_type: ScenarioType) -> StudyIndex:
+        """
+        Build the study index for the given scenario type and the scenario only.
+        This way we avoid performing a full study index build which is really costly.
+        """
         impl = self.get_impl()
-        areas = list(impl.get_all_area_ids())
-        thermals = impl.get_all_thermals()
-        renewables = impl.get_all_renewables()
-        storages = impl.get_all_st_storages()
-        sts_constraints = impl.get_all_st_storage_additional_constraints()
+
+        areas = []
+        links = []
+        thermals = {}
+        storages = {}
+        bc_groups = []
+        renewables = {}
+        sts_additional_constraints = {}
+
+        if scenario_type in {
+            ScenarioType.LOAD,
+            ScenarioType.THERMAL,
+            ScenarioType.HYDRO,
+            ScenarioType.WIND,
+            ScenarioType.SOLAR,
+            ScenarioType.RENEWABLE,
+            ScenarioType.HYDRO_INITIAL_LEVEL,
+            ScenarioType.HYDRO_FINAL_LEVEL,
+            ScenarioType.HYDRO_GENERATION_POWER,
+            ScenarioType.SHORT_TERM_STORAGE_INFLOWS,
+            ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS,
+        }:
+            # For all of these scenarios, we need to get the list of areas
+            areas = impl.get_all_area_ids()
+
+            if scenario_type == ScenarioType.THERMAL:
+                th_clusters = impl.get_all_thermals()
+                thermals = {a: list(th_clusters.get(a, {})) for a in areas}
+
+            if scenario_type == ScenarioType.RENEWABLE:
+                renew_clusters = impl.get_all_renewables()
+                renewables = {a: list(renew_clusters.get(a, {})) for a in areas}
+
+            if scenario_type == ScenarioType.SHORT_TERM_STORAGE_INFLOWS:
+                storages = {a: list(impl.get_all_st_storages().get(a, {})) for a in areas}
+
+            if scenario_type == ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS:
+                sts = impl.get_all_st_storages()
+                sts_constraints = impl.get_all_st_storage_additional_constraints()
+                sts_additional_constraints = {
+                    a: {s: [c.id for c in sts_constraints.get(a, {}).get(s, [])] for s in sts.get(a, {})} for a in areas
+                }
+
+        if scenario_type == ScenarioType.LINK:
+            links = [(link.area1, link.area2) for link in impl.get_links()]
+
+        if scenario_type == ScenarioType.BINDING_CONSTRAINTS:
+            bc_groups = list({c.group for c in impl.get_all_constraints().values() if c.group})
+
         return StudyIndex(
             areas=areas,
-            links=[(link.area1, link.area2) for link in impl.get_links()],
-            thermals={a: list(thermals.get(a, {})) for a in areas},
-            renewables={a: list(renewables.get(a, {})) for a in areas},
-            storages={a: list(storages.get(a, {})) for a in areas},
-            bc_groups={c.group for c in impl.get_all_constraints().values() if c.group},
-            sts_additional_constraints={
-                a: {s: [c.id for c in sts_constraints.get(a, {}).get(s, [])] for s in storages.get(a, {})}
-                for a in areas
-            },
+            links=links,
+            thermals=thermals,
+            renewables=renewables,
+            storages=storages,
+            bc_groups=bc_groups,
+            sts_additional_constraints=sts_additional_constraints,
         )
