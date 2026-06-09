@@ -22,7 +22,6 @@ from antarest.core.config import Config
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.archives import (
-    ArchiveFormat,
     archive_dir,
 )
 from antarest.core.utils.utils import StopWatch
@@ -140,11 +139,12 @@ class RawStudyService(AbstractStudyService):
         dst_path = self._config.storage.tmp_dir / f"archive_{study.id}"
         self._storage_mapping[study.storage_mode].write_study_for_archive(study, dst_path)
 
-        archive_path = self._config.storage.archive_dir.joinpath(f"{study.id}{ArchiveFormat.SEVEN_ZIP}")
+        archive_format = self._config.storage.archive_format
+        archive_path = self._config.storage.archive_dir.joinpath(f"{study.id}{archive_format}")
 
         try:
             stopwatch = StopWatch()
-            archive_dir(dst_path, archive_path, False, ArchiveFormat.SEVEN_ZIP)
+            archive_dir(dst_path, archive_path, False, archive_format)
             logger.info(f"Study {study.id} exported ({archive_path.suffix} format) in {stopwatch}s")
         except Exception as e:
             logger.warning(f"Failed to archive study {study.id}", exc_info=e)
