@@ -502,15 +502,20 @@ def test_lifecycle_for_both_storage_modes(client: TestClient, user_access_token:
     # Ensures the 2nd level variant was correctly created
     check_minimal_study_integrity(client, study_id)
 
-    # Copy as reference the variant
+    # Copy as reference the variant (This creates a new RawStudy with the same data)
     res = client.post(f"/v1/studies/{study_id}/copy?study_name=ReferenceStudy")
     assert res.status_code == 201
     task_id = res.json()
 
     client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
 
-    copied_study = client.get("/v1/studies?name=MyStudyCopy").json()
+    copied_study = client.get("/v1/studies?name=ReferenceStudy").json()
     copied_study_id = next(iter(copied_study))
 
     # Ensures the data was copied correctly
     check_minimal_study_integrity(client, copied_study_id)
+
+    # Export the variant
+    res = client.post(f"/v1/studies/{study_id}/export?study_name=ExportedStudy")
+    assert res.status_code == 201
+    task_id = res.json()
