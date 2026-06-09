@@ -59,7 +59,6 @@ from antarest.study.model import (
     MatrixIndex,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist, parse_outputs
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestSynthesis,
     DigestUI,
@@ -277,13 +276,13 @@ class InStudyFileOutputStorage(IOutputStorage):
         """
         Get the list of output for a study.
         """
-        study_outputs = self._outputs_provider.get_outputs(study_id)
-        outputs = study_outputs.get_file_study().config.outputs
-        if output_id not in outputs:
-            raise OutputNotFound(output_id)
-        output_data: Simulation = outputs[output_id]
-
         outputs_path = self._outputs_provider.get_outputs(study_id).outputs_path
+        simulations = parse_outputs(outputs_path)
+
+        if output_id not in simulations:
+            raise OutputNotFound(output_id)
+        output_data = simulations[output_id]
+
         file_metadata = IniReader().read(outputs_path / output_id / "about-the-study" / "parameters.ini")
         settings = OutputSettings(
             general=file_metadata["general"],
