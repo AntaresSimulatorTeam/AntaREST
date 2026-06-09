@@ -73,7 +73,6 @@ class SimpleFileOutputsProvider(IFileOutputsProvider):
         if not (self._studies_dir / study_id).is_dir():
             raise StudyNotFoundError(f"Studies directory {self._studies_dir} not found.")
         return FileStudyOutputs(
-            get_file_study=lambda: self._get_study(study_id),
             outputs_path=self._studies_dir / study_id / "output",
             is_managed=True,
         )
