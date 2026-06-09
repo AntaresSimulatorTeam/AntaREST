@@ -94,7 +94,7 @@ def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, in
 
     res = client.get(f"/v1/studies/{study_id}")
     assert res.json()["archived"]
-    assert (tmp_path / "archive_dir" / f"{study_id}.7z").exists()
+    assert (tmp_path / "archive_dir" / f"{study_id}.zip").exists()
 
     res = client.put(f"/v1/studies/{study_id}/unarchive")
 
@@ -103,7 +103,7 @@ def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, in
 
     res = client.get(f"/v1/studies/{study_id}")
     assert not res.json()["archived"]
-    assert not (tmp_path / "archive_dir" / f"{study_id}.7z").exists()
+    assert not (tmp_path / "archive_dir" / f"{study_id}.zip").exists()
     assert fake_output_file.exists()
     assert fake_output_file.read_text() == "Simulation done"
     assert fake_zipped_output.is_file()
@@ -131,7 +131,7 @@ def test_archive_with_both_storage_modes(
     client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
 
     # Ensures that the archive exists
-    assert (tmp_path / "archive_dir" / f"{study_id}.7z").exists()
+    assert (tmp_path / "archive_dir" / f"{study_id}.zip").exists()
 
     # Ensures the DB / FS was cleaned
     assert not (tmp_path / "internal_workspace" / study_id).exists()
