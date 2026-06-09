@@ -75,7 +75,7 @@ class SimpleFileOutputsProvider(IFileOutputsProvider):
         return FileStudyOutputs(
             get_file_study=lambda: self._get_study(study_id),
             outputs_path=self._studies_dir / study_id / "output",
-            study_workspace="default",
+            is_managed=True,
         )
 
     def _get_study(self, study_id: str) -> FileStudy:

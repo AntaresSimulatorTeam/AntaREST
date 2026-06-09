@@ -168,7 +168,7 @@ def test_export_output(tmp_path: Path) -> None:
             return FileStudyOutputs(
                 get_file_study=lambda: FileStudy(Mock(), study_tree),
                 outputs_path=root / "output",
-                study_workspace=DEFAULT_WORKSPACE_NAME,
+                is_managed=True,
             )
 
     output_storage = InStudyFileOutputStorage(

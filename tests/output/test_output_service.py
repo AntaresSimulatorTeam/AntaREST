@@ -31,6 +31,7 @@ from antarest.output.storage.file.storage import (
 )
 from antarest.output.storage.output_storage import IOutputStorage, OutputStorageType
 from antarest.study.model import (
+    DEFAULT_WORKSPACE_NAME,
     RawStudy,
     Study,
 )
@@ -76,7 +77,7 @@ def _file_outputs_provider(study: RawStudy) -> IFileOutputsProvider:
             return FileStudyOutputs(
                 get_file_study=not_implemented,
                 outputs_path=Path(study.path) / "output",
-                study_workspace=study.workspace,
+                is_managed=(study.workspace == DEFAULT_WORKSPACE_NAME),
             )
 
     return Impl()

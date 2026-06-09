@@ -334,7 +334,7 @@ timestamp = 1599488150
             return FileStudyOutputs(
                 get_file_study=lambda: study_service.get_raw(md),
                 outputs_path=study_path / "output",
-                study_workspace=DEFAULT_WORKSPACE_NAME,
+                is_managed=True,
             )
 
     output_storage = InStudyFileOutputStorage(
