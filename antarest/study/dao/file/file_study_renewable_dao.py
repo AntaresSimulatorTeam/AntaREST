@@ -16,7 +16,11 @@ from typing import TYPE_CHECKING, Any
 import polars as pl
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError, RenewableClusterConfigNotFound, RenewableClusterNotFound
+from antarest.core.exceptions import (
+    ChildNotFoundError,
+    RenewableClusterConfigNotFound,
+    RenewableClusterNotFound,
+)
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.dao.api.renewable_dao import RenewableDao
 from antarest.study.dao.common import AreaId, RenewableSeriesMapping
@@ -76,12 +80,14 @@ class FileStudyRenewableDao(RenewableDao, ABC):
     @override
     def get_all_renewables_for_area(self, area_id: str) -> Sequence[RenewableCluster]:
         file_study = self.get_file_study()
+        check_area_exists(file_study.config, area_id)
         clusters_data = self._get_all_renewables_for_area(file_study, area_id)
         return [parse_renewable_cluster(file_study.config.version, cluster) for cluster in clusters_data.values()]
 
     @override
     def get_renewable(self, area_id: str, renewable_id: str) -> RenewableCluster:
         file_study = self.get_file_study()
+        check_area_exists(file_study.config, area_id)
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=renewable_id)
         try:
             cluster = file_study.tree.get(path.split("/"), depth=1)
@@ -101,7 +107,11 @@ class FileStudyRenewableDao(RenewableDao, ABC):
 
     @override
     def get_renewable_series(self, area_id: str, renewable_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(_get_renewable_series_path(area_id, renewable_id))
+        check_area_exists(self.get_file_study().config, area_id)
+        try:
+            return self.get_impl().get_matrix(_get_renewable_series_path(area_id, renewable_id))
+        except ChildNotFoundError:
+            raise RenewableClusterNotFound(area_id, renewable_id)
 
     @override
     def get_all_renewables_series(self) -> RenewableSeriesMapping:
@@ -155,9 +165,13 @@ class FileStudyRenewableDao(RenewableDao, ABC):
         matrices_mapping: dict[str, list[InputSeriesMatrix]] = {}
         study_data = self.get_file_study()
         for area_id, value in series.items():
+            check_area_exists(study_data.config, area_id)
             for renewable_id, series_id in value.items():
                 url = _get_renewable_series_path(area_id, renewable_id)
-                node = study_data.tree.get_node(url)
+                try:
+                    node = study_data.tree.get_node(url)
+                except ChildNotFoundError:
+                    raise RenewableClusterNotFound(area_id, renewable_id)
                 assert isinstance(node, InputSeriesMatrix)
                 matrix_id = series_id
                 matrices_mapping.setdefault(matrix_id, []).append(node)
@@ -166,7 +180,10 @@ class FileStudyRenewableDao(RenewableDao, ABC):
     @override
     def delete_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
         study_data = self.get_file_study()
+        check_area_exists(study_data.config, area_id)
         cluster_id = renewable.id.lower()
+        if not any(c.id.lower() == cluster_id for c in study_data.config.areas[area_id].renewables):
+            raise RenewableClusterNotFound(area_id, renewable.id)
         paths = [
             ["input", "renewables", "clusters", area_id, "list", cluster_id],
             ["input", "renewables", "series", area_id, cluster_id],
@@ -192,8 +209,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
 
     @staticmethod
     def _update_renewable_config(study_data: FileStudyTreeConfig, area_id: str, renewable: RenewableCluster) -> None:
-        if area_id not in study_data.areas:
-            raise ValueError(f"The area '{area_id}' does not exist")
+        check_area_exists(study_data, area_id)
 
         renewable_id = renewable.id
         for k, existing_cluster in enumerate(study_data.areas[area_id].renewables):

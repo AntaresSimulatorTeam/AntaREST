@@ -166,7 +166,7 @@ class TestCreateCluster:
             study_version=STUDY_VERSION_8_8,
         ).apply(dao)
         assert output.status is False
-        assert f"The area '{fake_area_id}' does not exist" in output.message
+        assert f"Area is not found: '{fake_area_id}'" in output.message
 
     def test_to_dto(self, command_context: CommandContext) -> None:
         prepro = GEN.random((365, 6)).tolist()

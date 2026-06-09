@@ -15,13 +15,13 @@
 import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
 import { type DialogProps } from "@mui/material";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "@tanstack/react-router";
 
 import FormDialog from "@/components/dialogs/FormDialog";
-import type { SubmitHandlerPlus } from "@/components/Form/types";
 import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { TREE_ROOT_NAME } from "@/components/utils/constants";
 import { directoryQueries } from "@/queries/directories/queries";
 import { updateStudyFilters } from "@/redux/ducks/studies";
@@ -35,11 +35,11 @@ import StudyDestinationFE from "../../StudyDestinationFE";
 import type { DirectoryDestination } from "../../StudyDestinationFE/types";
 import {
   computeAllowSubmitOnPristine,
-  type FormValues,
   formSchema,
   getInitialDirectoryId,
-  toDirectoryPath,
   resolveRedirectDirectoryId,
+  toDirectoryPath,
+  type FormValues,
 } from "./utils";
 
 export interface MoveResult {
@@ -51,11 +51,12 @@ export interface MoveResult {
 }
 
 interface Props extends DialogProps {
-  onClose: () => void;
   studies: StudyMetadata[];
+  onClose: VoidFunction;
+  onRun?: VoidFunction;
 }
 
-function MoveStudyDialog({ open, onClose, studies }: Props) {
+function MoveStudyDialog({ open, studies, onClose, onRun }: Props) {
   const { t } = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
@@ -76,6 +77,8 @@ function MoveStudyDialog({ open, onClose, studies }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async (data: SubmitHandlerPlus<FormValues>): Promise<MoveResult> => {
+    onRun?.();
+
     const { destination, redirect } = formSchema.parse(data.values);
 
     // TODO: This adapter should be moved to the API layer when Tan stack migration is done.

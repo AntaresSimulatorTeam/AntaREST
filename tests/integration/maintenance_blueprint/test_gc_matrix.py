@@ -12,7 +12,9 @@
 
 """Integration tests for the matrix garbage collection task."""
 
+import tempfile
 from datetime import timedelta
+from pathlib import Path
 
 import polars as pl
 
@@ -42,9 +44,7 @@ class TestCleanMatricesIntegration:
             db.session.commit()
 
         result = clean_matrices(
-            matrix_service=matrix_service,
-            dry_run=False,
-            retention_time=3600,
+            matrix_service=matrix_service, dry_run=False, retention_time=3600, lock_folder=Path(tempfile.gettempdir())
         )
 
         assert isinstance(result, GarbageCollectorTaskResult)
@@ -67,6 +67,7 @@ class TestCleanMatricesIntegration:
             matrix_service=matrix_service,
             dry_run=False,
             retention_time=3600,
+            lock_folder=Path(tempfile.gettempdir()),
         )
 
         assert result.status == BackGroundTaskStatus.SUCCESS
@@ -93,6 +94,7 @@ class TestCleanMatricesIntegration:
             matrix_service=matrix_service,
             dry_run=True,
             retention_time=3600,
+            lock_folder=Path(tempfile.gettempdir()),
         )
 
         assert result.status == BackGroundTaskStatus.SUCCESS
@@ -109,6 +111,7 @@ class TestCleanMatricesIntegration:
             matrix_service=matrix_service,
             dry_run=False,
             retention_time=3600,
+            lock_folder=Path(tempfile.gettempdir()),
         )
 
         assert result.status == BackGroundTaskStatus.SUCCESS

@@ -19,7 +19,10 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import StudyNotFoundError
-from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
+from antarest.study.business.model.thematic_trimming_model import (
+    ThematicTrimming,
+    check_thematic_trimming_complete,
+)
 from antarest.study.dao.api.thematic_trimming_dao import ThematicTrimmingDao
 from antarest.study.dao.database.models.thematic_trimming import THEMATIC_TRIMMING_TABLE
 from antarest.study.dao.database.sql_utils import upsert_one
@@ -52,6 +55,7 @@ class DatabaseThematicTrimmingDao(ThematicTrimmingDao):
 
     @override
     def save_thematic_trimming(self, trimming: ThematicTrimming) -> None:
+        check_thematic_trimming_complete(trimming, self.get_impl().get_version())
         session = self._db_session
         study_id = self._study_id
         values = {"study_id": study_id, "thematic_trimming": trimming.model_dump(exclude_none=True)}

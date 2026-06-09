@@ -24,7 +24,7 @@ from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import User
 from antarest.login.utils import current_user_context
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyType
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, StorageMode, StudyType
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.helpers import create_variant_study
@@ -73,6 +73,7 @@ def test_get_variant_children(tmp_path: Path, admin_user: Any) -> None:
         owner=User(id=2, name="me"),
         groups=[],
         public_mode=PublicMode.NONE,
+        storage_mode=StorageMode.FILESYSTEM,
     )
     children = [
         create_variant_study(
@@ -85,6 +86,7 @@ def test_get_variant_children(tmp_path: Path, admin_user: Any) -> None:
             owner=User(id=2, name="me"),
             groups=[],
             public_mode=PublicMode.NONE,
+            storage_mode=StorageMode.DATABASE,
         ),
         create_variant_study(
             id="child2",
@@ -96,6 +98,7 @@ def test_get_variant_children(tmp_path: Path, admin_user: Any) -> None:
             owner=User(id=3, name="not me"),
             groups=[],
             public_mode=PublicMode.NONE,
+            storage_mode=StorageMode.DATABASE,
         ),
     ]
     for jwt_user in [jwt_user_me, jwt_user_not_me, admin_user]:

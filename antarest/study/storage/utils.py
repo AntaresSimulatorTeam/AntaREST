@@ -18,11 +18,10 @@ import os
 import re
 import shutil
 from collections.abc import Sequence
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 from io import StringIO
-from pathlib import Path, PurePosixPath
-from typing import Any, cast
+from pathlib import Path
+from typing import Any, BinaryIO, cast
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -50,6 +49,7 @@ from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
+from antarest.core.utils.archives import extract_archive_from_path, extract_archive_from_stream
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Identity
@@ -62,7 +62,9 @@ from antarest.study.model import (
     MatrixIndex,
     RawStudy,
     Study,
+    StudyContentStatus,
     StudyFolder,
+    StudyMetadataCopy,
     StudyMetadataDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -596,14 +598,12 @@ def get_current_user_name() -> str:
     return get_user_name_from_id(get_user_impersonator())
 
 
-def build_raw_study_from_source(
-    name: str, path: Path, groups: list[str], src_study: Study, destination_folder: PurePosixPath
-) -> RawStudy:
+def build_raw_study_from_source(src_study: Study, path: Path, metadata: StudyMetadataCopy) -> RawStudy:
     dest_id = str(uuid4())
     now_utc = current_time()
     dest_study = RawStudy(
         id=dest_id,
-        name=name,
+        name=metadata.name,
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(path / dest_id),
         created_at=now_utc,
@@ -612,21 +612,63 @@ def build_raw_study_from_source(
         author=src_study.author,
         editor=get_current_user_name(),
         horizon=src_study.horizon,
-        public_mode=PublicMode.NONE if groups else PublicMode.READ,
-        groups=groups,
-        folder=str(destination_folder / dest_id),
+        public_mode=PublicMode.NONE if metadata.groups else PublicMode.READ,
+        groups=metadata.groups,
+        owner=metadata.owner,
+        directory_id=metadata.directory_id,
         storage_mode=src_study.storage_mode,
+        content_status=StudyContentStatus.VALID,
     )
     return dest_study
 
 
-@dataclass(frozen=True)
-class StudyMetadataCreation:
-    id: str
-    version: StudyVersion
-    managed: bool
-    name: str | None = None
-    author: str | None = None
-    editor: str | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
+def extract_data_to_dir(dst_path: Path, source: Path | BinaryIO, tmp_dir: Path) -> None:
+    """
+    The source is extracted to the filesystem inside the `dst_path` attribute.
+    """
+    try:
+        if isinstance(source, Path):
+            extract_archive_from_path(source, dst_path)
+        else:
+            extract_archive_from_stream(source, dst_path, tmp_dir=tmp_dir)
+        fix_study_root(dst_path)
+    except Exception:
+        shutil.rmtree(dst_path, ignore_errors=True)
+        raise
+
+
+def update_study_from_raw_metadata(study: Study, file_study: FileStudy) -> None:
+    """
+    The given `study` object needs to be updated according to the real filesystem data inside `FileStudy`
+    """
+    try:
+        raw_meta = file_study.tree.get(["study", "antares"])
+
+        if study.editor:
+            raw_meta["editor"] = study.editor
+            file_study.tree.save(raw_meta, ["study", "antares"])
+
+        study.name = raw_meta["caption"]
+        study.version = str(raw_meta["version"])
+        study.created_at = datetime.utcfromtimestamp(raw_meta["created"])
+        study.updated_at = datetime.utcfromtimestamp(raw_meta["lastsave"])
+
+        logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
+        horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
+        study_antares = file_study.tree.get(url=["study", "antares"])
+        author = study_antares.get("author")
+        editor = study_antares.get("editor", author)
+        assert isinstance(author, str)
+        assert isinstance(editor, str)
+        assert isinstance(horizon, (str, int))
+        study.horizon = horizon
+        study.author = author
+        study.editor = editor
+
+    except Exception as e:
+        logger.error("Failed to fetch study %s raw study!", str(study.path), exc_info=e)
+        study.name = study.name or "unnamed"
+        study.created_at = study.created_at or current_time()
+        study.updated_at = study.updated_at or current_time()
+        study.author = study.author or "Unknown"
+        study.editor = study.editor or "Unknown"
