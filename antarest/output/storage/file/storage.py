@@ -23,6 +23,7 @@ import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import (
+    ChildNotFoundError,
     OutputAlreadyArchived,
     OutputAlreadyExists,
     OutputAlreadyUnarchived,
@@ -456,7 +457,9 @@ class InStudyFileOutputStorage(IOutputStorage):
         Digest of the output.
         """
         output_path = self._outputs_provider.get_outputs(study_id).outputs_path
-        file_path = output_path / output_id / "economy" / "mc-all" / "grid" / "digest" / "digest.txt"
+        file_path = output_path / output_id / "economy" / "mc-all" / "grid" / "digest.txt"
+        if not file_path.exists():
+            raise ChildNotFoundError(f"Digest file not found for study {study_id} and output {output_id}")
         return DigestSynthesis.get_ui(file_path)
 
     @override
