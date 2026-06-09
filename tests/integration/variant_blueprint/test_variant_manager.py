@@ -25,7 +25,11 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.study.model import Study
 from tests.integration.assets import ASSETS_DIR
-from tests.integration.studies_blueprint.utils import check_minimal_study_integrity, create_minimal_study
+from tests.integration.studies_blueprint.utils import (
+    check_exported_study_integrity,
+    check_minimal_study_integrity,
+    create_minimal_study,
+)
 from tests.integration.utils import wait_task_completion
 
 
@@ -468,7 +472,9 @@ def test_deletion_while_generating(client: TestClient, admin_access_token: str, 
 
 
 @pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
-def test_lifecycle_for_both_storage_modes(client: TestClient, user_access_token: str, storage_mode: str) -> None:
+def test_lifecycle_for_both_storage_modes(
+    client: TestClient, user_access_token: str, storage_mode: str, tmp_path: Path
+) -> None:
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
     # Create a Variant study with several areas, links, constraints, thermals ...
@@ -478,32 +484,32 @@ def test_lifecycle_for_both_storage_modes(client: TestClient, user_access_token:
 
     res = client.post(f"/v1/studies/{study_id}/variants?name=VariantStudy")
     assert res.status_code == 200
-    study_id = res.json()
+    variant_id = res.json()
 
-    create_minimal_study(client, study_id)
+    create_minimal_study(client, variant_id)
 
     # Ensures the data was created correctly
-    check_minimal_study_integrity(client, study_id)
+    check_minimal_study_integrity(client, variant_id)
 
     # Generate the variant from scratch
-    res = client.put(f"/v1/studies/{study_id}/generate?from_scratch=True")
+    res = client.put(f"/v1/studies/{variant_id}/generate?from_scratch=True")
     assert res.status_code == 200
     task_id = res.json()
     client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
 
     # Ensures the data was generated correctly
-    check_minimal_study_integrity(client, study_id)
+    check_minimal_study_integrity(client, variant_id)
 
     # Create a new variant from the previous one
-    res = client.post(f"/v1/studies/{study_id}/variants?name=VariantStudy2")
+    res = client.post(f"/v1/studies/{variant_id}/variants?name=VariantStudy2")
     assert res.status_code == 200
-    study_id = res.json()
+    variant_2_id = res.json()
 
     # Ensures the 2nd level variant was correctly created
-    check_minimal_study_integrity(client, study_id)
+    check_minimal_study_integrity(client, variant_2_id)
 
     # Copy as reference the variant (This creates a new RawStudy with the same data)
-    res = client.post(f"/v1/studies/{study_id}/copy?study_name=ReferenceStudy")
+    res = client.post(f"/v1/studies/{variant_2_id}/copy?study_name=ReferenceStudy")
     assert res.status_code == 201
     task_id = res.json()
 
@@ -516,6 +522,8 @@ def test_lifecycle_for_both_storage_modes(client: TestClient, user_access_token:
     check_minimal_study_integrity(client, copied_study_id)
 
     # Export the variant
-    res = client.post(f"/v1/studies/{study_id}/export?study_name=ExportedStudy")
-    assert res.status_code == 201
-    task_id = res.json()
+    res = client.get(f"/v1/studies/{variant_id}/export")
+    assert res.status_code == 200
+    download_id = res.json()["file"]["id"]
+
+    check_exported_study_integrity(client, tmp_path, download_id)
