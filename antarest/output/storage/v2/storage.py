@@ -262,14 +262,18 @@ class V2OutputStorage(IOutputStorage):
         ]
 
     @override
-    def get_output_details(self, study_id: str, output_id: str) -> OutputDetails:
+    def get_output_details(self, study_id: str) -> list[OutputDetails]:
         """
         Get the list of output for a study.
         """
-        metadata = self._repository.get_output_metadata(study_id, output_id)
-        if metadata is None:
-            raise OutputNotFound(output_id)
-        return _db_metadata_to_details(metadata)
+        result = []
+        for output_metadata in self._repository.search_output_metadata(study_id):
+            output_id = output_metadata.output_name
+            db_metadata = self._repository.get_output_metadata(study_id, output_id)
+            if db_metadata is None:
+                raise OutputNotFound(output_id)
+            result.append(_db_metadata_to_details(db_metadata))
+        return result
 
     @override
     def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:

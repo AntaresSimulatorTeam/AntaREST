@@ -273,34 +273,36 @@ class InStudyFileOutputStorage(IOutputStorage):
             raise
 
     @override
-    def get_output_details(self, study_id: str, output_id: str) -> OutputDetails:
+    def get_output_details(self, study_id: str) -> list[OutputDetails]:
         """
         Get the list of output for a study.
         """
         outputs_path = self._outputs_provider.get_outputs(study_id).outputs_path
         simulations = parse_outputs(outputs_path)
 
-        if output_id not in simulations:
-            raise OutputNotFound(output_id)
-        output_data = simulations[output_id]
+        result = []
 
-        file_metadata = FileStudyHelpers.get_output_config(outputs_path / output_id)
-        settings = OutputSettings(
-            general=file_metadata["general"],
-            optimization=file_metadata["optimization"],
-            playlist=list((get_playlist(file_metadata) or {})),
-        )
+        for output_id, output_data in simulations.items():
+            file_metadata = FileStudyHelpers.get_output_config(outputs_path / output_id)
+            settings = OutputSettings(
+                general=file_metadata["general"],
+                optimization=file_metadata["optimization"],
+                playlist=list((get_playlist(file_metadata) or {})),
+            )
 
-        return OutputDetails(
-            name=output_id,
-            mode=output_data.mode,
-            synthesis=output_data.synthesis,
-            by_year=output_data.by_year,
-            nb_years=output_data.nbyears,
-            archived=output_data.archived,
-            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
-            settings=settings,
-        )
+            output_details = OutputDetails(
+                name=output_id,
+                mode=output_data.mode,
+                synthesis=output_data.synthesis,
+                by_year=output_data.by_year,
+                nb_years=output_data.nbyears,
+                archived=output_data.archived,
+                storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
+                settings=settings,
+            )
+            result.append(output_details)
+
+        return result
 
     @override
     def list_outputs(self, study_id: str) -> list[OutputMetadata]:
