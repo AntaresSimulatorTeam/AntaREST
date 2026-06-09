@@ -23,7 +23,6 @@ import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import (
-    ChildNotFoundError,
     OutputAlreadyArchived,
     OutputAlreadyExists,
     OutputAlreadyUnarchived,
@@ -530,7 +529,6 @@ class InStudyFileOutputStorage(IOutputStorage):
             LogType.STDOUT: [Path(output_id) / "antares-out.log", Path(output_id) / "simulation.log"],
             LogType.STDERR: [Path(output_id) / "antares-err.log"],
         }
-        empty_log = False
         for log_location in log_locations[log_type]:
             try:
                 # Assume UTF-8 but ignore errors, it's difficult to be sure of log encoding
@@ -538,11 +536,9 @@ class InStudyFileOutputStorage(IOutputStorage):
                 file_path = output_path / log_location
                 return file_path.read_text(encoding="utf-8", errors="replace")
             except FileNotFoundError:
-                empty_log = True
                 pass
-        if empty_log:
-            return ""
-        raise ChildNotFoundError(f"Logs for {output_id} of study {study_id} were not found")
+        # If all files are missing, we return an empty string for backward compatibility
+        return ""
 
     @override
     def get_disk_usage(self, study_id: str, output_id: str) -> int:
