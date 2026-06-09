@@ -121,6 +121,11 @@ class StudyConverter:
 
     def _convert_binding_constraints(self) -> None:
         constraints = list(self._source_dao.get_all_constraints().values())
+
+        # If no binding constraint exists, we return immediately
+        if not constraints:
+            return
+
         self._new_dao.save_constraints(constraints)
 
         if self._study_version < STUDY_VERSION_8_7:
@@ -134,6 +139,11 @@ class StudyConverter:
 
     def _convert_links(self) -> None:
         links = self._source_dao.get_links()
+
+        # If no link exists, we return immediately
+        if not links:
+            return
+
         self._new_dao.save_links(links)
 
         # Link matrices
@@ -150,6 +160,10 @@ class StudyConverter:
             renewable_clusters = self._source_dao.get_all_renewables()
         except ChildNotFoundError:  # Can happen, according to the enr-modeling and to the study version
             renewable_clusters = {}
+
+        # If no area exists, we return immediately
+        if not area_properties:
+            return
 
         # First, create all areas with their properties to avoid foreign key or config issues
         new_area_properties = {}

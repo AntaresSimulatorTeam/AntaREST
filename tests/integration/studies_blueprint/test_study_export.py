@@ -12,13 +12,11 @@
 import zipfile
 from io import BytesIO
 from pathlib import Path
-from unittest.mock import ANY
 
 import pytest
 from starlette.testclient import TestClient
 
-from antarest.core.serde.ini_reader import read_ini
-from tests.integration.studies_blueprint.utils import create_minimal_study
+from tests.integration.studies_blueprint.utils import check_exported_study_integrity, create_minimal_study
 from tests.integration.utils import wait_task_completion
 from tests.test_helpers.download import download_to_file
 from tests.test_helpers.outputs import create_minimal_output_zip_from_name
@@ -136,57 +134,4 @@ def test_export_with_both_storage_modes(
     assert res.status_code == 200
     download_id = res.json()["file"]["id"]
 
-    zip_path = tmp_path / "export.zip"
-    download_to_file(client, download_id, tmp_path / zip_path)
-    assert zip_path.exists()
-
-    study_path = tmp_path / "exported_study"
-    with zipfile.ZipFile(zip_path) as zip_output:
-        zip_output.extractall(path=study_path)
-
-    assert study_path.exists()
-
-    # Check the path content to be sure the study was correctly exported
-    study_antares = read_ini(study_path / "study.antares")
-    assert study_antares == {
-        "antares": {
-            "version": 9.3,
-            "caption": "MyStudy",
-            "author": "George",
-            "editor": "George",
-            "created": ANY,
-            "lastsave": ANY,
-        }
-    }
-
-    # Areas
-    assert sorted([f.name for f in (study_path / "input" / "areas").iterdir()]) == [
-        "be",
-        "ch",
-        "fr",
-        "list.txt",
-        "sets.ini",
-    ]
-    # Links
-    assert sorted([f.name for f in (study_path / "input" / "links").iterdir()]) == ["be", "ch", "fr"]
-    # Thermals
-    ini_path = study_path / "input" / "thermal" / "clusters" / "fr" / "list.ini"
-    ini_content = read_ini(ini_path)
-    assert sorted(ini_content) == ["lignite plant", "nuclear cluster"]
-    # Binding constraints
-    ini_path = study_path / "input" / "bindingconstraints" / "bindingconstraints.ini"
-    ini_content = read_ini(ini_path)
-    assert ini_content == {
-        "0": {
-            "id": "constraint1",
-            "name": "Constraint1",
-            "enabled": True,
-            "type": "hourly",
-            "operator": "equal",
-            "comments": "",
-            "filter-year-by-year": "",
-            "filter-synthesis": "",
-            "group": "default",
-            "be%ch": 4.0,
-        }
-    }
+    check_exported_study_integrity(client, tmp_path, download_id, "MyStudy")

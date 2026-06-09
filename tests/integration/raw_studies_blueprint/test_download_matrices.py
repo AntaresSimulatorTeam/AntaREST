@@ -80,13 +80,9 @@ class PreparerProxy(Proxy):
         variant_id = res.json()
         return variant_id
 
-    def generate_snapshot(self, variant_id: str, denormalize: bool = False, from_scratch: bool = True) -> None:
+    def generate_snapshot(self, variant_id: str) -> None:
         # Generate a snapshot for the variant
-        res = self.client.put(
-            f"/v1/studies/{variant_id}/generate",
-            headers=self.headers,
-            params={"denormalize": denormalize, "from_scratch": from_scratch},
-        )
+        res = self.client.put(f"/v1/studies/{variant_id}/generate", headers=self.headers, params={"from_scratch": True})
         res.raise_for_status()
         task_id = res.json()
         assert task_id
