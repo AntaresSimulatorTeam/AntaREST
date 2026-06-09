@@ -283,7 +283,11 @@ class InStudyFileOutputStorage(IOutputStorage):
         result = []
 
         for output_id, output_data in simulations.items():
-            file_metadata = FileStudyHelpers.get_output_config(outputs_path / output_id)
+            folder_path = outputs_path / output_id
+            if output_data.archived:
+                folder_path = outputs_path / f"{output_id}{ArchiveFormat.ZIP}"
+
+            file_metadata = FileStudyHelpers.get_output_config(folder_path)
             settings = OutputSettings(
                 general=file_metadata["general"],
                 optimization=file_metadata["optimization"],
