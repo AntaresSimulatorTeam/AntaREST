@@ -9,22 +9,19 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+from pathlib import Path
 
 from antarest.core.model import JSON
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.core.serde.ini_reader import IniReader
 
 
 class FileStudyHelpers:
     @staticmethod
-    def get_config(study: FileStudy, output_id: str | None = None) -> JSON:
-        if output_id:
-            config_path = [
-                "output",
-                output_id,
-                "about-the-study",
-                "parameters",
-            ]
-            config = study.tree.get(config_path)
-            return config
-        return study.tree.get(["settings", "generaldata"])
+    def get_config(study_path: Path | None = None, output_path: Path | None = None) -> JSON:
+        if output_path:
+            return IniReader().read(output_path / "about-the-study" / "parameters.ini")
+        return IniReader().read(study_path / "settings" / "generaldata.ini")
+
+    @staticmethod
+    def get_input_config(study_path: Path) -> JSON:
+        return IniReader().read(study_path / "settings" / "generaldata.ini")

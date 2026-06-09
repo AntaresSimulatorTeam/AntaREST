@@ -13,7 +13,7 @@ import logging
 import shutil
 import zipfile
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import BinaryIO
@@ -30,6 +30,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.interfaces.cache import ICache
 from antarest.core.remote.remote_executor import IRemoteExecutor
+from antarest.core.serde.ini_reader import IniReader
 from antarest.core.utils.archives import (
     ArchiveFormat,
     archive_dir,
@@ -59,12 +60,10 @@ from antarest.study.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist, parse_outputs
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestSynthesis,
     DigestUI,
 )
-from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import (
     extract_output_name,
     fix_study_root,
@@ -83,12 +82,10 @@ class FileStudyOutputs:
     The implementation based on outputs stored as files requires the following information to work with a study.
 
     Attributes:
-        get_file_study: allows to load the underlying file study as needed.
         outputs_path: path to the study outputs directory.
         is_managed: Whether the outputs are managed by the AntaresWeb server or not.
     """
 
-    get_file_study: Callable[[], FileStudy]
     outputs_path: Path
     is_managed: bool
 
@@ -286,12 +283,12 @@ class InStudyFileOutputStorage(IOutputStorage):
             raise OutputNotFound(output_id)
         output_data: Simulation = outputs[output_id]
 
-        study_data = study_outputs.get_file_study()
-        file_metadata = FileStudyHelpers.get_config(study_data, output_data.get_file())
+        outputs_path = self._outputs_provider.get_outputs(study_id).outputs_path
+        file_metadata = IniReader().read(outputs_path / output_id / "about-the-study" / "parameters.ini")
         settings = OutputSettings(
             general=file_metadata["general"],
             optimization=file_metadata["optimization"],
-            playlist=[year for year in (get_playlist(file_metadata) or {}).keys()],
+            playlist=list((get_playlist(file_metadata) or {})),
         )
 
         return OutputDetails(
