@@ -133,7 +133,7 @@ class VariantStudyService(AbstractStudyService):
             config, repository, matrix_service, db_dao_factory, fs_dao_factory
         )
         self._snapshot_manager_mapping = {
-            StorageMode.FILESYSTEM: FileSnapshotManager(),
+            StorageMode.FILESYSTEM: FileSnapshotManager(cache),
             StorageMode.DATABASE: DatabaseSnapshotManager(database_study_storage),
         }
 
