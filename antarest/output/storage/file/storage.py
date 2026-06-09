@@ -421,7 +421,7 @@ class InStudyFileOutputStorage(IOutputStorage):
     def _remote_unarchive(self, output_id: str, study_outputs: FileStudyOutputs) -> None:
         dest, src = _output_paths(study_outputs.outputs_path, output_id)
         self._remote_executor.execute_remote_task(
-            f"unarchive_{study_outputs.outputs_path}",
+            f"unarchive_{output_id}",
             ArchiveTaskArgs(src=str(src), dest=str(dest)).model_dump(mode="json"),
         )
 
