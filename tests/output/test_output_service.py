@@ -16,6 +16,11 @@ from pathlib import Path
 from unittest.mock import ANY, Mock
 
 import pytest
+from antarest.output.storage.file.storage import (
+    FileStudyOutputs,
+    IFileOutputsProvider,
+    InStudyFileOutputStorage,
+)
 
 from antarest.core.exceptions import OutputAlreadyExists, TaskAlreadyRunning
 from antarest.core.model import PublicMode, StudyPermissionType
@@ -24,11 +29,6 @@ from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.utils import current_time
 from antarest.output.service import IStudyMetadataProvider, OutputService, StudyMetadata
-from antarest.output.storage.file.storage import (
-    FileStudyOutputs,
-    IFileOutputsProvider,
-    InStudyFileOutputStorage,
-)
 from antarest.output.storage.output_storage import IOutputStorage, OutputStorageType
 from antarest.study.model import (
     RawStudy,
