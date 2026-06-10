@@ -32,8 +32,6 @@ import type {
 import { convertStudyDtoToMetadata } from "../utils";
 import client from "./client";
 import type { FileDownloadTask } from "./downloads";
-import { getOutputs } from "./studies/outputs";
-import type { Output } from "./studies/outputs/types";
 
 const getStudiesRaw = async (): Promise<Record<string, StudyMetadataDTO>> => {
   const res = await client.get(`/v1/studies?exists=True`);
@@ -91,22 +89,6 @@ export const getAreaPositions = async (uuid: string): Promise<AreasConfig> => {
 export const getStudyMetadata = async (sid: string): Promise<StudyMetadata> => {
   const res = await client.get(`/v1/studies/${sid}`);
   return convertStudyDtoToMetadata(sid, res.data);
-};
-
-/**
- * Utility function to get a study output by its ID.
- * Since the API endpoint for getting a single output is not available, we fetch all outputs and filter by ID.
- *
- * @param studyId - The ID of the study.
- * @param outputId - The ID of the output to retrieve.
- * @returns The study output if found, or null if not found.
- */
-export const getStudyOutputById = async (
-  studyId: string,
-  outputId: string,
-): Promise<Output | undefined> => {
-  const outputs = await getOutputs({ studyId });
-  return outputs.find((output) => output.id === outputId);
 };
 
 export const getStudySynthesis = async (sid: string): Promise<StudySynthesis> => {

@@ -747,6 +747,7 @@
   "study.outputs.materializationFailed": "Échec de la matérialisation de la vue de variable",
   "study.outputs.materializationStartFailed": "Échec du démarrage de la matérialisation de la vue de variable",
   "study.outputs.delete.error": "Échec lors de la suppression de la sortie : {{outputName}}",
+  "study.outputs.notFound": "Aucune sortie trouvée avec l'ID : {{id}}",
   "study.error.createConstraintTerm": "Échec lors de l'ajout du nouveau terme",
   "study.error.missingData": "Erreur: {{0}} et/ou {{1}} est manquante",
   "study.error.termAlreadyExist": "Ce terme existe déjà",

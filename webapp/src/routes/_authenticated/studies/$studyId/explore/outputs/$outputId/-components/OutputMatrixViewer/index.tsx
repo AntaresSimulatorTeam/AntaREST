@@ -25,13 +25,13 @@ import ViewWrapper from "@/components/page/ViewWrapper";
 import usePromise from "@/hooks/usePromise";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 import { getStudyMatrixIndex } from "@/services/api/matrix";
+import type { Output } from "@/services/api/studies/outputs/types";
 import { getStudyData } from "@/services/api/study";
 import type { MatrixIndex } from "@/types/types";
 import { Box } from "@mui/material";
 import { useParams } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { StudyOutput } from "../../-hooks/useStudyOutput";
 import { useVariablePerVariable } from "../../-hooks/useVariablePerVariable";
 import {
   createPath,
@@ -47,7 +47,7 @@ import VariableMatrix from "./VariableMatrix";
 
 interface Props {
   selectedItem: Item;
-  output?: StudyOutput;
+  output?: Output;
 }
 
 type SetResultColHeaders = (headers: string[][], indices: number[]) => void;

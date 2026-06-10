@@ -747,6 +747,7 @@
   "study.outputs.materializationFailed": "Variable view materialization failed",
   "study.outputs.materializationStartFailed": "Failed to start variable view materialization",
   "study.outputs.delete.error": "Failed to delete the output: {{outputName}}",
+  "study.outputs.notFound": "No output found with ID: {{id}}",
   "study.error.createConstraintTerm": "Failed to add constraint term",
   "study.error.missingData": "Error: {{0}} and/or {{1}} is missing",
   "study.error.termAlreadyExist": "This term already exist",
