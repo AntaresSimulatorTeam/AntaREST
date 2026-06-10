@@ -55,6 +55,7 @@ from antarest.output.storage.output_storage import (
     OutputStorageType,
 )
 from antarest.study.model import (
+    DEFAULT_WORKSPACE_NAME,
     MatrixFrequency,
     MatrixIndex,
 )
@@ -83,11 +84,11 @@ class FileStudyOutputs:
 
     Attributes:
         outputs_path: path to the study outputs directory.
-        is_managed: Whether the outputs are managed by the AntaresWeb server or not.
+        study_workspace: name of the study workspace.
     """
 
     outputs_path: Path
-    is_managed: bool
+    study_workspace: str
 
 
 class IFileOutputsProvider(ABC):
@@ -423,7 +424,7 @@ class InStudyFileOutputStorage(IOutputStorage):
     def _remote_unarchive(self, output_id: str, study_outputs: FileStudyOutputs) -> None:
         dest, src = _output_paths(study_outputs.outputs_path, output_id)
         self._remote_executor.execute_remote_task(
-            f"unarchive_{output_id}",
+            f"unarchive_{study_outputs.study_workspace}",
             ArchiveTaskArgs(src=str(src), dest=str(dest)).model_dump(mode="json"),
         )
 
@@ -437,7 +438,8 @@ class InStudyFileOutputStorage(IOutputStorage):
             raise OutputAlreadyUnarchived(output_id)
 
         # Specific logic for "external" workspaces: we ask for unarchiving to the remote executor ...
-        if not study_outputs.is_managed:
+        workspace = study_outputs.study_workspace
+        if workspace != DEFAULT_WORKSPACE_NAME:
             self._remote_unarchive(output_id, study_outputs)
             remove_from_cache(self._cache, study_id)
         else:

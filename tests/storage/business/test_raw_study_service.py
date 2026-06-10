@@ -321,7 +321,7 @@ timestamp = 1599488150
 
     class OutputsProvider(IFileOutputsProvider):
         def get_outputs(self, study_id: str) -> FileStudyOutputs:
-            return FileStudyOutputs(outputs_path=study_path / "output", is_managed=True)
+            return FileStudyOutputs(outputs_path=study_path / "output", study_workspace=DEFAULT_WORKSPACE_NAME)
 
     output_storage = InStudyFileOutputStorage(
         OutputsProvider(), cache=Mock(), remote_executor=Mock(), repository=Mock()

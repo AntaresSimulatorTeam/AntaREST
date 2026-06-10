@@ -31,7 +31,6 @@ from antarest.output.storage.file.storage import (
 )
 from antarest.output.storage.output_storage import IOutputStorage, OutputStorageType
 from antarest.study.model import (
-    DEFAULT_WORKSPACE_NAME,
     RawStudy,
     Study,
 )
@@ -74,9 +73,7 @@ def _file_outputs_provider(study: RawStudy) -> IFileOutputsProvider:
 
     class Impl(IFileOutputsProvider):
         def get_outputs(self, study_id: str) -> FileStudyOutputs:
-            return FileStudyOutputs(
-                outputs_path=Path(study.path) / "output", is_managed=(study.workspace == DEFAULT_WORKSPACE_NAME)
-            )
+            return FileStudyOutputs(outputs_path=Path(study.path) / "output", study_workspace=study.workspace)
 
     return Impl()
 
@@ -86,6 +83,7 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
     tmp_path: Path, command_context: CommandContext
 ) -> None:
     # Prepare services and data
+    workspace_name = "other_workspace"
     study_id = str(uuid.uuid4())
     study_name = "My Study"
     study_mock = Mock(
@@ -96,7 +94,7 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
         owner=None,
         groups=[],
         public_mode=PublicMode.NONE,
-        workspace="other_workspace",
+        workspace=workspace_name,
         to_json_summary=Mock(return_value={"id": study_id, "name": study_name}),
     )
     # The `name` attribute cannot be mocked during creation of the mock object
@@ -137,7 +135,7 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
 
     # Check that a remote unarchive task was created
     remote_executor.execute_remote_task.assert_called_once_with(
-        f"unarchive_{output_id}",
+        f"unarchive_{workspace_name}",
         ArchiveTaskArgs(
             src=str(tmp_path / "output" / f"{output_id}.zip"), dest=str(tmp_path / "output" / output_id)
         ).model_dump(),

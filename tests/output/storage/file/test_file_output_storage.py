@@ -46,6 +46,7 @@ from antarest.output.storage.output_storage import (
     OutputSettingsOptimization,
     OutputStorageType,
 )
+from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -74,7 +75,7 @@ class SimpleFileOutputsProvider(IFileOutputsProvider):
             raise StudyNotFoundError(f"Studies directory {self._studies_dir} not found.")
         return FileStudyOutputs(
             outputs_path=self._studies_dir / study_id / "output",
-            is_managed=True,
+            study_workspace=DEFAULT_WORKSPACE_NAME,
         )
 
     def _get_study(self, study_id: str) -> FileStudy:
