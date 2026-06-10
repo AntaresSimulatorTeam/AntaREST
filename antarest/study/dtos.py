@@ -18,7 +18,7 @@ from antarest.core.utils.string import to_camel_case
 from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
-from antarest.study.model import StudyVersionInt
+from antarest.study.model import StudyVersionStr
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
     BindingConstraintConfig,
@@ -61,7 +61,7 @@ class StudyDataSynthesis(AntaresBaseModel):
     """
 
     study_id: str
-    version: StudyVersionInt
+    version: StudyVersionStr
     districts: dict[str, District] = {}
     areas: dict[str, AreaConfig] = {}
     bindings: list[BindingConstraintConfig] = []
@@ -93,7 +93,7 @@ class StudySynthesis(AntaresBaseModel):
     """
 
     study_id: str
-    version: StudyVersionInt
+    version: StudyVersionStr
     districts: dict[str, District] = {}
     areas: dict[str, AreaConfig] = {}
     outputs: dict[str, OutputSynthesis] = {}
