@@ -407,6 +407,7 @@ def test_check_state(tmp_path: Path, launcher_config: SlurmConfig) -> None:
     )
     slurm_launcher._import_study_output = Mock()
     slurm_launcher._delete_workspace_file = Mock()
+    slurm_launcher._remove_study_from_workspace_db = Mock()
     slurm_launcher.stop = Mock()
 
     study1 = Mock()
@@ -435,7 +436,7 @@ def test_check_state(tmp_path: Path, launcher_config: SlurmConfig) -> None:
     assert slurm_launcher.callbacks.update_status.call_count == 2
     assert slurm_launcher._import_study_output.call_count == 2
     assert slurm_launcher._delete_workspace_file.call_count == 4
-    assert data_repo_tinydb.remove_study.call_count == 2
+    assert slurm_launcher._remove_study_from_workspace_db.call_count == 2
     slurm_launcher.stop.assert_called_once()
 
 
