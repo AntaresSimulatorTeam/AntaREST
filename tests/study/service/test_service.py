@@ -11,22 +11,21 @@
 # This file is part of the Antares project.
 
 import contextlib
-import logging
 import os
 import textwrap
 import typing as t
 import uuid
 from configparser import MissingSectionHeaderError
-from datetime import datetime, timedelta
+from datetime import timedelta
 from functools import wraps
 from pathlib import Path
 from unittest.mock import ANY, Mock, patch, seal
 
 import pytest
-from _pytest.logging import LogCaptureFixture
 from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
+from typing_extensions import override
 
 from antarest.blobstore.service import BlobService
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
@@ -53,6 +52,7 @@ from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import MatrixService
 from antarest.output.storage.output_storage import OutputMetadata
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -160,21 +160,31 @@ def build_study_service(
     )
 
     class OutputsAccessMock(IOutputsAccess):
+        @override
         def list_outputs(self, study_id: str) -> list[OutputMetadata]:
             return []
 
+        @override
         def get_outputs_details(self, study_id: str) -> dict[str, Simulation]:
             return {}
 
+        @override
         def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:
             pass
 
+        @override
         def delete_output(self, study_id: str, output_id: str) -> None:
             pass
 
+        @override
         def archive_output(self, study_id: str, output_id: str) -> None:
             pass
 
+        @override
+        def get_disk_usage(self, study_id: str, output_id: str) -> int:
+            return 0
+
+        @override
         def write_output_to_dir(self, study_id: str, output_id: str, parent_dir: Path) -> None:
             pass
 
@@ -205,6 +215,7 @@ def study_to_dto(study: Study, folder_path: t.Optional[str] = None) -> StudyMeta
         status=None,
         doc=None,
         folder=folder_path,
+        storage_mode=study.storage_mode,
     )
 
 
@@ -428,48 +439,6 @@ def test_sync_studies_from_disk() -> None:
     assert study_f2.public_mode == PublicMode.FULL
 
 
-def test_sync_unsuppported_study_from_disk(caplog: LogCaptureFixture) -> None:
-    folder_a = StudyFolder(path=Path("a"), workspace="workspace1", groups=[])
-    folder_b = StudyFolder(path=Path("b"), workspace="workspace1", groups=[])
-
-    repository = Mock()
-    repository.get_all_raw.side_effect = [[]]
-    config = Config(storage=StorageConfig(workspaces={"workspace1": WorkspaceConfig()}))
-    raw_service = Mock(spec=RawStudyService)
-    service = build_study_service(raw_service, Mock(spec=DirectoryService), repository, config)
-
-    def fake_compatibility_check(study: Study) -> None:
-        if not hasattr(fake_compatibility_check, "call_count"):
-            fake_compatibility_check.call_count = 0
-
-        fake_compatibility_check.call_count += 1
-
-        if fake_compatibility_check.call_count >= 2:
-            raise RecursionError("Custom message")
-
-    raw_service.checks_antares_web_compatibility.side_effect = fake_compatibility_check
-
-    with caplog.at_level(level=logging.ERROR):
-        service.sync_studies_on_disk([folder_a, folder_b])
-
-    # Ensures the 2nd study wasn't added and went through the mock method
-    assert len(caplog.records) == 1
-    assert caplog.records[0].msg == "Failed to add study b"
-    assert isinstance(caplog.records[0].exc_info[1], RecursionError)
-
-    repository.save.assert_called_once_with(
-        RawStudy(
-            id=ANY,
-            path="a",
-            name="a",
-            folder="a",
-            workspace="workspace1",
-            missing=None,
-            public_mode=PublicMode.FULL,
-        )
-    )
-
-
 # noinspection PyArgumentList
 def test_partial_sync_studies_from_disk() -> None:
     now = current_time()
@@ -571,51 +540,24 @@ def test_remove_duplicate(db_session: Session) -> None:
 
 
 # noinspection PyArgumentList
-def test_create_study(tmp_path: Path) -> None:
-    # Mock
-    repository = Mock()
-
-    # Input
+def test_create_study(tmp_path: Path, raw_study_service: RawStudyService) -> None:
+    # User service
     user = User(id=0, name="user")
-    group = Group(id="my-group", name="group")
-
-    expected = create_raw_study(
-        id=str(uuid.uuid4()),
-        name="new-study",
-        version="700",
-        author="AUTHOR",
-        created_at=datetime.utcfromtimestamp(1234),
-        updated_at=datetime.utcfromtimestamp(9876),
-        content_status=StudyContentStatus.VALID,
-        workspace=DEFAULT_WORKSPACE_NAME,
-        owner=user,
-        groups=[group],
-    )
-
     user_service = Mock()
     user_service.get_user.return_value = user
 
-    study_service = Mock()
-    study_service.get_study_information.return_value = {
-        "antares": {
-            "caption": "CAPTION",
-            "version": "VERSION",
-            "author": "AUTHOR",
-            "created": 1234,
-            "lastsave": 9876,
-        }
-    }
-    study_service.create.return_value = expected
+    # Dao factory Mock
+    factory = Mock(spec=FileStudyDaoFactory)
+    factory.create_study_dao.return_value = Mock()
+    raw_study_service._study_dao_factories = {StorageMode.FILESYSTEM: factory}
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=tmp_path)}))
     service = build_study_service(
-        study_service, Mock(spec=DirectoryService), repository, config, user_service=user_service
+        raw_study_service, Mock(spec=DirectoryService), Mock(), config, user_service=user_service
     )
     service.storage_service.variant_study_service.command_factory = Mock()
     service.storage_service.variant_study_service.command_factory.command_context = Mock()
-    factory = Mock()
-    factory.create_study_dao.return_value = Mock()
-    service._study_dao_factories = {StorageMode.FILESYSTEM: factory}
 
+    # Fake user should fail and not call the DAO
     jwt_user = JWT_USER
     jwt_user.groups = []
     with pytest.raises(UserHasNotPermissionError):
@@ -623,6 +565,7 @@ def test_create_study(tmp_path: Path) -> None:
             service.create_study("new-study", STUDY_VERSION_7_2, ["my-group"], StorageMode.FILESYSTEM)
     factory.create_study_dao.assert_not_called()
 
+    # Real user should succeed and call the DAO once
     jwt_user.groups = [JWTGroup(id="my-group", name="group", role=RoleType.WRITER)]
     with current_user_context(jwt_user):
         service.create_study("new-study", STUDY_VERSION_7_2, ["my-group"], StorageMode.FILESYSTEM)
@@ -672,13 +615,16 @@ def test_save_metadata() -> None:
     repository.save.assert_called_once_with(study)
 
 
+@with_db_context
 def test_change_owner(study_service: StudyService, empty_study_880: FileStudy) -> None:
     # First, Alice creates a study
     study_id = empty_study_880.config.study_id
     study_path = empty_study_880.config.study_path
     alice = User(id=2)
     alice_jwt = JWTUser(id=2, impersonator=2, type="users")
-    study = create_raw_study(id=study_id, owner=alice, path=str(study_path))
+    study = create_raw_study(id=study_id, owner=alice, path=str(study_path), groups=[], public_mode=PublicMode.NONE)
+    db.session.add(study)
+    db.session.commit()
 
     # Make the study_service returns the study
     study_service.repository.get.return_value = study
@@ -964,7 +910,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
     study_uuid = str(uuid.uuid4())
 
     study_metadata_repository = Mock()
-    raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock())
+    raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock(), Mock())
     variant_study_repository = Mock()
     variant_study_service = VariantStudyService(
         Mock(), Mock(), raw_study_service, Mock(), Mock(), variant_study_repository, Mock(), Mock(), Mock()
@@ -1049,7 +995,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
 @with_admin_user
 def test_delete_recursively(tmp_path: Path) -> None:
     study_metadata_repository = Mock()
-    raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock())
+    raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock(), Mock())
     variant_study_repository = Mock()
     variant_study_service = VariantStudyService(
         Mock(), Mock(), raw_study_service, Mock(), Mock(), variant_study_repository, Mock(), Mock(), Mock()

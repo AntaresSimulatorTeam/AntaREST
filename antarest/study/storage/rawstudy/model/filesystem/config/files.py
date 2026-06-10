@@ -28,6 +28,7 @@ from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import extract_lines_from_archive, is_archive_format, read_file_from_archive
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.common import FILTER_VALUES
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -41,6 +42,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
 from antarest.study.storage.rawstudy.model.filesystem.config.district import parse_district
 from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import SimulationParsingError
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.link import parse_link
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
     BindingConstraintConfig,
@@ -393,8 +395,8 @@ def parse_area(root: Path, area: str) -> "AreaConfig":
         file_type=FileType.SIMPLE_INI,
     )
     filtering = optimization.get("filtering", {})
-    filter_synthesis = extract_filtering(filtering.get("filter-synthesis", ""))
-    filter_year_by_year = extract_filtering(filtering.get("filter-year-by-year", ""))
+    filter_synthesis = extract_filtering(filtering.get("filter-synthesis", FILTER_VALUES))
+    filter_year_by_year = extract_filtering(filtering.get("filter-year-by-year", FILTER_VALUES))
 
     st_storages = _parse_st_storage(root, area_id)
     return AreaConfig(
@@ -476,7 +478,7 @@ def _parse_st_storage(root: Path, area: str) -> list[STStorage]:
     config_list = []
     for section, values in config_dict.items():
         try:
-            config_list.append(parse_st_storage(version, values))
+            config_list.append(parse_st_storage(version, values, section))
         except ValueError as exc:
             config_path = root.joinpath(relpath)
             logger.warning(f"Invalid short-term storage configuration: '{section}' in '{config_path}'", exc_info=exc)
@@ -552,8 +554,7 @@ def _parse_links_filtering(root: Path, area: str) -> dict[str, LinkConfig]:
         inside_root_path=Path(f"input/links/{area}/properties.ini"),
         file_type=FileType.SIMPLE_INI,
     )
-    links_by_ids = {link_id: LinkConfig(**obj) for link_id, obj in properties_ini.items()}
-    return links_by_ids
+    return {link_id: parse_link(obj, area, link_id).to_config() for link_id, obj in properties_ini.items()}
 
 
 def _check_build_on_solver_tests(test_dir: Path) -> None:

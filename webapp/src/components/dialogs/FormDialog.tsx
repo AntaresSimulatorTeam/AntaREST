@@ -16,13 +16,13 @@
 // inferred at the call site. Using `unknown` would force every consumer that extends
 // FormDialogProps to explicitly specify both type arguments even when they don't care about them.
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { mergeSxProp } from "@/utils/muiUtils";
 import SaveIcon from "@mui/icons-material/Save";
 import { Button } from "@mui/material";
 import * as RA from "ramda-adjunct";
 import { useId, useState } from "react";
 import type { FieldValues, FormState } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { mergeSxProp } from "@/utils/muiUtils";
 import Form, { type FormProps } from "../Form";
 import BasicDialog, { type BasicDialogProps } from "./BasicDialog";
 

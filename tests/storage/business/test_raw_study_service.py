@@ -11,28 +11,38 @@
 # This file is part of the Antares project.
 
 import datetime
-import os
 import re
-from pathlib import Path, PurePosixPath
+import uuid
+from pathlib import Path
 from unittest.mock import Mock
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
+from antares.study.version import StudyVersion
 
+from antarest.blobstore.service import BlobService
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.exceptions import StudyDeletionNotAllowed, StudyNotFoundError
-from antarest.core.interfaces.cache import CacheConstants
+from antarest.core.exceptions import StudyDeletionNotAllowed
+from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import PublicMode
+from antarest.core.serde.ini_reader import read_ini
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.login.model import Group, Identity
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.output.storage.file.storage import (
     FileStudyOutputs,
     IFileOutputsProvider,
     InStudyFileOutputStorage,
 )
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.main import build_study_service
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, Directory, RawStudy, StudyMetadataCopy, StudyMetadataCreation
+from antarest.study.repository import StudyMetadataRepository
+from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from tests.helpers import create_raw_study, with_admin_user, with_db_context
+from tests.conftest import build_metadata_creation_object_from_study
+from tests.helpers import create_raw_study, create_variant_study, with_admin_user, with_db_context
 
 
 def build_config(
@@ -48,122 +58,9 @@ def build_config(
     )
 
 
-def test_get(tmp_path: str, project_path: Path) -> None:
-    """
-    path_to_studies
-    |_study1 (d)
-    |_ study2.py
-        |_ settings (d)
-    |_myfile (f)
-    """
-
-    # Create folders
-    path_to_studies = Path(tmp_path)
-    (path_to_studies / "study1").mkdir()
-    (path_to_studies / "myfile").touch()
-    path_study = path_to_studies / "study2.py"
-    path_study.mkdir()
-    (path_study / "settings").mkdir()
-    (path_study / "study.antares").touch()
-
-    data = {"titi": 43}
-    sub_route = "settings"
-
-    study = Mock()
-    study.get.return_value = data
-    study_factory = Mock()
-    study_factory.create_from_fs.return_value = FileStudy(Mock(), study)
-
-    study_service = RawStudyService(
-        config=build_config(path_to_studies), cache=Mock(), study_factory=study_factory, matrix_service=Mock()
-    )
-
-    metadata = create_raw_study(id="study2.py", workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study))
-    output = study_service.get(metadata=metadata, url=sub_route, depth=2)
-
-    assert output == data
-
-    study.get.assert_called_once_with(["settings"], depth=2, formatted=True)
-
-
-def test_get_cache(tmp_path: str) -> None:
-    # Create folders
-    path_to_studies = Path(tmp_path)
-    (path_to_studies / "study1").mkdir()
-    (path_to_studies / "myfile").touch()
-    path_study = path_to_studies / "study2.py"
-    path_study.mkdir()
-    (path_study / "settings").mkdir()
-    (path_study / "study.antares").touch()
-
-    data = {"titi": 43}
-    study = Mock()
-    study.get.return_value = data
-
-    study_factory = Mock()
-    study_factory.create_from_fs.return_value = FileStudy(Mock(), study)
-
-    cache = Mock()
-    cache.get.return_value = None
-
-    metadata = create_raw_study(id="study2.py", workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study))
-    study_service = RawStudyService(config=Mock(), cache=cache, study_factory=study_factory, matrix_service=Mock())
-
-    cache_id = f"{CacheConstants.RAW_STUDY}/{metadata.id}"
-    assert study_service.get(metadata=metadata, url="", depth=-1) == data
-    cache.get.assert_called_with(cache_id)
-    cache.put.assert_called_with(cache_id, data)
-
-    cache.get.return_value = data
-    assert study_service.get(metadata=metadata, url="", depth=-1) == data
-    cache.get.assert_called_with(cache_id)
-
-
-def test_assert_study_exist(tmp_path: str, project_path: Path) -> None:
-    tmp = Path(tmp_path)
-    (tmp / "study1").mkdir()
-    (tmp / "study.antares").touch()
-    path_study2 = tmp / "study2.py"
-    path_study2.mkdir()
-    (path_study2 / "settings").mkdir()
-    (path_study2 / "study.antares").touch()
-    # Input
-    study_name = "study2.py"
-    path_to_studies = Path(tmp_path)
-
-    # Test & Verify
-    study_service = RawStudyService(
-        config=build_config(path_to_studies), cache=Mock(), study_factory=Mock(), matrix_service=Mock()
-    )
-
-    metadata = create_raw_study(id=study_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study2))
-    study_service._check_study_exists(metadata)
-
-
-def test_assert_study_not_exist(tmp_path: str, project_path: Path) -> None:
-    # Create folders
-    tmp = Path(tmp_path)
-    (tmp / "study1").mkdir()
-    (tmp / "myfile").touch()
-    path_study2 = tmp / "study2.py"
-    path_study2.mkdir()
-    (path_study2 / "settings").mkdir()
-
-    # Input
-    study_name = "study3"
-    path_to_studies = Path(tmp_path)
-
-    # Test & Verify
-    study_service = RawStudyService(
-        config=build_config(path_to_studies), cache=Mock(), study_factory=Mock(), matrix_service=Mock()
-    )
-
-    metadata = create_raw_study(id=study_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study2))
-    with pytest.raises(StudyNotFoundError):
-        study_service._check_study_exists(metadata)
-
-
+@with_db_context
 def test_create_file_study_dao(tmp_path: Path, project_path: Path) -> None:
+    # Create the `Mock` objects
     study = Mock()
     data = {"antares": {"caption": None}}
     study.get.return_value = data
@@ -171,9 +68,10 @@ def test_create_file_study_dao(tmp_path: Path, project_path: Path) -> None:
     study_factory = Mock()
     study_factory.create_from_fs.return_value = FileStudy(Mock(), study)
     config = build_config(tmp_path)
-    study_service = RawStudyService(config=config, cache=Mock(), study_factory=study_factory, matrix_service=Mock())
+    raw_study_service = RawStudyService(config, Mock(), study_factory, Mock(), StudyMetadataRepository(Mock()))
 
-    metadata = create_raw_study(
+    # Add the `RawStudy` in the database
+    raw_study = create_raw_study(
         id="study1",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(config.get_workspace_path() / "study1"),
@@ -182,16 +80,32 @@ def test_create_file_study_dao(tmp_path: Path, project_path: Path) -> None:
         updated_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
         author="john.doe",
     )
-    FileStudyDaoFactory(Mock(), study_service.study_factory, Mock()).create_study_dao(metadata)
+    db.session.add(raw_study)
+    db.session.commit()
 
-    assert metadata.path == str(tmp_path / "study1")
-    path_study = tmp_path / metadata.id
+    # Tests the DAO creation method
+    factory = FileStudyDaoFactory(Mock(), Mock(), Mock(), study_factory, Mock(), raw_study_service.get_study_paths)
+    metadata = StudyMetadataCreation(
+        id=raw_study.id,
+        version=StudyVersion.parse(raw_study.version),
+        managed=True,
+        name=raw_study.name,
+        author=raw_study.author,
+        editor=raw_study.editor,
+        created_at=raw_study.created_at,
+        updated_at=raw_study.updated_at,
+    )
+    factory.create_study_dao(metadata)
+
+    assert raw_study.path == str(tmp_path / "study1")
+    path_study = tmp_path / raw_study.id
     assert path_study.exists()
 
     path_study_antares_infos = path_study / "study.antares"
     assert path_study_antares_infos.is_file()
 
 
+@with_db_context
 def test_create_study_versions(tmp_path: str, project_path: Path) -> None:
     path_studies = Path(tmp_path)
 
@@ -202,10 +116,10 @@ def test_create_study_versions(tmp_path: str, project_path: Path) -> None:
     study_factory = Mock()
     study_factory.create_from_fs.return_value = FileStudy(Mock(), study)
     config = build_config(path_studies)
-    study_service = RawStudyService(config=config, cache=Mock(), study_factory=study_factory, matrix_service=Mock())
+    raw_study_service = RawStudyService(config, Mock(), study_factory, Mock(), StudyMetadataRepository(Mock()))
 
     def create_study(version: str) -> RawStudy:
-        metadata = create_raw_study(
+        raw_study = create_raw_study(
             id=f"study{version}",
             workspace=DEFAULT_WORKSPACE_NAME,
             path=str(config.get_workspace_path() / f"study{version}"),
@@ -214,8 +128,13 @@ def test_create_study_versions(tmp_path: str, project_path: Path) -> None:
             updated_at=datetime.datetime.now(),
             author="john.doe",
         )
-        FileStudyDaoFactory(Mock(), study_service.study_factory, Mock()).create_study_dao(metadata)
-        return metadata
+        db.session.add(raw_study)
+        db.session.commit()
+        metadata = build_metadata_creation_object_from_study(raw_study)
+        FileStudyDaoFactory(
+            Mock(), Mock(), Mock(), study_factory, Mock(), raw_study_service.get_study_paths
+        ).create_study_dao(metadata)
+        return raw_study
 
     md700 = create_study("700")
     md710 = create_study("710")
@@ -344,48 +263,39 @@ def test_create_study_versions(tmp_path: str, project_path: Path) -> None:
 
 @with_db_context
 @with_admin_user
-def test_copy_study(tmp_path: Path) -> None:
-    source_name = "study1"
-    path_study = tmp_path / source_name
-    path_study.mkdir()
-    path_study_info = path_study / "study.antares"
-    path_study_info.touch()
+def test_copy_study(empty_study_930: FileStudy, study_service: StudyService) -> None:
+    file_study = empty_study_930
+    study_path = file_study.config.study_path
+    study_id = file_study.config.study_id
 
-    value = {
-        "antares": {
-            "caption": "ex1",
-            "created": 1480683452,
-            "lastsave": 1602678639,
-            "author": "unknown",
-        },
-    }
+    study = create_raw_study(id=study_id, path=str(study_path), public_mode=PublicMode.NONE, groups=[])
 
-    study = Mock()
-    study.get.return_value = value
-    study_factory = Mock()
+    # Create a directory to copy the study inside it
+    directory_id = str(uuid.uuid4())
+    db.session.add(Directory(id=directory_id, name="my_folder", parent_id=None))
+    db.session.commit()
 
-    config = Mock()
-    study_factory.create_from_fs.return_value = FileStudy(config, study)
+    # Initialize arguments for the copy method
+    groups = [Group(id="my_grp", name="my_grp")]
+    admin = Identity(id=1, name="admin", type="users")
 
-    url_engine = Mock()
-    url_engine.resolve.return_value = None, None, None
-    config = build_config(tmp_path)
-    study_service = RawStudyService(config=config, cache=Mock(), study_factory=study_factory, matrix_service=Mock())
-    groups = ["fake_group_1", "fake_group_2"]
+    # Copy the study
+    metadata = StudyMetadataCopy(name="new_name", groups=groups, owner=admin, directory_id=directory_id)
+    new_study = study_service.storage_service.raw_study_service.copy(study, metadata)
 
-    src_md = create_raw_study(
-        id=source_name,
-        workspace=DEFAULT_WORKSPACE_NAME,
-        path=str(path_study),
-        version="700",
-        groups=groups,
-    )
-    md = study_service.copy(src_md, "dst_name", groups, PurePosixPath())
-    md_id = md.id
-    assert str(md.path) == f"{tmp_path}{os.sep}{md_id}"
-    assert md.public_mode == PublicMode.NONE
-    assert md.groups == groups
-    study.get.assert_called_once_with(["study"])
+    # Check the new study attributes
+    assert new_study.path == str(study_path.parent / "internal_studies" / new_study.id)
+    assert new_study.public_mode == PublicMode.NONE
+    assert len(new_study.groups) == 1
+    assert new_study.groups[0].id == "my_grp"
+    assert new_study.directory_id == directory_id
+    assert new_study.name == "new_name"
+    assert new_study.owner.name == "admin"
+
+    # Checks study.antares is correctly updated
+    study_path = study_path.parent / "internal_studies" / new_study.id
+    assert study_path.exists()
+    assert read_ini(study_path / "study.antares")["antares"]["caption"] == "new_name"
 
 
 def test_zipped_output(tmp_path: Path) -> None:
@@ -399,7 +309,8 @@ def test_zipped_output(tmp_path: Path) -> None:
         config=build_config(tmp_path, workspace_name="foo", allow_deletion=False),
         cache=cache,
         study_factory=Mock(),
-        matrix_service=Mock(),
+        command_context=Mock(),
+        repository=Mock(),
     )
 
     md = create_raw_study(id=name, workspace="foo", path=str(study_path))
@@ -450,31 +361,92 @@ timestamp = 1599488150
     assert not (study_path / "output" / (expected_output_name + ".zip")).exists()
 
 
-def test_delete_study(tmp_path: Path) -> None:
+def _create_fake_study(path: Path) -> Path:
     name = "my-study"
-    study_path = tmp_path / name
+    study_path = path / name
     study_path.mkdir()
     (study_path / "study.antares").touch()
+    return study_path
 
-    cache = Mock()
 
-    study_service = RawStudyService(
-        config=build_config(tmp_path, workspace_name="foo", allow_deletion=False),
+def _build_study_service(config: Config, cache: ICache, repo: StudyMetadataRepository) -> StudyService:
+    study_service, _ = build_study_service(
+        config,
+        matrix_service=Mock(spec=ISimpleMatrixService),
         cache=cache,
-        study_factory=Mock(),
-        matrix_service=Mock(),
+        metadata_repository=repo,
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
+        user_service=Mock(),
+        event_bus=Mock(),
+        blob_service=Mock(spec=BlobService),
     )
+    return study_service
 
-    md = create_raw_study(id=name, workspace="foo", path=str(study_path))
+
+@with_admin_user
+@with_db_context
+def test_delete_raw_study(tmp_path: Path) -> None:
+    # Set Up
+    cache = Mock(spec=ICache)
+    cache.get.return_value = None
+
+    study_path = _create_fake_study(tmp_path)
+    name = study_path.name
+
+    raw_study = create_raw_study(id=name, workspace="foo", path=str(study_path), groups=[])
+
+    config = build_config(tmp_path, workspace_name="foo", allow_deletion=False)
+    repo = Mock()
+    repo.get.return_value = raw_study
+    study_service = _build_study_service(config, cache, repo)
+
+    # Deletion is forbidden
     with pytest.raises(StudyDeletionNotAllowed):
-        study_service.delete(md)
+        study_service.delete_study(raw_study.id, children=False)
 
-    study_service = RawStudyService(
-        config=build_config(tmp_path, allow_deletion=True), cache=cache, study_factory=Mock(), matrix_service=Mock()
+    # Allow deletion
+    study_service.config = build_config(tmp_path, workspace_name="foo", allow_deletion=True)
+    fake_output_access = Mock()
+    fake_output_access.list_outputs.return_value = []
+    study_service.register_output_access(fake_output_access)
+
+    study_service.delete_study(raw_study.id, children=False)
+
+    # Ensures the cache was called
+    study_service.storage_service.raw_study_service.cache.invalidate_all.assert_called_once_with(
+        [
+            f"{CacheConstants.RAW_STUDY}/{name}",
+            f"{CacheConstants.STUDY_FACTORY}/{name}",
+        ]
     )
+    assert not study_path.exists()
 
-    md = create_raw_study(id=name, workspace=DEFAULT_WORKSPACE_NAME, path=str(study_path))
-    study_service.delete(md)
+
+@with_admin_user
+@with_db_context
+def test_delete_variant_study(tmp_path: Path) -> None:
+    # Set Up
+    cache = Mock(spec=ICache)
+    cache.get.return_value = None
+
+    config = build_config(tmp_path, workspace_name="foo", allow_deletion=True)
+    repo = Mock()
+    study_service = _build_study_service(config, cache, repo)
+
+    study_path = _create_fake_study(tmp_path)
+    name = study_path.name
+
+    variant_study = create_variant_study(id=name, path=str(study_path))
+    repo.get.return_value = variant_study
+
+    fake_output_access = Mock()
+    fake_output_access.list_outputs.return_value = []
+    study_service.register_output_access(fake_output_access)
+
+    # Delete study
+    study_service.delete_study(variant_study.id, children=False)
+
     cache.invalidate_all.assert_called_once_with(
         [
             f"{CacheConstants.RAW_STUDY}/{name}",
@@ -505,7 +477,8 @@ def test_update_name_and_version_from_raw(tmp_path: Path) -> None:
         config=build_config(tmp_path, workspace_name="foo"),
         cache=Mock(),
         study_factory=study_factory,
-        matrix_service=Mock(),
+        command_context=Mock(),
+        repository=Mock(),
     )
 
     study_tree_mock.get.side_effect = [
@@ -521,37 +494,3 @@ def test_update_name_and_version_from_raw(tmp_path: Path) -> None:
     assert study_service.update_name_and_version_from_raw_meta(raw_study)
     assert raw_study.name == "new_name"
     assert raw_study.version == "800"
-
-
-def test_checks_study_compatibility(tmp_path: Path) -> None:
-    name = "my-study"
-    study_path = tmp_path / name
-    settings_path = study_path / "settings"
-    settings_path.mkdir(parents=True)
-
-    raw_study = create_raw_study(id=name, name=name, version="880", workspace="foo", path=str(study_path))
-    study_service = RawStudyService(Mock(), Mock(), Mock(), Mock())
-
-    # With a version prior to v9.2 the check should succeed
-    study_service.checks_antares_web_compatibility(raw_study)
-
-    # Change study version to 9.2
-    raw_study.version = "9.2"
-
-    # If the general data doesn't have the compatibility flag, the check should succeed
-    study_service.checks_antares_web_compatibility(raw_study)
-
-    # Use the legacy flag
-    general_data = settings_path / "generaldata.ini"
-    with open(general_data, "w") as f:
-        f.writelines(["[compatibility]\n", "hydro-pmax = daily"])
-
-    # The legacy flag is supported, the check should succeed
-    study_service.checks_antares_web_compatibility(raw_study)
-
-    general_data = settings_path / "generaldata.ini"
-    with open(general_data, "w") as f:
-        f.writelines(["[compatibility]\n", "hydro-pmax = hourly"])
-
-    # The new flag now is supported, the check should pass
-    study_service.checks_antares_web_compatibility(raw_study)

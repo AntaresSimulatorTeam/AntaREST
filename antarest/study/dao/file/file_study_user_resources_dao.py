@@ -44,18 +44,19 @@ class FileStudyUserResourceDao(UserResourcesDao, ABC):
         blob_service = self.get_impl().blob_service
         user_path = self.get_file_study().config.study_path / "user"
         if user_path.exists():
-            all_files = user_path.rglob("*")
             expansion_folder = user_path / "expansion"
-            for file in all_files:
-                if file.is_file() and not file.is_relative_to(expansion_folder):
-                    content = file.read_bytes()
-                    blob_id = blob_service.save(content)
+            for item in user_path.rglob("*"):
+                if item.is_relative_to(expansion_folder):
+                    continue
+                rel_path = PurePosixPath(item.relative_to(user_path).as_posix())
+                if item.is_file():
+                    blob_id = blob_service.save(item.read_bytes())
                     result.append(
-                        UserResourceDataCreation(
-                            path=PurePosixPath(file.relative_to(user_path).as_posix()),
-                            resource_type=ResourceType.FILE,
-                            blob_id=blob_id,
-                        )
+                        UserResourceDataCreation(path=rel_path, resource_type=ResourceType.FILE, blob_id=blob_id)
+                    )
+                elif item.is_dir() and not any(item.iterdir()):
+                    result.append(
+                        UserResourceDataCreation(path=rel_path, resource_type=ResourceType.FOLDER, blob_id=None)
                     )
         return result
 

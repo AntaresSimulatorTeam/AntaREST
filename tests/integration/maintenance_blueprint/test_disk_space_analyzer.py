@@ -12,12 +12,15 @@
 
 """Integration tests for the disk space analyzer."""
 
+import tempfile
+from pathlib import Path
+
 import pytest
 from antares.study.version import StudyVersion
 
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.lock import create_lock
+from antarest.core.utils.lock import create_file_lock
 from antarest.core.utils.utils import current_time
 from antarest.login.utils import current_user_context
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, LockId
@@ -26,6 +29,7 @@ from antarest.study.business.model.area_model import AreaCreation
 from antarest.study.business.model.link_model import Link
 from antarest.study.repository import StudyDiskSpaceRepository
 from antarest.study.service import StudyService
+from antarest.study.storage.utils import is_managed
 
 
 @pytest.fixture
@@ -40,11 +44,17 @@ class TestDiskSpaceAnalyzerIntegration:
                 study_1 = study_service.create_study("my_study_1", version=StudyVersion(8, 8, 0), group_ids=[])
                 study_2 = study_service.create_study("my_study_2", version=StudyVersion(8, 8, 0), group_ids=[])
 
-            result = disk_space_analysis(service=study_service, disk_repo=study_disk_repo)
+            result = disk_space_analysis(
+                service=study_service,
+                disk_repo=study_disk_repo,
+                lock_folder=Path(tempfile.gettempdir()),
+            )
             assert result.status == BackGroundTaskStatus.SUCCESS
             assert (
-                result.updated_studies == 3
-            )  # there are 3 studies because one was created inside the study_service fixture before the test
+                result.updated_studies == 2
+            )  # there are 2 managed studies because one was created inside the study_service fixture before the test
+            assert is_managed(study_1)
+            assert is_managed(study_2)
 
             with db():
                 past_analysis_date_1 = study_disk_repo.get(study_1).last_analysis_date
@@ -53,7 +63,11 @@ class TestDiskSpaceAnalyzerIntegration:
                 assert study_disk_repo.get(study_1).disk_space_bytes > 0
                 assert study_disk_repo.get(study_2).disk_space_bytes > 0
 
-            result = disk_space_analysis(service=study_service, disk_repo=study_disk_repo)
+            result = disk_space_analysis(
+                service=study_service,
+                disk_repo=study_disk_repo,
+                lock_folder=Path(tempfile.gettempdir()),
+            )
 
             assert result.updated_studies == 0
 
@@ -76,7 +90,11 @@ class TestDiskSpaceAnalyzerIntegration:
 
                 study_service.create_link(study_1, Link(area1=area_1.id, area2=area_2.id))
 
-            result = disk_space_analysis(service=study_service, disk_repo=study_disk_repo)
+            result = disk_space_analysis(
+                service=study_service,
+                disk_repo=study_disk_repo,
+                lock_folder=Path(tempfile.gettempdir()),
+            )
 
             with db():
                 current_disk_space = study_disk_repo.get(study_1).disk_space_bytes
@@ -90,9 +108,14 @@ class TestDiskSpaceAnalyzerIntegration:
     def test_returns_skipped_when_lock_held(
         self, study_service: StudyService, study_disk_repo: StudyDiskSpaceRepository
     ):
+        lock_folder = Path(tempfile.gettempdir())
         with db():
-            with create_lock(db.session, lock_id=LockId.STUDY_DISK_SPACE):
-                result = disk_space_analysis(service=study_service, disk_repo=study_disk_repo)
+            with create_file_lock(lock_id=LockId.STUDY_DISK_SPACE, lock_folder=lock_folder):
+                result = disk_space_analysis(
+                    service=study_service,
+                    disk_repo=study_disk_repo,
+                    lock_folder=lock_folder,
+                )
 
             assert result.status == BackGroundTaskStatus.SKIPPED
             assert result.reason == "lock_not_acquired"

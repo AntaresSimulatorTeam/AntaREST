@@ -1319,8 +1319,16 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def get_all_user_resources(self) -> list[UserResourceDataCreation]:
+        all_paths = [str(p) for p in self._user_resources]
+        non_empty_folders = {
+            str(path)
+            for path, content in self._user_resources.items()
+            if content is None and any(p.startswith(str(path) + "/") for p in all_paths)
+        }
         result = []
         for path, content in self._user_resources.items():
+            if str(path) in non_empty_folders:
+                continue
             resource_type = ResourceType.FOLDER if content is None else ResourceType.FILE
             result.append(
                 UserResourceDataCreation(
