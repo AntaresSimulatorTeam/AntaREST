@@ -357,6 +357,32 @@ It doesn't impact users as it's for internal usage only, matrices will be displa
 - **Default value:** false
 - **Description:** If `true`, blobs will never be removed. Else, the ones that are unused will.
 
+## **output**
+
+### **default_storage_type**
+
+- **Type:** OutputStorageType
+- **Default value:** OutputStorageType.IN_STUDY_FILE_TREE
+- **Description:** Type to use by when importing simulation results from the HP 
+
+### **v2_output_storage**
+
+#### **enable**
+
+- **Type:** Boolean
+- **Default value:** false
+- **Description:** If `true`, allows output storage in the new format.
+
+#### **archive_dir**
+- **Type:** Path
+- **Default value:** `./output-archives`
+- **Description:** Path where the v2 output archives will be stored.
+
+#### **variables_dir**
+- **Type:** Path
+- **Default value:** `./output-variables`
+- **Description:** Path where the v2 output variables will be stored.
+
 
 ```yaml
 # example for storage settings

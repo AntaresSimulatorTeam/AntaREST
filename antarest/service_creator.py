@@ -52,7 +52,7 @@ from antarest.output.adapters import study_service_as_file_outputs_provider, stu
 from antarest.output.service import OutputService
 from antarest.output.storage.file.repository import FileOutputRepository
 from antarest.output.storage.file.storage import InStudyFileOutputStorage
-from antarest.output.storage.output_storage import IOutputStorage
+from antarest.output.storage.output_storage import IOutputStorage, OutputStorageType
 from antarest.output.storage.v2.repository import OutputV2Repository
 from antarest.output.storage.v2.storage import V2OutputStorage
 from antarest.output.variable_view.gc import VariableViewGarbageCollector
@@ -186,18 +186,20 @@ def build_tablemode_service() -> TableModeService:
 
 
 def build_output_storage_list(config: Config, file_output_storage: InStudyFileOutputStorage) -> list[IOutputStorage]:
-    if not config.storage.output.enable:
+    output_v2_storage_config = config.storage.output.v2_output_storage
+    if not output_v2_storage_config.enable:
         return [file_output_storage]
     tmp_dir = config.storage.tmp_dir / "outputs"
-    lfs = DirLargeFileStorage(config.storage.output.archive_dir)
+    lfs = DirLargeFileStorage(output_v2_storage_config.archive_dir)
     v2_storage = V2OutputStorage(
         tmp_dir=tmp_dir,
         archive_storage=lfs,
         repository=OutputV2Repository(),
-        variables_dir=config.storage.output.variables_dir,
+        variables_dir=output_v2_storage_config.variables_dir,
     )
 
-    if config.storage.output.default:
+    if config.storage.output.default_storage_type == OutputStorageType.V2:
+        # The first element of the list will be used when importing simulation results from the HPC
         return [v2_storage, file_output_storage]
     else:
         return [file_output_storage, v2_storage]

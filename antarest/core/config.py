@@ -26,6 +26,7 @@ from antares.study.version import SolverVersion
 from antarest.core.model import JSON
 from antarest.core.roles import RoleType
 from antarest.core.utils.archives import ArchiveFormat
+from antarest.output.storage.output_storage import OutputStorageType
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 
 
@@ -146,24 +147,38 @@ class DbConfig:
 
 
 @dataclass(frozen=True)
-class OutputStorageConfig:
+class V2OutputStorageConfig:
     """
     Configuration for "new style" internal output storage
     """
 
     enable: bool = False
-    default: bool = False
     archive_dir: Path = Path("./output-archives")
     variables_dir: Path = Path("./output-variables")
 
     @classmethod
-    def from_dict(cls, data: JSON) -> "OutputStorageConfig":
+    def from_dict(cls, data: JSON) -> "V2OutputStorageConfig":
         defaults = cls()
-        return OutputStorageConfig(
+        return V2OutputStorageConfig(
             enable=data.get("enable", defaults.enable),
-            default=data.get("default", defaults.default),
             archive_dir=Path(data.get("archive_dir", str(defaults.archive_dir))),
             variables_dir=Path(data.get("variables_dir", str(defaults.variables_dir))),
+        )
+
+
+@dataclass(frozen=True)
+class OutputStorageConfig:
+    """Configuration for output storage"""
+
+    v2_output_storage: V2OutputStorageConfig = V2OutputStorageConfig()
+    default_storage_type: OutputStorageType = OutputStorageType.IN_STUDY_FILE_TREE
+
+    @classmethod
+    def from_dict(cls, data: JSON) -> "OutputStorageConfig":
+        defaults = cls()
+        return cls(
+            v2_output_storage=V2OutputStorageConfig.from_dict(data.get("v2_output_storage", {})),
+            default_storage_type=OutputStorageType(data.get("default_storage_type", defaults.default_storage_type)),
         )
 
 
