@@ -50,8 +50,8 @@ from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
 from antarest.output.service import OutputService
+from antarest.output.storage.file.in_study import InStudyFileOutputStorage
 from antarest.output.storage.file.repository import FileOutputRepository
-from antarest.output.storage.file.storage import InStudyFileOutputStorage
 from antarest.output.storage.output_storage import IOutputStorage, OutputStorageType
 from antarest.output.storage.v2.repository import OutputV2Repository
 from antarest.output.storage.v2.storage import V2OutputStorage
