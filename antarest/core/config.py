@@ -177,7 +177,9 @@ class OutsideStudyFileOutputStorageConfig:
     @classmethod
     def from_dict(cls, data: JSON) -> "OutsideStudyFileOutputStorageConfig":
         defaults = cls()
-        return OutsideStudyFileOutputStorageConfig(storage_dir=Path(data.get("storage_dir", str(defaults.storage_dir))))
+        storage_dir = Path(data.get("storage_dir", str(defaults.storage_dir)))
+        storage_dir.mkdir(parents=True, exist_ok=True)
+        return OutsideStudyFileOutputStorageConfig(storage_dir=storage_dir)
 
 
 @dataclass(frozen=True)
