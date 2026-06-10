@@ -304,16 +304,6 @@ def test_zipped_output(tmp_path: Path) -> None:
     study_path = tmp_path / name
     study_path.mkdir()
     (study_path / "study.antares").touch()
-    cache = Mock()
-    study_service = RawStudyService(
-        config=build_config(tmp_path, workspace_name="foo", allow_deletion=False),
-        cache=cache,
-        study_factory=Mock(),
-        command_context=Mock(),
-        repository=Mock(),
-    )
-
-    md = create_raw_study(id=name, workspace="foo", path=str(study_path))
 
     zipped_output = tmp_path / "output.zip"
     with ZipFile(zipped_output, "w", ZIP_DEFLATED) as output_data:
@@ -331,11 +321,7 @@ timestamp = 1599488150
 
     class OutputsProvider(IFileOutputsProvider):
         def get_outputs(self, study_id: str) -> FileStudyOutputs:
-            return FileStudyOutputs(
-                get_file_study=lambda: study_service.get_raw(md),
-                outputs_path=study_path / "output",
-                is_managed=True,
-            )
+            return FileStudyOutputs(outputs_path=study_path / "output", is_managed=True)
 
     output_storage = InStudyFileOutputStorage(
         OutputsProvider(), cache=Mock(), remote_executor=Mock(), repository=Mock()
