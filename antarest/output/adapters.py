@@ -64,7 +64,7 @@ def study_service_as_studies_repository(study_service: StudyService) -> IStudyMe
         @override
         def get_study_metadata(self, study_id: str) -> StudyMetadata:
             study = study_service.get_study(study_id)
-            return StudyMetadata(id=study.id, name=study.name or "<Unnamed study>")
+            return StudyMetadata(id=study.id, name=study.name or "<Unnamed study>", storage_mode=study.storage_mode)
 
         @override
         def assert_permission(self, study_id: str, permission: StudyPermissionType) -> None:

@@ -56,7 +56,7 @@ def test_is_output_archived(tmp_path: Path) -> None:
 def _studies_repository(study: Study) -> IStudyMetadataProvider:
     class Impl(IStudyMetadataProvider):
         def get_study_metadata(self, study_id: str) -> StudyMetadata:
-            return StudyMetadata(study.id, study.name)
+            return StudyMetadata(study.id, study.name, study.storage_mode)
 
         def assert_permission(self, study_id: str, permission: StudyPermissionType) -> None:
             pass
