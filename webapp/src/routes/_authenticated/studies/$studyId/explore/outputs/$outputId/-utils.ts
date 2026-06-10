@@ -22,7 +22,7 @@ import type {
   VariableViewParams,
 } from "@/services/api/studies/outputs/variableViews/types";
 import type { AreaWithId, District, LinkElement } from "@/types/types";
-import type { StudyOutput } from "./-hooks/useStudyOutput";
+import type { StudyOutput } from "./-hooks/useOutput";
 
 export type ListType = "areas" | "links" | "synthesis";
 export type DataType = "values" | "details" | "details-res" | "id" | "details-STstorage";
