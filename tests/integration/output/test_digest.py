@@ -53,6 +53,6 @@ class TestDigest:
         res = client.get(f"/v1/private/studies/{internal_study_id}/outputs/{output_wo_digest}/digest-ui")
         assert res.status_code == 404
         assert res.json() == {
-            "description": "'economy' not a child of OutputSimulation",
+            "description": f"Digest file not found for study {internal_study_id} and output {output_wo_digest}",
             "exception": "ChildNotFoundError",
         }

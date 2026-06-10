@@ -350,9 +350,7 @@ class OutputService:
         )
         res = []
         for storage in self._storages:
-            outputs = storage.list_outputs(study_id)
-            for o in outputs:
-                res.append(storage.get_output_details(study_id, o.id))
+            res.extend(storage.get_output_details(study_id))
         return res
 
     def import_output(

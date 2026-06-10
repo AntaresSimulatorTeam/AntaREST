@@ -13,10 +13,10 @@ import logging
 import shutil
 import zipfile
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import BinaryIO, cast
+from typing import BinaryIO
 from uuid import uuid4
 
 import polars as pl
@@ -43,7 +43,7 @@ from antarest.core.utils.utils import StopWatch
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.output.filestudy.aggregator_management import AggregatorManager
-from antarest.output.filestudy.file_output_utils import extract_variables_list
+from antarest.output.filestudy.file_output_utils import extract_variables_list, parse_output_config
 from antarest.output.filestudy.utils import QueryFileType
 from antarest.output.model import OutputVariablesList
 from antarest.output.storage.file.repository import FileOutputRepository
@@ -60,13 +60,10 @@ from antarest.study.model import (
     MatrixIndex,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist, parse_outputs
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestSynthesis,
     DigestUI,
 )
-from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import (
     extract_output_name,
     fix_study_root,
@@ -85,12 +82,10 @@ class FileStudyOutputs:
     The implementation based on outputs stored as files requires the following information to work with a study.
 
     Attributes:
-        get_file_study: allows to load the underlying file study as needed.
         outputs_path: path to the study outputs directory.
         study_workspace: name of the study workspace.
     """
 
-    get_file_study: Callable[[], FileStudy]
     outputs_path: Path
     study_workspace: str
 
@@ -278,34 +273,40 @@ class InStudyFileOutputStorage(IOutputStorage):
             raise
 
     @override
-    def get_output_details(self, study_id: str, output_id: str) -> OutputDetails:
+    def get_output_details(self, study_id: str) -> list[OutputDetails]:
         """
         Get the list of output for a study.
         """
-        study_outputs = self._outputs_provider.get_outputs(study_id)
-        outputs = study_outputs.get_file_study().config.outputs
-        if output_id not in outputs:
-            raise OutputNotFound(output_id)
-        output_data: Simulation = outputs[output_id]
+        outputs_path = self._outputs_provider.get_outputs(study_id).outputs_path
+        simulations = parse_outputs(outputs_path)
 
-        study_data = study_outputs.get_file_study()
-        file_metadata = FileStudyHelpers.get_config(study_data, output_data.get_file())
-        settings = OutputSettings(
-            general=file_metadata["general"],
-            optimization=file_metadata["optimization"],
-            playlist=[year for year in (get_playlist(file_metadata) or {}).keys()],
-        )
+        result = []
 
-        return OutputDetails(
-            name=output_id,
-            mode=output_data.mode,
-            synthesis=output_data.synthesis,
-            by_year=output_data.by_year,
-            nb_years=output_data.nbyears,
-            archived=output_data.archived,
-            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
-            settings=settings,
-        )
+        for output_id, output_data in simulations.items():
+            folder_path = outputs_path / output_id
+            if output_data.archived:
+                folder_path = outputs_path / f"{output_id}{ArchiveFormat.ZIP}"
+
+            file_metadata = parse_output_config(folder_path)
+            settings = OutputSettings(
+                general=file_metadata["general"],
+                optimization=file_metadata["optimization"],
+                playlist=list((get_playlist(file_metadata) or {})),
+            )
+
+            output_details = OutputDetails(
+                name=output_id,
+                mode=output_data.mode,
+                synthesis=output_data.synthesis,
+                by_year=output_data.by_year,
+                nb_years=output_data.nbyears,
+                archived=output_data.archived,
+                storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
+                settings=settings,
+            )
+            result.append(output_details)
+
+        return result
 
     @override
     def list_outputs(self, study_id: str) -> list[OutputMetadata]:
@@ -462,11 +463,11 @@ class InStudyFileOutputStorage(IOutputStorage):
         """
         Digest of the output.
         """
-        study_outputs = self._outputs_provider.get_outputs(study_id)
-        file_study = study_outputs.get_file_study()
-        digest_node = file_study.tree.get_node(url=["output", output_id, "economy", "mc-all", "grid", "digest"])
-        assert isinstance(digest_node, DigestSynthesis)
-        return digest_node.get_ui()
+        output_path = self._outputs_provider.get_outputs(study_id).outputs_path
+        file_path = output_path / output_id / "economy" / "mc-all" / "grid" / "digest.txt"
+        if not file_path.exists():
+            raise ChildNotFoundError(f"Digest file not found for study {study_id} and output {output_id}")
+        return DigestSynthesis.parse_file_for_ui(file_path)
 
     @override
     def get_output_time_index(self, study_id: str, output_id: str, frequency: MatrixFrequency) -> MatrixIndex:
@@ -479,9 +480,8 @@ class InStudyFileOutputStorage(IOutputStorage):
         Returns:
             MatrixIndex with start_date, steps, first_week_size and level
         """
-        study_outputs = self._outputs_provider.get_outputs(study_id)
-        file_study = study_outputs.get_file_study()
-        return get_start_date(file_study, output_id, frequency)
+        outputs_path = self._outputs_provider.get_outputs(study_id).outputs_path
+        return get_start_date(None, outputs_path / output_id, frequency)
 
     @override
     def aggregate_output_data(
@@ -526,36 +526,22 @@ class InStudyFileOutputStorage(IOutputStorage):
 
     @override
     def get_logs(self, study_id: str, output_id: str, log_type: LogType) -> str:
-        study_outputs = self._outputs_provider.get_outputs(study_id)
-        file_study = study_outputs.get_file_study()
+        output_path = self._outputs_provider.get_outputs(study_id).outputs_path
 
         log_locations = {
-            LogType.STDOUT: [
-                ["output", output_id, "antares-out"],
-                ["output", output_id, "simulation"],
-            ],
-            LogType.STDERR: [
-                ["output", output_id, "antares-err"],
-            ],
+            LogType.STDOUT: [Path(output_id) / "antares-out.log", Path(output_id) / "simulation.log"],
+            LogType.STDERR: [Path(output_id) / "antares-err.log"],
         }
-        empty_log = False
         for log_location in log_locations[log_type]:
             try:
                 # Assume UTF-8 but ignore errors, it's difficult to be sure of log encoding
                 # especially because of windows error messages
-                log = cast(bytes, file_study.tree.get(log_location, depth=1)).decode(encoding="utf-8", errors="replace")
-                # when missing file, RawFileNode return empty bytes
-                if log:
-                    return log
-                else:
-                    empty_log = True
-            except ChildNotFoundError:
+                file_path = output_path / log_location
+                return file_path.read_text(encoding="utf-8", errors="replace")
+            except FileNotFoundError:
                 pass
-            except KeyError:
-                pass
-        if empty_log:
-            return ""
-        raise ChildNotFoundError(f"Logs for {output_id} of study {study_id} were not found")
+        # If all files are missing, we return an empty string for backward compatibility
+        return ""
 
     @override
     def get_disk_usage(self, study_id: str, output_id: str) -> int:

@@ -612,8 +612,8 @@ def test_copy_output(
         assert storage.output_exists("my-copy", f"{EXPECTED_DATE}eco")
 
         # Verify the copied output has the same details
-        src_details = storage.get_output_details(study_id, f"{EXPECTED_DATE}eco")
-        copy_details = storage.get_output_details("my-copy", f"{EXPECTED_DATE}eco")
+        src_details = storage.get_output_details(study_id)[0]
+        copy_details = storage.get_output_details("my-copy")[0]
         assert src_details == copy_details
 
         # Verify the copied output has the same logs

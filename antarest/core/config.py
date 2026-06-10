@@ -26,8 +26,7 @@ from antares.study.version import SolverVersion
 from antarest.core.model import JSON
 from antarest.core.roles import RoleType
 from antarest.core.utils.archives import ArchiveFormat
-
-DEFAULT_WORKSPACE_NAME = "default"
+from antarest.study.model import DEFAULT_WORKSPACE_NAME
 
 
 class LauncherType(StrEnum):

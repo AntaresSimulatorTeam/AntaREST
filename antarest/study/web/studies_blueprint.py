@@ -462,7 +462,7 @@ def create_study_routes() -> APIRouter:
         study_service: StudyServiceDep, uuid: SanitizedStr, path: SanitizedStr = ""
     ) -> MatrixIndex:
         logger.info(f"Return the start date for input matrix '{uuid}'")
-        return study_service.get_input_matrix_startdate(uuid, path)
+        return study_service.get_matrix_startdate(uuid, path)
 
     @bp.get(
         "/studies/{uuid}/export",
