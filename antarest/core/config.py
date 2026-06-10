@@ -192,11 +192,14 @@ class OutputStorageConfig:
     @classmethod
     def from_dict(cls, data: JSON) -> "OutputStorageConfig":
         defaults = cls()
-        return cls(
+        config = cls(
             v2=V2OutputStorageConfig.from_dict(data.get("v2", {})),
             outside_study=OutsideStudyFileOutputStorageConfig.from_dict(data.get("outside_study", {})),
             default_storage_type=OutputStorageType(data.get("default_storage_type", defaults.default_storage_type)),
         )
+        if config.default_storage_type == OutputStorageType.OUTSIDE_STUDY_FILE_TREE and not config.v2.enable:
+            raise ValueError("You cannot set v2 storage as your default storage and not enable it")
+        return config
 
 
 @dataclass(frozen=True)

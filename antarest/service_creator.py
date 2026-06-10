@@ -48,9 +48,14 @@ from antarest.login.service import LoginService
 from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
-from antarest.output.adapters import study_service_as_file_outputs_provider, study_service_as_studies_repository
+from antarest.output.adapters import (
+    study_service_as_in_study_file_outputs_provider,
+    study_service_as_outside_study_file_outputs_provider,
+    study_service_as_studies_repository,
+)
 from antarest.output.service import OutputService
 from antarest.output.storage.file.in_study import InStudyFileOutputStorage
+from antarest.output.storage.file.outside_study import OutsideStudyFileOutputStorage
 from antarest.output.storage.file.repository import FileOutputRepository
 from antarest.output.storage.output_storage import IOutputStorage, OutputStorageType
 from antarest.output.storage.v2.repository import OutputV2Repository
@@ -185,10 +190,19 @@ def build_tablemode_service() -> TableModeService:
     return TableModeService(tablemode_repository=tablemode_repository)
 
 
-def build_output_storage_list(config: Config, file_output_storage: InStudyFileOutputStorage) -> list[IOutputStorage]:
+def build_output_storage_list(
+    config: Config, in_study_storage: InStudyFileOutputStorage, outside_study_storage: OutsideStudyFileOutputStorage
+) -> list[IOutputStorage]:
+    """The first element of the returned list will be used when importing simulation results from the HPC"""
+    default_storage_type = config.storage.output.default_storage_type
     output_v2_storage_config = config.storage.output.v2
     if not output_v2_storage_config.enable:
-        return [file_output_storage]
+        if default_storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
+            return [in_study_storage, outside_study_storage]
+        else:
+            return [outside_study_storage, in_study_storage]
+
+    # Build the v2 Storage
     tmp_dir = config.storage.tmp_dir / "outputs"
     lfs = DirLargeFileStorage(output_v2_storage_config.archive_dir)
     v2_storage = V2OutputStorage(
@@ -198,11 +212,12 @@ def build_output_storage_list(config: Config, file_output_storage: InStudyFileOu
         variables_dir=output_v2_storage_config.variables_dir,
     )
 
-    if config.storage.output.default_storage_type == OutputStorageType.V2:
-        # The first element of the list will be used when importing simulation results from the HPC
-        return [v2_storage, file_output_storage]
+    if default_storage_type == OutputStorageType.V2:
+        return [v2_storage, in_study_storage, outside_study_storage]
+    elif default_storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
+        return [in_study_storage, v2_storage, outside_study_storage]
     else:
-        return [file_output_storage, v2_storage]
+        return [outside_study_storage, in_study_storage, v2_storage]
 
 
 def build_output_service(
@@ -215,14 +230,22 @@ def build_output_service(
     matrix_service: ISimpleMatrixService,
 ) -> OutputService:
     remote_executor = RemoteWorkerExecutor(event_bus, config)
-    file_output_storage = InStudyFileOutputStorage(
-        outputs_provider=study_service_as_file_outputs_provider(study_service),
+    repository = FileOutputRepository()
+    in_study_file_output_storage = InStudyFileOutputStorage(
+        outputs_provider=study_service_as_in_study_file_outputs_provider(study_service),
         cache=cache,
         remote_executor=remote_executor,
-        repository=FileOutputRepository(),
+        repository=repository,
     )
 
-    storages = build_output_storage_list(config, file_output_storage)
+    outside_study_file_output_storage = OutsideStudyFileOutputStorage(
+        outputs_provider=study_service_as_outside_study_file_outputs_provider(config),
+        cache=cache,
+        remote_executor=remote_executor,
+        repository=repository,
+    )
+
+    storages = build_output_storage_list(config, in_study_file_output_storage, outside_study_file_output_storage)
 
     output_service = OutputService(
         studies_repository=study_service_as_studies_repository(study_service),

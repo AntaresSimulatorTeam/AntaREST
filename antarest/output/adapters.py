@@ -17,6 +17,7 @@ from pathlib import Path
 
 from typing_extensions import override
 
+from antarest.core.config import Config
 from antarest.core.model import StudyPermissionType
 from antarest.output.service import IStudyMetadataProvider, StudyMetadata
 from antarest.output.storage.file.abstract_storage import FileStudyOutputs, IFileOutputsProvider
@@ -25,7 +26,7 @@ from antarest.study.service import StudyService
 from antarest.study.storage.utils import assert_permission
 
 
-def study_service_as_file_outputs_provider(study_service: StudyService) -> IFileOutputsProvider:
+def study_service_as_in_study_file_outputs_provider(study_service: StudyService) -> IFileOutputsProvider:
     """
     Adapts a study service to provide only the necessary functionalities to the file output storage.
     """
@@ -37,6 +38,18 @@ def study_service_as_file_outputs_provider(study_service: StudyService) -> IFile
             return FileStudyOutputs(
                 outputs_path=Path(metadata.path) / "output",
                 study_workspace=getattr(metadata, "workspace", DEFAULT_WORKSPACE_NAME),
+            )
+
+    return StudyServiceAdapter()
+
+
+def study_service_as_outside_study_file_outputs_provider(config: Config) -> IFileOutputsProvider:
+    class StudyServiceAdapter(IFileOutputsProvider):
+        @override
+        def get_outputs(self, study_id: str) -> FileStudyOutputs:
+            return FileStudyOutputs(
+                outputs_path=config.storage.output.outside_study.storage_dir / study_id,
+                study_workspace=DEFAULT_WORKSPACE_NAME,  # The app manages all outputs directly
             )
 
     return StudyServiceAdapter()
