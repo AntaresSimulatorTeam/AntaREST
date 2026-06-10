@@ -33,7 +33,7 @@ export const studySchema = z
   .object({
     id: z.string(),
     name: z.string(),
-    version: z.int().transform(toSemanticVersion),
+    version: z.string().transform(toSemanticVersion),
     author: z.string().nullable(),
     editor: z.string().nullable(),
     created: z.string(),
