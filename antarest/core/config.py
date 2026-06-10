@@ -167,17 +167,34 @@ class V2OutputStorageConfig:
 
 
 @dataclass(frozen=True)
+class OutsideStudyFileOutputStorageConfig:
+    """
+    Configuration for output storage in a single dir for all studies
+    """
+
+    storage_dir: Path = Path("./outputs")
+
+    @classmethod
+    def from_dict(cls, data: JSON) -> "OutsideStudyFileOutputStorageConfig":
+        defaults = cls()
+        return OutsideStudyFileOutputStorageConfig(storage_dir=Path(data.get("storage_dir", str(defaults.storage_dir))))
+
+
+@dataclass(frozen=True)
 class OutputStorageConfig:
     """Configuration for output storage"""
 
-    v2_output_storage: V2OutputStorageConfig = V2OutputStorageConfig()
+    v2: V2OutputStorageConfig = V2OutputStorageConfig()
+    outside_study: OutsideStudyFileOutputStorageConfig = OutsideStudyFileOutputStorageConfig()
+
     default_storage_type: OutputStorageType = OutputStorageType.IN_STUDY_FILE_TREE
 
     @classmethod
     def from_dict(cls, data: JSON) -> "OutputStorageConfig":
         defaults = cls()
         return cls(
-            v2_output_storage=V2OutputStorageConfig.from_dict(data.get("v2_output_storage", {})),
+            v2=V2OutputStorageConfig.from_dict(data.get("v2", {})),
+            outside_study=OutsideStudyFileOutputStorageConfig.from_dict(data.get("outside_study", {})),
             default_storage_type=OutputStorageType(data.get("default_storage_type", defaults.default_storage_type)),
         )
 

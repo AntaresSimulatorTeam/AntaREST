@@ -365,7 +365,7 @@ It doesn't impact users as it's for internal usage only, matrices will be displa
 - **Default value:** OutputStorageType.IN_STUDY_FILE_TREE
 - **Description:** Type to use by when importing simulation results from the HP 
 
-### **v2_output_storage**
+### **v2**
 
 #### **enable**
 
@@ -383,6 +383,13 @@ It doesn't impact users as it's for internal usage only, matrices will be displa
 - **Default value:** `./output-variables`
 - **Description:** Path where the v2 output variables will be stored.
 
+### **outside_study**
+
+#### **storage_dir**
+
+- **Type:** Path
+- **Default value:** `./outputs`
+- **Description:** Path containing all outputs using the OutputStorageType.OUTSIDE_STUDY_FILE_TREE
 
 ```yaml
 # example for storage settings

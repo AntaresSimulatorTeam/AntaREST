@@ -186,7 +186,7 @@ def build_tablemode_service() -> TableModeService:
 
 
 def build_output_storage_list(config: Config, file_output_storage: InStudyFileOutputStorage) -> list[IOutputStorage]:
-    output_v2_storage_config = config.storage.output.v2_output_storage
+    output_v2_storage_config = config.storage.output.v2
     if not output_v2_storage_config.enable:
         return [file_output_storage]
     tmp_dir = config.storage.tmp_dir / "outputs"
