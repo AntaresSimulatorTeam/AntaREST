@@ -75,9 +75,7 @@ def _file_outputs_provider(study: RawStudy) -> IFileOutputsProvider:
     class Impl(IFileOutputsProvider):
         def get_outputs(self, study_id: str) -> FileStudyOutputs:
             return FileStudyOutputs(
-                get_file_study=not_implemented,
-                outputs_path=Path(study.path) / "output",
-                is_managed=(study.workspace == DEFAULT_WORKSPACE_NAME),
+                outputs_path=Path(study.path) / "output", is_managed=(study.workspace == DEFAULT_WORKSPACE_NAME)
             )
 
     return Impl()
