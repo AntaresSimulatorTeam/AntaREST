@@ -38,9 +38,12 @@ from antarest.core.remote.remote_executor import RemoteWorkerExecutor
 from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.tasks.service import ITaskService
 from antarest.eventbus.main import build_eventbus
-from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteStudyRepository, \
-    FavoriteExternalDirectoryRepository
-from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService, FavoriteExternalDirectoryService
+from antarest.favorite.repository import (
+    FavoriteDirectoryRepository,
+    FavoriteExternalDirectoryRepository,
+    FavoriteStudyRepository,
+)
+from antarest.favorite.service import FavoriteDirectoryService, FavoriteExternalDirectoryService, FavoriteStudyService
 from antarest.launcher.main import build_launcher
 from antarest.launcher.service import LauncherService
 from antarest.lfs.dir_lfs import DirLargeFileStorage
@@ -172,7 +175,9 @@ class CoreServices:
     tablemode_service: TableModeService
 
 
-def build_favorite_service() -> tuple[FavoriteStudyService, FavoriteDirectoryService, FavoriteExternalDirectoryService]:
+def build_favorite_service(
+    config: Config,
+) -> tuple[FavoriteStudyService, FavoriteDirectoryService, FavoriteExternalDirectoryService]:
     favorite_repository = FavoriteStudyRepository()
     favorite_study_service = FavoriteStudyService(favorite_study_repository=favorite_repository)
 
@@ -180,7 +185,9 @@ def build_favorite_service() -> tuple[FavoriteStudyService, FavoriteDirectorySer
     favorite_directory_service = FavoriteDirectoryService(favorite_directory_repository=favorite_directory_repository)
 
     favorite_external_directory_repository = FavoriteExternalDirectoryRepository()
-    favorite_external_directory_service = FavoriteExternalDirectoryService(favorite_external_directory_repository=favorite_external_directory_repository)
+    favorite_external_directory_service = FavoriteExternalDirectoryService(
+        favorite_external_directory_repository=favorite_external_directory_repository, workspace_config=config
+    )
 
     return favorite_study_service, favorite_directory_service, favorite_external_directory_service
 
@@ -277,7 +284,9 @@ def create_core_services(config: Config) -> CoreServices:
         matrix_service=matrix_service,
     )
 
-    favorite_study_service, favorite_directory_service, favorite_external_directory_service = build_favorite_service()
+    favorite_study_service, favorite_directory_service, favorite_external_directory_service = build_favorite_service(
+        config=config
+    )
     tablemode_service = build_tablemode_service()
 
     study_disk_space_repository = StudyDiskSpaceRepository()

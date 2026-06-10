@@ -125,8 +125,10 @@ def get_favorite_study_service(request: Request) -> FavoriteStudyService:
 def get_favorite_directory_service(request: Request) -> FavoriteDirectoryService:
     return get_app_state(request).services.favorite_directory
 
+
 def get_favorite_external_directory_service(request: Request) -> FavoriteExternalDirectoryService:
     return get_app_state(request).services.favorite_external_directory
+
 
 def get_tablemode_service(request: Request) -> TableModeService:
     return get_app_state(request).services.tablemode_service

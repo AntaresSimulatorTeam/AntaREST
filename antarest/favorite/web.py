@@ -69,14 +69,22 @@ def create_favorite_routes() -> APIRouter:
         logger.info(f"Deleting directory {uuid} from favorites.")
         favorite_directory_service.delete_favorite(uuid)
 
-    @bp.get("/favorites/external_directories", summary="Listing favorite external directories for current user", status_code=HTTPStatus.OK)
+    @bp.get(
+        "/favorites/external_directories",
+        summary="Listing favorite external directories for current user",
+        status_code=HTTPStatus.OK,
+    )
     def list_favorite_external_directories(
         favorite_external_directory_service: FavoriteExternalDirectoryServiceDep,
     ) -> list[FavoriteExternalDirectoryDTO]:
         logger.info("Listing favorite external directories for current user.")
         return favorite_external_directory_service.list_favorites()
 
-    @bp.post("/favorites/external_directories", summary="Add an external directory in the list of favorite directories", status_code=HTTPStatus.CREATED)
+    @bp.post(
+        "/favorites/external_directories",
+        summary="Add an external directory in the list of favorite directories",
+        status_code=HTTPStatus.CREATED,
+    )
     def add_favorite_external_directory(
         favorite_external_directory_service: FavoriteExternalDirectoryServiceDep,
         workspace: Annotated[str, Field(min_length=1, examples=["workspace_name"])],
@@ -86,10 +94,12 @@ def create_favorite_routes() -> APIRouter:
         ],
     ) -> FavoriteExternalDirectoryDTO:
         logger.info("Adding external directory as a favorite.")
-        return favorite_external_directory_service.add_favorite(workspace=workspace, path=path)
+        return favorite_external_directory_service.add_favorite(workspace=workspace, directory_path=path)
 
     @bp.delete(
-        "/favorites/external_directories", summary="Delete an external directory from the list of favorite directories", status_code=HTTPStatus.ACCEPTED
+        "/favorites/external_directories",
+        summary="Delete an external directory from the list of favorite directories",
+        status_code=HTTPStatus.ACCEPTED,
     )
     def delete_favorite_external_directory(
         favorite_external_directory_service: FavoriteExternalDirectoryServiceDep,
