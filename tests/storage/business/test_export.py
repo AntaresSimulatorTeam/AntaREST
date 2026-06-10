@@ -14,18 +14,14 @@ from pathlib import Path
 from unittest.mock import Mock
 from zipfile import ZipFile
 
-from antarest.output.storage.file.storage import (
-    FileStudyOutputs,
-    IFileOutputsProvider,
-    InStudyFileOutputStorage,
-)
-
 from antarest.blobstore.service import BlobService
 from antarest.core.config import InternalMatrixFormat
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixRepository
 from antarest.matrixstore.service import MatrixService
+from antarest.output.storage.file.abstract_storage import FileStudyOutputs, IFileOutputsProvider
+from antarest.output.storage.file.in_study import InStudyFileOutputStorage
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory

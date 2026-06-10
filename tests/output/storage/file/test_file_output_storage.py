@@ -17,11 +17,6 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
-from antarest.output.storage.file.storage import (
-    FileStudyOutputs,
-    IFileOutputsProvider,
-    InStudyFileOutputStorage,
-)
 from typing_extensions import override
 
 from antarest.core.cache.business.local_chache import LocalCache
@@ -38,6 +33,8 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.output.storage.file.abstract_storage import FileStudyOutputs, IFileOutputsProvider
+from antarest.output.storage.file.in_study import InStudyFileOutputStorage
 from antarest.output.storage.output_storage import (
     OutputDetails,
     OutputMetadata,
