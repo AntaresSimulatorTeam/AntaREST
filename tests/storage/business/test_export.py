@@ -165,11 +165,7 @@ def test_export_output(tmp_path: Path) -> None:
 
     class OutputsProvider(IFileOutputsProvider):
         def get_outputs(self, study_id: str) -> FileStudyOutputs:
-            return FileStudyOutputs(
-                get_file_study=lambda: FileStudy(Mock(), study_tree),
-                outputs_path=root / "output",
-                study_workspace=DEFAULT_WORKSPACE_NAME,
-            )
+            return FileStudyOutputs(outputs_path=root / "output", study_workspace=DEFAULT_WORKSPACE_NAME)
 
     output_storage = InStudyFileOutputStorage(
         OutputsProvider(), cache=Mock(), remote_executor=Mock(), repository=Mock()
