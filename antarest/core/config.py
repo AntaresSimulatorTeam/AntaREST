@@ -197,7 +197,7 @@ class OutputStorageConfig:
             outside_study=OutsideStudyFileOutputStorageConfig.from_dict(data.get("outside_study", {})),
             default_storage_type=OutputStorageType(data.get("default_storage_type", defaults.default_storage_type)),
         )
-        if config.default_storage_type == OutputStorageType.OUTSIDE_STUDY_FILE_TREE and not config.v2.enable:
+        if config.default_storage_type == OutputStorageType.V2 and not config.v2.enable:
             raise ValueError("You cannot set v2 storage as your default storage and not enable it")
         return config
 
