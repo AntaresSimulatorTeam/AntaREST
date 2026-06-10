@@ -54,6 +54,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Identity
 from antarest.login.utils import get_user_impersonator, require_current_user
+from antarest.output.filestudy.file_output_utils import parse_output_config
 from antarest.study.business.model.config.general_model import GeneralConfig, Mode
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -68,7 +69,7 @@ from antarest.study.model import (
     StudyMetadataDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
+from antarest.study.storage.rawstudy.model.helpers import parse_input_config
 
 logger = logging.getLogger(__name__)
 
@@ -424,9 +425,9 @@ def get_start_date(
     """
 
     if study_path:
-        data = FileStudyHelpers.get_input_config(study_path)
+        data = parse_input_config(study_path)
     elif output_path:
-        data = FileStudyHelpers.get_output_config(output_path)
+        data = parse_output_config(output_path)
     else:
         raise ValueError("Either study_path or output_path must be provided")
 

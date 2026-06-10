@@ -268,11 +268,7 @@ class V2OutputStorage(IOutputStorage):
         """
         result = []
         for output_metadata in self._repository.search_output_metadata(study_id):
-            output_id = output_metadata.output_name
-            db_metadata = self._repository.get_output_metadata(study_id, output_id)
-            if db_metadata is None:
-                raise OutputNotFound(output_id)
-            result.append(_db_metadata_to_details(db_metadata))
+            result.append(_db_metadata_to_details(output_metadata))
         return result
 
     @override

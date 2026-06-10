@@ -43,7 +43,7 @@ from antarest.core.utils.utils import StopWatch
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.output.filestudy.aggregator_management import AggregatorManager
-from antarest.output.filestudy.file_output_utils import extract_variables_list
+from antarest.output.filestudy.file_output_utils import extract_variables_list, parse_output_config
 from antarest.output.filestudy.utils import QueryFileType
 from antarest.output.model import OutputVariablesList
 from antarest.output.storage.file.repository import FileOutputRepository
@@ -64,7 +64,6 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
     DigestSynthesis,
     DigestUI,
 )
-from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.utils import (
     extract_output_name,
     fix_study_root,
@@ -288,7 +287,7 @@ class InStudyFileOutputStorage(IOutputStorage):
             if output_data.archived:
                 folder_path = outputs_path / f"{output_id}{ArchiveFormat.ZIP}"
 
-            file_metadata = FileStudyHelpers.get_output_config(folder_path)
+            file_metadata = parse_output_config(folder_path)
             settings = OutputSettings(
                 general=file_metadata["general"],
                 optimization=file_metadata["optimization"],
@@ -468,7 +467,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         file_path = output_path / output_id / "economy" / "mc-all" / "grid" / "digest.txt"
         if not file_path.exists():
             raise ChildNotFoundError(f"Digest file not found for study {study_id} and output {output_id}")
-        return DigestSynthesis.get_ui(file_path)
+        return DigestSynthesis.parse_file_for_ui(file_path)
 
     @override
     def get_output_time_index(self, study_id: str, output_id: str, frequency: MatrixFrequency) -> MatrixIndex:

@@ -9,23 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import io
 from pathlib import Path
 
 from antarest.core.model import JSON
 from antarest.core.serde.ini_reader import IniReader
-from antarest.core.utils.archives import read_original_file_in_archive
 
 
-class FileStudyHelpers:
-    @staticmethod
-    def get_input_config(study_path: Path) -> JSON:
-        return IniReader().read(study_path / "settings" / "generaldata.ini")
-
-    @staticmethod
-    def get_output_config(output_path: Path) -> JSON:
-        if output_path.suffix == ".zip":
-            # We need to read data from the archive
-            content = read_original_file_in_archive(output_path, "about-the-study/parameters.ini")
-            return IniReader().read(io.StringIO(content.decode("utf-8")))
-        return IniReader().read(output_path / "about-the-study" / "parameters.ini")
+def parse_input_config(study_path: Path) -> JSON:
+    return IniReader().read(study_path / "settings" / "generaldata.ini")
