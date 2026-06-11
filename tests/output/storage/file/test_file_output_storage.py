@@ -500,25 +500,27 @@ def _extract_output_to_dir(study_zip: Path, output_path: str, target_dir: Path) 
 
 
 def test_import_output_directory(output_storage: IOutputStorage, tmp_path: Path, sta_mini_zip_path: Path) -> None:
-    # Extract one of the outputs of STA-mini to a directory
-    studies_dir = tmp_path / "studies"
-
-    study_dir = studies_dir / "my-study"
-    study_dir.mkdir()
-
-    output_dir = tmp_path / "import-output"
-    _extract_output_to_dir(sta_mini_zip_path, "STA-mini/output/20201014-1422eco-hello", output_dir)
+    # Set Up
+    if output_storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
+        existing_output_dir = tmp_path / "studies" / "STA-mini" / "output" / "20201014-1422eco-hello"
+        in_study = True
+        (tmp_path / "studies" / "my-study").mkdir()
+        expected_output_dir = tmp_path / "studies" / "my-study" / "output" / "20201014-1422eco-hello"
+    else:
+        existing_output_dir = tmp_path / "outputs" / "STA-mini" / "20201014-1422eco-hello"
+        in_study = False
+        (tmp_path / "outputs" / "my-study").mkdir()
+        expected_output_dir = tmp_path / "outputs" / "my-study" / "20201014-1422eco-hello"
 
     # Import directory
-    output_storage.import_output("my-study", output_dir)
+    output_storage.import_output("my-study", existing_output_dir)
 
     # Cannot hard code the expected formatted date because it depends on the locale
     expected_date = utc_to_local("20201014-1222")
 
-    expected_output_dir = study_dir / "output" / f"{expected_date}eco-hello"
     assert expected_output_dir.exists()
     assert output_storage.list_outputs("my-study") == [
-        OutputMetadata(id=f"{expected_date}eco-hello", in_study=True, archived=False)
+        OutputMetadata(id=f"{expected_date}eco-hello", in_study=in_study, archived=False)
     ]
 
     # Import directory with logs and suffix
@@ -527,11 +529,11 @@ def test_import_output_directory(output_storage: IOutputStorage, tmp_path: Path,
     err_logs = tmp_path / "err.log"
     err_logs.write_text("some error")
     output_storage.import_output(
-        "my-study", output_dir, output_name_suffix="other", logs=SimulationLogs(out_logs, err_logs)
+        "my-study", existing_output_dir, output_name_suffix="other", logs=SimulationLogs(out_logs, err_logs)
     )
     assert output_storage.list_outputs("my-study") == [
-        OutputMetadata(id=f"{expected_date}eco-hello", in_study=True, archived=False),
-        OutputMetadata(id=f"{expected_date}eco-other", in_study=True, archived=False),
+        OutputMetadata(id=f"{expected_date}eco-hello", in_study=in_study, archived=False),
+        OutputMetadata(id=f"{expected_date}eco-other", in_study=in_study, archived=False),
     ]
 
     assert output_storage.get_logs("my-study", f"{expected_date}eco-other", LogType.STDOUT) == "some log"
