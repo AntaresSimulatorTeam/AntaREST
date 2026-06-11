@@ -347,12 +347,23 @@ def test_output_archival(output_storage: IOutputStorage) -> None:
 
 
 def test_output_copy(output_storage: IOutputStorage, tmp_path: Path) -> None:
-    # Create a copy of the STA-mini study without outputs
-    studies_dir = tmp_path / "studies"
-    sta_mini_path = studies_dir / "STA-mini"
-    copy_path = studies_dir / "STA-mini-copy"
-    shutil.copytree(sta_mini_path, copy_path, ignore=shutil.ignore_patterns("output"))
-    (copy_path / "output").mkdir()
+    ##########################
+    # Set Up
+    ##########################
+
+    # Create a study without outputs
+    if output_storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
+        studies_dir = tmp_path / "studies"
+        sta_mini_path = studies_dir / "STA-mini"
+        copy_path = studies_dir / "STA-mini-copy"
+        shutil.copytree(sta_mini_path, copy_path, ignore=shutil.ignore_patterns("output"))
+        (copy_path / "output").mkdir()
+    else:
+        (tmp_path / "outputs" / "STA-mini-copy").mkdir()
+
+    ##########################
+    # Test
+    ##########################
 
     assert output_storage.list_outputs("STA-mini-copy") == []
 
