@@ -318,18 +318,24 @@ def test_output_deletion(output_storage: IOutputStorage, tmp_path: Path) -> None
     assert "20201014-1422eco-hello" not in [o.id for o in outputs]
 
 
-def test_output_archival(output_storage: IOutputStorage) -> None:
+def test_output_archival(output_storage: IOutputStorage, tmp_path: Path) -> None:
     assert not output_storage.is_output_archived("STA-mini", "20201014-1422eco-hello")
     output_storage.archive_study_output("STA-mini", "20201014-1422eco-hello")
     assert output_storage.is_output_archived("STA-mini", "20201014-1422eco-hello")
+
+    # Check that the output is archived on the disk
+    if output_storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
+        output_folder = tmp_path / "studies" / "STA-mini" / "output"
+    else:
+        output_folder = tmp_path / "outputs" / "STA-mini"
+    assert not (output_folder / "20201014-1422eco-hello").exists()
+    assert (output_folder / "20201014-1422eco-hello.zip").exists()
 
     outputs = output_storage.list_outputs("STA-mini")
     assert "20201014-1422eco-hello" in [o.id for o in outputs if o.archived]
 
     with pytest.raises(OutputAlreadyArchived):
         output_storage.archive_study_output("STA-mini", "20201014-1422eco-hello")
-
-    # TODO: check zipped on disk
 
     output_storage.unarchive_study_output("STA-mini", "20201014-1422eco-hello")
     assert not output_storage.is_output_archived("STA-mini", "20201014-1422eco-hello")
