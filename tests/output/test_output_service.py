@@ -24,14 +24,12 @@ from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.utils import current_time
 from antarest.output.service import IStudyMetadataProvider, OutputService, StudyMetadata
-from antarest.output.storage.file.storage import (
-    FileStudyOutputs,
-    IFileOutputsProvider,
-    InStudyFileOutputStorage,
-)
+from antarest.output.storage.file.abstract_storage import FileStudyOutputs, IFileOutputsProvider
+from antarest.output.storage.file.in_study import InStudyFileOutputStorage
 from antarest.output.storage.output_storage import IOutputStorage, OutputStorageType
 from antarest.study.model import (
     RawStudy,
+    StorageMode,
     Study,
 )
 from antarest.study.storage.utils import is_output_archived
@@ -59,7 +57,7 @@ def test_is_output_archived(tmp_path: Path) -> None:
 def _studies_repository(study: Study) -> IStudyMetadataProvider:
     class Impl(IStudyMetadataProvider):
         def get_study_metadata(self, study_id: str) -> StudyMetadata:
-            return StudyMetadata(study.id, study.name)
+            return StudyMetadata(study.id, study.name, study.storage_mode)
 
         def assert_permission(self, study_id: str, permission: StudyPermissionType) -> None:
             pass
@@ -270,7 +268,7 @@ def test_already_existing_study_raises_error_and_deletes_output() -> None:
     storage2.import_output.return_value = "output_id"
 
     studies_repo = Mock(spec=IStudyMetadataProvider)
-    studies_repo.get_study_metadata.return_value = StudyMetadata("id", "name")
+    studies_repo.get_study_metadata.return_value = StudyMetadata("id", "name", StorageMode.FILESYSTEM)
 
     output_service = OutputService(
         storages=[storage1, storage2],
