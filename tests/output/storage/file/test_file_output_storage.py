@@ -179,7 +179,7 @@ def test_file_output_storage(file_output_storage):
                     user_playlist=True,
                 ),
                 optimization=OutputSettingsOptimization(transmission_capacities=True),
-                playlist=[1, 2],
+                playlist=[1],
             ),
         ),
         OutputDetails(
