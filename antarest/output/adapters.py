@@ -17,10 +17,10 @@ from pathlib import Path
 
 from typing_extensions import override
 
-from antarest.core.config import DEFAULT_WORKSPACE_NAME
 from antarest.core.model import StudyPermissionType
 from antarest.output.service import IStudyMetadataProvider, StudyMetadata
 from antarest.output.storage.file.storage import FileStudyOutputs, IFileOutputsProvider
+from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.service import StudyService
 from antarest.study.storage.utils import assert_permission
 
@@ -35,7 +35,6 @@ def study_service_as_file_outputs_provider(study_service: StudyService) -> IFile
         def get_outputs(self, study_id: str) -> FileStudyOutputs:
             metadata = study_service.get_study(study_id)
             return FileStudyOutputs(
-                get_file_study=lambda: study_service.get_file_study(metadata),
                 outputs_path=Path(metadata.path) / "output",
                 study_workspace=getattr(metadata, "workspace", DEFAULT_WORKSPACE_NAME),
             )

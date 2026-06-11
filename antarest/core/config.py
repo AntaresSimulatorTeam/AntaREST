@@ -25,8 +25,8 @@ from antares.study.version import SolverVersion
 
 from antarest.core.model import JSON
 from antarest.core.roles import RoleType
-
-DEFAULT_WORKSPACE_NAME = "default"
+from antarest.core.utils.archives import ArchiveFormat
+from antarest.study.model import DEFAULT_WORKSPACE_NAME
 
 
 class LauncherType(StrEnum):
@@ -191,6 +191,7 @@ class StorageConfig:
 
     matrixstore: Path = Path("./matrixstore")
     archive_dir: Path = Path("./archives")
+    archive_format: ArchiveFormat = ArchiveFormat.ZIP
     tmp_dir: Path = Path(tempfile.gettempdir())
     workspaces: dict[str, WorkspaceConfig] = field(default_factory=dict)
     allow_deletion: bool = False
@@ -240,6 +241,9 @@ class StorageConfig:
         return cls(
             matrixstore=Path(data["matrixstore"]) if "matrixstore" in data else defaults.matrixstore,
             archive_dir=Path(data["archive_dir"]) if "archive_dir" in data else defaults.archive_dir,
+            archive_format=(
+                ArchiveFormat(data["archive_format"]) if "archive_format" in data else defaults.archive_format
+            ),
             tmp_dir=Path(data["tmp_dir"]) if "tmp_dir" in data else defaults.tmp_dir,
             workspaces=workspaces,
             allow_deletion=data.get("allow_deletion", defaults.allow_deletion),
