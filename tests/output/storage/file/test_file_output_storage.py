@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 import os
 import shutil
-import tempfile
 import zipfile
 from pathlib import Path
 from unittest.mock import Mock
@@ -501,15 +500,6 @@ def test_get_logs(output_storage: IOutputStorage, tmp_path: Path) -> None:
         log_path.unlink()
 
 
-def _extract_output_to_dir(study_zip: Path, output_path: str, target_dir: Path) -> None:
-    with tempfile.TemporaryDirectory() as tmp_dir_str:
-        tmp_dir = Path(tmp_dir_str)
-        with zipfile.ZipFile(study_zip, "r") as zf:
-            names = [n for n in zf.namelist() if n.startswith(output_path)]
-            zf.extractall(tmp_dir, members=names)
-        (tmp_dir / "STA-mini" / "output" / "20201014-1422eco-hello").rename(target_dir)
-
-
 def test_import_output_directory(output_storage: IOutputStorage, tmp_path: Path, sta_mini_zip_path: Path) -> None:
     # Set Up
     if output_storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
@@ -614,12 +604,13 @@ def test_import_output_archive_stream(
     study_dir = studies_dir / "my-study"
     study_dir.mkdir()
 
-    archive_path = tmp_path / f"import-output{archive_format}"
-    output_dir = tmp_path / "import-output"
-    _extract_output_to_dir(sta_mini_zip_path, "STA-mini/output/20201014-1422eco-hello", output_dir)
-    archive_dir(
-        src_dir_path=output_dir, target_archive_path=archive_path, remove_source_dir=True, archive_format=archive_format
-    )
+    if output_storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
+        output_path = tmp_path / "studies" / "STA-mini/output/20201014-1422eco-hello"
+        archive_path = tmp_path / f"import-output{archive_format}"
+    else:
+        print("ok")
+
+    archive_dir(output_path, archive_path, True, archive_format)
 
     # Import archive stream
     with open(archive_path, "rb") as f:
