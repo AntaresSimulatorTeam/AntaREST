@@ -14,8 +14,6 @@
 
 import z from "zod";
 import client from "../../client";
-import { studySchema } from "../schemas";
-import type { Study } from "../types";
 import { variantTreeSchema } from "./schemas";
 import type { CreateVariantParams, GetVariantTreeParams } from "./types";
 
@@ -24,24 +22,6 @@ export async function getVariantTree({ studyId, includeParents = true }: GetVari
     params: { from_root: includeParents },
   });
   return variantTreeSchema.parse(data);
-}
-
-export async function getVariantParents({ studyId }: { studyId: Study["id"] }) {
-  const { data } = await client.get(`/v1/studies/${studyId}/parents`);
-  return z.array(studySchema).parse(data);
-}
-
-export async function getVariantDirectParent({ studyId }: { studyId: Study["id"] }) {
-  const { data } = await client.get(`/v1/studies/${studyId}/parents`, {
-    params: { direct: true },
-  });
-
-  return data ? studySchema.parse(data) : null;
-}
-
-export async function getVariantLatestParent({ studyId }: { studyId: Study["id"] }) {
-  const parents = await getVariantParents({ studyId });
-  return parents.length > 0 ? parents[parents.length - 1] : null;
 }
 
 export async function createVariant({ studyId, name }: CreateVariantParams) {
