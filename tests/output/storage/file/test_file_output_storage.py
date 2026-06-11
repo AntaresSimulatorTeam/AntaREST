@@ -556,26 +556,27 @@ def test_import_output_zip_should_import_it_as_archived(
 ) -> None:
     # Checks the "optimized path" for zipped outputs, see TODOs
 
-    # Extract one of the outputs of STA-mini to a directory and zip it
-    studies_dir = tmp_path / "studies"
-
-    study_dir = studies_dir / "my-study"
-    study_dir.mkdir()
-
-    zip_path = tmp_path / "import-output.zip"
-    output_dir = tmp_path / "import-output"
-    _extract_output_to_dir(sta_mini_zip_path, "STA-mini/output/20201014-1422eco-hello", output_dir)
-    archive_dir(src_dir_path=output_dir, target_archive_path=zip_path, remove_source_dir=True)
+    # Use the `20201014-1430adq-2` output as it's already zipped
+    if output_storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
+        studies_dir = tmp_path / "studies"
+        (studies_dir / "my-study").mkdir()
+        zip_path = studies_dir / "STA-mini" / "output" / "20201014-1430adq-2.zip"
+        in_study = True
+    else:
+        outputs_dir = tmp_path / "outputs"
+        (outputs_dir / "my-study").mkdir()
+        zip_path = outputs_dir / "STA-mini" / "20201014-1430adq-2.zip"
+        in_study = False
 
     # Import zip file
     output_id = output_storage.import_output("my-study", zip_path)
 
     # Cannot hard code the expected formatted date because it depends on the locale
-    expected_date = utc_to_local("20201014-1222")
+    expected_date = utc_to_local("20201014-1230")
 
-    assert output_id == f"{expected_date}eco-hello"
+    assert output_id == f"{expected_date}adq"
     assert output_storage.list_outputs("my-study") == [
-        OutputMetadata(id=f"{expected_date}eco-hello", in_study=True, archived=True)
+        OutputMetadata(id=f"{expected_date}adq", in_study=in_study, archived=True)
     ]
 
     # Import zip file with logs and suffix
@@ -586,16 +587,16 @@ def test_import_output_zip_should_import_it_as_archived(
     output_id = output_storage.import_output(
         "my-study", zip_path, output_name_suffix="other", logs=SimulationLogs(out_logs, err_logs)
     )
-    assert output_id == f"{expected_date}eco-other"
+    assert output_id == f"{expected_date}adq-other"
     assert output_storage.list_outputs("my-study") == [
-        OutputMetadata(id=f"{expected_date}eco-hello", in_study=True, archived=True),
-        OutputMetadata(id=f"{expected_date}eco-other", in_study=True, archived=True),
+        OutputMetadata(id=f"{expected_date}adq-other", in_study=in_study, archived=True),
+        OutputMetadata(id=f"{expected_date}adq", in_study=in_study, archived=True),
     ]
 
-    output_storage.unarchive_study_output("my-study", f"{expected_date}eco-other")
+    output_storage.unarchive_study_output("my-study", f"{expected_date}adq-other")
 
-    assert output_storage.get_logs("my-study", f"{expected_date}eco-other", LogType.STDOUT) == "some log"
-    assert output_storage.get_logs("my-study", f"{expected_date}eco-other", LogType.STDERR) == "some error"
+    assert output_storage.get_logs("my-study", f"{expected_date}adq-other", LogType.STDOUT) == "some log"
+    assert output_storage.get_logs("my-study", f"{expected_date}adq-other", LogType.STDERR) == "some error"
 
 
 @pytest.mark.parametrize("archive_format", [ArchiveFormat.ZIP, ArchiveFormat.SEVEN_ZIP])
