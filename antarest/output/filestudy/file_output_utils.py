@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from antarest.core.model import JSON
+from antarest.core.serde.ini_common import DUPLICATE_KEYS
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
@@ -37,21 +38,13 @@ from antarest.output.storage.output_storage import OutputDetails, OutputStorageT
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency
 
-DUPLICATE_KEYS = [
-    "playlist_year_weight",
-    "playlist_year +",
-    "playlist_year -",
-    "select_var -",
-    "select_var +",
-]
-
 
 def parse_output_config(output_path: Path) -> JSON:
     if output_path.suffix == ".zip":
         # We need to read data from the archive
         content = read_original_file_in_archive(output_path, "about-the-study/parameters.ini")
-        return IniReader().read(io.StringIO(content.decode("utf-8")))
-    return IniReader().read(output_path / "about-the-study" / "parameters.ini")
+        return IniReader(DUPLICATE_KEYS).read(io.StringIO(content.decode("utf-8")))
+    return IniReader(DUPLICATE_KEYS).read(output_path / "about-the-study" / "parameters.ini")
 
 
 def extract_output_details(output_path: Path) -> OutputDetails:

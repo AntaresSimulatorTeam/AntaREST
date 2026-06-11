@@ -24,6 +24,7 @@ from typing import Any, cast
 from antares.study.version import StudyVersion
 
 from antarest.core.model import JSON
+from antarest.core.serde.ini_common import DUPLICATE_KEYS
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import extract_lines_from_archive, is_archive_format, read_file_from_archive
@@ -58,7 +59,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import extract_filtering
-from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
 
 logger = logging.getLogger(__name__)
 

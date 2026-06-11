@@ -12,8 +12,9 @@
 from pathlib import Path
 
 from antarest.core.model import JSON
+from antarest.core.serde.ini_common import DUPLICATE_KEYS
 from antarest.core.serde.ini_reader import IniReader
 
 
 def parse_input_config(study_path: Path) -> JSON:
-    return IniReader().read(study_path / "settings" / "generaldata.ini")
+    return IniReader(DUPLICATE_KEYS).read(study_path / "settings" / "generaldata.ini")

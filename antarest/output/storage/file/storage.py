@@ -291,7 +291,7 @@ class InStudyFileOutputStorage(IOutputStorage):
             settings = OutputSettings(
                 general=file_metadata["general"],
                 optimization=file_metadata["optimization"],
-                playlist=list((get_playlist(file_metadata) or {})),
+                playlist=list(get_playlist(file_metadata) or {}),
             )
 
             output_details = OutputDetails(

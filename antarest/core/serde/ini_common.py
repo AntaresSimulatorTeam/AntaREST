@@ -15,6 +15,15 @@ from typing import TypeAlias
 
 PrimitiveType: TypeAlias = str | int | float | bool
 
+# Declare Duplicate Keys to use when reading `generaldata.ini` files
+DUPLICATE_KEYS = [
+    "playlist_year_weight",
+    "playlist_year +",
+    "playlist_year -",
+    "select_var -",
+    "select_var +",
+]
+
 
 @dataclasses.dataclass(frozen=True)
 class OptionMatcher:
