@@ -69,8 +69,8 @@ def test_import(admin_client: TestClient, empty_study_id: str, output_zip: Path)
         files={"output": io.BytesIO(output_zip.read_bytes())},
     )
     assert res.status_code == 202, res.json()
-    output_name = res.json()
-    assert output_name == f"{EXPECTED_DATE}eco"
+    output_id = res.json()
+    assert output_id == f"{EXPECTED_DATE}eco"
 
     # Check output metadata
     res = client.get(
@@ -79,10 +79,11 @@ def test_import(admin_client: TestClient, empty_study_id: str, output_zip: Path)
     assert res.status_code == 200, res.json()
     assert len(res.json()) == 1
     assert res.json()[-1] == {
+        "id": output_id,
+        "name": output_id,
         "archived": False,
         "byYear": False,
         "mode": "Economy",
-        "name": f"{EXPECTED_DATE}eco",
         "nbYears": 1,
         "synthesis": True,
         "storageType": "V2",
@@ -336,21 +337,22 @@ def test_conversion_to_v2(admin_client: TestClient, output_zip: Path, empty_stud
         files={"output": io.BytesIO(output_zip.read_bytes())},
     )
     assert res.status_code == 202, res.json()
-    output_name = res.json()
-    assert output_name == f"{EXPECTED_DATE}eco"
+    output_id = res.json()
+    assert output_id == f"{EXPECTED_DATE}eco"
 
     res = client.post(
-        f"/v1/studies/{study_id}/output/{output_name}/_convert?storage_type=V2",
+        f"/v1/studies/{study_id}/output/{output_id}/_convert?storage_type=V2",
     )
     assert res.status_code == 200, res.json()
 
     res = client.get(f"/v1/studies/{study_id}/outputs")
     assert res.json() == [
         {
+            "id": output_id,
+            "name": output_id,
             "archived": False,
             "byYear": False,
             "mode": "Economy",
-            "name": f"{EXPECTED_DATE}eco",
             "nbYears": 1,
             "synthesis": True,
             "storageType": "V2",
@@ -359,6 +361,6 @@ def test_conversion_to_v2(admin_client: TestClient, output_zip: Path, empty_stud
 
     # Second conversion should fail
     res = client.post(
-        f"/v1/studies/{study_id}/output/{output_name}/_convert?storage_type=V2",
+        f"/v1/studies/{study_id}/output/{output_id}/_convert?storage_type=V2",
     )
     assert res.status_code == 400, res.json()
