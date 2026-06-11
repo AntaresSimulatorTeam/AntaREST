@@ -500,18 +500,18 @@ def test_get_logs(output_storage: IOutputStorage, tmp_path: Path) -> None:
         log_path.unlink()
 
 
-def test_import_output_directory(output_storage: IOutputStorage, tmp_path: Path, sta_mini_zip_path: Path) -> None:
+def test_import_output_directory(output_storage: IOutputStorage, tmp_path: Path) -> None:
     # Set Up
     if output_storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
         existing_output_dir = tmp_path / "studies" / "STA-mini" / "output" / "20201014-1422eco-hello"
         in_study = True
         (tmp_path / "studies" / "my-study").mkdir()
-        expected_output_dir = tmp_path / "studies" / "my-study" / "output" / "20201014-1422eco-hello"
+        expected_output_folder = tmp_path / "studies" / "my-study" / "output"
     else:
         existing_output_dir = tmp_path / "outputs" / "STA-mini" / "20201014-1422eco-hello"
         in_study = False
-        (tmp_path / "outputs" / "my-study").mkdir()
-        expected_output_dir = tmp_path / "outputs" / "my-study" / "20201014-1422eco-hello"
+        expected_output_folder = tmp_path / "outputs" / "my-study"
+        expected_output_folder.mkdir()
 
     # Import directory
     output_storage.import_output("my-study", existing_output_dir)
@@ -519,7 +519,7 @@ def test_import_output_directory(output_storage: IOutputStorage, tmp_path: Path,
     # Cannot hard code the expected formatted date because it depends on the locale
     expected_date = utc_to_local("20201014-1222")
 
-    assert expected_output_dir.exists()
+    assert (expected_output_folder / f"{expected_date}eco-hello").exists()
     assert output_storage.list_outputs("my-study") == [
         OutputMetadata(id=f"{expected_date}eco-hello", in_study=in_study, archived=False)
     ]
