@@ -465,7 +465,10 @@ def test_write_output_to_dir(output_storage: IOutputStorage, tmp_path: Path) -> 
 
 def test_get_logs(output_storage: IOutputStorage, tmp_path: Path) -> None:
     # Will write fake logs to underlying output dir
-    outputs_path = tmp_path / "studies" / "STA-mini" / "output"
+    if output_storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
+        outputs_path = tmp_path / "studies" / "STA-mini" / "output"
+    else:
+        outputs_path = tmp_path / "outputs" / "STA-mini"
 
     (outputs_path / "logs").mkdir()
 
