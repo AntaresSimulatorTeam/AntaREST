@@ -607,7 +607,6 @@ def test_import_output_archive_stream(
         output_path = studies_dir / "STA-mini/output/20201014-1422eco-hello"
         in_study = True
     else:
-        print("ok")
         outputs_dir = tmp_path / "outputs"
         (outputs_dir / "my-study").mkdir()
         output_path = outputs_dir / "STA-mini/20201014-1422eco-hello"
