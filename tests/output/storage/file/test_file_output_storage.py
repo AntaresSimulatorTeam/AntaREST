@@ -46,6 +46,7 @@ from antarest.output.storage.output_storage import (
     OutputSettingsOptimization,
     OutputStorageType,
 )
+from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -73,9 +74,8 @@ class SimpleFileOutputsProvider(IFileOutputsProvider):
         if not (self._studies_dir / study_id).is_dir():
             raise StudyNotFoundError(f"Studies directory {self._studies_dir} not found.")
         return FileStudyOutputs(
-            get_file_study=lambda: self._get_study(study_id),
             outputs_path=self._studies_dir / study_id / "output",
-            study_workspace="default",
+            study_workspace=DEFAULT_WORKSPACE_NAME,
         )
 
     def _get_study(self, study_id: str) -> FileStudy:
@@ -132,9 +132,7 @@ def test_file_output_storage(file_output_storage):
     with pytest.raises(StudyNotFoundError):
         file_output_storage.list_outputs("non-existent")
 
-    assert [
-        file_output_storage.get_output_details("STA-mini", o.id) for o in file_output_storage.list_outputs("STA-mini")
-    ] == [
+    assert file_output_storage.get_output_details("STA-mini") == [
         OutputDetails(
             name="20201014-1422eco-hello",
             mode=Mode.ECONOMY,
@@ -184,7 +182,7 @@ def test_file_output_storage(file_output_storage):
                     user_playlist=True,
                 ),
                 optimization=OutputSettingsOptimization(transmission_capacities=True),
-                playlist=[1, 2],
+                playlist=[1],
             ),
         ),
         OutputDetails(
@@ -294,10 +292,7 @@ def test_file_output_storage(file_output_storage):
     ]
 
     with pytest.raises(StudyNotFoundError):
-        file_output_storage.get_output_details("unknown", "20241807-1540eco-extra-outputs")
-
-    with pytest.raises(OutputNotFound):
-        file_output_storage.get_output_details("STA-mini", "absent")
+        file_output_storage.get_output_details("unknown")
 
 
 def test_output_deletion(file_output_storage: InStudyFileOutputStorage) -> None:

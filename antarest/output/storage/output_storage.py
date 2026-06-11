@@ -175,7 +175,7 @@ class IOutputStorage(ABC):
         """
 
     @abstractmethod
-    def get_output_details(self, study_id: str, output_id: str) -> OutputDetails:
+    def get_output_details(self, study_id: str) -> list[OutputDetails]:
         """
         Get the list of output for a study.
         """

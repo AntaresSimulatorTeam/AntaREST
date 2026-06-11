@@ -57,7 +57,7 @@ class TestRepairStudy:
         assert archive_task.status == TaskStatus.COMPLETED, archive_task
         assert archive_task.result is not None and archive_task.result.success
 
-        archive_path = tmp_path / "archive_dir" / f"{study_id}.7z"
+        archive_path = tmp_path / "archive_dir" / f"{study_id}.zip"
         study_path = tmp_path / "internal_workspace" / study_id
         assert archive_path.exists()
         assert not study_path.exists()

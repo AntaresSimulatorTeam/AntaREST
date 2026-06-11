@@ -26,20 +26,21 @@ interface Props {
   open: boolean;
   onClose: VoidFunction;
   onSubmit: (values: RowData) => Promise<void>;
-  groups: string[];
-  allowNewGroups: boolean;
+  groups?: string[];
+  allowNewGroups?: boolean;
   existingNames: Array<RowData["name"]>;
 }
 
 function CreateDialog({ open, onClose, onSubmit, groups, allowNewGroups, existingNames }: Props) {
   const { t } = useTranslation();
+  const hasGroups = groups !== undefined;
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ values: { name, group } }: SubmitHandlerPlus<RowData>) => {
-    return onSubmit({ name: name.trim(), group });
+    return onSubmit(hasGroups ? { name: name.trim(), group } : { name: name.trim() });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -66,23 +67,24 @@ function CreateDialog({ open, onClose, onSubmit, groups, allowNewGroups, existin
             }}
             sx={{ m: 0 }}
           />
-          {allowNewGroups ? (
-            <StringFE
-              label={t("global.group")}
-              name="group"
-              datalist={groups}
-              control={control}
-              rules={{ required: t("form.field.required") }}
-            />
-          ) : (
-            <SelectFE
-              label={t("global.group")}
-              name="group"
-              control={control}
-              options={groups}
-              rules={{ required: t("form.field.required") }}
-            />
-          )}
+          {hasGroups &&
+            (allowNewGroups ? (
+              <StringFE
+                label={t("global.group")}
+                name="group"
+                datalist={groups}
+                control={control}
+                rules={{ required: t("form.field.required") }}
+              />
+            ) : (
+              <SelectFE
+                label={t("global.group")}
+                name="group"
+                control={control}
+                options={groups}
+                rules={{ required: t("form.field.required") }}
+              />
+            ))}
         </Fieldset>
       )}
     </FormDialog>
