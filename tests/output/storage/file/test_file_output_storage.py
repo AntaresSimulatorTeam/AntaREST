@@ -599,17 +599,21 @@ def test_import_output_archive_stream(
     # Checks the "optimized path" for zipped outputs, see TODOs
 
     # Extract one of the outputs of STA-mini to a directory and zip it
-    studies_dir = tmp_path / "studies"
-
-    study_dir = studies_dir / "my-study"
-    study_dir.mkdir()
 
     if output_storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
-        output_path = tmp_path / "studies" / "STA-mini/output/20201014-1422eco-hello"
-        archive_path = tmp_path / f"import-output{archive_format}"
+        studies_dir = tmp_path / "studies"
+        study_dir = studies_dir / "my-study"
+        study_dir.mkdir()
+        output_path = studies_dir / "STA-mini/output/20201014-1422eco-hello"
+        in_study = True
     else:
         print("ok")
+        outputs_dir = tmp_path / "outputs"
+        (outputs_dir / "my-study").mkdir()
+        output_path = outputs_dir / "STA-mini/20201014-1422eco-hello"
+        in_study = False
 
+    archive_path = tmp_path / f"import-output{archive_format}"
     archive_dir(output_path, archive_path, True, archive_format)
 
     # Import archive stream
@@ -620,5 +624,5 @@ def test_import_output_archive_stream(
     expected_date = utc_to_local("20201014-1222")
 
     assert output_storage.list_outputs("my-study") == [
-        OutputMetadata(id=f"{expected_date}eco-hello", in_study=True, archived=False)
+        OutputMetadata(id=f"{expected_date}eco-hello", in_study=in_study, archived=False)
     ]
