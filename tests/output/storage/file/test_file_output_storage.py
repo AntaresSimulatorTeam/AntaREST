@@ -33,7 +33,9 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.output.storage.file.abstract_storage import FileStudyOutputs, IFileOutputsProvider
 from antarest.output.storage.file.in_study import InStudyFileOutputStorage
+from antarest.output.storage.file.outside_study import OutsideStudyFileOutputStorage
 from antarest.output.storage.output_storage import (
+    IOutputStorage,
     OutputDetails,
     OutputMetadata,
     OutputSettings,
@@ -79,45 +81,49 @@ class OutsideStudyFileOutputProvider(IFileOutputsProvider):
         return FileStudyOutputs(outputs_path=self._outputs_dir / study_id, study_workspace=DEFAULT_WORKSPACE_NAME)
 
 
-@pytest.fixture
-def in_study_file_output_storage(tmp_path: Path, sta_mini_zip_path: Path) -> InStudyFileOutputStorage:
+@pytest.fixture(params=[OutputStorageType.IN_STUDY_FILE_TREE, OutputStorageType.OUTSIDE_STUDY_FILE_TREE])
+def output_storage(request, tmp_path: Path, sta_mini_zip_path: Path) -> IOutputStorage:
     executor = Mock(spec=IRemoteExecutor)
 
     studies_dir = tmp_path / "studies"
     studies_dir.mkdir()
 
+    outputs_dir = tmp_path / "outputs"
+    outputs_dir.mkdir()
+
     with zipfile.ZipFile(sta_mini_zip_path, "r") as zf:
-        # outputs_filter = [
-        #     n
-        #     for n in zf.namelist()
-        #     if n.startswith(
-        #         "STA-mini/output/20201014-1427eco" or n.startswith("STA-mini/output/20201014-1422eco-hello")
-        #     )
-        # ]
-        # zf.extractall(studies_dir, members=outputs_filter)
         zf.extractall(studies_dir)
 
-    outputs_provider = InStudySimpleFileOutputsProvider(studies_dir)
+    if request.param == OutputStorageType.IN_STUDY_FILE_TREE:
+        klass = InStudyFileOutputStorage
+        outputs_provider = InStudySimpleFileOutputsProvider(studies_dir)
+    else:
+        klass = OutsideStudyFileOutputStorage
+        outputs_provider = OutsideStudyFileOutputProvider(outputs_dir)
+        # Move the outputs and remove the study folder
+        (studies_dir / "STA-mini" / "output").rename(outputs_dir / "STA-mini")
+        shutil.rmtree(studies_dir)
 
-    return InStudyFileOutputStorage(
-        outputs_provider=outputs_provider, cache=LocalCache(), remote_executor=executor, repository=Mock()
-    )
+    return klass(outputs_provider=outputs_provider, cache=LocalCache(), remote_executor=executor, repository=Mock())
 
 
-def test_file_output_storage(in_study_file_output_storage: InStudyFileOutputStorage) -> None:
-    assert in_study_file_output_storage.list_outputs("STA-mini") == [
-        OutputMetadata(id="20201014-1422eco-hello", in_study=True, archived=False),
-        OutputMetadata(id="20201014-1425eco-goodbye", in_study=True, archived=False),
-        OutputMetadata(id="20201014-1427eco", in_study=True, archived=False),
-        OutputMetadata(id="20201014-1430adq", in_study=True, archived=False),
-        OutputMetadata(id="20201014-1430adq-2", in_study=True, archived=True),
-        OutputMetadata(id="20241807-1540eco-extra-outputs", in_study=True, archived=False),
+def test_file_output_storage(output_storage: IOutputStorage) -> None:
+    storage_type = output_storage.storage_type
+    in_study = storage_type == OutputStorageType.IN_STUDY_FILE_TREE
+
+    assert output_storage.list_outputs("STA-mini") == [
+        OutputMetadata(id="20201014-1422eco-hello", in_study=in_study, archived=False),
+        OutputMetadata(id="20201014-1425eco-goodbye", in_study=in_study, archived=False),
+        OutputMetadata(id="20201014-1427eco", in_study=in_study, archived=False),
+        OutputMetadata(id="20201014-1430adq", in_study=in_study, archived=False),
+        OutputMetadata(id="20201014-1430adq-2", in_study=in_study, archived=True),
+        OutputMetadata(id="20241807-1540eco-extra-outputs", in_study=in_study, archived=False),
     ]
 
     with pytest.raises(StudyNotFoundError):
-        in_study_file_output_storage.list_outputs("non-existent")
+        output_storage.list_outputs("non-existent")
 
-    assert in_study_file_output_storage.get_output_details("STA-mini") == [
+    assert output_storage.get_output_details("STA-mini") == [
         OutputDetails(
             name="20201014-1422eco-hello",
             mode=Mode.ECONOMY,
@@ -125,7 +131,7 @@ def test_file_output_storage(in_study_file_output_storage: InStudyFileOutputStor
             by_year=True,
             nb_years=1,
             archived=False,
-            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
+            storage_type=storage_type,
             settings=OutputSettings(
                 general=OutputSettingsGeneral(
                     mode="Economy",
@@ -151,7 +157,7 @@ def test_file_output_storage(in_study_file_output_storage: InStudyFileOutputStor
             by_year=True,
             nb_years=2,
             archived=False,
-            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
+            storage_type=storage_type,
             settings=OutputSettings(
                 general=OutputSettingsGeneral(
                     mode="Economy",
@@ -177,7 +183,7 @@ def test_file_output_storage(in_study_file_output_storage: InStudyFileOutputStor
             by_year=False,
             nb_years=1,
             archived=False,
-            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
+            storage_type=storage_type,
             settings=OutputSettings(
                 general=OutputSettingsGeneral(
                     mode="Economy",
@@ -203,7 +209,7 @@ def test_file_output_storage(in_study_file_output_storage: InStudyFileOutputStor
             by_year=False,
             nb_years=1,
             archived=False,
-            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
+            storage_type=storage_type,
             settings=OutputSettings(
                 general=OutputSettingsGeneral(
                     mode="Adequacy",
@@ -229,7 +235,7 @@ def test_file_output_storage(in_study_file_output_storage: InStudyFileOutputStor
             by_year=False,
             nb_years=1,
             archived=True,
-            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
+            storage_type=storage_type,
             settings=OutputSettings(
                 general=OutputSettingsGeneral(
                     mode="Adequacy",
@@ -255,7 +261,7 @@ def test_file_output_storage(in_study_file_output_storage: InStudyFileOutputStor
             by_year=True,
             nb_years=1,
             archived=False,
-            storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
+            storage_type=storage_type,
             settings=OutputSettings(
                 general=OutputSettingsGeneral(
                     mode="Economy",
@@ -277,10 +283,10 @@ def test_file_output_storage(in_study_file_output_storage: InStudyFileOutputStor
     ]
 
     with pytest.raises(StudyNotFoundError):
-        in_study_file_output_storage.get_output_details("unknown")
+        output_storage.get_output_details("unknown")
 
 
-def test_output_deletion(in_study_file_output_storage: InStudyFileOutputStorage) -> None:
+def test_output_deletion(in_study_file_output_storage: IOutputStorage) -> None:
     outputs = in_study_file_output_storage.list_outputs("STA-mini")
     assert len(outputs) == 6
     assert "20201014-1427eco" in [o.id for o in outputs]
@@ -307,7 +313,7 @@ def test_output_deletion(in_study_file_output_storage: InStudyFileOutputStorage)
     assert "20201014-1422eco-hello" not in [o.id for o in outputs]
 
 
-def test_output_archival(in_study_file_output_storage: InStudyFileOutputStorage) -> None:
+def test_output_archival(in_study_file_output_storage: IOutputStorage) -> None:
     assert not in_study_file_output_storage.is_output_archived("STA-mini", "20201014-1422eco-hello")
     in_study_file_output_storage.archive_study_output("STA-mini", "20201014-1422eco-hello")
     assert in_study_file_output_storage.is_output_archived("STA-mini", "20201014-1422eco-hello")
@@ -340,7 +346,7 @@ def test_output_archival(in_study_file_output_storage: InStudyFileOutputStorage)
         in_study_file_output_storage.unarchive_study_output("STA-mini", "non-existent")
 
 
-def test_output_copy(in_study_file_output_storage: InStudyFileOutputStorage, tmp_path: Path) -> None:
+def test_output_copy(in_study_file_output_storage: IOutputStorage, tmp_path: Path) -> None:
     # Create a copy of the STA-mini study without outputs
     studies_dir = tmp_path / "studies"
     sta_mini_path = studies_dir / "STA-mini"
@@ -375,7 +381,7 @@ def test_output_copy(in_study_file_output_storage: InStudyFileOutputStorage, tmp
         in_study_file_output_storage.copy_output("STA-mini", "STA-mini-copy", "20201014-1422eco-hello")
 
 
-def test_output_exists(in_study_file_output_storage: InStudyFileOutputStorage) -> None:
+def test_output_exists(in_study_file_output_storage: IOutputStorage) -> None:
     assert in_study_file_output_storage.output_exists("STA-mini", "20201014-1427eco")
     assert not in_study_file_output_storage.output_exists("STA-mini", "non-existent")
 
@@ -396,7 +402,7 @@ def _count_files_in_zip(zip_path: Path) -> int:
         return len(zf.namelist())
 
 
-def test_export_output(in_study_file_output_storage: InStudyFileOutputStorage, tmp_path: Path) -> None:
+def test_export_output(in_study_file_output_storage: IOutputStorage, tmp_path: Path) -> None:
     # We are just checking the count of files is correct as a proxy of a full content check
     expected_count = 79
 
@@ -418,7 +424,7 @@ def test_export_output(in_study_file_output_storage: InStudyFileOutputStorage, t
         in_study_file_output_storage.export_output("STA-mini", "non-existent", zip_path)
 
 
-def test_write_output_to_dir(in_study_file_output_storage: InStudyFileOutputStorage, tmp_path: Path) -> None:
+def test_write_output_to_dir(in_study_file_output_storage: IOutputStorage, tmp_path: Path) -> None:
     # We just checking the count of files is correct as a proxy of a full content check
     expected_count = 79
 
@@ -446,7 +452,7 @@ def test_write_output_to_dir(in_study_file_output_storage: InStudyFileOutputStor
         in_study_file_output_storage.write_output_to_dir("STA-mini", "non-existent", export_path)
 
 
-def test_get_logs(in_study_file_output_storage: InStudyFileOutputStorage, tmp_path: Path) -> None:
+def test_get_logs(in_study_file_output_storage: IOutputStorage, tmp_path: Path) -> None:
     # Will write fake logs to underlying output dir
     outputs_path = tmp_path / "studies" / "STA-mini" / "output"
 
@@ -480,7 +486,7 @@ def _extract_output_to_dir(study_zip: Path, output_path: str, target_dir: Path) 
 
 
 def test_import_output_directory(
-    in_study_file_output_storage: InStudyFileOutputStorage, tmp_path: Path, sta_mini_zip_path: Path
+    in_study_file_output_storage: IOutputStorage, tmp_path: Path, sta_mini_zip_path: Path
 ) -> None:
     # Extract one of the outputs of STA-mini to a directory
     studies_dir = tmp_path / "studies"
@@ -523,7 +529,7 @@ def test_import_output_directory(
 
 
 def test_import_output_zip_should_import_it_as_archived(
-    in_study_file_output_storage: InStudyFileOutputStorage, tmp_path: Path, sta_mini_zip_path: Path
+    in_study_file_output_storage: IOutputStorage, tmp_path: Path, sta_mini_zip_path: Path
 ) -> None:
     # Checks the "optimized path" for zipped outputs, see TODOs
 
@@ -573,7 +579,7 @@ def test_import_output_zip_should_import_it_as_archived(
 
 @pytest.mark.parametrize("archive_format", [ArchiveFormat.ZIP, ArchiveFormat.SEVEN_ZIP])
 def test_import_output_archive_stream(
-    in_study_file_output_storage: InStudyFileOutputStorage,
+    in_study_file_output_storage: IOutputStorage,
     tmp_path: Path,
     sta_mini_zip_path: Path,
     archive_format: ArchiveFormat,
