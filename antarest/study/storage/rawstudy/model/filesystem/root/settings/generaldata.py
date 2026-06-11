@@ -9,20 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-
+from antarest.core.serde.ini_common import DUPLICATE_KEYS
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
-
-DUPLICATE_KEYS = [
-    "playlist_year_weight",
-    "playlist_year +",
-    "playlist_year -",
-    "select_var -",
-    "select_var +",
-]
 
 
 class GeneralData(IniFileNode):
