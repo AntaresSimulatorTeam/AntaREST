@@ -51,7 +51,8 @@ export interface OptimizationDTO {
   transmissionCapacities: TransmissionCapacities;
   thermalClustersMinStablePower: boolean;
   thermalClustersMinUdTime: boolean;
-  includeReserves: boolean;
+  // Since v10.0
+  includeReserves?: boolean;
   dayAheadReserve: boolean;
   primaryReserve: boolean;
   strategicReserve: boolean;

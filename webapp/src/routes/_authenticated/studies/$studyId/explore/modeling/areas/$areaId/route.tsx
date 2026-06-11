@@ -44,7 +44,7 @@ function AreaLayout() {
 
   // The reserves tab is only shown when reserves are enabled in the
   // optimization configuration ("includeReserves").
-  const { data: includeReserves } = usePromise(
+  const { data: showReserves } = usePromise(
     () => getOptimization({ studyId: study.id }).then((o) => o.includeReserves),
     [study.id],
   );
@@ -119,7 +119,7 @@ function AreaLayout() {
             }),
           },
           semver.gte(study.version, "10.0.0") &&
-            includeReserves && {
+            showReserves && {
               id: "reserves",
               label: t("study.modeling.reserves"),
               linkOptions: linkOptions({
