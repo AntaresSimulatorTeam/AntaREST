@@ -286,7 +286,7 @@ def test_file_output_storage(output_storage: IOutputStorage) -> None:
         output_storage.get_output_details("unknown")
 
 
-def test_output_deletion(output_storage: IOutputStorage) -> None:
+def test_output_deletion(output_storage: IOutputStorage, tmp_path: Path) -> None:
     outputs = output_storage.list_outputs("STA-mini")
     assert len(outputs) == 6
     assert "20201014-1427eco" in [o.id for o in outputs]
@@ -296,7 +296,12 @@ def test_output_deletion(output_storage: IOutputStorage) -> None:
     assert len(outputs) == 5
     assert "20201014-1427eco" not in [o.id for o in outputs]
 
-    # TODO: could add a check on the directory on disk
+    # Check that the output is deleted from the disk
+    if output_storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
+        assert not (tmp_path / "studies" / "STA-mini" / "output" / "20201014-1427eco").exists()
+    else:
+        assert not (tmp_path / "outputs" / "STA-mini" / "20201014-1427eco").exists()
+
     with pytest.raises(StudyNotFoundError):
         output_storage.delete_output("non-existent", "20201014-1427eco")
 
