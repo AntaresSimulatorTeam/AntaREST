@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 class OutputStorageType(StrEnum):
     IN_STUDY_FILE_TREE = "IN_STUDY_FILE_TREE"
     V2 = "V2"
+    OUT_OF_STUDY_FILE_TREE = "OUT_OF_STUDY_FILE_TREE"
 
 
 @dataclass(frozen=True)

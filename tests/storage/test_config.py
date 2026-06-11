@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import re
 from pathlib import Path
 from typing import Any, cast
 
@@ -16,7 +17,14 @@ import pytest
 import yaml
 from antares.study.version import SolverVersion
 
-from antarest.core.config import Config, InternalMatrixFormat, LocalConfig, SlurmConfig, StorageConfig
+from antarest.core.config import (
+    Config,
+    InternalMatrixFormat,
+    LocalConfig,
+    OutputStorageConfig,
+    SlurmConfig,
+    StorageConfig,
+)
 
 
 @pytest.fixture
@@ -212,3 +220,12 @@ def test_launcher_config_solver_versions(tmp_path: Path) -> None:
         SolverVersion.parse("9.2"),
         SolverVersion.parse("10.0"),
     ]
+
+
+def test_output_storage_config_validation_errors() -> None:
+    data = {"v2": {"enable": False}, "default_storage_type": "V2"}
+
+    with pytest.raises(
+        ValueError, match=re.escape("You cannot set v2 storage as your default storage and not enable it")
+    ):
+        OutputStorageConfig.from_dict(data)

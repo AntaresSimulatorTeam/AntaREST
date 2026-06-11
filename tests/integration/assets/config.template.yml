@@ -21,10 +21,13 @@ storage:
     storage:
       database_mode_enabled: true
   output:
-    enable: true
-    default: false
-    archive_dir: {{output_archive_dir}}
-    variables_dir: {{output_variables_dir}}
+    default_storage_type: "IN_STUDY_FILE_TREE"
+    v2:
+      enable: true
+      archive_dir: {{output_archive_dir}}
+      variables_dir: {{output_variables_dir}}
+    out_of_study:
+      storage_dir: {{output_out_of_study_storage_dir}}
 
   workspaces:
     default:
