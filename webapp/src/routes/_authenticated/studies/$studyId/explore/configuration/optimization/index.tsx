@@ -141,6 +141,13 @@ function Optimization() {
               />
             </Fieldset>
             <Fieldset legend={t("study.configuration.optimization.legend.reserve")}>
+              {semver.gte(study.version, "10.0.0") && (
+                <SwitchFE
+                  label={t("study.configuration.optimization.includeReserves")}
+                  name="includeReserves"
+                  control={control}
+                />
+              )}
               <SwitchFE
                 label={t("study.configuration.optimization.dayAheadReserve")}
                 name="dayAheadReserve"

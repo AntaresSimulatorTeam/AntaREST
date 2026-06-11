@@ -12,7 +12,16 @@
  * This file is part of the Antares project.
  */
 
-export interface RowData<T = string> {
-  name: string;
-  group?: T;
-}
+import { createFileRoute, redirect } from "@tanstack/react-router";
+
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/",
+)({
+  beforeLoad: () => {
+    throw redirect({
+      from: Route.fullPath,
+      to: "general",
+      replace: true,
+    });
+  },
+});
