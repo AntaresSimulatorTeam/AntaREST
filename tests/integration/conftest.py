@@ -57,7 +57,7 @@ def _render_config(config_path: Path, db_url: str, tmp_path: Path) -> None:
     ext_workspace_path = tmp_path / "ext_workspace"
     output_archive_dir = tmp_path / "output_archives"
     output_variables_dir = tmp_path / "output_variables"
-    output_outside_study_storage_dir = tmp_path / "all_outputs"
+    output_out_of_study_storage_dir = tmp_path / "all_outputs"
 
     for d in (matrix_dir, blob_dir, archive_dir, tmp_dir, default_workspace, ext_workspace_path):
         d.mkdir(exist_ok=True)
@@ -80,7 +80,7 @@ def _render_config(config_path: Path, db_url: str, tmp_path: Path) -> None:
                 launcher_mock=ASSETS_DIR / launcher_name,
                 output_archive_dir=str(output_archive_dir),
                 output_variables_dir=str(output_variables_dir),
-                output_outside_study_storage_dir=str(output_outside_study_storage_dir),
+                output_out_of_study_storage_dir=str(output_out_of_study_storage_dir),
             )
         )
 

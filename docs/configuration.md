@@ -383,13 +383,13 @@ It doesn't impact users as it's for internal usage only, matrices will be displa
 - **Default value:** `./output-variables`
 - **Description:** Path where the v2 output variables will be stored.
 
-### **outside_study**
+### **out_of_study**
 
 #### **storage_dir**
 
 - **Type:** Path
 - **Default value:** `./outputs`
-- **Description:** Path containing all outputs using the OutputStorageType.OUTSIDE_STUDY_FILE_TREE
+- **Description:** Path containing all outputs using the OutputStorageType.OUT_OF_STUDY_FILE_TREE
 
 ```yaml
 # example for storage settings

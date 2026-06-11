@@ -49,13 +49,13 @@ from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.output.adapters import (
+    out_of_study_outputs_provider,
     study_service_as_in_study_file_outputs_provider,
-    study_service_as_outside_study_file_outputs_provider,
     study_service_as_studies_repository,
 )
 from antarest.output.service import OutputService
 from antarest.output.storage.file.in_study import InStudyFileOutputStorage
-from antarest.output.storage.file.outside_study import OutsideStudyFileOutputStorage
+from antarest.output.storage.file.out_of_study import OutOfStudyFileOutputStorage
 from antarest.output.storage.file.repository import FileOutputRepository
 from antarest.output.storage.output_storage import IOutputStorage, OutputStorageType
 from antarest.output.storage.v2.repository import OutputV2Repository
@@ -191,16 +191,16 @@ def build_tablemode_service() -> TableModeService:
 
 
 def build_output_storage_list(
-    config: Config, in_study_storage: InStudyFileOutputStorage, outside_study_storage: OutsideStudyFileOutputStorage
+    config: Config, in_study_storage: InStudyFileOutputStorage, out_of_study_storage: OutOfStudyFileOutputStorage
 ) -> list[IOutputStorage]:
     """The first element of the returned list will be used when importing simulation results from the HPC"""
     default_storage_type = config.storage.output.default_storage_type
     output_v2_storage_config = config.storage.output.v2
     if not output_v2_storage_config.enable:
         if default_storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
-            return [in_study_storage, outside_study_storage]
+            return [in_study_storage, out_of_study_storage]
         else:
-            return [outside_study_storage, in_study_storage]
+            return [out_of_study_storage, in_study_storage]
 
     # Build the v2 Storage
     tmp_dir = config.storage.tmp_dir / "outputs"
@@ -213,11 +213,11 @@ def build_output_storage_list(
     )
 
     if default_storage_type == OutputStorageType.V2:
-        return [v2_storage, in_study_storage, outside_study_storage]
+        return [v2_storage, in_study_storage, out_of_study_storage]
     elif default_storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
-        return [in_study_storage, v2_storage, outside_study_storage]
+        return [in_study_storage, v2_storage, out_of_study_storage]
     else:
-        return [outside_study_storage, in_study_storage, v2_storage]
+        return [out_of_study_storage, in_study_storage, v2_storage]
 
 
 def build_output_service(
@@ -238,14 +238,14 @@ def build_output_service(
         repository=repository,
     )
 
-    outside_study_file_output_storage = OutsideStudyFileOutputStorage(
-        outputs_provider=study_service_as_outside_study_file_outputs_provider(config),
+    out_of_study_file_output_storage = OutOfStudyFileOutputStorage(
+        outputs_provider=out_of_study_outputs_provider(config),
         cache=cache,
         remote_executor=remote_executor,
         repository=repository,
     )
 
-    storages = build_output_storage_list(config, in_study_file_output_storage, outside_study_file_output_storage)
+    storages = build_output_storage_list(config, in_study_file_output_storage, out_of_study_file_output_storage)
 
     output_service = OutputService(
         studies_repository=study_service_as_studies_repository(study_service),

@@ -167,7 +167,7 @@ class V2OutputStorageConfig:
 
 
 @dataclass(frozen=True)
-class OutsideStudyFileOutputStorageConfig:
+class OutOfStudyFileOutputStorageConfig:
     """
     Configuration for output storage in a single dir for all studies
     """
@@ -175,11 +175,11 @@ class OutsideStudyFileOutputStorageConfig:
     storage_dir: Path = Path("./outputs")
 
     @classmethod
-    def from_dict(cls, data: JSON) -> "OutsideStudyFileOutputStorageConfig":
+    def from_dict(cls, data: JSON) -> "OutOfStudyFileOutputStorageConfig":
         defaults = cls()
         storage_dir = Path(data.get("storage_dir", str(defaults.storage_dir)))
         storage_dir.mkdir(parents=True, exist_ok=True)
-        return OutsideStudyFileOutputStorageConfig(storage_dir=storage_dir)
+        return OutOfStudyFileOutputStorageConfig(storage_dir=storage_dir)
 
 
 @dataclass(frozen=True)
@@ -187,7 +187,7 @@ class OutputStorageConfig:
     """Configuration for output storage"""
 
     v2: V2OutputStorageConfig = V2OutputStorageConfig()
-    outside_study: OutsideStudyFileOutputStorageConfig = OutsideStudyFileOutputStorageConfig()
+    out_of_study: OutOfStudyFileOutputStorageConfig = OutOfStudyFileOutputStorageConfig()
 
     default_storage_type: OutputStorageType = OutputStorageType.IN_STUDY_FILE_TREE
 
@@ -196,7 +196,7 @@ class OutputStorageConfig:
         defaults = cls()
         config = cls(
             v2=V2OutputStorageConfig.from_dict(data.get("v2", {})),
-            outside_study=OutsideStudyFileOutputStorageConfig.from_dict(data.get("outside_study", {})),
+            out_of_study=OutOfStudyFileOutputStorageConfig.from_dict(data.get("out_of_study", {})),
             default_storage_type=OutputStorageType(data.get("default_storage_type", defaults.default_storage_type)),
         )
         if config.default_storage_type == OutputStorageType.V2 and not config.v2.enable:

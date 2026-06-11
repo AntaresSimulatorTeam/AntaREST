@@ -26,8 +26,8 @@ storage:
       enable: true
       archive_dir: {{output_archive_dir}}
       variables_dir: {{output_variables_dir}}
-    outside_study:
-      storage_dir: {{output_outside_study_storage_dir}}
+    out_of_study:
+      storage_dir: {{output_out_of_study_storage_dir}}
 
   workspaces:
     default:

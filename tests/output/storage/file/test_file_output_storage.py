@@ -32,7 +32,7 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.output.storage.file.abstract_storage import FileStudyOutputs, IFileOutputsProvider
 from antarest.output.storage.file.in_study import InStudyFileOutputStorage
-from antarest.output.storage.file.outside_study import OutsideStudyFileOutputStorage
+from antarest.output.storage.file.out_of_study import OutOfStudyFileOutputStorage
 from antarest.output.storage.output_storage import (
     IOutputStorage,
     OutputDetails,
@@ -69,7 +69,7 @@ class InStudySimpleFileOutputsProvider(IFileOutputsProvider):
         )
 
 
-class OutsideStudyFileOutputProvider(IFileOutputsProvider):
+class OutOfStudyFileOutputProvider(IFileOutputsProvider):
     def __init__(self, outputs_dir: Path):
         self._outputs_dir = outputs_dir
 
@@ -80,7 +80,7 @@ class OutsideStudyFileOutputProvider(IFileOutputsProvider):
         return FileStudyOutputs(outputs_path=self._outputs_dir / study_id, study_workspace=DEFAULT_WORKSPACE_NAME)
 
 
-@pytest.fixture(params=[OutputStorageType.IN_STUDY_FILE_TREE, OutputStorageType.OUTSIDE_STUDY_FILE_TREE])
+@pytest.fixture(params=[OutputStorageType.IN_STUDY_FILE_TREE, OutputStorageType.OUT_OF_STUDY_FILE_TREE])
 def output_storage(request, tmp_path: Path, sta_mini_zip_path: Path) -> IOutputStorage:
     executor = Mock(spec=IRemoteExecutor)
 
@@ -97,8 +97,8 @@ def output_storage(request, tmp_path: Path, sta_mini_zip_path: Path) -> IOutputS
         klass = InStudyFileOutputStorage
         outputs_provider = InStudySimpleFileOutputsProvider(studies_dir)
     else:
-        klass = OutsideStudyFileOutputStorage
-        outputs_provider = OutsideStudyFileOutputProvider(outputs_dir)
+        klass = OutOfStudyFileOutputStorage
+        outputs_provider = OutOfStudyFileOutputProvider(outputs_dir)
         # Move the outputs and remove the study folder
         (studies_dir / "STA-mini" / "output").rename(outputs_dir / "STA-mini")
         shutil.rmtree(studies_dir)

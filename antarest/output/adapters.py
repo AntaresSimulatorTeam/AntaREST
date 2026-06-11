@@ -43,12 +43,12 @@ def study_service_as_in_study_file_outputs_provider(study_service: StudyService)
     return StudyServiceAdapter()
 
 
-def study_service_as_outside_study_file_outputs_provider(config: Config) -> IFileOutputsProvider:
+def out_of_study_outputs_provider(config: Config) -> IFileOutputsProvider:
     class StudyServiceAdapter(IFileOutputsProvider):
         @override
         def get_outputs(self, study_id: str) -> FileStudyOutputs:
             return FileStudyOutputs(
-                outputs_path=config.storage.output.outside_study.storage_dir / study_id,
+                outputs_path=config.storage.output.out_of_study.storage_dir / study_id,
                 study_workspace=DEFAULT_WORKSPACE_NAME,  # The app manages all outputs directly
             )
 

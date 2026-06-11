@@ -386,7 +386,7 @@ class OutputService:
         if storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
             if self._studies_repository.get_study_metadata(uuid).storage_mode == StorageMode.DATABASE:
                 # For DB studies, the study.path does not exist; we want to store the outputs externally
-                storage = self._get_storage(OutputStorageType.OUTSIDE_STUDY_FILE_TREE)
+                storage = self._get_storage(OutputStorageType.OUT_OF_STUDY_FILE_TREE)
 
         output_id = storage.import_output(uuid, output, output_name_suffix, logs)
 

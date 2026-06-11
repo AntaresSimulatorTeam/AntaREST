@@ -18,7 +18,7 @@ from antarest.output.storage.file.repository import FileOutputRepository
 from antarest.output.storage.output_storage import OutputStorageType
 
 
-class OutsideStudyFileOutputStorage(AbstractFileOutputStorage):
+class OutOfStudyFileOutputStorage(AbstractFileOutputStorage):
     """
     Implementation based on outputs stored in antares-solver file format.
     Outputs will be stored outside studies, in separated folders named after their studies all in the same parent dir.
@@ -31,11 +31,9 @@ class OutsideStudyFileOutputStorage(AbstractFileOutputStorage):
         remote_executor: IRemoteExecutor,
         repository: FileOutputRepository,
     ) -> None:
-        super().__init__(
-            outputs_provider, cache, remote_executor, repository, OutputStorageType.OUTSIDE_STUDY_FILE_TREE
-        )
+        super().__init__(outputs_provider, cache, remote_executor, repository, OutputStorageType.OUT_OF_STUDY_FILE_TREE)
 
     @override
     @property
     def storage_type(self) -> OutputStorageType:
-        return OutputStorageType.OUTSIDE_STUDY_FILE_TREE
+        return OutputStorageType.OUT_OF_STUDY_FILE_TREE
