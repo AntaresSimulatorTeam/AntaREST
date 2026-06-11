@@ -14,10 +14,10 @@
 
 import TabsView from "@/components/page/TabsView";
 import ViewWrapper from "@/components/page/ViewWrapper";
-import usePromise from "@/hooks/usePromise";
+// import usePromise from "@/hooks/usePromise";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudySynthesis } from "@/redux/selectors";
-import { getOptimization } from "@/services/api/studies/config/optimization";
+// import { getOptimization } from "@/services/api/studies/config/optimization";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import useArea from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/-hooks/useArea";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
@@ -44,10 +44,10 @@ function AreaLayout() {
 
   // The reserves tab is only shown when reserves are enabled in the
   // optimization configuration ("includeReserves").
-  const { data: showReserves } = usePromise(
-    () => getOptimization({ studyId: study.id }).then((o) => o.includeReserves),
-    [study.id],
-  );
+  // const { data: showReserves } = usePromise(
+  //   () => getOptimization({ studyId: study.id }).then((o) => o.includeReserves),
+  //   [study.id],
+  // );
 
   return (
     <ViewWrapper>
@@ -118,15 +118,16 @@ function AreaLayout() {
               params,
             }),
           },
-          semver.gte(study.version, "10.0.0") &&
-            showReserves && {
-              id: "reserves",
-              label: t("study.modeling.reserves"),
-              linkOptions: linkOptions({
-                to: "/studies/$studyId/explore/modeling/areas/$areaId/reserves",
-                params,
-              }),
-            },
+          // semver.gte(study.version, "10.0.0") &&
+          //   showReserves && {
+          {
+            id: "reserves",
+            label: t("study.modeling.reserves"),
+            linkOptions: linkOptions({
+              to: "/studies/$studyId/explore/modeling/areas/$areaId/reserves",
+              params,
+            }),
+          },
           {
             id: "miscGen",
             label: t("study.modeling.miscGen"),

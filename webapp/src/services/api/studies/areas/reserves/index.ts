@@ -13,6 +13,7 @@
  */
 
 import client from "@/services/api/client";
+import * as mocks from "./mocks";
 import {
   createReserveParamsSchema,
   reserveGlobalParametersSchema,
@@ -32,6 +33,11 @@ import type {
   UpdateReserveParams,
 } from "./types";
 
+// TODO: Remove when the v10 backend reserves endpoints are available.
+// When enabled, all functions below use an in-memory fake API (see ./mocks.ts)
+// instead of calling the backend.
+const USE_MOCKS = true;
+
 /**
  * GET /v1/studies/{studyId}/areas/{areaId}/reserves - Lists all reserves of an area.
  *
@@ -40,6 +46,10 @@ import type {
  * @throws If the response doesn't match the expected schema.
  */
 export async function getReserves(params: ReservesAreaParams): Promise<Reserve[]> {
+  if (USE_MOCKS) {
+    return mocks.getReserves(params);
+  }
+
   const { studyId, areaId } = params;
   const res = await client.get(`/v1/studies/${studyId}/areas/${areaId}/reserves`);
   return reservesSchema.parse(res.data);
@@ -53,6 +63,10 @@ export async function getReserves(params: ReservesAreaParams): Promise<Reserve[]
  * @throws If the response doesn't match the expected schema.
  */
 export async function getReserve(params: GetReserveParams): Promise<Reserve> {
+  if (USE_MOCKS) {
+    return mocks.getReserve(params);
+  }
+
   const { studyId, areaId, reserveId } = params;
   const res = await client.get(`/v1/studies/${studyId}/areas/${areaId}/reserves/${reserveId}`);
   return reserveSchema.parse(res.data);
@@ -66,6 +80,10 @@ export async function getReserve(params: GetReserveParams): Promise<Reserve> {
  * @throws If the params or response doesn't match the expected schema.
  */
 export async function createReserve(params: CreateReserveParams): Promise<Reserve> {
+  if (USE_MOCKS) {
+    return mocks.createReserve(params);
+  }
+
   const { studyId, areaId, data } = params;
   const body = createReserveParamsSchema.parse(data);
   const res = await client.post(`/v1/studies/${studyId}/areas/${areaId}/reserves`, body);
@@ -80,6 +98,10 @@ export async function createReserve(params: CreateReserveParams): Promise<Reserv
  * @throws If the params or response doesn't match the expected schema.
  */
 export async function updateReserve(params: UpdateReserveParams): Promise<Reserve> {
+  if (USE_MOCKS) {
+    return mocks.updateReserve(params);
+  }
+
   const { studyId, areaId, reserveId, data } = params;
   const body = updateReserveParamsSchema.parse(data);
   const res = await client.patch(
@@ -95,6 +117,11 @@ export async function updateReserve(params: UpdateReserveParams): Promise<Reserv
  * @param params - Identifiers and the list of reserve IDs to delete.
  */
 export async function deleteReserves(params: DeleteReservesParams) {
+  if (USE_MOCKS) {
+    await mocks.deleteReserves(params);
+    return;
+  }
+
   const { studyId, areaId, reserveIds } = params;
   await client.delete(`/v1/studies/${studyId}/areas/${areaId}/reserves`, {
     data: reserveIds,
@@ -112,6 +139,10 @@ export async function deleteReserves(params: DeleteReservesParams) {
 export async function getReserveGlobalParameters(
   params: ReservesAreaParams,
 ): Promise<ReserveGlobalParameters> {
+  if (USE_MOCKS) {
+    return mocks.getReserveGlobalParameters(params);
+  }
+
   const { studyId, areaId } = params;
   const res = await client.get(`/v1/studies/${studyId}/areas/${areaId}/reserves/global-parameters`);
   return reserveGlobalParametersSchema.parse(res.data);
@@ -128,6 +159,10 @@ export async function getReserveGlobalParameters(
 export async function updateReserveGlobalParameters(
   params: UpdateReserveGlobalParametersParams,
 ): Promise<ReserveGlobalParameters> {
+  if (USE_MOCKS) {
+    return mocks.updateReserveGlobalParameters(params);
+  }
+
   const { studyId, areaId, data } = params;
   const body = updateReserveGlobalParametersSchema.parse(data);
   const res = await client.put(
