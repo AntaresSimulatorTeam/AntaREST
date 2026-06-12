@@ -151,9 +151,10 @@ class FileStudyStorage(IStudyStorage):
             (study_dir / "output").mkdir(parents=True)
             outputs_path.rename(study_dir / "output")
 
-        # Modify the study
-        self.update_from_raw_metadata(study)
-        self.normalize_study(study)
+        # As we don't know yet how outputs will be handled, we don't want to fill the cache with wrong data
+        file_study = self._get_file_study(Path(study.path), is_managed(study), use_cache=False)
+        update_study_from_raw_metadata(study, file_study)
+        self.normalize_file_study(file_study)
 
     def update_from_raw_metadata(self, study: Study) -> None:
         """
@@ -180,8 +181,8 @@ class FileStudyStorage(IStudyStorage):
             logger.error("Failed to update study %s name and version from raw metadata!", str(study.path), exc_info=e)
             return False
 
-    def _get_file_study(self, study_path: Path, managed: bool, study_id: str = "") -> FileStudy:
-        return self._study_factory.create_from_fs(study_path, managed, study_id=study_id)
+    def _get_file_study(self, study_path: Path, managed: bool, study_id: str = "", use_cache: bool = True) -> FileStudy:
+        return self._study_factory.create_from_fs(study_path, managed, study_id=study_id, use_cache=use_cache)
 
     def denormalize_study(self, study: Study) -> None:
         file_study = self._get_file_study(Path(study.path), is_managed(study), study.id)
