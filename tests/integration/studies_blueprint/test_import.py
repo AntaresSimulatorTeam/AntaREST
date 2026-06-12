@@ -251,6 +251,13 @@ def test_import_with_both_storage_modes(client: TestClient, user_access_token: s
 
     create_minimal_study(client, study_id)
 
+    # Imports an output inside the study
+    output_path_seven_zip = ASSETS_DIR / "output_adq.7z"
+    client.post(f"/v1/studies/{study_id}/output", files={"output": io.BytesIO(output_path_seven_zip.read_bytes())})
+    # Ensures the output has been successfully imported
+    res = client.get(f"/v1/studies/{study_id}/outputs")
+    assert len(res.json()) == 1
+
     # Zip the study directory manually
     study_path = tmp_path / "internal_workspace" / study_id
     archive_path = tmp_path / f"{study_name}.zip"
@@ -268,3 +275,7 @@ def test_import_with_both_storage_modes(client: TestClient, user_access_token: s
 
         # Ensures the data was imported correctly
         check_minimal_study_integrity(client, imported_study_id)
+
+        # Checks the output that was inside the zip was also imported
+        res_outputs = client.get(f"/v1/studies/{imported_study_id}/outputs")
+        assert len(res_outputs.json()) == 1

@@ -13,7 +13,7 @@ import logging
 import shutil
 import uuid
 from pathlib import Path
-from typing import BinaryIO, Iterator
+from typing import Iterator
 
 from antares.study.version import StudyVersion
 from sqlalchemy import delete, select
@@ -197,14 +197,19 @@ class DatabaseStudyStorage(IStudyStorage):
 
     @override
     def unarchive(self, study: RawStudy, archive_path: Path) -> None:
+        dst_path = self._config.storage.tmp_dir / str(uuid.uuid4())
         try:
-            self._extract_study(study, archive_path, create_study_in_db=False)
+            extract_data_to_dir(dst_path, archive_path, self._config.storage.tmp_dir)
+            self._extract_study(study, dst_path, create_study_in_db=False)
         except Exception as e:
             logger.error(f"Failed to unarchive study {study.id}", exc_info=e)
             # Clean up the database
             db.session.rollback()
             self.remove_study_data(study)
             raise e
+        finally:
+            # Clean up the temporary directory
+            shutil.rmtree(dst_path, ignore_errors=True)
 
     @override
     def export_study(self, study: Study, dst_path: Path) -> None:
@@ -250,9 +255,9 @@ class DatabaseStudyStorage(IStudyStorage):
         pass
 
     @override
-    def import_study(self, study: RawStudy, stream: BinaryIO) -> None:
+    def import_study(self, study: RawStudy, study_dir: Path) -> None:
         try:
-            self._extract_study(study, stream, create_study_in_db=True)
+            self._extract_study(study, study_dir, create_study_in_db=True)
 
         except Exception as e:
             logger.error(f"Failed to import study {study.path}", exc_info=e)
@@ -261,35 +266,26 @@ class DatabaseStudyStorage(IStudyStorage):
             self._repository.delete(study.id)
             raise e
 
-    def _extract_study(self, study: RawStudy, source: Path | BinaryIO, create_study_in_db: bool) -> None:
-        dst_path = self._config.storage.tmp_dir / str(uuid.uuid4())
+    def _extract_study(self, study: RawStudy, study_dir: Path, create_study_in_db: bool) -> None:
+        # Build the FS DAO from the extracted data
+        source_dao = self._fs_dao_factory.get_dao_from_path(study_dir, study_id=study.id, is_study_managed=True)
 
-        try:
-            # First, extract the source inside a temporary directory
-            extract_data_to_dir(dst_path, source, self._config.storage.tmp_dir)
+        if create_study_in_db:
+            # Update the `Study` object based on the FS DAO
+            update_study_from_raw_metadata(study, source_dao.get_file_study())
 
-            # Build the FS DAO from the extracted data
-            source_dao = self._fs_dao_factory.get_dao_from_path(dst_path, study_id=study.id, is_study_managed=True)
+            # Create the new study inside DB to avoid ForeignKey and StudyNotFound errors
+            self._repository.save(study)
 
-            if create_study_in_db:
-                # Update the `Study` object based on the FS DAO
-                update_study_from_raw_metadata(study, source_dao.get_file_study())
+        # Build the DB DAO
+        metadata = StudyMetadataCreation(id=study.id, version=source_dao.get_version(), managed=True)
+        new_dao = self._db_dao_factory.create_study_dao(metadata)
 
-                # Create the new study inside DB to avoid ForeignKey and StudyNotFound errors
-                self._repository.save(study)
-
-            # Build the DB DAO
-            metadata = StudyMetadataCreation(id=study.id, version=source_dao.get_version(), managed=True)
-            new_dao = self._db_dao_factory.create_study_dao(metadata)
-
-            # Convert the FS DAO into a DB one
-            converter = StudyConverter(
-                source_dao=source_dao,
-                new_dao=new_dao,
-                study_version=source_dao.get_version(),
-                matrix_service=self._matrix_service,
-            )
-            converter.convert_study_inputs()
-
-        finally:
-            shutil.rmtree(dst_path, ignore_errors=True)
+        # Convert the FS DAO into a DB one
+        converter = StudyConverter(
+            source_dao=source_dao,
+            new_dao=new_dao,
+            study_version=source_dao.get_version(),
+            matrix_service=self._matrix_service,
+        )
+        converter.convert_study_inputs()

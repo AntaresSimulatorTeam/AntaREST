@@ -186,6 +186,11 @@ class V2OutputStorage(IOutputStorage):
         return OutputStorageType.V2
 
     @override
+    def import_outputs(self, study_id: str, src_outputs_dir: Path) -> None:
+        for output in src_outputs_dir.iterdir():
+            self.import_output(study_id, output)
+
+    @override
     def import_output(
         self,
         study_id: str,

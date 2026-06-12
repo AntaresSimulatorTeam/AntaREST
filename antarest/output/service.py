@@ -244,7 +244,7 @@ class OutputService:
                 return storage
         raise OutputNotFound(output_id)
 
-    def _get_storage(self, storage_type: OutputStorageType | None) -> IOutputStorage:
+    def _get_storage_based_on_type(self, storage_type: OutputStorageType | None) -> IOutputStorage:
         """
         Returns the storage for the specified type, or the first one (which is then the default one).
         """
@@ -355,6 +355,25 @@ class OutputService:
             res.extend(storage.get_output_details(study_id))
         return res
 
+    def import_outputs(self, outputs_dir: Path, uuid: str) -> None:
+        """Used when importing a study which contains outputs"""
+        if not outputs_dir.exists():
+            return
+
+        storage = self._get_storage(uuid)
+
+        storage.import_outputs(uuid, outputs_dir)
+
+    def _get_storage(self, study_id: str, storage_type: OutputStorageType | None = None) -> IOutputStorage:
+        storage = self._get_storage_based_on_type(storage_type)
+
+        if storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
+            if self._studies_repository.get_study_metadata(study_id).storage_mode == StorageMode.DATABASE:
+                # For DB studies, the study.path does not exist; we want to store the outputs externally
+                storage = self._get_storage_based_on_type(OutputStorageType.OUT_OF_STUDY_FILE_TREE)
+
+        return storage
+
     def import_output(
         self,
         uuid: str,
@@ -381,12 +400,7 @@ class OutputService:
         logger.info(f"Importing new output for study {uuid}")
         self._studies_repository.assert_permission(uuid, StudyPermissionType.RUN)
 
-        storage = self._get_storage(storage_type)
-
-        if storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
-            if self._studies_repository.get_study_metadata(uuid).storage_mode == StorageMode.DATABASE:
-                # For DB studies, the study.path does not exist; we want to store the outputs externally
-                storage = self._get_storage(OutputStorageType.OUT_OF_STUDY_FILE_TREE)
+        storage = self._get_storage(uuid, storage_type)
 
         output_id = storage.import_output(uuid, output, output_name_suffix, logs)
 

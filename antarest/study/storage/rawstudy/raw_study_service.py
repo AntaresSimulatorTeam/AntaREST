@@ -12,7 +12,6 @@
 import logging
 import shutil
 from pathlib import Path
-from typing import BinaryIO
 
 from antares.study.version import StudyVersion
 from markupsafe import escape
@@ -174,13 +173,13 @@ class RawStudyService(AbstractStudyService):
     def update_name_and_version_from_raw_meta(self, study: RawStudy) -> bool:
         return self._file_study_storage.update_name_and_version_from_raw_meta(study)
 
-    def import_study(self, study: RawStudy, stream: BinaryIO) -> RawStudy:
+    def import_study(self, study: RawStudy, study_dir: Path) -> RawStudy:
         """
         Import study in the directory of the study.
 
         Args:
             study: study information.
-            stream: binary content of the study compressed in ZIP or 7z format.
+            study_dir: Temporary folder containing the study unarchived
 
         Returns:
             Updated study information.
@@ -188,7 +187,7 @@ class RawStudyService(AbstractStudyService):
         Raises:
             BadArchiveContent: If the archive is corrupted or in an unknown format.
         """
-        self._storage_mapping[study.storage_mode].import_study(study, stream)
+        self._storage_mapping[study.storage_mode].import_study(study, study_dir)
         return study
 
     def denormalize_study(self, study: Study) -> None:

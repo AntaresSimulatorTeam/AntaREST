@@ -211,6 +211,13 @@ class AbstractFileOutputStorage(IOutputStorage):
         self._in_study = storage_type == OutputStorageType.IN_STUDY_FILE_TREE
 
     @override
+    def import_outputs(self, study_id: str, src_outputs_dir: Path) -> None:
+        outputs_path = self._outputs_provider.get_outputs(study_id).outputs_path
+        outputs_path.mkdir()
+        for output in src_outputs_dir.iterdir():
+            output.rename(_output_path(outputs_path, output.name))
+
+    @override
     def import_output(
         self,
         study_id: str,
