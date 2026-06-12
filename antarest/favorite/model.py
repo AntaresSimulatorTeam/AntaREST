@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import logging
-from pathlib import PosixPath, PurePosixPath
+from pathlib import PurePosixPath
 
 from pydantic.alias_generators import to_camel
 from sqlalchemy import ForeignKey, Integer, String
