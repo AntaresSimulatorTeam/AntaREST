@@ -31,6 +31,7 @@ from antarest.favorite.repository import (
 )
 from antarest.login.utils import get_user_impersonator
 from antarest.study.directory_exceptions import DirectoryNotFoundError
+from antarest.study.storage.utils import is_folder_safe
 
 
 class FavoriteStudyService:
@@ -131,17 +132,24 @@ class FavoriteExternalDirectoryService:
     def __init__(
         self, favorite_external_directory_repository: FavoriteExternalDirectoryRepository, workspace_config: Config
     ):
-        self._favorite_external_directory_repository = favorite_external_directory_repository
+        self.favorite_external_directory_repository = favorite_external_directory_repository
         self.workspaces = workspace_config.storage.workspaces
 
     def add_favorite(self, directory_path: str, workspace: str) -> FavoriteExternalDirectoryDTO:
 
         if workspace in self.workspaces.keys():
+            if not is_folder_safe(self.workspaces[workspace], directory_path):
+                raise HTTPException(
+                    status_code=http.HTTPStatus.BAD_REQUEST,
+                    detail=f"Directory {directory_path} is not safe",
+                )
+
+            relative_path = Path.relative_to(Path(directory_path), self.workspaces[workspace].path / workspace)
             if (Path(self.workspaces[workspace].path) / directory_path).exists():
                 favorite_external_directory = FavoriteExternalDirectory(
-                    path=directory_path, workspace=workspace, user_id=get_user_impersonator()
+                    path=str(relative_path), workspace=workspace, user_id=get_user_impersonator()
                 )
-                dto = self._favorite_external_directory_repository.save(favorite_external_directory).to_dto()
+                dto = self.favorite_external_directory_repository.save(favorite_external_directory).to_dto()
                 return dto
             else:
                 raise DirectoryNotFoundError(f"{directory_path}")
@@ -149,15 +157,22 @@ class FavoriteExternalDirectoryService:
             raise WorkspaceNotFound(f"Workspace {workspace} not found")
 
     def list_favorites(self) -> list[FavoriteExternalDirectoryDTO]:
-        favorite_dtos = [favorite.to_dto() for favorite in self._favorite_external_directory_repository.get_all()]
+        favorite_dtos = [favorite.to_dto() for favorite in self.favorite_external_directory_repository.get_all()]
         favorite_dtos = sorted(favorite_dtos, key=lambda favorite: favorite.path)
         return favorite_dtos
 
     def delete_favorite(self, workspace: str, path: str) -> None:
-        favorite_external_directory = self._favorite_external_directory_repository.get(workspace=workspace, path=path)
-        if favorite_external_directory:
-            self._favorite_external_directory_repository.delete(workspace=workspace, path=path)
-        else:
+        """
+        Delete a favorite external directory from the current user list of favorites
+        Args:
+            workspace:
+            path:
+
+        Returns:
+
+        """
+        deleted_result = self.favorite_external_directory_repository.delete(workspace=workspace, path=path)
+        if not deleted_result:
             raise HTTPException(
                 status_code=http.HTTPStatus.NOT_FOUND,
                 detail=f"Favorite external directory with path {path} and workspace {workspace} not found",

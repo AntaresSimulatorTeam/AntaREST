@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from sqlalchemy import delete, select
+from sqlalchemy import CursorResult, delete, select
 from sqlalchemy.orm import Session, joinedload
 
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -161,18 +161,7 @@ class FavoriteExternalDirectoryRepository:
         result = self.session.execute(stmt)
         return list(result.scalars().all())
 
-    def get(self, workspace: str, path: str) -> FavoriteExternalDirectory | None:
-        stmt = (
-            select(FavoriteExternalDirectory)
-            .where(FavoriteExternalDirectory.user_id == get_user_impersonator())
-            .where(FavoriteExternalDirectory.workspace == workspace)
-            .where(FavoriteExternalDirectory.path == path)
-        )
-        result = self.session.execute(stmt)
-
-        return result.unique().scalar()
-
-    def delete(self, workspace: str, path: str) -> None:
+    def delete(self, workspace: str, path: str) -> bool:
         session = self.session
         stmt = (
             delete(FavoriteExternalDirectory)
@@ -180,5 +169,7 @@ class FavoriteExternalDirectoryRepository:
             .where(FavoriteExternalDirectory.workspace == workspace)
             .where(FavoriteExternalDirectory.path == path)
         )
-        session.execute(stmt)
+        result = session.execute(stmt)
+        assert isinstance(result, CursorResult)
         session.commit()
+        return result.rowcount > 0

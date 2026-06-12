@@ -28,14 +28,16 @@ from antarest.study.directory_exceptions import DirectoryNotFoundError
 
 def test_add_favorite_external_directory_failure_when_path_does_not_exist(tmp_path: Path):
     # Trying to add an external directory whose path doesn't exist to the favorites
-    config = Config(storage=StorageConfig())
-    config.storage.workspaces.update({"validspace": WorkspaceConfig()})
-    mock_path = "notapath/to/favorite/directory"
     workspace = "validspace"
+    config = Config(storage=StorageConfig(tmp_dir=tmp_path))
+    config.storage.workspaces.update({workspace: WorkspaceConfig(path=tmp_path)})
+    path_to_favorite = PosixPath(tmp_path) / workspace
+    path_to_favorite.mkdir(parents=True, exist_ok=True)
+    mock_path = path_to_favorite / "notapath" / "to" / "favorite" / "directory"
     mock_favorite_external_directory_repository = Mock(spec=FavoriteExternalDirectoryRepository)
 
     mock_favorite_external_directory_repository.save.return_value = FavoriteExternalDirectory(
-        path=mock_path, workspace=workspace
+        path=str(path_to_favorite), workspace=workspace
     )
     favorite_service = FavoriteExternalDirectoryService(
         mock_favorite_external_directory_repository, workspace_config=config
@@ -43,7 +45,7 @@ def test_add_favorite_external_directory_failure_when_path_does_not_exist(tmp_pa
 
     with current_user_context(DEFAULT_ADMIN_USER):
         with pytest.raises(DirectoryNotFoundError, match=f"404: Directory '{mock_path}' not found"):
-            favorite_service.add_favorite(mock_path, workspace)
+            favorite_service.add_favorite(str(mock_path), workspace)
 
 
 def test_add_favorite_external_directory_failure_when_workspace_does_not_exist(tmp_path: Path):
@@ -103,12 +105,12 @@ def test_list_favorite_external_directory_success_returns_two_favorites(tmp_path
 def test_add_favorite_external_directory_success_added_one_favorite(tmp_path: Path):
     # adding an external directory to the favorites, and then checking that the favorite is added
     config = Config(storage=StorageConfig(tmp_dir=tmp_path))
-    config.storage.workspaces.update({"validspace": WorkspaceConfig(path=tmp_path / "validspace")})
+    config.storage.workspaces.update({"validspace": WorkspaceConfig(path=tmp_path)})
     expected_favorite_dto = FavoriteExternalDirectoryDTO(
         path=PosixPath("path/to/favorite/directory"), workspace="validspace"
     )
     expected_fav_directory = FavoriteExternalDirectory(path="path/to/favorite/directory", workspace="validspace")
-    directory_to_favorite = tmp_path / "path" / "to" / "favorite" / "directory"
+    directory_to_favorite = tmp_path / "validspace" / "path" / "to" / "favorite" / "directory"
     directory_to_favorite.mkdir(parents=True, exist_ok=True)
 
     mocked_favorite_external_directory_repository = Mock(spec=FavoriteExternalDirectoryRepository)
@@ -127,15 +129,15 @@ def test_add_favorite_external_directory_success_added_one_favorite(tmp_path: Pa
     assert actual_favorite_dto_list == [expected_favorite_dto]
 
 
-def test_delete_favorite_external_directory_success_no_errors_when_directory_does_not_exist(tmp_path: Path):
+def test_delete_favorite_external_directory_failure_when_directory_does_not_exist(tmp_path: Path):
     # deleting an external directory from the favorites, but no errors are raised because the directory does not exist
     config = Config(storage=StorageConfig(tmp_dir=tmp_path))
-    inexisting_directory_path = "path/to/inexisting/directory"
+    inexisting_directory_path = ""
     mocked_favorite_external_directory_repository = Mock(spec=FavoriteExternalDirectoryRepository)
-    mocked_favorite_external_directory_repository.get.return_value = None
     favorite_service = FavoriteExternalDirectoryService(
         mocked_favorite_external_directory_repository, workspace_config=config
     )
+    mocked_favorite_external_directory_repository.delete.return_value = False
 
     with pytest.raises(
         HTTPException,
