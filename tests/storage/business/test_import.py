@@ -14,59 +14,72 @@ import io
 import os
 import shutil
 from pathlib import Path
+from unittest.mock import Mock
 
 import py7zr
 import pytest
 
-from antarest.core.exceptions import BadArchiveContent, StudyValidationError
-from antarest.study.model import DEFAULT_WORKSPACE_NAME
+from antarest.core.cache.business.local_chache import LocalCache
+from antarest.core.exceptions import StudyImportFailed, StudyValidationError
+from antarest.login.model import User
+from antarest.study.model import StorageMode
+from antarest.study.repository import StudyMetadataRepository
+from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import fix_study_root
-from tests.helpers import create_raw_study
+from tests.helpers import with_admin_user, with_db_context
 
 
-def test_import_study(tmp_path: Path, raw_study_service: RawStudyService, empty_study_930: FileStudy) -> None:
+@with_db_context
+@with_admin_user
+def test_import_study(tmp_path: Path, study_service: StudyService, empty_study_930: FileStudy) -> None:
+    # Set Up
     file_study = empty_study_930
     study_path = file_study.config.study_path
+    (tmp_path / "internal_studies").mkdir()
+    output_access_mock = Mock()
+    study_service.register_output_access(output_access_mock)
+    study_service.user_service.get_user.return_value = User(id=1, name="admin")
+    study_service.repository = StudyMetadataRepository(LocalCache())
 
     # .zip part
     filepath_zip = shutil.make_archive(str(study_path.absolute()), "zip", study_path)
-
     path_zip = Path(filepath_zip)
 
-    md = create_raw_study(
-        id="other-study-zip",
-        workspace=DEFAULT_WORKSPACE_NAME,
-        path=str(tmp_path / "other-study-zip"),
-        groups=["fake_group_1", "fake_group_2"],
-    )
     with path_zip.open("rb") as input_file:
-        md = raw_study_service.import_study(md, input_file)
-        assert md.path == f"{tmp_path}{os.sep}other-study-zip"
-    # assert that importing file into a created study does not alter its group
-    assert md.groups == ["fake_group_1", "fake_group_2"]
+        study_id = study_service.import_study(
+            input_file, group_ids=["admin"], directory="", storage_mode=StorageMode.FILESYSTEM
+        )
+
+    study = study_service.get_study(study_id)
+
+    # Asserts the group is correctly set
+    assert len(study.groups) == 1
+    assert study.groups[0].id == "admin"
+
+    # Checks other attributes
+    assert study.archived is False
+    assert study.directory is None  # We did not ask for one
+    assert study.name == "empty_study"
+    assert study.owner.name == "admin"
+    assert study.storage_mode == StorageMode.FILESYSTEM
 
     # .7z part
     filepath_7zip = study_path.parent / f"{study_path.name}.7z"
     with py7zr.SevenZipFile(filepath_7zip, "w") as archive:
         archive.writeall(study_path, arcname="")
 
-    md = create_raw_study(
-        id="other-study-7zip",
-        workspace=DEFAULT_WORKSPACE_NAME,
-        path=str(tmp_path / "other-study-7zip"),
-        groups=["fake_group_1", "fake_group_2"],
-    )
     with filepath_7zip.open("rb") as input_file:
-        md = raw_study_service.import_study(md, input_file)
-        assert md.path == f"{tmp_path}{os.sep}other-study-7zip"
-    # assert that importing file into a created study does not alter its group
-    assert md.groups == ["fake_group_1", "fake_group_2"]
+        study_id = study_service.import_study(input_file, group_ids=[], directory="", storage_mode=StorageMode.DATABASE)
+
+    # Checks study attributes
+    study = study_service.get_study(study_id)
+    assert study.storage_mode == StorageMode.DATABASE
+    assert study.groups == []
 
     # test for an unsupported archive format
-    with pytest.raises(BadArchiveContent, match="Unsupported archive format"):
-        raw_study_service.import_study(md, io.BytesIO(b""))
+    with pytest.raises(StudyImportFailed, match="Unsupported archive format"):
+        study_service.import_study(io.BytesIO(b""), [], "", StorageMode.FILESYSTEM)
 
 
 def test_fix_root(tmp_path: Path) -> None:
