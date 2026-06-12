@@ -189,7 +189,7 @@ def build_study_service(
             pass
 
         @override
-        def import_outputs(self, outputs_dir: Path, study_id: str, storage_mode: StorageMode) -> None:
+        def import_outputs(self, outputs_dir: Path, study_id: str) -> None:
             pass
 
     service.register_output_access(OutputsAccessMock())

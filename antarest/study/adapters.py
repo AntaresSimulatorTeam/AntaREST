@@ -15,7 +15,6 @@ from typing_extensions import override
 
 from antarest.output.service import OutputService
 from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
-from antarest.study.model import StorageMode
 from antarest.study.service import IOutputsAccess
 
 
@@ -54,7 +53,7 @@ def adapt_output_service_to_study_service(output_service: OutputService) -> IOut
             return output_service.get_disk_usage(study_id, output_id)
 
         @override
-        def import_outputs(self, outputs_dir: Path, study_id: str, storage_mode: StorageMode) -> None:
-            output_service.import_outputs(outputs_dir, study_id, storage_mode)
+        def import_outputs(self, outputs_dir: Path, study_id: str) -> None:
+            output_service.import_outputs(outputs_dir, study_id)
 
     return OutputServiceAdapter()

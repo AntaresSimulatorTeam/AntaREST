@@ -613,7 +613,7 @@ class IOutputsAccess(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def import_outputs(self, outputs_dir: Path, study_id: str, storage_mode: StorageMode) -> None:
+    def import_outputs(self, outputs_dir: Path, study_id: str) -> None:
         raise NotImplementedError()
 
 
@@ -1622,7 +1622,7 @@ class StudyService:
             self._save_study(study)
 
             # Imports the outputs
-            self._get_outputs_access().import_outputs(dst_path / "output", sid, storage_mode)
+            self._get_outputs_access().import_outputs(dst_path / "output", sid)
 
         except Exception as e:
             # Remove the study from DB
