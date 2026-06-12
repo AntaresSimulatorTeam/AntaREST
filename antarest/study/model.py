@@ -78,9 +78,14 @@ STUDY_VERSION_9_2 = StudyVersion.parse("9.2")
 STUDY_VERSION_9_3 = NEW_DEFAULT_STUDY_VERSION
 STUDY_VERSION_10_0 = StudyVersion.parse("10.0")
 
-StudyVersionStr: TypeAlias = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(str)]
-StudyVersionInt: TypeAlias = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(int)]
 
+def _serialize_version(version: StudyVersion) -> str:
+    return f"{version:2d}"
+
+
+StudyVersionStr: TypeAlias = Annotated[
+    StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(_serialize_version)
+]
 
 STUDY_REFERENCE_TEMPLATES: set[StudyVersion] = {
     STUDY_VERSION_7_0,
@@ -534,7 +539,7 @@ class OwnerInfo(AntaresBaseModel):
 class StudyMetadataDTO(AntaresBaseModel):
     id: str
     name: str
-    version: StudyVersionInt
+    version: StudyVersionStr
     author: str | None = None
     editor: str | None = None
     created: str
@@ -546,6 +551,7 @@ class StudyMetadataDTO(AntaresBaseModel):
     workspace: str
     managed: bool
     archived: bool
+    storage_mode: StorageMode
     horizon: str | None = None
     folder: str | None = None
     tags: list[str] = []
@@ -767,3 +773,23 @@ class StudyMetadataUpdate:
     editor: str | None = None
     last_save: float | None = None
     created_at: float | None = None
+
+
+@dataclasses.dataclass(frozen=True)
+class StudyMetadataCopy:
+    name: str
+    owner: Identity
+    groups: list[Group]
+    directory_id: str | None
+
+
+@dataclasses.dataclass(frozen=True)
+class StudyMetadataCreation:
+    id: str
+    version: StudyVersion
+    managed: bool
+    name: str | None = None
+    author: str | None = None
+    editor: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None

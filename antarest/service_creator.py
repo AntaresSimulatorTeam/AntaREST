@@ -324,6 +324,7 @@ def create_blob_gc(config: Config, blob_service: BlobService) -> BlobGarbageColl
         blob_service=blob_service,
         sleeping_time=config.storage.blob_gc_sleeping_time,
         dry_run=config.storage.blob_gc_dry_run,
+        lock_folder=config.storage.tmp_dir,
     )
 
 
@@ -332,6 +333,7 @@ def create_variable_view_gc(config: Config) -> VariableViewGarbageCollector:
         sleeping_time=config.storage.variable_view_gc_sleeping_time,
         dry_run=config.storage.variable_view_gc_dry_run,
         retention_time=config.storage.variable_view_gc_retention_days,
+        lock_folder=config.storage.tmp_dir,
     )
 
 

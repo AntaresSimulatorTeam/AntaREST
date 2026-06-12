@@ -12,16 +12,16 @@
 
 import logging
 import re
-import shutil
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from datetime import timedelta
 from functools import reduce
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import cast
 from uuid import uuid4
 
 import humanize
 from filelock import FileLock
+from markupsafe import escape
 from typing_extensions import override
 
 from antarest.core.config import Config
@@ -32,6 +32,7 @@ from antarest.core.exceptions import (
     NoParentStudyError,
     StudyNotFoundError,
     StudyValidationError,
+    UnsupportedOperationOnArchivedStudy,
     VariantGenerationError,
     VariantGenerationTimeoutError,
     VariantStudyParentNotValid,
@@ -39,7 +40,7 @@ from antarest.core.exceptions import (
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
-from antarest.core.model import JSON, PermissionInfo, StudyPermissionType
+from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.json import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
@@ -48,25 +49,27 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, current_time, suppress_exception
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
-from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
-from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory, ResourcePaths
 from antarest.study.model import (
     RawStudy,
     StorageMode,
     Study,
+    StudyMetadataCopy,
     StudyMetadataDTO,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter
-from antarest.study.storage.abstract_storage_service import AbstractStorageService
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
-from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
+from antarest.study.storage.abstract.abstract_study_service import AbstractStudyService
+from antarest.study.storage.database_storage import DatabaseStudyStorage
+from antarest.study.storage.file_study_utils import get_study_path
+from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import (
     assert_permission,
+    get_current_user_name,
+    get_user_name_from_id,
     is_managed,
-    remove_from_cache,
-    update_antares_info,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_blob_usage_provider import CommandBlobUsageProvider
@@ -81,7 +84,9 @@ from antarest.study.storage.variantstudy.model.model import (
     VariantTreeDTO,
 )
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
-from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator
+from antarest.study.storage.variantstudy.snapshot.database_snapshot_manager import DatabaseSnapshotManager
+from antarest.study.storage.variantstudy.snapshot.file_snapshot_manager import FileSnapshotManager
+from antarest.study.storage.variantstudy.snapshot.snapshot_generator import SnapshotGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +97,7 @@ def _cast_study_to_variant(study: Study) -> VariantStudy:
     return study
 
 
-class VariantStudyService(AbstractStorageService):
+class VariantStudyService(AbstractStudyService):
     def __init__(
         self,
         task_service: ITaskService,
@@ -105,7 +110,9 @@ class VariantStudyService(AbstractStorageService):
         config: Config,
         matrix_service: ISimpleMatrixService,
     ):
-        super().__init__(config=config, cache=cache)
+        super().__init__(cache, config)
+        self.cache = cache
+        self.config = config
         self.task_service = task_service
         self.raw_study_service = raw_study_service
         self.repository = repository
@@ -113,11 +120,74 @@ class VariantStudyService(AbstractStorageService):
         self.command_factory = command_factory
         self.study_factory = study_factory
         self._matrix_service = matrix_service
-        CommandMatrixUsageProvider(variant_study_repo=repository, command_factory=command_factory)
+        CommandMatrixUsageProvider(repository, command_factory, raw_study_service._storage_mapping)
         CommandBlobUsageProvider(variant_study_repo=repository, command_factory=command_factory)
+        ctx = command_factory.command_context
+        generator_matrix_constants = ctx.generator_matrix_constants
+        db_dao_factory = DatabaseStudyDaoFactory(matrix_service, generator_matrix_constants)
+        fs_dao_factory = FileStudyDaoFactory(
+            matrix_service, ctx.blob_service, generator_matrix_constants, study_factory, cache, self.get_study_paths
+        )
+        self._study_dao_factories = {StorageMode.DATABASE: db_dao_factory, StorageMode.FILESYSTEM: fs_dao_factory}
+        database_study_storage = DatabaseStudyStorage(
+            config, repository, matrix_service, db_dao_factory, fs_dao_factory
+        )
+        self._snapshot_manager_mapping = {
+            StorageMode.FILESYSTEM: FileSnapshotManager(cache),
+            StorageMode.DATABASE: DatabaseSnapshotManager(database_study_storage),
+        }
+
+    @override
+    def copy(self, src_study: Study, metadata: StudyMetadataCopy) -> RawStudy:
+        variant_study = _cast_study_to_variant(src_study)
+        self.safe_generation(variant_study, 600)
+        return self.raw_study_service.copy(src_study, metadata)
+
+    @override
+    def get_study_dao(self, study: Study) -> StudyDao:
+        variant_study = _cast_study_to_variant(study)
+        self.safe_generation(variant_study, 600)
+        return self._study_dao_factories[study.storage_mode].get_study_dao(study.id, True)
+
+    @override
+    def export_study_flat(self, study: Study, dst_path: Path) -> None:
+        variant = _cast_study_to_variant(study)
+        self.safe_generation(variant)
+        self.raw_study_service.export_study_flat(study, dst_path)
+
+    ##########################
+    # Specific methods
+    ##########################
+
+    def get_study_paths(self, study_id: str) -> ResourcePaths:
+        study = self.repository.get(study_id)
+        if not study:
+            sanitized = str(escape(study_id))
+            logger.warning("Study %s not found in metadata db", sanitized)
+            raise StudyNotFoundError(study_id)
+        return ResourcePaths(study_path=get_study_path(study), output_path=Path(study.path) / "output")
+
+    def invalidate_snapshot(self, variant_study: VariantStudy) -> None:
+        """
+        Invalidates snapshot so that it is regenerated from scratch
+        next time the study is accessed.
+        """
+        variant_study.snapshot = None
+        variant_study.updated_at = current_time()
+        self.repository.save(metadata=variant_study)
+
+    def clear_snapshot(self, variant_study: VariantStudy) -> None:
+        self._snapshot_manager_mapping[variant_study.storage_mode].clear_snapshot(variant_study)
+        self.invalidate_snapshot(variant_study)
+
+    def is_snapshot_up_to_date(self, variant_study: VariantStudy) -> bool:
+        return self._snapshot_manager_mapping[variant_study.storage_mode].is_snapshot_up_to_date(variant_study)
+
+    def has_snapshot(self, variant_study: VariantStudy) -> bool:
+        return self._snapshot_manager_mapping[variant_study.storage_mode].has_snapshot(variant_study)
 
     def _update_editor(self, study: VariantStudy) -> None:
-        user_name = self._get_current_user_name()
+        user_name = get_current_user_name()
         study.editor = user_name
         self.repository.save(study)
 
@@ -134,7 +204,7 @@ class VariantStudyService(AbstractStorageService):
         try:
             index = [command.id for command in study.commands].index(command_id)
             command: CommandBlock = study.commands[index]
-            user_name = self._get_user_name_from_id(command.user_id) if command.user_id else None
+            user_name = get_user_name_from_id(command.user_id) if command.user_id else None
             return command.to_dto().to_api(user_name)
         except ValueError:
             raise CommandNotFoundError(f"Command with id {command_id} not found") from None
@@ -153,7 +223,7 @@ class VariantStudyService(AbstractStorageService):
 
         for command in study.commands:
             if command.user_id and command.user_id not in id_to_name.keys():
-                user_name: str = self._get_user_name_from_id(command.user_id)
+                user_name: str = get_user_name_from_id(command.user_id)
                 id_to_name[command.user_id] = user_name
             command_list.append(command.to_dto().to_api(id_to_name.get(command.user_id)))
         return command_list
@@ -430,7 +500,7 @@ class VariantStudyService(AbstractStorageService):
         it will need a generation from scratch, and children need
         to be rebased too.
         """
-        self._invalidate_snapshot(study)
+        self.invalidate_snapshot(study)
         self.on_parent_change(study.id)
 
     def on_parent_change(self, study_id: str) -> None:
@@ -440,24 +510,6 @@ class VariantStudyService(AbstractStorageService):
         # TODO: optimize to not perform one request per child
         for child in self.get_children(parent_id=study_id):
             self.on_variant_rebase(child)
-
-    def _invalidate_snapshot(
-        self,
-        variant_study: VariantStudy,
-    ) -> None:
-        """
-        Invalidates snapshot so that it is regenerated from scratch
-        next time the study is accessed.
-        """
-        if variant_study.snapshot:
-            variant_study.snapshot.last_executed_command = None
-        variant_study.updated_at = current_time()
-        self.repository.save(metadata=variant_study)
-
-    def clear_snapshot(self, variant_study: VariantStudy) -> None:
-        logger.info(f"Clearing snapshot for study {variant_study.id}")
-        self._invalidate_snapshot(variant_study)
-        shutil.rmtree(self.get_study_path(variant_study), ignore_errors=True)
 
     def has_children(self, study: Study) -> bool:
         return self.repository.has_children(study.id)
@@ -506,93 +558,17 @@ class VariantStudyService(AbstractStorageService):
         study = self._get_study_by_id(id)
         if study.parent_id is not None:
             parent = self._get_study_by_id(study.parent_id)
-            return (
-                self.get_study_information(
-                    parent,
-                )
-                if isinstance(parent, VariantStudy)
-                else self.raw_study_service.get_study_information(
-                    parent,
-                )
-            )
+            return self.get_study_information(parent)
         return None
 
     def _get_variants_parents(self, id: str) -> list[StudyMetadataDTO]:
         study = self._get_study_by_id(id)
-        metadata = (
-            self.get_study_information(
-                study,
-            )
-            if isinstance(study, VariantStudy)
-            else self.raw_study_service.get_study_information(
-                study,
-            )
-        )
+        metadata = self.get_study_information(study)
         output_list: list[StudyMetadataDTO] = [metadata]
         if study.parent_id is not None:
             output_list.extend(self._get_variants_parents(study.parent_id))
 
         return output_list
-
-    @override
-    def get(
-        self,
-        metadata: Study,
-        url: str = "",
-        depth: int = 3,
-        formatted: bool = True,
-        use_cache: bool = True,
-    ) -> JSON:
-        """
-        Entry point to fetch data inside study.
-        Args:
-            metadata: study
-            url: path data inside study to reach
-            depth: tree depth to reach after reach data path
-            formatted: indicate if raw files must be parsed and formatted
-            use_cache: indicate if cache should be used
-
-        Returns: study data formatted in json
-        """
-        if isinstance(metadata, VariantStudy):
-            self._safe_generation(metadata, timeout=600)
-        else:
-            raise TypeError(f"Expected {VariantStudy} but received {type(metadata)}")
-        self.repository.refresh(metadata)
-        return super().get(
-            metadata=metadata,
-            url=url,
-            depth=depth,
-            formatted=formatted,
-            use_cache=use_cache,
-        )
-
-    @override
-    def get_file(
-        self,
-        metadata: Study,
-        url: str = "",
-        use_cache: bool = True,
-    ) -> OriginalFile:
-        """
-        Entry point to fetch for a file inside a study folder.
-        Args:
-            metadata: study
-            url: path data inside study to reach
-            use_cache: indicate if cache should be used to fetch study tree
-
-        Returns: the file content and extension
-        """
-        if isinstance(metadata, VariantStudy):
-            self._safe_generation(metadata, timeout=600)
-        else:
-            raise TypeError(f"Expected {VariantStudy} but received {type(metadata)}")
-        self.repository.refresh(metadata)
-        return super().get_file(
-            metadata=metadata,
-            url=url,
-            use_cache=use_cache,
-        )
 
     def create_variant_study(self, uuid: str, name: str) -> VariantStudy:
         """
@@ -622,9 +598,12 @@ class VariantStudyService(AbstractStorageService):
             )
 
         assert_permission(study, StudyPermissionType.READ)
+
+        if study.archived:
+            raise UnsupportedOperationOnArchivedStudy(study.id)
         new_id = str(uuid4())
         study_path = str(self.config.get_workspace_path() / new_id)
-        user_name = self._get_current_user_name()
+        user_name = get_current_user_name()
 
         now_utc = current_time()
         variant_study = VariantStudy(
@@ -644,6 +623,7 @@ class VariantStudyService(AbstractStorageService):
             groups=study.groups,  # Create inherit_group boolean
             owner_id=require_current_user().impersonator,
             snapshot=None,
+            storage_mode=study.storage_mode,
         )
         self.repository.save(variant_study)
         self.event_bus.push(
@@ -666,6 +646,23 @@ class VariantStudyService(AbstractStorageService):
         from_scratch: bool = False,
         listener: ICommandListener | None = None,
     ) -> str:
+        """
+        Schedule a snapshot generation task for the given variant study.
+
+        A variant is a parent reference + commands, not a file tree. Replaying
+        commands to materialize a snapshot can be slow, so it runs as an async
+        task. The per-study `FileLock` and `generation_task` reuse prevent
+        concurrent callers from generating the same snapshot twice.
+
+        Args:
+            metadata: The variant study to generate.
+            from_scratch: If True, regenerate from the root study, ignoring cached
+                ancestor snapshots.
+            listener: Optional listener notified as commands are applied.
+
+        Returns:
+            The ID of the (new or in-progress) generation task.
+        """
         study_id = metadata.id
         with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study_id}.lock")):
             logger.info(f"Starting variant study {study_id} generation")
@@ -687,25 +684,14 @@ class VariantStudyService(AbstractStorageService):
             study_id = metadata.id
 
             def callback(notifier: ITaskNotifier) -> TaskResult:
-                generator = SnapshotGenerator(
-                    cache=self.cache,
-                    raw_study_service=self.raw_study_service,
-                    command_factory=self.command_factory,
-                    study_factory=self.study_factory,
-                    repository=self.repository,
-                )
+                generator = SnapshotGenerator(variant_study_service=self)
 
                 # Build the Dao factory first
-                ctx = self.command_factory.command_context
-                factory: StudyFactoryDao
-                if metadata.storage_mode == StorageMode.FILESYSTEM:
-                    factory = FileStudyDaoFactory(ctx, self.study_factory, self.cache)
-                else:
-                    factory = DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants)
+                dao_factory = self._study_dao_factories[metadata.storage_mode]
                 # Then launch the generation
                 generate_result = generator.generate_snapshot(
                     study_id,
-                    dao_factory=factory,
+                    dao_factory=dao_factory,
                     from_scratch=from_scratch,
                     notifier=notifier,
                     listener=listener,
@@ -761,154 +747,8 @@ class VariantStudyService(AbstractStorageService):
             return self.task_service.status_task(task_id=task_id, with_logs=True)
         raise StudyValidationError(f"Variant study '{study_id}' has no generation task")
 
-    @override
-    def exists(self, metadata: Study) -> bool:
-        """
-        Check if the study snapshot exists and is up-to-date.
-
-        Args:
-            metadata: Study metadata.
-
-        Returns: `True` if the study is present on disk, `False` otherwise.
-        """
-        if not isinstance(metadata, VariantStudy):
-            return False
-
-        return (
-            (metadata.snapshot is not None)
-            and (metadata.snapshot.created_at >= metadata.updated_at)
-            and (self.get_study_path(metadata) / "study.antares").is_file()
-        )
-
-    @override
-    def copy(
-        self,
-        src_study: Study,
-        dest_study_name: str,
-        groups: Sequence[str],
-        destination_folder: PurePosixPath,
-    ) -> RawStudy:
-        """
-        Create a new variant study by copying a reference study.
-
-        Args:
-            src_study: The source study that you want to copy.
-            dest_study_name: The name for the destination study.
-            groups: A list of groups to assign to the destination study.
-            destination_folder: Path where the destination study will be stored. If not specified, the destination path will be the same as the source study.
-
-        Returns:
-            The newly created study.
-        """
-
-        dest_study = self.raw_study_service.build_raw_study(dest_study_name, groups, src_study, destination_folder)
-
-        variant = _cast_study_to_variant(src_study)
-        file_study = self.get_raw(metadata=variant)
-
-        src_path = file_study.config.path
-        dest_path = dest_study.path
-        shutil.copytree(src_path, dest_path)
-        update_antares_info(dest_study, file_study.tree, update_author=True)
-        return dest_study
-
-    def _safe_generation(self, metadata: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
-        try:
-            if self.exists(metadata):
-                # The study is already present on disk => nothing to do
-                return
-
-            logger.info("🔹 Starting variant study generation...")
-            # Create and run the generation task in a thread pool.
-            task_id = self.generate_task(metadata)
-            self.task_service.await_task(task_id, timeout)
-            result = self.task_service.status_task(task_id)
-            if not result.result:
-                raise ValueError("No task result")
-            if result.result.success:
-                # OK, the study has been generated
-                return
-            # The variant generation failed, we have to raise a clear exception.
-            error_msg = result.result.message
-            stripped_msg = error_msg.removeprefix(f"417: Failed to generate variant study {metadata.id}")
-            raise ValueError(stripped_msg)
-
-        except TimeoutError as e:
-            # Raise a REQUEST_TIMEOUT error (408)
-            msg = f"⚡ Timeout while waiting for generation of variant study {metadata.id}"
-            logger.error(msg, exc_info=e)
-            raise VariantGenerationTimeoutError(msg) from None
-
-        except Exception as e:
-            # raise a EXPECTATION_FAILED error (417)
-            logger.error(f"⚡ Fail to generate variant study {metadata.id}", exc_info=e)
-            raise VariantGenerationError(f"Error while generating variant {metadata.id} {e}") from None
-
-    @override
-    def get_raw(
-        self,
-        metadata: Study,
-        use_cache: bool = True,
-        output_dir: Path | None = None,
-    ) -> FileStudy:
-        """
-        Fetch a study raw tree object and its config
-        Args:
-            metadata: study
-            use_cache: use cache
-            output_dir: optional output dir override
-        Returns: the config and study tree object
-        """
-        variant = _cast_study_to_variant(metadata)
-        self._safe_generation(variant)
-
-        study_path = self.get_study_path(variant)
-        return self.study_factory.create_from_fs(
-            study_path,
-            is_managed(variant),
-            variant.id,
-            output_dir or Path(variant.path) / "output",
-            use_cache=use_cache,
-        )
-
-    @override
-    def delete(self, metadata: Study) -> None:
-        """
-        Delete study
-        Args:
-            metadata: study
-        Returns:
-        """
-        study_path = Path(metadata.path)
-        if study_path.exists():
-            shutil.rmtree(study_path)
-            remove_from_cache(self.cache, metadata.id)
-
-    @override
-    def get_study_path(self, metadata: Study) -> Path:
-        """
-        Get study path
-        Args:
-            metadata: study information
-
-        Returns: study path
-
-        """
-        variant = _cast_study_to_variant(metadata)
-        return variant.snapshot_dir
-
-    @override
-    def export_study_flat(
-        self,
-        metadata: Study,
-        dst_path: Path,
-        denormalize: bool = True,
-    ) -> None:
-        variant = _cast_study_to_variant(metadata)
-
-        self._safe_generation(variant)
-
-        self.raw_study_service.export_study_to_flat_directory(variant.snapshot_dir, dst_path, denormalize=denormalize)
+    def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
+        self._snapshot_manager_mapping[ref_study.storage_mode].create_snapshot(ref_study, variant_study)
 
     def clear_all_snapshots(self, retention_time: timedelta) -> str:
         """
@@ -939,14 +779,37 @@ class VariantStudyService(AbstractStorageService):
             custom_event_messages=None,
         )
 
-    @override
-    def normalize_study(self, study: Study) -> None:
-        if study.storage_mode == StorageMode.DATABASE:
-            # Nothing to do
-            return
+    def safe_generation(self, study: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
+        try:
+            if self._snapshot_manager_mapping[study.storage_mode].is_snapshot_up_to_date(study):
+                # Nothing to do
+                return
 
-        file_study = self.get_raw(study)
-        self.raw_study_service.normalize_file_study(file_study)
+            logger.info("🔹 Starting variant study generation...")
+            # Create and run the generation task in a thread pool.
+            task_id = self.generate_task(study)
+            self.task_service.await_task(task_id, timeout)
+            result = self.task_service.status_task(task_id)
+            if not result.result:
+                raise ValueError("No task result")
+            if result.result.success:
+                # OK, the study has been generated
+                return
+            # The variant generation failed, we have to raise a clear exception.
+            error_msg = result.result.message
+            stripped_msg = error_msg.removeprefix(f"417: Failed to generate variant study {study.id}")
+            raise ValueError(stripped_msg)
+
+        except TimeoutError as e:
+            # Raise a REQUEST_TIMEOUT error (408)
+            msg = f"⚡ Timeout while waiting for generation of variant study {study.id}"
+            logger.error(msg, exc_info=e)
+            raise VariantGenerationTimeoutError(msg) from None
+
+        except Exception as e:
+            # raise a EXPECTATION_FAILED error (417)
+            logger.error(f"⚡ Fail to generate variant study {study.id}", exc_info=e)
+            raise VariantGenerationError(f"Error while generating variant {study.id} {e}") from None
 
 
 class SnapshotCleanerTask:

@@ -12,8 +12,10 @@
 
 """Integration tests for the variable view garbage collection task."""
 
+import tempfile
 import uuid
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import polars as pl
 
@@ -84,7 +86,7 @@ class TestCleanVariableViewsIntegration:
             views_before = db.session.query(OutputVariablesViewsModel).all()
             assert len(views_before) == 1
 
-        result = clean_variable_views(dry_run=False, retention_time=7)
+        result = clean_variable_views(dry_run=False, retention_time=7, lock_folder=Path(tempfile.gettempdir()))
 
         assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.deleted_count == 1
@@ -114,7 +116,7 @@ class TestCleanVariableViewsIntegration:
             )
             db.session.commit()
 
-        result = clean_variable_views(dry_run=False, retention_time=7)
+        result = clean_variable_views(dry_run=False, retention_time=7, lock_folder=Path(tempfile.gettempdir()))
 
         assert result.status == BackGroundTaskStatus.SKIPPED
         assert result.reason == "no_unused_variable_view"
@@ -144,7 +146,7 @@ class TestCleanVariableViewsIntegration:
             )
             db.session.commit()
 
-        result = clean_variable_views(dry_run=True, retention_time=7)
+        result = clean_variable_views(dry_run=True, retention_time=7, lock_folder=Path(tempfile.gettempdir()))
 
         assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.deleted_count == 1
@@ -156,7 +158,7 @@ class TestCleanVariableViewsIntegration:
 
     def test_returns_skipped_with_no_views(self):
         """Test execution when there are no variable views."""
-        result = clean_variable_views(dry_run=False, retention_time=7)
+        result = clean_variable_views(dry_run=False, retention_time=7, lock_folder=Path(tempfile.gettempdir()))
 
         assert result.status == BackGroundTaskStatus.SKIPPED
         assert result.reason == "no_unused_variable_view"
@@ -198,7 +200,7 @@ class TestCleanVariableViewsIntegration:
             views_before = db.session.query(OutputVariablesViewsModel).all()
             assert len(views_before) == 2
 
-        result = clean_variable_views(dry_run=False, retention_time=7)
+        result = clean_variable_views(dry_run=False, retention_time=7, lock_folder=Path(tempfile.gettempdir()))
 
         assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.deleted_count == 1

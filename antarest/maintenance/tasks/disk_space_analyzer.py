@@ -11,12 +11,13 @@
 # This file is part of the Antares project.
 import logging
 import time
+from pathlib import Path
 from typing import Optional
 
 from pydantic import BaseModel
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.lock import LockNotAcquired, create_lock
+from antarest.core.utils.lock import LockNotAcquired, create_file_lock
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, LockId
 from antarest.study.model import StudyDiskSpaceAnalysis
@@ -34,44 +35,49 @@ class DiskSpaceAnalyzerTaskResult(BaseModel):
     error: Optional[str] = None
 
 
-def disk_space_analysis(service: StudyService, disk_repo: StudyDiskSpaceRepository) -> DiskSpaceAnalyzerTaskResult:
+def disk_space_analysis(
+    service: StudyService, disk_repo: StudyDiskSpaceRepository, lock_folder: Path
+) -> DiskSpaceAnalyzerTaskResult:
     start_time = time.time()
 
     updated_studies = 0
 
     try:
         with db():
-            with create_lock(db.session, lock_id=LockId.STUDY_DISK_SPACE):
+            with create_file_lock(lock_id=LockId.STUDY_DISK_SPACE, lock_folder=lock_folder):
                 # we're giving admin access to the disk space analyzer due to the search_studies method
-                studies = service.repository.get_all(StudyFilter(access_permissions=AccessPermissions(is_admin=True)))
+                studies = service.repository.get_all(
+                    StudyFilter(access_permissions=AccessPermissions(is_admin=True), managed=True)
+                )
                 disk_analysis = disk_repo.get_all()
 
                 dict_analysis = {element.study_id: element for element in disk_analysis}
 
                 for study in studies:
-                    updated_at = study.updated_at
                     try:
-                        filtered_analysis = dict_analysis.get(study.id, None)
+                        study_id = study.id
+                        updated_at = study.updated_at
+                        filtered_analysis = dict_analysis.get(study_id, None)
 
                         if not filtered_analysis:
-                            logger.info(f"Creating a disk space analysis for study {study.id}")
+                            logger.info(f"Creating a disk space analysis for study {study_id}")
                             study_disk_analysis = StudyDiskSpaceAnalysis(
-                                study_id=study.id,
-                                disk_space_bytes=service.get_disk_usage(study.id),
+                                study_id=study_id,
+                                disk_space_bytes=service.get_disk_usage(study_id),
                                 last_analysis_date=current_time(),
                             )
                             disk_repo.save(study_disk_analysis)
                             updated_studies += 1
 
                         elif updated_at is not None and (filtered_analysis.last_analysis_date < updated_at):
-                            logger.info(f"Updating disk space analysis for study {study.id}")
+                            logger.info(f"Updating disk space analysis for study {study_id}")
 
-                            usage = service.get_disk_usage(study.id)
-                            disk_repo.update(study.id, usage)
+                            usage = service.get_disk_usage(study_id)
+                            disk_repo.update(study_id, usage)
                             updated_studies += 1
 
                     except Exception as e:
-                        logger.error(f"Failed to analyze disk space for study {study.id}: {e}", exc_info=e)
+                        logger.error(f"Failed to analyze disk space for study {study_id}: {e}", exc_info=e)
 
     except LockNotAcquired:
         logger.info("Could not acquire lock, another disk space analysis is probably running")

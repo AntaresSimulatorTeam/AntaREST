@@ -24,7 +24,9 @@ from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Role, User
+from antarest.study.model import StorageMode
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.helpers import create_raw_study, create_variant_study
 
 
@@ -234,10 +236,6 @@ class TestVariantStudy:
         assert obj.snapshot is None
         assert obj.commands == []
 
-        # check Variant-specific properties
-        assert obj.snapshot_dir == Path(variant_study_path).joinpath("snapshot")
-        assert obj.is_snapshot_up_to_date() is False
-
     @pytest.mark.parametrize(
         "created_at, updated_at, study_antares_file, expected",
         [
@@ -273,6 +271,7 @@ class TestVariantStudy:
     )
     def test_is_snapshot_recent(
         self,
+        variant_study_service: VariantStudyService,
         db_session: Session,
         tmp_path: Path,
         raw_study_id: int,
@@ -297,22 +296,24 @@ class TestVariantStudy:
                 updated_at=updated_at,
                 path=str(tmp_path.joinpath("variant")),
                 owner_id=user_id,
+                storage_mode=StorageMode.FILESYSTEM,
             )
 
             # If the snapshot creation date is given, we create a snapshot
             # and a snapshot directory.
+            snapshot_dir = Path(variant.path) / "snapshot"
             if created_at:
                 variant.snapshot = VariantStudySnapshot(created_at=created_at)
-                variant.snapshot_dir.mkdir(parents=True, exist_ok=True)
+                snapshot_dir.mkdir(parents=True, exist_ok=True)
 
             # If the "study.antares" file is given, we create it in the snapshot directory.
             if study_antares_file:
-                variant.snapshot_dir.mkdir(parents=True, exist_ok=True)
-                (variant.snapshot_dir / study_antares_file).touch()
+                snapshot_dir.mkdir(parents=True, exist_ok=True)
+                (snapshot_dir / study_antares_file).touch()
 
             db_session.add(variant)
             db_session.commit()
 
         # Check the snapshot_uptodate() method
         obj: VariantStudy = db_session.query(VariantStudy).filter(VariantStudy.id == variant_id).one()
-        assert obj.is_snapshot_up_to_date() == expected
+        assert variant_study_service.is_snapshot_up_to_date(obj) == expected

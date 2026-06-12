@@ -67,8 +67,7 @@ class TestHydroManagement:
         with pytest.raises(AreaNotFound):
             db_dao.get_hydro_management("nonexistent")
 
-    def test_save_hydro_management_updates_existing_record(self, db_dao: DatabaseStudyDao) -> None:
-        dao = db_dao
+    def test_save_hydro_management_updates_existing_record(self, dao: StudyDao) -> None:
         """Test that save_hydro_management updates an existing record."""
         save_area(dao, "Paris")
 
@@ -129,9 +128,8 @@ class TestInflowStructure:
         with pytest.raises(AreaNotFound):
             db_dao.get_inflow_structure("nonexistent")
 
-    def test_save_inflow_structure_updates_existing_record(self, db_dao: DatabaseStudyDao) -> None:
+    def test_save_inflow_structure_updates_existing_record(self, dao: StudyDao) -> None:
         """Test that save_inflow_structure updates an existing record."""
-        dao = db_dao
         save_area(dao, "Paris")
 
         # Create initial config
@@ -158,9 +156,9 @@ class TestInflowStructure:
 class TestGetAllHydroProperties:
     """Tests for get_all_hydro_properties aggregation."""
 
-    def test_get_all_hydro_properties_returns_empty_dict_for_no_areas(self, db_dao: DatabaseStudyDao) -> None:
+    def test_get_all_hydro_properties_returns_empty_dict_for_no_areas(self, dao: StudyDao) -> None:
         """Test that get_all_hydro_properties returns empty dict when no areas exist."""
-        result = db_dao.get_all_hydro_properties()
+        result = dao.get_all_hydro_properties()
         assert result == {}
 
     def test_get_all_hydro_properties_excludes_areas_with_incomplete_data(self, db_dao: DatabaseStudyDao) -> None:
@@ -176,9 +174,8 @@ class TestGetAllHydroProperties:
         result = dao.get_all_hydro_properties()
         assert result == {}
 
-    def test_get_all_hydro_properties_aggregates_data(self, db_dao: DatabaseStudyDao) -> None:
+    def test_get_all_hydro_properties_aggregates_data(self, dao: StudyDao) -> None:
         """Test that get_all_hydro_properties correctly aggregates hydro data for all areas."""
-        dao = db_dao
         save_area(dao, "Paris")
         save_area(dao, "London")
 
@@ -222,9 +219,8 @@ class TestHydroAllocation:
         with pytest.raises(AreaNotFound):
             db_dao.get_hydro_allocation("nonexistent")
 
-    def test_save_hydro_allocation_replaces_existing_records(self, db_dao: DatabaseStudyDao) -> None:
+    def test_save_hydro_allocation_replaces_existing_records(self, dao: StudyDao) -> None:
         """Test that save_hydro_allocation replaces existing allocation."""
-        dao = db_dao
         save_area(dao, "Paris")
         save_area(dao, "London")
 
@@ -252,27 +248,24 @@ class TestHydroAllocation:
         coeffs_by_area = {a.area_id: a.coefficient for a in result.allocation}
         assert coeffs_by_area == {"paris": 0.6, "london": 0.4}
 
-    def test_save_hydro_allocation_raises_error_for_nonexistent_source_area(self, db_dao: DatabaseStudyDao) -> None:
+    def test_save_hydro_allocation_raises_error_for_nonexistent_source_area(self, dao: StudyDao) -> None:
         """Test that save_hydro_allocation raises AreaNotFound when source area doesn't exist."""
-        dao = db_dao
         save_area(dao, "Paris")
 
         allocation = HydroAllocation(allocation=[HydroAllocationArea(area_id="paris", coefficient=1.0)])
         with pytest.raises(AreaNotFound, match="nonexistent"):
             dao.save_hydro_allocation({"nonexistent": allocation})
 
-    def test_save_hydro_allocation_raises_error_for_nonexistent_target_area(self, db_dao: DatabaseStudyDao) -> None:
+    def test_save_hydro_allocation_raises_error_for_nonexistent_target_area(self, dao: StudyDao) -> None:
         """Test that save_hydro_allocation raises AreaNotFound with the invalid target area ID."""
-        dao = db_dao
         save_area(dao, "Paris")
 
         allocation = HydroAllocation(allocation=[HydroAllocationArea(area_id="nonexistent", coefficient=1.0)])
         with pytest.raises(AreaNotFound, match="nonexistent"):
             dao.save_hydro_allocation({"paris": allocation})
 
-    def test_get_hydro_allocation_matrix(self, db_dao: DatabaseStudyDao) -> None:
+    def test_get_hydro_allocation_matrix(self, dao: StudyDao) -> None:
         """Test that get_hydro_allocation_matrix returns all allocations."""
-        dao = db_dao
         save_area(dao, "Paris")
         save_area(dao, "London")
 
@@ -317,9 +310,8 @@ class TestHydroAllocation:
 class TestHydroCorrelation:
     """Tests for hydro correlation CRUD operations."""
 
-    def test_get_hydro_correlation_returns_self_correlation(self, db_dao: DatabaseStudyDao) -> None:
+    def test_get_hydro_correlation_returns_self_correlation(self, dao: StudyDao) -> None:
         """Test that get_hydro_correlation returns self-correlation for new area."""
-        dao = db_dao
         save_area(dao, "Paris")
 
         correlation = dao.get_hydro_correlation("paris")
@@ -342,9 +334,8 @@ class TestHydroCorrelation:
         with pytest.raises(ValueError):
             db_dao.get_hydro_correlation("nonexistent")
 
-    def test_save_hydro_correlation(self, db_dao: DatabaseStudyDao) -> None:
+    def test_save_hydro_correlation(self, dao: StudyDao) -> None:
         """Test that correlation is stored symmetrically (only upper triangle)."""
-        dao = db_dao
         save_area(dao, "Paris")
         save_area(dao, "London")
 
@@ -368,9 +359,8 @@ class TestHydroCorrelation:
         assert paris_corr is not None
         assert paris_corr.coefficient == 75.0
 
-    def test_save_hydro_correlation_raises_error_for_nonexistent_area(self, db_dao: DatabaseStudyDao) -> None:
+    def test_save_hydro_correlation_raises_error_for_nonexistent_area(self, dao: StudyDao) -> None:
         """Test that save_hydro_correlation raises AreaNotFound with the invalid area ID."""
-        dao = db_dao
         save_area(dao, "Paris")
 
         # Nonexistent correlated area
@@ -391,9 +381,8 @@ class TestHydroCorrelation:
         with pytest.raises(AreaNotFound, match="nonexistent"):
             dao.save_hydro_correlation({"nonexistent": correlation})
 
-    def test_get_hydro_correlation_matrix(self, db_dao: DatabaseStudyDao) -> None:
+    def test_get_hydro_correlation_matrix(self, dao: StudyDao) -> None:
         """Test that get_hydro_correlation_matrix returns the full matrix."""
-        dao = db_dao
         save_area(dao, "Paris")
         save_area(dao, "London")
 
@@ -586,12 +575,12 @@ _ALL_HYDRO_MATRIX_TABLES = [
 class TestHydroMatrices:
     """Tests for hydro matrix CRUD operations."""
 
-    def test_save_and_get_all_hydro_matrices(self, db_dao: DatabaseStudyDao) -> None:
+    def test_save_and_get_all_hydro_matrices(
+        self, dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService]
+    ) -> None:
         """Test saving and retrieving all 13 hydro matrix types."""
-        dao = db_dao
+        dao, matrix_service = dao_and_matrix_service
         save_area(dao, "Paris")
-
-        matrix_service = dao._matrix_service
 
         def make(data: list[list[float]]) -> tuple[pl.DataFrame, str]:
             df = pl.DataFrame(data=data, orient="row")

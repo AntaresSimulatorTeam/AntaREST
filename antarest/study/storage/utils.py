@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import calendar
+import contextlib
 import logging
 import math
 import os
@@ -20,7 +21,7 @@ from collections.abc import Sequence
 from datetime import datetime, timedelta
 from io import StringIO
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, BinaryIO, cast
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -42,26 +43,31 @@ from antarest.core.interfaces.cache import (
     study_config_cache_key,
     study_raw_cache_key,
 )
-from antarest.core.model import PermissionInfo, StudyPermissionType
+from antarest.core.model import PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
-from antarest.login.model import Group
-from antarest.login.utils import require_current_user
+from antarest.core.utils.archives import extract_archive_from_path, extract_archive_from_stream
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
+from antarest.login.model import Group, Identity
+from antarest.login.utils import get_user_impersonator, require_current_user
 from antarest.study.business.model.config.general_model import GeneralConfig, Mode
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_REFERENCE_TEMPLATES,
     MatrixFrequency,
     MatrixIndex,
+    RawStudy,
     Study,
+    StudyContentStatus,
     StudyFolder,
+    StudyMetadataCopy,
     StudyMetadataDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 
 logger = logging.getLogger(__name__)
@@ -69,34 +75,6 @@ logger = logging.getLogger(__name__)
 
 TS_GEN_PREFIX = "~"
 TS_GEN_SUFFIX = ".thermal_timeseries_gen.tmp"
-
-
-def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_author: bool) -> None:
-    """
-    Update antares study information in the study.antares file.
-
-    Args:
-        metadata: Study metadata containing name, dates, etc.
-        study_tree: File study tree to update
-        update_author: Whether to update the author field
-    """
-    study_data_info = study_tree.get(["study"])
-    antares_info = study_data_info["antares"]
-
-    author = metadata.author
-    editor = metadata.editor
-
-    # Update basic fields
-    antares_info["caption"] = metadata.name
-    antares_info["created"] = format_timestamp(metadata.created_at)
-    antares_info["lastsave"] = format_timestamp(metadata.updated_at)
-    antares_info["editor"] = editor
-
-    # Update author-related fields if additional_data exists
-    if update_author:
-        antares_info["author"] = author
-
-    study_tree.save(study_data_info, ["study"])
 
 
 def format_timestamp(dt: datetime | None) -> float:
@@ -585,3 +563,112 @@ def rec_scan_for_studies(
     except Exception as e:
         logger.error(f"Failed to scan dir {path}", exc_info=e)
         return []
+
+
+def get_disk_usage(path: Path) -> int:
+    """Calculate the total disk usage (in bytes) for a given Path."""
+    if path.is_file():
+        return os.path.getsize(path)
+    total_size = 0
+    with contextlib.suppress(FileNotFoundError, PermissionError):
+        with os.scandir(path) as it:
+            for entry in it:
+                with contextlib.suppress(FileNotFoundError, PermissionError):
+                    if entry.is_file():
+                        total_size += entry.stat().st_size
+                    elif entry.is_dir():
+                        total_size += get_disk_usage(path=Path(entry.path))
+    return total_size
+
+
+def get_user_name_from_id(user_id: int) -> str:
+    """
+    Utility method that retrieves a user's name based on their id.
+    Args:
+        user_id: user id (user must exist)
+    Returns: String representing the user's name
+    """
+    user_obj: Identity | None = db.session.get(Identity, user_id)
+    if user_obj is None:
+        return "Unnamed"
+    return str(user_obj.name)
+
+
+def get_current_user_name() -> str:
+    return get_user_name_from_id(get_user_impersonator())
+
+
+def build_raw_study_from_source(src_study: Study, path: Path, metadata: StudyMetadataCopy) -> RawStudy:
+    dest_id = str(uuid4())
+    now_utc = current_time()
+    dest_study = RawStudy(
+        id=dest_id,
+        name=metadata.name,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        path=str(path / dest_id),
+        created_at=now_utc,
+        updated_at=now_utc,
+        version=src_study.version,
+        author=src_study.author,
+        editor=get_current_user_name(),
+        horizon=src_study.horizon,
+        public_mode=PublicMode.NONE if metadata.groups else PublicMode.READ,
+        groups=metadata.groups,
+        owner=metadata.owner,
+        directory_id=metadata.directory_id,
+        storage_mode=src_study.storage_mode,
+        content_status=StudyContentStatus.VALID,
+    )
+    return dest_study
+
+
+def extract_data_to_dir(dst_path: Path, source: Path | BinaryIO, tmp_dir: Path) -> None:
+    """
+    The source is extracted to the filesystem inside the `dst_path` attribute.
+    """
+    try:
+        if isinstance(source, Path):
+            extract_archive_from_path(source, dst_path)
+        else:
+            extract_archive_from_stream(source, dst_path, tmp_dir=tmp_dir)
+        fix_study_root(dst_path)
+    except Exception:
+        shutil.rmtree(dst_path, ignore_errors=True)
+        raise
+
+
+def update_study_from_raw_metadata(study: Study, file_study: FileStudy) -> None:
+    """
+    The given `study` object needs to be updated according to the real filesystem data inside `FileStudy`
+    """
+    try:
+        raw_meta = file_study.tree.get(["study", "antares"])
+
+        if study.editor:
+            raw_meta["editor"] = study.editor
+            file_study.tree.save(raw_meta, ["study", "antares"])
+
+        study.name = raw_meta["caption"]
+        study.version = str(raw_meta["version"])
+        study.created_at = datetime.utcfromtimestamp(raw_meta["created"])
+        study.updated_at = datetime.utcfromtimestamp(raw_meta["lastsave"])
+
+        logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
+        horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
+        study_antares = file_study.tree.get(url=["study", "antares"])
+        author = study_antares.get("author")
+        editor = study_antares.get("editor", author)
+        assert isinstance(author, str)
+        assert isinstance(editor, str)
+        assert isinstance(horizon, (str, int))
+        study.horizon = horizon
+        study.author = author
+        study.editor = editor
+
+    except Exception as e:
+        logger.error("Failed to fetch study %s raw study!", str(study.path), exc_info=e)
+        study.name = study.name or "unnamed"
+        study.created_at = study.created_at or current_time()
+        study.updated_at = study.updated_at or current_time()
+        study.author = study.author or "Unknown"
+        study.editor = study.editor or "Unknown"

@@ -16,7 +16,6 @@ import enum
 import http
 import io
 import logging
-import os
 import shutil
 import tempfile
 from abc import ABC, abstractmethod
@@ -52,10 +51,11 @@ from antarest.core.exceptions import (
     TaskAlreadyRunning,
     UnsupportedOperationOnArchivedStudy,
     UnsupportedOperationOnThisStudyType,
+    XpansionConfigurationDoesNotExist,
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import ICache
+from antarest.core.interfaces.cache import ICache, study_raw_cache_key
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import JWTGroup
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
@@ -64,7 +64,7 @@ from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.np_array import imports_matrix_from_bytes
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
-from antarest.core.utils.archives import ArchiveFormat, archive_dir, is_archive_format
+from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.launcher.repository import JobResultRepository
@@ -117,12 +117,7 @@ from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
-from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
-from antarest.study.dao.database.database_matrices_provider import StudyDatabaseMatrixUsageProvider
-from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.directory_service import DirectoryService
 from antarest.study.dtos import StudySynthesis
@@ -137,6 +132,7 @@ from antarest.study.model import (
     Study,
     StudyContentStatus,
     StudyFolder,
+    StudyMetadataCopy,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
     StudyMetadataUpdate,
@@ -210,24 +206,21 @@ def _get_matrix_from_path(study_interface: StudyInterface, matrix_path: PurePosi
     return mapper.get_matrix_from_path(matrix_path)
 
 
+def build_replace_matrix_command(
+    data: SUB_JSON, url: str, context: CommandContext, study_version: StudyVersion
+) -> ReplaceMatrix:
+    if isinstance(data, bytes):
+        # noinspection PyTypeChecker
+        matrix = imports_matrix_from_bytes(data)
+        if matrix is None:
+            raise MatrixImportFailed("Could not parse the given matrix")
+        matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
+        return ReplaceMatrix(target=url, matrix=matrix.tolist(), command_context=context, study_version=study_version)
+    assert isinstance(data, (list, str))
+    return ReplaceMatrix(target=url, matrix=data, command_context=context, study_version=study_version)
+
+
 OutputSelection: TypeAlias = Literal["all"] | list[str]
-
-
-def get_disk_usage(path: str | Path) -> int:
-    """Calculate the total disk usage (in bytes) of a study in a compressed file or directory."""
-    path = Path(path)
-    if is_archive_format(path.suffix.lower()):
-        return os.path.getsize(path)
-    total_size = 0
-    with contextlib.suppress(FileNotFoundError, PermissionError):
-        with os.scandir(path) as it:
-            for entry in it:
-                with contextlib.suppress(FileNotFoundError, PermissionError):
-                    if entry.is_file():
-                        total_size += entry.stat().st_size
-                    elif entry.is_dir():
-                        total_size += get_disk_usage(path=str(entry.path))
-    return total_size
 
 
 def _get_path_inside_user_folder(
@@ -424,7 +417,7 @@ class StudyUpgraderTask:
                 )
             finally:
                 if is_study_denormalized:
-                    self.storage_service.get_storage(study_to_upgrade).normalize_study(study_to_upgrade)
+                    self.storage_service.raw_study_service.normalize_study(study_to_upgrade)
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         """
@@ -484,11 +477,6 @@ class RawStudyInterface(StudyInterface):
     def version(self) -> StudyVersion:
         return self._version
 
-    def _get_files(self) -> FileStudy:
-        if not self._cached_file_study:
-            self._cached_file_study = self._raw_study_service.get_raw(self._study)
-        return self._cached_file_study
-
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
         return self._get_dao().read_only()
@@ -522,18 +510,7 @@ class RawStudyInterface(StudyInterface):
         self._variant_study_service.on_parent_change(study.id)
 
     def _get_dao(self) -> StudyDao:
-        context = self._variant_study_service.command_factory.command_context
-        matrix_constants = context.generator_matrix_constants
-        if self._study.storage_mode == StorageMode.DATABASE:
-            return DatabaseStudyDao(self._study.id, db.session, self._matrix_service, matrix_constants)
-        return FileStudyTreeDao(
-            self._get_files(),
-            is_managed(self._study),
-            matrix_constants,
-            context.blob_service,
-            self._matrix_service,
-            self._raw_study_service.cache,
-        )
+        return self._raw_study_service.get_study_dao(self._study)
 
     @override
     def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
@@ -577,15 +554,7 @@ class VariantStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        context = self._variant_service.command_factory.command_context
-        return FileStudyTreeDao(
-            self._variant_service.get_raw(self._study),
-            True,
-            context.generator_matrix_constants,
-            context.blob_service,
-            context.matrix_service,
-            self._variant_service.cache,
-        ).read_only()
+        return self._variant_service.get_study_dao(self._study).read_only()
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
@@ -631,6 +600,10 @@ class IOutputsAccess(ABC):
 
     @abstractmethod
     def archive_output(self, study_id: str, output_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_disk_usage(self, study_id: str, output_id: str) -> int:
         raise NotImplementedError()
 
     @abstractmethod
@@ -702,14 +675,6 @@ class StudyService:
         self.config = config
         self.on_deletion_callbacks: list[Callable[[str], None]] = []
         self._outputs_access: IOutputsAccess | None = None
-        matrix_service = command_context.matrix_service
-        StudyDatabaseMatrixUsageProvider(matrix_service)
-        self._study_dao_factories: dict[StorageMode, StudyFactoryDao] = {
-            StorageMode.DATABASE: DatabaseStudyDaoFactory(matrix_service, command_context.generator_matrix_constants),
-            StorageMode.FILESYSTEM: FileStudyDaoFactory(
-                command_context, raw_study_service.study_factory, cache_service
-            ),
-        }
 
     def register_output_access(self, output_access: IOutputsAccess) -> None:
         """
@@ -746,7 +711,26 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
 
-        return self.storage_service.get_storage(study).get(study, url, depth, formatted)
+        file_study = self.get_file_study(study)
+        parts = [item for item in url.split("/") if item]
+
+        if url == "" and depth == -1:
+            # Means we're asking for `Debug` view
+            cache_id = study_raw_cache_key(study.id)
+            from_cache = self.cache_service.get(cache_id)
+            if from_cache is not None:
+                logger.info(f"Raw Study {study.id} read from cache")
+                data = from_cache
+            else:
+                data = file_study.tree.get(parts, depth=depth, formatted=formatted)
+                self.cache_service.put(cache_id, data)
+                logger.info(f"Cache new entry from RawStudyService (studyID: {study.id})")
+
+        else:
+            data = file_study.tree.get(parts, depth, formatted)
+
+        del file_study
+        return data
 
     def get_file(self, uuid: str, url: str) -> OriginalFile:
         """
@@ -761,10 +745,13 @@ class StudyService:
         """
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
+        self.assert_study_unarchived(study)
 
-        output = self.storage_service.get_storage(study).get_file(study, url)
+        file_study = self.get_file_study(study)
+        parts = [item for item in url.split("/") if item]
+        file_node = file_study.tree.get_node(parts)
 
-        return output
+        return file_node.get_file_content()
 
     def get_comments(self, study_id: str) -> str:
         """
@@ -820,34 +807,12 @@ class StudyService:
         Returns: List of study information
         """
         logger.info("Retrieving matching studies")
-        studies: dict[str, StudyMetadataDTO] = {}
-        matching_studies = self.repository.get_all(
-            study_filter=study_filter,
-            sort_by=sort_by,
-            pagination=pagination,
-        )
+        matching_studies = self.repository.get_all(study_filter=study_filter, sort_by=sort_by, pagination=pagination)
         logger.info("Studies retrieved")
 
-        # Bulk optimization: pre-calculate all directory paths in one query
-        directory_ids = [study.directory_id for study in matching_studies if study.directory_id is not None]
-        directory_paths = self.directory_service.get_directory_paths_bulk(directory_ids)
+        return self._build_studies_information(matching_studies, should_raise=False)
 
-        # Build study metadata with pre-calculated paths
-        for study in matching_studies:
-            folder_path = None
-            if study.directory_id:
-                dir_path = directory_paths.get(study.directory_id, "")
-                folder_path = f"{dir_path}/{study.id}" if dir_path else study.id
-
-            study_metadata = self._try_get_studies_information(study, folder_path)
-            if study_metadata is not None:
-                studies[study_metadata.id] = study_metadata
-        return studies
-
-    def count_studies(
-        self,
-        study_filter: StudyFilter,
-    ) -> int:
+    def count_studies(self, study_filter: StudyFilter) -> int:
         """
         Get number of matching studies.
         Args:
@@ -855,22 +820,30 @@ class StudyService:
 
         Returns: total number of studies matching the filtering criteria
         """
-        total: int = self.repository.count_studies(
-            study_filter=study_filter,
-        )
-        return total
+        return self.repository.count_studies(study_filter=study_filter)
 
-    def _try_get_studies_information(self, study: Study, folder_path: str | None = None) -> StudyMetadataDTO | None:
-        try:
-            return self.storage_service.get_storage(study).get_study_information(study, folder_path)
-        except Exception as e:
-            logger.warning(
-                "Failed to build study %s (%s) metadata",
-                study.id,
-                study.path,
-                exc_info=e,
-            )
-        return None
+    def _build_studies_information(self, studies: Sequence[Study], should_raise: bool) -> dict[str, StudyMetadataDTO]:
+        # Bulk optimization: pre-calculate all directory paths in one query
+        directory_ids = [study.directory_id for study in studies if study.directory_id is not None]
+        directory_paths = self.directory_service.get_directory_paths_bulk(directory_ids)
+
+        result = {}
+        # Build study metadata with pre-calculated paths
+        for study in studies:
+            folder_path = None
+            if study.directory_id:
+                dir_path = directory_paths.get(study.directory_id, "")
+                folder_path = f"{dir_path}/{study.id}" if dir_path else study.id
+
+            try:
+                study_metadata = self.storage_service.get_storage(study).get_study_information(study, folder_path)
+                result[study_metadata.id] = study_metadata
+            except Exception as e:
+                logger.warning("Failed to build study %s (%s) metadata", study.id, study.path, exc_info=e)
+                if should_raise:
+                    raise
+
+        return result
 
     def get_study_information(self, uuid: str) -> StudyMetadataDTO:
         """
@@ -888,7 +861,8 @@ class StudyService:
         # TODO: Debounce this with an "update_study_last_access" method updating only every few seconds.
         study.last_access = current_time()
         self.repository.save(study)
-        return self.storage_service.get_storage(study).get_study_information(study)
+
+        return self._build_studies_information([study], should_raise=True)[study.id]
 
     def update_study_information(self, uuid: str, metadata_patch: StudyMetadataPatchDTO) -> StudyMetadataDTO:
         """
@@ -966,22 +940,7 @@ class StudyService:
             raise ValueError(f"Unsupported study type '{study.type}'")
 
     def get_file_study(self, study: Study) -> FileStudy:
-        return self.storage_service.get_storage(study).get_raw(study)
-
-    def get_study_path(self, uuid: str) -> Path:
-        """
-        Retrieve study path
-        Args:
-            uuid: study uuid
-
-        Returns:
-
-        """
-        study = self.get_study(uuid)
-        assert_permission(study, StudyPermissionType.RUN)
-
-        logger.info("study %s path asked by user %s", uuid, get_user_id())
-        return self.storage_service.get_storage(study).get_study_path(study)
+        return self.storage_service.get_storage(study).get_study_dao(study).get_file_study()
 
     def create_study(
         self,
@@ -1035,7 +994,7 @@ class StudyService:
 
         raw.content_status = StudyContentStatus.VALID
         self.repository.save(raw)
-        self._study_dao_factories[raw.storage_mode].create_study_dao(raw)
+        self.storage_service.raw_study_service.create_study_dao(raw)
 
         self.event_bus.push(
             Event(
@@ -1211,8 +1170,7 @@ class StudyService:
                             study.id,
                         )
 
-                    self.storage_service.raw_study_service.update_from_raw_meta(study, fallback_on_default=True)
-                    self.storage_service.raw_study_service.checks_antares_web_compatibility(study)
+                    self.storage_service.raw_study_service.update_from_raw_metadata(study)
 
                     logger.warning("Skipping study format error analysis")
                     # TODO re enable this on an async worker
@@ -1294,22 +1252,12 @@ class StudyService:
         self.assert_study_unarchived(src_study)
 
         owner, groups = self._validate_and_prepare_permissions(group_ids)
+        directory_id = self.directory_service.get_directory_by_path(destination_folder.as_posix())
 
         def copy_task(notifier: ITaskNotifier) -> TaskResult:
             origin_study = self.get_study(src_uuid)
-            study = self.storage_service.get_storage(origin_study).copy(
-                origin_study,
-                dest_study_name,
-                group_ids,
-                destination_folder,
-            )
-
-            study.owner = owner
-            study.groups = groups
-            study.directory_id = self.directory_service.get_directory_by_path(destination_folder.as_posix())
-
-            self._save_study(study)
-            self.storage_service.get_storage(study).normalize_study(study)
+            metadata = StudyMetadataCopy(name=dest_study_name, owner=owner, groups=groups, directory_id=directory_id)
+            study = self.storage_service.get_storage(origin_study).copy(origin_study, metadata)
 
             match outputs_selection:
                 case "all":
@@ -1510,14 +1458,6 @@ class StudyService:
         for task_id in generation_tasks:
             self.task_service.await_task(task_id, timeout)
 
-    def _delete_study_from_filesystem(self, study: Study) -> None:
-        """Delete study files from disk (handles both archived and unarchived studies)."""
-        if study.archived:
-            os.unlink(self.storage_service.raw_study_service.find_archive_path(study))
-
-        elif study.storage_mode == StorageMode.FILESYSTEM:
-            self.storage_service.get_storage(study).delete(study)
-
     def _notify_study_deleted(self, study: Study, study_info: Any) -> None:
         """Push deletion event, log the action, and run deletion callbacks."""
         self.event_bus.push(
@@ -1586,6 +1526,11 @@ class StudyService:
         for study in studies_to_check:
             if study.id in studies_to_delete:
                 continue
+
+            # Ensures we're allowed to delete the studies
+            if not self.config.storage.allow_deletion and not is_managed(study):
+                raise StudyDeletionNotAllowed(study.id)
+
             self._validate_children_deletion(study, with_variants, variant_service)
 
             if variant_service.has_children(study):
@@ -1612,22 +1557,18 @@ class StudyService:
         self.repository.delete(*studies_to_delete.keys())
 
         for study in studies_to_delete.values():
-            self._delete_study_from_filesystem(study)
+            self.storage_service.get_storage(study).delete_from_filesystem(study)
             self._notify_study_deleted(study, study_infos[study.id])
 
-    def import_study(
-        self,
-        stream: BinaryIO,
-        group_ids: list[str],
-        directory: str = "",
-    ) -> str:
+    def import_study(self, stream: BinaryIO, group_ids: list[str], directory: str, storage_mode: StorageMode) -> str:
         """
         Import a compressed study.
 
         Args:
             stream: binary content of the study compressed in ZIP or 7z format.
             group_ids: group to attach to study
-            directory: Optional directory path where the study will be imported (e.g., 'project/subfolder').
+            directory: Directory path where the study will be imported (e.g., 'project/subfolder').
+            storage_mode: How the study will be stored inside the app ('filesystem' or 'database').
 
         Returns:
             New study UUID.
@@ -1648,13 +1589,13 @@ class StudyService:
             public_mode=PublicMode.NONE if group_ids else PublicMode.READ,
             owner=owner,
             groups=groups,
+            storage_mode=storage_mode,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
         study.directory_id = self.directory_service.get_directory_by_path(directory)
         study.updated_at = current_time()
 
         self._save_study(study)
-        self.storage_service.get_storage(study).normalize_study(study)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -1686,17 +1627,7 @@ class StudyService:
             assert not isinstance(data, (bytes, list))
             return UpdateConfig(target=url, data=data, command_context=context, study_version=study_version)
         elif isinstance(tree_node, InputSeriesMatrix):
-            if isinstance(data, bytes):
-                # noinspection PyTypeChecker
-                matrix = imports_matrix_from_bytes(data)
-                if matrix is None:
-                    raise MatrixImportFailed("Could not parse the given matrix")
-                matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
-                return ReplaceMatrix(
-                    target=url, matrix=matrix.tolist(), command_context=context, study_version=study_version
-                )
-            assert isinstance(data, (list, str))
-            return ReplaceMatrix(target=url, matrix=data, command_context=context, study_version=study_version)
+            return build_replace_matrix_command(data, url, context, study_version)
         elif isinstance(tree_node, RawFileNode):
             if url.split("/")[-1] == "comments":
                 if isinstance(data, bytes):
@@ -1738,8 +1669,7 @@ class StudyService:
             url: data path to reach
             data: new data to replace
         """
-        study_service = self.storage_service.get_storage(study)
-        file_study = study_service.get_raw(metadata=study)
+        file_study = self.get_file_study(study)
         version = file_study.config.version
 
         command: ICommand
@@ -1820,7 +1750,7 @@ class StudyService:
             except ResourceCreationNotAllowed:
                 # The url does not point towards a user resource, we use the `ReplaceMatrix` command
                 context = self.storage_service.variant_study_service.command_factory.command_context
-                command = ReplaceMatrix(target=url, matrix=new, command_context=context, study_version=study_version)
+                command = build_replace_matrix_command(new, url, context, study_version)
 
             self.get_study_interface(study).add_commands([command])
 
@@ -2205,8 +2135,6 @@ class StudyService:
             with db():
                 study_to_unarchive = clone_raw_study(assert_raw(self.get_study(uuid)))
 
-            archive_path = self.storage_service.raw_study_service.find_archive_path(study_to_unarchive)
-
             self.storage_service.raw_study_service.unarchive(study_to_unarchive)
 
             with db():
@@ -2224,7 +2152,6 @@ class StudyService:
                 )
                 remove_from_cache(cache=self.cache_service, root_id=uuid)
 
-            os.unlink(archive_path)
             return TaskResult(success=True, message="ok")
 
         return self.task_service.add_task(
@@ -2696,9 +2623,11 @@ class StudyService:
         """
         study = self.get_study(uuid=uuid)
         assert_permission(study, StudyPermissionType.READ)
-        study_path = self.storage_service.raw_study_service.get_study_path(study)
-        # If the study is a variant, it's possible that it only exists in DB and not on disk. If so, we return 0.
-        return get_disk_usage(study_path) if study_path.exists() else 0
+        disk_usage = self.storage_service.raw_study_service.get_disk_usage(study)
+
+        for output in self._get_outputs_access().list_outputs(study.id):
+            disk_usage += self._get_outputs_access().get_disk_usage(study.id, output.id)
+        return disk_usage
 
     def get_matrix_with_index_and_header(
         self, *, study_id: str, path: str, with_index: bool, with_header: bool
@@ -2860,7 +2789,7 @@ class StudyService:
             raise UnsupportedOperationOnThisStudyType(study_id, "normalize", "raw")
         self.assert_study_unarchived(study)
 
-        self.storage_service.get_storage(study).normalize_study(study)
+        self.storage_service.raw_study_service.normalize_study(study)
 
     def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
         """
@@ -3005,7 +2934,7 @@ class StudyService:
                 "constraints": constraints,
             }
 
-        except ChildNotFoundError:
+        except (ChildNotFoundError, XpansionConfigurationDoesNotExist):
             xpansion = None
 
         obj["xpansion"] = xpansion

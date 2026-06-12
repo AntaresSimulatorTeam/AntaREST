@@ -34,7 +34,7 @@ from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.model import RawStudy, Study
+from antarest.study.model import RawStudy, StorageMode, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
@@ -134,6 +134,34 @@ def assert_study(a: SUB_JSON, b: SUB_JSON) -> None:
         _assert_others(a, b)
 
 
+def explain_model_diff(actual: Any, expected: Any) -> str:
+    """
+    Produce a readable per-field diff between two pydantic models (or dicts).
+    Intended as a lazy assert message: `assert a == b, explain_model_diff(a, b)`.
+    Only called on assertion failure.
+    """
+
+    def _to_dict(obj: Any) -> Any:
+        if hasattr(obj, "model_dump"):
+            return obj.model_dump()
+        return obj
+
+    a = _to_dict(actual)
+    b = _to_dict(expected)
+    if not (isinstance(a, dict) and isinstance(b, dict)):
+        return f"actual={actual!r}\nexpected={expected!r}"
+
+    lines: list[str] = []
+    for key in sorted(set(a) | set(b)):
+        av = a.get(key, "<missing>")
+        bv = b.get(key, "<missing>")
+        if av != bv:
+            lines.append(f"  {key}: actual={av!r}  expected={bv!r}")
+    if not lines:
+        return "models dump identical — check types or non-dumped fields"
+    return "Field diff (actual vs expected):\n" + "\n".join(lines)
+
+
 def auto_retry_assert(predicate: Callable[..., bool], timeout: int = 2, delay: float = 0.2) -> None:
     threshold = datetime.now(timezone.utc) + timedelta(seconds=timeout)
     while datetime.now(timezone.utc) < threshold:
@@ -202,26 +230,15 @@ def create_raw_study(
     name: str | None = None,
     path: str | None = None,
     version: str = "880",
+    storage_mode: StorageMode = StorageMode.FILESYSTEM,
     **kwargs: Any,
 ) -> RawStudy:
-    """
-    Factory to create a new RawStudy object for testing purposes.
-
-    Args:
-        id: The study ID. If not provided, a new UUID is generated.
-        name: The study name. If not provided, it will be "My Study".
-        path: The study path. If not provided, a temporary path is created.
-        version: The study version. Default is "860".
-        **kwargs: Additional keyword arguments to pass to the RawStudy constructor.
-
-    Returns:
-        A new RawStudy object.
-    """
     return RawStudy(
         id=id or str(uuid.uuid4()),
         name=name or "My Study",
         path=str(path or Path("path/to/raw_study")),
         version=version,
+        storage_mode=storage_mode,
         **kwargs,
     )
 
