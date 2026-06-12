@@ -10,8 +10,9 @@
 #
 # This file is part of the Antares project.
 import logging
-from pathlib import PurePosixPath
+from pathlib import PurePosixPath, Path
 
+from pydantic import field_validator
 from pydantic.alias_generators import to_camel
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -86,6 +87,14 @@ class FavoriteDirectory(Base):
 class FavoriteExternalDirectoryDTO(AntaresBaseModel, extra="forbid"):
     path: PurePosixPath
     workspace: str
+
+    # à faire :
+    @field_validator("path", mode="before")
+    def to_posix(cls, path: Path) -> PurePosixPath:
+        """
+        Always convert path to posix path.
+        """
+        return PurePosixPath(path)
 
 
 class FavoriteExternalDirectory(Base):

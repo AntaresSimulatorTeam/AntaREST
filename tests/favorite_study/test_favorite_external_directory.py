@@ -83,15 +83,15 @@ def test_list_favorite_external_directory_success_returns_two_favorites(tmp_path
     # getting the external directories in the favorites, and returns two favorites
     config = Config(storage=StorageConfig(tmp_dir=tmp_path))
     expected_favorite_1 = FavoriteExternalDirectoryDTO(
-        path=PurePosixPath("path\\to\\favorite\\directory_1"), workspace="validspace"
+        path=PurePosixPath("path/to/favorite/directory_1"), workspace="validspace"
     )
     expected_favorite_2 = FavoriteExternalDirectoryDTO(
-        path=PurePosixPath("path\\to\\favorite\\directory_2"), workspace="validspace"
+        path=PurePosixPath("path/to/favorite/directory_2"), workspace="validspace"
     )
     expected_favorite_list = [expected_favorite_1, expected_favorite_2]
 
-    favorite_1 = FavoriteExternalDirectory(path="path\\to\\favorite\\directory_1", workspace="validspace")
-    favorite_2 = FavoriteExternalDirectory(path="path\\to\\favorite\\directory_2", workspace="validspace")
+    favorite_1 = FavoriteExternalDirectory(path="path/to/favorite/directory_1", workspace="validspace")
+    favorite_2 = FavoriteExternalDirectory(path="path/to/favorite/directory_2", workspace="validspace")
     mocked_favorite_external_directory_repository = Mock(spec=FavoriteExternalDirectoryRepository)
     mocked_favorite_external_directory_repository.get_all.return_value = [favorite_1, favorite_2]
     favorite_service = FavoriteExternalDirectoryService(
@@ -107,9 +107,9 @@ def test_add_favorite_external_directory_success_added_one_favorite(tmp_path: Pa
     config = Config(storage=StorageConfig(tmp_dir=tmp_path))
     config.storage.workspaces.update({"validspace": WorkspaceConfig(path=tmp_path)})
     expected_favorite_dto = FavoriteExternalDirectoryDTO(
-        path=PurePosixPath("path\\to\\favorite\\directory"), workspace="validspace"
+        path=PurePosixPath("path/to/favorite/directory"), workspace="validspace"
     )
-    expected_fav_directory = FavoriteExternalDirectory(path="path\\to\\favorite\\directory", workspace="validspace")
+    expected_fav_directory = FavoriteExternalDirectory(path="path/to/favorite/directory", workspace="validspace")
     directory_to_favorite = tmp_path / "validspace" / "path" / "to" / "favorite" / "directory"
     directory_to_favorite.mkdir(parents=True, exist_ok=True)
 
@@ -154,14 +154,14 @@ def test_delete_favorite_external_directory_success_deleted_one_favorite(tmp_pat
         mock_favorite_external_directory_repository, workspace_config=config
     )
     mocked_favorite_external_directory = FavoriteExternalDirectory(
-        path="path\\to\\favorite\\directory", workspace="validspace"
+        path="path/to/favorite/directory", workspace="validspace"
     )
 
     mock_favorite_external_directory_repository.get_all.return_value = [mocked_favorite_external_directory]
     actual_favorite_list = favorite_service.list_favorites()
     assert len(actual_favorite_list) == 1
 
-    favorite_service.delete_favorite(workspace="validspace", path="path\\to\\favorite\\directory")
+    favorite_service.delete_favorite(workspace="validspace", path="path/to/favorite/directory")
     mock_favorite_external_directory_repository.delete.assert_called_once()
 
     mock_favorite_external_directory_repository.get_all.return_value = []
