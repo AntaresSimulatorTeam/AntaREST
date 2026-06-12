@@ -88,6 +88,7 @@ from antarest.study.model import (
     MatrixAggregationResultDTO,
     MatrixFrequency,
     MatrixIndex,
+    StorageMode,
     StudyDownloadDTO,
     StudyDownloadType,
 )
@@ -103,6 +104,7 @@ logger = logging.getLogger(__name__)
 class StudyMetadata:
     id: str
     name: str
+    storage_mode: StorageMode
 
 
 class IStudyMetadataProvider(ABC):
@@ -380,6 +382,12 @@ class OutputService:
         self._studies_repository.assert_permission(uuid, StudyPermissionType.RUN)
 
         storage = self._get_storage(storage_type)
+
+        if storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
+            if self._studies_repository.get_study_metadata(uuid).storage_mode == StorageMode.DATABASE:
+                # For DB studies, the study.path does not exist; we want to store the outputs externally
+                storage = self._get_storage(OutputStorageType.OUT_OF_STUDY_FILE_TREE)
+
         output_id = storage.import_output(uuid, output, output_name_suffix, logs)
 
         # for now we just check after the fact that this output_id was actually not conflicting,

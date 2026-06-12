@@ -194,27 +194,21 @@ def _add_logs(output_dir: Path, logs: SimulationLogs) -> None:
         _copy_file(logs.err, output_dir, PurePosixPath("antares-err.log"))
 
 
-class InStudyFileOutputStorage(IOutputStorage):
-    """
-    Implementation based on outputs stored in antares-solver file format, inside a study.
-    """
-
+class AbstractFileOutputStorage(IOutputStorage):
     def __init__(
         self,
         outputs_provider: IFileOutputsProvider,
         cache: ICache,
         remote_executor: IRemoteExecutor,
         repository: FileOutputRepository,
+        storage_type: OutputStorageType,
     ) -> None:
         self._outputs_provider = outputs_provider
         self._cache = cache
         self._remote_executor = remote_executor
         self._repository = repository
-
-    @override
-    @property
-    def storage_type(self) -> OutputStorageType:
-        return OutputStorageType.IN_STUDY_FILE_TREE
+        self._storage_type = storage_type
+        self._in_study = storage_type == OutputStorageType.IN_STUDY_FILE_TREE
 
     @override
     def import_output(
@@ -302,7 +296,7 @@ class InStudyFileOutputStorage(IOutputStorage):
                 by_year=output_data.by_year,
                 nb_years=output_data.nbyears,
                 archived=output_data.archived,
-                storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
+                storage_type=self._storage_type,
                 settings=settings,
             )
             result.append(output_details)
@@ -317,7 +311,7 @@ class InStudyFileOutputStorage(IOutputStorage):
         outputs_path = self._outputs_provider.get_outputs(study_id).outputs_path
         simulations = parse_outputs(outputs_path)
         return [
-            OutputMetadata(id=output_id, in_study=True, archived=output.archived)
+            OutputMetadata(id=output_id, in_study=self._in_study, archived=output.archived)
             for output_id, output in simulations.items()
         ]
 
