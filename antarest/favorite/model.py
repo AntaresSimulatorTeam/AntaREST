@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import logging
-from pathlib import PurePosixPath, Path
+from pathlib import Path, PurePosixPath
 
 from pydantic import field_validator
 from pydantic.alias_generators import to_camel
