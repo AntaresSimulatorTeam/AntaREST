@@ -12,7 +12,7 @@
 import logging
 import shutil
 from pathlib import Path
-from typing import BinaryIO, Iterator
+from typing import Iterator
 
 from typing_extensions import override
 
@@ -140,8 +140,8 @@ class FileStudyStorage(IStudyStorage):
             node.save_matrix(matrix_ids[k])
 
     @override
-    def import_study(self, study: RawStudy, stream: BinaryIO) -> None:
-        extract_data_to_dir(Path(study.path), stream, self._config.storage.tmp_dir)
+    def import_study(self, study: RawStudy, study_dir: Path) -> None:
+        study_dir.rename(study.path)
         self.update_from_raw_metadata(study)
         self.normalize_study(study)
 

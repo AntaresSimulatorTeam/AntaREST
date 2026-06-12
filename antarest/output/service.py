@@ -355,6 +355,22 @@ class OutputService:
             res.extend(storage.get_output_details(study_id))
         return res
 
+    def import_outputs(self, outputs_dir: Path, uuid: str, storage_mode: StorageMode) -> None:
+        """Used when importing a study which contains outputs"""
+        if not outputs_dir.exists():
+            return
+
+        storage = self._get_storage(None)
+
+        if storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
+            if storage_mode == StorageMode.DATABASE:
+                # For DB studies, the study.path does not exist; we want to store the outputs externally
+                storage = self._get_storage(OutputStorageType.OUT_OF_STUDY_FILE_TREE)
+
+        for output_path in outputs_dir.iterdir():
+            # todo: this is not optimized, we should introduce a new method import_outputs inside each OutputStorage
+            storage.import_output(uuid, output_path)
+
     def import_output(
         self,
         uuid: str,
