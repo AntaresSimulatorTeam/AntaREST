@@ -360,7 +360,7 @@ class OutputService:
         if not outputs_dir.exists():
             return
 
-        storage = self._get_storage(uuid, None)
+        storage = self._get_storage(uuid)
 
         storage.import_outputs(uuid, outputs_dir)
 
