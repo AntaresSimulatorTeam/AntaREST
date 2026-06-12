@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 class OutputStorageType(StrEnum):
     IN_STUDY_FILE_TREE = "IN_STUDY_FILE_TREE"
     V2 = "V2"
+    OUT_OF_STUDY_FILE_TREE = "OUT_OF_STUDY_FILE_TREE"
 
 
 @dataclass(frozen=True)
@@ -174,7 +175,7 @@ class IOutputStorage(ABC):
         """
 
     @abstractmethod
-    def get_output_details(self, study_id: str, output_id: str) -> OutputDetails:
+    def get_output_details(self, study_id: str) -> list[OutputDetails]:
         """
         Get the list of output for a study.
         """

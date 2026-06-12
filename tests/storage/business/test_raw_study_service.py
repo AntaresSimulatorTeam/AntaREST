@@ -29,11 +29,8 @@ from antarest.core.serde.ini_reader import read_ini
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Identity
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.output.storage.file.storage import (
-    FileStudyOutputs,
-    IFileOutputsProvider,
-    InStudyFileOutputStorage,
-)
+from antarest.output.storage.file.abstract_storage import FileStudyOutputs, IFileOutputsProvider
+from antarest.output.storage.file.in_study import InStudyFileOutputStorage
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, Directory, RawStudy, StudyMetadataCopy, StudyMetadataCreation
@@ -304,16 +301,6 @@ def test_zipped_output(tmp_path: Path) -> None:
     study_path = tmp_path / name
     study_path.mkdir()
     (study_path / "study.antares").touch()
-    cache = Mock()
-    study_service = RawStudyService(
-        config=build_config(tmp_path, workspace_name="foo", allow_deletion=False),
-        cache=cache,
-        study_factory=Mock(),
-        command_context=Mock(),
-        repository=Mock(),
-    )
-
-    md = create_raw_study(id=name, workspace="foo", path=str(study_path))
 
     zipped_output = tmp_path / "output.zip"
     with ZipFile(zipped_output, "w", ZIP_DEFLATED) as output_data:
@@ -331,11 +318,7 @@ timestamp = 1599488150
 
     class OutputsProvider(IFileOutputsProvider):
         def get_outputs(self, study_id: str) -> FileStudyOutputs:
-            return FileStudyOutputs(
-                get_file_study=lambda: study_service.get_raw(md),
-                outputs_path=study_path / "output",
-                study_workspace=DEFAULT_WORKSPACE_NAME,
-            )
+            return FileStudyOutputs(outputs_path=study_path / "output", study_workspace=DEFAULT_WORKSPACE_NAME)
 
     output_storage = InStudyFileOutputStorage(
         OutputsProvider(), cache=Mock(), remote_executor=Mock(), repository=Mock()

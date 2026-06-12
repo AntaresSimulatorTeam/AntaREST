@@ -1036,7 +1036,7 @@ class StudyService:
         outputs = self._get_outputs_access().get_outputs_details(study.id)
         return StudySynthesis.aggregate(input_synthesis, outputs)
 
-    def get_input_matrix_startdate(self, study_id: str, path: str) -> MatrixIndex:
+    def get_matrix_startdate(self, study_id: str, path: str) -> MatrixIndex:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
 
@@ -1059,7 +1059,17 @@ class StudyService:
             data_node = file_study.tree.get_node(path_components)
             if isinstance(data_node, OutputSeriesMatrix) or isinstance(data_node, InputSeriesMatrix):
                 frequency = data_node.freq
-        return get_start_date(file_study, output_id, frequency)
+
+        study_path: Path | None = None
+        output_path: Path | None = None
+        if output_id is None:
+            study_path = file_study.config.study_path
+        else:
+            # As the user gave a path like study/output/output-id/... we assume the study follows this structure
+            assert file_study.config.output_path is not None
+            output_path = file_study.config.output_path / output_id
+
+        return get_start_date(study_path, output_path, frequency)
 
     def remove_duplicates(self) -> None:
         duplicates = self.repository.list_duplicates()
@@ -2680,7 +2690,7 @@ class StudyService:
                 raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 
         if with_index:
-            matrix_index = self.get_input_matrix_startdate(study_id, path)
+            matrix_index = self.get_matrix_startdate(study_id, path)
             time_column = pd.date_range(
                 start=matrix_index.start_date, periods=len(pandas_df), freq=matrix_index.level.value[0]
             )

@@ -54,6 +54,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Identity
 from antarest.login.utils import get_user_impersonator, require_current_user
+from antarest.output.filestudy.file_output_utils import parse_output_config
 from antarest.study.business.model.config.general_model import GeneralConfig, Mode
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -68,7 +69,7 @@ from antarest.study.model import (
     StudyMetadataDTO,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
+from antarest.study.storage.rawstudy.model.helpers import parse_input_config
 
 logger = logging.getLogger(__name__)
 
@@ -409,22 +410,30 @@ def get_matrix_index(
 
 
 def get_start_date(
-    file_study: FileStudy,
-    output_id: str | None = None,
+    study_path: Path | None = None,
+    output_path: Path | None = None,
     level: MatrixFrequency = MatrixFrequency.HOURLY,
 ) -> MatrixIndex:
     """
     Retrieve the index (start date and step count) for output or input matrices
 
     Args:
-        file_study: Study data
-        output_id: id of the output, if None, then it's the start date of the input matrices
+        study_path: If provided, we'll retrieve the start date of the input matrices
+        output_path: If provided, we'll retrieve the start date of the output matrices
         level: granularity of the steps
 
     """
-    config = FileStudyHelpers.get_config(file_study, output_id)["general"]
+
+    if study_path:
+        data = parse_input_config(study_path)
+    elif output_path:
+        data = parse_output_config(output_path)
+    else:
+        raise ValueError("Either study_path or output_path must be provided")
+
+    config = data["general"]
     simulation_range = parse_simulation_range(config)
-    return get_matrix_index(simulation_range, output_id is not None, level)
+    return get_matrix_index(simulation_range, is_output=output_path is not None, level=level)
 
 
 def is_folder_safe(workspace: WorkspaceConfig, folder: str) -> bool:
