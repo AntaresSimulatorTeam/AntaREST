@@ -96,4 +96,4 @@ class FavoriteExternalDirectory(Base):
     user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
     def to_dto(self) -> "FavoriteExternalDirectoryDTO":
-        return FavoriteExternalDirectoryDTO(path=PosixPath(self.path), workspace=self.workspace)
+        return FavoriteExternalDirectoryDTO(path=PurePosixPath(self.path), workspace=self.workspace)
