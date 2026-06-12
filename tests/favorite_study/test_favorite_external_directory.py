@@ -37,7 +37,7 @@ def test_add_favorite_external_directory_failure_when_path_does_not_exist(tmp_pa
     mock_favorite_external_directory_repository = Mock(spec=FavoriteExternalDirectoryRepository)
 
     mock_favorite_external_directory_repository.save.return_value = FavoriteExternalDirectory(
-        path=str(path_to_favorite), workspace=workspace
+        path=path_to_favorite.as_posix(), workspace=workspace
     )
     favorite_service = FavoriteExternalDirectoryService(
         mock_favorite_external_directory_repository, workspace_config=config
