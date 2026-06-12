@@ -367,9 +367,7 @@ class OutputService:
                 # For DB studies, the study.path does not exist; we want to store the outputs externally
                 storage = self._get_storage(OutputStorageType.OUT_OF_STUDY_FILE_TREE)
 
-        for output_path in outputs_dir.iterdir():
-            # todo: this is not optimized, we should introduce a new method import_outputs inside each OutputStorage
-            storage.import_output(uuid, output_path)
+        storage.import_outputs(uuid, outputs_dir)
 
     def import_output(
         self,

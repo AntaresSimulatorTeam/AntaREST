@@ -1616,20 +1616,24 @@ class StudyService:
             # Imports the inputs
             study = self.storage_service.raw_study_service.import_study(study, dst_path)
 
+            # Save the Study in DB (needed to import the outputs)
+            study.directory_id = self.directory_service.get_directory_by_path(directory)
+            study.updated_at = current_time()
+            self._save_study(study)
+
             # Imports the outputs
             self._get_outputs_access().import_outputs(dst_path / "output", sid, storage_mode)
 
         except Exception as e:
+            # Remove the study from DB
+            db.session.rollback()
+            self.repository.delete(study.id)
             raise StudyImportFailed(sid, reason=str(e))
 
         finally:
             # Clean up the temporary directory
             shutil.rmtree(dst_path, ignore_errors=True)
 
-        study.directory_id = self.directory_service.get_directory_by_path(directory)
-        study.updated_at = current_time()
-
-        self._save_study(study)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,

@@ -141,7 +141,17 @@ class FileStudyStorage(IStudyStorage):
 
     @override
     def import_study(self, study: RawStudy, study_dir: Path) -> None:
-        study_dir.rename(study.path)
+        # Move the study data to the Study `path` directory
+        study_path = Path(study.path)
+        study_dir.rename(study_path)
+
+        # Move the "output" subfolder back to its original location as we only want to import the inputs here
+        outputs_path = study_path / "output"
+        if outputs_path.exists():
+            (study_dir / "output").mkdir(parents=True)
+            outputs_path.rename(study_dir / "output")
+
+        # Modify the study
         self.update_from_raw_metadata(study)
         self.normalize_study(study)
 
