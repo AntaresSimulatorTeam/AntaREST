@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import logging
-from pathlib import PosixPath
+from pathlib import PosixPath, PurePosixPath
 
 from pydantic.alias_generators import to_camel
 from sqlalchemy import ForeignKey, Integer, String
@@ -84,7 +84,7 @@ class FavoriteDirectory(Base):
 
 
 class FavoriteExternalDirectoryDTO(AntaresBaseModel, extra="forbid"):
-    path: PosixPath
+    path: PurePosixPath
     workspace: str
 
 
