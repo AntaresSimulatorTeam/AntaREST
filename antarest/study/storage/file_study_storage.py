@@ -148,7 +148,7 @@ class FileStudyStorage(IStudyStorage):
         # Move the "output" subfolder back to its original location as we only want to import the inputs here
         outputs_path = study_path / "output"
         if outputs_path.exists():
-            (study_dir / "output").mkdir(parents=True)
+            study_dir.mkdir()
             outputs_path.rename(study_dir / "output")
 
         # As we don't know yet how outputs will be handled, we don't want to fill the cache with wrong data
