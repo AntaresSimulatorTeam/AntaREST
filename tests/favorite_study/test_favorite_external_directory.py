@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from pathlib import Path, PosixPath
+from pathlib import Path, PurePosixPath
 from unittest.mock import Mock
 
 import pytest
@@ -31,7 +31,7 @@ def test_add_favorite_external_directory_failure_when_path_does_not_exist(tmp_pa
     workspace = "validspace"
     config = Config(storage=StorageConfig(tmp_dir=tmp_path))
     config.storage.workspaces.update({workspace: WorkspaceConfig(path=tmp_path)})
-    path_to_favorite = PosixPath(tmp_path) / workspace
+    path_to_favorite = Path(tmp_path) / workspace
     path_to_favorite.mkdir(parents=True, exist_ok=True)
     mock_path = path_to_favorite / "notapath" / "to" / "favorite" / "directory"
     mock_favorite_external_directory_repository = Mock(spec=FavoriteExternalDirectoryRepository)
@@ -51,7 +51,7 @@ def test_add_favorite_external_directory_failure_when_path_does_not_exist(tmp_pa
 def test_add_favorite_external_directory_failure_when_workspace_does_not_exist(tmp_path: Path):
     # Trying to add an external directory to a non-existing workspace
     config = Config(storage=StorageConfig(tmp_dir=tmp_path))
-    path_to_favorite = PosixPath(tmp_path / "path" / "to" / "favorite" / "directory")
+    path_to_favorite = PurePosixPath(tmp_path / "path" / "to" / "favorite" / "directory")
     non_existing_workspace = ""
     mock_favorite_external_directory_repository = Mock(spec=FavoriteExternalDirectoryRepository)
     mock_favorite_external_directory_repository.save.return_value = FavoriteExternalDirectory(
@@ -83,10 +83,10 @@ def test_list_favorite_external_directory_success_returns_two_favorites(tmp_path
     # getting the external directories in the favorites, and returns two favorites
     config = Config(storage=StorageConfig(tmp_dir=tmp_path))
     expected_favorite_1 = FavoriteExternalDirectoryDTO(
-        path=PosixPath("path\\to\\favorite\\directory_1"), workspace="validspace"
+        path=PurePosixPath("path\\to\\favorite\\directory_1"), workspace="validspace"
     )
     expected_favorite_2 = FavoriteExternalDirectoryDTO(
-        path=PosixPath("path\\to\\favorite\\directory_2"), workspace="validspace"
+        path=PurePosixPath("path\\to\\favorite\\directory_2"), workspace="validspace"
     )
     expected_favorite_list = [expected_favorite_1, expected_favorite_2]
 
@@ -107,7 +107,7 @@ def test_add_favorite_external_directory_success_added_one_favorite(tmp_path: Pa
     config = Config(storage=StorageConfig(tmp_dir=tmp_path))
     config.storage.workspaces.update({"validspace": WorkspaceConfig(path=tmp_path)})
     expected_favorite_dto = FavoriteExternalDirectoryDTO(
-        path=PosixPath("path\\to\\favorite\\directory"), workspace="validspace"
+        path=PurePosixPath("path\\to\\favorite\\directory"), workspace="validspace"
     )
     expected_fav_directory = FavoriteExternalDirectory(path="path\\to\\favorite\\directory", workspace="validspace")
     directory_to_favorite = tmp_path / "validspace" / "path" / "to" / "favorite" / "directory"
