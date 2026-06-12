@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import logging
+import shutil
 import uuid
 from pathlib import Path
 from typing import Iterator
@@ -196,8 +197,8 @@ class DatabaseStudyStorage(IStudyStorage):
 
     @override
     def unarchive(self, study: RawStudy, archive_path: Path) -> None:
+        dst_path = self._config.storage.tmp_dir / str(uuid.uuid4())
         try:
-            dst_path = self._config.storage.tmp_dir / str(uuid.uuid4())
             extract_data_to_dir(dst_path, archive_path, self._config.storage.tmp_dir)
             self._extract_study(study, dst_path, create_study_in_db=False)
         except Exception as e:
@@ -206,6 +207,9 @@ class DatabaseStudyStorage(IStudyStorage):
             db.session.rollback()
             self.remove_study_data(study)
             raise e
+        finally:
+            # Clean up the temporary directory
+            shutil.rmtree(dst_path, ignore_errors=True)
 
     @override
     def export_study(self, study: Study, dst_path: Path) -> None:
