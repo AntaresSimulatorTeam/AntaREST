@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import os.path
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from starlette.testclient import TestClient
 
@@ -97,8 +97,8 @@ def test_get_favorite_external_directory_success_added_two_favorite(admin_client
     assert response_2.status_code == 201
     actual_favorite_list = admin_client.get("/v1/favorites/external_directories").json()
     assert len(actual_favorite_list) == 2
-    expected_favorite_external_directory_1["path"] = os.path.normpath(path_1)
-    expected_favorite_external_directory_2["path"] = os.path.normpath(path_2)
+    expected_favorite_external_directory_1["path"] = PurePosixPath(path_1).as_posix()
+    expected_favorite_external_directory_2["path"] = PurePosixPath(path_2).as_posix()
     assert actual_favorite_list == [expected_favorite_external_directory_1, expected_favorite_external_directory_2]
 
 
