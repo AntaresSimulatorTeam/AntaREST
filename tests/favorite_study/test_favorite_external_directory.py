@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import re
 from pathlib import Path, PurePosixPath
 from unittest.mock import Mock
 
@@ -44,8 +44,8 @@ def test_add_favorite_external_directory_failure_when_path_does_not_exist(tmp_pa
     )
 
     with current_user_context(DEFAULT_ADMIN_USER):
-        with pytest.raises(DirectoryNotFoundError, match=f"404: Directory '{mock_path}' not found"):
-            favorite_service.add_favorite(mock_path, workspace)
+        with pytest.raises(DirectoryNotFoundError, match=re.escape(f"404: Directory '{mock_path}' not found")):
+            favorite_service.add_favorite(mock_path.as_posix(), workspace)
 
 
 def test_add_favorite_external_directory_failure_when_workspace_does_not_exist(tmp_path: Path):
