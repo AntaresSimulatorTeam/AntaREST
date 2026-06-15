@@ -347,6 +347,11 @@ class AbstractFileOutputStorage(IOutputStorage):
         remove_from_cache(self._cache, study_id)
 
     @override
+    def delete_outputs(self, study_id: str) -> None:
+        outputs_path = self._outputs_provider.get_outputs(study_id).outputs_path
+        shutil.rmtree(outputs_path, ignore_errors=True)  # Contains both archived and unarchived outputs
+
+    @override
     def write_output_to_dir(self, study_id: str, output_id: str, parent: Path) -> None:
         """
         Writes outputs in filestudy format into parent directory

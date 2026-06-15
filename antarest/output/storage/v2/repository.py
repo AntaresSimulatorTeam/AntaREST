@@ -147,6 +147,11 @@ class OutputV2Repository:
         self.session.execute(stmt)
         self.session.commit()
 
+    def delete_outputs(self, study_id: str) -> None:
+        stmt = delete(DbOutputMetadataV2).where(DbOutputMetadataV2.study_id == study_id)
+        self.session.execute(stmt)
+        self.session.commit()
+
     def save_log(self, study_id: str, output_name: str, log_type: LogType, log_content: str) -> None:
         upsert_one(
             self.session,

@@ -590,6 +590,15 @@ class OutputService:
 
         logger.info(f"Output {output_name} deleted from study {uuid}")
 
+    def delete_outputs(self, uuid: str) -> None:
+        """
+        Delete all outputs simulation in the study
+        """
+        logger.info(f"Deleting all outputs from study {uuid}")
+        self._studies_repository.assert_permission(uuid, StudyPermissionType.WRITE)
+        for storage in self._storages:
+            storage.delete_outputs(uuid)
+
     def archive_outputs(self, study_id: str) -> list[str]:
         logger.info(f"Archiving all outputs for study {study_id}")
         self._studies_repository.assert_permission(study_id, StudyPermissionType.WRITE)

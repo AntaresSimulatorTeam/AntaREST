@@ -597,7 +597,7 @@ class IOutputsAccess(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def delete_output(self, study_id: str, output_id: str) -> None:
+    def delete_outputs(self, study_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
@@ -1568,8 +1568,7 @@ class StudyService:
 
         self._await_generation_tasks(studies_to_delete.values())
         for study in studies_to_delete.values():
-            for output in self._get_outputs_access().list_outputs(study.id):
-                self._get_outputs_access().delete_output(study.id, output.id)
+            self._get_outputs_access().delete_outputs(study.id)
         self.repository.delete(*studies_to_delete.keys())
 
         for study in studies_to_delete.values():

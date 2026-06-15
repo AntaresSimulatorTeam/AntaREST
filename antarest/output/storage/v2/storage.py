@@ -320,6 +320,14 @@ class V2OutputStorage(IOutputStorage):
         self._repository.delete_output(study_id, output_id)
 
     @override
+    def delete_outputs(self, study_id: str) -> None:
+        for output_metadata in self._repository.search_output_metadata(study_id):
+            output_id = output_metadata.output_name
+            self._archive_storage.delete_file(_archive_id(study_id, output_id))
+            shutil.rmtree(parquet_output_dir(self._variables_dir, study_id, output_id), ignore_errors=True)
+        self._repository.delete_outputs(study_id)
+
+    @override
     def export_output(self, study_id: str, output_id: str, target: Path) -> None:
         logger.info(f"Exporting output {study_id}/{output_id} from internal storage.")
         self._require_metadata(study_id, output_id)

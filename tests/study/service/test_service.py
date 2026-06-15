@@ -173,7 +173,7 @@ def build_study_service(
             pass
 
         @override
-        def delete_output(self, study_id: str, output_id: str) -> None:
+        def delete_outputs(self, study_id: str) -> None:
             pass
 
         @override

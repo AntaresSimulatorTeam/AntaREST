@@ -199,6 +199,12 @@ class IOutputStorage(ABC):
         """
 
     @abstractmethod
+    def delete_outputs(self, study_id: str) -> None:
+        """
+        Delete all outputs for a study
+        """
+
+    @abstractmethod
     def write_output_to_dir(self, study_id: str, output_id: str, parent: Path) -> None:
         """
         Writes outputs in filestudy format into the specified parent directory.
