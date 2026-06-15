@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import os.path
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
 from starlette.testclient import TestClient
 
