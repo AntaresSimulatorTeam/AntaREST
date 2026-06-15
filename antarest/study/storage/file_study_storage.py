@@ -12,7 +12,7 @@
 import logging
 import shutil
 from pathlib import Path
-from typing import BinaryIO, Iterator
+from typing import Iterator
 
 from typing_extensions import override
 
@@ -140,10 +140,21 @@ class FileStudyStorage(IStudyStorage):
             node.save_matrix(matrix_ids[k])
 
     @override
-    def import_study(self, study: RawStudy, stream: BinaryIO) -> None:
-        extract_data_to_dir(Path(study.path), stream, self._config.storage.tmp_dir)
-        self.update_from_raw_metadata(study)
-        self.normalize_study(study)
+    def import_study(self, study: RawStudy, study_dir: Path) -> None:
+        # Move the study data to the Study `path` directory
+        study_path = Path(study.path)
+        study_dir.rename(study_path)
+
+        # Move the "output" subfolder back to its original location as we only want to import the inputs here
+        outputs_path = study_path / "output"
+        if outputs_path.exists():
+            study_dir.mkdir()
+            outputs_path.rename(study_dir / "output")
+
+        # As we don't know yet how outputs will be handled, we don't want to fill the cache with wrong data
+        file_study = self._get_file_study(Path(study.path), is_managed(study), use_cache=False)
+        update_study_from_raw_metadata(study, file_study)
+        self.normalize_file_study(file_study)
 
     def update_from_raw_metadata(self, study: Study) -> None:
         """
@@ -170,8 +181,8 @@ class FileStudyStorage(IStudyStorage):
             logger.error("Failed to update study %s name and version from raw metadata!", str(study.path), exc_info=e)
             return False
 
-    def _get_file_study(self, study_path: Path, managed: bool, study_id: str = "") -> FileStudy:
-        return self._study_factory.create_from_fs(study_path, managed, study_id=study_id)
+    def _get_file_study(self, study_path: Path, managed: bool, study_id: str = "", use_cache: bool = True) -> FileStudy:
+        return self._study_factory.create_from_fs(study_path, managed, study_id=study_id, use_cache=use_cache)
 
     def denormalize_study(self, study: Study) -> None:
         file_study = self._get_file_study(Path(study.path), is_managed(study), study.id)

@@ -188,6 +188,10 @@ def build_study_service(
         def write_output_to_dir(self, study_id: str, output_id: str, parent_dir: Path) -> None:
             pass
 
+        @override
+        def import_outputs(self, outputs_dir: Path, study_id: str) -> None:
+            pass
+
     service.register_output_access(OutputsAccessMock())
     return service
 

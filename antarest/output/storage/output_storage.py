@@ -140,6 +140,12 @@ class IOutputStorage(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def import_outputs(self, study_id: str, src_outputs_dir: Path) -> None:
+        """
+        Import outputs when importing a study that contains outputs.
+        """
+
+    @abstractmethod
     def import_output(
         self,
         study_id: str,
