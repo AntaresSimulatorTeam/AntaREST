@@ -111,7 +111,6 @@ class DbConfig(BaseModel):
     pool_use_lifo: bool = False
 
 
-
 class V2OutputStorageConfig(BaseModel):
     """
     Configuration for "new style" internal output storage
@@ -145,20 +144,25 @@ class OutputStorageConfig(BaseModel):
 
     v2: V2OutputStorageConfig = V2OutputStorageConfig()
     out_of_study: OutOfStudyFileOutputStorageConfig = OutOfStudyFileOutputStorageConfig()
-
     default_storage_type: OutputStorageType = OutputStorageType.IN_STUDY_FILE_TREE
 
+    @model_validator(mode="before")
     @classmethod
-    def from_dict(cls, data: JSON) -> "OutputStorageConfig":
-        defaults = cls()
-        config = cls(
-            v2=V2OutputStorageConfig.model_validate(data.get("v2", {})),
-            out_of_study=OutOfStudyFileOutputStorageConfig.model_validate(data.get("out_of_study", {})),
-            default_storage_type=OutputStorageType(data.get("default_storage_type", defaults.default_storage_type)),
-        )
-        if config.default_storage_type == OutputStorageType.V2 and not config.v2.enable:
+    def _validate_model(cls, data: Any) -> Any:
+        if "out_of_study" in data:
+            data["out_of_study"] = OutOfStudyFileOutputStorageConfig.model_validate(data["out_of_study"])
+        if "default_storage_type" in data:
+            default_storage_type = OutputStorageType(data["default_storage_type"])
+            if default_storage_type not in OutputStorageType:
+                raise ValueError(f"Invalid default_storage_type: {default_storage_type}")
+            data["default_storage_type"] = default_storage_type
+        return data
+
+    @model_validator(mode="after")
+    def _validate_default_storage_type(self) -> "OutputStorageConfig":
+        if self.default_storage_type == OutputStorageType.V2 and not self.v2.enable:
             raise ValueError("You cannot set v2 storage as your default storage and not enable it")
-        return config
+        return self
 
 
 class StudyStorageConfig(BaseModel):
@@ -528,6 +532,7 @@ class CacheConfig(BaseModel):
     """
     Sub config object dedicated to cache module
     """
+
     model_config = ConfigDict(frozen=True)
 
     checker_delay: float = 0.2  # in seconds
@@ -544,8 +549,8 @@ class TaskConfig(BaseModel):
     """
     Sub config object dedicated to the task module
     """
-    model_config = ConfigDict(frozen=True)
 
+    model_config = ConfigDict(frozen=True)
 
     max_workers: int = 5
     remote_workers: list[RemoteWorkerConfig] = Field(default_factory=list)
@@ -568,12 +573,11 @@ class ServerConfig(BaseModel):
     """
     Sub config object dedicated to the server
     """
-    model_config = ConfigDict(frozen=True)
 
+    model_config = ConfigDict(frozen=True)
 
     worker_threadpool_size: int = 5
     services: list[str] = Field(default_factory=list)
-
 
 
 class PrometheusConfig(BaseModel):
@@ -584,6 +588,7 @@ class PrometheusConfig(BaseModel):
         multiprocess: if True, metrics of workers will be aggregated before exposition.
                       Environment variable `PROMETHEUS_MULTIPROC_DIR` must be set.
     """
+
     model_config = ConfigDict(frozen=True)
 
     multiprocess: bool = False
@@ -600,7 +605,6 @@ class MetricsConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     prometheus: PrometheusConfig | None = None
-
 
 
 class CeleryConfig(BaseModel):

@@ -228,4 +228,4 @@ def test_output_storage_config_validation_errors() -> None:
     with pytest.raises(
         ValueError, match=re.escape("You cannot set v2 storage as your default storage and not enable it")
     ):
-        OutputStorageConfig.from_dict(data)
+        OutputStorageConfig.model_validate(data)
