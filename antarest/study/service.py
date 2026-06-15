@@ -1609,7 +1609,7 @@ class StudyService:
         )
 
         # First, extract the source inside a temporary directory
-        dst_path = self.config.storage.tmp_dir / sid
+        dst_path = (self.config.storage.tmp_dir / sid).resolve()
         try:
             extract_data_to_dir(dst_path, stream, self.config.storage.tmp_dir)
 

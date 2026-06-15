@@ -142,7 +142,7 @@ class FileStudyStorage(IStudyStorage):
     @override
     def import_study(self, study: RawStudy, study_dir: Path) -> None:
         # Move the study data to the Study `path` directory
-        study_path = Path(study.path)
+        study_path = Path(study.path).resolve()
         study_dir.rename(study_path)
 
         # Move the "output" subfolder back to its original location as we only want to import the inputs here
