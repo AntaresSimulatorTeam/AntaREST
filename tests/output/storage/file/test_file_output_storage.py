@@ -13,7 +13,7 @@ import os
 import shutil
 import zipfile
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import pytest
 from typing_extensions import override
@@ -44,6 +44,7 @@ from antarest.output.storage.output_storage import (
 )
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
+from tests.helpers import with_db_context
 from tests.test_helpers.dates import utc_to_local
 
 
@@ -285,6 +286,7 @@ def test_file_output_storage(output_storage: IOutputStorage) -> None:
         output_storage.get_output_details("unknown")
 
 
+@with_db_context
 def test_output_deletion(output_storage: IOutputStorage, tmp_path: Path) -> None:
     outputs = output_storage.list_outputs("STA-mini")
     assert len(outputs) == 6
@@ -315,6 +317,12 @@ def test_output_deletion(output_storage: IOutputStorage, tmp_path: Path) -> None
     outputs = output_storage.list_outputs("STA-mini")
     assert len(outputs) == 4
     assert "20201014-1422eco-hello" not in [o.id for o in outputs]
+
+    # Ensures the DB was cleaned up
+    assert sorted(output_storage._repository.clean_output_variables_list.call_args_list) == [
+        call("STA-mini", "20201014-1422eco-hello"),
+        call("STA-mini", "20201014-1427eco"),
+    ]
 
 
 def test_output_archival(output_storage: IOutputStorage, tmp_path: Path) -> None:

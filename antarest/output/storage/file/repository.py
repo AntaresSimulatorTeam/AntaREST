@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import gzip
 
-from sqlalchemy import ForeignKey, Integer, LargeBinary, PrimaryKeyConstraint, String
+from sqlalchemy import ForeignKey, Integer, LargeBinary, PrimaryKeyConstraint, String, delete
 from sqlalchemy.orm import Mapped, mapped_column
 
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -61,4 +61,11 @@ class FileOutputRepository:
     def save_output_variables_list(self, study_id: str, output_id: str, variables_list: OutputVariablesList) -> None:
         db_model = DbOutputVariables.from_model(study_id, output_id, variables_list)
         db.session.add(db_model)
+        db.session.commit()
+
+    def clean_output_variables_list(self, study_id: str, output_id: str) -> None:
+        stmt = delete(DbOutputVariables).where(
+            DbOutputVariables.study_id == study_id, DbOutputVariables.output_id == output_id
+        )
+        db.session.execute(stmt)
         db.session.commit()

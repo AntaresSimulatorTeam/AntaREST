@@ -344,12 +344,16 @@ class AbstractFileOutputStorage(IOutputStorage):
         if archived_output_path.exists():
             archived_output_path.unlink()
 
+        self._repository.clean_output_variables_list(study_id, output_id)
+
         remove_from_cache(self._cache, study_id)
 
     @override
     def delete_outputs(self, study_id: str) -> None:
         outputs_path = self._outputs_provider.get_outputs(study_id).outputs_path
-        shutil.rmtree(outputs_path, ignore_errors=True)  # Contains both archived and unarchived outputs
+        # `outputs_path` contains both archived and unarchived outputs
+        shutil.rmtree(outputs_path, ignore_errors=True)
+        # No need to clean the repository, it will be done automatically when the study is deleted via ForeignKey.
 
     @override
     def write_output_to_dir(self, study_id: str, output_id: str, parent: Path) -> None:
