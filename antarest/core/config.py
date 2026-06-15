@@ -15,13 +15,13 @@ import os
 import platform
 import string
 import tempfile
-from dataclasses import asdict, dataclass, field
 from enum import StrEnum
 from pathlib import Path
-from typing import ClassVar
+from typing import Any, ClassVar, Self
 
 import yaml
 from antares.study.version import SolverVersion
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from antarest.core.model import JSON
 from antarest.core.roles import RoleType
@@ -42,86 +42,66 @@ class InternalMatrixFormat(StrEnum):
     FEATHER = "feather"
 
 
-@dataclass(frozen=True)
-class ExternalAuthConfig:
+class ExternalAuthConfig(BaseModel):
     """
     Sub config object dedicated to external auth service
     """
 
+    model_config = ConfigDict(frozen=True)
+
     url: str | None = None
     default_group_role: RoleType = RoleType.READER
     add_ext_groups: bool = False
-    group_mapping: dict[str, str] = field(default_factory=dict)
-
-    @classmethod
-    def from_dict(cls, data: JSON) -> "ExternalAuthConfig":
-        defaults = cls()
-        return cls(
-            url=data.get("url", defaults.url),
-            default_group_role=(
-                RoleType(data["default_group_role"]) if "default_group_role" in data else defaults.default_group_role
-            ),
-            add_ext_groups=data.get("add_ext_groups", defaults.add_ext_groups),
-            group_mapping=data.get("group_mapping", defaults.group_mapping),
-        )
+    group_mapping: dict[str, str] = Field(default_factory=dict)
 
 
-@dataclass(frozen=True)
-class SecurityConfig:
+class SecurityConfig(BaseModel):
     """
     Sub config object dedicated to security
     """
 
+    model_config = ConfigDict(frozen=True)
+
     jwt_key: str = ""
     admin_pwd: str = ""
     disabled: bool = False
-    external_auth: ExternalAuthConfig = ExternalAuthConfig()
+    external_auth: ExternalAuthConfig = Field(default_factory=ExternalAuthConfig)
 
+    @model_validator(mode="before")
     @classmethod
-    def from_dict(cls, data: JSON) -> "SecurityConfig":
-        defaults = cls()
-        return cls(
-            jwt_key=data.get("jwt", {}).get("key", defaults.jwt_key),
-            admin_pwd=data.get("login", {}).get("admin", {}).get("pwd", defaults.admin_pwd),
-            disabled=data.get("disabled", defaults.disabled),
-            external_auth=(
-                ExternalAuthConfig.from_dict(data["external_auth"])
-                if "external_auth" in data
-                else defaults.external_auth
-            ),
-        )
+    def _flatten_nested_keys(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        data = dict(data)
+        if "jwt" in data:
+            data.setdefault("jwt_key", data.pop("jwt", {}).get("key", ""))
+        if "login" in data:
+            data.setdefault("admin_pwd", data.pop("login", {}).get("admin", {}).get("pwd", ""))
+        return data
 
 
-@dataclass(frozen=True)
-class WorkspaceConfig:
+class WorkspaceConfig(BaseModel):
     """
     Sub config object dedicated to workspace
     """
 
-    filter_in: list[str] = field(default_factory=lambda: [".*"])
-    filter_out: list[str] = field(default_factory=lambda: [])
-    groups: list[str] = field(default_factory=lambda: [])
-    path: Path = Path()
+    model_config = ConfigDict(frozen=True)
 
-    @classmethod
-    def from_dict(cls, data: JSON) -> "WorkspaceConfig":
-        defaults = cls()
-        return cls(
-            filter_in=data.get("filter_in", defaults.filter_in),
-            filter_out=data.get("filter_out", defaults.filter_out),
-            groups=data.get("groups", defaults.groups),
-            path=Path(data["path"]) if "path" in data else defaults.path,
-        )
+    filter_in: list[str] = Field(default_factory=lambda: [".*"])
+    filter_out: list[str] = Field(default_factory=list)
+    groups: list[str] = Field(default_factory=list)
+    path: Path = Field(default_factory=Path)
 
 
-@dataclass(frozen=True)
-class DbConfig:
+class DbConfig(BaseModel):
     """
     Sub config object dedicated to db
     """
 
-    db_url: str = ""
-    db_admin_url: str | None = None
+    model_config = ConfigDict(frozen=True, populate_by_name=True)
+
+    db_url: str = Field(default="", alias="url")
+    db_admin_url: str | None = Field(default=None, alias="admin_url")
     db_connect_timeout: int = 10
     pool_recycle: int | None = None
     pool_pre_ping: bool = False
@@ -130,61 +110,39 @@ class DbConfig:
     pool_size: int = 5
     pool_use_lifo: bool = False
 
-    @classmethod
-    def from_dict(cls, data: JSON) -> "DbConfig":
-        defaults = cls()
-        return cls(
-            db_admin_url=data.get("admin_url", defaults.db_admin_url),
-            db_url=data.get("url", defaults.db_url),
-            db_connect_timeout=data.get("db_connect_timeout", defaults.db_connect_timeout),
-            pool_recycle=data.get("pool_recycle", defaults.pool_recycle),
-            pool_pre_ping=data.get("pool_pre_ping", defaults.pool_pre_ping),
-            pool_use_null=data.get("pool_use_null", defaults.pool_use_null),
-            pool_max_overflow=data.get("pool_max_overflow", defaults.pool_max_overflow),
-            pool_size=data.get("pool_size", defaults.pool_size),
-            pool_use_lifo=data.get("pool_use_lifo", defaults.pool_use_lifo),
-        )
 
 
-@dataclass(frozen=True)
-class V2OutputStorageConfig:
+class V2OutputStorageConfig(BaseModel):
     """
     Configuration for "new style" internal output storage
     """
+
+    model_config = ConfigDict(frozen=True)
 
     enable: bool = False
     archive_dir: Path = Path("./output-archives")
     variables_dir: Path = Path("./output-variables")
 
-    @classmethod
-    def from_dict(cls, data: JSON) -> "V2OutputStorageConfig":
-        defaults = cls()
-        return V2OutputStorageConfig(
-            enable=data.get("enable", defaults.enable),
-            archive_dir=Path(data.get("archive_dir", str(defaults.archive_dir))),
-            variables_dir=Path(data.get("variables_dir", str(defaults.variables_dir))),
-        )
 
-
-@dataclass(frozen=True)
-class OutOfStudyFileOutputStorageConfig:
+class OutOfStudyFileOutputStorageConfig(BaseModel):
     """
     Configuration for output storage in a single dir for all studies
     """
 
+    model_config = ConfigDict(frozen=True)
     storage_dir: Path = Path("./outputs")
 
     @classmethod
-    def from_dict(cls, data: JSON) -> "OutOfStudyFileOutputStorageConfig":
-        defaults = cls()
-        storage_dir = Path(data.get("storage_dir", str(defaults.storage_dir)))
-        storage_dir.mkdir(parents=True, exist_ok=True)
-        return OutOfStudyFileOutputStorageConfig(storage_dir=storage_dir)
+    @model_validator(mode="after")
+    def validate_range(self) -> type[Self]:
+        self.storage_dir.mkdir(parents=True, exist_ok=True)
+        return self
 
 
-@dataclass(frozen=True)
-class OutputStorageConfig:
+class OutputStorageConfig(BaseModel):
     """Configuration for output storage"""
+
+    model_config = ConfigDict(frozen=True)
 
     v2: V2OutputStorageConfig = V2OutputStorageConfig()
     out_of_study: OutOfStudyFileOutputStorageConfig = OutOfStudyFileOutputStorageConfig()
@@ -195,8 +153,8 @@ class OutputStorageConfig:
     def from_dict(cls, data: JSON) -> "OutputStorageConfig":
         defaults = cls()
         config = cls(
-            v2=V2OutputStorageConfig.from_dict(data.get("v2", {})),
-            out_of_study=OutOfStudyFileOutputStorageConfig.from_dict(data.get("out_of_study", {})),
+            v2=V2OutputStorageConfig.model_validate(data.get("v2", {})),
+            out_of_study=OutOfStudyFileOutputStorageConfig.model_validate(data.get("out_of_study", {})),
             default_storage_type=OutputStorageType(data.get("default_storage_type", defaults.default_storage_type)),
         )
         if config.default_storage_type == OutputStorageType.V2 and not config.v2.enable:
@@ -204,33 +162,28 @@ class OutputStorageConfig:
         return config
 
 
-@dataclass(frozen=True)
-class StudyStorageConfig:
+class StudyStorageConfig(BaseModel):
     """
     Sub config object dedicated to study storage configuration (from study.storage in YAML)
     """
 
+    model_config = ConfigDict(frozen=True)
+
     database_mode_enabled: bool = False
 
-    @classmethod
-    def from_dict(cls, data: JSON) -> "StudyStorageConfig":
-        defaults = cls()
-        return cls(
-            database_mode_enabled=data.get("database_mode_enabled", defaults.database_mode_enabled),
-        )
 
-
-@dataclass(frozen=True)
-class StorageConfig:
+class StorageConfig(BaseModel):
     """
     Sub config object dedicated to study module
     """
+
+    model_config = ConfigDict(frozen=True)
 
     matrixstore: Path = Path("./matrixstore")
     archive_dir: Path = Path("./archives")
     archive_format: ArchiveFormat = ArchiveFormat.ZIP
     tmp_dir: Path = Path(tempfile.gettempdir())
-    workspaces: dict[str, WorkspaceConfig] = field(default_factory=dict)
+    workspaces: dict[str, WorkspaceConfig] = Field(default_factory=dict)
     allow_deletion: bool = False
     watcher_lock: bool = True
     watcher_lock_delay: int = 10
@@ -259,64 +212,24 @@ class StorageConfig:
     disk_usage_log_cron: str = "0 * * * *"
     disk_space_analyzer_sleeping_time: int = 300
     disk_space_analyzer_cron: str = "0 1 * * *"
-    study_storage: StudyStorageConfig = StudyStorageConfig()
-    output: OutputStorageConfig = OutputStorageConfig()
+    study_storage: StudyStorageConfig = Field(default_factory=StudyStorageConfig)
+    output: OutputStorageConfig = Field(default_factory=OutputStorageConfig)
 
     @classmethod
     def from_dict(cls, data: JSON, desktop_mode: bool = False) -> "StorageConfig":
         if data.get("auto_archive_sleeping_time") and data.get("auto_archive_cron"):
             raise ValueError("auto_archive_sleeping_time and auto_archive_cron cannot be used together")
-        defaults = cls()
-        workspaces = (
-            {key: WorkspaceConfig.from_dict(value) for key, value in data["workspaces"].items()}
-            if "workspaces" in data
-            else defaults.workspaces
-        )
+        processed = dict(data)
+        # Flatten study.storage → study_storage
+        if "study" in processed and isinstance(processed["study"], dict):
+            processed.setdefault("study_storage", processed.pop("study").get("storage", {}))
+        # Validate workspaces and inject desktop system workspaces
+        workspaces = {k: WorkspaceConfig.model_validate(v) for k, v in processed.pop("workspaces", {}).items()}
         cls.validate_workspaces(workspaces, desktop_mode)
         if desktop_mode:
             workspaces = {**workspaces, **cls.system_workspaces()}
-        return cls(
-            matrixstore=Path(data["matrixstore"]) if "matrixstore" in data else defaults.matrixstore,
-            archive_dir=Path(data["archive_dir"]) if "archive_dir" in data else defaults.archive_dir,
-            archive_format=(
-                ArchiveFormat(data["archive_format"]) if "archive_format" in data else defaults.archive_format
-            ),
-            tmp_dir=Path(data["tmp_dir"]) if "tmp_dir" in data else defaults.tmp_dir,
-            workspaces=workspaces,
-            allow_deletion=data.get("allow_deletion", defaults.allow_deletion),
-            watcher_lock=data.get("watcher_lock", defaults.watcher_lock),
-            watcher_lock_delay=data.get("watcher_lock_delay", defaults.watcher_lock_delay),
-            download_default_expiration_timeout_minutes=(
-                data.get(
-                    "download_default_expiration_timeout_minutes",
-                    defaults.download_default_expiration_timeout_minutes,
-                )
-            ),
-            matrix_gc_sleeping_time=data.get("matrix_gc_sleeping_time", defaults.matrix_gc_sleeping_time),
-            matrix_gc_dry_run=data.get("matrix_gc_dry_run", defaults.matrix_gc_dry_run),
-            matrix_gc_retention_time=data.get("matrix_gc_retention_time", defaults.matrix_gc_retention_time),
-            auto_archive_threshold_days=data.get("auto_archive_threshold_days", defaults.auto_archive_threshold_days),
-            auto_archive_dry_run=data.get("auto_archive_dry_run", defaults.auto_archive_dry_run),
-            auto_archive_sleeping_time=data.get("auto_archive_sleeping_time", defaults.auto_archive_sleeping_time),
-            auto_archive_cron=data.get("auto_archive_cron", defaults.auto_archive_cron),
-            snapshot_retention_days=data.get("snapshot_retention_days", defaults.snapshot_retention_days),
-            matrixstore_format=InternalMatrixFormat(data.get("matrixstore_format", defaults.matrixstore_format)),
-            blobstore=Path(data["blobstore"]) if "blobstore" in data else defaults.blobstore,
-            blob_gc_sleeping_time=data.get("blob_gc_sleeping_time", defaults.blob_gc_sleeping_time),
-            blob_gc_dry_run=data.get("blob_gc_dry_run", defaults.blob_gc_dry_run),
-            variable_view_gc_sleeping_time=data.get(
-                "variable_view_gc_sleeping_time", defaults.variable_view_gc_sleeping_time
-            ),
-            variable_view_gc_dry_run=data.get("variable_view_gc_dry_run", defaults.variable_view_gc_dry_run),
-            variable_view_gc_retention_days=data.get(
-                "variable_view_gc_retention_days", defaults.variable_view_gc_retention_days
-            ),
-            watcher_scan_sleeping_time=data.get("watcher_scan_sleeping_time", defaults.watcher_scan_sleeping_time),
-            watcher_scan_dry_run=data.get("watcher_scan_dry_run", defaults.watcher_scan_dry_run),
-            tasks_gc_retention_days=data.get("tasks_gc_retention_days", defaults.tasks_gc_retention_days),
-            study_storage=StudyStorageConfig.from_dict(data.get("study", {}).get("storage", {})),
-            output=OutputStorageConfig.from_dict(data["output"]) if "output" in data else defaults.output,
-        )
+        processed["workspaces"] = workspaces
+        return cls.model_validate(processed)
 
     @classmethod
     def validate_workspaces(cls, workspaces: dict[str, WorkspaceConfig], desktop_mode: bool) -> None:
@@ -350,11 +263,12 @@ class StorageConfig:
             raise NotImplementedError("System workspaces are only implemented for Linux and Windows")
 
 
-@dataclass(frozen=True)
-class NbCoresConfig:
+class NbCoresConfig(BaseModel):
     """
     The NBCoresConfig class is designed to manage the configuration of the number of CPU cores
     """
+
+    model_config = ConfigDict(frozen=True)
 
     min: int = 1
     default: int = 22
@@ -371,16 +285,16 @@ class NbCoresConfig:
         """
         return {"min": self.min, "defaultValue": self.default, "max": self.max}
 
-    def __post_init__(self) -> None:
+    @model_validator(mode="after")
+    def _validate_range(self) -> "NbCoresConfig":
         """validation of CPU configuration"""
         if 1 <= self.min <= self.default <= self.max:
-            return
+            return self
         msg = f"Invalid configuration: 1 <= {self.min=} <= {self.default=} <= {self.max=}"
         raise ValueError(msg)
 
 
-@dataclass(frozen=True)
-class TimeLimitConfig:
+class TimeLimitConfig(BaseModel):
     """
     The TimeLimitConfig class is designed to manage the configuration of the time limit for a job.
 
@@ -389,6 +303,8 @@ class TimeLimitConfig:
         default: int: default value for the time limit (in hours).
         max: int: maximum allowed value for the time limit (in hours).
     """
+
+    model_config = ConfigDict(frozen=True)
 
     min: int = 1
     default: int = 48
@@ -405,52 +321,48 @@ class TimeLimitConfig:
         """
         return {"min": self.min, "defaultValue": self.default, "max": self.max}
 
-    def __post_init__(self) -> None:
-        """validation of CPU configuration"""
+    @model_validator(mode="after")
+    def _validate_range(self) -> "TimeLimitConfig":
+        """validation of time limit configuration"""
         if 1 <= self.min <= self.default <= self.max:
-            return
+            return self
         msg = f"Invalid configuration: 1 <= {self.min=} <= {self.default=} <= {self.max=}"
         raise ValueError(msg)
 
 
-@dataclass(frozen=True)
-class LocalConfig:
+class LocalConfig(BaseModel):
     """Sub config object dedicated to launcher module (local)"""
+
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
 
     id: str
     name: str
     type: ClassVar[LauncherType] = LauncherType.LOCAL
-    binaries: dict[SolverVersion, Path] = field(default_factory=dict)
+    binaries: dict[SolverVersion, Path] = Field(default_factory=dict)
     enable_nb_cores_detection: bool = True
-    nb_cores: NbCoresConfig = NbCoresConfig()
-    time_limit: TimeLimitConfig = TimeLimitConfig()
+    nb_cores: NbCoresConfig = Field(default_factory=NbCoresConfig)
+    time_limit: TimeLimitConfig = Field(default_factory=TimeLimitConfig)
     xpress_dir: str | None = None
     local_workspace: Path = Path("./local_workspace")
 
+    @field_validator("binaries", mode="before")
     @classmethod
-    def from_dict(cls, data: JSON) -> "LocalConfig":
-        """
-        Creates an instance of LocalConfig from a data dictionary
-        Args:
-            data: Parse config from dict.
-        Returns: object NbCoresConfig
-        """
-        binaries = {SolverVersion.parse(str(k)): Path(v) for k, v in data.get("binaries", {}).items()}
-        enable_nb_cores_detection = data.get("enable_nb_cores_detection", True)
-        nb_cores = data.get("nb_cores", asdict(NbCoresConfig()))
-        if enable_nb_cores_detection:
-            nb_cores.update(cls._autodetect_nb_cores())
-        xpress_dir = data.get("xpress_dir")
-        local_workspace = Path(data["local_workspace"]) if "local_workspace" in data else Path("./local_workspace")
-        return cls(
-            id=data["id"],
-            name=data["name"],
-            binaries=binaries,
-            enable_nb_cores_detection=enable_nb_cores_detection,
-            nb_cores=NbCoresConfig(**nb_cores),
-            xpress_dir=xpress_dir,
-            local_workspace=local_workspace,
-        )
+    def _parse_binaries(cls, v: Any) -> Any:
+        """Coerce string keys/values to SolverVersion/Path."""
+        if isinstance(v, dict):
+            return {
+                SolverVersion.parse(str(k)) if not isinstance(k, SolverVersion) else k: Path(val)
+                for k, val in v.items()
+            }
+        return v
+
+    @model_validator(mode="wrap")
+    @classmethod
+    def apply_cpu_detection(cls, data: Any, handler: Any) -> "LocalConfig":
+        """Inject detected CPU core counts into data before construction."""
+        if isinstance(data, dict) and data.get("enable_nb_cores_detection", True):
+            data = {**data, "nb_cores": cls._autodetect_nb_cores()}
+        return handler(data)
 
     @classmethod
     def _autodetect_nb_cores(cls) -> dict[str, int]:
@@ -458,85 +370,64 @@ class LocalConfig:
         Automatically detects the number of cores available on the user's machine
         Returns: Instance of NbCoresConfig
         """
-        min_cpu = cls.nb_cores.min
+        min_cpu = NbCoresConfig().min
         max_cpu = multiprocessing.cpu_count()
         default = max(min_cpu, max_cpu - 2)
         return {"min": min_cpu, "max": max_cpu, "default": default}
 
 
-@dataclass(frozen=True)
-class SlurmConfig:
+class SlurmConfig(BaseModel):
     """
     Sub config object dedicated to launcher module (slurm)
     """
 
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
     id: str
     name: str
     type: ClassVar[LauncherType] = LauncherType.SLURM
-    local_workspace: Path = Path()
+    local_workspace: Path = Field(default_factory=Path)
     username: str = ""
     hostname: str = ""
     port: int = 0
-    private_key_file: Path = Path()
+    private_key_file: Path = Field(default_factory=Path)
     key_password: str = ""
     password: str = ""
     default_wait_time: int = 0
-    time_limit: TimeLimitConfig = TimeLimitConfig()
-    nb_cores: NbCoresConfig = NbCoresConfig()
+    time_limit: TimeLimitConfig = Field(default_factory=TimeLimitConfig)
+    nb_cores: NbCoresConfig = Field(default_factory=NbCoresConfig)
     default_json_db_name: str = ""
     slurm_script_path: str = ""
     partition: str = ""
     max_cores: int = 64
-    antares_versions_on_remote_server: list[SolverVersion] = field(default_factory=list)
+    antares_versions_on_remote_server: list[SolverVersion] = Field(default_factory=list)
     enable_nb_cores_detection: bool = False
 
+    @field_validator("antares_versions_on_remote_server", mode="before")
     @classmethod
-    def from_dict(cls, data: JSON) -> "SlurmConfig":
-        """
-        Creates an instance of SlurmConfig from a data dictionary
+    def _parse_versions(cls, v: Any) -> Any:
+        """Coerce string items to SolverVersion."""
+        if isinstance(v, list):
+            return [SolverVersion.parse(str(item)) if not isinstance(item, SolverVersion) else item for item in v]
+        return v
 
-        Args:
-             data: Parsed config from dict.
-        Returns: object SlurmConfig
-        """
-        enable_nb_cores_detection = data.get("enable_nb_cores_detection", False)
-        nb_cores = data.get("nb_cores", asdict(NbCoresConfig()))
+    @model_validator(mode="before")
+    @classmethod
+    def handle_backward_compatibility(cls, data: Any) -> Any:
+        """Handle backward compatibility for old config formats."""
+        if not isinstance(data, dict):
+            return data
+
+        data = dict(data)  # Make a copy
+        # Handle old default_n_cpu field -> nb_cores
         if "default_n_cpu" in data:
-            # Use the old way to configure the NB cores for backward compatibility
-            nb_cores["default"] = int(data["default_n_cpu"])
-            nb_cores["min"] = min(nb_cores["min"], nb_cores["default"])
-            nb_cores["max"] = max(nb_cores["max"], nb_cores["default"])
-        if enable_nb_cores_detection:
-            nb_cores.update(cls._autodetect_nb_cores())
-        # In the configuration file, the default time limit is in seconds, so we convert it to hours
-        max_time_limit = data.get("default_time_limit", TimeLimitConfig().max * 3600) // 3600
-        time_limit = TimeLimitConfig(min=1, default=max_time_limit, max=max_time_limit)
-        antares_versions_as_str = data.get("antares_versions_on_remote_server", [])
-        antares_versions_on_remote_server = [SolverVersion.parse(str(v)) for v in antares_versions_as_str]
-        return cls(
-            id=data["id"],
-            name=data["name"],
-            local_workspace=Path(data.get("local_workspace", Path())),
-            username=data.get("username", ""),
-            hostname=data.get("hostname", ""),
-            port=data.get("port", 0),
-            private_key_file=data.get("private_key_file", Path()),
-            key_password=data.get("key_password", ""),
-            password=data.get("password", ""),
-            default_wait_time=data.get("default_wait_time", 0),
-            time_limit=time_limit,
-            default_json_db_name=data.get("default_json_db_name", ""),
-            slurm_script_path=data.get("slurm_script_path", ""),
-            partition=data.get("partition", ""),
-            antares_versions_on_remote_server=antares_versions_on_remote_server,
-            max_cores=data.get("max_cores", 64),
-            enable_nb_cores_detection=enable_nb_cores_detection,
-            nb_cores=NbCoresConfig(**nb_cores),
-        )
-
-    @classmethod
-    def _autodetect_nb_cores(cls) -> dict[str, int]:
-        raise NotImplementedError("NB Cores auto-detection is not implemented for SLURM server")
+            nb_cores = data.get("nb_cores", NbCoresConfig().model_dump())
+            default_n_cpu = int(data.pop("default_n_cpu"))
+            nb_cores["default"] = default_n_cpu
+            nb_cores["min"] = min(nb_cores["min"], default_n_cpu)
+            nb_cores["max"] = max(nb_cores["max"], default_n_cpu)
+            data["nb_cores"] = nb_cores
+        return data
 
 
 class InvalidConfigurationError(Exception):
@@ -550,140 +441,112 @@ class InvalidConfigurationError(Exception):
         super().__init__(msg)
 
 
-@dataclass(frozen=True)
-class LauncherConfig:
+class LauncherConfig(BaseModel):
     """
     Sub config object dedicated to launcher module
     """
 
-    default: str = "local"
+    model_config = ConfigDict(frozen=True, populate_by_name=True)
+
+    default: str = Field(default="local")
     configs: list[LocalConfig | SlurmConfig] | None = None
     batch_size: int = 9999
 
+    @model_validator(mode="before")
     @classmethod
-    def from_dict(cls, data: JSON) -> "LauncherConfig":
-        launchers: list[LocalConfig | SlurmConfig] = []
-        defaults = cls()
-        default = data.get("default", cls.default)
-        batch_size = data.get("batch_size", defaults.batch_size)
-        for launcher in data["launchers"]:
-            match launcher["type"]:
-                case LauncherType.LOCAL:
-                    launchers.append(LocalConfig.from_dict(launcher))
-                case LauncherType.SLURM:
-                    launchers.append(SlurmConfig.from_dict(launcher))
-                case _:
-                    raise InvalidConfigurationError(f"Unknown launcher type: {launcher['type']}")
+    def _remap_launchers(cls, data: Any) -> Any:
+        """Remap the 'launchers' YAML key to 'configs', dispatching each entry by type."""
+        if not isinstance(data, dict) or "launchers" not in data:
+            return data
+        data = dict(data)
+        raw_launchers = data.pop("launchers")
+        configs: list[Any] = []
+        for launcher in raw_launchers:
+            launcher_type = launcher.get("type")
+            if launcher_type == LauncherType.LOCAL:
+                configs.append(LocalConfig.model_validate(launcher))
+            elif launcher_type == LauncherType.SLURM:
+                configs.append(SlurmConfig.model_validate(launcher))
+            else:
+                raise ValueError(f"Unknown launcher type: {launcher_type!r}")
+        data["configs"] = configs
+        return data
 
-        if not any(launcher.id == default for launcher in launchers):
-            raise InvalidConfigurationError(f"Default launcher id '{default}' not found in launcher configs")
-
-        return cls(
-            default=default,
-            configs=launchers,
-            batch_size=batch_size,
-        )
+    @model_validator(mode="after")
+    def _validate_default_launcher(self) -> "LauncherConfig":
+        if self.configs:
+            if not any(launcher.id == self.default for launcher in self.configs):
+                ids = [launcher.id for launcher in self.configs]
+                raise ValueError(f"Default launcher id '{self.default}' not found in launcher configs, got {ids}")
+        return self
 
     def get_slurm_configs(self) -> list[SlurmConfig]:
         return [cfg for cfg in self.configs or [] if isinstance(cfg, SlurmConfig)]
 
 
-@dataclass(frozen=True)
-class LoggingConfig:
+class LoggingConfig(BaseModel):
     """
     Sub config object dedicated to logging
     """
 
+    model_config = ConfigDict(frozen=True, populate_by_name=True)
+
     logfile: Path | None = None
-    json: bool = False
+    json_format: bool = Field(default=False, alias="json")
     level: str = "INFO"
 
-    @classmethod
-    def from_dict(cls, data: JSON) -> "LoggingConfig":
-        defaults = cls()
-        return cls(
-            logfile=Path(data["logfile"]) if "logfile" in data else defaults.logfile,
-            json=data.get("json", defaults.json),
-            level=data.get("level", defaults.level),
-        )
 
-
-@dataclass(frozen=True)
-class RedisConfig:
+class RedisConfig(BaseModel):
     """
     Sub config object dedicated to redis
     """
+
+    model_config = ConfigDict(frozen=True)
 
     host: str = "localhost"
     port: int = 6379
     password: str | None = None
 
-    @classmethod
-    def from_dict(cls, data: JSON) -> "RedisConfig":
-        defaults = cls()
-        return cls(
-            host=data.get("host", defaults.host),
-            port=data.get("port", defaults.port),
-            password=data.get("password", defaults.password),
-        )
 
-
-@dataclass(frozen=True)
-class EventBusConfig:
+class EventBusConfig(BaseModel):
     """
     Sub config object dedicated to eventbus module
     """
 
-    # noinspection PyUnusedLocal
-    @classmethod
-    def from_dict(cls, data: JSON) -> "EventBusConfig":
-        return cls()
+    model_config = ConfigDict(frozen=True)
 
 
-@dataclass(frozen=True)
-class CacheConfig:
+class CacheConfig(BaseModel):
     """
     Sub config object dedicated to cache module
     """
+    model_config = ConfigDict(frozen=True)
 
     checker_delay: float = 0.2  # in seconds
 
-    @classmethod
-    def from_dict(cls, data: JSON) -> "CacheConfig":
-        defaults = cls()
-        return cls(
-            checker_delay=data.get("checker_delay", defaults.checker_delay),
-        )
 
+class RemoteWorkerConfig(BaseModel):
+    model_config = ConfigDict(frozen=True)
 
-@dataclass(frozen=True)
-class RemoteWorkerConfig:
     name: str
-    queues: list[str] = field(default_factory=list)
-
-    @classmethod
-    def from_dict(cls, data: JSON) -> "RemoteWorkerConfig":
-        defaults = cls(name="")  # `name` is mandatory
-        return cls(
-            name=data["name"],
-            queues=data.get("queues", defaults.queues),
-        )
+    queues: list[str] = Field(default_factory=list)
 
 
-@dataclass(frozen=True)
-class TaskConfig:
+class TaskConfig(BaseModel):
     """
     Sub config object dedicated to the task module
     """
+    model_config = ConfigDict(frozen=True)
+
 
     max_workers: int = 5
-    remote_workers: list[RemoteWorkerConfig] = field(default_factory=list)
+    remote_workers: list[RemoteWorkerConfig] = Field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data: JSON) -> "TaskConfig":
         defaults = cls()
         remote_workers = (
-            [RemoteWorkerConfig.from_dict(d) for d in data["remote_workers"]]
+            [RemoteWorkerConfig.model_validate(d) for d in data["remote_workers"]]
             if "remote_workers" in data
             else defaults.remote_workers
         )
@@ -693,26 +556,19 @@ class TaskConfig:
         )
 
 
-@dataclass(frozen=True)
-class ServerConfig:
+class ServerConfig(BaseModel):
     """
     Sub config object dedicated to the server
     """
+    model_config = ConfigDict(frozen=True)
+
 
     worker_threadpool_size: int = 5
-    services: list[str] = field(default_factory=list)
-
-    @classmethod
-    def from_dict(cls, data: JSON) -> "ServerConfig":
-        defaults = cls()
-        return cls(
-            worker_threadpool_size=data.get("worker_threadpool_size", defaults.worker_threadpool_size),
-            services=data.get("services", defaults.services),
-        )
+    services: list[str] = Field(default_factory=list)
 
 
-@dataclass(frozen=True)
-class PrometheusConfig:
+
+class PrometheusConfig(BaseModel):
     """
     Sub config object dedicated to prometheus metrics
 
@@ -720,16 +576,12 @@ class PrometheusConfig:
         multiprocess: if True, metrics of workers will be aggregated before exposition.
                       Environment variable `PROMETHEUS_MULTIPROC_DIR` must be set.
     """
+    model_config = ConfigDict(frozen=True)
 
     multiprocess: bool = False
 
-    @classmethod
-    def from_dict(cls, data: JSON) -> "PrometheusConfig":
-        return cls(multiprocess=bool(data["multiprocess"]))
 
-
-@dataclass(frozen=True)
-class MetricsConfig:
+class MetricsConfig(BaseModel):
     """
     Sub config object dedicated to metrics
 
@@ -737,15 +589,13 @@ class MetricsConfig:
         prometheus: if not None, metrics will be exposed in prometheus format
     """
 
+    model_config = ConfigDict(frozen=True)
+
     prometheus: PrometheusConfig | None = None
 
-    @classmethod
-    def from_dict(cls, data: JSON) -> "MetricsConfig":
-        return cls(prometheus=PrometheusConfig.from_dict(data["prometheus"]) if "prometheus" in data else None)
 
 
-@dataclass(frozen=True)
-class CeleryConfig:
+class CeleryConfig(BaseModel):
     """
     Sub config object dedicated to Celery technical configuration.
 
@@ -754,6 +604,8 @@ class CeleryConfig:
         result_backend: URL of the result backend (built from RedisConfig)
         result_expires: Time in seconds before task results expire
     """
+
+    model_config = ConfigDict(frozen=True)
 
     # Redis database number for Celery (broker + results)
     REDIS_DB: ClassVar[int] = 1
@@ -783,8 +635,7 @@ class CeleryConfig:
         )
 
 
-@dataclass(frozen=True)
-class Config:
+class Config(BaseModel):
     """
     Root server config
     """
@@ -816,25 +667,25 @@ class Config:
             if "storage" in data
             else defaults.storage
         )
-        redis_config = RedisConfig.from_dict(data["redis"]) if "redis" in data else defaults.redis
+        redis_config = RedisConfig.model_validate(data["redis"]) if "redis" in data else defaults.redis
         return cls(
-            server=ServerConfig.from_dict(data["server"]) if "server" in data else defaults.server,
-            security=SecurityConfig.from_dict(data["security"]) if "security" in data else defaults.security,
+            server=ServerConfig.model_validate(data["server"]) if "server" in data else defaults.server,
+            security=SecurityConfig.model_validate(data["security"]) if "security" in data else defaults.security,
             storage=storage_config,
-            launcher=LauncherConfig.from_dict(data["launcher"]) if "launcher" in data else defaults.launcher,
-            db=DbConfig.from_dict(data["db"]) if "db" in data else defaults.db,
-            logging=LoggingConfig.from_dict(data["logging"]) if "logging" in data else defaults.logging,
+            launcher=LauncherConfig.model_validate(data["launcher"]) if "launcher" in data else defaults.launcher,
+            db=DbConfig.model_validate(data["db"]) if "db" in data else defaults.db,
+            logging=LoggingConfig.model_validate(data["logging"]) if "logging" in data else defaults.logging,
             debug=data.get("debug", defaults.debug),
             resources_path=data["resources_path"] if "resources_path" in data else defaults.resources_path,
             redis=redis_config,
-            eventbus=EventBusConfig.from_dict(data["eventbus"]) if "eventbus" in data else defaults.eventbus,
-            cache=CacheConfig.from_dict(data["cache"]) if "cache" in data else defaults.cache,
+            eventbus=EventBusConfig.model_validate(data["eventbus"]) if "eventbus" in data else defaults.eventbus,
+            cache=CacheConfig.model_validate(data["cache"]) if "cache" in data else defaults.cache,
             tasks=TaskConfig.from_dict(data["tasks"]) if "tasks" in data else defaults.tasks,
             celery=CeleryConfig.from_dict(data.get("celery", {}), redis_config=redis_config),
             root_path=data.get("root_path", defaults.root_path),
             api_prefix=data.get("api_prefix", defaults.api_prefix),
             desktop_mode=desktop_mode,
-            metrics=MetricsConfig.from_dict(data["metrics"]) if "metrics" in data else MetricsConfig(),
+            metrics=MetricsConfig.model_validate(data["metrics"]) if "metrics" in data else MetricsConfig(),
         )
 
     @classmethod
