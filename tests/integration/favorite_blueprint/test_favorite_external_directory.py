@@ -77,7 +77,7 @@ def test_get_favorite_external_directory_success_get_one_favorite(admin_client: 
     actual_favorite_list = admin_client.get("/v1/favorites/external_directories").json()
     assert len(actual_favorite_list) == 1
     assert actual_favorite_list[0]["workspace"] == workspace_name
-    assert actual_favorite_list[0]["path"] == PurePosixPath(path).as_posix()
+    assert actual_favorite_list[0]["path"] == os.path.normpath(path)
 
 
 def test_get_favorite_external_directory_success_added_two_favorite(admin_client: TestClient, tmp_path: Path):
