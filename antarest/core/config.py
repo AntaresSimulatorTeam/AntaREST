@@ -215,21 +215,30 @@ class StorageConfig(BaseModel):
     study_storage: StudyStorageConfig = Field(default_factory=StudyStorageConfig)
     output: OutputStorageConfig = Field(default_factory=OutputStorageConfig)
 
+    @field_validator("workspaces", mode="before")
     @classmethod
-    def from_dict(cls, data: JSON, desktop_mode: bool = False) -> "StorageConfig":
+    def convert_workspaces(cls, v: Any) -> dict[str, WorkspaceConfig]:
+        """Convert dict entries to WorkspaceConfig objects."""
+        if isinstance(v, dict):
+            return {
+                key: WorkspaceConfig.model_validate(val) if isinstance(val, dict) else val for key, val in v.items()
+            }
+        return v
+
+    @model_validator(mode="before")
+    @classmethod
+    def _preprocess(cls, data: Any) -> Any:
+        """Flatten nested YAML keys and validate mutual exclusions."""
+        if not isinstance(data, dict):
+            return data
+        data = dict(data)
+        # Flatten study.storage → study_storage
+        if "study" in data and isinstance(data["study"], dict):
+            data.setdefault("study_storage", data.pop("study").get("storage", {}))
+        # Mutual exclusion check
         if data.get("auto_archive_sleeping_time") and data.get("auto_archive_cron"):
             raise ValueError("auto_archive_sleeping_time and auto_archive_cron cannot be used together")
-        processed = dict(data)
-        # Flatten study.storage → study_storage
-        if "study" in processed and isinstance(processed["study"], dict):
-            processed.setdefault("study_storage", processed.pop("study").get("storage", {}))
-        # Validate workspaces and inject desktop system workspaces
-        workspaces = {k: WorkspaceConfig.model_validate(v) for k, v in processed.pop("workspaces", {}).items()}
-        cls.validate_workspaces(workspaces, desktop_mode)
-        if desktop_mode:
-            workspaces = {**workspaces, **cls.system_workspaces()}
-        processed["workspaces"] = workspaces
-        return cls.model_validate(processed)
+        return data
 
     @classmethod
     def validate_workspaces(cls, workspaces: dict[str, WorkspaceConfig], desktop_mode: bool) -> None:
@@ -640,50 +649,56 @@ class Config(BaseModel):
     Root server config
     """
 
-    server: ServerConfig = ServerConfig()
-    security: SecurityConfig = SecurityConfig()
-    storage: StorageConfig = StorageConfig()
-    launcher: LauncherConfig = LauncherConfig()
-    db: DbConfig = DbConfig()
-    logging: LoggingConfig = LoggingConfig()
+    model_config = ConfigDict(frozen=True)
+
+    server: ServerConfig = Field(default_factory=ServerConfig)
+    security: SecurityConfig = Field(default_factory=SecurityConfig)
+    storage: StorageConfig = Field(default_factory=StorageConfig)
+    launcher: LauncherConfig = Field(default_factory=LauncherConfig)
+    db: DbConfig = Field(default_factory=DbConfig)
+    logging: LoggingConfig = Field(default_factory=LoggingConfig)
     debug: bool = True
-    resources_path: Path = Path()
+    resources_path: Path = Field(default_factory=Path)
     redis: RedisConfig | None = None
-    eventbus: EventBusConfig = EventBusConfig()
-    cache: CacheConfig = CacheConfig()
-    tasks: TaskConfig = TaskConfig()
-    metrics: MetricsConfig = MetricsConfig()
-    celery: CeleryConfig = CeleryConfig()
+    eventbus: EventBusConfig = Field(default_factory=EventBusConfig)
+    cache: CacheConfig = Field(default_factory=CacheConfig)
+    tasks: TaskConfig = Field(default_factory=TaskConfig)
+    metrics: MetricsConfig = Field(default_factory=MetricsConfig)
+    celery: CeleryConfig = Field(default_factory=CeleryConfig)
     root_path: str = ""
     api_prefix: str = ""
     desktop_mode: bool = False
 
     @classmethod
     def from_dict(cls, data: JSON) -> "Config":
-        defaults = cls()
-        desktop_mode = data.get("desktop_mode", defaults.desktop_mode)
-        storage_config = (
-            StorageConfig.from_dict(data["storage"], desktop_mode=desktop_mode)
-            if "storage" in data
-            else defaults.storage
-        )
-        redis_config = RedisConfig.model_validate(data["redis"]) if "redis" in data else defaults.redis
+        desktop_mode = data.get("desktop_mode", False)
+        if "storage" in data:
+            storage_config = StorageConfig.model_validate(data["storage"])
+            # Desktop-mode workspace validation and system workspace injection
+            workspaces = dict(storage_config.workspaces)
+            StorageConfig.validate_workspaces(workspaces, desktop_mode)
+            if desktop_mode:
+                workspaces = {**workspaces, **StorageConfig.system_workspaces()}
+                storage_config = storage_config.model_copy(update={"workspaces": workspaces})
+        else:
+            storage_config = StorageConfig()
+        redis_config = RedisConfig.model_validate(data["redis"]) if "redis" in data else None
         return cls(
-            server=ServerConfig.model_validate(data["server"]) if "server" in data else defaults.server,
-            security=SecurityConfig.model_validate(data["security"]) if "security" in data else defaults.security,
+            server=ServerConfig.model_validate(data["server"]) if "server" in data else ServerConfig(),
+            security=SecurityConfig.model_validate(data["security"]) if "security" in data else SecurityConfig(),
             storage=storage_config,
-            launcher=LauncherConfig.model_validate(data["launcher"]) if "launcher" in data else defaults.launcher,
-            db=DbConfig.model_validate(data["db"]) if "db" in data else defaults.db,
-            logging=LoggingConfig.model_validate(data["logging"]) if "logging" in data else defaults.logging,
-            debug=data.get("debug", defaults.debug),
-            resources_path=data["resources_path"] if "resources_path" in data else defaults.resources_path,
+            launcher=LauncherConfig.model_validate(data["launcher"]) if "launcher" in data else LauncherConfig(),
+            db=DbConfig.model_validate(data["db"]) if "db" in data else DbConfig(),
+            logging=LoggingConfig.model_validate(data["logging"]) if "logging" in data else LoggingConfig(),
+            debug=data.get("debug", True),
+            resources_path=data["resources_path"] if "resources_path" in data else Path(),
             redis=redis_config,
-            eventbus=EventBusConfig.model_validate(data["eventbus"]) if "eventbus" in data else defaults.eventbus,
-            cache=CacheConfig.model_validate(data["cache"]) if "cache" in data else defaults.cache,
-            tasks=TaskConfig.from_dict(data["tasks"]) if "tasks" in data else defaults.tasks,
+            eventbus=EventBusConfig.model_validate(data["eventbus"]) if "eventbus" in data else EventBusConfig(),
+            cache=CacheConfig.model_validate(data["cache"]) if "cache" in data else CacheConfig(),
+            tasks=TaskConfig.model_validate(data["tasks"]) if "tasks" in data else TaskConfig(),
             celery=CeleryConfig.from_dict(data.get("celery", {}), redis_config=redis_config),
-            root_path=data.get("root_path", defaults.root_path),
-            api_prefix=data.get("api_prefix", defaults.api_prefix),
+            root_path=data.get("root_path", ""),
+            api_prefix=data.get("api_prefix", ""),
             desktop_mode=desktop_mode,
             metrics=MetricsConfig.model_validate(data["metrics"]) if "metrics" in data else MetricsConfig(),
         )

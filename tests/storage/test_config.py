@@ -60,7 +60,7 @@ def test_storage_config_from_dict(storage_config_default: dict[str, Any]) -> Non
         },
     }
 
-    config = StorageConfig.from_dict(data)
+    config = StorageConfig.model_validate(data)
 
     assert config.matrixstore == Path("./custom_matrixstore")
     assert config.archive_dir == Path("./custom_archives")
@@ -165,9 +165,9 @@ def test_storage_config_from_dict_desktop_mode_true(storage_config_default: dict
         },
     }
 
-    config = StorageConfig.from_dict(data, desktop_mode=True)
+    config = Config.from_dict({"storage": data, "desktop_mode": True})
 
-    assert "local" in config.workspaces or "C:\\" in config.workspaces
+    assert "local" in config.storage.workspaces or "C:\\" in config.storage.workspaces
 
 
 def test_storage_config_from_dict_auto_archive() -> None:
@@ -177,7 +177,7 @@ def test_storage_config_from_dict_auto_archive() -> None:
     }
 
     with pytest.raises(ValueError):
-        StorageConfig.from_dict(data)
+        StorageConfig.model_validate(data)
 
 
 def test_launcher_config_solver_versions(tmp_path: Path) -> None:
