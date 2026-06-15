@@ -17,7 +17,7 @@ import string
 import tempfile
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, ClassVar, Self
+from typing import Any, ClassVar
 
 import yaml
 from antares.study.version import SolverVersion
@@ -132,9 +132,8 @@ class OutOfStudyFileOutputStorageConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
     storage_dir: Path = Path("./outputs")
 
-    @classmethod
     @model_validator(mode="after")
-    def validate_range(self) -> type[Self]:
+    def _create_storage_dir(self) -> "OutOfStudyFileOutputStorageConfig":
         self.storage_dir.mkdir(parents=True, exist_ok=True)
         return self
 
