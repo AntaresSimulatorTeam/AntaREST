@@ -56,7 +56,17 @@ export interface GroupedDataTableProps<
    */
   groups?: TGroups;
   allowNewGroups?: boolean;
-  onCreate?: (values: RowData<TGroups[number]>) => Promise<TData>;
+  onCreate?: (values: RowData<TGroups[number]> & Partial<TData>) => Promise<TData>;
+  /**
+   * Render a custom create dialog instead of the built-in one.
+   * Useful when creation requires fields the built-in dialog doesn't handle.
+   */
+  renderCreateDialog?: (props: {
+    open: boolean;
+    onClose: VoidFunction;
+    onSubmit: (values: RowData<TGroups[number]> & Partial<TData>) => Promise<void>;
+    existingNames: Array<RowData["name"]>;
+  }) => React.ReactNode;
   onDuplicate?: (row: TData, newName: string) => Promise<TData>;
   onDelete?: (rows: TData[]) => PromiseAny | void;
   onNameClick?: (row: TData) => void;
@@ -81,6 +91,7 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
   groups,
   allowNewGroups = false,
   onCreate,
+  renderCreateDialog,
   onDuplicate,
   onDelete,
   onNameClick,
@@ -338,7 +349,7 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreate = async (values: RowData<TGroups[number]>) => {
+  const handleCreate = async (values: RowData<TGroups[number]> & Partial<TData>) => {
     closeDialog();
 
     if (!onCreate) {
@@ -419,16 +430,26 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
   return (
     <>
       <MaterialReactTable table={table} />
-      {openDialog === "add" && (
-        <CreateDialog
-          open
-          onClose={closeDialog}
-          groups={groups}
-          allowNewGroups={allowNewGroups}
-          existingNames={existingNames}
-          onSubmit={handleCreate}
-        />
-      )}
+      {openDialog === "add" &&
+        (renderCreateDialog ? (
+          renderCreateDialog({
+            open: true,
+            onClose: closeDialog,
+            onSubmit: handleCreate,
+            existingNames,
+          })
+        ) : (
+          <CreateDialog
+            open
+            onClose={closeDialog}
+            groups={groups}
+            allowNewGroups={allowNewGroups}
+            existingNames={existingNames}
+            onSubmit={(values: RowData) =>
+              handleCreate(values as RowData<TGroups[number]> & Partial<TData>)
+            }
+          />
+        ))}
       {openDialog === "duplicate" && selectedRow && (
         <DuplicateDialog
           open

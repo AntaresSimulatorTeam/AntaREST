@@ -46,6 +46,7 @@ from antarest.core.exceptions import (
     ResourceCreationNotAllowed,
     ResourceDeletionNotAllowed,
     StudyDeletionNotAllowed,
+    StudyImportFailed,
     StudyNotFoundError,
     StudyVariantUpgradeError,
     TaskAlreadyRunning,
@@ -165,6 +166,7 @@ from antarest.study.storage.utils import (
     assert_permission,
     assert_permission_on_studies,
     create_new_empty_study,
+    extract_data_to_dir,
     extract_simulation_range_from_model,
     get_matrix_index,
     get_start_date,
@@ -608,6 +610,10 @@ class IOutputsAccess(ABC):
 
     @abstractmethod
     def write_output_to_dir(self, study_id: str, output_id: str, parent_dir: Path) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def import_outputs(self, outputs_dir: Path, study_id: str) -> None:
         raise NotImplementedError()
 
 
@@ -1601,11 +1607,33 @@ class StudyService:
             groups=groups,
             storage_mode=storage_mode,
         )
-        study = self.storage_service.raw_study_service.import_study(study, stream)
-        study.directory_id = self.directory_service.get_directory_by_path(directory)
-        study.updated_at = current_time()
 
-        self._save_study(study)
+        # First, extract the source inside a temporary directory
+        dst_path = self.config.storage.tmp_dir / sid
+        try:
+            extract_data_to_dir(dst_path, stream, self.config.storage.tmp_dir)
+
+            # Imports the inputs
+            study = self.storage_service.raw_study_service.import_study(study, dst_path)
+
+            # Save the Study in DB (needed to import the outputs)
+            study.directory_id = self.directory_service.get_directory_by_path(directory)
+            study.updated_at = current_time()
+            self._save_study(study)
+
+            # Imports the outputs
+            self._get_outputs_access().import_outputs(dst_path / "output", sid)
+
+        except Exception as e:
+            # Remove the study from DB
+            db.session.rollback()
+            self.repository.delete(study.id)
+            raise StudyImportFailed(sid, reason=str(e))
+
+        finally:
+            # Clean up the temporary directory
+            shutil.rmtree(dst_path, ignore_errors=True)
+
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
