@@ -88,7 +88,6 @@ class FavoriteExternalDirectoryDTO(AntaresBaseModel, extra="forbid"):
     path: PurePosixPath
     workspace: str
 
-    # à faire :
     @field_validator("path", mode="before")
     def to_posix(cls, path: Path) -> PurePosixPath:
         """
