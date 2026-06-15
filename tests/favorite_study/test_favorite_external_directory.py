@@ -44,7 +44,7 @@ def test_add_favorite_external_directory_failure_when_path_does_not_exist(tmp_pa
 
     with current_user_context(DEFAULT_ADMIN_USER):
         with pytest.raises(DirectoryNotFoundError, match=f"404: Directory '{mock_path.as_posix()}' not found"):
-            favorite_service.add_favorite(str(mock_path), workspace)
+            favorite_service.add_favorite(mock_path.as_posix(), workspace)
 
 
 def test_add_favorite_external_directory_failure_when_workspace_does_not_exist(tmp_path: Path):
