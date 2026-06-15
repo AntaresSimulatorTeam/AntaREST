@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import os.path
 from pathlib import Path, PurePosixPath
 
 from starlette.testclient import TestClient
@@ -27,7 +28,7 @@ def test_add_favorite_external_directory_success_added_one_favorite(admin_client
     actual_favorite_external_directory = response.json()
 
     assert actual_favorite_external_directory["workspace"] == workspace_name
-    assert actual_favorite_external_directory["path"] == PurePosixPath(path).as_posix()
+    assert actual_favorite_external_directory["path"] == os.path.normpath(path)
 
 
 def test_add_favorite_external_directory_failure_workspace_not_found(admin_client: TestClient, tmp_path: Path):
@@ -96,8 +97,8 @@ def test_get_favorite_external_directory_success_added_two_favorite(admin_client
     assert response_2.status_code == 201
     actual_favorite_list = admin_client.get("/v1/favorites/external_directories").json()
     assert len(actual_favorite_list) == 2
-    expected_favorite_external_directory_1["path"] = PurePosixPath(path_1).as_posix()
-    expected_favorite_external_directory_2["path"] = PurePosixPath(path_2).as_posix()
+    expected_favorite_external_directory_1["path"] = os.path.normpath(path_1)
+    expected_favorite_external_directory_2["path"] = os.path.normpath(path_2)
     assert actual_favorite_list == [expected_favorite_external_directory_1, expected_favorite_external_directory_2]
 
 
@@ -112,7 +113,7 @@ def test_delete_favorite_external_directory_success_deleted_one_favorite(admin_c
     response = admin_client.post("/v1/favorites/external_directories", params=expected_favorite_external_directory)
     assert response.status_code == 201
     actual_favorite_list = admin_client.get("/v1/favorites/external_directories").json()
-    expected_favorite_external_directory["path"] = PurePosixPath(path).as_posix()
+    expected_favorite_external_directory["path"] = os.path.normpath(path)
     assert actual_favorite_list == [expected_favorite_external_directory]
 
     admin_client.delete("/v1/favorites/external_directories", params=expected_favorite_external_directory)
