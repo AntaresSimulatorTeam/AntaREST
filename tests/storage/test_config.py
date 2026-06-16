@@ -150,9 +150,9 @@ def test_storage_config_from_dict_validation_errors(
 
     if should_raise:
         with pytest.raises(ValueError):
-            Config.from_dict(config_data)
+            Config.model_validate(config_data)
     else:
-        Config.from_dict(config_data)
+        Config.model_validate(config_data)
 
 
 def test_storage_config_from_dict_desktop_mode_true(storage_config_default: dict[str, Any]) -> None:
@@ -165,7 +165,7 @@ def test_storage_config_from_dict_desktop_mode_true(storage_config_default: dict
         },
     }
 
-    config = Config.from_dict({"storage": data, "desktop_mode": True})
+    config = Config.model_validate({"storage": data, "desktop_mode": True})
 
     assert "local" in config.storage.workspaces or "C:\\" in config.storage.workspaces
 

@@ -23,7 +23,6 @@ import yaml
 from antares.study.version import SolverVersion
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from antarest.core.model import JSON
 from antarest.core.roles import RoleType
 from antarest.core.utils.archives import ArchiveFormat
 from antarest.output.storage.output_storage import OutputStorageType
@@ -656,39 +655,45 @@ class Config(BaseModel):
     api_prefix: str = ""
     desktop_mode: bool = False
 
+    @model_validator(mode="before")
     @classmethod
-    def from_dict(cls, data: JSON) -> "Config":
+    def _model_validator(cls, data: Any) -> Any:
         desktop_mode = data.get("desktop_mode", False)
         if "storage" in data:
-            storage_config = StorageConfig.model_validate(data["storage"])
-            # Desktop-mode workspace validation and system workspace injection
-            workspaces = dict(storage_config.workspaces)
-            StorageConfig.validate_workspaces(workspaces, desktop_mode)
-            if desktop_mode:
-                workspaces = {**workspaces, **StorageConfig.system_workspaces()}
-                storage_config = storage_config.model_copy(update={"workspaces": workspaces})
+            storage_data = data["storage"]
+            storage_config = StorageConfig.model_validate(storage_data)
+            # Desktop-mode workspace validation and system workspace injection only when
+            # parsing from a raw dict (i.e. YAML config). When constructing Config directly
+            # with pre-built objects, skip these semantic checks.
+            if isinstance(storage_data, dict):
+                workspaces = dict(storage_config.workspaces)
+                StorageConfig.validate_workspaces(workspaces, desktop_mode)
+                if desktop_mode:
+                    workspaces = {**workspaces, **StorageConfig.system_workspaces()}
+                    storage_config = storage_config.model_copy(update={"workspaces": workspaces})
         else:
             storage_config = StorageConfig()
         redis_config = RedisConfig.model_validate(data["redis"]) if "redis" in data else None
-        return cls(
-            server=ServerConfig.model_validate(data["server"]) if "server" in data else ServerConfig(),
-            security=SecurityConfig.model_validate(data["security"]) if "security" in data else SecurityConfig(),
-            storage=storage_config,
-            launcher=LauncherConfig.model_validate(data["launcher"]) if "launcher" in data else LauncherConfig(),
-            db=DbConfig.model_validate(data["db"]) if "db" in data else DbConfig(),
-            logging=LoggingConfig.model_validate(data["logging"]) if "logging" in data else LoggingConfig(),
-            debug=data.get("debug", True),
-            resources_path=data["resources_path"] if "resources_path" in data else Path(),
-            redis=redis_config,
-            eventbus=EventBusConfig.model_validate(data["eventbus"]) if "eventbus" in data else EventBusConfig(),
-            cache=CacheConfig.model_validate(data["cache"]) if "cache" in data else CacheConfig(),
-            tasks=TaskConfig.model_validate(data["tasks"]) if "tasks" in data else TaskConfig(),
-            celery=CeleryConfig.model_validate(data.get("celery", {}) | {redis_config: redis_config}),
-            root_path=data.get("root_path", ""),
-            api_prefix=data.get("api_prefix", ""),
-            desktop_mode=desktop_mode,
-            metrics=MetricsConfig.model_validate(data["metrics"]) if "metrics" in data else MetricsConfig(),
-        )
+
+        data["server"] = ServerConfig.model_validate(data["server"]) if "server" in data else ServerConfig()
+        data["security"] = SecurityConfig.model_validate(data["security"]) if "security" in data else SecurityConfig()
+        data["storage"] = storage_config
+        data["launcher"] = LauncherConfig.model_validate(data["launcher"]) if "launcher" in data else LauncherConfig()
+        data["db"] = DbConfig.model_validate(data["db"]) if "db" in data else DbConfig()
+        data["logging"] = LoggingConfig.model_validate(data["logging"]) if "logging" in data else LoggingConfig()
+        data["debug"] = data.get("debug", True)
+        data["resources_path"] = data["resources_path"] if "resources_path" in data else Path()
+        data["redis"] = redis_config
+        data["eventbus"] = EventBusConfig.model_validate(data["eventbus"]) if "eventbus" in data else EventBusConfig()
+        data["cache"] = CacheConfig.model_validate(data["cache"]) if "cache" in data else CacheConfig()
+        data["tasks"] = TaskConfig.model_validate(data["tasks"]) if "tasks" in data else TaskConfig()
+        data["celery"] = CeleryConfig.model_validate(data.get("celery", {}) | {redis_config: redis_config})
+        data["root_path"] = data.get("root_path", "")
+        data["api_prefix"] = data.get("api_prefix", "")
+        data["desktop_mode"] = desktop_mode
+        data["metrics"] = MetricsConfig.model_validate(data["metrics"]) if "metrics" in data else MetricsConfig()
+
+        return data
 
     @classmethod
     def from_yaml_file(cls, file: Path, res: Path | None = None) -> "Config":
@@ -706,7 +711,7 @@ class Config(BaseModel):
             data = yaml.safe_load(f)
         if res is not None:
             data["resources_path"] = res
-        return cls.from_dict(data)
+        return cls.model_validate(data)
 
     def get_workspace_path(self, *, workspace: str = DEFAULT_WORKSPACE_NAME) -> Path:
         """
