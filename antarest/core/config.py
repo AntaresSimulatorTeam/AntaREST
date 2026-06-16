@@ -97,7 +97,7 @@ class DbConfig(BaseModel):
     Sub config object dedicated to db
     """
 
-    model_config = ConfigDict(frozen=True, populate_by_name=True)
+    model_config = ConfigDict(frozen=True)
 
     db_url: str = Field(default="", alias="url")
     db_admin_url: str | None = Field(default=None, alias="admin_url")
@@ -152,8 +152,6 @@ class OutputStorageConfig(BaseModel):
             data["out_of_study"] = OutOfStudyFileOutputStorageConfig.model_validate(data["out_of_study"])
         if "default_storage_type" in data:
             default_storage_type = OutputStorageType(data["default_storage_type"])
-            if default_storage_type not in OutputStorageType:
-                raise ValueError(f"Invalid default_storage_type: {default_storage_type}")
             data["default_storage_type"] = default_storage_type
         return data
 
@@ -344,7 +342,7 @@ class TimeLimitConfig(BaseModel):
 class LocalConfig(BaseModel):
     """Sub config object dedicated to launcher module (local)"""
 
-    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+    model_config = ConfigDict(frozen=True)
 
     id: str
     name: str
@@ -392,7 +390,7 @@ class SlurmConfig(BaseModel):
     Sub config object dedicated to launcher module (slurm)
     """
 
-    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+    model_config = ConfigDict(frozen=True)
 
     id: str
     name: str
@@ -457,7 +455,7 @@ class LauncherConfig(BaseModel):
     Sub config object dedicated to launcher module
     """
 
-    model_config = ConfigDict(frozen=True, populate_by_name=True)
+    model_config = ConfigDict(frozen=True)
 
     default: str = Field(default="local")
     configs: list[LocalConfig | SlurmConfig] | None = None
@@ -500,7 +498,7 @@ class LoggingConfig(BaseModel):
     Sub config object dedicated to logging
     """
 
-    model_config = ConfigDict(frozen=True, populate_by_name=True)
+    model_config = ConfigDict(frozen=True)
 
     logfile: Path | None = None
     json_format: bool = Field(default=False, alias="json")
@@ -659,20 +657,7 @@ class Config(BaseModel):
     @classmethod
     def _model_validator(cls, data: Any) -> Any:
         desktop_mode = data.get("desktop_mode", False)
-        if "storage" in data:
-            storage_data = data["storage"]
-            storage_config = StorageConfig.model_validate(storage_data)
-            # Desktop-mode workspace validation and system workspace injection only when
-            # parsing from a raw dict (i.e. YAML config). When constructing Config directly
-            # with pre-built objects, skip these semantic checks.
-            if isinstance(storage_data, dict):
-                workspaces = dict(storage_config.workspaces)
-                StorageConfig.validate_workspaces(workspaces, desktop_mode)
-                if desktop_mode:
-                    workspaces = {**workspaces, **StorageConfig.system_workspaces()}
-                    storage_config = storage_config.model_copy(update={"workspaces": workspaces})
-        else:
-            storage_config = StorageConfig()
+        storage_config = cls._build_storage_config(data, desktop_mode)
         redis_config = RedisConfig.model_validate(data["redis"]) if "redis" in data else None
 
         data["server"] = ServerConfig.model_validate(data["server"]) if "server" in data else ServerConfig()
@@ -694,6 +679,24 @@ class Config(BaseModel):
         data["metrics"] = MetricsConfig.model_validate(data["metrics"]) if "metrics" in data else MetricsConfig()
 
         return data
+
+    @classmethod
+    def _build_storage_config(cls, data: Any, desktop_mode: bool) -> StorageConfig:
+        if "storage" in data:
+            storage_data = data["storage"]
+            storage_config = StorageConfig.model_validate(storage_data)
+            # Desktop-mode workspace validation and system workspace injection only when
+            # parsing from a raw dict (i.e. YAML config). When constructing Config directly
+            # with pre-built objects, skip these semantic checks.
+            if isinstance(storage_data, dict):
+                workspaces = dict(storage_config.workspaces)
+                StorageConfig.validate_workspaces(workspaces, desktop_mode)
+                if desktop_mode:
+                    workspaces = {**workspaces, **StorageConfig.system_workspaces()}
+                    storage_config = storage_config.model_copy(update={"workspaces": workspaces})
+        else:
+            storage_config = StorageConfig()
+        return storage_config
 
     @classmethod
     def from_yaml_file(cls, file: Path, res: Path | None = None) -> "Config":
