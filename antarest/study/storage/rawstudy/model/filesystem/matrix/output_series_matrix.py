@@ -18,10 +18,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, MustNotModifyOutputException
 from antarest.core.model import JSON
-from antarest.output.filestudy.utils import (
-    get_start_column,
-    parse_output_file,
-)
+from antarest.output.filestudy.utils import get_start_column, parse_output_file
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
