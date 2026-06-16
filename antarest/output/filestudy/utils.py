@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import logging
 from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import Enum, StrEnum
@@ -21,9 +20,6 @@ import polars as pl
 from polars.exceptions import ComputeError
 
 from antarest.study.model import MatrixFrequency, MatrixIndex, TimeSerie
-
-logger = logging.getLogger(__name__)
-
 
 """Column name for the Monte Carlo year."""
 MCYEAR_COL = "mcYear"
