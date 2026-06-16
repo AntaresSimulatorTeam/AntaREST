@@ -69,6 +69,7 @@ function Header({
   const canScan = activeTree === "external" && external.path !== "";
   const showDescendants =
     activeTree === "external" ? external.showDescendants : managed.showDescendants;
+  const isExternalRoot = activeTree === "external" && external.path === "";
 
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
@@ -177,8 +178,8 @@ function Header({
           />
 
           <FilterControls
-            activeTree={activeTree}
             showDescendants={showDescendants}
+            isExternalRoot={isExternalRoot}
             isReferenceTypeActive={isReferenceStudyTypeActive}
             canScan={canScan}
             sortConfig={sortConfig}
