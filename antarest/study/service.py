@@ -1608,31 +1608,31 @@ class StudyService:
             storage_mode=storage_mode,
         )
 
-        # First, extract the source inside a temporary directory
-        dst_path = self.config.storage.tmp_dir / sid
-        try:
-            extract_data_to_dir(dst_path, stream, self.config.storage.tmp_dir)
+        # We use a tmp dir inside the studies' workspace to ensure we use the same fs partition.
+        # This way, we're able to move resources efficicently instead of copying them.
+        with tempfile.TemporaryDirectory(dir=self.config.get_workspace_path()) as tmpdir:
+            dst_path = Path(tmpdir)
 
-            # Imports the inputs
-            study = self.storage_service.raw_study_service.import_study(study, dst_path)
+            try:
+                # First, extract the source inside the temporary directory
+                extract_data_to_dir(dst_path, stream, self.config.storage.tmp_dir)
 
-            # Save the Study in DB (needed to import the outputs)
-            study.directory_id = self.directory_service.get_directory_by_path(directory)
-            study.updated_at = current_time()
-            self._save_study(study)
+                # Imports the inputs
+                study = self.storage_service.raw_study_service.import_study(study, dst_path)
 
-            # Imports the outputs
-            self._get_outputs_access().import_outputs(dst_path / "output", sid)
+                # Save the Study in DB (needed to import the outputs)
+                study.directory_id = self.directory_service.get_directory_by_path(directory)
+                study.updated_at = current_time()
+                self._save_study(study)
 
-        except Exception as e:
-            # Remove the study from DB
-            db.session.rollback()
-            self.repository.delete(study.id)
-            raise StudyImportFailed(sid, reason=str(e))
+                # Imports the outputs
+                self._get_outputs_access().import_outputs(dst_path / "output", sid)
 
-        finally:
-            # Clean up the temporary directory
-            shutil.rmtree(dst_path, ignore_errors=True)
+            except Exception as e:
+                # Remove the study from DB
+                db.session.rollback()
+                self.repository.delete(study.id)
+                raise StudyImportFailed(sid, reason=str(e))
 
         self.event_bus.push(
             Event(
