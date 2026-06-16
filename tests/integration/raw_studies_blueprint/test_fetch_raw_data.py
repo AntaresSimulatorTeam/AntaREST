@@ -704,7 +704,11 @@ def test_retrieve_output_data(client: TestClient, user_access_token: str, storag
     expected_date = utc_to_local("20221003-2142")
     output_id = f"{expected_date}adq"
     for path in [
-        f"output/{output_id}/simulation",
+        f"output/{output_id}/adequacy/mc-all/grid/digest",
+        f"output/{output_id}/adequacy/mc-all/areas/de/details-daily",
+        f"output/{output_id}/adequacy/mc-all/areas/de/id-monthly",
+        f"output/{output_id}/adequacy/mc-all/areas/es/values-monthly",
+        f"output/{output_id}/ts-numbers/load/fr",
     ]:
         res = client.get(f"/v1/studies/{study_id}/raw", params={"path": path})
         assert res.status_code == 200
