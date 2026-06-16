@@ -51,7 +51,7 @@ def test_add_favorite_external_directory_failure_path_not_found(admin_client: Te
     expected_favorite_external_directory = {"workspace": workspace_name, "path": inexisting_dir.as_posix()}
     response = admin_client.post("/v1/favorites/external_directories", params=expected_favorite_external_directory)
     assert response.status_code == 404
-    assert response.json()["description"] == f"Directory '{inexisting_dir}' not found"
+    assert response.json()["description"] == f"Directory '{inexisting_dir.as_posix()}' not found"
 
 
 def test_add_favorite_external_directory_failure_folder_not_safe(admin_client: TestClient, tmp_path: Path):
@@ -61,7 +61,7 @@ def test_add_favorite_external_directory_failure_folder_not_safe(admin_client: T
     expected_favorite_external_directory = {"workspace": workspace_name, "path": path.as_posix()}
     response = admin_client.post("/v1/favorites/external_directories", params=expected_favorite_external_directory)
     assert response.status_code == 400
-    assert response.json()["description"] == f"Directory {path} is not safe"
+    assert response.json()["description"] == f"Directory {path.as_posix()} is not safe"
 
 
 # TEST GET FAVORITES EXTERNAL DIRECTORY
@@ -83,8 +83,8 @@ def test_get_favorite_external_directory_success_get_one_favorite(admin_client: 
 def test_get_favorite_external_directory_success_added_two_favorite(admin_client: TestClient, tmp_path: Path):
     # creating two favorite external directories and checking that they are returned
     workspace_name = "ext"
-    path_1 = "path/to/favorite/directory_1"
-    path_2 = "path/to/favorite/directory_2"
+    path_1 = Path("path/to/favorite/directory_1").as_posix()
+    path_2 = Path("path/to/favorite/directory_2").as_posix()
     path_ws_1 = tmp_path / "ext_workspace" / workspace_name / path_1
     path_ws_2 = tmp_path / "ext_workspace" / workspace_name / path_2
     expected_favorite_external_directory_1 = {"workspace": workspace_name, "path": path_ws_1.as_posix()}
