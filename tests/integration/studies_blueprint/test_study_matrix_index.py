@@ -16,6 +16,7 @@ from starlette.testclient import TestClient
 
 from antarest.study.model import StorageMode
 from tests.integration.assets import ASSETS_DIR
+from tests.test_helpers.dates import utc_to_local
 
 
 class TestStudyMatrixIndex:
@@ -305,7 +306,8 @@ class TestStudyMatrixIndex:
         ############ Output matrices ############
         daily_response = {"first_week_size": 7, "level": "daily", "start_date": "2018-01-01 00:00:00", "steps": 7}
         monthly_response = {"first_week_size": 7, "level": "monthly", "start_date": "2018-01-01 00:00:00", "steps": 1}
-        output_id = "20221003-2342adq"
+        expected_date = utc_to_local("20221003-2142")
+        output_id = f"{expected_date}adq"
         for path in [
             f"output/{output_id}/adequacy/mc-all/areas/de/details-monthly",
             f"output/{output_id}/adequacy/mc-all/areas/de/id-daily",
