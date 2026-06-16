@@ -141,6 +141,7 @@ function ReservesGeneral() {
 
   return (
     <GroupedDataTable
+      key={`${studyId}-${areaId}`}
       data={rows}
       columns={columns}
       onCreate={handleCreate}
