@@ -12,13 +12,13 @@
 
 import logging
 
-import numpy as np
-import pandas as pd
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError, MustNotModifyOutputException
+from antarest.core.exceptions import MustNotModifyOutputException
 from antarest.core.model import JSON
-from antarest.output.filestudy.utils import get_start_column, parse_output_file
+from antarest.output.filestudy.utils import (
+    load_output_file,
+)
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
@@ -40,34 +40,11 @@ class OutputSeriesMatrix(LazyNode[bytes | JSON, bytes | JSON, JSON]):
     def get_lazy_content(self, url: list[str] | None = None, depth: int = -1, expanded: bool = False) -> str:
         return f"matrix://{self.config.path.name}"
 
-    def parse_dataframe(self) -> pd.DataFrame:
-        output_first_column = get_start_column(self.freq)
-        file_path = self.config.path
-        try:
-            output = parse_output_file(file_path, output_first_column)
-            df = output.data.to_pandas().astype(np.float64)
-            df.columns = pd.MultiIndex.from_tuples(output.headers)  # type: ignore
-            return df
-        except FileNotFoundError as e:
-            # Raise 404 'Not Found' if the TSV file is not found
-            logger.warning(f"Matrix file'{file_path}' not found")
-            study_id = self.config.study_id
-            relpath = file_path.relative_to(self.config.study_path).as_posix()
-            raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
-
     @override
     def load(
         self, url: list[str] | None = None, depth: int = -1, expanded: bool = False, formatted: bool = True
     ) -> bytes | JSON:
-        if not formatted:
-            try:
-                return self.config.path.read_bytes()
-            except FileNotFoundError:
-                logger.warning(f"Missing file {self.config.path}")
-                return b""
-
-        matrix = self.parse_dataframe()
-        return matrix.to_dict(orient="split", index=False)
+        return load_output_file(formatted, self.freq, self.config.path, self.config.study_id)
 
     @override
     def dump(self, data: bytes | JSON, url: list[str] | None = None) -> None:
