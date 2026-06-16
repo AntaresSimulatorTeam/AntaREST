@@ -2842,7 +2842,7 @@ class StudyService:
         - StorageMode.FILESYSTEM: Works for all paths.
 
         Output values:
-        - Works for all files. Does not work for paths pointing towards directories.
+        - Works for all paths.
 
         Depending on the type of path, it may return the following types of data:
           - an arbitrary dictionary (ini files ...)
