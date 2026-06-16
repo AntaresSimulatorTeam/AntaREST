@@ -16,7 +16,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import BinaryIO
+from typing import Any, BinaryIO
 from uuid import uuid4
 
 import polars as pl
@@ -30,7 +30,6 @@ from antarest.core.exceptions import (
     OutputNotFound,
 )
 from antarest.core.interfaces.cache import ICache
-from antarest.core.model import JSON
 from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.utils.archives import (
     ArchiveFormat,
@@ -561,7 +560,7 @@ class AbstractFileOutputStorage(IOutputStorage):
         return get_disk_usage(output_dir)
 
     @override
-    def get_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> bytes | JSON:
+    def get_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
         study_outputs = self._outputs_provider.get_outputs(study_id)
         outputs_path = study_outputs.outputs_path
 
@@ -582,5 +581,4 @@ class AbstractFileOutputStorage(IOutputStorage):
         # But we need one to build the `OutputSimulation` object. So, we build a fake one.
         matrix_storage_context = MatrixStorageContext(matrix_service=InMemorySimpleMatrixService(), is_managed=True)
         tree = Output(matrix_storage_context, config)
-        data_url = [output_id] + url
-        return tree.get(data_url, formatted=formatted)
+        return tree.get([output_id] + url, formatted=formatted)

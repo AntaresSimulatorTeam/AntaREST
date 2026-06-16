@@ -15,7 +15,7 @@ import tempfile
 import uuid
 from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import BinaryIO
+from typing import Any, BinaryIO
 
 import polars as pl
 from typing_extensions import override
@@ -26,7 +26,6 @@ from antarest.core.exceptions import (
     OutputNotFound,
     ShouldNotHappenException,
 )
-from antarest.core.model import JSON
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.utils.archives import (
     ArchiveFormat,
@@ -429,6 +428,6 @@ class V2OutputStorage(IOutputStorage):
         return get_disk_usage(output_dir)
 
     @override
-    def get_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> bytes | JSON:
+    def get_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
         # todo: implement this
         raise NotImplementedError()

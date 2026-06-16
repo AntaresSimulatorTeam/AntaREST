@@ -631,7 +631,7 @@ class IOutputsAccess(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> bytes | JSON:
+    def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
         raise NotImplementedError()
 
 

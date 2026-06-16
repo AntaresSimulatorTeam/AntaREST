@@ -21,7 +21,6 @@ import polars as pl
 from pydantic import ConfigDict, Field, SerializerFunctionWrapHandler, model_serializer
 from pydantic.alias_generators import to_camel
 
-from antarest.core.model import JSON
 from antarest.core.serde import AntaresBaseModel
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
@@ -282,7 +281,7 @@ class IOutputStorage(ABC):
         """
 
     @abstractmethod
-    def get_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> bytes | JSON:
+    def get_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
         """
         Retrieves raw content based on a given url
         """

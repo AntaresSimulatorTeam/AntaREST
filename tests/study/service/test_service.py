@@ -199,9 +199,7 @@ def build_study_service(
             return MatrixIndex()
 
         @override
-        def get_output_raw_content(
-            self, study_id: str, output_id: str, url: list[str], formatted: bool
-        ) -> bytes | JSON:
+        def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> t.Any:
             return {}
 
     service.register_output_access(OutputsAccessMock())
