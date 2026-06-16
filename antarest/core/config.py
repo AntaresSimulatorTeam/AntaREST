@@ -618,20 +618,17 @@ class CeleryConfig(BaseModel):
         password_part = f":{redis_config.password}@" if redis_config.password else ""
         return f"redis://{password_part}{redis_config.host}:{redis_config.port}/{db}"
 
+    @model_validator(mode="before")
     @classmethod
-    def from_dict(cls, data: JSON, redis_config: RedisConfig | None = None) -> "CeleryConfig":
-        defaults = cls()
+    def _validate_model(cls, data: Any) -> Any:
+        redis_url = ""
+        if "redis_config" in data:
+            redis_url = cls._build_redis_url(data["redis_config"], cls.REDIS_DB)
 
-        if redis_config:
-            redis_url = cls._build_redis_url(redis_config, cls.REDIS_DB)
-        else:
-            redis_url = ""
+        data["broker_url"] = data.get("broker_url", redis_url)
+        data["result_backend"] = data.get("result_backend", redis_url)
 
-        return cls(
-            broker_url=data.get("broker_url", redis_url),
-            result_backend=data.get("result_backend", redis_url),
-            result_expires=data.get("result_expires", defaults.result_expires),
-        )
+        return data
 
 
 class Config(BaseModel):
@@ -686,7 +683,7 @@ class Config(BaseModel):
             eventbus=EventBusConfig.model_validate(data["eventbus"]) if "eventbus" in data else EventBusConfig(),
             cache=CacheConfig.model_validate(data["cache"]) if "cache" in data else CacheConfig(),
             tasks=TaskConfig.model_validate(data["tasks"]) if "tasks" in data else TaskConfig(),
-            celery=CeleryConfig.from_dict(data.get("celery", {}), redis_config=redis_config),
+            celery=CeleryConfig.model_validate(data.get("celery", {}) | {redis_config: redis_config}),
             root_path=data.get("root_path", ""),
             api_prefix=data.get("api_prefix", ""),
             desktop_mode=desktop_mode,
