@@ -29,7 +29,8 @@ from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.prepro.area.thermal.thermal import (
     default_data_matrix,
 )
-from tests.integration.assets import ASSETS_DIR
+from tests.integration.assets import ASSETS_DIR as INTEGRATION_ASSETS_DIR
+from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
 from tests.test_helpers.dates import utc_to_local
 
 
@@ -694,7 +695,7 @@ def test_retrieve_output_data(client: TestClient, user_access_token: str, storag
     study_id = res.json()
 
     # Imports an output inside the study
-    output_path_seven_zip = ASSETS_DIR / "output_adq.7z"
+    output_path_seven_zip = INTEGRATION_ASSETS_DIR / "output_adq.7z"
     client.post(f"/v1/studies/{study_id}/output", files={"output": io.BytesIO(output_path_seven_zip.read_bytes())})
     # Ensures the output has been successfully imported
     res = client.get(f"/v1/studies/{study_id}/outputs")
