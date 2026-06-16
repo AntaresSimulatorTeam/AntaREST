@@ -198,6 +198,12 @@ def build_study_service(
         def get_output_time_index(self, study_id: str, output_id: str, frequency: MatrixFrequency) -> MatrixIndex:
             return MatrixIndex()
 
+        @override
+        def get_output_raw_content(
+            self, study_id: str, output_id: str, url: list[str], formatted: bool
+        ) -> bytes | JSON:
+            return {}
+
     service.register_output_access(OutputsAccessMock())
     return service
 

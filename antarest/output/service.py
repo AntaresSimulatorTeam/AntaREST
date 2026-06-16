@@ -34,7 +34,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.model import StudyPermissionType
+from antarest.core.model import JSON, StudyPermissionType
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.serde.parquet_writer import (
     yield_dataframes_from_parquet,
@@ -930,3 +930,6 @@ class OutputService:
             current_storage.export_output(study_id, output_id, tmp_zip)
             target_storage.import_output(study_id, tmp_zip)
             current_storage.delete_output(study_id, output_id)
+
+    def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> bytes | JSON:
+        return self._find_output_storage(study_id, output_id).get_raw_content(study_id, output_id, url, formatted)

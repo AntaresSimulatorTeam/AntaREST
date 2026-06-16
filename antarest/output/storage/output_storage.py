@@ -21,6 +21,7 @@ import polars as pl
 from pydantic import ConfigDict, Field, SerializerFunctionWrapHandler, model_serializer
 from pydantic.alias_generators import to_camel
 
+from antarest.core.model import JSON
 from antarest.core.serde import AntaresBaseModel
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
@@ -278,4 +279,10 @@ class IOutputStorage(ABC):
     def get_disk_usage(self, study_id: str, output_id: str) -> int:
         """
         Retrieve disk usage for a specific output.
+        """
+
+    @abstractmethod
+    def get_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> bytes | JSON:
+        """
+        Retrieves raw content based on a given url
         """

@@ -30,6 +30,7 @@ from antarest.core.exceptions import (
     OutputNotFound,
 )
 from antarest.core.interfaces.cache import ICache
+from antarest.core.model import JSON
 from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.utils.archives import (
     ArchiveFormat,
@@ -549,3 +550,8 @@ class AbstractFileOutputStorage(IOutputStorage):
         study_outputs = self._outputs_provider.get_outputs(study_id)
         output_dir = _output_path(study_outputs.outputs_path, output_id)
         return get_disk_usage(output_dir)
+
+    @override
+    def get_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> bytes | JSON:
+        # todo: There is no way to succeed other than building a FileStudyTree ...
+        raise NotImplementedError()

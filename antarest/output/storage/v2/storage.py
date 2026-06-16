@@ -26,6 +26,7 @@ from antarest.core.exceptions import (
     OutputNotFound,
     ShouldNotHappenException,
 )
+from antarest.core.model import JSON
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.utils.archives import (
     ArchiveFormat,
@@ -426,3 +427,8 @@ class V2OutputStorage(IOutputStorage):
     def get_disk_usage(self, study_id: str, output_id: str) -> int:
         output_dir = parquet_output_dir(self._variables_dir, study_id, output_id)
         return get_disk_usage(output_dir)
+
+    @override
+    def get_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> bytes | JSON:
+        # todo: implement this
+        raise NotImplementedError()
