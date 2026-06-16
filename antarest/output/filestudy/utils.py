@@ -16,13 +16,10 @@ from enum import Enum, StrEnum
 from pathlib import Path
 from typing import TypeAlias
 
-import numpy as np
 import pandas as pd
 import polars as pl
 from polars.exceptions import ComputeError
 
-from antarest.core.exceptions import ChildNotFoundError
-from antarest.core.model import JSON
 from antarest.study.model import MatrixFrequency, MatrixIndex, TimeSerie
 
 logger = logging.getLogger(__name__)
@@ -183,27 +180,3 @@ def parse_output_file(file_path: Path, first_column: int) -> OutputDataFrame:
     df = df.with_columns(pl.col(pl.Utf8).cast(pl.Float64))
 
     return OutputDataFrame(data=df, headers=output_headers)
-
-
-def parse_output_file_as_pandas_dataframe(frequency: MatrixFrequency, file_path: Path, study_id: str) -> pd.DataFrame:
-    try:
-        output_first_column = get_start_column(frequency)
-        output = parse_output_file(file_path, output_first_column)
-        df = output.data.to_pandas().astype(np.float64)
-        df.columns = pd.MultiIndex.from_tuples(output.headers)  # type: ignore
-        return df
-    except FileNotFoundError as e:
-        # Raise 404 'Not Found' if the TSV file is not found
-        raise ChildNotFoundError(f"File '{file_path}' not found in the study '{study_id}'") from e
-
-
-def load_output_file(formatted: bool, frequency: MatrixFrequency, file_path: Path, study_id: str) -> bytes | JSON:
-    if formatted:
-        df = parse_output_file_as_pandas_dataframe(frequency, file_path, study_id)
-        return df.to_dict(orient="split", index=False)
-
-    try:
-        return file_path.read_bytes()
-    except FileNotFoundError:
-        logger.warning(f"Missing file {file_path}")
-        return b""

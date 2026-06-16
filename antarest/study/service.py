@@ -73,7 +73,6 @@ from antarest.login.model import Group
 from antarest.login.service import LoginService, UserNotFoundError
 from antarest.login.utils import get_current_user, get_user_id, get_user_impersonator
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
-from antarest.output.filestudy.utils import parse_output_file_as_pandas_dataframe
 from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
@@ -2715,7 +2714,7 @@ class StudyService:
             if isinstance(node, InputSeriesMatrix):
                 pandas_df = node.parse_as_dataframe().to_pandas()
             elif isinstance(node, OutputSeriesMatrix):
-                pandas_df = parse_output_file_as_pandas_dataframe(node.freq, node.config.path, study_id)
+                pandas_df = node.parse_dataframe()
                 pandas_df.columns = pd.Index(pandas_df.columns)
             elif isinstance(node, OutputSynthesis):
                 pandas_df = pd.DataFrame(**node.load())

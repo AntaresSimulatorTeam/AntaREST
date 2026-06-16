@@ -262,6 +262,19 @@ def parse_outputs(output_path: Path) -> dict[str, Simulation]:
     return sims
 
 
+def parse_single_output(output_path: Path, output_id: str) -> Simulation:
+    try:
+        file_path = output_path / output_id
+        if file_path.exists():
+            return parse_simulation(file_path, canonical_name=output_id)
+        # Assume the output_id is a zip file
+        file_path = output_path / f"{output_id}.zip"
+        return parse_simulation_zip(file_path)
+
+    except Exception as e:
+        logger.warning(f"Failed to parse output {output_id} in {output_path}: {e}", exc_info=True)
+
+
 def parse_simulation_zip(path: Path) -> Simulation:
     xpansion_path = "expansion/out.json"
     ini_path = "about-the-study/parameters.ini"
