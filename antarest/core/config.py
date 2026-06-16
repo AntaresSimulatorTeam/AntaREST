@@ -220,7 +220,7 @@ class StorageConfig(BaseModel):
 
     @field_validator("workspaces", mode="before")
     @classmethod
-    def convert_workspaces(cls, v: Any) -> dict[str, WorkspaceConfig]:
+    def convert_workspaces(cls, v: Any) -> Any:
         """Convert dict entries to WorkspaceConfig objects."""
         if isinstance(v, dict):
             return {
@@ -370,7 +370,7 @@ class LocalConfig(BaseModel):
 
     @model_validator(mode="wrap")
     @classmethod
-    def apply_cpu_detection(cls, data: Any, handler: Any) -> "LocalConfig":
+    def apply_cpu_detection(cls, data: Any, handler: Any) -> Any:
         """Inject detected CPU core counts into data before construction."""
         if isinstance(data, dict) and data.get("enable_nb_cores_detection", True):
             data = {**data, "nb_cores": cls._autodetect_nb_cores()}
@@ -554,19 +554,6 @@ class TaskConfig(BaseModel):
 
     max_workers: int = 5
     remote_workers: list[RemoteWorkerConfig] = Field(default_factory=list)
-
-    @classmethod
-    def from_dict(cls, data: JSON) -> "TaskConfig":
-        defaults = cls()
-        remote_workers = (
-            [RemoteWorkerConfig.model_validate(d) for d in data["remote_workers"]]
-            if "remote_workers" in data
-            else defaults.remote_workers
-        )
-        return cls(
-            max_workers=data.get("max_workers", defaults.max_workers),
-            remote_workers=remote_workers,
-        )
 
 
 class ServerConfig(BaseModel):
