@@ -46,6 +46,7 @@ from antarest.core.exceptions import (
     ResourceCreationNotAllowed,
     ResourceDeletionNotAllowed,
     StudyDeletionNotAllowed,
+    StudyImportFailed,
     StudyNotFoundError,
     StudyVariantUpgradeError,
     TaskAlreadyRunning,
@@ -165,9 +166,9 @@ from antarest.study.storage.utils import (
     assert_permission,
     assert_permission_on_studies,
     create_new_empty_study,
+    extract_data_to_dir,
     extract_simulation_range_from_model,
     get_matrix_index,
-    get_start_date,
     is_managed,
     is_study_folder,
     remove_from_cache,
@@ -237,6 +238,17 @@ def _get_path_inside_user_folder(
     if url[1] == "expansion":
         raise exception_class(f"the given path is inside the `expansion` folder: {path}")
     return "/".join(url[1:])
+
+
+def _infer_output_matrix_frequency(file_name: str) -> MatrixFrequency:
+    """
+    Infers the matrix frequency from the given URL.
+    We use the fact that all Simulator output matrices end with a frequency suffix (e.g., "hourly", "daily", etc.)
+    """
+    try:
+        return MatrixFrequency(file_name.split("-")[-1])
+    except Exception as e:
+        raise ValueError(f"Unable to infer matrix frequency from file name: {file_name}") from e
 
 
 def assert_raw(study: Study) -> RawStudy:
@@ -608,6 +620,18 @@ class IOutputsAccess(ABC):
 
     @abstractmethod
     def write_output_to_dir(self, study_id: str, output_id: str, parent_dir: Path) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def import_outputs(self, outputs_dir: Path, study_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_output_time_index(self, study_id: str, output_id: str, frequency: MatrixFrequency) -> MatrixIndex:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
         raise NotImplementedError()
 
 
@@ -1040,36 +1064,22 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
 
-        # We need to handle matrices index differently if our study is stored in DB
-        if study.storage_mode == StorageMode.DATABASE:
-            dao = self.get_study_interface(study).get_study_dao()
-            # We can give a readOnly Dao as we won't use the save methods
-            mapper = RawPathToMatrixMapper(dao)  # type: ignore
-            matrix_frequency = mapper.get_matrix_frequency_from_path(PurePosixPath(path))
-            simulation_range = extract_simulation_range_from_model(dao.get_general_config())
-            return get_matrix_index(simulation_range, False, matrix_frequency)
+        path_components = path.strip().strip("/").split("/")
+        if not path_components or len(path_components) <= 2 or path_components[0] not in {"input", "output"}:
+            raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 
-        file_study = self.get_file_study(study)
-        output_id = None
-        frequency = MatrixFrequency.HOURLY
-        if path:
-            path_components = path.strip().strip("/").split("/")
-            if len(path_components) > 2 and path_components[0] == "output":
-                output_id = path_components[1]
-            data_node = file_study.tree.get_node(path_components)
-            if isinstance(data_node, OutputSeriesMatrix) or isinstance(data_node, InputSeriesMatrix):
-                frequency = data_node.freq
+        # We need to differentiate input from output matrices
+        if path_components[0] == "output":
+            output_id = path_components[1]
+            frequency = _infer_output_matrix_frequency(path_components[-1])
+            return self._get_outputs_access().get_output_time_index(study_id, output_id, frequency)
 
-        study_path: Path | None = None
-        output_path: Path | None = None
-        if output_id is None:
-            study_path = file_study.config.study_path
-        else:
-            # As the user gave a path like study/output/output-id/... we assume the study follows this structure
-            assert file_study.config.output_path is not None
-            output_path = file_study.config.output_path / output_id
-
-        return get_start_date(study_path, output_path, frequency)
+        dao = self.get_study_interface(study).get_study_dao()
+        # We can give a readOnly Dao as we won't use the save methods
+        mapper = RawPathToMatrixMapper(dao)  # type: ignore
+        matrix_frequency = mapper.get_matrix_frequency_from_path(PurePosixPath(path))
+        simulation_range = extract_simulation_range_from_model(dao.get_general_config())
+        return get_matrix_index(simulation_range, False, matrix_frequency)
 
     def remove_duplicates(self) -> None:
         duplicates = self.repository.list_duplicates()
@@ -1601,11 +1611,33 @@ class StudyService:
             groups=groups,
             storage_mode=storage_mode,
         )
-        study = self.storage_service.raw_study_service.import_study(study, stream)
-        study.directory_id = self.directory_service.get_directory_by_path(directory)
-        study.updated_at = current_time()
 
-        self._save_study(study)
+        # We use a tmp dir inside the studies' workspace to ensure we use the same fs partition.
+        # This way, we're able to move resources efficicently instead of copying them.
+        with tempfile.TemporaryDirectory(dir=self.config.get_workspace_path()) as tmpdir:
+            dst_path = Path(tmpdir)
+
+            try:
+                # First, extract the source inside the temporary directory
+                extract_data_to_dir(dst_path, stream, self.config.storage.tmp_dir)
+
+                # Imports the inputs
+                study = self.storage_service.raw_study_service.import_study(study, dst_path)
+
+                # Save the Study in DB (needed to import the outputs)
+                study.directory_id = self.directory_service.get_directory_by_path(directory)
+                study.updated_at = current_time()
+                self._save_study(study)
+
+                # Imports the outputs
+                self._get_outputs_access().import_outputs(dst_path / "output", sid)
+
+            except Exception as e:
+                # Remove the study from DB
+                db.session.rollback()
+                self.repository.delete(study.id)
+                raise StudyImportFailed(sid, reason=str(e))
+
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -2803,9 +2835,16 @@ class StudyService:
 
     def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
         """
-        Returns the content of a node based on the provided arguments.
+        Returns the content of a file based on the provided arguments.
 
-        Depending on the type of node, it may return the following types of data:
+        Input values:
+        - StorageMode.DATABASE: Only works for matrices.
+        - StorageMode.FILESYSTEM: Works for all paths.
+
+        Output values:
+        - Works for all paths.
+
+        Depending on the type of path, it may return the following types of data:
           - an arbitrary dictionary (ini files ...)
           - a dataframe (input matrices ...)
           - raw file content (arbitrary user files ...)
@@ -2815,6 +2854,20 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
+        url = [item for item in path.split("/") if item]
+
+        ######## Outputs ########
+
+        if url and url[0] == "output":
+            output_access = self._get_outputs_access()
+
+            # todo: Remove this once the R scripts have adapted their code and use the GET /outputs endpoint
+            if url == ["output"]:
+                return output_access.get_outputs_details(study.id)
+
+            return output_access.get_output_raw_content(study.id, url[1], url[2:], formatted)
+
+        ######## Inputs ########
 
         # We need to handle matrices differently if our study is stored in DB
         if study.storage_mode == StorageMode.DATABASE:
@@ -2822,7 +2875,6 @@ class StudyService:
 
         else:
             file_study = self.get_file_study(study)
-            url = [item for item in path.split("/") if item]
             node, relative_url = file_study.tree.get_node_and_remainder(url)
 
             # Return a dataframe when possible instead of less memory & computation - efficient python objects

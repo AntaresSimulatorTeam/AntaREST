@@ -96,7 +96,7 @@ class TestImportStudyDirectory:
             "/v1/studies/_import?directory=orphan/should/not/exist",
             files={"study": io.BytesIO(b"not-a-valid-archive")},
         )
-        assert res.status_code == 415
+        assert res.status_code == 422
 
         after = {d["name"] for d in client.get("/v1/directories").json()}
         assert after == before, "Failed imports must not leave orphan directories behind"

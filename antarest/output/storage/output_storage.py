@@ -140,6 +140,12 @@ class IOutputStorage(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def import_outputs(self, study_id: str, src_outputs_dir: Path) -> None:
+        """
+        Import outputs when importing a study that contains outputs.
+        """
+
+    @abstractmethod
     def import_output(
         self,
         study_id: str,
@@ -272,4 +278,10 @@ class IOutputStorage(ABC):
     def get_disk_usage(self, study_id: str, output_id: str) -> int:
         """
         Retrieve disk usage for a specific output.
+        """
+
+    @abstractmethod
+    def get_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
+        """
+        Retrieves raw content based on a given url
         """

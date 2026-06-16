@@ -29,7 +29,9 @@ from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.prepro.area.thermal.thermal import (
     default_data_matrix,
 )
+from tests.integration.assets import ASSETS_DIR as INTEGRATION_ASSETS_DIR
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
+from tests.test_helpers.dates import utc_to_local
 
 
 class TestFetchRawData:
@@ -681,3 +683,38 @@ class TestFetchOriginalFile:
         expected_content = np.zeros((8760, 1))
         actual_content = pd.read_csv(io.BytesIO(res.content), header=None)
         assert actual_content.to_numpy().tolist() == expected_content.tolist()
+
+
+@pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
+def test_retrieve_output_data(client: TestClient, user_access_token: str, storage_mode: str) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    # Create a study
+    res = client.post(f"/v1/studies?name=MyStudy&storage_mode={storage_mode}")
+    assert res.status_code == 201
+    study_id = res.json()
+
+    # Imports an output inside the study
+    output_path_seven_zip = INTEGRATION_ASSETS_DIR / "output_adq.7z"
+    client.post(f"/v1/studies/{study_id}/output", files={"output": io.BytesIO(output_path_seven_zip.read_bytes())})
+    # Ensures the output has been successfully imported
+    res = client.get(f"/v1/studies/{study_id}/outputs")
+    assert len(res.json()) == 1
+
+    # Ensures we're able to read output matrices for both storage modes
+    expected_date = utc_to_local("20221003-2142")
+    output_id = f"{expected_date}adq"
+    for path in [
+        f"output/{output_id}/adequacy/mc-all/grid/digest",
+        f"output/{output_id}/adequacy/mc-all/areas/de/details-daily",
+        f"output/{output_id}/adequacy/mc-all/areas/de/id-monthly",
+        f"output/{output_id}/adequacy/mc-all/areas/es/values-monthly",
+        f"output/{output_id}/ts-numbers/load/fr",
+    ]:
+        res = client.get(f"/v1/studies/{study_id}/raw", params={"path": path})
+        assert res.status_code == 200
+
+    # Ensures the code still works for R scripts usage. To be removed when the new R script release pops up.
+    res = client.get(f"/v1/studies/{study_id}/raw", params={"path": "output", "depth": 4})
+    assert res.status_code == 200
+    assert res.json() == {output_id: ANY}

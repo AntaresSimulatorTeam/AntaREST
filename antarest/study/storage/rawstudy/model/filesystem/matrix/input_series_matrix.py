@@ -27,7 +27,6 @@ from antarest.core.serde.matrix_export import write_dataframe_in_tsv_format
 from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.core.utils.polars import create_polars_dataframe, read_input_dataframe
 from antarest.core.utils.utils import StopWatch
-from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
@@ -89,14 +88,12 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
         self,
         matrix_storage_context: MatrixStorageContext,
         config: FileStudyTreeConfig,
-        freq: MatrixFrequency = MatrixFrequency.HOURLY,
         nb_columns: int | None = None,
         default_empty: MatrixSupplier | None = None,  # optional only for the capacity matrix in Xpansion
         should_exist: bool = True,
     ):
         LazyNode.__init__(self, config)
         self._matrix_storage_context = matrix_storage_context
-        self.freq = freq
         self.nb_columns = nb_columns
         self.default_empty = default_empty
         # Removes the .link suffix if the matrix is normalized
