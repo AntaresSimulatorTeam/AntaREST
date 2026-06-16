@@ -9,10 +9,14 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import io
+
 import pytest
 from starlette.testclient import TestClient
 
 from antarest.study.model import StorageMode
+from tests.integration.assets import ASSETS_DIR
+from tests.test_helpers.dates import utc_to_local
 
 
 class TestStudyMatrixIndex:
@@ -78,20 +82,6 @@ class TestStudyMatrixIndex:
             "level": "hourly",
             "start_date": "2018-01-01 00:00:00",
             "steps": 8760,
-        }
-        assert actual == expected
-
-        # Check the default matrix index
-        # ==============================
-
-        res = client.get(f"/v1/studies/{internal_study_id}/matrixindex")
-        assert res.status_code == 200
-        actual = res.json()
-        expected = {
-            "first_week_size": 7,
-            "start_date": "2018-01-01 00:00:00",
-            "steps": 8760,
-            "level": "hourly",
         }
         assert actual == expected
 
@@ -234,6 +224,13 @@ class TestStudyMatrixIndex:
         res = client.post(f"/v1/studies/{study_id}/areas/france/storages", json={"name": "st-storage"})
         res.raise_for_status()
 
+        # Import an output inside the study
+        output_path_seven_zip = ASSETS_DIR / "output_adq.7z"
+        client.post(f"/v1/studies/{study_id}/output", files={"output": io.BytesIO(output_path_seven_zip.read_bytes())})
+        # Ensures the output has been successfully imported
+        res = client.get(f"/v1/studies/{study_id}/outputs")
+        assert len(res.json()) == 1
+
         # Try to fetch the matrix index for different matrices
         url = f"/v1/studies/{study_id}/matrixindex"
         hourly_response = {"first_week_size": 7, "start_date": "2018-01-01 00:00:00", "steps": 8760, "level": "hourly"}
@@ -305,3 +302,17 @@ class TestStudyMatrixIndex:
         # We should still see the daily index for the constraint
         res = client.get(url, params={"path": bc_matrix_path})
         assert res.json() == daily_response
+
+        ############ Output matrices ############
+        daily_response = {"first_week_size": 7, "level": "daily", "start_date": "2018-01-01 00:00:00", "steps": 7}
+        monthly_response = {"first_week_size": 7, "level": "monthly", "start_date": "2018-01-01 00:00:00", "steps": 1}
+        expected_date = utc_to_local("20221003-2142")
+        output_id = f"{expected_date}adq"
+        for path in [
+            f"output/{output_id}/adequacy/mc-all/areas/de/details-monthly",
+            f"output/{output_id}/adequacy/mc-all/areas/de/id-daily",
+            f"output/{output_id}/adequacy/mc-all/areas/es/values-monthly",
+        ]:
+            res = client.get(url, params={"path": path})
+            mapping = {"daily": daily_response, "monthly": monthly_response}
+            assert res.json() == mapping[path.split("-")[-1]]

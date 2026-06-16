@@ -14,7 +14,7 @@ from typing import Any
 
 from typing_extensions import override
 
-from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_6, STUDY_VERSION_9_2, MatrixFrequency
+from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_6, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -29,20 +29,17 @@ class InputHydroSeriesArea(FolderNode):
     @override
     def build(self) -> TREE:
         study_version = self.config.version
-        freq = MatrixFrequency.DAILY if study_version >= STUDY_VERSION_6_5 else MatrixFrequency.MONTHLY
         default_empty = default_scenario_daily if study_version >= STUDY_VERSION_6_5 else default_scenario_monthly
         hydro_series_matrices: dict[str, INode[Any, Any, Any]] = {
             "mod": InputSeriesMatrix(
                 self.matrix_storage_context,
                 self.config.next_file("mod.txt"),
-                freq=freq,
                 default_empty=default_empty,
             ),
             # Run of River
             "ror": InputSeriesMatrix(
                 self.matrix_storage_context,
                 self.config.next_file("ror.txt"),
-                freq=MatrixFrequency.HOURLY,
                 default_empty=default_scenario_hourly,
             ),
         }
@@ -50,7 +47,6 @@ class InputHydroSeriesArea(FolderNode):
             hydro_series_matrices["mingen"] = InputSeriesMatrix(
                 self.matrix_storage_context,
                 self.config.next_file("mingen.txt"),
-                freq=MatrixFrequency.HOURLY,
                 default_empty=default_scenario_hourly,
             )
 
@@ -58,14 +54,12 @@ class InputHydroSeriesArea(FolderNode):
             hydro_series_matrices["maxHourlyGenPower"] = InputSeriesMatrix(
                 self.matrix_storage_context,
                 self.config.next_file("maxHourlyGenPower.txt"),
-                freq=MatrixFrequency.HOURLY,
                 default_empty=default_scenario_hourly,
                 should_exist=False,
             )
             hydro_series_matrices["maxHourlyPumpPower"] = InputSeriesMatrix(
                 self.matrix_storage_context,
                 self.config.next_file("maxHourlyPumpPower.txt"),
-                freq=MatrixFrequency.HOURLY,
                 default_empty=default_scenario_hourly,
                 should_exist=False,
             )
