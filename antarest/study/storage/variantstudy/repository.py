@@ -101,8 +101,7 @@ class VariantStudyRepository(StudyMetadataRepository):
         it has no parent. Returns None if `variant_id` does not exist.
         """
         cte = self._ancestor_or_self_cte(variant_id)
-        row = self.session.execute(select(cte.c.id).where(cte.c.parent_id.is_(None))).first()
-        return row[0] if row else None
+        return self.session.execute(select(cte.c.id).where(cte.c.parent_id.is_(None))).scalar_one_or_none()
 
     def get_all_descendants(self, parent_id: str) -> list[VariantStudy]:
         """

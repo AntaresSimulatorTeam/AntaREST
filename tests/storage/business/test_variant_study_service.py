@@ -27,7 +27,7 @@ from antarest.login.utils import current_user_context
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, StorageMode, StudyType
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import create_variant_study
+from tests.helpers import create_raw_study, create_variant_study, with_db_context
 
 
 def build_config(study_path: Path) -> Config:
@@ -142,48 +142,22 @@ def test_get_root_study_id(tmp_path: Path) -> None:
         study_service.get_root_study_id("missing")
 
 
-def test_get_all_variants_children_from_root(tmp_path: Path, admin_user: Any) -> None:
+@with_db_context
+def test_get_all_variants_children_from_root(
+    variant_study_service: VariantStudyService,
+    admin_user: JWTUser,
+) -> None:
     """When `from_root=True`, the tree is rebuilt starting at the topmost ancestor."""
-    study_path = tmp_path / "s"
-    study_path.mkdir()
-    (study_path / "study.antares").touch()
+    root = create_raw_study(name="root")
+    db.session.add(root)
+    db.session.commit()
 
-    repo_mock = Mock(spec=VariantStudyRepository)
-    study_service = VariantStudyService(
-        raw_study_service=Mock(),
-        cache=Mock(),
-        task_service=Mock(),
-        command_factory=Mock(),
-        study_factory=Mock(),
-        config=build_config(tmp_path),
-        repository=repo_mock,
-        event_bus=Mock(),
-        matrix_service=Mock(),
-    )
-
-    def _study(study_id: str) -> Any:
-        return create_variant_study(
-            id=study_id,
-            name=study_id,
-            type=StudyType.VARIANT,
-            archived=False,
-            path=str(study_path),
-            version="700",
-            owner=User(id=1, name="admin"),
-            groups=[],
-            public_mode=PublicMode.NONE,
-        )
-
-    root = _study("root")
-    leaf = _study("leaf")
-
-    repo_mock.get_root_ancestor_id.return_value = "root"
-    repo_mock.get.side_effect = [root, leaf]
-    repo_mock.get_children.side_effect = [[leaf], []]
+    leaf = create_variant_study(name="leaf", parent_id=root.id)
+    db.session.add(leaf)
+    db.session.commit()
 
     with current_user_context(admin_user):
-        tree = study_service.get_all_variants_children("leaf", from_root=True)
+        tree = variant_study_service.get_all_variants_children(leaf.id, from_root=True)
 
-    repo_mock.get_root_ancestor_id.assert_called_once_with("leaf")
-    assert tree.node.id == "root"
-    assert [c.node.id for c in tree.children] == ["leaf"]
+    assert tree.node.id == root.id
+    assert [c.node.id for c in tree.children] == [leaf.id]
