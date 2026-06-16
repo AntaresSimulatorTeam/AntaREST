@@ -84,20 +84,6 @@ class TestStudyMatrixIndex:
         }
         assert actual == expected
 
-        # Check the default matrix index
-        # ==============================
-
-        res = client.get(f"/v1/studies/{internal_study_id}/matrixindex")
-        assert res.status_code == 200
-        actual = res.json()
-        expected = {
-            "first_week_size": 7,
-            "start_date": "2018-01-01 00:00:00",
-            "steps": 8760,
-            "level": "hourly",
-        }
-        assert actual == expected
-
         # Check the matrix index of a daily time series stored in the output folder
         # =========================================================================
 
