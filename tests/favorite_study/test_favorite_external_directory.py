@@ -25,6 +25,37 @@ from antarest.login.utils import current_user_context
 from antarest.study.directory_exceptions import DirectoryNotFoundError
 
 
+@pytest.fixture
+def favorite_external_directory_service(tmp_path: Path) -> tuple[FavoriteExternalDirectoryService, Mock, Config, Path]:
+    """
+    Fixture that creates a FavoriteExternalDirectoryService with a mocked repository
+    and a temporary workspace configuration.
+
+    Returns:
+        A tuple of (FavoriteExternalDirectoryService, Mock repository, Config, Path)
+    """
+    # Create a config with the temporary path
+    config = Config(storage=StorageConfig(tmp_dir=tmp_path))
+
+    # Add a valid workspace to the config
+    workspace_name = "validspace"
+    config.storage.workspaces.update({workspace_name: WorkspaceConfig(path=tmp_path)})
+
+    # Create the workspace directory
+    workspace_path = tmp_path / workspace_name
+    workspace_path.mkdir(parents=True, exist_ok=True)
+
+    # Create a mock repository
+    mock_repository = Mock(spec=FavoriteExternalDirectoryRepository)
+
+    # Create the service
+    service = FavoriteExternalDirectoryService(
+        favorite_external_directory_repository=mock_repository, workspace_config=config
+    )
+
+    return service, mock_repository, config, tmp_path
+
+
 def test_add_favorite_external_directory_failure_when_path_does_not_exist(tmp_path: Path):
     # Trying to add an external directory whose path doesn't exist to the favorites
     workspace = "validspace"
@@ -54,33 +85,33 @@ def test_add_favorite_external_directory_failure_when_workspace_does_not_exist(t
     non_existing_workspace = ""
     mock_favorite_external_directory_repository = Mock(spec=FavoriteExternalDirectoryRepository)
     mock_favorite_external_directory_repository.save.return_value = FavoriteExternalDirectory(
-        workspace=non_existing_workspace, path=str(path_to_favorite)
+        workspace=non_existing_workspace, path=path_to_favorite.as_posix()
     )
     favorite_service = FavoriteExternalDirectoryService(
         mock_favorite_external_directory_repository, workspace_config=config
     )
 
     with pytest.raises(WorkspaceNotFound, match=f"422: Workspace {''} not found"):
-        favorite_service.add_favorite(str(path_to_favorite), non_existing_workspace)
+        favorite_service.add_favorite(path_to_favorite.as_posix(), non_existing_workspace)
 
 
-def test_list_favorite_external_directory_success_returns_empty_list_when_no_favorite_exists(tmp_path: Path):
+def test_list_favorite_external_directory_success_returns_empty_list_when_no_favorite_exists(
+    tmp_path: Path, favorite_external_directory_service: tuple[FavoriteExternalDirectoryService, Mock, Config, Path]
+):
     # getting the external directories in the favorites, but returns an empty list due to no favorite existing
-    config = Config(storage=StorageConfig(tmp_dir=tmp_path))
+    service, mock_repo, config, tmp_path = favorite_external_directory_service
     expected_favorite_list = []
-    mocked_favorite_external_directory_repository = Mock(spec=FavoriteExternalDirectoryRepository)
-    mocked_favorite_external_directory_repository.get_all.return_value = []
-    favorite_service = FavoriteExternalDirectoryService(
-        mocked_favorite_external_directory_repository, workspace_config=config
-    )
+    mock_repo.get_all.return_value = []
 
-    actual_favorite_list = favorite_service.list_favorites()
+    actual_favorite_list = service.list_favorites()
     assert actual_favorite_list == expected_favorite_list
 
 
-def test_list_favorite_external_directory_success_returns_two_favorites(tmp_path: Path):
+def test_list_favorite_external_directory_success_returns_two_favorites(
+    tmp_path: Path, favorite_external_directory_service: tuple[FavoriteExternalDirectoryService, Mock, Config, Path]
+):
     # getting the external directories in the favorites, and returns two favorites
-    config = Config(storage=StorageConfig(tmp_dir=tmp_path))
+    service, mock_repo, config, tmp_path = favorite_external_directory_service
     expected_favorite_1 = FavoriteExternalDirectoryDTO(
         path=PurePosixPath("path/to/favorite/directory_1"), workspace="validspace"
     )
@@ -91,20 +122,17 @@ def test_list_favorite_external_directory_success_returns_two_favorites(tmp_path
 
     favorite_1 = FavoriteExternalDirectory(path="path/to/favorite/directory_1", workspace="validspace")
     favorite_2 = FavoriteExternalDirectory(path="path/to/favorite/directory_2", workspace="validspace")
-    mocked_favorite_external_directory_repository = Mock(spec=FavoriteExternalDirectoryRepository)
-    mocked_favorite_external_directory_repository.get_all.return_value = [favorite_1, favorite_2]
-    favorite_service = FavoriteExternalDirectoryService(
-        mocked_favorite_external_directory_repository, workspace_config=config
-    )
+    mock_repo.get_all.return_value = [favorite_1, favorite_2]
 
-    actual_favorite_list = favorite_service.list_favorites()
+    actual_favorite_list = service.list_favorites()
     assert actual_favorite_list == expected_favorite_list
 
 
-def test_add_favorite_external_directory_success_added_one_favorite(tmp_path: Path):
+def test_add_favorite_external_directory_success_added_one_favorite(
+    tmp_path: Path, favorite_external_directory_service: tuple[FavoriteExternalDirectoryService, Mock, Config, Path]
+):
     # adding an external directory to the favorites, and then checking that the favorite is added
-    config = Config(storage=StorageConfig(tmp_dir=tmp_path))
-    config.storage.workspaces.update({"validspace": WorkspaceConfig(path=tmp_path)})
+    service, mock_repo, config, tmp_path = favorite_external_directory_service
     expected_favorite_dto = FavoriteExternalDirectoryDTO(
         path=PurePosixPath("path/to/favorite/directory"), workspace="validspace"
     )
@@ -112,17 +140,13 @@ def test_add_favorite_external_directory_success_added_one_favorite(tmp_path: Pa
     directory_to_favorite = tmp_path / "validspace" / "path" / "to" / "favorite" / "directory"
     directory_to_favorite.mkdir(parents=True, exist_ok=True)
 
-    mocked_favorite_external_directory_repository = Mock(spec=FavoriteExternalDirectoryRepository)
-    mocked_favorite_external_directory_repository.save.return_value = expected_fav_directory
-    favorite_service = FavoriteExternalDirectoryService(
-        mocked_favorite_external_directory_repository, workspace_config=config
-    )
+    mock_repo.save.return_value = expected_fav_directory
 
     with current_user_context(DEFAULT_ADMIN_USER):
-        actual_favorite_dto = favorite_service.add_favorite(str(directory_to_favorite), "validspace")
+        actual_favorite_dto = service.add_favorite(directory_to_favorite.as_posix(), "validspace")
 
-    mocked_favorite_external_directory_repository.get_all.return_value = [expected_fav_directory]
-    actual_favorite_dto_list = favorite_service.list_favorites()
+    mock_repo.get_all.return_value = [expected_fav_directory]
+    actual_favorite_dto_list = service.list_favorites()
 
     assert actual_favorite_dto == expected_favorite_dto
     assert actual_favorite_dto_list == [expected_favorite_dto]

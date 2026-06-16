@@ -154,7 +154,7 @@ class FavoriteExternalDirectoryRepository:
         fav = session.merge(favorite_external_directory)
         session.add(fav)
         session.commit()
-        return favorite_external_directory
+        return fav
 
     def get_all(self) -> list[FavoriteExternalDirectory]:
         stmt = select(FavoriteExternalDirectory).where(FavoriteExternalDirectory.user_id == get_user_impersonator())

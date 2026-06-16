@@ -143,8 +143,13 @@ class FileStudyStorage(IStudyStorage):
     def import_study(self, study: RawStudy, study_dir: Path) -> None:
         # Move the study data to the Study `path` directory
         study_path = Path(study.path)
-        # As `study_dir` and `study_path` may not be on the same fs partition, we have to do a `copytree`
-        shutil.copytree(study_dir, study_path, ignore=shutil.ignore_patterns("output"))
+        study_dir.rename(study_path)
+
+        # Move the "output" subfolder back to its original location as we only want to import the inputs here
+        outputs_path = study_path / "output"
+        if outputs_path.exists():
+            study_dir.mkdir()
+            outputs_path.rename(study_dir / "output")
 
         # As we don't know yet how outputs will be handled, we don't want to fill the cache with wrong data
         file_study = self._get_file_study(Path(study.path), is_managed(study), use_cache=False)

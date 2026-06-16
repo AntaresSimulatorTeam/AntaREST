@@ -31,7 +31,7 @@ from antarest.favorite.repository import (
 )
 from antarest.login.utils import get_user_impersonator
 from antarest.study.directory_exceptions import DirectoryNotFoundError
-from antarest.study.storage.utils import is_folder_safe
+from antarest.study.storage.utils import get_workspace_from_config, is_folder_safe
 
 
 class FavoriteStudyService:
@@ -133,19 +133,20 @@ class FavoriteExternalDirectoryService:
         self, favorite_external_directory_repository: FavoriteExternalDirectoryRepository, workspace_config: Config
     ):
         self.favorite_external_directory_repository = favorite_external_directory_repository
-        self.workspaces = workspace_config.storage.workspaces
+        self.workspace_config = workspace_config
 
     def add_favorite(self, directory_path: str, workspace: str) -> FavoriteExternalDirectoryDTO:
-
-        if workspace in self.workspaces.keys():
-            if not is_folder_safe(self.workspaces[workspace], directory_path):
+        workspace_conf = get_workspace_from_config(self.workspace_config, workspace)
+        if workspace:
+            if not is_folder_safe(workspace_conf, directory_path):
                 raise HTTPException(
                     status_code=http.HTTPStatus.BAD_REQUEST,
                     detail=f"Directory {directory_path} is not safe",
                 )
 
-            relative_path = Path.relative_to(Path(directory_path), self.workspaces[workspace].path / workspace)
-            if (Path(self.workspaces[workspace].path) / directory_path).exists():
+            relative_path = Path.relative_to(Path(directory_path), workspace_conf.path / workspace)
+
+            if (Path(workspace_conf.path) / directory_path).exists():
                 favorite_external_directory = FavoriteExternalDirectory(
                     path=str(relative_path), workspace=workspace, user_id=get_user_impersonator()
                 )

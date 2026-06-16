@@ -18,11 +18,11 @@ from starlette.testclient import TestClient
 # TEST ADD FAVORITE EXTERNAL DIRECTORY
 def test_add_favorite_external_directory_success_added_one_favorite(admin_client: TestClient, tmp_path: Path):
 
-    workspace_name = "default"
+    workspace_name = "ext"
     path = "path/to/favorite/directory"
-    path_ws = tmp_path / "internal_workspace" / workspace_name / path
+    path_ws = tmp_path / "ext_workspace" / workspace_name / path
     path_ws.mkdir(parents=True, exist_ok=True)
-    expected_favorite_external_directory = {"workspace": workspace_name, "path": str(path_ws)}
+    expected_favorite_external_directory = {"workspace": workspace_name, "path": path_ws.as_posix()}
     response = admin_client.post("/v1/favorites/external_directories", params=expected_favorite_external_directory)
     assert response.status_code == 201
     actual_favorite_external_directory = response.json()
@@ -34,8 +34,8 @@ def test_add_favorite_external_directory_success_added_one_favorite(admin_client
 def test_add_favorite_external_directory_failure_workspace_not_found(admin_client: TestClient, tmp_path: Path):
     workspace_name = "workspace_not_found"
     path = "path/to/favorite/directory"
-    path_ws = tmp_path / "internal_workspace" / workspace_name / path
-    expected_favorite_external_directory = {"workspace": workspace_name, "path": str(path_ws)}
+    path_ws = tmp_path / "ext_workspace" / workspace_name / path
+    expected_favorite_external_directory = {"workspace": workspace_name, "path": path_ws.as_posix()}
     path_ws.mkdir(parents=True, exist_ok=True)
     response = admin_client.post("/v1/favorites/external_directories", params=expected_favorite_external_directory)
     assert response.status_code == 422
@@ -44,11 +44,11 @@ def test_add_favorite_external_directory_failure_workspace_not_found(admin_clien
 
 def test_add_favorite_external_directory_failure_path_not_found(admin_client: TestClient, tmp_path: Path):
     # checking that the favorite external directory is not added if the path does not exist
-    workspace_name = "default"
-    path = tmp_path / "internal_workspace" / workspace_name
+    workspace_name = "ext"
+    path = tmp_path / "ext_workspace" / workspace_name
     path.mkdir(parents=True, exist_ok=True)
     inexisting_dir = path / "inexisting_dir" / "to" / "favorite" / "directory"
-    expected_favorite_external_directory = {"workspace": workspace_name, "path": str(inexisting_dir)}
+    expected_favorite_external_directory = {"workspace": workspace_name, "path": inexisting_dir.as_posix()}
     response = admin_client.post("/v1/favorites/external_directories", params=expected_favorite_external_directory)
     assert response.status_code == 404
     assert response.json()["description"] == f"Directory '{inexisting_dir}' not found"
@@ -56,9 +56,9 @@ def test_add_favorite_external_directory_failure_path_not_found(admin_client: Te
 
 def test_add_favorite_external_directory_failure_folder_not_safe(admin_client: TestClient, tmp_path: Path):
     # checking that the favorite external directory is not added if the path is not safe
-    workspace_name = "default"
-    path = tmp_path / workspace_name
-    expected_favorite_external_directory = {"workspace": workspace_name, "path": str(path)}
+    workspace_name = "ext"
+    path = tmp_path / "external_workspace" / workspace_name
+    expected_favorite_external_directory = {"workspace": workspace_name, "path": path.as_posix()}
     response = admin_client.post("/v1/favorites/external_directories", params=expected_favorite_external_directory)
     assert response.status_code == 400
     assert response.json()["description"] == f"Directory {path} is not safe"
@@ -67,10 +67,10 @@ def test_add_favorite_external_directory_failure_folder_not_safe(admin_client: T
 # TEST GET FAVORITES EXTERNAL DIRECTORY
 def test_get_favorite_external_directory_success_get_one_favorite(admin_client: TestClient, tmp_path: Path):
     # creating one favorite external directory and checking that it is returned
-    workspace_name = "default"
+    workspace_name = "ext"
     path = "path/to/favorite/directory"
-    path_ws = tmp_path / "internal_workspace" / workspace_name / path
-    expected_favorite_external_directory = {"workspace": workspace_name, "path": str(path_ws)}
+    path_ws = tmp_path / "ext_workspace" / workspace_name / path
+    expected_favorite_external_directory = {"workspace": workspace_name, "path": path_ws.as_posix()}
     path_ws.mkdir(parents=True, exist_ok=True)
     response = admin_client.post("/v1/favorites/external_directories", params=expected_favorite_external_directory)
     assert response.status_code == 201
@@ -82,13 +82,13 @@ def test_get_favorite_external_directory_success_get_one_favorite(admin_client: 
 
 def test_get_favorite_external_directory_success_added_two_favorite(admin_client: TestClient, tmp_path: Path):
     # creating two favorite external directories and checking that they are returned
-    workspace_name = "default"
+    workspace_name = "ext"
     path_1 = "path/to/favorite/directory_1"
     path_2 = "path/to/favorite/directory_2"
-    path_ws_1 = tmp_path / "internal_workspace" / workspace_name / path_1
-    path_ws_2 = tmp_path / "internal_workspace" / workspace_name / path_2
-    expected_favorite_external_directory_1 = {"workspace": workspace_name, "path": str(path_ws_1)}
-    expected_favorite_external_directory_2 = {"workspace": workspace_name, "path": str(path_ws_2)}
+    path_ws_1 = tmp_path / "ext_workspace" / workspace_name / path_1
+    path_ws_2 = tmp_path / "ext_workspace" / workspace_name / path_2
+    expected_favorite_external_directory_1 = {"workspace": workspace_name, "path": path_ws_1.as_posix()}
+    expected_favorite_external_directory_2 = {"workspace": workspace_name, "path": path_ws_2.as_posix()}
     path_ws_1.mkdir(parents=True, exist_ok=True)
     path_ws_2.mkdir(parents=True, exist_ok=True)
     response_1 = admin_client.post("/v1/favorites/external_directories", params=expected_favorite_external_directory_1)
@@ -97,18 +97,18 @@ def test_get_favorite_external_directory_success_added_two_favorite(admin_client
     assert response_2.status_code == 201
     actual_favorite_list = admin_client.get("/v1/favorites/external_directories").json()
     assert len(actual_favorite_list) == 2
-    expected_favorite_external_directory_1["path"] = PurePosixPath(path_1).as_posix().replace("/", os.path.sep)
-    expected_favorite_external_directory_2["path"] = PurePosixPath(path_2).as_posix().replace("/", os.path.sep)
+    expected_favorite_external_directory_1["path"] = PurePosixPath(path_1).as_posix()
+    expected_favorite_external_directory_2["path"] = PurePosixPath(path_2).as_posix()
     assert actual_favorite_list == [expected_favorite_external_directory_1, expected_favorite_external_directory_2]
 
 
 # TEST DELETE FAVORITE EXTERNAL DIRECTORY
 def test_delete_favorite_external_directory_success_deleted_one_favorite(admin_client: TestClient, tmp_path: Path):
     # adding an external directory to the favorite, and deleting it afterwards
-    workspace_name = "default"
+    workspace_name = "ext"
     path = "path/to/favorite/directory"
-    path_ws = tmp_path / "internal_workspace" / workspace_name / path
-    expected_favorite_external_directory = {"workspace": workspace_name, "path": str(path_ws)}
+    path_ws = tmp_path / "ext_workspace" / workspace_name / path
+    expected_favorite_external_directory = {"workspace": workspace_name, "path": path_ws.as_posix()}
     path_ws.mkdir(parents=True, exist_ok=True)
     response = admin_client.post("/v1/favorites/external_directories", params=expected_favorite_external_directory)
     assert response.status_code == 201
@@ -124,7 +124,7 @@ def test_delete_favorite_external_directory_success_deleted_one_favorite(admin_c
 def test_delete_favorite_external_directory_failure_not_found(admin_client: TestClient):
     # trying to delete a favorite external directory that does not exist
     path = "path/to/favorite/directory"
-    workspace_name = "default"
+    workspace_name = "ext"
     expected_favorite_external_directory = {"workspace": workspace_name, "path": path}
     response = admin_client.delete("/v1/favorites/external_directories", params=expected_favorite_external_directory)
     assert response.status_code == 404
