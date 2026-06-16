@@ -279,3 +279,9 @@ class IOutputStorage(ABC):
         """
         Retrieve disk usage for a specific output.
         """
+
+    @abstractmethod
+    def get_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
+        """
+        Retrieves raw content based on a given url
+        """

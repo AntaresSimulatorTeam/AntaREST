@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
+from typing import Any
 
 from typing_extensions import override
 
@@ -60,5 +61,9 @@ def adapt_output_service_to_study_service(output_service: OutputService) -> IOut
         @override
         def get_output_time_index(self, study_id: str, output_id: str, frequency: MatrixFrequency) -> MatrixIndex:
             return output_service.get_output_time_index(study_id, output_id, frequency)
+
+        @override
+        def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
+            return output_service.get_output_raw_content(study_id, output_id, url, formatted)
 
     return OutputServiceAdapter()
