@@ -57,6 +57,8 @@ from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_7_2,
+    MatrixFrequency,
+    MatrixIndex,
     OwnerInfo,
     RawStudy,
     StorageMode,
@@ -187,6 +189,14 @@ def build_study_service(
         @override
         def write_output_to_dir(self, study_id: str, output_id: str, parent_dir: Path) -> None:
             pass
+
+        @override
+        def import_outputs(self, outputs_dir: Path, study_id: str) -> None:
+            pass
+
+        @override
+        def get_output_time_index(self, study_id: str, output_id: str, frequency: MatrixFrequency) -> MatrixIndex:
+            return MatrixIndex()
 
     service.register_output_access(OutputsAccessMock())
     return service
