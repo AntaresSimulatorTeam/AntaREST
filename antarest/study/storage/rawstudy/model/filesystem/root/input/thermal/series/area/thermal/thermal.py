@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
-from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -32,14 +31,12 @@ class InputThermalSeriesAreaThermal(FolderNode):
             children["CO2Cost"] = InputSeriesMatrix(
                 self.matrix_storage_context,
                 self.config.next_file("CO2Cost.txt"),
-                freq=MatrixFrequency.HOURLY,
                 default_empty=default_scenario_hourly,
                 should_exist=False,
             )
             children["fuelCost"] = InputSeriesMatrix(
                 self.matrix_storage_context,
                 self.config.next_file("fuelCost.txt"),
-                freq=MatrixFrequency.HOURLY,
                 default_empty=default_scenario_hourly,
                 should_exist=False,
             )
