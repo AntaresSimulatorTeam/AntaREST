@@ -345,9 +345,13 @@ class TestDownloadMatrices:
             assert str(dataframe.index[0]) == "2018-01-01 00:00:00"
             assert np.array_equal(dataframe.to_numpy(), min_gen_df.to_numpy())
 
-        # test that downloading the digest file doesn't fail
+        # Test that downloading the digest file doesn't fail.
+        # The possibility does not exist anymore inside the front-end of the app, but it's still possible via API.
         digest_path = "output/20201014-1422eco-hello/economy/mc-all/grid/digest"
-        res = client.get(f"/v1/studies/{internal_study_id}/raw/download", params={"path": digest_path, "format": "tsv"})
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/raw/download",
+            params={"path": digest_path, "format": "tsv", "index": False},
+        )
         assert res.status_code == 200
 
         # =============================
