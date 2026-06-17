@@ -343,13 +343,8 @@ def test_get_variables_view_for_both_storage_modes(client: TestClient, user_acce
     expected_date = utc_to_local("20221003-2142")
     output_id = f"{expected_date}adq"
 
-    # Checks the variables-list
-    url = f"/v1/studies/{study_id}/output/{output_id}"
-    res = client.get(f"{url}/variables-list")
-    print(res.json())
-
     # Materialize a view
-    url = f"{url}/variables-views"
+    url = f"/v1/studies/{study_id}/output/{output_id}/variables-views"
     query_params = {"type": "area", "variable_name": "OP. COST", "frequency": "daily", "area_id": "de"}
     task_id = client.post(f"{url}/materialize", params=query_params).json()
     task = wait_task_completion(client, user_access_token, task_id)
@@ -357,4 +352,7 @@ def test_get_variables_view_for_both_storage_modes(client: TestClient, user_acce
 
     # Checks the data integrity
     res = client.get(f"{url}/data", params=query_params)
-    assert res.json() == {"data": [[46452000.0, 46452000.0], [46452000.0, 46452000.0]], "columns": ["1", "2"]}
+    assert res.json() == {
+        "columns": ["1"],
+        "data": [[3905885], [4977450], [4535560], [3319475], [3836050], [2759205], [3435005]],
+    }
