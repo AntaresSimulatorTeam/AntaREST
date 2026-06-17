@@ -44,7 +44,7 @@ class InternalMatrixFormat(StrEnum):
 class ConfigBaseModel(BaseModel):
     """Base model for all configuration classes."""
 
-    model_config = ConfigDict(frozen=True, populate_by_name=True, extra="ignore", validate_default=True)
+    model_config = ConfigDict(frozen=True, populate_by_name=True, validate_default=True)
 
 
 class ExternalAuthConfig(ConfigBaseModel):
@@ -584,7 +584,7 @@ class CeleryConfig(ConfigBaseModel):
     @classmethod
     def _validate_model(cls, data: Any) -> Any:
         redis_url = ""
-        if "redis_config" in data:
+        if "redis_config" in data and data["redis_config"]:
             redis_url = cls._build_redis_url(data["redis_config"], cls.REDIS_DB)
 
         data["broker_url"] = data.get("broker_url", redis_url)
@@ -624,6 +624,9 @@ class Config(ConfigBaseModel):
         redis_config = RedisConfig.model_validate(data["redis"]) if "redis" in data else None
         data["storage"] = storage_config
         data["redis"] = redis_config
+        data["celery"] = CeleryConfig.model_validate(
+            data["celery"] if "celery" in data else {} | {"redis_config": redis_config}
+        )
 
         return data
 

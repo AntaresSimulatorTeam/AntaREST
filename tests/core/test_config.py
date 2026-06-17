@@ -12,20 +12,26 @@
 import os.path
 import tempfile
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import yaml
 from antares.study.version import SolverVersion
-from core.config import CacheConfig, CeleryConfig, DbConfig, LoggingConfig, MetricsConfig, RedisConfig, TaskConfig
 
 from antarest.core.config import (
+    CacheConfig,
+    CeleryConfig,
     Config,
+    DbConfig,
     LauncherConfig,
     LocalConfig,
+    LoggingConfig,
+    MetricsConfig,
+    RedisConfig,
     SecurityConfig,
     ServerConfig,
     SlurmConfig,
     StorageConfig,
+    TaskConfig,
 )
 
 
@@ -117,11 +123,7 @@ class TestConfig:
             "api_prefix": "/api_prefix",
         }
 
-        tmp_path = tempfile.mkdtemp()
-        config_path = Path(os.path.join(tmp_path, "config.yaml"))
-
-        with config_path.open(mode="w", encoding="utf-8") as fd:
-            yaml.dump(data, fd)
+        config_path = self.save_data_to_temporary_file(data)
         config = Config.from_yaml_file(config_path)
 
         assert config.desktop_mode is False
@@ -141,6 +143,26 @@ class TestConfig:
         self.check_celery_config(config.celery)
         assert config.root_path == "/tmp/root_path"
         assert config.api_prefix == "/api_prefix"
+
+    def test_redis_config_loaded_in_celery_config(self) -> None:
+        data = {
+            "redis": {"host": "redis_host", "port": 1234, "password": "redis_password"},
+        }
+
+        config_path = self.save_data_to_temporary_file(data)
+
+        config = Config.from_yaml_file(config_path)
+        assert config.redis is not None
+        assert config.celery is not None
+        assert config.celery.broker_url == "redis://:redis_password@redis_host:1234/1"
+
+    def save_data_to_temporary_file(self, data: dict[str, Any]) -> Path:
+        tmp_path = tempfile.mkdtemp()
+        config_path = Path(os.path.join(tmp_path, "config.yaml"))
+
+        with config_path.open(mode="w", encoding="utf-8") as fd:
+            yaml.dump(data, fd)
+        return config_path
 
     def check_server_config(self, server_config: ServerConfig):
         assert server_config.worker_threadpool_size == 12
@@ -228,15 +250,15 @@ class TestConfig:
         assert db_config.db_admin_url == "db_admin_url"
         assert db_config.db_connect_timeout == 15
         assert db_config.pool_recycle == 3
-        assert db_config.pool_pre_ping == True
-        assert db_config.pool_use_null == True
+        assert db_config.pool_pre_ping
+        assert db_config.pool_use_null
         assert db_config.pool_max_overflow == 13
         assert db_config.pool_size == 20
-        assert db_config.pool_use_lifo == True
+        assert db_config.pool_use_lifo
 
     def check_logging_config(self, logging_config: LoggingConfig) -> None:
         assert logging_config.logfile == Path("/tmp/logfile")
-        assert logging_config.json_format == True
+        assert logging_config.json_format
         assert logging_config.level == "DEBUG"
 
     def check_redis_config(self, redis_config: RedisConfig | None) -> None:
@@ -258,7 +280,7 @@ class TestConfig:
         assert workers[1].queues == ["queue_2_1", "queue_2_2"]
 
     def check_metrics_config(self, metrics_config: MetricsConfig) -> None:
-        assert metrics_config.prometheus.multiprocess == True
+        assert metrics_config.prometheus.multiprocess
 
     def check_celery_config(self, celery_config: CeleryConfig) -> None:
         assert celery_config.broker_url == "celery_url"
