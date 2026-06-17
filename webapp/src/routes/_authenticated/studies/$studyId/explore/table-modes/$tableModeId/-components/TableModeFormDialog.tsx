@@ -19,6 +19,7 @@ import StringFE from "@/components/fieldEditors/StringFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { TABLE_MODE_TYPES } from "@/services/api/studies/tableMode/constants";
+import type { TableMode } from "@/services/api/tablemode/types";
 import storage, { StorageKey } from "@/services/utils/localStorage";
 import { validateArray } from "@/utils/validation/array";
 import { validateString } from "@/utils/validation/string";
@@ -26,16 +27,16 @@ import { useNavigate } from "@tanstack/react-router";
 import startCase from "lodash/startCase";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { getTableColumnsForType, type TableTemplate } from "../../-utils";
+import { getTableColumnsForType } from "../../-utils";
 import useStudy from "../../../../-hooks/useStudy";
 
 export interface TableTemplateFormDialogProps
-  extends Pick<FormDialogProps<TableTemplate>, "title" | "titleIcon" | "onCancel"> {
-  defaultValues: TableTemplate;
+  extends Pick<FormDialogProps<TableMode>, "title" | "titleIcon" | "onCancel"> {
+  defaultValues: TableMode;
   existingNames: string[];
 }
 
-function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
+function TableModeFormDialog(props: TableTemplateFormDialogProps) {
   const { title, titleIcon, defaultValues, onCancel, existingNames } = props;
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -55,7 +56,7 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ values }: SubmitHandlerPlus<TableTemplate>) => {
+  const handleSubmit = ({ values }: SubmitHandlerPlus<TableMode>) => {
     storage.setItem(StorageKey.StudiesModelTableModeTemplates, (prev) => {
       const currentTemplates = prev || [];
 
@@ -67,10 +68,10 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
     });
   };
 
-  const handleSubmitSuccessful = ({ values }: SubmitHandlerPlus<TableTemplate>) => {
+  const handleSubmitSuccessful = ({ values }: SubmitHandlerPlus<TableMode>) => {
     navigate({
-      to: "/studies/$studyId/explore/tablemode/$tableModeId",
-      params: { studyId: study.id, tableModeId: values.name },
+      to: "/studies/$studyId/explore/table-modes/$tableModeId",
+      params: { studyId: study.id, tableModeId: values.id },
       replace: isUpdateDialog ? true : false,
     });
 
@@ -127,4 +128,4 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
   );
 }
 
-export default TableTemplateFormDialog;
+export default TableModeFormDialog;
