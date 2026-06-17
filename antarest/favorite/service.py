@@ -159,7 +159,6 @@ class FavoriteExternalDirectoryService:
 
     def list_favorites(self) -> list[FavoriteExternalDirectoryDTO]:
         favorite_dtos = [favorite.to_dto() for favorite in self.favorite_external_directory_repository.get_all()]
-        favorite_dtos = sorted(favorite_dtos, key=lambda favorite: favorite.path)
         return favorite_dtos
 
     def delete_favorite(self, workspace: str, path: str) -> None:

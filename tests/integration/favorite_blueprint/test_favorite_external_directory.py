@@ -18,7 +18,7 @@ from starlette.testclient import TestClient
 def test_add_favorite_external_directory_success_added_one_favorite(admin_client: TestClient, tmp_path: Path):
 
     workspace_name = "ext"
-    path = Path("path") / "to" / "favorite" / "directory"
+    path = PurePosixPath("path") / "to" / "favorite" / "directory"
     path_ws = tmp_path / "ext_workspace" / workspace_name / path
     path_ws.mkdir(parents=True, exist_ok=True)
     expected_favorite_external_directory = {"workspace": workspace_name, "path": path_ws.as_posix()}
