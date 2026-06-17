@@ -13,9 +13,8 @@
  */
 
 import ViewWrapper from "@/components/page/ViewWrapper";
-import TableMode from "@/components/TableMode";
+import TableModeDataForm from "@/components/TableModeDataForm";
 import useDialog from "@/hooks/useDialog";
-import i18n from "@/i18n";
 import { getNames } from "@/services/utils";
 import storage, { StorageKey } from "@/services/utils/localStorage";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -26,22 +25,20 @@ import { useTranslation } from "react-i18next";
 import TableTemplateFormDialog from "./-components/TableTemplateFormDialog";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/tablemode/$tableModeId/",
+  "/_authenticated/studies/$studyId/explore/table-modes/$tableModeId/",
 )({
   loader: ({ params: { tableModeId } }) => {
-    const templates = storage.getItem(StorageKey.StudiesModelTableModeTemplates) || [];
-    const template = templates.find(({ name }) => name === tableModeId);
-
-    if (!template) {
-      throw new Error(i18n.t("study.tableMode.notFound", { id: tableModeId }));
-    }
-
-    return template;
+    // const templates = storage.getItem(StorageKey.StudiesModelTableModeTemplates) || [];
+    // const template = templates.find(({ name }) => name === tableModeId);
+    // if (!template) {
+    //   throw new Error(i18n.t("study.tableMode.notFound", { id: tableModeId }));
+    // }
+    // return template;
   },
-  component: Table,
+  component: TableMode,
 });
 
-function Table() {
+function TableMode() {
   const { studyId } = Route.useParams();
   const { t } = useTranslation();
   const { openDialog, confirm } = useDialog();
@@ -102,7 +99,7 @@ function Table() {
 
   return (
     <ViewWrapper>
-      <TableMode
+      <TableModeDataForm
         studyId={studyId}
         name={template.name}
         type={template.type}

@@ -14,13 +14,13 @@
 
 import DataGridSkeleton from "@/components/DataGridSkeleton";
 import usePromise from "@/hooks/usePromise";
-import { getTableMode, setTableMode } from "@/services/api/studies/tableMode";
+import { getTableModeData, setTableModeData } from "@/services/api/studies/tableMode";
 import type {
-  TableData,
-  TableModeColumnsForType,
-  TableModeType,
+  TableModeData,
+  TableModeData as TableModeDataForm,
 } from "@/services/api/studies/tableMode/types";
-import type { StudyMetadata } from "@/types/types";
+import type { Study } from "@/services/api/studies/types";
+import type { TableModeColumnsForType, TableModeType } from "@/services/api/tablemode/types";
 import type { GridColumn } from "@glideapps/glide-data-grid";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { Box, Typography } from "@mui/material";
@@ -32,27 +32,27 @@ import type { SubmitHandlerPlus } from "./Form/types";
 import EmptyView from "./page/EmptyView";
 import UsePromiseCond from "./utils/UsePromiseCond";
 
-export interface TableModeProps<T extends TableModeType = TableModeType> {
-  studyId: StudyMetadata["id"];
+export interface TableModeDataFormProps<T extends TableModeType = TableModeType> {
+  studyId: Study["id"];
   type: T;
   columns: TableModeColumnsForType<T>;
   name?: string;
   extraActions?: DataGridFormProps["extraActions"];
 }
 
-function TableMode<T extends TableModeType>({
+function TableModeDataForm<T extends TableModeType>({
   studyId,
   type,
   columns,
   name,
   extraActions,
-}: TableModeProps<T>) {
+}: TableModeDataFormProps<T>) {
   const { t } = useTranslation();
-  const [gridColumns, setGridColumns] = useState<DataGridFormProps<TableData>["columns"]>([]);
+  const [gridColumns, setGridColumns] = useState<DataGridFormProps<TableModeData>["columns"]>([]);
   const columnsDep = columns.join(",");
 
   const res = usePromise(
-    () => getTableMode({ studyId, tableType: type, columns }),
+    () => getTableModeData({ studyId, tableType: type, columns }),
     [studyId, type, columnsDep],
   );
 
@@ -86,8 +86,8 @@ function TableMode<T extends TableModeType>({
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = (data: SubmitHandlerPlus<TableData>) => {
-    return setTableMode({ studyId, tableType: type, data: data.dirtyValues });
+  const handleSubmit = (data: SubmitHandlerPlus<TableModeDataForm>) => {
+    return setTableModeData({ studyId, tableType: type, data: data.dirtyValues });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -129,4 +129,4 @@ function TableMode<T extends TableModeType>({
   );
 }
 
-export default TableMode;
+export default TableModeDataForm;
