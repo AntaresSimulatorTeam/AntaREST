@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import os.path
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PosixPath
 
 from starlette.testclient import TestClient
 
@@ -19,7 +19,7 @@ from starlette.testclient import TestClient
 def test_add_favorite_external_directory_success_added_one_favorite(admin_client: TestClient, tmp_path: Path):
 
     workspace_name = "ext"
-    path = Path("path/to/favorite/directory").as_posix()
+    path = "path/to/favorite/directory"
     path_ws = tmp_path / "ext_workspace" / workspace_name / path
     path_ws.mkdir(parents=True, exist_ok=True)
     expected_favorite_external_directory = {"workspace": workspace_name, "path": path_ws.as_posix()}
@@ -28,7 +28,7 @@ def test_add_favorite_external_directory_success_added_one_favorite(admin_client
     actual_favorite_external_directory = response.json()
 
     assert actual_favorite_external_directory["workspace"] == workspace_name
-    assert actual_favorite_external_directory["path"] == path
+    assert actual_favorite_external_directory["path"] == PosixPath(path).as_posix()
 
 
 def test_add_favorite_external_directory_failure_workspace_not_found(admin_client: TestClient, tmp_path: Path):
