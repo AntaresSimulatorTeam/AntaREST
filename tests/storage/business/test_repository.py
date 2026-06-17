@@ -141,6 +141,9 @@ class TestVariantStudyRepository:
         db_session.commit()
 
         for study in (v1, v2, v3):
+            # must initialze here because a select is issued and we don't want the recorder to count it
+            study_id = study.id
+            raw_study_id = raw_study.id
             with DBStatementRecorder(db_session.bind) as db_recorder:
-                assert repository.get_root_ancestor_id(study.id) == raw_study.id
-            assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+                assert repository.get_root_ancestor_id(study_id) == raw_study_id
+                assert len(db_recorder.sql_statements) == 1, str(db_recorder)
