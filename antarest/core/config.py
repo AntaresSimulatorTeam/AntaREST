@@ -41,12 +41,16 @@ class InternalMatrixFormat(StrEnum):
     FEATHER = "feather"
 
 
-class ExternalAuthConfig(BaseModel):
+class ConfigBaseModel(BaseModel):
+    """Base model for all configuration classes."""
+
+    model_config = ConfigDict(frozen=True, populate_by_name=True, extra="ignore", validate_default=True)
+
+
+class ExternalAuthConfig(ConfigBaseModel):
     """
     Sub config object dedicated to external auth service
     """
-
-    model_config = ConfigDict(frozen=True)
 
     url: str | None = None
     default_group_role: RoleType = RoleType.READER
@@ -54,12 +58,10 @@ class ExternalAuthConfig(BaseModel):
     group_mapping: dict[str, str] = Field(default_factory=dict)
 
 
-class SecurityConfig(BaseModel):
+class SecurityConfig(ConfigBaseModel):
     """
     Sub config object dedicated to security
     """
-
-    model_config = ConfigDict(frozen=True)
 
     jwt_key: str = ""
     admin_pwd: str = ""
@@ -79,12 +81,10 @@ class SecurityConfig(BaseModel):
         return data
 
 
-class WorkspaceConfig(BaseModel):
+class WorkspaceConfig(ConfigBaseModel):
     """
     Sub config object dedicated to workspace
     """
-
-    model_config = ConfigDict(frozen=True)
 
     filter_in: list[str] = Field(default_factory=lambda: [".*"])
     filter_out: list[str] = Field(default_factory=list)
@@ -92,7 +92,7 @@ class WorkspaceConfig(BaseModel):
     path: Path = Field(default_factory=Path)
 
 
-class DbConfig(BaseModel):
+class DbConfig(ConfigBaseModel):
     """
     Sub config object dedicated to db
     """
@@ -111,24 +111,21 @@ class DbConfig(BaseModel):
     pool_use_lifo: bool = False
 
 
-class V2OutputStorageConfig(BaseModel):
+class V2OutputStorageConfig(ConfigBaseModel):
     """
     Configuration for "new style" internal output storage
     """
-
-    model_config = ConfigDict(frozen=True)
 
     enable: bool = False
     archive_dir: Path = Path("./output-archives")
     variables_dir: Path = Path("./output-variables")
 
 
-class OutOfStudyFileOutputStorageConfig(BaseModel):
+class OutOfStudyFileOutputStorageConfig(ConfigBaseModel):
     """
     Configuration for output storage in a single dir for all studies
     """
 
-    model_config = ConfigDict(frozen=True)
     storage_dir: Path = Path("./outputs")
 
     @model_validator(mode="after")
@@ -137,10 +134,8 @@ class OutOfStudyFileOutputStorageConfig(BaseModel):
         return self
 
 
-class OutputStorageConfig(BaseModel):
+class OutputStorageConfig(ConfigBaseModel):
     """Configuration for output storage"""
-
-    model_config = ConfigDict(frozen=True)
 
     v2: V2OutputStorageConfig = V2OutputStorageConfig()
     out_of_study: OutOfStudyFileOutputStorageConfig = Field(default_factory=OutOfStudyFileOutputStorageConfig)
@@ -163,22 +158,18 @@ class OutputStorageConfig(BaseModel):
         return self
 
 
-class StudyStorageConfig(BaseModel):
+class StudyStorageConfig(ConfigBaseModel):
     """
     Sub config object dedicated to study storage configuration (from study.storage in YAML)
     """
 
-    model_config = ConfigDict(frozen=True)
-
     database_mode_enabled: bool = False
 
 
-class StorageConfig(BaseModel):
+class StorageConfig(ConfigBaseModel):
     """
     Sub config object dedicated to study module
     """
-
-    model_config = ConfigDict(frozen=True)
 
     matrixstore: Path = Path("./matrixstore")
     archive_dir: Path = Path("./archives")
@@ -273,12 +264,10 @@ class StorageConfig(BaseModel):
             raise NotImplementedError("System workspaces are only implemented for Linux and Windows")
 
 
-class NbCoresConfig(BaseModel):
+class NbCoresConfig(ConfigBaseModel):
     """
     The NBCoresConfig class is designed to manage the configuration of the number of CPU cores
     """
-
-    model_config = ConfigDict(frozen=True)
 
     min: int = 1
     default: int = 22
@@ -304,7 +293,7 @@ class NbCoresConfig(BaseModel):
         raise ValueError(msg)
 
 
-class TimeLimitConfig(BaseModel):
+class TimeLimitConfig(ConfigBaseModel):
     """
     The TimeLimitConfig class is designed to manage the configuration of the time limit for a job.
 
@@ -313,8 +302,6 @@ class TimeLimitConfig(BaseModel):
         default: int: default value for the time limit (in hours).
         max: int: maximum allowed value for the time limit (in hours).
     """
-
-    model_config = ConfigDict(frozen=True)
 
     min: int = 1
     default: int = 48
@@ -340,10 +327,8 @@ class TimeLimitConfig(BaseModel):
         raise ValueError(msg)
 
 
-class LocalConfig(BaseModel):
+class LocalConfig(ConfigBaseModel):
     """Sub config object dedicated to launcher module (local)"""
-
-    model_config = ConfigDict(frozen=True)
 
     id: str
     name: str
@@ -386,12 +371,10 @@ class LocalConfig(BaseModel):
         return {"min": min_cpu, "max": max_cpu, "default": default}
 
 
-class SlurmConfig(BaseModel):
+class SlurmConfig(ConfigBaseModel):
     """
     Sub config object dedicated to launcher module (slurm)
     """
-
-    model_config = ConfigDict(frozen=True)
 
     id: str
     name: str
@@ -454,12 +437,10 @@ class InvalidConfigurationError(Exception):
         super().__init__(msg)
 
 
-class LauncherConfig(BaseModel):
+class LauncherConfig(ConfigBaseModel):
     """
     Sub config object dedicated to launcher module
     """
-
-    model_config = ConfigDict(frozen=True)
 
     default: str = Field(default="local")
     configs: list[LocalConfig | SlurmConfig] | None = None
@@ -497,78 +478,64 @@ class LauncherConfig(BaseModel):
         return [cfg for cfg in self.configs or [] if isinstance(cfg, SlurmConfig)]
 
 
-class LoggingConfig(BaseModel):
+class LoggingConfig(ConfigBaseModel):
     """
     Sub config object dedicated to logging
     """
-
-    model_config = ConfigDict(frozen=True)
 
     logfile: Path | None = None
     json_format: bool = Field(default=False, alias="json")
     level: str = "INFO"
 
 
-class RedisConfig(BaseModel):
+class RedisConfig(ConfigBaseModel):
     """
     Sub config object dedicated to redis
     """
-
-    model_config = ConfigDict(frozen=True)
 
     host: str = "localhost"
     port: int = 6379
     password: str | None = None
 
 
-class EventBusConfig(BaseModel):
+class EventBusConfig(ConfigBaseModel):
     """
     Sub config object dedicated to eventbus module
     """
 
-    model_config = ConfigDict(frozen=True)
 
-
-class CacheConfig(BaseModel):
+class CacheConfig(ConfigBaseModel):
     """
     Sub config object dedicated to cache module
     """
 
-    model_config = ConfigDict(frozen=True)
-
     checker_delay: float = 0.2  # in seconds
 
 
-class RemoteWorkerConfig(BaseModel):
-    model_config = ConfigDict(frozen=True)
-
+class RemoteWorkerConfig(ConfigBaseModel):
     name: str
     queues: list[str] = Field(default_factory=list)
 
 
-class TaskConfig(BaseModel):
+class TaskConfig(ConfigBaseModel):
     """
     Sub config object dedicated to the task module
     """
-
-    model_config = ConfigDict(frozen=True)
 
     max_workers: int = 5
     remote_workers: list[RemoteWorkerConfig] = Field(default_factory=list)
 
 
-class ServerConfig(BaseModel):
+class ServerConfig(ConfigBaseModel):
     """
     Sub config object dedicated to the server
     """
-
-    model_config = ConfigDict(frozen=True)
 
     worker_threadpool_size: int = 5
     services: list[str] = Field(default_factory=list)
 
 
-class PrometheusConfig(BaseModel):
+class PrometheusConfig(ConfigBaseModel):
     """
     Sub config object dedicated to prometheus metrics
 
@@ -577,12 +544,10 @@ class PrometheusConfig(BaseModel):
                       Environment variable `PROMETHEUS_MULTIPROC_DIR` must be set.
     """
 
-    model_config = ConfigDict(frozen=True)
-
     multiprocess: bool = False
 
 
-class MetricsConfig(BaseModel):
+class MetricsConfig(ConfigBaseModel):
     """
     Sub config object dedicated to metrics
 
@@ -590,12 +555,10 @@ class MetricsConfig(BaseModel):
         prometheus: if not None, metrics will be exposed in prometheus format
     """
 
-    model_config = ConfigDict(frozen=True)
-
     prometheus: PrometheusConfig | None = None
 
 
-class CeleryConfig(BaseModel):
+class CeleryConfig(ConfigBaseModel):
     """
     Sub config object dedicated to Celery technical configuration.
 
@@ -604,8 +567,6 @@ class CeleryConfig(BaseModel):
         result_backend: URL of the result backend (built from RedisConfig)
         result_expires: Time in seconds before task results expire
     """
-
-    model_config = ConfigDict(frozen=True)
 
     # Redis database number for Celery (broker + results)
     REDIS_DB: ClassVar[int] = 1
@@ -632,12 +593,10 @@ class CeleryConfig(BaseModel):
         return data
 
 
-class Config(BaseModel):
+class Config(ConfigBaseModel):
     """
     Root server config
     """
-
-    model_config = ConfigDict(frozen=True)
 
     server: ServerConfig = Field(default_factory=ServerConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
