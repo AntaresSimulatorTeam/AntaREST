@@ -17,16 +17,26 @@ import FolderIcon from "@mui/icons-material/Folder";
 import { Box, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import type { Directory } from "@/services/api/directories/types";
-import { directoryListSx, emptyStateSx, getDirectoryRowSx } from "./styles";
+import { getDirectoryListSx, emptyStateSx, getDirectoryRowSx } from "./styles";
 
 interface Props {
   /** Direct children of the currently browsed directory, already sorted. */
   childDirectories: Directory[];
   allDirectories: Directory[];
   onDirectoryClick: (dir: Directory) => void;
+  /** Optional fixed height for the list; overrides the default 400-700px range. */
+  listHeight?: number | string;
+  /** When true, the list flex-grows to fill its parent. Overrides `listHeight`. */
+  fillHeight?: boolean;
 }
 
-function DirectoryList({ childDirectories, allDirectories, onDirectoryClick }: Props) {
+function DirectoryList({
+  childDirectories,
+  allDirectories,
+  onDirectoryClick,
+  listHeight,
+  fillHeight = false,
+}: Props) {
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -34,7 +44,7 @@ function DirectoryList({ childDirectories, allDirectories, onDirectoryClick }: P
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box component="ul" role="listbox" sx={directoryListSx}>
+    <Box component="ul" role="listbox" sx={getDirectoryListSx(listHeight, fillHeight)}>
       {childDirectories.length === 0 ? (
         <Box sx={emptyStateSx}>
           <Typography variant="body2" color="text.disabled" fontStyle="italic">

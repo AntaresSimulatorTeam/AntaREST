@@ -12,10 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import UploadDialog, { type UploadDialogProps } from "@/components/dialogs/UploadDialog";
-import { createStudy } from "@/redux/ducks/studies";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import FilterTags from "@/routes/_authenticated/studies/-components/HeaderActions/FilterTags";
+import ImportStudyDialog from "@/routes/-shared/components/studies/dialogs/ImportStudyDialog";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
@@ -31,7 +29,6 @@ interface Props {
 
 function HeaderActions({ onOpenFilterClick }: Props) {
   const [dialog, setDialog] = useState<null | "create" | "upload">();
-  const dispatch = useAppDispatch();
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -39,19 +36,6 @@ function HeaderActions({ onOpenFilterClick }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const closeDialog = () => setDialog(null);
-
-  ////////////////////////////////////////////////////////////////
-  // Event Handlers
-  ////////////////////////////////////////////////////////////////
-
-  const handleImport: UploadDialogProps["onImport"] = (file, onUploadProgress) => {
-    return dispatch(
-      createStudy({
-        file,
-        onUploadProgress,
-      }),
-    ).unwrap();
-  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -85,15 +69,7 @@ function HeaderActions({ onOpenFilterClick }: Props) {
         {t("global.create")}
       </Button>
       {dialog === "create" && <CreateStudyDialog open onClose={closeDialog} />}
-      {dialog === "upload" && (
-        <UploadDialog
-          open
-          title={t("studies.importNewStudy")}
-          dropzoneText={t("studies.importHint")}
-          onCancel={closeDialog}
-          onImport={handleImport}
-        />
-      )}
+      {dialog === "upload" && <ImportStudyDialog open onClose={closeDialog} />}
     </>
   );
 }

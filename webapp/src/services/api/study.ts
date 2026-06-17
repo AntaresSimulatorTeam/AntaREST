@@ -229,6 +229,7 @@ export const exportOutput = async (sid: string, output: string): Promise<FileDow
 export const importStudy = async (
   file: File,
   onProgress?: (progress: number) => void,
+  directory?: string,
 ): Promise<StudyMetadata["id"]> => {
   const options: AxiosRequestConfig = {};
   if (onProgress) {
@@ -246,6 +247,7 @@ export const importStudy = async (
     headers: {
       "content-type": "multipart/form-data",
     },
+    params: directory ? { directory } : undefined,
   };
   const res = await client.post("/v1/studies/_import", formData, restconfig);
   return res.data;

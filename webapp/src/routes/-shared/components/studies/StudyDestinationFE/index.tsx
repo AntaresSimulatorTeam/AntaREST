@@ -24,7 +24,7 @@ import { validatePath, validateString } from "@/utils/validation/string";
 import { combineValidators } from "@/utils/validation/utils";
 import DirectoryBreadcrumbs from "./DirectoryBreadcrumbs";
 import DirectoryList from "./DirectoryList";
-import { containerSx, explorerPanelSx } from "./styles";
+import { getContainerSx, getExplorerPanelSx } from "./styles";
 import type { BreadcrumbSegment, DirectoryDestination } from "./types";
 import { getDirectChildren, getDirectoryAncestors, mapDirectoriesById } from "./utils";
 
@@ -42,6 +42,13 @@ interface Props {
   helperText?: React.ReactNode;
   /** Forwarded to the hidden InputBase inside the address bar (for RHF ref). */
   inputRef?: React.Ref<HTMLInputElement>;
+  /** Optional fixed height for the directory list; overrides the default 400-700px range. */
+  listHeight?: number | string;
+  /**
+   * When true, the explorer flex-grows to fill its parent's available vertical space.
+   * Requires a flex-column ancestor with a bounded height. Overrides `listHeight`.
+   */
+  fillHeight?: boolean;
 }
 
 function selectDirectories(directories: Directory[]) {
@@ -57,6 +64,8 @@ function StudyDestinationFE({
   error = false,
   helperText,
   inputRef,
+  listHeight,
+  fillHeight = false,
 }: Props) {
   const {
     data: { directories, directoriesById },
@@ -146,8 +155,8 @@ function StudyDestinationFE({
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={containerSx} onBlur={handleContainerBlur}>
-      <Box sx={explorerPanelSx(error)}>
+    <Box sx={getContainerSx(fillHeight)} onBlur={handleContainerBlur}>
+      <Box sx={getExplorerPanelSx(error, fillHeight)}>
         <DirectoryBreadcrumbs
           breadcrumbs={breadcrumbs}
           newSubdirectoriesPath={newSubdirectoriesPath}
@@ -165,6 +174,8 @@ function StudyDestinationFE({
           childDirectories={childDirectories}
           allDirectories={directories}
           onDirectoryClick={(directory) => navigateTo(directory.id)}
+          listHeight={listHeight}
+          fillHeight={fillHeight}
         />
       </Box>
 

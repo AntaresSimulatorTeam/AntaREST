@@ -83,6 +83,7 @@ interface StudyCreator {
 interface StudyUpload {
   file: File;
   onUploadProgress?: (progress: number) => void;
+  directory?: string;
 }
 
 interface StudyUpdate {
@@ -176,8 +177,8 @@ export const createStudy = createAsyncThunk<StudyMetadata, CreateStudyArg, AppAs
     try {
       // StudyUpload
       if ("file" in arg) {
-        const { file, onUploadProgress } = arg;
-        const studyId = await api.importStudy(file, onUploadProgress);
+        const { file, onUploadProgress, directory } = arg;
+        const studyId = await api.importStudy(file, onUploadProgress, directory);
         return api.getStudyMetadata(studyId);
       }
 

@@ -13,11 +13,9 @@
  */
 
 import { z } from "zod";
-import type { Directory } from "@/services/api/directories/types";
 import type { StudyMetadata } from "@/types/types";
-import type { MoveResult } from ".";
 
-export { toDirectoryPath } from "../../StudyDestinationFE/utils";
+export { toDirectoryPath, resolveRedirectDirectoryId } from "../../StudyDestinationFE/utils";
 
 ////////////////////////////////////////////////////////////////
 // Schema
@@ -82,41 +80,4 @@ export function computeAllowSubmitOnPristine(
   }
 
   return studies.some((study) => study.directoryId !== null && study.directoryId !== undefined);
-}
-
-/**
- * Resolves the final directory ID for the redirect after a successful move.
- *
- * When the user typed a new sub-directory name, this walks the freshly-fetched
- * directory tree to find the deepest directory that was created.
- * Otherwise the selected directory ID is returned as-is.
- *
- * @param destination - Parsed destination value from the form.
- * @param directories - Freshly-fetched directory list (includes newly created dirs).
- * @returns The directory ID to redirect to, or `null` for root.
- */
-export function resolveRedirectDirectoryId(
-  destination: MoveResult["destination"],
-  directories: Directory[],
-): string | null {
-  if (!destination.newSubdirectoriesPath) {
-    return destination.directoryId;
-  }
-
-  const segments = destination.newSubdirectoriesPath.split("/").filter(Boolean);
-  let currentId = destination.directoryId;
-
-  for (const segment of segments) {
-    const child = directories.find(
-      (directory) => directory.parentId === currentId && directory.name === segment,
-    );
-
-    if (!child) {
-      break;
-    }
-
-    currentId = child.id;
-  }
-
-  return currentId;
 }
