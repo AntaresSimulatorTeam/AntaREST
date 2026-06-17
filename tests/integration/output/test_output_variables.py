@@ -9,10 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import io
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.serde.json import from_json
@@ -21,8 +23,10 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.output.storage.file.repository import DbOutputVariables
 from antarest.output.variable_view.db import OutputVariablesViewsModel
 from antarest.study.model import MatrixFrequency
+from tests.integration.assets import ASSETS_DIR as INTEGRATION_ASSETS_DIR
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR as assets_dir
 from tests.integration.utils import wait_task_completion
+from tests.test_helpers.dates import utc_to_local
 
 ASSETS_DIR = assets_dir / "output_variables_list"
 
@@ -317,3 +321,40 @@ def test_export_output_variables_view(client: TestClient, user_access_token: str
     res = client.get(export_url, params=query_params)
     df = pd.read_excel(res.content, header=None)
     assert df.equals(pd.DataFrame([[46452000, 46452000], [46452000, 46452000]]))
+
+
+@pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
+def test_get_variables_view_for_both_storage_modes(client: TestClient, user_access_token: str, storage_mode: str):
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    # Create a Study with the 2 different storage modes.
+    # This way when importing an output, we can test the 2 OutputFileStorage implementations
+    study_name = "MyStudy"
+    res = client.post(f"/v1/studies?name={study_name}")
+    assert res.status_code == 201
+    study_id = res.json()
+
+    # Imports an output inside the study
+    output_path_seven_zip = INTEGRATION_ASSETS_DIR / "output_adq.7z"
+    client.post(f"/v1/studies/{study_id}/output", files={"output": io.BytesIO(output_path_seven_zip.read_bytes())})
+    # Ensures the output has been successfully imported
+    res = client.get(f"/v1/studies/{study_id}/outputs")
+    assert len(res.json()) == 1
+    expected_date = utc_to_local("20221003-2142")
+    output_id = f"{expected_date}adq"
+
+    # Checks the variables-list
+    url = f"/v1/studies/{study_id}/output/{output_id}"
+    res = client.get(f"{url}/variables-list")
+    print(res.json())
+
+    # Materialize a view
+    url = f"{url}/variables-views"
+    query_params = {"type": "area", "variable_name": "OP. COST", "frequency": "daily", "area_id": "de"}
+    task_id = client.post(f"{url}/materialize", params=query_params).json()
+    task = wait_task_completion(client, user_access_token, task_id)
+    assert task.status == TaskStatus.COMPLETED
+
+    # Checks the data integrity
+    res = client.get(f"{url}/data", params=query_params)
+    assert res.json() == {"data": [[46452000.0, 46452000.0], [46452000.0, 46452000.0]], "columns": ["1", "2"]}
