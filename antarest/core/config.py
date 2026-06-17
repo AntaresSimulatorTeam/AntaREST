@@ -97,7 +97,8 @@ class DbConfig(BaseModel):
     Sub config object dedicated to db
     """
 
-    model_config = ConfigDict(frozen=True)
+    # populate_by_name so DbConfig can be creating using DbConfig(url=...) or DbConfig(db_url=...)
+    model_config = ConfigDict(frozen=True, populate_by_name=True)
 
     db_url: str = Field(default="", alias="url")
     db_admin_url: str | None = Field(default=None, alias="admin_url")
@@ -142,7 +143,7 @@ class OutputStorageConfig(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     v2: V2OutputStorageConfig = V2OutputStorageConfig()
-    out_of_study: OutOfStudyFileOutputStorageConfig = OutOfStudyFileOutputStorageConfig()
+    out_of_study: OutOfStudyFileOutputStorageConfig = Field(default_factory=OutOfStudyFileOutputStorageConfig)
     default_storage_type: OutputStorageType = OutputStorageType.IN_STUDY_FILE_TREE
 
     @model_validator(mode="before")
@@ -365,13 +366,13 @@ class LocalConfig(BaseModel):
             }
         return v
 
-    @model_validator(mode="wrap")
+    @model_validator(mode="before")
     @classmethod
-    def apply_cpu_detection(cls, data: Any, handler: Any) -> Any:
+    def apply_cpu_detection(cls, data: Any) -> Any:
         """Inject detected CPU core counts into data before construction."""
         if isinstance(data, dict) and data.get("enable_nb_cores_detection", True):
             data = {**data, "nb_cores": cls._autodetect_nb_cores()}
-        return handler(data)
+        return data
 
     @classmethod
     def _autodetect_nb_cores(cls) -> dict[str, int]:
@@ -436,6 +437,9 @@ class SlurmConfig(BaseModel):
             nb_cores["min"] = min(nb_cores["min"], default_n_cpu)
             nb_cores["max"] = max(nb_cores["max"], default_n_cpu)
             data["nb_cores"] = nb_cores
+
+        max_time = data.pop("default_time_limit", TimeLimitConfig().max * 3600) / 3600
+        data["time_limit"] = TimeLimitConfig(min=1, default=max_time, max=max_time)
         return data
 
 
@@ -659,24 +663,8 @@ class Config(BaseModel):
         desktop_mode = data.get("desktop_mode", False)
         storage_config = cls._build_storage_config(data, desktop_mode)
         redis_config = RedisConfig.model_validate(data["redis"]) if "redis" in data else None
-
-        data["server"] = ServerConfig.model_validate(data["server"]) if "server" in data else ServerConfig()
-        data["security"] = SecurityConfig.model_validate(data["security"]) if "security" in data else SecurityConfig()
         data["storage"] = storage_config
-        data["launcher"] = LauncherConfig.model_validate(data["launcher"]) if "launcher" in data else LauncherConfig()
-        data["db"] = DbConfig.model_validate(data["db"]) if "db" in data else DbConfig()
-        data["logging"] = LoggingConfig.model_validate(data["logging"]) if "logging" in data else LoggingConfig()
-        data["debug"] = data.get("debug", True)
-        data["resources_path"] = data["resources_path"] if "resources_path" in data else Path()
         data["redis"] = redis_config
-        data["eventbus"] = EventBusConfig.model_validate(data["eventbus"]) if "eventbus" in data else EventBusConfig()
-        data["cache"] = CacheConfig.model_validate(data["cache"]) if "cache" in data else CacheConfig()
-        data["tasks"] = TaskConfig.model_validate(data["tasks"]) if "tasks" in data else TaskConfig()
-        data["celery"] = CeleryConfig.model_validate(data.get("celery", {}) | {redis_config: redis_config})
-        data["root_path"] = data.get("root_path", "")
-        data["api_prefix"] = data.get("api_prefix", "")
-        data["desktop_mode"] = desktop_mode
-        data["metrics"] = MetricsConfig.model_validate(data["metrics"]) if "metrics" in data else MetricsConfig()
 
         return data
 

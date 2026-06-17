@@ -45,7 +45,7 @@ from tests.storage.conftest import SimpleSyncTaskService
 
 def build_config(root: Path, desktop_mode: bool = False) -> Config:
 
-    no_desktop_workespaces = {
+    no_desktop_workspaces = {
         DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=root / DEFAULT_WORKSPACE_NAME, groups=["toto"]),
         "diese": WorkspaceConfig(
             path=root / "diese",
@@ -58,12 +58,12 @@ def build_config(root: Path, desktop_mode: bool = False) -> Config:
             filter_out=["to_skip.*"],
         ),
     }
-    desktop_workspace = {DEFAULT_WORKSPACE_NAME: no_desktop_workespaces[DEFAULT_WORKSPACE_NAME]}
+    desktop_workspace = {DEFAULT_WORKSPACE_NAME: no_desktop_workspaces[DEFAULT_WORKSPACE_NAME]}
 
     return Config(
         desktop_mode=desktop_mode,
         storage=StorageConfig(
-            workspaces=desktop_workspace if desktop_mode else no_desktop_workespaces,
+            workspaces=desktop_workspace if desktop_mode else no_desktop_workspaces,
         ),
     )
 
