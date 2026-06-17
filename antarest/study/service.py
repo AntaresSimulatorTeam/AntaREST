@@ -630,6 +630,10 @@ class IOutputsAccess(ABC):
     def get_output_time_index(self, study_id: str, output_id: str, frequency: MatrixFrequency) -> MatrixIndex:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
+        raise NotImplementedError()
+
 
 class StudyService:
     """
@@ -2831,9 +2835,16 @@ class StudyService:
 
     def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
         """
-        Returns the content of a node based on the provided arguments.
+        Returns the content of a file based on the provided arguments.
 
-        Depending on the type of node, it may return the following types of data:
+        Input values:
+        - StorageMode.DATABASE: Only works for matrices.
+        - StorageMode.FILESYSTEM: Works for all paths.
+
+        Output values:
+        - Works for all paths.
+
+        Depending on the type of path, it may return the following types of data:
           - an arbitrary dictionary (ini files ...)
           - a dataframe (input matrices ...)
           - raw file content (arbitrary user files ...)
@@ -2843,6 +2854,20 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
+        url = [item for item in path.split("/") if item]
+
+        ######## Outputs ########
+
+        if url and url[0] == "output":
+            output_access = self._get_outputs_access()
+
+            # todo: Remove this once the R scripts have adapted their code and use the GET /outputs endpoint
+            if url == ["output"]:
+                return output_access.get_outputs_details(study.id)
+
+            return output_access.get_output_raw_content(study.id, url[1], url[2:], formatted)
+
+        ######## Inputs ########
 
         # We need to handle matrices differently if our study is stored in DB
         if study.storage_mode == StorageMode.DATABASE:
@@ -2850,7 +2875,6 @@ class StudyService:
 
         else:
             file_study = self.get_file_study(study)
-            url = [item for item in path.split("/") if item]
             node, relative_url = file_study.tree.get_node_and_remainder(url)
 
             # Return a dataframe when possible instead of less memory & computation - efficient python objects
