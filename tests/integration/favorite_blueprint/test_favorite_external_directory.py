@@ -18,7 +18,7 @@ from starlette.testclient import TestClient
 def test_add_favorite_external_directory_success_added_one_favorite(admin_client: TestClient, tmp_path: Path):
 
     workspace_name = "ext"
-    path = PurePosixPath("path") / "to" / "favorite" / "directory"
+    path = Path("path") / "to" / "favorite" / "directory"
     path_ws = tmp_path / "ext_workspace" / workspace_name / path
     path_ws.mkdir(parents=True, exist_ok=True)
     expected_favorite_external_directory = {"workspace": workspace_name, "path": path_ws.as_posix()}
@@ -67,7 +67,7 @@ def test_add_favorite_external_directory_failure_folder_not_safe(admin_client: T
 def test_get_favorite_external_directory_success_get_one_favorite(admin_client: TestClient, tmp_path: Path):
     # creating one favorite external directory and checking that it is returned
     workspace_name = "ext"
-    path = PurePosixPath("path") / "to" / "favorite" / "directory"
+    path = Path("path") / "to" / "favorite" / "directory"
     path_ws = tmp_path / "ext_workspace" / workspace_name / path
     expected_favorite_external_directory = {"workspace": workspace_name, "path": path_ws.as_posix()}
     path_ws.mkdir(parents=True, exist_ok=True)
@@ -82,8 +82,8 @@ def test_get_favorite_external_directory_success_get_one_favorite(admin_client: 
 def test_get_favorite_external_directory_success_added_two_favorite(admin_client: TestClient, tmp_path: Path):
     # creating two favorite external directories and checking that they are returned
     workspace_name = "ext"
-    path_1 = PurePosixPath("path") / "to" / "favorite" / "directory_1"
-    path_2 = PurePosixPath("path") / "to" / "favorite" / "directory_2"
+    path_1 = Path("path") / "to" / "favorite" / "directory_1"
+    path_2 = Path("path") / "to" / "favorite" / "directory_2"
     path_ws_1 = tmp_path / "ext_workspace" / workspace_name / path_1
     path_ws_2 = tmp_path / "ext_workspace" / workspace_name / path_2
     expected_favorite_external_directory_1 = {"workspace": workspace_name, "path": path_ws_1.as_posix()}
@@ -105,7 +105,7 @@ def test_get_favorite_external_directory_success_added_two_favorite(admin_client
 def test_delete_favorite_external_directory_success_deleted_one_favorite(admin_client: TestClient, tmp_path: Path):
     # adding an external directory to the favorite, and deleting it afterwards
     workspace_name = "ext"
-    path = PurePosixPath("path") / "to" / "favorite" / "directory"
+    path = Path("path") / "to" / "favorite" / "directory"
     path_ws = tmp_path / "ext_workspace" / workspace_name / path
     expected_favorite_external_directory = {"workspace": workspace_name, "path": path_ws.as_posix()}
     path_ws.mkdir(parents=True, exist_ok=True)
