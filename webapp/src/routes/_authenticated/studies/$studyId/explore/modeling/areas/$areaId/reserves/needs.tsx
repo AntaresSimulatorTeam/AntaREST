@@ -17,8 +17,9 @@ import SelectFE, { type SelectFEChangeEvent } from "@/components/fieldEditors/Se
 import EmptyView from "@/components/page/EmptyView";
 import { reserveQueries } from "@/queries/reserves/queries";
 import type { Reserve } from "@/services/api/studies/areas/reserves/types";
+import { sortByProp } from "@/services/utils";
 import GridOffIcon from "@mui/icons-material/GridOff";
-import { Box } from "@mui/material";
+import { Box, Stack } from "@mui/material";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -33,17 +34,24 @@ export const Route = createFileRoute(
   component: ReservesNeeds,
 });
 
-function reserveToOption(reserve: Reserve) {
-  return { label: reserve.id, value: reserve.id };
+function getReserveIds(reserves: Reserve[]) {
+  return sortByProp("id", reserves).map(({ id }) => id);
 }
 
 function ReservesNeeds() {
   const { t } = useTranslation();
   const { studyId, areaId } = Route.useParams();
 
-  const { data: reserves } = useSuspenseQuery(reserveQueries.list(studyId, areaId));
+  const { data: reserveIds } = useSuspenseQuery({
+    ...reserveQueries.list(studyId, areaId),
+    select: getReserveIds,
+  });
 
-  const [selectedReserveId, setSelectedReserveId] = useState(() => reserves[0]?.id ?? "");
+  const [selectedReserveId, setSelectedReserveId] = useState(() => reserveIds[0] ?? "");
+
+  if (!reserveIds.includes(selectedReserveId)) {
+    setSelectedReserveId(reserveIds[0] ?? "");
+  }
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -57,16 +65,16 @@ function ReservesNeeds() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  if (reserves.length === 0) {
+  if (reserveIds.length === 0) {
     return <EmptyView icon={GridOffIcon} title={t("study.modeling.reserves.needs.empty")} />;
   }
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: 1, gap: 1 }}>
+    <Stack direction="column" gap={1} sx={{ height: 1 }}>
       <SelectFE
         label={t("study.modeling.reserves.needs.select")}
         value={selectedReserveId}
-        options={reserves.map(reserveToOption)}
+        options={reserveIds}
         onChange={handleChange}
         size="extra-small"
         sx={{ minWidth: 200, maxWidth: 300 }}
@@ -78,6 +86,6 @@ function ReservesNeeds() {
           url={`input/reserves/${areaId}/${selectedReserveId}`}
         />
       </Box>
-    </Box>
+    </Stack>
   );
 }
