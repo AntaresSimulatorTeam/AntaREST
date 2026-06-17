@@ -15,10 +15,14 @@
 import type { Directory } from "@/services/api/directories/types";
 import { sortByName } from "@/services/utils";
 import type { DirectoryDestination } from "./types";
+import type { QueryClient } from "@tanstack/react-query";
+import { directoryQueries } from "@/queries/directories/queries";
 
 /**
  * Strips leading/trailing whitespace and collapses repeated/leading/trailing slashes
  * into a clean slash-separated path (e.g. `" /a//b/ "` → `"a/b"`).
+ *
+ * @param path
  */
 function normalizeSubdirectoriesPath(path: string): string {
   return path.trim().split("/").filter(Boolean).join("/");
@@ -128,4 +132,18 @@ export function resolveRedirectDirectoryId(
   }
 
   return currentId;
+}
+
+export async function refreshDirectoriesIfNeeded(
+  queryClient: QueryClient,
+  destination: DirectoryDestination,
+  directories: Directory[],
+): Promise<Directory[]> {
+  if (!destination.newSubdirectoriesPath) {
+    return directories;
+  }
+
+  await queryClient.invalidateQueries({ queryKey: directoryQueries.list().queryKey });
+
+  return queryClient.getQueryData(directoryQueries.list().queryKey) ?? directories;
 }

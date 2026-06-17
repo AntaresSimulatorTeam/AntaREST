@@ -15,7 +15,6 @@
 import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
 import { type DialogProps } from "@mui/material";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 
@@ -35,8 +34,8 @@ import {
   computeAllowSubmitOnPristine,
   formSchema,
   getInitialDirectoryId,
-  resolveRedirectDirectoryId,
   toDirectoryPath,
+  type FormValues,
 } from "./utils";
 
 export interface MoveResult {

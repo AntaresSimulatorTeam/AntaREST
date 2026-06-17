@@ -24,11 +24,8 @@ import useAppDispatch from "@/redux/hooks/useAppDispatch";
 
 import { StudyDestinationFE } from "../../StudyDestinationFE";
 import type { DirectoryDestination } from "../../StudyDestinationFE/types";
-import { toDirectoryPath } from "../../StudyDestinationFE/utils";
-import {
-  refreshDirectoriesIfNeeded,
-  useRedirectToDestination,
-} from "../../StudyDestinationFE/useRedirectToDestination";
+import { refreshDirectoriesIfNeeded, toDirectoryPath } from "../../StudyDestinationFE/utils";
+import { useRedirectToDestination } from "../../StudyDestinationFE/useRedirectToDestination";
 
 const ROOT_DESTINATION: DirectoryDestination = { directoryId: null, newSubdirectoriesPath: "" };
 
