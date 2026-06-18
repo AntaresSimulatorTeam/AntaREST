@@ -50,12 +50,12 @@ class PreparerProxy(Proxy):
 
         return study_id
 
-    def upload_matrix(self, internal_study_id: str, matrix_path: str, df: pd.DataFrame) -> None:
+    def upload_matrix(self, study_id: str, matrix_path: str, df: pd.DataFrame) -> None:
         tsv = io.BytesIO()
         df.to_csv(tsv, sep="\t", index=False, header=False)
         tsv.seek(0)
         # noinspection SpellCheckingInspection
-        res = self.client.put(f"/v1/studies/{internal_study_id}/raw", params={"path": matrix_path}, files={"file": tsv})
+        res = self.client.put(f"/v1/studies/{study_id}/raw", params={"path": matrix_path}, files={"file": tsv})
         res.raise_for_status()
 
     def create_variant(self, parent_id: str, *, name: str) -> str:
