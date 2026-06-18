@@ -37,18 +37,12 @@ class PreparerProxy(Proxy):
         """
         # Prepare a managed study to test specific matrices for version 8.2
         res = self.client.post(
-            f"/v1/studies/{ref_study_id}/copy",
-            params={"study_name": "copied-820", "use_task": False},
-            headers=self.headers,
+            f"/v1/studies/{ref_study_id}/copy", params={"study_name": "copied-820", "use_task": False}
         )
         res.raise_for_status()
         study_820_id = res.json()
 
-        res = self.client.put(
-            f"/v1/studies/{study_820_id}/upgrade",
-            params={"target_version": target_version},
-            headers=self.headers,
-        )
+        res = self.client.put(f"/v1/studies/{study_820_id}/upgrade", params={"target_version": target_version})
         res.raise_for_status()
         task_id = res.json()
         assert task_id
@@ -62,27 +56,18 @@ class PreparerProxy(Proxy):
         df.to_csv(tsv, sep="\t", index=False, header=False)
         tsv.seek(0)
         # noinspection SpellCheckingInspection
-        res = self.client.put(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": matrix_path},
-            headers=self.headers,
-            files={"file": tsv},
-        )
+        res = self.client.put(f"/v1/studies/{internal_study_id}/raw", params={"path": matrix_path}, files={"file": tsv})
         res.raise_for_status()
 
     def create_variant(self, parent_id: str, *, name: str) -> str:
-        res = self.client.post(
-            f"/v1/studies/{parent_id}/variants",
-            headers=self.headers,
-            params={"name": name},
-        )
+        res = self.client.post(f"/v1/studies/{parent_id}/variants", params={"name": name})
         res.raise_for_status()
         variant_id = res.json()
         return variant_id
 
     def generate_snapshot(self, variant_id: str) -> None:
         # Generate a snapshot for the variant
-        res = self.client.put(f"/v1/studies/{variant_id}/generate", headers=self.headers, params={"from_scratch": True})
+        res = self.client.put(f"/v1/studies/{variant_id}/generate", params={"from_scratch": True})
         res.raise_for_status()
         task_id = res.json()
         assert task_id
@@ -92,20 +77,14 @@ class PreparerProxy(Proxy):
 
     def create_area(self, parent_id: str, *, name: str, country: str = "FR") -> str:
         res = self.client.post(
-            f"/v1/studies/{parent_id}/areas",
-            headers=self.headers,
-            json={"name": name, "type": "AREA", "metadata": {"country": country}},
+            f"/v1/studies/{parent_id}/areas", json={"name": name, "type": "AREA", "metadata": {"country": country}}
         )
         res.raise_for_status()
         area_id = res.json()["id"]
         return area_id
 
     def update_general_data(self, internal_study_id: str, **data: Any) -> None:
-        res = self.client.put(
-            f"/v1/studies/{internal_study_id}/config/general/form",
-            json=data,
-            headers=self.headers,
-        )
+        res = self.client.put(f"/v1/studies/{internal_study_id}/config/general/form", json=data)
         res.raise_for_status()
 
 
