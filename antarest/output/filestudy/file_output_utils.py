@@ -56,6 +56,7 @@ def extract_output_details(output_path: Path) -> OutputDetails:
     output = parameters_dict["output"]
     mode = Mode(general["mode"])
     return OutputDetails(
+        id=output_path.name,
         name=output_path.name,  # TODO: should it be re-built from data instead ?
         mode=mode,
         synthesis=output["synthesis"],

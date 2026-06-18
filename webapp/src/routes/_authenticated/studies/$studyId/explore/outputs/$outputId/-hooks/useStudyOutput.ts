@@ -15,31 +15,19 @@
 import usePromise from "@/hooks/usePromise";
 import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
 import { getStudyOutput } from "@/redux/selectors";
+import type { Output } from "@/services/api/studies/outputs/types";
 import { getStudyOutputById } from "@/services/api/study";
+import type { OutputSynthesis } from "@/types/types";
 
 interface UseStudyOutputOptions {
   studyId: string;
   outputId: string | undefined;
 }
 
-export interface PartialStudyOutput {
-  id: string;
-  name: string;
-  mode?: string;
-  nbyears?: number;
-  synthesis?: boolean;
-  date?: string;
-  by_year?: boolean;
-  error?: boolean;
-  type?: string;
-  settings?: Record<string, unknown>;
-  completionDate?: string;
-  status?: string;
-  archived?: boolean;
-}
+export type StudyOutput = Output | (OutputSynthesis & { id: string });
 
 interface UseStudyOutputReturn {
-  data: PartialStudyOutput | undefined;
+  data: StudyOutput | undefined;
   isLoading: boolean;
   error: unknown;
 }
@@ -67,7 +55,7 @@ export default function useStudyOutput({
     data: fetchedOutput,
     isLoading,
     error,
-  } = usePromise<PartialStudyOutput | undefined>(
+  } = usePromise<StudyOutput | undefined>(
     async () => {
       if (outputFromStore) {
         return undefined;
