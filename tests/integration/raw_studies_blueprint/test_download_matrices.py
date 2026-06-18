@@ -12,6 +12,7 @@
 
 import datetime
 import io
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -22,6 +23,7 @@ from pandas._testing import assert_frame_equal
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
+from antarest.core.utils.archives import archive_dir
 from antarest.study.model import STUDY_VERSION_8_2, STUDY_VERSION_8_6, StorageMode
 from tests.integration.utils import wait_task_completion
 
@@ -309,31 +311,6 @@ def test_other_cases(client: TestClient, user_access_token: str, internal_study_
     dataframe = pd.read_csv(content, index_col=0, sep="\t")
     assert dataframe.to_numpy().tolist() == 365 * [101 * [0.0]]
 
-    # asserts endpoint returns the right columns for output matrix
-    res = client.get(
-        f"/v1/studies/{internal_study_id}/raw/download",
-        params={
-            "path": "output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr/values-hourly",
-            "format": "tsv",
-        },
-    )
-    assert res.status_code == 200
-    content = io.BytesIO(res.content)
-    dataframe = pd.read_csv(content, index_col=0, sep="\t")
-    # noinspection SpellCheckingInspection
-    assert list(dataframe.columns) == [
-        "('FLOW LIN.', 'MWh', '')",
-        "('UCAP LIN.', 'MWh', '')",
-        "('LOOP FLOW', 'MWh', '')",
-        "('FLOW QUAD.', 'MWh', '')",
-        "('CONG. FEE (ALG.)', 'Euro', '')",
-        "('CONG. FEE (ABS.)', 'Euro', '')",
-        "('MARG. COST', 'Euro/MW', '')",
-        "('CONG. PROB +', '%', '')",
-        "('CONG. PROB -', '%', '')",
-        "('HURDLE COST', 'Euro', '')",
-    ]
-
     # checks default value for an empty energy matrix
     res = client.get(
         f"/v1/studies/{internal_study_id}/raw/download",
@@ -343,3 +320,50 @@ def test_other_cases(client: TestClient, user_access_token: str, internal_study_
     content = io.BytesIO(res.content)
     dataframe = pd.read_csv(content, index_col=0, sep="\t")
     assert dataframe.to_numpy().tolist() == 12 * [5 * [0.0]]
+
+
+def test_download_output_matrices_for_both_storage_modes(
+    client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
+) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    # Create a study stored in Database mode
+    res = client.post("/v1/studies?name=MyStudy&storage_mode=database")
+    assert res.status_code == 201
+    database_id = res.json()
+
+    output_id = "20201014-1422eco-hello"
+    # Import the same output inside the DB study to perform the tests
+    output_path = tmp_path / "ext_workspace" / "STA-mini" / "output" / output_id
+    output_archive_path = tmp_path / "output_zipped.zip"
+    archive_dir(output_path, output_archive_path)
+    client.post(f"/v1/studies/{database_id}/output", files={"output": io.BytesIO(output_archive_path.read_bytes())})
+    # Ensures the output has been successfully imported
+    res = client.get(f"/v1/studies/{database_id}/outputs")
+    assert len(res.json()) == 1
+
+    # Use both the Database and the Filesystem studies to ensure we find the same results
+    for study_id in [internal_study_id, database_id]:
+        res = client.get(
+            f"/v1/studies/{study_id}/raw/download",
+            params={
+                "path": f"output/{output_id}/economy/mc-ind/00001/links/de/fr/values-hourly",
+                "format": "tsv",
+            },
+        )
+        assert res.status_code == 200
+        content = io.BytesIO(res.content)
+        dataframe = pd.read_csv(content, index_col=0, sep="\t")
+        # noinspection SpellCheckingInspection
+        assert list(dataframe.columns) == [
+            "('FLOW LIN.', 'MWh', '')",
+            "('UCAP LIN.', 'MWh', '')",
+            "('LOOP FLOW', 'MWh', '')",
+            "('FLOW QUAD.', 'MWh', '')",
+            "('CONG. FEE (ALG.)', 'Euro', '')",
+            "('CONG. FEE (ABS.)', 'Euro', '')",
+            "('MARG. COST', 'Euro/MW', '')",
+            "('CONG. PROB +', '%', '')",
+            "('CONG. PROB -', '%', '')",
+            "('HURDLE COST', 'Euro', '')",
+        ]
