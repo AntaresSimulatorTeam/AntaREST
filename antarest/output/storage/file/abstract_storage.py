@@ -16,7 +16,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import BinaryIO
+from typing import Any, BinaryIO
 from uuid import uuid4
 
 import polars as pl
@@ -42,6 +42,7 @@ from antarest.core.utils.archives import (
 from antarest.core.utils.utils import StopWatch
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
+from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.output.filestudy.aggregator_management import AggregatorManager
 from antarest.output.filestudy.file_output_utils import extract_variables_list, parse_output_config
 from antarest.output.filestudy.utils import QueryFileType
@@ -56,10 +57,18 @@ from antarest.output.storage.output_storage import (
 )
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
+    STUDY_VERSION_8,
     MatrixFrequency,
     MatrixIndex,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist, parse_outputs
+from antarest.study.storage.rawstudy.model.filesystem.config.files import (
+    get_playlist,
+    parse_outputs,
+    parse_single_output,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
+from antarest.study.storage.rawstudy.model.filesystem.root.output.output import Output
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestSynthesis,
     DigestUI,
@@ -550,3 +559,27 @@ class AbstractFileOutputStorage(IOutputStorage):
         study_outputs = self._outputs_provider.get_outputs(study_id)
         output_dir = _output_path(study_outputs.outputs_path, output_id)
         return get_disk_usage(output_dir)
+
+    @override
+    def get_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
+        study_outputs = self._outputs_provider.get_outputs(study_id)
+        outputs_path = study_outputs.outputs_path
+
+        # Build a fake config object to build the `Output` object.
+        # This is needed as the parsing logic for each file type is different.
+        config = FileStudyTreeConfig(
+            study_path=outputs_path,
+            path=outputs_path,
+            study_id=study_id,
+            version=STUDY_VERSION_8,
+            output_path=outputs_path,
+        )
+
+        # Parse a single output as the parsing can be quite long
+        config.outputs = {output_id: parse_single_output(outputs_path, output_id)}
+
+        # The `MatrixStorageContext` is only used for input matrices.
+        # But we need one to build the `OutputSimulation` object. So, we build a fake one.
+        matrix_storage_context = MatrixStorageContext(matrix_service=InMemorySimpleMatrixService(), is_managed=True)
+        tree = Output(matrix_storage_context, config)
+        return tree.get([output_id] + url, formatted=formatted)
