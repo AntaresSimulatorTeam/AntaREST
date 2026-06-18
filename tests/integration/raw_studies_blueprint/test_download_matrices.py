@@ -344,12 +344,10 @@ def test_download_output_matrices_for_both_storage_modes(
 
     # Use both the Database and the Filesystem studies to ensure we find the same results
     for study_id in [internal_study_id, database_id]:
+        download_url = f"/v1/studies/{study_id}/raw/download"
         res = client.get(
-            f"/v1/studies/{study_id}/raw/download",
-            params={
-                "path": f"output/{output_id}/economy/mc-ind/00001/links/de/fr/values-hourly",
-                "format": "tsv",
-            },
+            download_url,
+            params={"path": f"output/{output_id}/economy/mc-ind/00001/links/de/fr/values-hourly", "format": "tsv"},
         )
         assert res.status_code == 200
         content = io.BytesIO(res.content)
