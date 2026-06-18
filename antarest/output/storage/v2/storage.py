@@ -17,6 +17,7 @@ from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import Any, BinaryIO
 
+import pandas as pd
 import polars as pl
 from typing_extensions import override
 
@@ -429,5 +430,12 @@ class V2OutputStorage(IOutputStorage):
 
     @override
     def get_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
+        # todo: implement this
+        raise NotImplementedError()
+
+    @override
+    def get_matrix_as_dataframe(
+        self, study_id: str, output_id: str, url: list[str], frequency: MatrixFrequency
+    ) -> pd.DataFrame:
         # todo: implement this
         raise NotImplementedError()

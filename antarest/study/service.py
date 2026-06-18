@@ -153,9 +153,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.synthesis import OutputSynthesis
 from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
@@ -630,6 +628,12 @@ class IOutputsAccess(ABC):
 
     @abstractmethod
     def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_output_matrix_as_dataframe(
+        self, study_id: str, output_id: str, url: list[str], frequency: MatrixFrequency
+    ) -> pd.DataFrame:
         raise NotImplementedError()
 
 
@@ -2692,24 +2696,20 @@ class StudyService:
         study = self.get_study(study_id)
         study_interface = self.get_study_interface(study)
 
-        url = matrix_path.parts
+        path_components = matrix_path.parts
+        if not path_components or len(path_components) <= 2 or path_components[0] not in {"input", "output"}:
+            raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 
-        # We need to handle matrices differently if our study is stored in DB
-        if study.storage_mode == StorageMode.DATABASE:
-            pandas_df = _get_matrix_from_path(study_interface, matrix_path).to_pandas()
+        # We need to differentiate input from output matrices
+        if path_components[0] == "output":
+            output_id = path_components[1]
+            frequency = _infer_output_matrix_frequency(path_components[-1])
+            pandas_df = self._get_outputs_access().get_output_matrix_as_dataframe(
+                study_id, output_id, list(path_components[2:]), frequency
+            )
 
         else:
-            # Checks that the provided path refers to a matrix
-            node = self.get_file_study(study).tree.get_node(list(url))
-            if isinstance(node, InputSeriesMatrix):
-                pandas_df = node.parse_as_dataframe().to_pandas()
-            elif isinstance(node, OutputSeriesMatrix):
-                pandas_df = node.parse_dataframe()
-                pandas_df.columns = pd.Index(pandas_df.columns)
-            elif isinstance(node, OutputSynthesis):
-                pandas_df = pd.DataFrame(**node.load())
-            else:
-                raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
+            pandas_df = _get_matrix_from_path(study_interface, matrix_path).to_pandas()
 
         if with_index:
             matrix_index = self.get_matrix_startdate(study_id, path)

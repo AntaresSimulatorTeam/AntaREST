@@ -17,6 +17,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any, BinaryIO
 
+import pandas as pd
 import polars as pl
 from pydantic import ConfigDict, Field, SerializerFunctionWrapHandler, model_serializer
 from pydantic.alias_generators import to_camel
@@ -284,4 +285,12 @@ class IOutputStorage(ABC):
     def get_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
         """
         Retrieves raw content based on a given url
+        """
+
+    @abstractmethod
+    def get_matrix_as_dataframe(
+        self, study_id: str, output_id: str, url: list[str], frequency: MatrixFrequency
+    ) -> pd.DataFrame:
+        """
+        Parses a matrix from a given url and returns it as a dataframe
         """

@@ -19,6 +19,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO
 from uuid import uuid4
 
+import pandas as pd
 import polars as pl
 from typing_extensions import override
 
@@ -45,7 +46,7 @@ from antarest.launcher.model import LogType
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.output.filestudy.aggregator_management import AggregatorManager
 from antarest.output.filestudy.file_output_utils import extract_variables_list, parse_output_config
-from antarest.output.filestudy.utils import QueryFileType
+from antarest.output.filestudy.utils import QueryFileType, get_start_column, parse_output_file_as_pandas_dataframe
 from antarest.output.model import OutputVariablesList
 from antarest.output.storage.file.repository import FileOutputRepository
 from antarest.output.storage.output_storage import (
@@ -582,3 +583,14 @@ class AbstractFileOutputStorage(IOutputStorage):
         matrix_storage_context = MatrixStorageContext(matrix_service=InMemorySimpleMatrixService(), is_managed=True)
         tree = Output(matrix_storage_context, config)
         return tree.get([output_id] + url, formatted=formatted)
+
+    @override
+    def get_matrix_as_dataframe(
+        self, study_id: str, output_id: str, url: list[str], frequency: MatrixFrequency
+    ) -> pd.DataFrame:
+        study_outputs = self._outputs_provider.get_outputs(study_id)
+        output_dir = _output_path(study_outputs.outputs_path, output_id)
+
+        file_path = output_dir.joinpath("/".join(url)).with_suffix(".txt")
+        first_column = get_start_column(frequency)
+        return parse_output_file_as_pandas_dataframe(file_path, first_column)
