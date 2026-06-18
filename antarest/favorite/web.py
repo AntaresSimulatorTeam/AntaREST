@@ -12,10 +12,8 @@
 
 import logging
 from http import HTTPStatus
-from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from pydantic.fields import Field
 
 from antarest.core.api_types import UuidStr
 from antarest.core.utils.web import APITag
