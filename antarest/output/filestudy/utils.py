@@ -15,6 +15,7 @@ from enum import Enum, StrEnum
 from pathlib import Path
 from typing import TypeAlias
 
+import numpy as np
 import pandas as pd
 import polars as pl
 from polars.exceptions import ComputeError
@@ -176,3 +177,10 @@ def parse_output_file(file_path: Path, first_column: int) -> OutputDataFrame:
     df = df.with_columns(pl.col(pl.Utf8).cast(pl.Float64))
 
     return OutputDataFrame(data=df, headers=output_headers)
+
+
+def parse_output_file_as_pandas_dataframe(file_path: Path, first_column: int) -> pd.DataFrame:
+    output = parse_output_file(file_path, first_column)
+    df = output.data.to_pandas().astype(np.float64)
+    df.columns = pd.MultiIndex.from_tuples(output.headers)  # type: ignore
+    return df

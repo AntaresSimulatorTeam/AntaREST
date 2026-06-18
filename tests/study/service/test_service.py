@@ -21,6 +21,7 @@ from functools import wraps
 from pathlib import Path
 from unittest.mock import ANY, Mock, patch, seal
 
+import pandas as pd
 import pytest
 from antares.study.version import StudyVersion
 from fastapi import HTTPException
@@ -201,6 +202,12 @@ def build_study_service(
         @override
         def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> t.Any:
             return {}
+
+        @override
+        def get_output_matrix_as_dataframe(
+            self, study_id: str, output_id: str, url: list[str], frequency: MatrixFrequency
+        ) -> pd.DataFrame:
+            return pd.DataFrame()
 
     service.register_output_access(OutputsAccessMock())
     return service

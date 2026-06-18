@@ -12,6 +12,7 @@
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
 from typing_extensions import override
 
 from antarest.output.service import OutputService
@@ -65,5 +66,11 @@ def adapt_output_service_to_study_service(output_service: OutputService) -> IOut
         @override
         def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
             return output_service.get_output_raw_content(study_id, output_id, url, formatted)
+
+        @override
+        def get_output_matrix_as_dataframe(
+            self, study_id: str, output_id: str, url: list[str], frequency: MatrixFrequency
+        ) -> pd.DataFrame:
+            return output_service.get_matrix_as_dataframe(study_id, output_id, url, frequency)
 
     return OutputServiceAdapter()

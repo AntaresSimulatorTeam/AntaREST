@@ -4,6 +4,7 @@
     "config:recommended",
     ":semanticCommits"
   ],
+  "rebaseWhen": "never",
   "dependencyDashboard": true,
   "labels": ["dependencies"],
   "baseBranches": ["dev"],
