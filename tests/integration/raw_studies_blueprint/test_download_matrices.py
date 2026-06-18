@@ -442,6 +442,7 @@ def test_download_output_matrices_for_both_storage_modes(
 
 
 def _parse_dataframe(res: Response) -> pd.DataFrame:
+    print(res.content)
     assert res.status_code == 200
     content = io.BytesIO(res.content)
     return pd.read_csv(content, index_col=0, sep="\t")

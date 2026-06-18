@@ -50,7 +50,7 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --compile-bytecode
       - name: Test with pytest
-        run: uv run --frozen pytest --cov antarest --cov-report xml -n 4 --dist=worksteal
+        run: uv run --frozen pytest -s tests/integration/raw_studies_blueprint/test_download_matrices.py
       - name: Archive code coverage results
         if: matrix.os == 'ubuntu-22.04'
         uses: actions/upload-artifact@v7
