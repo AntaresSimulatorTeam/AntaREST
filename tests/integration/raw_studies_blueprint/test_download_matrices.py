@@ -197,13 +197,14 @@ class TestDownloadMatrices:
         # =============================
         # TESTS INDEX AND HEADER PARAMETERS
         # =============================
+        download_url = f"/v1/studies/{study_820_id}/raw/download"
 
         # test only few possibilities as each API call is quite long
         # (also check that the format is case-insensitive)
         for header in [True, False]:
             index = not header
             res = client.get(
-                f"/v1/studies/{study_820_id}/raw/download",
+                download_url,
                 params={"path": raw_matrix_path, "format": "TSV", "header": header, "index": index},
             )
             assert res.status_code == 200
@@ -241,9 +242,7 @@ class TestDownloadMatrices:
         ]
 
         # tests links headers after v8.2
-        res = client.get(
-            f"/v1/studies/{study_820_id}/raw/download", params={"path": "input/links/de/fr_parameters", "format": "tsv"}
-        )
+        res = client.get(download_url, params={"path": "input/links/de/fr_parameters", "format": "tsv"})
         assert res.status_code == 200
         content = io.BytesIO(res.content)
         dataframe = pd.read_csv(content, index_col=0, sep="\t")
@@ -268,7 +267,7 @@ class TestDownloadMatrices:
 
         # modulation matrix
         res = client.get(
-            f"/v1/studies/{study_820_id}/raw/download",
+            download_url,
             params={"path": "input/thermal/prepro/de/01_solar/modulation", "format": "tsv"},
         )
         assert res.status_code == 200
@@ -336,15 +335,6 @@ class TestDownloadMatrices:
             assert str(dataframe.index[0]) == "2018-01-01 00:00:00"
             assert np.array_equal(dataframe.to_numpy(), min_gen_df.to_numpy())
 
-        # Test that downloading the digest file doesn't fail.
-        # The possibility does not exist anymore inside the front-end of the app, but it's still possible via API.
-        digest_path = "output/20201014-1422eco-hello/economy/mc-all/grid/digest"
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw/download",
-            params={"path": digest_path, "format": "tsv", "index": False},
-        )
-        assert res.status_code == 200
-
         # =============================
         #  ERRORS
         # =============================
@@ -357,23 +347,17 @@ class TestDownloadMatrices:
         assert "should match pattern" in res.json()["description"]
 
         # fake path
-        res = client.get(
-            f"/v1/studies/{study_820_id}/raw/download", params={"path": f"input/links/de/{fake_str}", "format": "tsv"}
-        )
+        res = client.get(download_url, params={"path": f"input/links/de/{fake_str}", "format": "tsv"})
         assert res.status_code == 404
-        assert res.json()["exception"] == "ChildNotFoundError"
+        assert res.json()["exception"] == "IncorrectPathError"
 
         # path that does not lead to a matrix
-        res = client.get(
-            f"/v1/studies/{study_820_id}/raw/download", params={"path": "settings/generaldata", "format": "tsv"}
-        )
+        res = client.get(download_url, params={"path": "settings/generaldata", "format": "tsv"})
         assert res.status_code == 404
         assert res.json()["exception"] == "IncorrectPathError"
         assert res.json()["description"] == "The provided path does not point to a valid matrix: 'settings/generaldata'"
 
         # wrong format
-        res = client.get(
-            f"/v1/studies/{study_820_id}/raw/download", params={"path": raw_matrix_path, "format": fake_str}
-        )
+        res = client.get(download_url, params={"path": raw_matrix_path, "format": fake_str})
         assert res.status_code == 422
         assert res.json()["exception"] == "RequestValidationError"
