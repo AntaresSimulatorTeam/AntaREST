@@ -591,12 +591,26 @@ class AbstractFileOutputStorage(IOutputStorage):
         study_outputs = self._outputs_provider.get_outputs(study_id)
         output_dir = _output_path(study_outputs.outputs_path, output_id)
 
-        file_path = _build_file_path(output_dir, url)
+        file_path = _build_matrix_file_path(output_dir, url)
         first_column = get_start_column(frequency)
         return parse_output_file_as_pandas_dataframe(file_path, first_column)
 
 
-def _build_file_path(output_dir: Path, url: list[str]) -> Path:
-    # todo: this does not work because of the dumbass links parsing
-    # areas.setdefault(link.split(" - ")[0], []).append(link)
-    return output_dir.joinpath("/".join(url)).with_suffix(".txt")
+def _build_matrix_file_path(output_dir: Path, url: list[str]) -> Path:
+    """
+    Because the `OutputSimulationLinks` class modifies the url for links, we cannot simply use the url as is.
+    As we assume the user asked for a matrix, the possible link paths look like this:
+    - mc-all/links/...
+    - mc-ind/00001/links/...
+    """
+    try:
+        if url[1] == "mc-all" and url[2] == "links":
+            new_url = url[:3] + [f"{url[3]} - {url[4]}"] + url[5:]
+        elif url[1] == "mc-ind" and url[3] == "links":
+            new_url = url[:4] + [f"{url[4]} - {url[5]}"] + url[6:]
+        else:
+            new_url = url
+        return output_dir.joinpath("/".join(new_url)).with_suffix(".txt")
+
+    except Exception as e:
+        raise ValueError(f"Failed to fetch output matrix for path `{url}`") from e
