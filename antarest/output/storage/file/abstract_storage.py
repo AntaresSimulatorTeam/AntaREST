@@ -591,6 +591,12 @@ class AbstractFileOutputStorage(IOutputStorage):
         study_outputs = self._outputs_provider.get_outputs(study_id)
         output_dir = _output_path(study_outputs.outputs_path, output_id)
 
-        file_path = output_dir.joinpath("/".join(url)).with_suffix(".txt")
+        file_path = _build_file_path(output_dir, url)
         first_column = get_start_column(frequency)
         return parse_output_file_as_pandas_dataframe(file_path, first_column)
+
+
+def _build_file_path(output_dir: Path, url: list[str]) -> Path:
+    # todo: this does not work because of the dumbass links parsing
+    # areas.setdefault(link.split(" - ")[0], []).append(link)
+    return output_dir.joinpath("/".join(url)).with_suffix(".txt")
