@@ -157,7 +157,7 @@ from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFi
 from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
+from antarest.study.storage.study_upgrader import check_versions_coherence, find_next_version
 from antarest.study.storage.utils import (
     assert_permission,
     assert_permission_on_studies,
@@ -399,33 +399,21 @@ class StudyUpgraderTask:
 
     def _upgrade_study(self) -> None:
         """Run the task (lock the database)."""
-        study_id: str = self._study_id
-        target_version = self._target_version
-        is_study_denormalized = False
         with db():
-            study_to_upgrade = self.repository.one(study_id)
-            try:
-                # sourcery skip: extract-method
-                study_path = Path(study_to_upgrade.path)
-                study_upgrader = StudyUpgrader(study_path, target_version)
-                if is_managed(study_to_upgrade) and study_upgrader.should_denormalize_study():
-                    # We have to denormalize the study because the upgrade impacts study matrices
-                    self.storage_service.raw_study_service.denormalize_study(study_to_upgrade)
-                    is_study_denormalized = True
-                study_upgrader.upgrade()
-                remove_from_cache(self.cache_service, study_to_upgrade.id)
-                study_to_upgrade.version = f"{target_version:2d}"
-                self.repository.save(study_to_upgrade)
-                self.event_bus.push(
-                    Event(
-                        type=EventType.STUDY_EDITED,
-                        payload=study_to_upgrade.to_json_summary(),
-                        permissions=PermissionInfo.from_study(study_to_upgrade),
-                    )
+            study_to_upgrade = self.repository.one(self._study_id)
+
+            self.storage_service.raw_study_service.upgrade_study(study_to_upgrade, self._target_version)
+
+            remove_from_cache(self.cache_service, study_to_upgrade.id)
+            study_to_upgrade.version = f"{self._target_version:2d}"
+            self.repository.save(study_to_upgrade)
+            self.event_bus.push(
+                Event(
+                    type=EventType.STUDY_EDITED,
+                    payload=study_to_upgrade.to_json_summary(),
+                    permissions=PermissionInfo.from_study(study_to_upgrade),
                 )
-            finally:
-                if is_study_denormalized:
-                    self.storage_service.raw_study_service.normalize_study(study_to_upgrade)
+            )
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         """

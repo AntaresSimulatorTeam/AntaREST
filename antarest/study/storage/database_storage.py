@@ -266,6 +266,10 @@ class DatabaseStudyStorage(IStudyStorage):
             self._repository.delete(study.id)
             raise e
 
+    @override
+    def upgrade_study(self, study: Study, version: StudyVersion) -> None:
+        raise NotImplementedError()
+
     def _extract_study(self, study: RawStudy, study_dir: Path, create_study_in_db: bool) -> None:
         # Build the FS DAO from the extracted data
         source_dao = self._fs_dao_factory.get_dao_from_path(study_dir, study_id=study.id, is_study_managed=True)

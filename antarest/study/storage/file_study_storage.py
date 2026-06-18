@@ -14,6 +14,7 @@ import shutil
 from pathlib import Path
 from typing import Iterator
 
+from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.config import Config
@@ -28,6 +29,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
     extract_matrix_id,
 )
 from antarest.study.storage.study_storage_interface import IStudyStorage
+from antarest.study.storage.study_upgrader import StudyUpgrader
 from antarest.study.storage.utils import (
     build_raw_study_from_source,
     extract_data_to_dir,
@@ -155,6 +157,22 @@ class FileStudyStorage(IStudyStorage):
         file_study = self._get_file_study(Path(study.path), is_managed(study), use_cache=False)
         update_study_from_raw_metadata(study, file_study)
         self.normalize_file_study(file_study)
+
+    @override
+    def upgrade_study(self, study: Study, version: StudyVersion) -> None:
+        is_study_denormalized = False
+        try:
+            # sourcery skip: extract-method
+            study_path = Path(study.path)
+            study_upgrader = StudyUpgrader(study_path, version)
+            if is_managed(study) and study_upgrader.should_denormalize_study():
+                # We have to denormalize the study because the upgrade impacts study matrices
+                self.denormalize_study(study)
+                is_study_denormalized = True
+            study_upgrader.upgrade()
+        finally:
+            if is_study_denormalized:
+                self.normalize_study(study)
 
     def update_from_raw_metadata(self, study: Study) -> None:
         """
