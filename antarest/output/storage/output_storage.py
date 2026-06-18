@@ -108,6 +108,7 @@ class OutputDetails(AntaresBaseModel):
         populate_by_name=True,
     )
 
+    id: str
     name: str
     mode: Mode
     synthesis: bool

@@ -28,10 +28,13 @@ export interface UploadDialogProps extends Omit<BasicDialogProps, "actions"> {
   accept?: Accept;
   onCancel: VoidFunction;
   onImport: (file: File, setUploadProgress: (progress: number) => void) => PromiseAny;
+  /** Optional content rendered above the dropzone (e.g. extra form fields). */
+  extraContent?: React.ReactNode;
 }
 
 function UploadDialog(props: UploadDialogProps) {
-  const { dropzoneText, accept, onImport, onCancel, onClose, title, ...dialogProps } = props;
+  const { dropzoneText, accept, onImport, onCancel, onClose, title, extraContent, ...dialogProps } =
+    props;
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [isUploading, setIsUploading] = useState(false);
@@ -114,7 +117,18 @@ function UploadDialog(props: UploadDialogProps) {
       }
       onClose={handleClose}
     >
-      <Box sx={{ pt: 1 }}>
+      <Box
+        sx={{
+          pt: 1,
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          // When extra content is provided, fill the available dialog content height
+          // so consumers can use a tall dialog without leaving empty space below.
+          ...(extraContent && { flex: 1, minHeight: 0 }),
+        }}
+      >
+        {extraContent}
         {isUploading ? (
           <LinearProgress
             variant={uploadProgress > 2 && uploadProgress < 98 ? "determinate" : "indeterminate"}

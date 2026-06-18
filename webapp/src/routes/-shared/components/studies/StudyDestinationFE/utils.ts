@@ -15,6 +15,18 @@
 import type { Directory } from "@/services/api/directories/types";
 import { sortByName } from "@/services/utils";
 import type { DirectoryDestination } from "./types";
+import type { QueryClient } from "@tanstack/react-query";
+import { directoryQueries } from "@/queries/directories/queries";
+
+/**
+ * Strips leading/trailing whitespace and collapses repeated/leading/trailing slashes
+ * into a clean slash-separated path (e.g. `" /a//b/ "` → `"a/b"`).
+ *
+ * @param path
+ */
+function normalizeSubdirectoriesPath(path: string): string {
+  return path.trim().split("/").filter(Boolean).join("/");
+}
 
 /**
  * Creates a `Map` from a flat directory list for O(1) id-based lookups.
@@ -81,5 +93,57 @@ export function toDirectoryPath(directory: DirectoryDestination, directories: Di
         .join("/")
     : "";
 
-  return [base, directory.newSubdirectoriesPath].filter(Boolean).join("/");
+  return [base, normalizeSubdirectoriesPath(directory.newSubdirectoriesPath)]
+    .filter(Boolean)
+    .join("/");
+}
+
+/**
+ * Resolves the final directory ID after a successful operation that may have
+ * created new sub-directories. Walks the freshly-fetched directory tree to find
+ * the deepest directory created from `destination.newSubdirectoriesPath`.
+ *
+ * @param destination - Destination value from the form.
+ * @param directories - Freshly-fetched directory list (must include newly created dirs).
+ * @returns The directory ID to redirect to, or `null` for root.
+ */
+export function resolveRedirectDirectoryId(
+  destination: DirectoryDestination,
+  directories: Directory[],
+): string | null {
+  const path = normalizeSubdirectoriesPath(destination.newSubdirectoriesPath);
+
+  if (!path) {
+    return destination.directoryId;
+  }
+
+  let currentId = destination.directoryId;
+
+  for (const segment of path.split("/")) {
+    const child = directories.find(
+      (directory) => directory.parentId === currentId && directory.name === segment,
+    );
+
+    if (!child) {
+      break;
+    }
+
+    currentId = child.id;
+  }
+
+  return currentId;
+}
+
+export async function refreshDirectoriesIfNeeded(
+  queryClient: QueryClient,
+  destination: DirectoryDestination,
+  directories: Directory[],
+): Promise<Directory[]> {
+  if (!destination.newSubdirectoriesPath) {
+    return directories;
+  }
+
+  await queryClient.invalidateQueries({ queryKey: directoryQueries.list().queryKey });
+
+  return queryClient.getQueryData(directoryQueries.list().queryKey) ?? directories;
 }
