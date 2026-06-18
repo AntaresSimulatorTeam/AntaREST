@@ -124,6 +124,7 @@ def test_file_output_storage(output_storage: IOutputStorage) -> None:
 
     assert output_storage.get_output_details("STA-mini") == [
         OutputDetails(
+            id="20201014-1422eco-hello",
             name="20201014-1422eco-hello",
             mode=Mode.ECONOMY,
             synthesis=True,
@@ -150,6 +151,7 @@ def test_file_output_storage(output_storage: IOutputStorage) -> None:
             ),
         ),
         OutputDetails(
+            id="20201014-1425eco-goodbye",
             name="20201014-1425eco-goodbye",
             mode=Mode.ECONOMY,
             synthesis=True,
@@ -176,6 +178,7 @@ def test_file_output_storage(output_storage: IOutputStorage) -> None:
             ),
         ),
         OutputDetails(
+            id="20201014-1427eco",
             name="20201014-1427eco",
             mode=Mode.ECONOMY,
             synthesis=True,
@@ -202,6 +205,7 @@ def test_file_output_storage(output_storage: IOutputStorage) -> None:
             ),
         ),
         OutputDetails(
+            id="20201014-1430adq",
             name="20201014-1430adq",
             mode=Mode.ADEQUACY,
             synthesis=True,
@@ -228,6 +232,7 @@ def test_file_output_storage(output_storage: IOutputStorage) -> None:
             ),
         ),
         OutputDetails(
+            id="20201014-1430adq-2",
             name="20201014-1430adq-2",
             mode=Mode.ADEQUACY,
             synthesis=True,
@@ -254,6 +259,7 @@ def test_file_output_storage(output_storage: IOutputStorage) -> None:
             ),
         ),
         OutputDetails(
+            id="20241807-1540eco-extra-outputs",
             name="20241807-1540eco-extra-outputs",
             mode=Mode.ECONOMY,
             synthesis=True,

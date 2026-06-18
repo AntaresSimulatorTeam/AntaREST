@@ -24,10 +24,11 @@ def test_list_outputs(admin_client: TestClient, internal_study_id: str):
     # If it's to be removed in the future, we need to coordinate with them.
     assert res.json() == [
         {
+            "id": "20201014-1422eco-hello",
+            "name": "20201014-1422eco-hello",
             "archived": False,
             "byYear": True,
             "mode": "Economy",
-            "name": "20201014-1422eco-hello",
             "nbYears": 1,
             "storageType": "IN_STUDY_FILE_TREE",
             "settings": {
@@ -50,10 +51,11 @@ def test_list_outputs(admin_client: TestClient, internal_study_id: str):
             "synthesis": True,
         },
         {
+            "id": "20201014-1425eco-goodbye",
+            "name": "20201014-1425eco-goodbye",
             "archived": False,
             "byYear": True,
             "mode": "Economy",
-            "name": "20201014-1425eco-goodbye",
             "nbYears": 2,
             "storageType": "IN_STUDY_FILE_TREE",
             "settings": {
@@ -76,10 +78,11 @@ def test_list_outputs(admin_client: TestClient, internal_study_id: str):
             "synthesis": True,
         },
         {
+            "id": "20201014-1427eco",
+            "name": "20201014-1427eco",
             "archived": False,
             "byYear": False,
             "mode": "Economy",
-            "name": "20201014-1427eco",
             "nbYears": 1,
             "storageType": "IN_STUDY_FILE_TREE",
             "settings": {
@@ -102,10 +105,11 @@ def test_list_outputs(admin_client: TestClient, internal_study_id: str):
             "synthesis": True,
         },
         {
+            "id": "20201014-1430adq",
+            "name": "20201014-1430adq",
             "archived": False,
             "byYear": False,
             "mode": "Adequacy",
-            "name": "20201014-1430adq",
             "nbYears": 1,
             "storageType": "IN_STUDY_FILE_TREE",
             "settings": {
@@ -128,10 +132,11 @@ def test_list_outputs(admin_client: TestClient, internal_study_id: str):
             "synthesis": True,
         },
         {
+            "id": "20201014-1430adq-2",
+            "name": "20201014-1430adq-2",
             "archived": True,
             "byYear": False,
             "mode": "Adequacy",
-            "name": "20201014-1430adq-2",
             "nbYears": 1,
             "storageType": "IN_STUDY_FILE_TREE",
             "settings": {
@@ -154,10 +159,11 @@ def test_list_outputs(admin_client: TestClient, internal_study_id: str):
             "synthesis": True,
         },
         {
+            "id": "20241807-1540eco-extra-outputs",
+            "name": "20241807-1540eco-extra-outputs",
             "archived": False,
             "byYear": True,
             "mode": "Economy",
-            "name": "20241807-1540eco-extra-outputs",
             "nbYears": 1,
             "storageType": "IN_STUDY_FILE_TREE",
             "settings": {

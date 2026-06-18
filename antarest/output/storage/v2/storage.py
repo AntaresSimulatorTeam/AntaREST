@@ -139,6 +139,7 @@ def _db_metadata_to_simulation_range(metadata: DbOutputMetadataV2) -> Simulation
 
 def _db_metadata_to_details(metadata: DbOutputMetadataV2) -> OutputDetails:
     return OutputDetails(
+        id=metadata.output_name,
         name=metadata.output_name,
         mode=Mode(metadata.mode),
         synthesis=metadata.synthesis,

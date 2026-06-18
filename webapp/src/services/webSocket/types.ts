@@ -77,7 +77,8 @@ interface StudyJobEvent {
   type:
     | typeof WsEventType.StudyJobStarted
     | typeof WsEventType.StudyJobCompleted
-    | typeof WsEventType.StudyJobStatusUpdate;
+    | typeof WsEventType.StudyJobStatusUpdate
+    | typeof WsEventType.StudyJobCancelled;
   payload: JobDTO;
 }
 

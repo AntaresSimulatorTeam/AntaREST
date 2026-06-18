@@ -305,6 +305,7 @@ class AbstractFileOutputStorage(IOutputStorage):
             )
 
             output_details = OutputDetails(
+                id=output_id,
                 name=output_id,
                 mode=output_data.mode,
                 synthesis=output_data.synthesis,

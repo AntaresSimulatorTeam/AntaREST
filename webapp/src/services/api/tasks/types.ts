@@ -38,7 +38,7 @@ export type TaskLog = z.infer<typeof taskLogSchema>;
 export type Task = z.infer<typeof taskSchema>;
 
 ////////////////////////////////////////////////////////////////
-// Request params
+// Request Params
 ////////////////////////////////////////////////////////////////
 
 export type GetTasksParams = z.infer<typeof getTasksParamsSchema>;

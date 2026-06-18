@@ -13,6 +13,9 @@
  */
 
 import i18n from "@/i18n";
+import { jobQueries } from "@/queries/jobs/queries";
+import { outputKeys } from "@/queries/outputs/keys";
+import { queryClient } from "@/queries/queryClient";
 import { getStudy } from "@/redux/selectors";
 import { TASK_TYPES_MANAGED } from "@/routes/_authenticated/tasks/-components/utils";
 import { includes } from "@/utils/tsUtils";
@@ -300,6 +303,27 @@ function makeNotificationListener(dispatch: AppDispatch): WsEventListener {
         if (includes(type, TASK_TYPES_MANAGED)) {
           notif(TASK_MESSAGES[type]);
         }
+        break;
+      }
+      case WsEventType.StudyJobStarted:
+      case WsEventType.StudyJobStatusUpdate:
+      case WsEventType.StudyJobCompleted:
+      case WsEventType.StudyJobCancelled: {
+        const receivedJob = adaptJobDtoToJob(e.payload);
+
+        // Update job list if exists in cache
+        queryClient.setQueryData(jobQueries.list(receivedJob.studyId).queryKey, (old = []) =>
+          // The job may not exist in the list if it was started by another user
+          old.some((j) => j.id === receivedJob.id)
+            ? old.map((j) => (j.id === receivedJob.id ? receivedJob : j))
+            : [...old, receivedJob],
+        );
+
+        // Invalidate outputs list when job completes, as this indicates a new output has been added
+        if (e.type === WsEventType.StudyJobCompleted) {
+          queryClient.invalidateQueries({ queryKey: outputKeys.list(receivedJob.studyId) });
+        }
+
         break;
       }
     }

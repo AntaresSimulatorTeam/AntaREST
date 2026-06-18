@@ -31,7 +31,7 @@ import { Box } from "@mui/material";
 import { useParams } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { PartialStudyOutput } from "../../-hooks/useStudyOutput";
+import type { StudyOutput } from "../../-hooks/useStudyOutput";
 import { useVariablePerVariable } from "../../-hooks/useVariablePerVariable";
 import {
   createPath,
@@ -47,7 +47,7 @@ import VariableMatrix from "./VariableMatrix";
 
 interface Props {
   selectedItem: Item;
-  output?: PartialStudyOutput;
+  output?: StudyOutput;
 }
 
 type SetResultColHeaders = (headers: string[][], indices: number[]) => void;
@@ -256,7 +256,7 @@ function OutputMatrixViewer({ selectedItem, output }: Props) {
             setDataType={setDataType}
             frequency={frequency}
             setFrequency={setFrequency}
-            maxYear={output?.nbyears || MAX_YEAR}
+            maxYear={output?.nbYears || MAX_YEAR}
             studyId={studyId}
             outputId={outputId}
             path={path}

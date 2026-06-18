@@ -16,9 +16,9 @@ import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import DigestDialog from "@/components/dialogs/DigestDialog";
 import LinearProgressWithLabel from "@/components/LinearProgressWithLabel";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import { outputQueries } from "@/queries/outputs/queries";
 import type { Job, JobStatus } from "@/services/api/launcher/jobs/types";
-import { getStudyOutputs, killStudy } from "@/services/api/study";
+import { killStudy } from "@/services/api/study";
 import { convertUTCToLocalTime } from "@/services/utils";
 import type { JobsProgressById } from "@/types/types";
 import type { EmptyObject } from "@/utils/tsUtils";
@@ -26,7 +26,8 @@ import BlockIcon from "@mui/icons-material/Block";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import EqualizerIcon from "@mui/icons-material/Equalizer";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
-import { Step, StepLabel, Stepper, Tooltip, Typography } from "@mui/material";
+import { IconButton, Step, StepLabel, Stepper, Tooltip, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
 import moment from "moment";
 import { useSnackbar } from "notistack";
@@ -48,12 +49,6 @@ export const ColorStatus = {
   success: "success.main",
   failed: "error.main",
 } as const;
-
-const iconStyle = {
-  m: 0.5,
-  height: 22,
-  cursor: "pointer",
-};
 
 function QontoStepIcon(props: { className: string | undefined; status: JobStatus }) {
   const { className, status } = props;
@@ -89,14 +84,10 @@ function JobStepper({ jobs, jobsProgressById }: Props) {
   const [dialogState, setDialogState] = useState<DialogState>({});
   const study = useStudy();
 
-  const { data: outputs, isLoading: outputsLoading } = usePromiseWithSnackbarError(
-    () => getStudyOutputs(study.id),
-    {
-      disabled: study.archived,
-      errorMessage: t("results.error.outputs"),
-      deps: [study.id],
-    },
-  );
+  const { data: outputs } = useQuery({
+    ...outputQueries.list(study.id),
+    enabled: !study.archived,
+  });
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -184,15 +175,19 @@ function JobStepper({ jobs, jobsProgressById }: Props) {
                 {!study.archived && (
                   <StepLabelRow mt={1}>
                     <Tooltip title={t("study.copyJobId")}>
-                      <ContentCopyIcon onClick={() => copyId(job.id)} sx={iconStyle} />
+                      <IconButton onClick={() => copyId(job.id)} size="small">
+                        <ContentCopyIcon />
+                      </IconButton>
                     </Tooltip>
                     <LaunchJobLogView job={job} logButton logErrorButton />
-                    {!outputsLoading && canDisplayDigest(job) && (
+                    {canDisplayDigest(job) && (
                       <Tooltip title="Digest">
-                        <EqualizerIcon
+                        <IconButton
                           onClick={() => setDialogState({ type: "digest", job })}
-                          sx={iconStyle}
-                        />
+                          size="small"
+                        >
+                          <EqualizerIcon />
+                        </IconButton>
                       </Tooltip>
                     )}
                     {job.status === "running" && (
@@ -203,14 +198,17 @@ function JobStepper({ jobs, jobsProgressById }: Props) {
                           sx={{ width: "30%" }}
                         />
                         <Tooltip title={t("study.killStudy")}>
-                          <BlockIcon
+                          <IconButton
                             onClick={() => setDialogState({ type: "killJob", job })}
-                            sx={{
-                              ...iconStyle,
-                              color: "error.light",
-                              "&:hover": { color: "error.dark" },
-                            }}
-                          />
+                            size="small"
+                          >
+                            <BlockIcon
+                              sx={{
+                                color: "error.light",
+                                "&:hover": { color: "error.dark" },
+                              }}
+                            />
+                          </IconButton>
                         </Tooltip>
                       </CancelContainer>
                     )}
