@@ -12,35 +12,33 @@
  * This file is part of the Antares project.
  */
 
-const AREA = "areas";
-const LINK = "links";
-const THERMAL = "thermals";
-const RENEWABLE = "renewables";
-const ST_STORAGE = "st-storages";
-const BINDING_CONSTRAINT = "binding-constraints";
-const ST_STORAGE_ADDITIONAL_CONSTRAINTS = "st-storages-additional-constraints";
+import type { Options } from "@/components/fieldEditors/SelectFE";
+import type { TableModeColumnsForType, TableModeType } from "@/services/api/tablemode/types";
 
-export const TABLE_MODE_TYPES = [
-  AREA,
-  LINK,
-  THERMAL,
-  RENEWABLE,
-  ST_STORAGE,
-  BINDING_CONSTRAINT,
-  ST_STORAGE_ADDITIONAL_CONSTRAINTS,
-] as const;
+////////////////////////////////////////////////////////////////
+// Types
+////////////////////////////////////////////////////////////////
 
-// Deprecated types (breaking change from v2.16.8)
-export const TABLE_MODE_TYPES_ALIASES = {
-  area: AREA,
-  link: LINK,
-  cluster: THERMAL,
-  renewable: RENEWABLE,
-  "binding constraint": BINDING_CONSTRAINT,
+type TableModeColumnsByType = {
+  [K in TableModeType]: TableModeColumnsForType<K>;
 };
 
+////////////////////////////////////////////////////////////////
+// Constants
+////////////////////////////////////////////////////////////////
+
+const TABLE_MODE_TYPES = [
+  "areas",
+  "links",
+  "thermals",
+  "renewables",
+  "st-storages",
+  "binding-constraints",
+  "st-storages-additional-constraints",
+] as const satisfies TableModeType[];
+
 export const TABLE_MODE_COLUMNS_BY_TYPE = {
-  [AREA]: [
+  areas: [
     "nonDispatchPower",
     "dispatchHydroPower",
     "otherDispatchPower",
@@ -53,7 +51,7 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     // Since v8.3
     "adequacyPatchMode",
   ],
-  [LINK]: [
+  links: [
     "hurdlesCost",
     "loopFlow",
     "usePhaseShifter",
@@ -66,7 +64,7 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     "filterSynthesis",
     "filterYearByYear",
   ],
-  [THERMAL]: [
+  thermals: [
     "group",
     "enabled",
     "unitCount",
@@ -105,7 +103,7 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     "efficiency",
     "variableOMCost",
   ],
-  [RENEWABLE]: [
+  renewables: [
     // Since v8.1
     "group",
     "enabled",
@@ -113,7 +111,7 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     "unitCount",
     "nominalCapacity",
   ],
-  [ST_STORAGE]: [
+  "st-storages": [
     // Since v8.6
     "group",
     "injectionNominalCapacity",
@@ -129,7 +127,7 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     "penalizeVariationInjection",
     "penalizeVariationWithdrawal",
   ],
-  [BINDING_CONSTRAINT]: [
+  "binding-constraints": [
     "enabled",
     "timeStep",
     "operator",
@@ -140,10 +138,24 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     // Since v8.7
     "group",
   ],
-  [ST_STORAGE_ADDITIONAL_CONSTRAINTS]: [
+  "st-storages-additional-constraints": [
     // Since v9.2
     "variable",
     "operator",
     "enabled",
   ],
-} as const;
+} as const satisfies TableModeColumnsByType;
+
+export const tableModeTypeOptions = TABLE_MODE_TYPES.map((type) => ({
+  value: type,
+  label: (t) => t(`tableMode.type.${type}`),
+})) satisfies Options<TableModeType>;
+
+////////////////////////////////////////////////////////////////
+// Functions
+////////////////////////////////////////////////////////////////
+
+export function getTableColumnsForType<T extends TableModeType>(type: T) {
+  // Arrays have a numeric index signature because of `as const`
+  return TABLE_MODE_COLUMNS_BY_TYPE[type];
+}
