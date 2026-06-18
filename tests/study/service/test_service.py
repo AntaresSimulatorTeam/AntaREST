@@ -15,7 +15,6 @@ import os
 import textwrap
 import typing as t
 import uuid
-from abc import abstractmethod
 from configparser import MissingSectionHeaderError
 from datetime import timedelta
 from functools import wraps
@@ -204,7 +203,7 @@ def build_study_service(
         def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> t.Any:
             return {}
 
-        @abstractmethod
+        @override
         def get_output_matrix_as_dataframe(
             self, study_id: str, output_id: str, url: list[str], frequency: MatrixFrequency
         ) -> pd.DataFrame:
