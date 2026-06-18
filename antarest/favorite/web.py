@@ -25,7 +25,13 @@ from antarest.dependencies import (
     FavoriteStudyServiceDep,
     auth_required,
 )
-from antarest.favorite.model import FavoriteDirectoryDTO, FavoriteExternalDirectoryDTO, FavoriteStudyDTO
+from antarest.favorite.model import (
+    DirectoryPathType,
+    FavoriteDirectoryDTO,
+    FavoriteExternalDirectoryDTO,
+    FavoriteStudyDTO,
+    WorkspaceType,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +76,7 @@ def create_favorite_routes() -> APIRouter:
         favorite_directory_service.delete_favorite(uuid)
 
     @bp.get(
-        "/favorites/external_directories",
+        "/favorites/external-directories",
         summary="Listing favorite external directories for current user",
         status_code=HTTPStatus.OK,
     )
@@ -81,33 +87,27 @@ def create_favorite_routes() -> APIRouter:
         return favorite_external_directory_service.list_favorites()
 
     @bp.post(
-        "/favorites/external_directories",
+        "/favorites/external-directories",
         summary="Add an external directory in the list of favorite directories",
         status_code=HTTPStatus.CREATED,
     )
     def add_favorite_external_directory(
         favorite_external_directory_service: FavoriteExternalDirectoryServiceDep,
-        workspace: Annotated[str, Field(min_length=1, examples=["workspace_name"])],
-        path: Annotated[
-            str,
-            Field(min_length=1, examples=["path/of/external/directory"]),
-        ],
+        workspace: WorkspaceType,
+        path: DirectoryPathType,
     ) -> FavoriteExternalDirectoryDTO:
         logger.info("Adding external directory as a favorite.")
         return favorite_external_directory_service.add_favorite(workspace=workspace, directory_path=path)
 
     @bp.delete(
-        "/favorites/external_directories",
+        "/favorites/external-directories",
         summary="Delete an external directory from the list of favorite directories",
         status_code=HTTPStatus.ACCEPTED,
     )
     def delete_favorite_external_directory(
         favorite_external_directory_service: FavoriteExternalDirectoryServiceDep,
-        workspace: Annotated[str, Field(min_length=1, examples=["workspace_name"])],
-        path: Annotated[
-            str,
-            Field(min_length=1, examples=["path/of/external/directory"]),
-        ],
+        workspace: WorkspaceType,
+        path: DirectoryPathType,
     ) -> None:
         logger.info("Deleting external directory from favorites.")
         favorite_external_directory_service.delete_favorite(workspace=workspace, path=path)

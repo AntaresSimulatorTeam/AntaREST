@@ -11,8 +11,9 @@
 # This file is part of the Antares project.
 import logging
 from pathlib import Path, PurePosixPath
+from typing import Annotated, TypeAlias
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic.alias_generators import to_camel
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -22,6 +23,13 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.study.model import Directory, Study
 
 logger = logging.getLogger(__name__)
+
+WorkspaceType: TypeAlias = Annotated[str, Field(min_length=1)]
+
+DirectoryPathType: TypeAlias = Annotated[
+    str,
+    Field(min_length=1),
+]
 
 
 class FavoriteStudyDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel, populate_by_name=True):
@@ -101,7 +109,12 @@ class FavoriteExternalDirectory(Base):
 
     path: Mapped[str] = mapped_column(String, primary_key=True)
     workspace: Mapped[str] = mapped_column(String, primary_key=True)
-    user_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("identities.id", name="fk_user_id_favorite_study", ondelete="CASCADE"),
+        nullable=False,
+        primary_key=True,
+    )
 
-    def to_dto(self) -> "FavoriteExternalDirectoryDTO":
+    def to_dto(self) -> FavoriteExternalDirectoryDTO:
         return FavoriteExternalDirectoryDTO(path=PurePosixPath(self.path), workspace=self.workspace)
