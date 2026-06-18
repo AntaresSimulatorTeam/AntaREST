@@ -213,6 +213,9 @@ class DatabaseStudyStorage(IStudyStorage):
 
     @override
     def export_study(self, study: Study, dst_path: Path) -> None:
+        self._export_study(study, dst_path, normalized_matrices=False)
+
+    def _export_study(self, study: Study, dst_path: Path, normalized_matrices: bool) -> None:
         source_dao = self._db_dao_factory.get_study_dao(study_id=study.id, is_study_managed=True)
         study_version = StudyVersion.parse(study.version)
 
@@ -220,7 +223,7 @@ class DatabaseStudyStorage(IStudyStorage):
         metadata = StudyMetadataCreation(
             id=study.id,
             version=study_version,
-            managed=False,  # Means the matrices will be denormalized
+            managed=normalized_matrices,
             name=study.name,
             author=study.author,
             editor=study.editor,
