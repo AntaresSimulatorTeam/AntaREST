@@ -933,3 +933,10 @@ class OutputService:
 
     def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
         return self._find_output_storage(study_id, output_id).get_raw_content(study_id, output_id, url, formatted)
+
+    def get_matrix_as_dataframe(
+        self, study_id: str, output_id: str, url: list[str], frequency: MatrixFrequency
+    ) -> pd.DataFrame:
+        return self._find_output_storage(study_id, output_id).get_matrix_as_dataframe(
+            study_id, output_id, url, frequency
+        )
