@@ -37,6 +37,14 @@ function ReservesLayout() {
             params,
           }),
         },
+        {
+          id: "needs",
+          label: t("study.modeling.reserves.needs"),
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs",
+            params,
+          }),
+        },
       ]}
     />
   );
