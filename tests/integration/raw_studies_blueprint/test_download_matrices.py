@@ -27,6 +27,7 @@ from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.archives import archive_dir
 from antarest.study.model import STUDY_VERSION_8_2, STUDY_VERSION_8_6, StorageMode
 from tests.integration.utils import wait_task_completion
+from tests.test_helpers.dates import utc_to_local
 
 
 class Proxy:
@@ -333,9 +334,8 @@ def test_download_output_matrices_for_both_storage_modes(
     assert res.status_code == 201
     database_id = res.json()
 
-    output_id = "20201014-1422eco-hello"
     # Import the same output inside the DB study to perform the tests
-    output_path = tmp_path / "ext_workspace" / "STA-mini" / "output" / output_id
+    output_path = tmp_path / "ext_workspace" / "STA-mini" / "output" / "20201014-1422eco-hello"
     output_archive_path = tmp_path / "output_zipped.zip"
     archive_dir(output_path, output_archive_path)
     client.post(f"/v1/studies/{database_id}/output", files={"output": io.BytesIO(output_archive_path.read_bytes())})
@@ -344,6 +344,8 @@ def test_download_output_matrices_for_both_storage_modes(
     assert len(res.json()) == 1
 
     # Use both the Database and the Filesystem studies to ensure we find the same results
+    expected_date = utc_to_local("20201014-1222")
+    output_id = f"{expected_date}eco-hello"
     for study_id in [internal_study_id, database_id]:
         download_url = f"/v1/studies/{study_id}/raw/download"
 
