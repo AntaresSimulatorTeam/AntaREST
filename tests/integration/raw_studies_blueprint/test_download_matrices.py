@@ -93,11 +93,8 @@ class TestDownloadMatrices:
     """
 
     @pytest.mark.parametrize("storage_mode", [StorageMode.FILESYSTEM, StorageMode.DATABASE])
-    def test_download_matrices(
-        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_mode: StorageMode
-    ) -> None:
-        user_headers = {"Authorization": f"Bearer {user_access_token}"}
-        client.headers = user_headers
+    def test_download_matrices(self, client: TestClient, user_access_token: str, storage_mode: StorageMode) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # =====================
         #  STUDIES PREPARATION
@@ -203,25 +200,6 @@ class TestDownloadMatrices:
         # TEST SPECIFIC MATRICES
         # =============================
 
-        # tests links headers before v8.2
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw/download",
-            params={"path": "input/links/de/fr", "format": "tsv", "index": False},
-        )
-        assert res.status_code == 200
-        content = io.BytesIO(res.content)
-        dataframe = pd.read_csv(content, sep="\t")
-        assert list(dataframe.columns) == [
-            "Capacités de transmission directes",
-            "Capacités de transmission indirectes",
-            "Hurdle costs direct (de->fr)",
-            "Hurdle costs indirect (fr->de)",
-            "Impedances",
-            "Loop flow",
-            "P.Shift Min",
-            "P.Shift Max",
-        ]
-
         # tests links headers after v8.2
         res = client.get(download_url, params={"path": "input/links/de/fr_parameters", "format": "tsv"})
         assert res.status_code == 200
@@ -235,16 +213,6 @@ class TestDownloadMatrices:
             "P.Shift Min",
             "P.Shift Max",
         ]
-
-        # checks default value for an empty water_values matrix
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw/download",
-            params={"path": "input/hydro/common/capacity/waterValues_de", "format": "tsv"},
-        )
-        assert res.status_code == 200
-        content = io.BytesIO(res.content)
-        dataframe = pd.read_csv(content, index_col=0, sep="\t")
-        assert dataframe.to_numpy().tolist() == 365 * [101 * [0.0]]
 
         # modulation matrix
         res = client.get(
@@ -263,41 +231,6 @@ class TestDownloadMatrices:
             data=transposed_matrix,
         )
         assert dataframe.equals(expected_df)
-
-        # asserts endpoint returns the right columns for output matrix
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw/download",
-            params={
-                "path": "output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr/values-hourly",
-                "format": "tsv",
-            },
-        )
-        assert res.status_code == 200
-        content = io.BytesIO(res.content)
-        dataframe = pd.read_csv(content, index_col=0, sep="\t")
-        # noinspection SpellCheckingInspection
-        assert list(dataframe.columns) == [
-            "('FLOW LIN.', 'MWh', '')",
-            "('UCAP LIN.', 'MWh', '')",
-            "('LOOP FLOW', 'MWh', '')",
-            "('FLOW QUAD.', 'MWh', '')",
-            "('CONG. FEE (ALG.)', 'Euro', '')",
-            "('CONG. FEE (ABS.)', 'Euro', '')",
-            "('MARG. COST', 'Euro/MW', '')",
-            "('CONG. PROB +', '%', '')",
-            "('CONG. PROB -', '%', '')",
-            "('HURDLE COST', 'Euro', '')",
-        ]
-
-        # checks default value for an empty energy matrix
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw/download",
-            params={"path": "input/hydro/prepro/de/energy", "format": "tsv"},
-        )
-        assert res.status_code == 200
-        content = io.BytesIO(res.content)
-        dataframe = pd.read_csv(content, index_col=0, sep="\t")
-        assert dataframe.to_numpy().tolist() == 12 * [5 * [0.0]]
 
         # test the Min Gen of the 8.6 study
         for export_format in ["tsv", "xlsx"]:
@@ -342,3 +275,71 @@ class TestDownloadMatrices:
         res = client.get(download_url, params={"path": raw_matrix_path, "format": fake_str})
         assert res.status_code == 422
         assert res.json()["exception"] == "RequestValidationError"
+
+
+def test_other_cases(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    # tests links headers before v8.2
+    res = client.get(
+        f"/v1/studies/{internal_study_id}/raw/download",
+        params={"path": "input/links/de/fr", "format": "tsv", "index": False},
+    )
+    assert res.status_code == 200
+    content = io.BytesIO(res.content)
+    dataframe = pd.read_csv(content, sep="\t")
+    assert list(dataframe.columns) == [
+        "Capacités de transmission directes",
+        "Capacités de transmission indirectes",
+        "Hurdle costs direct (de->fr)",
+        "Hurdle costs indirect (fr->de)",
+        "Impedances",
+        "Loop flow",
+        "P.Shift Min",
+        "P.Shift Max",
+    ]
+
+    # checks default value for an empty water_values matrix
+    res = client.get(
+        f"/v1/studies/{internal_study_id}/raw/download",
+        params={"path": "input/hydro/common/capacity/waterValues_de", "format": "tsv"},
+    )
+    assert res.status_code == 200
+    content = io.BytesIO(res.content)
+    dataframe = pd.read_csv(content, index_col=0, sep="\t")
+    assert dataframe.to_numpy().tolist() == 365 * [101 * [0.0]]
+
+    # asserts endpoint returns the right columns for output matrix
+    res = client.get(
+        f"/v1/studies/{internal_study_id}/raw/download",
+        params={
+            "path": "output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr/values-hourly",
+            "format": "tsv",
+        },
+    )
+    assert res.status_code == 200
+    content = io.BytesIO(res.content)
+    dataframe = pd.read_csv(content, index_col=0, sep="\t")
+    # noinspection SpellCheckingInspection
+    assert list(dataframe.columns) == [
+        "('FLOW LIN.', 'MWh', '')",
+        "('UCAP LIN.', 'MWh', '')",
+        "('LOOP FLOW', 'MWh', '')",
+        "('FLOW QUAD.', 'MWh', '')",
+        "('CONG. FEE (ALG.)', 'Euro', '')",
+        "('CONG. FEE (ABS.)', 'Euro', '')",
+        "('MARG. COST', 'Euro/MW', '')",
+        "('CONG. PROB +', '%', '')",
+        "('CONG. PROB -', '%', '')",
+        "('HURDLE COST', 'Euro', '')",
+    ]
+
+    # checks default value for an empty energy matrix
+    res = client.get(
+        f"/v1/studies/{internal_study_id}/raw/download",
+        params={"path": "input/hydro/prepro/de/energy", "format": "tsv"},
+    )
+    assert res.status_code == 200
+    content = io.BytesIO(res.content)
+    dataframe = pd.read_csv(content, index_col=0, sep="\t")
+    assert dataframe.to_numpy().tolist() == 12 * [5 * [0.0]]
