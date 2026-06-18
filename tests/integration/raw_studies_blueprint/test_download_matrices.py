@@ -345,9 +345,12 @@ def test_download_output_matrices_for_both_storage_modes(
 
     # Use both the Database and the Filesystem studies to ensure we find the same results
     expected_date = utc_to_local("20201014-1222")
-    output_id = "20201014-1422eco-hello"
-    for study_id in [internal_study_id]:
-        print("STUDY ID", study_id)
+    study_id_to_output_id_mapping = {
+        internal_study_id: "20201014-1422eco-hello",
+        database_id: f"{expected_date}eco-hello",
+    }
+
+    for study_id, output_id in study_id_to_output_id_mapping.items():
         download_url = f"/v1/studies/{study_id}/raw/download"
 
         # `mc-ind` link matrix
@@ -443,7 +446,6 @@ def test_download_output_matrices_for_both_storage_modes(
 
 
 def _parse_dataframe(res: Response) -> pd.DataFrame:
-    print(res.content)
     assert res.status_code == 200
     content = io.BytesIO(res.content)
     return pd.read_csv(content, index_col=0, sep="\t")
