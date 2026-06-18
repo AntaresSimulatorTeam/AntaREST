@@ -346,8 +346,8 @@ def test_download_output_matrices_for_both_storage_modes(
     # Use both the Database and the Filesystem studies to ensure we find the same results
     expected_date = utc_to_local("20201014-1222")
     output_id = f"{expected_date}eco-hello"
-    for study_id in [internal_study_id, database_id]:
-        print(study_id)
+    for study_id in [database_id, internal_study_id]:
+        print("STUDY ID", study_id)
         download_url = f"/v1/studies/{study_id}/raw/download"
 
         # `mc-ind` link matrix
