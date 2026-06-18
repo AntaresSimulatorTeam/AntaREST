@@ -17,64 +17,39 @@ import ListFE from "@/components/fieldEditors/ListFE";
 import SelectFE from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import Fieldset from "@/components/Fieldset";
-import type { SubmitHandlerPlus } from "@/components/Form/types";
-import { TABLE_MODE_TYPES } from "@/services/api/studies/tableMode/constants";
+import { tableModeQueries } from "@/queries/tableMode/queries";
 import type { TableMode } from "@/services/api/tablemode/types";
-import storage, { StorageKey } from "@/services/utils/localStorage";
+import { getNames } from "@/services/utils";
 import { validateArray } from "@/utils/validation/array";
 import { validateString } from "@/utils/validation/string";
-import { useNavigate } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import startCase from "lodash/startCase";
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { getTableColumnsForType } from "../../-utils";
-import useStudy from "../../../../-hooks/useStudy";
+import { getTableColumnsForType, tableModeTypeOptions } from "./utils";
 
-export interface TableTemplateFormDialogProps
-  extends Pick<FormDialogProps<TableMode>, "title" | "titleIcon" | "onCancel"> {
+export interface TableModeFormDialogProps
+  extends Pick<
+    FormDialogProps<TableMode>,
+    "title" | "titleIcon" | "onCancel" | "onSubmit" | "onSubmitSuccessful"
+  > {
   defaultValues: TableMode;
-  existingNames: string[];
 }
 
-function TableModeFormDialog(props: TableTemplateFormDialogProps) {
-  const { title, titleIcon, defaultValues, onCancel, existingNames } = props;
+function TableModeFormDialog(props: TableModeFormDialogProps) {
+  const { title, titleIcon, defaultValues, onSubmit, onSubmitSuccessful, onCancel } = props;
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const study = useStudy();
-  const isUpdateDialog = !!defaultValues.name;
 
-  const typeOptions = useMemo(
-    () =>
-      TABLE_MODE_TYPES.map((type) => ({
-        value: type,
-        label: t(`tableMode.type.${type}`),
-      })),
-    [t],
-  );
+  const { data: existingNames } = useSuspenseQuery({
+    ...tableModeQueries.list(),
+    select: getNames,
+  });
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ values }: SubmitHandlerPlus<TableMode>) => {
-    storage.setItem(StorageKey.StudiesModelTableModeTemplates, (prev) => {
-      const currentTemplates = prev || [];
-
-      return isUpdateDialog
-        ? currentTemplates.map((template) =>
-            template.name === defaultValues.name ? values : template,
-          )
-        : [...currentTemplates, values];
-    });
-  };
-
-  const handleSubmitSuccessful = ({ values }: SubmitHandlerPlus<TableMode>) => {
-    navigate({
-      to: "/studies/$studyId/explore/table-modes/$tableModeId",
-      params: { studyId: study.id, tableModeId: values.id },
-      replace: isUpdateDialog ? true : false,
-    });
-
+  const handleSubmitSuccessful: TableModeFormDialogProps["onSubmitSuccessful"] = (...args) => {
+    onSubmitSuccessful?.(...args);
     onCancel();
   };
 
@@ -88,7 +63,7 @@ function TableModeFormDialog(props: TableTemplateFormDialogProps) {
       title={title}
       titleIcon={titleIcon}
       config={{ defaultValues }}
-      onSubmit={handleSubmit}
+      onSubmit={onSubmit}
       onSubmitSuccessful={handleSubmitSuccessful}
       onCancel={onCancel}
     >
@@ -102,25 +77,26 @@ function TableModeFormDialog(props: TableTemplateFormDialogProps) {
             rules={{
               validate: validateString({
                 existingValues: existingNames,
-                editedValue: defaultValues?.name,
+                editedValue: defaultValues.name,
               }),
             }}
           />
           <SelectFE
             label={t("study.type")}
-            options={typeOptions}
+            name="type"
+            options={tableModeTypeOptions}
             variant="outlined"
             onChange={() => setValue("columns", [])}
-            name="type"
             control={control}
           />
           <ListFE
             label={t("study.columns")}
+            name="columns"
             options={[...getTableColumnsForType(watch("type"))]}
             getOptionLabel={startCase}
-            name="columns"
+            getValueLabel={startCase}
             control={control}
-            rules={{ validate: validateArray() }}
+            rules={{ validate: (v) => validateArray(v) }}
           />
         </Fieldset>
       )}
