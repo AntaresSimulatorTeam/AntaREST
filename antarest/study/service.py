@@ -2707,6 +2707,8 @@ class StudyService:
             pandas_df = self._get_outputs_access().get_output_matrix_as_dataframe(
                 study_id, output_id, list(path_components[2:]), frequency
             )
+            # Flatten the columns to fit with the old code
+            pandas_df.columns = pd.Index(pandas_df.columns)
 
         else:
             pandas_df = _get_matrix_from_path(study_interface, matrix_path).to_pandas()
