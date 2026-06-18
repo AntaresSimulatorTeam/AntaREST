@@ -16,10 +16,13 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+import pytest
+from antares.study.version import StudyVersion
 from pandas._testing import assert_frame_equal
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
+from antarest.study.model import STUDY_VERSION_8_2, STUDY_VERSION_8_6, StorageMode
 from tests.integration.utils import wait_task_completion
 
 
@@ -31,25 +34,21 @@ class Proxy:
 
 
 class PreparerProxy(Proxy):
-    def copy_upgrade_study(self, ref_study_id: str, target_version: int = 820) -> str:
-        """
-        Copy a study in the managed workspace and upgrade it to a specific version
-        """
-        # Prepare a managed study to test specific matrices for version 8.2
+    def create_minimal_study(self, target_version: StudyVersion, storage_mode: StorageMode) -> str:
         res = self.client.post(
-            f"/v1/studies/{ref_study_id}/copy", params={"study_name": "copied-820", "use_task": False}
+            f"/v1/studies?name=NewStudy_{target_version}&storage_mode={storage_mode}&version={target_version}"
         )
-        res.raise_for_status()
-        study_820_id = res.json()
+        assert res.status_code == 201
+        study_id = res.json()
 
-        res = self.client.put(f"/v1/studies/{study_820_id}/upgrade", params={"target_version": target_version})
+        self.create_area(study_id, name="de", country="de")
+        self.create_area(study_id, name="fr", country="fr")
+        res = self.client.post(f"/v1/studies/{study_id}/links", json={"area1": "de", "area2": "fr"})
         res.raise_for_status()
-        task_id = res.json()
-        assert task_id
+        res = self.client.post(f"/v1/studies/{study_id}/areas/de/clusters/thermal", json={"name": "01_solar"})
+        res.raise_for_status()
 
-        task = wait_task_completion(self.client, self.user_access_token, task_id, base_timeout=20)
-        assert task.status == TaskStatus.COMPLETED
-        return study_820_id
+        return study_id
 
     def upload_matrix(self, internal_study_id: str, matrix_path: str, df: pd.DataFrame) -> None:
         tsv = io.BytesIO()
@@ -83,8 +82,8 @@ class PreparerProxy(Proxy):
         area_id = res.json()["id"]
         return area_id
 
-    def update_general_data(self, internal_study_id: str, **data: Any) -> None:
-        res = self.client.put(f"/v1/studies/{internal_study_id}/config/general/form", json=data)
+    def update_general_data(self, study_id: str, **data: Any) -> None:
+        res = self.client.put(f"/v1/studies/{study_id}/config/general/form", json=data)
         res.raise_for_status()
 
 
@@ -93,7 +92,10 @@ class TestDownloadMatrices:
     Checks the retrieval of matrices with the endpoint GET studies/uuid/raw/download
     """
 
-    def test_download_matrices(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    @pytest.mark.parametrize("storage_mode", [StorageMode.FILESYSTEM, StorageMode.DATABASE])
+    def test_download_matrices(
+        self, client: TestClient, user_access_token: str, internal_study_id: str, storage_mode: StorageMode
+    ) -> None:
         user_headers = {"Authorization": f"Bearer {user_access_token}"}
         client.headers = user_headers
 
@@ -103,7 +105,7 @@ class TestDownloadMatrices:
 
         preparer = PreparerProxy(client, user_access_token)
 
-        study_820_id = preparer.copy_upgrade_study(internal_study_id, target_version=820)
+        study_820_id = preparer.create_minimal_study(target_version=STUDY_VERSION_8_2, storage_mode=storage_mode)
 
         # Create Variant
         variant_id = preparer.create_variant(study_820_id, name="New Variant")
@@ -118,7 +120,7 @@ class TestDownloadMatrices:
         preparer.generate_snapshot(variant_id)
 
         # Prepare a managed study to test specific matrices for version 8.6
-        study_860_id = preparer.copy_upgrade_study(internal_study_id, target_version=860)
+        study_860_id = preparer.create_minimal_study(target_version=STUDY_VERSION_8_6, storage_mode=storage_mode)
 
         # Import a Min Gen. matrix: shape=(8760, 3), with random integers between 0 and 1000
         generator = np.random.default_rng(11)
