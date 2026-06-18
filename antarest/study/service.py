@@ -94,8 +94,6 @@ from antarest.study.business.matrix_management import MatrixManager, MatrixManag
 from antarest.study.business.model.area_model import AreaCreation, AreaInfo, AreaUIData, AreaUIUpdate
 from antarest.study.business.model.binding_constraint_model import LinkTerm
 from antarest.study.business.model.config.general_model import GeneralConfigUpdate
-from antarest.study.business.model.hydro_allocation_model import HydroAllocationMatrix
-from antarest.study.business.model.hydro_correlation_model import HydroCorrelationMatrix
 from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.study_data_model import StudyDataDTO
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation, UserResourceDataRemoval
@@ -2695,14 +2693,6 @@ class StudyService:
         study_interface = self.get_study_interface(study)
 
         url = matrix_path.parts
-        if url in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
-            if url[-1] == "allocation":
-                hydro_matrix: HydroCorrelationMatrix | HydroAllocationMatrix = (
-                    self.allocation_manager.get_allocation_matrix(study_interface)
-                )
-            else:
-                hydro_matrix = self.correlation_manager.get_correlation_matrix(study_interface)
-            return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
 
         # We need to handle matrices differently if our study is stored in DB
         if study.storage_mode == StorageMode.DATABASE:

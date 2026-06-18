@@ -256,15 +256,6 @@ class TestDownloadMatrices:
             "P.Shift Max",
         ]
 
-        # allocation and correlation matrices
-        for path in ["input/hydro/allocation", "input/hydro/correlation"]:
-            res = client.get(f"/v1/studies/{study_820_id}/raw/download", params={"path": path, "format": "tsv"})
-            assert res.status_code == 200
-            content = io.BytesIO(res.content)
-            dataframe = pd.read_csv(content, index_col=0, sep="\t")
-            assert list(dataframe.index) == list(dataframe.columns) == ["de", "es", "fr", "it"]
-            assert all(np.isclose(dataframe.iloc[i, i], 1.0) for i in range(len(dataframe)))
-
         # checks default value for an empty water_values matrix
         res = client.get(
             f"/v1/studies/{internal_study_id}/raw/download",
