@@ -20,6 +20,7 @@ import pandas as pd
 import pytest
 from antares.study.version import StudyVersion
 from pandas._testing import assert_frame_equal
+from requests import Response
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
@@ -345,14 +346,11 @@ def test_download_output_matrices_for_both_storage_modes(
     # Use both the Database and the Filesystem studies to ensure we find the same results
     for study_id in [internal_study_id, database_id]:
         download_url = f"/v1/studies/{study_id}/raw/download"
-        res = client.get(
-            download_url,
-            params={"path": f"output/{output_id}/economy/mc-ind/00001/links/de/fr/values-hourly", "format": "tsv"},
-        )
-        assert res.status_code == 200
-        content = io.BytesIO(res.content)
-        dataframe = pd.read_csv(content, index_col=0, sep="\t")
-        # noinspection SpellCheckingInspection
+
+        # `mc-ind` link matrix
+        path = f"output/{output_id}/economy/mc-ind/00001/links/de/fr/values-hourly"
+        res = client.get(download_url, params={"path": path, "format": "tsv"})
+        dataframe = _parse_dataframe(res)
         assert list(dataframe.columns) == [
             "('FLOW LIN.', 'MWh', '')",
             "('UCAP LIN.', 'MWh', '')",
@@ -365,3 +363,83 @@ def test_download_output_matrices_for_both_storage_modes(
             "('CONG. PROB -', '%', '')",
             "('HURDLE COST', 'Euro', '')",
         ]
+        assert dataframe.shape == (168, 10)
+
+        # `mc-ind` areas matrix
+        path = f"output/{output_id}/economy/mc-ind/00001/areas/fr/details-hourly"
+        res = client.get(download_url, params={"path": path, "format": "tsv"})
+        dataframe = _parse_dataframe(res)
+        assert dataframe.shape == (168, 27)
+        assert list(dataframe["('01_solar', 'MWh', '')"]) == [100 * k for k in range(20)] + 148 * [2000]
+
+        # `mc-all` areas matrix
+        path = f"output/{output_id}/economy/mc-all/areas/de/id-monthly"
+        res = client.get(download_url, params={"path": path, "format": "tsv"})
+        dataframe = _parse_dataframe(res)
+        assert dataframe.shape == (1, 58)
+        assert list(dataframe.columns) == [
+            "('OP. COST', 'Euro', 'min')",
+            "('OP. COST', 'Euro', 'max')",
+            "('MRG. PRICE', 'Euro', 'min')",
+            "('MRG. PRICE', 'Euro', 'max')",
+            "('BALANCE', 'MWh', 'min')",
+            "('BALANCE', 'MWh', 'max')",
+            "('LOAD', 'MWh', 'min')",
+            "('LOAD', 'MWh', 'max')",
+            "('H. ROR', 'MWh', 'min')",
+            "('H. ROR', 'MWh', 'max')",
+            "('WIND', 'MWh', 'min')",
+            "('WIND', 'MWh', 'max')",
+            "('SOLAR', 'MWh', 'min')",
+            "('SOLAR', 'MWh', 'max')",
+            "('NUCLEAR', 'MWh', 'min')",
+            "('NUCLEAR', 'MWh', 'max')",
+            "('LIGNITE', 'MWh', 'min')",
+            "('LIGNITE', 'MWh', 'max')",
+            "('COAL', 'MWh', 'min')",
+            "('COAL', 'MWh', 'max')",
+            "('GAS', 'MWh', 'min')",
+            "('GAS', 'MWh', 'max')",
+            "('OIL', 'MWh', 'min')",
+            "('OIL', 'MWh', 'max')",
+            "('MIX. FUEL', 'MWh', 'min')",
+            "('MIX. FUEL', 'MWh', 'max')",
+            "('MISC. DTG', 'MWh', 'min')",
+            "('MISC. DTG', 'MWh', 'max')",
+            "('H. STOR', 'MWh', 'min')",
+            "('H. STOR', 'MWh', 'max')",
+            "('H. PUMP', 'MWh', 'min')",
+            "('H. PUMP', 'MWh', 'max')",
+            "('H. LEV', '%', 'min')",
+            "('H. LEV', '%', 'max')",
+            "('H. INFL', 'MWh', 'min')",
+            "('H. INFL', 'MWh', 'max')",
+            "('H. OVFL', '%', 'min')",
+            "('H. OVFL', '%', 'max')",
+            "('H. VAL', 'Euro/MWh', 'min')",
+            "('H. VAL', 'Euro/MWh', 'max')",
+            "('H. COST', 'Euro', 'min')",
+            "('H. COST', 'Euro', 'max')",
+            "('UNSP. ENRG', 'MWh', 'min')",
+            "('UNSP. ENRG', 'MWh', 'max')",
+            "('SPIL. ENRG', 'MWh', 'min')",
+            "('SPIL. ENRG', 'MWh', 'max')",
+            "('LOLD', 'Hours', 'min')",
+            "('LOLD', 'Hours', 'max')",
+            "('AVL DTG', 'MWh', 'min')",
+            "('AVL DTG', 'MWh', 'max')",
+            "('DTG MRG', 'MWh', 'min')",
+            "('DTG MRG', 'MWh', 'max')",
+            "('MAX MRG', 'MWh', 'min')",
+            "('MAX MRG', 'MWh', 'max')",
+            "('NP COST', 'Euro', 'min')",
+            "('NP COST', 'Euro', 'max')",
+            "('NODU', ' ', 'min')",
+            "('NODU', ' ', 'max')",
+        ]
+
+
+def _parse_dataframe(res: Response) -> pd.DataFrame:
+    assert res.status_code == 200
+    content = io.BytesIO(res.content)
+    return pd.read_csv(content, index_col=0, sep="\t")
