@@ -162,7 +162,6 @@ class FileStudyStorage(IStudyStorage):
     def upgrade_study(self, study: Study, version: StudyVersion) -> None:
         is_study_denormalized = False
         try:
-            # sourcery skip: extract-method
             study_path = Path(study.path)
             study_upgrader = StudyUpgrader(study_path, version)
             if is_managed(study) and study_upgrader.should_denormalize_study():
