@@ -119,7 +119,6 @@ function Outputs() {
   };
 
   const handleDownload = (job: Job) => {
-    // TODO: check if download work
     downloadJobOutput(job.id);
   };
 
@@ -143,25 +142,17 @@ function Outputs() {
   };
 
   const renderCompletionDate = (output: OutputWithJob) => {
-    let completionDate: string | undefined;
-
-    if (output.job?.completionDate) {
-      completionDate = convertUTCToLocalTime(output.job.completionDate);
-    }
-    // If no related job or completion date is not available, try to parse date from output name
-    else {
-      const dateMatch = output.name.match(/(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})/);
-
-      if (dateMatch) {
-        const [, year, month, day, hour, minute] = dateMatch;
-        completionDate = `${year}-${month}-${day} ${hour}:${minute}:00`;
-      }
-    }
-
     return (
       <Stack gap={1}>
         <EventAvailableIcon fontSize="extra-small" />
-        {completionDate || t("global.unknown")}
+        {
+          // An output should always have a completed job — this is just a TS limitation caused
+          // by merging two API responses (outputs and jobs).
+          // We still guard the access rather than force the type, just to be safe.
+          output.job?.completionDate
+            ? convertUTCToLocalTime(output.job.completionDate)
+            : t("global.unknown")
+        }
       </Stack>
     );
   };

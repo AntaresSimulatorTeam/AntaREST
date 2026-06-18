@@ -16,6 +16,14 @@ import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { outputMutations } from "@/queries/outputs/mutations";
 import { outputQueries } from "@/queries/outputs/queries";
 import { createOptimisticListItem } from "@/queries/utils";
+import { WsChannel, WsEventType } from "@/services/webSocket/constants";
+import type { WsEvent, WsEventListener } from "@/services/webSocket/types";
+import {
+  addWsEventListener,
+  removeWsEventListener,
+  subscribeWsChannels,
+  unsubscribeWsChannels,
+} from "@/services/webSocket/ws";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -29,6 +37,8 @@ function useArchiveOutput() {
   const { t } = useTranslation();
 
   const { queryKey: queryListKey } = outputQueries.list(studyId);
+
+  let taskListener: WsEventListener | undefined;
 
   const mutation = useMutation({
     ...outputMutations.archive(studyId),
@@ -52,15 +62,47 @@ function useArchiveOutput() {
 
       return { outputToArchive };
     },
-    onSuccess: (_, variables, onMutateResult) => {
+    onSuccess: (taskId, variables, onMutateResult) => {
       const { outputId } = variables;
       const { outputToArchive } = onMutateResult || {};
 
       if (outputToArchive) {
-        queryClient.setQueryData(queryListKey, (old = []) => {
-          return old.map((output) =>
-            output.id === outputId ? { ...outputToArchive, archived: true } : output,
-          );
+        subscribeWsChannels(WsChannel.Task + taskId);
+
+        // `mutationFn` run a task to archive the output, we need to wait for the task to complete
+        // before updating the query cache by listening to the WebSocket events for the task.
+        return new Promise<void>((resolve, reject) => {
+          taskListener = (event: WsEvent) => {
+            switch (event.type) {
+              case WsEventType.TaskCompleted: {
+                const { id } = event.payload;
+
+                if (id === taskId) {
+                  queryClient.setQueryData(queryListKey, (old = []) => {
+                    return old.map((output) =>
+                      output.id === outputId ? { ...outputToArchive, archived: true } : output,
+                    );
+                  });
+
+                  resolve();
+                }
+
+                break;
+              }
+              case WsEventType.TaskFailed: {
+                const { id, message } = event.payload;
+
+                if (id === taskId) {
+                  // `onError` will be called after this
+                  reject(new Error(message));
+                }
+
+                break;
+              }
+            }
+          };
+
+          addWsEventListener(taskListener);
         });
       }
     },
@@ -82,6 +124,14 @@ function useArchiveOutput() {
         }),
         error,
       );
+    },
+    onSettled: (taskId) => {
+      if (taskId) {
+        unsubscribeWsChannels(WsChannel.Task + taskId);
+        if (taskListener) {
+          removeWsEventListener(taskListener);
+        }
+      }
     },
   });
 

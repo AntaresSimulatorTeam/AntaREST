@@ -309,16 +309,19 @@ function makeNotificationListener(dispatch: AppDispatch): WsEventListener {
       case WsEventType.StudyJobStatusUpdate:
       case WsEventType.StudyJobCompleted:
       case WsEventType.StudyJobCancelled: {
-        const updatedJob = adaptJobDtoToJob(e.payload);
+        const receivedJob = adaptJobDtoToJob(e.payload);
 
         // Update job list if exists in cache
-        queryClient.setQueryData(jobQueries.list(updatedJob.studyId).queryKey, (old) => {
-          return old?.map((job) => (job.id === updatedJob.id ? updatedJob : job));
-        });
+        queryClient.setQueryData(jobQueries.list(receivedJob.studyId).queryKey, (old = []) =>
+          // The job may not exist in the list if it was started by another user
+          old.some((j) => j.id === receivedJob.id)
+            ? old.map((j) => (j.id === receivedJob.id ? receivedJob : j))
+            : [...old, receivedJob],
+        );
 
         // Invalidate outputs list when job completes, as this indicates a new output has been added
         if (e.type === WsEventType.StudyJobCompleted) {
-          queryClient.invalidateQueries({ queryKey: outputKeys.list(updatedJob.studyId) });
+          queryClient.invalidateQueries({ queryKey: outputKeys.list(receivedJob.studyId) });
         }
 
         break;
