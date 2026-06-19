@@ -171,7 +171,9 @@ class FileStudyStorage(IStudyStorage):
             study_upgrader.upgrade()
         finally:
             if is_study_denormalized:
-                self.normalize_study(study)
+                # We don't want to use the cache as the study was upgraded
+                file_study = self._get_file_study(Path(study.path), managed=True, use_cache=False)
+                self.normalize_file_study(file_study)
 
     def update_from_raw_metadata(self, study: Study) -> None:
         """
