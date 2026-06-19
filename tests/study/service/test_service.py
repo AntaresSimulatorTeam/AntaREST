@@ -19,7 +19,7 @@ from configparser import MissingSectionHeaderError
 from datetime import timedelta
 from functools import wraps
 from pathlib import Path
-from unittest.mock import ANY, Mock, patch, seal
+from unittest.mock import ANY, Mock, seal
 
 import pandas as pd
 import pytest
@@ -1888,13 +1888,8 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
 
 
 @with_db_context
-@patch("antarest.study.storage.study_upgrader.StudyUpgrader.upgrade")
 @pytest.mark.parametrize("workspace", ["other_workspace", DEFAULT_WORKSPACE_NAME])
-def test_upgrade_study__raw_study__nominal(
-    upgrade_study_mock: Mock,
-    tmp_path: Path,
-    workspace: str,
-) -> None:
+def test_upgrade_study__raw_study__nominal(tmp_path: Path, workspace: str) -> None:
     study_id = str(uuid.uuid4())
     study_name = "my_study"
     target_version = "800"
@@ -1966,8 +1961,6 @@ def test_upgrade_study__raw_study__nominal(
     # Some messages could be emitted using the notifier (not a requirement).
     notifier = Mock()
     actual = task(notifier)
-
-    upgrade_study_mock.assert_called_once_with()
 
     # The study must be updated in the database
     actual_study: RawStudy = db.session.get(Study, study_id)
