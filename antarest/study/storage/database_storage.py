@@ -83,6 +83,7 @@ from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.study_upgrader import StudyUpgrader
 from antarest.study.storage.utils import (
     build_raw_study_from_source,
+    create_new_empty_study,
     extract_data_to_dir,
     update_study_from_raw_metadata,
 )
@@ -273,14 +274,17 @@ class DatabaseStudyStorage(IStudyStorage):
     @override
     def upgrade_study(self, study: Study, version: StudyVersion) -> None:
         dst_path = self._config.storage.tmp_dir / str(uuid.uuid4())
-        dst_path.mkdir()
 
         try:
-            # First, we export the study to a tmp directory as the `StudyUpgrader` only works with studies existing on the filesystem.
+            # 1- Create a real empty study as `StudyUpgrader` needs a `study.antares` file in its `should_denormalize_study` method
+            create_new_empty_study(StudyVersion.parse(study.version), dst_path)
             study_upgrader = StudyUpgrader(dst_path, version)
             normalized_matrices = not study_upgrader.should_denormalize_study()
+            # 2- Remove the `dst_path` as the export method requires a non-existing directory
+            shutil.rmtree(dst_path)
+            # 3- Export the study to a tmp directory as `StudyUpgrader` only works with studies existing on the filesystem.
             self._export_study(study, dst_path, normalized_matrices=normalized_matrices)
-            # Perform the upgrade
+            # 4- Perform the upgrade
             study_upgrader.upgrade()
         except Exception as e:
             shutil.rmtree(dst_path, ignore_errors=True)
