@@ -650,7 +650,7 @@ class TestFetchOriginalFile:
         output_id = _import_output(client, study_id)
 
         ##########################
-        # Nominal cases
+        # Input Matrix
         ##########################
 
         original_file_url = f"/v1/studies/{study_id}/raw/original-file"
@@ -663,7 +663,10 @@ class TestFetchOriginalFile:
         actual_content = pd.read_csv(io.BytesIO(res.content), header=None)
         assert actual_content.to_numpy().tolist() == expected_content.tolist()
 
-        # Retrieves several output files
+        ##########################
+        # Output files
+        ##########################
+
         if storage_mode == "filesystem":
             outputs_dir = tmp_path / "internal_workspace" / study_id / "output"
         else:
