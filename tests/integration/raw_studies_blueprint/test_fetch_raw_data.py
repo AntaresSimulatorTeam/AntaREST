@@ -631,11 +631,42 @@ class TestFetchOriginalFile:
 
     @pytest.mark.parametrize("storage_mode", ["database", "filesystem"])
     def test_for_both_storage_modes(self, client: TestClient, user_access_token: str, storage_mode: str) -> None:
+        ##########################
+        # Set Up
+        ##########################
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
-        pass
 
-        original_file_url = ""
-        ####### Error cases #######
+        # Create a study with the given storage_mode
+        res = client.post(f"/v1/studies?name=MyStudy&storage_mode={storage_mode}")
+        assert res.status_code == 201
+        study_id = res.json()
+
+        # Add an area
+        res = client.post(f"/v1/studies/{study_id}/areas", json={"name": "fr"})
+        res.raise_for_status()
+
+        output_id = _import_output(client, study_id)
+
+        ##########################
+        # Nominal cases
+        ##########################
+
+        original_file_url = f"/v1/studies/{study_id}/raw/original-file"
+
+        # Retrieves an input matrix
+        res = client.get(original_file_url, params={"path": "input/load/series/load_fr"})
+        assert res.status_code == 200
+        assert res.headers.get("content-disposition") == "attachment; filename=load_fr.txt"
+        expected_content = np.zeros((8760, 1))
+        actual_content = pd.read_csv(io.BytesIO(res.content), header=None)
+        assert actual_content.to_numpy().tolist() == expected_content.tolist()
+
+        # Retrieves several output files
+        # todo
+
+        ##########################
+        # Error cases
+        ##########################
 
         # If you try to retrieve a file that doesn't exist, we should have a 404 error
         res = client.get(original_file_url, params={"path": "user/somewhere/something.txt"})
@@ -651,15 +682,6 @@ class TestFetchOriginalFile:
         assert res.json()["description"] == "Node at user/folder is a folder node."
         assert res.json()["exception"] == "PathIsAFolderError"
 
-        # retrieves a matrix (a link towards the matrix store if the study is unarchived, else the real matrix)
-        res = client.get(original_file_url, params={"path": "input/load/series/load_area 1"})
-        assert res.status_code == 200
-        assert res.headers.get("content-disposition") == "attachment; filename=load_area 1.txt"
-        expected_content = np.zeros((8760, 1))
-        actual_content = pd.read_csv(io.BytesIO(res.content), header=None)
-        assert actual_content.to_numpy().tolist() == expected_content.tolist()
-
-
 @pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
 def test_retrieve_output_data(client: TestClient, user_access_token: str, storage_mode: str) -> None:
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
@@ -669,16 +691,9 @@ def test_retrieve_output_data(client: TestClient, user_access_token: str, storag
     assert res.status_code == 201
     study_id = res.json()
 
-    # Imports an output inside the study
-    output_path_seven_zip = INTEGRATION_ASSETS_DIR / "output_adq.7z"
-    client.post(f"/v1/studies/{study_id}/output", files={"output": io.BytesIO(output_path_seven_zip.read_bytes())})
-    # Ensures the output has been successfully imported
-    res = client.get(f"/v1/studies/{study_id}/outputs")
-    assert len(res.json()) == 1
+    output_id = _import_output(client, study_id)
 
     # Ensures we're able to read output matrices for both storage modes
-    expected_date = utc_to_local("20221003-2142")
-    output_id = f"{expected_date}adq"
     for path in [
         f"output/{output_id}/adequacy/mc-all/grid/digest",
         f"output/{output_id}/adequacy/mc-all/areas/de/details-daily",
@@ -693,3 +708,14 @@ def test_retrieve_output_data(client: TestClient, user_access_token: str, storag
     res = client.get(f"/v1/studies/{study_id}/raw", params={"path": "output", "depth": 4})
     assert res.status_code == 200
     assert res.json() == {output_id: ANY}
+
+def _import_output(client: TestClient, study_id: str) -> str:
+    # Imports an output inside the study
+    output_path_seven_zip = INTEGRATION_ASSETS_DIR / "output_adq.7z"
+    client.post(f"/v1/studies/{study_id}/output", files={"output": io.BytesIO(output_path_seven_zip.read_bytes())})
+    # Ensures the output has been successfully imported
+    res = client.get(f"/v1/studies/{study_id}/outputs")
+    assert len(res.json()) == 1
+    # Returns the output id
+    expected_date = utc_to_local("20221003-2142")
+    return f"{expected_date}adq"
