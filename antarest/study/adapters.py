@@ -19,6 +19,7 @@ from antarest.output.service import OutputService
 from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
 from antarest.study.model import MatrixFrequency, MatrixIndex
 from antarest.study.service import IOutputsAccess
+from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 
 
 def adapt_output_service_to_study_service(output_service: OutputService) -> IOutputsAccess:
@@ -72,5 +73,9 @@ def adapt_output_service_to_study_service(output_service: OutputService) -> IOut
             self, study_id: str, output_id: str, url: list[str], frequency: MatrixFrequency
         ) -> pd.DataFrame:
             return output_service.get_matrix_as_dataframe(study_id, output_id, url, frequency)
+
+        @override
+        def get_output_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
+            return output_service.get_original_file(study_id, output_id, url)
 
     return OutputServiceAdapter()

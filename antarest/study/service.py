@@ -162,6 +162,7 @@ from antarest.study.storage.utils import (
     assert_permission,
     assert_permission_on_studies,
     create_new_empty_study,
+    dump_dataframe,
     extract_data_to_dir,
     extract_simulation_range_from_model,
     get_matrix_index,
@@ -624,6 +625,10 @@ class IOutputsAccess(ABC):
     ) -> pd.DataFrame:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_output_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
+        raise NotImplementedError()
+
 
 class StudyService:
     """
@@ -761,10 +766,23 @@ class StudyService:
         assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
 
-        file_study = self.get_file_study(study)
         parts = [item for item in url.split("/") if item]
-        file_node = file_study.tree.get_node(parts)
 
+        # We need to handle the output case separately
+        if parts[0] == "output":
+            output_id = parts[1]
+            return self._get_outputs_access().get_output_original_file(uuid, output_id, list(parts[2:]))
+
+        if study.storage_mode == StorageMode.DATABASE:
+            # We only support fetching matrices
+            dataframe = _get_matrix_from_path(self.get_study_interface(study), PurePosixPath(url))
+            buffer = io.BytesIO()
+            dump_dataframe(dataframe, buffer)
+            content = buffer.getvalue()
+            return OriginalFile(suffix=".txt", filename=f"{parts[-1]}.txt", content=content)
+
+        file_study = self.get_file_study(study)
+        file_node = file_study.tree.get_node(parts)
         return file_node.get_file_content()
 
     def get_comments(self, study_id: str) -> str:
