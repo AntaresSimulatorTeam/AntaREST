@@ -667,7 +667,7 @@ class TestFetchOriginalFile:
         if storage_mode == "filesystem":
             outputs_dir = tmp_path / "internal_workspace" / study_id / "output"
         else:
-            outputs_dir = tmp_path / "all_outputs"
+            outputs_dir = tmp_path / "all_outputs" / study_id
         # todo
         # retrieves a txt file from the outputs
         file_path = f"output/{output_id}/simulation"
@@ -685,16 +685,29 @@ class TestFetchOriginalFile:
         # If you try to retrieve a file that doesn't exist, we should have a 404 error
         res = client.get(original_file_url, params={"path": "user/somewhere/something.txt"})
         assert res.status_code == 404, res.json()
-        assert res.json() == {
-            "description": "'somewhere' not a child of User",
-            "exception": "ChildNotFoundError",
-        }
+        if storage_mode == "filesystem":
+            assert res.json() == {
+                "description": "'somewhere' not a child of User",
+                "exception": "ChildNotFoundError",
+            }
+        else:
+            assert res.json() == {
+                "description": "The provided path does not point to a valid matrix: 'user/somewhere/something.txt'",
+                "exception": "IncorrectPathError",
+            }
 
         # If you try to retrieve a folder, we should get an Error 422
         res = client.get(original_file_url, params={"path": "input/load"})
-        assert res.status_code == 422, res.json()
-        assert res.json()["description"] == "Node at input/load is a folder node."
-        assert res.json()["exception"] == "PathIsAFolderError"
+        if storage_mode == "filesystem":
+            assert res.status_code == 422, res.json()
+            assert res.json()["description"] == "Node at input/load is a folder node."
+            assert res.json()["exception"] == "PathIsAFolderError"
+        else:
+            assert res.status_code == 404, res.json()
+            assert res.json() == {
+                "description": "The provided path does not point to a valid matrix: 'input/load'",
+                "exception": "IncorrectPathError",
+            }
 
 
 @pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
