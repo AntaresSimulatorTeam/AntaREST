@@ -696,7 +696,7 @@ class TestFetchOriginalFile:
                 "exception": "IncorrectPathError",
             }
 
-        # If you try to retrieve a folder, we should get an Error 422
+        # If you try to retrieve a folder, we should get an error
         res = client.get(original_file_url, params={"path": "input/load"})
         if storage_mode == "filesystem":
             assert res.status_code == 422, res.json()
