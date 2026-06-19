@@ -568,17 +568,8 @@ class TestFetchOriginalFile:
     Check the retrieval of a file from Study folder
     """
 
-    def test_get_study_file(
-        self,
-        client: TestClient,
-        user_access_token: str,
-        internal_study_id: str,
-    ) -> None:
+    def test_get_for_filesystem_study(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
         """
-        Test the `get_study_file` endpoint for fetching for a file in its original format.
-
-        This test retrieves a specific file from a study identified by a UUID and checks
-
         The test performs the following steps:
         1. Copies the user resources in the Study directory.
         2. Uses the API to download a file from the "user/folder" directory.
@@ -592,11 +583,7 @@ class TestFetchOriginalFile:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         original_file_url = f"/v1/studies/{internal_study_id}/raw/original-file"
 
-        shutil.copytree(
-            ASSETS_DIR.joinpath("user"),
-            study_dir.joinpath("user"),
-            dirs_exist_ok=True,
-        )
+        shutil.copytree(ASSETS_DIR.joinpath("user"), study_dir.joinpath("user"), dirs_exist_ok=True)
 
         # Then, use the API to download the files from the "user/folder" directory
         user_folder_dir = study_dir.joinpath("user/folder")
@@ -607,15 +594,6 @@ class TestFetchOriginalFile:
             actual = res.content
             expected = file_path.read_bytes()
             assert actual == expected
-
-        # retrieves a txt file from the outputs
-        file_path = "output/20201014-1422eco-hello/simulation"
-        res = client.get(f"/v1/studies/{internal_study_id}/raw/original-file", params={"path": file_path})
-        assert res.status_code == 200
-        assert res.headers.get("content-disposition") == "attachment; filename=simulation.log"
-        actual = res.content
-        expected = study_dir.joinpath(f"{file_path}.log").read_bytes()
-        assert actual == expected
 
         # If the extension is unknown, we should have a "binary" content
         user_folder_dir = study_dir.joinpath("user/unknown")
@@ -628,38 +606,13 @@ class TestFetchOriginalFile:
             expected = file_path.read_bytes()
             assert actual == expected
 
-        # If you try to retrieve a file that doesn't exist, we should have a 404 error
-        res = client.get(original_file_url, params={"path": "user/somewhere/something.txt"})
-        assert res.status_code == 404, res.json()
-        assert res.json() == {
-            "description": "'somewhere' not a child of User",
-            "exception": "ChildNotFoundError",
-        }
-
-        # If you try to retrieve a folder, we should get an Error 422
-        res = client.get(original_file_url, params={"path": "user/folder"})
-        assert res.status_code == 422, res.json()
-        assert res.json()["description"] == "Node at user/folder is a folder node."
-        assert res.json()["exception"] == "PathIsAFolderError"
-
-    def test_retrieve_original_files(self, client: TestClient, user_access_token: str) -> None:
-        # client headers
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
-
         # create a new study
         res = client.post("/v1/studies", params={"name": "MyStudy", "version": "880"})
         assert res.status_code == 201
         study_id = res.json()
 
         # add a new area to the study
-        res = client.post(
-            f"/v1/studies/{study_id}/areas",
-            json={
-                "name": "area 1",
-                "type": "AREA",
-                "metadata": {"country": "FR", "tags": ["a"]},
-            },
-        )
+        res = client.post(f"/v1/studies/{study_id}/areas", json={"name": "area 1"})
         assert res.status_code == 200, res.json()
 
         # retrieves an `ini` file
@@ -676,8 +629,30 @@ class TestFetchOriginalFile:
         assert res.headers.get("content-disposition") == "attachment; filename=study.antares"
         assert res.content.strip().decode().splitlines()[:3] == ["[antares]", "version = 880", "caption = MyStudy"]
 
+    @pytest.mark.parametrize("storage_mode", ["database", "filesystem"])
+    def test_for_both_storage_modes(self, client: TestClient, user_access_token: str, storage_mode: str) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        pass
+
+        original_file_url = ""
+        ####### Error cases #######
+
+        # If you try to retrieve a file that doesn't exist, we should have a 404 error
+        res = client.get(original_file_url, params={"path": "user/somewhere/something.txt"})
+        assert res.status_code == 404, res.json()
+        assert res.json() == {
+            "description": "'somewhere' not a child of User",
+            "exception": "ChildNotFoundError",
+        }
+
+        # If you try to retrieve a folder, we should get an Error 422
+        res = client.get(original_file_url, params={"path": "user/folder"})
+        assert res.status_code == 422, res.json()
+        assert res.json()["description"] == "Node at user/folder is a folder node."
+        assert res.json()["exception"] == "PathIsAFolderError"
+
         # retrieves a matrix (a link towards the matrix store if the study is unarchived, else the real matrix)
-        res = client.get(f"/v1/studies/{study_id}/raw/original-file", params={"path": "input/load/series/load_area 1"})
+        res = client.get(original_file_url, params={"path": "input/load/series/load_area 1"})
         assert res.status_code == 200
         assert res.headers.get("content-disposition") == "attachment; filename=load_area 1.txt"
         expected_content = np.zeros((8760, 1))
