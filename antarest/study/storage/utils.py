@@ -22,7 +22,7 @@ from collections.abc import Sequence
 from datetime import datetime, timedelta
 from io import StringIO
 from pathlib import Path
-from typing import Any, BinaryIO, cast
+from typing import TYPE_CHECKING, Any, BinaryIO, cast
 from uuid import uuid4
 from zipfile import ZipFile
 
@@ -70,8 +70,10 @@ from antarest.study.model import (
     StudyMetadataCopy,
     StudyMetadataDTO,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.helpers import parse_input_config
+
+if TYPE_CHECKING:
+    from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 logger = logging.getLogger(__name__)
 
@@ -648,7 +650,7 @@ def extract_data_to_dir(dst_path: Path, source: Path | BinaryIO, tmp_dir: Path) 
         raise
 
 
-def update_study_from_raw_metadata(study: Study, file_study: FileStudy) -> None:
+def update_study_from_raw_metadata(study: Study, file_study: "FileStudy") -> None:
     """
     The given `study` object needs to be updated according to the real filesystem data inside `FileStudy`
     """
