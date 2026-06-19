@@ -93,6 +93,7 @@ from antarest.study.model import (
     StudyDownloadType,
 )
 from antarest.study.storage.df_download import export_df_chunks
+from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestUI,
 )
@@ -940,3 +941,6 @@ class OutputService:
         return self._find_output_storage(study_id, output_id).get_matrix_as_dataframe(
             study_id, output_id, url, frequency
         )
+
+    def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
+        return self._find_output_storage(study_id, output_id).get_original_file(study_id, output_id, url)

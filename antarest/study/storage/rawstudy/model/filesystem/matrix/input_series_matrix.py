@@ -31,6 +31,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
+from antarest.study.storage.utils import dump_dataframe
 
 logger = logging.getLogger(__name__)
 
@@ -54,13 +55,6 @@ def extract_matrix_id(uri: str) -> str:
     need to be able to parse them.
     """
     return uri.removeprefix(MATRIX_PROTOCOL_PREFIX).strip()
-
-
-def _dump_dataframe(df: pl.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
-    if df.is_empty() and isinstance(path_or_buf, Path):
-        path_or_buf.write_bytes(b"")
-    else:
-        df.write_csv(path_or_buf, separator="\t", include_header=False)
 
 
 class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
@@ -314,7 +308,7 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
             target_path = self.config.path.with_suffix(".txt")
             buffer = io.BytesIO()
             df = self.parse_as_dataframe()
-            _dump_dataframe(df, buffer)
+            dump_dataframe(df, buffer)
             content = buffer.getvalue()
             suffix = target_path.suffix
             filename = target_path.name
@@ -324,7 +318,7 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
         if content == b"" and self.default_empty is not None:
             # The file is empty, we should return the `default_empty` value
             buffer = io.BytesIO()
-            _dump_dataframe(pl.DataFrame(self.default_empty()), buffer)
+            dump_dataframe(pl.DataFrame(self.default_empty()), buffer)
             content = buffer.getvalue()
 
         return OriginalFile(content=content, suffix=suffix, filename=filename)

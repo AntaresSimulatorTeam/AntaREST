@@ -12,6 +12,7 @@
 
 import calendar
 import contextlib
+import io
 import logging
 import math
 import os
@@ -25,6 +26,7 @@ from typing import Any, BinaryIO, cast
 from uuid import uuid4
 from zipfile import ZipFile
 
+import polars as pl
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
 from antares.study.version.upgrade_app import is_temporary_upgrade_dir
@@ -681,3 +683,10 @@ def update_study_from_raw_metadata(study: Study, file_study: FileStudy) -> None:
         study.updated_at = study.updated_at or current_time()
         study.author = study.author or "Unknown"
         study.editor = study.editor or "Unknown"
+
+
+def dump_dataframe(df: pl.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
+    if df.is_empty() and isinstance(path_or_buf, Path):
+        path_or_buf.write_bytes(b"")
+    else:
+        df.write_csv(path_or_buf, separator="\t", include_header=False)

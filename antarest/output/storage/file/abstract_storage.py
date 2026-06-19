@@ -68,6 +68,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     parse_single_output,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.root.output.output import Output
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
@@ -595,6 +596,11 @@ class AbstractFileOutputStorage(IOutputStorage):
         file_path = _build_matrix_file_path(output_dir, url)
         first_column = get_start_column(frequency)
         return parse_output_file_as_pandas_dataframe(file_path, first_column)
+
+    @override
+    def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
+        # todo: implement this
+        raise NotImplementedError()
 
 
 def _build_matrix_file_path(output_dir: Path, url: list[str]) -> Path:
