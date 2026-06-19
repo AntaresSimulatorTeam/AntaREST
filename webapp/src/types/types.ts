@@ -113,7 +113,7 @@ export interface OutputSynthesis {
   byYear: boolean;
   nbYears: number;
   archived: boolean;
-  storageType: "IN_STUDY_FILE_TREE" | "V2";
+  storageType: "IN_STUDY_FILE_TREE" | "OUT_OF_STUDY_FILE_TREE" | "V2";
 }
 
 export interface StudyLayer {
