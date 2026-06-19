@@ -82,7 +82,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
-from antarest.study.storage.rawstudy.model.filesystem.inode import INode
+from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -208,6 +208,10 @@ def build_study_service(
             self, study_id: str, output_id: str, url: list[str], frequency: MatrixFrequency
         ) -> pd.DataFrame:
             return pd.DataFrame()
+
+        @override
+        def get_output_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
+            raise NotImplementedError()
 
     service.register_output_access(OutputsAccessMock())
     return service
