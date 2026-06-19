@@ -791,7 +791,7 @@ class StudyService:
             buffer = io.BytesIO()
             dump_dataframe(dataframe, buffer)
             content = buffer.getvalue()
-            return OriginalFile(suffix=".txt", filename=parts[-1], content=content)
+            return OriginalFile(suffix=".txt", filename=f"{parts[-1]}.txt", content=content)
 
         file_study = self.get_file_study(study)
         file_node = file_study.tree.get_node(parts)
