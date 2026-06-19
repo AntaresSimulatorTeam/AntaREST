@@ -49,7 +49,7 @@ function ReservesNeeds() {
 
   const [selectedReserveId, setSelectedReserveId] = useState(() => reserveIds[0] ?? "");
 
-  if (!reserveIds.includes(selectedReserveId)) {
+  if (reserveIds.length > 0 && !reserveIds.includes(selectedReserveId)) {
     setSelectedReserveId(reserveIds[0] ?? "");
   }
 
