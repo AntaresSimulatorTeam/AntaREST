@@ -671,14 +671,23 @@ class TestFetchOriginalFile:
             outputs_dir = tmp_path / "internal_workspace" / study_id / "output"
         else:
             outputs_dir = tmp_path / "all_outputs" / study_id
-        # todo
-        # retrieves a txt file from the outputs
+
+        # Random file that isn't a matrix
         file_path = f"output/{output_id}/simulation"
         res = client.get(original_file_url, params={"path": file_path})
         assert res.status_code == 200
         assert res.headers.get("content-disposition") == "attachment; filename=simulation.log"
         actual = res.content
         expected = (outputs_dir / output_id / "simulation.log").read_bytes()
+        assert actual == expected
+
+        # Output matrix
+        file_path = f"output/{output_id}/adequacy/mc-all/areas/de/details-daily"
+        res = client.get(original_file_url, params={"path": file_path})
+        assert res.status_code == 200
+        assert res.headers.get("content-disposition") == "attachment; filename=details-daily.txt"
+        actual = res.content
+        expected = (outputs_dir / output_id / "adequacy" / "mc-all" / "areas" / "de" / "details-daily.txt").read_bytes()
         assert actual == expected
 
         ##########################
