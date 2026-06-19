@@ -14,8 +14,8 @@ import http
 import io
 import itertools
 import json
-import pathlib
 import shutil
+from pathlib import Path
 from unittest.mock import ANY
 
 import numpy as np
@@ -64,7 +64,7 @@ class TestFetchRawData:
         # First copy the user resources in the Study directory
         with db():
             study: RawStudy = db.session.get(Study, internal_study_id)
-            study_dir = pathlib.Path(study.path)
+            study_dir = Path(study.path)
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         shutil.copytree(
@@ -579,7 +579,7 @@ class TestFetchOriginalFile:
         # First copy the user resources in the Study directory
         with db():
             study: RawStudy = db.session.get(Study, internal_study_id)
-            study_dir = pathlib.Path(study.path)
+            study_dir = Path(study.path)
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         original_file_url = f"/v1/studies/{internal_study_id}/raw/original-file"
 
@@ -630,7 +630,9 @@ class TestFetchOriginalFile:
         assert res.content.strip().decode().splitlines()[:3] == ["[antares]", "version = 880", "caption = MyStudy"]
 
     @pytest.mark.parametrize("storage_mode", ["database", "filesystem"])
-    def test_for_both_storage_modes(self, client: TestClient, user_access_token: str, storage_mode: str) -> None:
+    def test_for_both_storage_modes(
+        self, client: TestClient, user_access_token: str, storage_mode: str, tmp_path: Path
+    ) -> None:
         ##########################
         # Set Up
         ##########################
@@ -662,7 +664,19 @@ class TestFetchOriginalFile:
         assert actual_content.to_numpy().tolist() == expected_content.tolist()
 
         # Retrieves several output files
+        if storage_mode == "filesystem":
+            outputs_dir = tmp_path / "internal_workspace" / study_id / "output"
+        else:
+            outputs_dir = tmp_path / "all_outputs"
         # todo
+        # retrieves a txt file from the outputs
+        file_path = f"output/{output_id}/simulation"
+        res = client.get(original_file_url, params={"path": file_path})
+        assert res.status_code == 200
+        assert res.headers.get("content-disposition") == "attachment; filename=simulation.log"
+        actual = res.content
+        expected = (outputs_dir / output_id / "simulation.log").read_bytes()
+        assert actual == expected
 
         ##########################
         # Error cases
@@ -677,10 +691,11 @@ class TestFetchOriginalFile:
         }
 
         # If you try to retrieve a folder, we should get an Error 422
-        res = client.get(original_file_url, params={"path": "user/folder"})
+        res = client.get(original_file_url, params={"path": "input/load"})
         assert res.status_code == 422, res.json()
-        assert res.json()["description"] == "Node at user/folder is a folder node."
+        assert res.json()["description"] == "Node at input/load is a folder node."
         assert res.json()["exception"] == "PathIsAFolderError"
+
 
 @pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
 def test_retrieve_output_data(client: TestClient, user_access_token: str, storage_mode: str) -> None:
@@ -708,6 +723,7 @@ def test_retrieve_output_data(client: TestClient, user_access_token: str, storag
     res = client.get(f"/v1/studies/{study_id}/raw", params={"path": "output", "depth": 4})
     assert res.status_code == 200
     assert res.json() == {output_id: ANY}
+
 
 def _import_output(client: TestClient, study_id: str) -> str:
     # Imports an output inside the study
