@@ -63,6 +63,7 @@ from antarest.output.storage.v2.variables_storage import (
 )
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency, MatrixIndex
+from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 from antarest.study.storage.utils import (
     SimulationRangeDefinition,
@@ -438,5 +439,10 @@ class V2OutputStorage(IOutputStorage):
     def get_matrix_as_dataframe(
         self, study_id: str, output_id: str, url: list[str], frequency: MatrixFrequency
     ) -> pd.DataFrame:
+        # todo: implement this
+        raise NotImplementedError()
+
+    @override
+    def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
         # todo: implement this
         raise NotImplementedError()
