@@ -35,7 +35,7 @@ class TestCreateReserveDefinition:
 
         command = CreateReserveDefinition(
             area_id="paris",
-            parameters=ReserveDefinitionCreation(id="Reserve 1", type=ReserveType.UP),
+            parameters=ReserveDefinitionCreation(name="Reserve 1", type=ReserveType.UP),
             command_context=command_context,
             study_version=STUDY_VERSION_10_0,
         )
@@ -52,7 +52,7 @@ class TestCreateReserveDefinition:
 
         first = CreateReserveDefinition(
             area_id="paris",
-            parameters=ReserveDefinitionCreation(id="Reserve 1", type=ReserveType.UP),
+            parameters=ReserveDefinitionCreation(name="Reserve 1", type=ReserveType.UP),
             command_context=command_context,
             study_version=STUDY_VERSION_10_0,
         )
@@ -60,7 +60,7 @@ class TestCreateReserveDefinition:
 
         second = CreateReserveDefinition(
             area_id="paris",
-            parameters=ReserveDefinitionCreation(id="Reserve 1", type=ReserveType.DOWN),
+            parameters=ReserveDefinitionCreation(name="Reserve 1", type=ReserveType.DOWN),
             command_context=command_context,
             study_version=STUDY_VERSION_10_0,
         )
@@ -72,7 +72,7 @@ class TestCreateReserveDefinition:
         with pytest.raises(ValidationError, match="study version before 10.0"):
             CreateReserveDefinition(
                 area_id="paris",
-                parameters=ReserveDefinitionCreation(id="Reserve 1", type=ReserveType.UP),
+                parameters=ReserveDefinitionCreation(name="Reserve 1", type=ReserveType.UP),
                 command_context=command_context,
                 study_version=StudyVersion.parse("9.2"),
             )
@@ -80,7 +80,7 @@ class TestCreateReserveDefinition:
     def test_to_dto(self, command_context: CommandContext) -> None:
         command = CreateReserveDefinition(
             area_id="paris",
-            parameters=ReserveDefinitionCreation(id="Reserve 1", type=ReserveType.UP, failure_cost=500.0),
+            parameters=ReserveDefinitionCreation(name="Reserve 1", type=ReserveType.UP, failure_cost=500.0),
             command_context=command_context,
             study_version=STUDY_VERSION_10_0,
         )
@@ -96,7 +96,7 @@ class TestCreateReserveDefinition:
 
         command = CreateReserveDefinition(
             area_id="paris",
-            parameters=ReserveDefinitionCreation(id="R1", type=ReserveType.UP),
+            parameters=ReserveDefinitionCreation(name="R1", type=ReserveType.UP),
             command_context=command_context,
             study_version=STUDY_VERSION_10_0,
         )
@@ -112,13 +112,13 @@ def _seed_two_reserves(dao: StudyDao, command_context: CommandContext) -> None:
     save_area(dao, "paris")
     CreateReserveDefinition(
         area_id="paris",
-        parameters=ReserveDefinitionCreation(id="R1", type=ReserveType.UP, failure_cost=10.0),
+        parameters=ReserveDefinitionCreation(name="R1", type=ReserveType.UP, failure_cost=10.0),
         command_context=command_context,
         study_version=STUDY_VERSION_10_0,
     ).apply(dao)
     CreateReserveDefinition(
         area_id="paris",
-        parameters=ReserveDefinitionCreation(id="R2", type=ReserveType.DOWN),
+        parameters=ReserveDefinitionCreation(name="R2", type=ReserveType.DOWN),
         command_context=command_context,
         study_version=STUDY_VERSION_10_0,
     ).apply(dao)
@@ -180,7 +180,7 @@ class TestRemoveReserveDefinitions:
         save_area(dao_10_0, "paris")
         CreateReserveDefinition(
             area_id="paris",
-            parameters=ReserveDefinitionCreation(id="R1", type=ReserveType.UP),
+            parameters=ReserveDefinitionCreation(name="R1", type=ReserveType.UP),
             command_context=command_context,
             study_version=STUDY_VERSION_10_0,
         ).apply(dao_10_0)
@@ -233,7 +233,7 @@ class TestRemoveReserveDefinitions:
         save_area(dao_10_0, "paris")
         CreateReserveDefinition(
             area_id="paris",
-            parameters=ReserveDefinitionCreation(id="R1", type=ReserveType.UP),
+            parameters=ReserveDefinitionCreation(name="R1", type=ReserveType.UP),
             command_context=command_context,
             study_version=STUDY_VERSION_10_0,
         ).apply(dao_10_0)
