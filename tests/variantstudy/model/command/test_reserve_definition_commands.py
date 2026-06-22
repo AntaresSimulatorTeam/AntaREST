@@ -42,10 +42,11 @@ class TestCreateReserveDefinition:
         output = command.apply(dao_10_0)
         assert output.status
         assert isinstance(output.result, ReserveDefinition)
-        assert output.result.id == "Reserve 1"
+        assert output.result.name == "Reserve 1"
+        assert output.result.id == "reserve 1"
         assert output.result.type == ReserveType.UP
 
-        assert dao_10_0.reserve_definition_exists("paris", "Reserve 1")
+        assert dao_10_0.reserve_definition_exists("paris", "reserve 1")
 
     def test_apply_duplicate_fails(self, dao_10_0: StudyDao, command_context: CommandContext) -> None:
         save_area(dao_10_0, "paris")
@@ -87,7 +88,7 @@ class TestCreateReserveDefinition:
         dto = command.to_dto()
         assert dto.action == "create_reserve_definition"
         assert dto.args["area_id"] == "paris"
-        assert dto.args["parameters"]["id"] == "Reserve 1"
+        assert dto.args["parameters"]["name"] == "Reserve 1"
         assert dto.args["parameters"]["type"] == "up"
         assert dto.args["parameters"]["failureCost"] == 500.0
 
@@ -103,7 +104,7 @@ class TestCreateReserveDefinition:
         output = command.apply(dao_10_0)
         assert output.status
 
-        matrix = dao_10_0.get_reserve_need("paris", "R1")
+        matrix = dao_10_0.get_reserve_need("paris", "r1")
         assert matrix.shape == (8760, 1)
         assert matrix.to_numpy().sum() == 0.0
 
@@ -131,8 +132,8 @@ class TestUpdateReserveDefinitions:
         command = UpdateReserveDefinitions(
             reserve_properties={
                 "paris": {
-                    "R1": ReserveDefinitionUpdate(failure_cost=999.0),
-                    "R2": ReserveDefinitionUpdate(spillage_cost=5.0),
+                    "r1": ReserveDefinitionUpdate(failure_cost=999.0),
+                    "r2": ReserveDefinitionUpdate(spillage_cost=5.0),
                 }
             },
             command_context=command_context,
@@ -141,8 +142,8 @@ class TestUpdateReserveDefinitions:
         output = command.apply(dao_10_0)
         assert output.status
 
-        assert dao_10_0.get_reserve_definition("paris", "R1").failure_cost == 999.0
-        assert dao_10_0.get_reserve_definition("paris", "R2").spillage_cost == 5.0
+        assert dao_10_0.get_reserve_definition("paris", "r1").failure_cost == 999.0
+        assert dao_10_0.get_reserve_definition("paris", "r2").spillage_cost == 5.0
 
     def test_apply_not_found(self, dao_10_0: StudyDao, command_context: CommandContext) -> None:
         _seed_two_reserves(dao_10_0, command_context)
