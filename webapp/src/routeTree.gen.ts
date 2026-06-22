@@ -89,6 +89,7 @@ import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdPropertie
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/index'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesParametersRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series/parameters'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesCapacitiesRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities'
+import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesGeneralRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/general'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroWaterValuesRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRunOfRiverRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river'
@@ -721,6 +722,15 @@ const AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesCapacitiesR
         AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesRouteRoute,
     } as any,
   )
+const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRoute =
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRouteImport.update(
+    {
+      id: '/needs',
+      path: '/needs',
+      getParentRoute: () =>
+        AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRoute,
+    } as any,
+  )
 const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesGeneralRoute =
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesGeneralRouteImport.update(
     {
@@ -1193,6 +1203,7 @@ export interface FileRoutesByFullPath {
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRunOfRiverRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroWaterValuesRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/reserves/general': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesGeneralRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRoute
   '/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesCapacitiesRoute
   '/studies/$studyId/explore/modeling/links/$linkId/time-series/parameters': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesParametersRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroIndexRoute
@@ -1299,6 +1310,7 @@ export interface FileRoutesByTo {
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRunOfRiverRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroWaterValuesRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/reserves/general': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesGeneralRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRoute
   '/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesCapacitiesRoute
   '/studies/$studyId/explore/modeling/links/$linkId/time-series/parameters': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesParametersRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroIndexRoute
@@ -1422,6 +1434,7 @@ export interface FileRoutesById {
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRunOfRiverRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroWaterValuesRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/general': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesGeneralRoute
+  '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRoute
   '/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesCapacitiesRoute
   '/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series/parameters': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesParametersRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroIndexRoute
@@ -1548,6 +1561,7 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values'
     | '/studies/$studyId/explore/modeling/areas/$areaId/reserves/general'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs'
     | '/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities'
     | '/studies/$studyId/explore/modeling/links/$linkId/time-series/parameters'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/'
@@ -1654,6 +1668,7 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values'
     | '/studies/$studyId/explore/modeling/areas/$areaId/reserves/general'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs'
     | '/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities'
     | '/studies/$studyId/explore/modeling/links/$linkId/time-series/parameters'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro'
@@ -1776,6 +1791,7 @@ export interface FileRouteTypes {
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/general'
+    | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs'
     | '/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities'
     | '/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series/parameters'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/'
@@ -2384,6 +2400,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesCapacitiesRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesRouteRoute
     }
+    '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs': {
+      id: '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs'
+      path: '/needs'
+      fullPath: '/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRoute
+    }
     '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/general': {
       id: '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/general'
       path: '/general'
@@ -2860,6 +2883,7 @@ const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRouteWithCh
 
 interface AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRouteChildren {
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesGeneralRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesGeneralRoute
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesIndexRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesIndexRoute
 }
 
@@ -2867,6 +2891,8 @@ const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRouteChi
   {
     AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesGeneralRoute:
       AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesGeneralRoute,
+    AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRoute:
+      AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRoute,
     AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesIndexRoute:
       AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesIndexRoute,
   }

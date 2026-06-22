@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 from datetime import datetime
+from pathlib import Path
 
 import pytest
 from starlette.testclient import TestClient
@@ -36,16 +37,28 @@ _OUTPUT_NAME_MAP = {
 }
 
 
-@pytest.fixture(params=["file", "v2"])
-def storage_type(request, client: TestClient, user_access_token: str, internal_study_id: str):
+@pytest.fixture(params=["in_study", "outside_study", "v2"])
+def storage_type(request, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path):
     """Parametrized fixture that runs tests with both file and parquet (V2) storage.
 
     Returns (mode, output_name_map) where output_name_map translates original output IDs
     to their V2 names (which may differ due to timezone-dependent name reconstruction).
     """
-    if request.param == "file":
-        return "file", {}
+    if request.param == "in_study":
+        return "in_study", {}
 
+    # `OUT_OF_FILE_STUDY_TREE` part
+    internal_study_output_dir = tmp_path / "ext_workspace" / "STA-mini" / "output"
+    outside_study_output_dir = tmp_path / "all_outputs" / internal_study_id
+
+    if request.param == "outside_study":
+        outside_study_output_dir.mkdir()
+        for output_id in _OUTPUT_IDS:
+            output_path = outside_study_output_dir / output_id
+            internal_study_output_dir.joinpath(output_id).rename(output_path)
+        return "outside_study", {}
+
+    # `V2` part
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
     for output_id in _OUTPUT_IDS:

@@ -14,6 +14,8 @@
 
 import BasicDialog, { type BasicDialogProps } from "@/components/dialogs/BasicDialog";
 import SelectSingle from "@/components/SelectSingle";
+import { getOutputs } from "@/services/api/studies/outputs";
+import type { Output } from "@/services/api/studies/outputs/types";
 import { Box, Button } from "@mui/material";
 import type { AxiosError } from "axios";
 import debug from "debug";
@@ -27,17 +29,15 @@ import {
   exportOutput as callExportOutput,
   downloadOutput,
   exportStudy,
-  getStudyOutputs,
   getStudySynthesis,
 } from "../../../../../../services/api/study";
 import {
   StudyOutputDownloadLevelDTO,
   StudyOutputDownloadType,
-  type StudySynthesis,
   type GenericInfo,
   type StudyMetadata,
-  type OutputDetails,
   type StudyOutputDownloadDTO,
+  type StudySynthesis,
 } from "../../../../../../types/types";
 import ExportFilter from "./ExportFilter";
 
@@ -72,7 +72,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
     },
   ];
   const [optionSelection, setOptionSelection] = useState<string>("exportWith");
-  const [outputList, setOutputList] = useState<GenericInfo[]>();
+  const [outputList, setOutputList] = useState<Output[]>();
   const [currentOutput, setCurrentOutput] = useState<string>();
   const [studySynthesis, setStudySynthesis] = useState<StudySynthesis>();
   const [filter, setFilter] = useState<StudyOutputDownloadDTO>({
@@ -134,10 +134,10 @@ export default function ExportModal(props: BasicDialogProps & Props) {
   useEffect(() => {
     (async () => {
       try {
-        const res = await getStudyOutputs(study.id);
+        const outputs = await getOutputs({ studyId: study.id });
         const tmpSynth = await getStudySynthesis(study.id);
-        setOutputList(res.map((o: OutputDetails) => ({ id: o.name, name: o.name })));
-        setCurrentOutput(res.length > 0 ? res[0].name : undefined);
+        setOutputList(outputs);
+        setCurrentOutput(outputs.length > 0 ? outputs[0].name : undefined);
         setStudySynthesis(tmpSynth);
       } catch (e) {
         logError(t("study.error.listOutputs"), study, e);
