@@ -25,7 +25,7 @@ from antares.study.version import StudyVersion
 
 from antarest.core.model import JSON
 from antarest.core.serde.ini_common import DUPLICATE_KEYS
-from antarest.core.serde.ini_reader import IniReader
+from antarest.core.serde.ini_reader import IniReader, IReader
 from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import extract_lines_from_archive, is_archive_format, read_file_from_archive
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
@@ -33,7 +33,6 @@ from antarest.study.business.model.common import FILTER_VALUES
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.reserve_definition_model import GLOBAL_PARAMETERS_SECTION
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6, STUDY_VERSION_9_2, STUDY_VERSION_10_0
@@ -59,6 +58,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import extract_filtering
+from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
 
 logger = logging.getLogger(__name__)
 
@@ -67,12 +67,13 @@ class FileType(Enum):
     TXT = "txt"
     SIMPLE_INI = "simple_ini"
     MULTI_INI = "multi_ini"
+    YAML = "yaml"
 
 
 def extract_data_from_archive(
     root: Path,
     posix_path: str,
-    reader: IniReader,
+    reader: IReader,
 ) -> dict[str, Any]:
     """
     Extract and process data from various types of files.
@@ -80,7 +81,7 @@ def extract_data_from_archive(
      Args:
           root: 7zip or ZIP file containing the study.
           posix_path: Relative path to the file to extract.
-          reader: IniReader object to use for processing the file.
+          reader: IReader object to use for processing the file.
 
     Returns:
         The content of the file, processed according to its type:
@@ -166,9 +167,13 @@ def _extract_data_from_file(
             except FileNotFoundError:
                 return []
 
-    elif file_type in {FileType.MULTI_INI, FileType.SIMPLE_INI}:
+    elif file_type in {FileType.MULTI_INI, FileType.SIMPLE_INI, FileType.YAML}:
+        if file_type == FileType.YAML:
+            reader: IReader = YAMLReader()
+        else:
+            reader = IniReader(multi_ini_keys)
+
         # Parse the file as a dictionary of keys/values, return an empty dictionary if missing.
-        reader = IniReader(multi_ini_keys)
         if is_archive:
             return extract_data_from_archive(root, posix_path, reader)
         else:
@@ -176,6 +181,10 @@ def _extract_data_from_file(
                 return reader.read(output_data_path)
             except FileNotFoundError:
                 return {}
+
+    elif file_type == FileType.YAML:
+        reader = YAMLReader()
+        return reader.read(output_data_path)
 
     else:  # pragma: no cover
         raise NotImplementedError(file_type)
@@ -536,23 +545,22 @@ def _parse_reserves(root: Path, area: str) -> list[str]:
     if version < STUDY_VERSION_10_0:
         return []
 
-    relpath = Path(f"input/reserves/{area}/reserves.ini")
+    relpath = Path(f"input/reserves/{area}/reserves.yml")
     config_dict: dict[str, Any] = _extract_data_from_file(
         root=root,
         inside_root_path=relpath,
         file_type=FileType.SIMPLE_INI,
     )
     reserve_ids = []
-    for section, values in config_dict.items():
-        if section.lower() == GLOBAL_PARAMETERS_SECTION:
-            continue
+    for obj in config_dict.get("reserves", []):
         try:
-            reserve = parse_reserve_definition(section, values)
+            reserve = parse_reserve_definition(obj)
+            reserve_ids.append(reserve.id)
         except ValueError as exc:
             config_path = root.joinpath(relpath)
-            logger.warning(f"Invalid reserve configuration: '{section}' in '{config_path}'", exc_info=exc)
+            logger.warning(f"Invalid reserve configuration in '{config_path}'", exc_info=exc)
             continue
-        reserve_ids.append(reserve.id)
+
     return reserve_ids
 
 
