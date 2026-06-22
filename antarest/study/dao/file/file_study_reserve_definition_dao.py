@@ -93,7 +93,10 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
 
     @override
     def reserve_definition_exists(self, area_id: str, reserve_id: str) -> bool:
-        return reserve_id in self.get_file_study().config.areas[area_id].reserves
+        try:
+            return reserve_id in self.get_file_study().config.areas[area_id].reserves
+        except KeyError:  # Happens if the area is not in the config
+            return False
 
     @override
     def save_reserve_definitions(self, data: dict[AreaId, list[ReserveDefinition]]) -> None:
