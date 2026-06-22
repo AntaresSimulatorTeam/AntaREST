@@ -66,7 +66,7 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
             data = file_study.tree.get(_area_reserves_path(area_id))
         except (ChildNotFoundError, KeyError):
             return []
-        return data
+        return data  # type: ignore
 
     @override
     def get_all_reserve_definitions(self) -> ReserveDefinitionsMapping:
