@@ -25,7 +25,7 @@ def upgrade() -> None:
         op.execute(text("UPDATE reserve_definition SET name = id"))
 
         # Alter the column to be non-nullable now that it's filled
-        op.alter_column('your_table_name', 'name', nullable=False)
+        batch_op.alter_column('name', nullable=False)
 
 def downgrade() -> None:
     with op.batch_alter_table("reserve_definition") as batch_op:
