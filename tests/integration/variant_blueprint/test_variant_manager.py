@@ -345,17 +345,23 @@ def test_comments(client: TestClient, admin_access_token: str, variant_id: str) 
 def test_recursive_variant_tree(client: TestClient, admin_access_token: str, base_study_id: str) -> None:
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
     parent_id = base_study_id
+    leaf_id = base_study_id
     for k in range(200):
         res = client.post(
-            f"/v1/studies/{base_study_id}/variants",
+            f"/v1/studies/{leaf_id}/variants",
             headers=admin_headers,
             params={"name": f"variant_{k}"},
         )
-        base_study_id = res.json()
+        leaf_id = res.json()
 
     # Asserts that we do not trigger a Recursive Exception
     res = client.get(f"/v1/studies/{parent_id}/variants", headers=admin_headers)
     assert res.status_code == 200, res.json()
+
+    # `from_root=true` from the deepest variant returns the same tree as querying the root.
+    res = client.get(f"/v1/studies/{leaf_id}/variants", params={"from_root": True}, headers=admin_headers)
+    assert res.status_code == 200, res.json()
+    assert res.json()["node"]["id"] == parent_id
 
 
 def test_outputs(client: TestClient, admin_access_token: str, variant_id: str, tmp_path: str) -> None:
