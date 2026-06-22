@@ -21,9 +21,10 @@ def upgrade() -> None:
         # First, create the column
         batch_op.add_column(sa.Column("name", sa.String(255), nullable=True))
 
-        # Update the 'name' column to match the 'id' column for all existing rows
-        op.execute(text("UPDATE reserve_definition SET name = id"))
+    # Update the 'name' column to match the 'id' column for all existing rows
+    op.execute(text("UPDATE reserve_definition SET name = reserve_id"))
 
+    with op.batch_alter_table("reserve_definition") as batch_op:
         # Alter the column to be non-nullable now that it's filled
         batch_op.alter_column('name', nullable=False)
 
