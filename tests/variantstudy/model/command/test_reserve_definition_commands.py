@@ -188,7 +188,7 @@ class TestRemoveReserveDefinitions:
 
         command = RemoveReserveDefinitions(
             area_id="paris",
-            reserve_ids=["R1"],
+            reserve_ids=["r1"],
             command_context=command_context,
             study_version=STUDY_VERSION_10_0,
         )
@@ -239,7 +239,7 @@ class TestRemoveReserveDefinitions:
             study_version=STUDY_VERSION_10_0,
         ).apply(dao_10_0)
 
-        reserve_id = ReserveDefinitionId("R1")
+        reserve_id = ReserveDefinitionId("r1")
         assert dao_10_0.get_all_reserve_needs().get("paris", {}).get(reserve_id) is not None
 
         command = RemoveReserveDefinitions(
