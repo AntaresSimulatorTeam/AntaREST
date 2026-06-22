@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 
 from antarest.core.interfaces.cache import ICache
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
+from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import create_raw_study, create_variant_study
 
 
@@ -115,3 +116,34 @@ class TestVariantStudyRepository:
 
         descendants = repository.get_all_descendants(parent_id=v1.id)
         assert {d.id for d in descendants} == {v1a.id, v1a1.id}
+
+    def test_get_root_ancestor_id(self, db_session: Session) -> None:
+        repository = VariantStudyRepository(cache_service=Mock(spec=ICache), session=db_session)
+
+        # Unknown id
+        assert repository.get_root_ancestor_id("nope") is None
+
+        # Standalone raw study: root is itself
+        raw_study = create_raw_study(name="Root")
+        db_session.add(raw_study)
+        db_session.commit()
+        assert repository.get_root_ancestor_id(raw_study.id) == raw_study.id
+
+        # Deep chain: root -> v1 -> v2 -> v3
+        v1 = create_variant_study(name="v1", parent_id=raw_study.id)
+        db_session.add(v1)
+        db_session.commit()
+        v2 = create_variant_study(name="v2", parent_id=v1.id)
+        db_session.add(v2)
+        db_session.commit()
+        v3 = create_variant_study(name="v3", parent_id=v2.id)
+        db_session.add(v3)
+        db_session.commit()
+
+        for study in (v1, v2, v3):
+            # must initialze here because a select is issued and we don't want the recorder to count it
+            study_id = study.id
+            raw_study_id = raw_study.id
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                assert repository.get_root_ancestor_id(study_id) == raw_study_id
+                assert len(db_recorder.sql_statements) == 1, str(db_recorder)
