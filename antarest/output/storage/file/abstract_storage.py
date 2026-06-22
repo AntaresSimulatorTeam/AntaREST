@@ -226,7 +226,8 @@ class AbstractFileOutputStorage(IOutputStorage):
         outputs_path = self._outputs_provider.get_outputs(study_id).outputs_path
         outputs_path.mkdir()
         for output in src_outputs_dir.iterdir():
-            output.rename(_output_path(outputs_path, output.name))
+            # `shutil.move` handles the case where `src` and `dst` are not on the same fs, which is the case in production.
+            shutil.move(src=output, dst=_output_path(outputs_path, output.name))
 
     @override
     def import_output(
