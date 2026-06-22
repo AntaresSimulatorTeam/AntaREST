@@ -7,7 +7,7 @@ Create Date: 2026-06-22 17:15:05.096474
 """
 from alembic import op
 import sqlalchemy as sa
-
+from sqlalchemy import text
 
 # revision identifiers, used by Alembic.
 revision = 'f50e7ed59478'
@@ -22,7 +22,7 @@ def upgrade() -> None:
         batch_op.add_column(sa.Column("name", sa.String(255), nullable=True))
 
         # Update the 'name' column to match the 'id' column for all existing rows
-        op.execute("UPDATE your_table_name SET name = id")
+        op.execute(text("UPDATE reserve_definition SET name = id"))
 
         # Alter the column to be non-nullable now that it's filled
         op.alter_column('your_table_name', 'name', nullable=False)
