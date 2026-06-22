@@ -100,14 +100,14 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
         file_study = self.get_file_study()
         for area_id, reserves in data.items():
             existing_reserves = self.get_all_reserve_definitions_for_area(area_id)
-            reserves_to_update = {r.id: r for r in reserves}
+            existing_ids = {r.id: r for r in existing_reserves}
 
             new_reserves = []
-            for reserve in existing_reserves:
-                if reserve.id not in reserves_to_update:
-                    new_reserves.append(reserve)
-                else:
-                    new_reserves.append(reserves_to_update.pop(reserve.id))
+            for reserve in reserves:
+                new_reserves.append(reserve)
+                existing_ids.pop(reserve.id, None)
+            for reserve in existing_ids.values():
+                new_reserves.append(reserve)
 
             # Update the files
             file_study.tree.save(serialize_reserve_definitions(new_reserves), _area_reserves_path(area_id))
