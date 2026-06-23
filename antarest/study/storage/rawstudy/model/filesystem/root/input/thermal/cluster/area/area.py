@@ -36,5 +36,5 @@ class InputThermalClustersArea(FolderNode):
     def build(self) -> TREE:
         children: TREE = {"list": InputThermalClustersAreaList(self.config.next_file("list.ini"))}
         if self.config.version >= STUDY_VERSION_10_0:
-            children["reserves"] = YAMLFileNode(self.config.next_file("reserve-participations.yaml"))
+            children["reserves-participations"] = YAMLFileNode(self.config.next_file("reserve-participations.yaml"))
         return children
