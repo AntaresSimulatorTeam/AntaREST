@@ -29,7 +29,7 @@ from pydantic import (
     model_validator,
 )
 from pydantic.alias_generators import to_camel
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, Sequence, String
+from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, Sequence, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
 
@@ -355,6 +355,26 @@ class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel
         description="The status of the launcher: 'SUCCESS' or 'FAILED'",
         title="Launcher Status",
     )
+
+
+class LauncherLoad(Base):
+    """
+    DTO representing the load of the SLURM cluster or local machine.
+
+    Attributes:
+        allocated_cpu_rate: The rate of allocated CPU, in range (0, 100).
+        cluster_load_rate: The rate of cluster load, in range (0, 100).
+        nb_queued_jobs: The number of queued jobs.
+        launcher_status: The status of the launcher: "SUCCESS" or "FAILED".
+    """
+
+    __tablename__ = "launcher_loads"
+
+    launcher_name: Mapped[str] = mapped_column(String(20), primary_key=True)
+    allocated_cpu_rate: Mapped[float] = mapped_column(Float)
+    cluster_load_rate: Mapped[float] = mapped_column(Float())
+    nb_queued_jobs: Mapped[int] = mapped_column(Integer())
+    launcher_status: Mapped[str] = mapped_column(String(100))
 
 
 class SolverPresets(AntaresBaseModel):
