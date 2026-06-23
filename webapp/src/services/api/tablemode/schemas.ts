@@ -13,7 +13,6 @@
  */
 
 import { uniqueArray } from "@/utils/zodUtils";
-import type { EnumLike } from "node_modules/zod/v4/core/util.cjs";
 import z from "zod";
 
 ////////////////////////////////////////////////////////////////
@@ -159,7 +158,7 @@ const stStorageAdditionalConstraintColumnsSchema = uniqueArray(
 
 function createTableModeSchemaForType<
   TType extends z.infer<typeof tableModeTypeSchema>,
-  TEnum extends EnumLike,
+  TEnum extends z.util.EnumLike,
 >(type: TType, columnsSchema: z.ZodArray<z.ZodEnum<TEnum>>) {
   return (
     z
@@ -182,7 +181,7 @@ function createTableModeSchemaForType<
 
 function createTableModeCreationSchemaForType<
   TType extends z.infer<typeof tableModeTypeSchema>,
-  TEnum extends EnumLike,
+  TEnum extends z.util.EnumLike,
 >(type: TType, columnsSchema: z.ZodArray<z.ZodEnum<TEnum>>) {
   return z
     .object({
@@ -199,7 +198,7 @@ function createTableModeCreationSchemaForType<
 
 function createTableModeUpdateSchemaForType<
   TType extends z.infer<typeof tableModeTypeSchema>,
-  TEnum extends EnumLike,
+  TEnum extends z.util.EnumLike,
 >(type: TType, columnsSchema: z.ZodArray<z.ZodEnum<TEnum>>) {
   return z
     .object({

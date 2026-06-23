@@ -38,7 +38,7 @@ function useTableMode() {
   });
 
   if (!tableModeId) {
-    throw new Error(t("route.noParameter", { param: "bindingConstraintId" }));
+    throw new Error(t("route.noParameter", { param: "tableModeId" }));
   }
 
   if (!tableMode) {
