@@ -184,12 +184,14 @@ class StudyConverter:
         self._new_dao.save_load(self._source_dao.get_all_load())
         self._new_dao.save_solar(self._source_dao.get_all_solar())
         self._new_dao.save_wind(self._source_dao.get_all_wind())
-        self._new_dao.save_reserves(self._source_dao.get_all_reserves())
         self._new_dao.save_misc_gen(self._source_dao.get_all_misc_gen())
 
-        # Reserves (v10.0+)
+        # Reserves
         if self._study_version >= STUDY_VERSION_10_0:
             self._convert_reserves()
+        else:
+            # Legacy reserves behavior
+            self._new_dao.save_reserves(self._source_dao.get_all_reserves())
 
         # Hydro
         self._convert_hydro()
@@ -247,13 +249,26 @@ class StudyConverter:
         self._new_dao.save_renewable_series(series_mapping)
 
     def _convert_reserves(self) -> None:
+        # Global parameters
         self._new_dao.save_reserves_global_parameters(self._source_dao.get_all_reserves_global_parameters())
+
+        # Reserve definitions
         reserve_definitions = self._source_dao.get_all_reserve_definitions()
         if reserve_definitions:
             self._new_dao.save_reserve_definitions(
                 {area_id: list(reserves.values()) for area_id, reserves in reserve_definitions.items()}
             )
             self._new_dao.save_reserve_needs(self._source_dao.get_all_reserve_needs())
+
+        # Thermal certifications
+        thermal_certifications = self._source_dao.get_all_thermal_reserve_certifications()
+        if thermal_certifications:
+            self._new_dao.save_thermal_reserve_certifications(
+                {
+                    area_id: {thermal_id: list(by_reserve.values()) for thermal_id, by_reserve in by_cluster.items()}
+                    for area_id, by_cluster in thermal_certifications.items()
+                }
+            )
 
     def _convert_short_term_storages(
         self, storages: dict[str, dict[str, STStorage]], constraints: STStorageAdditionalConstraintsMap
