@@ -549,7 +549,7 @@ def _parse_reserves(root: Path, area: str) -> list[str]:
     config_dict: dict[str, Any] = _extract_data_from_file(
         root=root,
         inside_root_path=relpath,
-        file_type=FileType.SIMPLE_INI,
+        file_type=FileType.YAML,
     )
     reserve_ids = []
     for obj in config_dict.get("reserves", []):
