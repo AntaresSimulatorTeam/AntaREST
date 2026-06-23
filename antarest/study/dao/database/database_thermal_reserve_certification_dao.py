@@ -96,7 +96,7 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
         if row:
             return _convert_row_to_model(row)
 
-        self._raise_the_right_thermal_reserve_exception({area_id: {thermal_id: {ReserveDefinitionId(reserve_id): None}}})
+        self._raise_the_right_thermal_reserve_exception({area_id: {thermal_id: {ReserveDefinitionId(reserve_id): ThermalReserveCertification()}}})
 
     @override
     def thermal_reserve_certification_exists(self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId) -> bool:
@@ -143,7 +143,7 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
         self._db_session.commit()
 
     def _raise_the_right_thermal_reserve_exception(
-        self, data: dict[AreaId, dict[ThermalId, dict[ReserveDefinitionId, ThermalReserveCertification | None]]], exc: IntegrityError | None = None
+        self, data: dict[AreaId, dict[ThermalId, dict[ReserveDefinitionId, ThermalReserveCertification]]], exc: IntegrityError | None = None
     ) -> NoReturn:
         # Checks if some areas are missing
         existing_ids = set(self.get_impl().get_all_area_ids())
@@ -169,7 +169,7 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
                     invalid_reserves_dict[area_id] = invalid_reserves
 
         if invalid_reserves_dict:
-            raise ReserveDefinitionsNotFound(invalid_reserves_dict)
+            raise ReserveDefinitionsNotFound(invalid_reserves_dict)  # type: ignore
 
         # All reserves exist. It means that the DB table does not contain the information.
         raise ValueError("One of the thermal reserve certification table is not filled as it should") from exc
