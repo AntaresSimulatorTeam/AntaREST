@@ -149,6 +149,11 @@ class ReserveDefinitionNotFound(HTTPException):
         msg = f"Reserve definition '{reserve_id}' not found in area '{area_id}'"
         super().__init__(HTTPStatus.NOT_FOUND, msg)
 
+class ReserveDefinitionsNotFound(HTTPException):
+    def __init__(self, invalid_reserve_ids: dict[str, set[str]]):
+        msg = f"Reserves not found: {invalid_reserve_ids}"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
 
 # ============================================================
 # Duplicate (409)
