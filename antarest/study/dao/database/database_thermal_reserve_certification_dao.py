@@ -91,7 +91,7 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
         return {row.reserve_id: _convert_row_to_model(row) for row in rows}
 
     @override
-    def get_thermal_reserve_certification(self, area_id: AreaId, thermal_id: ThermalId, reserve_id: str) -> ThermalReserveCertification:
+    def get_thermal_reserve_certification(self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId) -> ThermalReserveCertification:
         row = self._db_session.execute(self._select_one(area_id, thermal_id, reserve_id)).fetchone()
         if row:
             return _convert_row_to_model(row)
@@ -99,7 +99,7 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
         self._raise_the_right_thermal_reserve_exception({area_id: {thermal_id: {ReserveDefinitionId(reserve_id): None}}})
 
     @override
-    def thermal_reserve_certification_exists(self, area_id: AreaId, thermal_id: ThermalId, reserve_id: str) -> bool:
+    def thermal_reserve_certification_exists(self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId) -> bool:
         return self._db_session.execute(self._select_one(area_id, thermal_id, reserve_id)).fetchone() is not None
 
     @override

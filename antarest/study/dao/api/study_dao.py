@@ -906,10 +906,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
 
     @override
     def get_thermal_reserve_certification(self, area_id: AreaId, thermal_id: ThermalId,
-                                          reserve_id: str) -> ThermalReserveCertification:
+                                          reserve_id: ReserveDefinitionId) -> ThermalReserveCertification:
         return self._adaptee.get_thermal_reserve_certification(area_id, thermal_id, reserve_id)
 
 
     @override
-    def thermal_reserve_certification_exists(self, area_id: AreaId, thermal_id: ThermalId, reserve_id: str) -> bool:
+    def thermal_reserve_certification_exists(self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId) -> bool:
         return self._adaptee.thermal_reserve_certification_exists(area_id, thermal_id, reserve_id)

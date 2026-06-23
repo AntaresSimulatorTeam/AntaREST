@@ -97,7 +97,7 @@ from antarest.study.dao.common import (
     ThermalSeriesMapping,
     XpansionCapacitiesMapping,
     XpansionConstraintsMapping,
-    XpansionWeightsMapping,
+    XpansionWeightsMapping, ThermalId,
 )
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import StudyMetadataUpdate
@@ -1710,18 +1710,16 @@ class InMemoryStudyDao(StudyDao):
     @override
     def get_all_thermal_reserve_certifications_for_cluster(
         self, area_id: str, thermal_id: str
-    ) -> Sequence[ThermalReserveCertification]:
-        if area_id not in self.get_all_area_ids():
-            raise AreaNotFound(area_id)
-        return [
-            certification
-            for key, certification in self._thermal_reserve_certifications.items()
-            if key.area_id == area_id and key.thermal_id == thermal_id
-        ]
+    ) -> dict[ReserveDefinitionId, ThermalReserveCertification]:
+        result= {}
+        for key, certification in self._thermal_reserve_certifications.items():
+            if key.area_id == area_id and key.thermal_id == thermal_id:
+                result[key.reserve_id] = certification
+        return result
 
     @override
     def get_thermal_reserve_certification(
-        self, area_id: str, thermal_id: str, reserve_id: str
+        self, area_id: str, thermal_id: str, reserve_id: ReserveDefinitionId
     ) -> ThermalReserveCertification:
         if area_id not in self.get_all_area_ids():
             raise AreaNotFound(area_id)
@@ -1733,7 +1731,7 @@ class InMemoryStudyDao(StudyDao):
             raise ThermalReserveCertificationNotFound(area_id, thermal_id, reserve_id) from exc
 
     @override
-    def thermal_reserve_certification_exists(self, area_id: str, thermal_id: str, reserve_id: str) -> bool:
+    def thermal_reserve_certification_exists(self, area_id: str, thermal_id: str, reserve_id: ReserveDefinitionId) -> bool:
         if area_id not in self.get_all_area_ids():
             return False
         return (
@@ -1744,14 +1742,12 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_thermal_reserve_certifications(
         self,
-        data: dict[AreaId, dict[str, list[ThermalReserveCertification]]],
+        data: dict[AreaId, dict[ThermalId, dict[ReserveDefinitionId, ThermalReserveCertification]]],
     ) -> None:
         for area_id, by_cluster in data.items():
-            if area_id not in self.get_all_area_ids():
-                raise AreaNotFound(area_id)
-            for thermal_id, certifications in by_cluster.items():
-                for certification in certifications:
-                    key = thermal_reserve_certification_key(area_id, thermal_id, certification.id)
+            for thermal_id, reserves_dict in by_cluster.items():
+                for reserve_id, certification in reserves_dict.items():
+                    key = thermal_reserve_certification_key(area_id, thermal_id, reserve_id)
                     self._thermal_reserve_certifications[key] = certification
 
     @override

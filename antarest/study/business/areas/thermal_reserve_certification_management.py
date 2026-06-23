@@ -33,7 +33,7 @@ class ThermalReserveCertificationsManager:
     def get_certification(
         self, study: StudyInterface, area_id: str, thermal_id: str, reserve_id: str
     ) -> ThermalReserveCertification:
-        return study.get_study_dao().get_thermal_reserve_certification(area_id, thermal_id, reserve_id)
+        return study.get_study_dao().get_thermal_reserve_certification(area_id, thermal_id, ReserveDefinitionId(reserve_id))
 
     def create_certification(
         self,

@@ -263,12 +263,7 @@ class StudyConverter:
         # Thermal certifications
         thermal_certifications = self._source_dao.get_all_thermal_reserve_certifications()
         if thermal_certifications:
-            self._new_dao.save_thermal_reserve_certifications(
-                {
-                    area_id: {thermal_id: list(by_reserve.values()) for thermal_id, by_reserve in by_cluster.items()}
-                    for area_id, by_cluster in thermal_certifications.items()
-                }
-            )
+            self._new_dao.save_thermal_reserve_certifications(thermal_certifications)
 
     def _convert_short_term_storages(
         self, storages: dict[str, dict[str, STStorage]], constraints: STStorageAdditionalConstraintsMap

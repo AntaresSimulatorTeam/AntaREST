@@ -44,6 +44,8 @@ from antarest.study.dao.database.database_st_storage_dao import DatabaseStStorag
 from antarest.study.dao.database.database_study_settings_dao import DatabaseStudySettingsDao
 from antarest.study.dao.database.database_thematic_trimming_dao import DatabaseThematicTrimmingDao
 from antarest.study.dao.database.database_thermal_dao import DatabaseThermalDao
+from antarest.study.dao.database.database_thermal_reserve_certification_dao import \
+    DatabaseThermalReserveCertificationDao
 from antarest.study.dao.database.database_user_resources import DatabaseUserResourcesDao
 from antarest.study.dao.database.database_xpansion_dao import DatabaseXpansionDao
 from antarest.study.dao.database.models.comments import COMMENTS_TABLE
@@ -79,6 +81,7 @@ class DatabaseStudyDao(
     DatabaseBindingConstraintDao,
     DatabaseReservesGlobalParametersDao,
     DatabaseReserveDefinitionDao,
+    DatabaseThermalReserveCertificationDao,
 ):
     """
     Database implementation of StudyDao.
