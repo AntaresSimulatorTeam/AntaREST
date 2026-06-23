@@ -1714,7 +1714,7 @@ class InMemoryStudyDao(StudyDao):
         result= {}
         for key, certification in self._thermal_reserve_certifications.items():
             if key.area_id == area_id and key.thermal_id == thermal_id:
-                result[key.reserve_id] = certification
+                result[ReserveDefinitionId(key.reserve_id)] = certification
         return result
 
     @override
