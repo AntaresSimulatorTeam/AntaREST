@@ -24,6 +24,7 @@ from antarest.core.exceptions import (
     LinkNotFound,
     ReferencedObjectDeletionNotAllowed,
     ReserveDefinitionNotFound,
+    ThermalReserveCertificationNotFound,
 )
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.utils import remove_first_match
@@ -68,6 +69,7 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
@@ -91,6 +93,7 @@ from antarest.study.dao.common import (
     StStorageConstraintSeriesMapping,
     StStorageId,
     StStorageSeriesMapping,
+    ThermalReserveCertificationsMapping,
     ThermalSeriesMapping,
     XpansionCapacitiesMapping,
     XpansionConstraintsMapping,
@@ -133,6 +136,12 @@ class AdditionalConstraintKey:
     storage_id: str
     constraint_id: str
 
+@dataclass(frozen=True)
+class ThermalReserveCertificationKey:
+    area_id: str
+    thermal_id: str
+    reserve_id: str
+
 
 def link_key(area1_id: str, area2_id: str) -> LinkKey:
     area1_id, area2_id = sorted((area1_id, area2_id))
@@ -150,6 +159,8 @@ def reserve_key(area_id: str, reserve_id: str) -> ReserveKey:
 def additional_constraint_key(area_id: str, storage_id: str, constraint_id: str) -> AdditionalConstraintKey:
     return AdditionalConstraintKey(area_id, storage_id, constraint_id)
 
+def thermal_reserve_certification_key(area_id: str, thermal_id: str, reserve_id: str) -> ThermalReserveCertificationKey:
+    return ThermalReserveCertificationKey(area_id, thermal_id, reserve_id)
 
 class InMemoryStudyDao(StudyDao):
     """
@@ -271,6 +282,8 @@ class InMemoryStudyDao(StudyDao):
         self._solar: dict[str, str] = {}
         # Wind
         self._wind: dict[str, str] = {}
+        # Thermal Reserve Certifications
+        self._thermal_reserve_certifications: dict[ThermalReserveCertificationKey, ThermalReserveCertification] = {}
 
     @override
     def get_study_id(self) -> str:
@@ -1684,3 +1697,74 @@ class InMemoryStudyDao(StudyDao):
     def save_wind(self, series: AreaSeriesMapping) -> None:
         for area_id, series_id in series.items():
             self._wind[area_id] = series_id
+
+    @override
+    def get_all_thermal_reserve_certifications(self) -> ThermalReserveCertificationsMapping:
+        result: ThermalReserveCertificationsMapping = {}
+        for key, certification in self._thermal_reserve_certifications.items():
+            result.setdefault(key.area_id, {}).setdefault(key.thermal_id, {})[ReserveDefinitionId(key.reserve_id)] = (
+                certification
+            )
+        return result
+
+    @override
+    def get_all_thermal_reserve_certifications_for_cluster(
+        self, area_id: str, thermal_id: str
+    ) -> Sequence[ThermalReserveCertification]:
+        if area_id not in self.get_all_area_ids():
+            raise AreaNotFound(area_id)
+        return [
+            certification
+            for key, certification in self._thermal_reserve_certifications.items()
+            if key.area_id == area_id and key.thermal_id == thermal_id
+        ]
+
+    @override
+    def get_thermal_reserve_certification(
+        self, area_id: str, thermal_id: str, reserve_id: str
+    ) -> ThermalReserveCertification:
+        if area_id not in self.get_all_area_ids():
+            raise AreaNotFound(area_id)
+        try:
+            return self._thermal_reserve_certifications[
+                thermal_reserve_certification_key(area_id, thermal_id, reserve_id)
+            ]
+        except KeyError as exc:
+            raise ThermalReserveCertificationNotFound(area_id, thermal_id, reserve_id) from exc
+
+    @override
+    def thermal_reserve_certification_exists(self, area_id: str, thermal_id: str, reserve_id: str) -> bool:
+        if area_id not in self.get_all_area_ids():
+            return False
+        return (
+            thermal_reserve_certification_key(area_id, thermal_id, reserve_id)
+            in self._thermal_reserve_certifications
+        )
+
+    @override
+    def save_thermal_reserve_certifications(
+        self,
+        data: dict[AreaId, dict[str, list[ThermalReserveCertification]]],
+    ) -> None:
+        for area_id, by_cluster in data.items():
+            if area_id not in self.get_all_area_ids():
+                raise AreaNotFound(area_id)
+            for thermal_id, certifications in by_cluster.items():
+                for certification in certifications:
+                    key = thermal_reserve_certification_key(area_id, thermal_id, certification.id)
+                    self._thermal_reserve_certifications[key] = certification
+
+    @override
+    def delete_thermal_reserve_certifications(
+        self,
+        area_id: AreaId,
+        thermal_id: str,
+        reserve_ids: Sequence[ReserveDefinitionId],
+    ) -> None:
+        for rid in reserve_ids:
+            try:
+                del self._thermal_reserve_certifications[
+                    thermal_reserve_certification_key(area_id, thermal_id, rid)
+                ]
+            except KeyError as exc:
+                raise ThermalReserveCertificationNotFound(area_id, thermal_id, rid) from exc
