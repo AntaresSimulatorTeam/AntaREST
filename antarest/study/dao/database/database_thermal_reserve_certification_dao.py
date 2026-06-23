@@ -13,7 +13,7 @@ from abc import abstractmethod
 from collections.abc import Sequence
 from typing import Any, TYPE_CHECKING, NoReturn
 
-from sqlalchemy import Row, Select, delete, select
+from sqlalchemy import Row, Select, delete, select, CursorResult
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
@@ -123,7 +123,24 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
     @override
     def delete_thermal_reserve_certifications(self, area_id: AreaId, thermal_id: ThermalId,
                                               reserve_ids: list[ReserveDefinitionId]) -> None:
-        raise NotImplementedError()
+        if not reserve_ids:
+            return
+
+        result = self._db_session.execute(
+            delete(_TABLE).where(
+                (_TABLE.c.study_id == self._study_id)
+                & (_TABLE.c.area_id == area_id)
+                & (_TABLE.c.thermal_id == thermal_id)
+                & (_TABLE.c.reserve_id.in_(reserve_ids))
+            )
+        )
+        assert isinstance(result, CursorResult)
+        if result.rowcount < len(reserve_ids):
+            existing_reserve_ids = set(self.get_all_thermal_reserve_certifications_for_cluster(area_id, thermal_id))
+            for rid in reserve_ids:
+                if rid not in existing_reserve_ids:
+                    raise ThermalReserveCertificationNotFound(area_id, thermal_id, reserve_id=rid)
+        self._db_session.commit()
 
     def _raise_the_right_thermal_reserve_exception(
         self, data: dict[AreaId, dict[ThermalId, dict[ReserveDefinitionId, ThermalReserveCertification | None]]], exc: IntegrityError | None = None
