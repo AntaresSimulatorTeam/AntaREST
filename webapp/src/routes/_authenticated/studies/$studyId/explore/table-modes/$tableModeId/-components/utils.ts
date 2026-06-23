@@ -37,7 +37,7 @@ const TABLE_MODE_TYPES = [
   "st-storages-additional-constraints",
 ] as const satisfies TableModeType[];
 
-export const TABLE_MODE_COLUMNS_BY_TYPE = {
+const TABLE_MODE_COLUMNS_BY_TYPE = {
   areas: [
     "nonDispatchPower",
     "dispatchHydroPower",
@@ -156,6 +156,5 @@ export const tableModeTypeOptions = TABLE_MODE_TYPES.map((type) => ({
 ////////////////////////////////////////////////////////////////
 
 export function getTableColumnsForType<T extends TableModeType>(type: T) {
-  // Arrays have a numeric index signature because of `as const`
   return TABLE_MODE_COLUMNS_BY_TYPE[type];
 }

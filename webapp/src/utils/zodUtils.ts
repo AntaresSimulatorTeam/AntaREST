@@ -38,3 +38,9 @@ import { z } from "zod";
 export function nullishToOptional<T extends z.ZodTypeAny>(schema: T) {
   return schema.nullish().transform((v) => v ?? undefined);
 }
+
+export function uniqueArray<T extends z.ZodTypeAny>(schema: T) {
+  return z.array(schema).refine((values) => new Set(values).size === values.length, {
+    error: "Array must contain unique values",
+  });
+}

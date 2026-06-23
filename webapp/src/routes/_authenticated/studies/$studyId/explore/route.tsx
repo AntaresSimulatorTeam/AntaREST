@@ -64,10 +64,10 @@ function StudyExploreLayout() {
           }),
         },
         {
-          id: "tablemode",
-          label: t("study.tableMode"),
+          id: "table-modes",
+          label: t("study.tableModes"),
           linkOptions: linkOptions({
-            to: "/studies/$studyId/explore/tablemode",
+            to: "/studies/$studyId/explore/table-modes",
             params,
           }),
         },

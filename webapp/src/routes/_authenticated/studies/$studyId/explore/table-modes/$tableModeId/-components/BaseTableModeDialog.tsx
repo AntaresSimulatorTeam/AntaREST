@@ -36,22 +36,13 @@ export interface TableModeFormDialogProps
 }
 
 function TableModeFormDialog(props: TableModeFormDialogProps) {
-  const { title, titleIcon, defaultValues, onSubmit, onSubmitSuccessful, onCancel } = props;
+  const { title, titleIcon, defaultValues, onSubmit, onCancel } = props;
   const { t } = useTranslation();
 
   const { data: existingNames } = useSuspenseQuery({
     ...tableModeQueries.list(),
     select: getNames,
   });
-
-  ////////////////////////////////////////////////////////////////
-  // Event Handlers
-  ////////////////////////////////////////////////////////////////
-
-  const handleSubmitSuccessful: TableModeFormDialogProps["onSubmitSuccessful"] = (...args) => {
-    onSubmitSuccessful?.(...args);
-    onCancel();
-  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -64,7 +55,7 @@ function TableModeFormDialog(props: TableModeFormDialogProps) {
       titleIcon={titleIcon}
       config={{ defaultValues }}
       onSubmit={onSubmit}
-      onSubmitSuccessful={handleSubmitSuccessful}
+      onSubmitSuccessful={onCancel}
       onCancel={onCancel}
     >
       {({ control, setValue, watch }) => (
@@ -80,6 +71,7 @@ function TableModeFormDialog(props: TableModeFormDialogProps) {
                 editedValue: defaultValues.name,
               }),
             }}
+            disabled={!!defaultValues.name}
           />
           <SelectFE
             label={t("study.type")}

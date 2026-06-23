@@ -15,10 +15,7 @@
 import DataGridSkeleton from "@/components/DataGridSkeleton";
 import usePromise from "@/hooks/usePromise";
 import { getTableModeData, setTableModeData } from "@/services/api/studies/tableMode";
-import type {
-  TableModeData,
-  TableModeData as TableModeDataForm,
-} from "@/services/api/studies/tableMode/types";
+import type { TableModeData } from "@/services/api/studies/tableMode/types";
 import type { Study } from "@/services/api/studies/types";
 import type { TableModeColumnsForType, TableModeType } from "@/services/api/tablemode/types";
 import type { GridColumn } from "@glideapps/glide-data-grid";
@@ -86,7 +83,7 @@ function TableModeDataForm<T extends TableModeType>({
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = (data: SubmitHandlerPlus<TableModeDataForm>) => {
+  const handleSubmit = (data: SubmitHandlerPlus<TableModeData>) => {
     return setTableModeData({ studyId, tableType: type, data: data.dirtyValues });
   };
 
