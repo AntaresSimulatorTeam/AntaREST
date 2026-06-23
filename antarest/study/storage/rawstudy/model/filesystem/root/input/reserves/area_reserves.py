@@ -15,7 +15,7 @@ from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderN
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import default_scenario_hourly
-from antarest.study.storage.rawstudy.model.filesystem.root.input.reserves.reserves_ini import InputReservesIni
+from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLFileNode
 
 
 class InputReservesAreaFolder(FolderNode):
@@ -23,7 +23,7 @@ class InputReservesAreaFolder(FolderNode):
     def build(self) -> TREE:
         area_id = self.config.path.name
         tree: TREE = {
-            "reserves": InputReservesIni(self.config.next_file("reserves.ini")),
+            "reserves": YAMLFileNode(self.config.next_file("reserves.yml")),
         }
         for reserve_id in self.config.areas[area_id].reserves:
             tree[reserve_id] = InputSeriesMatrix(

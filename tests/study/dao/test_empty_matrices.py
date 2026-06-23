@@ -218,9 +218,10 @@ def test_empty_matrices(dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixSer
 
 def test_empty_reserve_need_matrix(dao_10_0: StudyDao, matrix_service: ISimpleMatrixService) -> None:
     area_id = "paris"
-    reserve_id = "R1"
+    reserve_name = "R1"
+    reserve_id = "r1"
     save_area(dao_10_0, area_id)
-    dao_10_0.save_reserve_definitions({area_id: [build_reserve_definition(reserve_id)]})
+    dao_10_0.save_reserve_definitions({area_id: [build_reserve_definition(reserve_name)]})
 
     null_matrix_id = matrix_service.create(pl.DataFrame(orient="row"))
     dao_10_0.save_reserve_needs({area_id: {ReserveDefinitionId(reserve_id): null_matrix_id}})

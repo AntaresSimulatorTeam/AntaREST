@@ -208,9 +208,9 @@ def dao_860_and_matrix_service(
         return build_fs_dao(db_session, STUDY_VERSION_8_6, command_context, core_cache, tmp_path)
 
 
-def build_reserve_definition(reserve_id: str) -> ReserveDefinition:
+def build_reserve_definition(reserve_name: str) -> ReserveDefinition:
     return ReserveDefinition(
-        id=reserve_id,
+        name=reserve_name,
         type=ReserveType.UP,
         failure_cost=10.0,
         spillage_cost=5.0,

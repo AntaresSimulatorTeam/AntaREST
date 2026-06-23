@@ -14,9 +14,9 @@ from antarest.study.dao.api.study_dao import StudyDao
 from tests.study.dao.utils import save_area
 
 
-def _reserve(id_: str, reserve_type: ReserveType = ReserveType.UP, **overrides) -> ReserveDefinition:
+def _reserve(name: str, reserve_type: ReserveType = ReserveType.UP, **overrides) -> ReserveDefinition:
     base = dict(
-        id=id_,
+        name=name,
         type=reserve_type,
         failure_cost=10.0,
         spillage_cost=5.0,
