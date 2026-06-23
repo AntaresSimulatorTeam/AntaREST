@@ -79,8 +79,6 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
 
             ini_content = self._get_all_certifications_for_area_as_ini_content(area_id)
 
-
-
             for k, participation in enumerate(ini_content.get("participations", [])):
                 thermal_id = transform_name_to_id(participation["cluster"])
                 if thermal_id in thermal_dict:
