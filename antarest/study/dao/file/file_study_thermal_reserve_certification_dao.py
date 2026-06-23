@@ -9,8 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import copy
 from abc import abstractmethod, ABC
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
 
@@ -19,8 +20,10 @@ from antarest.study.business.model.reserve_definition_model import ReserveDefini
 from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
 from antarest.study.dao.api.thermal_reserve_certification_dao import ThermalReserveCertificationDao
 from antarest.study.dao.common import AreaId, ThermalId, ThermalReserveCertificationsMapping
+from antarest.study.dao.file.common import check_area_exists
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal_reserve_certifications import \
-    parse_thermal_reserves_certifications
+    parse_thermal_reserves_certifications, serialize_thermal_reserve_certification
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 if TYPE_CHECKING:
@@ -69,8 +72,45 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
             self,
             data: dict[AreaId, dict[ThermalId, dict[ReserveDefinitionId, ThermalReserveCertification]]],
     ) -> None:
-        raise NotImplementedError()
+        file_study = self.get_file_study()
 
+        for area_id, thermal_dict in data.items():
+            check_area_exists(file_study.config, area_id)
+
+            ini_content = self._get_all_certifications_for_area_as_ini_content(area_id)
+
+
+
+            for k, participation in enumerate(ini_content.get("participations", [])):
+                thermal_id = transform_name_to_id(participation["cluster"])
+                if thermal_id in thermal_dict:
+                    # Empties `thermal_dict` to only keep in the end the certifications that are not already in the file
+                    reserves_dict = thermal_dict.pop(thermal_id)
+                    new_certifications = []
+                    for certification in participation["certifications"]:
+                        reserve_id = ReserveDefinitionId(transform_name_to_id(certification["reserve"]))
+                        if reserve_id not in reserves_dict:
+                            # Nothing to do
+                            new_certifications.append(certification)
+                        else:
+                            # Add the new certification
+                            data = serialize_thermal_reserve_certification(reserve_id, reserves_dict[reserve_id])
+                            new_certifications.append(data)
+                    # Replace the old certifications
+                    ini_content["participations"][k] = new_certifications
+
+            # Handle the remaining thermals which did not exist in the file.
+            new_thermals = []
+            for thermal_id, reserves_dict in thermal_dict.items():
+                new_certifications = []
+                for reserve_id, certification in reserves_dict.items():
+                    new_certifications.append(serialize_thermal_reserve_certification(reserve_id, certification))
+                new_thermals.append({"cluster": thermal_id, "certifications": new_certifications})
+
+            ini_content.setdefault("participations", []).extend(new_thermals)
+
+            # Save the new content
+            file_study.tree.save(ini_content, _thermal_reserve_path(area_id))
 
     @override
     def delete_thermal_reserve_certifications(self, area_id: AreaId, thermal_id: ThermalId,
@@ -78,5 +118,8 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
         raise NotImplementedError()
 
     def _get_all_certifications_for_area(self, area_id: AreaId) -> dict[ThermalId, dict[ReserveDefinitionId, ThermalReserveCertification]]:
-        data = self.get_file_study().tree.get(_thermal_reserve_path(area_id))
+        data = self._get_all_certifications_for_area_as_ini_content(area_id)
         return parse_thermal_reserves_certifications(data)
+
+    def _get_all_certifications_for_area_as_ini_content(self, area_id: AreaId) -> dict[str, Any]:
+        return self.get_file_study().tree.get(_thermal_reserve_path(area_id))
