@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
 
 def _thermal_reserve_path(area_id: str) -> list[str]:
-    return ["input", "thermal", "clusters", area_id, "reserves-participations"]
+    return ["input", "thermal", "clusters", area_id, "reserve-participations"]
 
 
 class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, ABC):
@@ -48,20 +48,20 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
     def get_all_thermal_reserve_certifications(self) -> ThermalReserveCertificationsMapping:
         result = {}
         for area in self.get_file_study().config.areas:
-            result[area] = self._get_all_certifications_for_area(area)
+            result[area] = self.get_all_certifications_for_area(area)
         return result
 
     @override
     def get_all_thermal_reserve_certifications_for_cluster(
         self, area_id: AreaId, thermal_id: ThermalId
     ) -> dict[ReserveDefinitionId, ThermalReserveCertification]:
-        return self._get_all_certifications_for_area(area_id).get(thermal_id, {})
+        return self.get_all_certifications_for_area(area_id).get(thermal_id, {})
 
     @override
     def get_thermal_reserve_certification(
         self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId
     ) -> ThermalReserveCertification:
-        certifications = self._get_all_certifications_for_area(area_id).get(thermal_id, {})
+        certifications = self.get_all_certifications_for_area(area_id).get(thermal_id, {})
         if reserve_id in certifications:
             return certifications[reserve_id]
 
@@ -71,7 +71,7 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
     def thermal_reserve_certification_exists(
         self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId
     ) -> bool:
-        return reserve_id in self._get_all_certifications_for_area(area_id).get(thermal_id, {})
+        return reserve_id in self.get_all_certifications_for_area(area_id).get(thermal_id, {})
 
     @override
     def save_thermal_reserve_certifications(self, data: ThermalReserveCertificationsMapping) -> None:
@@ -119,7 +119,7 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
     ) -> None:
         raise NotImplementedError()
 
-    def _get_all_certifications_for_area(
+    def get_all_certifications_for_area(
         self, area_id: AreaId
     ) -> dict[ThermalId, dict[ReserveDefinitionId, ThermalReserveCertification]]:
         data = self._get_all_certifications_for_area_as_ini_content(area_id)

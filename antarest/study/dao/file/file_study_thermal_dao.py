@@ -220,6 +220,8 @@ class FileStudyThermalDao(ThermalDao, ABC):
             study_data.tree.delete(path)
 
         self._remove_cluster_from_scenario_builder(study_data, area_id, cluster_id)
+        self._remove_thermal_reserve_certifications(area_id, cluster_id)
+
         # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
         remove_first_match(study_data.config.areas[area_id].thermals, lambda c: c.id.lower() == cluster_id)
 
@@ -300,3 +302,14 @@ class FileStudyThermalDao(ThermalDao, ABC):
                     del ruleset[key]
 
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
+
+    def _remove_thermal_reserve_certifications(self, area_id: str, thermal_id: str) -> None:
+        """
+        # Cascade: Remove any reserve certification attached to the deleted cluster.
+        # Avoids leaving orphan sections in `input/thermal/clusters/<area>/reserve-participations.yaml`.
+        """
+        all_area_certifications = self.get_impl().get_all_certifications_for_area(area_id)
+        if thermal_id not in all_area_certifications:
+            return
+        del all_area_certifications[thermal_id]
+        self.get_impl().save_thermal_reserve_certifications({area_id: all_area_certifications})
