@@ -118,13 +118,11 @@ class FileStudyThermalDao(ThermalDao, ABC):
 
     @override
     def thermal_exists(self, area_id: str, thermal_id: str) -> bool:
-        file_study = self.get_file_study()
-        path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=thermal_id)
-        try:
-            file_study.tree.get(path.split("/"), depth=1)
-            return True
-        except (KeyError, ChildNotFoundError):
-            return False
+        config = self.get_file_study().config
+        if area_id in config.areas:
+            thermals = config.areas[area_id].thermals
+            return thermal_id.lower() in {th.id.lower() for th in thermals}
+        return False
 
     @override
     def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pl.DataFrame:
