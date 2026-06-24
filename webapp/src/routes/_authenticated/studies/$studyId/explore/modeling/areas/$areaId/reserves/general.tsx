@@ -14,9 +14,11 @@
 
 import GroupedDataTable from "@/components/GroupedDataTable";
 import type { RowData } from "@/components/GroupedDataTable/types";
+import usePromise from "@/hooks/usePromise";
 import { reserveMutations } from "@/queries/reserves/mutations";
 import { reserveQueries } from "@/queries/reserves/queries";
 import type { Reserve } from "@/services/api/studies/areas/reserves/types";
+import { getOptimization } from "@/services/api/studies/config/optimization";
 import { Chip } from "@mui/material";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -73,6 +75,13 @@ function ReservesGeneral() {
   const { t } = useTranslation();
   const { studyId, areaId } = Route.useParams();
   const queryClient = useQueryClient();
+
+  // Reserves are editable only when enabled in the optimization configuration
+  // ("includeReserves"). Otherwise the table is shown in read-only mode.
+  const { data: showReserves } = usePromise(
+    () => getOptimization({ studyId }).then((o) => o.includeReserves),
+    [studyId],
+  );
 
   const { queryKey: listQueryKey } = reserveQueries.list(studyId, areaId);
 
@@ -144,6 +153,7 @@ function ReservesGeneral() {
       key={`${studyId}-${areaId}`}
       data={rows}
       columns={columns}
+      readOnly={!showReserves}
       onCreate={handleCreate}
       renderCreateDialog={({ open, onClose, onSubmit, existingNames }) => (
         <CreateReserveDialog
