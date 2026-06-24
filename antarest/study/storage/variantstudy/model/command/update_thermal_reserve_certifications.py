@@ -11,22 +11,18 @@
 # This file is part of the Antares project.
 
 
-from antarest.core.exceptions import InvalidFieldForVersionError, AreaNotFound
-from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
-from antarest.study.business.model.thermal_reserve_certification_model import (
-    ThermalReserveCertification,
-    ThermalReserveCertificationCreation,
-    create_thermal_reserve_certification, ThermalReserveCertificationUpdate, ThermalReserveCertificationUpdates,
-    update_thermal_reserve_certification,
-)
-from antarest.study.dao.common import AreaId, ThermalId, ThermalReserveCertificationsMapping
-
-from typing import Self, Any
+from typing import Any, Self
 
 from pydantic import model_validator
 from typing_extensions import override
 
+from antarest.core.exceptions import InvalidFieldForVersionError
+from antarest.study.business.model.thermal_reserve_certification_model import (
+    ThermalReserveCertificationUpdates,
+    update_thermal_reserve_certification,
+)
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.common import ThermalReserveCertificationsMapping
 from antarest.study.model import (
     STUDY_VERSION_10_0,
 )
@@ -45,6 +41,7 @@ class UpdateThermalReserveCertifications(ICommand):
     """
     Command used to create a new thermal reserve certification in the study.
     """
+
     command_name: CommandName = CommandName.UPDATE_THERMAL_RESERVE_CERTIFICATIONS
 
     # Command parameters
@@ -60,7 +57,9 @@ class UpdateThermalReserveCertifications(ICommand):
         return self
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[ThermalReserveCertificationsMapping]:
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[ThermalReserveCertificationsMapping]:
         """
         We validate ALL objects before saving them.
         This way, if some data is invalid, we're not modifying the study partially only.
@@ -74,11 +73,14 @@ class UpdateThermalReserveCertifications(ICommand):
                 all_certifications = study_data.get_all_thermal_reserve_certifications_for_cluster(area_id, thermal_id)
                 for reserve_id, certification_update in reserves_dict.items():
                     if reserve_id not in all_certifications:
-                        return command_failed(f"Reserve certification '{reserve_id}' does not exist for area '{area_id}' and thermal '{thermal_id}'")
+                        return command_failed(
+                            f"Reserve certification '{reserve_id}' does not exist for area '{area_id}' and thermal '{thermal_id}'"
+                        )
 
-                    certification = update_thermal_reserve_certification(all_certifications[reserve_id], certification_update)
+                    certification = update_thermal_reserve_certification(
+                        all_certifications[reserve_id], certification_update
+                    )
                     memory_mapping[area_id][thermal_id][reserve_id] = certification
-
 
         study_data.save_thermal_reserve_certifications(memory_mapping)
 
@@ -96,6 +98,5 @@ class UpdateThermalReserveCertifications(ICommand):
                     args[area_id][thermal_id][reserve_id] = certification.model_dump(mode="json", exclude_none=True)
 
         return CommandDTO(
-            action=CommandName.UPDATE_THERMAL_RESERVE_CERTIFICATIONS.value,
-            args=args,
-            study_version=self.study_version        )
+            action=CommandName.UPDATE_THERMAL_RESERVE_CERTIFICATIONS.value, args=args, study_version=self.study_version
+        )

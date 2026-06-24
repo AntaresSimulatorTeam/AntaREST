@@ -28,22 +28,28 @@ class ReadOnlyThermalReserveCertificationDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_thermal_reserve_certification(self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId) -> ThermalReserveCertification:
+    def get_thermal_reserve_certification(
+        self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId
+    ) -> ThermalReserveCertification:
         raise NotImplementedError()
 
     @abstractmethod
-    def thermal_reserve_certification_exists(self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId) -> bool:
+    def thermal_reserve_certification_exists(
+        self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId
+    ) -> bool:
         raise NotImplementedError()
 
 
 class ThermalReserveCertificationDao(ReadOnlyThermalReserveCertificationDao):
     @abstractmethod
-    def save_thermal_reserve_certifications(
-        self,
-        data: ThermalReserveCertificationsMapping
-    ) -> None:
+    def save_thermal_reserve_certifications(self, data: ThermalReserveCertificationsMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def delete_thermal_reserve_certifications(self, area_id: AreaId, thermal_id: ThermalId, reserve_ids: list[ReserveDefinitionId],) -> None:
+    def delete_thermal_reserve_certifications(
+        self,
+        area_id: AreaId,
+        thermal_id: ThermalId,
+        reserve_ids: list[ReserveDefinitionId],
+    ) -> None:
         raise NotImplementedError()

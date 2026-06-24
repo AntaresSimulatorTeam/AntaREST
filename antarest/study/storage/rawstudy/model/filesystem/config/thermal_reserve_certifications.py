@@ -20,7 +20,9 @@ from antarest.study.business.model.thermal_reserve_certification_model import Th
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 
-def parse_thermal_reserves_certifications(data: dict[str, Any]) -> dict[str, dict[ReserveDefinitionId, ThermalReserveCertification]]:
+def parse_thermal_reserves_certifications(
+    data: dict[str, Any],
+) -> dict[str, dict[ReserveDefinitionId, ThermalReserveCertification]]:
     result: dict[str, dict[ReserveDefinitionId, ThermalReserveCertification]] = {}
     for content in data.get("participations", []):
         thermal_id = transform_name_to_id(content["cluster"])
@@ -45,6 +47,8 @@ class ThermalClusterReserveParticipationFileData(AntaresBaseModel):
     participation_cost_off: float
 
 
-def serialize_thermal_reserve_certification(reserve_id: ReserveDefinitionId, certification: ThermalReserveCertification) -> dict[str, Any]:
+def serialize_thermal_reserve_certification(
+    reserve_id: ReserveDefinitionId, certification: ThermalReserveCertification
+) -> dict[str, Any]:
     data = {**certification.model_dump(), "reserve": reserve_id}
     return ThermalClusterReserveParticipationFileData.model_validate(data).model_dump(by_alias=True)

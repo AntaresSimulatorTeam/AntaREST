@@ -900,16 +900,18 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
 
     @override
     def get_all_thermal_reserve_certifications_for_cluster(
-            self, area_id: AreaId, thermal_id: ThermalId
+        self, area_id: AreaId, thermal_id: ThermalId
     ) -> dict[ReserveDefinitionId, ThermalReserveCertification]:
         return self._adaptee.get_all_thermal_reserve_certifications_for_cluster(area_id, thermal_id)
 
     @override
-    def get_thermal_reserve_certification(self, area_id: AreaId, thermal_id: ThermalId,
-                                          reserve_id: ReserveDefinitionId) -> ThermalReserveCertification:
+    def get_thermal_reserve_certification(
+        self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId
+    ) -> ThermalReserveCertification:
         return self._adaptee.get_thermal_reserve_certification(area_id, thermal_id, reserve_id)
 
-
     @override
-    def thermal_reserve_certification_exists(self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId) -> bool:
+    def thermal_reserve_certification_exists(
+        self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId
+    ) -> bool:
         return self._adaptee.thermal_reserve_certification_exists(area_id, thermal_id, reserve_id)

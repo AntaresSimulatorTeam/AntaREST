@@ -79,7 +79,7 @@ class FileStudyTreeDao(
     FileStudyAreaDao,
     FileStudyReservesGlobalParametersDao,
     FileStudyReserveDefinitionDao,
-    FileStudyThermalReserveCertificationDao
+    FileStudyThermalReserveCertificationDao,
 ):
     """
     Implementation of study DAO over the simulator input format.

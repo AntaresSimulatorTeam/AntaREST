@@ -15,13 +15,17 @@ from antarest.study.business.model.thermal_reserve_certification_model import (
     ThermalReserveCertificationCreation,
     ThermalReserveCertificationUpdate,
     create_thermal_reserve_certification,
-    update_thermal_reserve_certification,
 )
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.variantstudy.model.command.create_thermal_reserve_certification import \
-    CreateThermalReserveCertification
-from antarest.study.storage.variantstudy.model.command.update_thermal_reserve_certifications import \
-    UpdateThermalReserveCertifications
+from antarest.study.storage.variantstudy.model.command.create_thermal_reserve_certification import (
+    CreateThermalReserveCertification,
+)
+from antarest.study.storage.variantstudy.model.command.remove_thermal_reserve_certifications import (
+    RemoveThermalReserveCertifications,
+)
+from antarest.study.storage.variantstudy.model.command.update_thermal_reserve_certifications import (
+    UpdateThermalReserveCertifications,
+)
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -37,7 +41,9 @@ class ThermalReserveCertificationsManager:
     def get_certification(
         self, study: StudyInterface, area_id: str, thermal_id: str, reserve_id: str
     ) -> ThermalReserveCertification:
-        return study.get_study_dao().get_thermal_reserve_certification(area_id, thermal_id, ReserveDefinitionId(reserve_id))
+        return study.get_study_dao().get_thermal_reserve_certification(
+            area_id, thermal_id, ReserveDefinitionId(reserve_id)
+        )
 
     def create_certification(
         self,
@@ -81,7 +87,7 @@ class ThermalReserveCertificationsManager:
         command = RemoveThermalReserveCertifications(
             area_id=area_id,
             thermal_id=thermal_id,
-            reserve_ids=reserve_ids,
+            reserve_ids=[ReserveDefinitionId(reserve_id) for reserve_id in reserve_ids],
             study_version=study.version,
             command_context=self._command_context,
         )

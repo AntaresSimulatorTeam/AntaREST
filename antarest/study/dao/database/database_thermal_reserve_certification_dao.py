@@ -37,11 +37,13 @@ if TYPE_CHECKING:
 
 _TABLE = THERMAL_RESERVE_CERTIFICATION_TABLE
 
+
 def _convert_row_to_model(row: Row[Any]) -> ThermalReserveCertification:
     data = get_row_representation_as_dict(row)
     for key in ("study_id", "area_id", "thermal_id", "reserve_id"):
         del data[key]
     return ThermalReserveCertification.model_validate(data)
+
 
 def _convert_model_to_row(
     study_id: str, area_id: str, thermal_id: str, reserve_id: str, certification: ThermalReserveCertification
@@ -52,6 +54,7 @@ def _convert_model_to_row(
     values["area_id"] = area_id
     values["thermal_id"] = thermal_id
     return values
+
 
 class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
     """Database implementation of ThermalReserveCertificationDao."""
@@ -84,7 +87,7 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
 
     @override
     def get_all_thermal_reserve_certifications_for_cluster(
-            self, area_id: AreaId, thermal_id: ThermalId
+        self, area_id: AreaId, thermal_id: ThermalId
     ) -> dict[ReserveDefinitionId, ThermalReserveCertification]:
         stmt = select(_TABLE).where(
             (_TABLE.c.study_id == self._study_id) & (_TABLE.c.area_id == area_id) & (_TABLE.c.thermal_id == thermal_id)
@@ -93,22 +96,25 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
         return {row.reserve_id: _convert_row_to_model(row) for row in rows}
 
     @override
-    def get_thermal_reserve_certification(self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId) -> ThermalReserveCertification:
+    def get_thermal_reserve_certification(
+        self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId
+    ) -> ThermalReserveCertification:
         row = self._db_session.execute(self._select_one(area_id, thermal_id, reserve_id)).fetchone()
         if row:
             return _convert_row_to_model(row)
 
-        self._raise_the_right_thermal_reserve_exception({area_id: {thermal_id: {ReserveDefinitionId(reserve_id): ThermalReserveCertification()}}})
+        self._raise_the_right_thermal_reserve_exception(
+            {area_id: {thermal_id: {ReserveDefinitionId(reserve_id): ThermalReserveCertification()}}}
+        )
 
     @override
-    def thermal_reserve_certification_exists(self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId) -> bool:
+    def thermal_reserve_certification_exists(
+        self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId
+    ) -> bool:
         return self._db_session.execute(self._select_one(area_id, thermal_id, reserve_id)).fetchone() is not None
 
     @override
-    def save_thermal_reserve_certifications(
-            self,
-            data: ThermalReserveCertificationsMapping
-    ) -> None:
+    def save_thermal_reserve_certifications(self, data: ThermalReserveCertificationsMapping) -> None:
         if not data:
             return
         values = []
@@ -123,8 +129,9 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
         self._db_session.commit()
 
     @override
-    def delete_thermal_reserve_certifications(self, area_id: AreaId, thermal_id: ThermalId,
-                                              reserve_ids: list[ReserveDefinitionId]) -> None:
+    def delete_thermal_reserve_certifications(
+        self, area_id: AreaId, thermal_id: ThermalId, reserve_ids: list[ReserveDefinitionId]
+    ) -> None:
         if not reserve_ids:
             return
 
@@ -145,7 +152,9 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
         self._db_session.commit()
 
     def _raise_the_right_thermal_reserve_exception(
-        self, data: dict[AreaId, dict[ThermalId, dict[ReserveDefinitionId, ThermalReserveCertification]]], exc: IntegrityError | None = None
+        self,
+        data: dict[AreaId, dict[ThermalId, dict[ReserveDefinitionId, ThermalReserveCertification]]],
+        exc: IntegrityError | None = None,
     ) -> NoReturn:
         # Checks if some areas are missing
         existing_ids = set(self.get_impl().get_all_area_ids())
