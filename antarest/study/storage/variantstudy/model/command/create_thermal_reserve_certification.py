@@ -82,10 +82,11 @@ class CreateThermalReserveCertification(ICommand):
         study_data.save_thermal_reserve_certifications(
             {self.area_id: {self.thermal_id: {self.reserve_id: certification}}}
         )
-        msg = (
-            f"Reserve certification '{self.reserve_id}' added to thermal '{self.thermal_id}' in area '{self.area_id}'."
+
+        return command_succeeded(
+            f"Reserve certification '{self.reserve_id}' added to thermal '{self.thermal_id}' in area '{self.area_id}'.",
+            result=certification,
         )
-        return command_succeeded(msg, result=certification)
 
     @override
     def to_dto(self) -> CommandDTO:
