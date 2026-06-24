@@ -109,7 +109,7 @@ function Debug() {
   ////////////////////////////////////////////////////////////////
 
   if (study.storageMode !== "filesystem") {
-    throw new Error(`${Route.path} is only available for study with filesystem storage mode.`);
+    throw new Error(`${Route.path} is only available for studies with filesystem storage mode.`);
   }
 
   return (
