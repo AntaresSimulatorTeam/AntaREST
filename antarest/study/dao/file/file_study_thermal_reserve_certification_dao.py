@@ -117,7 +117,38 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
     def delete_thermal_reserve_certifications(
         self, area_id: AreaId, thermal_id: ThermalId, reserve_ids: list[ReserveDefinitionId]
     ) -> None:
-        raise NotImplementedError()
+        if not reserve_ids:
+            return
+
+        current_ini_content = self._get_all_certifications_for_area_as_ini_content(area_id)
+
+        all_certifications = parse_thermal_reserves_certifications(current_ini_content)
+
+        # Remove the given reserve ids from the existing certifications
+        if thermal_id not in all_certifications:
+            raise ThermalReserveCertificationNotFound(area_id, thermal_id, reserve_id=reserve_ids[0])
+
+        for reserve_id in reserve_ids:
+            if reserve_id not in all_certifications[thermal_id]:
+                raise ThermalReserveCertificationNotFound(area_id, thermal_id, reserve_id=reserve_id)
+
+            del all_certifications[thermal_id][reserve_id]
+
+        # Fill the new file content
+        ini_content = []
+        for thermal_id, reserves_dict in all_certifications.items():
+            thermal_content: dict[str, Any] = {"cluster": thermal_id, "certifications": []}
+            for reserve_id, certification in reserves_dict.items():
+                thermal_content["certifications"].append(
+                    serialize_thermal_reserve_certification(reserve_id, certification)
+                )
+            ini_content.append(thermal_content)
+        final_content = {"participations": ini_content}
+
+        # Save the new content
+        # todo: We're missing the `symmetries` code, so when removing one, we're removing all symmetries from the file.
+
+        self.get_file_study().tree.save(final_content, _thermal_reserve_path(area_id))
 
     def get_all_certifications_for_area(
         self, area_id: AreaId
