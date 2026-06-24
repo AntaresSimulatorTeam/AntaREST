@@ -42,9 +42,11 @@ function Debug() {
   // Allow to keep expanded items when the tree is reloaded with `reloadTree`
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const { path } = Route.useSearch();
+  const isFilesystemStudy = study.storageMode === "filesystem";
 
   const treeDataResponse = usePromiseWithSnackbarError(() => getTreeData(study.id), {
     errorMessage: t("studies.error.retrieveData"),
+    disabled: !isFilesystemStudy,
     deps: [study.id],
   });
 
@@ -108,7 +110,7 @@ function Debug() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  if (study.storageMode !== "filesystem") {
+  if (!isFilesystemStudy) {
     throw new Error(`${Route.path} is only available for studies with filesystem storage mode.`);
   }
 
