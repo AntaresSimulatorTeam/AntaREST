@@ -100,12 +100,12 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
         self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId
     ) -> ThermalReserveCertification:
         row = self._db_session.execute(self._select_one(area_id, thermal_id, reserve_id)).fetchone()
-        if row:
-            return _convert_row_to_model(row)
+        if not row:
+            self._raise_the_right_thermal_reserve_exception(
+                {area_id: {thermal_id: {ReserveDefinitionId(reserve_id): ThermalReserveCertification()}}}
+            )
 
-        self._raise_the_right_thermal_reserve_exception(
-            {area_id: {thermal_id: {ReserveDefinitionId(reserve_id): ThermalReserveCertification()}}}
-        )
+        return _convert_row_to_model(row)
 
     @override
     def thermal_reserve_certification_exists(
