@@ -108,6 +108,10 @@ function Debug() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
+  if (study.storageMode !== "filesystem") {
+    throw new Error(`${Route.path} is only available for study with filesystem storage mode.`);
+  }
+
   return (
     <DebugContext.Provider value={contextValue}>
       <SplitView splitId="debug">
