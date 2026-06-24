@@ -18,6 +18,8 @@ from antarest.study.business.model.thermal_reserve_certification_model import (
     update_thermal_reserve_certification,
 )
 from antarest.study.business.study_interface import StudyInterface
+from antarest.study.storage.variantstudy.model.command.create_thermal_reserve_certification import \
+    CreateThermalReserveCertification
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -40,11 +42,13 @@ class ThermalReserveCertificationsManager:
         study: StudyInterface,
         area_id: str,
         thermal_id: str,
+        reserve_id: str,
         data: ThermalReserveCertificationCreation,
     ) -> ThermalReserveCertification:
         command = CreateThermalReserveCertification(
             area_id=area_id,
             thermal_id=thermal_id,
+            reserve_id=ReserveDefinitionId(reserve_id),
             parameters=data,
             study_version=study.version,
             command_context=self._command_context,

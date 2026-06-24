@@ -93,11 +93,12 @@ from antarest.study.dao.common import (
     StStorageConstraintSeriesMapping,
     StStorageId,
     StStorageSeriesMapping,
+    ThermalId,
     ThermalReserveCertificationsMapping,
     ThermalSeriesMapping,
     XpansionCapacitiesMapping,
     XpansionConstraintsMapping,
-    XpansionWeightsMapping, ThermalId,
+    XpansionWeightsMapping,
 )
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import StudyMetadataUpdate

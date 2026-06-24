@@ -9,8 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import copy
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
@@ -22,8 +21,10 @@ from antarest.study.dao.api.thermal_reserve_certification_dao import ThermalRese
 from antarest.study.dao.common import AreaId, ThermalId, ThermalReserveCertificationsMapping
 from antarest.study.dao.file.common import check_area_exists
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal_reserve_certifications import \
-    parse_thermal_reserves_certifications, serialize_thermal_reserve_certification
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal_reserve_certifications import (
+    parse_thermal_reserves_certifications,
+    serialize_thermal_reserve_certification,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 if TYPE_CHECKING:

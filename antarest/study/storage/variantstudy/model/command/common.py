@@ -108,6 +108,7 @@ class CommandName(Enum):
     CREATE_RESERVE_DEFINITION = "create_reserve_definition"
     UPDATE_RESERVE_DEFINITIONS = "update_reserve_definitions"
     REMOVE_RESERVE_DEFINITIONS = "remove_reserve_definitions"
+    CREATE_THERMAL_RESERVE_CERTIFICATION = "create_thermal_reserve_certification"
 
 
 @dataclass(frozen=True)

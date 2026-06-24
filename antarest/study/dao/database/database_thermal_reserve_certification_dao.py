@@ -10,23 +10,25 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from collections.abc import Sequence
-from typing import Any, TYPE_CHECKING, NoReturn
+from typing import TYPE_CHECKING, Any, NoReturn
 
-from sqlalchemy import Row, Select, delete, select, CursorResult
+from sqlalchemy import CursorResult, Row, Select, delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.core.exceptions import AreaNotFound, ThermalReserveCertificationNotFound, ThermalClustersNotFound, \
-    ReserveDefinitionNotFound, ReserveDefinitionsNotFound
+from antarest.core.exceptions import (
+    AreaNotFound,
+    ReserveDefinitionsNotFound,
+    ThermalClustersNotFound,
+    ThermalReserveCertificationNotFound,
+)
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
 from antarest.study.dao.api.thermal_reserve_certification_dao import ThermalReserveCertificationDao
-from antarest.study.dao.common import AreaId, ThermalReserveCertificationsMapping, ThermalId
-from antarest.study.dao.database.common import area_exists, get_row_representation_as_dict, validate_area_exists
+from antarest.study.dao.common import AreaId, ThermalId, ThermalReserveCertificationsMapping
+from antarest.study.dao.database.common import get_row_representation_as_dict
 from antarest.study.dao.database.models.thermal_reserve_certification_dao import THERMAL_RESERVE_CERTIFICATION_TABLE
-
 from antarest.study.dao.database.sql_utils import upsert_multiple
 
 if TYPE_CHECKING:
