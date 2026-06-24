@@ -80,7 +80,7 @@ v2.32.0 (2026-05-26)
 * **variant**: block snapshot generation when parent is archived [`#3211`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3211)
 * **logging**: use ECS formatter, add more context fields [`#3206`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3206)
 * **backend_tablemode**: finished implementing tablemode and testing [`#3193`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3193)
-* **feat(binding-constraints)!**: alleviate binding constraints in config by using BindingConstraintConfig by @olivierPigeon-RTE in https://github.com/AntaresSimulatorTeam/AntaREST/pull/3203
+* **binding-constraints**: alleviate binding constraints in config by using BindingConstraintConfig [`#3203`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3203) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
 
 
 ### Bug Fixes
