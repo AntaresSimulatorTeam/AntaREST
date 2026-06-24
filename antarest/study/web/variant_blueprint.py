@@ -61,10 +61,10 @@ def create_study_variant_routes() -> APIRouter:
         summary="Get children variants",
         response_model=None,  # To cope with recursive models issues
     )
-    def get_variants(study_service: StudyServiceDep, uuid: UuidStr) -> VariantTreeDTO:
-        logger.info(f"Fetching variant children of study {uuid}")
+    def get_variants(study_service: StudyServiceDep, uuid: UuidStr, from_root: bool = False) -> VariantTreeDTO:
+        logger.info(f"Fetching variant children of study {uuid} (from_root={from_root})")
         variant_study_service = study_service.storage_service.variant_study_service
-        return variant_study_service.get_all_variants_children(uuid)
+        return variant_study_service.get_all_variants_children(uuid, from_root=from_root)
 
     @bp.get(
         "/studies/{uuid}/parents",

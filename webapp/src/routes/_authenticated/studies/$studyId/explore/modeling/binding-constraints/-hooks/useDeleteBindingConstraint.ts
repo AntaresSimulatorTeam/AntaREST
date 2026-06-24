@@ -82,6 +82,7 @@ function useDeleteBindingConstraint() {
       enqueueErrorSnackbar(
         t("study.modeling.bindingConst.deleteBindingConstraint.error", {
           name:
+            constraintToDelete?.name ||
             queryClient.getQueryData(queryListKey)?.find((c) => c.id === constraintId)?.name ||
             constraintId,
         }),

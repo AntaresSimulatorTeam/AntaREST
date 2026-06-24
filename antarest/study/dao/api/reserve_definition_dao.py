@@ -56,15 +56,3 @@ class ReserveDefinitionDao(ReadOnlyReserveDefinitionDao):
     @abstractmethod
     def save_reserve_needs(self, mapping: ReserveNeedsMapping) -> None:
         raise NotImplementedError()
-
-    @abstractmethod
-    def delete_reserve_need(self, area_id: AreaId, reserve_id: ReserveDefinitionId) -> None:
-        """
-        Delete the reserve need matrix attached to ``(area_id, reserve_id)``.
-
-        This is idempotent: if no need matrix is registered for the given
-        reserve (or the reserve does not exist at all), the call is a no-op
-        and does not raise. Callers can use it to ensure a need matrix is
-        gone without first checking for its presence.
-        """
-        raise NotImplementedError()

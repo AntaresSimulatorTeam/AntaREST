@@ -57,6 +57,14 @@ def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) ->
     return list(collections.OrderedDict.fromkeys(values))
 
 
+def _validate_storage_mode_against_config(storage_mode: StorageMode, config: ConfigDep) -> None:
+    if storage_mode == StorageMode.DATABASE and not config.storage.study_storage.database_mode_enabled:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_IMPLEMENTED,
+            detail="Database storage mode is not enabled on this server",
+        )
+
+
 def create_study_routes() -> APIRouter:
     """
     Endpoint implementation for studies management
@@ -239,12 +247,14 @@ def create_study_routes() -> APIRouter:
     )
     def import_study(
         study_service: StudyServiceDep,
+        config: ConfigDep,
         study: UploadFile,
         groups: SanitizedStr = "",
         directory: Annotated[
             SanitizedStr,
             Query(description="Directory path where the study will be imported (e.g., 'project/subfolder')"),
         ] = "",
+        storage_mode: StorageMode = StorageMode.FILESYSTEM,
     ) -> str:
         """
         Upload and import a compressed study from your computer to the Antares Web server.
@@ -253,6 +263,7 @@ def create_study_routes() -> APIRouter:
         - `study`: The binary content of the study file in ZIP or 7z format.
         - `groups`: The groups your study will belong to (Default: current user's groups).
         - `directory`: Optional logical directory path where the study will be placed.
+        - `storage_mode`: Define how the imported study will be stored. On filesystem (default), or fully in database.
 
         Returns:
         - The ID of the imported study.
@@ -261,6 +272,7 @@ def create_study_routes() -> APIRouter:
         - 415 error if the archive is corrupted or in an unknown format.
         """
         logger.info("Importing new study")
+        _validate_storage_mode_against_config(storage_mode, config)
 
         user = require_current_user()
         group_ids_raw = _split_comma_separated_values(groups, default=[group.id for group in user.groups])
@@ -269,7 +281,7 @@ def create_study_routes() -> APIRouter:
         directory_path_sanitized = validate_folder_path(directory) if directory else ""
 
         try:
-            uuid = study_service.import_study(study.file, group_ids, directory=directory_path_sanitized)
+            uuid = study_service.import_study(study.file, group_ids, directory_path_sanitized, storage_mode)
         except BadArchiveContent as e:
             raise BadZipBinary(str(e))
 
@@ -417,11 +429,8 @@ def create_study_routes() -> APIRouter:
         Returns:
         - The ID of the newly created study.
         """
-        if storage_mode == StorageMode.DATABASE and not config.storage.study_storage.database_mode_enabled:
-            raise HTTPException(
-                status_code=HTTPStatus.NOT_IMPLEMENTED,
-                detail="Database storage mode is not enabled on this server",
-            )
+        _validate_storage_mode_against_config(storage_mode, config)
+
         study_version = StudyVersion.parse(version) if version else None
         logger.info(f"Creating new study '{name}' with storage_mode={storage_mode}")
         name_sanitized = validate_study_name(escape(name))
@@ -453,7 +462,7 @@ def create_study_routes() -> APIRouter:
         study_service: StudyServiceDep, uuid: SanitizedStr, path: SanitizedStr = ""
     ) -> MatrixIndex:
         logger.info(f"Return the start date for input matrix '{uuid}'")
-        return study_service.get_input_matrix_startdate(uuid, path)
+        return study_service.get_matrix_startdate(uuid, path)
 
     @bp.get(
         "/studies/{uuid}/export",

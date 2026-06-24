@@ -26,6 +26,7 @@ from starlette.testclient import TestClient
 
 from antarest.core.config import Config
 from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.utils.archives import archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.dbmodel import Base
 from antarest.login.model import init_admin_user
@@ -56,6 +57,7 @@ def _render_config(config_path: Path, db_url: str, tmp_path: Path) -> None:
     ext_workspace_path = tmp_path / "ext_workspace"
     output_archive_dir = tmp_path / "output_archives"
     output_variables_dir = tmp_path / "output_variables"
+    output_out_of_study_storage_dir = tmp_path / "all_outputs"
 
     for d in (matrix_dir, blob_dir, archive_dir, tmp_dir, default_workspace, ext_workspace_path):
         d.mkdir(exist_ok=True)
@@ -78,6 +80,7 @@ def _render_config(config_path: Path, db_url: str, tmp_path: Path) -> None:
                 launcher_mock=ASSETS_DIR / launcher_name,
                 output_archive_dir=str(output_archive_dir),
                 output_variables_dir=str(output_variables_dir),
+                output_out_of_study_storage_dir=str(output_out_of_study_storage_dir),
             )
         )
 
@@ -225,3 +228,22 @@ def internal_study_fixture(
     res.raise_for_status()
     study_ids = t.cast(t.Iterable[str], res.json())
     return next(iter(study_ids))
+
+
+@pytest.fixture(scope="session")
+def sta_mini_zip_path(project_path: Path) -> Path:
+    return project_path / "examples/studies/STA-mini.zip"
+
+
+@pytest.fixture(scope="session")
+def output_zip(tmp_path_factory: pytest.TempPathFactory, sta_mini_zip_path: Path) -> Path:
+    extraction_dir = tmp_path_factory.mktemp(basename="study_extraction")
+
+    with zipfile.ZipFile(sta_mini_zip_path, "r") as zf:
+        zf.extractall(extraction_dir)
+    output_dir = extraction_dir / "STA-mini" / "output" / "20201014-1427eco"
+
+    output_zip_dir = tmp_path_factory.mktemp(basename="output")
+    output_zip = output_zip_dir / "output.zip"
+    archive_dir(output_dir, output_zip, remove_source_dir=True)
+    return output_zip

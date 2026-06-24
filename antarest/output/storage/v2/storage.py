@@ -15,8 +15,9 @@ import tempfile
 import uuid
 from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import BinaryIO
+from typing import Any, BinaryIO
 
+import pandas as pd
 import polars as pl
 from typing_extensions import override
 
@@ -62,11 +63,13 @@ from antarest.output.storage.v2.variables_storage import (
 )
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency, MatrixIndex
+from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 from antarest.study.storage.utils import (
     SimulationRangeDefinition,
     extract_output_name,
     fix_study_root,
+    get_disk_usage,
     get_matrix_index,
     parse_simulation_range,
 )
@@ -138,6 +141,7 @@ def _db_metadata_to_simulation_range(metadata: DbOutputMetadataV2) -> Simulation
 
 def _db_metadata_to_details(metadata: DbOutputMetadataV2) -> OutputDetails:
     return OutputDetails(
+        id=metadata.output_name,
         name=metadata.output_name,
         mode=Mode(metadata.mode),
         synthesis=metadata.synthesis,
@@ -183,6 +187,11 @@ class V2OutputStorage(IOutputStorage):
     @property
     def storage_type(self) -> OutputStorageType:
         return OutputStorageType.V2
+
+    @override
+    def import_outputs(self, study_id: str, src_outputs_dir: Path) -> None:
+        for output in src_outputs_dir.iterdir():
+            self.import_output(study_id, output)
 
     @override
     def import_output(
@@ -261,14 +270,14 @@ class V2OutputStorage(IOutputStorage):
         ]
 
     @override
-    def get_output_details(self, study_id: str, output_id: str) -> OutputDetails:
+    def get_output_details(self, study_id: str) -> list[OutputDetails]:
         """
         Get the list of output for a study.
         """
-        metadata = self._repository.get_output_metadata(study_id, output_id)
-        if metadata is None:
-            raise OutputNotFound(output_id)
-        return _db_metadata_to_details(metadata)
+        result = []
+        for output_metadata in self._repository.search_output_metadata(study_id):
+            result.append(_db_metadata_to_details(output_metadata))
+        return result
 
     @override
     def copy_output(self, src_study_id: str, target_study_id: str, output_id: str) -> None:
@@ -415,3 +424,25 @@ class V2OutputStorage(IOutputStorage):
 
         if not has_data:
             raise OutputAggregationError(output_id, "No output data matching the criteria were found")
+
+    @override
+    def get_disk_usage(self, study_id: str, output_id: str) -> int:
+        output_dir = parquet_output_dir(self._variables_dir, study_id, output_id)
+        return get_disk_usage(output_dir)
+
+    @override
+    def get_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
+        # todo: implement this
+        raise NotImplementedError()
+
+    @override
+    def get_matrix_as_dataframe(
+        self, study_id: str, output_id: str, url: list[str], frequency: MatrixFrequency
+    ) -> pd.DataFrame:
+        # todo: implement this
+        raise NotImplementedError()
+
+    @override
+    def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
+        # todo: implement this
+        raise NotImplementedError()

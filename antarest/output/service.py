@@ -88,10 +88,12 @@ from antarest.study.model import (
     MatrixAggregationResultDTO,
     MatrixFrequency,
     MatrixIndex,
+    StorageMode,
     StudyDownloadDTO,
     StudyDownloadType,
 )
 from antarest.study.storage.df_download import export_df_chunks
+from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestUI,
 )
@@ -103,6 +105,7 @@ logger = logging.getLogger(__name__)
 class StudyMetadata:
     id: str
     name: str
+    storage_mode: StorageMode
 
 
 class IStudyMetadataProvider(ABC):
@@ -242,7 +245,7 @@ class OutputService:
                 return storage
         raise OutputNotFound(output_id)
 
-    def _get_storage(self, storage_type: OutputStorageType | None) -> IOutputStorage:
+    def _get_storage_based_on_type(self, storage_type: OutputStorageType | None) -> IOutputStorage:
         """
         Returns the storage for the specified type, or the first one (which is then the default one).
         """
@@ -350,10 +353,27 @@ class OutputService:
         )
         res = []
         for storage in self._storages:
-            outputs = storage.list_outputs(study_id)
-            for o in outputs:
-                res.append(storage.get_output_details(study_id, o.id))
+            res.extend(storage.get_output_details(study_id))
         return res
+
+    def import_outputs(self, outputs_dir: Path, uuid: str) -> None:
+        """Used when importing a study which contains outputs"""
+        if not outputs_dir.exists():
+            return
+
+        storage = self._get_storage(uuid)
+
+        storage.import_outputs(uuid, outputs_dir)
+
+    def _get_storage(self, study_id: str, storage_type: OutputStorageType | None = None) -> IOutputStorage:
+        storage = self._get_storage_based_on_type(storage_type)
+
+        if storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
+            if self._studies_repository.get_study_metadata(study_id).storage_mode == StorageMode.DATABASE:
+                # For DB studies, the study.path does not exist; we want to store the outputs externally
+                storage = self._get_storage_based_on_type(OutputStorageType.OUT_OF_STUDY_FILE_TREE)
+
+        return storage
 
     def import_output(
         self,
@@ -381,7 +401,8 @@ class OutputService:
         logger.info(f"Importing new output for study {uuid}")
         self._studies_repository.assert_permission(uuid, StudyPermissionType.RUN)
 
-        storage = self._get_storage(storage_type)
+        storage = self._get_storage(uuid, storage_type)
+
         output_id = storage.import_output(uuid, output, output_name_suffix, logs)
 
         # for now we just check after the fact that this output_id was actually not conflicting,
@@ -890,6 +911,9 @@ class OutputService:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
         return self._find_output_storage(study_id, output_id).get_logs(study_id, output_id, log_type)
 
+    def get_disk_usage(self, study_id: str, output_id: str) -> int:
+        return self._find_output_storage(study_id, output_id).get_disk_usage(study_id, output_id)
+
     def convert_output(self, study_id: str, output_id: str, storage_type: OutputStorageType) -> None:
         """
         Converts an output to a different storage.
@@ -907,3 +931,16 @@ class OutputService:
             current_storage.export_output(study_id, output_id, tmp_zip)
             target_storage.import_output(study_id, tmp_zip)
             current_storage.delete_output(study_id, output_id)
+
+    def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
+        return self._find_output_storage(study_id, output_id).get_raw_content(study_id, output_id, url, formatted)
+
+    def get_matrix_as_dataframe(
+        self, study_id: str, output_id: str, url: list[str], frequency: MatrixFrequency
+    ) -> pd.DataFrame:
+        return self._find_output_storage(study_id, output_id).get_matrix_as_dataframe(
+            study_id, output_id, url, frequency
+        )
+
+    def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
+        return self._find_output_storage(study_id, output_id).get_original_file(study_id, output_id, url)

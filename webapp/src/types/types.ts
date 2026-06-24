@@ -45,6 +45,11 @@ export enum StudyType {
   RAW = "rawstudy",
 }
 
+export enum StorageMode {
+  FILESYSTEM = "filesystem",
+  DATABASE = "database",
+}
+
 /**
  * @deprecated Use StudyDTO type instead
  */
@@ -59,6 +64,7 @@ export interface StudyMetadataDTO extends IdentityDTO {
   workspace: string;
   managed: boolean;
   archived: boolean;
+  storage_mode: StorageMode;
   groups: IdentityDTO[];
   public_mode: StudyPublicMode;
   folder?: string;
@@ -100,13 +106,14 @@ export interface StudyMetadataPatchDTO {
   tags?: string[];
 }
 
-export interface OutputDetails {
+export interface OutputSynthesis {
   name: string;
-  mode: string;
+  mode: "Economy" | "Adequacy" | "Expansion";
   synthesis: boolean;
   byYear: boolean;
   nbYears: number;
   archived: boolean;
+  storageType: "IN_STUDY_FILE_TREE" | "OUT_OF_STUDY_FILE_TREE" | "V2";
 }
 
 export interface StudyLayer {
@@ -312,7 +319,7 @@ export interface StudySynthesis {
   version: number;
   areas: Record<string, Area>;
   districts: Record<string, District>;
-  outputs: Record<string, OutputDetails>;
+  outputs: Record<string, OutputSynthesis>;
   store_new_set: boolean;
   archive_input_series: string[];
   enr_modelling: "aggregated" | "clusters";

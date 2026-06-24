@@ -75,9 +75,8 @@ class StudyConverter:
         for district in self._source_dao.get_districts():
             self._new_dao.save_district(district)
 
-        # Layers
-        for layer in self._source_dao.get_layers():
-            self._new_dao.save_layer(layer)
+        # Comments
+        self._new_dao.save_comments(self._source_dao.get_comments())
 
     def _convert_settings(self) -> None:
         self._new_dao.save_general_config(self._source_dao.get_general_config())
@@ -122,6 +121,11 @@ class StudyConverter:
 
     def _convert_binding_constraints(self) -> None:
         constraints = list(self._source_dao.get_all_constraints().values())
+
+        # If no binding constraint exists, we return immediately
+        if not constraints:
+            return
+
         self._new_dao.save_constraints(constraints)
 
         if self._study_version < STUDY_VERSION_8_7:
@@ -135,6 +139,11 @@ class StudyConverter:
 
     def _convert_links(self) -> None:
         links = self._source_dao.get_links()
+
+        # If no link exists, we return immediately
+        if not links:
+            return
+
         self._new_dao.save_links(links)
 
         # Link matrices
@@ -151,6 +160,10 @@ class StudyConverter:
             renewable_clusters = self._source_dao.get_all_renewables()
         except ChildNotFoundError:  # Can happen, according to the enr-modeling and to the study version
             renewable_clusters = {}
+
+        # If no area exists, we return immediately
+        if not area_properties:
+            return
 
         # First, create all areas with their properties to avoid foreign key or config issues
         new_area_properties = {}
@@ -181,16 +194,20 @@ class StudyConverter:
         # Hydro
         self._convert_hydro()
 
+        # Layers (before Ui to avoid foreign key issues)
+        for layer in self._source_dao.get_layers():
+            self._new_dao.save_layer(layer)
+
         # Ui
         new_ui: AreaUiMapping = {}
         for area_id, source_ui in areas_ui.items():
             new_ui[area_id] = {}
-            for layer, x in source_ui.layer_x.items():
-                y = source_ui.layer_y[layer]
-                color = source_ui.layer_color[layer]
+            for layer_id, x in source_ui.layer_x.items():
+                y = source_ui.layer_y[layer_id]
+                color = source_ui.layer_color[layer_id]
                 r, g, b = (int(c) for c in color.strip(" ").split(","))
                 area_ui = AreaUI(x=x, y=y, color_rgb=(r, g, b))
-                new_ui[area_id][layer] = area_ui
+                new_ui[area_id][layer_id] = area_ui
         self._new_dao.save_area_ui(new_ui)
 
         # Short-term storages

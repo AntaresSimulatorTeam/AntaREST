@@ -25,8 +25,9 @@ from antares.study.version import SolverVersion
 
 from antarest.core.model import JSON
 from antarest.core.roles import RoleType
-
-DEFAULT_WORKSPACE_NAME = "default"
+from antarest.core.utils.archives import ArchiveFormat
+from antarest.output.storage.output_storage import OutputStorageType
+from antarest.study.model import DEFAULT_WORKSPACE_NAME
 
 
 class LauncherType(StrEnum):
@@ -146,25 +147,61 @@ class DbConfig:
 
 
 @dataclass(frozen=True)
-class OutputStorageConfig:
+class V2OutputStorageConfig:
     """
     Configuration for "new style" internal output storage
     """
 
     enable: bool = False
-    default: bool = False
     archive_dir: Path = Path("./output-archives")
     variables_dir: Path = Path("./output-variables")
 
     @classmethod
-    def from_dict(cls, data: JSON) -> "OutputStorageConfig":
+    def from_dict(cls, data: JSON) -> "V2OutputStorageConfig":
         defaults = cls()
-        return OutputStorageConfig(
+        return V2OutputStorageConfig(
             enable=data.get("enable", defaults.enable),
-            default=data.get("default", defaults.default),
             archive_dir=Path(data.get("archive_dir", str(defaults.archive_dir))),
             variables_dir=Path(data.get("variables_dir", str(defaults.variables_dir))),
         )
+
+
+@dataclass(frozen=True)
+class OutOfStudyFileOutputStorageConfig:
+    """
+    Configuration for output storage in a single dir for all studies
+    """
+
+    storage_dir: Path = Path("./outputs")
+
+    @classmethod
+    def from_dict(cls, data: JSON) -> "OutOfStudyFileOutputStorageConfig":
+        defaults = cls()
+        storage_dir = Path(data.get("storage_dir", str(defaults.storage_dir)))
+        storage_dir.mkdir(parents=True, exist_ok=True)
+        return OutOfStudyFileOutputStorageConfig(storage_dir=storage_dir)
+
+
+@dataclass(frozen=True)
+class OutputStorageConfig:
+    """Configuration for output storage"""
+
+    v2: V2OutputStorageConfig = V2OutputStorageConfig()
+    out_of_study: OutOfStudyFileOutputStorageConfig = OutOfStudyFileOutputStorageConfig()
+
+    default_storage_type: OutputStorageType = OutputStorageType.IN_STUDY_FILE_TREE
+
+    @classmethod
+    def from_dict(cls, data: JSON) -> "OutputStorageConfig":
+        defaults = cls()
+        config = cls(
+            v2=V2OutputStorageConfig.from_dict(data.get("v2", {})),
+            out_of_study=OutOfStudyFileOutputStorageConfig.from_dict(data.get("out_of_study", {})),
+            default_storage_type=OutputStorageType(data.get("default_storage_type", defaults.default_storage_type)),
+        )
+        if config.default_storage_type == OutputStorageType.V2 and not config.v2.enable:
+            raise ValueError("You cannot set v2 storage as your default storage and not enable it")
+        return config
 
 
 @dataclass(frozen=True)
@@ -191,6 +228,7 @@ class StorageConfig:
 
     matrixstore: Path = Path("./matrixstore")
     archive_dir: Path = Path("./archives")
+    archive_format: ArchiveFormat = ArchiveFormat.ZIP
     tmp_dir: Path = Path(tempfile.gettempdir())
     workspaces: dict[str, WorkspaceConfig] = field(default_factory=dict)
     allow_deletion: bool = False
@@ -240,6 +278,9 @@ class StorageConfig:
         return cls(
             matrixstore=Path(data["matrixstore"]) if "matrixstore" in data else defaults.matrixstore,
             archive_dir=Path(data["archive_dir"]) if "archive_dir" in data else defaults.archive_dir,
+            archive_format=(
+                ArchiveFormat(data["archive_format"]) if "archive_format" in data else defaults.archive_format
+            ),
             tmp_dir=Path(data["tmp_dir"]) if "tmp_dir" in data else defaults.tmp_dir,
             workspaces=workspaces,
             allow_deletion=data.get("allow_deletion", defaults.allow_deletion),

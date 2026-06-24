@@ -17,7 +17,7 @@ import numpy.typing as npt
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
-from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_9_2, MatrixFrequency
+from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -32,7 +32,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default i
 
 class MatrixInfo(TypedDict, total=False):
     name: str
-    freq: MatrixFrequency
     start_version: StudyVersion
     default_empty: Callable[[], npt.NDArray[np.float64]]
     should_exist: bool
@@ -43,44 +42,37 @@ INITIAL_VERSION = StudyVersion.parse(0)
 MATRICES_INFO: list[MatrixInfo] = [
     {
         "name": "maxpower",
-        "freq": MatrixFrequency.DAILY,
         "start_version": INITIAL_VERSION,
         "default_empty": default_maxpower,
     },
     {
         "name": "reservoir",
-        "freq": MatrixFrequency.DAILY,
         "start_version": INITIAL_VERSION,
         "default_empty": default_reservoir,
     },
     {
         "name": "inflowPattern",
-        "freq": MatrixFrequency.DAILY,
         "start_version": STUDY_VERSION_6_5,
         "default_empty": default_scenario_daily,
     },
     {
         "name": "creditmodulations",
-        "freq": MatrixFrequency.HOURLY,
         "start_version": STUDY_VERSION_6_5,
         "default_empty": default_credit_modulation,
     },
     {
         "name": "waterValues",
-        "freq": MatrixFrequency.DAILY,
         "start_version": STUDY_VERSION_6_5,
         "default_empty": default_water_values,
     },
     {
         "name": "maxDailyGenEnergy",
-        "freq": MatrixFrequency.DAILY,
         "start_version": STUDY_VERSION_9_2,
         "default_empty": default_scenario_daily,
         "should_exist": False,
     },
     {
         "name": "maxDailyPumpEnergy",
-        "freq": MatrixFrequency.DAILY,
         "start_version": STUDY_VERSION_9_2,
         "default_empty": default_scenario_daily,
         "should_exist": False,
@@ -99,7 +91,6 @@ class InputHydroCommonCapacity(FolderNode):
                     children[name] = InputSeriesMatrix(
                         self.matrix_storage_context,
                         self.config.next_file(f"{name}.txt"),
-                        freq=info["freq"],
                         default_empty=info["default_empty"],
                         should_exist=info.get("should_exist", True),
                     )
