@@ -82,7 +82,7 @@ class CreateThermalReserveCertification(ICommand):
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            action=CommandName.CREATE_AREA.value,
+            action=CommandName.CREATE_THERMAL_RESERVE_CERTIFICATION.value,
             args={
                 "area_id": self.area_id,
                 "thermal_id": self.thermal_id,

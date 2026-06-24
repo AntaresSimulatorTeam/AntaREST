@@ -107,7 +107,7 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
     @override
     def save_thermal_reserve_certifications(
             self,
-            data: dict[AreaId, dict[ThermalId, dict[ReserveDefinitionId, ThermalReserveCertification]]],
+            data: ThermalReserveCertificationsMapping
     ) -> None:
         if not data:
             return

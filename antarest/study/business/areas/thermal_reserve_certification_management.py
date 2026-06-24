@@ -20,6 +20,8 @@ from antarest.study.business.model.thermal_reserve_certification_model import (
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.create_thermal_reserve_certification import \
     CreateThermalReserveCertification
+from antarest.study.storage.variantstudy.model.command.update_thermal_reserve_certifications import \
+    UpdateThermalReserveCertifications
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -64,16 +66,14 @@ class ThermalReserveCertificationsManager:
         reserve_id: str,
         data: ThermalReserveCertificationUpdate,
     ) -> ThermalReserveCertification:
-        certification = self.get_certification(study, area_id, thermal_id, reserve_id)
-        updated = update_thermal_reserve_certification(certification, data)
-
         command = UpdateThermalReserveCertifications(
-            certification_properties={area_id: {thermal_id: {reserve_id: data}}},
+            parameters={area_id: {thermal_id: {ReserveDefinitionId(reserve_id): data}}},
             study_version=study.version,
             command_context=self._command_context,
         )
         study.add_commands([command])
-        return updated
+
+        return self.get_certification(study, area_id, thermal_id, reserve_id)
 
     def delete_certifications(
         self, study: StudyInterface, area_id: str, thermal_id: str, reserve_ids: list[str]

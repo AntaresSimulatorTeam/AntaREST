@@ -1743,7 +1743,7 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_thermal_reserve_certifications(
         self,
-        data: dict[AreaId, dict[ThermalId, dict[ReserveDefinitionId, ThermalReserveCertification]]],
+        data: ThermalReserveCertificationsMapping
     ) -> None:
         for area_id, by_cluster in data.items():
             for thermal_id, reserves_dict in by_cluster.items():

@@ -71,7 +71,7 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
     @override
     def save_thermal_reserve_certifications(
             self,
-            data: dict[AreaId, dict[ThermalId, dict[ReserveDefinitionId, ThermalReserveCertification]]],
+            data: ThermalReserveCertificationsMapping
     ) -> None:
         file_study = self.get_file_study()
 
