@@ -98,6 +98,7 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
                             data = serialize_thermal_reserve_certification(reserve_id, reserves_dict[reserve_id])
                             new_certifications.append(data)
                     # Replace the old certifications
+                    # todo: We're missing the `symmetries` code.
                     ini_content["participations"][k] = new_certifications
 
             # Handle the remaining thermals which did not exist in the file.
