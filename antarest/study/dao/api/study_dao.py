@@ -45,6 +45,7 @@ from antarest.study.business.model.sts_model import (
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
+from antarest.study.business.model.thermal_reserve_symmetries_model import ThermalReserveSymmetry
 from antarest.study.business.model.user_model import UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
@@ -92,6 +93,10 @@ from antarest.study.dao.api.thermal_reserve_certification_dao import (
     ReadOnlyThermalReserveCertificationDao,
     ThermalReserveCertificationDao,
 )
+from antarest.study.dao.api.thermal_reserve_symmetries_dao import (
+    ReadOnlyThermalReserveSymmetriesDao,
+    ThermalReserveSymmetriesDao,
+)
 from antarest.study.dao.api.timeseries_config_dao import ReadOnlyTimeSeriesConfigDao, TimeSeriesConfigDao
 from antarest.study.dao.api.user_resources_dao import ReadOnlyUserResourcesDao, UserResourcesDao
 from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
@@ -107,6 +112,7 @@ from antarest.study.dao.common import (
     StStorageSeriesMapping,
     ThermalId,
     ThermalReserveCertificationsMapping,
+    ThermalReserveSymmetriesMapping,
     ThermalSeriesMapping,
     XpansionCapacitiesMapping,
     XpansionConstraintsMapping,
@@ -146,6 +152,7 @@ class ReadOnlyStudyDao(
     ReadOnlyReservesGlobalParametersDao,
     ReadOnlyReserveDefinitionDao,
     ReadOnlyThermalReserveCertificationDao,
+    ReadOnlyThermalReserveSymmetriesDao,
 ):
     @abstractmethod
     def get_study_id(self) -> str:
@@ -198,6 +205,7 @@ class StudyDao(
     ReservesGlobalParametersDao,
     ReserveDefinitionDao,
     ThermalReserveCertificationDao,
+    ThermalReserveSymmetriesDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -915,3 +923,11 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId
     ) -> bool:
         return self._adaptee.thermal_reserve_certification_exists(area_id, thermal_id, reserve_id)
+
+    @override
+    def get_all_thermal_reserve_symmetries(self) -> ThermalReserveSymmetriesMapping:
+        return self._adaptee.get_all_thermal_reserve_symmetries()
+
+    @override
+    def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, list[ThermalReserveSymmetry]]:
+        return self._adaptee.get_thermal_reserve_symmetries(area_id)
