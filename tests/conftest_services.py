@@ -31,7 +31,7 @@ from antarest.core.config import Config, InternalMatrixFormat, StorageConfig, Wo
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskResult, TaskStatus, TaskType
-from antarest.core.tasks.service import ITaskService, NoopNotifier, Task
+from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService, NoopNotifier, Task
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import current_time
 from antarest.eventbus.business.local_eventbus import LocalEventBus
@@ -111,6 +111,10 @@ class SynchTaskService(ITaskService):
 
     @override
     def await_task(self, task_id: str, timeout_sec: t.Optional[int] = None) -> None:
+        pass
+
+    @override
+    async def await_task_async(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
         pass
 
     @override

@@ -9,8 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import asyncio
 import time
-from typing import Callable, TypeVar
+from collections.abc import Callable
+from typing import TypeVar
 
 T = TypeVar("T")
 
@@ -39,3 +41,28 @@ def wait_for(fn: Callable[[], T | None], polling_interval: float, timeout: float
 
     # one last try
     return fn()
+
+
+async def async_wait_for(fn: Callable[[], T | None], polling_interval: float, timeout: float) -> T | None:
+    """
+    Async equivalent of `wait_for`. Polls `fn` (which may do blocking I/O) in a thread
+    and yields the event loop between polls.
+
+    Args:
+        fn: polling function, may contain blocking calls (e.g. DB queries)
+        polling_interval: wait time in seconds between 2 calls of fn
+        timeout: maximum time to wait.
+
+    Returns:
+        None if timed out, else the result of the function.
+    """
+    end = time.time() + timeout
+
+    while time.time() < end:
+        result = await asyncio.to_thread(fn)
+        if result is not None:
+            return result
+        await asyncio.sleep(polling_interval)
+
+    # one last try
+    return await asyncio.to_thread(fn)

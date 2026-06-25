@@ -20,7 +20,7 @@ from antarest.core.filetransfer.model import FileDownload
 from antarest.core.filetransfer.repository import FileDownloadRepository
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskStatus, TaskType
-from antarest.core.tasks.service import ITaskService, NoopNotifier, Task
+from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService, NoopNotifier, Task
 from antarest.core.utils.utils import current_time
 
 
@@ -61,6 +61,10 @@ class SimpleSyncTaskService(ITaskService):
 
     @override
     def await_task(self, task_id: str, timeout_sec: int | None = None) -> None:
+        pass
+
+    @override
+    async def await_task_async(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
         pass
 
     @override
