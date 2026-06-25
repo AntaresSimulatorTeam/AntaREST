@@ -19,7 +19,11 @@ from antarest.study.business.model.reserve_definition_model import ReserveDefini
 from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
 from antarest.study.dao.api.thermal_reserve_certification_dao import ThermalReserveCertificationDao
 from antarest.study.dao.common import AreaId, ThermalId, ThermalReserveCertificationsMapping
-from antarest.study.dao.file.common import check_area_exists
+from antarest.study.dao.file.common import (
+    check_area_exists,
+    get_thermal_reserve_participations_as_ini_content,
+    get_thermal_reserve_path,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal_reserve_certifications import (
     parse_thermal_reserves_certifications,
@@ -29,10 +33,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-
-
-def _thermal_reserve_path(area_id: str) -> list[str]:
-    return ["input", "thermal", "clusters", area_id, "reserve-participations"]
 
 
 class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, ABC):
@@ -80,7 +80,7 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
         for area_id, thermal_dict in data.items():
             check_area_exists(file_study.config, area_id)
 
-            ini_content = self._get_all_certifications_for_area_as_ini_content(area_id)
+            ini_content = get_thermal_reserve_participations_as_ini_content(area_id, file_study)
 
             for k, participation in enumerate(ini_content.get("participations", [])):
                 thermal_id = transform_name_to_id(participation["cluster"])
@@ -112,7 +112,7 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
             ini_content.setdefault("participations", []).extend(new_thermals)
 
             # Save the new content
-            file_study.tree.save(ini_content, _thermal_reserve_path(area_id))
+            file_study.tree.save(ini_content, get_thermal_reserve_path(area_id))
 
     @override
     def delete_thermal_reserve_certifications(
@@ -121,7 +121,9 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
         if not reserve_ids:
             return
 
-        current_ini_content = self._get_all_certifications_for_area_as_ini_content(area_id)
+        file_study = self.get_file_study()
+
+        current_ini_content = get_thermal_reserve_participations_as_ini_content(area_id, file_study)
 
         all_certifications = parse_thermal_reserves_certifications(current_ini_content)
 
@@ -149,13 +151,10 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
         # Save the new content
         # todo: We're missing the `symmetries` code, so when removing one, we're removing all symmetries from the file.
 
-        self.get_file_study().tree.save(final_content, _thermal_reserve_path(area_id))
+        file_study.tree.save(final_content, get_thermal_reserve_path(area_id))
 
     def get_all_certifications_for_area(
         self, area_id: AreaId
     ) -> dict[ThermalId, dict[ReserveDefinitionId, ThermalReserveCertification]]:
-        data = self._get_all_certifications_for_area_as_ini_content(area_id)
+        data = get_thermal_reserve_participations_as_ini_content(area_id, self.get_file_study())
         return parse_thermal_reserves_certifications(data)
-
-    def _get_all_certifications_for_area_as_ini_content(self, area_id: AreaId) -> dict[str, Any]:
-        return self.get_file_study().tree.get(_thermal_reserve_path(area_id))

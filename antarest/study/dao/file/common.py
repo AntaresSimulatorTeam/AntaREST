@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.dao.common import AreaId, AreaSeriesMapping
@@ -62,3 +62,11 @@ def save_area_matrices(
         assert isinstance(node, InputSeriesMatrix)
         matrices_mapping.setdefault(series_id, []).append(node)
     file_study_dao.save_matrices(matrices_mapping)
+
+
+def get_thermal_reserve_path(area_id: str) -> list[str]:
+    return ["input", "thermal", "clusters", area_id, "reserve-participations"]
+
+
+def get_thermal_reserve_participations_as_ini_content(area_id: AreaId, file_study: FileStudy) -> dict[str, Any]:
+    return file_study.tree.get(get_thermal_reserve_path(area_id))
