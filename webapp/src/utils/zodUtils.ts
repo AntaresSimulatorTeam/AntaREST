@@ -39,7 +39,13 @@ export function nullishToOptional<T extends z.ZodTypeAny>(schema: T) {
   return schema.nullish().transform((v) => v ?? undefined);
 }
 
-export function uniqueArray<T extends z.ZodTypeAny>(schema: T) {
+/**
+ * Wraps a Zod schema to ensure that an array contains only unique values (strings or numbers).
+ *
+ * @param schema - The Zod schema to wrap, which defines the expected type of the array elements.
+ * @returns A new Zod schema that validates an array with unique values.
+ */
+export function uniqueArray<T extends z.ZodType<string | number>>(schema: T) {
   return z.array(schema).refine((values) => new Set(values).size === values.length, {
     error: "Array must contain unique values",
   });

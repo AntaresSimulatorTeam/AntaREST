@@ -19,14 +19,14 @@ import { linkOptions } from "@tanstack/react-router";
 import { sortByProp } from "ramda-adjunct";
 
 export function tableModesToList(tableModes: TableMode[]): RouterListViewItem[] {
-  const list = tableModes.map((tm) => ({
-    id: tm.id,
-    label: tm.name,
+  const list = tableModes.map((tableMode) => ({
+    id: tableMode.id,
+    label: tableMode.name,
     linkOptions: linkOptions({
       to: ".",
-      params: { tableModeId: tm.id },
+      params: { tableModeId: tableMode.id },
     }),
-    loading: isQueryListItemOptimistic(tm),
+    loading: isQueryListItemOptimistic(tableMode),
   }));
 
   return sortByProp("label", list);

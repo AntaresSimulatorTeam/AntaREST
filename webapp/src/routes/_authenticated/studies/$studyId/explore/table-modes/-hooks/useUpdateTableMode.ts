@@ -68,8 +68,6 @@ function useUpdateTableMode() {
       }
     },
     onSuccess: (updatedTableMode) => {
-      const { queryKey: queryListKey } = tableModeQueries.list();
-
       queryClient.setQueryData(queryListKey, (old = []) => {
         return old.map((tableMode) =>
           tableMode.id === updatedTableMode.id ? updatedTableMode : tableMode,

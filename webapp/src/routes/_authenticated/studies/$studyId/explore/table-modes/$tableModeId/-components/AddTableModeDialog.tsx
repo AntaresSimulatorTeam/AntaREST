@@ -17,7 +17,7 @@ import type { TableMode } from "@/services/api/tablemode/types";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { useTranslation } from "react-i18next";
 import useCreateTableMode from "../../-hooks/useCreateTableMode";
-import TableModeFormDialog from "./BaseTableModeDialog";
+import BaseTableModeDialog from "./BaseTableModeDialog";
 
 interface Props {
   onCancel: VoidFunction;
@@ -32,7 +32,8 @@ function AddTableModeDialog({ onCancel }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ values }: SubmitHandlerPlus<TableMode>) => {
-    createTableMode.mutate(values);
+    const { id, ...rest } = values;
+    createTableMode.mutate(rest);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -40,7 +41,7 @@ function AddTableModeDialog({ onCancel }: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <TableModeFormDialog
+    <BaseTableModeDialog
       title={t("study.tableModes.dialog.add.title")}
       titleIcon={AddCircleIcon}
       defaultValues={{

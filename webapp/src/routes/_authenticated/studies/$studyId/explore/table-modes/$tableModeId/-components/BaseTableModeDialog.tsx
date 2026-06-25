@@ -27,7 +27,7 @@ import startCase from "lodash/startCase";
 import { useTranslation } from "react-i18next";
 import { getTableColumnsForType, tableModeTypeOptions } from "./utils";
 
-export interface TableModeFormDialogProps
+export interface BaseTableModeDialogProps
   extends Pick<
     FormDialogProps<TableMode>,
     "title" | "titleIcon" | "onCancel" | "onSubmit" | "onSubmitSuccessful"
@@ -35,7 +35,7 @@ export interface TableModeFormDialogProps
   defaultValues: TableMode;
 }
 
-function TableModeFormDialog(props: TableModeFormDialogProps) {
+function BaseTableModeDialog(props: BaseTableModeDialogProps) {
   const { title, titleIcon, defaultValues, onSubmit, onCancel } = props;
   const { t } = useTranslation();
 
@@ -96,4 +96,4 @@ function TableModeFormDialog(props: TableModeFormDialogProps) {
   );
 }
 
-export default TableModeFormDialog;
+export default BaseTableModeDialog;

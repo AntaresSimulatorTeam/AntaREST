@@ -22,7 +22,7 @@ import type { GridColumn } from "@glideapps/glide-data-grid";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { Box, Typography } from "@mui/material";
 import startCase from "lodash/startCase";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import DataGridForm, { type DataGridFormProps } from "./DataGridForm";
 import type { SubmitHandlerPlus } from "./Form/types";
@@ -45,7 +45,6 @@ function TableModeDataForm<T extends TableModeType>({
   extraActions,
 }: TableModeDataFormProps<T>) {
   const { t } = useTranslation();
-  const [gridColumns, setGridColumns] = useState<DataGridFormProps<TableModeData>["columns"]>([]);
   const columnsDep = columns.join(",");
 
   const res = usePromise(
@@ -55,28 +54,20 @@ function TableModeDataForm<T extends TableModeType>({
 
   // Filter columns based on the data received, because the API may return
   // fewer columns than requested depending on the study root
-  useEffect(() => {
+  const gridColumns = useMemo<DataGridFormProps<TableModeData>["columns"]>(() => {
     const data = res.data || {};
     const rowNames = Object.keys(data);
 
     if (rowNames.length === 0) {
-      setGridColumns([]);
-      return;
+      return [];
     }
 
     const columnNames = Object.keys(data[rowNames[0]]);
 
-    setGridColumns(
-      columns
-        .filter((col) => columnNames.includes(col))
-        .map((col) => {
-          const title = startCase(col);
-          return {
-            title,
-            id: col,
-          } satisfies GridColumn;
-        }),
-    );
+    return columns
+      .filter((col) => columnNames.includes(col))
+      .map((col) => ({ title: startCase(col), id: col }) satisfies GridColumn);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [res.data, columnsDep]);
 
   ////////////////////////////////////////////////////////////////

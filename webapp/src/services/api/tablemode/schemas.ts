@@ -29,7 +29,7 @@ export const tableModeTypeSchema = z.enum([
   "st-storages-additional-constraints",
 ]);
 
-const areaColumnsSchema = uniqueArray(
+export const areaColumnsSchema = uniqueArray(
   z.enum([
     "nonDispatchPower",
     "dispatchHydroPower",
@@ -45,7 +45,7 @@ const areaColumnsSchema = uniqueArray(
   ]),
 );
 
-const linkColumnsSchema = uniqueArray(
+export const linkColumnsSchema = uniqueArray(
   z.enum([
     "hurdlesCost",
     "loopFlow",
@@ -61,7 +61,7 @@ const linkColumnsSchema = uniqueArray(
   ]),
 );
 
-const thermalColumnsSchema = uniqueArray(
+export const thermalColumnsSchema = uniqueArray(
   z.enum([
     "group",
     "enabled",
@@ -103,7 +103,7 @@ const thermalColumnsSchema = uniqueArray(
   ]),
 );
 
-const renewableColumnsSchema = uniqueArray(
+export const renewableColumnsSchema = uniqueArray(
   z.enum([
     // Since v8.1
     "group",
@@ -114,7 +114,7 @@ const renewableColumnsSchema = uniqueArray(
   ]),
 );
 
-const stStorageColumnsSchema = uniqueArray(
+export const stStorageColumnsSchema = uniqueArray(
   z.enum([
     // Since v8.6
     "group",
@@ -133,7 +133,7 @@ const stStorageColumnsSchema = uniqueArray(
   ]),
 );
 
-const bindingConstraintColumnsSchema = uniqueArray(
+export const bindingConstraintColumnsSchema = uniqueArray(
   z.enum([
     "enabled",
     "timeStep",
@@ -147,7 +147,7 @@ const bindingConstraintColumnsSchema = uniqueArray(
   ]),
 );
 
-const stStorageAdditionalConstraintColumnsSchema = uniqueArray(
+export const stStorageAdditionalConstraintColumnsSchema = uniqueArray(
   z.enum([
     // Since v9.2
     "variable",

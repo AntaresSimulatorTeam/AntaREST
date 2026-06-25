@@ -17,7 +17,7 @@ import type { TableMode } from "@/services/api/tablemode/types";
 import EditIcon from "@mui/icons-material/Edit";
 import { useTranslation } from "react-i18next";
 import useUpdateTableMode from "../../-hooks/useUpdateTableMode";
-import TableModeFormDialog from "./BaseTableModeDialog";
+import BaseTableModeDialog from "./BaseTableModeDialog";
 
 interface Props {
   tableMode: TableMode;
@@ -33,8 +33,8 @@ function UpdateTableModeDialog({ tableMode, onCancel }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ values }: SubmitHandlerPlus<TableMode>) => {
-    const { id, ...update } = values;
-    updateTableMode.mutate({ tableId: id, ...update });
+    const { id, ...rest } = values;
+    updateTableMode.mutate({ tableId: id, ...rest });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -42,7 +42,7 @@ function UpdateTableModeDialog({ tableMode, onCancel }: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <TableModeFormDialog
+    <BaseTableModeDialog
       title={t("study.tableModes.dialog.edit.title")}
       titleIcon={EditIcon}
       defaultValues={tableMode}
