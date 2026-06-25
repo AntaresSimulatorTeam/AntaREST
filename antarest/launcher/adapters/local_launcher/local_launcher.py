@@ -33,7 +33,7 @@ from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.jwt import JWTUser
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.log_manager import LogTailManager
-from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType
+from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType, NoValidOutputError
 from antarest.login.utils import current_user_context, require_current_user
 from antarest.study.model import STUDY_VERSION_9_2
 
@@ -144,6 +144,8 @@ class LocalLauncher(AbstractLauncher):
                     try:
                         launcher_logs = self._get_launcher_logs(job_id)
                         output_id = self.callbacks.import_output(job_id, export_path / "output", launcher_logs)
+                    except NoValidOutputError:
+                        logger.info(f"No valid output to import for study {study_uuid} located at {export_path}")
                     except Exception as e:
                         logger.error(
                             f"Failed to import output for study {study_uuid} located at {export_path}",
