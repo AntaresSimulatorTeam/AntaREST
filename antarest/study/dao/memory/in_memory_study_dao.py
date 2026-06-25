@@ -70,6 +70,7 @@ from antarest.study.business.model.sts_model import (
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
+from antarest.study.business.model.thermal_reserve_symmetries_model import ThermalReserveSymmetry
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
@@ -93,7 +94,9 @@ from antarest.study.dao.common import (
     StStorageConstraintSeriesMapping,
     StStorageId,
     StStorageSeriesMapping,
+    ThermalId,
     ThermalReserveCertificationsMapping,
+    ThermalReserveSymmetriesMapping,
     ThermalSeriesMapping,
     XpansionCapacitiesMapping,
     XpansionConstraintsMapping,
@@ -287,6 +290,8 @@ class InMemoryStudyDao(StudyDao):
         self._wind: dict[str, str] = {}
         # Thermal Reserve Certifications
         self._thermal_reserve_certifications: dict[ThermalReserveCertificationKey, ThermalReserveCertification] = {}
+        # Thermal Reserve Symmetries
+        self._thermal_reserve_symmetries: ThermalReserveSymmetriesMapping = {}
 
     @override
     def get_study_id(self) -> str:
@@ -1763,3 +1768,15 @@ class InMemoryStudyDao(StudyDao):
                 del self._thermal_reserve_certifications[thermal_reserve_certification_key(area_id, thermal_id, rid)]
             except KeyError as exc:
                 raise ThermalReserveCertificationNotFound(area_id, thermal_id, rid) from exc
+
+    @override
+    def get_all_thermal_reserve_symmetries(self) -> ThermalReserveSymmetriesMapping:
+        return self._thermal_reserve_symmetries
+
+    @override
+    def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, list[ThermalReserveSymmetry]]:
+        return self._thermal_reserve_symmetries[area_id]
+
+    @override
+    def set_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
+        self._thermal_reserve_symmetries = data
