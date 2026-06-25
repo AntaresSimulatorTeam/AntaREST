@@ -21,8 +21,10 @@ import { Alert, Chip } from "@mui/material";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import CreateReserveDialog from "./-components/CreateReserveDialog";
+import EditReserveDrawer from "./-components/EditReserveDrawer";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/general",
@@ -70,6 +72,7 @@ function ReservesGeneral() {
   const { t } = useTranslation();
   const { studyId, areaId } = Route.useParams();
   const queryClient = useQueryClient();
+  const [editingReserve, setEditingReserve] = useState<ReserveRow | null>(null);
 
   const { data: reservesEnabled } = useSuspenseQuery(reserveQueries.enabled(studyId));
 
@@ -92,6 +95,15 @@ function ReservesGeneral() {
     onSuccess: (data, { reserveIds }) => {
       queryClient.setQueryData(listQueryKey, (old = []) =>
         old.filter((reserve) => !reserveIds.includes(reserve.id)),
+      );
+    },
+  });
+
+  const updateMutation = useMutation({
+    ...reserveMutations.update(studyId, areaId),
+    onSuccess: (updatedReserve) => {
+      queryClient.setQueryData(listQueryKey, (old = []) =>
+        old.map((reserve) => (reserve.id === updatedReserve.id ? updatedReserve : reserve)),
       );
     },
   });
@@ -134,6 +146,19 @@ function ReservesGeneral() {
     });
   };
 
+  const handleUpdate = async (data: UpdateReserveData) => {
+    if (!editingReserve) {
+      return;
+    }
+
+    await updateMutation.mutateAsync({
+      studyId,
+      areaId,
+      reserveId: editingReserve.id,
+      data,
+    });
+  };
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -144,6 +169,13 @@ function ReservesGeneral() {
         <Alert severity="warning" sx={{ mb: 1 }}>
           {t("study.modeling.reserves.readOnly.alert")}
         </Alert>
+      {editingReserve && (
+        />
+          onSubmit={handleUpdate}
+          onClose={() => setEditingReserve(null)}
+          reserve={editingReserve}
+          open
+        <EditReserveDrawer
       )}
       <GroupedDataTable
         key={`${studyId}-${areaId}`}
