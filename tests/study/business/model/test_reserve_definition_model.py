@@ -23,14 +23,15 @@ from antarest.study.business.model.reserve_definition_model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.reserve_definition import (
     parse_reserve_definition,
-    serialize_reserve_definition,
+    serialize_reserve_definitions,
 )
 
 
 class TestReserveDefinition:
     def test_defaults_applied(self) -> None:
-        reserve = ReserveDefinition(id="Reserve 1", type=ReserveType.UP)
-        assert reserve.id == "Reserve 1"
+        reserve = ReserveDefinition(name="Reserve 1", type=ReserveType.UP)
+        assert reserve.id == "reserve 1"
+        assert reserve.name == "Reserve 1"
         assert reserve.type == ReserveType.UP
         assert reserve.failure_cost == 0.0
         assert reserve.spillage_cost == 0.0
@@ -39,9 +40,9 @@ class TestReserveDefinition:
         assert reserve.energy_activation_ratio == 1.0
 
     def test_type_is_case_insensitive(self) -> None:
-        reserve = ReserveDefinition(id="R", type="UP")  # type: ignore[arg-type]
+        reserve = ReserveDefinition(name="R", type="UP")  # type: ignore[arg-type]
         assert reserve.type == ReserveType.UP
-        reserve = ReserveDefinition(id="R", type="Down")  # type: ignore[arg-type]
+        reserve = ReserveDefinition(name="R", type="Down")  # type: ignore[arg-type]
         assert reserve.type == ReserveType.DOWN
 
     @pytest.mark.parametrize(
@@ -60,7 +61,7 @@ class TestReserveDefinition:
         ],
     )
     def test_bounds(self, field: str, value: float, valid: bool) -> None:
-        kwargs = {"id": "r", "type": ReserveType.UP, field: value}
+        kwargs = {"name": "r", "type": ReserveType.UP, field: value}
         if valid:
             ReserveDefinition(**kwargs)
         else:
@@ -69,22 +70,22 @@ class TestReserveDefinition:
 
 
 class TestReserveDefinitionCreation:
-    def test_only_id_and_type_required(self) -> None:
-        creation = ReserveDefinitionCreation(id="R1", type=ReserveType.UP)
-        assert creation.id == "R1"
+    def test_only_name_and_type_required(self) -> None:
+        creation = ReserveDefinitionCreation(name="R1", type=ReserveType.UP)
+        assert creation.name == "R1"
         assert creation.failure_cost is None
 
     @pytest.mark.parametrize(
-        "id_",
+        "name",
         ["global-parameters", "GLOBAL-PARAMETERS", "globalparameters", "GlobalParameters"],
     )
-    def test_reserved_id_rejected(self, id_: str) -> None:
+    def test_reserved_name_rejected(self, name: str) -> None:
         with pytest.raises(ReservedReserveDefinitionId):
-            ReserveDefinitionCreation(id=id_, type=ReserveType.UP)
+            ReserveDefinitionCreation(name=name, type=ReserveType.UP)
 
     def test_missing_type_invalid(self) -> None:
         with pytest.raises(ValidationError):
-            ReserveDefinitionCreation(id="R1")  # type: ignore[call-arg]
+            ReserveDefinitionCreation(name="R1")  # type: ignore[call-arg]
 
 
 class TestReserveDefinitionUpdate:
@@ -100,14 +101,15 @@ class TestReserveDefinitionUpdate:
 
 class TestCreateAndUpdateHelpers:
     def test_create_applies_defaults(self) -> None:
-        creation = ReserveDefinitionCreation(id="R1", type=ReserveType.UP)
+        creation = ReserveDefinitionCreation(name="R1", type=ReserveType.UP)
         reserve = create_reserve_definition(creation)
         assert reserve.reference_activation_duration == 1
         assert reserve.energy_activation_ratio == 1.0
-        assert reserve.id == "R1"
+        assert reserve.name == "R1"
+        assert reserve.id == "r1"
 
     def test_update_partial(self) -> None:
-        reserve = ReserveDefinition(id="R1", type=ReserveType.UP, failure_cost=100.0, reference_activation_duration=5)
+        reserve = ReserveDefinition(name="R1", type=ReserveType.UP, failure_cost=100.0, reference_activation_duration=5)
         update = ReserveDefinitionUpdate(failure_cost=200.0)
         result = update_reserve_definition(reserve, update)
         assert result.failure_cost == 200.0
@@ -117,16 +119,17 @@ class TestCreateAndUpdateHelpers:
 
 class TestFileDataRoundTrip:
     def test_serialize_excludes_id(self) -> None:
-        reserve = ReserveDefinition(id="Reserve 1", type=ReserveType.DOWN, failure_cost=500.0)
-        data = serialize_reserve_definition(reserve)
+        reserve = ReserveDefinition(name="Reserve 1", type=ReserveType.DOWN, failure_cost=500.0)
+        data = serialize_reserve_definitions([reserve])[0]
         assert "id" not in data
-        assert "name" not in data
+        assert data["name"] == "Reserve 1"
         assert data["type"] == "down"
         assert data["failure-cost"] == 500.0
         assert data["reference-activation-duration"] == 1
 
     def test_parse_kebab_case(self) -> None:
         data = {
+            "name": "Reserve 1",
             "type": "up",
             "failure-cost": 500.0,
             "spillage-cost": 1111.0,
@@ -134,15 +137,16 @@ class TestFileDataRoundTrip:
             "energy-activation-ratio": 1.0,
             "reference-activation-duration": 10,
         }
-        reserve = parse_reserve_definition("Reserve 1", data)
-        assert reserve.id == "Reserve 1"
+        reserve = parse_reserve_definition(data)
+        assert reserve.name == "Reserve 1"
+        assert reserve.id == "reserve 1"
         assert reserve.type == ReserveType.UP
         assert reserve.failure_cost == 500.0
         assert reserve.reference_activation_duration == 10
 
     def test_round_trip(self) -> None:
         original = ReserveDefinition(
-            id="Reserve A",
+            name="Reserve A",
             type=ReserveType.UP,
             failure_cost=10.0,
             spillage_cost=5.0,
@@ -150,6 +154,6 @@ class TestFileDataRoundTrip:
             power_activation_ratio=0.4,
             energy_activation_ratio=0.9,
         )
-        data = serialize_reserve_definition(original)
-        restored = parse_reserve_definition(original.id, data)
+        data = serialize_reserve_definitions([original])[0]
+        restored = parse_reserve_definition(data)
         assert restored == original
