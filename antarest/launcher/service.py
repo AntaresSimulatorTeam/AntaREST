@@ -35,6 +35,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
+from antarest.launcher.exceptions import NoValidOutputError
 from antarest.launcher.extensions.adequacy_patch.extension import AdequacyPatchExtension
 from antarest.launcher.extensions.interface import ILauncherExtension
 from antarest.launcher.model import (
@@ -48,7 +49,6 @@ from antarest.launcher.model import (
     LauncherParametersDTO,
     LauncherResourceRangeDTO,
     LogType,
-    NoValidOutputError,
     SolverPresets,
     SolverPresetsCreation,
     SolverPresetsDB,

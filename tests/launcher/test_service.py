@@ -45,6 +45,7 @@ from antarest.core.utils.utils import current_time
 from antarest.dbmodel import Base
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.adapters.local_launcher.local_launcher import SOLVER_VERSION_9_2
+from antarest.launcher.exceptions import NoValidOutputError
 from antarest.launcher.model import (
     JobLog,
     JobLogType,
@@ -53,7 +54,6 @@ from antarest.launcher.model import (
     LauncherLoadDTO,
     LauncherParametersDTO,
     LogType,
-    NoValidOutputError,
     SolverPresets,
     SolverPresetsDB,
 )

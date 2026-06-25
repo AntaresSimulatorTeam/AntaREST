@@ -42,12 +42,12 @@ from antarest.core.utils.utils import assert_this
 from antarest.globals import ANTAREST_WORKER_ID
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.log_manager import LogTailManager
+from antarest.launcher.exceptions import NoValidOutputError
 from antarest.launcher.model import (
     JobStatus,
     LauncherLoadDTO,
     LauncherParametersDTO,
     LogType,
-    NoValidOutputError,
     XpansionParametersDTO,
 )
 from antarest.launcher.ssh_client import calculates_slurm_load

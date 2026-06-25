@@ -44,15 +44,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.validation import I
 SolverParams = dict[str, str]
 
 
-class NoValidOutputError(Exception):
-    """
-    Raised when a launch leaves no importable Antares output (e.g. a failed launch that
-    only produced a `simulation.log` instead of a proper output directory or ZIP).
-
-    Launcher adapters catch this to mark the job as failed instead of crashing.
-    """
-
-
 def _format_solver_version(v: SolverVersion) -> str:
     return f"{v:2d}"
 
