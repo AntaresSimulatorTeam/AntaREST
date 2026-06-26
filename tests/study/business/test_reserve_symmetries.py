@@ -18,6 +18,7 @@ from antarest.study.business.model.reserve_symmetries_model import merge_symmetr
 @pytest.mark.parametrize(
     "symmetries,merged_symmetries",
     [
+        ([["a", "b", "c"]], [["a", "b", "c"]]),
         ([["a", "b"], ["c", "d"]], [["a", "b"], ["c", "d"]]),
         ([["a", "b"], ["a", "d"]], [["a", "b", "d"]]),
         ([["a", "b", "c"], ["c", "d"], ["e", "f"], ["b", "d"]], [["a", "b", "c", "d"], ["e", "f"]]),
