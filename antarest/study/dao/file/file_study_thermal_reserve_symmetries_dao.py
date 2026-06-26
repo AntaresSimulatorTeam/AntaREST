@@ -22,6 +22,7 @@ from antarest.study.dao.common import (
     ThermalReserveSymmetriesMapping,
 )
 from antarest.study.dao.file.common import get_thermal_reserve_participations_as_ini_content
+from antarest.study.storage.rawstudy.model.filesystem.config.reserve_symmetries import parse_thermal_reserves_symmetries
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 if TYPE_CHECKING:
@@ -47,8 +48,7 @@ class FileStudyThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao, ABC):
     @override
     def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, list[ReserveSymmetry]]:
         ini_content = get_thermal_reserve_participations_as_ini_content(area_id, self.get_file_study())
-        print(ini_content)
-        raise NotImplementedError()
+        return parse_thermal_reserves_symmetries(ini_content)
 
     @override
     def set_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
