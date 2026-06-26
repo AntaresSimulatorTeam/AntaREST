@@ -11,10 +11,9 @@
 # This file is part of the Antares project.
 from unittest.mock import MagicMock
 
-from sqlalchemy.orm import Session
-
 from antarest.launcher.adapters.database_launcher_load_dao import DataBaseLauncherLoadDao
 from antarest.launcher.model import LauncherLoad
+from tests.helpers import with_db_context
 
 launcher_load_1 = LauncherLoad(
     launcher_name="foo",
@@ -41,14 +40,16 @@ launcher_load_2_updated = LauncherLoad(
 )
 
 
-def test_database_launcher_loads_is_empty_by_default(db_session: Session) -> None:
-    db_launcher_load = DataBaseLauncherLoadDao(db_session)
+@with_db_context
+def test_database_launcher_loads_is_empty_by_default() -> None:
+    db_launcher_load = DataBaseLauncherLoadDao()
 
     assert db_launcher_load.get_launchers_loads() == []
 
 
-def test_should_be_able_to_add_launcher_load_data_to_db(db_session: Session) -> None:
-    db_launcher_load = DataBaseLauncherLoadDao(db_session)
+@with_db_context
+def test_should_be_able_to_add_launcher_load_data_to_db() -> None:
+    db_launcher_load = DataBaseLauncherLoadDao()
     db_launcher_load.update_launcher_load(launcher_load_1)
 
     actual_launchers_loads = db_launcher_load.get_launchers_loads()
@@ -57,8 +58,9 @@ def test_should_be_able_to_add_launcher_load_data_to_db(db_session: Session) -> 
     check_launcher_load_equals(actual_launchers_loads[0], launcher_load_1)
 
 
-def test_should_be_able_to_update_launcher_load_data_from_db(db_session: Session) -> None:
-    db_launcher_load = DataBaseLauncherLoadDao(db_session)
+@with_db_context
+def test_should_be_able_to_update_launcher_load_data_from_db() -> None:
+    db_launcher_load = DataBaseLauncherLoadDao()
     db_launcher_load.update_launcher_load(launcher_load_2)
 
     actual_launchers_loads = db_launcher_load.get_launchers_loads()
@@ -73,8 +75,9 @@ def test_should_be_able_to_update_launcher_load_data_from_db(db_session: Session
     check_launcher_load_equals(actual_launchers_loads[0], launcher_load_2_updated)
 
 
-def test_should_be_able_to_update_multiple_launchers_loads_data_from_db(db_session: Session) -> None:
-    db_launcher_load = DataBaseLauncherLoadDao(db_session)
+@with_db_context
+def test_should_be_able_to_update_multiple_launchers_loads_data_from_db() -> None:
+    db_launcher_load = DataBaseLauncherLoadDao()
     db_launcher_load.update_launcher_load(launcher_load_1)
     db_launcher_load.update_launcher_load(launcher_load_2)
 
@@ -89,8 +92,9 @@ def test_should_be_able_to_update_multiple_launchers_loads_data_from_db(db_sessi
     assert_launcher_load_is_in_db(launcher_load_2_updated, db_launcher_load)
 
 
-def test_should_update_all_launcher_loads_data_from_db(db_session: Session) -> None:
-    db_launcher_load = DataBaseLauncherLoadDao(db_session)
+@with_db_context
+def test_should_update_all_launcher_loads_data_from_db() -> None:
+    db_launcher_load = DataBaseLauncherLoadDao()
     service_mock = MagicMock()
     service_mock.get_all_loads.return_value = {"foo": launcher_load_1, "bar": launcher_load_2}
     db_launcher_load.update_all_launcher_loads(service_mock)

@@ -54,7 +54,7 @@ def save_launcher_load_task(self: MaintenanceTask) -> LauncherLoadTaskResult:
     start_time = time.time()
     try:
         with db():
-            dao = DataBaseLauncherLoadDao(session=db.session)
+            dao = DataBaseLauncherLoadDao()
             dao.update_all_launcher_loads(launcher_service)
         return LauncherLoadTaskResult(
             status=BackGroundTaskStatus.SUCCESS,
