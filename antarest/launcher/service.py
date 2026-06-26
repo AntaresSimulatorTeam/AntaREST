@@ -626,6 +626,10 @@ class LauncherService:
 
         return launcher.get_load()
 
+    def get_all_loads(self) -> dict[str, LauncherLoadDTO]:
+        """Get the load of all configured launchers."""
+        return {launcher_id: launcher.get_load() for launcher_id, launcher in self.launchers.items()}
+
     def get_solver_versions(self, launcher_id: str | None) -> list[SolverVersion]:
         """
         Fetch the list of solver versions from the configuration.

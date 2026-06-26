@@ -559,6 +559,7 @@ class LauncherConfig:
     default: str = "local"
     configs: list[LocalConfig | SlurmConfig] | None = None
     batch_size: int = 9999
+    launcher_loads_sleeping_time: int = 30
 
     @classmethod
     def from_dict(cls, data: JSON) -> "LauncherConfig":

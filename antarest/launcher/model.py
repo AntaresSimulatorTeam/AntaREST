@@ -368,13 +368,23 @@ class LauncherLoad(Base):
         launcher_status: The status of the launcher: "SUCCESS" or "FAILED".
     """
 
-    __tablename__ = "launcher_loads"
+    __tablename__ = "launchers_loads"
 
     launcher_name: Mapped[str] = mapped_column(String(20), primary_key=True)
     allocated_cpu_rate: Mapped[float] = mapped_column(Float)
     cluster_load_rate: Mapped[float] = mapped_column(Float())
     nb_queued_jobs: Mapped[int] = mapped_column(Integer())
     launcher_status: Mapped[str] = mapped_column(String(100))
+
+    @classmethod
+    def from_dto(cls, dto: LauncherLoadDTO, id: str) -> "LauncherLoad":
+        return cls(
+            launcher_name=id,
+            allocated_cpu_rate=dto.allocated_cpu_rate,
+            cluster_load_rate=dto.cluster_load_rate,
+            nb_queued_jobs=dto.nb_queued_jobs,
+            launcher_status=dto.launcher_status,
+        )
 
 
 class SolverPresets(AntaresBaseModel):
