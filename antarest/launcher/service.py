@@ -35,6 +35,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
+from antarest.launcher.exceptions import NoValidOutputError
 from antarest.launcher.extensions.adequacy_patch.extension import AdequacyPatchExtension
 from antarest.launcher.extensions.interface import ILauncherExtension
 from antarest.launcher.model import (
@@ -522,6 +523,9 @@ class LauncherService:
             job_launch_params = LauncherParametersDTO.from_launcher_params(job_result.launcher_params)
 
             output_true_path = find_single_output_path(output_path)
+
+            if not output_true_path.is_dir() and not is_zip(output_true_path):
+                raise NoValidOutputError(f"No valid output for job {job_id}: {output_true_path}")
 
             self._save_solver_stats(job_result, output_true_path)
 
