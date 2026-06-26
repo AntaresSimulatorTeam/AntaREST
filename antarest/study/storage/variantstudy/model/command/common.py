@@ -111,6 +111,8 @@ class CommandName(Enum):
     CREATE_THERMAL_RESERVE_CERTIFICATION = "create_thermal_reserve_certification"
     UPDATE_THERMAL_RESERVE_CERTIFICATIONS = "update_thermal_reserve_certifications"
     REMOVE_THERMAL_RESERVE_CERTIFICATIONS = "remove_thermal_reserve_certifications"
+    REPLACE_THERMAL_RESERVE_SYMMETRIES = "replace_thermal_reserve_symmetries"
+    REMOVE_THERMAL_RESERVE_SYMMETRIES = "remove_thermal_reserve_symmetries"
 
 
 @dataclass(frozen=True)

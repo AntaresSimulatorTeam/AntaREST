@@ -1765,11 +1765,7 @@ class InMemoryStudyDao(StudyDao):
         return self._thermal_reserve_symmetries[area_id]
 
     @override
-    def set_thermal_reserve_symmetries(
-        self, area_id: AreaId, thermal_id: ThermalId, symmetries: list[ReserveSymmetry]
-    ) -> None:
-        self._thermal_reserve_symmetries[area_id][thermal_id] = symmetries
-
-    @override
-    def save_all_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
-        self._thermal_reserve_symmetries = data
+    def save_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
+        for area_id, thermal_dict in data.items():
+            for thermal_id, symmetries in thermal_dict.items():
+                self._thermal_reserve_symmetries[area_id][thermal_id] = symmetries

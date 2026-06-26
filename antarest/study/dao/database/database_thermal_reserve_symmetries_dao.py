@@ -18,7 +18,6 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetry, merge_symmetries
 from antarest.study.dao.api.thermal_reserve_symmetries_dao import ThermalReserveSymmetriesDao
 from antarest.study.dao.common import (
@@ -82,32 +81,7 @@ class DatabaseThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao):
         return result
 
     @override
-    def set_thermal_reserve_symmetries(
-        self, area_id: AreaId, thermal_id: ThermalId, symmetries: list[ReserveSymmetry]
-    ) -> None:
-        # Check foreign key integrity
-        existing_reserve_definitions = self.get_impl().get_all_reserve_definitions_for_area(area_id)
-        reserve_ids = [ReserveDefinitionId(reserve.id) for reserve in existing_reserve_definitions]
-        self._checks_foreign_key_integrity({area_id: {thermal_id: symmetries}}, {area_id: reserve_ids})
-
-        # Save the new values
-        values = [_convert_model_to_row(self._study_id, area_id, thermal_id, symmetries)]
-        try:
-            # First, clean the DB
-            stmt = delete(_TABLE).where(
-                (_TABLE.c.study_id == self._study_id)
-                & (_TABLE.c.area_id == area_id)
-                & (_TABLE.c.thermal_id == thermal_id)
-            )
-            self._db_session.execute(stmt)
-            # Then, insert the new values
-            self._db_session.execute(insert(_TABLE), values)
-        except IntegrityError as e:
-            self.get_impl().raise_the_right_thermal_exception({area_id: [thermal_id]}, exc=e)
-        self._db_session.commit()
-
-    @override
-    def save_all_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
+    def save_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
         # Check foreign key integrity
         existing_reserve_definitions = self.get_impl().get_all_reserve_definitions()
         existing_reserve_ids = {}
@@ -122,7 +96,13 @@ class DatabaseThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao):
                 values.append(_convert_model_to_row(self._study_id, area_id, thermal_id, symmetries))
         try:
             # First, clean the DB
-            stmt = delete(_TABLE).where(_TABLE.c.study_id == self._study_id)
+            area_ids = set(data)
+            thermal_ids = {thermal_id for area_id, thermal_dict in data.items() for thermal_id in thermal_dict}
+            stmt = delete(_TABLE).where(
+                (_TABLE.c.study_id == self._study_id)
+                & (_TABLE.c.area_id.in_(area_ids))
+                & _TABLE.c.thermal_id.in_(thermal_ids)
+            )
             self._db_session.execute(stmt)
             # Then, insert the new values
             self._db_session.execute(insert(_TABLE), values)

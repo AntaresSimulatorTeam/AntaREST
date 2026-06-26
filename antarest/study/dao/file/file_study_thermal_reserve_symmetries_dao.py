@@ -59,13 +59,7 @@ class FileStudyThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao, ABC):
         return parse_thermal_reserves_symmetries(ini_content)
 
     @override
-    def set_thermal_reserve_symmetries(
-        self, area_id: AreaId, thermal_id: ThermalId, symmetries: list[ReserveSymmetry]
-    ) -> None:
-        self.save_all_thermal_reserve_symmetries({area_id: {thermal_id: symmetries}})
-
-    @override
-    def save_all_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
+    def save_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
         file_study = self.get_file_study()
         for area_id in data:
             check_area_exists(file_study.config, area_id)
