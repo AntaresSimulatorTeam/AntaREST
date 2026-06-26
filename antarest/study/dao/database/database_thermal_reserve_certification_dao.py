@@ -28,7 +28,7 @@ from antarest.study.business.model.thermal_reserve_certification_model import Th
 from antarest.study.dao.api.thermal_reserve_certification_dao import ThermalReserveCertificationDao
 from antarest.study.dao.common import AreaId, ThermalId, ThermalReserveCertificationsMapping
 from antarest.study.dao.database.common import get_row_representation_as_dict
-from antarest.study.dao.database.models.thermal_reserve_certification_dao import THERMAL_RESERVE_CERTIFICATION_TABLE
+from antarest.study.dao.database.models.thermal_reserve_certification import THERMAL_RESERVE_CERTIFICATION_TABLE
 from antarest.study.dao.database.sql_utils import upsert_multiple
 
 if TYPE_CHECKING:
