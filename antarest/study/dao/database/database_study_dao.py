@@ -47,6 +47,7 @@ from antarest.study.dao.database.database_thermal_dao import DatabaseThermalDao
 from antarest.study.dao.database.database_thermal_reserve_certification_dao import (
     DatabaseThermalReserveCertificationDao,
 )
+from antarest.study.dao.database.database_thermal_reserve_symmetries_dao import DatabaseThermalReserveSymmetriesDao
 from antarest.study.dao.database.database_user_resources import DatabaseUserResourcesDao
 from antarest.study.dao.database.database_xpansion_dao import DatabaseXpansionDao
 from antarest.study.dao.database.models.comments import COMMENTS_TABLE
@@ -83,6 +84,7 @@ class DatabaseStudyDao(
     DatabaseReservesGlobalParametersDao,
     DatabaseReserveDefinitionDao,
     DatabaseThermalReserveCertificationDao,
+    DatabaseThermalReserveSymmetriesDao,
 ):
     """
     Database implementation of StudyDao.
