@@ -17,6 +17,7 @@ from sqlalchemy import Row, select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
+from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetry, merge_symmetries
 from antarest.study.dao.api.thermal_reserve_symmetries_dao import ThermalReserveSymmetriesDao
 from antarest.study.dao.common import (
@@ -71,10 +72,19 @@ class DatabaseThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao):
     def set_thermal_reserve_symmetries(
         self, area_id: AreaId, thermal_id: ThermalId, symmetries: list[ReserveSymmetry]
     ) -> None:
-        raise NotImplementedError()
+        existing_reserve_definitions = self.get_impl().get_all_reserve_definitions_for_area(area_id)
+        reserve_ids = [ReserveDefinitionId(reserve.id) for reserve in existing_reserve_definitions]
+        self._checks_foreign_key_integrity({area_id: {thermal_id: symmetries}}, {area_id: reserve_ids})
+        # todo: continue
 
     @override
     def save_all_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
+        existing_reserve_definitions = self.get_impl().get_all_reserve_definitions()
+        existing_reserve_ids = {}
+        for area_id, value in existing_reserve_definitions.items():
+            existing_reserve_ids[area_id] = list(value)
+        self._checks_foreign_key_integrity(data, existing_reserve_ids)
+        # todo: continue
         raise NotImplementedError()
 
     @staticmethod
