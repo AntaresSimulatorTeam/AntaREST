@@ -22,6 +22,8 @@ ThermalId: TypeAlias = str
 def _symmetry_validator(data: list[str]) -> list[str]:
     if len(data) < 2:
         raise ValueError(f"Reserve symmetries should have at least 2 elements, and was {data}")
+    if len(set(data)) != len(data):
+        raise ValueError(f"Reserve symmetries should not contain duplicates, and was {data}")
     return data
 
 
