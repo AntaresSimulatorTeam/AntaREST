@@ -65,7 +65,7 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
         if reserve_id in certifications:
             return certifications[reserve_id]
 
-        raise ThermalReserveCertificationNotFound(area_id, thermal_id, reserve_id)
+        raise ThermalReserveCertificationNotFound(area_id, thermal_id, {reserve_id})
 
     @override
     def thermal_reserve_certification_exists(
@@ -100,8 +100,10 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
                 certifications = all_certifications.pop(thermal_id)
                 participation["certifications"] = serialize_thermal_reserve_certifications(certifications)
 
-            for thermal_id, certifications in all_certifications:
-                print("todo")
+            for thermal_id, certifications in all_certifications.items():
+                yaml_content["participations"].append(
+                    {"cluster": thermal_id, "certifications": serialize_thermal_reserve_certifications(certifications)}
+                )
 
     @override
     def delete_thermal_reserve_certifications(
