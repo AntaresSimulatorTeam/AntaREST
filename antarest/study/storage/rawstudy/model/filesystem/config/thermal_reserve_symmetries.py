@@ -12,12 +12,12 @@
 from typing import Any
 
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
-from antarest.study.business.model.thermal_reserve_symmetries_model import ThermalReserveSymmetry, merge_symmetries
+from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetry, merge_symmetries
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 
-def parse_thermal_reserves_symmetries(data: dict[str, Any]) -> dict[str, list[ThermalReserveSymmetry]]:
-    result: dict[str, list[ThermalReserveSymmetry]] = {}
+def parse_thermal_reserves_symmetries(data: dict[str, Any]) -> dict[str, list[ReserveSymmetry]]:
+    result: dict[str, list[ReserveSymmetry]] = {}
     for content in data.get("participations", []):
         thermal_id = transform_name_to_id(content["cluster"])
         if thermal_id in result:
@@ -33,6 +33,6 @@ def parse_thermal_reserves_symmetries(data: dict[str, Any]) -> dict[str, list[Th
     return result
 
 
-def serialize_thermal_reserve_symmetries(symmetries: list[ThermalReserveSymmetry]) -> list[dict[str, Any]]:
+def serialize_thermal_reserve_symmetries(symmetries: list[ReserveSymmetry]) -> list[dict[str, Any]]:
     merged_symmetries = merge_symmetries(symmetries)
     return [{"reserves": [symmetry]} for symmetry in merged_symmetries]

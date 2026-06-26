@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from antarest.study.business.model.thermal_reserve_symmetries_model import ThermalReserveSymmetry
+from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetry
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.dao.common import ThermalId
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -19,15 +19,15 @@ class ThermalReserveSymmetriesManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_symmetries(self, study: StudyInterface, area_id: str) -> dict[ThermalId, list[ThermalReserveSymmetry]]:
+    def get_symmetries(self, study: StudyInterface, area_id: str) -> dict[ThermalId, list[ReserveSymmetry]]:
         raise NotImplementedError()
 
     def set_symmetries(
-        self, study: StudyInterface, area_id: str, thermal_id: str, symmetries: list[ThermalReserveSymmetry]
-    ) -> list[ThermalReserveSymmetry]:
+        self, study: StudyInterface, area_id: str, thermal_id: str, symmetries: list[ReserveSymmetry]
+    ) -> list[ReserveSymmetry]:
         raise NotImplementedError()
 
     def delete_symmetries(
-        self, study: StudyInterface, area_id: str, thermal_id: str, symmetries: list[ThermalReserveSymmetry]
+        self, study: StudyInterface, area_id: str, thermal_id: str, symmetries: list[ReserveSymmetry]
     ) -> None:
         raise NotImplementedError()

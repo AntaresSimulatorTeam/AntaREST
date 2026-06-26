@@ -12,7 +12,7 @@
 
 import pytest
 
-from antarest.study.business.model.thermal_reserve_symmetries_model import merge_symmetries
+from antarest.study.business.model.reserve_symmetries_model import merge_symmetries
 
 
 @pytest.mark.parametrize(

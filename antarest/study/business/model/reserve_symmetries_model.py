@@ -16,7 +16,6 @@ from pydantic import BeforeValidator
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 
 AreaId: TypeAlias = str
-ThermalId: TypeAlias = str
 
 
 def _symmetry_validator(data: list[str]) -> list[str]:
@@ -27,13 +26,10 @@ def _symmetry_validator(data: list[str]) -> list[str]:
     return data
 
 
-ThermalReserveSymmetry: TypeAlias = Annotated[list[ReserveDefinitionId], BeforeValidator(_symmetry_validator)]
-
-# Update map: area -> thermal -> list of reserve ids
-ThermalReserveSymmetriesUpdate = dict[AreaId, dict[ThermalId, ThermalReserveSymmetry]]
+ReserveSymmetry: TypeAlias = Annotated[list[ReserveDefinitionId], BeforeValidator(_symmetry_validator)]
 
 
-def merge_symmetries(symmetries: list[ThermalReserveSymmetry]) -> list[ThermalReserveSymmetry]:
+def merge_symmetries(symmetries: list[ReserveSymmetry]) -> list[ReserveSymmetry]:
     """
     The Simulator accepts symmetries to be written as [a, b] and [b, c] separately, even if it means the same thing as [a, b, c].
     This function merges symmetries to have the least number of them.
@@ -53,3 +49,11 @@ def merge_symmetries(symmetries: list[ThermalReserveSymmetry]) -> list[ThermalRe
 
     # Replace sets with sorted lists for reproducibility
     return [sorted(list(merged_set)) for merged_set in merged_sets]
+
+
+##########################
+# Thermal part
+##########################
+
+ThermalId: TypeAlias = str
+ThermalReserveSymmetriesUpdate = dict[AreaId, dict[ThermalId, ReserveSymmetry]]

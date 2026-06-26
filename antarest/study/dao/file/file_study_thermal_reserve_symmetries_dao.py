@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
-from antarest.study.business.model.thermal_reserve_symmetries_model import ThermalReserveSymmetry
+from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetry
 from antarest.study.dao.api.thermal_reserve_symmetries_dao import ThermalReserveSymmetriesDao
 from antarest.study.dao.common import (
     AreaId,
@@ -45,7 +45,7 @@ class FileStudyThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao, ABC):
         return result
 
     @override
-    def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, list[ThermalReserveSymmetry]]:
+    def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, list[ReserveSymmetry]]:
         ini_content = get_thermal_reserve_participations_as_ini_content(area_id, self.get_file_study())
         print(ini_content)
         raise NotImplementedError()

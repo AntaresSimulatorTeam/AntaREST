@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 
-from antarest.study.business.model.thermal_reserve_symmetries_model import ThermalReserveSymmetry
+from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetry
 from antarest.study.dao.common import (
     AreaId,
     ThermalId,
@@ -25,7 +25,7 @@ class ReadOnlyThermalReserveSymmetriesDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, list[ThermalReserveSymmetry]]:
+    def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, list[ReserveSymmetry]]:
         raise NotImplementedError()
 
 
