@@ -33,6 +33,6 @@ def parse_thermal_reserves_symmetries(data: dict[str, Any]) -> dict[str, list[Re
     return result
 
 
-def serialize_thermal_reserve_symmetries(symmetries: list[ReserveSymmetry]) -> list[dict[str, Any]]:
+def serialize_reserve_symmetries(symmetries: list[ReserveSymmetry]) -> list[dict[str, Any]]:
     merged_symmetries = merge_symmetries(symmetries)
     return [{"reserves": [symmetry]} for symmetry in merged_symmetries]
