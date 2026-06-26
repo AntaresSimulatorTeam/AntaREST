@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+from unittest.mock import MagicMock
 
 from sqlalchemy.orm import Session
 
@@ -86,6 +86,24 @@ def test_should_be_able_to_update_multiple_launchers_loads_data_from_db(db_sessi
     db_launcher_load.update_launcher_load(launcher_load_2_updated)
     assert len(db_launcher_load.get_launchers_loads()) == 2
 
+    assert_launcher_load_is_in_db(launcher_load_2_updated, db_launcher_load)
+
+
+def test_should_update_all_launcher_loads_data_from_db(db_session: Session) -> None:
+    db_launcher_load = DataBaseLauncherLoadDao(db_session)
+    service_mock = MagicMock()
+    service_mock.get_all_loads.return_value = {"foo": launcher_load_1, "bar": launcher_load_2}
+    db_launcher_load.update_all_launcher_loads(service_mock)
+
+    assert len(db_launcher_load.get_launchers_loads()) == 2
+    assert_launcher_load_is_in_db(launcher_load_1, db_launcher_load)
+    assert_launcher_load_is_in_db(launcher_load_2, db_launcher_load)
+
+    service_mock.get_all_loads.return_value = {"foo": launcher_load_1, "bar": launcher_load_2_updated}
+    db_launcher_load.update_all_launcher_loads(service_mock)
+
+    assert len(db_launcher_load.get_launchers_loads()) == 2
+    assert_launcher_load_is_in_db(launcher_load_1, db_launcher_load)
     assert_launcher_load_is_in_db(launcher_load_2_updated, db_launcher_load)
 
 

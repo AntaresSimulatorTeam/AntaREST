@@ -10,17 +10,19 @@
 #
 # This file is part of the Antares project.
 
+from __future__ import annotations
 
-from sqlalchemy.orm import DeclarativeBase, Session
+from typing import TYPE_CHECKING
+
+from sqlalchemy.orm import Session
 
 from antarest.launcher.model import LauncherLoad
 
+if TYPE_CHECKING:
+    from antarest.launcher.service import LauncherService
 
-class Base(DeclarativeBase):
-    pass
 
-
-class DataBaseLauncherLoadDao(DeclarativeBase):
+class DataBaseLauncherLoadDao:
     def __init__(
         self,
         session: Session,
@@ -39,3 +41,9 @@ class DataBaseLauncherLoadDao(DeclarativeBase):
 
     def get_launchers_loads(self) -> list[LauncherLoad]:
         return self._session.query(LauncherLoad).all()
+
+    def update_all_launcher_loads(self, service: "LauncherService") -> None:
+        launcher_loads_dtos_by_id = service.get_all_loads()
+        for id, dto in launcher_loads_dtos_by_id.items():
+            launcher_load: LauncherLoad = LauncherLoad.from_dto(dto, id)
+            self.update_launcher_load(launcher_load)
