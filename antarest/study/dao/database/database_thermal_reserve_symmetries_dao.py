@@ -18,7 +18,6 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetry, merge_symmetries
-from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
 from antarest.study.dao.api.thermal_reserve_symmetries_dao import ThermalReserveSymmetriesDao
 from antarest.study.dao.common import (
     AreaId,
@@ -37,17 +36,6 @@ _TABLE = THERMAL_RESERVE_SYMMETRIES_TABLE
 def _convert_row_to_model(row: Row[Any]) -> list[ReserveSymmetry]:
     symmetries: list[ReserveSymmetry] = json.loads(row.symmetries)
     return merge_symmetries(symmetries)
-
-
-def _convert_model_to_row(
-    study_id: str, area_id: str, thermal_id: str, reserve_id: str, certification: ThermalReserveCertification
-) -> dict[str, Any]:
-    values = certification.model_dump()
-    values["reserve_id"] = reserve_id
-    values["study_id"] = study_id
-    values["area_id"] = area_id
-    values["thermal_id"] = thermal_id
-    return values
 
 
 class DatabaseThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao):
@@ -80,5 +68,26 @@ class DatabaseThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao):
         return result
 
     @override
-    def set_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
+    def set_thermal_reserve_symmetries(
+        self, area_id: AreaId, thermal_id: ThermalId, symmetries: list[ReserveSymmetry]
+    ) -> None:
         raise NotImplementedError()
+
+    @override
+    def save_all_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
+        raise NotImplementedError()
+
+    @staticmethod
+    def _checks_foreign_key_integrity(
+        new_data: ThermalReserveSymmetriesMapping, reserve_ids: dict[AreaId, ReserveSymmetry]
+    ) -> None:
+        """
+        There is no foreign key constraint between symmetries and reserve ids but they are linked.
+        So we have to check the data integrity manually.
+        """
+        for area_id, value in new_data.items():
+            for symmetries in value.values():
+                for symmetry in symmetries:
+                    for reserve_id in symmetry:
+                        if reserve_id not in reserve_ids[area_id]:
+                            raise ValueError(f"Invalid reserve id {reserve_id} for area {area_id}")

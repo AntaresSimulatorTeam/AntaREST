@@ -31,5 +31,11 @@ class ReadOnlyThermalReserveSymmetriesDao(ABC):
 
 class ThermalReserveSymmetriesDao(ReadOnlyThermalReserveSymmetriesDao):
     @abstractmethod
-    def set_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
+    def set_thermal_reserve_symmetries(
+        self, area_id: AreaId, thermal_id: ThermalId, symmetries: list[ReserveSymmetry]
+    ) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_all_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
         raise NotImplementedError()
