@@ -85,10 +85,26 @@ class DatabaseThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao):
     def set_thermal_reserve_symmetries(
         self, area_id: AreaId, thermal_id: ThermalId, symmetries: list[ReserveSymmetry]
     ) -> None:
+        # Check foreign key integrity
         existing_reserve_definitions = self.get_impl().get_all_reserve_definitions_for_area(area_id)
         reserve_ids = [ReserveDefinitionId(reserve.id) for reserve in existing_reserve_definitions]
         self._checks_foreign_key_integrity({area_id: {thermal_id: symmetries}}, {area_id: reserve_ids})
-        # todo: continue
+
+        # Save the new values
+        values = [_convert_model_to_row(self._study_id, area_id, thermal_id, symmetries)]
+        try:
+            # First, clean the DB
+            stmt = delete(_TABLE).where(
+                (_TABLE.c.study_id == self._study_id)
+                & (_TABLE.c.area_id == area_id)
+                & (_TABLE.c.thermal_id == thermal_id)
+            )
+            self._db_session.execute(stmt)
+            # Then, insert the new values
+            self._db_session.execute(insert(_TABLE), values)
+        except IntegrityError as e:
+            self.get_impl().raise_the_right_thermal_exception({area_id: [thermal_id]}, exc=e)
+        self._db_session.commit()
 
     @override
     def save_all_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
