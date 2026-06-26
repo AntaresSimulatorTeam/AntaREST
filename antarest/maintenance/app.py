@@ -53,6 +53,7 @@ class TaskName(StrEnum):
     TASKS_CLEANER = "tasks_cleaner"
     DISK_SPACE_ANALYZER = "disk_space_analyzer"
     DISK_USAGE = "disk_usage"
+    LAUNCHER_LOAD = "launcher_load"
 
 
 def _mask_url_credentials(url: str) -> str:
@@ -110,6 +111,7 @@ def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
     from antarest.maintenance.tasks.gc_matrix_task import clean_matrices_task
     from antarest.maintenance.tasks.gc_tasks_task import gc_tasks_task
     from antarest.maintenance.tasks.gc_variable_view_task import clean_variable_views_task
+    from antarest.maintenance.tasks.launcher_load_task import save_launcher_load_task
     from antarest.maintenance.tasks.watcher_scan_task import watcher_scan_task
 
     storage = get_config().storage
@@ -124,6 +126,10 @@ def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
     sender.add_periodic_task(storage.tasks_gc_sleeping_time, gc_tasks_task.s(), name=TaskName.TASKS_CLEANER)
     setup_disk_usage_log_task(sender, storage)
     setup_disk_space_analyzer_task(sender, storage)
+
+    sender.add_periodic_task(
+        get_config().launcher.launcher_loads_sleeping_time, save_launcher_load_task.s(), name=TaskName.LAUNCHER_LOAD
+    )
 
     logger.info(
         f"Periodic tasks registered: matrix_gc={storage.matrix_gc_sleeping_time}s, "
