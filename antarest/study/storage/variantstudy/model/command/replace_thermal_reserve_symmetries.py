@@ -26,7 +26,6 @@ from antarest.study.model import (
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
-    command_failed,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -34,12 +33,12 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class RemoveThermalReserveSymmetries(ICommand):
+class ReplaceThermalReserveSymmetries(ICommand):
     """
-    Command used to remove several new thermal reserve symmetries in the study.
+    Command used to replace reserve symmetries for a given area and thermal cluster.
     """
 
-    command_name: CommandName = CommandName.REMOVE_THERMAL_RESERVE_SYMMETRIES
+    command_name: CommandName = CommandName.REPLACE_THERMAL_RESERVE_SYMMETRIES
 
     # Command parameters
     # ==================
@@ -58,37 +57,18 @@ class RemoveThermalReserveSymmetries(ICommand):
         return self
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
-        existing_symmetries = study_data.get_thermal_reserve_symmetries(self.area_id)
-        if self.thermal_id not in existing_symmetries:
-            return command_failed(
-                f"Thermal cluster '{self.thermal_id}' does not have reserve symmetries in area '{self.area_id}'"
-            )
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[list[ReserveSymmetry]]:
+        study_data.save_thermal_reserve_symmetries({self.area_id: {self.thermal_id: merge_symmetries(self.symmetries)}})
 
-        new_symmetries = []
-        for existing_symmetry in existing_symmetries[self.thermal_id]:
-            if existing_symmetry not in self.symmetries:
-                new_symmetries.append(existing_symmetry)
-
-        if len(new_symmetries) != len(existing_symmetries[self.thermal_id]) - len(self.symmetries):
-            return command_failed(
-                f"Some thermal cluster reserve symmetry in '{self.symmetries}' does not exist for thermal '{self.thermal_id}' in area '{self.area_id}'"
-            )
-
-        study_data.save_thermal_reserve_symmetries({self.area_id: {self.thermal_id: new_symmetries}})
-
-        if not study_data.thermal_exists(self.area_id, self.thermal_id):
-            return command_failed(f"Thermal cluster '{self.thermal_id}' does not exist in area '{self.area_id}'")
-
-        study_data.save_thermal_reserve_symmetries({self.area_id: {self.thermal_id: new_symmetries}})
-
-        msg = f"Reserve symmetries from thermal '{self.thermal_id}' in area '{self.area_id}' removed successfully."
-        return command_succeeded(msg, result=None)
+        msg = f"Reserve symmetries from thermal '{self.thermal_id}' in area '{self.area_id}' replaced successfully."
+        return command_succeeded(msg, result=self.symmetries)
 
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            action=CommandName.REMOVE_THERMAL_RESERVE_SYMMETRIES.value,
+            action=CommandName.REPLACE_THERMAL_RESERVE_SYMMETRIES.value,
             args={"area_id": self.area_id, "thermal_id": self.thermal_id, "symmetries": self.symmetries},
             study_version=self.study_version,
         )
