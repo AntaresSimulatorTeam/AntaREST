@@ -13,7 +13,8 @@ import json
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import Row, select
+from sqlalchemy import Row, delete, insert, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -37,6 +38,18 @@ _TABLE = THERMAL_RESERVE_SYMMETRIES_TABLE
 def _convert_row_to_model(row: Row[Any]) -> list[ReserveSymmetry]:
     symmetries: list[ReserveSymmetry] = json.loads(row.symmetries)
     return merge_symmetries(symmetries)
+
+
+def _convert_model_to_row(
+    study_id: str, area_id: str, thermal_id: str, symmetries: list[ReserveSymmetry]
+) -> dict[str, Any]:
+    values = {
+        "study_id": study_id,
+        "area_id": area_id,
+        "thermal_id": thermal_id,
+        "symmetries": json.dumps(merge_symmetries(symmetries)),
+    }
+    return values
 
 
 class DatabaseThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao):
@@ -79,13 +92,28 @@ class DatabaseThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao):
 
     @override
     def save_all_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
+        # Check foreign key integrity
         existing_reserve_definitions = self.get_impl().get_all_reserve_definitions()
         existing_reserve_ids = {}
         for area_id, value in existing_reserve_definitions.items():
             existing_reserve_ids[area_id] = list(value)
         self._checks_foreign_key_integrity(data, existing_reserve_ids)
-        # todo: continue
-        raise NotImplementedError()
+
+        # Save the new values
+        values = []
+        for area_id, thermal_dict in data.items():
+            for thermal_id, symmetries in thermal_dict.items():
+                values.append(_convert_model_to_row(self._study_id, area_id, thermal_id, symmetries))
+        try:
+            # First, clean the DB
+            stmt = delete(_TABLE).where(_TABLE.c.study_id == self._study_id)
+            self._db_session.execute(stmt)
+            # Then, insert the new values
+            self._db_session.execute(insert(_TABLE), values)
+        except IntegrityError as e:
+            thermals = {area_id: list(thermal_dict) for area_id, thermal_dict in data.items()}
+            self.get_impl().raise_the_right_thermal_exception(thermals, exc=e)
+        self._db_session.commit()
 
     @staticmethod
     def _checks_foreign_key_integrity(
