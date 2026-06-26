@@ -47,8 +47,11 @@ class ThermalClusterReserveParticipationFileData(AntaresBaseModel):
     participation_cost_off: float
 
 
-def serialize_thermal_reserve_certification(
-    reserve_id: ReserveDefinitionId, certification: ThermalReserveCertification
-) -> dict[str, Any]:
-    data = {**certification.model_dump(), "reserve": reserve_id}
-    return ThermalClusterReserveParticipationFileData.model_validate(data).model_dump(by_alias=True)
+def serialize_thermal_reserve_certifications(
+    data: dict[ReserveDefinitionId, ThermalReserveCertification],
+) -> list[dict[str, Any]]:
+    result = []
+    for reserve_id, certification in data.items():
+        content = {**certification.model_dump(), "reserve": reserve_id}
+        result.append(ThermalClusterReserveParticipationFileData.model_validate(content).model_dump(by_alias=True))
+    return result
