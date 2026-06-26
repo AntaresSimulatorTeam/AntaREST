@@ -67,13 +67,17 @@ class DatabaseThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao):
         rows = self._db_session.execute(stmt).fetchall()
         result: ThermalReserveSymmetriesMapping = {}
         for row in rows:
-            symmetries = _convert_row_to_model(row)
-            result.setdefault(row.area_id, {})[row.thermal_id] = symmetries
+            result.setdefault(row.area_id, {})[row.thermal_id] = _convert_row_to_model(row)
         return result
 
     @override
     def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, list[ReserveSymmetry]]:
-        raise NotImplementedError()
+        stmt = select(_TABLE).where((_TABLE.c.study_id == self._study_id) & (_TABLE.c.area_id == area_id))
+        rows = self._db_session.execute(stmt).fetchall()
+        result = {}
+        for row in rows:
+            result[row.thermal_id] = _convert_row_to_model(row)
+        return result
 
     @override
     def set_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
