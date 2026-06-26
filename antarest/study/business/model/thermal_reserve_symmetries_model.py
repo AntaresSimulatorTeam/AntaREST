@@ -9,13 +9,23 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import TypeAlias
+from typing import Annotated, TypeAlias
+
+from pydantic import BeforeValidator
 
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 
 AreaId: TypeAlias = str
 ThermalId: TypeAlias = str
-ThermalReserveSymmetry: TypeAlias = list[ReserveDefinitionId]
+
+
+def _symmetry_validator(data: list[str]) -> list[str]:
+    if len(data) < 2:
+        raise ValueError(f"Reserve symmetries should have at least 2 elements, and was {data}")
+    return data
+
+
+ThermalReserveSymmetry: TypeAlias = Annotated[list[ReserveDefinitionId], BeforeValidator(_symmetry_validator)]
 
 # Update map: area -> thermal -> list of reserve ids
 ThermalReserveSymmetriesUpdate = dict[AreaId, dict[ThermalId, ThermalReserveSymmetry]]
@@ -40,5 +50,4 @@ def merge_symmetries(symmetries: list[ThermalReserveSymmetry]) -> list[ThermalRe
             merged_sets.append(current_set)
 
     # Replace sets with sorted lists for reproducibility
-    merged_sets = [sorted(list(merged_set)) for merged_set in merged_sets]
-    return merged_sets
+    return [sorted(list(merged_set)) for merged_set in merged_sets]
