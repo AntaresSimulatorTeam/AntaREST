@@ -265,6 +265,11 @@ class StudyConverter:
         if thermal_certifications:
             self._new_dao.save_thermal_reserve_certifications(thermal_certifications)
 
+        # Thermal symmetries
+        thermal_symmetries = self._source_dao.get_all_thermal_reserve_symmetries()
+        if thermal_symmetries:
+            self._new_dao.save_all_thermal_reserve_symmetries(thermal_symmetries)
+
     def _convert_short_term_storages(
         self, storages: dict[str, dict[str, STStorage]], constraints: STStorageAdditionalConstraintsMap
     ) -> None:
