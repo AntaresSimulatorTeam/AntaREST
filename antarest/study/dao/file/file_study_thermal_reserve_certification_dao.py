@@ -21,7 +21,7 @@ from antarest.study.dao.api.thermal_reserve_certification_dao import ThermalRese
 from antarest.study.dao.common import AreaId, ThermalId, ThermalReserveCertificationsMapping
 from antarest.study.dao.file.common import (
     check_area_exists,
-    get_thermal_reserve_participations_as_ini_content,
+    get_thermal_reserve_participations_as_yaml_content,
     get_thermal_reserve_path,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -80,7 +80,7 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
         for area_id, thermal_dict in data.items():
             check_area_exists(file_study.config, area_id)
 
-            ini_content = get_thermal_reserve_participations_as_ini_content(area_id, file_study)
+            ini_content = get_thermal_reserve_participations_as_yaml_content(area_id, file_study)
 
             for k, participation in enumerate(ini_content.get("participations", [])):
                 thermal_id = transform_name_to_id(participation["cluster"])
@@ -123,7 +123,7 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
 
         file_study = self.get_file_study()
 
-        current_ini_content = get_thermal_reserve_participations_as_ini_content(area_id, file_study)
+        current_ini_content = get_thermal_reserve_participations_as_yaml_content(area_id, file_study)
 
         all_certifications = parse_thermal_reserves_certifications(current_ini_content)
 
@@ -156,5 +156,5 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
     def get_all_certifications_for_area(
         self, area_id: AreaId
     ) -> dict[ThermalId, dict[ReserveDefinitionId, ThermalReserveCertification]]:
-        data = get_thermal_reserve_participations_as_ini_content(area_id, self.get_file_study())
+        data = get_thermal_reserve_participations_as_yaml_content(area_id, self.get_file_study())
         return parse_thermal_reserves_certifications(data)

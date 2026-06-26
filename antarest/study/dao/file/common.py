@@ -68,5 +68,8 @@ def get_thermal_reserve_path(area_id: str) -> list[str]:
     return ["input", "thermal", "clusters", area_id, "reserve-participations"]
 
 
-def get_thermal_reserve_participations_as_ini_content(area_id: AreaId, file_study: FileStudy) -> dict[str, Any]:
-    return file_study.tree.get(get_thermal_reserve_path(area_id))
+def get_thermal_reserve_participations_as_yaml_content(area_id: AreaId, file_study: FileStudy) -> dict[str, Any]:
+    data = file_study.tree.get(get_thermal_reserve_path(area_id))
+    if not data:
+        return {"participations": {}}
+    return data

@@ -21,8 +21,16 @@ from antarest.study.dao.common import (
     ThermalId,
     ThermalReserveSymmetriesMapping,
 )
-from antarest.study.dao.file.common import get_thermal_reserve_participations_as_ini_content
-from antarest.study.storage.rawstudy.model.filesystem.config.reserve_symmetries import parse_thermal_reserves_symmetries
+from antarest.study.dao.file.common import (
+    check_area_exists,
+    get_thermal_reserve_participations_as_yaml_content,
+    get_thermal_reserve_path,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.reserve_symmetries import (
+    parse_thermal_reserves_symmetries,
+    serialize_reserve_symmetries,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 if TYPE_CHECKING:
@@ -47,7 +55,7 @@ class FileStudyThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao, ABC):
 
     @override
     def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, list[ReserveSymmetry]]:
-        ini_content = get_thermal_reserve_participations_as_ini_content(area_id, self.get_file_study())
+        ini_content = get_thermal_reserve_participations_as_yaml_content(area_id, self.get_file_study())
         return parse_thermal_reserves_symmetries(ini_content)
 
     @override
@@ -58,4 +66,31 @@ class FileStudyThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao, ABC):
 
     @override
     def save_all_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
-        raise NotImplementedError()
+        file_study = self.get_file_study()
+        for area_id in data:
+            check_area_exists(file_study.config, area_id)
+            self._save_reserve_symmetries(area_id, data[area_id])
+
+    def _save_reserve_symmetries(self, area_id: AreaId, data: dict[ThermalId, list[ReserveSymmetry]]) -> None:
+        file_study = self.get_file_study()
+        # Verify that the thermals exist
+        for thermal_id in data:
+            self.get_impl().thermal_exists(area_id, thermal_id)
+
+        yaml_content = get_thermal_reserve_participations_as_yaml_content(area_id, file_study)
+
+        # First, replace symmetries for existing thermals
+        for k, participation in enumerate(yaml_content["participations"]):
+            thermal_id = transform_name_to_id(participation["cluster"])
+            if thermal_id in data:
+                symmetries = data.pop(thermal_id)
+                yaml_content["participations"][k]["symmetries"] = serialize_reserve_symmetries(symmetries)
+
+        # Then, add symmetries for new thermals
+        for thermal_id, symmetries in data.items():
+            yaml_content["participations"].append(
+                {"cluster": thermal_id, "symmetries": serialize_reserve_symmetries(symmetries)}
+            )
+
+        # Saves the content into the YAML file
+        file_study.tree.save(yaml_content, get_thermal_reserve_path(area_id))
