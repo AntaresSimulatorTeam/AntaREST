@@ -386,6 +386,14 @@ class LauncherLoad(Base):
             launcher_status=dto.launcher_status,
         )
 
+    def to_dto(self) -> LauncherLoadDTO:
+        return LauncherLoadDTO(
+            allocated_cpu_rate=self.allocated_cpu_rate,
+            cluster_load_rate=self.cluster_load_rate,
+            nb_queued_jobs=self.nb_queued_jobs,
+            launcher_status=self.launcher_status,
+        )
+
 
 class SolverPresets(AntaresBaseModel):
     @staticmethod

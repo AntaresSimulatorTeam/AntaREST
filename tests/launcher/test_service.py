@@ -133,6 +133,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
+            launcher_load_dao=Mock(),
             factory_launcher=factory_launcher_mock,
             event_bus=event_bus,
             file_transfer_manager=Mock(),
@@ -194,6 +195,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
+            launcher_load_dao=Mock(),
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -234,6 +236,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
+            launcher_load_dao=Mock(),
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -322,6 +325,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
+            launcher_load_dao=Mock(),
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -571,6 +575,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
+            launcher_load_dao=Mock(),
             factory_launcher=mock_factory,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -593,6 +598,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
+            launcher_load_dao=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -627,6 +633,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
+            launcher_load_dao=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -665,6 +672,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
+            launcher_load_dao=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -726,6 +734,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
+            launcher_load_dao=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -839,6 +848,7 @@ class TestLauncherService:
             file_transfer_manager=Mock(),
             task_service=Mock(),
             cache=Mock(),
+            launcher_load_dao=Mock(),
         )
 
         job_id = "job_id"
@@ -867,6 +877,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
+            launcher_load_dao=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -1007,15 +1018,17 @@ class TestLauncherService:
             launcher=LauncherConfig(default=default_launcher, configs=[LocalConfig(id="local", name="name")]),
         )
 
-        launcher_mock = Mock()
-        launcher_mock.get_load.return_value = LauncherLoadDTO.model_validate(expected_result)
-
         launchers_dict = {}
         if default_launcher == "local":
-            launchers_dict[default_launcher] = launcher_mock
+            launchers_dict[default_launcher] = Mock()
 
         factory_launcher_mock = Mock()
         factory_launcher_mock.build_launcher.return_value = launchers_dict
+
+        launcher_load_dao_mock = Mock()
+        launcher_load_dao_mock.get_launcher_load.return_value.to_dto.return_value = LauncherLoadDTO.model_validate(
+            expected_result
+        )
 
         launcher_service = LauncherService(
             config=config,
@@ -1024,6 +1037,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=job_repository,
             solver_presets_repository=Mock(),
+            launcher_load_dao=launcher_load_dao_mock,
             event_bus=Mock(),
             factory_launcher=factory_launcher_mock,
             file_transfer_manager=Mock(),
@@ -1075,6 +1089,7 @@ class TestLauncherService:
             login_service=login_service,
             job_result_repository=job_repository,
             solver_presets_repository=Mock(),
+            launcher_load_dao=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -1131,6 +1146,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=solver_presets_repository,
+            launcher_load_dao=Mock(),
             factory_launcher=factory_launcher_mock,
             event_bus=event_bus,
             file_transfer_manager=Mock(),

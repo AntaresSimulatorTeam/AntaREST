@@ -34,6 +34,7 @@ from antarest.core.utils.archives import ArchiveFormat, archive_dir, is_zip, rea
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks, SimulationLogs
+from antarest.launcher.adapters.database_launcher_load_dao import DataBaseLauncherLoadDao
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.exceptions import NoValidOutputError
 from antarest.launcher.extensions.adequacy_patch.extension import AdequacyPatchExtension
@@ -107,6 +108,7 @@ class LauncherService:
         login_service: LoginService,
         job_result_repository: JobResultRepository,
         solver_presets_repository: SolverPresetsRepository,
+        launcher_load_dao: DataBaseLauncherLoadDao,
         event_bus: IEventBus,
         file_transfer_manager: FileTransferManager,
         task_service: ITaskService,
@@ -119,6 +121,7 @@ class LauncherService:
         self.login_service = login_service
         self.job_result_repository = job_result_repository
         self.solver_presets_repository = solver_presets_repository
+        self.launcher_load_dao = launcher_load_dao
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
@@ -624,6 +627,11 @@ class LauncherService:
         if launcher is None:
             raise InvalidConfigurationError(launcher_id)
 
+        load = self.launcher_load_dao.get_launcher_load(launcher_id)
+        if load is not None:
+            return load.to_dto()
+
+        logger.info("No cached load for launcher '%s', querying live", launcher_id)
         return launcher.get_load()
 
     def get_all_loads(self) -> dict[str, LauncherLoadDTO]:
