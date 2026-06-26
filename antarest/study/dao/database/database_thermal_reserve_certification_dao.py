@@ -146,9 +146,8 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
         assert isinstance(result, CursorResult)
         if result.rowcount < len(reserve_ids):
             existing_reserve_ids = set(self.get_all_thermal_reserve_certifications_for_cluster(area_id, thermal_id))
-            for rid in reserve_ids:
-                if rid not in existing_reserve_ids:
-                    raise ThermalReserveCertificationNotFound(area_id, thermal_id, reserve_id=rid)
+            missing_reserve_ids: set[str] = set(reserve_ids) - existing_reserve_ids  # type: ignore
+            raise ThermalReserveCertificationNotFound(area_id, thermal_id, reserve_ids=missing_reserve_ids)
         self._db_session.commit()
 
     def _raise_the_right_thermal_reserve_exception(

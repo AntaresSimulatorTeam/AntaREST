@@ -24,7 +24,6 @@ from antarest.core.exceptions import (
     LinkNotFound,
     ReferencedObjectDeletionNotAllowed,
     ReserveDefinitionNotFound,
-    ThermalReserveCertificationNotFound,
 )
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.utils import remove_first_match
@@ -1729,21 +1728,12 @@ class InMemoryStudyDao(StudyDao):
     def get_thermal_reserve_certification(
         self, area_id: str, thermal_id: str, reserve_id: ReserveDefinitionId
     ) -> ThermalReserveCertification:
-        if area_id not in self.get_all_area_ids():
-            raise AreaNotFound(area_id)
-        try:
-            return self._thermal_reserve_certifications[
-                thermal_reserve_certification_key(area_id, thermal_id, reserve_id)
-            ]
-        except KeyError as exc:
-            raise ThermalReserveCertificationNotFound(area_id, thermal_id, reserve_id) from exc
+        return self._thermal_reserve_certifications[thermal_reserve_certification_key(area_id, thermal_id, reserve_id)]
 
     @override
     def thermal_reserve_certification_exists(
         self, area_id: str, thermal_id: str, reserve_id: ReserveDefinitionId
     ) -> bool:
-        if area_id not in self.get_all_area_ids():
-            return False
         return (
             thermal_reserve_certification_key(area_id, thermal_id, reserve_id) in self._thermal_reserve_certifications
         )
@@ -1764,10 +1754,7 @@ class InMemoryStudyDao(StudyDao):
         reserve_ids: Sequence[ReserveDefinitionId],
     ) -> None:
         for rid in reserve_ids:
-            try:
-                del self._thermal_reserve_certifications[thermal_reserve_certification_key(area_id, thermal_id, rid)]
-            except KeyError as exc:
-                raise ThermalReserveCertificationNotFound(area_id, thermal_id, rid) from exc
+            del self._thermal_reserve_certifications[thermal_reserve_certification_key(area_id, thermal_id, rid)]
 
     @override
     def get_all_thermal_reserve_symmetries(self) -> ThermalReserveSymmetriesMapping:

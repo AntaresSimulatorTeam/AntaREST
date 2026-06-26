@@ -860,8 +860,6 @@ class STStoragesNotFound(HTTPException):
 
 
 class ThermalReserveCertificationNotFound(HTTPException):
-    def __init__(self, area_id: str, thermal_id: str, reserve_id: str):
-        msg = (
-            f"Certifications for reserve '{reserve_id}' on thermal cluster '{thermal_id}' not found in area '{area_id}'"
-        )
+    def __init__(self, area_id: str, thermal_id: str, reserve_ids: set[str]):
+        msg = f"Certifications for reserve(s) '{reserve_ids}' on thermal cluster '{thermal_id}' not found in area '{area_id}'"
         super().__init__(HTTPStatus.NOT_FOUND, msg)
