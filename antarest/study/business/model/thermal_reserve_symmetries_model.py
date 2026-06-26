@@ -31,18 +31,14 @@ def merge_symmetries(symmetries: list[ThermalReserveSymmetry]) -> list[ThermalRe
 
     merged_sets = [set(symmetries[0])]
     for symmetry in symmetries[1:]:
-        merged = False
-        for reserve_id in symmetry:
-            for k, merged_set in enumerate(merged_sets):
-                if reserve_id in merged_set:
-                    merged_sets[k] = merged_set | set(symmetry)
-                    merged = True
-                    break
-            if merged:
+        current_set = set(symmetry)
+        for merged_set in merged_sets:
+            if current_set & merged_set:  # Check for intersection
+                merged_set.update(current_set)
                 break
-        if not merged:
-            merged_sets.append(set(symmetry))
+        else:
+            merged_sets.append(current_set)
 
-    # Replace sets with lists
+    # Replace sets with sorted lists for reproducibility
     merged_sets = [sorted(list(merged_set)) for merged_set in merged_sets]
     return merged_sets
