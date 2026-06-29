@@ -29,8 +29,8 @@ keepalive = 24 * 60 * 60  # 1 day
 capture_output = True
 
 loglevel = "info"
-errorlog = "-"
-accesslog = "-"
+errorlog = "/logs/gunicorn.error.log"
+accesslog = "/logs/gunicorn.access.log"
 preload_app = False
 
 
