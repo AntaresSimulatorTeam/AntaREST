@@ -1715,28 +1715,14 @@ class InMemoryStudyDao(StudyDao):
         return result
 
     @override
-    def get_all_thermal_reserve_certifications_for_cluster(
-        self, area_id: str, thermal_id: str
-    ) -> dict[ReserveDefinitionId, ThermalReserveCertification]:
+    def get_all_thermal_reserve_certifications_for_area(
+        self, area_id: AreaId
+    ) -> dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]]:
         result = {}
         for key, certification in self._thermal_reserve_certifications.items():
-            if key.area_id == area_id and key.thermal_id == thermal_id:
-                result[ReserveDefinitionId(key.reserve_id)] = certification
+            if key.area_id == area_id:
+                result.setdefault(ReserveDefinitionId(key.reserve_id), {})[key.thermal_id] = certification
         return result
-
-    @override
-    def get_thermal_reserve_certification(
-        self, area_id: str, thermal_id: str, reserve_id: ReserveDefinitionId
-    ) -> ThermalReserveCertification:
-        return self._thermal_reserve_certifications[thermal_reserve_certification_key(area_id, thermal_id, reserve_id)]
-
-    @override
-    def thermal_reserve_certification_exists(
-        self, area_id: str, thermal_id: str, reserve_id: ReserveDefinitionId
-    ) -> bool:
-        return (
-            thermal_reserve_certification_key(area_id, thermal_id, reserve_id) in self._thermal_reserve_certifications
-        )
 
     @override
     def save_thermal_reserve_certifications(self, data: ThermalReserveCertificationsMapping) -> None:

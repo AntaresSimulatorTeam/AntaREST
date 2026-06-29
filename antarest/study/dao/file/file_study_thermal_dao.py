@@ -312,8 +312,16 @@ class FileStudyThermalDao(ThermalDao, ABC):
         if self.get_file_study().config.version < STUDY_VERSION_10_0:
             # Reserves only exist in version 10.0+
             return
-        all_area_certifications = self.get_impl().get_all_certifications_for_area(area_id)
-        if thermal_id not in all_area_certifications:
-            return
-        del all_area_certifications[thermal_id]
-        self.get_impl().save_thermal_reserve_certifications({area_id: all_area_certifications})
+
+        thermal_exists = False
+        all_area_certifications = self.get_impl().get_all_thermal_reserve_certifications_for_area(area_id)
+        for reserve_id, thermal_dict in all_area_certifications.items():
+            for cluster_id in thermal_dict:
+                if cluster_id == thermal_id:
+                    del all_area_certifications[reserve_id][thermal_id]
+                    thermal_exists = True
+                    break
+
+        if thermal_exists:
+            # Avoid performing an empty save if there are no certifications to remove
+            self.get_impl().save_thermal_reserve_certifications({area_id: all_area_certifications})

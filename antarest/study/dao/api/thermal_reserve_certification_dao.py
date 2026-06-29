@@ -22,21 +22,9 @@ class ReadOnlyThermalReserveCertificationDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_all_thermal_reserve_certifications_for_cluster(
-        self, area_id: AreaId, thermal_id: ThermalId
-    ) -> dict[ReserveDefinitionId, ThermalReserveCertification]:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def get_thermal_reserve_certification(
-        self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId
-    ) -> ThermalReserveCertification:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def thermal_reserve_certification_exists(
-        self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId
-    ) -> bool:
+    def get_all_thermal_reserve_certifications_for_area(
+        self, area_id: AreaId
+    ) -> dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]]:
         raise NotImplementedError()
 
 
