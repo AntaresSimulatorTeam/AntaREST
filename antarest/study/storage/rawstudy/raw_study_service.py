@@ -190,5 +190,5 @@ class RawStudyService(AbstractStudyService):
         self._storage_mapping[study.storage_mode].import_study(study, study_dir)
         return study
 
-    def denormalize_study(self, study: Study) -> None:
-        self._file_study_storage.denormalize_study(study)
+    def upgrade_study(self, study: Study, version: StudyVersion) -> None:
+        self._storage_mapping[study.storage_mode].upgrade_study(study, version)

@@ -19,6 +19,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO
 from uuid import uuid4
 
+import pandas as pd
 import polars as pl
 from typing_extensions import override
 
@@ -45,7 +46,7 @@ from antarest.launcher.model import LogType
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.output.filestudy.aggregator_management import AggregatorManager
 from antarest.output.filestudy.file_output_utils import extract_variables_list, parse_output_config
-from antarest.output.filestudy.utils import QueryFileType
+from antarest.output.filestudy.utils import QueryFileType, get_start_column, parse_output_file_as_pandas_dataframe
 from antarest.output.model import OutputVariablesList
 from antarest.output.storage.file.repository import FileOutputRepository
 from antarest.output.storage.output_storage import (
@@ -67,6 +68,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     parse_single_output,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.root.output.output import Output
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
@@ -224,7 +226,8 @@ class AbstractFileOutputStorage(IOutputStorage):
         outputs_path = self._outputs_provider.get_outputs(study_id).outputs_path
         outputs_path.mkdir()
         for output in src_outputs_dir.iterdir():
-            output.rename(_output_path(outputs_path, output.name))
+            # `shutil.move` handles the case where `src` and `dst` are not on the same fs, which is the case in production.
+            shutil.move(src=output, dst=_output_path(outputs_path, output.name))
 
     @override
     def import_output(
@@ -562,6 +565,27 @@ class AbstractFileOutputStorage(IOutputStorage):
 
     @override
     def get_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
+        output_node = self._build_output_node(study_id, output_id)
+        return output_node.get([output_id] + url, formatted=formatted)
+
+    @override
+    def get_matrix_as_dataframe(
+        self, study_id: str, output_id: str, url: list[str], frequency: MatrixFrequency
+    ) -> pd.DataFrame:
+        study_outputs = self._outputs_provider.get_outputs(study_id)
+        output_dir = _output_path(study_outputs.outputs_path, output_id)
+
+        file_path = _build_matrix_file_path(output_dir, url)
+        first_column = get_start_column(frequency)
+        return parse_output_file_as_pandas_dataframe(file_path, first_column)
+
+    @override
+    def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
+        output_node = self._build_output_node(study_id, output_id)
+        file_node = output_node.get_node([output_id] + url)
+        return file_node.get_file_content()
+
+    def _build_output_node(self, study_id: str, output_id: str) -> Output:
         study_outputs = self._outputs_provider.get_outputs(study_id)
         outputs_path = study_outputs.outputs_path
 
@@ -581,5 +605,24 @@ class AbstractFileOutputStorage(IOutputStorage):
         # The `MatrixStorageContext` is only used for input matrices.
         # But we need one to build the `OutputSimulation` object. So, we build a fake one.
         matrix_storage_context = MatrixStorageContext(matrix_service=InMemorySimpleMatrixService(), is_managed=True)
-        tree = Output(matrix_storage_context, config)
-        return tree.get([output_id] + url, formatted=formatted)
+        return Output(matrix_storage_context, config)
+
+
+def _build_matrix_file_path(output_dir: Path, url: list[str]) -> Path:
+    """
+    Because the `OutputSimulationLinks` class modifies the url for links, we cannot simply use the url as is.
+    As we assume the user asked for a matrix, the possible link paths look like this:
+    - mc-all/links/...
+    - mc-ind/00001/links/...
+    """
+    try:
+        if url[1] == "mc-all" and url[2] == "links":
+            new_url = url[:3] + [f"{url[3]} - {url[4]}"] + url[5:]
+        elif url[1] == "mc-ind" and url[3] == "links":
+            new_url = url[:4] + [f"{url[4]} - {url[5]}"] + url[6:]
+        else:
+            new_url = url
+        return output_dir.joinpath("/".join(new_url)).with_suffix(".txt")
+
+    except Exception as e:
+        raise ValueError(f"Failed to fetch output matrix for path `{url}`") from e

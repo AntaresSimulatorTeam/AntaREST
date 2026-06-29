@@ -324,7 +324,7 @@ def test_provider_includes_reserve_need_matrix(dao_10_0: StudyDao) -> None:
     save_area(dao, "paris")
     dao.save_reserve_definitions({"paris": [build_reserve_definition("R1")]})
     matrix_id = matrix_service.create(pl.DataFrame([[0.0]] * 8760, orient="row"))
-    dao.save_reserve_needs({"paris": {ReserveDefinitionId("R1"): matrix_id}})
+    dao.save_reserve_needs({"paris": {ReserveDefinitionId("r1"): matrix_id}})
 
     with db():
         provider = _register_provider(dao, db.session, matrix_service)

@@ -14,6 +14,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Iterator
 
+from antares.study.version import StudyVersion
+
 from antarest.matrixstore.model import MatrixReference
 from antarest.study.model import RawStudy, Study, StudyMetadataCopy
 
@@ -54,4 +56,8 @@ class IStudyStorage(ABC):
 
     @abstractmethod
     def import_study(self, study: RawStudy, study_dir: Path) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def upgrade_study(self, study: Study, version: StudyVersion) -> None:
         raise NotImplementedError()
