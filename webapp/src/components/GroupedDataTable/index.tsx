@@ -221,11 +221,11 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
     positionToolbarAlertBanner: "none",
     // Rows
     muiTableBodyRowProps: ({ row }) => {
-      const isPending = isPendingRow(row.original);
-
       if (readOnly) {
         return {};
       }
+
+      const isPending = isPendingRow(row.original);
 
       return {
         onClick: () => {
