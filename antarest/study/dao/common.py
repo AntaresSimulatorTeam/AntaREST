@@ -16,7 +16,6 @@ from antarest.study.business.model.binding_constraint_model import ConstraintId
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveDefinitionId
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetry
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
-from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
 
 # TODO: It would be better to :
 #  - Use `NewType` instead of `TypeAlias`
@@ -46,7 +45,4 @@ AreaUiMapping: TypeAlias = dict[AreaId, dict[LayerId, AreaUI]]
 ReservesGlobalParametersMapping: TypeAlias = dict[AreaId, ReservesGlobalParameters]
 ReserveDefinitionsMapping: TypeAlias = dict[AreaId, dict[ReserveDefinitionId, ReserveDefinition]]
 ReserveNeedsMapping: TypeAlias = dict[AreaId, dict[ReserveDefinitionId, SeriesId]]
-ThermalReserveCertificationsMapping: TypeAlias = dict[
-    AreaId, dict[ThermalId, dict[ReserveDefinitionId, ThermalReserveCertification]]
-]
 ThermalReserveSymmetriesMapping: TypeAlias = dict[AreaId, dict[ThermalId, list[ReserveSymmetry]]]

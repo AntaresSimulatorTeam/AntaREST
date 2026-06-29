@@ -11,24 +11,23 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 
-from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
-from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
-from antarest.study.dao.common import AreaId, ThermalId, ThermalReserveCertificationsMapping
+from antarest.study.business.model.thermal_reserve_certification_model import (
+    ThermalReserveCertificationMapping,
+)
+from antarest.study.dao.common import AreaId
 
 
 class ReadOnlyThermalReserveCertificationDao(ABC):
     @abstractmethod
-    def get_all_thermal_reserve_certifications(self) -> ThermalReserveCertificationsMapping:
+    def get_all_thermal_reserve_certifications(self) -> dict[AreaId, ThermalReserveCertificationMapping]:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_all_thermal_reserve_certifications_for_area(
-        self, area_id: AreaId
-    ) -> dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]]:
+    def get_all_thermal_reserve_certifications_for_area(self, area_id: AreaId) -> ThermalReserveCertificationMapping:
         raise NotImplementedError()
 
 
 class ThermalReserveCertificationDao(ReadOnlyThermalReserveCertificationDao):
     @abstractmethod
-    def save_thermal_reserve_certifications(self, data: ThermalReserveCertificationsMapping) -> None:
+    def save_thermal_reserve_certifications(self, data: dict[AreaId, ThermalReserveCertificationMapping]) -> None:
         raise NotImplementedError()

@@ -23,9 +23,12 @@ from antarest.core.exceptions import (
     ThermalClustersNotFound,
 )
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
-from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
+from antarest.study.business.model.thermal_reserve_certification_model import (
+    ThermalReserveCertification,
+    ThermalReserveCertificationMapping,
+)
 from antarest.study.dao.api.thermal_reserve_certification_dao import ThermalReserveCertificationDao
-from antarest.study.dao.common import AreaId, ThermalId, ThermalReserveCertificationsMapping
+from antarest.study.dao.common import AreaId, ThermalId
 from antarest.study.dao.database.common import get_row_representation_as_dict
 from antarest.study.dao.database.models.thermal_reserve_certification import THERMAL_RESERVE_CERTIFICATION_TABLE
 from antarest.study.dao.database.sql_utils import upsert_multiple
@@ -75,10 +78,10 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
         pass
 
     @override
-    def get_all_thermal_reserve_certifications(self) -> ThermalReserveCertificationsMapping:
+    def get_all_thermal_reserve_certifications(self) -> dict[AreaId, ThermalReserveCertificationMapping]:
         stmt = select(_TABLE).where(_TABLE.c.study_id == self._study_id)
         rows = self._db_session.execute(stmt).fetchall()
-        result: ThermalReserveCertificationsMapping = {}
+        result: dict[AreaId, ThermalReserveCertificationMapping] = {}
         for row in rows:
             certification = _convert_row_to_model(row)
             result.setdefault(row.area_id, {}).setdefault(row.thermal_id, {})[row.reserve_id] = certification
@@ -93,7 +96,7 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
         return {row.reserve_id: {row.thermal_id: _convert_row_to_model(row)} for row in rows}
 
     @override
-    def save_thermal_reserve_certifications(self, data: ThermalReserveCertificationsMapping) -> None:
+    def save_thermal_reserve_certifications(self, data: dict[AreaId, ThermalReserveCertificationMapping]) -> None:
         if not data:
             return
         values = []

@@ -69,7 +69,10 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
+from antarest.study.business.model.thermal_reserve_certification_model import (
+    ThermalReserveCertification,
+    ThermalReserveCertificationMapping,
+)
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
@@ -1706,12 +1709,11 @@ class InMemoryStudyDao(StudyDao):
             self._wind[area_id] = series_id
 
     @override
-    def get_all_thermal_reserve_certifications(self) -> ThermalReserveCertificationsMapping:
-        result: ThermalReserveCertificationsMapping = {}
+    def get_all_thermal_reserve_certifications(self) -> dict[AreaId, ThermalReserveCertificationsMapping]:
+        result: dict[AreaId, ThermalReserveCertificationsMapping] = {}
         for key, certification in self._thermal_reserve_certifications.items():
-            result.setdefault(key.area_id, {}).setdefault(key.thermal_id, {})[ReserveDefinitionId(key.reserve_id)] = (
-                certification
-            )
+            reserve_id = ReserveDefinitionId(key.reserve_id)
+            result.setdefault(key.area_id, {}).setdefault(reserve_id, {})[key.thermal_id] = certification
         return result
 
     @override
@@ -1725,7 +1727,7 @@ class InMemoryStudyDao(StudyDao):
         return result
 
     @override
-    def save_thermal_reserve_certifications(self, data: ThermalReserveCertificationsMapping) -> None:
+    def save_thermal_reserve_certifications(self, data: dict[AreaId, ThermalReserveCertificationMapping]) -> None:
         for area_id, by_cluster in data.items():
             for thermal_id, reserves_dict in by_cluster.items():
                 for reserve_id, certification in reserves_dict.items():
