@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 
-from typing import Self
+from typing import Any, Self
 
 from pydantic import model_validator
 from typing_extensions import override
@@ -58,7 +58,6 @@ class ReplaceThermalReserveCertifications(ICommand):
     def _apply_dao(
         self, study_data: StudyDao, listener: ICommandListener | None = None
     ) -> CommandOutput[ThermalReserveCertificationMapping]:
-        # todo: build the new certifications based on the existing ones
         study_data.save_thermal_reserve_certifications({self.area_id: self.certifications})
 
         msg = f"Reserve certifications in area '{self.area_id}' replaced successfully."
@@ -66,7 +65,7 @@ class ReplaceThermalReserveCertifications(ICommand):
 
     @override
     def to_dto(self) -> CommandDTO:
-        args = {}
+        args: dict[str, Any] = {}
         for reserve_id, thermal_dict in self.certifications.items():
             args["reserve_id"] = {}
             for thermal_id, certification in thermal_dict.items():
