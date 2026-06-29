@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 import http
-from pathlib import Path
 
 from fastapi import HTTPException
 
@@ -136,6 +135,15 @@ class FavoriteExternalDirectoryService:
         self.workspace_config = workspace_config
 
     def add_favorite(self, directory_path: str, workspace: str) -> FavoriteExternalDirectoryDTO:
+        """
+        Add an external directory to the current user list of favorites
+        Args:
+            directory_path: the path of the external directory that we want to add as a favorite
+            workspace: the workspace of the external directory that we want to add as a favorite
+
+        Returns: the DTO of the saved favorite external directory
+
+        """
         workspace_conf = get_workspace_from_config(self.workspace_config, workspace)
         if workspace_conf:
             if not is_folder_safe(workspace_conf, directory_path):
@@ -146,7 +154,7 @@ class FavoriteExternalDirectoryService:
 
             if (workspace_conf.path / directory_path).exists():
                 favorite_external_directory = FavoriteExternalDirectory(
-                    path=str(Path(directory_path)), workspace=workspace, user_id=get_user_impersonator()
+                    path=directory_path, workspace=workspace, user_id=get_user_impersonator()
                 )
                 dto = self.favorite_external_directory_repository.save(favorite_external_directory).to_dto()
                 return dto
@@ -156,6 +164,11 @@ class FavoriteExternalDirectoryService:
             raise WorkspaceNotFound(f"Workspace {workspace} not found")
 
     def list_favorites(self) -> list[FavoriteExternalDirectoryDTO]:
+        """
+        List all favorite external directories from the current user
+        Returns: The favorite external directories DTOs of the current user in ascending order
+
+        """
         favorite_dtos = [favorite.to_dto() for favorite in self.favorite_external_directory_repository.get_all()]
         return favorite_dtos
 
@@ -163,8 +176,8 @@ class FavoriteExternalDirectoryService:
         """
         Delete a favorite external directory from the current user list of favorites
         Args:
-            workspace:
-            path:
+            workspace: the workspace of the favorite external directory that will be deleted
+            path: the path of the favorite external directory that we want to delete
 
         Returns:
 

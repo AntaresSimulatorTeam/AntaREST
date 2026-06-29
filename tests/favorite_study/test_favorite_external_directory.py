@@ -64,16 +64,8 @@ def test_add_favorite_external_directory_failure_when_path_does_not_exist(tmp_pa
     workspace = "validspace"
     config = Config(storage=StorageConfig(tmp_dir=tmp_path))
     config.storage.workspaces.update({workspace: WorkspaceConfig(path=tmp_path)})
-    path_to_favorite = Path(tmp_path) / workspace
-    path_to_favorite.mkdir(parents=True, exist_ok=True)
-    mock_favorite_external_directory_repository = Mock(spec=FavoriteExternalDirectoryRepository)
 
-    mock_favorite_external_directory_repository.save.return_value = FavoriteExternalDirectory(
-        path=mock_not_a_path.as_posix(), workspace=workspace
-    )
-    favorite_service = FavoriteExternalDirectoryService(
-        mock_favorite_external_directory_repository, workspace_config=config
-    )
+    favorite_service = FavoriteExternalDirectoryService(Mock(), workspace_config=config)
 
     with current_user_context(DEFAULT_ADMIN_USER):
         with pytest.raises(DirectoryNotFoundError, match=f"404: Directory '{mock_not_a_path.as_posix()}' not found"):
@@ -85,13 +77,7 @@ def test_add_favorite_external_directory_failure_when_workspace_does_not_exist(t
     config = Config(storage=StorageConfig(tmp_dir=tmp_path))
     path_to_favorite = PurePosixPath(tmp_path / "path" / "to" / "favorite" / "directory")
     non_existing_workspace = ""
-    mock_favorite_external_directory_repository = Mock(spec=FavoriteExternalDirectoryRepository)
-    mock_favorite_external_directory_repository.save.return_value = FavoriteExternalDirectory(
-        workspace=non_existing_workspace, path=path_to_favorite.as_posix()
-    )
-    favorite_service = FavoriteExternalDirectoryService(
-        mock_favorite_external_directory_repository, workspace_config=config
-    )
+    favorite_service = FavoriteExternalDirectoryService(Mock(), workspace_config=config)
 
     with pytest.raises(WorkspaceNotFound, match=f"422: Workspace {''} not found"):
         favorite_service.add_favorite(path_to_favorite.as_posix(), non_existing_workspace)
