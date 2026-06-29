@@ -17,13 +17,9 @@ from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.core.exceptions import InvalidFieldForVersionError
-from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
-from antarest.study.business.model.thermal_reserve_certification_model import (
-    ThermalReserveCertification,
-    ThermalReserveCertificationCreation,
-)
+from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertificationMapping
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.dao.common import AreaId, ThermalId
+from antarest.study.dao.common import AreaId
 from antarest.study.model import (
     STUDY_VERSION_10_0,
 )
@@ -48,7 +44,7 @@ class ReplaceThermalReserveCertifications(ICommand):
     # ==================
 
     area_id: AreaId
-    certifications: dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertificationCreation]]
+    certifications: ThermalReserveCertificationMapping
 
     @model_validator(mode="after")
     def _validate_version(self) -> Self:
@@ -61,7 +57,7 @@ class ReplaceThermalReserveCertifications(ICommand):
     @override
     def _apply_dao(
         self, study_data: StudyDao, listener: ICommandListener | None = None
-    ) -> CommandOutput[dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]]]:
+    ) -> CommandOutput[ThermalReserveCertificationMapping]:
         # todo: build the new certifications based on the existing ones
         study_data.save_thermal_reserve_certifications({self.area_id: self.certifications})
 

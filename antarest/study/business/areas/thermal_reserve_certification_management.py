@@ -12,7 +12,7 @@
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.thermal_reserve_certification_model import (
     ThermalReserveCertification,
-    ThermalReserveCertificationCreation,
+    ThermalReserveCertificationMapping,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.replace_thermal_reserve_certifications import (
@@ -34,8 +34,8 @@ class ThermalReserveCertificationsManager:
         self,
         study: StudyInterface,
         area_id: str,
-        data: dict[ReserveDefinitionId, dict[str, ThermalReserveCertificationCreation]],
-    ) -> dict[ReserveDefinitionId, dict[str, ThermalReserveCertification]]:
+        data: ThermalReserveCertificationMapping,
+    ) -> ThermalReserveCertificationMapping:
         command = ReplaceThermalReserveCertifications(
             area_id=area_id,
             certifications=data,
@@ -43,4 +43,4 @@ class ThermalReserveCertificationsManager:
             command_context=self._command_context,
         )
         study.add_commands([command])
-        return self.get_certifications(study, area_id)
+        return data

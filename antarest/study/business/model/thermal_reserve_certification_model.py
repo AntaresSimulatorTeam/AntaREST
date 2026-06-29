@@ -33,38 +33,4 @@ class ThermalReserveCertification(AntaresBaseModel):
     participation_cost_off: Cost = 0.0
 
 
-class ThermalReserveCertificationCreation(AntaresBaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
-
-    max_power: Power | None = None
-    max_power_off: Power | None = None
-    participation_cost: Cost | None = None
-    participation_cost_off: Cost | None = None
-
-
-class ThermalReserveCertificationUpdate(AntaresBaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
-
-    max_power: Power | None = None
-    max_power_off: Power | None = None
-    participation_cost: Cost | None = None
-    participation_cost_off: Cost | None = None
-
-
-# Update map: area -> thermal -> reserve -> update
-ThermalReserveCertificationUpdates = dict[
-    AreaId, dict[ThermalId, dict[ReserveDefinitionId, ThermalReserveCertificationUpdate]]
-]
-
-
-def create_thermal_reserve_certification(
-    data: ThermalReserveCertificationCreation,
-) -> ThermalReserveCertification:
-    return ThermalReserveCertification.model_validate(data.model_dump(exclude_none=True))
-
-
-def update_thermal_reserve_certification(
-    certification: ThermalReserveCertification,
-    data: ThermalReserveCertificationUpdate,
-) -> ThermalReserveCertification:
-    return certification.model_copy(update=data.model_dump(exclude_none=True))
+ThermalReserveCertificationMapping = dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]]
