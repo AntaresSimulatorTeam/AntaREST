@@ -18,6 +18,7 @@ import { tableModeCreationSchema } from "@/services/api/tablemode/schemas";
 import type { TableModeCreation } from "@/services/api/tablemode/types";
 import storage from "@/services/utils/localStorage";
 import { appendColon } from "@/utils/i18nUtils";
+import { buildKey } from "@/utils/reactUtils";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import {
   Backdrop,
@@ -114,12 +115,12 @@ function MigrationTableModes() {
       );
     }
 
-    setState({
+    setState(prev => ({
+      ...prev,
       status: failed.length > 0 ? "error" : "success",
-      migrated: oldTableModes.length - failed.length,
       failed,
       total: oldTableModes.length,
-    });
+    }));
   }
 
   ////////////////////////////////////////////////////////////////
@@ -184,9 +185,9 @@ function MigrationTableModes() {
                 {t("study.tableModes.migration.error", { count: state.failed.length })}
               </Typography>
               <List dense sx={{ overflow: "auto" }}>
-                {state.failed.map(([tableModeCreation, error]) => (
+                {state.failed.map(([tableModeCreation, error], index) => (
                   <ListItem
-                    key={tableModeCreation.name}
+                    key={buildKey(tableModeCreation.name, index)}
                     secondaryAction={
                       <Tooltip
                         title={`${appendColon(t("global.columns"))} ${tableModeCreation.columns.join(", ")}`}
