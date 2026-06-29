@@ -157,11 +157,12 @@ from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFi
 from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
+from antarest.study.storage.study_upgrader import check_versions_coherence, find_next_version
 from antarest.study.storage.utils import (
     assert_permission,
     assert_permission_on_studies,
     create_new_empty_study,
+    dump_dataframe,
     extract_data_to_dir,
     extract_simulation_range_from_model,
     get_matrix_index,
@@ -399,33 +400,21 @@ class StudyUpgraderTask:
 
     def _upgrade_study(self) -> None:
         """Run the task (lock the database)."""
-        study_id: str = self._study_id
-        target_version = self._target_version
-        is_study_denormalized = False
         with db():
-            study_to_upgrade = self.repository.one(study_id)
-            try:
-                # sourcery skip: extract-method
-                study_path = Path(study_to_upgrade.path)
-                study_upgrader = StudyUpgrader(study_path, target_version)
-                if is_managed(study_to_upgrade) and study_upgrader.should_denormalize_study():
-                    # We have to denormalize the study because the upgrade impacts study matrices
-                    self.storage_service.raw_study_service.denormalize_study(study_to_upgrade)
-                    is_study_denormalized = True
-                study_upgrader.upgrade()
-                remove_from_cache(self.cache_service, study_to_upgrade.id)
-                study_to_upgrade.version = f"{target_version:2d}"
-                self.repository.save(study_to_upgrade)
-                self.event_bus.push(
-                    Event(
-                        type=EventType.STUDY_EDITED,
-                        payload=study_to_upgrade.to_json_summary(),
-                        permissions=PermissionInfo.from_study(study_to_upgrade),
-                    )
+            study_to_upgrade = self.repository.one(self._study_id)
+
+            self.storage_service.raw_study_service.upgrade_study(study_to_upgrade, self._target_version)
+
+            remove_from_cache(self.cache_service, study_to_upgrade.id)
+            study_to_upgrade.version = f"{self._target_version:2d}"
+            self.repository.save(study_to_upgrade)
+            self.event_bus.push(
+                Event(
+                    type=EventType.STUDY_EDITED,
+                    payload=study_to_upgrade.to_json_summary(),
+                    permissions=PermissionInfo.from_study(study_to_upgrade),
                 )
-            finally:
-                if is_study_denormalized:
-                    self.storage_service.raw_study_service.normalize_study(study_to_upgrade)
+            )
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         """
@@ -636,6 +625,10 @@ class IOutputsAccess(ABC):
     ) -> pd.DataFrame:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_output_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
+        raise NotImplementedError()
+
 
 class StudyService:
     """
@@ -773,10 +766,23 @@ class StudyService:
         assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
 
-        file_study = self.get_file_study(study)
         parts = [item for item in url.split("/") if item]
-        file_node = file_study.tree.get_node(parts)
 
+        # We need to handle the output case separately
+        if parts[0] == "output":
+            output_id = parts[1]
+            return self._get_outputs_access().get_output_original_file(uuid, output_id, list(parts[2:]))
+
+        if study.storage_mode == StorageMode.DATABASE:
+            # We only support fetching matrices
+            dataframe = _get_matrix_from_path(self.get_study_interface(study), PurePosixPath(url))
+            buffer = io.BytesIO()
+            dump_dataframe(dataframe, buffer)
+            content = buffer.getvalue()
+            return OriginalFile(suffix=".txt", filename=f"{parts[-1]}.txt", content=content)
+
+        file_study = self.get_file_study(study)
+        file_node = file_study.tree.get_node(parts)
         return file_node.get_file_content()
 
     def get_comments(self, study_id: str) -> str:

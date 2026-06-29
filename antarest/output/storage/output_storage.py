@@ -29,6 +29,7 @@ from antarest.output.filestudy.utils import QueryFileType
 from antarest.output.model import OutputVariablesList
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency, MatrixIndex
+from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
 logger = logging.getLogger(__name__)
@@ -294,4 +295,10 @@ class IOutputStorage(ABC):
     ) -> pd.DataFrame:
         """
         Parses a matrix from a given url and returns it as a dataframe
+        """
+
+    @abstractmethod
+    def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
+        """
+        Retrieves the original file as it exists on the file system
         """

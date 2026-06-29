@@ -10,20 +10,11 @@
 #
 # This file is part of the Antares project.
 
-"""
-Antares Web
 
-This module contains the project metadata.
-"""
+class NoValidOutputError(Exception):
+    """
+    Raised when a launch leaves no importable Antares output (e.g. a failed launch that
+    only produced a `simulation.log` instead of a proper output directory or ZIP).
 
-from pathlib import Path
-
-# Standard project metadata
-
-__version__ = "2.33.0"
-__author__ = "RTE, Antares Web Team"
-__date__ = "2026-06-24"
-# noinspection SpellCheckingInspection
-__credits__ = "(c) Réseau de Transport de l’Électricité (RTE)"
-
-ROOT_DIR: Path = Path(__file__).resolve().parent
+    Launcher adapters catch this to mark the job as failed instead of crashing.
+    """

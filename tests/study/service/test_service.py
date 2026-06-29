@@ -15,7 +15,6 @@ import os
 import textwrap
 import typing as t
 import uuid
-from configparser import MissingSectionHeaderError
 from datetime import timedelta
 from functools import wraps
 from pathlib import Path
@@ -58,6 +57,7 @@ from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_7_2,
+    STUDY_VERSION_8,
     MatrixFrequency,
     MatrixIndex,
     OwnerInfo,
@@ -82,7 +82,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
-from antarest.study.storage.rawstudy.model.filesystem.inode import INode
+from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -208,6 +208,10 @@ def build_study_service(
             self, study_id: str, output_id: str, url: list[str], frequency: MatrixFrequency
         ) -> pd.DataFrame:
             return pd.DataFrame()
+
+        @override
+        def get_output_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
+            raise NotImplementedError()
 
     service.register_output_access(OutputsAccessMock())
     return service
@@ -1884,13 +1888,8 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
 
 
 @with_db_context
-@patch("antarest.study.storage.study_upgrader.StudyUpgrader.upgrade")
 @pytest.mark.parametrize("workspace", ["other_workspace", DEFAULT_WORKSPACE_NAME])
-def test_upgrade_study__raw_study__nominal(
-    upgrade_study_mock: Mock,
-    tmp_path: Path,
-    workspace: str,
-) -> None:
+def test_upgrade_study__raw_study__nominal(tmp_path: Path, workspace: str) -> None:
     study_id = str(uuid.uuid4())
     study_name = "my_study"
     target_version = "800"
@@ -1963,8 +1962,6 @@ def test_upgrade_study__raw_study__nominal(
     notifier = Mock()
     actual = task(notifier)
 
-    upgrade_study_mock.assert_called_once_with()
-
     # The study must be updated in the database
     actual_study: RawStudy = db.session.get(Study, study_id)
     assert actual_study is not None, "Not in database"
@@ -1989,21 +1986,17 @@ def test_upgrade_study__raw_study__nominal(
 
 
 @with_db_context
-def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
+@patch("antarest.study.storage.rawstudy.raw_study_service.RawStudyService")
+def test_upgrade_study__raw_study__failed(upgrade_mock: Mock, tmp_path: Path) -> None:
     study_id = str(uuid.uuid4())
-    study_name = "my_study"
-    target_version = "800"
     old_version = "720"
-    (tmp_path / "study.antares").touch()
-    (tmp_path / "study.antares").write_text(f"version = {old_version}")
-    # The study.antares file doesn't have an header the upgrade should fail.
 
     # Prepare a RAW study
     # noinspection PyArgumentList
     now = current_time()
     raw_study = create_raw_study(
         id=study_id,
-        name=study_name,
+        name="my_study",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(tmp_path),
         created_at=now,
@@ -2026,12 +2019,10 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
     # The `StudyMetadataRepository` is used to store the study in database.
     repository = StudyMetadataRepository(cache_service)
 
-    # The `StudyStorageService` is used to retrieve:
-    # - the `RawStudyService` of a RAW study, or
-    # - the `VariantStudyService` of a variant study.
-    # It is used to `denormalize`/`normalize` the study.
-    # For a variant study, the  `clear_snapshot` is also called
+    # Mocks the `upgrade_study` method to mimick an upgrade failure.
     storage_service = Mock()
+    storage_service.raw_study_service = upgrade_mock
+    upgrade_mock.upgrade_study.side_effect = ValueError("Mocked error")
 
     # The `IEventBus` service is used to send event notifications.
     # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
@@ -2040,7 +2031,7 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
     # Prepare the task for an upgrade
     task = StudyUpgraderTask(
         study_id,
-        target_version,
+        target_version=STUDY_VERSION_8,
         repository=repository,
         storage_service=storage_service,
         cache_service=cache_service,
@@ -2050,7 +2041,7 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
     # The task is called with a `TaskUpdateNotifier` a parameter.
     # Some messages could be emitted using the notifier (not a requirement).
     notifier = Mock()
-    with pytest.raises(MissingSectionHeaderError, match="File contains no section headers"):
+    with pytest.raises(ValueError):  # Due to the Mocked error
         task(notifier)
 
     # The study must not be updated in the database
