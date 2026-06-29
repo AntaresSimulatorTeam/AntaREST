@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "AntaREST"
-version = "2.31.0"
+version = "2.33.0"
 authors = [{name="RTE, Antares Web Team", email="andrea.sgattoni@rte-france.com" }]
 description="Antares Server"
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -17,7 +17,7 @@ classifiers=[
         "Operating System :: OS Independent",
     ]
 dependencies = [
-    "Antares-Launcher==1.4.6",
+    "antares-launcher==1.4.9",
     "antares-study-version==1.0.20",
     "antares-timeseries-generation==0.1.9",
     "fastapi==0.135.1",
@@ -85,6 +85,7 @@ test = [
     "pytest-cov~=7.0.0",
     "pytest-mock~=3.15.0",
     "jinja2~=3.1.3",
+    "testcontainers~=4.14.2"
 ]
 
 [project.optional-dependencies]

@@ -10,64 +10,62 @@
 #
 # This file is part of the Antares project.
 import pytest
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound, LinkNotFound
 from antarest.study.business.model.common import FilterOption
 from antarest.study.business.model.link_model import DEFAULT_COLOR, AssetType, Link, LinkStyle, TransmissionCapacity
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.dao.database.models.link import LINK_TABLE
 from tests.db_statement_recorder import DBStatementRecorder
 from tests.study.dao.utils import save_area
 
 
-def _create_default_link(db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def _create_default_link(dao: StudyDao) -> None:
+    save_area(dao, "Paris")
+    save_area(dao, "London")
+    dao.save_links([Link(area1="paris", area2="london")])
+
+
+def test_create_link_with_default_properties(dao: StudyDao) -> None:
     save_area(dao, "Paris")
     save_area(dao, "London")
     link = Link(area1="paris", area2="london")
     dao.save_links([link])
 
-
-def test_create_link_with_default_properties(db_session: Session, db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
-    study_id = dao.get_study_id()
-    save_area(dao, "Paris")
-    save_area(dao, "London")
-    link = Link(area1="paris", area2="london")
-    dao.save_links([link])
-
-    # Check default Link was created
-    stmt = select(LINK_TABLE)
-    rows = db_session.execute(stmt).fetchall()
-    assert len(rows) == 1
-    row = rows[0]
-    assert row.study_id == study_id
-    assert row.area1 == "london"
-    assert row.area2 == "paris"
-    assert row.hurdles_cost is False
-    assert row.loop_flow is False
-    assert row.use_phase_shifter is False
-    assert row.transmission_capacities == TransmissionCapacity.ENABLED
-    assert row.asset_type == AssetType.AC
-    assert row.display_comments is True
-    assert row.comments == ""
-    assert row.colorr == DEFAULT_COLOR
-    assert row.colorb == DEFAULT_COLOR
-    assert row.colorg == DEFAULT_COLOR
-    assert row.link_width == 1.0
-    assert row.link_style == LinkStyle.PLAIN
-    assert row.filter_synthesis == "hourly, daily, weekly, monthly, annual"
-    assert row.filter_year_by_year == "hourly, daily, weekly, monthly, annual"
-
-    # Check the return method
     created_link = dao.get_link("london", "paris")
+    assert created_link.area1 == "london"
+    assert created_link.area2 == "paris"
+    assert created_link.hurdles_cost is False
+    assert created_link.loop_flow is False
+    assert created_link.use_phase_shifter is False
+    assert created_link.transmission_capacities == TransmissionCapacity.ENABLED
+    assert created_link.asset_type == AssetType.AC
+    assert created_link.display_comments is True
+    assert created_link.comments == ""
+    assert created_link.colorr == DEFAULT_COLOR
+    assert created_link.colorb == DEFAULT_COLOR
+    assert created_link.colorg == DEFAULT_COLOR
+    assert created_link.link_width == 1.0
+    assert created_link.link_style == LinkStyle.PLAIN
+    assert list(created_link.filter_synthesis) == [
+        FilterOption.HOURLY,
+        FilterOption.DAILY,
+        FilterOption.WEEKLY,
+        FilterOption.MONTHLY,
+        FilterOption.ANNUAL,
+    ]
+    assert list(created_link.filter_year_by_year) == [
+        FilterOption.HOURLY,
+        FilterOption.DAILY,
+        FilterOption.WEEKLY,
+        FilterOption.MONTHLY,
+        FilterOption.ANNUAL,
+    ]
     assert created_link == link
 
 
-def test_exists_method(db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def test_exists_method(dao: StudyDao) -> None:
     # Asserts at first the link does not exist
     assert dao.link_exists("london", "paris") is False
 
@@ -78,8 +76,7 @@ def test_exists_method(db_dao: DatabaseStudyDao) -> None:
     assert dao.link_exists("london", "paris") is True
 
 
-def test_get_method(db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def test_get_method(dao: StudyDao) -> None:
     with pytest.raises(LinkNotFound):
         dao.get_link("london", "paris")
 
@@ -103,25 +100,22 @@ def test_get_all_links(db_dao: DatabaseStudyDao, db_session: Session) -> None:
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
-def test_delete_link(db_dao: DatabaseStudyDao, db_session: Session) -> None:
-    dao = db_dao
+def test_delete_link(db_dao: DatabaseStudyDao) -> None:
     link = Link(area1="paris", area2="london")
     with pytest.raises(LinkNotFound):
-        dao.delete_link(link)
+        db_dao.delete_link(link)
 
-    _create_default_link(dao)
+    _create_default_link(db_dao)
 
     # Delete the existing link
-    dao.delete_link(link)
+    db_dao.delete_link(link)
 
     # Asserts there are no links left in DB
-    stmt = select(LINK_TABLE)
-    rows = db_session.execute(stmt).fetchall()
+    rows = db_dao.get_links()
     assert rows == []
 
 
-def test_save_link(db_dao: DatabaseStudyDao) -> None:
-    dao = db_dao
+def test_save_link(dao: StudyDao) -> None:
     _create_default_link(dao)
 
     # Save the link with new properties
@@ -139,8 +133,29 @@ def test_save_link(db_dao: DatabaseStudyDao) -> None:
         dao.save_links([Link(area1="paris", area2="fake_area")])
 
 
-def test_delete_area(db_dao: DatabaseStudyDao, db_session: Session) -> None:
-    dao = db_dao
+def test_save_link_filters_propagate_to_synthesis(dao: StudyDao) -> None:
+    """`save_links` must propagate filters into the in-memory link config exposed by
+    `get_synthesis`"""
+    save_area(dao, "Paris")
+    save_area(dao, "London")
+
+    dao.save_links(
+        [
+            Link(
+                area1="paris",
+                area2="london",
+                filter_synthesis=[FilterOption.DAILY, FilterOption.WEEKLY],
+                filter_year_by_year=[FilterOption.HOURLY],
+            )
+        ]
+    )
+
+    link_config = dao.get_synthesis().areas["london"].links["paris"]
+    assert link_config.filters_synthesis == ["daily", "weekly"]
+    assert link_config.filters_year == ["hourly"]
+
+
+def test_delete_area(dao: StudyDao) -> None:
     _create_default_link(dao)
     save_area(dao, "Toulouse")
     dao.save_links([Link(area1="paris", area2="toulouse")])
@@ -149,6 +164,5 @@ def test_delete_area(db_dao: DatabaseStudyDao, db_session: Session) -> None:
     # For one link, it's `area2` and for the other `area1`
     dao.delete_area("paris")
 
-    stmt = select(LINK_TABLE)
-    rows = db_session.execute(stmt).fetchall()
+    rows = dao.get_links()
     assert rows == []

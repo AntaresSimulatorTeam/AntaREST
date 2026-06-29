@@ -18,31 +18,11 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
-from antarest.core.utils.archives import archive_dir
 from tests.integration.utils import wait_task_completion
 from tests.test_helpers.dates import utc_to_local
 from tests.test_helpers.download import download_to_file
 
 EXPECTED_DATE = utc_to_local("20201014-1227")
-
-
-@pytest.fixture(scope="session")
-def sta_mini_zip_path(project_path: Path) -> Path:
-    return project_path / "examples/studies/STA-mini.zip"
-
-
-@pytest.fixture(scope="session")
-def output_zip(tmp_path_factory: pytest.TempPathFactory, sta_mini_zip_path: Path) -> Path:
-    extraction_dir = tmp_path_factory.mktemp(basename="study_extraction")
-
-    with zipfile.ZipFile(sta_mini_zip_path, "r") as zf:
-        zf.extractall(extraction_dir)
-    output_dir = extraction_dir / "STA-mini" / "output" / "20201014-1427eco"
-
-    output_zip_dir = tmp_path_factory.mktemp(basename="output")
-    output_zip = output_zip_dir / "output.zip"
-    archive_dir(output_dir, output_zip, remove_source_dir=True)
-    return output_zip
 
 
 @pytest.fixture
@@ -89,8 +69,8 @@ def test_import(admin_client: TestClient, empty_study_id: str, output_zip: Path)
         files={"output": io.BytesIO(output_zip.read_bytes())},
     )
     assert res.status_code == 202, res.json()
-    output_name = res.json()
-    assert output_name == f"{EXPECTED_DATE}eco"
+    output_id = res.json()
+    assert output_id == f"{EXPECTED_DATE}eco"
 
     # Check output metadata
     res = client.get(
@@ -99,10 +79,11 @@ def test_import(admin_client: TestClient, empty_study_id: str, output_zip: Path)
     assert res.status_code == 200, res.json()
     assert len(res.json()) == 1
     assert res.json()[-1] == {
+        "id": output_id,
+        "name": output_id,
         "archived": False,
         "byYear": False,
         "mode": "Economy",
-        "name": f"{EXPECTED_DATE}eco",
         "nbYears": 1,
         "synthesis": True,
         "storageType": "V2",
@@ -356,21 +337,22 @@ def test_conversion_to_v2(admin_client: TestClient, output_zip: Path, empty_stud
         files={"output": io.BytesIO(output_zip.read_bytes())},
     )
     assert res.status_code == 202, res.json()
-    output_name = res.json()
-    assert output_name == f"{EXPECTED_DATE}eco"
+    output_id = res.json()
+    assert output_id == f"{EXPECTED_DATE}eco"
 
     res = client.post(
-        f"/v1/studies/{study_id}/output/{output_name}/_convert?storage_type=V2",
+        f"/v1/studies/{study_id}/output/{output_id}/_convert?storage_type=V2",
     )
     assert res.status_code == 200, res.json()
 
     res = client.get(f"/v1/studies/{study_id}/outputs")
     assert res.json() == [
         {
+            "id": output_id,
+            "name": output_id,
             "archived": False,
             "byYear": False,
             "mode": "Economy",
-            "name": f"{EXPECTED_DATE}eco",
             "nbYears": 1,
             "synthesis": True,
             "storageType": "V2",
@@ -379,6 +361,6 @@ def test_conversion_to_v2(admin_client: TestClient, output_zip: Path, empty_stud
 
     # Second conversion should fail
     res = client.post(
-        f"/v1/studies/{study_id}/output/{output_name}/_convert?storage_type=V2",
+        f"/v1/studies/{study_id}/output/{output_id}/_convert?storage_type=V2",
     )
     assert res.status_code == 400, res.json()

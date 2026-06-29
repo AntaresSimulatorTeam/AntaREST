@@ -13,8 +13,10 @@ import zipfile
 from io import BytesIO
 from pathlib import Path
 
+import pytest
 from starlette.testclient import TestClient
 
+from tests.integration.studies_blueprint.utils import check_exported_study_integrity, create_minimal_study
 from tests.integration.utils import wait_task_completion
 from tests.test_helpers.download import download_to_file
 from tests.test_helpers.outputs import create_minimal_output_zip_from_name
@@ -112,3 +114,24 @@ def export_with_output_test(client: TestClient, study_id: str, tmp_path: Path) -
     assert "output/20201002-1023eco-output1/info.antares-output" in namelist
     assert "output/20210716-1815adq-output2/info.antares-output" in namelist
     assert "output/20231002-1023eco/info.antares-output" in namelist
+
+
+@pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
+def test_export_with_both_storage_modes(
+    client: TestClient, user_access_token: str, storage_mode: str, tmp_path: Path
+) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    # Create a Raw study with several areas, links, constraints, thermals ...
+    res = client.post(f"/v1/studies?name=MyStudy&storage_mode={storage_mode}")
+    assert res.status_code == 201
+    study_id = res.json()
+
+    create_minimal_study(client, study_id)
+
+    # Export the study
+    res = client.get(f"/v1/studies/{study_id}/export")
+    assert res.status_code == 200
+    download_id = res.json()["file"]["id"]
+
+    check_exported_study_integrity(client, tmp_path, download_id, "MyStudy")

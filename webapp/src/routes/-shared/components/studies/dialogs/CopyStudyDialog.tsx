@@ -18,19 +18,18 @@ import SelectFE from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import UsePromiseCond from "@/components/utils/UsePromiseCond";
-import usePromise from "@/hooks/usePromise";
-import { directoryQueries } from "@/queries/directories/queries";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { directoryQueries } from "@/queries/directories/queries";
+import { outputQueries } from "@/queries/outputs/queries";
 import { copyStudy } from "@/services/api/studies";
+import type { Output } from "@/services/api/studies/outputs/types";
 import { getTask } from "@/services/api/tasks";
-import { getStudyOutputs } from "@/services/api/study";
-import type { StudyMetadata, OutputDetails } from "@/types/types";
-import { validateStudyName } from "@/utils/studiesUtils";
+import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
+import { validateStudyName } from "@/utils/studiesUtils";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
 import SaveAsIcon from "@mui/icons-material/SaveAs";
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import StudyDestinationFE from "../StudyDestinationFE";
 import type { DirectoryDestination } from "../StudyDestinationFE/types";
@@ -45,7 +44,18 @@ interface Props {
 interface DefaultValues {
   studyName: string;
   destination: DirectoryDestination;
-  outputIds?: Array<OutputDetails["name"]>;
+  outputIds?: Array<Output["id"]>;
+}
+
+function selectOutputsData(outputs: Output[]) {
+  const outputOptions = outputs.map((output) => ({
+    value: output.id,
+    label: output.name,
+  }));
+
+  const defaultOutputIds = outputs.map((output) => output.id);
+
+  return { outputOptions, defaultOutputIds };
 }
 
 function CopyStudyDialog({ study, open, onClose }: Props) {
@@ -56,10 +66,15 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
-  const outputsRes = usePromise(async () => {
-    const outputs = await getStudyOutputs(study.id);
-    return outputs.map(({ name }) => name);
-  }, [study.id]);
+  const {
+    data: { outputOptions, defaultOutputIds } = { outputOptions: [], defaultOutputIds: [] },
+    isPending: isOutputsPending,
+    isError: isOutputsError,
+    isSuccess: isOutputsSuccess,
+  } = useQuery({
+    ...outputQueries.list(study.id),
+    select: selectOutputsData,
+  });
 
   const defaultValues: DefaultValues = {
     studyName: `${study.name} (${t("studies.copySuffix")})`,
@@ -126,28 +141,33 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
             autoFocus
           />
           <StudyDestinationFE name="destination" control={control} />
-          <UsePromiseCond
-            response={outputsRes}
-            ifPending={() => (
-              <FieldSkeleton>
-                <SelectFE value="" />
-              </FieldSkeleton>
-            )}
-            ifRejected={() => <SelectFE helperText={t("study.error.listOutputs")} error disabled />}
-            ifFulfilled={(outputs) => (
-              <SelectFE
-                name="outputIds"
-                control={control}
-                label={t("global.outputs")}
-                defaultValue={outputs}
-                options={outputs}
-                startCaseLabel={false}
-                multiple
-                onSelectAllOptions={(values) => setValue("outputIds", values)}
-                onDeselectAllOptions={() => setValue("outputIds", [])}
-              />
-            )}
-          />
+          {/* Outputs field */}
+          {isOutputsPending && (
+            <FieldSkeleton>
+              <SelectFE value="" />
+            </FieldSkeleton>
+          )}
+          {isOutputsError && (
+            <SelectFE
+              label={t("global.outputs")}
+              helperText={t("study.error.listOutputs")}
+              error
+              disabled
+            />
+          )}
+          {isOutputsSuccess && (
+            <SelectFE
+              name="outputIds"
+              control={control}
+              label={t("global.outputs")}
+              defaultValue={defaultOutputIds}
+              options={outputOptions}
+              startCaseLabel={false}
+              multiple
+              onSelectAllOptions={(values) => setValue("outputIds", values)}
+              onDeselectAllOptions={() => setValue("outputIds", [])}
+            />
+          )}
         </Fieldset>
       )}
     </FormDialog>

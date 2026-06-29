@@ -20,14 +20,11 @@ from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixRepository
 from antarest.matrixstore.service import MatrixService
-from antarest.output.storage.file.storage import (
-    FileStudyOutputs,
-    IFileOutputsProvider,
-    InStudyFileOutputStorage,
-)
+from antarest.output.storage.file.abstract_storage import FileStudyOutputs, IFileOutputsProvider
+from antarest.output.storage.file.in_study import InStudyFileOutputStorage
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_8_8
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -62,7 +59,7 @@ def test_export_flat_export_all_files_except_output(
 
 
 @with_db_context
-def test_normalize_denormalized_methods(tmp_path: Path) -> None:
+def test_normalize_denormalized_methods(tmp_path: Path, study_factory: StudyFactory) -> None:
     # Create a real matrix_service with a db connection to test DB queries
     db_session = db.session
     buket_dir = tmp_path / "matrixstore_bucket"
@@ -70,8 +67,12 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
     content_repo = MatrixContentRepository(buket_dir, InternalMatrixFormat.FEATHER)
     matrix_service = MatrixService(repo, Mock(), content_repo, Mock(), Mock(), Mock(), Mock())
 
-    # Create a study with this matrix_service
-    study = empty_study_fixture(STUDY_VERSION_8_8, matrix_service, tmp_path)
+    # Create a `FileStudy` with this matrix_service
+    file_study = empty_study_fixture(STUDY_VERSION_8_8, matrix_service, tmp_path)
+
+    # Create a `RawStudy` object based on the `FileStudy`
+    study_path = file_study.config.study_path
+    study = create_raw_study(id=file_study.config.study_id, path=str(study_path), workspace=DEFAULT_WORKSPACE_NAME)
 
     # Use this matrix_service in the raw_study_service and in the command_context
     matrix_constants = GeneratorMatrixConstants(matrix_service)
@@ -80,11 +81,12 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
     command_context = CommandContext(
         generator_matrix_constants=matrix_constants, matrix_service=matrix_service, blob_service=blob_service
     )
-    raw_study_service = RawStudyService(Mock(), Mock(), Mock(), matrix_service)
-    dao = build_dao_from_file_study(study, command_context, True)
+    study_factory._matrix_service = matrix_service
+    raw_study_service = RawStudyService(Mock(), study_factory, Mock(), command_context, Mock())
+    dao = build_dao_from_file_study(file_study, command_context, True)
 
     # Create an area and a thermal with specific matrices to have real DB matrices in our study
-    version = study.config.version
+    version = file_study.config.version
     cmd = CreateArea(command_context=command_context, area_name="fr", study_version=version)
     output = cmd.apply(dao)
     assert output.status
@@ -99,7 +101,6 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
     assert output.status
 
     # Ensures the matrix is normalized for now
-    study_path = study.config.study_path
     normalized_path = study_path / "input" / "load" / "series" / "load_fr.txt.link"
     denormalized_path = study_path / "input" / "load" / "series" / "load_fr.txt"
     assert normalized_path.exists()
@@ -108,7 +109,7 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
 
     # Normalize the study
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        raw_study_service.normalize_file_study(study)
+        raw_study_service.normalize_study(study)
         assert len(db_recorder.sql_statements) == 0  # no DB request as there is nothing to do
 
     assert normalized_path.read_text() == content
@@ -116,7 +117,7 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
 
     # Denormalize the study
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        raw_study_service.denormalize_file_study(study)
+        raw_study_service._file_study_storage.denormalize_study(study)
         assert len(db_recorder.sql_statements) == 1  # 1 DB request for all matrices
 
     assert not normalized_path.exists()
@@ -125,7 +126,7 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
 
     # Denormalize again
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        raw_study_service.denormalize_file_study(study)
+        raw_study_service._file_study_storage.denormalize_study(study)
         assert len(db_recorder.sql_statements) == 0  # no DB request as there is nothing to do
 
     assert not normalized_path.exists()
@@ -134,7 +135,7 @@ def test_normalize_denormalized_methods(tmp_path: Path) -> None:
 
     # Normalize the study to come back to the initial point
     with DBStatementRecorder(db_session.bind) as db_recorder:
-        raw_study_service.normalize_file_study(study)
+        raw_study_service.normalize_study(study)
         assert len(db_recorder.sql_statements) == 1  # 1 DB request for all matrices
 
     assert normalized_path.exists()
@@ -161,11 +162,7 @@ def test_export_output(tmp_path: Path) -> None:
 
     class OutputsProvider(IFileOutputsProvider):
         def get_outputs(self, study_id: str) -> FileStudyOutputs:
-            return FileStudyOutputs(
-                get_file_study=lambda: FileStudy(Mock(), study_tree),
-                outputs_path=root / "output",
-                study_workspace=DEFAULT_WORKSPACE_NAME,
-            )
+            return FileStudyOutputs(outputs_path=root / "output", study_workspace=DEFAULT_WORKSPACE_NAME)
 
     output_storage = InStudyFileOutputStorage(
         OutputsProvider(), cache=Mock(), remote_executor=Mock(), repository=Mock()

@@ -30,10 +30,13 @@ from antarest.study.business.model.area_properties_model import (
     parse_filters,
     serialize_filters,
 )
+from antarest.study.business.model.common import FILTER_VALUES
 from antarest.study.storage.rawstudy.model.filesystem.config.ini_properties import IniProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import (
     validate_filtering,
 )
+
+_ALL_FILTERS_INI = ", ".join(str(f) for f in FILTER_VALUES)
 
 
 class AreaUIStyle(IniProperties):
@@ -168,8 +171,8 @@ class OptimizationFileData(AntaresBaseModel):
     class FilteringSection(AntaresBaseModel):
         model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True, extra="forbid")
 
-        filter_synthesis: str = Field("")
-        filter_year_by_year: str = Field("")
+        filter_synthesis: str = Field(default=_ALL_FILTERS_INI)
+        filter_year_by_year: str = Field(default=_ALL_FILTERS_INI)
 
         @field_validator("filter_synthesis", "filter_year_by_year", mode="before")
         def _validate_filtering(cls, v: Any) -> str:

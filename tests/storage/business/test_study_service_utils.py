@@ -11,11 +11,13 @@
 # This file is part of the Antares project.
 
 import datetime
+import uuid
+from pathlib import Path
 from typing import Any
-from unittest.mock import Mock
 
 import pytest
 
+from antarest.core.serde.ini_writer import write_ini_file
 from antarest.study.model import (
     MatrixFrequency,
     MatrixIndex,
@@ -164,16 +166,14 @@ from antarest.study.storage.utils import DAY_NAMES, get_start_date
         ),
     ],
 )
-def test_create_matrix_index_output(config: dict[str, Any], level: MatrixFrequency, expected: MatrixIndex) -> None:
-    config_mock = Mock()
-    config_mock.archived = False
-    output_id = "some output"
+def test_create_matrix_index_output(
+    config: dict[str, Any], level: MatrixFrequency, expected: MatrixIndex, tmp_path: Path
+) -> None:
+    output_path = tmp_path / str(uuid.uuid4())
+    (output_path / "about-the-study").mkdir(parents=True)
+    write_ini_file(output_path / "about-the-study" / "parameters.ini", {"general": config})
 
-    file_study = Mock()
-    file_study.tree.get.return_value = {"general": config}
-    file_study.config.outputs = {output_id: config_mock}
-
-    assert get_start_date(file_study, output_id, level) == expected
+    assert get_start_date(None, output_path, level) == expected
 
 
 @pytest.mark.parametrize(
@@ -317,11 +317,15 @@ def test_create_matrix_index_output(config: dict[str, Any], level: MatrixFrequen
         ),
     ],
 )
-def test_create_matrix_index_input(config: dict[str, Any], level: MatrixFrequency, expected: MatrixIndex) -> None:
-    file_study = Mock()
-    file_study.tree.get.return_value = {"general": config}
+def test_create_matrix_index_input(
+    config: dict[str, Any], level: MatrixFrequency, expected: MatrixIndex, tmp_path: Path
+) -> None:
+    study_path = tmp_path / str(uuid.uuid4())
+    (study_path / "settings").mkdir(parents=True)
+    write_ini_file(study_path / "settings" / "generaldata.ini", {"general": config})
+
     # Asserts the content are the same
-    actual = get_start_date(file_study, None, level)
+    actual = get_start_date(study_path, None, level)
     assert actual == expected
     # Asserts the returned 1st January corresponds to the chosen one
     actual_datetime = datetime.datetime.strptime(actual.start_date, "%Y-%m-%d %H:%M:%S")

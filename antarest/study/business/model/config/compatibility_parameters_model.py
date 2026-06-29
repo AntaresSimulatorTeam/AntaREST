@@ -18,7 +18,7 @@ from pydantic.alias_generators import to_camel
 
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.model import STUDY_VERSION_9_2, STUDY_VERSION_10_0
+from antarest.study.model import STUDY_VERSION_9_2
 
 
 class HydroPmax(StrEnum):
@@ -30,14 +30,12 @@ class CompatibilityParameters(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
     hydro_pmax: HydroPmax = HydroPmax.DAILY
-    reserves_enabled: bool | None = None
 
 
 class CompatibilityParametersUpdate(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
     hydro_pmax: HydroPmax | None = None
-    reserves_enabled: bool | None = None
 
 
 def update_compatibility_parameters(
@@ -49,17 +47,6 @@ def update_compatibility_parameters(
     return CompatibilityParameters.model_validate(current_properties)
 
 
-def initialize_compatibility_parameters_against_version(
-    parameters: CompatibilityParameters, version: StudyVersion
-) -> None:
-    if version >= STUDY_VERSION_10_0 and parameters.reserves_enabled is None:
-        parameters.reserves_enabled = False
-
-
-def validate_compatibility_parameters_against_version(
-    version: StudyVersion, parameters: CompatibilityParametersUpdate
-) -> None:
-    if version < STUDY_VERSION_9_2 and parameters.hydro_pmax is not None:
-        raise InvalidFieldForVersionError("Field hydro_pmax is not a valid field for study version before 9.2")
-    if version < STUDY_VERSION_10_0 and parameters.reserves_enabled is not None:
-        raise InvalidFieldForVersionError("Field reserves_enabled is not a valid field for study version before 10.0")
+def validate_compatibility_parameters_against_version(version: StudyVersion) -> None:
+    if version < STUDY_VERSION_9_2:
+        raise InvalidFieldForVersionError("Hydro pmax cannot be set to hourly before study version 9.2")

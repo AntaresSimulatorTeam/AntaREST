@@ -22,6 +22,7 @@ from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import cast
 
+import tinydb
 from antares.study.version import SolverVersion
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
 from antareslauncher.main import MainParameters, run_with
@@ -41,7 +42,14 @@ from antarest.core.utils.utils import assert_this
 from antarest.globals import ANTAREST_WORKER_ID
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.log_manager import LogTailManager
-from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType, XpansionParametersDTO
+from antarest.launcher.exceptions import NoValidOutputError
+from antarest.launcher.model import (
+    JobStatus,
+    LauncherLoadDTO,
+    LauncherParametersDTO,
+    LogType,
+    XpansionParametersDTO,
+)
 from antarest.launcher.ssh_client import calculates_slurm_load
 from antarest.launcher.ssh_config import SSHConfigDTO
 from antarest.login.utils import current_user_context, require_current_user
@@ -402,7 +410,7 @@ class SlurmLauncher(AbstractLauncher):
                 study.xpansion_mode,
                 study.job_log_dir,
             )
-        except FileNotFoundError:
+        except (FileNotFoundError, NoValidOutputError):
             msg = "Simulation failed, output results are not available"
             self.callbacks.append_after_log(study.name, msg)
             # see antarest.launcher.service.LauncherService.update
@@ -455,7 +463,7 @@ class SlurmLauncher(AbstractLauncher):
 
     def _clean_up_study(self, launch_id: str) -> None:
         logger.info(f"Cleaning up study with launch_id {launch_id}")
-        self.data_repo_tinydb.remove_study(launch_id)
+        self._remove_study_from_workspace_db(launch_id)
         self._delete_workspace_file(self.local_workspace / STUDIES_OUTPUT_DIR_NAME / launch_id)
         self._delete_workspace_file(self.local_workspace / STUDIES_INPUT_DIR_NAME / launch_id)
         if (self.local_workspace / STUDIES_OUTPUT_DIR_NAME).exists():
@@ -648,6 +656,11 @@ class SlurmLauncher(AbstractLauncher):
             "launcherStatus": "SUCCESS",
         }
         return LauncherLoadDTO(**args)
+
+    def _remove_study_from_workspace_db(self, study_name: str) -> None:
+        pk_name = self.data_repo_tinydb.db_primary_key
+        logger.info(f"Removing study '{study_name}' from database")
+        self.data_repo_tinydb.db.remove(tinydb.where(pk_name) == study_name)
 
 
 def _override_solver_version(study_path: Path, version: SolverVersion) -> None:

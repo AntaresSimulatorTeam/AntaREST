@@ -62,7 +62,7 @@ def launcher_config(tmp_path: Path) -> SlurmConfig:
         "enable_nb_cores_detection": False,
         "nb_cores": {"min": 1, "default": 34, "max": 36},
     }
-    return SlurmConfig.from_dict(data)
+    return SlurmConfig.model_validate(data)
 
 
 def test_init_slurm_launcher_arguments(tmp_path: Path) -> None:
@@ -407,6 +407,7 @@ def test_check_state(tmp_path: Path, launcher_config: SlurmConfig) -> None:
     )
     slurm_launcher._import_study_output = Mock()
     slurm_launcher._delete_workspace_file = Mock()
+    slurm_launcher._remove_study_from_workspace_db = Mock()
     slurm_launcher.stop = Mock()
 
     study1 = Mock()
@@ -435,7 +436,7 @@ def test_check_state(tmp_path: Path, launcher_config: SlurmConfig) -> None:
     assert slurm_launcher.callbacks.update_status.call_count == 2
     assert slurm_launcher._import_study_output.call_count == 2
     assert slurm_launcher._delete_workspace_file.call_count == 4
-    assert data_repo_tinydb.remove_study.call_count == 2
+    assert slurm_launcher._remove_study_from_workspace_db.call_count == 2
     slurm_launcher.stop.assert_called_once()
 
 
@@ -528,6 +529,7 @@ def test_kill_job(
         wait_time=launcher_config.default_wait_time,
         xpansion_mode=None,
         other_options=None,
+        oversubscribe=False,
     )
     launcher_parameters = MainParameters(
         json_dir=Path(tmp_path),

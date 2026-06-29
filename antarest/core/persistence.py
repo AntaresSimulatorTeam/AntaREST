@@ -31,7 +31,7 @@ class Base(DeclarativeBase):
 
 
 def upgrade_db(config_file: Path) -> None:
-    os.environ.setdefault("ANTAREST_CONF", str(config_file))
+    os.environ["ANTAREST_CONF"] = str(config_file)
     alembic_cfg = Config(str(get_local_path() / "alembic.ini"))
     alembic_cfg.stdout = StringIO()
     alembic_cfg.set_main_option("script_location", str(get_local_path() / "alembic"))

@@ -1,6 +1,111 @@
 Antares Web Changelog
 =====================
 
+v2.33.0 (2026-06-24)
+--------------------
+
+### Features
+* **study**: add `storage_mode` attribute inside GET /studies endpoint [`#3231`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3231)
+* **ui-studies**: add active tree variant chip in breadcrumb navigation [`#3216`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3216)
+* **ui-reserves**: add service layer methods and types [`#3217`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3217)
+* **ui-studies**: disable the creation of variants and launch of archived studies [`#3224`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3224)
+* **study**: support copy, import and export on DB studies [`#3220`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3220)
+* **study**: support archive / unarchive for DB studies [`#3238`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3238)
+* **study**: support all variants operations on DB studies [`#3226`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3226)
+* **ui-reserves**: add reserves list [`#3241`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3241)
+* **output**: add new output storage mode [`#3245`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3245)
+* **ui-reserves**: add create delete and duplicate operations to reserves list [`#3249`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3249)
+* **output, db**: support reading matrix indexes [`#3253`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3253) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **output, db**: support reading matrices [`#3259`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3259) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **ui-studies**: add destination directory picker to import dialog [`#3215`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3215)
+* **ui-reserves**: add Needs tab with reserve matrix viewer [`#3263`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3263)
+* **ui-outputs**: add user column and refactor the view [`#3221`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3221)
+* **output, db**: support downloading matrices [`#3265`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3265) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **original-file**: support endpoint for db studies [`#3268`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3268)
+* **study**: support upgrade for db studies [`#3269`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3269)
+* **variant**: fetch whole tree in single request [`#3225`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3225)
+
+### Bug fixes
+* **matrix**: allow importation for DB studies [`#3229`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3229)
+* **xpansion**: display xpansion page for DB studies [`#3230`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3230)
+* **task**: prevent parallel execution of same type of task [`#3233`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3233)
+* **archive**: use zip as default archive format  [`#3240`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3240)
+* **ui-api**: study DTO change version type [`#3247`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3247)
+* **generaldata**: put back duplicated keys to read the file [`#3248`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3248)
+* **output, db**: do not remove outputs inside study at import [`#3251`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3251)
+* **import**: use the studies fs partition for the tmp dir [`#3257`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3257)
+* **ui-reserves**: refresh table data on area change [`#3256`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3256)
+* **studies**: hide descendants toggle at external tree root [`#3255`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3255)
+* **output**: support reading variables for `adequacy` simulations [`#3262`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3262)
+* **ui-reserves**: prevent infinite re-render on Needs tab when area has no reserves [`#3267`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3267)
+* **output, ui**: add new value for storageType enum [`#3270`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3270)
+* **import**: issue when importing study in db mode with outputs in [`#3271`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3271)
+* **upgrade**: remove usage of the cache for db studies [`#3272`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3272)
+* **ui-matrix**: skip matrixindex call for custom-fetcher matrices [`#3276`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3276)
+
+### Performances
+* **sc-builder**: improve fetch perfs for DB DAO [`#3242`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3242)
+
+### Refactorings
+* **services**: introduce skeleton for database storage service [`#3178`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3178)  ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **gc**: move the database matrix gc provider [`#3235`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3235)
+* **db**: introduce intermediate table for the dao [`#3232`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3232)
+* **dao**: parametrize tests to run on FS and DB dao [`#3161`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3161)
+* **version**: change format inside some endpoints [`#3244`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3244)  ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **output**: simplify `FileStudyOutputs` class [`#3243`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3243)
+* **reserves**: adapt code to new file format [`#3274`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3274)
+
+### Miscellaneous
+* **reserves**: support the modified file format [`#3218`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3218)
+* **doc**: remove polyfill.io JS dependency - compromised library [`#3228`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3228)
+* **docs**: update readme [`#3227`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3227)
+* **deps**: update dependency python-multipart to v0.0.27 [SECURITY] [`#3205`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3205)
+* **db**: add postgre migration test [`#3237`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3237)
+* **docs**: remove obsolete documentation [`#3234`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3234)
+* **launcher**: update launcher to 1.4.9 [`#3246`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3246)
+* **output, db**: add aggregation tests for new storage mode [`#3264`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3264)
+
+
+v2.32.0 (2026-05-26)
+--------------------
+
+### Features
+* **study**: import study in given directory [`#3182`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3182)
+* **reserves**: implement need matrix [`#3191`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3191)
+* **ui-studies**: persist list view mode in localStorage [`#3198`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3198)
+* **ui-study**: specific home view for archived study [`#3195`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3195)
+* **ui-study**: hide job actions when study is archived [`#3204`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3204)
+* **study**: forbid invalid characters in output_suffix [`#3210`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3210)
+* **ui-study**: hide disk usage for external study [`#3213`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3213)
+* **variant**: block snapshot generation when parent is archived [`#3211`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3211)
+* **logging**: use ECS formatter, add more context fields [`#3206`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3206)
+* **backend_tablemode**: finished implementing tablemode and testing [`#3193`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3193)
+* **binding-constraints**: alleviate binding constraints in config by using BindingConstraintConfig [`#3203`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3203) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+
+
+### Bug Fixes
+
+* **ui-api**: pass target_version as query parameter instead of json to upgrade studies [`#3142`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3142)
+* **raw**: allow user resource modification on db studies [`#3179`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3179)
+* **reserves**: remove name field [`#3188`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3188)
+* **xpansion**: allow tree build for in-memory jobs [`#3192`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3192)
+* **logs**: logs dir must be shared between workers [`#3197`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3197)
+* **ui-matrix**: fix column header visibility on grouped matrix columns [`#3200`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3200)
+* **db-dao**: fix enum types definition [`#3199`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3199)
+* **tablemode_backend**: replaced uuid name by 'table_id' [`#3209`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3209)
+* **task**: use short transaction when polling for task status [`#3212`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3212)
+* **ui-studies**: otherOptions validation issue in launch dialog [`#3223`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3223)
+
+### Performances
+* **download**: use short transactions when polling for download readiness [`#3196`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3196)
+
+### Refactorings
+* **disk_space_analyzer**: reinforcing disk space analysis function [`#3208`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3208)
+* **matrix**: remove matrix prefixes and "URI mapper" [`#3202`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3202)
+
+### Miscellaneous
+* **release**: include uv.lock file in update_version script [`#3190`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3190)
+
 v2.31.0 (2026-04-23)
 --------------------
 

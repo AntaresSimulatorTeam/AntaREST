@@ -17,29 +17,25 @@ import { type DialogProps } from "@mui/material";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "@tanstack/react-router";
 
 import FormDialog from "@/components/dialogs/FormDialog";
-import type { SubmitHandlerPlus } from "@/components/Form/types";
 import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { TREE_ROOT_NAME } from "@/components/utils/constants";
 import { directoryQueries } from "@/queries/directories/queries";
-import { updateStudyFilters } from "@/redux/ducks/studies";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import { getDescendantIds } from "@/routes/_authenticated/studies/-components/StudyTree/ManagedTree/utils";
 import type { Directory } from "@/services/api/directories/types";
 import { moveStudy } from "@/services/api/study";
 import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import StudyDestinationFE from "../../StudyDestinationFE";
 import type { DirectoryDestination } from "../../StudyDestinationFE/types";
+import { useRedirectToDestination } from "../../StudyDestinationFE/useRedirectToDestination";
 import {
   computeAllowSubmitOnPristine,
-  type FormValues,
   formSchema,
   getInitialDirectoryId,
   toDirectoryPath,
-  resolveRedirectDirectoryId,
+  type FormValues,
 } from "./utils";
 
 export interface MoveResult {
@@ -51,16 +47,16 @@ export interface MoveResult {
 }
 
 interface Props extends DialogProps {
-  onClose: () => void;
   studies: StudyMetadata[];
+  onClose: VoidFunction;
+  onRun?: VoidFunction;
 }
 
-function MoveStudyDialog({ open, onClose, studies }: Props) {
+function MoveStudyDialog({ open, studies, onClose, onRun }: Props) {
   const { t } = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
-  const dispatch = useAppDispatch();
-  const navigate = useNavigate();
+  const redirectToDestination = useRedirectToDestination();
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
   const initialDirectoryId = getInitialDirectoryId(studies);
@@ -76,6 +72,8 @@ function MoveStudyDialog({ open, onClose, studies }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async (data: SubmitHandlerPlus<FormValues>): Promise<MoveResult> => {
+    onRun?.();
+
     const { destination, redirect } = formSchema.parse(data.values);
 
     // TODO: This adapter should be moved to the API layer when Tan stack migration is done.
@@ -153,19 +151,7 @@ function MoveStudyDialog({ open, onClose, studies }: Props) {
     }
 
     if (redirect) {
-      const directoryId = resolveRedirectDirectoryId(destination, updatedDirectories);
-
-      dispatch(
-        updateStudyFilters({
-          activeTree: "managed",
-          managed: {
-            directoryId,
-            directoryIds: directoryId ? getDescendantIds(directoryId, updatedDirectories) : null,
-          },
-        }),
-      );
-
-      navigate({ to: "/studies" });
+      redirectToDestination(destination, updatedDirectories);
     }
   };
 

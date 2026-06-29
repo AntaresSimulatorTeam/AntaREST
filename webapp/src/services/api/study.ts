@@ -21,7 +21,6 @@ import type {
   AreasConfig,
   DistrictApplyFilter,
   MatrixAggregationResult,
-  OutputDetails,
   StudyLayer,
   StudyMetadata,
   StudyMetadataDTO,
@@ -33,6 +32,8 @@ import type {
 import { convertStudyDtoToMetadata } from "../utils";
 import client from "./client";
 import type { FileDownloadTask } from "./downloads";
+import { getOutputs } from "./studies/outputs";
+import type { Output } from "./studies/outputs/types";
 
 const getStudiesRaw = async (): Promise<Record<string, StudyMetadataDTO>> => {
   const res = await client.get(`/v1/studies?exists=True`);
@@ -92,11 +93,6 @@ export const getStudyMetadata = async (sid: string): Promise<StudyMetadata> => {
   return convertStudyDtoToMetadata(sid, res.data);
 };
 
-export const getStudyOutputs = async (sid: string): Promise<OutputDetails[]> => {
-  const res = await client.get(`/v1/studies/${sid}/outputs`);
-  return res.data;
-};
-
 /**
  * Utility function to get a study output by its ID.
  * Since the API endpoint for getting a single output is not available, we fetch all outputs and filter by ID.
@@ -108,9 +104,9 @@ export const getStudyOutputs = async (sid: string): Promise<OutputDetails[]> => 
 export const getStudyOutputById = async (
   studyId: string,
   outputId: string,
-): Promise<OutputDetails | undefined> => {
-  const outputs = await getStudyOutputs(studyId);
-  return outputs.find((output) => output.name === outputId);
+): Promise<Output | undefined> => {
+  const outputs = await getOutputs({ studyId });
+  return outputs.find((output) => output.id === outputId);
 };
 
 export const getStudySynthesis = async (sid: string): Promise<StudySynthesis> => {
@@ -229,6 +225,7 @@ export const exportOutput = async (sid: string, output: string): Promise<FileDow
 export const importStudy = async (
   file: File,
   onProgress?: (progress: number) => void,
+  directory?: string,
 ): Promise<StudyMetadata["id"]> => {
   const options: AxiosRequestConfig = {};
   if (onProgress) {
@@ -246,6 +243,7 @@ export const importStudy = async (
     headers: {
       "content-type": "multipart/form-data",
     },
+    params: directory ? { directory } : undefined,
   };
   const res = await client.post("/v1/studies/_import", formData, restconfig);
   return res.data;
@@ -285,24 +283,6 @@ export const getStudyJobLog = async (
 export const downloadJobOutput = async (jobId: string): Promise<any> => {
   const res = await client.get(`/v1/launcher/jobs/${jobId}/output`);
   return res.data;
-};
-
-export const unarchiveOutput = async (studyId: string, outputId: string): Promise<string> => {
-  const res = await client.post(
-    `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}/_unarchive`,
-  );
-  return res.data;
-};
-
-export const archiveOutput = async (studyId: string, outputId: string): Promise<string> => {
-  const res = await client.post(
-    `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}/_archive`,
-  );
-  return res.data;
-};
-
-export const deleteOutput = async (studyId: string, outputId: string): Promise<void> => {
-  await client.delete(`/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}`);
 };
 
 export const changeStudyOwner = async (

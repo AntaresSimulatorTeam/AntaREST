@@ -9,12 +9,16 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import io
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from antarest.core.model import JSON
+from antarest.core.serde.ini_common import DUPLICATE_KEYS
 from antarest.core.serde.ini_reader import IniReader
+from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.output.filestudy.utils import (
@@ -34,13 +38,13 @@ from antarest.output.storage.output_storage import OutputDetails, OutputStorageT
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency
 
-DUPLICATE_KEYS = [
-    "playlist_year_weight",
-    "playlist_year +",
-    "playlist_year -",
-    "select_var -",
-    "select_var +",
-]
+
+def parse_output_config(output_path: Path) -> JSON:
+    if output_path.suffix == ".zip":
+        # We need to read data from the archive
+        content = read_original_file_in_archive(output_path, "about-the-study/parameters.ini")
+        return IniReader(DUPLICATE_KEYS).read(io.StringIO(content.decode("utf-8")))
+    return IniReader(DUPLICATE_KEYS).read(output_path / "about-the-study" / "parameters.ini")
 
 
 def extract_output_details(output_path: Path) -> OutputDetails:
@@ -52,6 +56,7 @@ def extract_output_details(output_path: Path) -> OutputDetails:
     output = parameters_dict["output"]
     mode = Mode(general["mode"])
     return OutputDetails(
+        id=output_path.name,
         name=output_path.name,  # TODO: should it be re-built from data instead ?
         mode=mode,
         synthesis=output["synthesis"],
@@ -166,21 +171,24 @@ def extract_variables_list(output_path: Path) -> OutputVariablesList:
     It classifies them under categories inside a Pydantic model.
     This operation can take dozens of seconds as there are potentially hundreds of files to parse.
     """
-    # Initialization
-    mc_ind_path = output_path / "economy" / MCRoot.MC_IND.value
-    mc_all_path = output_path / "economy" / MCRoot.MC_ALL.value
+
+    # Build paths to parse data from
+    existing_paths: list[Path] = []
+
+    for mode in {"economy", "adequacy"}:
+        mc_ind_path = output_path / mode / MCRoot.MC_IND.value
+        if mc_ind_path.exists():
+            first_mc_year = sorted(mc_ind_path.iterdir())[0].name
+            existing_paths.append(mc_ind_path / first_mc_year)
+        mc_all_path = output_path / mode / MCRoot.MC_ALL.value
+        if mc_all_path.exists():
+            existing_paths.append(mc_all_path)
 
     variables: dict[str, Any] = {"mc_ind": {"areas": [], "links": []}, "mc_all": {"areas": [], "links": []}}
 
-    existing_paths = []
-    if mc_ind_path.exists():
-        first_mc_year = sorted(mc_ind_path.iterdir())[0].name
-        existing_paths.append(mc_ind_path / first_mc_year)
-    if mc_all_path.exists():
-        existing_paths.append(mc_all_path)
-
+    # Iterate over paths and gather data
     for mc_path in existing_paths:
-        mc_root = MCRoot.MC_ALL if mc_path == mc_all_path else MCRoot.MC_IND
+        mc_root = MCRoot.MC_ALL if mc_path.name == MCRoot.MC_ALL.value else MCRoot.MC_IND
         mc_root_key = "mc_all" if mc_root == MCRoot.MC_ALL else "mc_ind"
 
         # Areas

@@ -9,18 +9,14 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from sqlalchemy import select
-from sqlalchemy.orm import Session
-
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
-from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.dao.database.models.reserve_definition import RESERVE_DEFINITION_TABLE
+from antarest.study.dao.api.study_dao import StudyDao
 from tests.study.dao.utils import save_area
 
 
-def _reserve(id_: str, reserve_type: ReserveType = ReserveType.UP, **overrides) -> ReserveDefinition:
+def _reserve(name: str, reserve_type: ReserveType = ReserveType.UP, **overrides) -> ReserveDefinition:
     base = dict(
-        id=id_,
+        name=name,
         type=reserve_type,
         failure_cost=10.0,
         spillage_cost=5.0,
@@ -32,11 +28,10 @@ def _reserve(id_: str, reserve_type: ReserveType = ReserveType.UP, **overrides) 
     return ReserveDefinition(**base)
 
 
-def test_cascade_delete_on_area_removal(db_session: Session, db_dao: DatabaseStudyDao) -> None:
-    save_area(db_dao, "paris")
-    db_dao.save_reserve_definitions({"paris": [_reserve("R1")]})
+def test_cascade_delete_on_area_removal(dao_10_0: StudyDao) -> None:
+    save_area(dao_10_0, "paris")
+    dao_10_0.save_reserve_definitions({"paris": [_reserve("R1")]})
 
-    with db_session:
-        db_dao.delete_area("paris")
-        rows = db_session.execute(select(RESERVE_DEFINITION_TABLE)).fetchall()
-        assert rows == []
+    dao_10_0.delete_area("paris")
+
+    assert dao_10_0.get_all_reserve_definitions() == {}

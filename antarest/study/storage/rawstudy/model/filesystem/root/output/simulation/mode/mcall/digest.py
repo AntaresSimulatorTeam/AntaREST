@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+from pathlib import Path
 
 import polars as pl
 from pydantic import Field
@@ -77,6 +77,28 @@ def _get_district(df: pl.DataFrame) -> DigestMatrixUI:
     return _build_areas_and_districts(df, first_row)
 
 
+def _parse_digest_file(file_path: Path) -> pl.DataFrame:
+    """
+    Parse a digest file as a whole and return a single DataFrame.
+
+    The `digest.txt` file is a TSV file containing synthetic results of the simulation.
+    This file contains several data tables, each being separated by empty lines
+    and preceded by a header describing the nature and dimensions of the table.
+
+    Note that rows in the file may have different number of columns.
+    """
+    with open(file_path) as digest_file:
+        # Reads the file and find the maximum number of columns in any row
+        data = [row.split("\t") for row in digest_file.read().splitlines()]
+        max_cols = max(len(row) for row in data)
+
+        # Adjust the number of columns in each row
+        data = [row + [""] * (max_cols - len(row)) for row in data]
+
+        # Returns a DataFrame from the data
+        return create_polars_dataframe(data)
+
+
 class DigestSynthesis(OutputSynthesis):
     @override
     def load(
@@ -86,38 +108,18 @@ class DigestSynthesis(OutputSynthesis):
         expanded: bool = False,
         formatted: bool = True,
     ) -> JSON:
-        df = self._parse_digest_file()
+        df = _parse_digest_file(self.config.path)
         return df.to_pandas().to_dict(orient="split", index=False)
 
-    def get_ui(self) -> DigestUI:
+    @staticmethod
+    def parse_file_for_ui(file_path: Path) -> DigestUI:
         """
         Parse a digest file and returns it as 4 separated matrices.
         One for areas, one for the districts, one for linear flow and the last one for quadratic flow.
         """
-        df = self._parse_digest_file()
+        df = _parse_digest_file(file_path)
         flow_linear = _get_flow_linear(df)
         flow_quadratic = _get_flow_quadratic(df)
         area = _get_area(df)
         districts = _get_district(df)
         return DigestUI(area=area, districts=districts, flowLinear=flow_linear, flowQuadratic=flow_quadratic)
-
-    def _parse_digest_file(self) -> pl.DataFrame:
-        """
-        Parse a digest file as a whole and return a single DataFrame.
-
-        The `digest.txt` file is a TSV file containing synthetic results of the simulation.
-        This file contains several data tables, each being separated by empty lines
-        and preceded by a header describing the nature and dimensions of the table.
-
-        Note that rows in the file may have different number of columns.
-        """
-        with open(self.config.path) as digest_file:
-            # Reads the file and find the maximum number of columns in any row
-            data = [row.split("\t") for row in digest_file.read().splitlines()]
-            max_cols = max(len(row) for row in data)
-
-            # Adjust the number of columns in each row
-            data = [row + [""] * (max_cols - len(row)) for row in data]
-
-            # Returns a DataFrame from the data
-            return create_polars_dataframe(data)

@@ -12,7 +12,6 @@
 
 import datetime
 import uuid
-from pathlib import Path
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -167,22 +166,3 @@ class VariantStudy(Study):
     @override
     def __str__(self) -> str:
         return super().__str__() + f", snapshot={self.snapshot}"
-
-    @property
-    def snapshot_dir(self) -> Path:
-        """Get the path of the snapshot directory."""
-        if self.path is None:
-            raise ValueError("Study path is not set")
-        return Path(self.path) / "snapshot"
-
-    def is_snapshot_up_to_date(self) -> bool:
-        """Check if the snapshot exists and is up-to-date."""
-        return (
-            (self.snapshot is not None)
-            and (self.snapshot.created_at >= self.updated_at)
-            and (self.snapshot_dir / "study.antares").is_file()
-        )
-
-    def has_snapshot(self) -> bool:
-        """Check if the snapshot exists."""
-        return (self.snapshot is not None) and (self.snapshot_dir / "study.antares").is_file()

@@ -14,6 +14,7 @@
 
 import SimpleLoader from "@/components/loaders/SimpleLoader";
 import SplitView from "@/components/page/SplitView";
+import { jobQueries } from "@/queries/jobs/queries";
 import { variantQueries } from "@/queries/variants/queries";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -22,6 +23,9 @@ import VariantsTree from "./-components/VariantsTree";
 import useStudy from "./-hooks/useStudy";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/")({
+  loader: async ({ context, params: { studyId } }) => {
+    await context.queryClient.ensureQueryData(jobQueries.list(studyId));
+  },
   component: StudyHome,
 });
 

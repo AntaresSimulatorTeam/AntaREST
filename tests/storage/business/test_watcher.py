@@ -44,22 +44,26 @@ from tests.storage.conftest import SimpleSyncTaskService
 
 
 def build_config(root: Path, desktop_mode: bool = False) -> Config:
+
+    no_desktop_workspaces = {
+        DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=root / DEFAULT_WORKSPACE_NAME, groups=["toto"]),
+        "diese": WorkspaceConfig(
+            path=root / "diese",
+            groups=["tata"],
+            filter_out=["to_skip.*"],
+        ),
+        "test": WorkspaceConfig(
+            path=root / "test",
+            groups=["toto"],
+            filter_out=["to_skip.*"],
+        ),
+    }
+    desktop_workspace = {DEFAULT_WORKSPACE_NAME: no_desktop_workspaces[DEFAULT_WORKSPACE_NAME]}
+
     return Config(
         desktop_mode=desktop_mode,
         storage=StorageConfig(
-            workspaces={
-                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=root / DEFAULT_WORKSPACE_NAME, groups=["toto"]),
-                "diese": WorkspaceConfig(
-                    path=root / "diese",
-                    groups=["tata"],
-                    filter_out=["to_skip.*"],
-                ),
-                "test": WorkspaceConfig(
-                    path=root / "test",
-                    groups=["toto"],
-                    filter_out=["to_skip.*"],
-                ),
-            }
+            workspaces=desktop_workspace if desktop_mode else no_desktop_workspaces,
         ),
     )
 
@@ -210,7 +214,7 @@ def test_scan_recursive_false(study_tree: Path, db_session: Session) -> None:
         study.version = "860"
         return study
 
-    raw_study_service.update_from_raw_meta.side_effect = update_meta
+    raw_study_service.update_from_raw_metadata.side_effect = update_meta
 
     def get_info(path: Path) -> StudyMetadataDTO:
         return study_to_dto(

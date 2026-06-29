@@ -22,6 +22,7 @@ from uuid import uuid4
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
+from pydantic import ValidationError
 from sqlalchemy import create_engine
 
 from antarest.core.config import (
@@ -45,6 +46,7 @@ from antarest.core.utils.utils import current_time
 from antarest.dbmodel import Base
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.adapters.local_launcher.local_launcher import SOLVER_VERSION_9_2
+from antarest.launcher.exceptions import NoValidOutputError
 from antarest.launcher.model import (
     JobLog,
     JobLogType,
@@ -67,7 +69,15 @@ from antarest.launcher.service import (
 from antarest.login.model import Identity
 from antarest.login.utils import current_user_context, get_current_user
 from antarest.output.service import OutputService
-from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, OwnerInfo, Study, StudyMetadataDTO, StudyType
+from antarest.study.model import (
+    STUDY_VERSION_8_8,
+    STUDY_VERSION_9_2,
+    OwnerInfo,
+    StorageMode,
+    Study,
+    StudyMetadataDTO,
+    StudyType,
+)
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
@@ -94,6 +104,7 @@ class TestLauncherService:
             workspace="default",
             managed=True,
             archived=False,
+            storage_mode=StorageMode.FILESYSTEM,
         )
         storage_service_mock.get_study_path.return_value = Path("path/to/study")
 
@@ -508,7 +519,7 @@ class TestLauncherService:
                 id="default-config-not-found",
                 marks=pytest.mark.xfail(
                     reason="Default launcher id default not found in launcher configs",
-                    raises=InvalidConfigurationError,
+                    raises=ValidationError,
                     strict=True,
                 ),
             ),
@@ -812,6 +823,40 @@ class TestLauncherService:
         launcher_service.remove_job(job_id)
         assert not launcher_service._get_job_output_fallback_path(job_id).exists()
 
+    @with_admin_user
+    def test_import_output_failed_launch(self, tmp_path: Path) -> None:
+        # A failed launch leaves only simulation.log inside the output dir.
+        # _import_output must raise NoValidOutputError (handled by the launcher adapters).
+        output_service = Mock(spec=OutputService)
+        launcher_service = LauncherService(
+            config=Mock(storage=StorageConfig(tmp_dir=tmp_path)),
+            study_service=Mock(),
+            output_service=output_service,
+            login_service=Mock(),
+            job_result_repository=Mock(),
+            solver_presets_repository=Mock(),
+            event_bus=Mock(),
+            factory_launcher=Mock(),
+            file_transfer_manager=Mock(),
+            task_service=Mock(),
+            cache=Mock(),
+        )
+
+        job_id = "job_id"
+        study_id = "study_id"
+        launcher_service.job_result_repository.get.return_value = JobResult(id=job_id, study_id=study_id)
+
+        # Simulate failed launch: output dir contains only simulation.log
+        output_path = tmp_path / "output"
+        sim_dir = output_path / "20241201-1200eco"
+        sim_dir.mkdir(parents=True)
+        (sim_dir / "simulation.log").write_text("solver crashed")
+
+        with pytest.raises(NoValidOutputError):
+            launcher_service._import_output(job_id, output_path, SimulationLogs.no_logs())
+
+        output_service.import_output.assert_not_called()
+
     def test_save_solver_stats(self, tmp_path: Path) -> None:
         study_service = Mock()
         study_service.get_study.return_value = Mock(spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE)
@@ -942,7 +987,7 @@ class TestLauncherService:
                 id="slurm launcher with no config",
                 marks=pytest.mark.xfail(
                     reason="Configuration is not available for the slurm launcher",
-                    raises=InvalidConfigurationError,
+                    raises=ValidationError,
                     strict=True,
                 ),
             ),
@@ -1058,6 +1103,7 @@ class TestLauncherService:
             workspace="default",
             managed=True,
             archived=False,
+            storage_mode=StorageMode.FILESYSTEM,
         )
         storage_service_mock.get_study_path.return_value = Path("path/to/study")
         launcher_mock = Mock()
@@ -1130,6 +1176,7 @@ class TestLauncherService:
                 workspace="default",
                 managed=True,
                 archived=False,
+                storage_mode=StorageMode.FILESYSTEM,
             )
             launcher_service.run_study("study_uuid", "local", params, "config-1")
 

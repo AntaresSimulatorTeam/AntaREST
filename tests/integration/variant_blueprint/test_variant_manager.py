@@ -25,6 +25,11 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.study.model import Study
 from tests.integration.assets import ASSETS_DIR
+from tests.integration.studies_blueprint.utils import (
+    check_exported_study_integrity,
+    check_minimal_study_integrity,
+    create_minimal_study,
+)
 from tests.integration.utils import wait_task_completion
 
 
@@ -340,17 +345,23 @@ def test_comments(client: TestClient, admin_access_token: str, variant_id: str) 
 def test_recursive_variant_tree(client: TestClient, admin_access_token: str, base_study_id: str) -> None:
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
     parent_id = base_study_id
+    leaf_id = base_study_id
     for k in range(200):
         res = client.post(
-            f"/v1/studies/{base_study_id}/variants",
+            f"/v1/studies/{leaf_id}/variants",
             headers=admin_headers,
             params={"name": f"variant_{k}"},
         )
-        base_study_id = res.json()
+        leaf_id = res.json()
 
     # Asserts that we do not trigger a Recursive Exception
     res = client.get(f"/v1/studies/{parent_id}/variants", headers=admin_headers)
     assert res.status_code == 200, res.json()
+
+    # `from_root=true` from the deepest variant returns the same tree as querying the root.
+    res = client.get(f"/v1/studies/{leaf_id}/variants", params={"from_root": True}, headers=admin_headers)
+    assert res.status_code == 200, res.json()
+    assert res.json()["node"]["id"] == parent_id
 
 
 def test_outputs(client: TestClient, admin_access_token: str, variant_id: str, tmp_path: str) -> None:
@@ -464,3 +475,61 @@ def test_deletion_while_generating(client: TestClient, admin_access_token: str, 
     # Ensures the deletion succeeds
     assert res.status_code == 200
     assert not (tmp_path / "internal_workspace" / variant_id).exists()
+
+
+@pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
+def test_lifecycle_for_both_storage_modes(
+    client: TestClient, user_access_token: str, storage_mode: str, tmp_path: Path
+) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    # Create a Variant study with several areas, links, constraints, thermals ...
+    res = client.post(f"/v1/studies?name=RawStudy&storage_mode={storage_mode}")
+    assert res.status_code == 201
+    study_id = res.json()
+
+    res = client.post(f"/v1/studies/{study_id}/variants?name=VariantStudy")
+    assert res.status_code == 200
+    variant_id = res.json()
+
+    create_minimal_study(client, variant_id)
+
+    # Ensures the data was created correctly
+    check_minimal_study_integrity(client, variant_id)
+
+    # Generate the variant from scratch
+    res = client.put(f"/v1/studies/{variant_id}/generate?from_scratch=True")
+    assert res.status_code == 200
+    task_id = res.json()
+    client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
+
+    # Ensures the data was generated correctly
+    check_minimal_study_integrity(client, variant_id)
+
+    # Create a new variant from the previous one
+    res = client.post(f"/v1/studies/{variant_id}/variants?name=VariantStudy2")
+    assert res.status_code == 200
+    variant_2_id = res.json()
+
+    # Ensures the 2nd level variant was correctly created
+    check_minimal_study_integrity(client, variant_2_id)
+
+    # Copy as reference the variant (This creates a new RawStudy with the same data)
+    res = client.post(f"/v1/studies/{variant_2_id}/copy?study_name=ReferenceStudy")
+    assert res.status_code == 201
+    task_id = res.json()
+
+    client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
+
+    copied_study = client.get("/v1/studies?name=ReferenceStudy").json()
+    copied_study_id = next(iter(copied_study))
+
+    # Ensures the data was copied correctly
+    check_minimal_study_integrity(client, copied_study_id)
+
+    # Export the variant
+    res = client.get(f"/v1/studies/{variant_id}/export")
+    assert res.status_code == 200
+    download_id = res.json()["file"]["id"]
+
+    check_exported_study_integrity(client, tmp_path, download_id, "VariantStudy")

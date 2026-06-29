@@ -335,7 +335,7 @@ class TestRenewable:
         )
         assert res.status_code == 500, res.json()
         obj = res.json()
-        assert f"The area '{bad_area_id}' does not exist" in obj["description"]
+        assert f"Area is not found: '{bad_area_id}'" in obj["description"]
 
         # Check POST with wrong `group`
         res = client.post(
