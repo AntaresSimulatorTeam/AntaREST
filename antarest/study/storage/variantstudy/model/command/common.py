@@ -110,7 +110,6 @@ class CommandName(Enum):
     REMOVE_RESERVE_DEFINITIONS = "remove_reserve_definitions"
     CREATE_THERMAL_RESERVE_CERTIFICATION = "create_thermal_reserve_certification"
     UPDATE_THERMAL_RESERVE_CERTIFICATIONS = "update_thermal_reserve_certifications"
-    REMOVE_THERMAL_RESERVE_CERTIFICATIONS = "remove_thermal_reserve_certifications"
     REPLACE_THERMAL_RESERVE_SYMMETRIES = "replace_thermal_reserve_symmetries"
 
 

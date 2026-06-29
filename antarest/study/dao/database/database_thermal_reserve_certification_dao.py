@@ -12,7 +12,7 @@
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, NoReturn
 
-from sqlalchemy import CursorResult, Row, Select, delete, select
+from sqlalchemy import Row, Select, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
@@ -21,7 +21,6 @@ from antarest.core.exceptions import (
     AreaNotFound,
     ReserveDefinitionsNotFound,
     ThermalClustersNotFound,
-    ThermalReserveCertificationNotFound,
 )
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
@@ -123,31 +122,10 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
                 for reserve_id, certification in reserves_dict.items():
                     values.append(_convert_model_to_row(self._study_id, area_id, thermal_id, reserve_id, certification))
         try:
+            # todo: this is a replace, we should first empty the DB
             upsert_multiple(session=self._db_session, table=_TABLE, values=values)
         except IntegrityError as e:
             self._raise_the_right_thermal_reserve_exception(data, exc=e)
-        self._db_session.commit()
-
-    @override
-    def delete_thermal_reserve_certifications(
-        self, area_id: AreaId, thermal_id: ThermalId, reserve_ids: list[ReserveDefinitionId]
-    ) -> None:
-        if not reserve_ids:
-            return
-
-        result = self._db_session.execute(
-            delete(_TABLE).where(
-                (_TABLE.c.study_id == self._study_id)
-                & (_TABLE.c.area_id == area_id)
-                & (_TABLE.c.thermal_id == thermal_id)
-                & (_TABLE.c.reserve_id.in_(reserve_ids))
-            )
-        )
-        assert isinstance(result, CursorResult)
-        if result.rowcount < len(reserve_ids):
-            existing_reserve_ids = set(self.get_all_thermal_reserve_certifications_for_cluster(area_id, thermal_id))
-            missing_reserve_ids: set[str] = set(reserve_ids) - existing_reserve_ids  # type: ignore
-            raise ThermalReserveCertificationNotFound(area_id, thermal_id, reserve_ids=missing_reserve_ids)
         self._db_session.commit()
 
     def _raise_the_right_thermal_reserve_exception(

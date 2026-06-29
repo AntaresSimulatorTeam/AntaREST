@@ -44,12 +44,3 @@ class ThermalReserveCertificationDao(ReadOnlyThermalReserveCertificationDao):
     @abstractmethod
     def save_thermal_reserve_certifications(self, data: ThermalReserveCertificationsMapping) -> None:
         raise NotImplementedError()
-
-    @abstractmethod
-    def delete_thermal_reserve_certifications(
-        self,
-        area_id: AreaId,
-        thermal_id: ThermalId,
-        reserve_ids: list[ReserveDefinitionId],
-    ) -> None:
-        raise NotImplementedError()

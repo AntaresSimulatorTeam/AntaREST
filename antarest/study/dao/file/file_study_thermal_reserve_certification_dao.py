@@ -22,7 +22,6 @@ from antarest.study.dao.common import AreaId, ThermalId, ThermalReserveCertifica
 from antarest.study.dao.file.common import (
     check_area_exists,
     get_thermal_reserve_participations_as_yaml_content,
-    get_thermal_reserve_path,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal_reserve_certifications import (
@@ -104,40 +103,6 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
                 yaml_content["participations"].append(
                     {"cluster": thermal_id, "certifications": serialize_thermal_reserve_certifications(certifications)}
                 )
-
-    @override
-    def delete_thermal_reserve_certifications(
-        self, area_id: AreaId, thermal_id: ThermalId, reserve_ids: list[ReserveDefinitionId]
-    ) -> None:
-        if not reserve_ids:
-            return
-
-        file_study = self.get_file_study()
-
-        yaml_content = get_thermal_reserve_participations_as_yaml_content(area_id, file_study)
-
-        thermal_exists = False
-        for k, participation in enumerate(yaml_content["participations"]):
-            cluster_id = transform_name_to_id(participation["cluster"])
-            if cluster_id == thermal_id:
-                certifications = participation["certifications"]
-                new_certifications = []
-                for certification in certifications:
-                    reserve_id = ReserveDefinitionId(transform_name_to_id(certification["reserve"]))
-                    if reserve_id not in reserve_ids:
-                        new_certifications.append(certification)
-                participation["certifications"] = new_certifications
-                if len(new_certifications) != len(certifications) - len(reserve_ids):
-                    raise ThermalReserveCertificationNotFound(area_id, thermal_id, reserve_ids=set(reserve_ids))
-                thermal_exists = True
-                break
-
-        if not thermal_exists:
-            # Means the thermal exists in the area but not in the reserve participations YAML file
-            raise ThermalReserveCertificationNotFound(area_id, thermal_id, reserve_ids=set(reserve_ids))
-
-        # Save the new content in the YAML file
-        file_study.tree.save(yaml_content, get_thermal_reserve_path(area_id))
 
     def get_all_certifications_for_area(
         self, area_id: AreaId

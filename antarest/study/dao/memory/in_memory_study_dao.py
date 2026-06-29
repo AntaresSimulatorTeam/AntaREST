@@ -1747,16 +1747,6 @@ class InMemoryStudyDao(StudyDao):
                     self._thermal_reserve_certifications[key] = certification
 
     @override
-    def delete_thermal_reserve_certifications(
-        self,
-        area_id: AreaId,
-        thermal_id: str,
-        reserve_ids: Sequence[ReserveDefinitionId],
-    ) -> None:
-        for rid in reserve_ids:
-            del self._thermal_reserve_certifications[thermal_reserve_certification_key(area_id, thermal_id, rid)]
-
-    @override
     def get_all_thermal_reserve_symmetries(self) -> ThermalReserveSymmetriesMapping:
         return self._thermal_reserve_symmetries
 
