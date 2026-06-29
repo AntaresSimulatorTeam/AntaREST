@@ -44,6 +44,7 @@ def test_add_favorite_external_directory_success_two_users_added_one_and_same_fa
     response = admin_client.post("/v1/favorites/external-directories", params=expected_favorite_external_directory)
     assert response.status_code == 201
     actual_favorite_external_directory = response.json()
+    expected_favorite_external_directory["path"] = str(path)
     assert actual_favorite_external_directory["workspace"] == workspace_name
     assert actual_favorite_external_directory["path"] == str(path)
     response = admin_client.get("/v1/favorites/external-directories").json()
@@ -58,7 +59,6 @@ def test_add_favorite_external_directory_success_two_users_added_one_and_same_fa
     # Here, this new user is adding the same favorite external directory as the first user, so he could see it
     admin_client.post("/v1/favorites/external-directories", params=expected_favorite_external_directory)
     response = admin_client.get("/v1/favorites/external-directories").json()
-    expected_favorite_external_directory["path"] = str(path)
     assert response == [expected_favorite_external_directory]
 
 
