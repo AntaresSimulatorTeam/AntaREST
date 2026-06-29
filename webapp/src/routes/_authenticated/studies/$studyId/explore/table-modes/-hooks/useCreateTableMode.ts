@@ -21,7 +21,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
-function useCreateTableMode() {
+interface Options {
+  notifyError?: boolean;
+}
+
+function useCreateTableMode({ notifyError = true }: Options = {}) {
   const params = useParams({
     from: "/_authenticated/studies/$studyId/explore/table-modes",
   });
@@ -67,7 +71,9 @@ function useCreateTableMode() {
       return tempTableModeId;
     },
     onError: (error, variables, tempTableModeId) => {
-      enqueueErrorSnackbar(t("study.tableModes.create.error", { name: variables.name }), error);
+      if (notifyError) {
+        enqueueErrorSnackbar(t("study.tableModes.create.error", { name: variables.name }), error);
+      }
 
       if (!tempTableModeId) {
         return;

@@ -70,7 +70,7 @@ function ReservesNeeds() {
   }
 
   return (
-    <Stack direction="column" gap={1} sx={{ height: 1 }}>
+    <Stack direction="column" spacing={1} sx={{ height: 1 }}>
       <SelectFE
         label={t("study.modeling.reserves.needs.select")}
         value={selectedReserveId}
