@@ -14,12 +14,12 @@
 
 import z from "zod";
 import client from "../../client";
-import { outputsSchema } from "./schemas";
+import { outputSchema } from "./schemas";
 import type { GetOutputsParams, Output, OutputParams } from "./types";
 
 export async function getOutputs({ studyId }: GetOutputsParams): Promise<Output[]> {
   const { data } = await client.get(`/v1/studies/${studyId}/outputs`);
-  return outputsSchema.parse(data);
+  return z.array(outputSchema).parse(data);
 }
 
 export async function deleteOutput({ studyId, outputId }: OutputParams) {

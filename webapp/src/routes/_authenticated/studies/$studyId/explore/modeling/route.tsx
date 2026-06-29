@@ -52,7 +52,7 @@ function ModelingLayout() {
           }),
         },
         {
-          id: "bindingConstraints",
+          id: "binding-constraints",
           label: t("study.bindingConstraints"),
           linkOptions: linkOptions({
             to: "/studies/$studyId/explore/modeling/binding-constraints",
