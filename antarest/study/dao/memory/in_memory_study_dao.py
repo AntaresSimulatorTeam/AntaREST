@@ -1718,7 +1718,7 @@ class InMemoryStudyDao(StudyDao):
     def get_all_thermal_reserve_certifications_for_area(
         self, area_id: AreaId
     ) -> dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]]:
-        result = {}
+        result: dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]] = {}
         for key, certification in self._thermal_reserve_certifications.items():
             if key.area_id == area_id:
                 result.setdefault(ReserveDefinitionId(key.reserve_id), {})[key.thermal_id] = certification
