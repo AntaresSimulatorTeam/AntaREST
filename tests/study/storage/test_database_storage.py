@@ -34,7 +34,7 @@ def test_upgrade_fails(tmp_path: Path) -> None:
     """
     Ensures that if the upgrader fails when exporting data to the FS or during the upgrade process, the study remains in its original state.
     """
-    config = Config.from_dict({"storage": {"tmp_dir": tmp_path}})
+    config = Config.model_validate({"storage": {"tmp_dir": tmp_path}})
 
     db_dao_factory = Mock()
     db_dao_factory.get_study_dao.side_effect = ValueError("Raises for the test")
@@ -72,7 +72,7 @@ def test_upgrade_does_not_use_cache(tmp_path: Path, study_factory) -> None:
     # Set Up
     ##########################
 
-    config = Config.from_dict({"storage": {"tmp_dir": tmp_path}})
+    config = Config.model_validate({"storage": {"tmp_dir": tmp_path}})
     cache = LocalCache()
     matrix_service = InMemorySimpleMatrixService()
     generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
