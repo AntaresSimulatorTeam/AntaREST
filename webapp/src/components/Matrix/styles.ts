@@ -214,3 +214,12 @@ export const aggregatesAvgTheme = {
     textDark: lightColors.text,
   },
 };
+
+export const groupRowTheme = {
+  dark: {
+    bgCell: darkColors.groupHeaderBg,
+  },
+  light: {
+    bgCell: lightColors.groupHeaderBg,
+  },
+};
