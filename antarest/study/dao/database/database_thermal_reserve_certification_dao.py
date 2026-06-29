@@ -113,7 +113,7 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
 
     def _raise_the_right_thermal_reserve_exception(
         self,
-        data: dict[AreaId, dict[ThermalId, dict[ReserveDefinitionId, ThermalReserveCertification]]],
+        data: dict[AreaId, ThermalReserveCertificationMapping],
         exc: IntegrityError | None = None,
     ) -> NoReturn:
         # Checks if some areas are missing
