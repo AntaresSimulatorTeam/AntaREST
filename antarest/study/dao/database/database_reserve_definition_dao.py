@@ -191,14 +191,3 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao):
                         raise ReserveDefinitionNotFound(area_id, reserve_id) from e
             raise ValueError(f"Reserve need mapping is invalid for study {self._study_id}") from e
         self._db_session.commit()
-
-    @override
-    def delete_reserve_need(self, area_id: AreaId, reserve_id: ReserveDefinitionId) -> None:
-        self._db_session.execute(
-            delete(_NEED_TABLE).where(
-                (_NEED_TABLE.c.study_id == self._study_id)
-                & (_NEED_TABLE.c.area_id == area_id)
-                & (_NEED_TABLE.c.reserve_id == reserve_id)
-            )
-        )
-        self._db_session.commit()

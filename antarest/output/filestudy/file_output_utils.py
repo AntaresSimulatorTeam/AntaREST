@@ -56,6 +56,7 @@ def extract_output_details(output_path: Path) -> OutputDetails:
     output = parameters_dict["output"]
     mode = Mode(general["mode"])
     return OutputDetails(
+        id=output_path.name,
         name=output_path.name,  # TODO: should it be re-built from data instead ?
         mode=mode,
         synthesis=output["synthesis"],
@@ -170,21 +171,24 @@ def extract_variables_list(output_path: Path) -> OutputVariablesList:
     It classifies them under categories inside a Pydantic model.
     This operation can take dozens of seconds as there are potentially hundreds of files to parse.
     """
-    # Initialization
-    mc_ind_path = output_path / "economy" / MCRoot.MC_IND.value
-    mc_all_path = output_path / "economy" / MCRoot.MC_ALL.value
+
+    # Build paths to parse data from
+    existing_paths: list[Path] = []
+
+    for mode in {"economy", "adequacy"}:
+        mc_ind_path = output_path / mode / MCRoot.MC_IND.value
+        if mc_ind_path.exists():
+            first_mc_year = sorted(mc_ind_path.iterdir())[0].name
+            existing_paths.append(mc_ind_path / first_mc_year)
+        mc_all_path = output_path / mode / MCRoot.MC_ALL.value
+        if mc_all_path.exists():
+            existing_paths.append(mc_all_path)
 
     variables: dict[str, Any] = {"mc_ind": {"areas": [], "links": []}, "mc_all": {"areas": [], "links": []}}
 
-    existing_paths = []
-    if mc_ind_path.exists():
-        first_mc_year = sorted(mc_ind_path.iterdir())[0].name
-        existing_paths.append(mc_ind_path / first_mc_year)
-    if mc_all_path.exists():
-        existing_paths.append(mc_all_path)
-
+    # Iterate over paths and gather data
     for mc_path in existing_paths:
-        mc_root = MCRoot.MC_ALL if mc_path == mc_all_path else MCRoot.MC_IND
+        mc_root = MCRoot.MC_ALL if mc_path.name == MCRoot.MC_ALL.value else MCRoot.MC_IND
         mc_root_key = "mc_all" if mc_root == MCRoot.MC_ALL else "mc_ind"
 
         # Areas

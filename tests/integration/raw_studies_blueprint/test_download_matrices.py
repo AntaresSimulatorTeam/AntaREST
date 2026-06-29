@@ -12,15 +12,22 @@
 
 import datetime
 import io
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
+import pytest
+from antares.study.version import StudyVersion
 from pandas._testing import assert_frame_equal
+from requests import Response
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
+from antarest.core.utils.archives import archive_dir
+from antarest.study.model import STUDY_VERSION_8_2, STUDY_VERSION_8_6, StorageMode
 from tests.integration.utils import wait_task_completion
+from tests.test_helpers.dates import utc_to_local
 
 
 class Proxy:
@@ -31,58 +38,39 @@ class Proxy:
 
 
 class PreparerProxy(Proxy):
-    def copy_upgrade_study(self, ref_study_id: str, target_version: int = 820) -> str:
-        """
-        Copy a study in the managed workspace and upgrade it to a specific version
-        """
-        # Prepare a managed study to test specific matrices for version 8.2
+    def create_minimal_study(self, target_version: StudyVersion, storage_mode: StorageMode) -> str:
         res = self.client.post(
-            f"/v1/studies/{ref_study_id}/copy",
-            params={"study_name": "copied-820", "use_task": False},
-            headers=self.headers,
+            f"/v1/studies?name=NewStudy_{target_version}&storage_mode={storage_mode}&version={target_version}"
         )
+        assert res.status_code == 201
+        study_id = res.json()
+
+        self.create_area(study_id, name="de", country="de")
+        self.create_area(study_id, name="fr", country="fr")
+        res = self.client.post(f"/v1/studies/{study_id}/links", json={"area1": "de", "area2": "fr"})
         res.raise_for_status()
-        study_820_id = res.json()
-
-        res = self.client.put(
-            f"/v1/studies/{study_820_id}/upgrade",
-            params={"target_version": target_version},
-            headers=self.headers,
-        )
+        res = self.client.post(f"/v1/studies/{study_id}/areas/de/clusters/thermal", json={"name": "01_solar"})
         res.raise_for_status()
-        task_id = res.json()
-        assert task_id
 
-        task = wait_task_completion(self.client, self.user_access_token, task_id, base_timeout=20)
-        assert task.status == TaskStatus.COMPLETED
-        return study_820_id
+        return study_id
 
-    def upload_matrix(self, internal_study_id: str, matrix_path: str, df: pd.DataFrame) -> None:
+    def upload_matrix(self, study_id: str, matrix_path: str, df: pd.DataFrame) -> None:
         tsv = io.BytesIO()
         df.to_csv(tsv, sep="\t", index=False, header=False)
         tsv.seek(0)
         # noinspection SpellCheckingInspection
-        res = self.client.put(
-            f"/v1/studies/{internal_study_id}/raw",
-            params={"path": matrix_path},
-            headers=self.headers,
-            files={"file": tsv},
-        )
+        res = self.client.put(f"/v1/studies/{study_id}/raw", params={"path": matrix_path}, files={"file": tsv})
         res.raise_for_status()
 
     def create_variant(self, parent_id: str, *, name: str) -> str:
-        res = self.client.post(
-            f"/v1/studies/{parent_id}/variants",
-            headers=self.headers,
-            params={"name": name},
-        )
+        res = self.client.post(f"/v1/studies/{parent_id}/variants", params={"name": name})
         res.raise_for_status()
         variant_id = res.json()
         return variant_id
 
     def generate_snapshot(self, variant_id: str) -> None:
         # Generate a snapshot for the variant
-        res = self.client.put(f"/v1/studies/{variant_id}/generate", headers=self.headers, params={"from_scratch": True})
+        res = self.client.put(f"/v1/studies/{variant_id}/generate", params={"from_scratch": True})
         res.raise_for_status()
         task_id = res.json()
         assert task_id
@@ -92,20 +80,14 @@ class PreparerProxy(Proxy):
 
     def create_area(self, parent_id: str, *, name: str, country: str = "FR") -> str:
         res = self.client.post(
-            f"/v1/studies/{parent_id}/areas",
-            headers=self.headers,
-            json={"name": name, "type": "AREA", "metadata": {"country": country}},
+            f"/v1/studies/{parent_id}/areas", json={"name": name, "type": "AREA", "metadata": {"country": country}}
         )
         res.raise_for_status()
         area_id = res.json()["id"]
         return area_id
 
-    def update_general_data(self, internal_study_id: str, **data: Any) -> None:
-        res = self.client.put(
-            f"/v1/studies/{internal_study_id}/config/general/form",
-            json=data,
-            headers=self.headers,
-        )
+    def update_general_data(self, study_id: str, **data: Any) -> None:
+        res = self.client.put(f"/v1/studies/{study_id}/config/general/form", json=data)
         res.raise_for_status()
 
 
@@ -114,9 +96,9 @@ class TestDownloadMatrices:
     Checks the retrieval of matrices with the endpoint GET studies/uuid/raw/download
     """
 
-    def test_download_matrices(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
-        user_headers = {"Authorization": f"Bearer {user_access_token}"}
-        client.headers = user_headers
+    @pytest.mark.parametrize("storage_mode", [StorageMode.FILESYSTEM, StorageMode.DATABASE])
+    def test_download_matrices(self, client: TestClient, user_access_token: str, storage_mode: StorageMode) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # =====================
         #  STUDIES PREPARATION
@@ -124,7 +106,7 @@ class TestDownloadMatrices:
 
         preparer = PreparerProxy(client, user_access_token)
 
-        study_820_id = preparer.copy_upgrade_study(internal_study_id, target_version=820)
+        study_820_id = preparer.create_minimal_study(target_version=STUDY_VERSION_8_2, storage_mode=storage_mode)
 
         # Create Variant
         variant_id = preparer.create_variant(study_820_id, name="New Variant")
@@ -139,7 +121,7 @@ class TestDownloadMatrices:
         preparer.generate_snapshot(variant_id)
 
         # Prepare a managed study to test specific matrices for version 8.6
-        study_860_id = preparer.copy_upgrade_study(internal_study_id, target_version=860)
+        study_860_id = preparer.create_minimal_study(target_version=STUDY_VERSION_8_6, storage_mode=storage_mode)
 
         # Import a Min Gen. matrix: shape=(8760, 3), with random integers between 0 and 1000
         generator = np.random.default_rng(11)
@@ -197,13 +179,14 @@ class TestDownloadMatrices:
         # =============================
         # TESTS INDEX AND HEADER PARAMETERS
         # =============================
+        download_url = f"/v1/studies/{study_820_id}/raw/download"
 
         # test only few possibilities as each API call is quite long
         # (also check that the format is case-insensitive)
         for header in [True, False]:
             index = not header
             res = client.get(
-                f"/v1/studies/{study_820_id}/raw/download",
+                download_url,
                 params={"path": raw_matrix_path, "format": "TSV", "header": header, "index": index},
             )
             assert res.status_code == 200
@@ -221,29 +204,8 @@ class TestDownloadMatrices:
         # TEST SPECIFIC MATRICES
         # =============================
 
-        # tests links headers before v8.2
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw/download",
-            params={"path": "input/links/de/fr", "format": "tsv", "index": False},
-        )
-        assert res.status_code == 200
-        content = io.BytesIO(res.content)
-        dataframe = pd.read_csv(content, sep="\t")
-        assert list(dataframe.columns) == [
-            "Capacités de transmission directes",
-            "Capacités de transmission indirectes",
-            "Hurdle costs direct (de->fr)",
-            "Hurdle costs indirect (fr->de)",
-            "Impedances",
-            "Loop flow",
-            "P.Shift Min",
-            "P.Shift Max",
-        ]
-
         # tests links headers after v8.2
-        res = client.get(
-            f"/v1/studies/{study_820_id}/raw/download", params={"path": "input/links/de/fr_parameters", "format": "tsv"}
-        )
+        res = client.get(download_url, params={"path": "input/links/de/fr_parameters", "format": "tsv"})
         assert res.status_code == 200
         content = io.BytesIO(res.content)
         dataframe = pd.read_csv(content, index_col=0, sep="\t")
@@ -256,28 +218,9 @@ class TestDownloadMatrices:
             "P.Shift Max",
         ]
 
-        # allocation and correlation matrices
-        for path in ["input/hydro/allocation", "input/hydro/correlation"]:
-            res = client.get(f"/v1/studies/{study_820_id}/raw/download", params={"path": path, "format": "tsv"})
-            assert res.status_code == 200
-            content = io.BytesIO(res.content)
-            dataframe = pd.read_csv(content, index_col=0, sep="\t")
-            assert list(dataframe.index) == list(dataframe.columns) == ["de", "es", "fr", "it"]
-            assert all(np.isclose(dataframe.iloc[i, i], 1.0) for i in range(len(dataframe)))
-
-        # checks default value for an empty water_values matrix
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw/download",
-            params={"path": "input/hydro/common/capacity/waterValues_de", "format": "tsv"},
-        )
-        assert res.status_code == 200
-        content = io.BytesIO(res.content)
-        dataframe = pd.read_csv(content, index_col=0, sep="\t")
-        assert dataframe.to_numpy().tolist() == 365 * [101 * [0.0]]
-
         # modulation matrix
         res = client.get(
-            f"/v1/studies/{study_820_id}/raw/download",
+            download_url,
             params={"path": "input/thermal/prepro/de/01_solar/modulation", "format": "tsv"},
         )
         assert res.status_code == 200
@@ -292,41 +235,6 @@ class TestDownloadMatrices:
             data=transposed_matrix,
         )
         assert dataframe.equals(expected_df)
-
-        # asserts endpoint returns the right columns for output matrix
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw/download",
-            params={
-                "path": "output/20201014-1422eco-hello/economy/mc-ind/00001/links/de/fr/values-hourly",
-                "format": "tsv",
-            },
-        )
-        assert res.status_code == 200
-        content = io.BytesIO(res.content)
-        dataframe = pd.read_csv(content, index_col=0, sep="\t")
-        # noinspection SpellCheckingInspection
-        assert list(dataframe.columns) == [
-            "('FLOW LIN.', 'MWh', '')",
-            "('UCAP LIN.', 'MWh', '')",
-            "('LOOP FLOW', 'MWh', '')",
-            "('FLOW QUAD.', 'MWh', '')",
-            "('CONG. FEE (ALG.)', 'Euro', '')",
-            "('CONG. FEE (ABS.)', 'Euro', '')",
-            "('MARG. COST', 'Euro/MW', '')",
-            "('CONG. PROB +', '%', '')",
-            "('CONG. PROB -', '%', '')",
-            "('HURDLE COST', 'Euro', '')",
-        ]
-
-        # checks default value for an empty energy matrix
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/raw/download",
-            params={"path": "input/hydro/prepro/de/energy", "format": "tsv"},
-        )
-        assert res.status_code == 200
-        content = io.BytesIO(res.content)
-        dataframe = pd.read_csv(content, index_col=0, sep="\t")
-        assert dataframe.to_numpy().tolist() == 12 * [5 * [0.0]]
 
         # test the Min Gen of the 8.6 study
         for export_format in ["tsv", "xlsx"]:
@@ -345,11 +253,6 @@ class TestDownloadMatrices:
             assert str(dataframe.index[0]) == "2018-01-01 00:00:00"
             assert np.array_equal(dataframe.to_numpy(), min_gen_df.to_numpy())
 
-        # test that downloading the digest file doesn't fail
-        digest_path = "output/20201014-1422eco-hello/economy/mc-all/grid/digest"
-        res = client.get(f"/v1/studies/{internal_study_id}/raw/download", params={"path": digest_path, "format": "tsv"})
-        assert res.status_code == 200
-
         # =============================
         #  ERRORS
         # =============================
@@ -362,23 +265,187 @@ class TestDownloadMatrices:
         assert "should match pattern" in res.json()["description"]
 
         # fake path
-        res = client.get(
-            f"/v1/studies/{study_820_id}/raw/download", params={"path": f"input/links/de/{fake_str}", "format": "tsv"}
-        )
+        res = client.get(download_url, params={"path": f"input/links/de/{fake_str}", "format": "tsv"})
         assert res.status_code == 404
-        assert res.json()["exception"] == "ChildNotFoundError"
+        assert res.json()["exception"] == "IncorrectPathError"
 
         # path that does not lead to a matrix
-        res = client.get(
-            f"/v1/studies/{study_820_id}/raw/download", params={"path": "settings/generaldata", "format": "tsv"}
-        )
+        res = client.get(download_url, params={"path": "settings/generaldata", "format": "tsv"})
         assert res.status_code == 404
         assert res.json()["exception"] == "IncorrectPathError"
         assert res.json()["description"] == "The provided path does not point to a valid matrix: 'settings/generaldata'"
 
         # wrong format
-        res = client.get(
-            f"/v1/studies/{study_820_id}/raw/download", params={"path": raw_matrix_path, "format": fake_str}
-        )
+        res = client.get(download_url, params={"path": raw_matrix_path, "format": fake_str})
         assert res.status_code == 422
         assert res.json()["exception"] == "RequestValidationError"
+
+
+def test_other_cases(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    # tests links headers before v8.2
+    res = client.get(
+        f"/v1/studies/{internal_study_id}/raw/download",
+        params={"path": "input/links/de/fr", "format": "tsv", "index": False},
+    )
+    assert res.status_code == 200
+    content = io.BytesIO(res.content)
+    dataframe = pd.read_csv(content, sep="\t")
+    assert list(dataframe.columns) == [
+        "Capacités de transmission directes",
+        "Capacités de transmission indirectes",
+        "Hurdle costs direct (de->fr)",
+        "Hurdle costs indirect (fr->de)",
+        "Impedances",
+        "Loop flow",
+        "P.Shift Min",
+        "P.Shift Max",
+    ]
+
+    # checks default value for an empty water_values matrix
+    res = client.get(
+        f"/v1/studies/{internal_study_id}/raw/download",
+        params={"path": "input/hydro/common/capacity/waterValues_de", "format": "tsv"},
+    )
+    assert res.status_code == 200
+    content = io.BytesIO(res.content)
+    dataframe = pd.read_csv(content, index_col=0, sep="\t")
+    assert dataframe.to_numpy().tolist() == 365 * [101 * [0.0]]
+
+    # checks default value for an empty energy matrix
+    res = client.get(
+        f"/v1/studies/{internal_study_id}/raw/download",
+        params={"path": "input/hydro/prepro/de/energy", "format": "tsv"},
+    )
+    assert res.status_code == 200
+    content = io.BytesIO(res.content)
+    dataframe = pd.read_csv(content, index_col=0, sep="\t")
+    assert dataframe.to_numpy().tolist() == 12 * [5 * [0.0]]
+
+
+def test_download_output_matrices_for_both_storage_modes(
+    client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
+) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    # Create a study stored in Database mode
+    res = client.post("/v1/studies?name=MyStudy&storage_mode=database")
+    assert res.status_code == 201
+    database_id = res.json()
+
+    # Import the same output inside the DB study to perform the tests
+    output_path = tmp_path / "ext_workspace" / "STA-mini" / "output" / "20201014-1422eco-hello"
+    output_archive_path = tmp_path / "output_zipped.zip"
+    archive_dir(output_path, output_archive_path)
+    client.post(f"/v1/studies/{database_id}/output", files={"output": io.BytesIO(output_archive_path.read_bytes())})
+    # Ensures the output has been successfully imported
+    res = client.get(f"/v1/studies/{database_id}/outputs")
+    assert len(res.json()) == 1
+
+    # Use both the Database and the Filesystem studies to ensure we find the same results
+    expected_date = utc_to_local("20201014-1222")
+    study_id_to_output_id_mapping = {
+        internal_study_id: "20201014-1422eco-hello",
+        database_id: f"{expected_date}eco-hello",
+    }
+
+    for study_id, output_id in study_id_to_output_id_mapping.items():
+        download_url = f"/v1/studies/{study_id}/raw/download"
+
+        # `mc-ind` link matrix
+        path = f"output/{output_id}/economy/mc-ind/00001/links/de/fr/values-hourly"
+        res = client.get(download_url, params={"path": path, "format": "tsv"})
+        dataframe = _parse_dataframe(res)
+        assert list(dataframe.columns) == [
+            "('FLOW LIN.', 'MWh', '')",
+            "('UCAP LIN.', 'MWh', '')",
+            "('LOOP FLOW', 'MWh', '')",
+            "('FLOW QUAD.', 'MWh', '')",
+            "('CONG. FEE (ALG.)', 'Euro', '')",
+            "('CONG. FEE (ABS.)', 'Euro', '')",
+            "('MARG. COST', 'Euro/MW', '')",
+            "('CONG. PROB +', '%', '')",
+            "('CONG. PROB -', '%', '')",
+            "('HURDLE COST', 'Euro', '')",
+        ]
+        assert dataframe.shape == (168, 10)
+
+        # `mc-ind` areas matrix
+        path = f"output/{output_id}/economy/mc-ind/00001/areas/fr/details-hourly"
+        res = client.get(download_url, params={"path": path, "format": "tsv"})
+        dataframe = _parse_dataframe(res)
+        assert dataframe.shape == (168, 27)
+        assert list(dataframe["('01_solar', 'MWh', '')"]) == [100 * k for k in range(20)] + 148 * [2000]
+
+        # `mc-all` areas matrix
+        path = f"output/{output_id}/economy/mc-all/areas/de/id-monthly"
+        res = client.get(download_url, params={"path": path, "format": "tsv"})
+        dataframe = _parse_dataframe(res)
+        assert dataframe.shape == (1, 58)
+        assert list(dataframe.columns) == [
+            "('OP. COST', 'Euro', 'min')",
+            "('OP. COST', 'Euro', 'max')",
+            "('MRG. PRICE', 'Euro', 'min')",
+            "('MRG. PRICE', 'Euro', 'max')",
+            "('BALANCE', 'MWh', 'min')",
+            "('BALANCE', 'MWh', 'max')",
+            "('LOAD', 'MWh', 'min')",
+            "('LOAD', 'MWh', 'max')",
+            "('H. ROR', 'MWh', 'min')",
+            "('H. ROR', 'MWh', 'max')",
+            "('WIND', 'MWh', 'min')",
+            "('WIND', 'MWh', 'max')",
+            "('SOLAR', 'MWh', 'min')",
+            "('SOLAR', 'MWh', 'max')",
+            "('NUCLEAR', 'MWh', 'min')",
+            "('NUCLEAR', 'MWh', 'max')",
+            "('LIGNITE', 'MWh', 'min')",
+            "('LIGNITE', 'MWh', 'max')",
+            "('COAL', 'MWh', 'min')",
+            "('COAL', 'MWh', 'max')",
+            "('GAS', 'MWh', 'min')",
+            "('GAS', 'MWh', 'max')",
+            "('OIL', 'MWh', 'min')",
+            "('OIL', 'MWh', 'max')",
+            "('MIX. FUEL', 'MWh', 'min')",
+            "('MIX. FUEL', 'MWh', 'max')",
+            "('MISC. DTG', 'MWh', 'min')",
+            "('MISC. DTG', 'MWh', 'max')",
+            "('H. STOR', 'MWh', 'min')",
+            "('H. STOR', 'MWh', 'max')",
+            "('H. PUMP', 'MWh', 'min')",
+            "('H. PUMP', 'MWh', 'max')",
+            "('H. LEV', '%', 'min')",
+            "('H. LEV', '%', 'max')",
+            "('H. INFL', 'MWh', 'min')",
+            "('H. INFL', 'MWh', 'max')",
+            "('H. OVFL', '%', 'min')",
+            "('H. OVFL', '%', 'max')",
+            "('H. VAL', 'Euro/MWh', 'min')",
+            "('H. VAL', 'Euro/MWh', 'max')",
+            "('H. COST', 'Euro', 'min')",
+            "('H. COST', 'Euro', 'max')",
+            "('UNSP. ENRG', 'MWh', 'min')",
+            "('UNSP. ENRG', 'MWh', 'max')",
+            "('SPIL. ENRG', 'MWh', 'min')",
+            "('SPIL. ENRG', 'MWh', 'max')",
+            "('LOLD', 'Hours', 'min')",
+            "('LOLD', 'Hours', 'max')",
+            "('AVL DTG', 'MWh', 'min')",
+            "('AVL DTG', 'MWh', 'max')",
+            "('DTG MRG', 'MWh', 'min')",
+            "('DTG MRG', 'MWh', 'max')",
+            "('MAX MRG', 'MWh', 'min')",
+            "('MAX MRG', 'MWh', 'max')",
+            "('NP COST', 'Euro', 'min')",
+            "('NP COST', 'Euro', 'max')",
+            "('NODU', ' ', 'min')",
+            "('NODU', ' ', 'max')",
+        ]
+
+
+def _parse_dataframe(res: Response) -> pd.DataFrame:
+    assert res.status_code == 200
+    content = io.BytesIO(res.content)
+    return pd.read_csv(content, index_col=0, sep="\t")

@@ -34,8 +34,8 @@ import type { StudySortConfig } from "@/types/types";
 import type { ViewMode } from "../types";
 
 interface FilterControlsProps {
-  activeTree: "managed" | "external";
   showDescendants: boolean;
+  isExternalRoot: boolean;
   isReferenceTypeActive: boolean;
   canScan: boolean;
   sortConfig: StudySortConfig;
@@ -48,8 +48,8 @@ interface FilterControlsProps {
 }
 
 function FilterControls({
-  activeTree,
   showDescendants,
+  isExternalRoot,
   isReferenceTypeActive,
   canScan,
   sortConfig,
@@ -68,25 +68,27 @@ function FilterControls({
 
   return (
     <>
-      {/* Directory hierarchy toggle - current dir only vs include descendants */}
-      <ToggleButtonGroup
-        value={showDescendants}
-        exclusive
-        onChange={(_e, v) => v !== null && onToggleShowDescendants(v)}
-        size="extra-small"
-        color="primary"
-      >
-        <Tooltip title={t("studies.filters.noDescendants")}>
-          <ToggleButton value={false}>
-            <FolderIcon />
-          </ToggleButton>
-        </Tooltip>
-        <Tooltip title={t("studies.filters.showDescendants")}>
-          <ToggleButton value={true}>
-            <AccountTreeIcon />
-          </ToggleButton>
-        </Tooltip>
-      </ToggleButtonGroup>
+      {/* Directory hierarchy toggle - current dir only vs include descendants (hidden for external root) */}
+      {!isExternalRoot && (
+        <ToggleButtonGroup
+          value={showDescendants}
+          exclusive
+          onChange={(_e, v) => v !== null && onToggleShowDescendants(v)}
+          size="extra-small"
+          color="primary"
+        >
+          <Tooltip title={t("studies.filters.noDescendants")}>
+            <ToggleButton value={false}>
+              <FolderIcon />
+            </ToggleButton>
+          </Tooltip>
+          <Tooltip title={t("studies.filters.showDescendants")}>
+            <ToggleButton value={true}>
+              <AccountTreeIcon />
+            </ToggleButton>
+          </Tooltip>
+        </ToggleButtonGroup>
+      )}
 
       {/* View mode toggle */}
       <ToggleButtonGroup

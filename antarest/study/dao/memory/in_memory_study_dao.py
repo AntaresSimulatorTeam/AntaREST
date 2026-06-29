@@ -1676,10 +1676,6 @@ class InMemoryStudyDao(StudyDao):
                 self._reserve_needs[reserve_key(area_id, reserve_id)] = matrix_id
 
     @override
-    def delete_reserve_need(self, area_id: AreaId, reserve_id: ReserveDefinitionId) -> None:
-        self._reserve_needs.pop(reserve_key(area_id, reserve_id), None)
-
-    @override
     def save_solar(self, series: AreaSeriesMapping) -> None:
         for area_id, series_id in series.items():
             self._solar[area_id] = series_id

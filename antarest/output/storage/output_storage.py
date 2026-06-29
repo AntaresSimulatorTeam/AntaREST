@@ -17,6 +17,7 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any, BinaryIO
 
+import pandas as pd
 import polars as pl
 from pydantic import ConfigDict, Field, SerializerFunctionWrapHandler, model_serializer
 from pydantic.alias_generators import to_camel
@@ -28,6 +29,7 @@ from antarest.output.filestudy.utils import QueryFileType
 from antarest.output.model import OutputVariablesList
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency, MatrixIndex
+from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
 logger = logging.getLogger(__name__)
@@ -108,6 +110,7 @@ class OutputDetails(AntaresBaseModel):
         populate_by_name=True,
     )
 
+    id: str
     name: str
     mode: Mode
     synthesis: bool
@@ -278,4 +281,24 @@ class IOutputStorage(ABC):
     def get_disk_usage(self, study_id: str, output_id: str) -> int:
         """
         Retrieve disk usage for a specific output.
+        """
+
+    @abstractmethod
+    def get_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
+        """
+        Retrieves raw content based on a given url
+        """
+
+    @abstractmethod
+    def get_matrix_as_dataframe(
+        self, study_id: str, output_id: str, url: list[str], frequency: MatrixFrequency
+    ) -> pd.DataFrame:
+        """
+        Parses a matrix from a given url and returns it as a dataframe
+        """
+
+    @abstractmethod
+    def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
+        """
+        Retrieves the original file as it exists on the file system
         """

@@ -27,11 +27,11 @@ from antarest.core.serde.matrix_export import write_dataframe_in_tsv_format
 from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.core.utils.polars import create_polars_dataframe, read_input_dataframe
 from antarest.core.utils.utils import StopWatch
-from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
+from antarest.study.storage.utils import dump_dataframe
 
 logger = logging.getLogger(__name__)
 
@@ -55,13 +55,6 @@ def extract_matrix_id(uri: str) -> str:
     need to be able to parse them.
     """
     return uri.removeprefix(MATRIX_PROTOCOL_PREFIX).strip()
-
-
-def _dump_dataframe(df: pl.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
-    if df.is_empty() and isinstance(path_or_buf, Path):
-        path_or_buf.write_bytes(b"")
-    else:
-        df.write_csv(path_or_buf, separator="\t", include_header=False)
 
 
 class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
@@ -89,14 +82,12 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
         self,
         matrix_storage_context: MatrixStorageContext,
         config: FileStudyTreeConfig,
-        freq: MatrixFrequency = MatrixFrequency.HOURLY,
         nb_columns: int | None = None,
         default_empty: MatrixSupplier | None = None,  # optional only for the capacity matrix in Xpansion
         should_exist: bool = True,
     ):
         LazyNode.__init__(self, config)
         self._matrix_storage_context = matrix_storage_context
-        self.freq = freq
         self.nb_columns = nb_columns
         self.default_empty = default_empty
         # Removes the .link suffix if the matrix is normalized
@@ -317,7 +308,7 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
             target_path = self.config.path.with_suffix(".txt")
             buffer = io.BytesIO()
             df = self.parse_as_dataframe()
-            _dump_dataframe(df, buffer)
+            dump_dataframe(df, buffer)
             content = buffer.getvalue()
             suffix = target_path.suffix
             filename = target_path.name
@@ -327,7 +318,7 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
         if content == b"" and self.default_empty is not None:
             # The file is empty, we should return the `default_empty` value
             buffer = io.BytesIO()
-            _dump_dataframe(pl.DataFrame(self.default_empty()), buffer)
+            dump_dataframe(pl.DataFrame(self.default_empty()), buffer)
             content = buffer.getvalue()
 
         return OriginalFile(content=content, suffix=suffix, filename=filename)

@@ -14,8 +14,8 @@ import http
 import io
 import itertools
 import json
-import pathlib
 import shutil
+from pathlib import Path
 from unittest.mock import ANY
 
 import numpy as np
@@ -29,7 +29,9 @@ from antarest.study.model import RawStudy, Study
 from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.prepro.area.thermal.thermal import (
     default_data_matrix,
 )
+from tests.integration.assets import ASSETS_DIR as INTEGRATION_ASSETS_DIR
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
+from tests.test_helpers.dates import utc_to_local
 
 
 class TestFetchRawData:
@@ -62,7 +64,7 @@ class TestFetchRawData:
         # First copy the user resources in the Study directory
         with db():
             study: RawStudy = db.session.get(Study, internal_study_id)
-            study_dir = pathlib.Path(study.path)
+            study_dir = Path(study.path)
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         shutil.copytree(
@@ -566,17 +568,8 @@ class TestFetchOriginalFile:
     Check the retrieval of a file from Study folder
     """
 
-    def test_get_study_file(
-        self,
-        client: TestClient,
-        user_access_token: str,
-        internal_study_id: str,
-    ) -> None:
+    def test_get_for_filesystem_study(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
         """
-        Test the `get_study_file` endpoint for fetching for a file in its original format.
-
-        This test retrieves a specific file from a study identified by a UUID and checks
-
         The test performs the following steps:
         1. Copies the user resources in the Study directory.
         2. Uses the API to download a file from the "user/folder" directory.
@@ -586,15 +579,11 @@ class TestFetchOriginalFile:
         # First copy the user resources in the Study directory
         with db():
             study: RawStudy = db.session.get(Study, internal_study_id)
-            study_dir = pathlib.Path(study.path)
+            study_dir = Path(study.path)
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         original_file_url = f"/v1/studies/{internal_study_id}/raw/original-file"
 
-        shutil.copytree(
-            ASSETS_DIR.joinpath("user"),
-            study_dir.joinpath("user"),
-            dirs_exist_ok=True,
-        )
+        shutil.copytree(ASSETS_DIR.joinpath("user"), study_dir.joinpath("user"), dirs_exist_ok=True)
 
         # Then, use the API to download the files from the "user/folder" directory
         user_folder_dir = study_dir.joinpath("user/folder")
@@ -605,15 +594,6 @@ class TestFetchOriginalFile:
             actual = res.content
             expected = file_path.read_bytes()
             assert actual == expected
-
-        # retrieves a txt file from the outputs
-        file_path = "output/20201014-1422eco-hello/simulation"
-        res = client.get(f"/v1/studies/{internal_study_id}/raw/original-file", params={"path": file_path})
-        assert res.status_code == 200
-        assert res.headers.get("content-disposition") == "attachment; filename=simulation.log"
-        actual = res.content
-        expected = study_dir.joinpath(f"{file_path}.log").read_bytes()
-        assert actual == expected
 
         # If the extension is unknown, we should have a "binary" content
         user_folder_dir = study_dir.joinpath("user/unknown")
@@ -626,38 +606,13 @@ class TestFetchOriginalFile:
             expected = file_path.read_bytes()
             assert actual == expected
 
-        # If you try to retrieve a file that doesn't exist, we should have a 404 error
-        res = client.get(original_file_url, params={"path": "user/somewhere/something.txt"})
-        assert res.status_code == 404, res.json()
-        assert res.json() == {
-            "description": "'somewhere' not a child of User",
-            "exception": "ChildNotFoundError",
-        }
-
-        # If you try to retrieve a folder, we should get an Error 422
-        res = client.get(original_file_url, params={"path": "user/folder"})
-        assert res.status_code == 422, res.json()
-        assert res.json()["description"] == "Node at user/folder is a folder node."
-        assert res.json()["exception"] == "PathIsAFolderError"
-
-    def test_retrieve_original_files(self, client: TestClient, user_access_token: str) -> None:
-        # client headers
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
-
         # create a new study
         res = client.post("/v1/studies", params={"name": "MyStudy", "version": "880"})
         assert res.status_code == 201
         study_id = res.json()
 
         # add a new area to the study
-        res = client.post(
-            f"/v1/studies/{study_id}/areas",
-            json={
-                "name": "area 1",
-                "type": "AREA",
-                "metadata": {"country": "FR", "tags": ["a"]},
-            },
-        )
+        res = client.post(f"/v1/studies/{study_id}/areas", json={"name": "area 1"})
         assert res.status_code == 200, res.json()
 
         # retrieves an `ini` file
@@ -674,10 +629,134 @@ class TestFetchOriginalFile:
         assert res.headers.get("content-disposition") == "attachment; filename=study.antares"
         assert res.content.strip().decode().splitlines()[:3] == ["[antares]", "version = 880", "caption = MyStudy"]
 
-        # retrieves a matrix (a link towards the matrix store if the study is unarchived, else the real matrix)
-        res = client.get(f"/v1/studies/{study_id}/raw/original-file", params={"path": "input/load/series/load_area 1"})
+    @pytest.mark.parametrize("storage_mode", ["database", "filesystem"])
+    def test_for_both_storage_modes(
+        self, client: TestClient, user_access_token: str, storage_mode: str, tmp_path: Path
+    ) -> None:
+        ##########################
+        # Set Up
+        ##########################
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # Create a study with the given storage_mode
+        res = client.post(f"/v1/studies?name=MyStudy&storage_mode={storage_mode}")
+        assert res.status_code == 201
+        study_id = res.json()
+
+        # Add an area
+        res = client.post(f"/v1/studies/{study_id}/areas", json={"name": "fr"})
+        res.raise_for_status()
+
+        output_id = _import_output(client, study_id)
+
+        ##########################
+        # Input Matrix
+        ##########################
+
+        original_file_url = f"/v1/studies/{study_id}/raw/original-file"
+
+        # Retrieves an input matrix
+        res = client.get(original_file_url, params={"path": "input/load/series/load_fr"})
         assert res.status_code == 200
-        assert res.headers.get("content-disposition") == "attachment; filename=load_area 1.txt"
+        assert res.headers.get("content-disposition") == "attachment; filename=load_fr.txt"
         expected_content = np.zeros((8760, 1))
         actual_content = pd.read_csv(io.BytesIO(res.content), header=None)
         assert actual_content.to_numpy().tolist() == expected_content.tolist()
+
+        ##########################
+        # Output files
+        ##########################
+
+        if storage_mode == "filesystem":
+            outputs_dir = tmp_path / "internal_workspace" / study_id / "output"
+        else:
+            outputs_dir = tmp_path / "all_outputs" / study_id
+
+        # Random file that isn't a matrix
+        file_path = f"output/{output_id}/simulation"
+        res = client.get(original_file_url, params={"path": file_path})
+        assert res.status_code == 200
+        assert res.headers.get("content-disposition") == "attachment; filename=simulation.log"
+        actual = res.content
+        expected = (outputs_dir / output_id / "simulation.log").read_bytes()
+        assert actual == expected
+
+        # Output matrix
+        file_path = f"output/{output_id}/adequacy/mc-all/areas/de/details-daily"
+        res = client.get(original_file_url, params={"path": file_path})
+        assert res.status_code == 200
+        assert res.headers.get("content-disposition") == "attachment; filename=details-daily.txt"
+        actual = res.content
+        expected = (outputs_dir / output_id / "adequacy" / "mc-all" / "areas" / "de" / "details-daily.txt").read_bytes()
+        assert actual == expected
+
+        ##########################
+        # Error cases
+        ##########################
+
+        # If you try to retrieve a file that doesn't exist, we should have a 404 error
+        res = client.get(original_file_url, params={"path": "user/somewhere/something.txt"})
+        assert res.status_code == 404, res.json()
+        if storage_mode == "filesystem":
+            assert res.json() == {
+                "description": "'somewhere' not a child of User",
+                "exception": "ChildNotFoundError",
+            }
+        else:
+            assert res.json() == {
+                "description": "The provided path does not point to a valid matrix: 'user/somewhere/something.txt'",
+                "exception": "IncorrectPathError",
+            }
+
+        # If you try to retrieve a folder, we should get an error
+        res = client.get(original_file_url, params={"path": "input/load"})
+        if storage_mode == "filesystem":
+            assert res.status_code == 422, res.json()
+            assert res.json()["description"] == "Node at input/load is a folder node."
+            assert res.json()["exception"] == "PathIsAFolderError"
+        else:
+            assert res.status_code == 404, res.json()
+            assert res.json() == {
+                "description": "The provided path does not point to a valid matrix: 'input/load'",
+                "exception": "IncorrectPathError",
+            }
+
+
+@pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
+def test_retrieve_output_data(client: TestClient, user_access_token: str, storage_mode: str) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    # Create a study
+    res = client.post(f"/v1/studies?name=MyStudy&storage_mode={storage_mode}")
+    assert res.status_code == 201
+    study_id = res.json()
+
+    output_id = _import_output(client, study_id)
+
+    # Ensures we're able to read output matrices for both storage modes
+    for path in [
+        f"output/{output_id}/adequacy/mc-all/grid/digest",
+        f"output/{output_id}/adequacy/mc-all/areas/de/details-daily",
+        f"output/{output_id}/adequacy/mc-all/areas/de/id-monthly",
+        f"output/{output_id}/adequacy/mc-all/areas/es/values-monthly",
+        f"output/{output_id}/ts-numbers/load/fr",
+    ]:
+        res = client.get(f"/v1/studies/{study_id}/raw", params={"path": path})
+        assert res.status_code == 200
+
+    # Ensures the code still works for R scripts usage. To be removed when the new R script release pops up.
+    res = client.get(f"/v1/studies/{study_id}/raw", params={"path": "output", "depth": 4})
+    assert res.status_code == 200
+    assert res.json() == {output_id: ANY}
+
+
+def _import_output(client: TestClient, study_id: str) -> str:
+    # Imports an output inside the study
+    output_path_seven_zip = INTEGRATION_ASSETS_DIR / "output_adq.7z"
+    client.post(f"/v1/studies/{study_id}/output", files={"output": io.BytesIO(output_path_seven_zip.read_bytes())})
+    # Ensures the output has been successfully imported
+    res = client.get(f"/v1/studies/{study_id}/outputs")
+    assert len(res.json()) == 1
+    # Returns the output id
+    expected_date = utc_to_local("20221003-2142")
+    return f"{expected_date}adq"

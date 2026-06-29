@@ -15,8 +15,9 @@ import tempfile
 import uuid
 from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import BinaryIO
+from typing import Any, BinaryIO
 
+import pandas as pd
 import polars as pl
 from typing_extensions import override
 
@@ -62,6 +63,7 @@ from antarest.output.storage.v2.variables_storage import (
 )
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency, MatrixIndex
+from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 from antarest.study.storage.utils import (
     SimulationRangeDefinition,
@@ -139,6 +141,7 @@ def _db_metadata_to_simulation_range(metadata: DbOutputMetadataV2) -> Simulation
 
 def _db_metadata_to_details(metadata: DbOutputMetadataV2) -> OutputDetails:
     return OutputDetails(
+        id=metadata.output_name,
         name=metadata.output_name,
         mode=Mode(metadata.mode),
         synthesis=metadata.synthesis,
@@ -426,3 +429,20 @@ class V2OutputStorage(IOutputStorage):
     def get_disk_usage(self, study_id: str, output_id: str) -> int:
         output_dir = parquet_output_dir(self._variables_dir, study_id, output_id)
         return get_disk_usage(output_dir)
+
+    @override
+    def get_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
+        # todo: implement this
+        raise NotImplementedError()
+
+    @override
+    def get_matrix_as_dataframe(
+        self, study_id: str, output_id: str, url: list[str], frequency: MatrixFrequency
+    ) -> pd.DataFrame:
+        # todo: implement this
+        raise NotImplementedError()
+
+    @override
+    def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
+        # todo: implement this
+        raise NotImplementedError()
