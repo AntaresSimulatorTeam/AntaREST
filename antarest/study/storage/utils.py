@@ -124,7 +124,10 @@ def find_single_output_path(all_output_path: Path) -> Path:
     if len(children) == 1:
         if children[0].endswith(".zip"):
             return all_output_path / children[0]
-        return find_single_output_path(all_output_path / children[0])
+        only_child = all_output_path / children[0]
+        if only_child.is_dir():
+            return find_single_output_path(only_child)
+        return only_child
     return all_output_path
 
 

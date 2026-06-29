@@ -42,7 +42,14 @@ from antarest.core.utils.utils import assert_this
 from antarest.globals import ANTAREST_WORKER_ID
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.log_manager import LogTailManager
-from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType, XpansionParametersDTO
+from antarest.launcher.exceptions import NoValidOutputError
+from antarest.launcher.model import (
+    JobStatus,
+    LauncherLoadDTO,
+    LauncherParametersDTO,
+    LogType,
+    XpansionParametersDTO,
+)
 from antarest.launcher.ssh_client import calculates_slurm_load
 from antarest.launcher.ssh_config import SSHConfigDTO
 from antarest.login.utils import current_user_context, require_current_user
@@ -403,7 +410,7 @@ class SlurmLauncher(AbstractLauncher):
                 study.xpansion_mode,
                 study.job_log_dir,
             )
-        except FileNotFoundError:
+        except (FileNotFoundError, NoValidOutputError):
             msg = "Simulation failed, output results are not available"
             self.callbacks.append_after_log(study.name, msg)
             # see antarest.launcher.service.LauncherService.update
