@@ -83,6 +83,8 @@ from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.reserve_definitions_management import ReserveDefinitionsManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
+from antarest.study.business.areas.thermal_reserve_certification_management import ThermalReserveCertificationsManager
+from antarest.study.business.areas.thermal_reserve_symmetries_management import ThermalReserveSymmetriesManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintFilters
 from antarest.study.business.compatibility_parameters_management import CompatibilityParamsManager
 from antarest.study.business.correlation_management import CorrelationManager
@@ -670,6 +672,8 @@ class StudyService:
         self.compatibility_parameters_manager = CompatibilityParamsManager(command_context)
         self.reserves_global_parameters_manager = ReservesGlobalParametersManager(command_context)
         self.reserve_definitions_manager = ReserveDefinitionsManager(command_context)
+        self.thermal_reserve_symmetries_manager = ThermalReserveSymmetriesManager(command_context)
+        self.thermal_reserve_certifications_manager = ThermalReserveCertificationsManager(command_context)
         self.hydro_manager = HydroManager(command_context)
         self.allocation_manager = AllocationManager(command_context)
         self.renewable_manager = RenewableManager(command_context)
