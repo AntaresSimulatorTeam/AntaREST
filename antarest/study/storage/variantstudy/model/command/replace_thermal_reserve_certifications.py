@@ -70,7 +70,7 @@ class ReplaceThermalReserveCertifications(ICommand):
         for reserve_id, thermal_dict in self.certifications.items():
             args["reserve_id"] = {}
             for thermal_id, certification in thermal_dict.items():
-                args.setdefault(reserve_id, {})[thermal_id] = certification.model_dump(mode="json", exclude_none=True)
+                args.setdefault(reserve_id, {})[thermal_id] = certification.model_dump(mode="json")
         return CommandDTO(
             action=CommandName.REPLACE_THERMAL_RESERVE_CERTIFICATIONS.value,
             args={"area_id": self.area_id, "certifications": args},
