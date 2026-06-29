@@ -115,7 +115,7 @@ function MigrationTableModes() {
       );
     }
 
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       status: failed.length > 0 ? "error" : "success",
       failed,
