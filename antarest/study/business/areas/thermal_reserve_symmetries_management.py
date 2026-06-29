@@ -26,14 +26,13 @@ class ThermalReserveSymmetriesManager:
         return study.get_study_dao().get_thermal_reserve_symmetries(area_id)
 
     def set_symmetries(
-        self, study: StudyInterface, area_id: str, thermal_id: str, symmetries: list[ReserveSymmetry]
-    ) -> list[ReserveSymmetry]:
+        self, study: StudyInterface, area_id: str, data: dict[ThermalId, list[ReserveSymmetry]]
+    ) -> dict[ThermalId, list[ReserveSymmetry]]:
         command = ReplaceThermalReserveSymmetries(
             area_id=area_id,
-            thermal_id=thermal_id,
-            symmetries=symmetries,
+            symmetries=data,
             command_context=self._command_context,
             study_version=study.version,
         )
         study.add_commands([command])
-        return self.get_symmetries(study, area_id)[thermal_id]
+        return data

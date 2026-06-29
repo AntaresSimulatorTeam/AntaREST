@@ -35,7 +35,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 class ReplaceThermalReserveSymmetries(ICommand):
     """
-    Command used to replace reserve symmetries for a given area and thermal cluster.
+    Command used to replace reserve symmetries for a given area
     """
 
     command_name: CommandName = CommandName.REPLACE_THERMAL_RESERVE_SYMMETRIES
@@ -44,8 +44,7 @@ class ReplaceThermalReserveSymmetries(ICommand):
     # ==================
 
     area_id: AreaId
-    thermal_id: ThermalId
-    symmetries: list[ReserveSymmetry]
+    symmetries: dict[ThermalId, list[ReserveSymmetry]]
 
     @model_validator(mode="after")
     def _validate_version_and_symmetries(self) -> Self:
@@ -53,22 +52,24 @@ class ReplaceThermalReserveSymmetries(ICommand):
             msg = "Thermal cluster reserve symmetries are not valid for study version before 10.0"
             raise InvalidFieldForVersionError(msg)
 
-        self.symmetries = merge_symmetries(self.symmetries)
+        for thermal_id in self.symmetries:
+            self.symmetries[thermal_id] = merge_symmetries(self.symmetries[thermal_id])
+
         return self
 
     @override
     def _apply_dao(
         self, study_data: StudyDao, listener: ICommandListener | None = None
-    ) -> CommandOutput[list[ReserveSymmetry]]:
-        study_data.save_thermal_reserve_symmetries({self.area_id: {self.thermal_id: merge_symmetries(self.symmetries)}})
+    ) -> CommandOutput[dict[ThermalId, list[ReserveSymmetry]]]:
+        study_data.save_thermal_reserve_symmetries({self.area_id: self.symmetries})
 
-        msg = f"Reserve symmetries from thermal '{self.thermal_id}' in area '{self.area_id}' replaced successfully."
+        msg = f"Reserve symmetries in area '{self.area_id}' replaced successfully."
         return command_succeeded(msg, result=self.symmetries)
 
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.REPLACE_THERMAL_RESERVE_SYMMETRIES.value,
-            args={"area_id": self.area_id, "thermal_id": self.thermal_id, "symmetries": self.symmetries},
+            args={"area_id": self.area_id, "symmetries": self.symmetries},
             study_version=self.study_version,
         )

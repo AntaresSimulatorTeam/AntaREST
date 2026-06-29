@@ -1659,6 +1659,18 @@ def create_study_data_routes() -> APIRouter:
         study_interface = study_service.get_study_interface(study)
         return study_service.thermal_reserve_symmetries_manager.get_symmetries(study_interface, area_id)
 
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/thermal/reserves/symmetries",
+        summary="Saves new thermal reserve symmetries for a given area",
+    )
+    def save_thermal_reserve_symmetries(
+        study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr, data: dict[str, list[ReserveSymmetry]]
+    ) -> dict[str, list[ReserveSymmetry]]:
+        logger.info("Saving thermal reserve symmetries for study '%s' and area '%s'", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.thermal_reserve_symmetries_manager.set_symmetries(study_interface, area_id, data)
+
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
         summary="Get all renewable clusters",
