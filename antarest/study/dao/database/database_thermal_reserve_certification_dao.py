@@ -85,32 +85,12 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
         return result
 
     @override
-    def get_all_thermal_reserve_certifications_for_cluster(
-        self, area_id: AreaId, thermal_id: ThermalId
-    ) -> dict[ReserveDefinitionId, ThermalReserveCertification]:
-        stmt = select(_TABLE).where(
-            (_TABLE.c.study_id == self._study_id) & (_TABLE.c.area_id == area_id) & (_TABLE.c.thermal_id == thermal_id)
-        )
+    def get_all_thermal_reserve_certifications_for_area(
+        self, area_id: AreaId
+    ) -> dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]]:
+        stmt = select(_TABLE).where((_TABLE.c.study_id == self._study_id) & (_TABLE.c.area_id == area_id))
         rows = self._db_session.execute(stmt).fetchall()
-        return {row.reserve_id: _convert_row_to_model(row) for row in rows}
-
-    @override
-    def get_thermal_reserve_certification(
-        self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId
-    ) -> ThermalReserveCertification:
-        row = self._db_session.execute(self._select_one(area_id, thermal_id, reserve_id)).fetchone()
-        if not row:
-            self._raise_the_right_thermal_reserve_exception(
-                {area_id: {thermal_id: {ReserveDefinitionId(reserve_id): ThermalReserveCertification()}}}
-            )
-
-        return _convert_row_to_model(row)
-
-    @override
-    def thermal_reserve_certification_exists(
-        self, area_id: AreaId, thermal_id: ThermalId, reserve_id: ReserveDefinitionId
-    ) -> bool:
-        return self._db_session.execute(self._select_one(area_id, thermal_id, reserve_id)).fetchone() is not None
+        return {row.reserve_id: {row.thermal_id: _convert_row_to_model(row)} for row in rows}
 
     @override
     def save_thermal_reserve_certifications(self, data: ThermalReserveCertificationsMapping) -> None:
