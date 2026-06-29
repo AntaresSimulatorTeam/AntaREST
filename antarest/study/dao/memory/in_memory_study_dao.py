@@ -97,7 +97,6 @@ from antarest.study.dao.common import (
     StStorageId,
     StStorageSeriesMapping,
     ThermalId,
-    ThermalReserveCertificationsMapping,
     ThermalReserveSymmetriesMapping,
     ThermalSeriesMapping,
     XpansionCapacitiesMapping,
@@ -1709,8 +1708,8 @@ class InMemoryStudyDao(StudyDao):
             self._wind[area_id] = series_id
 
     @override
-    def get_all_thermal_reserve_certifications(self) -> dict[AreaId, ThermalReserveCertificationsMapping]:
-        result: dict[AreaId, ThermalReserveCertificationsMapping] = {}
+    def get_all_thermal_reserve_certifications(self) -> dict[AreaId, ThermalReserveCertificationMapping]:
+        result: dict[AreaId, ThermalReserveCertificationMapping] = {}
         for key, certification in self._thermal_reserve_certifications.items():
             reserve_id = ReserveDefinitionId(key.reserve_id)
             result.setdefault(key.area_id, {}).setdefault(reserve_id, {})[key.thermal_id] = certification

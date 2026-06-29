@@ -45,7 +45,10 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
+from antarest.study.business.model.thermal_reserve_certification_model import (
+    ThermalReserveCertification,
+    ThermalReserveCertificationMapping,
+)
 from antarest.study.business.model.user_model import UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
@@ -111,7 +114,6 @@ from antarest.study.dao.common import (
     StStorageConstraintSeriesMapping,
     StStorageSeriesMapping,
     ThermalId,
-    ThermalReserveCertificationsMapping,
     ThermalReserveSymmetriesMapping,
     ThermalSeriesMapping,
     XpansionCapacitiesMapping,
@@ -903,7 +905,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_all_reserve_needs()
 
     @override
-    def get_all_thermal_reserve_certifications(self) -> ThermalReserveCertificationsMapping:
+    def get_all_thermal_reserve_certifications(self) -> dict[AreaId, ThermalReserveCertificationMapping]:
         return self._adaptee.get_all_thermal_reserve_certifications()
 
     @override
