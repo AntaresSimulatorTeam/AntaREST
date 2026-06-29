@@ -639,6 +639,8 @@
   "study.modeling.renewables.select": "Renouvelable",
   "study.modeling.renewables.parameters": "Paramètres",
   "study.modeling.reserves": "Réserves",
+  "study.modeling.reserves.error.optimizationConfig": "Impossible de récupérer la configuration des réserves",
+  "study.modeling.reserves.readOnly.alert": "Les réserves sont en lecture seule. Pour les modifier, activez-les dans la configuration d'optimisation.",
   "study.modeling.reserves.needs": "Besoins",
   "study.modeling.reserves.needs.select": "Réserve",
   "study.modeling.reserves.needs.empty": "Créez une réserve pour définir ses besoins",
