@@ -12,9 +12,6 @@
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetry
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.dao.common import ThermalId
-from antarest.study.storage.variantstudy.model.command.remove_thermal_reserve_symmetries import (
-    RemoveThermalReserveSymmetries,
-)
 from antarest.study.storage.variantstudy.model.command.replace_thermal_reserve_symmetries import (
     ReplaceThermalReserveSymmetries,
 )
@@ -40,15 +37,3 @@ class ThermalReserveSymmetriesManager:
         )
         study.add_commands([command])
         return self.get_symmetries(study, area_id)[thermal_id]
-
-    def delete_symmetries(
-        self, study: StudyInterface, area_id: str, thermal_id: str, symmetries: list[ReserveSymmetry]
-    ) -> None:
-        command = RemoveThermalReserveSymmetries(
-            area_id=area_id,
-            thermal_id=thermal_id,
-            symmetries=symmetries,
-            command_context=self._command_context,
-            study_version=study.version,
-        )
-        study.add_commands([command])
