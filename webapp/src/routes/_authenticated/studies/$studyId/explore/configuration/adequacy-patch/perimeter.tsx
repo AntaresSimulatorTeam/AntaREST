@@ -13,7 +13,7 @@
  */
 
 import ViewWrapper from "@/components/page/ViewWrapper";
-import TableMode from "@/components/TableMode";
+import TableModeDataForm from "@/components/TableModeDataForm";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute(
@@ -27,7 +27,7 @@ function Perimeter() {
 
   return (
     <ViewWrapper>
-      <TableMode studyId={studyId} type="areas" columns={["adequacyPatchMode"]} />
+      <TableModeDataForm studyId={studyId} type="areas" columns={["adequacyPatchMode"]} />
     </ViewWrapper>
   );
 }

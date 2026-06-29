@@ -121,7 +121,7 @@ function TabsView({
             />
           )}
           {primaryActions && (
-            <Stack gap={1} sx={{ px: 1 }}>
+            <Stack spacing={1} sx={{ px: 1 }}>
               {primaryActions}
             </Stack>
           )}
@@ -143,7 +143,7 @@ function TabsView({
             ))}
           </TabList>
           {secondaryActions && (
-            <Stack gap={1} sx={{ pr: 1 }}>
+            <Stack spacing={1} sx={{ pr: 1 }}>
               {secondaryActions}
             </Stack>
           )}

@@ -28,5 +28,3 @@ export const outputSchema = z.object({
   archived: z.boolean(),
   storageType: storageTypeSchema,
 });
-
-export const outputsSchema = z.array(outputSchema);

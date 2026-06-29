@@ -84,7 +84,7 @@ function InformationView({ variantTree }: Props) {
 
   return (
     <ViewWrapper flex={{ gap: 2 }}>
-      <Stack flex={1} gap={1} sx={{ overflow: "auto" }}>
+      <Stack flex={1} spacing={1} sx={{ overflow: "auto" }}>
         <LauncherHistory />
         {!study.archived && (
           <Stack direction="column" sx={{ height: 1, flex: 1, overflow: "hidden" }}>
@@ -99,8 +99,8 @@ function InformationView({ variantTree }: Props) {
 
       <Box>
         <CustomScrollbar>
-          <Stack gap={1} justifyContent="space-between">
-            <Stack gap={1}>
+          <Stack spacing={1} justifyContent="space-between">
+            <Stack spacing={1}>
               {!study.archived && (
                 <>
                   <RouterButton

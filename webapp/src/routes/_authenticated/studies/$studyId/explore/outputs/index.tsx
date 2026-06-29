@@ -134,7 +134,7 @@ function Outputs() {
 
   const renderCreationDate = (job: Job) => {
     return (
-      <Stack gap={1}>
+      <Stack spacing={1}>
         <CalendarTodayIcon fontSize="extra-small" />
         {convertUTCToLocalTime(job.creationDate)}
       </Stack>
@@ -143,7 +143,7 @@ function Outputs() {
 
   const renderCompletionDate = (output: OutputWithJob) => {
     return (
-      <Stack gap={1}>
+      <Stack spacing={1}>
         <EventAvailableIcon fontSize="extra-small" />
         {
           // An output should always have a completed job — this is just a TS limitation caused
@@ -162,7 +162,7 @@ function Outputs() {
     const isDisabled = output.archived || isOutputOptimistic;
 
     return (
-      <Stack gap={2}>
+      <Stack spacing={2}>
         {isOutputOptimistic && <CircularProgress size="1rem" color="inherit" />}
         <RouterLink
           color="inherit"
@@ -221,14 +221,14 @@ function Outputs() {
               runningJobs.map((job) => (
                 <TableRow key={job.id}>
                   <TableCell component="th" scope="row">
-                    <Stack gap={2}>
+                    <Stack spacing={2}>
                       <CircularProgress size="1rem" color="inherit" />
                       <Typography>{job.id}</Typography>
                     </Stack>
                   </TableCell>
                   <TableCell align="right">{job.owner?.name}</TableCell>
                   <TableCell align="right">
-                    <Stack gap={2} justifyContent="flex-end">
+                    <Stack spacing={2} justifyContent="flex-end">
                       {renderCreationDate(job)}
                     </Stack>
                   </TableCell>
@@ -249,7 +249,7 @@ function Outputs() {
                   </TableCell>
                   <TableCell align="right">{output.job?.owner?.name}</TableCell>
                   <TableCell align="right">
-                    <Stack gap={2} justifyContent="flex-end">
+                    <Stack spacing={2} justifyContent="flex-end">
                       {output.job && renderCreationDate(output.job)}
                       {renderCompletionDate(output)}
                     </Stack>
