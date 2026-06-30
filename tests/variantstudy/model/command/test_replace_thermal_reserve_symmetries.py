@@ -26,63 +26,30 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 def _set_up(dao: StudyDao, command_context: CommandContext) -> None:
     version = dao.get_version()
-    # Create 2 areas
+    # Create area `fr`
     cmd1 = CreateArea(area_name="FR", command_context=command_context, study_version=version)
-    cmd2 = CreateArea(area_name="de", command_context=command_context, study_version=version)
     output = cmd1.apply(dao)
     assert output.status
-    output = cmd2.apply(dao)
-    assert output.status
-    # Create 2 thermals inside area `fr` and 1 inside area `de`
-    cmd = CreateCluster(
-        area_id="fr",
-        parameters=ThermalClusterCreation(name="th1"),
-        command_context=command_context,
-        study_version=version,
-    )
-    output = cmd.apply(dao)
-    assert output.status
-    cmd = CreateCluster(
-        area_id="fr",
-        parameters=ThermalClusterCreation(name="th2"),
-        command_context=command_context,
-        study_version=version,
-    )
-    output = cmd.apply(dao)
-    assert output.status
-    cmd = CreateCluster(
-        area_id="de",
-        parameters=ThermalClusterCreation(name="th_de"),
-        command_context=command_context,
-        study_version=version,
-    )
-    output = cmd.apply(dao)
-    assert output.status
-    # Create 2 reserves inside area `fr` and 1 inside area `de`
-    cmd = CreateReserveDefinition(
-        area_id="fr",
-        parameters=ReserveDefinitionCreation(name="r1", type=ReserveType.UP),
-        command_context=command_context,
-        study_version=version,
-    )
-    output = cmd.apply(dao)
-    assert output.status
-    cmd = CreateReserveDefinition(
-        area_id="fr",
-        parameters=ReserveDefinitionCreation(name="r2", type=ReserveType.DOWN),
-        command_context=command_context,
-        study_version=version,
-    )
-    output = cmd.apply(dao)
-    assert output.status
-    cmd = CreateReserveDefinition(
-        area_id="de",
-        parameters=ReserveDefinitionCreation(name="reserve_DE", type=ReserveType.UP),
-        command_context=command_context,
-        study_version=version,
-    )
-    output = cmd.apply(dao)
-    assert output.status
+    # Create 2 thermals inside area `fr`
+    for thermal_name in ["th1", "th2"]:
+        cmd = CreateCluster(
+            area_id="fr",
+            parameters=ThermalClusterCreation(name=thermal_name),
+            command_context=command_context,
+            study_version=version,
+        )
+        output = cmd.apply(dao)
+        assert output.status
+    # Create 4 reserves inside area `fr`
+    for reserve_name in ["r1", "r2", "r3", "r4"]:
+        cmd = CreateReserveDefinition(
+            area_id="fr",
+            parameters=ReserveDefinitionCreation(name=reserve_name, type=ReserveType.UP),
+            command_context=command_context,
+            study_version=version,
+        )
+        output = cmd.apply(dao)
+        assert output.status
 
 
 def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> None:
@@ -104,6 +71,19 @@ def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> No
     # Check the symmetries
     result = dao_10_0.get_all_thermal_reserve_symmetries()
     assert result == {"fr": {"th1": [["r1", "r2"]]}}
+
+    cmd = ReplaceThermalReserveSymmetries(
+        area_id="fr",
+        symmetries={"th1": [["r2", "r3"], ["r4", "r1"]], "th2": [["r1", "r2"]]},
+        command_context=command_context,
+        study_version=STUDY_VERSION_10_0,
+    )
+    output = cmd.apply(dao_10_0)
+    assert output.status
+
+    # Check the symmetries
+    result = dao_10_0.get_all_thermal_reserve_symmetries()
+    assert result == {"fr": {"th1": [["r2", "r3"], ["r1", "r4"]], "th2": [["r1", "r2"]]}}
 
 
 def test_error_cases(dao_10_0: StudyDao, command_context: CommandContext) -> None:
