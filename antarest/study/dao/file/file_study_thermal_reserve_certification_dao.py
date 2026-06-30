@@ -25,6 +25,7 @@ from antarest.study.dao.common import AreaId
 from antarest.study.dao.file.common import (
     check_area_exists,
     get_thermal_reserve_participations_as_yaml_content,
+    get_thermal_reserve_path,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal_reserve_certifications import (
@@ -109,3 +110,6 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
                 yaml_content["participations"].append(
                     {"cluster": thermal_id, "certifications": serialize_thermal_reserve_certifications(certifications)}
                 )
+
+            # Saves the content into the YAML file
+            file_study.tree.save(yaml_content, get_thermal_reserve_path(area_id))
