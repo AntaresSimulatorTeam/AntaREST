@@ -51,14 +51,14 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
     def get_all_thermal_reserve_certifications(self) -> dict[AreaId, ThermalReserveCertificationMapping]:
         result = {}
         for area in self.get_file_study().config.areas:
-            certifications = self.get_all_thermal_reserve_certifications_for_area(area)
+            certifications = self.get_thermal_reserve_certifications(area)
             if certifications:
                 # Only return areas with certifications to have the same behavior as the DB Dao.
                 result[area] = certifications
         return result
 
     @override
-    def get_all_thermal_reserve_certifications_for_area(self, area_id: AreaId) -> ThermalReserveCertificationMapping:
+    def get_thermal_reserve_certifications(self, area_id: AreaId) -> ThermalReserveCertificationMapping:
         data = get_thermal_reserve_participations_as_yaml_content(area_id, self.get_file_study())
         return parse_thermal_reserves_certifications(data)
 
@@ -83,7 +83,7 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
                         raise ThermalClusterNotFound(area_id, thermal_id)
 
             # Save the given certifications
-            all_certifications = self.get_all_thermal_reserve_certifications_for_area(area_id)
+            all_certifications = self.get_thermal_reserve_certifications(area_id)
             for reserve_id, value in reserves_dict.items():
                 if reserve_id in all_certifications:
                     # First, save certifications for existing reserves

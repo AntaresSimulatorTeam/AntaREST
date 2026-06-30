@@ -23,7 +23,7 @@ class ReadOnlyThermalReserveCertificationDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_all_thermal_reserve_certifications_for_area(self, area_id: AreaId) -> ThermalReserveCertificationMapping:
+    def get_thermal_reserve_certifications(self, area_id: AreaId) -> ThermalReserveCertificationMapping:
         raise NotImplementedError()
 
 

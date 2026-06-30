@@ -22,12 +22,12 @@ def parse_thermal_reserves_symmetries(data: dict[str, Any]) -> dict[str, list[Re
         thermal_id = transform_name_to_id(content["cluster"])
         if thermal_id in result:
             raise ValueError(f"Duplicate thermal cluster id: {thermal_id}")
-        result[thermal_id] = []
         for symmetry in content.get("symmetries", []):
             reserve_ids = [ReserveDefinitionId(s) for s in symmetry["reserves"]]
-            result[thermal_id].append(reserve_ids)
+            result.setdefault(thermal_id, []).append(reserve_ids)
 
-        # Merge symmetries
+    # Merge symmetries
+    for thermal_id in result:
         result[thermal_id] = merge_symmetries(result[thermal_id])
 
     return result

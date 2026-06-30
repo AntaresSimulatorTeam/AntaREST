@@ -909,10 +909,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_all_thermal_reserve_certifications()
 
     @override
-    def get_all_thermal_reserve_certifications_for_area(
+    def get_thermal_reserve_certifications(
         self, area_id: AreaId
     ) -> dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]]:
-        return self._adaptee.get_all_thermal_reserve_certifications_for_area(area_id)
+        return self._adaptee.get_thermal_reserve_certifications(area_id)
 
     @override
     def get_all_thermal_reserve_symmetries(self) -> ThermalReserveSymmetriesMapping:

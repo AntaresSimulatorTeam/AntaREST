@@ -314,7 +314,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
             return
 
         thermal_exists = False
-        all_area_certifications = self.get_impl().get_all_thermal_reserve_certifications_for_area(area_id)
+        all_area_certifications = self.get_impl().get_thermal_reserve_certifications(area_id)
         for reserve_id, thermal_dict in all_area_certifications.items():
             for cluster_id in thermal_dict:
                 if cluster_id == thermal_id:

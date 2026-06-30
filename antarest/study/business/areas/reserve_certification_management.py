@@ -25,7 +25,7 @@ class ReserveCertificationsManager:
         self._command_context = command_context
 
     def get_certifications(self, study: StudyInterface, area_id: str) -> ReserveCertifications:
-        thermals = study.get_study_dao().get_all_thermal_reserve_certifications_for_area(area_id)
+        thermals = study.get_study_dao().get_thermal_reserve_certifications(area_id)
         return ReserveCertifications(thermals=thermals)
 
     def set_certifications(

@@ -93,7 +93,7 @@ def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> No
     assert output.status
 
     # Check the certifications
-    result = dao_10_0.get_all_thermal_reserve_certifications_for_area("fr")
+    result = dao_10_0.get_thermal_reserve_certifications("fr")
     assert result == new_certifications
 
 

@@ -1716,7 +1716,7 @@ class InMemoryStudyDao(StudyDao):
         return result
 
     @override
-    def get_all_thermal_reserve_certifications_for_area(
+    def get_thermal_reserve_certifications(
         self, area_id: AreaId
     ) -> dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]]:
         result: dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]] = {}

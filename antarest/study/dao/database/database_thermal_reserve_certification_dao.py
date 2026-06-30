@@ -86,7 +86,7 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
         return result
 
     @override
-    def get_all_thermal_reserve_certifications_for_area(self, area_id: AreaId) -> ThermalReserveCertificationMapping:
+    def get_thermal_reserve_certifications(self, area_id: AreaId) -> ThermalReserveCertificationMapping:
         stmt = select(_TABLE).where((_TABLE.c.study_id == self._study_id) & (_TABLE.c.area_id == area_id))
         rows = self._db_session.execute(stmt).fetchall()
         result: ThermalReserveCertificationMapping = {}
