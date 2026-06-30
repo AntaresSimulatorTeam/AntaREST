@@ -133,4 +133,6 @@ def test_error_cases(dao_10_0: StudyDao, command_context: CommandContext) -> Non
     )
     output = cmd.apply(dao_10_0)
     assert not output.status
-    assert "Thermal clusters not found: {'fr': {'fake_thermal'}}" in output.message
+    expected_msg_db = "Thermal clusters not found: {'fr': {'fake_thermal'}}"
+    expected_msg_fs = "Thermal cluster 'fake_thermal' not found in area 'fr'"
+    assert expected_msg_db in output.message or expected_msg_fs in output.message
