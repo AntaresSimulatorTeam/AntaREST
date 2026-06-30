@@ -121,26 +121,26 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
         if invalid_areas := set(data) - existing_ids:
             raise AreaNotFound(*invalid_areas)
 
-        # Checks if some thermals are missing
-        all_existing_thermals = self.get_impl().get_all_thermals()
-        invalid_thermal_dict = {}
-        for area_id in data:
-            if invalid_thermals := set(data[area_id]) - set(all_existing_thermals.get(area_id, [])):
-                invalid_thermal_dict[area_id] = invalid_thermals
-
-        if invalid_thermal_dict:
-            raise ThermalClustersNotFound(invalid_thermal_dict) from exc
-
         # Checks if some reserve definitions are missing
         all_existing_reserves = self.get_impl().get_all_reserve_definitions()
         invalid_reserves_dict = {}
-        for area_id, thermal_dict in data.items():
-            for reserves_dict in thermal_dict.values():
-                if invalid_reserves := set(reserves_dict) - set(all_existing_reserves.get(area_id, {})):
-                    invalid_reserves_dict[area_id] = invalid_reserves
+        for area_id, reserves_dict in data.items():
+            if invalid_reserves := set(reserves_dict) - set(all_existing_reserves.get(area_id, {})):
+                invalid_reserves_dict[area_id] = invalid_reserves
 
         if invalid_reserves_dict:
             raise ReserveDefinitionsNotFound(invalid_reserves_dict)  # type: ignore
 
-        # All reserves exist. It means that the DB table does not contain the information.
+        # Checks if some thermals are missing
+        all_existing_thermals = self.get_impl().get_all_thermals()
+        invalid_thermal_dict = {}
+        for area_id, reserves_dict in data.items():
+            for thermal_ids in reserves_dict.values():
+                if invalid_thermals := set(thermal_ids) - set(all_existing_thermals.get(area_id, [])):
+                    invalid_thermal_dict[area_id] = invalid_thermals
+
+        if invalid_thermal_dict:
+            raise ThermalClustersNotFound(invalid_thermal_dict) from exc
+
+        # All objects exist. It means that the DB table does not contain the information.
         raise ValueError("One of the thermal reserve certification table is not filled as it should") from exc
