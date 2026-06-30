@@ -18,7 +18,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.core.exceptions import AreaNotFound
+from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetry, merge_symmetries
 from antarest.study.dao.api.thermal_reserve_symmetries_dao import ThermalReserveSymmetriesDao
 from antarest.study.dao.common import (
@@ -127,4 +127,4 @@ class DatabaseThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao):
                 for symmetry in symmetries:
                     for reserve_id in symmetry:
                         if reserve_id not in reserve_ids[area_id]:
-                            raise ValueError(f"Invalid reserve id {reserve_id} for area {area_id}")
+                            raise ReserveDefinitionNotFound(area_id, reserve_id)

@@ -113,5 +113,14 @@ def test_error_cases(dao_10_0: StudyDao, command_context: CommandContext) -> Non
     assert "Area is not found: 'fake_area'" in output.message
 
     # Wrong reserve
+    cmd = ReplaceThermalReserveSymmetries(
+        area_id="fr",
+        symmetries={"th1": [["fake_reserve", "r2"]]},
+        command_context=command_context,
+        study_version=STUDY_VERSION_10_0,
+    )
+    output = cmd.apply(dao_10_0)
+    assert not output.status
+    assert "Reserve definition 'fake_reserve' not found in area 'fr'" in output.message
 
     # Wrong cluster
