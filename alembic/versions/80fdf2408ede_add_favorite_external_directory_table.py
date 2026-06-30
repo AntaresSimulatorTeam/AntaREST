@@ -21,7 +21,7 @@ def upgrade():
                 sa.Column('workspace', sa.String(length=255), nullable=False),
                 sa.Column('path', sa.String(length=255), nullable=False),
         sa.Column('user_id', sa.Integer(), nullable=False),
-                sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+                sa.ForeignKeyConstraint(['user_id'], ['identities.id'], ),
                 sa.PrimaryKeyConstraint('workspace', 'path', 'user_id')
     )
 

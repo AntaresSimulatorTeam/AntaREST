@@ -56,9 +56,12 @@ def test_add_favorite_external_directory_success_two_users_added_one_and_same_fa
     response = admin_client.get("/v1/favorites/external-directories").json()
     assert response == []
 
+    expected_favorite_external_directory["path"] = path.as_posix()
+
     # Here, this new user is adding the same favorite external directory as the first user, so he could see it
     admin_client.post("/v1/favorites/external-directories", params=expected_favorite_external_directory)
     response = admin_client.get("/v1/favorites/external-directories").json()
+    expected_favorite_external_directory["path"] = str(path)
     assert response == [expected_favorite_external_directory]
 
 
