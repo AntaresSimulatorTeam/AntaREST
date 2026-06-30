@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
+from antarest.core.exceptions import ReserveDefinitionsNotFound
 from antarest.study.business.model.thermal_reserve_certification_model import (
     ThermalReserveCertificationMapping,
 )
@@ -59,14 +60,23 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
     def save_thermal_reserve_certifications(self, data: dict[AreaId, ThermalReserveCertificationMapping]) -> None:
         file_study = self.get_file_study()
 
-        for area_id, thermal_dict in data.items():
-            # Verify area and thermals exist
+        for area_id, reserves_dict in data.items():
+            # Verify that the area exists
             check_area_exists(file_study.config, area_id)
-            for thermal_id in thermal_dict:
-                self.get_impl().thermal_exists(area_id, thermal_id)
 
+            # Verify that the given reserves exist
+            existing_reserve_ids = file_study.config.areas[area_id].reserves
+            if invalid_reserves := set(reserves_dict) - set(existing_reserve_ids):
+                raise ReserveDefinitionsNotFound({area_id: invalid_reserves})
+
+            # Verify that the given thermals exist
+            for thermal_ids in reserves_dict.values():
+                for thermal_id in thermal_ids:
+                    self.get_impl().thermal_exists(area_id, thermal_id)
+
+            # Save the given certifications
             all_certifications = self.get_all_thermal_reserve_certifications_for_area(area_id)
-            for thermal_id, value in thermal_dict.items():
+            for thermal_id, value in reserves_dict.items():
                 if thermal_id in all_certifications:
                     # First, save certifications for existing thermals
                     for reserve_id in value:
