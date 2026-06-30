@@ -25,6 +25,7 @@ from antarest.core.config import (
     SlurmConfig,
     StorageConfig,
 )
+from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLWriter
 
 
 @pytest.fixture
@@ -229,3 +230,14 @@ def test_output_storage_config_validation_errors() -> None:
         ValueError, match=re.escape("You cannot set v2 storage as your default storage and not enable it")
     ):
         OutputStorageConfig.model_validate(data)
+
+
+def test_parse_security_group_mapping(tmp_path: Path) -> None:
+    """Mimick production config where we declare the groups of the app"""
+    yaml_path = tmp_path / "config.yaml"
+    writer = YAMLWriter()
+    data = {"security": {"external_auth": {"group_mapping": {1: "espace_commun", "00001188": "drd"}}}}
+    writer.write(data, yaml_path)
+
+    config = Config.from_yaml_file(yaml_path)
+    assert config.security.external_auth.group_mapping == {1: "espace_commun", "00001188": "drd"}
