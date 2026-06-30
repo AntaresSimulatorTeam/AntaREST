@@ -55,7 +55,7 @@ class ExternalAuthConfig(ConfigBaseModel):
     url: str | None = None
     default_group_role: RoleType = RoleType.READER
     add_ext_groups: bool = False
-    group_mapping: dict[str | int, str] = Field(default_factory=dict)
+    group_mapping: dict[str, str] = Field(default_factory=dict)
 
 
 class SecurityConfig(ConfigBaseModel):
