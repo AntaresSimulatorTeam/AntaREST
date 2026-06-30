@@ -60,7 +60,7 @@ def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> No
     _set_up(dao_10_0, command_context)
 
     # Get reserves at first to check the current state
-    result = dao_10_0.get_all_thermal_reserve_symmetries()
+    result = dao_10_0.get_all_thermal_reserve_certifications()
     assert result == {}
 
     cmd = ReplaceThermalReserveSymmetries(

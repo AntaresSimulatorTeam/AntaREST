@@ -50,7 +50,10 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
     def get_all_thermal_reserve_certifications(self) -> dict[AreaId, ThermalReserveCertificationMapping]:
         result = {}
         for area in self.get_file_study().config.areas:
-            result[area] = self.get_all_thermal_reserve_certifications_for_area(area)
+            certifications = self.get_all_thermal_reserve_certifications_for_area(area)
+            if certifications:
+                # Only return areas with certifications to have the same behavior as the DB Dao.
+                result[area] = certifications
         return result
 
     @override
