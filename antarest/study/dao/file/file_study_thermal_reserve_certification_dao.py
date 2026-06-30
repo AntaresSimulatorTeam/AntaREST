@@ -66,7 +66,8 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
 
             # Verify that the given reserves exist
             existing_reserve_ids = file_study.config.areas[area_id].reserves
-            if invalid_reserves := set(reserves_dict) - set(existing_reserve_ids):
+            invalid_reserves: set[str] = set(reserves_dict) - set(existing_reserve_ids)  # type: ignore
+            if invalid_reserves:
                 raise ReserveDefinitionsNotFound({area_id: invalid_reserves})
 
             # Verify that the given thermals exist
