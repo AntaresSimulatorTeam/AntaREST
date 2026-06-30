@@ -67,6 +67,12 @@ from antarest.study.storage.variantstudy.model.command.replace_hydro_allocation 
 from antarest.study.storage.variantstudy.model.command.replace_hydro_correlation import ReplaceHydroCorrelation
 from antarest.study.storage.variantstudy.model.command.replace_layer_areas import ReplaceLayerAreas
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+from antarest.study.storage.variantstudy.model.command.replace_thermal_reserve_certifications import (
+    ReplaceThermalReserveCertifications,
+)
+from antarest.study.storage.variantstudy.model.command.replace_thermal_reserve_symmetries import (
+    ReplaceThermalReserveSymmetries,
+)
 from antarest.study.storage.variantstudy.model.command.replace_user_resource import ReplaceUserResource
 from antarest.study.storage.variantstudy.model.command.replace_xpansion_adequacy_criterion import (
     ReplaceXpansionAdequacyCriterion,
@@ -180,6 +186,8 @@ COMMAND_MAPPING: dict[str, type[ICommand]] = {
     CommandName.CREATE_RESERVE_DEFINITION.value: CreateReserveDefinition,
     CommandName.UPDATE_RESERVE_DEFINITIONS.value: UpdateReserveDefinitions,
     CommandName.REMOVE_RESERVE_DEFINITIONS.value: RemoveReserveDefinitions,
+    CommandName.REPLACE_THERMAL_RESERVE_SYMMETRIES.value: ReplaceThermalReserveSymmetries,
+    CommandName.REPLACE_THERMAL_RESERVE_CERTIFICATIONS.value: ReplaceThermalReserveCertifications,
 }
 
 
