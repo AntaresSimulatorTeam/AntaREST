@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import http
-from pathlib import Path
+from pathlib import PurePosixPath
 
 from fastapi import HTTPException
 
@@ -155,7 +155,7 @@ class FavoriteExternalDirectoryService:
 
             if (workspace_conf.path / directory_path).exists():
                 favorite_external_directory = FavoriteExternalDirectory(
-                    path=str(Path(directory_path)), workspace=workspace, user_id=get_user_impersonator()
+                    path=PurePosixPath(directory_path).as_posix(), workspace=workspace, user_id=get_user_impersonator()
                 )
                 dto = self.favorite_external_directory_repository.save(favorite_external_directory).to_dto()
                 return dto

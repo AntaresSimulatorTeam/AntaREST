@@ -27,7 +27,7 @@ def test_add_favorite_external_directory_success_added_one_favorite(admin_client
     actual_favorite_external_directory = response.json()
 
     assert actual_favorite_external_directory["workspace"] == workspace_name
-    assert actual_favorite_external_directory["path"] == str(path)
+    assert actual_favorite_external_directory["path"] == path.as_posix()
 
 
 def test_add_favorite_external_directory_success_two_users_added_one_and_same_favorite(
@@ -44,9 +44,9 @@ def test_add_favorite_external_directory_success_two_users_added_one_and_same_fa
     response = admin_client.post("/v1/favorites/external-directories", params=expected_favorite_external_directory)
     assert response.status_code == 201
     actual_favorite_external_directory = response.json()
-    expected_favorite_external_directory["path"] = str(path)
+    expected_favorite_external_directory["path"] = path.as_posix()
     assert actual_favorite_external_directory["workspace"] == workspace_name
-    assert actual_favorite_external_directory["path"] == str(path)
+    assert actual_favorite_external_directory["path"] == path.as_posix()
     response = admin_client.get("/v1/favorites/external-directories").json()
     assert response == [expected_favorite_external_directory]
 
@@ -61,7 +61,7 @@ def test_add_favorite_external_directory_success_two_users_added_one_and_same_fa
     # Here, this new user is adding the same favorite external directory as the first user, so he could see it
     admin_client.post("/v1/favorites/external-directories", params=expected_favorite_external_directory)
     response = admin_client.get("/v1/favorites/external-directories").json()
-    expected_favorite_external_directory["path"] = str(path)
+    expected_favorite_external_directory["path"] = path.as_posix()
     assert response == [expected_favorite_external_directory]
 
 
@@ -111,7 +111,7 @@ def test_get_favorite_external_directory_success_get_one_favorite(admin_client: 
     actual_favorite_list = admin_client.get("/v1/favorites/external-directories").json()
     assert len(actual_favorite_list) == 1
     assert actual_favorite_list[0]["workspace"] == workspace_name
-    assert actual_favorite_list[0]["path"] == str(path)
+    assert actual_favorite_list[0]["path"] == path.as_posix()
 
 
 def test_get_favorite_external_directory_success_added_two_favorite(admin_client: TestClient, tmp_path: Path):
@@ -131,8 +131,8 @@ def test_get_favorite_external_directory_success_added_two_favorite(admin_client
     assert response_2.status_code == 201
     actual_favorite_list = admin_client.get("/v1/favorites/external-directories").json()
     assert len(actual_favorite_list) == 2
-    expected_favorite_external_directory_1["path"] = str(path_1)
-    expected_favorite_external_directory_2["path"] = str(path_2)
+    expected_favorite_external_directory_1["path"] = path_1.as_posix()
+    expected_favorite_external_directory_2["path"] = path_2.as_posix()
     assert actual_favorite_list == [expected_favorite_external_directory_1, expected_favorite_external_directory_2]
 
 
@@ -147,7 +147,7 @@ def test_delete_favorite_external_directory_success_deleted_one_favorite(admin_c
     response = admin_client.post("/v1/favorites/external-directories", params=expected_favorite_external_directory)
     assert response.status_code == 201
     actual_favorite_list = admin_client.get("/v1/favorites/external-directories").json()
-    expected_favorite_external_directory["path"] = str(path)
+    expected_favorite_external_directory["path"] = path.as_posix()
     assert actual_favorite_list == [expected_favorite_external_directory]
 
     admin_client.delete("/v1/favorites/external-directories", params=expected_favorite_external_directory)
