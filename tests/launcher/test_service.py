@@ -22,6 +22,7 @@ from uuid import uuid4
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
+from pydantic import ValidationError
 from sqlalchemy import create_engine
 
 from antarest.core.config import (
@@ -518,7 +519,7 @@ class TestLauncherService:
                 id="default-config-not-found",
                 marks=pytest.mark.xfail(
                     reason="Default launcher id default not found in launcher configs",
-                    raises=InvalidConfigurationError,
+                    raises=ValidationError,
                     strict=True,
                 ),
             ),
@@ -986,7 +987,7 @@ class TestLauncherService:
                 id="slurm launcher with no config",
                 marks=pytest.mark.xfail(
                     reason="Configuration is not available for the slurm launcher",
-                    raises=InvalidConfigurationError,
+                    raises=ValidationError,
                     strict=True,
                 ),
             ),

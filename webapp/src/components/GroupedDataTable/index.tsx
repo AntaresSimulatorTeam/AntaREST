@@ -72,6 +72,7 @@ export interface GroupedDataTableProps<
   onNameClick?: (row: TData) => void;
   nameLinkOptions?: (row: TData) => ToOptions;
   onDataChange?: (data: TData[]) => void;
+  readOnly?: boolean;
   isLoading?: boolean;
   deleteConfirmationMessage?: string | ((rows: TData[]) => string);
   fillPendingRow?: (
@@ -97,6 +98,7 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
   onNameClick,
   nameLinkOptions,
   onDataChange,
+  readOnly = false,
   isLoading,
   deleteConfirmationMessage,
   fillPendingRow,
@@ -106,7 +108,7 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
   const [tableData, setTableData] = useState(data);
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const callbacksRef = useUpdatedRef({ onNameClick, nameLinkOptions });
+  const callbacksRef = useUpdatedRef({ onNameClick, nameLinkOptions, readOnly });
   const pendingRows = useRef<Array<RowData<TGroups[number]>>>([]);
   const { createOps, deleteOps, totalOps } = useOperationInProgressCount();
   const { isDarkMode } = useThemeColorScheme();
@@ -140,9 +142,9 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
         filterVariant: "autocomplete",
         filterSelectOptions: existingNames,
         Cell: ({ renderedCellValue, row }) => {
-          const { onNameClick, nameLinkOptions } = callbacksRef.current;
+          const { onNameClick, nameLinkOptions, readOnly } = callbacksRef.current;
 
-          if (isPendingRow(row.original)) {
+          if (isPendingRow(row.original) || readOnly) {
             return renderedCellValue;
           }
 
@@ -219,6 +221,10 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
     positionToolbarAlertBanner: "none",
     // Rows
     muiTableBodyRowProps: ({ row }) => {
+      if (readOnly) {
+        return {};
+      }
+
       const isPending = isPendingRow(row.original);
 
       return {
@@ -254,6 +260,7 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
             startIcon={<AddCircleOutlineIcon />}
             variant="contained"
             onClick={() => setOpenDialog("add")}
+            disabled={readOnly}
           >
             {t("button.add")}
           </Button>
@@ -263,7 +270,7 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
             startIcon={<ContentCopyIcon />}
             variant="outlined"
             onClick={() => setOpenDialog("duplicate")}
-            disabled={table.getSelectedRowModel().rows.length !== 1}
+            disabled={readOnly || table.getSelectedRowModel().rows.length !== 1}
           >
             {t("global.duplicate")}
           </Button>
@@ -274,7 +281,7 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
             color="error"
             variant="outlined"
             onClick={() => setOpenDialog("delete")}
-            disabled={table.getSelectedRowModel().rows.length === 0}
+            disabled={readOnly || table.getSelectedRowModel().rows.length === 0}
           >
             {t("global.delete")}
           </Button>

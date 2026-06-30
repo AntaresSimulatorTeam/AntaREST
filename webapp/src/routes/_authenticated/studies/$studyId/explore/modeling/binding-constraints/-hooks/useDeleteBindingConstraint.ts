@@ -54,7 +54,7 @@ function useDeleteBindingConstraint() {
       const nextConstraint = prevList
         ? getNextItemAfterDeletion(
             prevList,
-            prevList.findIndex((c) => c.id === constraintToDeleteId),
+            prevList.findIndex((item) => item.id === constraintToDeleteId),
           )
         : undefined;
 
@@ -75,19 +75,16 @@ function useDeleteBindingConstraint() {
       const { constraintId } = variables;
       const { constraintToDelete } = onMutateResult || {};
 
-      if (constraintToDelete) {
-        queryClient.setQueryData(queryListKey, (old = []) => [...old, constraintToDelete]);
-      }
-
       enqueueErrorSnackbar(
         t("study.modeling.bindingConst.deleteBindingConstraint.error", {
-          name:
-            constraintToDelete?.name ||
-            queryClient.getQueryData(queryListKey)?.find((c) => c.id === constraintId)?.name ||
-            constraintId,
+          name: constraintToDelete?.name || constraintId,
         }),
         error,
       );
+
+      if (constraintToDelete) {
+        queryClient.setQueryData(queryListKey, (old = []) => [...old, constraintToDelete]);
+      }
     },
   });
 

@@ -14,80 +14,68 @@
 
 import DataGridSkeleton from "@/components/DataGridSkeleton";
 import usePromise from "@/hooks/usePromise";
-import { getTableMode, setTableMode } from "@/services/api/studies/tableMode";
-import type {
-  TableData,
-  TableModeColumnsForType,
-  TableModeType,
-} from "@/services/api/studies/tableMode/types";
-import type { StudyMetadata } from "@/types/types";
+import { getTableModeData, setTableModeData } from "@/services/api/studies/tableMode";
+import type { TableModeData } from "@/services/api/studies/tableMode/types";
+import type { Study } from "@/services/api/studies/types";
+import type { TableModeColumnsForType, TableModeType } from "@/services/api/tablemode/types";
 import type { GridColumn } from "@glideapps/glide-data-grid";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { Box, Typography } from "@mui/material";
 import startCase from "lodash/startCase";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import DataGridForm, { type DataGridFormProps } from "./DataGridForm";
 import type { SubmitHandlerPlus } from "./Form/types";
 import EmptyView from "./page/EmptyView";
 import UsePromiseCond from "./utils/UsePromiseCond";
 
-export interface TableModeProps<T extends TableModeType = TableModeType> {
-  studyId: StudyMetadata["id"];
+export interface TableModeDataFormProps<T extends TableModeType = TableModeType> {
+  studyId: Study["id"];
   type: T;
   columns: TableModeColumnsForType<T>;
   name?: string;
   extraActions?: DataGridFormProps["extraActions"];
 }
 
-function TableMode<T extends TableModeType>({
+function TableModeDataForm<T extends TableModeType>({
   studyId,
   type,
   columns,
   name,
   extraActions,
-}: TableModeProps<T>) {
+}: TableModeDataFormProps<T>) {
   const { t } = useTranslation();
-  const [gridColumns, setGridColumns] = useState<DataGridFormProps<TableData>["columns"]>([]);
   const columnsDep = columns.join(",");
 
   const res = usePromise(
-    () => getTableMode({ studyId, tableType: type, columns }),
+    () => getTableModeData({ studyId, tableType: type, columns }),
     [studyId, type, columnsDep],
   );
 
   // Filter columns based on the data received, because the API may return
   // fewer columns than requested depending on the study root
-  useEffect(() => {
+  const gridColumns = useMemo<DataGridFormProps<TableModeData>["columns"]>(() => {
     const data = res.data || {};
     const rowNames = Object.keys(data);
 
     if (rowNames.length === 0) {
-      setGridColumns([]);
-      return;
+      return [];
     }
 
     const columnNames = Object.keys(data[rowNames[0]]);
 
-    setGridColumns(
-      columns
-        .filter((col) => columnNames.includes(col))
-        .map((col) => {
-          const title = startCase(col);
-          return {
-            title,
-            id: col,
-          } satisfies GridColumn;
-        }),
-    );
+    return columns
+      .filter((col) => columnNames.includes(col))
+      .map((col) => ({ title: startCase(col), id: col }) satisfies GridColumn);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [res.data, columnsDep]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = (data: SubmitHandlerPlus<TableData>) => {
-    return setTableMode({ studyId, tableType: type, data: data.dirtyValues });
+  const handleSubmit = (data: SubmitHandlerPlus<TableModeData>) => {
+    return setTableModeData({ studyId, tableType: type, data: data.dirtyValues });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -129,4 +117,4 @@ function TableMode<T extends TableModeType>({
   );
 }
 
-export default TableMode;
+export default TableModeDataForm;
