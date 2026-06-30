@@ -51,7 +51,10 @@ class FileStudyThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao, ABC):
     def get_all_thermal_reserve_symmetries(self) -> ThermalReserveSymmetriesMapping:
         result = {}
         for area in self.get_file_study().config.areas:
-            result[area] = self.get_thermal_reserve_symmetries(area)
+            symmetries = self.get_thermal_reserve_symmetries(area)
+            if symmetries:
+                # Only return areas with symmetries to have the same behavior as the DB Dao.
+                result[area] = symmetries
         return result
 
     @override

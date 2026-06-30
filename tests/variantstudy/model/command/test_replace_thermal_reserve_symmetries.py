@@ -88,6 +88,10 @@ def _set_up(dao: StudyDao, command_context: CommandContext) -> None:
 def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> None:
     _set_up(dao_10_0, command_context)
 
+    # Get reserves at first to check the current state
+    result = dao_10_0.get_all_thermal_reserve_symmetries()
+    assert result == {}
+
 
 def test_error_cases(dao_10_0: StudyDao, command_context: CommandContext) -> None:
     _set_up(dao_10_0, command_context)
