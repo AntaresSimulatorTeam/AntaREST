@@ -152,7 +152,7 @@ class ReserveDefinitionNotFound(HTTPException):
 
 class ReserveDefinitionsNotFound(HTTPException):
     def __init__(self, invalid_reserve_ids: dict[str, set[str]]):
-        msg = f"Reserves not found: {invalid_reserve_ids}"
+        msg = f"Reserve definitions not found: {invalid_reserve_ids}"
         super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
