@@ -18,6 +18,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
+from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetry, merge_symmetries
 from antarest.study.dao.api.thermal_reserve_symmetries_dao import ThermalReserveSymmetriesDao
 from antarest.study.dao.common import (
@@ -120,6 +121,8 @@ class DatabaseThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao):
         So we have to check the data integrity manually.
         """
         for area_id, value in new_data.items():
+            if area_id not in reserve_ids:
+                raise AreaNotFound(area_id)
             for symmetries in value.values():
                 for symmetry in symmetries:
                     for reserve_id in symmetry:

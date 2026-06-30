@@ -14,7 +14,7 @@ import pytest
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionCreation, ReserveType
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.model import STUDY_VERSION_9_3
+from antarest.study.model import STUDY_VERSION_9_3, STUDY_VERSION_10_0
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_reserve_definition import CreateReserveDefinition
@@ -102,6 +102,15 @@ def test_error_cases(dao_10_0: StudyDao, command_context: CommandContext) -> Non
         )
 
     # Wrong area
+    cmd = ReplaceThermalReserveSymmetries(
+        area_id="fake_area",
+        symmetries={"th1": [["r1", "r2"]]},
+        command_context=command_context,
+        study_version=STUDY_VERSION_10_0,
+    )
+    output = cmd.apply(dao_10_0)
+    assert not output.status
+    assert "Area is not found: 'fake_area'" in output.message
 
     # Wrong reserve
 
