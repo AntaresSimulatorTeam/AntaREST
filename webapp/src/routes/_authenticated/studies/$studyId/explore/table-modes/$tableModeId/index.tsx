@@ -13,84 +13,60 @@
  */
 
 import ViewWrapper from "@/components/page/ViewWrapper";
-import TableMode from "@/components/TableMode";
+import TableModeDataForm from "@/components/TableModeDataForm";
 import useDialog from "@/hooks/useDialog";
-import i18n from "@/i18n";
-import { getNames } from "@/services/utils";
-import storage, { StorageKey } from "@/services/utils/localStorage";
+import { isQueryListItemOptimistic } from "@/queries/utils";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import { Button } from "@mui/material";
-import { createFileRoute, useLoaderData } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import TableTemplateFormDialog from "./-components/TableTemplateFormDialog";
+import useDeleteTableMode from "../-hooks/useDeleteTableMode";
+import UpdateTableModeDialog from "./-components/UpdateTableModeDialog";
+import useTableMode from "./-hooks/useTableMode";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/tablemode/$tableModeId/",
+  "/_authenticated/studies/$studyId/explore/table-modes/$tableModeId/",
 )({
-  loader: ({ params: { tableModeId } }) => {
-    const templates = storage.getItem(StorageKey.StudiesModelTableModeTemplates) || [];
-    const template = templates.find(({ name }) => name === tableModeId);
-
-    if (!template) {
-      throw new Error(i18n.t("study.tableMode.notFound", { id: tableModeId }));
-    }
-
-    return template;
-  },
-  component: Table,
+  component: TableMode,
 });
 
-function Table() {
+function TableMode() {
   const { studyId } = Route.useParams();
   const { t } = useTranslation();
   const { openDialog, confirm } = useDialog();
   const navigate = Route.useNavigate();
-  const template = Route.useLoaderData();
-
-  const existingNames = useLoaderData({
-    from: "/_authenticated/studies/$studyId/explore/tablemode",
-    select: getNames,
-  });
+  const tableMode = useTableMode();
+  const isOptimistic = isQueryListItemOptimistic(tableMode);
+  const deleteTableMode = useDeleteTableMode();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleEdit = () => {
-    if (!template) {
+    if (!tableMode) {
       return;
     }
 
-    openDialog(({ onClose }) => (
-      <TableTemplateFormDialog
-        title={t("study.tableMode.dialog.edit.title")}
-        titleIcon={EditIcon}
-        defaultValues={template}
-        existingNames={existingNames}
-        onCancel={onClose}
-      />
-    ));
+    openDialog(({ onClose }) => <UpdateTableModeDialog tableMode={tableMode} onCancel={onClose} />);
   };
 
   const handleDelete = async () => {
-    if (!template) {
+    if (!tableMode) {
       return;
     }
 
     const isConfirmed = await confirm({
       titleIcon: DeleteIcon,
       alert: "error",
-      content: t("study.tableMode.dialog.delete.text", {
-        name: template.name,
+      content: t("study.tableModes.dialog.delete.text", {
+        name: tableMode.name,
       }),
     });
 
     if (isConfirmed) {
-      storage.setItem(StorageKey.StudiesModelTableModeTemplates, (prev) => {
-        const currentTemplates = prev || [];
-        return currentTemplates?.filter(({ name }) => name !== template.name);
-      });
+      deleteTableMode.mutate({ tableId: tableMode.id });
 
       navigate({ to: "..", replace: true });
     }
@@ -102,14 +78,19 @@ function Table() {
 
   return (
     <ViewWrapper>
-      <TableMode
+      <TableModeDataForm
         studyId={studyId}
-        name={template.name}
-        type={template.type}
-        columns={template.columns}
+        name={tableMode.name}
+        type={tableMode.type}
+        columns={tableMode.columns}
         extraActions={
           <>
-            <Button variant="outlined" startIcon={<EditIcon />} onClick={handleEdit}>
+            <Button
+              variant="outlined"
+              startIcon={<EditIcon />}
+              onClick={handleEdit}
+              disabled={isOptimistic}
+            >
               {t("global.edit")}
             </Button>
             <Button
@@ -117,6 +98,7 @@ function Table() {
               color="error"
               startIcon={<DeleteIcon />}
               onClick={handleDelete}
+              disabled={isOptimistic}
             >
               {t("global.delete")}
             </Button>

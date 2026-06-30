@@ -123,11 +123,11 @@ function ManagedTreeNode({
     <TreeItemEnhanced
       itemId={path}
       label={
-        <Stack justifyContent="space-between" gap={1}>
+        <Stack justifyContent="space-between" spacing={1}>
           <Typography variant="body2" noWrap>
             {name}
           </Typography>
-          <Stack gap={0.25} sx={nodeActionsContainerStyles}>
+          <Stack spacing={0.25} sx={nodeActionsContainerStyles}>
             <FavoriteDirectoryToggle
               directoryId={id}
               slotProps={{ icon: { fontSize: "extra-small" } }}
