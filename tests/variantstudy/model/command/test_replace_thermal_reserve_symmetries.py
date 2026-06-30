@@ -9,12 +9,18 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pytest
+
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionCreation, ReserveType
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.model import STUDY_VERSION_9_3
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_reserve_definition import CreateReserveDefinition
+from antarest.study.storage.variantstudy.model.command.replace_thermal_reserve_symmetries import (
+    ReplaceThermalReserveSymmetries,
+)
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -84,4 +90,19 @@ def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> No
 
 
 def test_error_cases(dao_10_0: StudyDao, command_context: CommandContext) -> None:
-    pass
+    _set_up(dao_10_0, command_context)
+
+    # Wrong version
+    with pytest.raises(ValueError, match="study version before 10.0"):
+        ReplaceThermalReserveSymmetries(
+            area_id="fr",
+            symmetries={"th1": [["r1", "r2"]]},
+            command_context=command_context,
+            study_version=STUDY_VERSION_9_3,
+        )
+
+    # Wrong area
+
+    # Wrong reserve
+
+    # Wrong cluster
