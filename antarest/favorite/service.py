@@ -15,7 +15,6 @@ from pathlib import Path
 from fastapi import HTTPException
 
 from antarest.core.config import Config
-from antarest.core.exceptions import WorkspaceNotFound
 from antarest.favorite.model import (
     FavoriteDirectory,
     FavoriteDirectoryDTO,
@@ -146,23 +145,23 @@ class FavoriteExternalDirectoryService:
 
         """
         workspace_conf = get_workspace_from_config(self.workspace_config, workspace)
-        if workspace_conf:
-            if not is_folder_safe(workspace_conf, directory_path):
-                raise HTTPException(
-                    status_code=http.HTTPStatus.BAD_REQUEST,
-                    detail=f"Directory {directory_path} is not safe",
-                )
 
-            if (workspace_conf.path / directory_path).exists():
-                favorite_external_directory = FavoriteExternalDirectory(
-                    path=str(Path(directory_path)), workspace=workspace, user_id=get_user_impersonator()
-                )
-                dto = self.favorite_external_directory_repository.save(favorite_external_directory).to_dto()
-                return dto
-            else:
-                raise DirectoryNotFoundError(f"{directory_path}")
-        else:
-            raise WorkspaceNotFound(f"Workspace {workspace} not found")
+        if not is_folder_safe(workspace_conf, directory_path):
+            raise HTTPException(
+                status_code=http.HTTPStatus.BAD_REQUEST,
+                detail=f"Directory {directory_path} is not safe",
+            )
+
+        full_directory_path = workspace_conf.path / directory_path
+
+        if not full_directory_path.exists():
+            raise DirectoryNotFoundError(f"{directory_path}")
+
+        favorite_external_directory = FavoriteExternalDirectory(
+            path=str(Path(directory_path)), workspace=workspace, user_id=get_user_impersonator()
+        )
+        dto = self.favorite_external_directory_repository.save(favorite_external_directory).to_dto()
+        return dto
 
     def list_favorites(self) -> list[FavoriteExternalDirectoryDTO]:
         """

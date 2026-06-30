@@ -21,7 +21,7 @@ def upgrade():
                 sa.Column('workspace', sa.String(length=255), nullable=False),
                 sa.Column('path', sa.String(length=255), nullable=False),
         sa.Column('user_id', sa.Integer(), nullable=False),
-                sa.ForeignKeyConstraint(['user_id'], ['identities.id'], ),
+                sa.ForeignKeyConstraint(['user_id'], ['identities.id'], name="fk_user_id_favorite_external_directory", ondelete='CASCADE'),
                 sa.PrimaryKeyConstraint('workspace', 'path', 'user_id')
     )
 
