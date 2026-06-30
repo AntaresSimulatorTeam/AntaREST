@@ -17,11 +17,12 @@ from pydantic.alias_generators import to_camel
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 
-AreaId: TypeAlias = str
-ThermalId: TypeAlias = str
-
 Cost = Annotated[float, Field(ge=0)]
 Power = Annotated[float, Field(ge=0)]
+
+##########################
+# Thermal part
+##########################
 
 
 class ThermalReserveCertification(AntaresBaseModel):
@@ -33,4 +34,16 @@ class ThermalReserveCertification(AntaresBaseModel):
     participation_cost_off: Cost = 0.0
 
 
+ThermalId: TypeAlias = str
 ThermalReserveCertificationMapping = dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]]
+
+
+##########################
+# Whole model
+##########################
+
+
+class ReserveCertifications(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
+
+    thermals: ThermalReserveCertificationMapping
