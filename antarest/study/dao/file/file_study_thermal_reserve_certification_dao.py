@@ -14,10 +14,11 @@ from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
-from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
-from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
+from antarest.study.business.model.thermal_reserve_certification_model import (
+    ThermalReserveCertificationMapping,
+)
 from antarest.study.dao.api.thermal_reserve_certification_dao import ThermalReserveCertificationDao
-from antarest.study.dao.common import AreaId, ThermalId, ThermalReserveCertificationsMapping
+from antarest.study.dao.common import AreaId
 from antarest.study.dao.file.common import (
     check_area_exists,
     get_thermal_reserve_participations_as_yaml_content,
@@ -43,21 +44,19 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
         pass
 
     @override
-    def get_all_thermal_reserve_certifications(self) -> ThermalReserveCertificationsMapping:
+    def get_all_thermal_reserve_certifications(self) -> dict[AreaId, ThermalReserveCertificationMapping]:
         result = {}
         for area in self.get_file_study().config.areas:
             result[area] = self.get_all_thermal_reserve_certifications_for_area(area)
         return result
 
     @override
-    def get_all_thermal_reserve_certifications_for_area(
-        self, area_id: AreaId
-    ) -> dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]]:
+    def get_all_thermal_reserve_certifications_for_area(self, area_id: AreaId) -> ThermalReserveCertificationMapping:
         data = get_thermal_reserve_participations_as_yaml_content(area_id, self.get_file_study())
         return parse_thermal_reserves_certifications(data)
 
     @override
-    def save_thermal_reserve_certifications(self, data: ThermalReserveCertificationsMapping) -> None:
+    def save_thermal_reserve_certifications(self, data: dict[AreaId, ThermalReserveCertificationMapping]) -> None:
         file_study = self.get_file_study()
 
         for area_id, thermal_dict in data.items():
