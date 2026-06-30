@@ -22,9 +22,6 @@ from antarest.study.storage.variantstudy.model.command.create_reserve_definition
 from antarest.study.storage.variantstudy.model.command.replace_thermal_reserve_certifications import (
     ReplaceThermalReserveCertifications,
 )
-from antarest.study.storage.variantstudy.model.command.replace_thermal_reserve_symmetries import (
-    ReplaceThermalReserveSymmetries,
-)
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -76,18 +73,28 @@ def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> No
     result = dao_10_0.get_all_thermal_reserve_certifications()
     assert result == {"fr": {"r1": {"th1": ThermalReserveCertification()}}}
 
-    cmd = ReplaceThermalReserveSymmetries(
+    new_certifications = {
+        "r1": {
+            "th1": ThermalReserveCertification(
+                participation_cost_off=10.4, participation_cost=10.5, max_power_off=6, max_power=21
+            ),
+            "th2": ThermalReserveCertification(),
+        },
+        "r2": {"th2": ThermalReserveCertification(participation_cost=1000, max_power=1)},
+    }
+
+    cmd = ReplaceThermalReserveCertifications(
         area_id="fr",
-        symmetries={"th1": [["r2", "r3"], ["r4", "r1"]], "th2": [["r1", "r2"]]},
+        certifications=new_certifications,
         command_context=command_context,
         study_version=STUDY_VERSION_10_0,
     )
     output = cmd.apply(dao_10_0)
     assert output.status
 
-    # Check the symmetries
-    result = dao_10_0.get_all_thermal_reserve_symmetries()
-    assert result == {"fr": {"th1": [["r2", "r3"], ["r1", "r4"]], "th2": [["r1", "r2"]]}}
+    # Check the certifications
+    result = dao_10_0.get_all_thermal_reserve_certifications_for_area("fr")
+    assert result == new_certifications
 
 
 def test_error_cases(dao_10_0: StudyDao, command_context: CommandContext) -> None:
