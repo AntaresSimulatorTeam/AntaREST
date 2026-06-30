@@ -77,14 +77,14 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
 
             # Save the given certifications
             all_certifications = self.get_all_thermal_reserve_certifications_for_area(area_id)
-            for thermal_id, value in reserves_dict.items():
-                if thermal_id in all_certifications:
-                    # First, save certifications for existing thermals
-                    for reserve_id in value:
-                        all_certifications[thermal_id][reserve_id] = data[area_id][thermal_id][reserve_id]
+            for reserve_id, value in reserves_dict.items():
+                if reserve_id in all_certifications:
+                    # First, save certifications for existing reserves
+                    for thermal_id in value:
+                        all_certifications[reserve_id][thermal_id] = data[area_id][reserve_id][thermal_id]
                 else:
-                    # Then, save certifications for new thermals
-                    all_certifications[thermal_id] = value
+                    # Then, save certifications for new reserves
+                    all_certifications[reserve_id] = value
 
             # Serialize the new content to write it into the YAML file
             yaml_content = get_thermal_reserve_participations_as_yaml_content(area_id, file_study)
