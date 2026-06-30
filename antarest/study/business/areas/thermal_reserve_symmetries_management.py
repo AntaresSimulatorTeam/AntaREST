@@ -45,6 +45,7 @@ class ReserveSymmetriesManager:
         # Hydro part
         # todo
 
+        # Apply the modifications
         if commands:
             study.add_commands(commands)
         return data
