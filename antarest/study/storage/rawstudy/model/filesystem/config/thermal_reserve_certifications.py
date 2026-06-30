@@ -30,7 +30,7 @@ def parse_thermal_reserves_certifications(
         if thermal_id in result:
             raise ValueError(f"Duplicate thermal cluster id: {thermal_id}")
         existing_thermals.add(thermal_id)
-        for certification in content["certifications"]:
+        for certification in content.get("certifications", []):
             file_data_model = ThermalClusterReserveParticipationFileData.model_validate(certification)
             model = file_data_model.to_model()
             result.setdefault(file_data_model.reserve_id(), {})[thermal_id] = model
