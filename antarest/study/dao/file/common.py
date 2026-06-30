@@ -72,5 +72,5 @@ def get_thermal_reserve_participations_as_yaml_content(area_id: AreaId, file_stu
     data = file_study.tree.get(get_thermal_reserve_path(area_id))
     if not data:
         # Adds the first key to simplify handling of key errors in the rest of the code
-        return {"participations": {}}
+        return {"participations": []}
     return data
