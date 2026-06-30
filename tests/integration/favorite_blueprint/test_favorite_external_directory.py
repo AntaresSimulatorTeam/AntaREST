@@ -136,8 +136,8 @@ def test_get_favorite_external_directory_success_added_two_favorite(admin_client
     assert response_2.status_code == 201
     actual_favorite_list = admin_client.get("/v1/favorites/external-directories").json()
     assert len(actual_favorite_list) == 2
-    expected_favorite_external_directory_1["path"] = str(path_1)
-    expected_favorite_external_directory_2["path"] = str(path_2)
+    expected_favorite_external_directory_1["path"] = path_1.as_posix()
+    expected_favorite_external_directory_2["path"] = path_2.as_posix()
     assert actual_favorite_list == [expected_favorite_external_directory_1, expected_favorite_external_directory_2]
 
 
