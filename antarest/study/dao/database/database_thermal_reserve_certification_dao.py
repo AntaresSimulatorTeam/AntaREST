@@ -83,7 +83,7 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
         result: dict[AreaId, ThermalReserveCertificationMapping] = {}
         for row in rows:
             certification = _convert_row_to_model(row)
-            result.setdefault(row.area_id, {}).setdefault(row.thermal_id, {})[row.reserve_id] = certification
+            result.setdefault(row.area_id, {}).setdefault(row.reserve_id, {})[row.thermal_id] = certification
         return result
 
     @override
