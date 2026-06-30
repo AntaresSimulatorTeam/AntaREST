@@ -100,9 +100,9 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
         if not data:
             return
         values = []
-        for area_id, thermal_dict in data.items():
-            for thermal_id, reserves_dict in thermal_dict.items():
-                for reserve_id, certification in reserves_dict.items():
+        for area_id, reserves_dict in data.items():
+            for reserve_id, thermal_dict in reserves_dict.items():
+                for thermal_id, certification in thermal_dict.items():
                     values.append(_convert_model_to_row(self._study_id, area_id, thermal_id, reserve_id, certification))
         try:
             # todo: this is a replace, we should first empty the DB
