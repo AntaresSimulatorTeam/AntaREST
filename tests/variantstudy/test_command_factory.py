@@ -1104,7 +1104,19 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.REPLACE_THERMAL_RESERVE_CERTIFICATIONS.value,
-            args={"area_id": "fr", "certifications": {"r1": {"th1": {"max_power": 3.2, "max_power_off": 1.2}}}},
+            args={
+                "area_id": "fr",
+                "certifications": {
+                    "r1": {
+                        "th1": {
+                            "max_power": 3.2,
+                            "max_power_off": 1.2,
+                            "participation_cost": 0,
+                            "participation_cost_off": 4,
+                        }
+                    }
+                },
+            },
             study_version=STUDY_VERSION_10_0,
         ),
         None,
