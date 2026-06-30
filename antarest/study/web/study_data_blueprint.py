@@ -100,7 +100,7 @@ from antarest.study.business.model.reserve_definition_model import (
     ReserveDefinitionCreation,
     ReserveDefinitionUpdate,
 )
-from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetry
+from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.business.model.reserves_global_parameters_model import (
     ReservesGlobalParameters,
     ReservesGlobalParametersUpdate,
@@ -1648,28 +1648,28 @@ def create_study_data_routes() -> APIRouter:
         study_service.reserve_definitions_manager.delete_reserve_definitions(study_interface, area_id, reserve_ids)
 
     @bp.get(
-        path="/studies/{uuid}/areas/{area_id}/thermal/reserves/symmetries",
-        summary="Fetch thermal reserve symmetries for a given area",
+        path="/studies/{uuid}/areas/{area_id}/reserves/symmetries",
+        summary="Fetch all reserve symmetries for a given area",
     )
     def get_thermal_reserve_symmetries(
         study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr
-    ) -> dict[str, list[ReserveSymmetry]]:
-        logger.info("Fetching thermal reserve symmetries for study '%s' and area '%s'", uuid, area_id)
+    ) -> ReserveSymmetries:
+        logger.info("Fetching reserve symmetries for study '%s' and area '%s'", uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.thermal_reserve_symmetries_manager.get_symmetries(study_interface, area_id)
+        return study_service.reserve_symmetries_manager.get_symmetries(study_interface, area_id)
 
     @bp.put(
-        path="/studies/{uuid}/areas/{area_id}/thermal/reserves/symmetries",
-        summary="Saves new thermal reserve symmetries for a given area",
+        path="/studies/{uuid}/areas/{area_id}/reserves/symmetries",
+        summary="Saves new reserve symmetries for a given area",
     )
     def save_thermal_reserve_symmetries(
-        study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr, data: dict[str, list[ReserveSymmetry]]
-    ) -> dict[str, list[ReserveSymmetry]]:
-        logger.info("Saving thermal reserve symmetries for study '%s' and area '%s'", uuid, area_id)
+        study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr, data: ReserveSymmetries
+    ) -> ReserveSymmetries:
+        logger.info("Saving reserve symmetries for study '%s' and area '%s'", uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        return study_service.thermal_reserve_symmetries_manager.set_symmetries(study_interface, area_id, data)
+        return study_service.reserve_symmetries_manager.set_symmetries(study_interface, area_id, data)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",

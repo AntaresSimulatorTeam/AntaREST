@@ -9,30 +9,42 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetry
+from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.dao.common import ThermalId
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_thermal_reserve_symmetries import (
     ReplaceThermalReserveSymmetries,
 )
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-class ThermalReserveSymmetriesManager:
+class ReserveSymmetriesManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_symmetries(self, study: StudyInterface, area_id: str) -> dict[ThermalId, list[ReserveSymmetry]]:
-        return study.get_study_dao().get_thermal_reserve_symmetries(area_id)
+    def get_symmetries(self, study: StudyInterface, area_id: str) -> ReserveSymmetries:
+        thermals = study.get_study_dao().get_thermal_reserve_symmetries(area_id)
+        return ReserveSymmetries(thermals=thermals)
 
-    def set_symmetries(
-        self, study: StudyInterface, area_id: str, data: dict[ThermalId, list[ReserveSymmetry]]
-    ) -> dict[ThermalId, list[ReserveSymmetry]]:
-        command = ReplaceThermalReserveSymmetries(
-            area_id=area_id,
-            symmetries=data,
-            command_context=self._command_context,
-            study_version=study.version,
-        )
-        study.add_commands([command])
+    def set_symmetries(self, study: StudyInterface, area_id: str, data: ReserveSymmetries) -> ReserveSymmetries:
+        commands: list[ICommand] = []
+
+        # Thermal part
+        if data.thermals:
+            command = ReplaceThermalReserveSymmetries(
+                area_id=area_id,
+                symmetries=data.thermals,
+                command_context=self._command_context,
+                study_version=study.version,
+            )
+            commands.append(command)
+
+        # St-Storage part
+        # todo
+
+        # Hydro part
+        # todo
+
+        if commands:
+            study.add_commands(commands)
         return data

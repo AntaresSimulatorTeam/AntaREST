@@ -11,11 +11,11 @@
 # This file is part of the Antares project.
 from typing import Annotated, TypeAlias
 
-from pydantic import BeforeValidator
+from pydantic import BeforeValidator, ConfigDict
+from pydantic.alias_generators import to_camel
 
+from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
-
-AreaId: TypeAlias = str
 
 
 def _symmetry_validator(data: list[str]) -> list[str]:
@@ -27,6 +27,19 @@ def _symmetry_validator(data: list[str]) -> list[str]:
 
 
 ReserveSymmetry: TypeAlias = Annotated[list[ReserveDefinitionId], BeforeValidator(_symmetry_validator)]
+
+
+ThermalId: TypeAlias = str
+StStorageId: TypeAlias = str
+AreaId: TypeAlias = str
+
+
+class ReserveSymmetries(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
+
+    thermals: dict[ThermalId, list[ReserveSymmetry]] = {}
+    st_storages: dict[StStorageId, list[ReserveSymmetry]] = {}
+    hydro: dict[AreaId, list[ReserveSymmetry]] = {}
 
 
 def merge_symmetries(symmetries: list[ReserveSymmetry]) -> list[ReserveSymmetry]:
@@ -49,11 +62,3 @@ def merge_symmetries(symmetries: list[ReserveSymmetry]) -> list[ReserveSymmetry]
 
     # Replace sets with sorted lists for reproducibility
     return [sorted(list(merged_set)) for merged_set in merged_sets]
-
-
-##########################
-# Thermal part
-##########################
-
-ThermalId: TypeAlias = str
-ThermalReserveSymmetriesUpdate = dict[AreaId, dict[ThermalId, ReserveSymmetry]]
