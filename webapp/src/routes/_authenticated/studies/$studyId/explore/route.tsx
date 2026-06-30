@@ -88,7 +88,7 @@ function StudyExploreLayout() {
             params,
           }),
         },
-        {
+        study.storageMode === "filesystem" && {
           id: "debug",
           label: t("study.debug"),
           linkOptions: linkOptions({
@@ -97,7 +97,7 @@ function StudyExploreLayout() {
             search: { path: undefined },
           }),
         },
-      ]}
+      ].filter(Boolean)}
       divider
     />
   );
