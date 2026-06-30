@@ -12,7 +12,7 @@
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, NoReturn
 
-from sqlalchemy import Row, Select, select
+from sqlalchemy import Row, Select, delete, insert, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
@@ -31,7 +31,6 @@ from antarest.study.dao.api.thermal_reserve_certification_dao import ThermalRese
 from antarest.study.dao.common import AreaId, ThermalId
 from antarest.study.dao.database.common import get_row_representation_as_dict
 from antarest.study.dao.database.models.thermal_reserve_certification import THERMAL_RESERVE_CERTIFICATION_TABLE
-from antarest.study.dao.database.sql_utils import upsert_multiple
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -105,8 +104,17 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
                 for thermal_id, certification in thermal_dict.items():
                     values.append(_convert_model_to_row(self._study_id, area_id, thermal_id, reserve_id, certification))
         try:
-            # todo: this is a replace, we should first empty the DB
-            upsert_multiple(session=self._db_session, table=_TABLE, values=values)
+            # First, clean the DB
+            area_ids = set(data)
+            reserve_ids = {reserve_id for area_id, reserves_dict in data.items() for reserve_id in reserves_dict}
+            stmt = delete(_TABLE).where(
+                (_TABLE.c.study_id == self._study_id)
+                & (_TABLE.c.area_id.in_(area_ids))
+                & _TABLE.c.reserve_id.in_(reserve_ids)
+            )
+            self._db_session.execute(stmt)
+            # Then, insert the new values
+            self._db_session.execute(insert(_TABLE), values)
         except IntegrityError as e:
             self._raise_the_right_thermal_reserve_exception(data, exc=e)
         self._db_session.commit()
