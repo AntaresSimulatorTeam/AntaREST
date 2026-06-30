@@ -36,3 +36,12 @@ def test_symmetries_and_certifications_do_not_overwrite_each_other(fs_dao_930_an
 
     assert dao.get_thermal_reserve_symmetries("fr") == {"th1": [["r1", "r2"], ["r3", "r4"]]}
     assert dao.get_thermal_reserve_certifications("fr") == {"r1": {"th2": ThermalReserveCertification()}}
+
+    # Save a new symmetry. Ensures the symmetry writing didn't affect the certification.
+    dao.save_thermal_reserve_symmetries({"fr": {"th2": [["r1", "r2", "r3"]]}})
+
+    assert dao.get_thermal_reserve_certifications("fr") == {"r1": {"th2": ThermalReserveCertification()}}
+    assert dao.get_thermal_reserve_symmetries("fr") == {
+        "th1": [["r1", "r2"], ["r3", "r4"]],
+        "th2": [["r1", "r2", "r3"]],
+    }
