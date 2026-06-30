@@ -31,9 +31,9 @@ def parse_thermal_reserves_certifications(
             raise ValueError(f"Duplicate thermal cluster id: {thermal_id}")
         existing_thermals.add(thermal_id)
         for certification in content["certifications"]:
-            reserve_id = ReserveDefinitionId(transform_name_to_id(certification.pop("reserve")))
-            model = ThermalReserveCertification.model_validate(certification)
-            result.setdefault(reserve_id, {})[thermal_id] = model
+            file_data_model = ThermalClusterReserveParticipationFileData.model_validate(certification)
+            model = file_data_model.to_model()
+            result.setdefault(file_data_model.reserve_id(), {})[thermal_id] = model
 
     return result
 
@@ -46,6 +46,12 @@ class ThermalClusterReserveParticipationFileData(AntaresBaseModel):
     max_power_off: float
     participation_cost: float
     participation_cost_off: float
+
+    def reserve_id(self) -> ReserveDefinitionId:
+        return ReserveDefinitionId(transform_name_to_id(self.reserve))
+
+    def to_model(self) -> ThermalReserveCertification:
+        return ThermalReserveCertification.model_validate(self.model_dump(exclude={"reserve"}))
 
 
 def serialize_thermal_reserve_certifications(
