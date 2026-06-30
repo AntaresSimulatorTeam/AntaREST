@@ -15,7 +15,9 @@ from typing import TYPE_CHECKING
 from typing_extensions import override
 
 from antarest.core.exceptions import ReserveDefinitionsNotFound
+from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.thermal_reserve_certification_model import (
+    ThermalReserveCertification,
     ThermalReserveCertificationMapping,
 )
 from antarest.study.dao.api.thermal_reserve_certification_dao import ThermalReserveCertificationDao
@@ -86,14 +88,20 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
                     # Then, save certifications for new reserves
                     all_certifications[reserve_id] = value
 
+            # Reorganize data as the YAML file is organized by thermals and not by reserves
+            thermal_certifications: dict[str, dict[ReserveDefinitionId, ThermalReserveCertification]] = {}
+            for reserve_id, value in all_certifications.items():
+                for thermal_id, certification in value.items():
+                    thermal_certifications.setdefault(thermal_id, {})[reserve_id] = certification
+
             # Serialize the new content to write it into the YAML file
             yaml_content = get_thermal_reserve_participations_as_yaml_content(area_id, file_study)
             for participation in yaml_content["participations"]:
                 thermal_id = transform_name_to_id(participation["cluster"])
-                certifications = all_certifications.pop(thermal_id)
+                certifications = thermal_certifications.pop(thermal_id)
                 participation["certifications"] = serialize_thermal_reserve_certifications(certifications)
 
-            for thermal_id, certifications in all_certifications.items():
+            for thermal_id, certifications in thermal_certifications.items():
                 yaml_content["participations"].append(
                     {"cluster": thermal_id, "certifications": serialize_thermal_reserve_certifications(certifications)}
                 )
