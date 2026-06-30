@@ -103,6 +103,9 @@ class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, AB
             yaml_content = get_thermal_reserve_participations_as_yaml_content(area_id, file_study)
             for participation in yaml_content["participations"]:
                 thermal_id = transform_name_to_id(participation["cluster"])
+                if thermal_id not in thermal_certifications:
+                    # Means the file contains symmetries but no certifications for this thermal
+                    continue
                 certifications = thermal_certifications.pop(thermal_id)
                 participation["certifications"] = serialize_thermal_reserve_certifications(certifications)
 
