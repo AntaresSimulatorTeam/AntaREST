@@ -9,6 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import uuid
+from pathlib import Path
+from unittest.mock import Mock
 
 import numpy as np
 import polars as pl
@@ -16,8 +19,11 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.exceptions import AreaNotFound
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.area_properties_model import AreaProperties, initialize_area_properties
 from antarest.study.business.model.config.compatibility_parameters_model import (
     HydroPmax,
 )
@@ -29,6 +35,7 @@ from antarest.study.business.model.hydro_correlation_model import (
 from antarest.study.business.model.hydro_model import HydroManagement, InflowStructure
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.database.models.hydro import (
     HYDRO_ALLOCATION_TABLE,
     HYDRO_CORRELATION_TABLE,
@@ -48,6 +55,11 @@ from antarest.study.dao.database.models.hydro import (
     HYDRO_RUN_OF_RIVER_TABLE,
     HYDRO_WATER_VALUES_TABLE,
 )
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory, ResourcePaths
+from antarest.study.model import StorageMode, StudyMetadataCreation
+from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
+from tests.helpers import create_raw_study, with_db_context
 from tests.study.dao.utils import save_area
 
 
@@ -803,3 +815,57 @@ class TestConvertHydroPmax:
         assert dao.get_compatibility_parameters().hydro_pmax == HydroPmax.HOURLY
         dao.convert_hydro_pmax(HydroPmax.DAILY)
         assert dao.get_compatibility_parameters().hydro_pmax == HydroPmax.DAILY
+
+
+@with_db_context
+def test_hydro_correlation(dao: StudyDao, study_factory: StudyFactory, tmp_path: Path) -> None:
+    # Set Up
+    for area_name in ["fr", "be", "pl"]:
+        props = AreaProperties()
+        initialize_area_properties(props, dao.get_version())
+        dao.save_areas_with_properties({area_name: props})
+    dao.save_hydro_correlation(
+        {
+            "fr": HydroCorrelation(
+                correlation=[
+                    HydroCorrelationArea(area_id="fr", coefficient=100.0),
+                    HydroCorrelationArea(area_id="be", coefficient=72.0),
+                    HydroCorrelationArea(area_id="pl", coefficient=85.0),
+                ]
+            )
+        }
+    )
+    source_dao = dao
+    matrix_service = source_dao.matrix_service
+    study_id, study_version = str(uuid.uuid4()), source_dao.get_version()
+
+    creation = StudyMetadataCreation(id=study_id, version=study_version, managed=True)
+    if isinstance(source_dao, FileStudyTreeDao):
+        study = create_raw_study(id=study_id, version=str(study_version), storage_mode=StorageMode.DATABASE)
+        db.session.add(study)
+        db.session.commit()
+        db_dao_factory = DatabaseStudyDaoFactory(matrix_service, Mock())
+        new_dao = db_dao_factory.create_study_dao(creation)
+    else:
+        study_path = tmp_path / study_id
+        paths_getter = Mock()
+        paths_getter.return_value = ResourcePaths(study_path=study_path, output_path=None)
+        fs_dao_factory = FileStudyDaoFactory(matrix_service, Mock(), Mock(), study_factory, LocalCache(), paths_getter)
+        study = create_raw_study(
+            id=study_id, version=str(study_version), storage_mode=StorageMode.FILESYSTEM, path=str(study_path)
+        )
+        db.session.add(study)
+        db.session.commit()
+        new_dao = fs_dao_factory.create_study_dao(creation)
+
+    # First, save areas to avoid foreign key issues
+    area_properties = source_dao.get_all_area_properties()
+    new_dao.save_areas_with_properties(area_properties)
+
+    # Then, save the correlation. This mimics the study conversion code.
+    correlation_dict = source_dao.get_hydro_correlation_matrix().to_hydro_correlations()
+    assert sorted(correlation_dict) == ["be", "fr", "pl"]
+    new_dao.save_hydro_correlation(correlation_dict)
+
+    # Finally, ensures the correlation was saved successfully.
+    assert new_dao.get_hydro_correlation_matrix().to_hydro_correlations() == correlation_dict
