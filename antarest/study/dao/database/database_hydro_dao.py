@@ -158,7 +158,7 @@ class DatabaseHydroDao(HydroDao):
             raise AreaNotFound(*invalid_areas)
 
         # All areas exist. It means that the DB table does not contain the information.
-        raise ValueError("One of the link table is not filled as it should") from exc
+        raise ValueError("One of the hydro table is not filled as it should") from exc
 
     @override
     def save_hydro_management(self, hydro_management: dict[AreaId, HydroManagement]) -> None:
