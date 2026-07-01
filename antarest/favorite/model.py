@@ -10,7 +10,10 @@
 #
 # This file is part of the Antares project.
 import logging
+from pathlib import Path, PurePosixPath
+from typing import Annotated, TypeAlias
 
+from pydantic import Field, field_validator
 from pydantic.alias_generators import to_camel
 from sqlalchemy import ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -20,6 +23,13 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.study.model import Directory, Study
 
 logger = logging.getLogger(__name__)
+
+WorkspaceType: TypeAlias = Annotated[str, Field(min_length=1)]
+
+DirectoryPathType: TypeAlias = Annotated[
+    str,
+    Field(min_length=1),
+]
 
 
 class FavoriteStudyDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel, populate_by_name=True):
@@ -80,3 +90,31 @@ class FavoriteDirectory(Base):
 
     def to_dto(self) -> FavoriteDirectoryDTO:
         return FavoriteDirectoryDTO(directory_id=self.directory_id, directory_name=self.directory.name)
+
+
+class FavoriteExternalDirectoryDTO(AntaresBaseModel, extra="forbid"):
+    path: PurePosixPath
+    workspace: str
+
+    @field_validator("path", mode="before")
+    def to_posix(cls, path: Path) -> PurePosixPath:
+        """
+        Always convert path to posix path.
+        """
+        return PurePosixPath(path)
+
+
+class FavoriteExternalDirectory(Base):
+    __tablename__ = "favorite_external_directory"
+
+    path: Mapped[str] = mapped_column(String, primary_key=True)
+    workspace: Mapped[str] = mapped_column(String, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("identities.id", name="fk_user_id_favorite_external_directory", ondelete="CASCADE"),
+        nullable=False,
+        primary_key=True,
+    )
+
+    def to_dto(self) -> FavoriteExternalDirectoryDTO:
+        return FavoriteExternalDirectoryDTO(path=PurePosixPath(self.path), workspace=self.workspace)
