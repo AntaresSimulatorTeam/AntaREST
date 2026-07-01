@@ -16,7 +16,6 @@ import enum
 import http
 import io
 import logging
-import shutil
 import tempfile
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable, Sequence
@@ -116,8 +115,6 @@ from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
-from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.directory_service import DirectoryService
 from antarest.study.dtos import StudySynthesis
 from antarest.study.model import (
@@ -161,7 +158,6 @@ from antarest.study.storage.study_upgrader import check_versions_coherence, find
 from antarest.study.storage.utils import (
     assert_permission,
     assert_permission_on_studies,
-    create_new_empty_study,
     dump_dataframe,
     extract_data_to_dir,
     extract_simulation_range_from_model,
@@ -2998,37 +2994,3 @@ class StudyService:
         ##########################
 
         return StudyDataDTO.model_validate(obj)
-
-    def write_study_as_file_study(
-        self, study_id: str, path: Path, with_outputs: bool = False, normalize_matrices: bool = False
-    ) -> None:
-        study = self.get_study(study_id)
-        assert_permission(study, StudyPermissionType.READ)
-        source_dao = self.get_study_interface(study).get_study_dao()
-
-        # Create empty study on the filesystem
-        study_version = StudyVersion.parse(study.version)
-        assert study.name is not None
-        create_new_empty_study(study_version, path, study.name, study.author or "Unknown")
-
-        # Create the FileStudyDAO
-        file_study = self.storage_service.raw_study_service.study_factory.create_from_fs(
-            path, with_matrix_normalization=normalize_matrices, study_id="", use_cache=False
-        )
-        context = self.storage_service.variant_study_service.command_factory.command_context
-        file_study_dao = FileStudyTreeDao(
-            file_study,
-            normalize_matrices,
-            context.generator_matrix_constants,
-            context.blob_service,
-            context.matrix_service,
-            self.cache_service,
-        )
-        # Write the given study input in the filesystem
-        converter = StudyConverter(source_dao, file_study_dao, study_version, context.matrix_service)
-        converter.convert_study_inputs()
-
-        # Copy the `output` folder if asked
-        output_src_path = Path(study.path) / "output"
-        if with_outputs and output_src_path.exists():
-            shutil.copytree(output_src_path, path / "output", dirs_exist_ok=True)

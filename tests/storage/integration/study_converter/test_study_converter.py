@@ -10,11 +10,12 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock
 
 import numpy as np
 import polars as pl
 
+from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.study.business.model.area_model import AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
@@ -53,6 +54,7 @@ from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.model import STUDY_VERSION_7_0, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
+from antarest.study.storage.utils import create_new_empty_study
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import with_admin_user
 from tests.storage.integration.conftest import UUID
@@ -64,25 +66,42 @@ def test_nominal_case(storage_service, tmp_path: Path, command_context: CommandC
     Ensures we can represent a study as a filesystem one.
     """
     source_path = tmp_path / "studies" / UUID
-    new_path = tmp_path / "studies" / "new_study" / UUID
-    storage_service.write_study_as_file_study(UUID, new_path, with_outputs=True)
 
-    # Create DAO based on new study to test the study content.
-    factory = storage_service.storage_service.raw_study_service.study_factory
-    file_study = factory.create_from_fs(new_path, with_matrix_normalization=False, study_id="", use_cache=False)
-    context = command_context
-    file_study_dao = FileStudyTreeDao(
-        file_study, False, context.generator_matrix_constants, context.blob_service, context.matrix_service, Mock()
+    cache = LocalCache()
+    study_factory = storage_service.storage_service.raw_study_service.study_factory
+    file_study = study_factory.create_from_fs(source_path, False, "", None, False)
+    source_dao = FileStudyTreeDao(
+        file_study,
+        False,
+        command_context.generator_matrix_constants,
+        command_context.blob_service,
+        command_context.matrix_service,
+        cache,
     )
 
+    new_path = tmp_path / "studies" / "new_study" / UUID
+    create_new_empty_study(source_dao.get_version(), new_path)
+    file_study = study_factory.create_from_fs(new_path, False, "", None, False)
+    new_dao = FileStudyTreeDao(
+        file_study,
+        False,
+        command_context.generator_matrix_constants,
+        command_context.blob_service,
+        command_context.matrix_service,
+        cache,
+    )
+
+    converter = StudyConverter(source_dao, new_dao, source_dao.get_version(), command_context.matrix_service)
+    converter.convert_study_inputs()
+
     # Version
-    assert file_study_dao.get_version() == STUDY_VERSION_7_0
+    assert new_dao.get_version() == STUDY_VERSION_7_0
 
     # Comments (only check the length as the content is long and badly formatted)
-    assert len(file_study_dao.get_comments()) == 8542
+    assert len(new_dao.get_comments()) == 8542
 
     # Links
-    assert file_study_dao.get_links() == [
+    assert new_dao.get_links() == [
         Link(
             area1="de",
             area2="fr",
@@ -105,7 +124,7 @@ def test_nominal_case(storage_service, tmp_path: Path, command_context: CommandC
             filter_year_by_year=[FilterOption.HOURLY],
         ),
     ]
-    series = file_study_dao.get_link_series("fr", "it")
+    series = new_dao.get_link_series("fr", "it")
     expected_series = create_polars_dataframe(np.zeros((8760, 8)))
     expected_series = expected_series.with_columns(
         [pl.lit(100000).alias("0"), pl.lit(100000).alias("1"), pl.lit(0.01).alias("2"), pl.lit(0.01).alias("3")]
@@ -113,10 +132,10 @@ def test_nominal_case(storage_service, tmp_path: Path, command_context: CommandC
     pl.testing.assert_frame_equal(series, expected_series, check_dtypes=False)
 
     # Binding constraints
-    assert file_study_dao.get_all_constraints() == {}
+    assert new_dao.get_all_constraints() == {}
 
     # Settings
-    assert file_study_dao.get_general_config() == GeneralConfig(
+    assert new_dao.get_general_config() == GeneralConfig(
         mode=Mode.ADEQUACY,
         first_day=1,
         last_day=7,
@@ -127,18 +146,18 @@ def test_nominal_case(storage_service, tmp_path: Path, command_context: CommandC
         mc_scenario=True,
         filtering=True,
     )
-    assert file_study_dao.get_optimization_preferences() == OptimizationPreferences()
-    assert file_study_dao.get_advanced_parameters() == AdvancedParameters(
+    assert new_dao.get_optimization_preferences() == OptimizationPreferences()
+    assert new_dao.get_advanced_parameters() == AdvancedParameters(
         initial_reservoir_levels=InitialReservoirLevel.COLD_START, number_of_cores_mode=SimulationCore.MAXIMUM
     )
-    assert file_study_dao.get_playlist_config() == Playlist(years={1: PlaylistValues(status=True, weight=1)})
-    assert file_study_dao.get_timeseries_config() == TimeSeriesConfiguration(thermal=TimeSeriesType(number=1))
-    assert file_study_dao.get_thematic_trimming() == ThematicTrimming(
+    assert new_dao.get_playlist_config() == Playlist(years={1: PlaylistValues(status=True, weight=1)})
+    assert new_dao.get_timeseries_config() == TimeSeriesConfiguration(thermal=TimeSeriesType(number=1))
+    assert new_dao.get_thematic_trimming() == ThematicTrimming(
         solar=True, nuclear=True, lignite=True, coal=True, gas=True, oil=True, mix_fuel=True, misc_dtg=True
     )
 
     # Scenario builder
-    assert file_study_dao.get_ruleset() == Ruleset(
+    assert new_dao.get_ruleset() == Ruleset(
         load={"de": {"0": 1}, "es": {"0": 1}, "fr": {"0": 1}, "it": {"0": 1}},
         thermal={
             "de": {
@@ -192,7 +211,7 @@ def test_nominal_case(storage_service, tmp_path: Path, command_context: CommandC
     )
 
     # Area properties
-    assert file_study_dao.get_all_area_properties() == {
+    assert new_dao.get_all_area_properties() == {
         "de": AreaProperties(
             energy_cost_unsupplied=3000.0,
             filter_synthesis={"monthly", "daily"},
@@ -216,7 +235,7 @@ def test_nominal_case(storage_service, tmp_path: Path, command_context: CommandC
     }
 
     # Area ui
-    assert file_study_dao.get_all_areas_ui_info() == {
+    assert new_dao.get_all_areas_ui_info() == {
         "de": AreaUIData(
             ui={"x": 1, "y": 135, "color_r": 0, "color_g": 128, "color_b": 255, "layers": "0"},
             layer_x={"0": 1},
@@ -244,7 +263,7 @@ def test_nominal_case(storage_service, tmp_path: Path, command_context: CommandC
     }
 
     # Districts
-    assert file_study_dao.get_districts() == [
+    assert new_dao.get_districts() == [
         District(
             id="all areas",
             output=False,
@@ -255,12 +274,12 @@ def test_nominal_case(storage_service, tmp_path: Path, command_context: CommandC
     ]
 
     # Load
-    load = file_study_dao.get_load("fr")
+    load = new_dao.get_load("fr")
     expected_load = create_polars_dataframe(np.array(53 * list(range(0, 168 * 100, 100)))[:8760])
     pl.testing.assert_frame_equal(load, expected_load, check_dtypes=False)
 
     # Thermal series
-    thermal_series = file_study_dao.get_thermal_series("fr", "01_solar")
+    thermal_series = new_dao.get_thermal_series("fr", "01_solar")
     assert thermal_series.equals(create_polars_dataframe(8760 * [2000]))
 
     # Thermal clusters
@@ -329,7 +348,7 @@ def test_nominal_case(storage_service, tmp_path: Path, command_context: CommandC
             market_bid_cost=90.0,
         ),
     }
-    assert file_study_dao.get_all_thermals() == {
+    assert new_dao.get_all_thermals() == {
         "de": expected_clusters,
         "es": expected_clusters,
         "fr": expected_clusters,
@@ -340,13 +359,13 @@ def test_nominal_case(storage_service, tmp_path: Path, command_context: CommandC
     expected_properties = HydroProperties(
         management_options=HydroManagement(intra_daily_modulation=2.0), inflow_structure=InflowStructure()
     )
-    assert file_study_dao.get_all_hydro_properties() == {
+    assert new_dao.get_all_hydro_properties() == {
         "de": expected_properties,
         "es": expected_properties,
         "fr": expected_properties,
         "it": expected_properties,
     }
-    correlation_matrix = file_study_dao.get_hydro_correlation_matrix()
+    correlation_matrix = new_dao.get_hydro_correlation_matrix()
     assert correlation_matrix.index == correlation_matrix.columns == ["de", "es", "fr", "it"]
     assert correlation_matrix.data.tolist() == [
         [1.0, 0.0, 0.25, 0.0],
@@ -356,15 +375,15 @@ def test_nominal_case(storage_service, tmp_path: Path, command_context: CommandC
     ]
 
     for area_id in ["de", "es", "fr", "it"]:
-        assert file_study_dao.get_hydro_allocation(area_id) == HydroAllocation(
+        assert new_dao.get_hydro_allocation(area_id) == HydroAllocation(
             allocation=[HydroAllocationArea(area_id=area_id, coefficient=1)]
         )
 
     # User folder
-    assert list(file_study_dao.get_all_user_resources()) == []
+    assert list(new_dao.get_all_user_resources()) == []
 
     # Xpansion
-    assert file_study_dao.get_xpansion_settings() == XpansionSettings(
+    assert new_dao.get_xpansion_settings() == XpansionSettings(
         master=Master.RELAXED,
         uc_type=UcType.EXPANSION_FAST,
         optimality_gap=1000000.0,
@@ -381,14 +400,10 @@ def test_nominal_case(storage_service, tmp_path: Path, command_context: CommandC
         sensitivity_config=XpansionSensitivitySettings(epsilon=0.0, projection=[], capex=False),
     )
 
-    assert file_study_dao.get_all_xpansion_candidates() == []
-    assert file_study_dao.get_xpansion_resources(XpansionResourceFileType.CONSTRAINTS) == []
-    assert file_study_dao.get_xpansion_resources(XpansionResourceFileType.WEIGHTS) == []
-    assert file_study_dao.get_xpansion_resources(XpansionResourceFileType.CAPACITIES) == []
-
-    # Outputs
-    outputs_before = [f.name for f in (source_path / "output").iterdir()]
-    assert [f.name for f in (new_path / "output").iterdir()] == outputs_before
+    assert new_dao.get_all_xpansion_candidates() == []
+    assert new_dao.get_xpansion_resources(XpansionResourceFileType.CONSTRAINTS) == []
+    assert new_dao.get_xpansion_resources(XpansionResourceFileType.WEIGHTS) == []
+    assert new_dao.get_xpansion_resources(XpansionResourceFileType.CAPACITIES) == []
 
     # Ensures the matrices are not normalized
     assert (new_path / "input" / "load" / "series" / "load_de.txt").exists()
