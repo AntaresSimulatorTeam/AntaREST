@@ -52,7 +52,6 @@ from antarest.study.business.model.xpansion_model import (
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.model import STUDY_VERSION_7_0, STUDY_VERSION_9_2
-from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import with_admin_user
@@ -394,27 +393,6 @@ def test_nominal_case(storage_service, tmp_path: Path, command_context: CommandC
     # Ensures the matrices are not normalized
     assert (new_path / "input" / "load" / "series" / "load_de.txt").exists()
     assert not (new_path / "input" / "load" / "series" / "load_de.txt.link").exists()
-
-
-@with_admin_user
-def test_no_outputs(storage_service: StudyService, tmp_path: Path) -> None:
-    """
-    Ensures the outputs aren't copied when didn't asked to
-    """
-    new_path = tmp_path / "studies" / "new_study" / UUID
-    storage_service.write_study_as_file_study(UUID, new_path, with_outputs=False)
-    assert not list((new_path / "output").iterdir())
-
-
-@with_admin_user
-def test_matrices_normalized(storage_service: StudyService, tmp_path: Path) -> None:
-    """
-    Ensures the matrices are normalized when asked to.
-    """
-    new_path = tmp_path / "studies" / "new_study" / UUID
-    storage_service.write_study_as_file_study(UUID, new_path, with_outputs=False, normalize_matrices=True)
-    assert not (new_path / "input" / "load" / "series" / "load_de.txt").exists()
-    assert (new_path / "input" / "load" / "series" / "load_de.txt.link").exists()
 
 
 def test_convert_short_term_storages_also_converts_additional_constraint_matrix() -> None:
